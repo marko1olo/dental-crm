@@ -265,7 +265,9 @@ export function calculateSanpinShelfLifeDays(
 	}
 
 	if (typeof options?.manufacturerDays === "number" && options.manufacturerDays > 0) {
-		return Math.min(Math.max(options.manufacturerDays, def.minShelfLifeDays), def.maxShelfLifeDays);
+		// Для термосварных упаковок (ГОСТ Р ИСО 11607 / МУ 287-113, шов ≥ 8 мм) допускается срок до 365 суток (1 год)
+		const maxDays = def.isHeatSealed ? Math.max(def.maxShelfLifeDays, 365) : def.maxShelfLifeDays;
+		return Math.min(Math.max(options.manufacturerDays, def.minShelfLifeDays), maxDays);
 	}
 
 	return def.defaultShelfLifeDays;

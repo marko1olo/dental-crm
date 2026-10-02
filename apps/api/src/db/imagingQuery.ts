@@ -1,5 +1,5 @@
 import type { ImagingStudy, ImagingViewerSessionState } from "@dental/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 import { cloneDicomWorkbenchManifestForServerStorage } from "../routes/imaging/workstationReadiness.js";
 import { db } from "./client.js";
@@ -38,12 +38,24 @@ function createDefaultViewerSessionState(): ImagingViewerSessionState {
 
 function mapImagingStudy(
 	record: typeof schema.imagingStudies.$inferSelect,
+	patientFullNameOrOptions?:
+		| string
+		| null
+		| { patientFullName?: string | null },
 ): ImagingStudy {
+	const patientFullName =
+		typeof patientFullNameOrOptions === "string"
+			? patientFullNameOrOptions
+			: typeof patientFullNameOrOptions === "object" &&
+					patientFullNameOrOptions !== null
+				? patientFullNameOrOptions.patientFullName ?? null
+				: null;
 	return {
 		id: record.id,
 		organizationId: record.organizationId,
 		patientId: record.patientId,
 		visitId: record.visitId,
+		doctorId: record.doctorId,
 		kind: record.kind,
 		title: record.title,
 		toothCode: record.toothCode,
@@ -53,21 +65,24 @@ function mapImagingStudy(
 		sourceName: record.sourceName,
 		storagePath: record.storagePath,
 		dicomStudyUid: record.dicomStudyUid,
+		studyInstanceUid: record.studyInstanceUid ?? record.dicomStudyUid,
+		seriesInstanceUid: record.seriesInstanceUid,
+		modality: record.modality,
+		seriesDescription: record.seriesDescription,
+		studyDate: record.studyDate,
+		sliceCount: record.sliceCount,
+		dimensions: record.dimensions,
+		voxelSpacing: record.voxelSpacing,
+		fileSizeBytes: record.fileSizeBytes,
+		// biome-ignore lint/suspicious/noExplicitAny: domain schema contract
+		bindingStatus: (record.bindingStatus as any) || "unassigned",
+		bindingConfidence: record.bindingConfidence ?? 0,
+		dicomPatientName: record.dicomPatientName,
+		dicomPatientId: record.dicomPatientId,
+		dicomBirthDate: record.dicomBirthDate,
+		patientFullName: patientFullName ?? null,
 		status: record.status,
 		aiSummary: record.aiSummary,
-		/*
-		 * ВРАЧ ДОЛЖЕН ВИДЕТЬ СНИМОК, А НЕ РИСУНОК.
-		 *
-		 * Здесь для любого исследования подставлялся адрес preview.svg — а он
-		 * рисует бирюзовый градиент с контуром челюсти. Настоящий файл лежит в
-		 * storagePath и в ссылку не попадал вообще: и главный просмотрщик, и лента
-		 * миниатюр, и «Открыть», и «КТ-просмотрщик» показывали заглушку. Разбор ИИ
-		 * при этом читает файл с диска — снимок видела модель, но не врач.
-		 *
-		 * Ссылка ведёт на файл, когда браузер способен его показать. Для DICOM и
-		 * прочего заглушка остаётся: она честно говорит, что предпросмотра нет, и
-		 * это лучше сломанной картинки.
-		 */
 		previewUrl: record.storagePath
 			? (browserRenderableImageMimeType(record.storagePath)
 				? `/api/imaging/studies/${record.id}/file`
@@ -79,30 +94,158 @@ function mapImagingStudy(
 	};
 }
 
+export interface ImagingStudiesQueryFilters {
+	patientId?: string | null | undefined;
+	modality?: string | null | undefined;
+	bindingStatus?: string | null | undefined;
+	search?: string | null | undefined;
+	limit?: number | undefined;
+	offset?: number | undefined;
+}
+
+export async function getImagingStudiesWithFilters(
+	organizationId: string,
+	filters: ImagingStudiesQueryFilters = {},
+): Promise<ImagingStudy[]> {
+	const conditions = [eq(schema.imagingStudies.organizationId, organizationId)];
+
+	if (filters.patientId) {
+		conditions.push(eq(schema.imagingStudies.patientId, filters.patientId));
+	}
+
+	if (filters.modality) {
+		conditions.push(
+			sql`lower(${schema.imagingStudies.modality}) = lower(${filters.modality})`,
+		);
+	}
+
+	if (filters.bindingStatus) {
+		conditions.push(
+			eq(schema.imagingStudies.bindingStatus, filters.bindingStatus),
+		);
+	}
+
+	if (filters.search && filters.search.trim().length > 0) {
+		const searchPattern = `%${filters.search.trim().toLowerCase()}%`;
+		conditions.push(
+			or(
+				sql`lower(${schema.imagingStudies.title}) LIKE ${searchPattern}`,
+				sql`lower(${schema.imagingStudies.dicomPatientName}) LIKE ${searchPattern}`,
+				sql`lower(${schema.patients.fullName}) LIKE ${searchPattern}`,
+			)!,
+		);
+	}
+
+	const baseQuery = db
+		.select({
+			study: schema.imagingStudies,
+			patientFullName: schema.patients.fullName,
+		})
+		.from(schema.imagingStudies)
+		.leftJoin(
+			schema.patients,
+			and(
+				eq(schema.patients.organizationId, organizationId),
+				eq(schema.patients.id, schema.imagingStudies.patientId),
+			),
+		)
+		.where(and(...conditions))
+		.orderBy(desc(schema.imagingStudies.capturedAt));
+
+	const limitVal = typeof filters.limit === "number" && filters.limit > 0 ? filters.limit : undefined;
+	const offsetVal = typeof filters.offset === "number" && filters.offset > 0 ? filters.offset : undefined;
+
+	let rows: Array<{
+		study: typeof schema.imagingStudies.$inferSelect;
+		patientFullName: string | null;
+	}>;
+
+	if (limitVal !== undefined && offsetVal !== undefined) {
+		rows = await baseQuery.limit(limitVal).offset(offsetVal);
+	} else if (limitVal !== undefined) {
+		rows = await baseQuery.limit(limitVal);
+	} else if (offsetVal !== undefined) {
+		rows = await baseQuery.offset(offsetVal);
+	} else {
+		rows = await baseQuery;
+	}
+
+	return rows.map((r) => mapImagingStudy(r.study, r.patientFullName));
+}
+
 export async function getImagingStudiesForPatient(
 	organizationId: string,
 	patientId: string,
 ): Promise<ImagingStudy[]> {
-	const records = await db
-		.select()
-		.from(schema.imagingStudies)
-		.where(
-			and(
-				eq(schema.imagingStudies.organizationId, organizationId),
-				eq(schema.imagingStudies.patientId, patientId),
-			),
-		);
-	return records.map(mapImagingStudy);
+	return getImagingStudiesWithFilters(organizationId, { patientId });
 }
 
 export async function getAllImagingStudies(
 	organizationId: string,
 ): Promise<ImagingStudy[]> {
-	const records = await db
-		.select()
-		.from(schema.imagingStudies)
-		.where(eq(schema.imagingStudies.organizationId, organizationId));
-	return records.map(mapImagingStudy);
+	return getImagingStudiesWithFilters(organizationId);
+}
+
+export async function bindPatientToStudyInDb(
+	organizationId: string,
+	studyId: string,
+	patientId: string,
+): Promise<ImagingStudy | null> {
+	const [patient] = await db
+		.select({ id: schema.patients.id, fullName: schema.patients.fullName })
+		.from(schema.patients)
+		.where(
+			and(
+				eq(schema.patients.organizationId, organizationId),
+				eq(schema.patients.id, patientId),
+			),
+		)
+		.limit(1);
+
+	if (!patient) {
+		throw new Error("Пациент не найден в базе организации");
+	}
+
+	const [updated] = await db
+		.update(schema.imagingStudies)
+		.set({
+			patientId: patient.id,
+			bindingStatus: "manual_bound",
+			bindingConfidence: 100,
+			aiSummary: `Вручную привязано врачом к пациенту: ${patient.fullName}`,
+		})
+		.where(
+			and(
+				eq(schema.imagingStudies.organizationId, organizationId),
+				eq(schema.imagingStudies.id, studyId),
+			),
+		)
+		.returning();
+
+	return updated ? mapImagingStudy(updated, patient.fullName) : null;
+}
+
+export async function unbindPatientFromStudyInDb(
+	organizationId: string,
+	studyId: string,
+): Promise<ImagingStudy | null> {
+	const [updated] = await db
+		.update(schema.imagingStudies)
+		.set({
+			patientId: null,
+			bindingStatus: "unassigned",
+			bindingConfidence: 0,
+			aiSummary: "Исследование отвязано от пациента врачом",
+		})
+		.where(
+			and(
+				eq(schema.imagingStudies.organizationId, organizationId),
+				eq(schema.imagingStudies.id, studyId),
+			),
+		)
+		.returning();
+
+	return updated ? mapImagingStudy(updated, null) : null;
 }
 
 export async function getImagingStudyById(
@@ -128,6 +271,7 @@ export async function createImagingStudiesInDb(
 	inputs: Array<{
 		patientId: string;
 		visitId?: string | null | undefined;
+		doctorId?: string | null | undefined;
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		kind: any;
 		title: string;
@@ -167,6 +311,7 @@ export async function createImagingStudiesInDb(
 				organizationId,
 				patientId: input.patientId,
 				visitId: input.visitId || null,
+				doctorId: input.doctorId || null,
 				kind: input.kind,
 				title: input.title.length > 180 ? input.title.slice(0, 180) : input.title,
 				toothCode: input.toothCode || null,
@@ -185,7 +330,7 @@ export async function createImagingStudiesInDb(
 		)
 		.returning();
 
-	return records.map(mapImagingStudy);
+	return records.map((r) => mapImagingStudy(r));
 }
 
 export async function createImagingStudyInDb(
@@ -193,6 +338,7 @@ export async function createImagingStudyInDb(
 	input: {
 		patientId: string;
 		visitId?: string | null | undefined;
+		doctorId?: string | null | undefined;
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		kind: any;
 		title: string;
@@ -245,6 +391,7 @@ export async function createImagingStudyInDb(
 			organizationId,
 			patientId: input.patientId,
 			visitId: input.visitId || null,
+			doctorId: input.doctorId || null,
 			kind: input.kind,
 			title: input.title.length > 180 ? input.title.slice(0, 180) : input.title,
 			toothCode: input.toothCode || null,
@@ -334,7 +481,6 @@ import type {
 	SaveDicomWorkbenchBundleRequest,
 	SaveImagingViewerSessionRequest,
 } from "@dental/shared";
-import { desc } from "drizzle-orm";
 import { dicomWorkbenchBundles, imagingViewerSessions } from "./schema.js";
 
 export async function getOrCreateImagingViewerSession(

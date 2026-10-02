@@ -11,5 +11,6 @@ export {
 	formatPatientInitials,
 	getAvatarColor,
 	resolvePatientFromPhone,
+	resolvePatientCategory,
 } from "@dental/shared";
 

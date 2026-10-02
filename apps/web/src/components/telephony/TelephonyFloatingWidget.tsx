@@ -1,17 +1,7 @@
-import {
-	ChevronDown,
-	Headphones,
-	PhoneCall,
-	PhoneIncoming,
-	PhoneOff,
-	X,
-} from "lucide-react";
+import { ChevronDown, Headphones, PhoneCall, PhoneIncoming, PhoneOff, X } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-} from "../../lib/safeLocalStorage";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -32,10 +22,7 @@ import {
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
-import {
-	captureLeadFromIncomingCall,
-	resolveCallAdvertisingAttribution,
-} from "./telephonyAttribution";
+import { captureLeadFromIncomingCall, resolveCallAdvertisingAttribution } from "./telephonyAttribution";
 import { TelephonyDialerPad } from "./TelephonyDialerPad";
 import { TelephonyRecentCallsJournal } from "./TelephonyRecentCallsJournal";
 import { TelephonyMiniControlPanel } from "./TelephonyMiniControlPanel";
@@ -84,6 +71,8 @@ export function TelephonyFloatingWidget({
 	const agentState = useTelephonyStore((s) => s.agentState);
 	const setAgentState = useTelephonyStore((s) => s.setAgentState);
 	const activeLineId = useTelephonyStore((s) => s.activeLineId);
+	const line1 = useTelephonyStore((s) => s.line1);
+	const line2 = useTelephonyStore((s) => s.line2);
 	const switchLine = useTelephonyStore((s) => s.switchLine);
 	const isHeld = useTelephonyStore((s) => s.isHeld);
 	const toggleHold = useTelephonyStore((s) => s.toggleHold);
@@ -673,6 +662,8 @@ export function TelephonyFloatingWidget({
 						onSetAgentState={setAgentState}
 						activeLineId={activeLineId}
 						onSwitchLine={switchLine}
+						line1={line1}
+						line2={line2}
 						isHeld={isHeld}
 						onToggleHold={toggleHold}
 						isMuted={isMuted}

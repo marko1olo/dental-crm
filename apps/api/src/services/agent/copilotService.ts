@@ -8,8 +8,9 @@ import { copilotPendingActions } from "../../db/schema/copilot.js";
 import { selectProviderKey } from "../../speech/keyPool.js";
 import type { AgentContext } from "./context.js";
 import type { ToolResult } from "./tools/tool.js";
-import { SemanticRouter } from "./semanticRouter.js";
+import { routeCopilotFallback } from "./copilotFallbackRouter.js";
 import { ClinicalValidatorAgent } from "./validatorAgent.js";
+import { omniLlmGateway } from "./omniGateway.js";
 import type {
 	LLMProvider,
 	LLMStreamEvent,
@@ -421,214 +422,30 @@ export const defaultCopilotActionManager = new CopilotActionManager();
  * Creates the default LLM provider for the AI Clinical Copilot with streaming and heuristic fallbacks.
  */
 export function createDefaultLlmProvider(): LLMProvider {
+	const omniProvider = omniLlmGateway.asLlmProvider();
+
 	return {
 		async *complete(params): AsyncIterable<LLMStreamEvent> {
-			const groqKey =
-				process.env.GROQ_API_KEY || selectProviderKey("groq_whisper")?.value;
-			const geminiKey =
-				process.env.GEMINI_API_KEY ||
-				process.env.GOOGLE_API_KEY ||
-				selectProviderKey("google_speech")?.value;
-			const openaiKey =
-				process.env.OPENAI_API_KEY ||
-				selectProviderKey("openai_transcribe")?.value;
-			const apiKey = groqKey || geminiKey || openaiKey;
-
-			if (apiKey) {
-				const baseUrl = groqKey
-					? "https://api.groq.com/openai/v1"
-					: geminiKey
-						? "https://generativelanguage.googleapis.com/v1beta/openai"
-						: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
-				const model =
-					params.model ||
-					(groqKey
-						? "llama-3.3-70b-versatile"
-						: geminiKey
-							? "gemini-3.5-flash-lite"
-							: process.env.OPENAI_MODEL || "gpt-4o-mini");
-
-				const messages: Array<{
-					role: string;
-					content?: string | null;
-					tool_calls?: Array<{
-						id: string;
-						type: "function";
-						function: { name: string; arguments: string };
-					}>;
-					tool_call_id?: string;
-				}> = [{ role: "system", content: params.system }];
-
-				for (const m of params.messages) {
-					if (typeof m.content === "string") {
-						messages.push({ role: m.role, content: m.content });
-					} else if (Array.isArray(m.content)) {
-						const textBlocks = m.content.filter(
-							(b): b is TextBlock => b.type === "text",
-						);
-						const toolUseBlocks = m.content.filter(
-							(b): b is ToolUseBlock => b.type === "tool_use",
-						);
-						const toolResultBlocks = m.content.filter(
-							(b): b is ToolResultBlock => b.type === "tool_result",
-						);
-
-						if (toolResultBlocks.length > 0) {
-							for (const tr of toolResultBlocks) {
-								messages.push({
-									role: "tool",
-									tool_call_id: tr.toolCallId,
-									content:
-										typeof tr.content === "string"
-											? tr.content
-											: JSON.stringify(tr.content),
-								});
-							}
-						} else {
-							const textContent = textBlocks.map((b) => b.text).join("\n");
-							const toolCalls =
-								toolUseBlocks.length > 0
-									? toolUseBlocks.map((tu) => ({
-											id: tu.id,
-											type: "function" as const,
-											function: {
-												name: tu.name,
-												arguments: JSON.stringify(tu.input),
-											},
-										}))
-									: undefined;
-							messages.push({
-								role: m.role,
-								content: textContent || null,
-								...(toolCalls ? { tool_calls: toolCalls } : {}),
-							});
-						}
-					}
+			let emittedAny = false;
+			try {
+				const stream = omniProvider.complete(params);
+				for await (const chunk of stream) {
+					emittedAny = true;
+					yield chunk;
 				}
-
-				try {
-					const requestPayload: Record<string, unknown> = {
-						model,
-						messages,
-						stream: true,
-						temperature: params.temperature ?? 0.2,
-						max_tokens: params.maxTokens ?? 4096,
-					};
-					if (params.tools && params.tools.length > 0) {
-						requestPayload.tools = params.tools;
-					}
-
-					const response = await fetch(`${baseUrl}/chat/completions`, {
-						method: "POST",
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify(requestPayload),
-					});
-
-					if (response.ok && response.body) {
-						const reader = response.body.getReader();
-						const decoder = new TextDecoder();
-						let buffer = "";
-						const pendingToolCalls = new Map<
-							number,
-							{ id: string; name: string; args: string }
-						>();
-
-						while (true) {
-							const { value, done } = await reader.read();
-							if (done) break;
-							buffer += decoder.decode(value, { stream: true });
-							let idx = buffer.indexOf("\n\n");
-							while (idx >= 0) {
-								const frame = buffer.slice(0, idx);
-								buffer = buffer.slice(idx + 2);
-								for (const line of frame.split("\n")) {
-									const trimmed = line.trim();
-									if (!trimmed.startsWith("data:")) continue;
-									const dataStr = trimmed.slice(5).trim();
-									if (dataStr === "[DONE]") {
-										for (const tc of pendingToolCalls.values()) {
-											let parsedArgs: Record<string, unknown> = {};
-											try {
-												parsedArgs = JSON.parse(tc.args || "{}");
-											} catch (parseErr: unknown) {
-												console.warn("[CopilotService] Failed to parse tool call args JSON:", parseErr);
-											}
-											yield {
-												type: "tool_use",
-												id: tc.id || `call_${Date.now()}`,
-												name: tc.name,
-												input: parsedArgs,
-											};
-										}
-										pendingToolCalls.clear();
-										yield { type: "done", stopReason: "stop" };
-										return;
-									}
-									try {
-										const json = JSON.parse(dataStr);
-										const choice = json.choices?.[0];
-										if (!choice) continue;
-										const delta = choice.delta;
-										if (delta?.content) {
-											yield { type: "text_delta", text: delta.content };
-										}
-										if (delta?.tool_calls && Array.isArray(delta.tool_calls)) {
-											for (const tc of delta.tool_calls) {
-												const index = tc.index ?? 0;
-												const existing = pendingToolCalls.get(index) ?? {
-													id: tc.id ?? "",
-													name: tc.function?.name ?? "",
-													args: "",
-												};
-												if (tc.id) existing.id = tc.id;
-												if (tc.function?.name) existing.name = tc.function.name;
-												if (tc.function?.arguments) {
-													existing.args += tc.function.arguments;
-												}
-												pendingToolCalls.set(index, existing);
-											}
-										}
-										if (choice.finish_reason) {
-											for (const tc of pendingToolCalls.values()) {
-												let parsedArgs: Record<string, unknown> = {};
-												try {
-													parsedArgs = JSON.parse(tc.args || "{}");
-												} catch (parseErr: unknown) {
-													console.warn("[CopilotService] Failed to parse tool call args JSON on finish:", parseErr);
-												}
-												yield {
-													type: "tool_use",
-													id: tc.id || `call_${Date.now()}`,
-													name: tc.name,
-													input: parsedArgs,
-												};
-											}
-											pendingToolCalls.clear();
-											yield {
-												type: "done",
-												stopReason: choice.finish_reason,
-											};
-											return;
-										}
-									} catch (chunkErr: unknown) {
-										console.warn("[CopilotService] Error parsing SSE chunk:", chunkErr);
-									}
-								}
-								idx = buffer.indexOf("\n\n");
-							}
-						}
-						return;
-					}
-				} catch (streamErr: unknown) {
-					console.warn("[CopilotService] SSE stream reading failed, falling back to heuristic:", streamErr);
-					// Fall through to heuristic fallback
+				return;
+			} catch (streamErr: unknown) {
+				if (emittedAny) {
+					// Mid-stream error; do not corrupt stream with duplicate heuristic output
+					throw streamErr;
 				}
+				console.warn(
+					"[CopilotService] OmniGateway stream failed, falling back to deterministic SemanticRouter:",
+					streamErr instanceof Error ? streamErr.message : String(streamErr),
+				);
 			}
 
-			// Local Intelligent Fallback Generator
+			// Local Intelligent Fallback Generator (Deterministic SemanticRouter)
 			const lastMsg = params.messages[params.messages.length - 1];
 			let userText = "";
 			if (typeof lastMsg?.content === "string") {
@@ -658,266 +475,12 @@ export function createDefaultLlmProvider(): LLMProvider {
 					? patientMatch[1]
 					: "00000000-0000-7000-8000-000000000001";
 
-			// 0. Fast Deterministic Semantic Router for Compound Doctor Prompts
-			const decomposedPlan = SemanticRouter.decompose(userText, {
-				currentTooth: contextTooth,
-				patientId: contextPatientId,
+			yield* routeCopilotFallback({
+				userText,
+				lower,
+				contextTooth,
+				contextPatientId,
 			});
-
-			if (
-				decomposedPlan.hasClinical &&
-				(decomposedPlan.hasFinance || decomposedPlan.hasBooking)
-			) {
-				const aggregated = SemanticRouter.dispatchAndAggregate(decomposedPlan, {
-					currentTooth: contextTooth,
-					patientId: contextPatientId,
-				});
-
-				yield {
-					type: "text_delta",
-					text: `${aggregated.unifiedResponseRu}\n\n`,
-				};
-
-				const clinicalTask = decomposedPlan.subtasks.find(
-					(s) => s.intent === "clinical",
-				);
-				const tooth =
-					(clinicalTask && "toothNumber" in clinicalTask
-						? clinicalTask.toothNumber
-						: undefined) || contextTooth;
-				const diagnosis =
-					clinicalTask && "diagnoses" in clinicalTask && clinicalTask.diagnoses?.[0]
-						? clinicalTask.diagnoses[0]
-						: "K02.1";
-
-				yield {
-					type: "tool_use",
-					id: `call_plan_${Date.now()}`,
-					name: "clinical.suggest_treatment_plan",
-					input: {
-						patientId: contextPatientId,
-						tooth,
-						primaryDiagnosis: diagnosis,
-					},
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 1. Treatment Plan & 3-Tier Estimate
-			if (
-				lower.includes("план") ||
-				lower.includes("смет") ||
-				lower.includes("тариф") ||
-				lower.includes("эконом") ||
-				lower.includes("оптимум") ||
-				lower.includes("премиум") ||
-				lower.includes("лечени") ||
-				lower.includes("кариес") ||
-				lower.includes("пульпит") ||
-				lower.includes("имплант")
-			) {
-				const diagnosis = lower.includes("пульпит")
-					? "Pulpitis"
-					: lower.includes("имплант")
-						? "Implantation"
-						: "Caries";
-				yield {
-					type: "tool_use",
-					id: `call_plan_${Date.now()}`,
-					name: "clinical.suggest_treatment_plan",
-					input: {
-						patientId: contextPatientId,
-						tooth: contextTooth,
-						primaryDiagnosis: diagnosis,
-					},
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 2. Statutory Prescription Form 107-1/u
-			if (
-				lower.includes("рецепт") ||
-				lower.includes("107") ||
-				lower.includes("назнач") ||
-				lower.includes("выпиши") ||
-				lower.includes("лекарств") ||
-				lower.includes("амоксиклав") ||
-				lower.includes("амоксициллин") ||
-				lower.includes("ибупрофен") ||
-				lower.includes("нимесил") ||
-				lower.includes("линкомицин")
-			) {
-				yield {
-					type: "tool_use",
-					id: `call_rx_${Date.now()}`,
-					name: "clinical.create_prescription_107",
-					input: {
-						patientId: contextPatientId,
-						drugs: [
-							{
-								mnn: "Amoxicillin + Clavulanic acid",
-								tradeName: "Амоксиклав",
-								latinName: "Amoxicillini + Acidi clavulanici",
-								dosageForm: "таблетки диспергируемые",
-								dosage: "875 мг + 125 мг",
-								quantity: "14 шт (1 уп)",
-								signa:
-									"По 1 таблетке 2 раза в сутки внутрь перед приемом пищи, 7 дней",
-								icd10: "K04.0",
-							},
-						],
-						validityDays: 60,
-						isChronicallyIll: false,
-					},
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 3. Drug-Drug Interaction & Allergy Safety Check
-			if (
-				lower.includes("взаимодейств") ||
-				lower.includes("совместим") ||
-				lower.includes("аллерг") ||
-				lower.includes("ddi") ||
-				lower.includes("противопоказ")
-			) {
-				yield {
-					type: "tool_use",
-					id: `call_ddi_${Date.now()}`,
-					name: "clinical.check_drug_interaction",
-					input: {
-						patientId: contextPatientId,
-						newDrug: "Амоксициллин",
-						currentMedications: ["Пенициллин", "Варфарин"],
-					},
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 4. Patient Search
-			if (
-				lower.includes("пациент") ||
-				lower.includes("найди") ||
-				lower.includes("поиск") ||
-				lower.includes("больной")
-			) {
-				const query =
-					userText.replace(/найди|пациента|пациент|поиск|карту/gi, "").trim() ||
-					"Иванов";
-				yield {
-					type: "tool_use",
-					id: `call_patient_${Date.now()}`,
-					name: "clinical.find_patient",
-					input: { query },
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 5. Doctor Schedule & Free Slots
-			if (
-				lower.includes("расписание") ||
-				lower.includes("прием") ||
-				lower.includes("окна") ||
-				lower.includes("слот") ||
-				lower.includes("запис") ||
-				lower.includes("свободн")
-			) {
-				const now = new Date();
-				const startOfDay = new Date(
-					now.getFullYear(),
-					now.getMonth(),
-					now.getDate(),
-					0,
-					0,
-					0,
-					0,
-				);
-				const endOfDay = new Date(
-					now.getFullYear(),
-					now.getMonth(),
-					now.getDate() + 3,
-					23,
-					59,
-					59,
-					999,
-				);
-				yield {
-					type: "tool_use",
-					id: `call_schedule_${Date.now()}`,
-					name: "clinical.get_doctor_schedule",
-					input: {
-						doctorUserId: "00000000-0000-7000-8000-000000000002",
-						dateFrom: startOfDay.toISOString(),
-						dateTo: endOfDay.toISOString(),
-					},
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 6. Form 043/u Clinical Diary
-			if (
-				lower.includes("043") ||
-				lower.includes("осмотр") ||
-				lower.includes("дневник") ||
-				lower.includes("диктовка") ||
-				lower.includes("жалоб") ||
-				lower.includes("статус")
-			) {
-				yield {
-					type: "tool_use",
-					id: `call_notes_${Date.now()}`,
-					name: "clinical_notes.parse_voice_dictation",
-					input: { transcript: userText, specialty: "therapist" },
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			// 7. Price List / RAG Knowledge Search
-			if (
-				lower.includes("цена") ||
-				lower.includes("стоимост") ||
-				lower.includes("почем") ||
-				lower.includes("прайс") ||
-				lower.includes("сколько стоит") ||
-				lower.includes("804н") ||
-				lower.includes("гаранти") ||
-				lower.includes("протокол")
-			) {
-				const category = lower.includes("гаранти")
-					? "guarantee"
-					: lower.includes("протокол")
-						? "clinical_protocol"
-						: "price_804n";
-				yield {
-					type: "tool_use",
-					id: `call_rag_${Date.now()}`,
-					name: "internal.search_knowledge_base",
-					input: { query: userText, category, threshold: 0.75 },
-				};
-				yield { type: "done", stopReason: "tool_use" };
-				return;
-			}
-
-			const defaultResponse =
-				"Здравствуйте! Я клинический ассистент DENTE. Готов помочь вам с:\n" +
-				"• Поиском и открытием медицинских карт пациентов\n" +
-				"• Расчетом интерактивных 3-Tier планов лечения (Эконом / Оптимум / Премиум)\n" +
-				"• Выпиской рецептов по форме 107-1/у и проверкой совместимости препаратов (DDI)\n" +
-				"• Автоматическим заполнением формы 043/у по диктовке врача\n" +
-				"• Просмотром расписания и быстрым подбором свободных окон.\n\n" +
-				"Чем могу помочь прямо сейчас?";
-
-			for (const char of defaultResponse) {
-				yield { type: "text_delta", text: char };
-			}
-			yield { type: "done", stopReason: "stop" };
 		},
 	};
 }

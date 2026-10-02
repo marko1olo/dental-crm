@@ -410,7 +410,7 @@ export function ClinicControlPill({
 						<div className="dnt-cc-section-header">
 							<span className="dnt-cc-section-title">
 								<Clock size={13} className="text-[var(--teal)]" />
-								<span>Кассовая Смена и 54-ФЗ</span>
+								<span>Кассовая смена</span>
 							</span>
 							<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">
 								Открыта ({formattedShiftTime})
@@ -431,7 +431,7 @@ export function ClinicControlPill({
 									Касса / ОФД
 								</span>
 								<strong className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1">
-									<ShieldCheck size={12} /> ККТ АТОЛ Онлайн (ФФД 1.2)
+									<ShieldCheck size={12} /> ККТ АТОЛ Онлайн
 								</strong>
 							</div>
 						</div>
@@ -442,16 +442,16 @@ export function ClinicControlPill({
 								onClick={() => {
 									setIsOpen(false);
 									showToast(
-										"Сформирован промежуточный X-отчет (без гашения)",
+										"Сформирован промежуточный отчет (без гашения)",
 										"info",
 									);
 									setCurrentView("shift");
 								}}
 								className="dnt-cc-btn dnt-cc-btn--secondary flex-1 min-h-[44px]"
-								title="Снять промежуточный отчет без гашения кассы (X-отчет)"
+								title="Снять промежуточный отчет без закрытия смены"
 							>
 								<FileText size={14} />
-								<span>X-отчет</span>
+								<span>Текущий отчет</span>
 							</button>
 
 							<button
@@ -465,10 +465,10 @@ export function ClinicControlPill({
 									}
 								}}
 								className="dnt-cc-btn dnt-cc-btn--primary flex-1 min-h-[44px]"
-								title="Сформировать Z-отчет 54-ФЗ и закрыть смену"
+								title="Закрыть смену и сформировать отчет"
 							>
 								<CreditCard size={14} />
-								<span>Закрыть (Z-отчет)</span>
+								<span>Закрыть смену</span>
 							</button>
 						</div>
 					</div>

@@ -12,12 +12,15 @@ export interface MdlpOfflinePackage {
 	readonly createdAt: string;
 	readonly docNum: string;
 	readonly docDate: string;
-	readonly mode: "acceptance_701" | "disposal_531";
+	readonly mode: "acceptance_701" | "disposal_531" | "disposal_444";
 	readonly itemsCount: number;
 	readonly totalCostRub: number;
 	readonly items: readonly ChestnyZnakScannedItem[];
 	readonly status: "queued" | "syncing" | "synced";
 	readonly reason: string;
+	readonly patientId?: string | null | undefined;
+	readonly visitId?: string | null | undefined;
+	readonly protocolNumber?: string | undefined; // 043/у
 }
 
 const OFFLINE_QUEUE_STORAGE_KEY = "dente_mdlp_offline_disposal_queue_v1";
@@ -47,13 +50,23 @@ export const SAMPLE_BARCODES = [
 	},
 	{
 		label: "Септанест 1:100 000",
-		code: "010340093000001421SN9876543210\x1d17271231\x1d10SER99\x1d91KEY1\x1d92SIG44CHARS1234567890123456789012345678901234",
+		code: "010340093000001421SN09876543210\x1d17271231\x1d10SER99\x1d91KEY1\x1d92SIG44CHARS1234567890123456789012345678901234",
 		cost: 390,
 	},
 	{
 		label: "Убистезин",
 		code: "010404671900001221UBI1234567890\x1d17280331\x1d10LOT42\x1d91ABCD\x1d92SIG44CHARS1234567890123456789012345678901234",
 		cost: 520,
+	},
+	{
+		label: "Хлоргексидина биглюконат 0.05% (100 мл)",
+		code: "010460123456789321CHX1234567890\x1d17280630\x1d10LOTCHX26\x1d91ABCD\x1d92SIG44CHARS1234567890123456789012345678901234",
+		cost: 85,
+	},
+	{
+		label: "Мирамистин 0.01% (150 мл)",
+		code: "010460700836005921MIR1234567890\x1d17280930\x1d10LOTMIR26\x1d91KEY1\x1d92SIG44CHARS1234567890123456789012345678901234",
+		cost: 410,
 	},
 	{
 		label: "Просроченный (2024)",
@@ -85,9 +98,23 @@ export const EMERGENCY_DISPENSE_PRESETS = [
 	{
 		label: "Скандонест 3% (Мепивакаин без адреналина)",
 		shortName: "Скандонест (Мепивакаин)",
-		code: "010340093000002121SCANDO98765\x1d17281231\x1d10SER77\x1d91KEY1\x1d92SIG44CHARS1234567890123456789012345678901234",
+		code: "010340093000002121SCANDO987654\x1d17281231\x1d10SER77\x1d91KEY1\x1d92SIG44CHARS1234567890123456789012345678901234",
 		cost: 420,
 		badge: "Без адреналина",
+	},
+	{
+		label: "Хлоргексидина биглюконат 0.05% (Антисептик)",
+		shortName: "Хлоргексидин 0.05%",
+		code: SAMPLE_BARCODES[3]!.code,
+		cost: 85,
+		badge: "Антисептик",
+	},
+	{
+		label: "Мирамистин 0.01% (Антисептический раствор)",
+		shortName: "Мирамистин 0.01%",
+		code: SAMPLE_BARCODES[4]!.code,
+		cost: 410,
+		badge: "Антисептик",
 	},
 	{
 		label: "Имплантат Dentium SuperLine Ø4.0 L10",

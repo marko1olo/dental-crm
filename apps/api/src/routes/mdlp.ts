@@ -78,8 +78,7 @@ const mdlpActGenerateBodySchema = z.object({
 	dentistName: z.string().trim().optional(),
 	approverRole: z
 		.enum(["senior_nurse", "doctor", "administrator", "authorized_staff"])
-		.optional()
-		.default("doctor"),
+		.optional(),
 	approverName: z.string().trim().optional(),
 	approvedByFullName: z.string().trim().optional(),
 	approvedByPositionRu: z.string().trim().optional(),

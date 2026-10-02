@@ -62,6 +62,11 @@ export interface PanoramicReconstructionOptions {
 	readonly enableVariableTrough?: boolean;
 	readonly variableTroughOptions?: VariableFocalTroughOptions;
 	readonly softKnee?: boolean | import("./cbctLutMath").SoftKneeConfig;
+	readonly gamma?: number;
+	readonly airCutoffHU?: number;
+	readonly softKneeCeiling?: number;
+	readonly useSoftKnee?: boolean;
+	readonly outputBuffer?: Uint8ClampedArray;
 }
 
 /**
@@ -202,6 +207,22 @@ export {
 	reconstructPanoramicViewWebGl2,
 } from "./cbctPanoramicWebGlEngine";
 
+// Reusable zero-GC scratch buffers for CPU panoramic reconstruction
+let panoScratchRowVoxZ: Float64Array | null = null;
+let panoScratchColPtX: Float64Array | null = null;
+let panoScratchColPtY: Float64Array | null = null;
+let panoScratchColNormX: Float64Array | null = null;
+let panoScratchColNormY: Float64Array | null = null;
+let panoScratchSampleVx: Float64Array | null = null;
+let panoScratchSampleVy: Float64Array | null = null;
+
+function acquireFloat64Scratch(current: Float64Array | null, requiredLength: number): Float64Array {
+	if (!current || current.length < requiredLength) {
+		return new Float64Array(Math.max(requiredLength, 1024));
+	}
+	return current;
+}
+
 /**
  * Reconstructs a full panoramic radiograph (OPG) by sweeping along the dental spline.
  * Default projectionMode is clinical "mip" for crisp, high-contrast bone and enamel visualization.
@@ -217,15 +238,15 @@ export function reconstructPanoramicView(
 		heightMm = defaultHeightMm,
 		heightPx,
 		widthPx,
-		windowWidth = 4200,
-		windowLevel = 1100,
-		projectionMode = "ray_sum",
+		windowWidth = 4025,
+		windowLevel = 525,
+		projectionMode = "average",
 		centerZMm: userCenterZMm,
 		invert = false,
 		coarsePreview = false,
 	} = options;
 
-	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 7.0;
+	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 1.0;
 	const totalLengthMm = archCurve?.totalArcLengthMm || 100.0;
 	// Strict Isometric CPR resolution: 1 physical mm along arch = 1 physical mm along Z axis
 	const stepMm = options.pixelSpacingMm ?? (volume?.spacingMm?.x && volume.spacingMm.x >= 0.15 ? volume.spacingMm.x : 0.25);
@@ -235,6 +256,9 @@ export function reconstructPanoramicView(
 
 	if (!volume || !volume.data || volume.isDisposed || !archCurve || !archCurve.splinePointsMm || archCurve.splinePointsMm.length === 0) {
 		const safeW = widthPx ?? 500;
+		const emptyBuf = options.outputBuffer && options.outputBuffer.length >= safeW * outH * 4
+			? options.outputBuffer
+			: new Uint8ClampedArray(safeW * outH * 4);
 		return {
 			widthPx: safeW,
 			heightPx: outH,
@@ -242,7 +266,7 @@ export function reconstructPanoramicView(
 			centerZMm: userCenterZMm ?? 0.0,
 			heightMm,
 			pixelSpacingMm: pixelSpacing,
-			pixelData: new Uint8ClampedArray(safeW * outH * 4),
+			pixelData: emptyBuf,
 			toothMarkersOnPano: [],
 		};
 	}
@@ -259,7 +283,19 @@ export function reconstructPanoramicView(
 					widthPx: outW,
 					focalTroughThicknessMm: effectiveThickness,
 				});
-				if (gpuResult) return gpuResult;
+				if (gpuResult) {
+					// Guard against empty/black frame if WebGL allocation failed silently
+					const pix = gpuResult.pixelData;
+					const step = Math.max(1, Math.floor(pix.length / 256));
+					let hasVisibleSignal = false;
+					for (let i = 0; i < pix.length; i += step) {
+						if (pix[i]! > 0) {
+							hasVisibleSignal = true;
+							break;
+						}
+					}
+					if (hasVisibleSignal) return gpuResult;
+				}
 			}
 		} catch {
 			// Fallback transparently to high-speed CPU path
@@ -270,19 +306,15 @@ export function reconstructPanoramicView(
 
 	const splinePoints = archCurve.splinePointsMm;
 	const vectorField = calculateArchTangentsAndNormals(splinePoints);
-	const pixelBuffer = new Uint8ClampedArray(outW * outH * 4);
+	const pixelBuffer = options.outputBuffer && options.outputBuffer.length >= outW * outH * 4
+		? options.outputBuffer
+		: new Uint8ClampedArray(outW * outH * 4);
 
 	// Adaptive focal trough slab sampling (default 12-16 mm, dense sampling step 0.35 - 0.4 mm, or 0.8 mm for coarse preview)
 	const focalRadiusMm = effectiveThickness / 2.0;
 	const sampleStepMm = options.sampleStepMm ?? (coarsePreview ? 0.8 : 0.4);
 	const slabSamples = Math.max(2, Math.round(focalRadiusMm / sampleStepMm));
 	const numSlab = 2 * slabSamples + 1;
-
-	// Precompute slab offsets along focal trough normal
-	const slabOffsets = new Float64Array(numSlab);
-	for (let s = -slabSamples; s <= slabSamples; s++) {
-		slabOffsets[s + slabSamples] = (s / slabSamples) * focalRadiusMm;
-	}
 
 	const zTopMm = centerZMm + heightMm / 2.0;
 	const zBottomMm = centerZMm - heightMm / 2.0;
@@ -300,19 +332,24 @@ export function reconstructPanoramicView(
 	const invSpY = 1.0 / spY;
 	const invSpZ = 1.0 / spZ;
 
-	// Precompute Z voxel positions for all rows
-	const rowVoxZ = new Float64Array(outH);
+	// Precompute Z voxel positions for all rows with reusable zero-GC scratch buffer
+	panoScratchRowVoxZ = acquireFloat64Scratch(panoScratchRowVoxZ, outH);
+	const rowVoxZ = panoScratchRowVoxZ;
 	for (let row = 0; row < outH; row++) {
 		const zMm = zTopMm - row * zStepMm;
 		rowVoxZ[row] = (zMm - originZ) * invSpZ;
 	}
 
-	// Precompute 2D positions and normalized normals along the dental spline for all columns
+	// Precompute 2D positions and normalized normals along the dental spline with reusable zero-GC scratch buffers
 	const denomW = Math.max(1, outW - 1);
-	const colPtX = new Float64Array(outW);
-	const colPtY = new Float64Array(outW);
-	const colNormX = new Float64Array(outW);
-	const colNormY = new Float64Array(outW);
+	panoScratchColPtX = acquireFloat64Scratch(panoScratchColPtX, outW);
+	const colPtX = panoScratchColPtX;
+	panoScratchColPtY = acquireFloat64Scratch(panoScratchColPtY, outW);
+	const colPtY = panoScratchColPtY;
+	panoScratchColNormX = acquireFloat64Scratch(panoScratchColNormX, outW);
+	const colNormX = panoScratchColNormX;
+	panoScratchColNormY = acquireFloat64Scratch(panoScratchColNormY, outW);
+	const colNormY = panoScratchColNormY;
 
 	let currNode = 0;
 	for (let col = 0; col < outW; col++) {
@@ -339,14 +376,22 @@ export function reconstructPanoramicView(
 		colNormY[col] = rawNormY / normLen;
 	}
 
-	// Clinical soft-tone radiologic OPG contrast LUT: wide window 4200 / 1100 (enamel ~210..225/255, clear dentin, pulp & trabeculae)
-	const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 3000 ? volume.defaultWindowWidth : 4200);
-	const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel >= 900 ? volume.defaultWindowLevel : 1100);
-	const lut = get16BitLut(effectiveWW, effectiveWL, invert, 1.0, options.softKnee);
+	// Canonical clinical radiologic OPG contrast LUT: window 4025 / 525, gamma 1.50, airCutoff -500 HU
+	const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 1000 ? volume.defaultWindowWidth : 4025);
+	const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel >= -200 && volume.defaultWindowLevel <= 2500 ? volume.defaultWindowLevel : 525);
+	const effectiveGamma = options.gamma ?? 1.50;
+	const effectiveSoftKnee = options.useSoftKnee !== undefined
+		? (options.useSoftKnee
+			? { peakEnamel: options.softKneeCeiling ?? 215, airCutoffHU: options.airCutoffHU ?? -500, enabled: true }
+			: { airCutoffHU: options.airCutoffHU ?? -500, enabled: false })
+		: (options.softKnee ?? { airCutoffHU: options.airCutoffHU ?? -500, enabled: false });
+	const lut = get16BitLut(effectiveWW, effectiveWL, invert, effectiveGamma, effectiveSoftKnee);
 
-	// Zero-allocation sample voxel buffers per column
-	const sampleVx = new Float64Array(numSlab);
-	const sampleVy = new Float64Array(numSlab);
+	// Zero-allocation sample voxel scratch buffers per column
+	panoScratchSampleVx = acquireFloat64Scratch(panoScratchSampleVx, numSlab);
+	const sampleVx = panoScratchSampleVx;
+	panoScratchSampleVy = acquireFloat64Scratch(panoScratchSampleVy, numSlab);
+	const sampleVy = panoScratchSampleVy;
 
 	const colStep = coarsePreview ? 2 : 1;
 
@@ -354,6 +399,13 @@ export function reconstructPanoramicView(
 		? Math.max(0.1, Math.min(1.0, options.anteriorTroughRatio))
 		: 0.65;
 	const halfTotalLen = totalLengthMm > 0 ? totalLengthMm / 2.0 : 50.0;
+
+	const airCutoffVal = options.airCutoffHU ?? -500;
+	const isSingleSlice = projectionMode === "slice" || projectionMode === "single";
+	const isRaySum = projectionMode === "ray_sum" || projectionMode === "raysum" || projectionMode === "blend";
+	const isMinIp = projectionMode === "minip";
+	const isAverage = projectionMode === "average";
+	const centerS = slabSamples;
 
 	// Sweep along the spline with constant physical arc-length distance
 	for (let col = 0; col < outW; col += colStep) {
@@ -383,37 +435,36 @@ export function reconstructPanoramicView(
 
 		for (let row = 0; row < outH; row++) {
 			const vz = rowVoxZ[row]!;
+			let finalHU: number;
 
-			let maxHU = -32768;
-			let minHU = 32767;
-			let sumHU = 0;
-
-			// Direct trilinear sampling without object allocations
-			for (let s = 0; s < numSlab; s++) {
-				const vx = sampleVx[s]!;
-				const vy = sampleVy[s]!;
-				const hu = sampleVoxelTrilinearHU(vx, vy, vz, volume);
-				if (hu > maxHU) maxHU = hu;
-				if (hu < minHU) minHU = hu;
-				sumHU += hu;
-			}
-
-			let finalHU = maxHU;
-			if (projectionMode === "minip") {
-				finalHU = minHU;
-			} else if (projectionMode === "average") {
-				finalHU = Math.round(sumHU / numSlab);
-			} else if (projectionMode === "slice" || projectionMode === "single") {
-				const centerS = slabSamples;
+			if (isSingleSlice) {
 				finalHU = sampleVoxelTrilinearHU(sampleVx[centerS]!, sampleVy[centerS]!, vz, volume);
-			} else if (projectionMode === "ray_sum" || projectionMode === "raysum" || projectionMode === "blend") {
-				// Clinical weighted ray-sum: blends 35% MIP sharpness with 65% soft tissue average
-				// Preserves dark pulp chambers, root canals, and trabecular patterns inside bright teeth!
-				const avgHU = sumHU / numSlab;
-				finalHU = Math.round(0.35 * maxHU + 0.65 * avgHU);
 			} else {
-				// Explicit pure MIP
-				finalHU = maxHU;
+				let maxHU = -32768;
+				let minHU = 32767;
+				let sumHU = 0;
+
+				// Direct trilinear sampling without object allocations
+				for (let s = 0; s < numSlab; s++) {
+					const vx = sampleVx[s]!;
+					const vy = sampleVy[s]!;
+					const hu = sampleVoxelTrilinearHU(vx, vy, vz, volume);
+					if (hu > maxHU) maxHU = hu;
+					if (hu < minHU) minHU = hu;
+					sumHU += hu < airCutoffVal ? airCutoffVal : hu;
+				}
+
+				if (isMinIp) {
+					finalHU = minHU;
+				} else if (isAverage) {
+					finalHU = Math.round(sumHU / numSlab);
+				} else if (isRaySum) {
+					// Clinical weighted ray-sum: blends 35% MIP sharpness with 65% soft tissue average
+					finalHU = Math.round(0.35 * maxHU + 0.65 * (sumHU / numSlab));
+				} else {
+					// Explicit pure MIP
+					finalHU = maxHU;
+				}
 			}
 
 			const gray = lut[(finalHU + 32768) & 0xffff]!;

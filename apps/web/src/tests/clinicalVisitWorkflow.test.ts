@@ -11,9 +11,19 @@ import {
 	getIsolatedVisitDraftStorageKey,
 	completeClinicalVisitAndAssembleEstimate,
 	extractProceduresFromDiary,
+	buildChairsideSmartProtocol,
+	CHAIRSIDE_SMART_PROTOCOL_KEYS,
 	type DoctorChairSession,
 	type ClinicalVisitCompletionInput,
+	type ChairsideSmartProtocolKey,
 } from "../components/visit/clinicalVisitWorkflow";
+import {
+	saveChairsideVisitDraft,
+	loadChairsideVisitDraft,
+	clearChairsideVisitDraft,
+	isChairsideDraftRecent,
+	type ChairsideVisitDraftPayload,
+} from "../components/visit/doctorChairSessions";
 import {
 	getIsolatedVisitDraftKey,
 	verifyZeroDraftCollision,
@@ -254,6 +264,131 @@ describe("Subagent 6: Multi-Chair Solo Doctor Concurrent Workflow & Chair Switch
 			assert.equal(result.isAbortedOrRescheduled, true);
 			assert.equal(result.form043uSaved, true);
 			assert.ok(result.statusBannerText.includes("Приём перенесен"));
+		});
+	});
+
+	describe("5. Chairside 1-Click Smart Clinical Protocols & Crash Resilience (Mandates 8e, 8i, 8k)", () => {
+		it("provides all 5 core chairside protocols with compliant ICD-10, SOAP sections, and 804n codes", () => {
+			assert.equal(CHAIRSIDE_SMART_PROTOCOL_KEYS.length, 5);
+			const expectedKeys: ChairsideSmartProtocolKey[] = ["caries", "pulpitis", "periodontitis", "hygiene", "extraction"];
+			assert.deepEqual([...CHAIRSIDE_SMART_PROTOCOL_KEYS], expectedKeys);
+
+			for (const key of expectedKeys) {
+				const proto = buildChairsideSmartProtocol(key, 36, { surfaces: "MOD" });
+				assert.ok(proto.icd10, `Missing icd10 for ${key}`);
+				assert.ok(proto.diagnosis.includes("36"), `Diagnosis must include tooth 36 for ${key}`);
+				assert.ok(proto.complaint.length > 10, `Complaint too short for ${key}`);
+				assert.ok(proto.anamnesis.length > 10, `Anamnesis too short for ${key}`);
+				assert.ok(proto.objectiveStatus.length > 10, `ObjectiveStatus too short for ${key}`);
+				assert.ok(proto.treatmentPlan.length > 20, `TreatmentPlan too short for ${key}`);
+				assert.ok(proto.recommendations.length > 10, `Recommendations too short for ${key}`);
+				assert.equal(proto.targetTooth, 36);
+			}
+
+			// Проверка специфических клинических кодов Минздрава РФ (Приказ 804н)
+			const caries = buildChairsideSmartProtocol("caries", 16);
+			assert.equal(caries.icd10, "K02.1");
+			assert.ok(caries.treatmentPlan.includes("A16.07.002.001"));
+
+			const pulpitis = buildChairsideSmartProtocol("pulpitis", 24);
+			assert.equal(pulpitis.icd10, "K04.0");
+			assert.ok(pulpitis.treatmentPlan.includes("A16.07.030"));
+
+			const perio = buildChairsideSmartProtocol("periodontitis", 46);
+			assert.equal(perio.icd10, "K04.5");
+			assert.ok(perio.treatmentPlan.includes("A16.07.082"));
+
+			const hygiene = buildChairsideSmartProtocol("hygiene");
+			assert.equal(hygiene.icd10, "K05.1");
+			assert.ok(hygiene.treatmentPlan.includes("A16.07.051"));
+
+			const extraction = buildChairsideSmartProtocol("extraction", 48);
+			assert.equal(extraction.icd10, "K01.1");
+			assert.ok(extraction.treatmentPlan.includes("A16.07.001"));
+		});
+
+		it("applies audit stamp when protocol is updated in locked/signed state", () => {
+			const proto = buildChairsideSmartProtocol("caries", 11, { isLocked: true });
+			assert.ok(proto.treatmentPlan.includes("[Исправленному верить:"));
+		});
+
+		it("extracts procedures accurately for K01.1 (surgery) and K05.1 (hygiene)", () => {
+			const surgProcs = extractProceduresFromDiary({
+				diagnosisIcd10: "K01.1 Простое удаление зуба 38",
+				diagnosisTooth: "38",
+				treatmentDescription: "Люксация элеватором и удаление корня зуба щипцами.",
+			});
+			assert.ok(surgProcs.some((p) => p.category === "surgery" && p.code === "A16.07.001"));
+
+			const hygProcs = extractProceduresFromDiary({
+				diagnosisIcd10: "K05.1 Хронический катаральный гингивит",
+				treatmentDescription: "Комплексная гигиена полости рта, скейлинг, Air-Flow.",
+			});
+			assert.ok(hygProcs.some((p) => p.category === "hygiene" && p.code === "A16.07.051"));
+		});
+
+		it("persists chairside visit draft and recovers within 1 second on crash/refresh", () => {
+			const map = new Map<string, string>();
+			const mockStorage = {
+				getItem: (k: string) => map.get(k) ?? null,
+				setItem: (k: string, v: string) => map.set(k, String(v)),
+				removeItem: (k: string) => map.delete(k),
+				clear: () => map.clear(),
+			};
+			const prevWindow = (globalThis as any).window;
+			(globalThis as any).window = {
+				localStorage: mockStorage,
+			};
+
+			try {
+				const draft: ChairsideVisitDraftPayload = {
+					visitId: "VIS-CHAIRSIDE-CRASH-TEST",
+					chairId: "chair-1",
+					savedAtIso: new Date().toISOString(),
+					noteForm: {
+						diagnosis: "K02.1 Кариес дентина зуба 16",
+						complaint: "Боль от холодного",
+						anamnesis: "Появилась неделю назад",
+						objectiveStatus: "Полость на жевательной",
+						treatmentPlan: "Препарирование и пломба Filtek",
+						recommendations: "Не есть 2 часа",
+					},
+					diary: {
+						diagnosis: "K02.1 Кариес дентина зуба 16",
+						complaint: "Боль от холодного",
+						anamnesis: "Появилась неделю назад",
+						objectiveStatus: "Полость на жевательной",
+						treatmentPlan: "Препарирование и пломба Filtek",
+						recommendations: "Не есть 2 часа",
+						toothNumber: 16,
+					},
+					activeTooth: 16,
+					activeTab: "diary",
+				};
+
+				saveChairsideVisitDraft(draft);
+
+				const loaded = loadChairsideVisitDraft("VIS-CHAIRSIDE-CRASH-TEST");
+				assert.ok(loaded !== null);
+				assert.equal(loaded?.visitId, "VIS-CHAIRSIDE-CRASH-TEST");
+				assert.equal(loaded?.activeTooth, 16);
+				assert.equal(loaded?.noteForm?.diagnosis, "K02.1 Кариес дентина зуба 16");
+				assert.equal(loaded?.diary?.diagnosis, "K02.1 Кариес дентина зуба 16");
+				assert.equal(isChairsideDraftRecent(loaded), true);
+
+				// Draft older than 24 hours should not be considered recent
+				const oldDraft: ChairsideVisitDraftPayload = {
+					...draft,
+					savedAtIso: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+				};
+				assert.equal(isChairsideDraftRecent(oldDraft), false);
+
+				// Clear draft
+				clearChairsideVisitDraft("VIS-CHAIRSIDE-CRASH-TEST");
+				assert.equal(loadChairsideVisitDraft("VIS-CHAIRSIDE-CRASH-TEST"), null);
+			} finally {
+				(globalThis as any).window = prevWindow;
+			}
 		});
 	});
 });

@@ -65,6 +65,8 @@ export interface FastCheckoutPaymentSplitProps {
 	readonly onAddRemainingToLoyalty: () => void;
 	readonly onAddRemainingToFamily: () => void;
 	readonly onAddRemaining5050: () => void;
+	readonly onAddRemainingDepositPlusCard?: () => void;
+	readonly onSwitchToSplitMode?: () => void;
 }
 
 export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> = ({
@@ -104,6 +106,8 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 	onAddRemainingToLoyalty,
 	onAddRemainingToFamily,
 	onAddRemaining5050,
+	onAddRemainingDepositPlusCard,
+	onSwitchToSplitMode,
 }) => {
 	const totalAvailableDeposit = (patientDepositRub || 0) + (patientFamilyBalanceRub || 0);
 
@@ -175,6 +179,19 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 							>
 								<Coins size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 								<span className="truncate">Депозит</span>
+							</button>
+						)}
+
+						{onSwitchToSplitMode && (
+							<button
+								type="button"
+								onClick={onSwitchToSplitMode}
+								className="h-9 px-3 rounded-xl border border-dashed border-teal-500/60 bg-teal-500/5 hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1.5 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95"
+								data-testid="simple-split-toggle-btn"
+								title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)"
+							>
+								<Layers size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="truncate">Сплит</span>
 							</button>
 						)}
 					</div>
@@ -271,6 +288,17 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								>
 									+ в Депозит
 								</button>
+								{totalAvailableDeposit > 0 && remainingRub > 0 && onAddRemainingDepositPlusCard && (
+									<button
+										type="button"
+										onClick={onAddRemainingDepositPlusCard}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-200 border border-amber-500/40 transition-all cursor-pointer select-none active:scale-95"
+										title={`Использовать весь остаток депозита (${totalAvailableDeposit.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽), а недостачу закрыть картой`}
+										data-testid="split-fill-deposit-card-btn"
+									>
+										+ Депозит + Карта
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={onAddRemainingToLoyalty}

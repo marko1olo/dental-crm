@@ -8,6 +8,7 @@
 
 import React from "react";
 import {
+	AlertTriangle,
 	Award,
 	CheckCircle2,
 	PenTool,
@@ -18,6 +19,10 @@ import {
 } from "lucide-react";
 import type { DentalFastPrescriptionSet } from "./prescriptionDataSets";
 import type { PrescriptionFormType } from "./PrescriptionPrintModal";
+import {
+	getDrugAllergyConflictType,
+	isDrugConflictingWithAllergies,
+} from "./prescriptionAllergyChecker";
 
 export interface PrescriptionDrugCatalogSelectorProps {
 	readonly fastPresets: readonly DentalFastPrescriptionSet[];
@@ -56,6 +61,7 @@ export interface PrescriptionDrugCatalogSelectorProps {
 	readonly patientAddress: string;
 	readonly onPatientAddressChange: (val: string) => void;
 	readonly activeForm: PrescriptionFormType;
+	readonly patientAllergies?: string | readonly string[] | null | undefined;
 }
 
 export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSelectorProps> = ({
@@ -89,6 +95,7 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 	patientAddress,
 	onPatientAddressChange,
 	activeForm,
+	patientAllergies,
 }) => {
 	return (
 		<div className="w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4">
@@ -99,39 +106,71 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 					Стоматологические 1-клик пакеты назначений:
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-					{fastPresets.slice(0, 4).map((preset) => (
-						<div
-							key={preset.id}
-							className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-all flex flex-col justify-between gap-1.5"
-						>
-							<div>
-								<div className="text-xs font-bold text-[var(--ink)] leading-snug">
-									{preset.label}
+					{fastPresets.slice(0, 4).map((preset) => {
+						const hasPresetConflict = Boolean(
+							patientAllergies &&
+							preset.drugIds?.some((drugId) => {
+								const matchedDrug = filteredCatalog.find((d) => d.id === drugId);
+								return matchedDrug
+									? isDrugConflictingWithAllergies(
+											{ id: matchedDrug.id, tradeName: matchedDrug.tradeNameRu, latinName: matchedDrug.latinRp, category: matchedDrug.category },
+											patientAllergies,
+										)
+									: isDrugConflictingWithAllergies(
+											{ id: drugId, tradeName: drugId, latinName: drugId },
+											patientAllergies,
+										);
+							}),
+						);
+						return (
+							<div
+								key={preset.id}
+								className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between gap-1.5 ${
+									hasPresetConflict
+										? "border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60"
+										: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)]"
+								}`}
+							>
+								<div>
+									<div className="flex items-center justify-between gap-1">
+										<div className="text-xs font-bold text-[var(--ink)] leading-snug">
+											{preset.label}
+										</div>
+										{hasPresetConflict && (
+											<span
+												data-testid={`preset-allergy-badge-${preset.id}`}
+												className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"
+											>
+												<AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />
+												Аллерген в пакете
+											</span>
+										)}
+									</div>
+									<div className="text-[11px] text-[var(--muted)] line-clamp-2 mt-0.5">
+										{preset.desc}
+									</div>
 								</div>
-								<div className="text-[11px] text-[var(--muted)] line-clamp-2 mt-0.5">
-									{preset.desc}
+								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line)]">
+									<button
+										type="button"
+										onClick={() => onApplyAndInsertToDiary(preset)}
+										className="h-7 px-2 text-[11px] font-semibold rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-all cursor-pointer flex items-center gap-1"
+									>
+										<PenTool className="w-3 h-3 text-[var(--teal)]" />
+										В дневник
+									</button>
+									<button
+										type="button"
+										onClick={() => onApplyAndPrint(preset)}
+										className="h-7 px-2 text-[11px] font-semibold rounded bg-[var(--teal)] text-[var(--ink-inverse)] hover:opacity-90 transition-all cursor-pointer flex items-center gap-1 ml-auto"
+									>
+										<Printer className="w-3 h-3" />
+										Печать
+									</button>
 								</div>
 							</div>
-							<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line)]">
-								<button
-									type="button"
-									onClick={() => onApplyAndInsertToDiary(preset)}
-									className="h-7 px-2 text-[11px] font-semibold rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-all cursor-pointer flex items-center gap-1"
-								>
-									<PenTool className="w-3 h-3 text-[var(--teal)]" />
-									В дневник
-								</button>
-								<button
-									type="button"
-									onClick={() => onApplyAndPrint(preset)}
-									className="h-7 px-2 text-[11px] font-semibold rounded bg-[var(--teal)] text-[var(--ink-inverse)] hover:opacity-90 transition-all cursor-pointer flex items-center gap-1 ml-auto"
-								>
-									<Printer className="w-3 h-3" />
-									Печать
-								</button>
-							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			</div>
 
@@ -166,6 +205,10 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 				<div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
 					{filteredCatalog.map((drug) => {
 						const isSelected = selectedDrugIds.includes(drug.id);
+						const conflictType = getDrugAllergyConflictType(
+							{ id: drug.id, tradeName: drug.tradeNameRu, latinName: drug.latinRp, category: drug.category },
+							patientAllergies,
+						);
 						return (
 							<div
 								key={drug.id}
@@ -173,11 +216,24 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 								className={`p-2 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between gap-2 ${
 									isSelected
 										? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] font-semibold shadow-xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"
+										: conflictType
+											? "bg-rose-500/5 border-rose-500/30 text-[var(--ink)] hover:border-rose-500/50"
+											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"
 								}`}
 							>
 								<div className="min-w-0">
-									<div className="font-bold truncate">{drug.tradeNameRu}</div>
+									<div className="flex items-center gap-1.5 flex-wrap">
+										<span className="font-bold truncate">{drug.tradeNameRu}</span>
+										{conflictType && (
+											<span
+												data-testid={`drug-allergy-badge-${drug.id}`}
+												className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-0.5 shrink-0"
+											>
+												<AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />
+												АЛЛЕРГИЯ
+											</span>
+										)}
+									</div>
 									<div className="text-[11px] text-[var(--muted)] truncate italic">
 										{drug.latinRp}
 									</div>

@@ -740,33 +740,7 @@ export function drawDentalArchControlPointManipulators(
 			ctx.stroke();
 		}
 
-		// 2. Floating FDI Tooth Badge Pill on Hover/Drag/Select
-		if (isHovered || isDragging || isSelected) {
-			const labelText = `FDI #${anchor.toothFdi}`;
-			ctx.font = "bold 10px monospace";
-			const textWidth = ctx.measureText(labelText).width;
-			const pillW = textWidth + 10;
-			const pillH = 16;
-			const pillX = screen.x - pillW / 2;
-			const pillY = screen.y - 24;
-
-			ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-			ctx.strokeStyle = isDragging ? "#06b6d4" : isHovered ? "#2dd4bf" : "#a855f7";
-			ctx.lineWidth = 1.5;
-			ctx.beginPath();
-			if (typeof ctx.roundRect === "function") {
-				ctx.roundRect(pillX, pillY, pillW, pillH, 4);
-			} else {
-				ctx.rect(pillX, pillY, pillW, pillH);
-			}
-			ctx.fill();
-			ctx.stroke();
-
-			ctx.fillStyle = isDragging ? "#67e8f9" : isHovered ? "#5eead4" : "#ffffff";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(labelText, screen.x, pillY + pillH / 2);
-		}
+		// FDI badge pill suppressed from user viewport overlay per mandate
 	}
 
 	ctx.restore();

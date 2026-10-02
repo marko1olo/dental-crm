@@ -483,7 +483,11 @@ describe("Wave 27 Domain 1 — Real-Time Cross-Referencing & Panorama Navigation
 			assert.ok(drawCalls.length > 0);
 			assert.ok(drawCalls.includes("save"));
 			assert.ok(drawCalls.includes("restore"));
-			assert.ok(drawCalls.some((c) => c.startsWith("fillText:")));
+			// FDI text badges are suppressed from user contour canvas per mandate
+			assert.ok(
+				!drawCalls.some((c) => c.startsWith("fillText:")),
+				"FDI tooth badges must remain suppressed from visible manipulator canvas per mandate",
+			);
 
 			assert.doesNotThrow(() => {
 				drawDentalArchControlPointManipulators(mockCtx, {

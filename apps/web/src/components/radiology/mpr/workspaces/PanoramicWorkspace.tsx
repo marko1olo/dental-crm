@@ -184,7 +184,7 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 							onClick={() => onSwitchJaw?.("maxilla")}
 							className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
 								jawType === "maxilla"
-									? "bg-purple-600 text-white shadow-xs font-bold"
+									? "bg-purple-950/70 text-purple-200 border border-purple-500/50 shadow-xs font-semibold"
 									: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 							}`}
 							data-testid="cbct-jaw-switch-maxilla-btn"
@@ -197,7 +197,7 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 							onClick={() => onSwitchJaw?.("mandible")}
 							className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
 								jawType === "mandible"
-									? "bg-cyan-600 text-white shadow-xs font-bold"
+									? "bg-cyan-950/70 text-cyan-200 border border-cyan-500/50 shadow-xs font-semibold"
 									: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 							}`}
 							data-testid="cbct-jaw-switch-mandible-btn"

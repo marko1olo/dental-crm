@@ -10,6 +10,7 @@ import type {
 
 export * from "./telephonyTypes";
 export * from "./telephonyHelpers";
+import { normalizePhone } from "./telephonyHelpers";
 
 
 const initialTransferState: CallTransferState = {
@@ -144,10 +145,12 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			return;
 		}
 
+		const normalizedPhone = normalizePhone(call.phone) || call.phone;
 		const id = call.callId || `call-${now}-${++telephonyCallSeq}`;
 		const callStartedAt = call.callStartedAt ?? now;
 		const incomingPayload: IncomingCallPayload = {
 			...call,
+			phone: normalizedPhone,
 			id,
 			status: call.status ?? "ringing",
 			callStartedAt,
@@ -370,9 +373,19 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
+		const endedAt = Date.now();
 		const updatedCallId = activeCall.id || activeCall.callId;
 		const resolvedRecUrl =
 			recordingUrl || activeCall.recordingUrl || undefined;
+		const finalDuration =
+			typeof activeCall.durationSeconds === "number" && activeCall.durationSeconds > 0
+				? activeCall.durationSeconds
+				: Math.max(
+						0,
+						Math.floor(
+							(endedAt - (activeCall.callStartedAt || endedAt)) / 1000,
+						),
+					);
 
 		const updatedHistory = callHistory.map((item) => {
 			if (
@@ -384,6 +397,8 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 					status: "ended" as const,
 					actionTaken: item.actionTaken || ("accepted" as const),
 					recordingUrl: resolvedRecUrl || item.recordingUrl,
+					endedAt,
+					durationSeconds: finalDuration,
 				};
 			}
 			return item;

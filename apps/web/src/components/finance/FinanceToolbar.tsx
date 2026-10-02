@@ -5,6 +5,7 @@ import {
 	MoreHorizontal,
 	TrendingUp,
 	FileText,
+	FileCheck,
 	Banknote,
 	ShieldCheck,
 } from "lucide-react";
@@ -24,6 +25,7 @@ export interface FinanceToolbarProps {
 	onOpenPnl: () => void;
 	onGoToDocuments: () => void;
 	onOpenCashbox: () => void;
+	onOpenBillingAct?: () => void;
 }
 
 export function FinanceToolbar({
@@ -41,6 +43,7 @@ export function FinanceToolbar({
 	onOpenPnl,
 	onGoToDocuments,
 	onOpenCashbox,
+	onOpenBillingAct,
 }: FinanceToolbarProps) {
 	return (
 		<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
@@ -183,6 +186,22 @@ export function FinanceToolbar({
 									className="shrink-0 text-sky-600 dark:text-sky-400"
 								/>
 								<span>Документы</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onCloseFinanceOptions();
+									onOpenBillingAct?.();
+								}}
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
+								role="menuitem"
+								data-testid="btn-finance-open-billing-act"
+							>
+								<FileCheck
+									size={14}
+									className="shrink-0 text-indigo-600 dark:text-indigo-400"
+								/>
+								<span>Акт А4 и гарантии</span>
 							</button>
 							<button
 								type="button"

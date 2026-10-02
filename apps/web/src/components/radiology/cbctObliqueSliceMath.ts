@@ -45,21 +45,26 @@ export function sampleVoxelHUTrilinear(
 	const { width, height, depth } = volume.dimensions;
 
 	// Robust boundary check handling NaN, Infinity, and out-of-volume bounds
-	if (!(vx >= 0 && vx <= width - 1 && vy >= 0 && vy <= height - 1 && vz >= 0 && vz <= depth - 1)) {
+	// Tolerant edge boundary [-0.5, dim - 0.5] avoids black hole voids on volume edges while rejecting distant air samples
+	if (!(vx >= -0.5 && vx <= width - 0.5 && vy >= -0.5 && vy <= height - 0.5 && vz >= -0.5 && vz <= depth - 0.5)) {
 		return -1000;
 	}
 
-	const x0 = Math.floor(vx);
-	const y0 = Math.floor(vy);
-	const z0 = Math.floor(vz);
+	const clampedVx = vx < 0 ? 0 : vx > width - 1 ? width - 1 : vx;
+	const clampedVy = vy < 0 ? 0 : vy > height - 1 ? height - 1 : vy;
+	const clampedVz = vz < 0 ? 0 : vz > depth - 1 ? depth - 1 : vz;
 
-	const x1 = Math.min(width - 1, x0 + 1);
-	const y1 = Math.min(height - 1, y0 + 1);
-	const z1 = Math.min(depth - 1, z0 + 1);
+	const x0 = Math.floor(clampedVx);
+	const y0 = Math.floor(clampedVy);
+	const z0 = Math.floor(clampedVz);
 
-	const tx = vx - x0;
-	const ty = vy - y0;
-	const tz = vz - z0;
+	const x1 = x0 < width - 1 ? x0 + 1 : x0;
+	const y1 = y0 < height - 1 ? y0 + 1 : y0;
+	const z1 = z0 < depth - 1 ? z0 + 1 : z0;
+
+	const tx = clampedVx - x0;
+	const ty = clampedVy - y0;
+	const tz = clampedVz - z0;
 
 	const data = volume.data;
 	const sliceStride = width * height;
@@ -78,23 +83,18 @@ export function sampleVoxelHUTrilinear(
 	const c011 = data[row11 + x0] ?? -1000;
 	const c111 = data[row11 + x1] ?? -1000;
 
-	const c00 = c000 * (1.0 - tx) + c100 * tx;
-	const c10 = c010 * (1.0 - tx) + c110 * tx;
-	const c01 = c001 * (1.0 - tx) + c101 * tx;
-	const c11 = c011 * (1.0 - tx) + c111 * tx;
+	// Fast FMA Horner-like linear interpolation: a + t * (b - a) halves floating-point multiplications from 14 to 7
+	const c00 = c000 + tx * (c100 - c000);
+	const c10 = c010 + tx * (c110 - c010);
+	const c01 = c001 + tx * (c101 - c001);
+	const c11 = c011 + tx * (c111 - c011);
 
-	const c0 = c00 * (1.0 - ty) + c10 * ty;
-	const c1 = c01 * (1.0 - ty) + c11 * ty;
+	const c0 = c00 + ty * (c10 - c00);
+	const c1 = c01 + ty * (c11 - c01);
 
-	const rawHu = c0 * (1.0 - tz) + c1 * tz;
-	const rescaleSlope = (volume as { rescaleSlope?: number }).rescaleSlope;
-	const rescaleIntercept = (volume as { rescaleIntercept?: number }).rescaleIntercept;
-	if (rescaleSlope !== undefined || rescaleIntercept !== undefined) {
-		const slope = rescaleSlope ?? 1;
-		const intercept = rescaleIntercept ?? 0;
-		const scaled = rawHu * slope + intercept;
-		return Math.max(-1000, Math.min(3071, Math.round(scaled)));
-	}
+	const rawHu = c0 + tz * (c1 - c0);
+	// volume.data is already strictly calibrated in Hounsfield Units (HU) during ingestion.
+	// Zero double-rescale mutilation per Mandates 8b and 8e.
 	return Math.max(-32768, Math.min(32767, Math.round(rawHu)));
 }
 
@@ -140,6 +140,9 @@ export function extractObliqueMprSlice(
 	const dim = volume.dimensions;
 	const sp = volume.spacingMm;
 	const origin = volume.originMm;
+	const spX = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const spY = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const spZ = (sp?.z && sp.z > 0) ? sp.z : 0.2;
 
 	let widthPx = 0;
 	let heightPx = 0;
@@ -152,24 +155,24 @@ export function extractObliqueMprSlice(
 		case "axial":
 			widthPx = dim.width;
 			heightPx = dim.height;
-			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.y;
+			pixelSpacingX = spX;
+			pixelSpacingY = spY;
 			maxSliceIndex = dim.depth - 1;
 			physicalPosMm = crosshairMm.z;
 			break;
 		case "coronal":
 			widthPx = dim.width;
-			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
-			pixelSpacingX = sp.x;
-			pixelSpacingY = (dim.depth * sp.z) / heightPx;
+			heightPx = Math.max(1, Math.round((dim.depth * spZ) / spX));
+			pixelSpacingX = spX;
+			pixelSpacingY = (dim.depth * spZ) / heightPx;
 			maxSliceIndex = dim.height - 1;
 			physicalPosMm = crosshairMm.y;
 			break;
 		case "sagittal":
 			widthPx = dim.height;
-			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
-			pixelSpacingX = sp.y;
-			pixelSpacingY = (dim.depth * sp.z) / heightPx;
+			heightPx = Math.max(1, Math.round((dim.depth * spZ) / spY));
+			pixelSpacingX = spY;
+			pixelSpacingY = (dim.depth * spZ) / heightPx;
 			maxSliceIndex = dim.width - 1;
 			physicalPosMm = crosshairMm.x;
 			break;
@@ -194,7 +197,7 @@ export function extractObliqueMprSlice(
 
 	const pivotPx = worldMmToSlicePx(crosshairMm, plane, volume);
 
-	const normalStepMm = Math.min(sp.x, Math.min(sp.y, sp.z));
+	const normalStepMm = Math.min(spX, Math.min(spY, spZ));
 	const isSlabActive = slabMode !== "single" && slabThicknessMm > normalStepMm;
 	const halfSlabMm = isSlabActive ? slabThicknessMm / 2.0 : 0;
 	const slabSteps = isSlabActive ? Math.max(1, Math.round(slabThicknessMm / normalStepMm)) : 1;
@@ -212,9 +215,9 @@ export function extractObliqueMprSlice(
 	const nY = basis.normal.y;
 	const nZ = basis.normal.z;
 
-	const invSpX = 1.0 / sp.x;
-	const invSpY = 1.0 / sp.y;
-	const invSpZ = 1.0 / sp.z;
+	const invSpX = 1.0 / spX;
+	const invSpY = 1.0 / spY;
+	const invSpZ = 1.0 / spZ;
 	if (!volume.data || volume.isDisposed) {
 		return {
 			data: pixelBuffer,
@@ -288,19 +291,16 @@ export function extractObliqueMprSlice(
 						const c011 = volData[row11 + x0] ?? -1000;
 						const c111 = volData[row11 + x1] ?? -1000;
 
-						const c00 = c000 * (1.0 - tx) + c100 * tx;
-						const c10 = c010 * (1.0 - tx) + c110 * tx;
-						const c01 = c001 * (1.0 - tx) + c101 * tx;
-						const c11 = c011 * (1.0 - tx) + c111 * tx;
+						const c00 = c000 + tx * (c100 - c000);
+						const c10 = c010 + tx * (c110 - c010);
+						const c01 = c001 + tx * (c101 - c001);
+						const c11 = c011 + tx * (c111 - c011);
 
-						const c0 = c00 * (1.0 - ty) + c10 * ty;
-						const c1 = c01 * (1.0 - ty) + c11 * ty;
+						const c0 = c00 + ty * (c10 - c00);
+						const c1 = c01 + ty * (c11 - c01);
 
-						const rawHu = c0 * (1.0 - tz) + c1 * tz;
-						const slope = volume.rescaleSlope ?? 1.0;
-						const intercept = volume.rescaleIntercept ?? 0.0;
-						const huVal = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
-						hu = Math.max(-1000, Math.min(3071, Math.round(huVal)));
+						const rawHu = c0 + tz * (c1 - c0);
+						hu = Math.max(-32768, Math.min(32767, Math.round(rawHu)));
 					} else {
 						hu = -1000;
 					}
@@ -322,6 +322,15 @@ export function extractObliqueMprSlice(
 			}
 		}
 	} else {
+		// High-performance 3D DDA for oblique slab: precomputed normal step vectors
+		const stepS_vx = (stepMm * nX) * invSpX;
+		const stepS_vy = (stepMm * nY) * invSpY;
+		const stepS_vz = (stepMm * nZ) * invSpZ;
+
+		const startS_vx = (-halfSlabMm * nX) * invSpX;
+		const startS_vy = (-halfSlabMm * nY) * invSpY;
+		const startS_vz = (-halfSlabMm * nZ) * invSpZ;
+
 		for (let row = 0; row < heightPx; row++) {
 			const offsetRow = row - pivotPx.y;
 			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
@@ -330,27 +339,21 @@ export function extractObliqueMprSlice(
 
 			let pIdx = row * widthPx * 4;
 
-			for (let col = 0; col < widthPx; col++) {
-				const offsetCol = col - pivotPx.x;
-				const baseWorldX = baseRowWorldX + offsetCol * uX;
-				const baseWorldY = baseRowWorldY + offsetCol * uY;
-				const baseWorldZ = baseRowWorldZ + offsetCol * uZ;
+			let baseColVx = (baseRowWorldX - pivotPx.x * uX - origin.x) * invSpX;
+			let baseColVy = (baseRowWorldY - pivotPx.x * uY - origin.y) * invSpY;
+			let baseColVz = (baseRowWorldZ - pivotPx.x * uZ - origin.z) * invSpZ;
 
+			for (let col = 0; col < widthPx; col++) {
 				let maxHU = -32768;
 				let minHU = 32767;
 				let sumHU = 0;
 				let count = 0;
 
+				let vx = baseColVx + startS_vx;
+				let vy = baseColVy + startS_vy;
+				let vz = baseColVz + startS_vz;
+
 				for (let s = 0; s <= slabSteps; s++) {
-					const normDist = -halfSlabMm + s * stepMm;
-					const worldX = baseWorldX + normDist * nX;
-					const worldY = baseWorldY + normDist * nY;
-					const worldZ = baseWorldZ + normDist * nZ;
-
-					const vx = (worldX - origin.x) * invSpX;
-					const vy = (worldY - origin.y) * invSpY;
-					const vz = (worldZ - origin.z) * invSpZ;
-
 					let hu: number;
 					if (interpolation === "trilinear" && volData) {
 						if (vx >= 0 && vx <= maxX && vy >= 0 && vy <= maxY && vz >= 0 && vz <= maxD) {
@@ -380,19 +383,16 @@ export function extractObliqueMprSlice(
 							const c011 = volData[row11 + x0] ?? -1000;
 							const c111 = volData[row11 + x1] ?? -1000;
 
-							const c00 = c000 * (1.0 - tx) + c100 * tx;
-							const c10 = c010 * (1.0 - tx) + c110 * tx;
-							const c01 = c001 * (1.0 - tx) + c101 * tx;
-							const c11 = c011 * (1.0 - tx) + c111 * tx;
+							const c00 = c000 + tx * (c100 - c000);
+							const c10 = c010 + tx * (c110 - c010);
+							const c01 = c001 + tx * (c101 - c001);
+							const c11 = c011 + tx * (c111 - c011);
 
-							const c0 = c00 * (1.0 - ty) + c10 * ty;
-							const c1 = c01 * (1.0 - ty) + c11 * ty;
+							const c0 = c00 + ty * (c10 - c00);
+							const c1 = c01 + ty * (c11 - c01);
 
-							const rawHu = c0 * (1.0 - tz) + c1 * tz;
-							const slope = volume.rescaleSlope ?? 1.0;
-							const intercept = volume.rescaleIntercept ?? 0.0;
-							const huVal = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
-							hu = Math.max(-1000, Math.min(3071, Math.round(huVal)));
+							const rawHu = c0 + tz * (c1 - c0);
+							hu = Math.max(-32768, Math.min(32767, Math.round(rawHu)));
 						} else {
 							hu = -1000;
 						}
@@ -404,6 +404,10 @@ export function extractObliqueMprSlice(
 					if (hu < minHU) minHU = hu;
 					sumHU += hu;
 					count++;
+
+					vx += stepS_vx;
+					vy += stepS_vy;
+					vz += stepS_vz;
 				}
 
 				let finalHU = maxHU;
@@ -417,6 +421,10 @@ export function extractObliqueMprSlice(
 				pixelBuffer[pIdx + 2] = gray;
 				pixelBuffer[pIdx + 3] = 255;
 				pIdx += 4;
+
+				baseColVx += stepVx;
+				baseColVy += stepVy;
+				baseColVz += stepVz;
 			}
 		}
 	}

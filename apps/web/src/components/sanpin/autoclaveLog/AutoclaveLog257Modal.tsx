@@ -287,8 +287,8 @@ export function AutoclaveLog257Modal({
 							<ShieldCheck size={24} />
 						</div>
 						<div className="autoclave-log-title-text">
-							<h2>Журнал работы стерилизаторов (Форма № 257/у)</h2>
-							<p>СанПиН 3.3686-21 • Приказ Минздрава СССР № 1030 • Паровой (Класс B) и воздушный методы</p>
+							<h2>Журнал автоклава (стерилизация инструментов)</h2>
+							<p>Паровой (Класс B) и воздушный методы • Контроль параметров</p>
 						</div>
 					</div>
 
@@ -296,7 +296,7 @@ export function AutoclaveLog257Modal({
 						type="button"
 						onClick={onClose}
 						className="autoclave-log-close-btn"
-						title="Закрыть студию Формы 257/у"
+						title="Закрыть журнал автоклава"
 					>
 						<X size={20} />
 					</button>
@@ -319,7 +319,7 @@ export function AutoclaveLog257Modal({
 						onClick={() => setActiveTab("journal_257")}
 					>
 						<FileText size={16} />
-						Реестр Журнала 257/у ({records.length})
+						Реестр циклов ({records.length})
 					</button>
 				</div>
 

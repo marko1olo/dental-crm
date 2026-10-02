@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { ChevronDown, ChevronUp, Target, X } from "lucide-react";
 import { FDI_LOWER_TEETH, FDI_UPPER_TEETH } from "./completedServicesPlan";
 

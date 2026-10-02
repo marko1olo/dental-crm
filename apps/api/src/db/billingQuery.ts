@@ -9,6 +9,7 @@ import {
 import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
 import { db } from "./client.js";
+import { withTenantCtx } from "./rls.js";
 import * as schema from "./schema.js";
 
 // The DB stores tax_deduction_code as free `text`, but the Payment DTO narrows it
@@ -240,7 +241,7 @@ export async function createPaymentInDb(
 		throw new Error("Сумма оплаты должна быть строго больше нуля.");
 	}
 
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(organizationId, async (tx) => {
 		// ACID pg_advisory_xact_lock на clientMutationId для защиты от состояния гонки
 		if (input.clientMutationId) {
 			await tx.execute(

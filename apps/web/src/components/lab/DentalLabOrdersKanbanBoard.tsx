@@ -494,12 +494,12 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 																onPrintBlank(order);
 																setActiveCardMenuOrderId(null);
 															}}
-															title="Распечатать бланк наряда ЗТЛ-1 для курьера лаборатории"
+															title="Распечатать бланк наряда для курьера лаборатории"
 															role="menuitem"
 															data-testid={`ztl-card-print-a4-${order.id}`}
 														>
 															<Printer size={14} className="shrink-0 text-slate-600" />
-															<span>Печать ЗТЛ-1 (А4)</span>
+															<span>Печать наряда (А4)</span>
 														</button>
 
 														<button

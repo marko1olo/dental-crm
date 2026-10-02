@@ -2172,6 +2172,34 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					: `Списано позиций по FEFO: ${deductionResults.length}`,
 			});
 		} catch (error) {
+			const isInsufficientStock =
+				error instanceof InsufficientStockError ||
+				(error as any)?.error === "InsufficientStock" ||
+				(error as any)?.name === "InsufficientStockError" ||
+				(error as any)?.code === "InsufficientStock";
+
+			if (isInsufficientStock) {
+				const itemErr = error as any;
+				const invItemId = itemErr.inventoryItemId ?? "unknown";
+				const invItemName = itemErr.inventoryItemName ?? "Материал";
+				const avail = Number(itemErr.availableStock ?? 0);
+				const req = Number(itemErr.requiredStock ?? 1);
+				return reply.status(200).send({
+					success: true,
+					isOverdraft: true,
+					is_overdraft: true,
+					hasOverdraft: true,
+					warning: `Мягкий овердрафт склада (Мандат 8n): зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Приём проведён без блокировки.`,
+					message: `Мягкий овердрафт склада (Мандат 8n): дефицит по материалу «${invItemName}». Клинический процесс не блокируется.`,
+					inventoryItemId: invItemId,
+					inventoryItemName: invItemName,
+					availableStock: avail,
+					requiredStock: req,
+					count: 0,
+					items: [],
+				});
+			}
+
 			request.log.error(error, "Failed to deduct inventory items");
 			const msg =
 				error instanceof Error

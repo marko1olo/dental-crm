@@ -109,7 +109,7 @@ function modelForProvider(provider: SpeechPolishProvider): string | null {
 		return (
 			process.env.DENTAL_SPEECH_POLISH_GEMINI_MODEL?.trim() ||
 			process.env.DENTAL_SPEECH_POLISH_MODEL?.trim() ||
-			"gemini-2.5-flash"
+			"gemini-3.5-flash-lite"
 		);
 	}
 	if (provider === "groq") {
@@ -296,6 +296,9 @@ const DENTAL_AI_CASCADING_MODELS: Array<{
 	// Gemini
 	{ provider: "gemini", model: "gemini-3.5-flash-lite" },
 	{ provider: "gemini", model: "gemini-3.1-flash-lite" },
+	{ provider: "gemini", model: "gemini-3.8-flash" },
+	{ provider: "gemini", model: "gemini-3.7-flash" },
+	{ provider: "gemini", model: "gemini-3.5-flash" },
 	{ provider: "gemini", model: "gemini-2.5-flash" },
 	// Groq
 	{ provider: "groq", model: "qwen/qwen3.8-27b" },

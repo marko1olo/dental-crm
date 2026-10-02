@@ -10,6 +10,7 @@ import {
 	MessageSquare,
 	Search,
 	Settings,
+	Sliders,
 	Sparkles,
 	Stethoscope,
 	Users,
@@ -156,6 +157,17 @@ export function Omnibar() {
 			},
 		},
 		{
+			id: "action-cbct-tuner",
+			title: "🧪 Тюнер контраста и срезов КЛКТ (Ползунки W/L, Gamma, ОПТГ)",
+			icon: <Sliders className="text-[var(--teal)]" />,
+			category: "Быстрые действия",
+			action: () => {
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:open-cbct-tuner"));
+				}
+			},
+		},
+		{
 			id: "action-shortcuts-overlay",
 			title: "Горячие клавиши врача (Шпаргалка ? / F1)",
 			icon: <Keyboard className="text-[var(--teal)]" />,
@@ -195,7 +207,7 @@ export function Omnibar() {
 				id: `patient-${res.patient.id}`,
 				title: `${res.patient.fullName || "Пациент"}${res.patient.phone ? ` (${res.patient.phone})` : ""}${cardNum ? ` [Карта: ${cardNum}]` : ""}`,
 				icon: <Users className="text-[var(--teal)]" />,
-				category: "Пациенты (Медицинская карта 043/у)",
+				category: "Пациенты (Медицинская карта)",
 				action: () => {
 					if (setActivePatientId && res.patient.id) {
 						setActivePatientId(res.patient.id);

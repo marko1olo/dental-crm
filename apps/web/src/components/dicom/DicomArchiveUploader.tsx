@@ -8,17 +8,34 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	extractDicomHeaderInfo,
+	markStudyAsSynced,
+	markStudySyncFailed,
+	saveLocalDicomStudy,
+	startDicomOfflineSyncWatcher,
+} from "./dicomOfflineSync";
 
 export interface DicomArchiveUploaderProps {
 	onImagesLoaded: (imageIds: string[]) => void;
 	className?: string;
 	uploadToServer?: boolean;
+	patientId?: string | null;
+	doctorId?: string | null;
 }
 
-export async function uploadDicomFileToStow(file: File | Blob): Promise<boolean> {
+export async function uploadDicomFileToStow(
+	file: File | Blob,
+	patientId?: string | null,
+	doctorId?: string | null,
+): Promise<boolean> {
 	try {
 		const arrayBuf = await file.arrayBuffer();
-		const res = await fetch("/api/dicomweb/studies", {
+		const params = new URLSearchParams();
+		if (patientId) params.set("patientId", patientId);
+		if (doctorId) params.set("doctorId", doctorId);
+		const qs = params.toString() ? `?${params.toString()}` : "";
+		const res = await fetch(`/api/dicomweb/studies${qs}`, {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/dicom",
@@ -52,7 +69,9 @@ export { filterDicomArchiveEntries, isDicomEntry, isDicomdirEntry, sortDicomEntr
 export function DicomArchiveUploader({
 	onImagesLoaded,
 	className,
-	uploadToServer = false,
+	uploadToServer = true,
+	patientId,
+	doctorId,
 }: DicomArchiveUploaderProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -60,6 +79,10 @@ export function DicomArchiveUploader({
 		"Перетащите ZIP-архив КЛКТ, папку со снимками или отдельные файлы .dcm",
 	);
 	const [progressPercent, setProgressPercent] = useState<number | null>(null);
+	const [syncBadge, setSyncBadge] = useState<{
+		type: "synced" | "pending";
+		text: string;
+	} | null>(null);
 
 	const folderInputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +90,9 @@ export function DicomArchiveUploader({
 	const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
+		const stopWatcher = startDicomOfflineSyncWatcher();
 		return () => {
+			stopWatcher();
 			isMountedRef.current = false;
 			if (batchTimerRef.current) {
 				clearTimeout(batchTimerRef.current);
@@ -81,8 +106,13 @@ export function DicomArchiveUploader({
 		};
 	}, []);
 
+	interface ParsedDicomResult {
+		imageId: string;
+		file: File;
+	}
+
 	const processFile = useCallback(
-		async (file: File): Promise<string | null> => {
+		async (file: File): Promise<ParsedDicomResult | null> => {
 			if (isDicomdirEntry(file.name)) {
 				return null;
 			}
@@ -100,7 +130,7 @@ export function DicomArchiveUploader({
 
 						const imageId =
 							cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
-						resolve(imageId);
+						resolve({ imageId, file });
 					} catch (e) {
 						showToast(
 							actionFailureToast(
@@ -121,7 +151,7 @@ export function DicomArchiveUploader({
 	);
 
 	const processZip = useCallback(
-		async (zipFile: File): Promise<string[]> => {
+		async (zipFile: File): Promise<ParsedDicomResult[]> => {
 			if (zipFile.size > MAX_SAFE_FILE_SIZE_BYTES) {
 				setStatus(
 					"Файл слишком велик для обработки в памяти браузера (>1.5 ГБ). Используйте просмотр по папке со срезами.",
@@ -133,7 +163,7 @@ export function DicomArchiveUploader({
 			setProgressPercent(0);
 			let archiveBuffer: Uint8Array | null = new Uint8Array(await zipFile.arrayBuffer());
 
-			return new Promise<string[]>((resolve, reject) => {
+			return new Promise<ParsedDicomResult[]>((resolve, reject) => {
 				fflate.unzip(archiveBuffer!, (err, unzipped) => {
 					// Immediately release compressed archive buffer from V8 heap
 					archiveBuffer = null;
@@ -144,7 +174,7 @@ export function DicomArchiveUploader({
 
 					const entries = sortDicomEntries(Object.keys(unzipped));
 					const totalFiles = entries.length;
-					const imageIds: string[] = [];
+					const results: ParsedDicomResult[] = [];
 
 					if (totalFiles === 0) {
 						resolve([]);
@@ -185,10 +215,7 @@ export function DicomArchiveUploader({
 								const file = new File([fileData], filename);
 								const imageId =
 									cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
-								imageIds.push(imageId);
-								if (uploadToServer) {
-									void uploadDicomFileToStow(file);
-								}
+								results.push({ imageId, file });
 							}
 							// Zero-leak GC: immediately free this slice's uncompressed Uint8Array buffer
 							delete unzipped[filename];
@@ -198,7 +225,7 @@ export function DicomArchiveUploader({
 						const pct = Math.round((currentIndex / totalFiles) * 100);
 						if (isMountedRef.current) {
 							setProgressPercent(pct);
-							setStatus(`Обработка срезов КЛКТ: ${currentIndex}/${totalFiles} (${imageIds.length} DICOM)...`);
+							setStatus(`Обработка срезов КЛКТ: ${currentIndex}/${totalFiles} (${results.length} DICOM)...`);
 						}
 
 						if (currentIndex < totalFiles) {
@@ -209,7 +236,7 @@ export function DicomArchiveUploader({
 							if (isMountedRef.current) {
 								setProgressPercent(null);
 							}
-							resolve(imageIds);
+							resolve(results);
 						}
 					};
 
@@ -269,7 +296,7 @@ export function DicomArchiveUploader({
 			setProgressPercent(null);
 
 			try {
-				const validImageIds: string[] = [];
+				const parsedResults: ParsedDicomResult[] = [];
 				const zipFiles = files.filter((f) =>
 					f.name.toLowerCase().endsWith(".zip"),
 				);
@@ -277,11 +304,10 @@ export function DicomArchiveUploader({
 					files.filter((f) => !f.name.toLowerCase().endsWith(".zip")),
 				);
 
-
 				// Process ZIP files
 				for (const zipFile of zipFiles) {
-					const zipImageIds = await processZip(zipFile);
-					validImageIds.push(...zipImageIds);
+					const zipParsed = await processZip(zipFile);
+					parsedResults.push(...zipParsed);
 				}
 
 				// Process individual / folder files
@@ -295,24 +321,131 @@ export function DicomArchiveUploader({
 						const f = nonZipFiles[i];
 						if (f) {
 							if (isDicomdirEntry(f.name)) continue;
-							const imageId = await processFile(f);
-							if (imageId) {
-								validImageIds.push(imageId);
-								if (uploadToServer) {
-									void uploadDicomFileToStow(f);
-								}
+							const parsed = await processFile(f);
+							if (parsed) {
+								parsedResults.push(parsed);
 							}
 						}
 					}
 				}
 
 				if (!isMountedRef.current) return;
-				if (validImageIds.length > 0) {
-					setStatus(`Успешно загружено объектов DICOM: ${validImageIds.length}`);
-					onImagesLoaded(validImageIds);
-				} else {
+				if (parsedResults.length === 0) {
 					setStatus("Подходящие файлы DICOM (.dcm) или срезы КЛКТ не найдены.");
+					return;
 				}
+
+				const validImageIds = parsedResults.map((r) => r.imageId);
+				const validFiles = parsedResults.map((r) => r.file);
+
+				// Mandate 8l: Двухуровневое хранение КТ (Tier 1: Local IndexedDB + Tier 2: PACS STOW-RS)
+				// 1. Первичное мгновенное сохранение на локальном ПК (Tier 1 Workstation)
+				let studyUid = `1.2.643.5.1.13.2.${Date.now()}`;
+				let studySeriesUid: string | undefined;
+				let patientNameFromDicom: string | undefined;
+				let patientIdFromDicom: string | undefined;
+				let studyDateFromDicom: string | undefined;
+
+				try {
+					const firstSliceBuf = await validFiles[0]!.arrayBuffer();
+					const headerInfo = extractDicomHeaderInfo(firstSliceBuf);
+					studyUid = headerInfo.studyInstanceUid || studyUid;
+					studySeriesUid = headerInfo.seriesUid;
+					patientNameFromDicom = headerInfo.patientName;
+					patientIdFromDicom = headerInfo.patientId;
+					studyDateFromDicom = headerInfo.studyDate;
+
+					const sliceBuffers = await Promise.all(
+						validFiles.map(async (f) => ({
+							name: f.name,
+							buffer: await f.arrayBuffer(),
+						})),
+					);
+
+					await saveLocalDicomStudy({
+						studyInstanceUid: studyUid,
+						seriesUid: studySeriesUid,
+						patientId: patientId || patientIdFromDicom || null,
+						sliceCount: validFiles.length,
+						studyDate: studyDateFromDicom,
+						title: patientNameFromDicom
+							? `КЛКТ — ${patientNameFromDicom}`
+							: `КЛКТ исследование ${studyUid.slice(-8)}`,
+						slices: sliceBuffers,
+					});
+					setSyncBadge({
+						type: "pending",
+						text: "Сохранено локально на этом ПК • Ожидает синхронизации",
+					});
+				} catch (tier1Err) {
+					logger.warn("[DicomArchiveUploader] Ошибка сохранения в IndexedDB:", tier1Err);
+				}
+
+				const effectivePatientId = patientId || patientIdFromDicom || null;
+
+				if (uploadToServer) {
+					const isOnline = typeof navigator === "undefined" || navigator.onLine !== false;
+					if (!isOnline) {
+						setStatus(`Офлайн: сохранено локально (${validFiles.length} срезов). «Ожидает синхронизации»`);
+						setSyncBadge({
+							type: "pending",
+							text: "Сохранено локально на этом ПК • Ожидает синхронизации",
+						});
+						showToast(`Офлайн: ${validFiles.length} срезов сохранено в IndexedDB (Ожидает синхронизации)`, "info");
+					} else {
+						// Честный прогресс-бар отправки на бэкенд (POST /api/dicomweb/studies / STOW-RS)
+						setStatus(`Синхронизация с PACS: 0/${validFiles.length} (0%)...`);
+						setProgressPercent(0);
+						let uploadedCount = 0;
+						const failedFiles: File[] = [];
+
+						// Пул параллельной отправки (4 конкурентных потока для STOW-RS)
+						const totalUploads = validFiles.length;
+						let uploadIndex = 0;
+						const workerCount = Math.min(4, totalUploads);
+						const uploadWorkers = Array.from({ length: workerCount }, async () => {
+							while (uploadIndex < totalUploads) {
+								if (!isMountedRef.current) break;
+								const taskIdx = uploadIndex++;
+								const file = validFiles[taskIdx]!;
+								const ok = await uploadDicomFileToStow(file, effectivePatientId, doctorId);
+								if (!ok) {
+									failedFiles.push(file);
+								}
+								uploadedCount++;
+								const pct = Math.round((uploadedCount / totalUploads) * 100);
+								if (isMountedRef.current) {
+									setProgressPercent(pct);
+									setStatus(`Синхронизация с PACS: ${uploadedCount}/${totalUploads} (${pct}%)...`);
+								}
+							}
+						});
+						await Promise.all(uploadWorkers);
+
+						if (failedFiles.length > 0) {
+							await markStudySyncFailed(studyUid, `Не удалось отправить ${failedFiles.length} из ${totalUploads} срезов`);
+							setStatus(`Сохранено локально (${validFiles.length} срезов) • Ожидает синхронизации (${failedFiles.length} не отправлено)`);
+							setSyncBadge({
+								type: "pending",
+								text: "Сохранено локально на этом ПК • Ожидает синхронизации",
+							});
+							showToast(`Связь нестабильна: ${failedFiles.length} срезов КТ сохранены локально и ожидают отправки`, "warning");
+						} else {
+							await markStudyAsSynced(studyUid);
+							setStatus(`Сохранено локально на этом ПК • Синхронизировано с сервером клиники (${validFiles.length} срезов)`);
+							setSyncBadge({
+								type: "synced",
+								text: "Сохранено локально на этом ПК • Синхронизировано с сервером клиники",
+							});
+							showToast(`Исследование (${validFiles.length} срезов) сохранено локально и синхронизировано с сервером`, "success");
+						}
+					}
+				} else {
+					setStatus(`Сохранено локально на этом ПК: ${validImageIds.length} срезов`);
+				}
+
+				if (!isMountedRef.current) return;
+				onImagesLoaded(validImageIds);
 			} catch (error) {
 				if (!isMountedRef.current) return;
 				showToast(
@@ -333,7 +466,7 @@ export function DicomArchiveUploader({
 				}
 			}
 		},
-		[loading, onImagesLoaded, processFile, processZip],
+		[loading, onImagesLoaded, processFile, processZip, uploadToServer, patientId, doctorId],
 	);
 
 	const onDrop = useCallback(
@@ -437,6 +570,29 @@ export function DicomArchiveUploader({
 				>
 					{status}
 				</div>
+				{syncBadge && (
+					<div
+						className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium mt-1 transition-all"
+						style={{
+							background:
+								syncBadge.type === "synced"
+									? "var(--teal-soft, rgba(20,184,166,0.12))"
+									: "var(--amber-soft, rgba(245,158,11,0.12))",
+							color:
+								syncBadge.type === "synced"
+									? "var(--teal, #14b8a6)"
+									: "var(--amber, #d97706)",
+							border: `1px solid ${
+								syncBadge.type === "synced"
+									? "var(--teal-soft, rgba(20,184,166,0.3))"
+									: "var(--amber-soft, rgba(245,158,11,0.3))"
+							}`,
+						}}
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-current" />
+						<span>{syncBadge.text}</span>
+					</div>
+				)}
 			</div>
 
 			{loading && (

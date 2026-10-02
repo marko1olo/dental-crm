@@ -78,7 +78,7 @@ export function MedicalWasteAccumulateTab({
 					<div>
 						<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 800, fontSize: "0.95rem", color: "var(--ink, #0f172a)" }}>
 							<Sparkles size={18} color="var(--teal, #0d9488)" />
-							<span>Нормативный экспресс-учет смены (СанПиН 2.1.3684-21)</span>
+							<span>Экспресс-учет отходов смены</span>
 						</div>
 						<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
 							1-клик автоматическое формирование двух записей: мягкие отходы (желтый пакет 2.5 кг) + острые отходы (контейнер игл 0.8 кг)
@@ -106,11 +106,11 @@ export function MedicalWasteAccumulateTab({
 							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
 							whiteSpace: "nowrap",
 						}}
-						title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21"
+						title="1-Клик сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
 						data-testid="waste-quick-shift-btn"
 					>
 						<Sparkles size={18} />
-						<span>{isSubmittingQuickShift ? "Оформление смены..." : "1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
+						<span>{isSubmittingQuickShift ? "Оформление смены..." : "1-Клик сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
 					</button>
 				</div>
 			</div>
@@ -118,7 +118,7 @@ export function MedicalWasteAccumulateTab({
 			{/* 1. Выбор класса отходов */}
 			<div>
 				<div className="text-xs font-bold uppercase text-muted mb-2">
-					1. Класс медицинских отходов (СанПиН 2.1.3684-21)
+					1. Класс отходов
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 					{SANPIN_MEDICAL_WASTE_CLASSES.map((cls) => {
@@ -176,7 +176,7 @@ export function MedicalWasteAccumulateTab({
 					}}
 				>
 					<div style={{ fontWeight: 800, marginBottom: "2px" }}>
-						Опасные стоматологические отходы (Класс Б, СанПиН 2.1.3684-21):
+						Опасные стоматологические отходы (Класс Б):
 					</div>
 					<div>
 						• <strong>Мягкие отходы:</strong> карпулы от анестетиков со следами крови, ватные валики, марлевые салфетки, латексные/нитриловые перчатки, удаленные зубы.<br />
@@ -270,10 +270,10 @@ export function MedicalWasteAccumulateTab({
 				</div>
 			</div>
 
-			{/* Норматив накопления СанПиН 2.1.3684-21 */}
+			{/* Норматив накопления */}
 			<div className="text-xs text-muted px-1 flex items-center justify-between flex-wrap gap-2">
 				<span>
-					• Норматив временного накопления: <strong>не более 24 часов</strong> при комнатной температуре, <strong>до 72 часов</strong> при температуре не выше +5°C (п. 174 СанПиН 2.1.3684-21).
+					• Срок хранения: <strong>не более 24 часов</strong> при комнатной температуре, <strong>до 72 часов</strong> в холодильнике.
 				</span>
 			</div>
 

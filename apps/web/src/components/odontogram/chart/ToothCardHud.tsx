@@ -9,6 +9,7 @@ export interface ToothCardHudProps {
 	surfaces?: readonly string[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	rootResorptionStage?: RootResorptionStage | number | undefined;
+	useSurfaces?: boolean | undefined;
 	onQuickStateChange: (targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void;
 	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
 }
@@ -20,6 +21,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 	surfaces,
 	selectedTeeth,
 	rootResorptionStage,
+	useSurfaces,
 	onQuickStateChange,
 	onResorptionChange,
 }) => {
@@ -49,7 +51,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Caries", surfaces);
+							onQuickStateChange(getTargets(), "Caries", useSurfaces ? surfaces : undefined);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Кариес молочного зуба"
@@ -63,7 +65,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Filled", surfaces);
+							onQuickStateChange(getTargets(), "Filled", useSurfaces ? surfaces : undefined);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Пломба стеклоиономерным цементом (СИЦ / Композит)"
@@ -78,7 +80,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Pulpitis", surfaces);
+							onQuickStateChange(getTargets(), "Pulpitis", useSurfaces ? surfaces : undefined);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Витальная пульпотомия молочного зуба (Biodentine/MTA)"
@@ -92,7 +94,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Crown", surfaces);
+							onQuickStateChange(getTargets(), "Crown", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Эстетическая циркониевая коронка NuSmile / 3M"
@@ -126,7 +128,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Missing", surfaces);
+							onQuickStateChange(getTargets(), "Missing", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-slate-500/15 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Физиологическая смена зуба (выпал / эксфолиация)"
@@ -140,7 +142,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Healthy", surfaces);
+							onQuickStateChange(getTargets(), "Healthy", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Здоровый интактный молочный зуб"
@@ -157,7 +159,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Caries", surfaces);
+							onQuickStateChange(getTargets(), "Caries", useSurfaces ? surfaces : undefined);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Кариес"
@@ -171,7 +173,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Filled", surfaces);
+							onQuickStateChange(getTargets(), "Filled", useSurfaces ? surfaces : undefined);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Пломба"
@@ -185,7 +187,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Pulpitis", surfaces);
+							onQuickStateChange(getTargets(), "Pulpitis", useSurfaces ? surfaces : undefined);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Пульпит"
@@ -199,7 +201,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Crown", surfaces);
+							onQuickStateChange(getTargets(), "Crown", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Коронка"
@@ -213,7 +215,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Implant", surfaces);
+							onQuickStateChange(getTargets(), "Implant", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Имплантат"
@@ -227,7 +229,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Missing", surfaces);
+							onQuickStateChange(getTargets(), "Missing", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Удален"
@@ -241,7 +243,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onQuickStateChange(getTargets(), "Healthy", surfaces);
+							onQuickStateChange(getTargets(), "Healthy", []);
 						}}
 						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Здоров (Интактный)"

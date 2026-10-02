@@ -215,8 +215,8 @@ export function AutoclaveRegisterTab() {
 		<div className="sanpin-tab-content">
 			{/* Official Form Header for Print */}
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ</h2>
-				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»">Контроль работы стерилизаторов и термовременных индикаторов (Форма № 257/у)</p>
+				<h2>ЖУРНАЛ АВТОКЛАВА</h2>
+				<p title="Контроль работы стерилизаторов">Стерилизация инструментов и контроль качества</p>
 			</div>
 
 			{/* Compact 1-Click Autoclave Shift Cycle Strip (32px, 8px radius) */}
@@ -226,7 +226,7 @@ export function AutoclaveRegisterTab() {
 			>
 				<div className="flex items-center gap-2 min-w-0 shrink">
 					<span className="px-2 py-0.5 rounded-md bg-[var(--primary,#0284c7)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap">
-						СанПиН • Форма № 257/у
+						Стерилизация
 					</span>
 					<span className="text-xs font-semibold text-ink truncate">
 						Типовой регламент: 134°C, 2.1 бар, 5 мин (крафт-пакеты, индикатор 5 класса • 100% норма)
@@ -241,7 +241,7 @@ export function AutoclaveRegisterTab() {
 						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:bg-teal-700 inline-flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm w-full sm:w-auto shrink-0 whitespace-nowrap"
 						style={{ minHeight: "32px", height: "32px", borderRadius: "8px" }}
 						data-testid="banner-autoclave-quick-shift-btn"
-						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
+						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в журнал"
 					>
 						<Sparkles size={14} className="shrink-0" />
 						<span className="shrink-0 whitespace-nowrap hidden sm:inline">Запустить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
@@ -270,7 +270,12 @@ export function AutoclaveRegisterTab() {
 				onQuickShiftBatch={handleQuickShiftBatch}
 				isLoggingBatch={isLoggingBatch}
 				onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
-				onGenerateMonthlyForm257={handleGenerateMonthlyForm257}
+				onGenerateMonthlyForm257={() =>
+					handleGenerateMonthlyForm257(
+						deviceFilter !== "all" ? deviceFilter : undefined,
+						clinicDevices,
+					)
+				}
 				onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
 				onOpenKraftModal={() => setIsKraftModalOpen(true)}
 				onLoadMore={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}

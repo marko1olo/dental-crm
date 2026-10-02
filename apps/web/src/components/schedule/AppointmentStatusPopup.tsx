@@ -317,7 +317,7 @@ export function AppointmentHoverHud({
 							showToast(`Приём начат: ${appointmentPatientName} в кресле`, "success");
 						}}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-						title="Начать приём: перевести в статус «В кресле» и открыть карту приёма 043/у (1 клик)"
+						title="Начать приём: перевести в статус «В кресле» и открыть медицинскую карту (1 клик)"
 					>
 						<Stethoscope size={14} className="shrink-0" />
 						<span className="whitespace-nowrap">Начать приём</span>

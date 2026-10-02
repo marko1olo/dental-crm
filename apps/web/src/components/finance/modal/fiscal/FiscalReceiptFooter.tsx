@@ -109,7 +109,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							onClick={handlePrintSalesSlip}
 							className="h-9 px-3 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 							data-testid="btn-print-sales-slip-modal"
-							title="Напечатать товарный чек с номенклатурой 804н без фискализации в ОФД"
+							title="Напечатать товарный чек без отправки в налоговую"
 						>
 							<FileText size={14} className="text-teal-600" />
 							<span>Товарный чек</span>
@@ -126,7 +126,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							onClick={() => handleExecuteFiscalization()}
 							disabled={isFiscalizing}
 							data-testid="btn-execute-fiscalization btn-fiscalize-receipt"
-							title={isFiscalizing ? "Идет фискализация чека в ККТ..." : undefined}
+							title={isFiscalizing ? "Идет печать чека на кассе..." : undefined}
 							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 						>
 							<ShieldCheck size={16} />
@@ -285,7 +285,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							disabled={isFiscalizing}
 							title={
 								isFiscalizing
-									? "Идет фискализация возврата в ККТ..."
+									? "Идет печать чека возврата на кассе..."
 									: refundFiscalData.totalRub <= 0
 										? "Укажите сумму возврата больше 0 ₽"
 										: undefined
@@ -324,7 +324,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							type="button"
 							onClick={() => handleExecuteFiscalization()}
 							disabled={isFiscalizing}
-							title={isFiscalizing ? "Идет фискализация чека коррекции в ККТ..." : undefined}
+							title={isFiscalizing ? "Идет печать чека коррекции на кассе..." : undefined}
 							className="h-9 px-5 rounded-xl font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 						>
 							<ShieldCheck size={15} />

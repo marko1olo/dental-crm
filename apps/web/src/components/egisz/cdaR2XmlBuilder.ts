@@ -55,10 +55,7 @@ export function canonicalizeCdaXml(xml: string): string {
 	return sharedCanonicalizeCdaXml(xml, { disallowEnvelopedSignature: true });
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * INTERFACES & SCHEMAS
- * ═══════════════════════════════════════════════════════════════════════════ */
-
+// ─── INTERFACES & SCHEMAS ───────────────────────────────────────────────
 export interface EgiszClinicInfo {
 	clinicName: string;
 	clinicOid: string;
@@ -196,10 +193,7 @@ export interface FnsTaxCertificatePayload {
 	moSignature?: GostSignatureInfo | undefined;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * 1. DENTAL CDA R2 XML GENERATOR (СЭМД 101 / 102 / 105 / 302 / 303 / 043/У)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
+// ─── 1. DENTAL CDA R2 XML GENERATOR (СЭМД 101/102/105/302/303/043/У) ───
 export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): string {
 	const docDef =
 		EGISZ_DENTAL_SEMD_TYPES[payload.docTypeCode as EgiszDentalSemdCode] || {
@@ -333,14 +327,18 @@ ${toothObservationsXml}
 			: [{ icd10Code: "Z01.2", icd10Name: "Стоматологическое обследование", isPrimary: true }];
 
 	const diagnosesEntriesXml = diagnosesList
-		.map((diag) => `\t\t\t\t\t<entry>
+		.map((diag) => {
+			const dCode = (diag.icd10Code || "").trim() || "Z01.2";
+			const dName = (diag.icd10Name || diag.diagnosisName || "").trim() || "Стоматологическое обследование";
+			return `\t\t\t\t\t<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<code code="282291009" codeSystem="2.16.840.1.113883.6.96" displayName="${diag.isPrimary ? "Основной клинический диагноз" : "Сопутствующий диагноз"}"/>
 							<statusCode code="completed"/>
-							<value xsi:type="CD" code="${escapeXml(diag.icd10Code)}" codeSystem="${EGISZ_REMD_OIDS.ICD10}" codeSystemName="МКБ-10" displayName="${escapeXml(diag.icd10Name)}"/>
+							<value xsi:type="CD" code="${escapeXml(dCode)}" codeSystem="${EGISZ_REMD_OIDS.ICD10}" codeSystemName="МКБ-10" displayName="${escapeXml(dName)}"/>
 							${diag.tooth ? `<targetSiteCode code="${escapeXml(String(diag.tooth))}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="Зуб ${escapeXml(String(diag.tooth))}"/>` : ""}
 						</observation>
-					</entry>`)
+					</entry>`;
+		})
 		.join("\n");
 
 	const diagnosesSection = `
@@ -350,7 +348,7 @@ ${toothObservationsXml}
 					<title>Клинический диагноз</title>
 					<text>
 						<list>
-							${diagnosesList.map((d) => `<item>${d.isPrimary ? "<strong>[Основной]</strong> " : "[Сопутствующий] "}${escapeXml(d.icd10Code)} — ${escapeXml(d.icd10Name)}${d.tooth ? ` (зуб ${escapeXml(String(d.tooth))})` : ""}</item>`).join("\n\t\t\t\t\t\t\t")}
+							${diagnosesList.map((d) => `<item>${d.isPrimary ? "<strong>[Основной]</strong> " : "[Сопутствующий] "}${escapeXml((d.icd10Code || "").trim() || "Z01.2")} — ${escapeXml((d.icd10Name || d.diagnosisName || "").trim() || "Стоматологическое обследование")}${d.tooth ? ` (зуб ${escapeXml(String(d.tooth))})` : ""}</item>`).join("\n\t\t\t\t\t\t\t")}
 						</list>
 					</text>
 ${diagnosesEntriesXml}
@@ -364,14 +362,18 @@ ${diagnosesEntriesXml}
 			: [{ code: "B01.065.001", name: "Прием (осмотр, консультация) врача-стоматолога-терапевта первичный" }];
 
 	const proceduresEntriesXml = proceduresList
-		.map((proc) => `\t\t\t\t\t<entry>
+		.map((proc) => {
+			const pCode = (proc.code || "").trim() || "B01.065.001";
+			const pName = (proc.name || "").trim() || "Прием (осмотр, консультация) врача-стоматолога";
+			return `\t\t\t\t\t<entry>
 						<procedure classCode="PROC" moodCode="EVN">
-							<code code="${escapeXml(proc.code)}" codeSystem="${EGISZ_REMD_OIDS.NOMENKLATURA_804N}" codeSystemName="Номенклатура медицинских услуг 804н" displayName="${escapeXml(proc.name)}"/>
+							<code code="${escapeXml(pCode)}" codeSystem="${EGISZ_REMD_OIDS.NOMENKLATURA_804N}" codeSystemName="Номенклатура медицинских услуг 804н" displayName="${escapeXml(pName)}"/>
 							<statusCode code="completed"/>
 							<effectiveTime value="${visitTime}"/>
 							${proc.tooth ? `<targetSiteCode code="${escapeXml(String(proc.tooth))}" codeSystem="${EGISZ_REMD_OIDS.DENTAL_TOOTH}" displayName="Зуб ${escapeXml(String(proc.tooth))}"/>` : ""}
 						</procedure>
-					</entry>`)
+					</entry>`;
+		})
 		.join("\n");
 
 	const proceduresSection = `
@@ -382,7 +384,7 @@ ${diagnosesEntriesXml}
 					<text>
 						${payload.treatmentProtocolDescription ? `<paragraph><strong>Описание вмешательства:</strong> ${escapeXml(payload.treatmentProtocolDescription)}</paragraph>` : ""}
 						<list>
-							${proceduresList.map((p) => `<item>${escapeXml(p.code)} — ${escapeXml(p.name)}${p.tooth ? ` (зуб ${escapeXml(String(p.tooth))})` : ""}</item>`).join("\n\t\t\t\t\t\t\t")}
+							${proceduresList.map((p) => `<item>${escapeXml((p.code || "").trim() || "B01.065.001")} — ${escapeXml((p.name || "").trim() || "Услуга")}${p.tooth ? ` (зуб ${escapeXml(String(p.tooth))})` : ""}</item>`).join("\n\t\t\t\t\t\t\t")}
 						</list>
 					</text>
 ${proceduresEntriesXml}
@@ -428,7 +430,7 @@ ${proceduresEntriesXml}
 			<patient>
 				<name>
 					<family>${escapeXml(patFamily)}</family>
-					<given>${escapeXml(patGiven)}</given>
+					${patGiven ? `<given>${escapeXml(patGiven)}</given>` : `<given nullFlavor="NI"/>`}
 					${patPatronymic ? `<identity:Patronymic>${escapeXml(patPatronymic)}</identity:Patronymic>` : ""}
 				</name>
 				<administrativeGenderCode code="${genderCode}" codeSystem="${EGISZ_REMD_OIDS.GENDER}" codeSystemName="Пол" displayName="${escapeXml(genderLabel)}"/>
@@ -446,7 +448,7 @@ ${proceduresEntriesXml}
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(docFamily)}</family>
-					<given>${escapeXml(docGiven)}</given>
+					${docGiven ? `<given>${escapeXml(docGiven)}</given>` : `<given nullFlavor="NI"/>`}
 					${docPatronymic ? `<identity:Patronymic>${escapeXml(docPatronymic)}</identity:Patronymic>` : ""}
 				</name>
 			</assignedPerson>
@@ -482,7 +484,7 @@ ${proceduresEntriesXml}
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(chiefFamily)}</family>
-					<given>${escapeXml(chiefGiven)}</given>
+					${chiefGiven ? `<given>${escapeXml(chiefGiven)}</given>` : `<given nullFlavor="NI"/>`}
 					${chiefPatronymic ? `<identity:Patronymic>${escapeXml(chiefPatronymic)}</identity:Patronymic>` : ""}
 				</name>
 			</assignedPerson>
@@ -513,10 +515,7 @@ ${proceduresEntriesXml}
 	return canonicalizeCdaXml(rawXml);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * 2. FNS TAX DEDUCTION CERTIFICATE XML BUILDER (КНД 1151156 / ЕД-7-11/755@)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
+// ─── 2. FNS TAX DEDUCTION CERTIFICATE XML BUILDER (КНД 1151156 / ЕД-7-11/755@) ───
 export function generateFnsTaxCertificateXml(payload: FnsTaxCertificatePayload): string {
 	const docDate = payload.documentDate instanceof Date ? payload.documentDate : new Date(payload.documentDate);
 	const validDocDate = Number.isNaN(docDate.getTime()) ? new Date() : docDate;
@@ -672,6 +671,7 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 		if (!cleanXml.includes("<recordTarget")) errors.push("В CDA XML отсутствуют сведения о пациенте <recordTarget>");
 		if (!cleanXml.includes("<author")) errors.push("В CDA XML отсутствуют сведения об авторе (враче) <author>");
 		if (!cleanXml.includes("<custodian")) errors.push("В CDA XML отсутствуют сведения об организации <custodian>");
+		if (!cleanXml.includes("<legalAuthenticator")) errors.push("В CDA XML отсутствуют сведения о заверителе <legalAuthenticator>");
 		if (!cleanXml.includes("<structuredBody")) errors.push("В CDA XML отсутствует тело документа <structuredBody>");
 	} else if (cleanXml.includes("<Файл") && cleanXml.includes('КНД="1151156"')) {
 		docTypeDetected = "fns_knd_1151156";
@@ -693,10 +693,7 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 	};
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * 4. CRYPTO PACKAGING & GOST SIGNATURE STAMPS (63-ФЗ / ГОСТ Р 7.0.97-2016)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
+// ─── 4. CRYPTO PACKAGING & GOST SIGNATURE STAMPS (63-ФЗ / ГОСТ Р 7.0.97-2016) ───
 export function generateGostXmlSignatureBlock(sig: GostSignatureInfo, documentRef = ""): string {
 	const is512 =
 		sig.algorithmOid === "1.2.643.7.1.1.1.2" ||

@@ -85,14 +85,14 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-						Подписание СЭМД УКЭП (Приказ Минздрава № 947н, 63-ФЗ)
+						Подписание карты электронной подписью врача
 					</div>
 					<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "var(--primary-strong)" }}>
 						КриптоПро CSP
 					</span>
 				</div>
 				<div style={{ fontSize: "0.8125rem", color: "var(--muted)", marginBottom: "1rem" }}>
-					Подписание отсоединенной подписью CAdES-BES (ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012 / 63-ФЗ)
+					Подписание усиленной квалифицированной электронной подписью (УКЭП)
 				</div>
 
 				{/* View Submodes */}
@@ -111,7 +111,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							cursor: "pointer",
 						}}
 					>
-						Печатный бланк СЭМД ф. 043/у
+						Печатный бланк медицинской карты
 					</button>
 					<button
 						type="button"
@@ -127,7 +127,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							cursor: "pointer",
 						}}
 					>
-						HL7 CDA R2 XML
+						Электронный формат (XML)
 					</button>
 				</div>
 
@@ -153,7 +153,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Key size={16} />
-							Подписать УКЭП врача
+							Подписать электронной подписью
 						</button>
 						<button
 							type="button"
@@ -174,7 +174,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Send size={16} />
-							Отправить в РЭМД ЕГИСЗ
+							Отправить в Минздрав
 						</button>
 						<button
 							type="button"
@@ -195,7 +195,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Clock size={14} />
-							Отложить в очередь ЕГИСЗ (не блокировать приём)
+							Отложить отправку (не блокировать приём)
 						</button>
 					</div>
 
@@ -220,7 +220,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Building2 size={14} />
-							Подписать УКЭП организации
+							Подписать подписью клиники
 						</button>
 						<button
 							type="button"
@@ -283,7 +283,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<CheckCircle2 size={14} />
-							Валидация XML CDA
+							Проверка XML
 						</button>
 					</div>
 				</div>
@@ -292,10 +292,10 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 					<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
 						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--warning)", fontSize: "0.875rem" }}>
 							<AlertTriangle size={18} />
-							Плагин КриптоПро CSP не установлен / Сертификат не выбран
+							Электронная подпись не обнаружена / Сертификат не выбран
 						</div>
 						<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", lineHeight: 1.5 }}>
-							Для наложения УКЭП установите расширение «КриптоПро ЭЦП Browser Plug-in» и подключите ключевой носитель (Рутокен/JaCarta), либо загрузите открепленный файл подписи (.sig / .p7s).
+							Для подписания подключите токен с электронной подписью врача, либо загрузите открепленный файл подписи (.sig / .p7s).
 						</p>
 						<div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", marginTop: "0.25rem" }}>
 							<button
@@ -336,7 +336,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Clock size={14} />
-								Отложить в очередь ЕГИСЗ (не блокировать приём)
+								Отложить отправку (не блокировать приём)
 							</button>
 							<label
 								style={{
@@ -367,7 +367,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 					<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 						<div>
 							<label style={{ fontSize: "0.75rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
-								Выберите сертификат УКЭП (ГОСТ Р 34.10-2012):
+								Выберите сертификат электронной подписи:
 							</label>
 							<select
 								value={selectedCert?.thumbprint || ""}
@@ -413,7 +413,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Key size={18} />
-								{isSigning ? "Выполняется подписание..." : "Подписать документ УКЭП"}
+								{isSigning ? "Выполняется подписание..." : "Подписать электронной подписью"}
 							</button>
 							<button
 								type="button"
@@ -434,7 +434,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Clock size={14} />
-								Отложить в очередь ЕГИСЗ
+								Отложить отправку (не блокировать приём)
 							</button>
 							<label
 								style={{
@@ -479,7 +479,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Building2 size={14} />
-								{isSigning ? "Подписание МО..." : "Подписать УКЭП МО"}
+								{isSigning ? "Подписание..." : "Подписать подписью клиники"}
 							</button>
 							<label
 								style={{
@@ -497,7 +497,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Building2 size={14} />
-								Загрузить .sig (МО)
+								Загрузить .sig (клиника)
 								<input
 									type="file"
 									accept=".sig,.p7s,.sgn,.bin"
@@ -514,13 +514,13 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 			{(doctorSig || moSig) && (
 				<div className="gost-stamps-wrapper" style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)", display: "flex", flexDirection: "column", gap: "1rem" }}>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-						Визуальный штамп электронной подписи (ГОСТ Р 7.0.97-2016)
+						Визуальный штамп электронной подписи
 					</div>
 					<div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
 						{doctorSig && (
 							<div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 								<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)" }}>
-									Подпись лечащего врача (УКЭП):
+									Подпись лечащего врача:
 								</div>
 								<div
 									dangerouslySetInnerHTML={{
@@ -538,7 +538,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 						{moSig && (
 							<div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 								<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)" }}>
-									Подпись медицинской организации (УКЭП МО):
+									Подпись клиники (организации):
 								</div>
 								<div
 									dangerouslySetInnerHTML={{

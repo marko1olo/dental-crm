@@ -247,7 +247,7 @@ ${observations}
 					${proceduresList.map((p) => `
 					<entry>
 						<procedure classCode="PROC" moodCode="EVN">
-							<code code="${escapeXml(p.code)}" codeSystem="${EGISZ_STANDARD_OIDS.V001_NOMENKLATURA}" codeSystemName="Номенклатура медицинских услуг V001" displayName="${escapeXml(p.name)}"/>
+							<code code="${escapeXml(p.code)}" codeSystem="${EGISZ_STANDARD_OIDS.V001_NOMENKLATURA}" codeSystemName="Номенклатура медицинских услуг 804н" displayName="${escapeXml(p.name)}"/>
 							<statusCode code="completed"/>
 							<effectiveTime value="${visitTime}"/>
 							${p.tooth ? `<targetSiteCode code="${escapeXml(String(p.tooth))}" codeSystem="${EGISZ_STANDARD_OIDS.DENTAL_TOOTH}" displayName="Зуб ${escapeXml(String(p.tooth))}"/>` : ""}
@@ -257,7 +257,7 @@ ${observations}
 			</component>`;
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
-<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:identity="urn:hl7-ru:identity" xmlns:address="urn:hl7-ru:address" xmlns:fias="urn:hl7-ru:fias">
 	<realmCode code="RU"/>
 	<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
 	<templateId root="${docDef.templateRoot}"/>
@@ -281,8 +281,8 @@ ${observations}
 			<patient>
 				<name>
 					<family>${escapeXml(patientLast)}</family>
-					<given>${escapeXml(patientFirst)}</given>
-					${patientMiddle ? `<given>${escapeXml(patientMiddle)}</given>` : ""}
+					${patientFirst ? `<given>${escapeXml(patientFirst)}</given>` : `<given nullFlavor="NI"/>`}
+					${patientMiddle ? `<identity:Patronymic>${escapeXml(patientMiddle)}</identity:Patronymic>` : ""}
 				</name>
 				<administrativeGenderCode code="${genderCode}" codeSystem="${EGISZ_STANDARD_OIDS.GENDER}" codeSystemName="Пол пациента" displayName="${escapeXml(genderLabel)}"/>
 				<birthTime value="${birthTime}"/>
@@ -303,8 +303,8 @@ ${observations}
 			<assignedPerson>
 				<name>
 					<family>${escapeXml(doctorLast)}</family>
-					<given>${escapeXml(doctorFirst)}</given>
-					${doctorMiddle ? `<given>${escapeXml(doctorMiddle)}</given>` : ""}
+					${doctorFirst ? `<given>${escapeXml(doctorFirst)}</given>` : `<given nullFlavor="NI"/>`}
+					${doctorMiddle ? `<identity:Patronymic>${escapeXml(doctorMiddle)}</identity:Patronymic>` : ""}
 				</name>
 			</assignedPerson>
 			<representedOrganization>
@@ -328,6 +328,26 @@ ${observations}
 			</representedCustodianOrganization>
 		</assignedCustodian>
 	</custodian>
+
+	<legalAuthenticator>
+		<time value="${effectiveTime}"/>
+		<signatureCode code="S"/>
+		<assignedEntity>
+			<id root="${EGISZ_STANDARD_OIDS.SNILS}" extension="${escapeXml(normalizeSnils(data.doctorSnils || "00000000000"))}"/>
+			<code code="15" codeSystem="${EGISZ_STANDARD_OIDS.MEDICAL_POSITIONS}" codeSystemName="Должности медработников" displayName="Главный врач"/>
+			<assignedPerson>
+				<name>
+					<family>${escapeXml(doctorLast)}</family>
+					${doctorFirst ? `<given>${escapeXml(doctorFirst)}</given>` : `<given nullFlavor="NI"/>`}
+					${doctorMiddle ? `<identity:Patronymic>${escapeXml(doctorMiddle)}</identity:Patronymic>` : ""}
+				</name>
+			</assignedPerson>
+			<representedOrganization>
+				<id root="${EGISZ_STANDARD_OIDS.FRMO_MO_ROOT}" extension="${escapeXml(docRoot)}"/>
+				<name>${escapeXml(data.clinicName)}</name>
+			</representedOrganization>
+		</assignedEntity>
+	</legalAuthenticator>
 
 	<componentOf>
 		<encompassingEncounter>
@@ -575,6 +595,20 @@ export function validateCdaSemanticRules(
 			: "УКЭП врача еще не наложена. Для отправки в РЭМД ЕГИСЗ требуется подписание.",
 		details: `ГОСТ Р 34.10-2012 (${EGISZ_STANDARD_OIDS.GOST_3410_2012_256}) PKCS#7 detached`,
 		xpathOrOid: "package/doctorSignature",
+	});
+
+	// 12. Legal Authenticator (Главный врач / МО)
+	const hasLegalAuth = xml.includes("<legalAuthenticator");
+	rules.push({
+		id: "RULE_LEGAL_AUTHENTICATOR",
+		name: "Сведения о лице, заверившем документ (legalAuthenticator)",
+		category: "header",
+		status: hasLegalAuth ? "passed" : "failed",
+		message: hasLegalAuth
+			? "Блок заверителя документа (руководитель МО / главный врач) присутствует в CDA XML."
+			: "В структуре CDA отсутствует обязательный блок <legalAuthenticator> (требование ЕГИСЗ РЭМД).",
+		details: "HL7 CDA R2 legalAuthenticator + подпись МО",
+		xpathOrOid: "ClinicalDocument/legalAuthenticator",
 	});
 
 	const passedCount = rules.filter((r) => r.status === "passed").length;

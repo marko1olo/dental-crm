@@ -407,6 +407,10 @@ export function HardwareSettingsTab() {
 													type="button"
 													className="hw-btn-compact"
 													aria-label={isExpanded ? "Свернуть настройки" : "Развернуть настройки"}
+													onClick={(e) => {
+														e.stopPropagation();
+														setActiveDeviceId(isExpanded ? null : dev.id);
+													}}
 												>
 													{isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
 												</button>

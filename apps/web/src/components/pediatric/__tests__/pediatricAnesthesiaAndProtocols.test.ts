@@ -270,3 +270,53 @@ describe("Subagent 4: Pediatric Anesthesia Somatic Contraindications & Allergies
 		expect(hasArticaineMention).toBe(true);
 	});
 });
+
+describe("Subagent 4: Mandate 8e Doctor Autonomy Invariant (No Disabled Blocks)", () => {
+	it("preserves full Form 043/u clinical protocol text with warning note when overdose is detected", () => {
+		const drug = PEDIATRIC_ANESTHETIC_SPECS.articaine_4;
+		const weightKg = 20;
+		const carpules = 2.0; // 136 mg > 100 mg MRD
+		const mrdPerKg = drug.maxDoseMgPerKg;
+		const maxAllowedTotalDoseMg = Number(Math.min(drug.absoluteMaxDoseMg, weightKg * mrdPerKg).toFixed(1));
+		const singleCarpuleDoseMg = drug.mgPerCarpule;
+		const totalVolumeMl = Number((carpules * drug.standardCarpuleVolumeMl).toFixed(2));
+		const totalDoseAdministeredMg = Number((carpules * singleCarpuleDoseMg).toFixed(1));
+		const maxSafeCarpulesCount = Number((maxAllowedTotalDoseMg / singleCarpuleDoseMg).toFixed(2));
+		const doseUtilizationPercent = Number(((totalDoseAdministeredMg / (maxAllowedTotalDoseMg || 1)) * 100).toFixed(1));
+		const isOverdose = totalDoseAdministeredMg > maxAllowedTotalDoseMg;
+
+		const safetyWarningLine = isOverdose
+			? `\n• ⚠️ ВНИМАНИЕ: Превышение расчетной дозы (${totalDoseAdministeredMg} мг > МРД ${maxAllowedTotalDoseMg} мг на ${weightKg} кг). Введено по клиническим показаниям под личную ответственность врача.`
+			: "";
+
+		const formattedText043 = [
+			`Анестезиологическое пособие: ${drug.nameRu}.`,
+			`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
+			`• Вес ребенка: ${weightKg} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
+			`• Расход дозы: ${doseUtilizationPercent}% (макс. ${maxSafeCarpulesCount} карп.) ${isOverdose ? "— ⚠️ ПРЕВЫШЕНИЕ МРД" : "— ДОЗА БЕЗОПАСНА"}.`,
+			`• Вазоконстриктор: ${drug.vasoconstrictorRu}.${safetyWarningLine}`,
+		].join("\n");
+
+		expect(isOverdose).toBe(true);
+		expect(formattedText043).toContain("Анестезиологическое пособие: Артикаин 4%");
+		expect(formattedText043).toContain("Введено: 2 карп.");
+		expect(formattedText043).toContain("136 мг активного вещества");
+		expect(formattedText043).toContain("ПРЕВЫШЕНИЕ МРД");
+		expect(formattedText043).toContain("под личную ответственность врача");
+		expect(formattedText043).not.toContain("[БЛОКИРОВКА АНЕСТЕЗИИ");
+	});
+
+	it("calculates 1-click step-down dose to safe margin (0.25 carpule step)", () => {
+		const drug = PEDIATRIC_ANESTHETIC_SPECS.articaine_4;
+		const weightKg = 20; // max allowed = 100 mg
+		const maxAllowedMg = weightKg * drug.maxDoseMgPerKg;
+		const maxSafeCarpules = maxAllowedMg / drug.mgPerCarpule; // 100 / 68 = 1.4705
+
+		const safeSteppedDownCarpules = Math.floor(maxSafeCarpules * 4) / 4; // 1.25
+		const steppedDownDoseMg = safeSteppedDownCarpules * drug.mgPerCarpule; // 1.25 * 68 = 85 mg
+
+		expect(safeSteppedDownCarpules).toBe(1.25);
+		expect(steppedDownDoseMg).toBeLessThan(maxAllowedMg);
+		expect(steppedDownDoseMg).toBe(85.0);
+	});
+});

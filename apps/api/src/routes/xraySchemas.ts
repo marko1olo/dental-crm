@@ -48,6 +48,8 @@ export const _xrayScanResponseSchema = z.object({
 	capturedAt: z.string(),
 	createdAt: z.string(),
 	hasImage: z.boolean(),
+	fileUrl: z.string().optional(),
+	storagePath: z.string().nullable().optional(),
 });
 
 /** Целое из окружения с зажимом в границы. Ноль хардкода сроков в коде. */
@@ -200,6 +202,7 @@ export function startDetachedXrayAnalysis(job: XrayAnalysisJob): void {
 export function scanToResponse(
 	scan: typeof xrayScans.$inferSelect,
 	includeImage = false,
+	resolvedImageDataUri?: string | null,
 ) {
 	return {
 		id: scan.id,
@@ -222,7 +225,11 @@ export function scanToResponse(
 		capturedAt: scan.capturedAt.toISOString(),
 		createdAt: scan.createdAt.toISOString(),
 		hasImage: !!(scan.imageDataUri || scan.storagePath),
-		...(includeImage ? { imageDataUri: scan.imageDataUri ?? null } : {}),
+		fileUrl: `/api/xray/scans/${scan.id}/file`,
+		storagePath: scan.storagePath ?? null,
+		...(includeImage
+			? { imageDataUri: resolvedImageDataUri ?? scan.imageDataUri ?? null }
+			: {}),
 	};
 }
 

@@ -24,6 +24,8 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
+import { VisitProtocolView } from "../VisitProtocolView";
+import { DentalForm043 } from "../../icons/DentalIcons";
 import {
 	STOMX_MARKETING_SOURCES_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
@@ -116,6 +118,8 @@ export interface PatientVisitHistoryItem {
 export interface PatientGeneralInfo {
 	id?: string | null | undefined;
 	fullName?: string | null | undefined;
+	cardNumber?: string | null | undefined;
+	medicalCardNumber?: string | null | undefined;
 	phone?: string | null | undefined;
 	birthDate?: string | null | undefined;
 	gender?: "male" | "female" | "other" | string | null | undefined;
@@ -224,6 +228,8 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 			insurance: false,
 			notes: false,
 		});
+
+		const [viewingProtocolVisit, setViewingProtocolVisit] = useState<PatientVisitHistoryItem | null>(null);
 
 		const toggleAccordion = useCallback((key: "passport" | "insurance" | "notes") => {
 			setAccordionsOpen((prev) => ({
@@ -1700,6 +1706,17 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 
 												<button
 													type="button"
+													data-testid={`btn-open-visit-protocol-${visit.id}`}
+													onClick={() => setViewingProtocolVisit(visit)}
+													className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--glass-hover)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1 shrink-0 transition-all shadow-2xs"
+													title="Протокол приёма"
+												>
+													<DentalForm043 className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+													<span>Протокол</span>
+												</button>
+
+												<button
+													type="button"
 													onClick={() => onNavigateToVisit?.(visit.id)}
 													className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1 shrink-0 transition-all shadow-2xs"
 												>
@@ -1918,6 +1935,20 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							</div>
 						</div>
 					</div>
+				)}
+
+				{viewingProtocolVisit && (
+					<VisitProtocolView
+						isOpen={true}
+						onClose={() => setViewingProtocolVisit(null)}
+						visitId={viewingProtocolVisit.id}
+						patientId={patient?.id}
+						patientName={patient?.fullName}
+						doctorName={viewingProtocolVisit.doctorName}
+						initialTooth={viewingProtocolVisit.toothNumber}
+						initialDate={viewingProtocolVisit.date}
+						initialDiagnosis={viewingProtocolVisit.services}
+					/>
 				)}
 			</div>
 		);

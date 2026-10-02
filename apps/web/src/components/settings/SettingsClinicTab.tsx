@@ -21,7 +21,7 @@ import {
 	Plus,
 	Users,
 } from "lucide-react";
-import { type ChangeEvent, useState } from "react";
+import React, { type ChangeEvent, useState } from "react";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -35,6 +35,7 @@ import { showToast } from "../GlobalToast";
 import { SettingsClinicChairsSection } from "./clinic/SettingsClinicChairsSection";
 import { SettingsClinicLegalSection } from "./clinic/SettingsClinicLegalSection";
 import { SettingsClinicScheduleSection } from "./clinic/SettingsClinicScheduleSection";
+import { DoctorCbctPreferencesCard } from "./DoctorCbctPreferencesCard";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type WeekdayOption = { value: number; label: string };
@@ -521,6 +522,9 @@ export function SettingsClinicTab({
 						</button>
 					</div>
 				</article>
+
+				{/* 🔬 Параметры КЛКТ по умолчанию и интерактивный тюнер */}
+				<DoctorCbctPreferencesCard />
 
 				{/* Chairs & Installation Shifts Panel */}
 				<SettingsClinicChairsSection

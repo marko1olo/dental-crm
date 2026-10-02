@@ -109,7 +109,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 			<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
 				<div className="text-xs text-[var(--muted,#64748b)] font-bold flex items-center gap-1.5">
 					<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span>Кассовая операция 54-ФЗ</span>
+					<span>Кассовая операция</span>
 				</div>
 
 				{/* Secondary Actions / Overflow Menu Button («...») */}
@@ -128,7 +128,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 					{isOverflowMenuOpen && (
 						<div className="absolute right-0 top-full mt-1.5 w-72 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] shadow-2xl p-2 z-40 space-y-1 text-xs">
 							<div className="px-2.5 py-1 text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
-								Вторичные операции 54-ФЗ
+								Дополнительные операции
 							</div>
 							<button
 								type="button"
@@ -140,7 +140,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 								data-testid="overflow-print-sales-slip"
 							>
 								<FileText size={14} className="text-teal-600 shrink-0" />
-								<span>Товарный чек (без ОФД)</span>
+								<span>Товарный чек (без отправки в налоговую)</span>
 							</button>
 							<button
 								type="button"
@@ -221,7 +221,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 					>
 						{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
 							<option key={cat.id} value={cat.alias}>
-								{cat.name} (ФФД: {cat.ffdCalculationSubject === 4 ? "Услуга" : cat.ffdCalculationSubject === 1 ? "Товар" : cat.ffdCalculationSubject === 3 ? "Аванс" : "Внереализ."})
+								{cat.name} ({cat.ffdCalculationSubject === 4 ? "Услуга" : cat.ffdCalculationSubject === 1 ? "Товар" : cat.ffdCalculationSubject === 3 ? "Аванс" : "Внереализ."})
 							</option>
 						))}
 					</select>
@@ -273,7 +273,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
 						<ShoppingBag size={14} className="text-teal-600 dark:text-teal-400" />
-						<span>Витрина ресепшена (54-ФЗ НДС 20%):</span>
+						<span>Сопутствующие товары (зубные пасты, щетки):</span>
 					</div>
 					<button
 						type="button"
@@ -428,14 +428,14 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 					<div className="flex items-center justify-between text-xs">
 						<span className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
 							<ShieldCheck size={16} className="text-amber-600" />
-							Маркировка Честный ЗНАК / МДЛП (Тег 1162 / 2000)
+							Маркированные препараты (Честный ЗНАК)
 						</span>
 						<span className="px-2.5 py-1 rounded text-xs font-mono font-bold bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100">
-							Обязательно 54-ФЗ
+							Маркировка
 						</span>
 					</div>
 					<p className="text-xs text-amber-800 dark:text-amber-300">
-						В счете присутствуют лекарственные препараты / имплантаты, подлежащие выводу из оборота через ККТ.
+						В счете присутствуют лекарственные препараты / имплантаты, подлежащие списанию при продаже.
 					</p>
 					<div className="space-y-2 pt-1">
 						{fiscalData.items
@@ -613,7 +613,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 							<span>Округление до сотен: копейки списаны в пользу пациента. К оплате ровно {totalSumRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 						<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">
-							54-ФЗ / Точность до копейки
+							Точность до копейки
 						</span>
 					</div>
 				)}

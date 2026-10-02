@@ -143,7 +143,7 @@ export function DoctorForm043TemplatesSection() {
 
 				<div>
 					<label className="text-xs font-bold text-[var(--ink)] block mb-1">
-						Тестовый диагноз МКБ-10:
+						Тестовый диагноз:
 					</label>
 					<input
 						type="text"

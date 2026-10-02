@@ -555,3 +555,27 @@ test("parseDashboardPayload: парсинг расширенных потоко�
 	assert.equal(doc.clinicMarginRub, 123_750);
 });
 
+test("computeLocalAnalyticsData: поддержка amountRub и amountKopecks и отсечение фантомных когорт при невалидных датах", () => {
+	const data = computeLocalAnalyticsData({
+		patients: [{ id: "p-1" }],
+		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: "2026-04-10T10:00:00.000Z", status: "completed" }],
+		payments: [
+			{ id: "pay-1", amountRub: 12_500, method: "card", doctorUserId: "doc-1", paidAt: "2026-04-10T11:00:00.000Z" },
+			{ id: "pay-2", amountKopecks: 750_000, method: "cash", doctorUserId: "doc-1", paidAt: "2026-04-11T12:00:00.000Z" },
+			// Платёж с поврежденной датой не должен создавать фантомных когорт вида "2026-08"
+			{ id: "pay-3", amount: 1_000, method: "card", doctorUserId: "doc-1", createdAt: "invalid-date" },
+		],
+		staff: [{ id: "doc-1", name: "Доктор Петров", role: "doctor" }],
+	});
+
+	assert.equal(data.kpis.totalRevenue, 21_000, "12500 + 7500 + 1000 = 21000 руб");
+	assert.equal(data.kpis.cardRevenue, 13_500, "12500 + 1000 = 13500 руб");
+	assert.equal(data.kpis.cashRevenue, 7_500, "750000 коп = 7500 руб");
+
+	// Когорта должна быть строго одна: 2026-04 (без фантомного 2026-08)
+	assert.equal(data.cohortLtvJson.length, 1);
+	assert.equal(data.cohortLtvJson[0]?.cohort, "2026-04");
+	assert.equal(data.cohortLtvJson[0]?.["Month 12"], 20_000, "12500 + 7500 = 20000 руб в когорте 2026-04");
+});
+
+

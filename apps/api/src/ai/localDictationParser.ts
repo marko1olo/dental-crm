@@ -1,6 +1,15 @@
 import type { ParserContext } from "./dictationParser.js";
+import {
+	extractFdiTeethNumbers,
+	extractToothSurfaces,
+	matchDentalDiagnosis,
+	extractDentalAnesthesia,
+	extractDentalProcedures,
+	synthesizeSoapRecord,
+	type ClinicalToothState,
+} from "./dentalSpeechGrammar.js";
 
-interface ToothUpdate {
+export interface ToothUpdate {
 	code: string;
 	state:
 		| "treatment"
@@ -11,15 +20,25 @@ interface ToothUpdate {
 		| "prosthetics"
 		| "implant"
 		| "calculus";
+	surfaces?: string[] | undefined;
+	clinicalState?: ClinicalToothState | undefined;
+	diagnosisCode?: string | undefined;
+	diagnosisTitle?: string | undefined;
 }
 
-interface EmkUpdates {
-	complaint?: string;
-	anamnesis?: string;
-	objectiveStatus?: string;
-	diagnosis?: string;
-	treatmentPlan?: string;
-	costRub?: number;
+export interface EmkUpdates {
+	complaint?: string | undefined;
+	anamnesis?: string | undefined;
+	objectiveStatus?: string | undefined;
+	diagnosis?: string | undefined;
+	diagnosisIcd10?: string | undefined;
+	treatmentPlan?: string | undefined;
+	recommendations?: string | undefined;
+	costRub?: number | undefined;
+	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
+	anesthesia?: any;
+	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
+	procedures?: any[] | undefined;
 }
 
 export interface SmartAction {
@@ -34,6 +53,12 @@ export interface SmartAction {
 		| "complex_llm_fallback";
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	payload?: any;
+	toothUpdates?: ToothUpdate[] | undefined;
+	emkUpdates?: EmkUpdates | undefined;
+	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
+	anesthesia?: any;
+	// biome-ignore lint/suspicious/noExplicitAny: clinical entity
+	procedures?: any[] | undefined;
 }
 
 // ---- HELPER DICTIONARIES & REGEX ----
@@ -245,6 +270,39 @@ function extractTime(text: string): string | null {
 		if (hourMap[word]) return `${hourMap[word]}:${isQuarter ? "15" : "30"}`;
 	}
 
+	// Match word pairs like 'в пятнадцать тридцать', 'в десять сорок пять'
+	const prepRegex = /(?:^|[\s,.:;])(в|на)\s+/gi;
+	let pMatch: RegExpExecArray | null;
+	while ((pMatch = prepRegex.exec(text)) !== null) {
+		const afterStr = text.slice(pMatch.index + pMatch[0].length).trim();
+		const rawWords = afterStr.split(/\s+/).slice(0, 3);
+		const word0 = rawWords[0];
+		const word1 = rawWords[1];
+		if (word0 && word1) {
+			const w0 = word0.replace(/[^\wа-яё]/gi, "");
+			const w1 = word1.replace(/[^\wа-яё]/gi, "");
+			let h: number | null = parseInt(w0, 10);
+			if (Number.isNaN(h)) h = parseWordNumber(w0);
+			let min: number | null = parseInt(w1, 10);
+			if (Number.isNaN(min)) min = parseWordNumber(w1);
+
+			const word2 = rawWords[2];
+			if (word2) {
+				const w2 = word2.replace(/[^\wа-яё]/gi, "");
+				const min2 = parseWordNumber(w2);
+				if (min !== null && min2 !== null && min >= 20 && min <= 50 && min2 >= 1 && min2 <= 9) {
+					min = min + min2;
+				}
+			}
+
+			if (h !== null && h >= 0 && h <= 24 && min !== null && min >= 0 && min < 60) {
+				let hour = h;
+				if ((text.includes("дня") || text.includes("вечера")) && hour < 12) hour += 12;
+				return `${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
+			}
+		}
+	}
+
 	// Fix explicit word matching 'в 10 утра' / 'в 5 часов'
 	const matches = text.matchAll(
 		/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:часов|часа|час|утра|дня|вечера))?(?!\s*\d)/gi,
@@ -304,19 +362,39 @@ function extractDate(text: string): {
 	return null;
 }
 
+function formatPatientName(name: string): string {
+	return name
+		.split(/\s+/)
+		.filter(Boolean)
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+		.join(" ");
+}
+
 function extractPatientName(
 	text: string,
 	actionRegexStr: string,
 ): string | null {
-	// Use lookahead to find the name strictly between the action and any temporal/preposition words
+	// 1. Прямой маркер «пациент ФИО» / «пациента ФИО»
+	const patientPrefixMatch = text.match(
+		/пациент(?:а)?\s+([а-яё]+(?:\s+[а-яё]+){1,2})/i,
+	);
+	if (patientPrefixMatch && patientPrefixMatch[1]) {
+		const name = patientPrefixMatch[1].trim();
+		if (name.length > 2) return formatPatientName(name);
+	}
+
+	// 2. Имя между действием и предлогами времени/даты
 	const regex = new RegExp(
 		`(?:${actionRegexStr})\\s+(.*?)(?=\\s+(?:на|в|к|телефон|с|завтра|сегодня|послезавтра)(?:\\s|$)|\\s+\\d|$)`,
 		"i",
 	);
 	const match = text.match(regex);
 	if (match && match[1] !== undefined && match[1].length > 2) {
-		const cleanName = match[1].replace(/^(?:для|запись)\s+/i, "").trim();
-		if (cleanName.length > 2) return cleanName;
+		const cleanName = match[1]
+			.replace(/^(?:для|запись|прием|пациента|пациент)\s+/i, "")
+			.replace(/^(?:для|запись|прием|пациента|пациент)\s+/i, "")
+			.trim();
+		if (cleanName.length > 2) return formatPatientName(cleanName);
 	}
 	return null;
 }
@@ -440,6 +518,11 @@ function extractEmkSections(text: string, updates: EmkUpdates) {
 function expandToothRanges(text: string): string[] {
 	const allTeeth = new Set<string>();
 
+	const grammarTeeth = extractFdiTeethNumbers(text);
+	for (const t of grammarTeeth) {
+		allTeeth.add(t.toString());
+	}
+
 	if (
 		text.includes("все зубы") ||
 		text.includes("обе челюсти") ||
@@ -536,7 +619,7 @@ export function parseDictationLocally(
 			return null; // Fallback to LLM
 		}
 		if (
-			text.match(/(запиши|записать|создай запись|запись для|новый пациент)/)
+			text.match(/(запиши|записать|создай запись|запись на|запись для|запись|новый пациент)/)
 		) {
 			const dateInfo = extractDate(text);
 			const timeStr = extractTime(text);
@@ -553,7 +636,7 @@ export function parseDictationLocally(
 
 			const pName = extractPatientName(
 				text,
-				"запиши|записать|создай запись(?: для)?|запись для|новый пациент",
+				"запиши|записать|создай запись(?: для)?|запись для|запись на|запись|новый пациент",
 			);
 			if (!pName) return null; // Without a patient name, scheduling is impossible locally. Fallback to LLM.
 
@@ -609,6 +692,14 @@ export function parseDictationLocally(
 		const cost = extractCost(text);
 		if (cost) emkUpdates.costRub = cost;
 
+		const anesthesia = extractDentalAnesthesia(text);
+		const procedures = extractDentalProcedures(
+			text,
+			teethCodes.length > 0 ? Number(teethCodes[0]) : undefined,
+		);
+		const globalSurfaces = extractToothSurfaces(text);
+		const globalDiag = matchDentalDiagnosis(text);
+
 		extractEmkSections(text, emkUpdates);
 		const hasStructuredEmk = !!(
 			emkUpdates.complaint ||
@@ -620,39 +711,99 @@ export function parseDictationLocally(
 		if (teethCodes.length > 0) {
 			for (const clause of clauses) {
 				const localTeeth = expandToothRanges(clause);
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				let foundState: any = null;
-				for (const [keyword, state] of Object.entries(STATE_MAPPING)) {
-					const regex = new RegExp(`(^|[^а-яё])${keyword}([^а-яё]|$)`, "i");
-					if (regex.test(clause)) {
-						foundState = state;
-						if (!hasStructuredEmk) {
-							if (state === "treatment") {
-								if (!emkUpdates.complaint)
-									emkUpdates.complaint = (clause as string).trim();
-								if (!emkUpdates.diagnosis) emkUpdates.diagnosis = keyword;
-							} else if (state === "implant" || state === "prosthetics") {
-								if (!emkUpdates.treatmentPlan)
-									emkUpdates.treatmentPlan = clause.trim();
-							}
+				const clauseDiag = matchDentalDiagnosis(clause);
+				const clauseSurfaces = extractToothSurfaces(clause);
+
+				let foundState: ToothUpdate["state"] | null = null;
+				let clinicalState: ClinicalToothState | undefined;
+				let diagCode: string | undefined;
+				let diagTitle: string | undefined;
+
+				if (clauseDiag) {
+					foundState = clauseDiag.toothState;
+					clinicalState = clauseDiag.clinicalState;
+					diagCode = clauseDiag.code;
+					diagTitle = clauseDiag.title;
+				} else {
+					for (const [keyword, state] of Object.entries(STATE_MAPPING)) {
+						const regex = new RegExp(`(^|[^а-яё])${keyword}([^а-яё]|$)`, "i");
+						if (regex.test(clause)) {
+							foundState = state;
+							break;
 						}
-						break;
 					}
 				}
+
+				if (!foundState && globalDiag) {
+					foundState = globalDiag.toothState;
+					clinicalState = globalDiag.clinicalState;
+					diagCode = globalDiag.code;
+					diagTitle = globalDiag.title;
+				}
+
 				if (foundState) {
 					const targetTeeth = localTeeth.length > 0 ? localTeeth : teethCodes;
+					const effectiveSurfaces =
+						clauseSurfaces.length > 0
+							? clauseSurfaces
+							: globalSurfaces.length > 0
+								? globalSurfaces
+								: undefined;
+
 					targetTeeth.forEach((code) => {
 						if (
 							!toothUpdates.some(
 								(tu) => tu.code === code && tu.state === foundState,
 							)
 						) {
-							toothUpdates.push({ code, state: foundState });
+							toothUpdates.push({
+								code,
+								state: foundState!,
+								surfaces: effectiveSurfaces,
+								clinicalState,
+								diagnosisCode: diagCode,
+								diagnosisTitle: diagTitle,
+							});
 						}
 					});
 					hasValidMatch = true;
 				}
 			}
+		}
+
+		if (anesthesia) {
+			emkUpdates.anesthesia = anesthesia;
+			hasValidMatch = true;
+		}
+
+		if (procedures.length > 0) {
+			emkUpdates.procedures = procedures;
+			hasValidMatch = true;
+		}
+
+		if (globalDiag && !emkUpdates.diagnosis) {
+			emkUpdates.diagnosis = `${globalDiag.code} ${globalDiag.title}`;
+			emkUpdates.diagnosisIcd10 = globalDiag.code;
+			hasValidMatch = true;
+		}
+
+		// If we don't have structured EMK from doctor's section headers, synthesize a clean SOAP 043/u record
+		if (!hasStructuredEmk && (teethCodes.length > 0 || globalDiag || anesthesia || procedures.length > 0)) {
+			const synth = synthesizeSoapRecord(
+				text,
+				teethCodes.map(Number),
+				globalSurfaces,
+				globalDiag,
+				anesthesia,
+				procedures,
+			);
+			if (!emkUpdates.complaint && synth.complaint) emkUpdates.complaint = synth.complaint;
+			if (!emkUpdates.anamnesis && synth.anamnesis) emkUpdates.anamnesis = synth.anamnesis;
+			if (!emkUpdates.objectiveStatus && synth.objectiveStatus) emkUpdates.objectiveStatus = synth.objectiveStatus;
+			if (!emkUpdates.diagnosis && synth.diagnosis) emkUpdates.diagnosis = synth.diagnosis;
+			if (!emkUpdates.diagnosisIcd10 && synth.diagnosisIcd10) emkUpdates.diagnosisIcd10 = synth.diagnosisIcd10;
+			if (!emkUpdates.treatmentPlan && synth.treatmentPlan) emkUpdates.treatmentPlan = synth.treatmentPlan;
+			if (!emkUpdates.recommendations && synth.recommendations) emkUpdates.recommendations = synth.recommendations;
 		}
 
 		// If we couldn't match a specific tooth or emk section, try a broader fallback
@@ -669,7 +820,19 @@ export function parseDictationLocally(
 				emkUpdates.complaint =
 					emkUpdates.complaint.charAt(0).toUpperCase() +
 					emkUpdates.complaint.slice(1);
-			return { action: "update_tooth", payload: { toothUpdates, emkUpdates } };
+			return {
+				action: "update_tooth",
+				payload: {
+					toothUpdates,
+					emkUpdates,
+					anesthesia: anesthesia || undefined,
+					procedures: procedures.length > 0 ? procedures : undefined,
+				},
+				toothUpdates,
+				emkUpdates,
+				anesthesia: anesthesia || undefined,
+				procedures: procedures.length > 0 ? procedures : undefined,
+			};
 		}
 		return null;
 	}

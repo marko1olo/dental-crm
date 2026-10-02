@@ -86,7 +86,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	onQuadrantChange,
 	selectedTeeth = [],
 	activeStamp,
-	useSurfaces = true,
+	useSurfaces = false,
 	showPulpAndCanals = false,
 	showPeriapicalHalos = false,
 	showPeriodontalBoneLoss = false,
@@ -200,7 +200,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		}
 		void SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			`1-клик Профгигиена: протокол 043/у ${protocol.diagnosis} и услуга ${protocol.serviceCode} (${protocol.serviceName}) добавлены`,
+			`1-клик Профгигиена: протокол ${protocol.diagnosis} и услуга ${protocol.serviceCode} (${protocol.serviceName}) добавлены`,
 			"success",
 		);
 	};
@@ -319,14 +319,23 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	const [modalTooth, setModalTooth] = useState<number | null>(null);
 
 	const handleToothClick = useCallback(
-		(e: React.MouseEvent, num: number) => {
+		(e: React.MouseEvent, num: number, surface?: string) => {
+			const isModifierPressed = Boolean(e?.shiftKey || e?.altKey);
+			const effectiveSurface = (useSurfaces || isModifierPressed) ? surface : undefined;
+			if (effectiveSurface && onSurfacesChange) {
+				const current = toothDataMap.get(num)?.surfaces ?? [];
+				const nextSurfaces = current.includes(effectiveSurface)
+					? current.filter((s) => s !== effectiveSurface)
+					: [...current, effectiveSurface];
+				onSurfacesChange([num], nextSurfaces);
+			}
 			if (onToothClick) {
-				(onToothClick as any)(e, num);
-			} else {
+				(onToothClick as any)(e, num, effectiveSurface);
+			} else if (!effectiveSurface) {
 				setModalTooth(num);
 			}
 		},
-		[onToothClick],
+		[onToothClick, onSurfacesChange, toothDataMap, useSurfaces],
 	);
 
 	const topSplit = useMemo(() => splitArchAtMidline(topTeethList), [topTeethList]);

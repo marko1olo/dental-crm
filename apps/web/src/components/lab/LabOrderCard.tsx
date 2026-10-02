@@ -173,11 +173,11 @@ export function LabOrderCard({
 							type="button"
 							onClick={() => handleOpenPrintOrder(order)}
 							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-							title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+							title="Распечатать официальный наряд технику (А4 / ГОСТ)"
 							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 						>
 							<Printer className="w-3.5 h-3.5" />
-							<span>Печать ЗТЛ-1</span>
+							<span>Печать наряда</span>
 						</button>
 					)}
 
@@ -187,11 +187,11 @@ export function LabOrderCard({
 							type="button"
 							onClick={() => handleOpenPrintOrder(order)}
 							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-							title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+							title="Распечатать официальный наряд технику (А4 / ГОСТ)"
 							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 						>
 							<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-							<span>Печать ЗТЛ-1</span>
+							<span>Печать наряда</span>
 						</button>
 					) : (
 						<button

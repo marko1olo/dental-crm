@@ -114,7 +114,7 @@ export const communicationDocumentTaskActionLabels: Partial<
 	tax_deduction_certificate: "Справка 2024+",
 	legacy_tax_deduction_certificate: "Справка 2021-2023",
 	tax_deduction_registry: "Реестр",
-	dental_medical_card_043u: "Карта 043/у",
+	dental_medical_card_043u: "Медицинская карта",
 	medical_record_extract: "Выписка",
 	medical_record_copy_request: "Копии карты",
 	medical_document_release_receipt: "Расписка выдачи",

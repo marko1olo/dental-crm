@@ -1737,7 +1737,7 @@ export function PaymentCapture({
 				}}
 				data-testid="payment-checkout-bar"
 			>
-				{/* Итого к списанию / оплате по 54-ФЗ */}
+				{/* Итого к списанию / оплате */}
 				<div
 					className="payment-total-due-banner flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink sm:shrink-0 min-w-0 sm:min-w-[150px] md:min-w-[170px]"
 					data-testid="payment-total-due-banner"
@@ -1786,13 +1786,11 @@ export function PaymentCapture({
 						aria-describedby={
 							!paymentReadyToSubmit ? paymentMissingId : undefined
 						}
-						disabled={isSaving || dueAmount <= 0}
+						disabled={isSaving}
 						title={
 							isSaving
 								? "Идет сохранение платежа, терминал занят..."
-								: dueAmount <= 0
-									? "Сумма к списанию 0 ₽ — введите сумму"
-									: undefined
+								: "Оплата картой (Сбербанк POS / QR)"
 						}
 						data-testid="payment-sberpos-button"
 					>
@@ -1810,13 +1808,11 @@ export function PaymentCapture({
 						aria-describedby={
 							!paymentReadyToSubmit ? paymentMissingId : undefined
 						}
-						disabled={isSaving || dueAmount <= 0}
+						disabled={isSaving}
 						title={
 							isSaving
 								? "Операция выполняется..."
-								: dueAmount <= 0
-									? "Сумма к списанию 0 ₽ — введите сумму"
-									: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+								: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
 						}
 						data-testid="payment-split-modal-button"
 					>
@@ -1853,13 +1849,11 @@ export function PaymentCapture({
 									}}
 									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 									role="menuitem"
-									disabled={isSaving || dueAmount <= 0}
+									disabled={isSaving}
 									title={
 										isSaving
 											? "Операция выполняется..."
-											: dueAmount <= 0
-												? "Сумма к списанию 0 ₽"
-												: "Сбер POS"
+											: "Сбер POS"
 									}
 								>
 									<CreditCard
@@ -1876,14 +1870,12 @@ export function PaymentCapture({
 									}}
 									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 									role="menuitem"
-									disabled={isSaving || dueAmount <= 0}
+									disabled={isSaving}
 									data-testid="payment-split-modal-button"
 									title={
 										isSaving
 											? "Операция выполняется..."
-											: dueAmount <= 0
-												? "Сумма к списанию 0 ₽"
-												: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+											: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
 									}
 								>
 									<Coins
@@ -1900,13 +1892,11 @@ export function PaymentCapture({
 									}}
 									className="w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg hover:bg-[var(--line)] text-blue-700 dark:text-blue-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 									role="menuitem"
-									disabled={isSaving || dueAmount <= 0}
+									disabled={isSaving}
 									title={
 										isSaving
 											? "Операция выполняется..."
-											: dueAmount <= 0
-												? "Сумма к списанию 0 ₽"
-												: "Зафиксировать оплату в CRM, если карта списана на терминале вручную"
+											: "Зафиксировать оплату в CRM, если карта списана на терминале вручную"
 									}
 									data-testid="payment-manual-card-terminal-button"
 								>

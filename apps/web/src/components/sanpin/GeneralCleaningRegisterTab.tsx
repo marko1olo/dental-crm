@@ -270,7 +270,7 @@ export function GeneralCleaningRegisterTab() {
 						onClick={() => setIsDisinfectionModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{ height: "36px", minHeight: "36px", padding: "0 0.85rem", fontSize: "0.825rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-						title="Честный расчет концентрации, расхода дезраствора и график генеральной уборки (СанПиН 3.3686-21)"
+						title="Расчет концентрации, расхода дезраствора и график генеральной уборки"
 					>
 						<Calculator size={15} className="text-[var(--teal,#0d9488)]" /> Расчет дезсредства
 					</button>
@@ -290,7 +290,7 @@ export function GeneralCleaningRegisterTab() {
 							onClick={() => setIsOptionsMenuOpen(!isOptionsMenuOpen)}
 							className="sanpin-btn sanpin-btn-secondary"
 							style={{ height: "36px", minHeight: "36px", padding: "0 0.65rem", display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "0.825rem" }}
-							title="Дополнительные опции: автопилот графика, норма СанПиН, экспорт, печать"
+							title="Дополнительные опции: заполнение графика, норма дезинфекции, экспорт, печать"
 							aria-label="Опции журнала"
 						>
 							<MoreHorizontal size={16} />

@@ -99,7 +99,7 @@ export function useVisitDiaryTrayHandlers({
 		} catch (e) {
 			logger.warn("[sterilization link] запрос не выполнен, продолжаем solo-подписание", e);
 			showToast(
-				`Штрихкод лотка зафиксирован локально: ${requestFailureCause(null)}. Подпись 043/у продолжена.`,
+				`Штрихкод лотка зафиксирован локально: ${requestFailureCause(null)}. Подпись дневника продолжена.`,
 				"warning",
 				8000,
 			);

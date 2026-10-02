@@ -2486,9 +2486,11 @@ function buildAppointmentReadiness(
 
 	const imagesByPatientId = new Map<string, typeof imagingStudies>();
 	for (const study of imagingStudies) {
-		if (!imagesByPatientId.has(study.patientId))
-			imagesByPatientId.set(study.patientId, []);
-		imagesByPatientId.get(study.patientId)?.push(study);
+		if (study.patientId) {
+			if (!imagesByPatientId.has(study.patientId))
+				imagesByPatientId.set(study.patientId, []);
+			imagesByPatientId.get(study.patientId)?.push(study);
+		}
 	}
 
 	const tasksByAppointmentId = new Map<string, typeof communicationTasks>();
@@ -7643,7 +7645,7 @@ function _getOrCreateImagingViewerSession(
 		organizationId,
 		studyId: study.id,
 		patientId: study.patientId,
-		visitId: study.visitId,
+		visitId: study.visitId ?? null,
 		state: defaultViewerStateForStudy(study),
 		annotations: [],
 		clientSavedAt: null,
@@ -7695,7 +7697,7 @@ function _saveImagingViewerSession(
 		organizationId,
 		studyId: study.id,
 		patientId: study.patientId,
-		visitId: input.visitId ?? study.visitId,
+		visitId: input.visitId ?? study.visitId ?? null,
 		state: input.state,
 		annotations,
 		clientSavedAt: input.clientSavedAt ?? null,

@@ -195,13 +195,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		if (!activePatient) return [];
 		const badges: any[] = [];
 		const rawAllergies = activePatient.allergies || "";
-		if (rawAllergies && !isNegativeAllergyStatement(rawAllergies)) {
+		const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
+		if (allergyText && !isNegativeAllergyStatement(allergyText)) {
 			badges.push({
 				id: "allergy",
 				testId: "visit-focus-allergy-alert",
-				title: `Аллергоанамнез: ${rawAllergies}`,
+				title: `Аллергоанамнез: ${allergyText}`,
 				shortLabel: "АЛЛЕРГИЯ",
-				fullLabel: `Аллергия: ${rawAllergies}`,
+				fullLabel: `Аллергия: ${allergyText}`,
 			});
 		}
 		const somaticNotes = `${activePatient.somaticNotes || ""} ${activePatient.concomitantDiseases || ""} ${visitNoteForm?.anamnesis || ""}`.toLowerCase();

@@ -12,10 +12,16 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { kopecksToNumericString } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import {
+	type Kopecks,
+	classifyProcedureStage,
+	kopecksToNumericString,
+	parseKopecks,
+	percentageOfKopecks,
+} from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import type { ToothData } from "../odontogram/ToothChart";
 import {
 	calculateLiveInvoiceItems,
@@ -72,34 +78,33 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 		return rawItems.filter((it) => !excludedKeys.has(`${it.toothNumber}-${it.code}`));
 	}, [rawItems, excludedKeys]);
 
-	// Group into clinical 3 stages (Therapy / Surgery / Orthopedics)
+	// Group into clinical 3 stages (Therapy / Surgery / Orthopedics) via canonical SSOT classifyProcedureStage
 	const stageGroups: WizardStageGroup[] = useMemo(() => {
 		const therapyItems: LiveInvoiceItem[] = [];
 		const surgeryItems: LiveInvoiceItem[] = [];
 		const orthoItems: LiveInvoiceItem[] = [];
 
 		for (const it of activeItems) {
-			const cat = it.category.toLowerCase();
-			if (cat.includes("ортопед") || cat.includes("протез") || it.code.startsWith("A16.07.004")) {
+			const stageKind = classifyProcedureStage(it.code, it.category);
+			if (stageKind === "stage_3_orthopedics") {
 				orthoItems.push(it);
-			} else if (
-				cat.includes("хирург") ||
-				cat.includes("имплант") ||
-				it.code.startsWith("A16.07.001") ||
-				it.code.startsWith("A16.07.006")
-			) {
+			} else if (stageKind === "stage_2_surgery") {
 				surgeryItems.push(it);
 			} else {
 				therapyItems.push(it);
 			}
 		}
 
-		const calcStageTotalKopecks = (items: LiveInvoiceItem[]) =>
+		const calcStageTotalKopecks = (items: LiveInvoiceItem[]): Kopecks =>
 			items.reduce((acc, it) => {
-				const grossKop = Math.round(it.price * it.quantity * 100);
-				const discKop = Math.round((grossKop * doctorDiscountPercent) / 100);
-				return acc + Math.max(0, grossKop - discKop);
-			}, 0);
+				const unitKop = parseKopecks(it.price);
+				const grossKop = (unitKop * (it.quantity || 1)) as Kopecks;
+				const discKop =
+					doctorDiscountPercent > 0
+						? percentageOfKopecks(grossKop, doctorDiscountPercent * 100)
+						: (0 as Kopecks);
+				return (acc + Math.max(0, grossKop - discKop)) as Kopecks;
+			}, 0 as Kopecks);
 
 		const g1Kop = calcStageTotalKopecks(therapyItems);
 		const g2Kop = calcStageTotalKopecks(surgeryItems);
@@ -136,10 +141,14 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 	// Calculate total price in whole kopecks (Mandate 8b)
 	const totalKopecks = useMemo(() => {
 		return activeItems.reduce((acc, it) => {
-			const grossKop = Math.round(it.price * it.quantity * 100);
-			const discKop = Math.round((grossKop * doctorDiscountPercent) / 100);
-			return acc + Math.max(0, grossKop - discKop);
-		}, 0);
+			const unitKop = parseKopecks(it.price);
+			const grossKop = (unitKop * (it.quantity || 1)) as Kopecks;
+			const discKop =
+				doctorDiscountPercent > 0
+					? percentageOfKopecks(grossKop, doctorDiscountPercent * 100)
+					: (0 as Kopecks);
+			return (acc + Math.max(0, grossKop - discKop)) as Kopecks;
+		}, 0 as Kopecks);
 	}, [activeItems, doctorDiscountPercent]);
 
 	const totalRub = Math.round(totalKopecks / 100);
@@ -173,8 +182,22 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 						];
 
 			const planItemsForApi = effectiveItems.map((item, idx) => {
-				const lineGrossRub = item.price * item.quantity;
-				const lineDiscRub = Math.round((lineGrossRub * doctorDiscountPercent) / 100);
+				const unitKop = parseKopecks(item.price);
+				const grossKop = (unitKop * (item.quantity || 1)) as Kopecks;
+				const discKop =
+					doctorDiscountPercent > 0
+						? percentageOfKopecks(grossKop, doctorDiscountPercent * 100)
+						: (0 as Kopecks);
+				const lineDiscRub = Math.round(discKop / 100);
+
+				const stageKind = classifyProcedureStage(item.code, item.category);
+				const phase =
+					stageKind === "stage_3_orthopedics"
+						? 3
+						: stageKind === "stage_2_surgery"
+							? 2
+							: 1;
+
 				return {
 					id: `auto_${item.toothNumber}_${item.code}_${idx}`,
 					toothNumber: item.toothNumber,
@@ -183,24 +206,20 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 					quantity: item.quantity,
 					price: item.price,
 					discount: lineDiscRub,
-					phase:
-						item.category.toLowerCase().includes("ортопед") || item.code.startsWith("A16.07.004")
-							? 3
-							: item.category.toLowerCase().includes("хирург") ||
-								  item.category.toLowerCase().includes("имплант") ||
-								  item.code.startsWith("A16.07.001") ||
-								  item.code.startsWith("A16.07.006")
-								? 2
-								: 1,
+					phase,
 					isAuto: true,
 				};
 			});
 
 			const effectiveTotalKopecks = effectiveItems.reduce((acc, it) => {
-				const grossKop = Math.round(it.price * it.quantity * 100);
-				const discKop = Math.round((grossKop * doctorDiscountPercent) / 100);
-				return acc + Math.max(0, grossKop - discKop);
-			}, 0);
+				const unitKop = parseKopecks(it.price);
+				const grossKop = (unitKop * (it.quantity || 1)) as Kopecks;
+				const discKop =
+					doctorDiscountPercent > 0
+						? percentageOfKopecks(grossKop, doctorDiscountPercent * 100)
+						: (0 as Kopecks);
+				return (acc + Math.max(0, grossKop - discKop)) as Kopecks;
+			}, 0 as Kopecks);
 			const effectiveTotalRub = Math.round(effectiveTotalKopecks / 100);
 
 			if (patientId) {

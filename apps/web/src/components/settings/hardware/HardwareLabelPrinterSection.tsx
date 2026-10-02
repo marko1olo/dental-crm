@@ -338,7 +338,7 @@ export function HardwareLabelPrinterSection() {
 						}}
 					>
 						<div style={{ textAlign: "center", fontWeight: "bold", borderBottom: "1px solid black", paddingBottom: "2px", marginBottom: "4px" }}>
-							{activePreset === "kraft_sanpin" ? "СТЕРИЛЬНО" : "БИОМАТЕРИАЛ PRP"}
+							{activePreset === "kraft_sanpin" ? "СТЕРИЛЬНО (СанПиН 3.3686-21)" : "БИОМАТЕРИАЛ PRP"}
 						</div>
 
 						{activePreset === "kraft_sanpin" ? (

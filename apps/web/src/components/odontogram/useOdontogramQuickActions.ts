@@ -68,6 +68,34 @@ export function useOdontogramQuickActions({
 		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info", 4000);
 	}, [updateToothState]);
 
+	const handleInvertSelection = useCallback(
+		(
+			allTeeth: number[],
+			selectedTeeth: number[],
+			setSelectedTeeth: (t: number[]) => void,
+		) => {
+			const selectedSet = new Set(selectedTeeth);
+			const inverted = allTeeth.filter((t) => !selectedSet.has(t));
+			setSelectedTeeth(inverted);
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast(
+				`Инвертировано: выделено ${inverted.length} из ${allTeeth.length} зубов`,
+				"info",
+				3000,
+			);
+		},
+		[],
+	);
+
+	const handleClearSelection = useCallback(
+		(setSelectedTeeth: (t: number[]) => void) => {
+			setSelectedTeeth([]);
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast("Выделение зубов снято в 1 клик", "info", 2000);
+		},
+		[],
+	);
+
 	const handleSyncAllToDiary = useCallback(() => {
 		const currentTeeth = teethDataRef.current.length > 0 ? teethDataRef.current : teethData;
 		const pathological = currentTeeth.filter(
@@ -188,7 +216,20 @@ export function useOdontogramQuickActions({
 	return {
 		handleMarkAllHealthy,
 		handleMarkWisdomMissing,
+		handleInvertSelection,
+		handleClearSelection,
 		handleSyncAllToDiary,
 		handleOneClickLabOrder,
 	};
+}
+
+/**
+ * Чистая утилита инвертирования выделенных зубов челюсти (1 клик).
+ */
+export function invertTeethSelection(
+	allTeeth: number[],
+	selectedTeeth: number[],
+): number[] {
+	const selectedSet = new Set(selectedTeeth);
+	return allTeeth.filter((t) => !selectedSet.has(t));
 }

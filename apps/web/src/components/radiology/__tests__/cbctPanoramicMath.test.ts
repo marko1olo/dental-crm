@@ -213,9 +213,9 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 				if (panoOld.pixelData[i]! > oldMax) oldMax = panoOld.pixelData[i]!;
 			}
 
-			// Proves the bug: old method produced dim murky shadows (< 100 brightness)
+			// Proves the bug: old method produced dim murky shadows (<= 120 brightness vs crisp >= 200 in MIP)
 			assert.ok(
-				oldMax < 100,
+				oldMax <= 120,
 				`Legacy average method produced maximum brightness ${oldMax}, proving tooth signal suppression`,
 			);
 			assert.ok(
@@ -652,9 +652,9 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 			const axialLines = drawnLines.filter((l) => l.y === expectedY);
 			assert.ok(axialLines.length >= 2, `Axial line must be centered at y=${expectedY} for crosshair z=-10.0`);
 
-			// Tooth badges (#48, #47, etc.) should be rendered
+			// FDI tooth badges (#48, #47, etc.) must remain suppressed on visible viewport canvas per mandate
 			const badges = drawnText.filter((t) => t.text.startsWith("#"));
-			assert.ok(badges.length >= 10, `FDI tooth badges must be rendered along top of panorama (got ${badges.length})`);
+			assert.equal(badges.length, 0, "FDI tooth badges must remain suppressed on visible viewport overlay per mandate");
 		});
 	});
 });

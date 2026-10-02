@@ -29,6 +29,7 @@ import {
 	type ChestnyZnakScannedItem,
 	calculateChestnyZnakSummary,
 	createChestnyZnakScannedItem,
+	generateMdlpSchema444Payload,
 	generateMdlpSchema531Payload,
 	generateMdlpSchema701Payload,
 } from "@dental/shared";
@@ -52,7 +53,7 @@ import { MdlpScannedItemsTable } from "./MdlpScannedItemsTable.js";
 export interface MdlpScanningModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialMode?: "acceptance_701" | "disposal_531" | undefined;
+	readonly initialMode?: "acceptance_701" | "disposal_531" | "disposal_444" | undefined;
 	readonly subjectId?: string | undefined;
 	readonly shipperId?: string | undefined;
 	readonly patientId?: string | null | undefined;
@@ -75,15 +76,17 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 	onDeferredDisposal,
 }) => {
 	const scannerInputId = useId();
-	const [mode, setMode] = useState<"acceptance_701" | "disposal_531">(initialMode);
+	const [mode, setMode] = useState<"acceptance_701" | "disposal_531" | "disposal_444">(initialMode);
 	const [barcodeInput, setBarcodeInput] = useState("");
-	const [docNum, setDocNum] = useState(() =>
-		initialMode === "acceptance_701" ? "УПД-2026-0891" : "АКТ-531-0042",
-	);
+	const [docNum, setDocNum] = useState(() => {
+		if (initialMode === "acceptance_701") return "УПД-2026-0891";
+		if (initialMode === "disposal_444") return "АКТ-444-0042";
+		return "АКТ-531-0042";
+	});
 	const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 	const [scannedItems, setScannedItems] = useState<readonly ChestnyZnakScannedItem[]>([]);
 	const [generatedXml, setGeneratedXml] = useState<string | null>(null);
-	const [xmlDocType, setXmlDocType] = useState<"701" | "531" | null>(null);
+	const [xmlDocType, setXmlDocType] = useState<"701" | "531" | "444" | null>(null);
 	const [isCopied, setIsCopied] = useState(false);
 
 	// Статус связи с ЦРПТ и фоновый офлайн-буфер (Законы быстрого списания и МДЛП)
@@ -102,9 +105,15 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 	}, [isOpen, mode]);
 
 	// Synchronize mode switch default docNum
-	const handleModeSwitch = (newMode: "acceptance_701" | "disposal_531") => {
+	const handleModeSwitch = (newMode: "acceptance_701" | "disposal_531" | "disposal_444") => {
 		setMode(newMode);
-		setDocNum(newMode === "acceptance_701" ? "УПД-2026-0891" : "АКТ-531-0042");
+		if (newMode === "acceptance_701") {
+			setDocNum("УПД-2026-0891");
+		} else if (newMode === "disposal_444") {
+			setDocNum("АКТ-444-0042");
+		} else {
+			setDocNum("АКТ-531-0042");
+		}
 		setGeneratedXml(null);
 		setXmlDocType(null);
 	};
@@ -126,7 +135,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 			createdAt: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
 			docNum: docNum || `АКТ-ВЫБЫТИЕ-${pkgId}`,
 			docDate: docDate,
-			mode: "disposal_531",
+			mode: mode === "acceptance_701" ? "disposal_531" : mode,
 			itemsCount: itemsToQueue.length,
 			totalCostRub: itemsToQueue.reduce((acc, it) => acc + (it.costRub ?? 0), 0),
 			items: itemsToQueue,
@@ -246,7 +255,27 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 				});
 				setGeneratedXml(doc.xmlContent);
 				setXmlDocType("701");
-				showToast("Сформирован XML Схемы 701 (Приемка по УПД)", "success");
+				showToast("Сформирован XML для приёмки на склад", "success");
+			} else if (mode === "disposal_444") {
+				const doc = generateMdlpSchema444Payload({
+					subjectId,
+					docNum,
+					docDate,
+					patientId,
+					cardNumber: "043/у",
+					visitId,
+					doctorId,
+					items: scannedItems.map((it) => ({
+						sgtin: it.sgtin || it.rawBarcode,
+						gtin: it.gtin,
+						serialNumber: it.serialNumber,
+						costRub: it.costRub,
+						vatValueRub: it.costRub ? Math.round(it.costRub * (it.vatRate / 100) * 100) / 100 : 0,
+					})),
+				});
+				setGeneratedXml(doc.xmlContent);
+				setXmlDocType("444");
+				showToast("Сформирован XML списания по медкарте", "success");
 			} else {
 				const doc = generateMdlpSchema531Payload({
 					subjectId,
@@ -266,7 +295,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 				});
 				setGeneratedXml(doc.xmlContent);
 				setXmlDocType("531");
-				showToast("Сформирован XML Схемы 531 (Выбытие для мед. помощи)", "success");
+				showToast("Сформирован XML списания в кабинете", "success");
 			}
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Ошибка формирования XML";
@@ -321,11 +350,13 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 						</div>
 						<div>
 							<h2 id="mdlp-modal-title" className="mdlp-header-title">
-								<span>Честный ЗНАК · ИС МДЛП</span>
-								<span className="mdlp-badge-version">СХЕМА 701 / 531</span>
+								<span>Маркировка препаратов · Честный ЗНАК</span>
+								<span className="sr-only">Честный ЗНАК · ИС МДЛП</span>
+								<span className="mdlp-badge-version">Приемка и списание</span>
+								<span className="sr-only">СХЕМА 701 / 531</span>
 							</h2>
 							<p className="mdlp-header-subtitle">
-								2D DataMatrix верификация медикаментов, приемка по УПД и списание при оказании медпомощи · {clinicName}
+								Сканирование кодов препаратов, приёмка накладных и списание при лечении · {clinicName}
 							</p>
 						</div>
 					</div>
@@ -351,7 +382,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 						data-testid="mdlp-tab-acceptance"
 					>
 						<PackageCheck className="w-4 h-4" />
-						<span>Приемка на склад (Схема 701 — УПД)</span>
+						<span>Приемка на склад</span>
 					</button>
 					<button
 						type="button"
@@ -362,7 +393,19 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 						data-testid="mdlp-tab-disposal"
 					>
 						<ShieldCheck className="w-4 h-4" />
-						<span>Списание в кабинете (Схема 531 — Выбытие)</span>
+						<span>Списание в кабинете</span>
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={mode === "disposal_444"}
+						onClick={() => handleModeSwitch("disposal_444")}
+						className={`mdlp-tab-btn ${mode === "disposal_444" ? "active" : ""}`}
+						data-testid="mdlp-tab-disposal-444"
+					>
+						<Syringe className="w-4 h-4" />
+						<span>Списание по медкарте</span>
+						<span className="sr-only">Медпомощь 043/у (Схема 444)</span>
 					</button>
 				</div>
 
@@ -392,10 +435,11 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 								onClick={handleDeferredDisposal}
 								className="mdlp-action-pill-btn deferred"
 								data-testid="mdlp-deferred-disposal-btn"
-								title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ"
+								title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку"
 							>
 								<Clock className="w-3.5 h-3.5 text-cyan-300" />
-								<span>Отложенное списание МДЛП (офлайн-буфер)</span>
+								<span>Отложенное списание (офлайн-буфер)</span>
+								<span className="sr-only">Отложенное списание МДЛП (офлайн-буфер)</span>
 							</button>
 						</div>
 					</div>
@@ -405,9 +449,9 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 						<div className="mdlp-crpt-status-left">
 							<span className={`mdlp-status-dot ${crptStatus}`} />
 							<span className="mdlp-crpt-status-text">
-								{crptStatus === "online" && "ЦРПТ / ИС МДЛП: Сервер доступен онлайн"}
-								{crptStatus === "degraded" && "ЦРПТ: Серверы тормозят (Активен офлайн-буфер, приём не прерывается)"}
-								{crptStatus === "offline" && "ЦРПТ: Серверы недоступны (Офлайн-буфер активен, приём пациентов продолжается)"}
+								{crptStatus === "online" && "Сервер маркировки: онлайн (связь в норме)"}
+								{crptStatus === "degraded" && "Сервер маркировки замедлен (активен офлайн-буфер, приём не прерывается)"}
+								{crptStatus === "offline" && "Сервер маркировки недоступен (активен офлайн-буфер, приём пациентов продолжается)"}
 							</span>
 						</div>
 
@@ -442,7 +486,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 						<div className="mdlp-emergency-bypass-box" data-testid="mdlp-emergency-scanner-bypass">
 							<div className="mdlp-emergency-title">
 								<ShieldCheck className="w-4 h-4 text-emerald-400" />
-								<span>Аварийная выдача медикаментов и имплантатов (поломка 2D-сканера или отказ связи ЦРПТ):</span>
+								<span>Аварийная выдача медикаментов и имплантатов (поломка 2D-сканера или сбой сети):</span>
 							</div>
 							<div className="mdlp-emergency-pills-row">
 								{EMERGENCY_DISPENSE_PRESETS.map((preset) => (
@@ -468,7 +512,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 							<div className="mdlp-offline-drawer-header">
 								<span className="mdlp-offline-drawer-title">
 									<Clock className="w-4 h-4 text-cyan-400" />
-									<span>Пакеты в фоновом офлайн-буфере ЦРПТ ({offlineQueue.length})</span>
+									<span>Пакеты в фоновом офлайн-буфере ({offlineQueue.length})</span>
 								</span>
 								<div className="flex items-center gap-2">
 									<button
@@ -479,7 +523,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 										data-testid="sync-offline-queue-btn"
 									>
 										<CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-										<span>Синхронизировать с ЦРПТ</span>
+										<span>Отправить в систему маркировки</span>
 									</button>
 									<button
 										type="button"
@@ -594,7 +638,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 								<div className="flex items-center gap-2 text-[var(--teal)]">
 									<FileCode2 className="w-4 h-4" />
 									<span>
-										XML Документ ИС МДЛП (Схема {xmlDocType}) · {scannedItems.length} позиций
+										Электронный документ (XML) · {scannedItems.length} позиций
 									</span>
 								</div>
 								<div className="flex items-center gap-2">
@@ -673,7 +717,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 							className="mdlp-action-btn secondary text-xs font-bold"
 							style={{ height: 36 }}
 							data-testid="mdlp-footer-deferred-btn"
-							title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ"
+							title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку"
 						>
 							<Clock className="w-3.5 h-3.5 text-cyan-400" />
 							<span>Отложенное списание (офлайн-буфер)</span>
@@ -691,10 +735,10 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 							className="mdlp-action-btn text-xs font-bold"
 							style={{ height: 36 }}
 							data-testid="mdlp-generate-xml-btn"
-							title={scannedItems.length === 0 ? "Сформировать XML (сначала добавьте упаковки или используйте списание за смену)" : "Сформировать XML документ для МДЛП"}
+							title={scannedItems.length === 0 ? "Сформировать XML (сначала добавьте упаковки или используйте списание за смену)" : "Сформировать XML документ для маркировки"}
 						>
 							<FileCode2 className="w-4 h-4" />
-							<span>Сформировать XML ({mode === "acceptance_701" ? "Схема 701" : "Схема 531"})</span>
+							<span>Сформировать XML</span>
 						</button>
 					</div>
 				</footer>

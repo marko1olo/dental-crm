@@ -13,6 +13,7 @@ import { registerContextTools } from "./contextTools.js";
 import { registerRagTools } from "./ragTools.js";
 import { registerSanpinTools } from "./sanpinTools.js";
 import { registerDenteAgentTools } from "../denteAgentTools.js";
+import { registerCrmUniversalTools } from "./crmUniversalTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";
 import type { ToolDefinition, ToolResult } from "./tool.js";
 
@@ -255,6 +256,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
 	registerRagTools(registry, "internal");
 	registerContextTools(registry, "ui_context");
 	registerDenteAgentTools(registry, "dente_agent");
+	registerCrmUniversalTools(registry, "crm");
 	return registry;
 }
 

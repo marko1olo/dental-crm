@@ -7,6 +7,7 @@
  */
 
 import * as fflate from "fflate";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import type { CbctVoxelVolume } from "./cbctMprMath";
 import {
   isMultiFrameDicom,
@@ -21,6 +22,7 @@ import {
   computeSliceNormalDistance,
   extractCalibratedVoxelHU,
   decodeSliceVoxels,
+  isLocalizerOrScoutSlice,
   DICOM_TRANSFER_SYNTAX,
   isValidTransferSyntax,
   isEncapsulatedTransferSyntax,
@@ -76,6 +78,7 @@ export {
   computeSliceNormalDistance,
   extractCalibratedVoxelHU,
   decodeSliceVoxels,
+  isLocalizerOrScoutSlice,
   DICOM_TRANSFER_SYNTAX,
   isValidTransferSyntax,
   isEncapsulatedTransferSyntax,
@@ -183,7 +186,16 @@ export async function buildVolumeFromDicomBuffers(
     }
   }
 
-  // Exclude auxiliary scout / localizer slices whose dimensions do not match the dominant CT matrix
+  // 1. DICOM Guardrail: Reject 2D scout / localizer / surview images
+  if (sliceEntries.length > 1) {
+    const tomographicSlices = sliceEntries.filter((e) => !isLocalizerOrScoutSlice(e.header));
+    if (tomographicSlices.length > 0 && tomographicSlices.length !== sliceEntries.length) {
+      sliceEntries.length = 0;
+      sliceEntries.push(...tomographicSlices);
+    }
+  }
+
+  // 2. DICOM Guardrail: Exclude auxiliary slices whose matrix dimensions do not match the dominant CT volume
   if (sliceEntries.length > 1) {
     const dimCounts = new Map<string, number>();
     for (const e of sliceEntries) {
@@ -206,7 +218,7 @@ export async function buildVolumeFromDicomBuffers(
     }
   }
 
-  // Sort slices in ascending order of physical Z (Inferior/Caudal -> Superior/Cranial)
+  // 3. DICOM Guardrail: Sort slices in ascending order of physical Z / normal distance (Caudal -> Cranial)
   sliceEntries.sort((a, b) => {
     const distA = computeSliceNormalDistance(
       a.header.imagePositionPatient,
@@ -227,25 +239,79 @@ export async function buildVolumeFromDicomBuffers(
     return a.fileName.localeCompare(b.fileName, undefined, { numeric: true });
   });
 
+  // 4. DICOM Guardrail: Deduplicate slices acquired at identical physical Z coordinate (< 0.01 mm)
+  if (sliceEntries.length > 1) {
+    const distances = sliceEntries.map((e) =>
+      computeSliceNormalDistance(
+        e.header.imagePositionPatient,
+        e.header.imageOrientationPatient,
+        e.header.sliceLocationZ,
+      ),
+    );
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (let i = 0; i < distances.length; i++) {
+      const d = distances[i]!;
+      if (d < minZ) minZ = d;
+      if (d > maxZ) maxZ = d;
+    }
+    const hasZVariation = (maxZ - minZ) >= 0.01;
+
+    if (hasZVariation) {
+      const uniqueSlices: DicomSliceEntry[] = [];
+      for (let idx = 0; idx < sliceEntries.length; idx++) {
+        const entry = sliceEntries[idx]!;
+        if (uniqueSlices.length === 0) {
+          uniqueSlices.push(entry);
+        } else {
+          const prev = uniqueSlices[uniqueSlices.length - 1]!;
+          const distPrev = computeSliceNormalDistance(
+            prev.header.imagePositionPatient,
+            prev.header.imageOrientationPatient,
+            prev.header.sliceLocationZ,
+          );
+          const distCur = distances[idx]!;
+          if (Math.abs(distCur - distPrev) >= 0.01) {
+            uniqueSlices.push(entry);
+          }
+        }
+      }
+      if (uniqueSlices.length > 0 && uniqueSlices.length !== sliceEntries.length) {
+        sliceEntries.length = 0;
+        sliceEntries.push(...uniqueSlices);
+      }
+    }
+  }
+
   const refHeader = sliceEntries[0]!.header;
   const width = refHeader.cols;
   const height = refHeader.rows;
   const depth = sliceEntries.length;
 
+  // 5. DICOM Guardrail: Compute robust median slice spacing instead of naive division of extreme points
   let computedSpacingZ = refHeader.sliceThickness;
   if (depth > 1) {
-    const distFirst = computeSliceNormalDistance(
-      sliceEntries[0]!.header.imagePositionPatient,
-      sliceEntries[0]!.header.imageOrientationPatient,
-      sliceEntries[0]!.header.sliceLocationZ,
+    const distances = sliceEntries.map((e) =>
+      computeSliceNormalDistance(
+        e.header.imagePositionPatient,
+        e.header.imageOrientationPatient,
+        e.header.sliceLocationZ,
+      ),
     );
-    const distLast = computeSliceNormalDistance(
-      sliceEntries[depth - 1]!.header.imagePositionPatient,
-      sliceEntries[depth - 1]!.header.imageOrientationPatient,
-      sliceEntries[depth - 1]!.header.sliceLocationZ,
-    );
-    const deltaZ = Math.abs(distLast - distFirst) / (depth - 1);
-    if (deltaZ > 0.001 && deltaZ < 10.0) computedSpacingZ = deltaZ;
+    const stepDeltas: number[] = [];
+    for (let i = 1; i < distances.length; i++) {
+      const delta = Math.abs(distances[i]! - distances[i - 1]!);
+      if (delta > 0.001 && delta < 20.0) {
+        stepDeltas.push(delta);
+      }
+    }
+    if (stepDeltas.length > 0) {
+      stepDeltas.sort((a, b) => a - b);
+      const medianDeltaZ = stepDeltas[Math.floor(stepDeltas.length / 2)]!;
+      if (medianDeltaZ > 0.001 && medianDeltaZ < 10.0) {
+        computedSpacingZ = medianDeltaZ;
+      }
+    }
   }
 
   const refOrient = refHeader.imageOrientationPatient ?? [1, 0, 0, 0, 1, 0];
@@ -640,6 +706,7 @@ export async function buildVolumeFromDicomweb(
     workerBridge?: CbctWorkerBridge | null;
     enableProgressiveLOD?: boolean;
     gpuUploadTarget?: DicomStreamingUploadTarget | null;
+    concurrency?: number;
   },
 ): Promise<CbctVoxelVolume> {
   const onProgress = options?.onProgress;
@@ -647,24 +714,9 @@ export async function buildVolumeFromDicomweb(
 
   const apiBase = (options?.baseUrl ?? getViteApiUrl()).replace(/\/+$/, "");
 
-  let headers = options?.headers;
-  if (!headers) {
-    try {
-      const { readDenteClinicToken, readDenteStaffToken } = await import("../../lib/safeLocalStorage");
-      const clinicToken = readDenteClinicToken();
-      const staffToken = readDenteStaffToken();
-      headers = {};
-      if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
-      if (staffToken) {
-        headers["x-dente-staff-token"] = staffToken;
-        headers.Authorization = `Bearer ${staffToken}`;
-      } else if (clinicToken) {
-        headers.Authorization = `Bearer ${clinicToken}`;
-      }
-    } catch {
-      headers = {};
-    }
-  }
+  // Проброс авторизации (Authorization: Bearer + x-dente-staff-token + x-dente-clinic-token)
+  const defaultAuth = getDenteAuthHeaders();
+  const headers: Record<string, string> = { ...defaultAuth, ...(options?.headers ?? {}) };
 
   const metaUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/metadata`;
   const metaRes = await fetch(metaUrl, {
@@ -678,29 +730,50 @@ export async function buildVolumeFromDicomweb(
     throw new Error("В запрошенной серии PACS не найдено снимков DICOM");
   }
 
-  const items: Array<{ buffer: ArrayBuffer; fileName: string }> = [];
-  const total = metaJson.length;
-
-  for (let i = 0; i < total; i++) {
+  const validEntries: Array<{ sopUid: string; index: number }> = [];
+  for (let i = 0; i < metaJson.length; i++) {
     const item = metaJson[i];
     const sopUid = item?.["00080018"]?.Value?.[0] as string | undefined;
-    if (!sopUid) continue;
-
-    const frameUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/instances/${encodeURIComponent(sopUid)}`;
-    const frameRes = await fetch(frameUrl, {
-      headers: { Accept: "application/dicom", ...headers },
-    });
-    if (!frameRes.ok) {
-      throw new Error(`PACS WADO-RS instance download failed (${sopUid}): HTTP ${frameRes.status}`);
-    }
-    const buf = await frameRes.arrayBuffer();
-    items.push({ buffer: buf, fileName: `${sopUid}.dcm` });
-
-    if (i % 5 === 0 || i === total - 1) {
-      const pct = 10 + Math.round((i / total) * 35);
-      onProgress?.(pct, `Загрузка DICOM кадров (${i + 1}/${total})...`);
+    if (sopUid) {
+      validEntries.push({ sopUid, index: i });
     }
   }
+
+  if (validEntries.length === 0) {
+    throw new Error("В запрошенной серии PACS не найдено снимков DICOM");
+  }
+
+  const total = validEntries.length;
+  const concurrency = (options?.concurrency && options.concurrency > 0) ? options.concurrency : 8;
+  const items: Array<{ buffer: ArrayBuffer; fileName: string }> = new Array(total);
+  let downloadedCount = 0;
+  let currentIndex = 0;
+
+  // Батчевая параллельная загрузка срезов (Concurrency: 6-8 параллельных потоков)
+  const workerCount = Math.min(concurrency, total);
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (currentIndex < total) {
+      const taskIndex = currentIndex++;
+      const entry = validEntries[taskIndex]!;
+      const frameUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/instances/${encodeURIComponent(entry.sopUid)}`;
+      const frameRes = await fetch(frameUrl, {
+        headers: { Accept: "application/dicom", ...headers },
+      });
+      if (!frameRes.ok) {
+        throw new Error(`PACS WADO-RS instance download failed (${entry.sopUid}): HTTP ${frameRes.status}`);
+      }
+      const buf = await frameRes.arrayBuffer();
+      items[taskIndex] = { buffer: buf, fileName: `${entry.sopUid}.dcm` };
+      downloadedCount++;
+
+      if (downloadedCount % 5 === 0 || downloadedCount === total) {
+        const pct = 10 + Math.round((downloadedCount / total) * 35);
+        onProgress?.(pct, `Параллельная загрузка DICOM кадров (${downloadedCount}/${total})...`);
+      }
+    }
+  });
+
+  await Promise.all(workers);
 
   const ingestionOptions: DicomVolumeIngestionOptions = {
     onProgress,

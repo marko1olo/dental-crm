@@ -206,8 +206,8 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 			assert.strictEqual(vol.dimensions.depth, 60);
 			assert.ok(vol.data);
 			assert.strictEqual(vol.isDisposed, false);
-			assert.strictEqual(vol.defaultWindowWidth, 2000);
-			assert.strictEqual(vol.defaultWindowLevel, 400);
+			assert.strictEqual(vol.defaultWindowWidth, 4025);
+			assert.strictEqual(vol.defaultWindowLevel, 525);
 
 			// Test air density sampling (-1000 HU)
 			const vox = worldMmToVoxel({ x: 0, y: 0, z: 0 }, vol);

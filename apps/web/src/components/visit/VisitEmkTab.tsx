@@ -470,6 +470,7 @@ export function VisitEmkTab() {
 					title="Отметка выполнения"
 					aria-label="Отметка выполнения"
 					className="sr-only"
+					onClick={handleApplyPhysiologicalNorm}
 				>
 					<Check size={14} />
 				</button>

@@ -48,6 +48,60 @@ export interface UseIncomingCallDataResult {
 	providerLabel: string;
 }
 
+interface PatientFastPhoneIndex<T> {
+	byId: Map<string, T>;
+	byNational10: Map<string, T>;
+	byCleanDigits: Map<string, T>;
+}
+
+const patientFastIndexCache = new WeakMap<object, PatientFastPhoneIndex<any>>();
+
+function getOrCreatePatientFastIndex<
+	T extends {
+		id: string;
+		phone?: string | null;
+		administrativeProfile?: { legalRepresentativePhone?: string | null } | null;
+	},
+>(patientsList: readonly T[]): PatientFastPhoneIndex<T> {
+	const cached = patientFastIndexCache.get(patientsList);
+	if (cached) return cached;
+
+	const byId = new Map<string, T>();
+	const byNational10 = new Map<string, T>();
+	const byCleanDigits = new Map<string, T>();
+
+	for (let i = 0; i < patientsList.length; i++) {
+		const p = patientsList[i];
+		if (!p) continue;
+		if (p.id) byId.set(p.id, p);
+
+		const candidatePhones = [
+			p.phone,
+			p.administrativeProfile?.legalRepresentativePhone,
+		];
+
+		for (const raw of candidatePhones) {
+			if (!raw || typeof raw !== "string") continue;
+			const clean = raw.replace(/\D/g, "");
+			if (clean.length >= 7) {
+				if (!byCleanDigits.has(clean)) {
+					byCleanDigits.set(clean, p);
+				}
+				if (clean.length >= 10) {
+					const nat10 = clean.slice(-10);
+					if (!byNational10.has(nat10)) {
+						byNational10.set(nat10, p);
+					}
+				}
+			}
+		}
+	}
+
+	const index = { byId, byNational10, byCleanDigits };
+	patientFastIndexCache.set(patientsList, index);
+	return index;
+}
+
 export function useIncomingCallData(
 	activeCall: IncomingCallPayload | null,
 	dashboard: Dashboard | undefined,
@@ -141,15 +195,30 @@ export function useIncomingCallData(
 		return () => clearTimeout(timer);
 	}, [activeCall, dismissCall]);
 
-	// Resolve Patient Info from Dashboard via Fuzzy Phone Matching
+	// Resolve Patient Info from Dashboard via Fast O(1) Index + Fuzzy Phone Matching Fallback
 	const resolvedPatient = useMemo(() => {
-		if (!currentCall || !dashboard?.patients) return null;
+		if (!currentCall || !dashboard?.patients || dashboard.patients.length === 0) return null;
+
+		const fastIndex = getOrCreatePatientFastIndex(dashboard.patients);
+
 		if (currentCall.patientId) {
-			const found = dashboard.patients.find(
-				(p) => p.id === currentCall.patientId,
-			);
+			const found = fastIndex.byId.get(currentCall.patientId);
 			if (found) return found;
 		}
+
+		if (currentCall.phone) {
+			const clean = currentCall.phone.replace(/\D/g, "");
+			if (clean.length >= 10) {
+				const nat10 = clean.slice(-10);
+				const foundByNat = fastIndex.byNational10.get(nat10);
+				if (foundByNat) return foundByNat;
+			}
+			if (clean.length >= 7) {
+				const foundByClean = fastIndex.byCleanDigits.get(clean);
+				if (foundByClean) return foundByClean;
+			}
+		}
+
 		return resolvePatientFromPhone(dashboard.patients, currentCall.phone);
 	}, [currentCall, dashboard?.patients]);
 

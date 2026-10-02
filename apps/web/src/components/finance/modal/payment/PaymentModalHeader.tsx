@@ -99,7 +99,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						)}
 						<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1">
 							<CheckCircle2 size={12} />
-							<span>Чек (54-ФЗ)</span>
+							<span>Кассовый чек</span>
 						</span>
 					</h2>
 					<p className="text-xs text-[var(--muted,#64748b)] m-0">
@@ -127,7 +127,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						type="button"
 						onClick={handleQuickPrintAct}
 						className="hidden sm:flex min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
-						title="Быстрая печать акта сдачи-приемки (804н)"
+						title="Быстрая печать акта сдачи-приемки"
 						aria-label="Печать акта 804н"
 						data-testid="btn-payment-modal-print-act"
 					>
@@ -169,14 +169,14 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 								className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer"
 							>
 								<FileText size={13} className="text-slate-500 shrink-0" />
-								<span className="truncate">Печать копии акта (804н)</span>
+								<span className="truncate">Печать копии акта</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => {
 									setIsMoreMenuOpen(false);
 									showToast(
-										`Электронный чек 54-ФЗ отправлен на контакт: ${patientPhone || "телефон пациента"}`,
+										`Электронный чек отправлен на контакт: ${patientPhone || "телефон пациента"}`,
 										"success",
 										3000,
 									);
@@ -191,7 +191,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 								onClick={() => {
 									setIsMoreMenuOpen(false);
 									showToast(
-										"Для оформления возврата прихода откройте модуль фискализации 54-ФЗ (вкладка Возврат).",
+										"Для оформления возврата откройте модуль кассы (вкладка Возврат).",
 										"info",
 										4000,
 									);
@@ -199,7 +199,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 								className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 text-rose-600 cursor-pointer border-t border-[var(--line,#e2e8f0)] pt-1.5"
 							>
 								<RotateCcw size={13} className="shrink-0" />
-								<span className="truncate">Чек возврата прихода (54-ФЗ)</span>
+								<span className="truncate">Чек возврата</span>
 							</button>
 						</div>
 					)}
@@ -401,7 +401,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 					<div className="flex items-center gap-2">
 						<Printer size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
 						<span className="font-semibold text-blue-950 dark:text-blue-200">
-							Платёж сохранён в базе CRM. Требуется повторить печать фискального чека 54-ФЗ?
+							Платёж сохранён в базе CRM. Требуется повторить печать кассового чека?
 						</span>
 					</div>
 					<button
@@ -411,7 +411,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						title={
 							isRetryingFiscalization
 								? "Печать..."
-								: "Отправить чек на фискализатор ККТ без повторного изменения баланса пациента"
+								: "Напечатать чек на кассе без повторного изменения баланса пациента"
 						}
 						className="min-h-[32px] px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 						data-testid="btn-fiscalization-retry-direct"
@@ -420,7 +420,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 							size={13}
 							className={isRetryingFiscalization ? "animate-spin" : ""}
 						/>
-						<span>Повторить фискализацию чека</span>
+						<span>Повторить печать чека</span>
 					</button>
 				</div>
 			)}

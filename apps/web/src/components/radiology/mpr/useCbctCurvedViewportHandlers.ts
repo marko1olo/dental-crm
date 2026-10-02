@@ -5,8 +5,22 @@
  */
 
 import React, { useCallback, useRef, useState } from "react";
-import type { Point3D, ViewportTransform, CbctViewportType, CbctMeasurementRuler } from "../cbctMprMath";
-import { DEFAULT_VIEWPORT_TRANSFORM, getCanvasPointerPos } from "../cbctMprMath";
+import type { Point3D, ViewportTransform, CbctViewportType, CbctMeasurementRuler, CbctAngleMeasurement } from "../cbctMprMath";
+import {
+	DEFAULT_VIEWPORT_TRANSFORM,
+	getCanvasPointerPos,
+	calculateAngleBetween3Points3D,
+	calculateWorldDistance3DMm,
+	hitTestMeasurementHandle,
+	hitTestMeasurementObject,
+	slicePxToScreenPx,
+} from "../cbctMprMath";
+import {
+	panoramicSlicePxToWorldMm,
+	panoramicWorldMmToSlicePx,
+	crossSectionSlicePxToWorldMm,
+	crossSectionWorldMmToSlicePx,
+} from "../cbctCoordinateMath";
 import type { DentalArchCurve, PanoramicReconstructionResult, CrossSectionSliceData } from "../dentalCurveEngine";
 import { hitTestPanoramicToothMarker, mapPanoPointerToCrosshairAndSlice } from "../dentalCurveEngine";
 import { type VirtualImplantSpec, pointToSegmentDistance2D } from "../implantSafetyEngine";
@@ -55,6 +69,18 @@ export interface UseCbctCurvedViewportHandlersParams {
 	isDraggingZoom: { plane: CbctViewportType; startY: number; startZoom: number } | null;
 	setIsDraggingZoom: React.Dispatch<React.SetStateAction<{ plane: CbctViewportType; startY: number; startZoom: number } | null>>;
 	hasDraggedZoomRef: React.MutableRefObject<boolean>;
+	rulers: CbctMeasurementRuler[];
+	setRulers: React.Dispatch<React.SetStateAction<CbctMeasurementRuler[]>>;
+	activeRuler: (CbctMeasurementRuler & { currentMm: Point3D }) | null;
+	setActiveRuler: React.Dispatch<React.SetStateAction<(CbctMeasurementRuler & { currentMm: Point3D }) | null>>;
+	angles: CbctAngleMeasurement[];
+	setAngles: React.Dispatch<React.SetStateAction<CbctAngleMeasurement[]>>;
+	activeAngle: (CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" }) | null;
+	setActiveAngle: React.Dispatch<React.SetStateAction<(CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" }) | null>>;
+	hoveredMeasurementHandle: { type?: string; id: string; handleIndex: number; plane?: any } | null;
+	setHoveredMeasurementHandle: React.Dispatch<React.SetStateAction<any>>;
+	draggingMeasurementHandle: { type?: string; id: string; handleIndex: number; plane?: any } | null;
+	setDraggingMeasurementHandle: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandlersParams) {
@@ -68,7 +94,23 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 		setSelectedMeasurement, handleSelectTooth, panoCanvasRef, crossSectionCanvasRef,
 		isDraggingWL, setIsDraggingWL, isPanning, setIsPanning, isDraggingZoom, setIsDraggingZoom,
 		hasDraggedZoomRef,
+		rulers, setRulers, activeRuler, setActiveRuler,
+		angles, setAngles, activeAngle, setActiveAngle,
+		hoveredMeasurementHandle, setHoveredMeasurementHandle,
+		draggingMeasurementHandle, setDraggingMeasurementHandle,
 	} = params;
+
+	const getPanoPointerMm = useCallback((pointerPx: { readonly x: number; readonly y: number }): Point3D => {
+		const t = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+		const slicePx = { x: (pointerPx.x - t.panX) / t.zoom, y: (pointerPx.y - t.panY) / t.zoom };
+		return panoramicSlicePxToWorldMm(slicePx, panoramicData ?? { widthPx: 1000, heightPx: 500 }, archCurve.totalArcLengthMm);
+	}, [transforms.panoramic, panoramicData, archCurve.totalArcLengthMm]);
+
+	const getCrossPointerMm = useCallback((pointerPx: { readonly x: number; readonly y: number }, cW: number): Point3D => {
+		const t = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+		const slicePx = { x: (pointerPx.x - t.panX) / t.zoom, y: (pointerPx.y - t.panY) / t.zoom };
+		return crossSectionSlicePxToWorldMm(slicePx, activeCrossSection ?? { widthPx: 400, heightPx: 400 }, cW);
+	}, [transforms.cross_section, activeCrossSection]);
 
 	const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
 	const pendingPanoSyncRef = useRef<{ crossSectionIdx: number; worldMm: Point3D } | null>(null);
@@ -98,6 +140,68 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			setIsDraggingZoom({ plane: "panoramic", startY: e.clientY, startZoom: currentTransform.zoom });
 			return;
 		}
+		if (activeTool === "ruler") {
+			if (panoramicData && panoCanvasRef.current) {
+				const canvas = panoCanvasRef.current;
+				const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const pt = getPanoPointerMm(pointerPx);
+				setActiveRuler({ id: `ruler-${Date.now()}`, plane: "panoramic", startMm: pt, endMm: pt, currentMm: pt, distanceMm: 0 });
+			}
+			return;
+		}
+		if (activeTool === "angle") {
+			if (panoramicData && panoCanvasRef.current) {
+				const canvas = panoCanvasRef.current;
+				const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const pt = getPanoPointerMm(pointerPx);
+				if (!activeAngle) {
+					setActiveAngle({ id: `angle-${Date.now()}`, plane: "panoramic", startMm: pt, vertexMm: pt, endMm: pt, currentMm: pt, angleDeg: 0, step: "vertex" } as unknown as CbctAngleMeasurement & { currentMm: Point3D });
+					showToast("Точка 1 (плечо) установлена. Кликните для установки вершины угла", "info");
+					return;
+				}
+				if ((activeAngle as unknown as { step?: "vertex" | "end" }).step === "vertex") {
+					setActiveAngle({ ...activeAngle, vertexMm: pt, endMm: pt, currentMm: pt, step: "end" } as unknown as CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" });
+					showToast("Вершина угла зафиксирована. Кликните для фиксации второго плеча", "info");
+					return;
+				}
+				const deg = calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, pt);
+				const full: CbctAngleMeasurement = { id: activeAngle.id, plane: "panoramic", startMm: activeAngle.startMm, vertexMm: activeAngle.vertexMm, endMm: pt, angleDeg: deg };
+				setAngles((prev) => [...prev, full]);
+				setActiveAngle(null);
+				setSelectedMeasurement(full as unknown as CbctMeasurementRuler);
+				showToast(`Измерение угла зафиксировано: ${deg}°`, "success");
+			}
+			return;
+		}
+
+		if (panoramicData && panoCanvasRef.current) {
+			const canvas = panoCanvasRef.current;
+			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const toScreen = (p: Point3D) => slicePxToScreenPx(panoramicWorldMmToSlicePx(p, panoramicData, archCurve.totalArcLengthMm), currentTransform);
+			const pRulers = rulers.filter((r) => r.plane === "panoramic").map((r) => ({ id: r.id, plane: r.plane, startPx: toScreen(r.startMm), endPx: toScreen(r.endMm) }));
+			const pAngles = angles.filter((a) => a.plane === "panoramic").map((a) => ({ id: a.id, plane: a.plane, startPx: toScreen(a.startMm), vertexPx: toScreen(a.vertexMm), endPx: toScreen(a.endMm) }));
+
+			const handleHit = hitTestMeasurementHandle(pointerPx, pRulers, pAngles, 12);
+			if (handleHit) {
+				setDraggingMeasurementHandle({ type: handleHit.type, id: handleHit.id, handleIndex: handleHit.handleIndex, plane: "panoramic" });
+				setSelectedMeasurement({ type: handleHit.type, id: handleHit.id } as unknown as CbctMeasurementRuler);
+				return;
+			}
+
+			const objectHit = hitTestMeasurementObject(pointerPx, pRulers, pAngles, [], 10);
+			if (objectHit) {
+				if (objectHit.isDeleteButtonHit) {
+					if (objectHit.type === "ruler") { setRulers((prev) => prev.filter((r) => r.id !== objectHit.id)); showToast("Измерение линейки удалено", "info"); }
+					else if (objectHit.type === "angle") { setAngles((prev) => prev.filter((a) => a.id !== objectHit.id)); showToast("Измерение угла удалено", "info"); }
+					setSelectedMeasurement(null);
+					return;
+				}
+				setSelectedMeasurement({ type: objectHit.type, id: objectHit.id } as unknown as CbctMeasurementRuler);
+				return;
+			}
+		}
+
 		if (crossSections.length === 0 || !panoCanvasRef.current) return;
 		setIsDraggingPano(true);
 		const canvas = panoCanvasRef.current;
@@ -112,7 +216,7 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 		const syncRes = mapPanoPointerToCrosshairAndSlice({ x, y }, { width: canvas.width, height: canvas.height }, archCurve, crossSections, crosshairMm, transforms.panoramic);
 		setActiveCrossSectionIdx(syncRes.crossSectionIdx);
 		setCrosshairMm(syncRes.worldMm);
-	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setTransforms, setActiveCrossSectionIdx, setCrosshairMm, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef]);
+	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setTransforms, setActiveCrossSectionIdx, setCrosshairMm, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef, rulers, setRulers, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle, setDraggingMeasurementHandle, setSelectedMeasurement, getPanoPointerMm]);
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (isDraggingWL) {
@@ -142,6 +246,57 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			}));
 			return;
 		}
+
+		if (draggingMeasurementHandle && draggingMeasurementHandle.plane === "panoramic" && panoCanvasRef.current) {
+			const canvas = panoCanvasRef.current;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const pt = getPanoPointerMm(pointerPx);
+			if (draggingMeasurementHandle.type === "ruler") {
+				setRulers((prev) => prev.map((r) => {
+					if (r.id !== draggingMeasurementHandle.id) return r;
+					const startMm = draggingMeasurementHandle.handleIndex === 0 ? pt : r.startMm;
+					const endMm = draggingMeasurementHandle.handleIndex === 1 ? pt : r.endMm;
+					return { ...r, startMm, endMm, distanceMm: calculateWorldDistance3DMm(startMm, endMm) };
+				}));
+			} else if (draggingMeasurementHandle.type === "angle") {
+				setAngles((prev) => prev.map((a) => {
+					if (a.id !== draggingMeasurementHandle.id) return a;
+					const startMm = draggingMeasurementHandle.handleIndex === 0 ? pt : a.startMm;
+					const vertexMm = draggingMeasurementHandle.handleIndex === 1 ? pt : a.vertexMm;
+					const endMm = draggingMeasurementHandle.handleIndex === 2 ? pt : a.endMm;
+					return { ...a, startMm, vertexMm, endMm, angleDeg: calculateAngleBetween3Points3D(startMm, vertexMm, endMm) };
+				}));
+			}
+			return;
+		}
+
+		if (activeRuler && activeRuler.plane === "panoramic" && panoCanvasRef.current) {
+			const canvas = panoCanvasRef.current;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const pt = getPanoPointerMm(pointerPx);
+			setActiveRuler((prev) => (prev ? { ...prev, currentMm: pt } : null));
+			return;
+		}
+
+		if (activeAngle && activeAngle.plane === "panoramic" && panoCanvasRef.current) {
+			const canvas = panoCanvasRef.current;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const pt = getPanoPointerMm(pointerPx);
+			setActiveAngle((prev) => (prev ? { ...prev, currentMm: pt } : null));
+			return;
+		}
+
+		if (!isDraggingPano && panoCanvasRef.current && panoramicData) {
+			const canvas = panoCanvasRef.current;
+			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const toScreen = (p: Point3D) => slicePxToScreenPx(panoramicWorldMmToSlicePx(p, panoramicData, archCurve.totalArcLengthMm), currentTransform);
+			const pRulers = rulers.filter((r) => r.plane === "panoramic").map((r) => ({ id: r.id, plane: r.plane, startPx: toScreen(r.startMm), endPx: toScreen(r.endMm) }));
+			const pAngles = angles.filter((a) => a.plane === "panoramic").map((a) => ({ id: a.id, plane: a.plane, startPx: toScreen(a.startMm), vertexPx: toScreen(a.vertexMm), endPx: toScreen(a.endMm) }));
+			const handleHit = hitTestMeasurementHandle(pointerPx, pRulers, pAngles, 12);
+			setHoveredMeasurementHandle(handleHit ? { type: handleHit.type, id: handleHit.id, handleIndex: handleHit.handleIndex, plane: "panoramic" } : null);
+		}
+
 		if (!isDraggingPano || crossSections.length === 0 || !panoCanvasRef.current) return;
 		const canvas = panoCanvasRef.current;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
@@ -156,7 +311,7 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 				rafPanoIdRef.current = null;
 			});
 		}
-	}, [isDraggingWL, isPanning, isDraggingZoom, isDraggingPano, crossSections, archCurve, crosshairMm, transforms.panoramic, panoCanvasRef, setWindowWidth, setWindowLevel, setTransforms, setActiveCrossSectionIdx, setCrosshairMm, hasDraggedZoomRef]);
+	}, [isDraggingWL, isPanning, isDraggingZoom, isDraggingPano, crossSections, archCurve, crosshairMm, transforms.panoramic, panoCanvasRef, setWindowWidth, setWindowLevel, setTransforms, setActiveCrossSectionIdx, setCrosshairMm, hasDraggedZoomRef, draggingMeasurementHandle, activeRuler, activeAngle, panoramicData, rulers, angles, setRulers, setAngles, setActiveRuler, setActiveAngle, setHoveredMeasurementHandle, getPanoPointerMm]);
 
 	const handlePanoMouseUp = useCallback(() => {
 		if (rafPanoIdRef.current !== null) {
@@ -173,12 +328,27 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			const nextZoom = Math.min(5.0, Number((currentTransform.zoom * 1.25).toFixed(2)));
 			setTransforms((prev) => ({ ...prev, panoramic: { ...(prev.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
 		}
+		if (draggingMeasurementHandle && draggingMeasurementHandle.plane === "panoramic") {
+			setDraggingMeasurementHandle(null);
+			return;
+		}
+		if (activeRuler && activeRuler.plane === "panoramic") {
+			const distMm = calculateWorldDistance3DMm(activeRuler.startMm, activeRuler.currentMm);
+			if (distMm >= 0.5) {
+				const fullRuler: CbctMeasurementRuler = { id: activeRuler.id, plane: "panoramic", startMm: activeRuler.startMm, endMm: activeRuler.currentMm, distanceMm: distMm };
+				setRulers((prev) => [...prev, fullRuler]);
+				setSelectedMeasurement(fullRuler);
+				showToast(`Замер зафиксирован: ${distMm} мм`, "success");
+			}
+			setActiveRuler(null);
+			return;
+		}
 		setIsDraggingPano(false);
 		setIsPanning(null);
 		setIsDraggingZoom(null);
 		setIsDraggingWL(null);
 		hasDraggedZoomRef.current = false;
-	}, [isDraggingZoom, transforms.panoramic, setActiveCrossSectionIdx, setCrosshairMm, setTransforms, setIsPanning, setIsDraggingZoom, setIsDraggingWL, hasDraggedZoomRef]);
+	}, [isDraggingZoom, transforms.panoramic, setActiveCrossSectionIdx, setCrosshairMm, setTransforms, setIsPanning, setIsDraggingZoom, setIsDraggingWL, hasDraggedZoomRef, draggingMeasurementHandle, activeRuler, setDraggingMeasurementHandle, setRulers, setSelectedMeasurement, setActiveRuler]);
 
 	const handleCrossSectionMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (e.button === 2 || activeTool === "window_level") {
@@ -204,6 +374,68 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			setIsDraggingZoom({ plane: "cross_section", startY: e.clientY, startZoom: currentTransform.zoom });
 			return;
 		}
+		if (activeTool === "ruler") {
+			if (activeCrossSection && crossSectionCanvasRef.current) {
+				const canvas = crossSectionCanvasRef.current;
+				const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const pt = getCrossPointerMm(pointerPx, canvas.width);
+				setActiveRuler({ id: `ruler-${Date.now()}`, plane: "cross_section", startMm: pt, endMm: pt, currentMm: pt, distanceMm: 0 });
+			}
+			return;
+		}
+		if (activeTool === "angle") {
+			if (activeCrossSection && crossSectionCanvasRef.current) {
+				const canvas = crossSectionCanvasRef.current;
+				const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const pt = getCrossPointerMm(pointerPx, canvas.width);
+				if (!activeAngle) {
+					setActiveAngle({ id: `angle-${Date.now()}`, plane: "cross_section", startMm: pt, vertexMm: pt, endMm: pt, currentMm: pt, angleDeg: 0, step: "vertex" } as unknown as CbctAngleMeasurement & { currentMm: Point3D });
+					showToast("Точка 1 (плечо) установлена. Кликните для установки вершины угла", "info");
+					return;
+				}
+				if ((activeAngle as unknown as { step?: "vertex" | "end" }).step === "vertex") {
+					setActiveAngle({ ...activeAngle, vertexMm: pt, endMm: pt, currentMm: pt, step: "end" } as unknown as CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" });
+					showToast("Вершина угла зафиксирована. Кликните для фиксации второго плеча", "info");
+					return;
+				}
+				const deg = calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, pt);
+				const full: CbctAngleMeasurement = { id: activeAngle.id, plane: "cross_section", startMm: activeAngle.startMm, vertexMm: activeAngle.vertexMm, endMm: pt, angleDeg: deg };
+				setAngles((prev) => [...prev, full]);
+				setActiveAngle(null);
+				setSelectedMeasurement(full as unknown as CbctMeasurementRuler);
+				showToast(`Измерение угла зафиксировано: ${deg}°`, "success");
+			}
+			return;
+		}
+
+		if (activeCrossSection && crossSectionCanvasRef.current) {
+			const canvas = crossSectionCanvasRef.current;
+			const currentTransform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const toScreen = (p: Point3D) => slicePxToScreenPx(crossSectionWorldMmToSlicePx(p, activeCrossSection, canvas.width), currentTransform);
+			const pRulers = rulers.filter((r) => r.plane === "cross_section").map((r) => ({ id: r.id, plane: r.plane, startPx: toScreen(r.startMm), endPx: toScreen(r.endMm) }));
+			const pAngles = angles.filter((a) => a.plane === "cross_section").map((a) => ({ id: a.id, plane: a.plane, startPx: toScreen(a.startMm), vertexPx: toScreen(a.vertexMm), endPx: toScreen(a.endMm) }));
+
+			const handleHit = hitTestMeasurementHandle(pointerPx, pRulers, pAngles, 12);
+			if (handleHit) {
+				setDraggingMeasurementHandle({ type: handleHit.type, id: handleHit.id, handleIndex: handleHit.handleIndex, plane: "cross_section" });
+				setSelectedMeasurement({ type: handleHit.type, id: handleHit.id } as unknown as CbctMeasurementRuler);
+				return;
+			}
+
+			const objectHit = hitTestMeasurementObject(pointerPx, pRulers, pAngles, [], 10);
+			if (objectHit) {
+				if (objectHit.isDeleteButtonHit) {
+					if (objectHit.type === "ruler") { setRulers((prev) => prev.filter((r) => r.id !== objectHit.id)); showToast("Измерение линейки удалено", "info"); }
+					else if (objectHit.type === "angle") { setAngles((prev) => prev.filter((a) => a.id !== objectHit.id)); showToast("Измерение угла удалено", "info"); }
+					setSelectedMeasurement(null);
+					return;
+				}
+				setSelectedMeasurement({ type: objectHit.type, id: objectHit.id } as unknown as CbctMeasurementRuler);
+				return;
+			}
+		}
+
 		if (studioMode !== "implant" || !activeCrossSection || !crossSectionCanvasRef.current) return;
 		const canvas = crossSectionCanvasRef.current;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
@@ -228,7 +460,7 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			setSelectedMeasurement({ type: "implant" as unknown as "ruler", id: "active" } as unknown as CbctMeasurementRuler);
 			setCrossSectionDragStart({ clientX: e.clientX, clientY: e.clientY, startX: implantEntryXOffsetMm, startY: implantEntryDepthMm, startAng: implantAngulationDeg });
 		}
-	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel, transforms.cross_section, crossSectionCanvasRef, setTransforms, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, setSelectedMeasurement, setDragImplantPart, setCrossSectionDragStart, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef]);
+	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel, transforms.cross_section, crossSectionCanvasRef, setTransforms, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, setSelectedMeasurement, setDragImplantPart, setCrossSectionDragStart, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef, rulers, setRulers, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle, setDraggingMeasurementHandle, getCrossPointerMm]);
 
 	const handleCrossSectionMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (isDraggingWL) {
@@ -258,6 +490,57 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			}));
 			return;
 		}
+
+		if (draggingMeasurementHandle && draggingMeasurementHandle.plane === "cross_section" && activeCrossSection && crossSectionCanvasRef.current) {
+			const canvas = crossSectionCanvasRef.current;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const pt = getCrossPointerMm(pointerPx, canvas.width);
+			if (draggingMeasurementHandle.type === "ruler") {
+				setRulers((prev) => prev.map((r) => {
+					if (r.id !== draggingMeasurementHandle.id) return r;
+					const startMm = draggingMeasurementHandle.handleIndex === 0 ? pt : r.startMm;
+					const endMm = draggingMeasurementHandle.handleIndex === 1 ? pt : r.endMm;
+					return { ...r, startMm, endMm, distanceMm: calculateWorldDistance3DMm(startMm, endMm) };
+				}));
+			} else if (draggingMeasurementHandle.type === "angle") {
+				setAngles((prev) => prev.map((a) => {
+					if (a.id !== draggingMeasurementHandle.id) return a;
+					const startMm = draggingMeasurementHandle.handleIndex === 0 ? pt : a.startMm;
+					const vertexMm = draggingMeasurementHandle.handleIndex === 1 ? pt : a.vertexMm;
+					const endMm = draggingMeasurementHandle.handleIndex === 2 ? pt : a.endMm;
+					return { ...a, startMm, vertexMm, endMm, angleDeg: calculateAngleBetween3Points3D(startMm, vertexMm, endMm) };
+				}));
+			}
+			return;
+		}
+
+		if (activeRuler && activeRuler.plane === "cross_section" && activeCrossSection && crossSectionCanvasRef.current) {
+			const canvas = crossSectionCanvasRef.current;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const pt = getCrossPointerMm(pointerPx, canvas.width);
+			setActiveRuler((prev) => (prev ? { ...prev, currentMm: pt } : null));
+			return;
+		}
+
+		if (activeAngle && activeAngle.plane === "cross_section" && activeCrossSection && crossSectionCanvasRef.current) {
+			const canvas = crossSectionCanvasRef.current;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const pt = getCrossPointerMm(pointerPx, canvas.width);
+			setActiveAngle((prev) => (prev ? { ...prev, currentMm: pt } : null));
+			return;
+		}
+
+		if (activeCrossSection && crossSectionCanvasRef.current && !dragImplantPart) {
+			const canvas = crossSectionCanvasRef.current;
+			const currentTransform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const toScreen = (p: Point3D) => slicePxToScreenPx(crossSectionWorldMmToSlicePx(p, activeCrossSection, canvas.width), currentTransform);
+			const pRulers = rulers.filter((r) => r.plane === "cross_section").map((r) => ({ id: r.id, plane: r.plane, startPx: toScreen(r.startMm), endPx: toScreen(r.endMm) }));
+			const pAngles = angles.filter((a) => a.plane === "cross_section").map((a) => ({ id: a.id, plane: a.plane, startPx: toScreen(a.startMm), vertexPx: toScreen(a.vertexMm), endPx: toScreen(a.endMm) }));
+			const handleHit = hitTestMeasurementHandle(pointerPx, pRulers, pAngles, 12);
+			setHoveredMeasurementHandle(handleHit ? { type: handleHit.type, id: handleHit.id, handleIndex: handleHit.handleIndex, plane: "cross_section" } : null);
+		}
+
 		if (!activeCrossSection || !crossSectionCanvasRef.current) return;
 		const canvas = crossSectionCanvasRef.current;
 		const pxSpacing = activeCrossSection.pixelSpacingMm || 0.25;
@@ -297,7 +580,7 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 				setImplantAngulationDeg(Math.max(-30, Math.min(30, angleDeg)));
 			}
 		}
-	}, [isDraggingWL, isPanning, isDraggingZoom, dragImplantPart, crossSectionDragStart, activeCrossSection, studioMode, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, hoveredImplantPart, crossSectionCanvasRef, setWindowWidth, setWindowLevel, setTransforms, setHoveredImplantPart, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, hasDraggedZoomRef]);
+	}, [isDraggingWL, isPanning, isDraggingZoom, dragImplantPart, crossSectionDragStart, activeCrossSection, studioMode, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, hoveredImplantPart, crossSectionCanvasRef, setWindowWidth, setWindowLevel, setTransforms, setHoveredImplantPart, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, hasDraggedZoomRef, draggingMeasurementHandle, activeRuler, activeAngle, rulers, angles, setRulers, setAngles, setActiveRuler, setActiveAngle, setHoveredMeasurementHandle, getCrossPointerMm]);
 
 	const handleCrossSectionMouseUp = useCallback(() => {
 		if (isDraggingZoom && !hasDraggedZoomRef.current && isDraggingZoom.plane === "cross_section") {
@@ -305,13 +588,28 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			const nextZoom = Math.min(5.0, Number((currentTransform.zoom * 1.25).toFixed(2)));
 			setTransforms((prev) => ({ ...prev, cross_section: { ...(prev.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
 		}
+		if (draggingMeasurementHandle && draggingMeasurementHandle.plane === "cross_section") {
+			setDraggingMeasurementHandle(null);
+			return;
+		}
+		if (activeRuler && activeRuler.plane === "cross_section") {
+			const distMm = calculateWorldDistance3DMm(activeRuler.startMm, activeRuler.currentMm);
+			if (distMm >= 0.5) {
+				const fullRuler: CbctMeasurementRuler = { id: activeRuler.id, plane: "cross_section", startMm: activeRuler.startMm, endMm: activeRuler.currentMm, distanceMm: distMm };
+				setRulers((prev) => [...prev, fullRuler]);
+				setSelectedMeasurement(fullRuler);
+				showToast(`Замер зафиксирован: ${distMm} мм`, "success");
+			}
+			setActiveRuler(null);
+			return;
+		}
 		setDragImplantPart(null);
 		setCrossSectionDragStart(null);
 		setIsPanning(null);
 		setIsDraggingZoom(null);
 		setIsDraggingWL(null);
 		hasDraggedZoomRef.current = false;
-	}, [isDraggingZoom, transforms.cross_section, setDragImplantPart, setCrossSectionDragStart, setTransforms, setIsPanning, setIsDraggingZoom, setIsDraggingWL, hasDraggedZoomRef]);
+	}, [isDraggingZoom, transforms.cross_section, setDragImplantPart, setCrossSectionDragStart, setTransforms, setIsPanning, setIsDraggingZoom, setIsDraggingWL, hasDraggedZoomRef, draggingMeasurementHandle, activeRuler, setDraggingMeasurementHandle, setRulers, setSelectedMeasurement, setActiveRuler]);
 
 	return {
 		isDraggingPano,

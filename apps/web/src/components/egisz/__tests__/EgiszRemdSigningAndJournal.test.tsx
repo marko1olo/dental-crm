@@ -12,6 +12,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { strToU8, zipSync } from "fflate";
 import { EgiszRemdHubModal } from "../EgiszRemdHubModal";
+import { EgiszJournalTab } from "../tabs/EgiszJournalTab";
 import { SAMPLE_REMD_JOURNAL_RECORDS } from "../egiszJournalData";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
@@ -282,5 +283,39 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 		assert.ok(zipped.length > 100, "ZIP buffer has non-trivial size");
 		assert.equal(zipped[0], 0x50, "ZIP magic byte 1 is 'P'");
 		assert.equal(zipped[1], 0x4b, "ZIP magic byte 2 is 'K'");
+	});
+
+	it("2.6 honest status badges correctly label accepted_by_egisz, rejected_by_egisz, signed, and sent without masquerading as draft", () => {
+		const baseRec = SAMPLE_REMD_JOURNAL_RECORDS[0]!;
+		const testRecords = [
+			{ ...baseRec, id: "T1", status: "accepted_by_egisz" as const },
+			{ ...baseRec, id: "T2", status: "rejected_by_egisz" as const },
+			{ ...baseRec, id: "T3", status: "signed" as const },
+			{ ...baseRec, id: "T4", status: "sent" as const },
+			{ ...baseRec, id: "T5", status: "registered" as const },
+			{ ...baseRec, id: "T6", status: "error" as const },
+			{ ...baseRec, id: "T7", status: "draft" as const },
+		];
+
+		const html = renderToStaticMarkup(
+			createElement(EgiszJournalTab, {
+				records: testRecords,
+				journalFilter: "all",
+				onJournalFilterChange: () => {},
+				selectedJournalId: "T1",
+				onSelectJournalId: () => {},
+				onBatchZipExport: () => {},
+				onSingleZipExport: () => {},
+				onSwitchToSignatureTab: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("Принят ЕГИСЗ"), "Contains honest label 'Принят ЕГИСЗ'");
+		assert.ok(html.includes("Отклонен ЕГИСЗ"), "Contains honest label 'Отклонен ЕГИСЗ'");
+		assert.ok(html.includes("Подписан"), "Contains honest label 'Подписан'");
+		assert.ok(html.includes("Отправлен"), "Contains honest label 'Отправлен'");
+		assert.ok(html.includes("Зарегистрирован"), "Contains honest label 'Зарегистрирован'");
+		assert.ok(html.includes("Ошибка"), "Contains honest label 'Ошибка'");
+		assert.ok(html.includes("Черновик"), "Contains honest label 'Черновик'");
 	});
 });

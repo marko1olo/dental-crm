@@ -1,0 +1,16 @@
+{
+  "role": "RED TEAM PERIODONTOLOGY, PERIO-CHART & HYGIENE INDICES INQUISITOR",
+  "status": "INITIALIZING_RECONNAISSANCE",
+  "completed_steps": [
+    "Read all mandatory rule files (core.md, frontend.md, engineering.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md) in full"
+  ],
+  "pending_steps": [
+    "Reconnaissance of periodontology, perio-chart, and hygiene indices codebase across packages/shared, apps/api, apps/web",
+    "Identify academic bloat, procedural nightmares, mockups, duplicate types, and missing 1-click workflows",
+    "Eliminate procedural nightmare & bloat: Implement 1-click '✓ Пародонт в норме', express WHO sextant/index teeth calculation for OHI-S and PMA, focus on pathology spots",
+    "Eliminate hardcoded mocks and unify duplicated perio-chart types to single SSOT",
+    "Run targeted unit tests and verify typecheck with exit code 0",
+    "Deliver verbatim Inquisitor report with 100% honesty and zero sycophancy"
+  ],
+  "findings": []
+}

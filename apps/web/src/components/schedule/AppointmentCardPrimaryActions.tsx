@@ -74,7 +74,7 @@ export function AppointmentCardPrimaryActions({
 						} else {
 							useAppStore.getState().setCurrentView("visit");
 						}
-						showToast("Пациент в кресле: открыта карта 043/у", "success");
+						showToast("Пациент в кресле: открыта медицинская карта", "success");
 					}}
 					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 					title="Начать приём в кресле (Клавиша 2)"

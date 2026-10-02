@@ -113,7 +113,7 @@ export const FiscalCertificateTab: React.FC<FiscalCertificateTabProps> = ({
 					</div>
 					<div>
 						<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-							ИНН налогоплательщика (не требуется при оплате физлицом, только для справки ФНС):
+							ИНН плательщика (только для справки):
 						</label>
 						<input
 							type="text"

@@ -1313,9 +1313,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 				id: string;
 				fullName: string;
 				relationshipRu: string;
-				birthDate?: string;
-				phone?: string;
-				cardNumber?: string;
+				birthDate?: string | undefined;
+				phone?: string | undefined;
+				cardNumber?: string | undefined;
 				allowSpendFamilyBalance: boolean;
 				allowBooking: boolean;
 			}> = [];

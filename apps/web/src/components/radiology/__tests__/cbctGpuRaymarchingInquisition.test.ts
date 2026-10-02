@@ -31,6 +31,10 @@ import {
 	CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER,
 } from "../mpr/webgl/cbctMprShaders";
 import {
+	CBCT_CROSS_SECTION_FRAGMENT_SHADER,
+	CBCT_CROSS_SECTION_VERTEX_SHADER,
+} from "../mpr/webgl/cbctCrossSectionShaders";
+import {
 	CbctVolumeGlContext,
 	getSharedCbctGlContext,
 } from "../mpr/webgl/CbctVolumeGlContext";
@@ -57,8 +61,8 @@ function createMockVolume(width = 64, height = 64, depth = 32): CbctVoxelVolume 
 		maxHU: 3071,
 		rescaleSlope: 1.0,
 		rescaleIntercept: -1000,
-		defaultWindowWidth: 2200,
-		defaultWindowLevel: 450,
+		defaultWindowWidth: 4025,
+		defaultWindowLevel: 525,
 		isDisposed: false,
 	};
 }
@@ -276,10 +280,12 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 
 		it("CBCT_MPR_FRAGMENT_SHADER implements pitch-black air cutoff and soft-knee shoulder <= 178/255", () => {
 			assert.ok(
+				CBCT_MPR_FRAGMENT_SHADER.includes("if (finalHU <= u_airCutoffHU) {\n        normVal = 0.0;") ||
 				CBCT_MPR_FRAGMENT_SHADER.includes("if (finalHU <= -100.0) {\n        gray = 0.0;"),
-				"MPR shader must strictly clamp air background (HU <= -100) to pitch black (0.0)",
+				"MPR shader must strictly clamp air background to pitch black (0.0)",
 			);
 			assert.ok(
+				CBCT_MPR_FRAGMENT_SHADER.includes("float maxComp = max(0.01, peak - (114.0 / 255.0));") ||
 				CBCT_MPR_FRAGMENT_SHADER.includes("float maxComp = (178.0 - 114.0) / 255.0;"),
 				"MPR shader must cap peak enamel shoulder to 178/255",
 			);
@@ -291,12 +297,33 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 
 		it("CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER implements pitch-black air cutoff and soft-knee shoulder <= 178/255", () => {
 			assert.ok(
+				CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER.includes("if (finalHU <= u_airCutoffHU) {\n        normVal = 0.0;") ||
 				CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER.includes("if (finalHU <= -100.0) {\n        normVal = 0.0;"),
-				"Panoramic shader must strictly clamp air background (HU <= -100) to pitch black (0.0)",
+				"Panoramic shader must strictly clamp air background to pitch black (0.0)",
 			);
 			assert.ok(
+				CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER.includes("float maxComp = max(0.01, peak - (114.0 / 255.0));") ||
 				CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER.includes("float maxComp = (178.0 - 114.0) / 255.0;"),
 				"Panoramic shader must cap peak enamel shoulder to 178/255",
+			);
+		});
+
+		it("CBCT_CROSS_SECTION_FRAGMENT_SHADER samples along arch tangent and normal with Gamma 1.50 and Air Cutoff -500", () => {
+			assert.ok(
+				CBCT_CROSS_SECTION_FRAGMENT_SHADER.includes("vec3 baseUvw = u_sliceOrigin + v_uv.x * u_axisU + v_uv.y * u_axisV;"),
+				"Cross-section shader must sample along bucco-lingual normal axis U and vertical Z axis V",
+			);
+			assert.ok(
+				CBCT_CROSS_SECTION_FRAGMENT_SHADER.includes("vec3 p = baseUvw + float(s) * u_axisNorm;"),
+				"Cross-section slab integration must step along arch tangent T (u_axisNorm)",
+			);
+			assert.ok(
+				CBCT_CROSS_SECTION_FRAGMENT_SHADER.includes("if (finalHU <= u_airCutoffHU) {\n        normVal = 0.0;"),
+				"Cross-section shader must enforce air cutoff (-500 HU)",
+			);
+			assert.ok(
+				CBCT_CROSS_SECTION_FRAGMENT_SHADER.includes("normVal = pow(normVal, u_gamma);"),
+				"Cross-section shader must support non-linear gamma curve (1.50)",
 			);
 		});
 	});
@@ -327,19 +354,60 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 			const zeroAngles = { axialAngleDeg: 0, coronalTiltDeg: 0, sagittalTiltDeg: 0 };
 
 			ctx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
-				windowWidth: 2200,
-				windowLevel: 450,
+				windowWidth: 4025,
+				windowLevel: 525,
 			});
 
 			const elapsedSingle = ctx.getLastRenderTimeMs();
 			assert.ok(elapsedSingle < 2.0, `Single plane GPU dispatch must be < 2 ms (actual: ${elapsedSingle.toFixed(3)} ms)`);
 
 			ctx.renderAllPlanes(volume, centerCrosshair, zeroAngles, {
-				windowWidth: 2200,
-				windowLevel: 450,
+				windowWidth: 4025,
+				windowLevel: 525,
 			});
 			const elapsedAll = ctx.getLastAllPlanesTimeMs();
 			assert.ok(elapsedAll < 2.0, `All planes GPU dispatch must be < 2 ms (actual: ${elapsedAll.toFixed(3)} ms)`);
+
+			ctx.dispose();
+		});
+
+		it("renderCrossSectionOnGl executes in < 1 ms with Gamma 1.50 and Air Cutoff -500 on GPU", () => {
+			const ctx = new CbctVolumeGlContext();
+			const { gl: mockGl } = createMockWebGL2Context();
+			mockGl.readPixels = (_x: number, _y: number, w: number, h: number, _format: number, _type: number, out: Uint8Array) => {
+				out.fill(128);
+			};
+
+			const canvas: any = {
+				width: 256,
+				height: 256,
+				getContext: (type: string) => (type === "webgl2" ? mockGl : null),
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			};
+
+			const inited = ctx.init(canvas);
+			assert.ok(inited && ctx.isAvailable());
+
+			const volume = createMockVolume(32, 32, 16);
+			ctx.uploadVolume(volume);
+
+			const centerCrosshair = { x: 0, y: 0, z: 0 };
+			const normal2D = { x: 0, y: 1 };
+
+			const res = ctx.renderCrossSectionOnGl(volume, centerCrosshair, normal2D, {
+				windowWidth: 4400,
+				windowLevel: 1300,
+				gamma: 1.50,
+				airCutoffHU: -500.0,
+				readPixels: true,
+			});
+
+			assert.ok(res !== null, "renderCrossSectionOnGl must return result");
+			assert.ok(res.coords !== undefined, "Result must contain coords");
+			assert.ok(res.pixelData !== undefined && res.pixelData.length > 0, "Result must contain pixelData");
+			assert.ok(res.renderTimeMs < 1.0, `GPU cross-section dispatch must be < 1 ms (actual: ${res.renderTimeMs.toFixed(3)} ms)`);
+			assert.ok(ctx.getLastCrossSectionRenderTimeMs() < 1.0, "lastCrossSectionRenderTimeMs must be < 1 ms");
 
 			ctx.dispose();
 		});
@@ -371,6 +439,10 @@ describe("RED TEAM INQUISITION: CBCT GPU Raymarching & Enamel Burnout Safeguards
 			assert.ok(
 				gpuCallIdx < returnIdx && returnIdx < cpuFallbackIdx,
 				"GPU render must execute and return; strictly BEFORE CPU preview slice fallback",
+			);
+			assert.ok(
+				!src.includes("renderCanvas2DVolumeRaymarching"),
+				"CbctVolume3DViewport must have zero occurrences of renderCanvas2DVolumeRaymarching (total liquidation of CPU raymarching vestige)",
 			);
 		});
 

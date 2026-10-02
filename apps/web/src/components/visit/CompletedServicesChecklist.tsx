@@ -33,66 +33,18 @@ import {
 import { ChairsideToothSelector } from "./ChairsideToothSelector";
 import { ChairsideExpressGrid } from "./ChairsideExpressGrid";
 import { CompletedServicesList } from "./CompletedServicesList";
+import { ChairsideDiagnosisPackageCard } from "./ChairsideDiagnosisPackageCard";
 
 export { CLINICAL_SERVICE_BUNDLES, type ClinicalServiceBundle } from "./clinicalServiceBundles";
 
-
 /*
-  ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ. ЧТО ЗДЕСЬ БЫЛО СЛОМАНО — ВСЁ СРАЗУ.
-
-  1. Читались поля, которых у позиции плана лечения не существует. Позиция —
-     это TreatmentPlanItem (packages/shared/src/index.ts): serviceId,
-     snapshotServiceName, toothCode, quantity, unitPriceRub, discountRub. Код
-     же спрашивал item.priceId, item.title, item.toothNumber и item.price.
-     На экране это выглядело так: список галочек БЕЗ НАЗВАНИЙ — подпись
-     `{item.title || item.priceId}` разворачивалась в пустоту. Врач видел
-     столбик пустых квадратиков и не мог знать, что отмечает. Ключ React у всех
-     строк тоже был один и тот же — «undefined-undefined».
-  2. Отметка никуда не сохранялась. Она писалась в visitNoteForm.completedServices,
-     а VisitNoteForm — это ровно пять текстовых полей (AppHelpers.tsx), и
-     visitNoteDraftFromForm отправляет на сервер только их. Любая пересборка
-     черновика (visitNoteFormFromDraft / visitNoteFormFromVisit) заменяет форму
-     целиком и молча стирала отметки. Читателя у поля тоже не было: единственное
-     место, откуда выполненные услуги уходят в разбор, — это
-     dashboard.activeVisit.completedServices, а в visitSchema такого поля нет
-     вовсе. То есть врач отмечал услуги, а касса не видела ничего.
-  3. Цены не было. Шаг рабочего дня «назначить лечение, увидеть сумму, отдать
-     пациента в кассу» на этом экране выполнить было нечем.
-  4. Подсказка на заголовке обещала «автоматический расчет начислений врачу и
-     списывание материалов». Ни того, ни другого отсюда не происходит.
-
-  КАК СДЕЛАНО ТЕПЕРЬ. Отметка пишется туда, что действительно доезжает до карты
-  приёма, — в поле «План» (treatmentPlan) отдельной строкой «Выполнено: …».
-  Состояние галочки читается из этого же текста, поэтому оно не может разойтись
-  с тем, что уйдёт на сервер: если врач сам поправит или удалит строку, галочка
-  честно снимется. Новых полей и новых запросов к серверу для этого не нужно.
-
-  ДОЛГ ВЕДУЩЕМУ (нужен сервер, поэтому не делаю): отдельного машинного списка
-  выполненных услуг у приёма нет. Пока его нет, ни начисление врачу, ни
-  списание материалов, ни счёт по факту выполненного автоматически не построить —
-  строка в тексте плана читается человеком, но не программой. Нужны поле
-  visits.completedServices (или своя таблица) плюс приём его в маршруте
-  сохранения приёма; на клиенте контракт уже описан —
-  visitFlowRequest.completedServices в packages/shared.
+  ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ У КРЕСЛА (Mandates 8b, 8e, 8k, 8n).
+  1. Запись отметки в поле treatmentPlan («Выполнено: ...») гарантирует сохранение на сервере.
+  2. Готовый чек-лист услуг по Номенклатуре 804н по клику на диагноз зуба с ценами в целых копейках.
+  3. 1-клик передача в кассу 54-ФЗ и в смету пациента без 10-минутного поиска по 300 позициям.
+  4. Точные цены без float-округлений (Mandate 8b).
 */
 
-/*
-  5. НЕПРОЧИТАННАЯ ЦЕНА ПЕЧАТАЛАСЬ КАК «0 ₽».
-
-  БЫЛО: `Number(item?.unitPriceRub ?? 0)`. Всё, что не прочиталось числом,
-  становилось нулём: пустая цена, «1500,50» с запятой (Number() запятую не
-  принимает), сумма с разделителем тысяч. Услуга с НЕИЗВЕСТНОЙ ценой выглядела
-  бесплатной — «0 ₽» — и этот ноль ещё складывался в итог «К оплате по
-  отмеченному». Врач называл пациенту сумму, в которой не хватало позиций, и
-  проверить это по экрану было нельзя: «0 ₽» ничем не отличается от настоящего
-  нуля.
-
-  ТЕПЕРЬ цену либо удалось прочитать, либо о ней сказано словами. Запятая
-  принимается, разделители тысяч убираются, а строка вида «1,500.50» с двумя
-  разными разделителями честно считается непрочитанной: угадывать в деньгах
-  нельзя. Непрочитанные позиции в итог не попадают, и об этом написано рядом с
-  итогом. Разбор чисел вынесен в completedServicesPlan.ts и закрыт тестом.
-*/
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 function serviceTitleOf(item: any): string {
@@ -440,6 +392,26 @@ export const CompletedServicesChecklist: React.FC<
 		);
 	};
 
+	// 1-клик внесение готового клинического пакета по Номенклатуре 804н
+	const handleApplyDiagnosisPackage = (newLines: string[], invoicePayload: any) => {
+		if (!updateVisitNoteField) return;
+		const base = (planText ?? "").replace(/\s+$/, "");
+		const updatedPlan = base ? `${base}\n${newLines.join("\n")}` : newLines.join("\n");
+		updateVisitNoteField("treatmentPlan", updatedPlan);
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: invoicePayload,
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+	};
+
 	// 1-клик удаление ошибочно внесенной строки
 	const handleRemoveCompletedLine = (rawLine: string) => {
 		if (!updateVisitNoteField) return;
@@ -617,6 +589,15 @@ export const CompletedServicesChecklist: React.FC<
 					</div>
 				)}
 			</div>
+
+			{/* 3.5. ГОТОВЫЙ ЧЕК-ЛИСТ УСЛУГ ПО НОМЕНКЛАТУРЕ 804Н (МГНОВЕННО У КРЕСЛА) */}
+			<ChairsideDiagnosisPackageCard
+				selectedTooth={selectedTooth}
+				patientId={visitPatientId}
+				visitId={visitId}
+				catalog={effectiveCatalog}
+				onApplyPackageToPlan={handleApplyDiagnosisPackage}
+			/>
 
 			{/* 4. КОМПЛЕКСНЫЕ КЛИНИЧЕСКИЕ ПАКЕТЫ (КАРИЕС, ЭНДО, ГИГИЕНА, УДАЛЕНИЕ) */}
 			<div className="mb-3 p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-800/50">

@@ -17,6 +17,7 @@ export interface StockDeductionRecord {
 	inventoryItemId: string;
 	inventoryItemName: string;
 	quantityChanged: string;
+	unitCostRub?: string | null;
 	isOverdraft?: boolean;
 	deficitQty?: number;
 }
@@ -71,6 +72,8 @@ export function isDeductibleQuantity(value: number): boolean {
  *    (по inventoryItemId ASC).
  * 3. Многоарендная изоляция: правила берутся с organizationId = orgId ИЛИ NULL (дефолтные правила),
  *    но строки склада inventoryItems и проводки inventoryTransactions строго ограничены organizationId.
+ * 4. Fallback к 804н BOM (Mandates 8e, 8n): если в БД нет кастомных правил procedureMaterialRules,
+ *    списание автоматически производится по техкартам процедур (fefoStockService.deductForProcedure).
  */
 export async function deductMaterialsForVisit(
 	tx: DbTransaction,
@@ -79,6 +82,8 @@ export async function deductMaterialsForVisit(
 		visitId: string;
 		userId: string | null;
 		transactionType?: "auto_deduct" | "manual_writeoff";
+		services?: Array<{ serviceId: string; quantity?: number }>;
+		items?: Array<{ inventoryItemId: string; quantity: number }>;
 	},
 ): Promise<MaterialDeductionResult> {
 	const {
@@ -86,6 +91,8 @@ export async function deductMaterialsForVisit(
 		visitId,
 		userId,
 		transactionType = "auto_deduct",
+		services: directServices,
+		items: directItems,
 	} = params;
 
 	// 1. Выбираем только незавершённые позиции лечения приёма (защита от повторного списания)
@@ -100,8 +107,65 @@ export async function deductMaterialsForVisit(
 			),
 		);
 
+	const deductions: StockDeductionRecord[] = [];
+	let hasOverdraft = false;
+
 	if (uncompletedItems.length === 0) {
-		return { completedTreatmentItems: 0, deductions: [] };
+		// Поддержка прямого списания по переданным услугам / материалам (Mandate 8v)
+		if (directServices && directServices.length > 0) {
+			for (const srv of directServices) {
+				const procDeductions = await fefoStockService.deductForProcedure(tx, {
+					organizationId,
+					serviceId: srv.serviceId,
+					serviceQuantity: srv.quantity ?? 1,
+					visitId,
+					userId,
+					allowOverdraft: true,
+					transactionType,
+				});
+				for (const pd of procDeductions) {
+					if (pd.isOverdraft) hasOverdraft = true;
+					deductions.push({
+						inventoryItemId: pd.inventoryItemId,
+						inventoryItemName: pd.inventoryItemName,
+						quantityChanged: String(-pd.deductedQty),
+						isOverdraft: pd.isOverdraft,
+						deficitQty: pd.deficitQty,
+					});
+				}
+			}
+		}
+
+		if (directItems && directItems.length > 0) {
+			for (const it of directItems) {
+				const res = await fefoStockService.deductFefo(tx, {
+					organizationId,
+					inventoryItemId: it.inventoryItemId,
+					requiredQty: it.quantity,
+					visitId,
+					userId,
+					allowOverdraft: true,
+					transactionType,
+					notes: `Списание по визиту ${visitId}`,
+				});
+				if (res.isOverdraft) hasOverdraft = true;
+				deductions.push({
+					inventoryItemId: res.inventoryItemId,
+					inventoryItemName: res.inventoryItemName,
+					quantityChanged: String(-res.deductedQty),
+					isOverdraft: res.isOverdraft,
+					deficitQty: res.deficitQty,
+				});
+			}
+		}
+
+		return {
+			completedTreatmentItems: 0,
+			deductions,
+			hasOverdraft,
+			isOverdraft: hasOverdraft,
+			...(hasOverdraft ? { warning: "soft_overdraft" } : {}),
+		};
 	}
 
 	// Помечаем все позиции лечения приёма как completed
@@ -120,30 +184,25 @@ export async function deductMaterialsForVisit(
 		.map((item) => item.serviceId)
 		.filter((id): id is string => typeof id === "string" && id.length > 0);
 
-	if (serviceIds.length === 0) {
-		return { completedTreatmentItems: uncompletedItems.length, deductions: [] };
-	}
-
-	const rules = await tx
-		.select()
-		.from(procedureMaterialRules)
-		.where(
-			and(
-				inArray(procedureMaterialRules.serviceId, serviceIds),
-				or(
-					eq(procedureMaterialRules.organizationId, organizationId),
-					isNull(procedureMaterialRules.organizationId),
+	const rules = serviceIds.length > 0
+		? await tx
+			.select()
+			.from(procedureMaterialRules)
+			.where(
+				and(
+					inArray(procedureMaterialRules.serviceId, serviceIds),
+					or(
+						eq(procedureMaterialRules.organizationId, organizationId),
+						isNull(procedureMaterialRules.organizationId),
+					),
 				),
-			),
-		);
+			)
+		: [];
 
-	if (rules.length === 0) {
-		return { completedTreatmentItems: uncompletedItems.length, deductions: [] };
-	}
-
-	// 3. Агрегируем требуемые количества по каждому inventoryItemId
+	// 3. Агрегируем требуемые количества по каждому inventoryItemId из кастомных правил
 	// Map: inventoryItemId -> requiredQuantity
 	const requiredByItem = new Map<string, number>();
+	const servicesCoveredByRules = new Set<string>();
 
 	for (const item of uncompletedItems) {
 		if (!item.serviceId) continue;
@@ -151,71 +210,99 @@ export async function deductMaterialsForVisit(
 		if (!isDeductibleQuantity(serviceQuantity)) continue;
 
 		const matchingRules = rules.filter((r) => r.serviceId === item.serviceId);
-		for (const rule of matchingRules) {
-			if (!rule.inventoryItemId) continue;
-			const ruleQuantity = Number(rule.quantityToDeduct);
-			if (!isDeductibleQuantity(ruleQuantity)) continue;
+		if (matchingRules.length > 0) {
+			servicesCoveredByRules.add(item.serviceId);
+			for (const rule of matchingRules) {
+				if (!rule.inventoryItemId) continue;
+				const ruleQuantity = Number(rule.quantityToDeduct);
+				if (!isDeductibleQuantity(ruleQuantity)) continue;
 
-			const deductionAmount = ruleQuantity * serviceQuantity;
-			const existing = requiredByItem.get(rule.inventoryItemId) ?? 0;
-			requiredByItem.set(rule.inventoryItemId, existing + deductionAmount);
+				const deductionAmount = ruleQuantity * serviceQuantity;
+				const existing = requiredByItem.get(rule.inventoryItemId) ?? 0;
+				requiredByItem.set(rule.inventoryItemId, existing + deductionAmount);
+			}
 		}
-	}
-
-	if (requiredByItem.size === 0) {
-		return { completedTreatmentItems: uncompletedItems.length, deductions: [] };
 	}
 
 	// 4. Сортируем ID для предотвращения взаимоблокировок (Deadlock-free locking)
 	const sortedItemIds = Array.from(requiredByItem.keys()).sort();
 
-	const lockedInventoryItems = await tx
-		.select()
-		.from(inventoryItems)
-		.where(
-			and(
-				inArray(inventoryItems.id, sortedItemIds),
-				eq(inventoryItems.organizationId, organizationId),
-			),
-		)
-		.for("update");
+	if (sortedItemIds.length > 0) {
+		const lockedInventoryItems = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					inArray(inventoryItems.id, sortedItemIds),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.for("update");
 
-	const inventoryMap = new Map(
-		lockedInventoryItems.map((inv) => [inv.id, inv]),
-	);
+		const inventoryMap = new Map(
+			lockedInventoryItems.map((inv) => [inv.id, inv]),
+		);
 
-	const deductions: StockDeductionRecord[] = [];
-	let hasOverdraft = false;
+		for (const itemId of sortedItemIds) {
+			const requiredQty = requiredByItem.get(itemId);
+			if (!requiredQty || requiredQty <= 0) continue;
 
-	for (const itemId of sortedItemIds) {
-		const requiredQty = requiredByItem.get(itemId);
-		if (!requiredQty || requiredQty <= 0) continue;
+			const inv = inventoryMap.get(itemId);
+			if (!inv) continue;
 
-		const inv = inventoryMap.get(itemId);
-		if (!inv) continue;
+			const fefoRes = await fefoStockService.deductFefo(tx, {
+				organizationId,
+				inventoryItemId: inv.id,
+				requiredQty,
+				visitId,
+				userId,
+				allowOverdraft: true,
+				transactionType,
+				notes: `Списание по визиту ${visitId}`,
+			});
 
-		const fefoRes = await fefoStockService.deductFefo(tx, {
+			if (fefoRes.isOverdraft) {
+				hasOverdraft = true;
+			}
+
+			deductions.push({
+				inventoryItemId: inv.id,
+				inventoryItemName: inv.name,
+				quantityChanged: String(-fefoRes.deductedQty),
+				unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
+				isOverdraft: fefoRes.isOverdraft,
+				deficitQty: fefoRes.deficitQty,
+			});
+		}
+	}
+
+	// 5. Для позиций без кастомных правил procedureMaterialRules списываем по техкартам 804н (BOM)
+	for (const item of uncompletedItems) {
+		if (!item.serviceId) continue;
+		if (servicesCoveredByRules.has(item.serviceId)) continue;
+		const srvQty = Number(item.quantity) || 1;
+		if (!isDeductibleQuantity(srvQty)) continue;
+
+		const procDeductions = await fefoStockService.deductForProcedure(tx, {
 			organizationId,
-			inventoryItemId: inv.id,
-			requiredQty,
+			serviceId: item.serviceId,
+			serviceQuantity: srvQty,
 			visitId,
 			userId,
 			allowOverdraft: true,
 			transactionType,
-			notes: `Списание по визиту ${visitId}`,
 		});
 
-		if (fefoRes.isOverdraft) {
-			hasOverdraft = true;
+		for (const pd of procDeductions) {
+			if (pd.isOverdraft) hasOverdraft = true;
+			deductions.push({
+				inventoryItemId: pd.inventoryItemId,
+				inventoryItemName: pd.inventoryItemName,
+				quantityChanged: String(-pd.deductedQty),
+				isOverdraft: pd.isOverdraft,
+				deficitQty: pd.deficitQty,
+			});
 		}
-
-		deductions.push({
-			inventoryItemId: inv.id,
-			inventoryItemName: inv.name,
-			quantityChanged: String(-fefoRes.deductedQty),
-			isOverdraft: fefoRes.isOverdraft,
-			deficitQty: fefoRes.deficitQty,
-		});
 	}
 
 	return {

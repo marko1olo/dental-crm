@@ -11,6 +11,7 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import "../../../../testCssStub.mjs";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { documentKindMetadata } from "@dental/shared";
@@ -290,7 +291,7 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 		expect(result.executed).toBe(false);
 		expect(mockOpenIssuedHtml).not.toHaveBeenCalled();
 		expect(mockToast).toHaveBeenCalledWith(
-			"У пациента нет созданных документов. Нажмите «+ Создать документ» для выбора бланка ИДС, 043/у или договора",
+			"У пациента нет созданных документов. Нажмите «+ Создать документ» для выбора согласия, медкарты или договора",
 			"info",
 		);
 	});

@@ -228,10 +228,11 @@ export const OdontogramModule = React.memo(({
 				selectedTeeth.length > 0 && selectedTeeth.includes(num)
 					? selectedTeeth
 					: [num];
-			void updateToothState(targets, state);
+			// Если activeSurfaces.length === 0, состояние применяется ко всему зубу целиком (surfaces = undefined / [])
+			const toothSurfaces =
+				activeSurfaces.length > 0 ? [...activeSurfaces] : undefined;
+			void updateToothState(targets, state, toothSurfaces ?? []);
 			try {
-				const toothSurfaces =
-					activeSurfaces.length > 0 ? activeSurfaces : undefined;
 				const findingPayload =
 					toothSurfaces && toothSurfaces.length > 0
 						? {
@@ -358,7 +359,7 @@ export const OdontogramModule = React.memo(({
 			setMenuConfig(null);
 		} else {
 			let activeSelection = selectedTeeth;
-			let currentSurfaces = activeSurfaces;
+			let currentSurfaces: string[] = [];
 
 			if (!odontogramUseSurfaces) {
 				surface = undefined;
@@ -367,18 +368,17 @@ export const OdontogramModule = React.memo(({
 			if (!selectedTeeth.includes(toothNumber)) {
 				activeSelection = [toothNumber];
 				setSelectedTeeth(activeSelection);
-
-				const existing = teethData.find(
-					(t) => t.toothNumber === activeSelection[0],
-				);
-				if (existing?.surfaces) {
-					currentSurfaces = [...existing.surfaces];
-				} else {
-					currentSurfaces = [];
-				}
+				// Базово: сбрасываем поверхности в [], не подтягивая случайные поверхности из старых состояний
+				currentSurfaces = [];
+			} else if (!surface) {
+				// Обычный повторный клик по зубу без указания поверхности также сбрасывает поверхности в []
+				currentSurfaces = [];
+			} else {
+				currentSurfaces = [...activeSurfaces];
 			}
 
-			if (surface && activeSelection.length === 1) {
+			// Если врач явно кликнул на конкретную поверхность в активном режиме поверхностей
+			if (surface && activeSelection.length === 1 && odontogramUseSurfaces) {
 				if (currentSurfaces.includes(surface)) {
 					currentSurfaces = currentSurfaces.filter((s) => s !== surface);
 				} else {
@@ -386,7 +386,7 @@ export const OdontogramModule = React.memo(({
 				}
 			}
 
-			if (activeSelection.length !== 1) {
+			if (activeSelection.length !== 1 || !odontogramUseSurfaces) {
 				currentSurfaces = [];
 			}
 
@@ -422,7 +422,7 @@ export const OdontogramModule = React.memo(({
 				y,
 				position: isUpperJaw ? "bottom" : "top",
 				caretOffset,
-				surfaces: currentSurfaces,
+				...(currentSurfaces.length > 0 ? { surfaces: currentSurfaces } : {}),
 			});
 		}
 	};

@@ -294,7 +294,7 @@ export function AutoclaveNewCycleTab({
 				<div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
 					<span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
 						<Zap size={16} color="var(--teal, #0d9488)" />
-						Автоклавирование без бюрократии (СанПиН 3.3686-21)
+						Стерилизация инструментов
 					</span>
 					<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
 						Регистрация типового цикла для смотровых наборов и наконечников в 1 клик
@@ -333,7 +333,7 @@ export function AutoclaveNewCycleTab({
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
 					<span className="autoclave-form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
 						<Sparkles size={16} color="var(--teal, #0d9488)" />
-						Регламентные режимы стерилизации (СанПиН 3.3686-21)
+						Режимы стерилизации
 					</span>
 					<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
 						Автоматическая калибровка T°, давления и времени
@@ -443,7 +443,7 @@ export function AutoclaveNewCycleTab({
 
 				<div className="autoclave-form-group">
 					<label className="autoclave-form-label" htmlFor="bix-number">
-						Номер бикса / упаковки (СанПиН 3.3686-21)
+						Номер бикса / упаковки
 					</label>
 					<input
 						id="bix-number"
@@ -540,7 +540,7 @@ export function AutoclaveNewCycleTab({
 					<div>
 						<span className="autoclave-form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
 							<ShieldCheck size={16} color="var(--teal, #0d9488)" />
-							Химический контроль в 5 контрольных точках камеры (СанПиН 3.3686-21)
+							Контроль термоиндикаторов в 5 точках камеры
 						</span>
 						<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
 							Кликните на маркер точки для смены статуса (ОК / Брак)
@@ -630,7 +630,7 @@ export function AutoclaveNewCycleTab({
 
 				<div className="autoclave-form-group">
 					<label className="autoclave-form-label" htmlFor="nurse-verify">
-						Контрольная заверка (Ответственный по СанПиН)
+						Контрольная заверка (Ответственный за стерилизацию)
 					</label>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", height: "44px" }}>
 						<input
@@ -661,7 +661,7 @@ export function AutoclaveNewCycleTab({
 					{compliance.isCompliant && areAllPointsPassed ? (
 						<span style={{ color: "#059669", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.35rem" }}>
 							<CheckCircle2 size={18} />
-							Партия готова к внесению в Журнал 257/у (Статус: СТЕРИЛЬНО)
+							Партия готова к внесению в журнал (Статус: СТЕРИЛЬНО)
 						</span>
 					) : (
 						<span style={{ color: "#dc2626", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.35rem" }}>
@@ -677,7 +677,7 @@ export function AutoclaveNewCycleTab({
 					style={{ minWidth: "220px", minHeight: "44px" }}
 				>
 					<Save size={18} />
-					Записать цикл в Форму 257/у
+					Записать цикл в журнал
 				</button>
 			</div>
 		</form>

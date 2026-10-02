@@ -48,6 +48,7 @@ import {
 	treatmentItems,
 } from "../db/schema.js";
 import { InsufficientStockError } from "./inventory/materialDeduction.js";
+import { fefoStockService } from "./inventory/fefoStockService.js";
 
 export { InsufficientStockError };
 
@@ -964,17 +965,27 @@ export class TreatmentConsumablesService {
 			const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
 			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
 			const newStock = Number((baseStock - requiredQty).toFixed(4));
-			const quantityChanged = String(-requiredQty);
 			const threshold = Number(inv.criticalThreshold ?? inv.minQty ?? 0);
 
-			// Дефицит материалов: при нехватке остатка списываем в отрицательный остаток (дефицит),
-			// фиксируем предупреждение в результате списания, чтобы врач беспрепятственно завершил прием.
-			if (newStock < 0) {
+			const noteText =
+				(newStock < 0
+					? `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена по приёму ${visitId}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`
+					: `Автосписание по приёму ${visitId}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`) +
+				(clientMutationId ? ` [mutation:${clientMutationId}]` : "");
+
+			const fefoRes = await fefoStockService.deductFefo(tx as any, {
+				organizationId,
+				inventoryItemId: inv.id,
+				requiredQty,
+				visitId: safeVisitId,
+				userId,
+				allowOverdraft: params.allowOverdraft ?? true,
+				transactionType,
+				notes: noteText,
+			});
+
+			if (fefoRes.isOverdraft || newStock < 0) {
 				hasAnyOverdraft = true;
-				console.warn(
-					`[treatmentConsumablesService] Списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
-						`для визита ${visitId} (клиника ${organizationId}): в наличии ${baseStock}, требовалось ${requiredQty}, итоговый дефицит: ${newStock}.`,
-				);
 				warnings.push({
 					type: "out_of_stock",
 					itemId: inv.id,
@@ -1021,52 +1032,14 @@ export class TreatmentConsumablesService {
 				}
 			}
 
-			// Update warehouse stock
-			await tx
-				.update(inventoryItems)
-				.set({
-					stockQuantity: String(newStock),
-					currentQty: String(newStock),
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(inventoryItems.id, inv.id),
-						eq(inventoryItems.organizationId, organizationId),
-					),
-				);
-
-			const isOverdraft = newStock < 0;
-			transactionsToInsert.push({
-				organizationId,
-				visitId: safeVisitId,
-				itemId: inv.id,
-				inventoryItemId: inv.id,
-				quantityChanged,
-				qty: quantityChanged,
-				unitCostRub: inv.unitCostRub ?? inv.pricePerUnit ?? "0",
-				transactionType: isOverdraft ? "emergency_overdraft" : transactionType,
-				isOverdraft,
-				userId,
-				notes:
-					(isOverdraft
-						? `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена по приёму ${visitId}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`
-						: `Автосписание по приёму ${visitId}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`) +
-					(clientMutationId ? ` [mutation:${clientMutationId}]` : ""),
-			});
-
 			deductions.push({
 				inventoryItemId: inv.id,
 				inventoryItemName: inv.name,
-				quantityChanged,
+				quantityChanged: String(-fefoRes.deductedQty),
 				unitCostRub: inv.unitCostRub,
 				lotNumber: inv.lotNumber,
 				remainingStock: newStock,
 			});
-		}
-
-		if (transactionsToInsert.length > 0) {
-			await tx.insert(inventoryTransactions).values(transactionsToInsert);
 		}
 
 		return {

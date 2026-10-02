@@ -194,17 +194,19 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			alertMessageRu = `Препарат противопоказан детям в возрасте до ${drug.minAgeYears} лет.`;
 		}
 
-		const formattedText043 = isContraindicated
-			? `[БЛОКИРОВКА АНЕСТЕЗИИ: ${contraindicationReasonRu}]`
+		const safetyWarningLine = isContraindicated
+			? `\n• ⚠️ ВНИМАНИЕ: Противопоказание по соматическому анамнезу (${contraindicationReasonRu}). Введено по решению лечащего врача под личную ответственность.`
 			: isOverdose
-				? `[БЛОКИРОВКА АНЕСТЕЗИИ: Превышение токсической дозы ${totalDoseAdministeredMg} мг > ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг]`
-				: [
-						`Анестезиологическое пособие: ${drug.nameRu}.`,
-						`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
-						`• Вес ребенка: ${safeWeight} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
-						`• Расход дозы: ${doseUtilizationPercent}% (макс. ${maxSafeCarpulesCount} карп.) — ДОЗА БЕЗОПАСНА.`,
-						`• Вазоконстриктор: ${drug.vasoconstrictorRu}.`,
-					].join("\n");
+				? `\n• ⚠️ ВНИМАНИЕ: Превышение расчетной дозы (${totalDoseAdministeredMg} мг > МРД ${maxAllowedTotalDoseMg} мг на ${safeWeight} кг). Введено по клиническим показаниям под личную ответственность врача.`
+				: "";
+
+		const formattedText043 = [
+			`Анестезиологическое пособие: ${drug.nameRu}.`,
+			`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
+			`• Вес ребенка: ${safeWeight} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
+			`• Расход дозы: ${doseUtilizationPercent}% (макс. ${maxSafeCarpulesCount} карп.) ${isOverdose ? "— ⚠️ ПРЕВЫШЕНИЕ МРД" : "— ДОЗА БЕЗОПАСНА"}.`,
+			`• Вазоконстриктор: ${drug.vasoconstrictorRu}.${safetyWarningLine}`,
+		].join("\n");
 
 		const result: PediatricAnesthesiaCalculationResult = {
 			drug,
@@ -240,17 +242,16 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 		onCalculationChange?.(calculation);
 	}, [calculation, onCalculationChange]);
 
+	// Mandate 8e: Doctor Autonomy — the CRM NEVER blocks saving or applying anesthesia records
 	const handleApplyAnesthesia = useCallback(() => {
-		if (calculation.isContraindicated) {
-			showToast(`БЛОКИРОВКА: ${calculation.contraindicationReasonRu}`, "error", 4500);
-			return;
-		}
-		if (calculation.isOverdose) {
-			showToast("БЛОКИРОВКА: Нельзя внести токсическую дозу анестетика в карту 043/у! Уменьшите количество карпул.", "error", 4500);
-			return;
-		}
 		onApplyToProtocol?.(calculation.formattedText043, calculation);
-		showToast(`Анестезия ${drug.shortLabelRu} (${calculation.carpulesAdministered} карп.) внесена в протокол`, "success", 2500);
+		if (calculation.isContraindicated) {
+			showToast(`Внимание: ${calculation.contraindicationReasonRu} (зафиксировано в протоколе 043/у)`, "warning", 4000);
+		} else if (calculation.isOverdose) {
+			showToast(`Внимание: превышение расчетной дозы МРД (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг). Зафиксировано в 043/у.`, "warning", 4000);
+		} else {
+			showToast(`Анестезия ${drug.shortLabelRu} (${calculation.carpulesAdministered} карп.) внесена в протокол`, "success", 2500);
+		}
 	}, [calculation, drug.shortLabelRu, onApplyToProtocol]);
 
 	const handleSetMaxSafeDose = useCallback(() => {
@@ -481,26 +482,37 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* МГНОВЕННЫЙ КРАСНЫЙ АЛЕРТ И БЛОКИРОВКА ТОКСИЧЕСКОЙ ДОЗЫ */}
+			{/* МГНОВЕННЫЙ АЛЕРТ: ПРЕВЫШЕНИЕ РАСЧЕТНОЙ ДОЗЫ (МРД)             */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			{calculation.isOverdose && (
 				<div
-					className="mb-3 rounded-xl border-2 border-rose-600 bg-rose-50 dark:bg-rose-950/60 p-3 text-rose-950 dark:text-rose-100 shadow-md animate-in fade-in duration-200"
+					className="mb-3 rounded-xl border-2 border-rose-500 bg-rose-50 dark:bg-rose-950/60 p-3 text-rose-950 dark:text-rose-100 shadow-md animate-in fade-in duration-200"
 					data-testid="anesthesia-toxic-overdose-alert"
 				>
-					<div className="flex items-start gap-2.5">
-						<AlertOctagon className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5 animate-bounce" />
-						<div className="space-y-1 min-w-0">
-							<div className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-600 dark:text-rose-300">
-								ПРЕВЫШЕНИЕ ТОКСИЧЕСКОЙ ДОЗЫ АНЕСТЕТИКА! БЛОКИРОВКА!
-							</div>
-							<p className="text-xs leading-relaxed font-semibold">
-								Введено <span className="underline font-mono">{calculation.totalDoseAdministeredMg} мг</span> ({calculation.carpulesAdministered} карп.) при максимально допустимой дозе <span className="font-mono">{calculation.maxAllowedTotalDoseMg} мг</span> (лимит {drug.maxDoseMgPerKg} мг/кг на вес {weightKg} кг).
-							</p>
-							<div className="text-[11px] font-bold bg-rose-200/60 dark:bg-rose-900/60 px-2 py-1 rounded inline-block">
-								Безопасный максимум для этого ребенка: не более {calculation.maxSafeCarpulesCount} карпул(ы)!
+					<div className="flex flex-col sm:flex-row items-start justify-between gap-2.5">
+						<div className="flex items-start gap-2.5 min-w-0">
+							<AlertOctagon className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+							<div className="space-y-1 min-w-0">
+								<div className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-600 dark:text-rose-300">
+									ВНИМАНИЕ: ПРЕВЫШЕНИЕ РАСЧЕТНОЙ ДОЗЫ АНЕСТЕТИКА (МРД)!
+								</div>
+								<p className="text-xs leading-relaxed font-semibold">
+									Введено <span className="underline font-mono">{calculation.totalDoseAdministeredMg} мг</span> ({calculation.carpulesAdministered} карп.) при максимально допустимой дозе <span className="font-mono">{calculation.maxAllowedTotalDoseMg} мг</span> (лимит {drug.maxDoseMgPerKg} мг/кг на вес {weightKg} кг).
+								</p>
+								<div className="text-[11px] font-bold bg-rose-200/60 dark:bg-rose-900/60 px-2 py-1 rounded inline-block">
+									Безопасный расчет для этого ребенка: до {calculation.maxSafeCarpulesCount} карпул(ы)
+								</div>
 							</div>
 						</div>
+						<button
+							type="button"
+							onClick={handleSetMaxSafeDose}
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shrink-0 transition cursor-pointer self-stretch sm:self-auto flex items-center justify-center gap-1 shadow-xs"
+							data-testid="btn-reduce-to-safe-dose"
+							title={`Снизить до максимальной безопасной дозы: ${calculation.maxSafeCarpulesCount} карп.`}
+						>
+							<span>Снизить до {calculation.maxSafeCarpulesCount} карп.</span>
+						</button>
 					</div>
 				</div>
 			)}
@@ -543,7 +555,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* КНОПКА ПРИМЕНЕНИЯ В ПРОТОКОЛ (С БЛОКИРОВКОЙ ПРИ ОВЕРДОЗЕ) */}
+			{/* КНОПКА ПРИМЕНЕНИЯ В ПРОТОКОЛ (ВРАЧЕБНАЯ АВТОНОМИЯ: БЕЗ ДИЗЕЙБЛА)  */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
 				<div className="text-[11px] text-[var(--muted,#64748b)] min-w-0">
@@ -553,34 +565,35 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 				<button
 					type="button"
 					onClick={handleApplyAnesthesia}
-					disabled={calculation.isOverdose || calculation.isContraindicated}
-					className={`min-h-[36px] sm:h-8 px-3 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer select-none shadow-xs active:scale-95 ${
-						calculation.isOverdose || calculation.isContraindicated
-							? "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed opacity-60"
-							: "bg-teal-600 hover:bg-teal-700 text-white"
+					className={`min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer select-none shadow-xs active:scale-95 touch-manipulation ${
+						calculation.isContraindicated
+							? "bg-rose-600 hover:bg-rose-700 text-white"
+							: calculation.isOverdose
+								? "bg-amber-600 hover:bg-amber-700 text-white"
+								: "bg-teal-600 hover:bg-teal-700 text-white"
 					}`}
 					title={
 						calculation.isContraindicated
-							? `Блокировка: ${calculation.contraindicationReasonRu}`
+							? `Внести в протокол (соматический риск: ${calculation.contraindicationReasonRu})`
 							: calculation.isOverdose
-								? "Блокировка: превышена токсическая доза!"
+								? `Внести в протокол с отметкой о превышении расчетной дозы (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг)`
 								: "Внести расчет дозы анестезии в дневник 043/у"
 					}
 					data-testid="btn-apply-anesthesia-protocol"
 				>
 					{calculation.isContraindicated ? (
 						<>
-							<ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
-							<span>Противопоказано</span>
+							<ShieldAlert className="h-4 w-4 text-white shrink-0" />
+							<span>Внести с риском (выбор врача)</span>
 						</>
 					) : calculation.isOverdose ? (
 						<>
-							<ShieldAlert className="h-3.5 w-3.5" />
-							<span>Блокировка овердоза</span>
+							<AlertTriangle className="h-4 w-4 text-white shrink-0" />
+							<span>Внести с превышением МРД</span>
 						</>
 					) : (
 						<>
-							<Zap className="h-3.5 w-3.5" />
+							<Zap className="h-4 w-4 text-white shrink-0" />
 							<span>Внести анестезию в 043/у</span>
 						</>
 					)}

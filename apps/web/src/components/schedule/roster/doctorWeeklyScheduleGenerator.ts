@@ -36,8 +36,8 @@ export * from "./rosterDateRangeBinding";
  */
 export function generateWeeklyScheduleForStaffAndCabinets(
 	startDateIso: string,
-	staffList: StaffMember[] = DEFAULT_CLINIC_STAFF,
-	cabinets: CabinetDefinition[] = CLINIC_CABINETS_CATALOG,
+	staffList: StaffMember[] = isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [],
+	cabinets: CabinetDefinition[] = isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG : [],
 	preset: "five_day" | "two_two" | "morning" | "evening" | "full_day" = "five_day",
 ): DoctorShift[] {
 	const allChairs: Array<{ cabinetId: string; chairId: string; name: string }> =
@@ -61,7 +61,9 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 
 	const doctors = staffList.filter((s) => s.isDoctor);
 	const assistants = staffList.filter((s) => s.isAssistant);
-	const fallbackDoctors = DEFAULT_CLINIC_STAFF.filter((s) => s.isDoctor);
+	const fallbackDoctors = isDemoShowcaseMode()
+		? DEFAULT_CLINIC_STAFF.filter((s) => s.isDoctor)
+		: [];
 	const effectiveDoctors =
 		doctors.length > 0 ? doctors : fallbackDoctors;
 	if (effectiveDoctors.length === 0) return [];

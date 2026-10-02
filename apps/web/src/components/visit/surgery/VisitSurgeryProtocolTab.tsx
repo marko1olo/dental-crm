@@ -285,7 +285,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						<h3 className="text-base font-black text-[var(--ink)] flex items-center gap-2">
 							<span>Хирургический протокол & Имплантологический кокпит</span>
 							<span className="text-xs px-2.5 py-0.5 rounded-lg font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
-								{`Зуб #${effectiveTooth}`}
+								{`Зуб FDI #${effectiveTooth}`}
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted)]">
@@ -351,7 +351,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
-						Зуб операции:
+						Зуб операции (FDI):
 					</span>
 					<span className="text-sm font-black font-mono px-2.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)]">
 						{`#${effectiveTooth}`}
@@ -585,12 +585,12 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				<div className="text-xs text-[var(--muted)]">
 					{currentNorm.code804n && (
 						<>
-							<span>Код: </span>
+							<span>Услуга: </span>
 							<strong className="text-[var(--ink)]">{currentNorm.code804n}</strong>
 							<span> · </span>
 						</>
 					)}
-					<span>МКБ-10: </span>
+					<span>Диагноз: </span>
 					<strong className="text-[var(--ink)]">{currentNorm.icd10}</strong>
 					{currentNorm.category === "implant" ? " · Торк 35 Н/см" : ""}
 				</div>

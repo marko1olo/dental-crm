@@ -52,6 +52,7 @@ import {
 	multiplyKopecks,
 	parseKopecks,
 	percentageOfKopecks,
+	splitKopecks,
 	sumKopecks,
 } from "@dental/shared";
 import {
@@ -750,18 +751,11 @@ export function calculateInstallmentScheduleKopecks(
 		};
 	}
 
+	const parts = splitKopecks(totalKopecks, months);
+	const monthlyPaymentKopecks = parts[0] ?? 0;
+	const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
 	const basePart = Math.floor(totalKopecks / months);
 	const remainder = totalKopecks - basePart * months;
-	const parts: Kopecks[] = [];
-
-	for (let i = 0; i < months; i++) {
-		// Распределяем копеечный остаток на первые месяцы
-		const part = i < remainder ? basePart + 1 : basePart;
-		parts.push(part);
-	}
-
-	const monthlyPaymentKopecks = parts[0] ?? basePart;
-	const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
 
 	return {
 		months,

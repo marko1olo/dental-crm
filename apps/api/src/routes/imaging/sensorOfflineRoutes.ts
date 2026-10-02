@@ -8,6 +8,7 @@ import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 const registerLocalStudyBodySchema = z.object({
 	patientId: z.string().uuid("Идентификатор пациента должен быть валидным UUID"),
 	visitId: z.string().uuid().optional().nullable(),
+	doctorId: z.string().uuid().optional().nullable(),
 	kind: z
 		.enum([
 			"ct",
@@ -107,6 +108,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			organizationId,
 			patientId: data.patientId,
 			visitId: data.visitId,
+			doctorId: data.doctorId || undefined,
 			kind: data.kind as ImagingStudyKind,
 			title: data.title || `Снимок ${data.kind.toUpperCase()}`,
 			toothCode: data.toothCode,
@@ -132,6 +134,10 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 	 */
 	app.post(
 		"/api/imaging/upload",
+		{
+			bodyLimit: Number(process.env.DICOM_BODY_LIMIT_BYTES ?? 2 * 1024 * 1024 * 1024),
+			config: { tenantTxSelfManaged: true },
+		},
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			if (!(await requireClinicalMutationAccess(request, reply, "upload radiology scan"))) {
 				return;
@@ -176,7 +182,14 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				region = query.region || undefined;
 				visitId = query.visitId || undefined;
 				filename = query.filename || (request.headers["x-file-name"] as string) || "scan.dcm";
-				fileStream = request.raw;
+				if (Buffer.isBuffer(request.body)) {
+					const { Readable } = await import("node:stream");
+					fileStream = Readable.from(request.body);
+				} else if (request.body && typeof (request.body as any).pipe === "function") {
+					fileStream = request.body as NodeJS.ReadableStream;
+				} else {
+					fileStream = request.raw;
+				}
 			}
 
 			if (!patientId) {

@@ -164,7 +164,7 @@ export function EmergencyBiohazardRegisterTab() {
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
 				<h2>АВАРИЙНЫЕ СИТУАЦИИ И АПТЕЧКА «АНТИ-ВИЧ»</h2>
-				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»">Регистрация контактов с биоматериалами и протоколы экстренной профилактики</p>
+				<p title="Профилактика инфекционных рисков">Регистрация контактов с биоматериалами и протоколы экстренной профилактики</p>
 			</div>
 
 			<div
@@ -180,7 +180,7 @@ export function EmergencyBiohazardRegisterTab() {
 			>
 				<AlertOctagon size={24} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
 				<div style={{ fontSize: "0.85rem", lineHeight: 1.5 }}>
-					<strong style={{ color: "#dc2626" }} title="СанПиН 3.3686-21">ЭКСТРЕННЫЙ АЛГОРИТМ ПРИ УКОЛАХ И ПОРЕЗАХ:</strong>
+					<strong style={{ color: "#dc2626" }} title="Экстренный протокол">ЭКСТРЕННЫЙ АЛГОРИТМ ПРИ УКОЛАХ И ПОРЕЗАХ:</strong>
 					<ol style={{ margin: "0.35rem 0 0 1.25rem", padding: 0 }}>
 						<li>Снять перчатки, выдавить каплю крови из ранки.</li>
 						<li>Вымыть руки проточной водой с мылом, обработать 70% спиртом, края раны смазать 5% спиртовым йодом, заклеить пластырем.</li>

@@ -24,6 +24,25 @@ import { readDenteClinicToken, readDenteStaffToken } from "./safeLocalStorage";
 /** Имя заголовка админского секрета. Реэкспортируется из `AppHelpers.tsx` для совместимости. */
 export const denteAdminSecretHeaderName = "x-dente-admin-secret";
 
+export function getDenteAuthHeaders(
+	extra: Record<string, string> = {},
+): Record<string, string> {
+	const headers: Record<string, string> = { ...extra };
+	const clinicToken = readDenteClinicToken();
+	const staffToken = readDenteStaffToken();
+	if (clinicToken) {
+		headers["x-dente-clinic-token"] = clinicToken;
+	}
+	if (staffToken) {
+		headers["x-dente-staff-token"] = staffToken;
+	}
+	const token = staffToken || clinicToken;
+	if (token && !headers.Authorization) {
+		headers.Authorization = `Bearer ${token}`;
+	}
+	return headers;
+}
+
 export function denteAdminSecretRequestHeaders(
 	extra: Record<string, string> = {},
 	adminSecret?: string,
@@ -33,14 +52,6 @@ export function denteAdminSecretRequestHeaders(
 		? { ...extra, [denteAdminSecretHeaderName]: secret }
 		: { ...extra };
 
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	if (clinicToken) {
-		headers["x-dente-clinic-token"] = clinicToken;
-	}
-	if (staffToken) {
-		headers["x-dente-staff-token"] = staffToken;
-	}
-
-	return headers;
+	return getDenteAuthHeaders(headers);
 }
+

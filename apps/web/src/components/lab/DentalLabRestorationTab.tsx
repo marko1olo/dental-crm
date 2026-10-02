@@ -356,6 +356,7 @@ export function DentalLabRestorationTab({
 				toggleTooth={toggleTooth}
 				selectQuadrant={selectQuadrant}
 				jawScope={jawScope}
+				constructionType={constructionType}
 			/>
 
 			{/* 3-CLICK EXPRESS ORTHOPEDIC CONFIGURATOR (Mandate 8e: Fast 0-Click Core Loop & 3-Click Law) */}

@@ -22,7 +22,13 @@ import {
 	kopecksToRubles,
 	calculateVatKopecks,
 	isRetailCommodityItem,
+	resolveTaxDeductionCategoryShared,
+	EXPENSIVE_TREATMENT_804N_CODES,
+	TAX_DEDUCTION_RELATIONSHIP_MAP,
 } from "@dental/shared";
+export const ANNUAL_TAX_DEDUCTION_LIMIT_RUB = 150000;
+export const ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 = 150000;
+export const ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024 = 120000;
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 
 export interface Order804nFiscalReceiptItem {
@@ -177,7 +183,6 @@ export const TAX_DEDUCTION_RELATIONSHIP_CODES: Record<TaxDeductionRelationship, 
 	child: "4",
 };
 
-export const ANNUAL_TAX_DEDUCTION_LIMIT_RUB = 150000; // Лимит по ст. 219 НК РФ для обычного лечения (Код 01) с 2024 года
 
 export interface TaxDeductionReceiptBreakdown {
 	readonly code01Kopecks: Kopecks;
@@ -239,46 +244,11 @@ export interface TaxDeductionCertificatePayload {
 
 /**
  * Определение кода налогового вычета по Номенклатуре 804н и названию услуги (Код 01 против Кода 02).
- * Код 02 (Дорогостоящее лечение): дентальная имплантация (A16.07.054, A16.07.054.001, A16.07.054.002),
- * костная пластика (A16.07.041, A16.07.041.001), синус-лифтинг (A16.07.041.002, A16.07.040),
- * сложные реконструкции альвеолярного отростка (A16.07.055, A16.07.096).
+ * SSOT: Делегирует в каноническую реализацию resolveTaxDeductionCategoryShared из @dental/shared (Мандаты 8b, 8za),
+ * поддерживающую полный перечень кодов Постановления Правительства РФ № 458.
  */
 export function resolveTaxDeductionCategory(code804n?: string, serviceName?: string): "1" | "2" {
-	const expensiveCodes = [
-		"A16.07.054.001",
-		"A16.07.054.002",
-		"A16.07.054",
-		"A16.07.041",
-		"A16.07.041.001",
-		"A16.07.041.002",
-		"A16.07.040",
-		"A16.07.055",
-		"A16.07.096",
-	];
-
-	if (code804n && expensiveCodes.includes(code804n.trim())) {
-		return "2";
-	}
-
-	if (serviceName) {
-		const lower = serviceName.toLowerCase();
-		if (
-			lower.includes("импланта") ||
-			lower.includes("имплантат") ||
-			lower.includes("синус-лифтинг") ||
-			lower.includes("синуслифтинг") ||
-			lower.includes("костная пластика") ||
-			lower.includes("остеопластик") ||
-			lower.includes("аугментация") ||
-			lower.includes("расщепление гребня") ||
-			lower.includes("реконструкция челюсти") ||
-			lower.includes("костный трансплантат")
-		) {
-			return "2";
-		}
-	}
-
-	return "1";
+	return resolveTaxDeductionCategoryShared(code804n, serviceName);
 }
 
 /**

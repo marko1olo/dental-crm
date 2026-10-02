@@ -30,6 +30,7 @@ export interface MultiFrameDicomHeader {
   studyDate: string;
   seriesDescription: string;
   sopClassUid: string;
+  imageType: string;
   transferSyntaxUid: string;
   isEncapsulated: boolean;
   isZDescending: boolean;
@@ -182,6 +183,7 @@ export function parseMultiFrameDicomHeader(buffer: ArrayBuffer): MultiFrameDicom
   let studyDate = "";
   let seriesDescription = "";
   let sopClassUid = "";
+  let imageType = "ORIGINAL\\PRIMARY\\AXIAL";
   let transferSyntaxUid = "";
   let isEncapsulated = false;
 
@@ -271,6 +273,14 @@ export function parseMultiFrameDicomHeader(buffer: ArrayBuffer): MultiFrameDicom
         if (transferSyntaxUid.startsWith("1.2.840.10008.1.2.4") || transferSyntaxUid === "1.2.840.10008.1.2.5") {
           isEncapsulated = true;
         }
+      }
+    } else if (group === 0x0008 && element === 0x0008) {
+      // ImageType
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
+        imageType = new TextDecoder("ascii")
+          .decode(new Uint8Array(buffer, tagValOff, tagLen))
+          .replace(/\0+$/, "")
+          .trim();
       }
     } else if (group === 0x0008 && element === 0x0016) {
       // SOPClassUID
@@ -459,7 +469,7 @@ export function parseMultiFrameDicomHeader(buffer: ArrayBuffer): MultiFrameDicom
     }
   }
 
-  // Determine physical Z spacing and orientation
+  // Determine physical Z spacing and orientation via robust median adjacent step
   let perFrameDeltaZ = 0;
   let isZDescending = false;
 
@@ -469,9 +479,21 @@ export function parseMultiFrameDicomHeader(buffer: ArrayBuffer): MultiFrameDicom
     if (firstZ > lastZ) {
       isZDescending = true;
     }
-    const computed = Math.abs(lastZ - firstZ) / (zPositions.length - 1);
-    if (computed > 0.001 && computed < 50.0) {
-      perFrameDeltaZ = computed;
+    const stepDeltas: number[] = [];
+    for (let k = 1; k < zPositions.length; k++) {
+      const delta = Math.abs(zPositions[k]! - zPositions[k - 1]!);
+      if (delta > 0.001 && delta < 50.0) {
+        stepDeltas.push(delta);
+      }
+    }
+    if (stepDeltas.length > 0) {
+      stepDeltas.sort((a, b) => a - b);
+      perFrameDeltaZ = stepDeltas[Math.floor(stepDeltas.length / 2)]!;
+    } else {
+      const computed = Math.abs(lastZ - firstZ) / (zPositions.length - 1);
+      if (computed > 0.001 && computed < 50.0) {
+        perFrameDeltaZ = computed;
+      }
     }
   }
 
@@ -528,6 +550,7 @@ export function parseMultiFrameDicomHeader(buffer: ArrayBuffer): MultiFrameDicom
     studyDate,
     seriesDescription,
     sopClassUid,
+    imageType,
     transferSyntaxUid,
     isEncapsulated,
     isZDescending,

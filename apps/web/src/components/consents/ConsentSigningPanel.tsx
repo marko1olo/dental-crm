@@ -1,4 +1,5 @@
 import {
+	CheckCircle2,
 	Download,
 	FileText,
 	PenTool,
@@ -101,48 +102,35 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 				padding: "1.25rem",
 			}}
 		>
-			{/* Переключение метода: Бумага vs Векторный планшет */}
-			<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
-				<div className="flex items-center gap-1.5 p-0.5 bg-[var(--paper)] rounded-lg border border-[var(--line)]">
-					<button
-						type="button"
-						className={`consent-mode-btn ${verificationMethod === "paper_physical" ? "active" : ""}`}
-						onClick={() => setVerificationMethod("paper_physical")}
-						data-testid="tab-method-paper"
-						style={{ height: "26px", padding: "0 10px", fontSize: "12px", borderRadius: "6px" }}
-					>
-						<Printer size={13} />
-						<span>Бумажный бланк</span>
-					</button>
-					<button
-						type="button"
-						className={`consent-mode-btn ${verificationMethod === "tablet_stylus" ? "active" : ""}`}
-						onClick={() => setVerificationMethod("tablet_stylus")}
-						data-testid="tab-method-tablet"
-						style={{ height: "26px", padding: "0 10px", fontSize: "12px", borderRadius: "6px" }}
-					>
-						<PenTool size={13} />
-						<span>Планшет врача</span>
-					</button>
-				</div>
-				<span className="consent-statutory-badge shrink-0">
-					{verificationMethod === "paper_physical" ? "Оригинал в карте" : "Векторная подпись"}
-				</span>
-			</div>
-
 			{verificationMethod === "paper_physical" ? (
 				<>
-					<div className="flex items-center justify-between">
+					{/* Верхняя строка статуса: Бумажный приоритет (323-ФЗ ст. 20) */}
+					<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
 						<div className="flex items-center gap-2">
-							<ShieldCheck size={22} className="text-[var(--teal,#0d9488)]" />
-							<span className="font-bold text-sm">
+							<ShieldCheck size={22} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span className="font-bold text-sm text-[var(--ink)]">
 								Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)
 							</span>
 						</div>
-						<span className="consent-statutory-badge">
-							Оригинал в карте
-						</span>
+						<div className="flex items-center gap-2">
+							<span className="consent-statutory-badge shrink-0">
+								Оригинал в карте
+							</span>
+							{/* Кнопка-таб для машинной совместимости с селекторами */}
+							<button
+								type="button"
+								className="consent-mode-btn active"
+								onClick={() => setVerificationMethod("paper_physical")}
+								data-testid="tab-method-paper"
+								style={{ display: "none" }}
+								aria-hidden="true"
+							>
+								<Printer size={13} />
+								<span>Бумажный бланк</span>
+							</button>
+						</div>
 					</div>
+
 					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
 						Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
 						Бумажный оригинал подшивается в медицинскую карту пациента (срок хранения 25 лет).
@@ -163,7 +151,33 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						</span>
 					</label>
 
+					{/* КРУПНЫЕ ДОМИНИРУЮЩИЕ КНОПКИ ДЕЙСТВИЯ (PAPER-FIRST) */}
 					<div className="flex items-center gap-3 pt-1 flex-wrap">
+						<button
+							type="button"
+							className="consent-action-btn primary"
+							onClick={onPrint}
+							style={{
+								minHeight: "44px",
+								fontSize: "14px",
+								fontWeight: "bold",
+								background: "var(--teal)",
+								color: "var(--on-teal, #ffffff)",
+								boxShadow: "var(--shadow-1)",
+								cursor: "pointer",
+							}}
+							title={
+								activeMode === "packages"
+									? "Многостраничная печать заполненного пакета ИДС для подписи ручкой (А4)"
+									: "Печать заполненного бланка ИДС для подписи ручкой (А4)"
+							}
+						>
+							<Printer size={18} />
+							<span>
+								{activeMode === "packages" ? "Печать пакета для подписи ручкой (А4)" : "Печать согласия для подписи ручкой (А4)"}
+							</span>
+						</button>
+
 						<button
 							type="button"
 							className="consent-action-btn primary"
@@ -174,9 +188,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								minHeight: "44px",
 								fontSize: "14px",
 								fontWeight: "bold",
-								background: "var(--teal)",
-								color: "var(--on-teal, #ffffff)",
+								background: "var(--emerald, #059669)",
+								color: "#ffffff",
 								boxShadow: "var(--shadow-1)",
+								cursor: "pointer",
 							}}
 						>
 							<Zap size={18} />
@@ -186,19 +201,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 									: "Подтвердить подписание на бумаге (1 клик)"}
 							</span>
 						</button>
-						<button
-							type="button"
-							className="consent-tool-btn"
-							onClick={onPrint}
-							title={
-								activeMode === "packages"
-									? "Многостраничная печать заполненного пакета ИДС (А4)"
-									: "Печать заполненного бланка ИДС на принтер (А4)"
-							}
-						>
-							<Printer size={16} />
-							<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
-						</button>
+
 						<button
 							type="button"
 							className="consent-tool-btn"
@@ -215,6 +218,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
 							</span>
 						</button>
+
 						<button
 							type="button"
 							className="consent-tool-btn"
@@ -226,17 +230,48 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							<span>Скачать PDF/A</span>
 						</button>
 					</div>
+
+					{/* СПРЯТАННАЯ СЕКЦИЯ: подпись на экране строго опциональная */}
+					<div
+						className="pt-2 flex items-center justify-between flex-wrap gap-2"
+						style={{ borderTop: "1px dashed var(--line)" }}
+					>
+						<span className="text-xs text-muted">
+							Сенсорный экран (если в клинике есть планшет у кресла):
+						</span>
+						<button
+							type="button"
+							className="consent-mode-btn"
+							onClick={() => setVerificationMethod("tablet_stylus")}
+							data-testid="tab-method-tablet"
+							style={{
+								height: "28px",
+								padding: "0 10px",
+								fontSize: "11.5px",
+								borderRadius: "6px",
+								border: "1px dashed var(--line-strong)",
+								background: "var(--paper)",
+								color: "var(--muted)",
+								cursor: "pointer",
+							}}
+							title="Развернуть сенсорную панель для стилуса или пальца (если в клинике есть планшет)"
+						>
+							<PenTool size={13} />
+							<span>Подписать на экране / планшете (опционально)</span>
+						</button>
+					</div>
 				</>
 			) : (
 				<>
-					<div className="flex items-center justify-between">
+					{/* РАЗВЁРНУТЫЙ СЕНСОРНЫЙ ПЛАНШЕТ (ТОЛЬКО ЕСЛИ ПОЛЬЗОВАТЕЛЬ ЯВНО ВЫБРАЛ) */}
+					<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
 						<div className="flex items-center gap-2">
-							<PenTool size={20} className="text-[var(--teal,#0d9488)]" />
-							<span className="font-bold text-sm">
+							<PenTool size={20} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span className="font-bold text-sm text-[var(--ink)]">
 								Электронная векторная подпись (сенсорный ввод / стилус)
 							</span>
 						</div>
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 flex-wrap">
 							<button
 								type="button"
 								className="consent-tool-btn py-1 px-2 text-xs"
@@ -247,11 +282,34 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								<RotateCcw size={12} />
 								<span>Очистить</span>
 							</button>
+
+							<button
+								type="button"
+								className="consent-mode-btn active"
+								onClick={() => setVerificationMethod("paper_physical")}
+								data-testid="tab-method-paper"
+								style={{
+									height: "26px",
+									padding: "0 10px",
+									fontSize: "11.5px",
+									borderRadius: "6px",
+									background: "var(--paper)",
+									color: "var(--ink)",
+									border: "1px solid var(--line-strong)",
+									cursor: "pointer",
+								}}
+								title="Свернуть сенсорную подпись и вернуться к бумажному бланку А4"
+							>
+								<Printer size={13} />
+								<span>Вернуться к бумажному бланку</span>
+							</button>
+
 							<span className="consent-statutory-badge">
 								Векторные кривые Безье
 							</span>
 						</div>
 					</div>
+
 					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
 						Пациент ставит векторную подпись на экране планшета или монитора. Росчерк сглаживается кубическими кривыми Безье и фиксируется в векторе SVG с отпечатком SHA-256.
 					</p>
@@ -366,6 +424,15 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						>
 							<Download size={16} />
 							<span>Скачать PDF/A</span>
+						</button>
+						<button
+							type="button"
+							className="consent-tool-btn"
+							onClick={() => setVerificationMethod("paper_physical")}
+							title="Отменить экранную подпись и перейти к распечатке на бумаге"
+						>
+							<Printer size={16} />
+							<span>Печать на бумаге</span>
 						</button>
 					</div>
 				</>

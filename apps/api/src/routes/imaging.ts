@@ -40,3 +40,4 @@ export {
 export { chooseDicomAdjacentWindow } from "./imaging/renderProgressiveStages.js";
 
 export * from "./imaging/index.js";
+export * from "./imaging/patientFioBindingEngine.js";

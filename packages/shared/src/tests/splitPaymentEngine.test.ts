@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	allocateSplitPaymentAcrossItems,
+	balanceSplitDepositPlusCard,
+	balanceSplitTenderRemainder,
 	type SplitPaymentPositionItem,
 	type SplitPaymentTenderInput,
 	SplitPaymentValidationError,
@@ -191,4 +193,71 @@ describe("Wave 23: Domain 1 — Split Payment Engine (Святость дене�
 		assert.equal(totalAllocatedAdvKop, 300000);
 		assert.equal(totalAllocatedCashKop + totalAllocatedCardKop + totalAllocatedAdvKop, 1500000);
 	});
+
+	it("8. 1-Click Remainder Balancer: balances exact kopecks to card or SBP without calculator", () => {
+		const actTotalKopecks = 1245050; // 12 450.50 ₽
+		// Patient paid 2,000.00 ₽ in cash
+		const currentTenders: SplitPaymentTenderInput = {
+			cashKopecks: 200000,
+		};
+
+		// 1-Click: "+ на Карту"
+		const balancedCard = balanceSplitTenderRemainder({
+			actTotalKopecks,
+			currentTenders,
+			targetKind: "card",
+		});
+
+		assert.equal(balancedCard.cashKopecks, 200000);
+		assert.equal(balancedCard.cardKopecks, 1045050); // 10 450.50 ₽ exactly
+
+		const valCard = validateAndBalanceSplitPayment({
+			actTotalKopecks,
+			tenders: balancedCard,
+		});
+		assert.equal(valCard.isBalanced, true);
+		assert.equal(valCard.discrepancyKopecks, 0);
+
+		// 1-Click: "+ в СБП"
+		const balancedSbp = balanceSplitTenderRemainder({
+			actTotalKopecks,
+			currentTenders,
+			targetKind: "sbp",
+		});
+		assert.equal(balancedSbp.sbpKopecks, 1045050);
+
+		const valSbp = validateAndBalanceSplitPayment({
+			actTotalKopecks,
+			tenders: balancedSbp,
+		});
+		assert.equal(valSbp.isBalanced, true);
+	});
+
+	it("9. 1-Click Deposit + Card Combo: spends available deposit first and closes remaining tail on card", () => {
+		const actTotalKopecks = 1000033; // 10 000.33 ₽
+		const availableDepositKopecks = 325000; // 3 250.00 ₽ on patient account
+
+		const balanced = balanceSplitDepositPlusCard({
+			actTotalKopecks,
+			currentTenders: {},
+			availableDepositKopecks,
+			secondaryTender: "card",
+		});
+
+		assert.equal(balanced.advanceDepositKopecks, 325000); // 3 250.00 ₽ from deposit
+		assert.equal(balanced.cardKopecks, 675033); // 6 750.33 ₽ on card
+
+		const val = validateAndBalanceSplitPayment({
+			actTotalKopecks,
+			tenders: balanced,
+		});
+
+		assert.equal(val.isBalanced, true);
+		assert.equal(val.actTotalKopecks, 1000033);
+		assert.equal(val.totalTendersKopecks, 1000033);
+		assert.equal(val.ffd12Tags.tag1215_advanceOffsetKopecks, 325000);
+		assert.equal(val.ffd12Tags.tag1081_electronicKopecks, 675033);
+		assert.equal(val.discrepancyKopecks, 0);
+	});
 });
+

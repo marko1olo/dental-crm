@@ -19,13 +19,16 @@
 
 import {
 	calculateCombinedHygieneReport,
+	calculateSextantHygieneIndices,
 	CLINICAL_PERIO_NORM_SUMMARY_RU,
 	CLINICAL_PRO_HYGIENE_SUMMARY_RU,
 	createClinicalPerioNormProtocolText,
 	createClinicalProHygieneProtocolText,
 	createHealthyHygieneAssessment,
 	deriveHygieneFromPerioTeeth,
+	formatSextantHygieneSummary,
 	HYGIENE_INDEX_TEETH_CONFIG,
+	WHO_HYGIENE_SEXTANTS,
 	type CombinedHygieneReport,
 	type HygieneToothAssessment,
 	type PerioToothRecord,
@@ -504,10 +507,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		};
 		setAssessments(gingivitisAssessments);
 
+		const rep = calculateCombinedHygieneReport(gingivitisAssessments);
 		const protocolText =
 			"• Экспресс-оценка гигиены и пародонта: Хронический катаральный гингивит (K05.1).\n" +
 			"• Status localis: Отек десневых сосочков, гиперемия и цианоз маргинального края десны, кровоточивость при зондировании (BOP+). Патологических пародонтальных карманов нет (глубина бороздок до 3 мм за счет отека десны). Определяются наддесневые зубные отложения и мягкий зубной налет.\n" +
-			"• Клинические индексы: OHI-S 1.7 (удовлетворительная), PMA 35% (воспаление сосочков и маргинальной десны), КПИ 2.0 (зубной камень, кровоточивость).\n" +
+			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
 			"• Рекомендовано: Профессиональная гигиена полости рта (УЗ + AirFlow), противовоспалительная терапия, аппликации дентального геля.";
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -601,10 +605,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		};
 		setAssessments(mildPerioAssessments);
 
+		const rep = calculateCombinedHygieneReport(mildPerioAssessments);
 		const protocolText =
 			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит легкой степени тяжести (K05.3).\n" +
 			"• Status localis: Десна умеренно гиперемирована, пастозна, с цианотичным оттенком. Глубина пародонтальных карманов 3-4 мм, преимущественно в межзубных промежутках, кровоточивость при зондировании (BOP+). Рецессия десны до 1 мм, умеренное количество над- и поддесневого зубного камня, патологическая подвижность зубов отсутствует (0 ст.). На рентгенограмме/КЛКТ: деструкция кортикальной пластинки и вершин межальвеолярных перегородок до 1/3 длины корней.\n" +
-			"• Клинические индексы: OHI-S 1.8 (удовлетворительная), PMA 35% (умеренное воспаление сосочков и маргинального края), КПИ 2.5 (зубной камень, карманы 3-4 мм).\n" +
+			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
 			"• Рекомендовано: Профессиональная гигиена полости рта (УЗ Piezon + субгингивальный AirFlow), закрытый кюретаж карманов, антисептическая обработка десны, обучение гигиене.";
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -698,10 +703,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		};
 		setAssessments(perioAssessments);
 
+		const rep = calculateCombinedHygieneReport(perioAssessments);
 		const protocolText =
 			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит средней степени тяжести (K05.3).\n" +
 			"• Status localis: Десна застойно гиперемирована с цианотичным оттенком, сосочки деформированы. Глубина пародонтальных карманов 4-5 мм с серозным экссудатом, рецессия десны 1-2 мм, обильный под- и наддесневой зубной камень, патологическая подвижность I ст. На рентгенограмме/КЛКТ: резорбция костной ткани межальвеолярных перегородок от 1/3 до 1/2 длины корней.\n" +
-			"• Клинические индексы: OHI-S 2.4 (неудовлетворительная), PMA 55% (тяжелое диффузное воспаление), КПИ 3.0 (пародонтальные карманы 4-5 мм).\n" +
+			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
 			"• Рекомендовано: Комплексная пародонтальная терапия, поддесневой скейлинг SRP, Vector-терапия, антимикробная обработка карманов, шинирование по показаниям.";
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -795,10 +801,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		};
 		setAssessments(perioAssessments);
 
+		const rep = calculateCombinedHygieneReport(perioAssessments);
 		const protocolText =
 			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит тяжёлой степени (K05.32).\n" +
 			"• Status localis: Десна застойно цианотична, выраженная кровоточивость сосочков (BOP > 50%). Глубокие пародонтальные карманы от 6 до 8 мм с серозно-гнойным экссудатом, рецессия десны 2-4 мм с обнажением фуркаций корней (фуркационные дефекты II класса). Обильный над- и поддесневой зубной камень, патологическая подвижность зубов II-III ст., веерообразное расхождение резцов. На рентгенограмме/КЛКТ: диффузная деструкция костной ткани межальвеолярных перегородок более 1/2 длины корней.\n" +
-			"• Клинические индексы: OHI-S 2.8 (плохая гигиена), PMA 75% (тяжелый генерализованный гингивит), КПИ 4.0 (тяжелые деструктивные изменения пародонта, карманы ≥ 6 мм, подвижность).\n" +
+			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
 			"• Рекомендовано: Неотложная противовоспалительная санация пародонта, антисептическое орошение карманов хлоргексидином 0.05%, эвакуация гнойного экссудата. Временное экстракоронарное шинирование подвижных зубов (A16.07.019). Системная противовоспалительная терапия, консультация хирурга-пародонтолога (лоскутные операции / удаление безнадежных зубов).";
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
@@ -1074,8 +1081,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 	// 1-Click Insert into Visit Diary 043/u (ALWAYS ACTIVE - Zero Obstacles)
 	const handleInsertTo043 = useCallback(() => {
+		const sextantsResult = calculateSextantHygieneIndices(assessments);
+		const sextantSummary = formatSextantHygieneSummary(sextantsResult);
 		const lines = [
 			report.summaryText043,
+			`• Экспресс-скрининг по 6 секстантам ВОЗ (16, 11, 26 • 36, 31, 46): ${sextantSummary}`,
 			"• Дополнительные клинические индексы гигиены:",
 			`  - ${silnessResult.ratingText}`,
 			`  - ${fedorovResult.ratingText}`,
@@ -1120,6 +1130,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		);
 	}, [
 		report.summaryText043,
+		assessments,
 		silnessResult,
 		fedorovResult,
 		phpResult,
@@ -1128,6 +1139,8 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 	// 1-Click Print Protocol (Miller's Law: лаконичное прямое действие)
 	const handlePrintProtocol = useCallback(() => {
+		const sextantsResult = calculateSextantHygieneIndices(assessments);
+		const sextantSummary = formatSextantHygieneSummary(sextantsResult);
 		const printContent = [
 			"═══════════════════════════════════════════════════════════════",
 			"ПРОТОКОЛ КЛИНИЧЕСКИХ ИНДЕКСОВ ГИГИЕНЫ И ПАРОДОНТА",
@@ -1138,6 +1151,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			`1. Индекс OHI-S (Грин-Вермиллион): ${report.ohiS.ratingText}`,
 			`   - Зубной налет (DI-S): ${report.ohiS.debrisScore}`,
 			`   - Зубной камень (CI-S): ${report.ohiS.calculusScore}`,
+			`   - Экспресс-скрининг по 6 секстантам ВОЗ: ${sextantSummary}`,
 			`2. Индекс Silness-Löe (Сиднесс-Лоэ): ${silnessResult.ratingText}`,
 			`3. Индекс Федорова-Володкиной: ${fedorovResult.ratingText}`,
 			`4. Индекс PHP (Подошадлей-Хейли): ${phpResult.ratingText}`,
@@ -1841,6 +1855,17 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 											</div>
 										</div>
 									</div>
+									{(() => {
+										const sextantDef = WHO_HYGIENE_SEXTANTS.find((s) => s.indexToothNumber === cfg.toothNumber);
+										return sextantDef ? (
+											<span
+												className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30 shrink-0"
+												title={`Секстант ВОЗ ${sextantDef.sextant}: зубы ${sextantDef.teethRangeRu}`}
+											>
+												{sextantDef.sextant} ({sextantDef.teethRangeRu})
+											</span>
+										) : null;
+									})()}
 								</div>
 
 								{/* Row 1: Primary Hygiene Score (OHI-S DI-S / Silness-Löe / Fedorov-Volodkina / PHP) */}

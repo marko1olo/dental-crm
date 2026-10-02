@@ -115,7 +115,7 @@ export const GeneralCleaningModal: React.FC<GeneralCleaningModalProps> = ({
 		setExposureMinutes(60);
 		setUvMinutes(120);
 		setVentilationMinutes(15);
-		setNotes("Генеральная уборка по СанПиН 3.3686-21: Аламинол 5%, 60 мин, УФ 120 мин, проветривание 15 мин.");
+		setNotes("Генеральная уборка: Аламинол 5%, 60 мин, УФ 120 мин, проветривание 15 мин.");
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -210,7 +210,7 @@ export const GeneralCleaningModal: React.FC<GeneralCleaningModalProps> = ({
 							<h2 className="text-lg font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2">
 								<span>Генеральная уборка и расчет дезраствора</span>
 								<span className="text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold uppercase tracking-wide">
-									СанПиН 3.3686-21
+									Стандарт дезинфекции
 								</span>
 							</h2>
 							<div className="text-xs text-[var(--muted,#64748b)]">
@@ -233,7 +233,7 @@ export const GeneralCleaningModal: React.FC<GeneralCleaningModalProps> = ({
 				<div className="p-3.5 rounded-xl bg-teal-50/80 border border-teal-200 flex items-center justify-between gap-3 flex-wrap">
 					<div className="flex items-center gap-2 text-xs text-teal-900">
 						<Sparkles size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
-						<span><strong>Норма СанПиН:</strong> Операционная, Аламинол 5% (вирулицидный режим), экспозиция 60 мин, УФ 120 мин.</span>
+						<span><strong>Стандартная норма:</strong> Операционная, Аламинол 5% (вирулицидный режим), экспозиция 60 мин, УФ 120 мин.</span>
 					</div>
 					<button
 						type="button"
@@ -460,7 +460,7 @@ export const GeneralCleaningModal: React.FC<GeneralCleaningModalProps> = ({
 
 						<div className="p-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between">
 							<div>
-								<div className="text-[11px] text-[var(--muted,#64748b)] font-semibold">Следующая уборка per СанПиН:</div>
+								<div className="text-[11px] text-[var(--muted,#64748b)] font-semibold">Следующая плановая уборка:</div>
 								<div className="text-sm font-extrabold text-[var(--ink,#0f172a)]">{nextPlannedDate}</div>
 							</div>
 							<span className="text-xs font-bold px-2 py-0.5 rounded bg-teal-100 text-teal-800">

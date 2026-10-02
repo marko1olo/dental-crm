@@ -46,24 +46,38 @@ export type DoctorSpecialtyId =
 
 export type AssistantCategoryId = "none" | "second" | "first" | "highest";
 
-export interface DoctorSpecialtyCommissionRule {
-	readonly specialtyId: string;
-	readonly titleRu: string;
-	readonly defaultPercentage: number;
-	readonly retailProductsPercentage: number;
-	readonly deductsLabCosts: boolean;
-	readonly deductsMaterialCosts: boolean;
-	readonly minGuaranteeMonthlyKop: number;
-	readonly descriptionRu: string;
-}
+import {
+	DOCTOR_SPECIALTY_PAYROLL_PRESETS,
+	type DoctorSpecialtyCommissionRule,
+	type AssistantShiftRateRule,
+	ASSISTANT_SHIFT_RULE,
+	type KpiBonusTier,
+	KPI_BONUS_TIERS,
+	CLINICAL_CATEGORY_COMMISSION_PERCENT,
+	DEFAULT_CATEGORY_COMMISSION_PERCENT,
+	type DoctorCompletedServiceItem,
+	type DoctorPayrollStornoLineItem,
+} from "@dental/shared/payroll";
+
+export {
+	DOCTOR_SPECIALTY_PAYROLL_PRESETS,
+	type DoctorSpecialtyCommissionRule,
+	type AssistantShiftRateRule,
+	ASSISTANT_SHIFT_RULE,
+	type KpiBonusTier,
+	KPI_BONUS_TIERS,
+	CLINICAL_CATEGORY_COMMISSION_PERCENT,
+	DEFAULT_CATEGORY_COMMISSION_PERCENT,
+	type DoctorCompletedServiceItem,
+	type DoctorPayrollStornoLineItem,
+};
 
 export type DoctorSpecialtyConfig = DoctorSpecialtyCommissionRule;
 
-export interface AssistantShiftRateRule {
-	readonly baseShiftRateKop: number;
-	readonly radiographBonusKop: number;
-	readonly surgeryAssistanceBonusKop: number;
-	readonly overtimeHourlyRateKop: number;
+export interface SoloDoctorSpecialtyPreset {
+	readonly specialtyId: string;
+	readonly titleRu: string;
+	readonly labelRu: string;
 }
 
 export interface AssistantRatesConfig {
@@ -84,157 +98,6 @@ export interface AdministratorRatesConfig {
 	readonly leadConversionThresholdPercent: number;
 	readonly leadConversionBonusKop: number;
 }
-
-export interface KpiBonusTier {
-	readonly minRevenueKop: number;
-	readonly bonusPercentage: number;
-	readonly badgeLabelRu: string;
-}
-
-export interface SoloDoctorSpecialtyPreset {
-	readonly specialtyId: string;
-	readonly titleRu: string;
-	readonly labelRu: string;
-}
-
-export const CLINICAL_CATEGORY_COMMISSION_PERCENT: Record<
-	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
-	number
-> = {
-	therapy: 25,
-	orthopedics: 20,
-	surgery: 22,
-	orthodontics: 22,
-	hygiene: 30,
-	retail_hygiene: 10,
-	pediatric: 25,
-};
-
-export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<
-	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
-	number
-> = {
-	therapy: 25,
-	orthopedics: 25,
-	surgery: 20,
-	orthodontics: 25,
-	hygiene: 30,
-	retail_hygiene: 10,
-	pediatric: 25,
-};
-
-export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissionRule[] = [
-	{
-		specialtyId: "general_dentist",
-		titleRu: "Врач-стоматолог общей практики (соло)",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: true,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000,
-		descriptionRu: "25% от выручки за вычетом лаборатории и прямых материалов + 10% за средства домашней гигиены.",
-	},
-	{
-		specialtyId: "therapist",
-		titleRu: "Врач-стоматолог терапевт / эндодонтист",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000,
-		descriptionRu: "25% от выручки за вычетом прямых материалов (пломбировочные, эндомоторы) + 10% за средства домашней гигиены.",
-	},
-	{
-		specialtyId: "orthopedist",
-		titleRu: "Врач-стоматолог ортопед (CAD/CAM)",
-		defaultPercentage: 25,
-		retailProductsPercentage: 5,
-		deductsLabCosts: true,
-		deductsMaterialCosts: false,
-		minGuaranteeMonthlyKop: 8000000,
-		descriptionRu: "25% от выручки за вычетом счетов зуботехнической лаборатории (цирконий, керамика, виниры, E.max).",
-	},
-	{
-		specialtyId: "surgeon_implantologist",
-		titleRu: "Врач-стоматолог хирург-имплантолог",
-		defaultPercentage: 20,
-		retailProductsPercentage: 5,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 10000000,
-		descriptionRu: "20% от имплантации (за вычетом стоимости имплантата и мембран) + 30% от амбулаторных удалений зубов.",
-	},
-	{
-		specialtyId: "surgeon",
-		titleRu: "Врач-стоматолог хирург",
-		defaultPercentage: 20,
-		retailProductsPercentage: 5,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 10000000,
-		descriptionRu: "20% от амбулаторных хирургических операций за вычетом стоимости расходных материалов.",
-	},
-	{
-		specialtyId: "orthodontist",
-		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
-		defaultPercentage: 25,
-		retailProductsPercentage: 5,
-		deductsLabCosts: true,
-		deductsMaterialCosts: false,
-		minGuaranteeMonthlyKop: 7500000,
-		descriptionRu: "25% от активаций брекет-систем и регулярных приемов, за вычетом стоимости сетапа элайнеров.",
-	},
-	{
-		specialtyId: "periodontist",
-		titleRu: "Врач-стоматолог пародонтолог",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000,
-		descriptionRu: "25% от пародонтологического лечения (Vector, кюретаж, шинирование) за вычетом материалов.",
-	},
-	{
-		specialtyId: "pediatric_dentist",
-		titleRu: "Детский врач-стоматолог",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000,
-		descriptionRu: "25% от детского терапевтического приема и адаптации за вычетом материалов.",
-	},
-	{
-		specialtyId: "pediatric",
-		titleRu: "Детский врач-стоматолог",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000,
-		descriptionRu: "25% от детского терапевтического приема (минус материалы) + адаптационный прием.",
-	},
-	{
-		specialtyId: "hygienist",
-		titleRu: "Гигиенист стоматологический",
-		defaultPercentage: 30,
-		retailProductsPercentage: 15,
-		deductsLabCosts: false,
-		deductsMaterialCosts: false,
-		minGuaranteeMonthlyKop: 4500000,
-		descriptionRu: "30% от профессиональной гигиены и отбеливания + 15% за проданные пасты/щетки Curaprox/Oral-B.",
-	},
-	{
-		specialtyId: "solo_practitioner",
-		titleRu: "Врач-стоматолог (Индивидуальная практика / Соло)",
-		defaultPercentage: 100,
-		retailProductsPercentage: 100,
-		deductsLabCosts: true,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 0,
-		descriptionRu: "Индивидуальная практика: 100% операционной выручки за вычетом лаборатории и материалов.",
-	},
-];
 
 export const DOCTOR_SPECIALTY_CONFIGS: Record<string, DoctorSpecialtyCommissionRule> = {
 	therapist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "therapist")!,
@@ -329,13 +192,6 @@ export const DEFAULT_ASSISTANT_RATES: AssistantRatesConfig = {
 	surgeryAssistanceBonusKop: 50000,
 };
 
-export const ASSISTANT_SHIFT_RULE: AssistantShiftRateRule = {
-	baseShiftRateKop: 350000,
-	radiographBonusKop: 15000,
-	surgeryAssistanceBonusKop: 20000,
-	overtimeHourlyRateKop: 50000,
-};
-
 export const DEFAULT_ADMINISTRATOR_RATES: AdministratorRatesConfig = {
 	baseSalaryMonthlyKop: 4500000,
 	baseShiftRateKop: 300000,
@@ -343,53 +199,6 @@ export const DEFAULT_ADMINISTRATOR_RATES: AdministratorRatesConfig = {
 	leadConversionThresholdPercent: 70.0,
 	leadConversionBonusKop: 1000000,
 };
-
-export const KPI_BONUS_TIERS: readonly KpiBonusTier[] = [
-	{
-		minRevenueKop: 100000000,
-		bonusPercentage: 5,
-		badgeLabelRu: "Топ-выручка (+5% премия)",
-	},
-	{
-		minRevenueKop: 50000000,
-		bonusPercentage: 2,
-		badgeLabelRu: "Личный план выполнен (+2% премия)",
-	},
-	{
-		minRevenueKop: 0,
-		bonusPercentage: 0,
-		badgeLabelRu: "Базовая ставка",
-	},
-];
-
-export interface DoctorCompletedServiceItem {
-	readonly id: string;
-	readonly dateIso: string;
-	readonly patientName: string;
-	readonly medicalCardNumber: string;
-	readonly serviceNameRu: string;
-	readonly order804nCode?: string | undefined;
-	readonly toothCode?: string | undefined;
-	readonly category: "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric";
-	readonly grossRevenueKop: number;
-	readonly labCostKop: number;
-	readonly materialCostKop: number;
-	readonly customCommissionPercent?: number | undefined;
-	readonly isRefunded?: boolean | undefined;
-	readonly refundedAmountKop?: number | undefined;
-	readonly performerId?: string | undefined;
-	readonly doctorId?: string | undefined;
-	readonly receiptNumber?: string | undefined;
-	readonly refundReceiptNumber?: string | undefined;
-	readonly refundReasonRu?: string | undefined;
-	readonly refundDateIso?: string | undefined;
-	readonly isWarrantyRework?: boolean | undefined;
-	readonly warrantyType?: "doctor_fault" | "clinic_warranty" | "lab_warranty" | undefined;
-	readonly warrantyFixedCompensationKop?: number | undefined;
-	readonly deductMaterialFromDoctor?: boolean | undefined;
-	readonly paymentSource?: "cash" | "card" | "sbp" | "deposit" | "family_deposit" | "split" | undefined;
-	readonly isDepositAdvanceOnly?: boolean | undefined;
-}
 
 export type StaffDoctorCompletedServiceItem = DoctorCompletedServiceItem;
 
@@ -421,17 +230,6 @@ export interface DoctorPayrollCalculationInput {
 	readonly refundDeductions?: readonly DoctorRefundDeductionItem[] | undefined;
 }
 
-export interface DoctorPayrollStornoLineItem {
-	readonly id: string;
-	readonly serviceId?: string | undefined;
-	readonly dateIso: string;
-	readonly serviceNameRu: string;
-	readonly receiptNumber: string;
-	readonly reasonRu: string;
-	readonly refundedGrossKop: number;
-	readonly stornoCommissionKop: number;
-	readonly labelRu: string;
-}
 
 export interface DoctorPayrollResult {
 	readonly doctorId: string;
@@ -859,7 +657,7 @@ export function calculateDoctorPeriodPayroll(
 			const labelRu = `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`;
 
 			stornoItems.push({
-				id: `storno-deduct-${ref.serviceId ?? Math.random().toString(36).slice(2)}`,
+				id: `storno-deduct-${ref.serviceId ?? `${ref.dateIso ?? input.periodEndIso}-${stornoItems.length + 1}`}`,
 				serviceId: ref.serviceId,
 				dateIso: ref.dateIso ?? input.periodEndIso,
 				serviceNameRu: ref.serviceNameRu ?? "Возврат за ранее оплаченную услугу",

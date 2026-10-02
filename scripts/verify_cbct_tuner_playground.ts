@@ -7,7 +7,7 @@
 
 import { chromium } from "playwright";
 import * as path from "node:path";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, copyFileSync } from "node:fs";
 
 async function main() {
 	console.log("=== STARTING CBCT TUNER PLAYGROUND VERIFICATION ===");
@@ -34,7 +34,7 @@ async function main() {
 
 	try {
 		console.log("Navigating to http://127.0.0.1:5173/?cbct=tuner ...");
-		await page.goto("http://127.0.0.1:5173/?cbct=tuner", { waitUntil: "networkidle", timeout: 30000 });
+		await page.goto("http://127.0.0.1:5173/?cbct=tuner", { waitUntil: "domcontentloaded", timeout: 30000 });
 
 		// Wait for Tuner container
 		const tunerContainer = page.locator('[data-testid="cbct-tuner-playground"]');
@@ -61,30 +61,37 @@ async function main() {
 
 		// 2. Test Window Width Slider
 		const wwSlider = page.locator('[data-testid="cbct-slider-window-width"]');
-		await wwSlider.fill("2400");
-		console.log("✓ Window Width slider set to 2400");
+		await wwSlider.fill("4025");
+		console.log("✓ Window Width slider set to 4025");
 
 		// 3. Test Window Level Slider
 		const wlSlider = page.locator('[data-testid="cbct-slider-window-level"]');
-		await wlSlider.fill("500");
-		console.log("✓ Window Level slider set to 500");
+		await wlSlider.fill("525");
+		console.log("✓ Window Level slider set to 525");
 
 		// 4. Test Gamma Slider
 		const gammaSlider = page.locator('[data-testid="cbct-slider-gamma"]');
-		await gammaSlider.fill("1.15");
-		console.log("✓ Gamma slider set to 1.15");
+		await gammaSlider.fill("1.5");
+		console.log("✓ Gamma slider set to 1.5");
 
-		// 5. Test Soft-Knee Slider
-		const softKneeSlider = page.locator('[data-testid="cbct-slider-soft-knee"]');
-		if (await softKneeSlider.isVisible()) {
-			await softKneeSlider.fill("185");
-			console.log("✓ Soft-Knee slider set to 185");
+		// 5. Test Air Cutoff Slider
+		const airSlider = page.locator('[data-testid="cbct-slider-air-cutoff"]');
+		if (await airSlider.isVisible()) {
+			await airSlider.fill("-500");
+			console.log("✓ Air Cutoff slider set to -500 HU");
+		}
+
+		// 5b. Test Soft-Knee Checkbox (Off)
+		const softKneeCb = page.locator('[data-testid="cbct-checkbox-soft-knee"]');
+		if (await softKneeCb.isChecked()) {
+			await softKneeCb.uncheck();
+			console.log("✓ Soft-Knee checkbox unchecked (false)");
 		}
 
 		// 6. Test Slice Thickness Slider & Projection Mode
 		const thickSlider = page.locator('[data-testid="cbct-slider-thickness"]');
-		await thickSlider.fill("1.5");
-		console.log("✓ Thickness slider set to 1.5mm");
+		await thickSlider.fill("1");
+		console.log("✓ Thickness slider set to 1.0mm");
 
 		const avgModeBtn = page.locator('[data-testid="cbct-tuner-mode-average"]');
 		if (await avgModeBtn.isVisible()) {
@@ -111,29 +118,67 @@ async function main() {
 		await page.screenshot({ path: proofPath, fullPage: false });
 		console.log(`✓ Main Proof Screenshot saved to: ${proofPath}`);
 
+		const brainDirs = [
+			"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\9bd515d4-936b-4ea4-8192-7c7792988575",
+			"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\df880520-dc90-48e7-ab9e-032bd60d9f31",
+		];
+		for (const bDir of brainDirs) {
+			if (existsSync(bDir)) {
+				const bPath = path.join(bDir, "proof_tuner_playground.png");
+				copyFileSync(proofPath, bPath);
+				console.log(`✓ Copied to brain: ${bPath}`);
+			}
+		}
+
+		// 10. Test switching patient to Bulyakov
+		const waitForPatientLoad = async (patientName: string) => {
+			const loader = page.locator('[data-testid="cbct-tuner-loading-status"]');
+			try {
+				await loader.waitFor({ state: "visible", timeout: 3000 });
+				await loader.waitFor({ state: "detached", timeout: 45000 });
+			} catch {
+				await loader.waitFor({ state: "detached", timeout: 45000 });
+			}
+			console.log(`✓ ${patientName} volume fully loaded and rendered`);
+		};
+
 		// 10. Test switching patient to Bulyakov
 		const patientSelect = page.locator('[data-testid="cbct-tuner-patient-select"]');
 		await patientSelect.selectOption("bulyakov");
 		console.log("✓ Selected patient: Буляков Н.З.");
+		await waitForPatientLoad("Буляков Н.З.");
 
-		// Wait for patient volume download and auto-arch detection to complete
-		await page.waitForFunction(() => {
-			const bodyText = document.body.innerText;
-			return !bodyText.includes("Загрузка") && !bodyText.includes("Декодирование");
-		}, { timeout: 20000 });
-		console.log("✓ Bulyakov volume fully loaded and rendered");
-
-		await page.waitForTimeout(1000);
+		// Allow CPR panorama to finish rendering
+		await page.waitForTimeout(2500);
 
 		const bulyakovProofPath = path.join(screenshotsDir, "proof_tuner_bulyakov.png");
 		await page.screenshot({ path: bulyakovProofPath, fullPage: false });
 		console.log(`✓ Bulyakov Proof Screenshot saved to: ${bulyakovProofPath}`);
 
-		// 11. Switch back to Zakharov
-		await patientSelect.selectOption("zakharov");
+		// 11. Test switching patient to Barabash
+		await patientSelect.selectOption("barabash");
+		console.log("✓ Selected patient: Барабаш С.В.");
+		await waitForPatientLoad("Барабаш С.В.");
 		await page.waitForTimeout(1500);
 
-		console.log("\n=== CBCT TUNER PLAYGROUND VERIFICATION COMPLETE (100% SUCCESS) ===");
+		// 12. Test switching patient to Sumarokova
+		await patientSelect.selectOption("sumarokova");
+		console.log("✓ Selected patient: Сумарокова И.О.");
+		await waitForPatientLoad("Сумарокова И.О.");
+		await page.waitForTimeout(1500);
+
+		// 13. Test switching patient to Amirova
+		await patientSelect.selectOption("amirova");
+		console.log("✓ Selected patient: Амирова Н.Н.");
+		await waitForPatientLoad("Амирова Н.Н.");
+		await page.waitForTimeout(1500);
+
+		// 14. Switch back to Zakharov
+		await patientSelect.selectOption("zakharov");
+		await waitForPatientLoad("Захаров И.Д.");
+		await page.waitForTimeout(1500);
+
+		console.log("\n=== CBCT TUNER PLAYGROUND ALL 5 PATIENTS VERIFIED (100% SUCCESS) ===");
 	} catch (err) {
 		console.error("Test execution failed:", err);
 		process.exit(1);

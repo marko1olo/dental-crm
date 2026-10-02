@@ -657,80 +657,11 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 			assert.equal(CRISP_OVERLAY_BORDER_CYAN, "#06b6d4");
 		});
 
-		it("drawMandibularNerveBadge uses CRISP_OVERLAY_PAD_BG underlay pad and 1px gold border", () => {
+		function createRecordingMockCtx() {
 			const fills: string[] = [];
 			const strokes: string[] = [];
 			const lineThicknesses: number[] = [];
-			const mockCtx = {
-				save: () => {},
-				restore: () => {},
-				beginPath: () => {},
-				roundRect: () => {},
-				rect: () => {},
-				fill: () => fills.push(String(mockCtx.fillStyle)),
-				stroke: () => {
-					strokes.push(String(mockCtx.strokeStyle));
-					lineThicknesses.push(mockCtx.lineWidth);
-				},
-				fillText: () => {},
-				measureText: (text: string) => ({ width: text.length * 8 }),
-				fillStyle: "",
-				strokeStyle: "",
-				lineWidth: 1,
-				font: "",
-				textAlign: "",
-				textBaseline: "",
-			} as unknown as CanvasRenderingContext2D;
-
-			drawMandibularNerveBadge(mockCtx, { x: 100, y: 100 }, 42.5, 2.0);
-
-			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Nerve badge must use rgba(15, 23, 42, 0.92) underlay pad");
-			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_GOLD), "Nerve badge must use #f59e0b gold border");
-			assert.ok(lineThicknesses.includes(1.0), "Nerve badge border width must be 1.0px");
-		});
-
-		it("drawCbctMeasurementRuler uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
-			const fills: string[] = [];
-			const strokes: string[] = [];
-			const lineThicknesses: number[] = [];
-			const mockCtx = {
-				save: () => {},
-				restore: () => {},
-				beginPath: () => {},
-				moveTo: () => {},
-				lineTo: () => {},
-				arc: () => {},
-				roundRect: () => {},
-				rect: () => {},
-				fill: () => fills.push(String(mockCtx.fillStyle)),
-				stroke: () => {
-					strokes.push(String(mockCtx.strokeStyle));
-					lineThicknesses.push(mockCtx.lineWidth);
-				},
-				fillText: () => {},
-				measureText: (text: string) => ({ width: text.length * 8 }),
-				fillStyle: "",
-				strokeStyle: "",
-				lineWidth: 1,
-				font: "",
-				textAlign: "",
-				textBaseline: "",
-				shadowColor: "",
-				shadowBlur: 0,
-			} as unknown as CanvasRenderingContext2D;
-
-			drawCbctMeasurementRuler(mockCtx, { x: 10, y: 10 }, { x: 110, y: 10 }, 15.0, false, null, false);
-
-			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Measurement ruler badge must use rgba(15, 23, 42, 0.92) underlay pad");
-			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_CYAN), "Measurement ruler badge must use cyan border in non-active mode");
-			assert.ok(lineThicknesses.includes(1.0), "Ruler badge border width must be 1.0px");
-		});
-
-		it("drawCbctAngleMeasurement uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
-			const fills: string[] = [];
-			const strokes: string[] = [];
-			const lineThicknesses: number[] = [];
-			const mockCtx = {
+			const ctx = {
 				save: () => {},
 				restore: () => {},
 				beginPath: () => {},
@@ -740,10 +671,10 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				closePath: () => {},
 				roundRect: () => {},
 				rect: () => {},
-				fill: () => fills.push(String(mockCtx.fillStyle)),
+				fill: () => fills.push(String(ctx.fillStyle)),
 				stroke: () => {
-					strokes.push(String(mockCtx.strokeStyle));
-					lineThicknesses.push(mockCtx.lineWidth);
+					strokes.push(String(ctx.strokeStyle));
+					lineThicknesses.push(ctx.lineWidth);
 				},
 				fillText: () => {},
 				measureText: (text: string) => ({ width: text.length * 8 }),
@@ -756,8 +687,30 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 				shadowColor: "",
 				shadowBlur: 0,
 			} as unknown as CanvasRenderingContext2D;
+			return { ctx, fills, strokes, lineThicknesses };
+		}
 
-			drawCbctAngleMeasurement(mockCtx, { x: 50, y: 20 }, { x: 50, y: 80 }, { x: 120, y: 80 }, 90.0, false, null);
+		it("drawMandibularNerveBadge uses CRISP_OVERLAY_PAD_BG underlay pad and 1px gold border", () => {
+			const { ctx, fills, strokes, lineThicknesses } = createRecordingMockCtx();
+			drawMandibularNerveBadge(ctx, { x: 100, y: 100 }, 42.5, 2.0);
+
+			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Nerve badge must use rgba(15, 23, 42, 0.92) underlay pad");
+			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_GOLD), "Nerve badge must use #f59e0b gold border");
+			assert.ok(lineThicknesses.includes(1.0), "Nerve badge border width must be 1.0px");
+		});
+
+		it("drawCbctMeasurementRuler uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
+			const { ctx, fills, strokes, lineThicknesses } = createRecordingMockCtx();
+			drawCbctMeasurementRuler(ctx, { x: 10, y: 10 }, { x: 110, y: 10 }, 15.0, false, null, false);
+
+			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Measurement ruler badge must use rgba(15, 23, 42, 0.92) underlay pad");
+			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_CYAN), "Measurement ruler badge must use cyan border in non-active mode");
+			assert.ok(lineThicknesses.includes(1.0), "Ruler badge border width must be 1.0px");
+		});
+
+		it("drawCbctAngleMeasurement uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
+			const { ctx, fills, strokes, lineThicknesses } = createRecordingMockCtx();
+			drawCbctAngleMeasurement(ctx, { x: 50, y: 20 }, { x: 50, y: 80 }, { x: 120, y: 80 }, 90.0, false, null);
 
 			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Angle badge must use rgba(15, 23, 42, 0.92) underlay pad");
 			assert.ok(strokes.includes(CRISP_OVERLAY_BORDER_CYAN), "Angle badge must use cyan border in non-active mode");
@@ -765,36 +718,8 @@ describe("CBCT Angle & Measurement Math (CAD Caliper & Protractor)", () => {
 		});
 
 		it("drawCbctProbeMarker uses CRISP_OVERLAY_PAD_BG underlay pad with 1px border", () => {
-			const fills: string[] = [];
-			const strokes: string[] = [];
-			const lineThicknesses: number[] = [];
-			const mockCtx = {
-				save: () => {},
-				restore: () => {},
-				beginPath: () => {},
-				moveTo: () => {},
-				lineTo: () => {},
-				arc: () => {},
-				roundRect: () => {},
-				rect: () => {},
-				fill: () => fills.push(String(mockCtx.fillStyle)),
-				stroke: () => {
-					strokes.push(String(mockCtx.strokeStyle));
-					lineThicknesses.push(mockCtx.lineWidth);
-				},
-				fillText: () => {},
-				measureText: (text: string) => ({ width: text.length * 8 }),
-				fillStyle: "",
-				strokeStyle: "",
-				lineWidth: 1,
-				font: "",
-				textAlign: "",
-				textBaseline: "",
-				shadowColor: "",
-				shadowBlur: 0,
-			} as unknown as CanvasRenderingContext2D;
-
-			drawCbctProbeMarker(mockCtx, { x: 50, y: 50 }, 1250, "Кортикальная кость", false);
+			const { ctx, fills, strokes, lineThicknesses } = createRecordingMockCtx();
+			drawCbctProbeMarker(ctx, { x: 50, y: 50 }, 1250, "Кортикальная кость", false);
 
 			assert.ok(fills.includes(CRISP_OVERLAY_PAD_BG), "Probe marker badge must use rgba(15, 23, 42, 0.92) underlay pad");
 			assert.ok(strokes.includes("#38bdf8"), "Probe marker badge must use sky border in non-active mode");

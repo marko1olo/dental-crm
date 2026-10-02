@@ -8,6 +8,10 @@
  * - Mandate 8d: Apple HIG & Medical Density (touch targets >= 44x44px, 0 emojis)
  */
 
+import {
+	areIntervalsOverlapping,
+	calculateOverlapDurationMinutes,
+} from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson } from "../../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
@@ -825,13 +829,11 @@ export function detectAppointmentCollisions(params: {
 
 		if (Number.isNaN(aStartMs) || Number.isNaN(aEndMs)) continue;
 
-		// Overlap interval check: startA < endB && endA > startB
-		const isOverlapping = candStartMs < aEndMs && candEndMs > aStartMs;
+		// Overlap interval check via SSOT engine
+		const isOverlapping = areIntervalsOverlapping(candStartMs, candEndMs, aStartMs, aEndMs);
 		if (!isOverlapping) continue;
 
-		const overlapMinutes = Math.round(
-			(Math.min(candEndMs, aEndMs) - Math.max(candStartMs, aStartMs)) / 60000,
-		);
+		const overlapMinutes = calculateOverlapDurationMinutes(candStartMs, candEndMs, aStartMs, aEndMs);
 
 		const docName = a.doctorUserId ? staffNameMap.get(a.doctorUserId) || "Врач" : null;
 		const chairName = a.chairId ? chairNameMap.get(a.chairId) || "Кресло" : null;
@@ -961,7 +963,7 @@ export function findAlternativeChairsForSlot(params: {
 					? Date.parse(a.endsAt)
 					: aStartMs + aDuration * 60000;
 
-			return startMs < aEndMs && endMs > aStartMs;
+			return areIntervalsOverlapping(startMs, endMs, aStartMs, aEndMs);
 		});
 
 		return !hasConflict;
@@ -1020,7 +1022,7 @@ export function findShiftMinutesOptions(params: {
 					? Date.parse(a.endsAt)
 					: aStartMs + aDuration * 60000;
 
-			return newStartMs < aEndMs && newEndMs > aStartMs;
+			return areIntervalsOverlapping(newStartMs, newEndMs, aStartMs, aEndMs);
 		});
 
 		return {

@@ -32,6 +32,7 @@ import {
 	DoctorPrescriptions107Section,
 	DoctorSpecialtyPresetsCard,
 } from "./doctor";
+import { DoctorCbctPreferencesCard } from "./DoctorCbctPreferencesCard";
 
 interface DoctorClinicalPreferencesSectionProps {
 	soundNotificationsMuted?: boolean | undefined;
@@ -105,6 +106,9 @@ export function DoctorClinicalPreferencesSection({
 			<div className="space-y-6">
 				{/* 0. Быстрые пресеты по специальности врача (1 клик) */}
 				<DoctorSpecialtyPresetsCard />
+
+				{/* 0.1 Параметры КЛКТ по умолчанию и интерактивный тюнер */}
+				<DoctorCbctPreferencesCard />
 
 
 				{/* Подвкладки клинических настроек */}

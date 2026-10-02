@@ -76,7 +76,7 @@ export function getViewportOrientationLabels(viewport: CbctViewportType): Viewpo
 				leftTooltipRu: "Right (Правая сторона пациента — слева на экране)",
 				rightTooltipRu: "Left (Левая сторона пациента — справа на экране)",
 				planeColor: ROMEXIS_COLORS.axial,
-				planeNameRu: "Аксиальный (Горизонтальный срез)",
+				planeNameRu: "Аксиальный срез",
 				planeNameEn: "AXIAL",
 			};
 		case "coronal":
@@ -90,7 +90,7 @@ export function getViewportOrientationLabels(viewport: CbctViewportType): Viewpo
 				leftTooltipRu: "Right (Правая сторона пациента — слева на экране)",
 				rightTooltipRu: "Left (Левая сторона пациента — справа на экране)",
 				planeColor: ROMEXIS_COLORS.coronal,
-				planeNameRu: "Корональный (Фронтальный срез)",
+				planeNameRu: "Корональный срез",
 				planeNameEn: "CORONAL",
 			};
 		case "sagittal":
@@ -104,7 +104,7 @@ export function getViewportOrientationLabels(viewport: CbctViewportType): Viewpo
 				leftTooltipRu: "Anterior (Передняя сторона / Лицо)",
 				rightTooltipRu: "Posterior (Задняя сторона / Затылок)",
 				planeColor: ROMEXIS_COLORS.sagittal,
-				planeNameRu: "Сагиттальный (Профиль)",
+				planeNameRu: "Сагиттальный срез",
 				planeNameEn: "SAGITTAL",
 			};
 		case "panoramic":
@@ -118,7 +118,7 @@ export function getViewportOrientationLabels(viewport: CbctViewportType): Viewpo
 				leftTooltipRu: "Right (Правая сторона / Квадранты 1 и 4)",
 				rightTooltipRu: "Left (Левая сторона / Квадранты 2 и 3)",
 				planeColor: ROMEXIS_COLORS.panoramic,
-				planeNameRu: "Развернутая панорама (ОПТГ)",
+				planeNameRu: "Панорама ОПТГ",
 				planeNameEn: "PANORAMA",
 			};
 		case "cross_section":
@@ -132,7 +132,7 @@ export function getViewportOrientationLabels(viewport: CbctViewportType): Viewpo
 				leftTooltipRu: "Buccal (Вестибулярно / Щечно)",
 				rightTooltipRu: "Lingual (Язычно / Небно)",
 				planeColor: ROMEXIS_COLORS.crossSection,
-				planeNameRu: "Кросс-секция (Трансверзальный срез)",
+				planeNameRu: "Кросс-секция",
 				planeNameEn: "CROSS-SECTION",
 			};
 	}

@@ -108,9 +108,15 @@ export const DEFAULT_MODEL_TARIFFS: Record<string, ModelTariff> = {
 	"claude-3-opus": { promptKopecksPer1M: 138750, completionKopecksPer1M: 693750 },
 
 	// Google Gemini Models
+	"gemini-3.5-flash-lite": { promptKopecksPer1M: 600, completionKopecksPer1M: 2400 },
+	"gemini-3.1-flash-lite": { promptKopecksPer1M: 600, completionKopecksPer1M: 2400 },
+	"gemini-3.8-flash": { promptKopecksPer1M: 1200, completionKopecksPer1M: 4800 },
+	"gemini-3.7-flash": { promptKopecksPer1M: 1200, completionKopecksPer1M: 4800 },
+	"gemini-3.6-flash": { promptKopecksPer1M: 1200, completionKopecksPer1M: 4800 },
+	"gemini-3.5-flash": { promptKopecksPer1M: 1200, completionKopecksPer1M: 4800 },
+	"gemini-3.1-pro": { promptKopecksPer1M: 11563, completionKopecksPer1M: 46250 },
 	"gemini-2.0-flash": { promptKopecksPer1M: 925, completionKopecksPer1M: 3700 },
 	"gemini-2.5-flash": { promptKopecksPer1M: 925, completionKopecksPer1M: 3700 },
-	"gemini-3.5-flash": { promptKopecksPer1M: 1200, completionKopecksPer1M: 4800 },
 	"gemini-1.5-flash": { promptKopecksPer1M: 694, completionKopecksPer1M: 2775 },
 	"gemini-1.5-pro": { promptKopecksPer1M: 11563, completionKopecksPer1M: 46250 },
 	"gemini-2.0-pro": { promptKopecksPer1M: 11563, completionKopecksPer1M: 46250 },

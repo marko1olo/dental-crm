@@ -174,7 +174,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			: isPediatricEffective
 				? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
 				: [...ALL_ADULT_TEETH_NUMBERS];
-		onQuickStateChange?.(allTeeth, "Healthy");
+		onQuickStateChange?.(allTeeth, "Healthy", []);
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
 			"Санирован: вся зубная формула отмечена интактной (здоровой)",
@@ -188,15 +188,42 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			return;
 		}
 		const wisdomTeeth = [18, 28, 38, 48];
-		onQuickStateChange?.(wisdomTeeth, "Missing");
+		onQuickStateChange?.(wisdomTeeth, "Missing", []);
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 	}, [onMarkWisdomTeethMissing, onQuickStateChange]);
 
+	const handleInvertSelection = useCallback(() => {
+		const allTeeth = isMixedEffective
+			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH, 16, 26, 36, 46]
+			: isPediatricEffective
+				? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+				: [...ALL_ADULT_TEETH_NUMBERS];
+		const selectedSet = new Set(selectedTeeth ?? []);
+		const inverted = allTeeth.filter((t) => !selectedSet.has(t));
+		if (onSelectTeethGroup) {
+			onSelectTeethGroup(inverted);
+		}
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			`Инвертировано: выделено ${inverted.length} из ${allTeeth.length} зубов`,
+			"info",
+			3000,
+		);
+	}, [isMixedEffective, isPediatricEffective, selectedTeeth, onSelectTeethGroup]);
+
+	const handleClearSelection = useCallback(() => {
+		if (onSelectTeethGroup) {
+			onSelectTeethGroup([]);
+		}
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Выделение зубов снято в 1 клик", "info", 2000);
+	}, [onSelectTeethGroup]);
+
 	const handleBatchSelectGroup = useCallback(
 		(teeth: number[]) => {
 			if (activeStampTool && onQuickStateChange) {
-				onQuickStateChange(teeth, activeStampTool);
+				onQuickStateChange(teeth, activeStampTool, []);
 				SoundFeedbackService.getInstance().playActionSuccess();
 				showToast(
 					`Штамп «${activeStampTool}» применён к ${teeth.length} зубам`,
@@ -216,7 +243,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	const handleQuickTriggerState = useCallback(
 		(state: ToothState) => {
 			if (selectedTeeth && selectedTeeth.length > 0 && onQuickStateChange) {
-				onQuickStateChange(selectedTeeth, state);
+				onQuickStateChange(selectedTeeth, state, []);
 				SoundFeedbackService.getInstance().playActionSuccess();
 				showToast(
 					`Статус «${state}» применён к ${selectedTeeth.length} зубам`,
@@ -273,20 +300,23 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 
 			triggerHaptic("selection");
 
+			// Если режим разметки поверхностей не включен (useSurfaces !== true), выбираем зуб целиком (surface: undefined)
+			const effectiveSurface = useSurfaces ? surface : undefined;
+
 			if (activeStampTool) {
 				triggerHaptic("success");
-				onQuickStateChange?.([num], activeStampTool);
+				onQuickStateChange?.([num], activeStampTool, []);
 				return;
 			}
 
 			if (isFastExtractMode) {
 				triggerHaptic("success");
-				onQuickStateChange?.([num], "Missing");
+				onQuickStateChange?.([num], "Missing", []);
 				return;
 			}
 
 			if (onToothClick) {
-				onToothClick(num, safeRect, surface);
+				onToothClick(num, safeRect, effectiveSurface);
 				return;
 			}
 
@@ -300,10 +330,10 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					height: safeRect.height,
 				},
 				currentState: currentTooth?.state,
-				surfaces: currentTooth?.surfaces ? [...currentTooth.surfaces] : undefined,
+				surfaces: effectiveSurface ? [effectiveSurface] : undefined,
 			});
 		},
-		[activeStampTool, isFastExtractMode, onQuickStateChange, teethData, onToothClick],
+		[activeStampTool, isFastExtractMode, onQuickStateChange, teethData, onToothClick, useSurfaces],
 	);
 
 	// Global Escape hotkey to exit Stamp tool
@@ -466,6 +496,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					dentitionMode={dentitionMode}
 					pediatricMode={pediatricMode}
 					isPediatricEffective={isPediatricEffective}
+					onInvertSelection={handleInvertSelection}
+					onClearSelection={handleClearSelection}
 					handleMarkIntactDentition={handleMarkIntactDentition}
 					handleMarkWisdomTeethMissing={handleMarkWisdomTeethMissing}
 					onSyncAllToDiary={onSyncAllToDiary}

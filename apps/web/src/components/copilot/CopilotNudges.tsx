@@ -138,19 +138,20 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
 
               {description && <p className="copilot-nudge-text">{description}</p>}
 
-              <div className="copilot-nudge-actions" style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+              <div className="copilot-nudge-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
                 {isClinical && (
                   <button
                     type="button"
                     onClick={() => handleApply043(nudge)}
                     className="copilot-nudge-btn"
                     style={{
-                      backgroundColor: isApplied ? 'var(--teal, #0d9488)' : 'var(--teal, #0d9488)',
-                      color: 'var(--on-teal, #ffffff)',
+                      backgroundColor: 'var(--teal, #0d9488)',
+                      color: '#ffffff',
                       border: 'none',
                       fontWeight: 600,
                     }}
                     disabled={isApplied}
+                    title="Внести клинический протокол в медицинскую карту в 1 клик"
                   >
                     {isApplied ? (
                       <>
@@ -175,6 +176,7 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
                     border: '1px solid var(--line, rgba(15, 118, 110, 0.2))',
                     color: 'var(--ink)',
                   }}
+                  title="Обсудить протокол с ДЕНТОЙ"
                 >
                   <span>Обсудить</span>
                   <ArrowRight size={14} />

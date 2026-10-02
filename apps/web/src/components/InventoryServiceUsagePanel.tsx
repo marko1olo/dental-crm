@@ -153,7 +153,7 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 				<div className="flex items-center gap-1.5">
 					<Layers size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)]">
-						Технологические карты услуг (BOM / Приказ 804н)
+						Расход материалов по услугам
 					</span>
 				</div>
 
@@ -237,7 +237,7 @@ export const InventoryServiceUsagePanel: React.FC<InventoryServiceUsagePanelProp
 							{/* Список расходников по техкарте */}
 							<div className="space-y-1.5">
 								<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">
-									Спецификация расходных материалов (BOM):
+									Спецификация расходных материалов:
 								</span>
 								<div className="border border-[var(--line)] rounded-lg overflow-hidden">
 									<table className="w-full text-xs text-left">

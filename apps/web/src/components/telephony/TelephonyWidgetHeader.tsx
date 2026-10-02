@@ -14,6 +14,7 @@ import React from "react";
 import {
 	type IncomingCallPayload,
 	type TelephonyAgentState,
+	type TelephonyLineSession,
 	formatDurationTimer,
 } from "../../store/telephonyStore";
 
@@ -25,6 +26,8 @@ export interface TelephonyWidgetHeaderProps {
 	onSetAgentState: (state: TelephonyAgentState) => void;
 	activeLineId: number;
 	onSwitchLine: (line: 1 | 2) => void;
+	line1?: TelephonyLineSession | undefined;
+	line2?: TelephonyLineSession | undefined;
 	isHeld: boolean;
 	onToggleHold: () => void;
 	isMuted: boolean;
@@ -46,6 +49,8 @@ export function TelephonyWidgetHeader({
 	onSetAgentState,
 	activeLineId,
 	onSwitchLine,
+	line1,
+	line2,
 	isHeld,
 	onToggleHold,
 	isMuted,
@@ -204,24 +209,36 @@ export function TelephonyWidgetHeader({
 					<button
 						type="button"
 						onClick={() => onSwitchLine(1)}
-						className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all inline-flex items-center justify-center cursor-pointer ${
+						className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all inline-flex items-center justify-center gap-1 cursor-pointer ${
 							activeLineId === 1
 								? "bg-[var(--teal)] text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: line1?.state === "ringing"
+									? "bg-amber-100 text-amber-900 animate-pulse border border-amber-300"
+									: line1?.state === "held"
+										? "bg-amber-50 text-amber-700 border border-amber-200"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
+						title={line1?.call ? `Линия 1: ${line1.call.patientName || line1.call.phone} (${line1.state})` : "Линия 1 свободна"}
 					>
-						Л1 {activeCall ? "●" : "○"}
+						Л1 {line1?.call ? "●" : "○"}
+						{line1?.state === "held" && <span className="text-[9px] font-normal">[Hold]</span>}
 					</button>
 					<button
 						type="button"
 						onClick={() => onSwitchLine(2)}
-						className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all inline-flex items-center justify-center cursor-pointer ${
+						className={`min-h-[36px] px-2.5 py-1.5 rounded text-xs font-mono font-bold transition-all inline-flex items-center justify-center gap-1 cursor-pointer ${
 							activeLineId === 2
 								? "bg-[var(--teal)] text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: line2?.state === "ringing"
+									? "bg-amber-100 text-amber-900 animate-pulse border border-amber-300"
+									: line2?.state === "held"
+										? "bg-amber-50 text-amber-700 border border-amber-200"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
+						title={line2?.call ? `Линия 2: ${line2.call.patientName || line2.call.phone} (${line2.state})` : "Линия 2 свободна"}
 					>
-						Л2 ○
+						Л2 {line2?.call ? "●" : "○"}
+						{line2?.state === "held" && <span className="text-[9px] font-normal">[Hold]</span>}
 					</button>
 					{activeCall && (
 						<button

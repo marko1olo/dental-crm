@@ -384,7 +384,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 					</span>
 				</div>
 
-				{/* ── Мгновенный поиск по ключевым словам (043/у) ── */}
+				{/* ── Мгновенный поиск по ключевым словам ── */}
 				<div className="timeline-search-bar flex flex-col gap-2 p-3 rounded-2xl bg-[var(--paper-soft)]">
 					<div className="relative flex items-center w-full">
 						<Search size={16} className="absolute left-3.5 text-[var(--muted)] pointer-events-none" />
@@ -392,7 +392,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Поиск по дневникам 043/у: «пульпит», «коффердам», «пломба», «артикаин», зуб..."
+							placeholder="Поиск по дневникам приёма: «пульпит», «коффердам», «пломба», «артикаин», зуб..."
 							className="w-full min-h-[44px] pl-10 pr-9 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal-soft)] transition-all font-medium"
 						/>
 						{searchQuery && (

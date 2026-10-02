@@ -273,6 +273,45 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(!htmlConfirmed.includes('Отмена правок'));
   });
 
+  it('renders CopilotActionConfirm with high-contrast visual clinical diff (Будет изменено: зуб -> пломба / аналог)', () => {
+    // 1. Odontogram diff
+    const htmlTooth = renderToString(
+      <CopilotActionConfirm
+        callId="c-diff-1"
+        name="update_odontogram"
+        args={{
+          tooth: '36',
+          status: 'treatment',
+          treatment: 'Пломба световая (Estelite Sigma Quick)',
+        }}
+        onConfirm={() => {}}
+      />
+    );
+    assert.ok(htmlTooth.includes('copilot-action-confirm-diff-card'));
+    assert.ok(htmlTooth.includes('Зуб 36'));
+    assert.ok(htmlTooth.includes('Было'));
+    assert.ok(htmlTooth.includes('Будет изменено'));
+    assert.ok(htmlTooth.includes('Пломба световая'));
+
+    // 2. Medication / DDI diff
+    const htmlDrug = renderToString(
+      <CopilotActionConfirm
+        callId="c-diff-2"
+        name="replace_medication"
+        args={{
+          medication: 'Амоксициллин',
+          safe_alternative: 'Кларитромицин 500мг',
+          allergy: 'Пенициллиновый ряд',
+        }}
+        onConfirm={() => {}}
+      />
+    );
+    assert.ok(htmlDrug.includes('copilot-action-confirm-diff-card'));
+    assert.ok(htmlDrug.includes('Фармакотерапия'));
+    assert.ok(htmlDrug.includes('Амоксициллин'));
+    assert.ok(htmlDrug.includes('Кларитромицин 500мг'));
+  });
+
   it('renders CopilotActionConfirmation component with 3-way choices and field labels', () => {
     const args = {
       patient_name: 'Иванов Иван Иванович',
@@ -346,14 +385,14 @@ describe('Copilot Core Cards & SSR Rendering', () => {
     assert.ok(html.includes('Рабочие сценарии') || html.includes('сценарии'));
   });
 
-  it('renders CopilotComposer with dictation mic, 152-FZ trust note, and hotkeys', () => {
+  it('renders CopilotComposer with dictation mic, medical privacy trust note, and hotkeys', () => {
     const html = renderToString(
       <CopilotComposer value="Тест" busy={false} onChange={() => {}} onSubmit={() => {}} onReset={() => {}} />
     );
-    assert.ok(html.includes('Данные защищены 152-ФЗ') || html.includes('152-ФЗ'));
+    assert.ok(html.includes('Медицинская тайна и защита данных') || html.includes('защита данных'));
     assert.ok(html.includes('Ctrl+K'));
     assert.ok(html.includes('copilot-mic-btn'));
-    assert.ok(html.includes('Сброс'));
+    assert.ok(html.includes('Очистить') || html.includes('Сброс'));
     assert.ok(!html.includes('text-[10px]') && !html.includes('text-[11px]'));
   });
 
@@ -745,7 +784,7 @@ describe('Copilot 1-Click Outpatient Diary 043/u Card', () => {
     assert.ok(html.includes('Глубокая кариозная полость MOD'), 'objective text missing');
     assert.ok(html.includes('Лечение и пломбирование:'), 'treatment label missing');
     assert.ok(html.includes('Estelite Sigma Quick'), 'treatment text missing');
-    assert.ok(html.includes('Сохранить в ЭМК визита (1 клик)'), 'button text missing');
+    assert.ok(html.includes('Внести в дневник'), 'button text missing');
   });
 
   it('renders saved state correctly after confirmation', () => {
@@ -761,8 +800,8 @@ describe('Copilot 1-Click Outpatient Diary 043/u Card', () => {
       <CopilotProtocol043ConfirmCard data={diaryData} resolved="confirm" />
     );
 
-    assert.ok(html.includes('Дневник приёма сохранён в ЭМК визита'));
-    assert.ok(html.includes('В ЭМК визита'));
+    assert.ok(html.includes('Дневник приёма сохранён'));
+    assert.ok(html.includes('В медкарте'));
   });
 });
 
@@ -823,7 +862,7 @@ describe('CopilotActionConfirm Specialized 1-Click Medical Buttons', () => {
     );
 
     assert.ok(html.includes('ДЕНТА сформировала дневник приёма'));
-    assert.ok(html.includes('Сохранить в ЭМК визита (1 клик)'));
+    assert.ok(html.includes('Внести в дневник приёма'));
     assert.ok(html.includes('Жалобы пациента'));
     assert.ok(html.includes('Лечение и процедуры'));
   });
@@ -874,7 +913,7 @@ describe('Copilot Proactive Clinical Tooth Protocol Nudges', () => {
         icd10: 'K04.0',
         anesthesia: 'Артикаин 1:100 000 (1.7 мл)',
         description: 'Рекомендован протокол эндодонтии (NaOCl 2.5% + EDTA 17% + Metapex).',
-        actionPrompt: 'Заполни форму 043/у по эндодонтии',
+        actionPrompt: 'Заполни дневник приёма по эндодонтии',
         form043: {
           tooth: 46,
           diagnosis: 'K04.0 Пульпит зуба #46',

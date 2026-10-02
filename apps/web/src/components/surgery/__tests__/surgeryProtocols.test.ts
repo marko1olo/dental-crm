@@ -13,6 +13,7 @@ import {
 	SIMPLE_EXTRACTION_NORM_TEXT,
 	ATYPICAL_EXTRACTION_NORM_TEXT,
 	SINUS_LIFT_GBR_NORM_TEXT,
+	CLOSED_SINUS_LIFT_NORM_TEXT,
 	PERICORONITIS_NORM_TEXT,
 	COMPLEX_EXTRACTION_NORM_TEXT,
 	PERIOSTOTOMY_NORM_TEXT,
@@ -59,6 +60,7 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		assert.ok(ids.includes("surgery_extraction_simple"), "Must include simple extraction norm");
 		assert.ok(ids.includes("surgery_extraction_atypical"), "Must include atypical wisdom tooth norm");
 		assert.ok(ids.includes("surgery_sinus_lift_gbr"), "Must include sinus-lift/GBR norm");
+		assert.ok(ids.includes("surgery_sinus_lift_closed"), "Must include closed sinus-lift norm");
 		assert.ok(ids.includes("surgery_pericoronitis"), "Must include pericoronitis norm");
 		assert.ok(ids.includes("surgery_extraction_complex"), "Must include complex extraction norm");
 		assert.ok(ids.includes("surgery_periostotomy"), "Must include emergency periostotomy norm");
@@ -161,6 +163,37 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		// Form 043/u validator check
 		const validation = validateSoapPreset(preset);
 		assert.equal(validation.isValid, true, `Preset must be valid: ${validation.errors.join(", ")}`);
+	});
+
+	it("2d. Closed sinus-lift norm (surgery_sinus_lift_closed) has transalveolar Summers protocol, Valsalva test & 804n code", () => {
+		const norm = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_sinus_lift_closed");
+		assert.ok(norm, "surgery_sinus_lift_closed must be present in SURGICAL_OPERATION_NORMS");
+		assert.equal(norm.title, "Закрытый (трансальвеолярный) синус-лифтинг остеотомами");
+		assert.equal(norm.shortBadge, "Закрытый синус");
+		assert.equal(norm.category, "sinus_gbr");
+		assert.equal(norm.icd10, "K08.2");
+		assert.equal(norm.icd10Label, "Атрофия беззубого альвеолярного края");
+		assert.equal(norm.standardProtocolTextRu, CLOSED_SINUS_LIFT_NORM_TEXT);
+
+		// Clinical protocol verification
+		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("Инфильтрационная анестезия"));
+		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("остеотомами Саммерса"));
+		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("пробой Вальсальвы"));
+		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("ксенографт"));
+		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("35 Н·см"));
+		assert.ok(CLOSED_SINUS_LIFT_NORM_TEXT.includes("ПГА 4-0"));
+
+		// Materials: Ксенографт (1 шт), ПГА 4-0 (1 шт), Артикаин (1 карп)
+		const mats = norm.requiredMaterials;
+		const xenograft = mats.find((m) => m.name.includes("ксенографт"));
+		assert.ok(xenograft, "Must have xenograft material");
+		assert.equal(xenograft.isWarehouseCritical, true);
+
+		const suture = mats.find((m) => m.name.includes("ПГА 4-0"));
+		assert.ok(suture, "Must have PGA 4-0 suture");
+
+		const articaine = mats.find((m) => m.name.toLowerCase().includes("артикаин"));
+		assert.ok(articaine, "Must have Articaine anesthetic");
 	});
 
 	it("3. Soft warehouse overdraft NEVER blocks surgery (canProceed is always true)", () => {

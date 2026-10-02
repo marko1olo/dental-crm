@@ -20,6 +20,10 @@ import {
 	CBCT_MPR_VERTEX_SHADER,
 } from "./cbctMprShaders";
 import {
+	CBCT_CROSS_SECTION_FRAGMENT_SHADER,
+	CBCT_CROSS_SECTION_VERTEX_SHADER,
+} from "./cbctCrossSectionShaders";
+import {
 	type CbctColorMapMode,
 	type GlSliceCoordinates,
 	type GlSliceRenderOptions,
@@ -50,6 +54,10 @@ interface GlUniformLocations {
 	trilinear: WebGLUniformLocation | null;
 	colorMap: WebGLUniformLocation | null;
 	sharpenAmount: WebGLUniformLocation | null;
+	gamma: WebGLUniformLocation | null;
+	useSoftKnee: WebGLUniformLocation | null;
+	softKneeCeiling: WebGLUniformLocation | null;
+	airCutoffHU: WebGLUniformLocation | null;
 }
 
 export class CbctVolumeGlContext {
@@ -58,6 +66,9 @@ export class CbctVolumeGlContext {
 	private program: WebGLProgram | null = null;
 	private vertexShader: WebGLShader | null = null;
 	private fragmentShader: WebGLShader | null = null;
+	private crossSectionProgram: WebGLProgram | null = null;
+	private crossSectionVertexShader: WebGLShader | null = null;
+	private crossSectionFragmentShader: WebGLShader | null = null;
 	private volumeTexture: WebGLTexture | null = null;
 	private activeVolumeId: string | null = null;
 	private activeVolume: CbctVoxelVolume | null = null;
@@ -67,6 +78,7 @@ export class CbctVolumeGlContext {
 	private downsampleStep = 1;
 	private cleanupContextListeners: (() => void) | null = null;
 	private uniforms: GlUniformLocations | null = null;
+	private crossSectionUniforms: GlUniformLocations | null = null;
 	private contextRestoredListeners: Set<() => void> = new Set();
 	private contextLostListeners: Set<() => void> = new Set();
 	private contextLostState = false;
@@ -78,6 +90,7 @@ export class CbctVolumeGlContext {
 	private lastOptions: GlSliceRenderOptions | null = null;
 	private lastRenderTimeMs = 0;
 	private lastAllPlanesTimeMs = 0;
+	private lastCrossSectionRenderTimeMs = 0;
 
 	constructor(canvas?: HTMLCanvasElement) {
 		if (canvas) this.init(canvas);
@@ -86,6 +99,7 @@ export class CbctVolumeGlContext {
 	public init(canvas: HTMLCanvasElement): boolean {
 		this.cleanupContextListeners?.();
 		this.cleanupContextListeners = null;
+		this.cleanupGlObjects();
 		this.canvas = canvas;
 		this.contextLostState = false;
 
@@ -124,8 +138,10 @@ export class CbctVolumeGlContext {
 				this.volumeTexture = null;
 				this.uploadDim = null;
 				this.program = null;
+				this.crossSectionProgram = null;
 				this.vao = null;
 				this.uniforms = null;
+				this.crossSectionUniforms = null;
 				for (const cb of this.contextLostListeners) {
 					try {
 						cb();
@@ -195,6 +211,8 @@ export class CbctVolumeGlContext {
 	public getLastSliceCoordinates(): GlSliceCoordinates | null { return this.lastCoords; }
 	public getLastRenderTimeMs(): number { return this.lastRenderTimeMs; }
 	public getLastAllPlanesTimeMs(): number { return this.lastAllPlanesTimeMs; }
+	public getLastCrossSectionRenderTimeMs(): number { return this.lastCrossSectionRenderTimeMs; }
+	public getCrossSectionProgram(): WebGLProgram | null { return this.crossSectionProgram; }
 
 	public addContextRestoredListener(listener: () => void): () => void {
 		this.contextRestoredListeners.add(listener);
@@ -226,6 +244,25 @@ export class CbctVolumeGlContext {
 		return this.currentSharpenAmount;
 	}
 
+	private cleanupGlObjects(): void {
+		const gl = this.gl;
+		if (!gl) return;
+		if (this.vao && gl.deleteVertexArray) { gl.deleteVertexArray(this.vao); this.vao = null; }
+		if (this.volumeTexture) { gl.deleteTexture(this.volumeTexture); this.volumeTexture = null; }
+		if (this.program) {
+			if (this.vertexShader) { gl.detachShader(this.program, this.vertexShader); gl.deleteShader(this.vertexShader); this.vertexShader = null; }
+			if (this.fragmentShader) { gl.detachShader(this.program, this.fragmentShader); gl.deleteShader(this.fragmentShader); this.fragmentShader = null; }
+			gl.deleteProgram(this.program);
+			this.program = null;
+		}
+		if (this.crossSectionProgram) {
+			if (this.crossSectionVertexShader) { gl.detachShader(this.crossSectionProgram, this.crossSectionVertexShader); gl.deleteShader(this.crossSectionVertexShader); this.crossSectionVertexShader = null; }
+			if (this.crossSectionFragmentShader) { gl.detachShader(this.crossSectionProgram, this.crossSectionFragmentShader); gl.deleteShader(this.crossSectionFragmentShader); this.crossSectionFragmentShader = null; }
+			gl.deleteProgram(this.crossSectionProgram);
+			this.crossSectionProgram = null;
+		}
+	}
+
 	private setupShaders(): boolean {
 		const gl = this.gl;
 		if (!gl) return false;
@@ -255,6 +292,8 @@ export class CbctVolumeGlContext {
 
 		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 			console.error("[CbctVolumeGlContext] Program link failed:", gl.getProgramInfoLog(program));
+			if (this.vertexShader) { gl.deleteShader(this.vertexShader); this.vertexShader = null; }
+			if (this.fragmentShader) { gl.deleteShader(this.fragmentShader); this.fragmentShader = null; }
 			gl.deleteProgram(program);
 			return false;
 		}
@@ -264,7 +303,35 @@ export class CbctVolumeGlContext {
 		this.vao = gl.createVertexArray ? gl.createVertexArray() : null;
 		if (this.vao && gl.bindVertexArray) gl.bindVertexArray(this.vao);
 
-		this.uniforms = {
+		this.uniforms = this.extractUniformLocations(program);
+
+		// Setup specialized transverse cross-section shader program
+		this.crossSectionVertexShader = compileShader(CBCT_CROSS_SECTION_VERTEX_SHADER, gl.VERTEX_SHADER);
+		this.crossSectionFragmentShader = compileShader(CBCT_CROSS_SECTION_FRAGMENT_SHADER, gl.FRAGMENT_SHADER);
+		if (this.crossSectionVertexShader && this.crossSectionFragmentShader) {
+			const csProg = gl.createProgram();
+			if (csProg) {
+				gl.attachShader(csProg, this.crossSectionVertexShader);
+				gl.attachShader(csProg, this.crossSectionFragmentShader);
+				gl.linkProgram(csProg);
+				if (gl.getProgramParameter(csProg, gl.LINK_STATUS)) {
+					this.crossSectionProgram = csProg;
+					this.crossSectionUniforms = this.extractUniformLocations(csProg);
+				} else {
+					console.warn("[CbctVolumeGlContext] Cross-section shader link failed:", gl.getProgramInfoLog(csProg));
+					if (this.crossSectionVertexShader) { gl.deleteShader(this.crossSectionVertexShader); this.crossSectionVertexShader = null; }
+					if (this.crossSectionFragmentShader) { gl.deleteShader(this.crossSectionFragmentShader); this.crossSectionFragmentShader = null; }
+					gl.deleteProgram(csProg);
+				}
+			}
+		}
+
+		return true;
+	}
+
+	private extractUniformLocations(program: WebGLProgram): GlUniformLocations {
+		const gl = this.gl!;
+		return {
 			volume: gl.getUniformLocation(program, "u_volume"),
 			volumeDim: gl.getUniformLocation(program, "u_volumeDim"),
 			sliceOrigin: gl.getUniformLocation(program, "u_sliceOrigin"),
@@ -279,8 +346,11 @@ export class CbctVolumeGlContext {
 			trilinear: gl.getUniformLocation(program, "u_trilinear"),
 			colorMap: gl.getUniformLocation(program, "u_colorMap"),
 			sharpenAmount: gl.getUniformLocation(program, "u_sharpenAmount"),
+			gamma: gl.getUniformLocation(program, "u_gamma"),
+			useSoftKnee: gl.getUniformLocation(program, "u_useSoftKnee"),
+			softKneeCeiling: gl.getUniformLocation(program, "u_softKneeCeiling"),
+			airCutoffHU: gl.getUniformLocation(program, "u_airCutoffHU"),
 		};
-		return true;
 	}
 
 	public uploadVolume(volume: CbctVoxelVolume, options?: { forceReupload?: boolean }): boolean {
@@ -331,6 +401,10 @@ export class CbctVolumeGlContext {
 			gl.useProgram(this.program);
 			gl.uniform3f(this.uniforms.volumeDim, result.uploadDim.width, result.uploadDim.height, result.uploadDim.depth);
 		}
+		if (this.crossSectionProgram && this.crossSectionUniforms?.volumeDim) {
+			gl.useProgram(this.crossSectionProgram);
+			gl.uniform3f(this.crossSectionUniforms.volumeDim, result.uploadDim.width, result.uploadDim.height, result.uploadDim.depth);
+		}
 		return true;
 	}
 
@@ -358,18 +432,17 @@ export class CbctVolumeGlContext {
 		return true;
 	}
 
-	public renderFromCoordinates(
-		volume: CbctVoxelVolume,
+	private dispatchSliceDraw(
+		prog: WebGLProgram,
+		uniforms: GlUniformLocations,
 		coords: GlSliceCoordinates,
 		options: GlSliceRenderOptions,
-		targetCanvas?: HTMLCanvasElement | null,
-	): GlSliceCoordinates | null {
-		const gl = this.gl, canvas = this.canvas;
-		if (!gl || !canvas || !this.isAvailable() || !this.program || !this.uniforms) return null;
-		if (!this.uploadVolume(volume)) return null;
-
-		this.lastCoords = coords;
-		this.lastOptions = options;
+		targetCanvas?: HTMLCanvasElement | null | undefined,
+		readPixels?: boolean | undefined,
+	): { coords: GlSliceCoordinates; pixelData?: Uint8ClampedArray | undefined; renderTimeMs: number } | null {
+		const gl = this.gl;
+		const canvas = this.canvas;
+		if (!gl || !canvas) return null;
 
 		if (targetCanvas) {
 			if (options.clampDpr) {
@@ -388,44 +461,55 @@ export class CbctVolumeGlContext {
 		}
 
 		gl.viewport(0, 0, coords.widthPx, coords.heightPx);
-		gl.useProgram(this.program);
+		gl.useProgram(prog);
 		if (this.vao && gl.bindVertexArray) gl.bindVertexArray(this.vao);
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_3D, this.volumeTexture);
-		gl.uniform1i(this.uniforms.volume, 0);
+		if (uniforms.volume) gl.uniform1i(uniforms.volume, 0);
 
-		if (this.uniforms.volumeDim && this.uploadDim) {
-			gl.uniform3f(this.uniforms.volumeDim, this.uploadDim.width, this.uploadDim.height, this.uploadDim.depth);
+		if (uniforms.volumeDim && this.uploadDim) {
+			gl.uniform3f(uniforms.volumeDim, this.uploadDim.width, this.uploadDim.height, this.uploadDim.depth);
 		}
 
-		gl.uniform3fv(this.uniforms.sliceOrigin, coords.sliceOrigin);
-		gl.uniform3fv(this.uniforms.axisU, coords.axisU);
-		gl.uniform3fv(this.uniforms.axisV, coords.axisV);
-		gl.uniform3fv(this.uniforms.axisNorm, coords.axisNorm);
-		gl.uniform1f(this.uniforms.windowWidth, options.windowWidth);
-		gl.uniform1f(this.uniforms.windowLevel, options.windowLevel);
-		gl.uniform1i(this.uniforms.invert, options.invert ? 1 : 0);
-		gl.uniform1i(this.uniforms.slabMode, coords.slabModeCode);
-		gl.uniform1i(this.uniforms.slabSteps, coords.slabSteps);
-		gl.uniform1i(this.uniforms.trilinear, options.interpolation !== "nearest" ? 1 : 0);
+		if (uniforms.sliceOrigin) gl.uniform3fv(uniforms.sliceOrigin, coords.sliceOrigin);
+		if (uniforms.axisU) gl.uniform3fv(uniforms.axisU, coords.axisU);
+		if (uniforms.axisV) gl.uniform3fv(uniforms.axisV, coords.axisV);
+		if (uniforms.axisNorm) gl.uniform3fv(uniforms.axisNorm, coords.axisNorm);
+		if (uniforms.windowWidth) gl.uniform1f(uniforms.windowWidth, options.windowWidth);
+		if (uniforms.windowLevel) gl.uniform1f(uniforms.windowLevel, options.windowLevel);
+		if (uniforms.invert) gl.uniform1i(uniforms.invert, options.invert ? 1 : 0);
+		if (uniforms.slabMode) gl.uniform1i(uniforms.slabMode, coords.slabModeCode);
+		if (uniforms.slabSteps) gl.uniform1i(uniforms.slabSteps, coords.slabSteps);
+		if (uniforms.trilinear) gl.uniform1i(uniforms.trilinear, options.interpolation !== "nearest" ? 1 : 0);
 
 		const colorMapCode = options.colorMap !== undefined ? resolveColorMapCode(options.colorMap) : this.currentColorMap;
 		const sharpenAmount = options.sharpenAmount !== undefined
 			? Math.max(0.0, Math.min(1.0, options.sharpenAmount))
 			: this.currentSharpenAmount;
 
-		if (this.uniforms.colorMap) {
-			gl.uniform1i(this.uniforms.colorMap, colorMapCode);
-		}
-		if (this.uniforms.sharpenAmount) {
-			gl.uniform1f(this.uniforms.sharpenAmount, sharpenAmount);
-		}
+		if (uniforms.colorMap) gl.uniform1i(uniforms.colorMap, colorMapCode);
+		if (uniforms.sharpenAmount) gl.uniform1f(uniforms.sharpenAmount, sharpenAmount);
+		if (uniforms.gamma) gl.uniform1f(uniforms.gamma, options.gamma ?? 1.50);
+		if (uniforms.useSoftKnee) gl.uniform1i(uniforms.useSoftKnee, options.useSoftKnee ? 1 : 0);
+		if (uniforms.softKneeCeiling) gl.uniform1f(uniforms.softKneeCeiling, options.softKneeCeiling ?? 215.0);
+		if (uniforms.airCutoffHU) gl.uniform1f(uniforms.airCutoffHU, options.airCutoffHU ?? -500.0);
 
 		const tDrawStart = typeof performance !== "undefined" ? performance.now() : 0;
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-		if (tDrawStart > 0 && typeof performance !== "undefined") {
-			this.lastRenderTimeMs = performance.now() - tDrawStart;
+		const elapsed = tDrawStart > 0 && typeof performance !== "undefined" ? performance.now() - tDrawStart : 0.05;
+		this.lastRenderTimeMs = elapsed;
+
+		let pixelData: Uint8ClampedArray | undefined;
+		if (readPixels) {
+			const raw = new Uint8Array(coords.widthPx * coords.heightPx * 4);
+			gl.readPixels(0, 0, coords.widthPx, coords.heightPx, gl.RGBA, gl.UNSIGNED_BYTE, raw);
+			pixelData = new Uint8ClampedArray(coords.widthPx * coords.heightPx * 4);
+			const rowBytes = coords.widthPx * 4;
+			for (let y = 0; y < coords.heightPx; y++) {
+				const srcY = coords.heightPx - 1 - y;
+				pixelData.set(raw.subarray(srcY * rowBytes, (srcY + 1) * rowBytes), y * rowBytes);
+			}
 		}
 
 		if (targetCanvas) {
@@ -445,7 +529,24 @@ export class CbctVolumeGlContext {
 				);
 			}
 		}
-		return coords;
+
+		return { coords, pixelData, renderTimeMs: elapsed };
+	}
+
+	public renderFromCoordinates(
+		volume: CbctVoxelVolume,
+		coords: GlSliceCoordinates,
+		options: GlSliceRenderOptions,
+		targetCanvas?: HTMLCanvasElement | null,
+	): GlSliceCoordinates | null {
+		if (!this.gl || !this.isAvailable() || !this.program || !this.uniforms) return null;
+		if (!this.uploadVolume(volume)) return null;
+
+		this.lastCoords = coords;
+		this.lastOptions = options;
+
+		const res = this.dispatchSliceDraw(this.program, this.uniforms, coords, options, targetCanvas);
+		return res ? res.coords : null;
 	}
 
 	public renderSlice(
@@ -463,17 +564,67 @@ export class CbctVolumeGlContext {
 		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
 	}
 
+	public renderCrossSectionOnGl(
+		volume: CbctVoxelVolume,
+		centerMm: Point3D,
+		normal2D: Point2D,
+		options?: (GlSliceRenderOptions & {
+			widthMm?: number | undefined;
+			heightMm?: number | undefined;
+			pixelSpacingMm?: number | undefined;
+			slabThicknessMm?: number | undefined;
+			readPixels?: boolean | undefined;
+		}) | undefined,
+		targetCanvas?: HTMLCanvasElement | null | undefined,
+	): { coords: GlSliceCoordinates; pixelData?: Uint8ClampedArray | undefined; renderTimeMs: number } | null {
+		if (!this.gl || !this.isAvailable()) return null;
+		if (!this.uploadVolume(volume)) return null;
+
+		const coords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, options);
+		const prog = this.crossSectionProgram ?? this.program;
+		const uniforms = this.crossSectionUniforms ?? this.uniforms;
+		if (!prog || !uniforms) return null;
+
+		this.lastCrosshairMm = { ...centerMm };
+		this.lastCoords = coords;
+		this.lastOptions = options ?? null;
+
+		const renderOpts: GlSliceRenderOptions = {
+			windowWidth: options?.windowWidth ?? volume.defaultWindowWidth ?? 4025,
+			windowLevel: options?.windowLevel ?? volume.defaultWindowLevel ?? 525,
+			gamma: options?.gamma ?? 1.50,
+			airCutoffHU: options?.airCutoffHU ?? -500.0,
+			useSoftKnee: options?.useSoftKnee ?? false,
+			softKneeCeiling: options?.softKneeCeiling ?? 178.0,
+			invert: options?.invert ?? false,
+			interpolation: options?.interpolation ?? "trilinear",
+			colorMap: options?.colorMap,
+			sharpenAmount: options?.sharpenAmount,
+			clampDpr: options?.clampDpr,
+			safeDpr: options?.safeDpr,
+		};
+
+		const res = this.dispatchSliceDraw(prog, uniforms, coords, renderOpts, targetCanvas, options?.readPixels);
+		if (res) {
+			this.lastCrossSectionRenderTimeMs = res.renderTimeMs;
+		}
+		return res;
+	}
+
 	public renderCrossSection(
 		volume: CbctVoxelVolume,
 		centerMm: Point3D,
 		normal2D: Point2D,
-		options: GlSliceRenderOptions & { widthMm?: number; heightMm?: number; pixelSpacingMm?: number },
-		targetCanvas?: HTMLCanvasElement | null,
+		options: GlSliceRenderOptions & {
+			widthMm?: number | undefined;
+			heightMm?: number | undefined;
+			pixelSpacingMm?: number | undefined;
+			slabThicknessMm?: number | undefined;
+		},
+		targetCanvas?: HTMLCanvasElement | null | undefined,
 	): GlSliceCoordinates | null {
-		this.lastCrosshairMm = { ...centerMm };
-		this.lastOptions = options;
-		const coords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, options);
-		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
+		const result = this.renderCrossSectionOnGl(volume, centerMm, normal2D, options, targetCanvas);
+		return result ? result.coords : null;
 	}
 
 	public renderAllPlanes(
@@ -525,8 +676,8 @@ export class CbctVolumeGlContext {
 		this.lastAngles = { ...newAngles };
 		this.lastCrosshairMm = { ...crosshairMm };
 		const renderOptions: GlSliceRenderOptions = options ?? {
-			windowWidth: volume.defaultWindowWidth ?? 4400,
-			windowLevel: volume.defaultWindowLevel ?? 1300,
+			windowWidth: volume.defaultWindowWidth ?? 4025,
+			windowLevel: volume.defaultWindowLevel ?? 525,
 		};
 		const coords = this.renderSlice(volume, plane, crosshairMm, newAngles, renderOptions, targetCanvas);
 		if (!coords) return null;
@@ -548,8 +699,8 @@ export class CbctVolumeGlContext {
 		this.lastCrosshairMm = { ...newCrosshairMm };
 		this.lastAngles = { ...angles };
 		const renderOptions: GlSliceRenderOptions = options ?? {
-			windowWidth: volume.defaultWindowWidth ?? 4400,
-			windowLevel: volume.defaultWindowLevel ?? 1300,
+			windowWidth: volume.defaultWindowWidth ?? 4025,
+			windowLevel: volume.defaultWindowLevel ?? 525,
 		};
 		const coords = this.renderAllPlanes(volume, newCrosshairMm, angles, renderOptions, targets);
 		if (!coords) return null;
@@ -566,8 +717,8 @@ export class CbctVolumeGlContext {
 		this.lastCrosshairMm = { ...newCrosshairMm };
 		this.lastAngles = { ...angles };
 		const renderOptions: GlSliceRenderOptions = options ?? {
-			windowWidth: volume.defaultWindowWidth ?? 4400,
-			windowLevel: volume.defaultWindowLevel ?? 1300,
+			windowWidth: volume.defaultWindowWidth ?? 4025,
+			windowLevel: volume.defaultWindowLevel ?? 525,
 		};
 		return this.renderAllPlanes(volume, newCrosshairMm, angles, renderOptions, targets);
 	}
@@ -575,13 +726,7 @@ export class CbctVolumeGlContext {
 	public dispose(): void {
 		const gl = this.gl;
 		if (gl) {
-			if (this.vao && gl.deleteVertexArray) { gl.deleteVertexArray(this.vao); this.vao = null; }
-			if (this.volumeTexture) { gl.deleteTexture(this.volumeTexture); this.volumeTexture = null; }
-			if (this.program) {
-				if (this.vertexShader) { gl.detachShader(this.program, this.vertexShader); gl.deleteShader(this.vertexShader); this.vertexShader = null; }
-				if (this.fragmentShader) { gl.detachShader(this.program, this.fragmentShader); gl.deleteShader(this.fragmentShader); this.fragmentShader = null; }
-				gl.deleteProgram(this.program); this.program = null;
-			}
+			this.cleanupGlObjects();
 			const loseCtx = gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null;
 			if (loseCtx && typeof (loseCtx as unknown as { loseContext?: () => void }).loseContext === "function") {
 				(loseCtx as unknown as { loseContext: () => void }).loseContext();
@@ -605,6 +750,7 @@ export class CbctVolumeGlContext {
 		this.uploadDim = null;
 		this.isInitialized = false;
 		this.uniforms = null;
+		this.crossSectionUniforms = null;
 	}
 }
 

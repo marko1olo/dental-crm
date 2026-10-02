@@ -25,7 +25,7 @@ import {
 	imagingStudyKind,
 	imagingStudyStatus,
 } from "./_common.js";
-import { organizations } from "./auth.js";
+import { organizations, users } from "./auth.js";
 import { visits } from "./clinical.js";
 import { patients } from "./patients.js";
 
@@ -62,10 +62,9 @@ export const imagingStudies = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id),
+		patientId: uuid("patient_id").references(() => patients.id),
 		visitId: uuid("visit_id").references(() => visits.id),
+		doctorId: uuid("doctor_id").references(() => users.id),
 		kind: imagingStudyKind("kind").notNull(),
 		title: text("title").notNull(),
 		toothCode: text("tooth_code"),
@@ -77,6 +76,20 @@ export const imagingStudies = pgTable(
 		aiSummary: text("ai_summary"),
 		storagePath: text("storage_path"),
 		dicomStudyUid: text("dicom_study_uid"),
+		studyInstanceUid: text("study_instance_uid"),
+		seriesInstanceUid: text("series_instance_uid"),
+		modality: text("modality"),
+		seriesDescription: text("series_description"),
+		studyDate: text("study_date"),
+		sliceCount: integer("slice_count"),
+		dimensions: text("dimensions"),
+		voxelSpacing: text("voxel_spacing"),
+		fileSizeBytes: integer("file_size_bytes"),
+		bindingStatus: text("binding_status").notNull().default("unassigned"),
+		bindingConfidence: integer("binding_confidence").notNull().default(0),
+		dicomPatientName: text("dicom_patient_name"),
+		dicomPatientId: text("dicom_patient_id"),
+		dicomBirthDate: text("dicom_birth_date"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -87,6 +100,19 @@ export const imagingStudies = pgTable(
 		),
 		patientIdIdx: index("imaging_studies_patient_id_idx").on(t.patientId),
 		visitIdIdx: index("imaging_studies_visit_id_idx").on(t.visitId),
+		doctorIdIdx: index("imaging_studies_doctor_id_idx").on(t.doctorId),
+		dicomStudyUidIdx: index("imaging_studies_dicom_study_uid_idx").on(
+			t.dicomStudyUid,
+		),
+		studyInstanceUidIdx: index("imaging_studies_study_instance_uid_idx").on(
+			t.studyInstanceUid,
+		),
+		modalityIdx: index("imaging_studies_modality_idx").on(t.modality),
+		bindingStatusIdx: index("imaging_studies_binding_status_idx").on(
+			t.bindingStatus,
+		),
+		studyDateIdx: index("imaging_studies_study_date_idx").on(t.studyDate),
+		createdAtIdx: index("imaging_studies_created_at_idx").on(t.createdAt),
 	}),
 );
 
@@ -176,6 +202,7 @@ export const imagingSeries = pgTable(
 			organizationIdIdx: index("imaging_series_organizationId_idx").on(
 				table.organizationId,
 			),
+			createdAtIdx: index("imaging_series_created_at_idx").on(table.createdAt),
 		};
 	},
 );
@@ -191,11 +218,18 @@ export const imagingInstances = pgTable(
 			.notNull()
 			.references(() => imagingSeries.id, { onDelete: "cascade" }),
 		dicomSopInstanceUid: text("dicom_sop_instance_uid").notNull(),
+		sopInstanceUid: text("sop_instance_uid"),
 		instanceNumber: integer("instance_number"),
 		sopClassUid: text("sop_class_uid"),
 		storagePath: text("storage_path").notNull(),
+		storageKey: text("storage_key"),
+		fileSizeBytes: integer("file_size_bytes"),
+		sliceLocation: real("slice_location"),
+		windowCenter: real("window_center"),
+		windowWidth: real("window_width"),
 		rows: integer("rows"),
 		columns: integer("columns"),
+		cols: integer("cols"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -208,9 +242,21 @@ export const imagingInstances = pgTable(
 			imagingInstancesUidIdx: index("imaging_instances_uid_idx").on(
 				table.dicomSopInstanceUid,
 			),
+			imagingInstancesSopUidIdx: index("imaging_instances_sop_uid_idx").on(
+				table.sopInstanceUid,
+			),
 			organizationIdIdx: index("imaging_instances_organizationId_idx").on(
 				table.organizationId,
 			),
+			createdAtIdx: index("imaging_instances_created_at_idx").on(
+				table.createdAt,
+			),
+			imagingInstancesSliceLocationIdx: index(
+				"imaging_instances_slice_location_idx",
+			).on(table.seriesId, table.sliceLocation),
+			imagingInstancesInstanceNumberIdx: index(
+				"imaging_instances_instance_number_idx",
+			).on(table.seriesId, table.instanceNumber),
 		};
 	},
 );
@@ -266,8 +312,11 @@ export const xrayScans = pgTable(
 			.references(() => patients.id),
 		visitId: uuid("visit_id").references(() => visits.id),
 		// Storage: base64 data URI or storage path for the image
-		imageDataUri: text("image_data_uri"), // base64 data URI (for small images)
-		storagePath: text("storage_path"), // path on disk for larger files
+		imageDataUri: text("image_data_uri"), // base64 data URI (for legacy backward compatibility only)
+		storagePath: text("storage_path"), // path on disk for the image
+		fileUrl: text("file_url"), // direct stream URL (/api/xray/scans/:id/file)
+		fileSizeBytes: integer("file_size_bytes"),
+		sha256: text("sha256"),
 		originalFilename: text("original_filename"),
 		mimeType: text("mime_type").notNull().default("image/jpeg"),
 		// AI Analysis results
@@ -296,6 +345,7 @@ export const xrayScans = pgTable(
 		xrayScansPatientIdx: index("xray_scans_patient_idx").on(table.patientId),
 		xrayScansOrgIdx: index("xray_scans_org_idx").on(table.organizationId),
 		visitIdIdx: index("xray_scans_visitId_idx").on(table.visitId),
+		createdAtIdx: index("xray_scans_created_at_idx").on(table.createdAt),
 	}),
 );
 
@@ -309,9 +359,7 @@ export const imagingViewerSessions = pgTable(
 		studyId: uuid("study_id")
 			.notNull()
 			.references(() => imagingStudies.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id),
+		patientId: uuid("patient_id").references(() => patients.id),
 		visitId: uuid("visit_id").references(() => visits.id),
 		state: jsonb("state").$type<ImagingViewerSessionState>().notNull(),
 		annotations: jsonb("annotations")
@@ -380,6 +428,15 @@ export const dicomWorkbenchBundles = pgTable(
 		),
 		patientIdIdx: index("dicom_workbench_bundles_patient_id_idx").on(
 			t.patientId,
+		),
+		studyInstanceUidIdx: index(
+			"dicom_workbench_bundles_study_instance_uid_idx",
+		).on(t.studyInstanceUid),
+		seriesInstanceUidIdx: index(
+			"dicom_workbench_bundles_series_instance_uid_idx",
+		).on(t.seriesInstanceUid),
+		createdAtIdx: index("dicom_workbench_bundles_created_at_idx").on(
+			t.createdAt,
 		),
 	}),
 );

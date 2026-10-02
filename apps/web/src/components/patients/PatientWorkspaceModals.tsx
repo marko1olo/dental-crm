@@ -178,7 +178,7 @@ export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProp
 							</div>
 							<div>
 								<h2 className="text-sm sm:text-base font-black leading-tight">
-									Слияние дубликатов карт (152-ФЗ / 323-ФЗ)
+									Слияние дубликатов медицинских карт
 								</h2>
 								<p className="text-[11px] text-[var(--muted)]">
 									Неразрушающее объединение: баланс с точностью до копейки, строгое объединение аллергий
@@ -252,7 +252,7 @@ export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProp
 								{/* Non-destructive Guarantees Checklist */}
 								<div className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col gap-2">
 									<p className="text-[11px] font-black uppercase text-[var(--muted)] tracking-wider">
-										Гарантии неразрушающего слияния (Clinical Safety & 152-ФЗ):
+										Гарантии безопасности клинических данных:
 									</p>
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
 										<div className="flex items-start gap-1.5">
@@ -269,7 +269,7 @@ export const PatientDuplicateMergeModal: React.FC<PatientDuplicateMergeModalProp
 										</div>
 										<div className="flex items-start gap-1.5">
 											<Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-											<span><strong>152-ФЗ аудит:</strong> карта дубликата архивируется со статусом mergedIntoPatientId (ничего не удаляется).</span>
+											<span><strong>Неразрушающий аудит:</strong> карта дубликата архивируется с сохранением полной истории (ничего не удаляется).</span>
 										</div>
 									</div>
 								</div>

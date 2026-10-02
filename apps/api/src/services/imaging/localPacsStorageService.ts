@@ -23,85 +23,19 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { imagingInstances, imagingSeries, imagingStudies } from "../../db/schema.js";
 
-export class PathTraversalError extends Error {
-	constructor(message = "Обнаружена попытка выхода за пределы изолированного каталога хранилища (Path Traversal).") {
-		super(message);
-		this.name = "PathTraversalError";
-	}
-}
-
-export class TenantIsolationError extends Error {
-	constructor(message = "Доступ к файлам другой организации запрещен.") {
-		super(message);
-		this.name = "TenantIsolationError";
-	}
-}
-
-export class InvalidMagicBytesError extends Error {
-	constructor(message = "Формат файла не соответствует сигнатуре разрешенных медицинских снимков (DICOM / PNG / JPEG / HEIC).") {
-		super(message);
-		this.name = "InvalidMagicBytesError";
-	}
-}
-
-export type AllowedImagingFormat = "dicom" | "png" | "jpeg" | "heic";
-
-/**
- * Detects magic bytes / signatures for medical imaging and clinical photos:
- * - DICOM: offset 128 'DICM' or preamble-less group 0x0002 / 0x0008
- * - PNG: 89 50 4E 47 0D 0A 1A 0A
- * - JPEG: FF D8 FF
- * - HEIC / HEIF: bytes 4..7 'ftyp' with supported brands
- */
-export function detectImagingMagicBytes(buffer: Buffer | Uint8Array): AllowedImagingFormat | null {
-	if (!buffer || buffer.length < 3) return null;
-
-	// 1. JPEG: FF D8 FF
-	if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-		return "jpeg";
-	}
-
-	// 2. PNG: 89 50 4E 47 0D 0A 1A 0A
-	if (
-		buffer.length >= 8 &&
-		buffer[0] === 0x89 &&
-		buffer[1] === 0x50 &&
-		buffer[2] === 0x4e &&
-		buffer[3] === 0x47 &&
-		buffer[4] === 0x0d &&
-		buffer[5] === 0x0a &&
-		buffer[6] === 0x1a &&
-		buffer[7] === 0x0a
-	) {
-		return "png";
-	}
-
-	// 3. HEIC / HEIF
-	if (isHeicOrHeifBuffer(buffer)) {
-		return "heic";
-	}
-
-	// 4. DICOM standard preamble: offset 128 has 'DICM'
-	if (buffer.length >= 132) {
-		const isDicm =
-			(buffer[128] ?? 0) === 0x44 && // D
-			(buffer[129] ?? 0) === 0x49 && // I
-			(buffer[130] ?? 0) === 0x43 && // C
-			(buffer[131] ?? 0) === 0x4d; // M
-		if (isDicm) return "dicom";
-	}
-
-	// 5. DICOM preamble-less: starts with tag group 0x0002 or 0x0008
-	if (buffer.length >= 8) {
-		const groupLE = (buffer[0] ?? 0) | ((buffer[1] ?? 0) << 8);
-		const groupBE = ((buffer[0] ?? 0) << 8) | (buffer[1] ?? 0);
-		if (groupLE === 0x0002 || groupLE === 0x0008 || groupBE === 0x0002 || groupBE === 0x0008) {
-			return "dicom";
-		}
-	}
-
-	return null;
-}
+export * from "./localPacsSanitizer.js";
+import {
+	PathTraversalError,
+	TenantIsolationError,
+	InvalidMagicBytesError,
+	type AllowedImagingFormat,
+	detectImagingMagicBytes,
+	getPacsStorageRoot,
+	getPacsTenantStorageDir,
+	resolvePacsTenantStoragePath,
+	validateAndResolvePacsLocalFilePath,
+	toNormalizedRelativePacsStoragePath,
+} from "./localPacsSanitizer.js";
 
 export type CloudSyncStatus = "local_only" | "sync_queued" | "syncing" | "synced" | "sync_failed";
 
@@ -109,6 +43,7 @@ export interface LocalRadiologyScanInput {
 	readonly organizationId: string;
 	readonly patientId: string;
 	readonly visitId?: string | null | undefined;
+	readonly doctorId?: string | null | undefined;
 	readonly kind: ImagingStudyKind;
 	readonly title: string;
 	readonly toothCode?: string | null | undefined;
@@ -126,7 +61,7 @@ export interface LocalRadiologyScanInput {
 export interface LocalRadiologyScanResult {
 	readonly studyId: string;
 	readonly organizationId: string;
-	readonly patientId: string;
+	readonly patientId: string | null;
 	readonly visitId: string | null;
 	readonly kind: ImagingStudyKind;
 	readonly title: string;
@@ -149,7 +84,7 @@ export interface LocalRadiologyScanResult {
 
 export interface LocalPacsSyncQueueItem {
 	readonly studyId: string;
-	readonly patientId: string;
+	readonly patientId: string | null;
 	readonly title: string;
 	readonly localFilePath: string;
 	readonly fileSizeBytes: number;
@@ -169,150 +104,29 @@ export class LocalPacsStorageService {
 	 * Root storage directory for clinic PACS / radiology files.
 	 */
 	public static getStorageRoot(): string {
-		const configured = process.env.DENTE_PACS_STORAGE_ROOT?.trim() || process.env.DENTE_IMAGING_STORAGE_ROOT?.trim();
-		if (configured) return path.resolve(configured);
-		return path.resolve(process.cwd(), "uploads", "pacs");
+		return getPacsStorageRoot();
 	}
 
-	/**
-	 * Resolves isolated directory for a tenant's files and ensures it exists.
-	 * Protects against Path Traversal in organizationId.
-	 */
 	public static getTenantStorageDir(organizationId: string): string {
-		if (!organizationId || typeof organizationId !== "string") {
-			throw new TenantIsolationError("Идентификатор организации обязателен.");
-		}
-		const trimmed = organizationId.trim();
-		if (
-			trimmed.includes("/") ||
-			trimmed.includes("\\") ||
-			trimmed.includes("\0") ||
-			trimmed.includes("..") ||
-			!/^[a-zA-Z0-9_-]+$/.test(trimmed)
-		) {
-			throw new PathTraversalError("Недопустимый идентификатор организации для файлового хранилища.");
-		}
-
-		const root = this.getStorageRoot();
-		const tenantDir = path.resolve(root, trimmed);
-		if (!tenantDir.startsWith(root + path.sep) && tenantDir !== root) {
-			throw new PathTraversalError("Каталог организации выходит за пределы хранилища.");
-		}
-		return tenantDir;
+		return getPacsTenantStorageDir(organizationId);
 	}
 
-	/**
-	 * Resolves candidate file path within tenant's isolated directory.
-	 * Strict protection against Path Traversal (../, null bytes, escaped paths).
-	 */
 	public static resolveTenantStoragePath(organizationId: string, candidatePath: string): string {
-		if (!candidatePath || typeof candidatePath !== "string") {
-			throw new PathTraversalError("Путь к файлу снимка обязателен.");
-		}
-		if (candidatePath.includes("\0")) {
-			throw new PathTraversalError("Недопустимый путь к файлу: обнаружен null-байт.");
-		}
-
-		const tenantDir = this.getTenantStorageDir(organizationId);
-		let decoded = candidatePath;
-		try {
-			decoded = decodeURIComponent(candidatePath);
-		} catch {
-			// keep original if decoding fails
-		}
-		if (decoded.includes("\0")) {
-			throw new PathTraversalError("Недопустимый путь к файлу: обнаружен null-байт.");
-		}
-
-		const resolved = path.isAbsolute(decoded)
-			? path.resolve(decoded)
-			: path.resolve(tenantDir, decoded);
-
-		// Strict containment check: must be strictly inside tenantDir
-		if (!resolved.startsWith(tenantDir + path.sep) && resolved !== tenantDir) {
-			throw new PathTraversalError(
-				`Обнаружена попытка несанкционированного доступа к файлу за пределами хранилища организации: ${candidatePath}`,
-			);
-		}
-
-		return resolved;
+		return resolvePacsTenantStoragePath(organizationId, candidatePath);
 	}
 
-	/**
-	 * Validates and resolves local workstation radiology file path for offline PACS registration.
-	 * Allows legitimate workstation storage paths while strictly blocking Path Traversal (../, null bytes)
-	 * and forbidden OS system directories.
-	 */
 	public static validateAndResolveLocalFilePath(organizationId: string, candidatePath: string): string {
-		if (!candidatePath || typeof candidatePath !== "string") {
-			throw new PathTraversalError("Путь к файлу снимка обязателен.");
-		}
-		if (candidatePath.includes("\0")) {
-			throw new PathTraversalError("Недопустимый путь к файлу: обнаружен null-байт.");
-		}
-
-		let decoded = candidatePath;
-		try {
-			decoded = decodeURIComponent(candidatePath);
-		} catch {
-			// keep original
-		}
-		if (decoded.includes("\0")) {
-			throw new PathTraversalError("Недопустимый путь к файлу: обнаружен null-байт.");
-		}
-
-		if (decoded.includes("..")) {
-			throw new PathTraversalError("Недопустимый путь к файлу: обнаружена последовательность выхода из каталога (..).");
-		}
-
-		if (path.isAbsolute(decoded)) {
-			const normalized = path.normalize(decoded);
-			if (normalized.includes("..")) {
-				throw new PathTraversalError("Недопустимый путь к файлу: обнаружена последовательность выхода из каталога (..).");
-			}
-
-			// Strict cross-tenant isolation if path is inside PACS storage root
-			const storageRoot = this.getStorageRoot();
-			const tenantDir = this.getTenantStorageDir(organizationId);
-			if (normalized.startsWith(storageRoot + path.sep) && !normalized.startsWith(tenantDir + path.sep) && normalized !== tenantDir) {
-				throw new TenantIsolationError("Доступ к файлам другой организации запрещен.");
-			}
-
-			const lower = normalized.toLowerCase();
-			const forbiddenPrefixes = [
-				"c:\\windows",
-				"c:\\program files",
-				"c:\\program files (x86)",
-				"c:\\programdata",
-				"/etc",
-				"/sys",
-				"/proc",
-				"/root",
-				"/var/run",
-				"/bin",
-				"/sbin",
-				"/boot",
-				"/dev",
-			];
-
-			for (const prefix of forbiddenPrefixes) {
-				if (lower.startsWith(prefix)) {
-					throw new PathTraversalError(`Запрещен доступ к системным директориям операционной системы: ${candidatePath}`);
-				}
-			}
-
-			const sensitiveTokens = [".env", ".git", ".ssh", "id_rsa", "id_ed25519"];
-			for (const token of sensitiveTokens) {
-				if (lower.includes(token)) {
-					throw new PathTraversalError(`Запрещен доступ к конфиденциальным файлам: ${candidatePath}`);
-				}
-			}
-
-			return normalized;
-		}
-
-		return this.resolveTenantStoragePath(organizationId, decoded);
+		return validateAndResolvePacsLocalFilePath(organizationId, candidatePath);
 	}
+
+	public static toNormalizedRelativeStoragePath(
+		organizationId: string,
+		candidatePath: string,
+		subfolder = "dicom",
+	): string {
+		return toNormalizedRelativePacsStoragePath(organizationId, candidatePath, subfolder);
+	}
+
 
 	/**
 	 * Streams a file into tenant-isolated storage while verifying magic bytes on the fly.
@@ -404,9 +218,11 @@ export class LocalPacsStorageService {
 			throw err;
 		}
 
+		const normalizedRelative = path.posix.join("uploads", "pacs", organizationId, uniqueName);
+
 		return {
 			storagePath: targetPath,
-			relativePath: uniqueName,
+			relativePath: normalizedRelative,
 			fileName: safeName,
 			fileSizeBytes: totalBytes,
 			sha256: hash.digest("hex"),
@@ -434,6 +250,61 @@ export class LocalPacsStorageService {
 		detectedFormat: AllowedImagingFormat;
 	}> {
 		return this.storeTenantFileStream(organizationId, fileName, Readable.from(buffer), options);
+	}
+
+	/**
+	 * Safely stores a 2D X-ray (visiograph/panoramic) scan buffer in isolated tenant storage on disk.
+	 * Returns storagePath and relativePath to eliminate base64 storage in PostgreSQL columns.
+	 */
+	public static async storeXrayScanFile(
+		organizationId: string,
+		rawFileName: string | undefined,
+		buffer: Buffer,
+		mimeType = "image/jpeg",
+	): Promise<{
+		storagePath: string;
+		relativePath: string;
+		fileName: string;
+		fileSizeBytes: number;
+		sha256: string;
+	}> {
+		const tenantDir = this.getTenantStorageDir(organizationId);
+		await fs.mkdir(tenantDir, { recursive: true });
+
+		const maxBytes = 100 * 1024 * 1024; // 100 MB max for 2D X-ray
+		if (buffer.length > maxBytes) {
+			throw new Error(`Превышен максимальный размер файла рентген-снимка (${Math.round(maxBytes / (1024 * 1024))} МБ).`);
+		}
+
+		let ext = ".jpg";
+		if (mimeType.includes("png")) ext = ".png";
+		else if (mimeType.includes("webp")) ext = ".webp";
+		else if (mimeType.includes("dicom") || mimeType.includes("dcm")) ext = ".dcm";
+
+		const base = (rawFileName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
+		let safeName = base
+			.replace(/[\x00-\x1F]/g, "")
+			.replace(/[<>:"|?*]/g, "_")
+			.slice(0, 160) || `xray_${Date.now()}`;
+
+		if (!path.extname(safeName)) {
+			safeName += ext;
+		}
+
+		const uniqueName = `${Date.now()}_${crypto.randomUUID()}_${safeName}`;
+		const targetPath = path.join(tenantDir, uniqueName);
+
+		await fs.writeFile(targetPath, buffer);
+
+		const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+
+		return {
+			storagePath: targetPath,
+			relativePath: uniqueName,
+			fileName: safeName,
+			fileSizeBytes: buffer.length,
+			sha256,
+		};
 	}
 
 	/**
@@ -569,10 +440,18 @@ export class LocalPacsStorageService {
 
 		const studyUid = input.dicomStudyUid || `1.2.643.5.1.13.1.${Date.now()}.${crypto.randomInt(100000, 99999999)}`;
 
-		// Insert or update imaging study in database with local storage_path
+		// Normalization: Ensure relative normalized path in DB, NEVER raw absolute Windows paths (e.g. C:\Users\...)
+		const normalizedStoragePath = this.toNormalizedRelativeStoragePath(
+			input.organizationId,
+			input.localFilePath,
+			"dicom",
+		);
+
+		// Insert or update imaging study in database with normalized relative storage_path
 		const study = await createImagingStudyInDb(input.organizationId, {
 			patientId: input.patientId,
 			visitId: input.visitId || null,
+			doctorId: input.doctorId || null,
 			kind: input.kind,
 			title: input.title.trim() || `Снимок ${input.kind.toUpperCase()}`,
 			toothCode: input.toothCode || null,
@@ -580,7 +459,7 @@ export class LocalPacsStorageService {
 			capturedAt: capturedAtIso,
 			sourceKind: "dicom_file",
 			sourceName: input.sourceName || "Local Station PACS",
-			storagePath: canonicalPath,
+			storagePath: normalizedStoragePath,
 			dicomStudyUid: studyUid,
 			aiSummary: input.localThumbnailDataUri ? "Снимок готов к приему. Локальный кэш сформирован." : null,
 		});
@@ -612,8 +491,11 @@ export class LocalPacsStorageService {
 						organizationId: input.organizationId,
 						seriesId: seriesRow.id,
 						dicomSopInstanceUid: input.dicomSopInstanceUid,
+						sopInstanceUid: input.dicomSopInstanceUid,
 						instanceNumber: 1,
-						storagePath: input.localFilePath,
+						storagePath: normalizedStoragePath,
+						storageKey: normalizedStoragePath,
+						fileSizeBytes: fileSizeBytes || undefined,
 					});
 				}
 			} catch (err) {
@@ -636,7 +518,7 @@ export class LocalPacsStorageService {
 			title: study.title || input.title,
 			toothCode: input.toothCode || null,
 			region: input.region || null,
-			localFilePath: input.localFilePath,
+			localFilePath: normalizedStoragePath,
 			localOfflineAvailable: true,
 			cloudSyncStatus: "local_only",
 			canStartConsultationImmediately: true,
@@ -674,11 +556,14 @@ export class LocalPacsStorageService {
 		let fileExistsLocally = false;
 		let fileSizeBytes = 0;
 
-		if (localPath && existsSync(localPath)) {
+		if (localPath) {
 			try {
-				const stat = statSync(localPath);
-				fileSizeBytes = stat.size;
-				fileExistsLocally = true;
+				const resolvedDiskPath = this.validateAndResolveLocalFilePath(organizationId, localPath);
+				if (existsSync(resolvedDiskPath)) {
+					const stat = statSync(resolvedDiskPath);
+					fileSizeBytes = stat.size;
+					fileExistsLocally = true;
+				}
 			} catch {
 				fileExistsLocally = false;
 			}
@@ -762,9 +647,12 @@ export class LocalPacsStorageService {
 		return studies.map((s) => {
 			const sync = this.syncQueueMap.get(s.id);
 			let fileSizeBytes = 0;
-			if (s.storagePath && existsSync(s.storagePath)) {
+			if (s.storagePath) {
 				try {
-					fileSizeBytes = statSync(s.storagePath).size;
+					const resolved = this.validateAndResolveLocalFilePath(organizationId, s.storagePath);
+					if (existsSync(resolved)) {
+						fileSizeBytes = statSync(resolved).size;
+					}
 				} catch {
 					fileSizeBytes = 0;
 				}

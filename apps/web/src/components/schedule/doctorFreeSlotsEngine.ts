@@ -2,7 +2,7 @@
  * doctorFreeSlotsEngine.ts — Алгоритм быстрого поиска свободных окон у врача на 7–14 дней вперед.
  */
 
-import type { Appointment } from "@dental/shared";
+import { type Appointment, areIntervalsOverlapping } from "@dental/shared";
 
 export type TimeOfDayFilter = "all" | "morning" | "day" | "evening";
 
@@ -125,8 +125,35 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 
 		// Filter appointments for this date
 		const dayAppts = activeAppointments.filter((a) => {
-			const apptDate = a.startsAt.slice(0, 10);
+			const rawDate = a.startsAt || (a as any).startTime || (a as any).startAt || "";
+			const apptDate = typeof rawDate === "string" ? rawDate.slice(0, 10) : "";
 			return apptDate === dateKey;
+		});
+
+		// Pre-parse doctor break intervals in minutes once per day
+		const parsedBreaks = breakIntervals.map((b) => {
+			const [bStartH, bStartM] = b.startTime.split(":").map(Number);
+			const [bEndH, bEndM] = b.endTime.split(":").map(Number);
+			return {
+				startMin: (bStartH ?? 0) * 60 + (bStartM ?? 0),
+				endMin: (bEndH ?? 0) * 60 + (bEndM ?? 0),
+			};
+		});
+
+		// Pre-parse day appointments once into numeric timestamps to eliminate thousands of Date allocations
+		const parsedDayAppts = dayAppts.map((a) => {
+			const aStart = new Date(a.startsAt || (a as any).startTime || 0).getTime();
+			const aDuration = Number((a as any).durationMinutes) || 30;
+			const aEnd =
+				a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
+					? new Date(a.endsAt).getTime()
+					: aStart + aDuration * 60000;
+			return {
+				doctorUserId: a.doctorUserId,
+				chairId: a.chairId,
+				startMs: aStart,
+				endMs: aEnd,
+			};
 		});
 
 		// Iterate time slots
@@ -145,14 +172,10 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 				continue;
 			}
 
-			// Check doctor break collisions (e.g. 13:00 - 14:00)
-			const hasBreakConflict = breakIntervals.some((b) => {
-				const [bStartH, bStartM] = b.startTime.split(":").map(Number);
-				const [bEndH, bEndM] = b.endTime.split(":").map(Number);
-				const bStartTotal = (bStartH ?? 0) * 60 + (bStartM ?? 0);
-				const bEndTotal = (bEndH ?? 0) * 60 + (bEndM ?? 0);
-				return startTotalMin < bEndTotal && endTotalMin > bStartTotal;
-			});
+			// Check doctor break collisions (e.g. 13:00 - 14:00) using pre-parsed minutes
+			const hasBreakConflict = parsedBreaks.some(
+				(b) => startTotalMin < b.endMin && endTotalMin > b.startMin,
+			);
 
 			if (hasBreakConflict) {
 				continue;
@@ -163,50 +186,27 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 			const startMs = new Date(startIso).getTime();
 			const endMs = new Date(endIso).getTime();
 
-			// Check doctor collision (including multi-hour appointments 1.5-3h)
+			// Check doctor collision using pre-parsed timestamps via SSOT engine
 			const hasDoctorConflict = doctorId
-				? dayAppts.some((a) => {
-						if (a.doctorUserId !== doctorId) return false;
-						const aStart = new Date(a.startsAt).getTime();
-						const aDuration = Number((a as any).durationMinutes) || 30;
-						const aEnd =
-							a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
-								? new Date(a.endsAt).getTime()
-								: aStart + aDuration * 60000;
-						return startMs < aEnd && endMs > aStart;
-					})
+				? parsedDayAppts.some((a) => a.doctorUserId === doctorId && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs))
 				: false;
 
 			if (hasDoctorConflict) {
 				continue;
 			}
 
-			// Find available chair (excluding multi-hour blocks)
+			// Find available chair using pre-parsed timestamps via SSOT engine
 			const availableChair = activeChairs.find((chair) => {
-				const hasChairConflict = dayAppts.some((a) => {
-					if (a.chairId !== chair.id) return false;
-					const aStart = new Date(a.startsAt).getTime();
-					const aDuration = Number((a as any).durationMinutes) || 30;
-					const aEnd =
-						a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
-							? new Date(a.endsAt).getTime()
-							: aStart + aDuration * 60000;
-					return startMs < aEnd && endMs > aStart;
-				});
+				const hasChairConflict = parsedDayAppts.some(
+					(a) => a.chairId === chair.id && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs),
+				);
 				return !hasChairConflict;
 			}) || defaultChair;
 
-			// Check if any chair is free if doctor is specified, or check chair availability
-			const chairConflict = dayAppts.some((a) => {
-				if (a.chairId !== availableChair.id) return false;
-				const aStart = new Date(a.startsAt).getTime();
-				const aDuration = Number((a as any).durationMinutes) || 30;
-				const aEnd =
-					a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
-						? new Date(a.endsAt).getTime()
-						: aStart + aDuration * 60000;
-				return startMs < aEnd && endMs > aStart;
-			});
+			// Verify chair availability
+			const chairConflict = parsedDayAppts.some(
+				(a) => a.chairId === availableChair.id && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs),
+			);
 
 			if (!chairConflict) {
 				const timeStartStr = `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`;
@@ -301,7 +301,8 @@ export function calculateDailyChairDoctorTally(params: {
 
 	// Filter appointments for this date
 	const dayAppts = appointments.filter((a) => {
-		const apptDate = a.startsAt.slice(0, 10);
+		const rawDate = a.startsAt || (a as any).startTime || (a as any).startAt || "";
+		const apptDate = typeof rawDate === "string" ? rawDate.slice(0, 10) : "";
 		return apptDate === dateKey && a.status !== "cancelled" && a.status !== "no_show";
 	});
 
@@ -318,9 +319,27 @@ export function calculateDailyChairDoctorTally(params: {
 	let totalDurationMinutes = 0;
 	let totalRevenueRub = 0;
 
+	// Index doctors for O(1) lookups
+	const doctorsMap = new Map<string, (typeof doctors)[number]>();
+	for (const doc of doctors) {
+		if (doc.id) doctorsMap.set(doc.id, doc);
+	}
+
+	// Group day appointments by chair in a single pass O(N)
+	const apptsByChair = new Map<string, typeof dayAppts>();
+	for (const a of dayAppts) {
+		const cId = a.chairId || "";
+		let list = apptsByChair.get(cId);
+		if (!list) {
+			list = [];
+			apptsByChair.set(cId, list);
+		}
+		list.push(a);
+	}
+
 	// Calculate per chair
 	const chairStats: ChairDailyOccupancyStats[] = activeChairs.map((chair) => {
-		const chairAppts = dayAppts.filter((a) => a.chairId === chair.id);
+		const chairAppts = apptsByChair.get(chair.id) || [];
 		let chairDurationMin = 0;
 		let chairRevenue = 0;
 		let completedCount = 0;
@@ -358,7 +377,7 @@ export function calculateDailyChairDoctorTally(params: {
 		);
 
 		const activeDoctorNames = Array.from(docIdSet).map((dId) => {
-			const doc = doctors.find((d) => d.id === dId);
+			const doc = doctorsMap.get(dId);
 			return doc?.fullName || doc?.name || dId;
 		});
 
@@ -397,7 +416,7 @@ export function calculateDailyChairDoctorTally(params: {
 	}
 
 	const doctorStats: DoctorDailyOccupancyStats[] = Array.from(doctorStatsMap.entries()).map(([dId, data]) => {
-		const doc = doctors.find((d) => d.id === dId);
+		const doc = doctorsMap.get(dId);
 		const dName = doc?.fullName || doc?.name || (dId === "unassigned" ? "Не назначен" : dId);
 		return {
 			doctorId: dId,

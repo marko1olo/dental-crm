@@ -3,7 +3,9 @@ import test, { describe } from "node:test";
 import {
 	ALL_ADULT_TEETH,
 	ALL_PEDIATRIC_TEETH,
+	areClassicGostOdontogramPropsEqual,
 	calculateDmft,
+	type ClassicGostOdontogramProps,
 	formatOdontogramTo043ProtocolText,
 	getGostAbbreviation,
 	getNextFocusedTooth,
@@ -209,6 +211,10 @@ describe("Classic GOST 043/u — Single-Key & Sequence Hotkey Parser", () => {
 		assert.equal(getToothStateFromHotkey("ь"), "Missing");
 		assert.equal(getToothStateFromHotkey("o"), "Missing");
 		assert.equal(getToothStateFromHotkey("о"), "Missing");
+		assert.equal(getToothStateFromHotkey("x"), "Missing");
+		assert.equal(getToothStateFromHotkey("X"), "Missing");
+		assert.equal(getToothStateFromHotkey("х"), "Missing");
+		assert.equal(getToothStateFromHotkey("Х"), "Missing");
 
 		assert.equal(getToothStateFromHotkey("з"), "Healthy");
 		assert.equal(getToothStateFromHotkey("З"), "Healthy");
@@ -407,6 +413,28 @@ describe("Classic GOST 043/u — Mobile (390x844) & Tablet (1024x768) Touch Keyp
 		assert.equal(selected.length, 4);
 		assert.ok(selected.includes(16));
 		assert.ok(selected.includes(46));
+	});
+
+	test("Поддержка activeStamp в ClassicGostOdontogramProps и areClassicGostOdontogramPropsEqual", () => {
+		const baseProps: ClassicGostOdontogramProps = {
+			teethData: [],
+			onToothClick: () => {},
+			activeStamp: null,
+		};
+		const stampedProps: ClassicGostOdontogramProps = {
+			teethData: [],
+			onToothClick: () => {},
+			activeStamp: "Caries",
+		};
+		assert.equal(areClassicGostOdontogramPropsEqual(baseProps, stampedProps), false);
+		assert.equal(areClassicGostOdontogramPropsEqual(stampedProps, { ...stampedProps }), true);
+		assert.equal(
+			areClassicGostOdontogramPropsEqual(stampedProps, {
+				...stampedProps,
+				activeStamp: "Filled",
+			}),
+			false,
+		);
 	});
 });
 

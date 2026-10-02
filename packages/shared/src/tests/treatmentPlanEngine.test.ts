@@ -131,6 +131,9 @@ describe("Wave 19: Multi-Option Treatment Plan & Phased Clinical Estimate Engine
 			assert.strictEqual(classifyProcedureStage("A16.07.004.001", "Ортопедия"), "stage_3_orthopedics");
 			assert.strictEqual(classifyProcedureStage("A16.07.004.002", "Ортопедия"), "stage_3_orthopedics");
 			assert.strictEqual(classifyProcedureStage("A16.07.006.001", "Протезирование"), "stage_3_orthopedics");
+			assert.strictEqual(classifyProcedureStage("A16.07.006.002", "Имплантация"), "stage_3_orthopedics");
+			assert.strictEqual(classifyProcedureStage("A16.07.006", "Протезирование на имплантатах"), "stage_3_orthopedics");
+			assert.strictEqual(classifyProcedureStage("A16.07.004", "Коронка на импланте"), "stage_3_orthopedics");
 			assert.strictEqual(classifyProcedureStage("A16.07.003.001", "Виниры"), "stage_3_orthopedics");
 			assert.strictEqual(classifyProcedureStage("A16.07.036", "Бюгель"), "stage_3_orthopedics");
 		});

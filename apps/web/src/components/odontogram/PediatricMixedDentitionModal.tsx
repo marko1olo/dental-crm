@@ -703,7 +703,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								<Activity className="w-4 h-4 text-rose-600 shrink-0" />
 							</button>
 
-							{/* 8. Вставить протокол в карту 043/у */}
+							{/* 8. Вставить протокол в медицинскую карту */}
 							<button
 								type="button"
 								onClick={handleInsertCariogramTo043}
@@ -1070,7 +1070,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								cariogramResult={cariogramResult}
 							/>
 
-							{/* 1-Click Insert to 043/u Action Button */}
+							{/* 1-Click Insert to Medical Card Action Button */}
 							<div className="flex items-center justify-end pt-2">
 								<button
 									type="button"

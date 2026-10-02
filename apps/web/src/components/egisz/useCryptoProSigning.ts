@@ -11,6 +11,7 @@ import {
 	type CertificateInfo,
 	signatureService,
 } from "../../lib/cryptopro";
+import { parseCryptoProError } from "../../utils/cryptoPro";
 import {
 	type EgiszClinicInfo,
 	type EgiszDoctorInfo,
@@ -48,8 +49,10 @@ export function useCryptoProSigning({
 			if (certs.length > 0 && !selectedCert) {
 				setSelectedCert(certs[0] || null);
 			}
-		} catch (_e) {
+		} catch (e) {
 			setAvailableCerts([]);
+			const parsed = parseCryptoProError(e);
+			showToast(`КриптоПро CSP: ${parsed.userMessage}`, "warning");
 		} finally {
 			setIsCheckingCerts(false);
 		}
@@ -125,6 +128,24 @@ export function useCryptoProSigning({
 			return;
 		}
 
+		const now = Date.now();
+		const validToTime = new Date(certToUse.validTo).getTime();
+		const validFromTime = new Date(certToUse.validFrom).getTime();
+		if (!Number.isNaN(validToTime) && validToTime < now) {
+			showToast(
+				`Сертификат «${certToUse.name}» просрочен (${new Date(certToUse.validTo).toLocaleDateString("ru-RU")}). Подписание отклонено`,
+				"error",
+			);
+			return;
+		}
+		if (!Number.isNaN(validFromTime) && validFromTime > now) {
+			showToast(
+				`Сертификат «${certToUse.name}» еще не вступил в силу (действителен с ${new Date(certToUse.validFrom).toLocaleDateString("ru-RU")})`,
+				"error",
+			);
+			return;
+		}
+
 		setIsSigning(true);
 		try {
 			const xmlToSign = canonicalizeCdaXml(generatedXml);
@@ -151,8 +172,8 @@ export function useCryptoProSigning({
 			setDoctorSig(newDocSig);
 			showToast(`Документ успешно подписан УКЭП (${newDocSig.certificateSerialNumber})`, "success");
 		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : String(err);
-			showToast(`Ошибка при наложении электронной подписи: ${msg}`, "error");
+			const parsed = parseCryptoProError(err);
+			showToast(`Ошибка при наложении электронной подписи: ${parsed.userMessage}`, "error");
 		} finally {
 			setIsSigning(false);
 		}
@@ -163,6 +184,24 @@ export function useCryptoProSigning({
 		if (!certToUse) {
 			showToast(
 				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Выберите сертификат или загрузите открепленный файл .sig / .p7s",
+				"error",
+			);
+			return;
+		}
+
+		const now = Date.now();
+		const validToTime = new Date(certToUse.validTo).getTime();
+		const validFromTime = new Date(certToUse.validFrom).getTime();
+		if (!Number.isNaN(validToTime) && validToTime < now) {
+			showToast(
+				`Сертификат организации «${certToUse.name}» просрочен (${new Date(certToUse.validTo).toLocaleDateString("ru-RU")}). Подписание отклонено`,
+				"error",
+			);
+			return;
+		}
+		if (!Number.isNaN(validFromTime) && validFromTime > now) {
+			showToast(
+				`Сертификат организации «${certToUse.name}» еще не вступил в силу (действителен с ${new Date(certToUse.validFrom).toLocaleDateString("ru-RU")})`,
 				"error",
 			);
 			return;
@@ -194,8 +233,8 @@ export function useCryptoProSigning({
 			setMoSig(newMoSig);
 			showToast(`Документ успешно подписан УКЭП организации (${newMoSig.certificateSerialNumber})`, "success");
 		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : String(err);
-			showToast(`Ошибка при наложении подписи организации: ${msg}`, "error");
+			const parsed = parseCryptoProError(err);
+			showToast(`Ошибка при наложении подписи организации: ${parsed.userMessage}`, "error");
 		} finally {
 			setIsSigning(false);
 		}

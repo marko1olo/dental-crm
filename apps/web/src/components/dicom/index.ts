@@ -4,6 +4,7 @@
 export * from "./PanoramicRendererWindow";
 export * from "./BoneQualityPanel";
 export * from "./DicomArchiveUploader";
+export * from "./dicomOfflineSync";
 export * from "./panoramicMprMath";
 export * from "./ctPlanningPersistence";
 export type {

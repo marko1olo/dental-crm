@@ -69,6 +69,21 @@ export interface CopilotDrawerProps {
 	onBookSlot?: BookSlotHandler;
 }
 
+const formatShortPatientName = (fullName?: string | null) => {
+	if (!fullName) return null;
+	const parts = fullName.trim().split(/\s+/);
+	const p0 = parts[0];
+	const p1 = parts[1];
+	const p2 = parts[2];
+	if (p0 && p1 && p2) {
+		return `${p0} ${p1[0] ?? ""}.${p2[0] ?? ""}.`;
+	}
+	if (p0 && p1) {
+		return `${p0} ${p1[0] ?? ""}.`;
+	}
+	return fullName;
+};
+
 export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 	isOpen,
 	messages,
@@ -181,7 +196,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 					<div>
 						<h3 className="copilot-header-title">
 							<span>ДЕНТА — Клинический ассистент</span>
-							<span className="copilot-header-badge">ИИ-ассистент</span>
+							<span className="copilot-header-badge">Копилот</span>
 						</h3>
 						<div
 							style={{
@@ -235,33 +250,9 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 			</header>
 
 			{/* Context Awareness Telemetry Bar */}
-			<div
-				className="copilot-context-bar"
-				style={{
-					display: "flex",
-					alignItems: "center",
-					flexWrap: "wrap",
-					gap: "6px",
-					padding: "6px 16px",
-					backgroundColor: "var(--paper-soft, rgba(15, 118, 110, 0.04))",
-					borderBottom: "1px solid var(--line, rgba(15, 118, 110, 0.12))",
-					fontSize: "12px",
-					color: "var(--ink, #0f172a)",
-				}}
-				data-testid="copilot-context-bar"
-			>
+			<div className="copilot-context-bar" data-testid="copilot-context-bar">
 				<span
-					style={{
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "4px",
-						fontWeight: 600,
-						color: "var(--teal-dark, #0f766e)",
-						padding: "2px 6px",
-						borderRadius: "4px",
-						backgroundColor: "var(--teal-soft, #ccfbf1)",
-						border: "1px solid var(--teal-surface, rgba(13, 148, 136, 0.2))",
-					}}
+					className="copilot-context-chip active-view"
 					title={`Активный экран: ${uiContext.viewLabel || uiContext.view}`}
 				>
 					<Activity size={12} />
@@ -271,16 +262,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 				{uiContext.activeTooth !== null &&
 					uiContext.activeTooth !== undefined && (
 						<span
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "4px",
-								fontWeight: 600,
-								padding: "2px 6px",
-								borderRadius: "4px",
-								backgroundColor: "var(--paper-strong, #ffffff)",
-								border: "1px solid var(--line, rgba(15, 118, 110, 0.15))",
-							}}
+							className="copilot-context-chip"
 							title={`Выбранный зуб FDI: ${uiContext.activeTooth}`}
 						>
 							<span>{`Зуб #${uiContext.activeTooth}`}</span>
@@ -289,19 +271,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
 				{uiContext.patientId && (
 					<span
-						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-							padding: "2px 6px",
-							borderRadius: "4px",
-							backgroundColor: "var(--paper-strong, #ffffff)",
-							border: "1px solid var(--line, rgba(15, 118, 110, 0.15))",
-							maxWidth: "160px",
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-							whiteSpace: "nowrap",
-						}}
+						className="copilot-context-chip"
 						title={
 							uiContext.patientName
 								? `Пациент: ${uiContext.patientName}`
@@ -309,14 +279,8 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 						}
 					>
 						<User size={12} style={{ flexShrink: 0 }} />
-						<span
-							style={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							{uiContext.patientName ??
+						<span>
+							{formatShortPatientName(uiContext.patientName) ??
 								`Пациент #${uiContext.patientId.slice(0, 6)}`}
 						</span>
 					</span>
@@ -324,16 +288,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
 				{uiContext.activeDoctor && (
 					<span
-						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-							padding: "2px 6px",
-							borderRadius: "4px",
-							backgroundColor: "var(--paper-strong, #ffffff)",
-							border: "1px solid var(--line, rgba(15, 118, 110, 0.15))",
-							color: "var(--muted, #64748b)",
-						}}
+						className="copilot-context-chip doctor"
 						title={`Лечащий врач: ${uiContext.activeDoctor}`}
 					>
 						<span>{uiContext.activeDoctor}</span>

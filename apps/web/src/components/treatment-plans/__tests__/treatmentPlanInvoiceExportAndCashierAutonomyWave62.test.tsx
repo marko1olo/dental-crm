@@ -37,7 +37,9 @@ import {
 } from "../../billing/InvoicesView.js";
 import type { ToothData } from "../../odontogram/ToothChart.js";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext.js";
-import type { CashierInvoiceExportData } from "../types.js";
+import type { CashierInvoiceExportData, TreatmentPlanStage, TreatmentPlanTier } from "../types.js";
+import { exportPlanToCashier } from "../treatmentPlanNetworkSync.js";
+import type { Kopecks } from "@dental/shared";
 
 // Mock localStorage for Node.js test environment
 class MockLocalStorage {
@@ -61,6 +63,7 @@ class MockLocalStorage {
 }
 
 const mockStorage = new MockLocalStorage();
+(globalThis as any).fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
 if (typeof (globalThis as any).window === "undefined") {
 	(globalThis as any).window = {
 		localStorage: mockStorage,
@@ -132,6 +135,7 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 
 	beforeEach(() => {
 		mockStorage.clear();
+		saveStoredInvoices([]);
 	});
 
 	describe("1. TreatmentPlanModule Cashier Export Toolbar & Options Menu", () => {
@@ -362,4 +366,176 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 		});
 	});
 
+	describe("4. Inquisitor Financial Parity: exportPlanToCashier Line Price Mapping", () => {
+		beforeEach(() => {
+			mockStorage.clear();
+			saveStoredInvoices([]);
+		});
+
+		it("maps discounted line items to net unit prices preserving exact invoice total parity", () => {
+			const stages: TreatmentPlanStage[] = [
+				{
+					stageNumber: 1,
+					stageKind: "stage_1_therapy",
+					title: "Терапевтический этап",
+					subtitle: "Санация",
+					clinicalGoal: "Лечение кариеса",
+					order804nCodes: ["A16.07.002"],
+					totalRub: 8000,
+					totalKopecks: 800000 as Kopecks,
+					estimatedWeeks: 1,
+					estimatedVisits: 1,
+					items: [
+						{
+							id: "it-discounted",
+							name: "Восстановление зуба светоотверждаемым композитом",
+							code804n: "A16.07.002",
+							category: "Терапия",
+							stageKind: "stage_1_therapy",
+							unitPriceRub: 10000, // Pre-discount catalog price
+							priceRub: 8000, // Net row price after 20% doctor discount
+							discountRub: 2000,
+							quantity: 1,
+						},
+					],
+				},
+			];
+
+			const dummyTier: TreatmentPlanTier = {
+				tierId: "optimum",
+				title: "Оптимальный",
+				subtitle: "Надежный баланс",
+				badge: "Рекомендация врача",
+				badgeClass: "badge-optimum",
+				borderClass: "border-optimum",
+				isRecommended: true,
+				totalRub: 8000,
+				totalKopecks: 800000 as Kopecks,
+				durationWeeks: 1,
+				durationVisits: 1,
+				warrantyYears: 2,
+				materialsHeadline: "Композит",
+				materialsList: ["Filtek"],
+				keyAdvantages: ["Гарантия 2 года"],
+				stages,
+				itemsCount: 1,
+				ndflRefundRub: 1040,
+				priceWithNdflRefundRub: 6960,
+				monthlyInstallment12Rub: 667,
+				installments: {} as any,
+				ndflDetails: {} as any,
+			};
+
+			const loyaltyDeduction = {
+				availableBalanceRub: 0,
+				appliedBonusRub: 0,
+				appliedBonusKopecks: 0 as Kopecks,
+				grossKopecks: 1000000 as Kopecks,
+				discountKopecks: 200000 as Kopecks,
+				netPayableKopecks: 800000 as Kopecks,
+				netPayableRub: 8000,
+			};
+
+			exportPlanToCashier({
+				patientId: "PAT-WAVE62",
+				patientName: "Волков Дмитрий Андреевич",
+				stages,
+				currentTier: dummyTier,
+				loyaltyDeduction,
+			});
+
+			const invoices = loadStoredInvoices();
+			assert.equal(invoices.length, 1);
+			const inv = invoices[0]!;
+			assert.equal(inv.totalAmountRub, 8000);
+			assert.equal(inv.status, "issued");
+			assert.equal(inv.items.length, 1);
+
+			// CRITICAL INQUISITOR CHECK: Line price must be net unit price (8000 ₽), NOT gross (10000 ₽)!
+			assert.equal(inv.items[0]!.priceRub, 8000, "Line item must reflect net unit price after discount");
+			const lineSum = inv.items.reduce((sum, item) => sum + item.quantity * item.priceRub, 0);
+			assert.equal(lineSum, inv.totalAmountRub, "Sum of line items must strictly equal invoice total amount");
+		});
+
+		it("exports 100% clinical warranty plan with status 'warranty_100' and 0 ₽ prices", () => {
+			const stages: TreatmentPlanStage[] = [
+				{
+					stageNumber: 1,
+					stageKind: "stage_1_therapy",
+					title: "Гарантийный прием",
+					subtitle: "Коррекция",
+					clinicalGoal: "Гарантийная пришлифовка",
+					order804nCodes: ["A16.07.025"],
+					totalRub: 0,
+					totalKopecks: 0 as Kopecks,
+					estimatedWeeks: 1,
+					estimatedVisits: 1,
+					items: [
+						{
+							id: "it-warranty",
+							name: "Гарантийная шлифовка пломбы",
+							code804n: "A16.07.025",
+							category: "Терапия",
+							stageKind: "stage_1_therapy",
+							unitPriceRub: 2500,
+							priceRub: 0,
+							discountRub: 2500,
+							quantity: 1,
+							isWarranty: true,
+						},
+					],
+				},
+			];
+
+			const dummyTier: TreatmentPlanTier = {
+				tierId: "standard",
+				title: "Стандарт",
+				subtitle: "Базовый",
+				badge: "Базовый",
+				badgeClass: "badge-standard",
+				borderClass: "border-standard",
+				isRecommended: false,
+				totalRub: 0,
+				totalKopecks: 0 as Kopecks,
+				durationWeeks: 1,
+				durationVisits: 1,
+				warrantyYears: 1,
+				materialsHeadline: "Шлифовка",
+				materialsList: [],
+				keyAdvantages: [],
+				stages,
+				itemsCount: 1,
+				ndflRefundRub: 0,
+				priceWithNdflRefundRub: 0,
+				monthlyInstallment12Rub: 0,
+				installments: {} as any,
+				ndflDetails: {} as any,
+			};
+
+			const loyaltyDeduction = {
+				availableBalanceRub: 0,
+				appliedBonusRub: 0,
+				appliedBonusKopecks: 0 as Kopecks,
+				grossKopecks: 250000 as Kopecks,
+				discountKopecks: 250000 as Kopecks,
+				netPayableKopecks: 0 as Kopecks,
+				netPayableRub: 0,
+			};
+
+			exportPlanToCashier({
+				patientId: "PAT-WAVE62",
+				patientName: "Волков Дмитрий Андреевич",
+				stages,
+				currentTier: dummyTier,
+				loyaltyDeduction,
+			});
+
+			const invoices = loadStoredInvoices();
+			assert.equal(invoices.length, 1);
+			const inv = invoices[0]!;
+			assert.equal(inv.totalAmountRub, 0);
+			assert.equal(inv.status, "warranty_100");
+			assert.equal(inv.items[0]!.priceRub, 0);
+		});
+	});
 });

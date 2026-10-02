@@ -10,9 +10,11 @@ import {
 } from "@dental/shared";
 import {
 	ODONTOGRAM_VIEW_MODES,
+	STAMP_ITEMS,
 	areOdontogramViewContainerPropsEqual,
 	type OdontogramViewContainerProps,
 } from "../OdontogramViewContainer";
+import { invertTeethSelection } from "../useOdontogramQuickActions";
 import {
 	defaultUiPreferences,
 	loadUiPreferences,
@@ -370,6 +372,84 @@ describe("Mandate 8y: Dual-Mode Isolation & Patient Anti-Contamination Invariant
 			),
 			false,
 		);
+	});
+});
+
+describe("Odontogram Toolbar Quick Actions & Stamps Invariants (Mandate 8l/8aa)", () => {
+	test("invertTeethSelection чисто инвертирует множество зубов без побочных эффектов", () => {
+		const allAdultTeeth = [
+			18, 17, 16, 15, 14, 13, 12, 11,
+			21, 22, 23, 24, 25, 26, 27, 28,
+			38, 37, 36, 35, 34, 33, 32, 31,
+			48, 47, 46, 45, 44, 43, 42, 41,
+		];
+
+		// 1. Пустое выделение -> инвертирование выделяет ВСЕ зубы
+		const allInverted = invertTeethSelection(allAdultTeeth, []);
+		assert.equal(allInverted.length, 32);
+		assert.deepEqual(allInverted, allAdultTeeth);
+
+		// 2. Все выделены -> инвертирование сбрасывает в пустой массив
+		const emptyInverted = invertTeethSelection(allAdultTeeth, allAdultTeeth);
+		assert.equal(emptyInverted.length, 0);
+		assert.deepEqual(emptyInverted, []);
+
+		// 3. Выделены центральные резцы (11, 21) -> остаются 30 остальных зубов
+		const frontInverted = invertTeethSelection(allAdultTeeth, [11, 21]);
+		assert.equal(frontInverted.length, 30);
+		assert.ok(!frontInverted.includes(11));
+		assert.ok(!frontInverted.includes(21));
+		assert.ok(frontInverted.includes(12));
+		assert.ok(frontInverted.includes(22));
+	});
+
+	test("STAMP_ITEMS содержит полный клинический набор штампов включая Crown, Caries, Filled, Missing, Healthy", () => {
+		const stampStates = STAMP_ITEMS.map((s) => s.state);
+		assert.ok(stampStates.includes("Crown"), "Штамп 'Crown' (Коронка) обязан присутствовать в палитре");
+		assert.ok(stampStates.includes("Caries"), "Штамп 'Caries' (Кариес) обязан присутствовать");
+		assert.ok(stampStates.includes("Filled"), "Штамп 'Filled' (Пломба) обязан присутствовать");
+		assert.ok(stampStates.includes("Missing"), "Штамп 'Missing' (Удален) обязан присутствовать");
+		assert.ok(stampStates.includes("Healthy"), "Штамп 'Healthy' (Здоров) обязан присутствовать");
+
+		const crownStamp = STAMP_ITEMS.find((s) => s.state === "Crown");
+		assert.equal(crownStamp?.short, "Коронка");
+		assert.equal(crownStamp?.testId, "stamp-crown-primary-btn");
+	});
+
+	test("Клиническая суть (Антидрочь): Пакетные действия вызывают onQuickStateChange со строгим пустым массивом surfaces []", () => {
+		let capturedTargets: number[] = [];
+		let capturedState: string = "";
+		let capturedSurfaces: readonly string[] | undefined = undefined;
+
+		const onQuickStateChange = (
+			targets: number[],
+			state: any,
+			surfaces?: readonly string[] | undefined,
+		) => {
+			capturedTargets = targets;
+			capturedState = state;
+			capturedSurfaces = surfaces;
+		};
+
+		// 1. Санация всей формулы: surfaces обязаны быть строго []
+		const allTeeth = [18, 17, 16, 15, 14, 13, 12, 11];
+		onQuickStateChange(allTeeth, "Healthy", []);
+		assert.equal(capturedState, "Healthy");
+		assert.deepEqual(capturedTargets, allTeeth);
+		assert.deepEqual(capturedSurfaces, [], "Санация не должна навязывать поверхности (строго [])");
+
+		// 2. Адентия 8-ок: surfaces обязаны быть строго []
+		const wisdomTeeth = [18, 28, 38, 48];
+		onQuickStateChange(wisdomTeeth, "Missing", []);
+		assert.equal(capturedState, "Missing");
+		assert.deepEqual(capturedTargets, wisdomTeeth);
+		assert.deepEqual(capturedSurfaces, [], "Адентия 8-ок не должна навязывать поверхности (строго [])");
+
+		// 3. Штамп на зуб или группу: surfaces обязаны быть строго []
+		onQuickStateChange([16], "Crown", []);
+		assert.equal(capturedState, "Crown");
+		assert.deepEqual(capturedTargets, [16]);
+		assert.deepEqual(capturedSurfaces, [], "Штамп красит зуб целиком без поверхностей (строго [])");
 	});
 });
 

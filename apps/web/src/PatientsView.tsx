@@ -1382,7 +1382,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									<span>Сохранить</span>
 								</button>
 
-								{/* Primary CTA 2 (Above Fold): Открыть приём 043/у */}
+								{/* Primary CTA 2 (Above Fold): Открыть приём */}
 								<button
 									type="button"
 									onClick={() =>
@@ -1622,7 +1622,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												<span>Бланк ИДС / согласий</span>
 											</button>
 
-											{/* 4. Медицинская карта 043/у */}
+											{/* 4. Медицинская карта */}
 											<button
 												type="button"
 												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"

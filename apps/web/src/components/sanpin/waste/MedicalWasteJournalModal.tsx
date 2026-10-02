@@ -219,7 +219,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 			}
 
 			showToast(
-				"Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
+				"Отходы смены успешно зафиксированы (пакет 2.5 кг + контейнер игл 0.8 кг)",
 				"success",
 			);
 			setActiveTab("journal");
@@ -310,10 +310,10 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 						<div>
 							<div className="font-bold text-lg leading-tight flex items-center gap-1.5">
 								<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
-								<span>Учет и Обезвреживание Медицинских Отходов</span>
+								<span>Учет и передача отходов</span>
 							</div>
 							<div className="text-xs font-normal text-muted">
-								СанПиН 2.1.3684-21 • Классы А, Б, Г • Весовой контроль • Акты приема-передачи
+								Утилизация отходов • Весовой контроль • Акты передачи
 							</div>
 						</div>
 					</div>

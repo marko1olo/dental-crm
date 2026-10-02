@@ -21,7 +21,6 @@ import {
 	ALL_CBCT_VOLUME_3D_PRESETS,
 	getVolume3DPreset,
 	getSafeDevicePixelRatio,
-	renderCanvas2DVolumeRaymarching,
 	renderCanvas2DPreviewSlice,
 } from "./cbctVolume3DMath";
 import {
@@ -72,58 +71,41 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isInteracting, setIsInteracting] = useState<boolean>(false);
 	const [clipping, setClipping] = useState<Volume3DClippingBox>({
-		clipMin: initialClipping?.clipMin
-			? [initialClipping.clipMin[0], initialClipping.clipMin[1], initialClipping.clipMin[2]]
-			: [0.0, 0.0, 0.0],
-		clipMax: initialClipping?.clipMax
-			? [initialClipping.clipMax[0], initialClipping.clipMax[1], initialClipping.clipMax[2]]
-			: [1.0, 1.0, 1.0],
+		clipMin: initialClipping?.clipMin ? [...initialClipping.clipMin] : [0.0, 0.0, 0.0],
+		clipMax: initialClipping?.clipMax ? [...initialClipping.clipMax] : [1.0, 1.0, 1.0],
 	});
 	const [isClippingOpen, setIsClippingOpen] = useState<boolean>(false);
 	const [isPresetOpen, setIsPresetOpen] = useState<boolean>(false);
 
 	const hasActiveClipping =
-		clipping.clipMin[0] > 0.001 ||
-		clipping.clipMin[1] > 0.001 ||
-		clipping.clipMin[2] > 0.001 ||
-		clipping.clipMax[0] < 0.999 ||
-		clipping.clipMax[1] < 0.999 ||
-		clipping.clipMax[2] < 0.999;
+		clipping.clipMin[0] > 0.001 || clipping.clipMin[1] > 0.001 || clipping.clipMin[2] > 0.001 ||
+		clipping.clipMax[0] < 0.999 || clipping.clipMax[1] < 0.999 || clipping.clipMax[2] < 0.999;
 
-	const handleClipChange = useCallback(
-		(axis: "xMin" | "xMax" | "yMin" | "yMax" | "zMin" | "zMax", val: number) => {
-			setClipping((prev) => {
-				const nextMin: [number, number, number] = [...prev.clipMin];
-				const nextMax: [number, number, number] = [...prev.clipMax];
-				if (axis === "xMin") nextMin[0] = Math.max(0, Math.min(nextMax[0] - 0.05, val));
-				if (axis === "xMax") nextMax[0] = Math.min(1, Math.max(nextMin[0] + 0.05, val));
-				if (axis === "yMin") nextMin[1] = Math.max(0, Math.min(nextMax[1] - 0.05, val));
-				if (axis === "yMax") nextMax[1] = Math.min(1, Math.max(nextMin[1] + 0.05, val));
-				if (axis === "zMin") nextMin[2] = Math.max(0, Math.min(nextMax[2] - 0.05, val));
-				if (axis === "zMax") nextMax[2] = Math.min(1, Math.max(nextMin[2] + 0.05, val));
-				const next = { clipMin: nextMin, clipMax: nextMax };
-				onClippingChange?.(next);
-				return next;
-			});
-		},
-		[onClippingChange],
-	);
+	const handleClipChange = useCallback((axis: "xMin" | "xMax" | "yMin" | "yMax" | "zMin" | "zMax", val: number) => {
+		setClipping((prev) => {
+			const nextMin: [number, number, number] = [...prev.clipMin];
+			const nextMax: [number, number, number] = [...prev.clipMax];
+			if (axis === "xMin") nextMin[0] = Math.max(0, Math.min(nextMax[0] - 0.05, val));
+			if (axis === "xMax") nextMax[0] = Math.min(1, Math.max(nextMin[0] + 0.05, val));
+			if (axis === "yMin") nextMin[1] = Math.max(0, Math.min(nextMax[1] - 0.05, val));
+			if (axis === "yMax") nextMax[1] = Math.min(1, Math.max(nextMin[1] + 0.05, val));
+			if (axis === "zMin") nextMin[2] = Math.max(0, Math.min(nextMax[2] - 0.05, val));
+			if (axis === "zMax") nextMax[2] = Math.min(1, Math.max(nextMin[2] + 0.05, val));
+			const next = { clipMin: nextMin, clipMax: nextMax };
+			onClippingChange?.(next);
+			return next;
+		});
+	}, [onClippingChange]);
 
 	const handleResetClipping = useCallback(() => {
-		const next: Volume3DClippingBox = {
-			clipMin: [0.0, 0.0, 0.0],
-			clipMax: [1.0, 1.0, 1.0],
-		};
+		const next: Volume3DClippingBox = { clipMin: [0.0, 0.0, 0.0], clipMax: [1.0, 1.0, 1.0] };
 		setClipping(next);
 		onClippingChange?.(next);
 	}, [onClippingChange]);
 
 	const handleQuickClipSpine = useCallback(() => {
 		setClipping((prev) => {
-			const next: Volume3DClippingBox = {
-				clipMin: [prev.clipMin[0], prev.clipMin[1], 0.28], // Cuts cervical spine
-				clipMax: [...prev.clipMax],
-			};
+			const next: Volume3DClippingBox = { clipMin: [prev.clipMin[0], prev.clipMin[1], 0.28], clipMax: [...prev.clipMax] };
 			onClippingChange?.(next);
 			return next;
 		});
@@ -131,10 +113,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 	const handleQuickClipOcciput = useCallback(() => {
 		setClipping((prev) => {
-			const next: Volume3DClippingBox = {
-				clipMin: [...prev.clipMin],
-				clipMax: [prev.clipMax[0], 0.72, prev.clipMax[2]], // Cuts occipital bone
-			};
+			const next: Volume3DClippingBox = { clipMin: [...prev.clipMin], clipMax: [prev.clipMax[0], 0.72, prev.clipMax[2]] };
 			onClippingChange?.(next);
 			return next;
 		});
@@ -517,7 +496,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 											className={`px-2 py-1 rounded text-[10px] font-semibold text-left transition-colors cursor-pointer flex items-center justify-between ${
 												isSelected
 													? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40"
-													: "text-zinc-300 hover:text-white hover:bg-zinc-800"
+													: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 											}`}
 											data-testid={`cbct-preset-chip-${p.id}`}
 										>
@@ -537,7 +516,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						type="button"
 						onClick={() => handleSetOrientation("coronal")}
 						title="Фронтальная проекция (Фас / Coronal)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="cbct-btn-orientation-coronal"
 					>
 						Фас
@@ -546,7 +525,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						type="button"
 						onClick={() => handleSetOrientation("sagittal")}
 						title="Сагиттальная проекция (Профиль / Sagittal)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="cbct-btn-orientation-sagittal"
 					>
 						Профиль
@@ -555,7 +534,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						type="button"
 						onClick={() => handleSetOrientation("isometric")}
 						title="Ракурс 3/4 (Изометрия челюсти)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="cbct-btn-orientation-isometric"
 					>
 						3/4
@@ -647,7 +626,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							className={`flex-1 px-1.5 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer border text-center ${
 								clipping.clipMin[2] >= 0.2
 									? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 font-bold"
-									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
 							}`}
 							data-testid="cbct-btn-clip-spine"
 						>
@@ -660,7 +639,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							className={`flex-1 px-1.5 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer border text-center ${
 								clipping.clipMax[1] <= 0.8
 									? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 font-bold"
-									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
 							}`}
 							data-testid="cbct-btn-clip-occiput"
 						>

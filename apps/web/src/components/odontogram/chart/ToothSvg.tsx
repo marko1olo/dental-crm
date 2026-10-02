@@ -180,26 +180,36 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 		const target = (e.target as Element).closest("[data-surface]");
 		if (target) {
 			const surf = target.getAttribute("data-surface");
-			if (surf) {
-				e.stopPropagation();
+			const isModifierPressed = Boolean(e.shiftKey || e.altKey);
+			const isSurfaceIntent = Boolean(useSurfaces || isModifierPressed);
+
+			e.stopPropagation();
+			if (surf && isSurfaceIntent) {
 				onClick(e as unknown as React.MouseEvent, number, surf);
+			} else {
+				onClick(e as unknown as React.MouseEvent, number, undefined);
 			}
 		}
-	}, [onClick, number]);
+	}, [onClick, number, useSurfaces]);
 
 	const handleSurfaceKeyDown = useCallback((e: React.KeyboardEvent<SVGGElement>) => {
 		if (e.key === "Enter" || e.key === " ") {
 			const target = (e.target as Element).closest("[data-surface]");
 			if (target) {
 				const surf = target.getAttribute("data-surface");
-				if (surf) {
-					e.preventDefault();
-					e.stopPropagation();
+				const isModifierPressed = Boolean(e.shiftKey || e.altKey);
+				const isSurfaceIntent = Boolean(useSurfaces || isModifierPressed);
+
+				e.preventDefault();
+				e.stopPropagation();
+				if (surf && isSurfaceIntent) {
 					onClick(e as unknown as React.MouseEvent, number, surf);
+				} else {
+					onClick(e as unknown as React.MouseEvent, number, undefined);
 				}
 			}
 		}
-	}, [onClick, number]);
+	}, [onClick, number, useSurfaces]);
 
 	const renderImplant = () => (
 		<ToothImplantGraphic
@@ -262,6 +272,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						isTop={isTop}
 						isPrimary={isPrimary}
 						surfaces={surfaces}
+						useSurfaces={useSurfaces}
 						selectedTeeth={selectedTeeth}
 						rootResorptionStage={rootResorptionStage}
 						onQuickStateChange={onQuickStateChange}
@@ -319,7 +330,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			onClick={(e) => {
 				if (activeStamp && onQuickStateChange) {
 					const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-					onQuickStateChange(targets, activeStamp, surfaces);
+					onQuickStateChange(targets, activeStamp, []);
 					return;
 				}
 				onClick(e, number);
@@ -339,7 +350,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								? []
 								: surfaces && surfaces.length > 0
 									? surfaces
-									: ["O"];
+									: [];
 						onQuickStateChange(targets, nextState, nextSurfaces);
 					}
 					return;
@@ -432,7 +443,11 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						selectedTeeth?.includes(number) && selectedTeeth.length > 0
 							? selectedTeeth
 							: [number];
-					onQuickStateChange(targets, quickState, surfaces);
+					const isWholeToothState = quickState === "Healthy" || quickState === "Missing" || quickState === "Crown" || quickState === "Implant";
+					const effectiveSurfaces = isWholeToothState
+						? (quickState === "Healthy" || quickState === "Missing" ? [] : undefined)
+						: (useSurfaces ? surfaces : undefined);
+					onQuickStateChange(targets, quickState, effectiveSurfaces);
 				}
 			}}
 		>
@@ -445,45 +460,47 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 					onClick={(e) => e.stopPropagation()}
 					onPointerDown={(e) => e.stopPropagation()}
 				>
-					{/* Surface Selector row (touch targets >= 44x44px) */}
-					<div className="flex items-center gap-1">
-						{(
-							[
-								{ key: "O", label: "O", full: "Окклюзионная" },
-								{ key: "V", label: "V", full: "Вестибулярная" },
-								{ key: isTop ? "P" : "L", label: isTop ? "P" : "L", full: isTop ? "Небная" : "Язычная" },
-								{ key: "M", label: "M", full: "Медиальная" },
-								{ key: "D", label: "D", full: "Дистальная" },
-								{ key: "C", label: "C", full: "Пришеечная" },
-							] as const
-						).map((surf) => {
-							const currSurfaces = surfaces ?? [];
-							const isSurfActive = currSurfaces.includes(surf.key) || (surf.key === "P" && currSurfaces.includes("L")) || (surf.key === "L" && currSurfaces.includes("P"));
-							return (
-								<button
-									key={surf.key}
-									type="button"
-									className={`touch-surface-btn px-2.5 py-2 min-h-[44px] min-w-[44px] rounded-lg text-xs font-bold border transition-all touch-manipulation flex items-center justify-center ${
-										isSurfActive
-											? "bg-teal-500 text-white border-teal-400 shadow-md scale-105"
-											: "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95"
-									}`}
-									title={`${surf.full} поверхность`}
-									onClick={(e) => {
-										e.stopPropagation();
-										const nextSurfaces = isSurfActive
-											? currSurfaces.filter((s) => s !== surf.key && s !== (surf.key === "P" ? "L" : surf.key === "L" ? "P" : ""))
-											: [...currSurfaces, surf.key];
-										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-										const nextState = nextSurfaces.length > 0 ? (state === "Healthy" ? "Caries" : state) : state;
-										onQuickStateChange?.(targets, nextState, nextSurfaces);
-									}}
-								>
-									{surf.label}
-								</button>
-							);
-						})}
-					</div>
+					{/* Surface Selector row (touch targets >= 44x44px) - strictly hidden unless useSurfaces is true */}
+					{useSurfaces && (
+						<div className="flex items-center gap-1">
+							{(
+								[
+									{ key: "O", label: "O", full: "Окклюзионная" },
+									{ key: "V", label: "V", full: "Вестибулярная" },
+									{ key: isTop ? "P" : "L", label: isTop ? "P" : "L", full: isTop ? "Небная" : "Язычная" },
+									{ key: "M", label: "M", full: "Медиальная" },
+									{ key: "D", label: "D", full: "Дистальная" },
+									{ key: "C", label: "C", full: "Пришеечная" },
+								] as const
+							).map((surf) => {
+								const currSurfaces = surfaces ?? [];
+								const isSurfActive = currSurfaces.includes(surf.key) || (surf.key === "P" && currSurfaces.includes("L")) || (surf.key === "L" && currSurfaces.includes("P"));
+								return (
+									<button
+										key={surf.key}
+										type="button"
+										className={`touch-surface-btn px-2.5 py-2 min-h-[44px] min-w-[44px] rounded-lg text-xs font-bold border transition-all touch-manipulation flex items-center justify-center ${
+											isSurfActive
+												? "bg-teal-500 text-white border-teal-400 shadow-md scale-105"
+												: "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95"
+										}`}
+										title={`${surf.full} поверхность`}
+										onClick={(e) => {
+											e.stopPropagation();
+											const nextSurfaces = isSurfActive
+												? currSurfaces.filter((s) => s !== surf.key && s !== (surf.key === "P" ? "L" : surf.key === "L" ? "P" : ""))
+												: [...currSurfaces, surf.key];
+											const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+											const nextState = nextSurfaces.length > 0 ? (state === "Healthy" ? "Caries" : state) : state;
+											onQuickStateChange?.(targets, nextState, nextSurfaces);
+										}}
+									>
+										{surf.label}
+									</button>
+								);
+							})}
+						</div>
+					)}
 					{/* Quick State Row */}
 					{onQuickStateChange && (
 						<div className="flex items-center gap-1 overflow-x-auto max-w-[340px] sm:max-w-none py-0.5">
@@ -492,7 +509,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-									onQuickStateChange(targets, "Caries", surfaces);
+									onQuickStateChange(targets, "Caries", useSurfaces ? surfaces : undefined);
 								}}
 								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
@@ -504,7 +521,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-									onQuickStateChange(targets, "Filled", surfaces);
+									onQuickStateChange(targets, "Filled", useSurfaces ? surfaces : undefined);
 								}}
 								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-blue-500/15 text-blue-900 dark:text-blue-200 border border-blue-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
@@ -516,7 +533,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-									onQuickStateChange(targets, "Pulpitis", surfaces);
+									onQuickStateChange(targets, "Pulpitis", useSurfaces ? surfaces : undefined);
 								}}
 								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-rose-500/15 text-rose-900 dark:text-rose-200 border border-rose-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
@@ -528,7 +545,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-									onQuickStateChange(targets, "Crown", surfaces);
+									onQuickStateChange(targets, "Crown", []);
 								}}
 								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
@@ -540,7 +557,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
-									onQuickStateChange(targets, "Missing", surfaces);
+									onQuickStateChange(targets, "Missing", undefined);
 								}}
 								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-red-600/15 text-red-900 dark:text-red-200 border border-red-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>

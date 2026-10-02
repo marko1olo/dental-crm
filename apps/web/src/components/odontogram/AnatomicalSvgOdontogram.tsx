@@ -431,9 +431,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				(e.target as HTMLElement)?.closest(".tooth-svg-wrapper") ??
 				(e.currentTarget as HTMLElement);
 			const rect = wrapper.getBoundingClientRect();
-			onToothClick(num, rect, surface);
+			// Обычный клик по зубу ВСЕГДА выбирает ЗУБ ЦЕЛИКОМ (surface: undefined)
+			// Передача конкретной поверхности (surface) допустима ТОЛЬКО если активен специальный
+			// режим разметки поверхностей (useSurfaces === true) и/или зажат модификатор (e.shiftKey / e.altKey).
+			const isModifierPressed = Boolean(e?.shiftKey || e?.altKey);
+			const effectiveSurface = (useSurfaces || isModifierPressed) ? surface : undefined;
+			onToothClick(num, rect, effectiveSurface);
 		},
-		[onToothClick],
+		[onToothClick, useSurfaces],
 	);
 
 	const topSplit = React.useMemo(() => splitArchAtMidline(topTeethList), [topTeethList]);

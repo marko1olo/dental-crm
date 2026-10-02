@@ -55,7 +55,7 @@ export const OrthodonticCard043_1uForm: React.FC<OrthodonticCard043_1uFormProps>
 		return (
 			<div className="document-form-container form-043-1u-wrapper">
 				<DocumentPayloadCard
-					title="Медицинская карта ортодонтического пациента (Форма № 043-1/у)"
+					title="Медицинская карта ортодонтического пациента"
 					description="Антропометрия лица, цефалометрия ТРГ, расчет индексов Тона, Пона, Болтона и план аппаратурного лечения"
 				>
 					<div className="document-form-nav-tabs" style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>

@@ -393,3 +393,95 @@ export async function verifyDicomOrganization(
 	return true;
 }
 
+/** DICOM Standard Patient Data Dictionary Tags */
+export const TAG_PATIENT_NAME = "x00100010";
+export const TAG_PATIENT_ID = "x00100020";
+export const TAG_PATIENT_BIRTH_DATE = "x00100030";
+
+/**
+ * Normalizes DICOM patient name (converts Caret ^ to spaces, removes multi-spaces).
+ */
+export function cleanDicomPatientName(rawName: string | null | undefined): string | null {
+	if (!rawName || typeof rawName !== "string") return null;
+	const cleaned = rawName
+		.replace(/\0+$/u, "")
+		.replace(/\^/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+	return cleaned.length > 0 ? cleaned : null;
+}
+
+/**
+ * Parses raw DICOM buffer and extracts required UIDs, Patient info, and dimensions.
+ */
+export function parseDicomBufferForStow(buffer: Buffer): {
+	studyUid: string | null;
+	seriesUid: string | null;
+	sopInstanceUid: string | null;
+	dicomPatientId: string | null;
+	dicomPatientName: string | null;
+	dicomBirthDate: string | null;
+	rows: number | null;
+	columns: number | null;
+} {
+	if (buffer.length < 132) {
+		return {
+			studyUid: null,
+			seriesUid: null,
+			sopInstanceUid: null,
+			dicomPatientId: null,
+			dicomPatientName: null,
+			dicomBirthDate: null,
+			rows: null,
+			columns: null,
+		};
+	}
+
+	try {
+		const dataSet = dicomParser.parseDicom(new Uint8Array(buffer));
+		return {
+			studyUid: normalizeUid(dataSet.string(TAG_STUDY_INSTANCE_UID)),
+			seriesUid: normalizeUid(dataSet.string(TAG_SERIES_INSTANCE_UID)),
+			sopInstanceUid: normalizeUid(dataSet.string(TAG_SOP_INSTANCE_UID)),
+			dicomPatientId: normalizeUid(dataSet.string(TAG_PATIENT_ID)),
+			dicomPatientName: normalizeUid(dataSet.string(TAG_PATIENT_NAME)),
+			dicomBirthDate: normalizeUid(dataSet.string(TAG_PATIENT_BIRTH_DATE)),
+			rows: dataSet.uint16(TAG_ROWS) ?? null,
+			columns: dataSet.uint16(TAG_COLUMNS) ?? null,
+		};
+	} catch {
+		return {
+			studyUid: null,
+			seriesUid: null,
+			sopInstanceUid: null,
+			dicomPatientId: null,
+			dicomPatientName: null,
+			dicomBirthDate: null,
+			rows: null,
+			columns: null,
+		};
+	}
+}
+
+/**
+ * Strips multipart prelude headers and boundary trailer from an in-memory Buffer.
+ */
+export function stripMultipartWrapperFromBuffer(buffer: Buffer): Buffer {
+	const headerEndCrLf = buffer.indexOf("\r\n\r\n");
+	const headerEndLf = buffer.indexOf("\n\n");
+	let startOffset = 0;
+	if (headerEndCrLf !== -1 && headerEndCrLf < 4096) {
+		startOffset = headerEndCrLf + 4;
+	} else if (headerEndLf !== -1 && headerEndLf < 4096) {
+		startOffset = headerEndLf + 2;
+	}
+
+	let endOffset = buffer.length;
+	const lastBoundary = buffer.lastIndexOf("\r\n--");
+	if (lastBoundary !== -1 && lastBoundary > startOffset) {
+		endOffset = lastBoundary;
+	}
+
+	return buffer.subarray(startOffset, endOffset);
+}
+

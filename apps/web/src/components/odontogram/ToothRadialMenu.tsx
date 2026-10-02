@@ -487,62 +487,72 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					</div>
 
 					{/* Quick Macro Bar (Black Classes I-VI / 6-Surface Shading / Resorption) */}
-					<div className="flex flex-col gap-2.5 p-3 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
-						{isPrimaryTooth(toothNumber) ? (
-							<>
-								<div className="flex items-center justify-between">
-									<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1 shrink-0">Резорбция корней:</span>
-									<span className="text-xs text-[var(--odontogram-ink-muted)]">0–100%</span>
-								</div>
-								<div className="grid grid-cols-4 gap-2 w-full">
-									<button
-										type="button"
-										onClick={() => {
-											onSelectState("Healthy", undefined, "resorption_1");
-											onClose();
-										}}
-										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
-										title="Физиологическая резорбция I степени (25%)"
-									>
-										[Рез I 25%]
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											onSelectState("Healthy", undefined, "resorption_2");
-											onClose();
-										}}
-										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
-										title="Физиологическая резорбция II степени (50%)"
-									>
-										[Рез II 50%]
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											onSelectState("Healthy", undefined, "resorption_3");
-											onClose();
-										}}
-										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
-										title="Физиологическая резорбция III степени (75%)"
-									>
-										[Рез III 75%]
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											onSelectState("Missing", undefined, "exfoliation");
-											onClose();
-										}}
-										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
-										title="Физиологическая смена / Эксфолиация (100%)"
-									>
-										[Смена 100%]
-									</button>
-								</div>
-							</>
-						) : (
-							<>
+					{isPrimaryTooth(toothNumber) ? (
+						<div className="flex flex-col gap-2 p-3 rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)]">
+							<div className="flex items-center justify-between">
+								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1 shrink-0">Резорбция корней:</span>
+								<span className="text-xs text-[var(--odontogram-ink-muted)]">0–100%</span>
+							</div>
+							<div className="grid grid-cols-4 gap-2 w-full">
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Healthy", undefined, "resorption_1");
+										onClose();
+									}}
+									className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+									title="Физиологическая резорбция I степени (25%)"
+								>
+									[Рез I 25%]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Healthy", undefined, "resorption_2");
+										onClose();
+									}}
+									className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+									title="Физиологическая резорбция II степени (50%)"
+								>
+									[Рез II 50%]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Healthy", undefined, "resorption_3");
+										onClose();
+									}}
+									className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 touch-manipulation text-center"
+									title="Физиологическая резорбция III степени (75%)"
+								>
+									[Рез III 75%]
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectState("Missing", undefined, "exfoliation");
+										onClose();
+									}}
+									className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
+									title="Физиологическая смена / Эксфолиация (100%)"
+								>
+									[Смена 100%]
+								</button>
+							</div>
+						</div>
+					) : (
+						<details className="odontogram-mobile-surfaces-accordion group rounded-2xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] p-3 transition-all">
+							<summary className="flex items-center justify-between cursor-pointer select-none text-xs font-black text-teal-700 dark:text-teal-400">
+								<span className="flex items-center gap-1.5">
+									<span>Указать поверхности (опционально)</span>
+									<span className="text-[10px] text-[var(--odontogram-ink-muted)] font-normal group-open:hidden">▾ раскрыть</span>
+									<span className="text-[10px] text-[var(--odontogram-ink-muted)] font-normal hidden group-open:inline">▴ свернуть</span>
+								</span>
+								<span className="text-xs font-mono font-bold text-[var(--odontogram-ink-muted)]">
+									{selectedSurfaces.length > 0 ? selectedSurfaces.join(", ") : "Вся коронка"}
+								</span>
+							</summary>
+							<div className="flex flex-col gap-2.5 mt-2.5 pt-2.5 border-t border-[var(--odontogram-border-subtle)]">
 								{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
 								<div className="flex flex-col gap-1.5 pb-2 border-b border-[var(--odontogram-border-subtle)]">
 									<div className="flex items-center justify-between">
@@ -790,9 +800,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										[Гф: Герметизация]
 									</button>
 								</div>
-							</>
-						)}
-					</div>
+							</div>
+						</details>
+					)}
 
 					{/* IROPZ warning */}
 					{(Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") && (
@@ -1029,10 +1039,19 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								</button>
 							</div>
 						) : (
-							<div className="flex flex-col items-center gap-1.5">
-								{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
-								<div className="flex items-center gap-1">
-									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
+							<details className="odontogram-desktop-surfaces-accordion group flex flex-col items-center transition-all">
+								<summary className="flex items-center gap-2 cursor-pointer select-none px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300">
+									<span className="uppercase font-black tracking-wide">Поверхности (опционально)</span>
+									<span className="text-[11px] font-mono font-bold text-[var(--odontogram-ink-muted)]">
+										{selectedSurfaces.length > 0 ? `[${selectedSurfaces.join("")}]` : "вся коронка"}
+									</span>
+									<span className="text-[10px] text-[var(--odontogram-ink-muted)] group-open:hidden">▾</span>
+									<span className="text-[10px] text-[var(--odontogram-ink-muted)] hidden group-open:inline">▴</span>
+								</summary>
+								<div className="flex flex-col items-center gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--odontogram-border-subtle)]">
+									{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
+									<div className="flex items-center gap-1">
+										<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
 									{[
 										{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
 										{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
@@ -1260,7 +1279,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										[Гф]
 									</button>
 								</div>
-							</div>
+								</div>
+							</details>
 						)}
 					</div>
 

@@ -173,7 +173,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 						data-testid="fefo-filter-expired"
 					>
 						<ShieldAlert size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-						<span>Просрочено (СанПиН):</span>
+						<span>Истёк срок годности:</span>
 						<strong className="font-mono text-rose-600 dark:text-rose-400">{stats.expiredCount}</strong>
 					</button>
 
@@ -357,11 +357,11 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 																}
 															}}
 															className="h-7 px-2 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-[11px] font-bold cursor-pointer inline-flex items-center gap-1 transition-colors"
-															title="Оформить акт списания просроченного материала по СанПиН 3.3686-21 (Медицинские отходы Класс Б)"
+															title="Списать просроченный материал (утилизация)"
 															data-testid={`btn-fefo-dispose-${item.id}`}
 														>
 															<Trash2 size={12} className="shrink-0" />
-															<span>Утилизация (Класс Б)</span>
+															<span>Утилизация</span>
 														</button>
 													) : (
 														<>

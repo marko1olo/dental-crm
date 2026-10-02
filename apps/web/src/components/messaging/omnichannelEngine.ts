@@ -3,6 +3,12 @@
  * расчет метрик NPS, подстановка шаблонных токенов и эталонные клинические датасеты.
  */
 
+import {
+	formatCurrencyRu,
+	formatKopecksRu,
+	formatRussianPhone,
+	maskRussianPhone as canonicalMaskRussianPhone,
+} from "../../utils/formatters.js";
 import type {
 	NpsCategory,
 	NpsMetrics,
@@ -135,50 +141,15 @@ export function replaceTemplateVariables(
 	});
 }
 
-/**
- * Форматирует телефон в стандарте РФ: +7 (999) 000-00-00.
- */
-export function formatRussianPhone(phone: string): string {
-	const digits = phone.replace(/\D/g, "");
-	if (digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8"))) {
-		return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
-	}
-	if (digits.length === 10) {
-		return `+7 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 8)}-${digits.slice(8, 10)}`;
-	}
-	return phone;
-}
+export { formatRussianPhone, formatCurrencyRu, formatKopecksRu };
 
 /**
  * Маскирует номер телефона для соблюдения 152-ФЗ РФ (скрывает средние цифры):
  * Пример: "+7 (916) 450-12-34" -> "+7 (916) ***-**-34"
+ * В каналах SMS/мессенджеров используются ASCII-звездочки для защиты кодировки GSM-7.
  */
 export function maskRussianPhone(phone: string): string {
-	const digits = phone.replace(/\D/g, "");
-	if (digits.length < 10) return "+7 (***) ***-**-**";
-	const main = digits.slice(-10);
-	const code = main.slice(0, 3);
-	const last2 = main.slice(-2);
-	return `+7 (${code}) ***-**-${last2}`;
-}
-
-/**
- * Форматирует сумму в рублях с копейками.
- */
-export function formatCurrencyRu(sumRub: number): string {
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(sumRub);
-}
-
-/**
- * Форматирует сумму из целочисленных копеек.
- */
-export function formatKopecksRu(kopecks: number): string {
-	return formatCurrencyRu(kopecks / 100);
+	return canonicalMaskRussianPhone(phone, { maskChar: "*" });
 }
 
 /**

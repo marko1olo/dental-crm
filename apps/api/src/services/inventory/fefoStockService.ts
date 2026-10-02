@@ -10,6 +10,9 @@ import {
 	stockBatches,
 	warehouses,
 } from "../../db/schema/inventory.js";
+import { serviceCatalogItems } from "../../db/schema/clinical.js";
+import { DEFAULT_804N_CONSUMABLE_LINKS } from "@dental/shared";
+import { DEFAULT_804N_BOM_SEEDS } from "./defaultBomSeeds.js";
 import { InsufficientStockError } from "./materialDeduction.js";
 
 /**
@@ -155,7 +158,7 @@ export class FefoStockService {
 		}
 
 		// 1. Блокируем строку номенклатуры FOR UPDATE
-		const [inv] = await tx
+		let [inv] = await tx
 			.select()
 			.from(inventoryItems)
 			.where(
@@ -165,6 +168,30 @@ export class FefoStockService {
 				),
 			)
 			.for("update");
+
+		if (!inv) {
+			if (allowOverdraft !== false) {
+				const isUuid =
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+						inventoryItemId,
+					);
+				const [created] = await tx
+					.insert(inventoryItems)
+					.values({
+						...(isUuid ? { id: inventoryItemId } : {}),
+						organizationId,
+						name: `Материал ${inventoryItemId}`,
+						stockQuantity: "0",
+						currentQty: "0",
+						criticalThreshold: "0",
+						unitCostRub: "0",
+					})
+					.returning();
+				inv = created;
+			} else {
+				throw new Error(`Материал с ID ${inventoryItemId} не найден на складе клиники.`);
+			}
+		}
 
 		if (!inv) {
 			throw new Error(`Материал с ID ${inventoryItemId} не найден на складе клиники.`);
@@ -241,38 +268,61 @@ export class FefoStockService {
 		let deficitQty = 0;
 		let warning: string | undefined;
 
-		// 3. Обработка нехватки партий (дефицит / мягкий овердрафт при экстренной помощи и лечении)
+		// 3. Обработка остатка потребности (списание с непартионного остатка карточки или дефицит/овердрафт)
 		if (needed > 0) {
-			deficitQty = needed;
-			// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и спасение зуба пациента.
-			// Мягкий овердрафт склада с предупреждением применяется при любых клинических списаниях,
-			// если не задан строгий административный запрет (allowOverdraft === false).
-			if (allowOverdraft === false) {
-				throw new InsufficientStockError({
+			const alreadyDeductedFromBatches = requiredQty - needed;
+			const availableUnbatched = Math.max(0, currentStock - alreadyDeductedFromBatches);
+			const unbatchedDeduct = Math.min(needed, availableUnbatched);
+			const trueDeficit = Number((needed - unbatchedDeduct).toFixed(4));
+
+			if (unbatchedDeduct > 0) {
+				transactionsToInsert.push({
+					organizationId,
+					visitId: visitId ?? null,
+					itemId: inv.id,
 					inventoryItemId: inv.id,
-					inventoryItemName: inv.name,
-					availableStock: requiredQty - needed,
-					requiredStock: requiredQty,
+					batchId: null,
+					warehouseId: warehouseId ?? null,
+					quantityChanged: String(-unbatchedDeduct),
+					unitCostRub: inv.unitCostRub ?? null,
+					transactionType,
+					isOverdraft: false,
+					userId: userId ?? null,
+					notes: notes ?? (visitId ? `Списание по визиту ${visitId} (остаток номенклатуры)` : null),
 				});
 			}
 
-			isOverdraft = true;
-			warning = `Внимание: допущен технический перерасход по материалу «${inv.name}» (дефицит ${deficitQty} ${inv.unit ?? "ед."}). Требуется оформление прихода накладной снабженцем.`;
+			if (trueDeficit > 0) {
+				deficitQty = trueDeficit;
+				if (allowOverdraft === false) {
+					throw new InsufficientStockError({
+						inventoryItemId: inv.id,
+						inventoryItemName: inv.name,
+						availableStock: requiredQty - trueDeficit,
+						requiredStock: requiredQty,
+					});
+				}
 
-			transactionsToInsert.push({
-				organizationId,
-				visitId: visitId ?? null,
-				itemId: inv.id,
-				inventoryItemId: inv.id,
-				batchId: null,
-				warehouseId: warehouseId ?? null,
-				quantityChanged: String(-deficitQty),
-				unitCostRub: inv.unitCostRub ?? null,
-				transactionType: "emergency_overdraft",
-				isOverdraft: true,
-				userId: userId ?? null,
-				notes: `Технический перерасход при оказании помощи (дефицит ${deficitQty} ед.)`,
-			});
+				isOverdraft = true;
+				warning = `Внимание: допущен технический перерасход по материалу «${inv.name}» (дефицит ${deficitQty} ${inv.unit ?? "ед."}). Требуется оформление прихода накладной снабженцем.`;
+
+				transactionsToInsert.push({
+					organizationId,
+					visitId: visitId ?? null,
+					itemId: inv.id,
+					inventoryItemId: inv.id,
+					batchId: null,
+					warehouseId: warehouseId ?? null,
+					quantityChanged: String(-deficitQty),
+					unitCostRub: inv.unitCostRub ?? null,
+					transactionType: "emergency_overdraft",
+					isOverdraft: true,
+					userId: userId ?? null,
+					notes: notes
+						? `${notes} (дефицит ${deficitQty} ед.)`
+						: `Технический перерасход при оказании помощи (дефицит ${deficitQty} ед.)`,
+				});
+			}
 		}
 
 		// 4. Обновляем итоговый баланс номенклатуры и синхронизируем актуальную партию/срок годности
@@ -559,35 +609,81 @@ export class FefoStockService {
 		tx: DbTransaction,
 		params: {
 			organizationId: string;
-			serviceId: string;
+			serviceId?: string | undefined;
+			serviceIdOrCode?: string | undefined;
 			serviceQuantity?: number | undefined;
 			warehouseId?: string | null | undefined;
 			visitId?: string | null | undefined;
 			userId?: string | null | undefined;
 			allowOverdraft?: boolean | undefined;
+			transactionType?: string | undefined;
+			notes?: string | undefined;
 		},
-	): Promise<FefoDeductionResult[]> {
+	): Promise<FefoDeductionResult[] & { totalMaterials: number; hasOverdraft: boolean }> {
 		const {
 			organizationId,
-			serviceId,
 			serviceQuantity = 1,
 			warehouseId,
 			visitId,
 			userId,
 			allowOverdraft = true,
+			transactionType = "procedure_bom_deduct",
+			notes,
 		} = params;
+		const serviceId = params.serviceId ?? params.serviceIdOrCode ?? "";
 
 		// 1. Ищем техкарту процедуры в procedure_tech_cards
+		const isUuid =
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+				serviceId,
+			);
+
+		let serviceCode = serviceId;
+		let serviceTitle = "";
+		let order804nCode = "";
+		if (isUuid) {
+			const [catalogItem] = await tx
+				.select({
+					code: serviceCatalogItems.code,
+					title: serviceCatalogItems.title,
+					order804nCode: serviceCatalogItems.order804nCode,
+				})
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.id, serviceId),
+						eq(serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (catalogItem) {
+				serviceCode = catalogItem.code;
+				serviceTitle = catalogItem.title;
+				order804nCode = catalogItem.order804nCode ?? "";
+			}
+		}
+
+		const techCardCond = isUuid
+			? and(
+					eq(procedureTechCards.organizationId, organizationId),
+					or(
+						eq(procedureTechCards.serviceId, serviceId),
+						eq(procedureTechCards.serviceCode, serviceId),
+						...(serviceCode !== serviceId ? [eq(procedureTechCards.serviceCode, serviceCode)] : []),
+						...(order804nCode ? [eq(procedureTechCards.serviceCode, order804nCode)] : []),
+					),
+					eq(procedureTechCards.status, "active"),
+				)
+			: and(
+					eq(procedureTechCards.organizationId, organizationId),
+					eq(procedureTechCards.serviceCode, serviceId),
+					eq(procedureTechCards.status, "active"),
+				);
+
 		const [techCard] = await tx
 			.select()
 			.from(procedureTechCards)
-			.where(
-				and(
-					eq(procedureTechCards.organizationId, organizationId),
-					eq(procedureTechCards.serviceId, serviceId),
-					eq(procedureTechCards.status, "active"),
-				),
-			)
+			.where(techCardCond)
 			.limit(1);
 
 		let itemsToDeduct: Array<{ inventoryItemId: string; quantity: number }> = [];
@@ -604,18 +700,31 @@ export class FefoStockService {
 			}));
 		} else {
 			// Резервный поиск в procedure_material_rules
-			const rules = await tx
-				.select()
-				.from(procedureMaterialRules)
-				.where(
-					and(
-						eq(procedureMaterialRules.serviceId, serviceId),
+			const ruleCond = isUuid
+				? and(
+						or(
+							eq(procedureMaterialRules.serviceId, serviceId),
+							eq(procedureMaterialRules.serviceCode, serviceId),
+							...(serviceCode !== serviceId ? [eq(procedureMaterialRules.serviceCode, serviceCode)] : []),
+							...(order804nCode ? [eq(procedureMaterialRules.serviceCode, order804nCode)] : []),
+						),
 						or(
 							eq(procedureMaterialRules.organizationId, organizationId),
 							isNull(procedureMaterialRules.organizationId),
 						),
-					),
-				);
+					)
+				: and(
+						eq(procedureMaterialRules.serviceCode, serviceId),
+						or(
+							eq(procedureMaterialRules.organizationId, organizationId),
+							isNull(procedureMaterialRules.organizationId),
+						),
+					);
+
+			const rules = await tx
+				.select()
+				.from(procedureMaterialRules)
+				.where(ruleCond);
 
 			itemsToDeduct = rules
 				.filter((r) => r.inventoryItemId || r.materialItemId)
@@ -625,8 +734,121 @@ export class FefoStockService {
 				}));
 		}
 
+		// Если в БД техкарты еще не заведены, проверяем дефолтные технологические карты 804н (BOM Seeds)
 		if (itemsToDeduct.length === 0) {
-			return [];
+			const safeServiceId = (serviceId || "").toLowerCase();
+			const proto = DEFAULT_804N_BOM_SEEDS.find(
+				(s) =>
+					s.serviceCode === serviceCode ||
+					(order804nCode && s.serviceCode === order804nCode) ||
+					(serviceTitle && s.serviceTitle?.toLowerCase() === serviceTitle.toLowerCase()) ||
+					(serviceTitle && s.serviceTitle && serviceTitle.toLowerCase().includes(s.serviceTitle.toLowerCase())) ||
+					s.serviceCode === serviceId ||
+					(safeServiceId && s.serviceTitle?.toLowerCase() === safeServiceId),
+			);
+
+			if (proto) {
+				for (const mat of proto.materials) {
+					const [existing] = await tx
+						.select({ id: inventoryItems.id })
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.organizationId, organizationId),
+								sql`lower(${inventoryItems.name}) = lower(${mat.name})`,
+							),
+						)
+						.limit(1);
+
+					let targetItemId = existing?.id;
+					if (!targetItemId) {
+						const [created] = await tx
+							.insert(inventoryItems)
+							.values({
+								organizationId,
+								name: mat.name,
+								category: mat.category,
+								unit: mat.unit,
+								stockQuantity: "0",
+								currentQty: "0",
+								criticalThreshold: String(mat.criticalThreshold),
+								unitCostRub: String(mat.defaultUnitCostRub),
+							})
+							.returning({ id: inventoryItems.id });
+						targetItemId = created?.id;
+					}
+
+					if (targetItemId) {
+						itemsToDeduct.push({
+							inventoryItemId: targetItemId,
+							quantity: mat.quantityToDeduct * serviceQuantity,
+						});
+					}
+				}
+			} else {
+				// Резервный поиск в каноническом каталоге DEFAULT_804N_CONSUMABLE_LINKS (@dental/shared)
+				const matchingLinks = DEFAULT_804N_CONSUMABLE_LINKS.filter(
+					(l) =>
+						l.service804nCode === serviceCode ||
+						(order804nCode && l.service804nCode === order804nCode) ||
+						(serviceTitle && l.serviceTitle?.toLowerCase() === serviceTitle.toLowerCase()) ||
+						l.service804nCode === serviceId,
+				);
+
+				for (const link of matchingLinks) {
+					const [existing] = await tx
+						.select({ id: inventoryItems.id })
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.organizationId, organizationId),
+								or(
+									eq(inventoryItems.id, link.inventoryItemId),
+									sql`lower(${inventoryItems.name}) = lower(${link.itemName})`,
+								),
+							),
+						)
+						.limit(1);
+
+					let targetItemId = existing?.id;
+					if (!targetItemId) {
+						const isLinkUuid =
+							/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+								link.inventoryItemId,
+							);
+						const [created] = await tx
+							.insert(inventoryItems)
+							.values({
+								...(isLinkUuid ? { id: link.inventoryItemId } : {}),
+								organizationId,
+								name: link.itemName,
+								category: link.category,
+								unit: link.unit,
+								stockQuantity: "0",
+								currentQty: "0",
+								criticalThreshold: "5",
+								unitCostRub: String((link.costPriceKopecks / 100).toFixed(2)),
+							})
+							.returning({ id: inventoryItems.id });
+						targetItemId = created?.id;
+					}
+
+					if (targetItemId) {
+						itemsToDeduct.push({
+							inventoryItemId: targetItemId,
+							quantity: link.quantityPerService * serviceQuantity,
+						});
+					}
+				}
+			}
+		}
+
+		if (itemsToDeduct.length === 0) {
+			const emptyResults = Object.assign([] as FefoDeductionResult[], {
+				totalMaterials: 0,
+				hasOverdraft: false,
+			});
+			return emptyResults;
 		}
 
 		// Сортировка ID для предотвращения взаимных блокировок
@@ -645,12 +867,15 @@ export class FefoStockService {
 				visitId: visitId ?? undefined,
 				userId: userId ?? undefined,
 				allowOverdraft,
-				transactionType: "procedure_bom_deduct",
+				transactionType,
 			});
 			results.push(res);
 		}
 
-		return results;
+		return Object.assign(results, {
+			totalMaterials: results.length,
+			hasOverdraft: results.some((r) => r.isOverdraft),
+		});
 	}
 }
 

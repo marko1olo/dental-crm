@@ -1,0 +1,18 @@
+{
+  "role": "PATIENT CARD 043/U & MEDICAL ANAMNESIS INQUISITOR",
+  "status": "INITIALIZING",
+  "completed_steps": [
+    "Read core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely"
+  ],
+  "pending_steps": [
+    "Run existing tests for patients directory",
+    "Audit PatientDetailModal.tsx, PatientWorkspaceView.tsx, PatientHealthCard.tsx, blankContractPrint.ts",
+    "Audit allergy and somatic anamnesis display in patient card header (prominent red badge with AlertTriangle)",
+    "Audit visit timeline (dates, doctor, services, sum, tooth formula, images)",
+    "Audit 1-click print for outpatient card 043/u and informed consent (clean A4, tokens)",
+    "Implement fixes for identified defects",
+    "Re-run tests and verify Exit Code 0",
+    "Final report with evidence"
+  ],
+  "findings": []
+}

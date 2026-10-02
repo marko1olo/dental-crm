@@ -128,7 +128,7 @@ export const PaymentBuyerAndStomxBar: React.FC<PaymentBuyerAndStomxBarProps> = (
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
 						<Building2 size={14} className="text-indigo-600" />
-						<span>Чек 54-ФЗ: Данные покупателя</span>
+						<span>Данные плательщика</span>
 					</div>
 					<div className="flex items-center gap-1 p-0.5 bg-[var(--paper,#ffffff)] rounded-lg border border-[var(--line,#e2e8f0)]">
 						<button
@@ -171,7 +171,7 @@ export const PaymentBuyerAndStomxBar: React.FC<PaymentBuyerAndStomxBarProps> = (
 								<span>ИНН пациента (необязательно, для справки НДФЛ 13%):</span>
 							</span>
 							<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium" data-testid="inn-physical-not-required-badge">
-								По 54-ФЗ для физлиц не требуется
+								Для физлиц не требуется
 							</span>
 						</div>
 						<div className="relative">
@@ -201,7 +201,7 @@ export const PaymentBuyerAndStomxBar: React.FC<PaymentBuyerAndStomxBarProps> = (
 					<div className="space-y-1">
 						<label className="text-[11px] font-bold text-[var(--ink,#0f172a)] flex items-center justify-between">
 							<span>ИНН юридического лица / ИП (10 или 12 цифр):</span>
-							<span className="text-[10px] text-indigo-600 font-bold">* Обязательно по 54-ФЗ</span>
+							<span className="text-[10px] text-indigo-600 font-bold">* Обязательно для юрлиц</span>
 						</label>
 						<div className="relative">
 							<input
@@ -231,7 +231,7 @@ export const PaymentBuyerAndStomxBar: React.FC<PaymentBuyerAndStomxBarProps> = (
 						) : buyerInn.length === 10 || buyerInn.length === 12 ? (
 							<p className="text-[10px] text-emerald-600 dark:text-emerald-400 m-0 flex items-center gap-1">
 								<CheckCircle2 size={10} />
-								<span>ИНН валиден по формату 54-ФЗ для B2B расчетов</span>
+								<span>ИНН проверен</span>
 							</p>
 						) : null}
 					</div>

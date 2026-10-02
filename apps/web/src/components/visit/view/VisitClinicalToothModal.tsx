@@ -360,45 +360,98 @@ export function VisitClinicalToothModal({
 								{materialCategory === "filling"
 									? "Пломбировочный материал"
 									: materialCategory === "crown"
-										? "Коронка"
+										? "Коронка (Ортопедия)"
 										: materialCategory === "veneer"
-											? "Винир"
+											? "Винир (Ортопедия)"
 											: "Имплантат"}
 							</div>
 
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="teal"
-								onClick={() => {
-									handleSelectDiagnosis(
-										"done",
-										`установлена пломба (светоотверждаемый композит Filtek Z250 / Gradia Direct), шлифовка, полировка`,
-										"treatmentPlan",
-									);
-									setMaterialCategory(null);
-								}}
-							>
-								<span>Световой композит</span>{" "}
-								<Sparkles className="w-4 h-4 text-teal-500 shrink-0" />
-							</button>
+							{materialCategory === "filling" && (
+								<button
+									type="button"
+									className="_ccm-btn"
+									data-color="teal"
+									onClick={() => {
+										handleSelectDiagnosis(
+											"done",
+											`установлена пломба (светоотверждаемый композит Filtek Z250 / Gradia Direct), шлифовка, полировка`,
+											"treatmentPlan",
+										);
+										setMaterialCategory(null);
+									}}
+								>
+									<span>Световой композит</span>{" "}
+									<Sparkles className="w-4 h-4 text-teal-500 shrink-0" />
+								</button>
+							)}
 
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="teal"
-								onClick={() => {
-									handleSelectDiagnosis(
-										"done",
-										`установлена металлокерамическая / диоксид циркония коронка с фиксацией на постоянный цемент`,
-										"treatmentPlan",
-									);
-									setMaterialCategory(null);
-								}}
-							>
-								<span>Цирконий / Керула</span>{" "}
-								<Crown className="w-4 h-4 text-amber-500 shrink-0" />
-							</button>
+							{materialCategory === "crown" && (
+								<>
+									<button
+										type="button"
+										className="_ccm-btn"
+										data-color="teal"
+										onClick={() => {
+											setLabOrderModalToothNumber(selectedToothForMenu?.code);
+											setIsLabOrderModalOpen(true);
+											closeClinicalModal();
+										}}
+									>
+										<span>1-Клик: Наряд в ЗТЛ на коронку (ZrO2, А2)</span>{" "}
+										<FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
+									</button>
+									<button
+										type="button"
+										className="_ccm-btn"
+										data-color="teal"
+										onClick={() => {
+											handleSelectDiagnosis(
+												"done",
+												`установлена металлокерамическая / диоксид циркония коронка с фиксацией на постоянный цемент`,
+												"treatmentPlan",
+											);
+											setMaterialCategory(null);
+										}}
+									>
+										<span>Коронка зафиксирована (Цирконий / Керула)</span>{" "}
+										<Crown className="w-4 h-4 text-amber-500 shrink-0" />
+									</button>
+								</>
+							)}
+
+							{materialCategory === "veneer" && (
+								<>
+									<button
+										type="button"
+										className="_ccm-btn"
+										data-color="teal"
+										onClick={() => {
+											setLabOrderModalToothNumber(selectedToothForMenu?.code);
+											setIsLabOrderModalOpen(true);
+											closeClinicalModal();
+										}}
+									>
+										<span>1-Клик: Наряд в ЗТЛ на винир (E.max, А1)</span>{" "}
+										<FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
+									</button>
+									<button
+										type="button"
+										className="_ccm-btn"
+										data-color="teal"
+										onClick={() => {
+											handleSelectDiagnosis(
+												"done",
+												`установлен керамический винир IPS e.max Press с адгезивной фиксацией (Variolink Esthetic)`,
+												"treatmentPlan",
+											);
+											setMaterialCategory(null);
+										}}
+									>
+										<span>Винир E.max зафиксирован</span>{" "}
+										<Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
+									</button>
+								</>
+							)}
 
 							<button
 								type="button"

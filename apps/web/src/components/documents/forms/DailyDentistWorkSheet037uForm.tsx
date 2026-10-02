@@ -85,7 +85,7 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 		return (
 			<div className="document-form-container form-037u-wrapper">
 				<DocumentPayloadCard
-					title="Листок ежедневного учета работы врача-стоматолога (Форма № 037/у-88)"
+					title="Ежедневный учет работы врача-стоматолога"
 					description="Ежедневный журнал приёма с автоматическим расчетом трудоемкости в УЕТ"
 				>
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>

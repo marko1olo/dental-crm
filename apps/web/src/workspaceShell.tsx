@@ -30,6 +30,7 @@ import {
 	Plus,
 	ReceiptText,
 	ScanLine,
+	Sliders,
 	Sparkles,
 	Stethoscope,
 	Sun,
@@ -764,8 +765,12 @@ export function WorkspaceTopbar({
 							))}
 						</div>
 					</details>
-					<PerspectiveSwitcher />
-					<RecentPatientHistoryWidget compactDropdown />
+					<div className="hidden 2xl:flex items-center">
+						<PerspectiveSwitcher />
+					</div>
+					<div className="hidden xl:flex items-center">
+						<RecentPatientHistoryWidget compactDropdown />
+					</div>
 					<NotificationBell />
 				</div>
 			</div>
@@ -911,7 +916,7 @@ export function WorkspaceTopbar({
 
 				{/* 3D КЛКТ ЗАХАРОВ (312 срезов DICOM) — прямой доступ к реальному томографическому исследованию */}
 				<button
-					className="secondary-button"
+					className="secondary-button hidden md:inline-flex items-center gap-1.5"
 					type="button"
 					data-testid="topbar-open-cbct-demo-btn"
 					title="Открыть 3D КЛКТ студию: реальное исследование Захарова (312 срезов DICOM)"
@@ -922,17 +927,38 @@ export function WorkspaceTopbar({
 						onOpenCbctDemo?.();
 					}}
 					style={{
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "6px",
 						backgroundColor: "rgba(168, 85, 247, 0.15)",
 						color: "#c084fc",
 						borderColor: "rgba(168, 85, 247, 0.4)",
 						fontWeight: 600,
 					}}
 				>
-					<Box className="w-4 h-4 text-purple-400" aria-hidden="true" />
-					<span>3D КЛКТ (Захаров 312 срезов)</span>
+					<Box className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
+					<span className="hidden 2xl:inline">3D КЛКТ (Захаров)</span>
+					<span className="hidden xl:inline 2xl:hidden">3D КЛКТ</span>
+				</button>
+
+				{/* 🧪 ТЮНЕР КОНТРАСТА И СРЕЗОВ КЛКТ (Playground) — прямое окно настройки ползунков */}
+				<button
+					className="secondary-button hidden lg:inline-flex items-center gap-1.5"
+					type="button"
+					data-testid="topbar-open-cbct-tuner-btn"
+					title="Открыть интерактивный тюнер контраста, срезов и ОПТГ панорамы (?cbct=tuner)"
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente:open-cbct-tuner"));
+						}
+					}}
+					style={{
+						backgroundColor: "rgba(13, 148, 136, 0.15)",
+						color: "var(--teal)",
+						borderColor: "rgba(13, 148, 136, 0.4)",
+						fontWeight: 600,
+					}}
+				>
+					<Sliders className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+					<span className="hidden 2xl:inline">🧪 Тюнер КТ</span>
+					<span className="hidden xl:inline 2xl:hidden">Тюнер</span>
 				</button>
 
 				{/*

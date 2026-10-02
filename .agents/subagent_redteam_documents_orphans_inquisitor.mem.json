@@ -1,0 +1,51 @@
+{
+  "role": "RED TEAM DOCUMENTS, CONSENTS & LEGAL FORMS DUPLICATES & ORPHANS INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Mandatory reading of core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Verified ironclad constraint: ZERO touches to CBCT / DICOM / Radiology files",
+    "Exhaustive audit of 35 forms in apps/web/src/components/documents/forms/ and DocumentFormSwitch.tsx",
+    "Audit of consent suites in apps/web/src/components/consents/ and apps/web/src/components/visit/consents/",
+    "Audit of treatment plan printouts (TreatmentPlanContractPrint.tsx, TreatmentPlanPresenterModal.tsx)",
+    "Audit of prescription printing (PrescriptionPrintModal.tsx, PrescriptionSheetPreview.tsx)",
+    "Audit of packages/shared legal and document generators (formsContractAndConsents.ts, stomxConsentHtmlGenerator.ts)",
+    "Purged hardcoded mock defaults ('Иванов Иван Иванович', 'Д-р Смирнов А. В.', fake INN/OGRN/license) in TreatmentPlanPresenterModal.tsx",
+    "Eliminated orphan/asymmetric mapping of procedure-specific consents in visitConsentTypes.ts and useVisitConsentsLogic.ts",
+    "Fixed critical bug 'doc.payload.consentKey in next' that silently dropped newly fetched signed consents from /api/documents",
+    "Added PROCEDURE_TYPE_TO_CONSENT_KEY, isConsentTemplateKey, and resolveConsentKeyFromDocument in visitConsentTypes.ts",
+    "Created packages/shared/src/legal/index.ts and re-exported generateStomxConsentHtml in formsContractAndConsents.ts SSOT and shared index.ts",
+    "Added unit tests in consentSsotEngine.test.ts (16/16 passing) and strengthened wave117RadiologyAndTreatmentPlanMocks.test.ts (9/9 passing)",
+    "Ran check:encoding (6980 files clean, 0 errors)",
+    "Ran typecheck on @dental/shared and @dental/web (Exit Code 0)",
+    "Ran build on @dental/shared (Exit Code 0)"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "duplicates_resolved": [
+      "stomxConsentHtmlGenerator.ts was isolated from packages/shared SSOT exports; unified under packages/shared/src/legal/index.ts and re-exported from formsContractAndConsents.ts and packages/shared/src/index.ts",
+      "Asymmetric mapping between CONSENT_KEY_TO_DOCUMENT_KIND ('procedure_specific_consent_packet') and DOCUMENT_KIND_TO_CONSENT_KEY resolved with bidirectional resolveConsentKeyFromDocument"
+    ],
+    "orphans_wired": [
+      "Procedure-specific consents in /api/documents?patientId=... were orphaned when loaded chairside because useVisitConsentsLogic.ts had no reverse mapping for procedureType and checked restrictive 'in next'. Now wired directly into active chairside consent state"
+    ],
+    "mocks_purged": [
+      "TreatmentPlanPresenterModal.tsx: hardcoded default patientName ('Иванов Иван Иванович'), doctorFullName ('Д-р Смирнов А. В.'), clinicInn, clinicOgrn, clinicAddress, clinicLicense purged and replaced with authentic context fallbacks"
+    ]
+  },
+  "verification": {
+    "check_encoding": "PASSED (6980 files clean)",
+    "typecheck_shared": "PASSED (Exit Code 0)",
+    "build_shared": "PASSED (Exit Code 0)",
+    "typecheck_web": "PASSED (Exit Code 0)",
+    "unit_tests": [
+      "apps/web/src/components/consents/__tests__/consentSsotEngine.test.ts (16/16)",
+      "packages/shared/src/tests/legalContractsAndConsents.test.ts (7/7)",
+      "packages/shared/src/tests/legalConsentsStomx.test.ts (8/8)",
+      "apps/web/src/components/consents/__tests__/extendedStomxConsents.test.ts (6/6)",
+      "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModal.test.tsx (15/15)",
+      "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx",
+      "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPatientPresentationAutonomy.test.tsx",
+      "apps/web/src/components/radiology/__tests__/wave117RadiologyAndTreatmentPlanMocks.test.ts (9/9)"
+    ]
+  }
+}

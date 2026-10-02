@@ -68,22 +68,31 @@ export interface AnatomicalInteractiveSurfacesProps {
 	surfaces?: readonly string[] | undefined;
 	state: ToothState;
 	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
+	useSurfaces?: boolean | undefined;
 }
 
 export const AnatomicalInteractiveSurfaces: React.FC<AnatomicalInteractiveSurfacesProps> = React.memo(
-	({ number, geom, isTop, surfaces, state, onClick }) => {
+	({ number, geom, isTop, surfaces, state, onClick, useSurfaces }) => {
 		const handleSurfaceClick = React.useCallback(
 			(e: React.MouseEvent<SVGGElement>) => {
 				const target = (e.target as Element).closest("[data-surface]");
 				if (target) {
 					const surf = target.getAttribute("data-surface");
-					if (surf) {
-						e.stopPropagation();
+					// Передача конкретной поверхности допустима ТОЛЬКО если активен специальный
+					// режим разметки поверхностей (useSurfaces === true) и/или зажат модификатор (Shift / Alt).
+					// При обычном клике без модификатора всегда выбирается зуб ЦЕЛИКОМ (surface: undefined).
+					const isModifierPressed = Boolean(e.shiftKey || e.altKey);
+					const isSurfaceIntent = Boolean(useSurfaces || isModifierPressed);
+
+					e.stopPropagation();
+					if (surf && isSurfaceIntent) {
 						onClick(e, number, surf);
+					} else {
+						onClick(e, number, undefined);
 					}
 				}
 			},
-			[onClick, number],
+			[onClick, number, useSurfaces],
 		);
 
 		const handleSurfaceKeyDown = React.useCallback(
@@ -92,15 +101,20 @@ export const AnatomicalInteractiveSurfaces: React.FC<AnatomicalInteractiveSurfac
 					const target = (e.target as Element).closest("[data-surface]");
 					if (target) {
 						const surf = target.getAttribute("data-surface");
-						if (surf) {
-							e.preventDefault();
-							e.stopPropagation();
+						const isModifierPressed = Boolean(e.shiftKey || e.altKey);
+						const isSurfaceIntent = Boolean(useSurfaces || isModifierPressed);
+
+						e.preventDefault();
+						e.stopPropagation();
+						if (surf && isSurfaceIntent) {
 							onClick(e as unknown as React.MouseEvent, number, surf);
+						} else {
+							onClick(e as unknown as React.MouseEvent, number, undefined);
 						}
 					}
 				}
 			},
-			[onClick, number],
+			[onClick, number, useSurfaces],
 		);
 
 		const surfaceKeyList = isTop ? TOP_SURFACE_KEYS : BOTTOM_SURFACE_KEYS;

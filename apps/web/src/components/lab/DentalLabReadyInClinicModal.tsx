@@ -660,7 +660,7 @@ export function DentalLabReadyInClinicModal({
 				{/* Подвал */}
 				<div className="px-5 py-3 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-2">
 					<span className="text-[11px] text-[var(--muted,#64748b)]">
-						Наряд ЗТЛ-1 · Протокол примерки и фиксации
+						Заказ-наряд технику · Протокол примерки и фиксации
 					</span>
 					<button
 						type="button"

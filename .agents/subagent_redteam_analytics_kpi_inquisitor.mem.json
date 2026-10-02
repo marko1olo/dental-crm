@@ -1,0 +1,20 @@
+{
+  "role": "RED TEAM ANALYTICS, P&L & CLINIC KPIS INQUISITOR",
+  "status": "in_progress",
+  "phase": "reconnaissance",
+  "completed_steps": [
+    "Read all required constitutional documents: core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Initialized subagent memory checkpoint"
+  ],
+  "pending_steps": [
+    "Run codebase census on financial analytics, P&L, direction revenue, chair occupancy, conversion, average ticket, doctor KPIs",
+    "Inspect findings for hardcoded arrays, mock trends, Math.random, academic bloat, float money calculations",
+    "Formulate defect list and execute targeted surgical fixes with real database/store aggregation",
+    "Verify exact kopecks arithmetic, clean empty states",
+    "Run targeted unit tests and compile checks",
+    "Report findings and verbatim evidence back to parent"
+  ],
+  "findings": [],
+  "defects_identified": [],
+  "modified_files": []
+}

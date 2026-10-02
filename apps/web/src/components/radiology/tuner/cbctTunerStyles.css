@@ -1,0 +1,290 @@
+/* ============================================================
+   DENTE CRM — CBCT DARK COCKPIT & ANTI-BLINDING RADIOLOGY CSS
+   Медицинский Dark Cockpit: абсолютная светоизоляция рентген-модулей
+   (КЛКТ, ОПТГ, Тюнер контраста, MPR Студия) от светлой темы CRM.
+   Защита врача от ослепляющих белых элементов (#ffffff) и гигантских
+   44px прямоугольников в WebKit / Blink / Gecko.
+   ============================================================ */
+
+/* ── 1. DARK COCKPIT ROOT CONTAINER ISOLATION ────────────── */
+.cbct-dark-cockpit,
+[data-cbct-cockpit="true"],
+#cbct-tuner-playground,
+[data-testid="cbct-tuner-playground"],
+[data-testid="cbct-studio-modal"] {
+	color-scheme: dark !important;
+	background-color: #000000 !important;
+	color: #d4d4d8 !important; /* Noble muted medical grey instead of blinding white */
+}
+
+/* Принудительная изоляция от каскада светлой темы (data-theme="light") */
+:is([data-theme="light"], html:not([data-theme="dark"])) .cbct-dark-cockpit,
+:is([data-theme="light"], html:not([data-theme="dark"])) [data-cbct-cockpit="true"],
+:is([data-theme="light"], html:not([data-theme="dark"])) [data-testid="cbct-tuner-playground"],
+:is([data-theme="light"], html:not([data-theme="dark"])) [data-testid="cbct-studio-modal"] {
+	background-color: #000000 !important;
+	color: #d4d4d8 !important;
+	color-scheme: dark !important;
+}
+
+/* ── 1b. ANTI-GLARE GREYED-OUT TEXT ON ALL CBCT BUTTONS ───── */
+/* ВЕСЬ белый текст на кнопках во всем КТ засерен, чтобы не резал глаза врачу */
+.cbct-dark-cockpit button,
+[data-cbct-cockpit="true"] button,
+[data-testid="cbct-studio-modal"] button,
+[data-testid="cbct-header-bar"] button,
+[data-testid="cbct-header-bar"] nav button {
+	color: #a1a1aa; /* zinc-400 приглушенный серый медицинский тон */
+}
+
+.cbct-dark-cockpit button:hover,
+[data-cbct-cockpit="true"] button:hover,
+[data-testid="cbct-studio-modal"] button:hover,
+[data-testid="cbct-header-bar"] button:hover,
+[data-testid="cbct-header-bar"] nav button:hover {
+	color: #d4d4d8; /* zinc-300 мягкий тон при наведении, но ноль ослепляющего белого */
+}
+
+.cbct-dark-cockpit button:active,
+[data-cbct-cockpit="true"] button:active,
+[data-testid="cbct-studio-modal"] button:active,
+[data-testid="cbct-header-bar"] button:active,
+.cbct-dark-cockpit button[aria-selected="true"],
+[data-cbct-cockpit="true"] button[aria-selected="true"],
+[data-testid="cbct-header-bar"] button[aria-selected="true"] {
+	color: #e4e4e7; /* zinc-200 благородный мягкий светлый тон без белой вспышки */
+}
+
+/* Принудительное гашение классов text-white и text-zinc-100 внутри КТ-кокпита */
+.cbct-dark-cockpit button.text-white,
+[data-cbct-cockpit="true"] button.text-white,
+[data-testid="cbct-studio-modal"] button.text-white,
+.cbct-dark-cockpit .text-white,
+[data-cbct-cockpit="true"] .text-white,
+[data-testid="cbct-studio-modal"] .text-white {
+	color: #d4d4d8 !important; /* zinc-300 благородный серый вместо #ffffff */
+}
+
+.cbct-dark-cockpit button.text-zinc-100,
+[data-cbct-cockpit="true"] button.text-zinc-100,
+[data-testid="cbct-studio-modal"] button.text-zinc-100,
+.cbct-dark-cockpit .text-zinc-100,
+[data-cbct-cockpit="true"] .text-zinc-100,
+[data-testid="cbct-studio-modal"] .text-zinc-100 {
+	color: #d4d4d8 !important;
+}
+
+/* ── 2. SELECT & OPTION CONTROLS IMMUNITY ─────────────────── */
+.cbct-dark-cockpit select,
+[data-cbct-cockpit="true"] select,
+[data-testid="cbct-tuner-playground"] select,
+[data-testid="cbct-studio-modal"] select {
+	background-color: #18181b !important;
+	color: #67e8f9 !important;
+	border-color: #3f3f46 !important;
+	color-scheme: dark !important;
+}
+
+.cbct-dark-cockpit select option,
+[data-cbct-cockpit="true"] select option,
+[data-testid="cbct-tuner-playground"] select option,
+[data-testid="cbct-studio-modal"] select option {
+	background-color: #18181b !important;
+	color: #d4d4d8 !important;
+}
+
+/* ── 3. ANTI-BLINDING RANGE SLIDERS (КЛКТ ПОЛЗУНКИ) ───────── */
+/*
+   Сам input[type="range"] имеет прозрачный фон, чтобы правило min-height: 44px
+   (для тач-устройств и перчаток) НЕ раздувало непрозрачный белый или серый блок!
+   Визуальный трек рисуется строго через псевдоэлементы track (высота 6px).
+*/
+.cbct-slider,
+.cbct-mpr-range-slider,
+.cbct-dark-cockpit input[type="range"],
+[data-cbct-cockpit="true"] input[type="range"],
+[data-testid="cbct-tuner-playground"] input[type="range"],
+[data-testid="cbct-studio-modal"] input[type="range"] {
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	width: 100% !important;
+	background: transparent !important;
+	background-color: transparent !important;
+	border: none !important;
+	outline: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	cursor: pointer !important;
+	min-height: 44px !important;
+	height: 44px !important;
+	touch-action: pan-y !important;
+}
+
+/* --- WebKit / Blink (Chrome, Safari, Edge, Android WebView) Track --- */
+.cbct-slider::-webkit-slider-runnable-track,
+.cbct-mpr-range-slider::-webkit-slider-runnable-track,
+.cbct-dark-cockpit input[type="range"]::-webkit-slider-runnable-track,
+[data-cbct-cockpit="true"] input[type="range"]::-webkit-slider-runnable-track,
+[data-testid="cbct-tuner-playground"] input[type="range"]::-webkit-slider-runnable-track,
+[data-testid="cbct-studio-modal"] input[type="range"]::-webkit-slider-runnable-track {
+	width: 100% !important;
+	height: 6px !important;
+	background: #18181b !important;
+	border: 1px solid #27272a !important;
+	border-radius: 3px !important;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+	cursor: pointer !important;
+	transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+/* --- Firefox (Gecko) Track --- */
+.cbct-slider::-moz-range-track,
+.cbct-mpr-range-slider::-moz-range-track,
+.cbct-dark-cockpit input[type="range"]::-moz-range-track,
+[data-cbct-cockpit="true"] input[type="range"]::-moz-range-track,
+[data-testid="cbct-tuner-playground"] input[type="range"]::-moz-range-track,
+[data-testid="cbct-studio-modal"] input[type="range"]::-moz-range-track {
+	width: 100% !important;
+	height: 6px !important;
+	background: #18181b !important;
+	border: 1px solid #27272a !important;
+	border-radius: 3px !important;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+	cursor: pointer !important;
+	transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+/* --- WebKit / Blink Base Thumb (Cyan 400 default) --- */
+.cbct-slider::-webkit-slider-thumb,
+.cbct-mpr-range-slider::-webkit-slider-thumb,
+.cbct-dark-cockpit input[type="range"]::-webkit-slider-thumb,
+[data-cbct-cockpit="true"] input[type="range"]::-webkit-slider-thumb,
+[data-testid="cbct-tuner-playground"] input[type="range"]::-webkit-slider-thumb,
+[data-testid="cbct-studio-modal"] input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	height: 18px !important;
+	width: 18px !important;
+	border-radius: 50% !important;
+	background: #22d3ee !important;
+	border: 2px solid #083344 !important;
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+	cursor: pointer !important;
+	margin-top: -6px !important; /* Центрирование: (6px трек - 18px thumb) / 2 = -6px */
+	transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease !important;
+}
+
+/* --- Firefox Base Thumb --- */
+.cbct-slider::-moz-range-thumb,
+.cbct-mpr-range-slider::-moz-range-thumb,
+.cbct-dark-cockpit input[type="range"]::-moz-range-thumb,
+[data-cbct-cockpit="true"] input[type="range"]::-moz-range-thumb,
+[data-testid="cbct-tuner-playground"] input[type="range"]::-moz-range-thumb,
+[data-testid="cbct-studio-modal"] input[type="range"]::-moz-range-thumb {
+	height: 18px !important;
+	width: 18px !important;
+	border-radius: 50% !important;
+	background: #22d3ee !important;
+	border: 2px solid #083344 !important;
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+	cursor: pointer !important;
+	transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease !important;
+}
+
+/* ── 4. COLOR ACCENTS FOR CLINICAL METRICS ────────────────── */
+/* Cyan (Z-Slice, Window Width, Window Level) */
+.cbct-slider--cyan::-webkit-slider-thumb {
+	background: #22d3ee !important;
+	border-color: #083344 !important;
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+.cbct-slider--cyan::-moz-range-thumb {
+	background: #22d3ee !important;
+	border-color: #083344 !important;
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Amber (Gamma) */
+.cbct-slider--amber::-webkit-slider-thumb {
+	background: #fbbf24 !important;
+	border-color: #451a03 !important;
+	box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+.cbct-slider--amber::-moz-range-thumb {
+	background: #fbbf24 !important;
+	border-color: #451a03 !important;
+	box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Emerald (Soft-Knee Enamel Ceiling) */
+.cbct-slider--emerald::-webkit-slider-thumb {
+	background: #34d399 !important;
+	border-color: #064e3b !important;
+	box-shadow: 0 0 10px rgba(16, 185, 129, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+.cbct-slider--emerald::-moz-range-thumb {
+	background: #34d399 !important;
+	border-color: #064e3b !important;
+	box-shadow: 0 0 10px rgba(16, 185, 129, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Blue (Air Cutoff HU) */
+.cbct-slider--blue::-webkit-slider-thumb {
+	background: #60a5fa !important;
+	border-color: #172554 !important;
+	box-shadow: 0 0 10px rgba(59, 130, 246, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+.cbct-slider--blue::-moz-range-thumb {
+	background: #60a5fa !important;
+	border-color: #172554 !important;
+	box-shadow: 0 0 10px rgba(59, 130, 246, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Purple (Thickness & Slab) */
+.cbct-slider--purple::-webkit-slider-thumb {
+	background: #c084fc !important;
+	border-color: #3b0764 !important;
+	box-shadow: 0 0 10px rgba(168, 85, 247, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+.cbct-slider--purple::-moz-range-thumb {
+	background: #c084fc !important;
+	border-color: #3b0764 !important;
+	box-shadow: 0 0 10px rgba(168, 85, 247, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Teal (Doctor CBCT Defaults) */
+.cbct-slider--teal::-webkit-slider-thumb {
+	background: #2dd4bf !important;
+	border-color: #042f2e !important;
+	box-shadow: 0 0 10px rgba(20, 184, 166, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+.cbct-slider--teal::-moz-range-thumb {
+	background: #2dd4bf !important;
+	border-color: #042f2e !important;
+	box-shadow: 0 0 10px rgba(20, 184, 166, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* ── 5. HOVER & ACTIVE TOUCH STATES ───────────────────────── */
+.cbct-slider:hover::-webkit-slider-thumb,
+.cbct-mpr-range-slider:hover::-webkit-slider-thumb,
+.cbct-dark-cockpit input[type="range"]:hover::-webkit-slider-thumb {
+	transform: scale(1.15) !important;
+}
+
+.cbct-slider:active::-webkit-slider-thumb,
+.cbct-mpr-range-slider:active::-webkit-slider-thumb,
+.cbct-dark-cockpit input[type="range"]:active::-webkit-slider-thumb {
+	transform: scale(1.25) !important;
+}
+
+.cbct-slider:hover::-moz-range-thumb,
+.cbct-mpr-range-slider:hover::-moz-range-thumb,
+.cbct-dark-cockpit input[type="range"]:hover::-moz-range-thumb {
+	transform: scale(1.15) !important;
+}
+
+.cbct-slider:active::-moz-range-thumb,
+.cbct-mpr-range-slider:active::-moz-range-thumb,
+.cbct-dark-cockpit input[type="range"]:active::-moz-range-thumb {
+	transform: scale(1.25) !important;
+}

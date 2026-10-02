@@ -41,6 +41,9 @@ export {
 	validateRussianInn,
 	validateRussianOgrn,
 	validateRussianKpp,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
 } from "./finance/taxDeduction.js";
 export {
 	formatKopecksRu,
@@ -50,7 +53,7 @@ export {
 } from "./money.js";
 export * from "./sanpin/index.js";
 export * from "./sanpin/sterilizationPouchEngine.js";
-export * from "./legal/legalContractsAndConsents.js";
+export * from "./legal/index.js";
 export * from "./documents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
@@ -384,9 +387,9 @@ const documentKindBaseMetadata = {
 		requiresPaidRecord: true,
 	},
 	tax_deduction_certificate: {
-		title: "Черновик данных для справки КНД 1151156",
-		label: "Данные КНД",
-		actionLabel: "Данные для КНД",
+		title: "Справка для налогового вычета",
+		label: "Налоговый вычет",
+		actionLabel: "Справка для налоговой",
 		group: "tax",
 		amountSource: "paid",
 		requiresVisit: false,
@@ -448,8 +451,8 @@ const documentKindBaseMetadata = {
 	},
 	personal_data_processing_consent: {
 		title: "Согласие на обработку персональных данных",
-		label: "ПДн",
-		actionLabel: "Согласие на ПДн",
+		label: "Персональные данные",
+		actionLabel: "Согласие на обработку данных",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,
@@ -538,36 +541,36 @@ const documentKindBaseMetadata = {
 		requiresPaidRecord: false,
 	},
 	dental_medical_card_043u: {
-		title: "Медицинская карта стоматологического больного (форма N 043/у)",
-		label: "Карта 043/у",
-		actionLabel: "Карта 043/у",
+		title: "Медицинская карта стоматологического пациента",
+		label: "Медицинская карта",
+		actionLabel: "Медицинская карта",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
 	orthodontic_medical_card_043_1u: {
-		title: "Медицинская карта ортодонтического пациента (форма N 043-1/у)",
-		label: "Карта 043-1/у",
-		actionLabel: "Карта 043-1/у",
+		title: "Медицинская карта ортодонтического пациента",
+		label: "Ортодонтическая карта",
+		actionLabel: "Ортодонтическая карта",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
 	daily_dentist_diary_037u: {
-		title: "Листок ежедневного учета работы врача-стоматолога (форма N 037/у-88)",
-		label: "Листок 037/у",
-		actionLabel: "Листок 037/у",
+		title: "Ежедневный учет работы врача-стоматолога",
+		label: "Ежедневный учет",
+		actionLabel: "Ежедневный учет",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
 	summary_dentist_statement_039u: {
-		title: "Сводная ведомость учета работы врача-стоматолога (форма N 039/у-88)",
-		label: "Сводная 039/у",
-		actionLabel: "Сводная 039/у",
+		title: "Сводная ведомость работы врача-стоматолога",
+		label: "Сводная ведомость",
+		actionLabel: "Сводная ведомость",
 		group: "legal",
 		amountSource: "none",
 		requiresVisit: false,

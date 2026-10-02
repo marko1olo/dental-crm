@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	type CbctVoxelVolume, type Point3D, type SlabProjectionMode, type ObliqueRotationAngles,
@@ -43,7 +43,6 @@ import { useCbctClipboardSnapshot } from "./mpr/useCbctClipboardSnapshot";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
 import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
-import "./tuner/cbctTunerStyles.css";
 
 // Re-exports for zero-downtime backwards compatibility
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
@@ -73,18 +72,15 @@ export const CbctMprImplantStudioModal: React.FC<
 	initialImageIds,
 	autoLoadDemo,
 }) => {
-	const modalId = useId();
+	const modalId = "cbct-studio-modal";
 
 	// Studio mode & layout
 	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(initialCaliper ?? null);
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>(initialViewLayout ?? "quad_view");
-	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
-	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false);
-	const studioMenuRef = useRef<HTMLDivElement | null>(null);
-	const [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false);
+	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null), [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false), studioMenuRef = useRef<HTMLDivElement | null>(null), [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false);
 
 	const handleToggleUnsharp = useCallback(() => {
 		setIsUnsharpActive((prev) => {
@@ -105,6 +101,8 @@ export const CbctMprImplantStudioModal: React.FC<
 
 	const handleSelectStudioMode = useCallback((mode: StudioMode) => {
 		setStudioMode(mode);
+		if (mode === "panoramic") setShowDentalArch(true);
+		else if (mode === "diagnostic") setShowDentalArch(false);
 	}, []);
 
 	// Volume state
@@ -119,14 +117,10 @@ export const CbctMprImplantStudioModal: React.FC<
 	});
 	const [doctorDefaults] = useState(() => loadDoctorCbctSettings());
 	const [activePreset, setActivePreset] = useState<string>("standard");
-	const [windowWidth, setWindowWidth] = useState<number>(() => doctorDefaults.windowWidth);
-	const [windowLevel, setWindowLevel] = useState<number>(() => doctorDefaults.windowLevel);
-	const [invertColors, setInvertColors] = useState<boolean>(false);
-	const [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
-	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(() => doctorDefaults.mprThicknessMm);
-	const [panoThicknessMm, setPanoThicknessMm] = useState<number>(() => doctorDefaults.panoThicknessMm);
-	const [panoProjectionMode, setPanoProjectionMode] = useState<string>("average");
-	const [loadedSliceCount, setLoadedSliceCount] = useState<number>(0);
+	const [windowWidth, setWindowWidth] = useState<number>(() => doctorDefaults.windowWidth), [windowLevel, setWindowLevel] = useState<number>(() => doctorDefaults.windowLevel);
+	const [invertColors, setInvertColors] = useState<boolean>(false), [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
+	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(() => doctorDefaults.mprThicknessMm), [panoThicknessMm, setPanoThicknessMm] = useState<number>(() => doctorDefaults.panoThicknessMm);
+	const [panoProjectionMode, setPanoProjectionMode] = useState<string>("average"), [loadedSliceCount, setLoadedSliceCount] = useState<number>(0);
 	const [patientDisplayName, setPatientDisplayName] = useState<string>(patientName || "3D КЛКТ исследование");
 
 	// Crosshair & oblique angles
@@ -134,9 +128,9 @@ export const CbctMprImplantStudioModal: React.FC<
 	const [obliqueAngles, setObliqueAngles] = useState<ObliqueRotationAngles>(DEFAULT_OBLIQUE_ROTATION);
 	const [mobileActiveTab, setMobileActiveTab] = useState<"axial" | "coronal" | "sagittal" | "panoramic" | "planner">("axial");
 
-	// Dental arch & panorama
+	// Dental arch & panorama (Default false in diagnostic MPR, active in panoramic, Mandate 8l)
 	const [jawType, setJawType] = useState<"mandible" | "maxilla">("mandible");
-	const [showDentalArch, setShowDentalArch] = useState<boolean>(false);
+	const [showDentalArch, setShowDentalArch] = useState<boolean>(initialStudioMode === "panoramic");
 	const [showEdgeRulers, setShowEdgeRulers] = useState<boolean>(false);
 	const [hoveredViewport, setHoveredViewport] = useState<CbctViewportType | null>(null);
 	const [archCurve, setArchCurve] = useState<DentalArchCurve>(() =>
@@ -149,20 +143,13 @@ export const CbctMprImplantStudioModal: React.FC<
 
 	// Implant planning & nerve safety
 	const [selectedBrand, setSelectedBrand] = useState<ImplantBrandKey>("osstem");
-	const [selectedDiameterMm, setSelectedDiameterMm] = useState<number>(4.0);
-	const [selectedLengthMm, setSelectedLengthMm] = useState<number>(10.0);
-	const [implantEntryXOffsetMm, setImplantEntryXOffsetMm] = useState<number>(0.0);
-	const [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
-	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0);
-	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
-	const [nervePoints, setNervePoints] = useState<Point3D[]>([]);
-	const [selectedNerveNodeIdx, setSelectedNerveNodeIdx] = useState<number | null>(null);
-
-	const [dragImplantPart, setDragImplantPart] = useState<string | null>(null);
-	const [hoveredImplantPart, setHoveredImplantPart] = useState<string | null>(null);
+	const [selectedDiameterMm, setSelectedDiameterMm] = useState<number>(4.0), [selectedLengthMm, setSelectedLengthMm] = useState<number>(10.0);
+	const [implantEntryXOffsetMm, setImplantEntryXOffsetMm] = useState<number>(0.0), [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
+	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0), [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
+	const [nervePoints, setNervePoints] = useState<Point3D[]>([]), [selectedNerveNodeIdx, setSelectedNerveNodeIdx] = useState<number | null>(null);
+	const [dragImplantPart, setDragImplantPart] = useState<string | null>(null), [hoveredImplantPart, setHoveredImplantPart] = useState<string | null>(null);
 	const [crossSectionDragStart, setCrossSectionDragStart] = useState<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>(null);
-	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0);
-	const [canalYDepthMm, setCanalYDepthMm] = useState<number>(16.5);
+	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0), [canalYDepthMm, setCanalYDepthMm] = useState<number>(16.5);
 
 	// Measurement tools & transforms
 	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
@@ -269,7 +256,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		isEnabled: isOpen,
 	});
 
-	// Auto-detect dental arch
+	// Auto-detect dental arch (switches to panoramic if called explicitly, Mandate 8l)
 	const handleAutoDetectArch = useCallback(() => {
 		if (!volume) {
 			showToast("Для авто-поиска дуги требуется активный 3D объем КТ", "error");
@@ -278,16 +265,18 @@ export const CbctMprImplantStudioModal: React.FC<
 		try {
 			const detected = autoDetectDentalArch(volume, jawType);
 			setArchCurve(detected);
+			if (studioMode !== "panoramic") handleSelectStudioMode("panoramic");
 			setShowDentalArch(true);
 			const occlusalZMm = findOcclusalZPlane(volume, jawType);
 			const midAnchor = detected.anchors[Math.floor(detected.anchors.length / 2)];
 			setCrosshairMm({ x: midAnchor?.positionMm.x ?? 0, y: midAnchor?.positionMm.y ?? 0, z: occlusalZMm });
 			showToast(`Авто-поиск дуги: выровнено ${detected.anchors.length} ориентиров`, "success");
 		} catch {
+			if (studioMode !== "panoramic") handleSelectStudioMode("panoramic");
 			setShowDentalArch(true);
 			showToast("Авто-поиск дуги активирован", "info");
 		}
-	}, [volume, jawType]);
+	}, [volume, jawType, studioMode, handleSelectStudioMode]);
 
 	// Physical jaw switcher callback (Switches Z-slice, recalculates arch, OPG, and cross-sections)
 	const handleSwitchJaw = useCallback((newJaw: "mandible" | "maxilla") => {
@@ -299,10 +288,9 @@ export const CbctMprImplantStudioModal: React.FC<
 		try {
 			const detected = autoDetectDentalArch(volume, newJaw);
 			setArchCurve(detected);
-			setShowDentalArch(true);
+			if (studioMode === "panoramic") setShowDentalArch(true);
 			const occlusalZMm = detected.planeZMm ?? findOcclusalZPlane(volume, newJaw);
-			let archCenterX = 0;
-			let archCenterY = 0;
+			let archCenterX = 0, archCenterY = 0;
 			if (detected.splinePointsMm.length > 0) {
 				const midIdx = Math.floor(detected.splinePointsMm.length / 2);
 				archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
@@ -313,7 +301,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		} catch {
 			showToast(`Переключено на ${newJaw === "maxilla" ? "ВЧ" : "НЧ"}`, "info");
 		}
-	}, [volume]);
+	}, [volume, studioMode]);
 
 	// Panoramic and cross-sections update (Asynchronous Web Worker offloading for 60 FPS fluidity)
 	useEffect(() => {
@@ -400,10 +388,9 @@ export const CbctMprImplantStudioModal: React.FC<
 			try {
 				const detected = autoDetectDentalArch(vol, jawType);
 				setArchCurve(detected);
-				setShowDentalArch(true);
+				if (studioMode === "panoramic") setShowDentalArch(true);
 				const occlusalZMm = detected.planeZMm ?? findOcclusalZPlane(vol, jawType);
-				let archCenterX = 0;
-				let archCenterY = 0;
+				let archCenterX = 0, archCenterY = 0;
 				if (detected.splinePointsMm.length > 0) {
 					const midIdx = Math.floor(detected.splinePointsMm.length / 2);
 					archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
@@ -460,13 +447,13 @@ export const CbctMprImplantStudioModal: React.FC<
 	}, []);
 
 	const handleClearRulers = useCallback((plane?: CbctViewportType) => {
-		if (plane) {
-			setRulers((prev) => prev.filter((r) => r.plane !== plane));
-			showToast(`Замеры ${plane} очищены`, "info");
-		} else {
-			setRulers([]);
-			showToast("Все экранные замеры очищены", "info");
-		}
+		setRulers((prev) => (plane ? prev.filter((r) => r.plane !== plane) : []));
+		showToast(plane ? `Замеры ${plane} очищены` : "Все экранные замеры очищены", "info");
+	}, []);
+
+	const handleClearAngles = useCallback((plane?: CbctViewportType) => {
+		setAngles((prev) => (plane ? prev.filter((a) => a.plane !== plane) : []));
+		showToast(plane ? `Замеры углов ${plane} очищены` : "Все замеры углов очищены", "info");
 	}, []);
 
 	const handleSelectQuickWlPreset = useCallback((preset: { windowWidth: number; windowLevel: number }) => {
@@ -659,6 +646,9 @@ export const CbctMprImplantStudioModal: React.FC<
 			if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") {
 				e.preventDefault();
 				setActiveTool((prev) => (prev === "ruler" ? "crosshair" : "ruler"));
+			} else if (e.key === "a" || e.key === "A" || e.key === "ф" || e.key === "Ф") {
+				e.preventDefault();
+				setActiveTool((prev) => (prev === "angle" ? "crosshair" : "angle"));
 			} else if (e.key === "u" || e.key === "U" || e.key === "г" || e.key === "Г") {
 				e.preventDefault();
 				handleToggleUnsharp();
@@ -677,7 +667,7 @@ export const CbctMprImplantStudioModal: React.FC<
 			data-cbct-cockpit="true"
 			data-theme="dark"
 			style={{ colorScheme: "dark" }}
-			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden cbct-dark-cockpit ${
+			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-300 font-sans select-none overflow-hidden cbct-dark-cockpit ${
 				isFullscreen ? "p-0" : "p-1 sm:p-2 bg-black/80 backdrop-blur-sm"
 			}`}
 		>
@@ -718,7 +708,13 @@ export const CbctMprImplantStudioModal: React.FC<
 						activeTool={activeTool} onSelectTool={setActiveTool} activePresetId={activePreset} onSelectPreset={handleSelectPreset}
 						slabMode={slabMode} onSelectSlabMode={setSlabMode} slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={setSlabThicknessMm}
 						invertColors={invertColors} onToggleInvertColors={() => setInvertColors((prev) => !prev)}
-						onResetAll={handleResetAll} showDentalArch={showDentalArch} onToggleDentalArch={() => setShowDentalArch((prev) => !prev)}
+						onResetAll={handleResetAll} showDentalArch={showDentalArch} onToggleDentalArch={() => {
+							setShowDentalArch((prev) => {
+								const next = !prev;
+								if (next && studioMode !== "panoramic") handleSelectStudioMode("panoramic");
+								return next;
+							});
+						}}
 						onAutoDetectArch={handleAutoDetectArch}
 					/>
 
@@ -745,7 +741,7 @@ export const CbctMprImplantStudioModal: React.FC<
 						handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown} handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove} handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp}
 						dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart} activeCrossSection={activeCrossSection} activeCrossSectionIdx={activeCrossSectionIdx}
 						crossSections={crossSections} onLoadDemoVolume={dicomLoader.handleLoadDemoVolume} activeTool={activeTool} onSelectTool={setActiveTool}
-						rulers={rulers} onClearRulers={handleClearRulers} onSelectQuickWlPreset={handleSelectQuickWlPreset} handleSelectTooth={interactions.handleSelectTooth}
+						rulers={rulers} onClearRulers={handleClearRulers} angles={angles} onClearAngles={handleClearAngles} onSelectQuickWlPreset={handleSelectQuickWlPreset} handleSelectTooth={interactions.handleSelectTooth}
 						archCurve={archCurve} jawType={jawType} onSwitchJaw={handleSwitchJaw} activeToothFdi={activeCrossSection?.nearestToothFdi}
 						isUnsharpActive={isUnsharpActive} onToggleUnsharp={handleToggleUnsharp} onChangeCrossSectionIdx={setActiveCrossSectionIdx}
 						selectedBrand={selectedBrand} onSelectBrand={setSelectedBrand} selectedDiameterMm={selectedDiameterMm} onSelectDiameterMm={setSelectedDiameterMm}

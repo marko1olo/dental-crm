@@ -52,7 +52,7 @@ const generateInformedConsentSchema = z.object({
 	trustedContact: z
 		.string()
 		.optional()
-		.describe("Доверенное лицо для передачи сведений о здоровье по ч. 3 ст. 13 323-ФЗ (ФИО, телефон)"),
+		.describe("Доверенное лицо для передачи сведений о здоровье (ФИО, телефон)"),
 });
 
 // ─── CLINICAL PRESET DEFINITIONS ───────────────────────────────────────────
@@ -330,7 +330,7 @@ export const generateInformedConsentTool: ToolDefinition<
 > = {
 	name: "generate_informed_consent",
 	description:
-		"Генерация полного юридического текста Информированного Добровольного Согласия (ИДС) по ст. 20 323-ФЗ и Приказу Минздрава № 1051н с детальными рисками, показаниями, альтернативами, рекомендациями и криптографическим хэшем подписи SHA-256.",
+		"Генерация полного текста Информированного Добровольного Согласия (ИДС) с детальными рисками, показаниями, альтернативами, рекомендациями и криптографическим хэшем подписи SHA-256.",
 	parameters: generateInformedConsentSchema,
 	permissions: ["clinical.write", "clinical.read"],
 	category: "write",

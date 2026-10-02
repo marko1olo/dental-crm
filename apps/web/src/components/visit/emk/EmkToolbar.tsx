@@ -3,6 +3,7 @@ import {
 	Calendar,
 	Check,
 	ChevronDown,
+	ShieldCheck,
 	Sparkles,
 	Tag,
 } from "lucide-react";
@@ -131,6 +132,19 @@ export function EmkToolbar({
 				className="emk-tier1-quick-soap-bar flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0"
 				data-testid="emk-tier1-quick-soap-bar"
 			>
+				{Boolean(onApplyNorm || onApplyPhysiologicalNorm) && (
+					<button
+						type="button"
+						data-testid="btn-quick-soap-norm"
+						onClick={onApplyNorm ?? onApplyPhysiologicalNorm}
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:border-emerald-500 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						title="1-клик физиологическая норма (Мандат 8e)"
+					>
+						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span className="whitespace-nowrap shrink-0 min-w-max">Норма</span>
+					</button>
+				)}
+
 				{hygienePreset && (
 					<button
 						type="button"

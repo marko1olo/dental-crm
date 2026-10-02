@@ -125,7 +125,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 
 		return (
 			<DocumentPayloadCard
-				title="Согласие на ПДн"
+				title="Согласие на обработку персональных данных"
 				description="Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона."
 				notice={
 					operatorReview.problems.length > 0 ? (
@@ -136,7 +136,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 							style={{ marginTop: "12px" }}
 						>
 							<strong>
-								Согласие на ПДн не создастся: у клиники не хватает{" "}
+								Согласие на обработку данных не создастся: у клиники не хватает{" "}
 								{operatorReview.problems.length} из{" "}
 								{operatorReview.requiredCount} реквизитов оператора. Вписать
 								их в самом согласии нельзя — они приходят из профиля

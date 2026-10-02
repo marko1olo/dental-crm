@@ -489,3 +489,129 @@ export function allocateSplitPaymentAcrossItems(
 		};
 	});
 }
+
+/**
+ * 1-Click Remainder Balancer to single tender kind down to the exact integer kopeck.
+ * Zero floating point drift.
+ */
+export function balanceSplitTenderRemainder(params: {
+	readonly actTotalKopecks: number;
+	readonly currentTenders: SplitPaymentTenderInput;
+	readonly targetKind: SplitTenderKind;
+	readonly availableDepositKopecks?: number | undefined;
+}): SplitPaymentTenderInput {
+	const actKop = Math.max(0, Math.round(params.actTotalKopecks));
+	const current = params.currentTenders;
+
+	// Calculate sum of all tenders excluding the target kind
+	let otherSumKop = 0;
+	if (params.targetKind !== "cash") otherSumKop += resolveKopecks(current.cashKopecks, current.cashRub);
+	if (params.targetKind !== "card") otherSumKop += resolveKopecks(current.cardKopecks, current.cardRub);
+	if (params.targetKind !== "sbp") otherSumKop += resolveKopecks(current.sbpKopecks, current.sbpRub);
+	if (params.targetKind !== "advance_deposit") otherSumKop += resolveKopecks(current.advanceDepositKopecks, current.advanceDepositRub);
+	if (params.targetKind !== "family_deposit") otherSumKop += resolveKopecks(current.familyDepositKopecks, current.familyDepositRub);
+	if (params.targetKind !== "credit") otherSumKop += resolveKopecks(current.creditKopecks, current.creditRub);
+	if (params.targetKind !== "certificate_or_bonus") otherSumKop += resolveKopecks(current.certificateOrBonusKopecks, current.certificateOrBonusRub);
+	if (params.targetKind !== "dms_insurance") otherSumKop += resolveKopecks(current.dmsInsuranceKopecks, current.dmsInsuranceRub);
+
+	const remainderKop = Math.max(0, actKop - otherSumKop);
+
+	const updated: SplitPaymentTenderInput = {
+		...current,
+		cashRub: undefined,
+		cardRub: undefined,
+		sbpRub: undefined,
+		advanceDepositRub: undefined,
+		familyDepositRub: undefined,
+		creditRub: undefined,
+		certificateOrBonusRub: undefined,
+		dmsInsuranceRub: undefined,
+		cashKopecks: resolveKopecks(current.cashKopecks, current.cashRub),
+		cardKopecks: resolveKopecks(current.cardKopecks, current.cardRub),
+		sbpKopecks: resolveKopecks(current.sbpKopecks, current.sbpRub),
+		advanceDepositKopecks: resolveKopecks(current.advanceDepositKopecks, current.advanceDepositRub),
+		familyDepositKopecks: resolveKopecks(current.familyDepositKopecks, current.familyDepositRub),
+		creditKopecks: resolveKopecks(current.creditKopecks, current.creditRub),
+		certificateOrBonusKopecks: resolveKopecks(current.certificateOrBonusKopecks, current.certificateOrBonusRub),
+		dmsInsuranceKopecks: resolveKopecks(current.dmsInsuranceKopecks, current.dmsInsuranceRub),
+	};
+
+	let targetAmountKop = remainderKop;
+	if (
+		(params.targetKind === "advance_deposit" || params.targetKind === "family_deposit") &&
+		params.availableDepositKopecks !== undefined
+	) {
+		targetAmountKop = Math.min(remainderKop, Math.max(0, params.availableDepositKopecks));
+	}
+
+	switch (params.targetKind) {
+		case "cash":
+			return { ...updated, cashKopecks: targetAmountKop };
+		case "card":
+			return { ...updated, cardKopecks: targetAmountKop };
+		case "sbp":
+			return { ...updated, sbpKopecks: targetAmountKop };
+		case "advance_deposit":
+			return { ...updated, advanceDepositKopecks: targetAmountKop };
+		case "family_deposit":
+			return { ...updated, familyDepositKopecks: targetAmountKop };
+		case "credit":
+			return { ...updated, creditKopecks: targetAmountKop };
+		case "certificate_or_bonus":
+			return { ...updated, certificateOrBonusKopecks: targetAmountKop };
+		case "dms_insurance":
+			return { ...updated, dmsInsuranceKopecks: targetAmountKop };
+	}
+}
+
+/**
+ * 1-Click Combo: Spends available personal/family advance deposit first,
+ * and balances all remaining unallocated kopecks to Bank Card or SBP QR.
+ */
+export function balanceSplitDepositPlusCard(params: {
+	readonly actTotalKopecks: number;
+	readonly currentTenders: SplitPaymentTenderInput;
+	readonly availableDepositKopecks: number;
+	readonly secondaryTender?: "card" | "sbp" | "cash" | undefined;
+}): SplitPaymentTenderInput {
+	const actKop = Math.max(0, Math.round(params.actTotalKopecks));
+	const current = params.currentTenders;
+	const availDepositKop = Math.max(0, Math.round(params.availableDepositKopecks));
+	const secondary = params.secondaryTender ?? "card";
+
+	// Tenders other than deposit and secondary
+	let baseSumKop = 0;
+	if (secondary !== "cash") baseSumKop += resolveKopecks(current.cashKopecks, current.cashRub);
+	if (secondary !== "card") baseSumKop += resolveKopecks(current.cardKopecks, current.cardRub);
+	if (secondary !== "sbp") baseSumKop += resolveKopecks(current.sbpKopecks, current.sbpRub);
+	baseSumKop += resolveKopecks(current.creditKopecks, current.creditRub);
+	baseSumKop += resolveKopecks(current.certificateOrBonusKopecks, current.certificateOrBonusRub);
+	baseSumKop += resolveKopecks(current.dmsInsuranceKopecks, current.dmsInsuranceRub);
+
+	const remainderKop = Math.max(0, actKop - baseSumKop);
+	const depositTakeKop = Math.min(remainderKop, availDepositKop);
+	const secondaryTakeKop = remainderKop - depositTakeKop;
+
+	const updated: SplitPaymentTenderInput = {
+		...current,
+		cashRub: undefined,
+		cardRub: undefined,
+		sbpRub: undefined,
+		advanceDepositRub: undefined,
+		familyDepositRub: undefined,
+		creditRub: undefined,
+		certificateOrBonusRub: undefined,
+		dmsInsuranceRub: undefined,
+		cashKopecks: secondary === "cash" ? secondaryTakeKop : resolveKopecks(current.cashKopecks, current.cashRub),
+		cardKopecks: secondary === "card" ? secondaryTakeKop : resolveKopecks(current.cardKopecks, current.cardRub),
+		sbpKopecks: secondary === "sbp" ? secondaryTakeKop : resolveKopecks(current.sbpKopecks, current.sbpRub),
+		advanceDepositKopecks: depositTakeKop,
+		familyDepositKopecks: 0,
+		creditKopecks: resolveKopecks(current.creditKopecks, current.creditRub),
+		certificateOrBonusKopecks: resolveKopecks(current.certificateOrBonusKopecks, current.certificateOrBonusRub),
+		dmsInsuranceKopecks: resolveKopecks(current.dmsInsuranceKopecks, current.dmsInsuranceRub),
+	};
+
+	return updated;
+}
+

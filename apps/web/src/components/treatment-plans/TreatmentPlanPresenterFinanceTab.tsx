@@ -122,7 +122,7 @@ export const TreatmentPlanPresenterFinanceTab: React.FC<TreatmentPlanPresenterFi
 
 				<div className="text-[11px] text-[var(--tp-text-muted)] flex items-center gap-1.5 opacity-80">
 					<ShieldCheck size={14} className="text-teal-500 shrink-0" />
-					<span>Клиника выдаёт официальную справку об оплате медицинских услуг для ФНС (КНД 1151156)</span>
+					<span>Клиника выдаёт официальную справку для налоговой (вычет 13%)</span>
 				</div>
 			</div>
 		</div>

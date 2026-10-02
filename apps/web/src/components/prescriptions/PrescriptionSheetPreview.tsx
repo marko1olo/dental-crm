@@ -11,6 +11,7 @@ export interface PrescriptionSheetPreviewProps {
 	readonly customSeriesNumber: string;
 	readonly penicillinConflict: boolean;
 	readonly nsaidConflict: boolean;
+	readonly anestheticConflict?: boolean;
 	readonly ddiSafetyAudit?: { readonly drugInteractions: readonly any[] } | null | undefined;
 	readonly withStampAndSignature: boolean;
 	readonly clinic: string;
@@ -46,6 +47,7 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 	customSeriesNumber,
 	penicillinConflict,
 	nsaidConflict,
+	anestheticConflict = false,
 	ddiSafetyAudit,
 	withStampAndSignature,
 	clinic,
@@ -102,6 +104,19 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
 						<span className="font-bold truncate">
 							Внимание: выписан НПВС при аллергии на НПВС/аспирин в анамнезе
+						</span>
+					</div>
+					<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+						Автономия врача (Печать доступна)
+					</span>
+				</div>
+			)}
+			{anestheticConflict && (
+				<div data-testid="allergy-conflict-anesthetic" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2 min-w-0">
+						<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+						<span className="font-bold truncate">
+							Внимание: выписан местный анестетик при аллергии на анестетики/лидокаин в анамнезе
 						</span>
 					</div>
 					<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
@@ -305,6 +320,52 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						<QrCode className="w-9 h-9 text-sky-600 dark:text-sky-400 shrink-0" />
 					</div>
 				)}
+			</div>
+
+			{/* Patient Friendly Instruction Memo Card (Zero Latin Rp/Dtd/S) */}
+			<div
+				data-testid="patient-prescription-memo-card"
+				className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] flex flex-col gap-2.5 font-sans shadow-sm"
+			>
+				<div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
+						<FileText className="w-3.5 h-3.5 text-[var(--teal)]" />
+						Памятка пациенту (без латыни):
+					</span>
+					<span className="text-[10px] text-[var(--muted)]">Для понятного приёма дома</span>
+				</div>
+
+				<div className="flex flex-col gap-2 text-xs">
+					{activeItems.length === 0 ? (
+						<div className="text-[var(--muted)] italic py-1">Препараты не выбраны</div>
+					) : (
+						activeItems.map((item, idx) => {
+							const cleanSigna = item.signaRussian
+								.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "")
+								.replace(/^(?:Rp[.:]?\s*)/i, "")
+								.replace(/^(?:D\.?t\.?d\.?\s*N?\s*\d*\.?\s*)/i, "")
+								.trim();
+							return (
+								<div
+									key={item.id || idx}
+									className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]/60 flex flex-col gap-1"
+								>
+									<div className="font-bold text-[var(--ink)] text-xs">
+										{idx + 1}. {item.tradeName}
+									</div>
+									<div className="text-xs text-[var(--ink)]">
+										<span className="font-semibold text-teal-700 dark:text-teal-400">Способ применения: </span>
+										{cleanSigna}
+									</div>
+								</div>
+							);
+						})
+					)}
+				</div>
+
+				<div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)]/60 pt-2 leading-relaxed">
+					При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой: <strong>{phone}</strong>.
+				</div>
 			</div>
 		</div>
 	);

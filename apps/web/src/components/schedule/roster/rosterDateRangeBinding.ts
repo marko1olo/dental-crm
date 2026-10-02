@@ -56,8 +56,8 @@ export function applyDoctorChairDateRange(
 		shiftPreset,
 		startTime: customStart,
 		endTime: customEnd,
-		staffList = DEFAULT_CLINIC_STAFF,
-		cabinets = CLINIC_CABINETS_CATALOG,
+		staffList = isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [],
+		cabinets = isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG : [],
 		includeWeekends = true,
 	} = params;
 

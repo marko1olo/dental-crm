@@ -29,6 +29,16 @@ export interface KpiBonusTier {
 
 export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissionRule[] = [
 	{
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики (соло)",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
+		descriptionRu: "25% от выручки за вычетом лаборатории и прямых материалов + 10% за средства домашней гигиены.",
+	},
+	{
 		specialtyId: "therapist",
 		titleRu: "Врач-стоматолог терапевт / эндодонтист",
 		defaultPercentage: 25,
@@ -59,6 +69,16 @@ export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissio
 		descriptionRu: "20% от имплантации (за вычетом стоимости имплантата и мембран) + 30% от амбулаторных удалений зубов.",
 	},
 	{
+		specialtyId: "surgeon",
+		titleRu: "Врач-стоматолог хирург",
+		defaultPercentage: 20,
+		retailProductsPercentage: 5,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 10000000,
+		descriptionRu: "20% от амбулаторных хирургических операций за вычетом стоимости расходных материалов.",
+	},
+	{
 		specialtyId: "orthodontist",
 		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
 		defaultPercentage: 25,
@@ -69,6 +89,36 @@ export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissio
 		descriptionRu: "25% от активаций брекет-систем и регулярных приемов, за вычетом стоимости сетапа элайнеров.",
 	},
 	{
+		specialtyId: "periodontist",
+		titleRu: "Врач-стоматолог пародонтолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от пародонтологического лечения (Vector, кюретаж, шинирование) за вычетом материалов.",
+	},
+	{
+		specialtyId: "pediatric_dentist",
+		titleRu: "Детский врач-стоматолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от детского терапевтического приема и адаптации за вычетом материалов.",
+	},
+	{
+		specialtyId: "pediatric",
+		titleRu: "Детский врач-стоматолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от детского терапевтического приема (минус материалы) + адаптационный прием.",
+	},
+	{
 		specialtyId: "hygienist",
 		titleRu: "Гигиенист стоматологический",
 		defaultPercentage: 30,
@@ -77,6 +127,16 @@ export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissio
 		deductsMaterialCosts: false,
 		minGuaranteeMonthlyKop: 4500000, // 45,000 RUB
 		descriptionRu: "30% от профессиональной гигиены и отбеливания + 15% за проданные пасты/щетки Curaprox/Oral-B.",
+	},
+	{
+		specialtyId: "solo_practitioner",
+		titleRu: "Врач-стоматолог (Индивидуальная практика / Соло)",
+		defaultPercentage: 100,
+		retailProductsPercentage: 100,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 0,
+		descriptionRu: "Индивидуальная практика: 100% операционной выручки за вычетом лаборатории и материалов.",
 	},
 ];
 
@@ -105,6 +165,19 @@ export const KPI_BONUS_TIERS: readonly KpiBonusTier[] = [
 	},
 ];
 
+export const CLINICAL_CATEGORY_COMMISSION_PERCENT: Record<
+	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
+	number
+> = {
+	therapy: 25,
+	orthopedics: 20,
+	surgery: 22,
+	orthodontics: 22,
+	hygiene: 30,
+	retail_hygiene: 10,
+	pediatric: 25,
+};
+
 export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<
 	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
 	number
@@ -131,6 +204,32 @@ export interface DoctorCompletedServiceItem {
 	readonly customCommissionPercent?: number | undefined;
 	readonly isRefunded?: boolean | undefined;
 	readonly refundedAmountKop?: number | undefined;
+	readonly order804nCode?: string | undefined;
+	readonly toothCode?: string | undefined;
+	readonly performerId?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly receiptNumber?: string | undefined;
+	readonly refundReceiptNumber?: string | undefined;
+	readonly refundReasonRu?: string | undefined;
+	readonly refundDateIso?: string | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyType?: "doctor_fault" | "clinic_warranty" | "lab_warranty" | undefined;
+	readonly warrantyFixedCompensationKop?: number | undefined;
+	readonly deductMaterialFromDoctor?: boolean | undefined;
+	readonly paymentSource?: "cash" | "card" | "sbp" | "deposit" | "family_deposit" | "split" | undefined;
+	readonly isDepositAdvanceOnly?: boolean | undefined;
+}
+
+export interface DoctorPayrollStornoLineItem {
+	readonly id: string;
+	readonly serviceId?: string | undefined;
+	readonly dateIso: string;
+	readonly serviceNameRu: string;
+	readonly receiptNumber: string;
+	readonly reasonRu: string;
+	readonly refundedGrossKop: number;
+	readonly stornoCommissionKop: number;
+	readonly labelRu: string;
 }
 
 export interface DoctorPayrollCalculationInput {
@@ -209,7 +308,9 @@ export interface AssistantPayrollResult {
 export function calculateDoctorPeriodPayroll(
 	input: DoctorPayrollCalculationInput,
 ): DoctorPayrollResult {
-	const defaultPreset = DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
+	const defaultPreset =
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "therapist") ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
 	const preset: DoctorSpecialtyCommissionRule =
 		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === input.specialtyId) ??
 		defaultPreset;
@@ -373,8 +474,8 @@ export function calculateAssistantPeriodPayroll(
 
 	for (const shift of shifts) {
 		totalShifts += 1;
-		totalRadiographs += shift.radiographsTakenCount;
-		totalSurgeries += shift.surgeriesAssistedCount;
+		totalRadiographs += shift.radiographsTakenCount ?? 0;
+		totalSurgeries += shift.surgeriesAssistedCount ?? 0;
 
 		if (shift.shiftType === "standard_6h") {
 			baseShiftPayout += rules.baseShiftRateKop;

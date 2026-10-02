@@ -68,10 +68,10 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 												? "Акт сдачи-приемки выполненных услуг"
 												: activeTab === "oneC"
 													? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09"
-													: "Кассовый чек 54-ФЗ · Фискализация 54-ФЗ & Прием платежей"}
+													: "Касса · Прием платежей и печать чеков"}
 							</h3>
 							<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
-								ФФД 1.2
+								Онлайн-касса
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)] break-words mt-0.5">
@@ -105,7 +105,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 				>
 					<AlertTriangle size={14} className="shrink-0 text-amber-600" />
 					<span>
-						Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽. Долг не блокирует фискализацию чека на фактически вносимую сумму.
+						Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽. Долг не блокирует печать чека на фактически вносимую сумму.
 					</span>
 				</div>
 			)}
@@ -121,10 +121,10 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
 							<div>
 								<h4 className="font-bold text-amber-900 dark:text-amber-200 m-0">
-									Внимание: сбой связи с фискальным регистратором ККТ / эквайрингом
+									Внимание: сбой связи с кассовым аппаратом / терминалом
 								</h4>
 								<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
-									{interruptedFiscalState.reason}. Если терминал уже списал средства с карты или требуется повторить фискализацию без изменения баланса пациента, выберите действие:
+									{interruptedFiscalState.reason}. Если терминал уже списал средства с карты или требуется повторить печать чека без изменения баланса пациента, выберите действие:
 								</p>
 							</div>
 						</div>
@@ -152,7 +152,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							type="button"
 							onClick={handleRetryFiscalizationWithoutBalanceImpact}
 							disabled={isFiscalizing}
-							title={isFiscalizing ? "Отправка на ККТ..." : "Повторно отправить чек на фискализацию в ККТ без изменения баланса пациента"}
+							title={isFiscalizing ? "Отправка на кассу..." : "Повторно напечатать чек на кассе без изменения баланса пациента"}
 							className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
 							data-testid="btn-fiscal-retry-direct"
 						>
@@ -209,7 +209,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						Справка для ФНС
+						Справка для налоговой (13%)
 					</button>
 					<button
 						type="button"

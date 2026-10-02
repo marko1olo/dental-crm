@@ -374,24 +374,8 @@ export function classifyProcedureStage(
 	const code = (code804n || "").trim().toUpperCase();
 	const cat = (categoryRu || "").toLowerCase();
 
-	// 1. Хирургия и имплантация (Этап 2)
-	if (
-		code.startsWith("A16.07.001") || // Удаление зуба
-		code.startsWith("A16.07.041") || // Костная пластика, остеотомия
-		code.startsWith("A16.07.054") || // Дентальная имплантация, ФДМ
-		code.startsWith("A16.07.093") || // Навигационный шаблон
-		code.startsWith("A16.07.026") || // Гингивопластика
-		code.startsWith("A16.07.011") || // Вскрытие абсцесса
-		cat.includes("хирург") ||
-		cat.includes("имплант") ||
-		cat.includes("синус") ||
-		cat.includes("удален") ||
-		cat.includes("костн")
-	) {
-		return "stage_2_surgery";
-	}
-
-	// 2. Ортопедия и протезирование (Этап 3)
+	// 1. Ортопедия и протезирование (Этап 3) — наивысший приоритет, чтобы
+	// протезирование на имплантатах (A16.07.006, коронки, мосты) не попадало в хирургию
 	if (
 		code.startsWith("A16.07.004") || // Коронки
 		code.startsWith("A16.07.006") || // Протезирование на имплантатах
@@ -408,6 +392,23 @@ export function classifyProcedureStage(
 		cat.includes("вкладк")
 	) {
 		return "stage_3_orthopedics";
+	}
+
+	// 2. Хирургия и имплантация (Этап 2)
+	if (
+		code.startsWith("A16.07.001") || // Удаление зуба
+		code.startsWith("A16.07.041") || // Костная пластика, остеотомия
+		code.startsWith("A16.07.054") || // Дентальная имплантация, ФДМ
+		code.startsWith("A16.07.093") || // Навигационный шаблон
+		code.startsWith("A16.07.026") || // Гингивопластика
+		code.startsWith("A16.07.011") || // Вскрытие абсцесса
+		cat.includes("хирург") ||
+		cat.includes("имплант") ||
+		cat.includes("синус") ||
+		cat.includes("удален") ||
+		cat.includes("костн")
+	) {
+		return "stage_2_surgery";
 	}
 
 	// 3. Терапия, санация, гигиена, диагностика (Этап 1)

@@ -81,9 +81,24 @@ export function useCbctTunerData(initialPatientId = "zakharov") {
 			if (patientId === "zakharov" && typeof window !== "undefined") {
 				const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
 				if (win.__cbctDemoVolume) {
-					setVolume(win.__cbctDemoVolume);
-					const arch = autoDetectDentalArch(win.__cbctDemoVolume, "mandible");
+					const demoVol = win.__cbctDemoVolume;
+					setVolume({
+						...demoVol,
+						defaultWindowWidth: 4025,
+						defaultWindowLevel: 525,
+					});
+					const arch = autoDetectDentalArch(demoVol, "mandible");
 					setArchCurve(arch);
+					try {
+						const occZMm = findOcclusalZPlane(win.__cbctDemoVolume, "mandible");
+						const originZ = win.__cbctDemoVolume.originMm?.z ?? 0;
+						const spZ = win.__cbctDemoVolume.spacingMm?.z || 0.25;
+						const dimZ = win.__cbctDemoVolume.dimensions.depth;
+						const occIdx = Math.max(0, Math.min(dimZ - 1, Math.round((occZMm - originZ) / spZ)));
+						setRecommendedZIndex(occIdx);
+					} catch {
+						setRecommendedZIndex(Math.floor(win.__cbctDemoVolume.dimensions.depth / 2));
+					}
 					setIsLoading(false);
 					setLoadStatus(null);
 					return;
@@ -127,8 +142,8 @@ export function useCbctTunerData(initialPatientId = "zakharov") {
 						z: dimZ * spZ,
 					},
 					isDisposed: false,
-					defaultWindowWidth: 2200,
-					defaultWindowLevel: 450,
+					defaultWindowWidth: 4025,
+					defaultWindowLevel: 525,
 				};
 
 				if (typeof window !== "undefined" && patientId === "zakharov") {

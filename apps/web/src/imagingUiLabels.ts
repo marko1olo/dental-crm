@@ -58,6 +58,8 @@ export const imagingSourceLabels: Record<ImagingSourceKind, string> = {
 	twain_wia: "TWAIN/WIA",
 	sensor_bridge: "Датчик",
 	folder_watch: "Папка",
+	hot_folder: "Hot Folder",
+	dicom_worklist: "DICOM Worklist",
 };
 
 export const imagingSourceDetails: Record<ImagingSourceKind, string> = {
@@ -68,6 +70,8 @@ export const imagingSourceDetails: Record<ImagingSourceKind, string> = {
 	twain_wia: "сканер TWAIN/WIA",
 	sensor_bridge: "локальный RVG-датчик",
 	folder_watch: "папка обмена",
+	hot_folder: "горячая папка импорта снимков",
+	dicom_worklist: "модальный рабочий список DICOM",
 };
 
 export const imagingViewerToolLabels: Record<string, string> = {

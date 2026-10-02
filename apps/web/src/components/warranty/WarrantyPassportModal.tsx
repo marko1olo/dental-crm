@@ -679,8 +679,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 						<div className="warranty-header-title">
 							<h3>Гарантийный паспорт & Сертификат качества</h3>
 							<p>
-								Закон РФ № 2300-1 «О защите прав потребителей» • Положение СтАР • Медкарта №{" "}
-								{patient?.cardNumber || "043/у"}
+								Гарантия клиники и стандарты качества • Медкарта №{" "}
+								{patient?.cardNumber || "б/н"}
 							</p>
 						</div>
 					</div>

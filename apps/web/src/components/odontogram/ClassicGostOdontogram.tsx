@@ -333,6 +333,8 @@ export function getToothStateFromHotkey(
 		case "ь":
 		case "o":
 		case "о":
+		case "x":
+		case "х":
 			return "Missing";
 		case "з":
 		case "h":
@@ -508,6 +510,7 @@ export interface ClassicGostOdontogramProps {
 	topTeeth?: number[] | undefined;
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
+	activeStamp?: ToothState | null | undefined;
 	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
@@ -520,6 +523,7 @@ export function areClassicGostOdontogramPropsEqual(
 	prev: ClassicGostOdontogramProps,
 	next: ClassicGostOdontogramProps,
 ): boolean {
+	if (prev.activeStamp !== next.activeStamp) return false;
 	if (prev.pediatricMode !== next.pediatricMode) return false;
 	if (prev.mixedDentition !== next.mixedDentition) return false;
 	if (prev.useSurfaces !== next.useSurfaces) return false;
@@ -605,6 +609,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 	topTeeth: customTopTeeth,
 	bottomTeeth: customBottomTeeth,
 	selectedTeeth = [],
+	activeStamp,
 	onToothClick,
 	onQuickStateChange,
 	useSurfaces = false,
@@ -691,17 +696,12 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 				return;
 			}
 
-			// 1. Hotkey status assignment for selected teeth
+			// 1. Hotkey status assignment for selected teeth (applied to tooth whole without surfaces)
 			if (selectedTeeth.length > 0 && onQuickStateChange) {
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState) {
 					e.preventDefault();
-					const firstTooth = selectedTeeth[0];
-					const singleTooth =
-						selectedTeeth.length === 1 && firstTooth !== undefined
-							? (teethData ?? []).find((t) => t.toothNumber === firstTooth)
-							: undefined;
-					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
+					onQuickStateChange(selectedTeeth, quickState, undefined);
 					return;
 				}
 			}
@@ -812,6 +812,7 @@ interface ClassicGostToothCellProps {
 	readonly tooth?: ToothData | undefined;
 	readonly isSelected: boolean;
 	readonly selectedTeeth: readonly number[];
+	readonly activeStamp?: ToothState | null | undefined;
 	readonly onToothClick: (toothNumber: number, rect: DOMRect) => void;
 	readonly onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[]) => void) | undefined;
 	readonly useSurfaces?: boolean | undefined;
@@ -825,6 +826,7 @@ function areGostToothCellPropsEqual(
 	if (prev.toothNumber !== next.toothNumber) return false;
 	if (prev.isUpper !== next.isUpper) return false;
 	if (prev.isSelected !== next.isSelected) return false;
+	if (prev.activeStamp !== next.activeStamp) return false;
 	if (prev.useSurfaces !== next.useSurfaces) return false;
 	if (prev.pediatricMode !== next.pediatricMode) return false;
 	if (prev.onToothClick !== next.onToothClick) return false;
@@ -885,6 +887,7 @@ const ClassicGostToothCell: React.FC<ClassicGostToothCellProps> = memo(({
 	tooth,
 	isSelected,
 	selectedTeeth,
+	activeStamp,
 	onToothClick,
 	onQuickStateChange,
 	useSurfaces,
@@ -911,12 +914,20 @@ const ClassicGostToothCell: React.FC<ClassicGostToothCellProps> = memo(({
 			aria-label={`Зуб ${toothNumber}, ${gost.nameRu}`}
 			aria-pressed={isSelected ? true : undefined}
 			onClick={(e) => {
+				if (activeStamp && onQuickStateChange) {
+					onQuickStateChange([toothNumber], activeStamp, undefined);
+					return;
+				}
 				const rect = e.currentTarget.getBoundingClientRect();
 				onToothClick(toothNumber, rect);
 			}}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") {
 					e.preventDefault();
+					if (activeStamp && onQuickStateChange) {
+						onQuickStateChange([toothNumber], activeStamp, undefined);
+						return;
+					}
 					const rect = e.currentTarget.getBoundingClientRect();
 					onToothClick(toothNumber, rect);
 					return;
@@ -947,11 +958,11 @@ const ClassicGostToothCell: React.FC<ClassicGostToothCellProps> = memo(({
 					return;
 				}
 
-				// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
+				// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З, X, etc.) applied without surfaces
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState && onQuickStateChange) {
 					e.preventDefault();
-					onQuickStateChange([toothNumber], quickState, surfaces ? [...surfaces] : undefined);
+					onQuickStateChange([toothNumber], quickState, undefined);
 				}
 			}}
 			className={`gost-cell-tooth relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] min-h-[56px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shrink-0 ${
@@ -1027,6 +1038,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 			tooth={toothStateMap.get(toothNumber)}
 			isSelected={selectedTeeth.includes(toothNumber)}
 			selectedTeeth={selectedTeeth}
+			activeStamp={activeStamp}
 			onToothClick={onToothClick}
 			onQuickStateChange={onQuickStateChange}
 			useSurfaces={useSurfaces}
@@ -1187,7 +1199,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 						onClick={() => {
 							if (onQuickStateChange) {
 								const allTargetTeeth = [...topList, ...bottomList];
-								onQuickStateChange(allTargetTeeth, "Healthy");
+								onQuickStateChange(allTargetTeeth, "Healthy", undefined);
 								showToast("Зубная формула: Все зубы здоровы / интактный зубной ряд (норма)", "success");
 							}
 						}}
@@ -1206,7 +1218,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 							onClick={() => {
 								if (onQuickStateChange) {
 									const wisdomTeeth = [18, 28, 38, 48];
-									onQuickStateChange(wisdomTeeth, "Missing");
+									onQuickStateChange(wisdomTeeth, "Missing", undefined);
 									showToast("Зубы мудрости (18, 28, 38, 48) отмечены как отсутствующие (0)", "info");
 								}
 							}}
@@ -1258,7 +1270,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 								data-testid={`gost-keypad-btn-${stateKey}`}
 								onClick={() => {
 									if (onQuickStateChange) {
-										onQuickStateChange(selectedTeeth, stateKey as ToothState);
+										onQuickStateChange(selectedTeeth, stateKey as ToothState, undefined);
 									}
 								}}
 								disabled={false}

@@ -299,7 +299,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 								</div>
 								<div>
 									<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
-										Оплата наличными (Касса 54-ФЗ)
+										Оплата наличными (Касса)
 									</span>
 									<span className="text-xs text-[var(--muted,#64748b)]">
 										Сумма чека: {formatMoneyRu(cashAmount)}
@@ -632,10 +632,10 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 									<Gift size={16} className="text-amber-600 shrink-0" />
 									<div>
 										<span className="text-xs font-bold block text-[var(--ink,#0f172a)]">
-											Подарочный сертификат (Тег 1215)
+											Подарочный сертификат
 										</span>
 										<span className="text-[11px] text-[var(--muted,#64748b)]">
-											Зачет аванса по 54-ФЗ
+											Зачет аванса
 										</span>
 									</div>
 								</div>

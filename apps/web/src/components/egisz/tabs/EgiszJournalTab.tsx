@@ -25,6 +25,26 @@ export interface EgiszJournalTabProps {
 	readonly onRefreshOutbox?: (() => void) | undefined;
 }
 
+function getStatusBadge(status: RemdDocumentStatus): { bg: string; color: string; label: string } {
+	switch (status) {
+		case "registered":
+			return { bg: "rgba(16, 185, 129, 0.15)", color: "var(--success)", label: "Зарегистрирован" };
+		case "accepted_by_egisz":
+			return { bg: "rgba(16, 185, 129, 0.15)", color: "var(--success)", label: "Принят ЕГИСЗ" };
+		case "signed":
+			return { bg: "rgba(59, 130, 246, 0.15)", color: "var(--primary)", label: "Подписан" };
+		case "sent":
+			return { bg: "rgba(6, 182, 212, 0.15)", color: "var(--teal, #0d9488)", label: "Отправлен" };
+		case "rejected_by_egisz":
+			return { bg: "rgba(239, 68, 68, 0.15)", color: "var(--danger)", label: "Отклонен ЕГИСЗ" };
+		case "error":
+			return { bg: "rgba(239, 68, 68, 0.15)", color: "var(--danger)", label: "Ошибка" };
+		case "draft":
+		default:
+			return { bg: "rgba(245, 158, 11, 0.15)", color: "var(--warning)", label: "Черновик" };
+	}
+}
+
 export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 	records,
 	journalFilter,
@@ -38,8 +58,8 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 	onSwitchToSignatureTab,
 	onRefreshOutbox,
 }) => {
-	const registeredCount = records.filter((r) => r.status === "registered").length;
-	const errorCount = records.filter((r) => r.status === "error").length;
+	const registeredCount = records.filter((r) => r.status === "registered" || r.status === "accepted_by_egisz").length;
+	const errorCount = records.filter((r) => r.status === "error" || r.status === "rejected_by_egisz").length;
 	const draftCount = records.filter((r) => r.status === "draft").length;
 
 	return (
@@ -48,10 +68,10 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
 				<div>
 					<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "var(--ink)" }}>
-						Журнал медицинских документов РЭМД ЕГИСЗ
+						Журнал отправки медицинских документов в Минздрав
 					</h3>
 					<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-						Реестр СЭМД 043/у, 101, 102, 302, 303, 105 &bull; Приказ 947н Минздрава РФ
+						Реестр электронных медицинских карт и протоколов приёма
 					</p>
 				</div>
 				<div style={{ display: "flex", gap: "0.5rem" }}>
@@ -105,7 +125,7 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
 				<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
 					<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--success)", textTransform: "uppercase" }}>
-						Зарегистрировано в РЭМД
+						Зарегистрировано в Минздраве
 					</div>
 					<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--success)", marginTop: "0.25rem" }}>
 						{registeredCount}
@@ -134,7 +154,7 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 				<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
 					Фильтр статуса:
 				</span>
-				{(["all", "registered", "error", "draft", "signed", "sent"] as const).map((filterVal) => (
+				{(["all", "registered", "accepted_by_egisz", "signed", "sent", "rejected_by_egisz", "error", "draft"] as const).map((filterVal) => (
 					<button
 						key={filterVal}
 						type="button"
@@ -154,13 +174,17 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 							? "Все"
 							: filterVal === "registered"
 							? "Зарегистрировано"
-							: filterVal === "error"
-							? "Ошибка валидации"
-							: filterVal === "draft"
-							? "Черновик"
+							: filterVal === "accepted_by_egisz"
+							? "Принято в Минздраве"
 							: filterVal === "signed"
 							? "Подписан"
-							: "Отправлен"}
+							: filterVal === "sent"
+							? "Отправлен"
+							: filterVal === "rejected_by_egisz"
+							? "Отклонено"
+							: filterVal === "error"
+							? "Ошибка валидации"
+							: "Черновик"}
 					</button>
 				))}
 			</div>
@@ -169,13 +193,13 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 			<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--danger)", fontSize: "0.875rem" }}>
 					<AlertCircle size={18} />
-					ERR_FRMR_SNILS_NOT_FOUND (Ошибка валидации РЭМД)
+					Ошибка валидации СНИЛС врача
 				</div>
 				<div style={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.35rem" }}>
 					Инструкция по устранению ошибки:
 				</div>
 				<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
-					Проверьте правильность ввода СНИЛС врача в регистре ФРМР ЕГИСЗ и справочнике персонала клиники. СНИЛС должен быть верифицирован в ПФР и привязан к должности в ФРМО.
+					Проверьте правильность ввода СНИЛС врача в справочнике сотрудников клиники.
 				</p>
 			</div>
 
@@ -185,10 +209,10 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 					<thead>
 						<tr style={{ background: "var(--paper-strong)", borderBottom: "1px solid var(--line)", textAlign: "left" }}>
 							<th style={{ width: "130px", padding: "0.6rem 0.75rem" }}>Статус</th>
-							<th style={{ width: "70px", padding: "0.6rem 0.75rem" }}>СЭМД</th>
+							<th style={{ width: "70px", padding: "0.6rem 0.75rem" }}>Тип</th>
 							<th style={{ width: "190px", padding: "0.6rem 0.75rem" }}>Пациент</th>
 							<th style={{ width: "190px", padding: "0.6rem 0.75rem" }}>Врач</th>
-							<th style={{ width: "160px", padding: "0.6rem 0.75rem" }}>Рег. номер РЭМД</th>
+							<th style={{ width: "160px", padding: "0.6rem 0.75rem" }}>Номер в Минздраве</th>
 							<th style={{ width: "95px", padding: "0.6rem 0.75rem" }}>Дата</th>
 							<th style={{ width: "175px", padding: "0.6rem 0.75rem", textAlign: "right" }}>Действия</th>
 						</tr>
@@ -207,32 +231,23 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 									}}
 								>
 									<td style={{ padding: "0.6rem 0.75rem" }}>
-										<span
-											style={{
-												padding: "0.2rem 0.5rem",
-												borderRadius: "4px",
-												fontSize: "0.75rem",
-												fontWeight: 600,
-												background:
-													rec.status === "registered"
-														? "rgba(16, 185, 129, 0.15)"
-														: rec.status === "error"
-														? "rgba(239, 68, 68, 0.15)"
-														: "rgba(245, 158, 11, 0.15)",
-												color:
-													rec.status === "registered"
-														? "var(--success)"
-														: rec.status === "error"
-														? "var(--danger)"
-														: "var(--warning)",
-											}}
-										>
-											{rec.status === "registered"
-												? "Зарегистрирован"
-												: rec.status === "error"
-												? "Ошибка"
-												: "Черновик"}
-										</span>
+										{(() => {
+											const badge = getStatusBadge(rec.status);
+											return (
+												<span
+													style={{
+														padding: "0.2rem 0.5rem",
+														borderRadius: "4px",
+														fontSize: "0.75rem",
+														fontWeight: 600,
+														background: badge.bg,
+														color: badge.color,
+													}}
+												>
+													{badge.label}
+												</span>
+											);
+										})()}
 									</td>
 									<td style={{ padding: "0.6rem 0.75rem", fontWeight: 600 }}>
 										{rec.docTypeCode}

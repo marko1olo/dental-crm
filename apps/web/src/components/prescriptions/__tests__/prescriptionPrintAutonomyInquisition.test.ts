@@ -41,6 +41,15 @@ import {
 	detectPrescriptionAllergyConflicts,
 	PrescriptionPrintModal,
 } from "../PrescriptionPrintModal.js";
+import {
+	generatePatientMemoPrintHtml,
+	cleanHumanInstruction,
+} from "../prescriptionPrintHtml.js";
+import {
+	hasAnestheticAllergy,
+	hasPenicillinAllergy,
+	hasNsaidAllergy,
+} from "../prescriptionAllergyChecker.js";
 
 // Regulatory Cartoon Emoji Regex (Mandate 8d pt 7)
 const CARTOON_EMOJI_REGEX =
@@ -301,6 +310,34 @@ describe("Red Team Inquisition: Pediatric & Dosage Toxicology Safety", () => {
 		assert.strictEqual(nsaidConflict.length, 1);
 		assert.strictEqual(nsaidConflict[0]!.type, "nsaid");
 	});
+
+	it("2.6 Allergy conflict detection warns on local anesthetics (Lidocaine, Articaine, Novocaine)", () => {
+		assert.strictEqual(hasAnestheticAllergy("Непереносимость лидокаина"), true);
+		assert.strictEqual(hasAnestheticAllergy(["Аллергия на новокаин и артикаин"]), true);
+		assert.strictEqual(hasAnestheticAllergy("Только пыльца"), false);
+
+		const anestheticConflict = detectPrescriptionAllergyConflicts(
+			["Аллергия на Лидокаин (отёк Квинке в анамнезе)"],
+			[
+				{
+					id: "articaine_forte",
+					latinName: "Rp.: Solutionis Articaini 4% cum Epinephrino 1:100000 1.7 ml",
+					tradeName: "Ультракаин Д-С форте",
+					form: "раствор для инъекций",
+					dosage: "4%",
+					quantity: "N. 10",
+					dispenseLatin: "D.t.d. N 10 in amp.",
+					signaRussian: "S. Для проводниковой и инфильтрационной анестезии",
+					category: "anesthetic",
+				},
+			],
+		);
+
+		assert.strictEqual(anestheticConflict.length, 1);
+		assert.strictEqual(anestheticConflict[0]!.type, "anesthetic");
+		assert.ok(anestheticConflict[0]!.matchedAllergyTerm.includes("лидокаин"));
+		assert.strictEqual(anestheticConflict[0]!.conflictingDrugs[0]!.tradeName, "Ультракаин Д-С форте");
+	});
 });
 
 describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
@@ -389,6 +426,23 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
 			html.includes("data-testid=\"allergy-conflict-nsaid\""),
 			"Must display NSAID allergy conflict warning",
 		);
+		assert.ok(
+			html.includes("data-testid=\"prescription-allergy-modal-banner\""),
+			"Must display prominent modal top allergy warning banner",
+		);
+		assert.ok(
+			html.includes("data-testid=\"drug-allergy-badge-amoxiclav_875_125\""),
+			"Must highlight conflicting antibiotic in drug catalog",
+		);
+		assert.ok(
+			html.includes("data-testid=\"preset-allergy-badge-alveolitis_dry_socket\""),
+			"Must highlight fast prescription preset containing allergen",
+		);
+		assert.ok(
+			html.includes("data-testid=\"patient-prescription-memo-card\""),
+			"Must render human-readable patient memo card",
+		);
+
 		// But doctor autonomy allows printing
 		assert.ok(
 			html.includes("Автономия врача"),
@@ -397,6 +451,18 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e)", () => {
 		assert.ok(
 			html.includes("data-testid=\"print-prescription-btn\""),
 			"Print button remains fully available",
+		);
+		assert.ok(
+			!html.includes("data-testid=\"print-prescription-btn\" disabled"),
+			"Print prescription button must NEVER be disabled",
+		);
+		assert.ok(
+			html.includes("data-testid=\"print-patient-memo-btn\""),
+			"Print patient memo button must be present",
+		);
+		assert.ok(
+			!html.includes("data-testid=\"print-patient-memo-btn\" disabled"),
+			"Print patient memo button must NEVER be disabled",
 		);
 	});
 
@@ -493,6 +559,36 @@ describe("Red Team Inquisition: Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 			false,
 			"Patient prescription memo must NOT contain cartoon emojis",
 		);
+	});
+
+	it("5.4 Patient memo HTML generator contains 0 cartoon emojis and 0 cryptic Latin prefixes", () => {
+		const memoHtml = generatePatientMemoPrintHtml({
+			clinic: "Стоматология ДЕНТЕ",
+			address: "г. Москва, ул. Ленина, 10",
+			phone: "+7 (495) 999-88-77",
+			patientName: "Сидоров С.С.",
+			prescriptionDate: "2026-10-02",
+			docName: "Д-р Смирнов",
+			activeItems: [
+				{
+					id: "amox",
+					tradeName: "Амоксиклав 875+125 мг",
+					latinName: "Rp.: Amoxicillini + Acidi clavulanici 875/125 mg",
+					form: "таблетки диспергируемые",
+					dosage: "875+125 мг",
+					quantity: "N. 14",
+					dispenseLatin: "D.t.d. N 14 in tab.",
+					signaRussian: "S. Внутрь по 1 таблетке 2 раза в день во время еды, 7 дней",
+				},
+			],
+		});
+
+		assert.strictEqual(hasEmojis(memoHtml), false, "Patient memo HTML must NOT contain cartoon emojis");
+		assert.ok(memoHtml.includes("ПАМЯТКА ДЛЯ ПАЦИЕНТА"), "Must contain patient memo title");
+		assert.ok(memoHtml.includes("Способ применения: Внутрь по 1 таблетке 2 раза в день"), "Must contain clean human instructions");
+		assert.ok(!memoHtml.includes("S. Внутрь"), "Must strip Latin 'S.' prefix in patient memo");
+		assert.ok(!memoHtml.includes("Rp.:"), "Must strip Latin 'Rp.:' in patient memo");
+		assert.ok(!memoHtml.includes("D.t.d."), "Must strip Latin 'D.t.d.' in patient memo");
 	});
 });
 

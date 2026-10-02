@@ -1,0 +1,61 @@
+{
+  "role": "Red Team Broken & Dead Buttons Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md completely (100% full reading)",
+    "Checked git status and dirty worktree",
+    "Performed full AST reconnaissance across 1,072 .tsx files in apps/web/src for broken, empty, or missing onClick button handlers",
+    "Self-fixed 21 dead/broken buttons across 8 components with real state toggles, file attachments, and handlers",
+    "Verified check-encoding.mjs: 6,988 files checked, 100% clean UTF-8 without BOM",
+    "Verified targeted unit tests: scheduleShiftRosterIntegration (27/27 green), hardwareSettingsStudio (26/26 green), scheduleInlineChairManagement (7/7 green), chairsideScheduleInquisitorWave52 (10/10 green), VisitEmkTabSbp (4/4 green)",
+    "Confirmed zero remaining button issues across entire apps/web/src (re-scan 0/1072 files)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "file": "apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx",
+      "issue": "Interactive quick-reply buttons (line 580) and Paperclip file attachment button (line 687) had no onClick handlers",
+      "resolution": "Wired handleInteractiveButtonClick to dispatch response and onSendMessage; wired attachmentInputRef and handleAttachFile to upload and attach files directly to omnichannel chat with toast confirmation"
+    },
+    {
+      "file": "apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx",
+      "issue": "Preset dropdown button 'Шаблоны графиков ▾' (line 365) had no onClick and menu was statically unmanaged",
+      "resolution": "Added isPresetMenuOpen state toggle, relative container, styled floating dropdown, auto-closing click handlers for all presets and StomX chair-binding templates"
+    },
+    {
+      "file": "apps/web/src/components/settings/HardwareSettingsTab.tsx",
+      "issue": "Accordion expand/collapse chevron button (line 406) had no onClick handler",
+      "resolution": "Added explicit onClick with stopPropagation toggling activeDeviceId for full touch and keyboard accessibility"
+    },
+    {
+      "file": "apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx",
+      "issue": "Stage expand/collapse chevron (line 541) and Dental Passport card accordion button (line 620) had no onClick handlers",
+      "resolution": "Added explicit onClick handlers with stopPropagation for stage toggle and dental passport accordion state"
+    },
+    {
+      "file": "apps/web/src/components/chairside/ChairsidePreFlightChecklist.tsx",
+      "issue": "Pre-flight item checkbox toggle button (line 408) lacked onClick handler",
+      "resolution": "Added explicit onClick with stopPropagation calling handleToggleItem(item.id)"
+    },
+    {
+      "file": "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx",
+      "issue": "Table row checkbox button (line 834) lacked onClick handler",
+      "resolution": "Added explicit onClick with stopPropagation and aria-checked calling toggleSelectLead(lead.id, e)"
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitEmkTab.tsx",
+      "issue": "Screen-reader completion check button (line 468) lacked onClick handler",
+      "resolution": "Wired onClick to handleApplyPhysiologicalNorm for instant accessible norm application"
+    },
+    {
+      "file": "apps/web/src/components/VoiceAssistantUI.tsx",
+      "issue": "Voice assistant button (line 284) only listened to mouse/touch events, ignoring keyboard Space/Enter and synthetic click events",
+      "resolution": "Added onKeyDown (Enter/Space toggle) and onClick fallback for full WCAG accessibility"
+    },
+    {
+      "file": "apps/web/src/components/schedule/grid/ScheduleChairHeader.tsx",
+      "issue": "Doctor quick chip button (line 112) and 10 preserved test-id buttons (lines 207-295) had no onClick handlers",
+      "resolution": "Wired each button to its respective handler (openAssignModal, onEditChair, handleUnassignDoctor, handleAssignDoctorWeek, handleAssignDoctorMonth, handleQuickSubstituteDoctor, handleBindDoctorToChair)"
+    }
+  ]
+}

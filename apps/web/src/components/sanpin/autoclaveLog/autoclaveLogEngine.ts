@@ -21,6 +21,7 @@ import {
 	type SterilizationRegimeId,
 	type SterilizerApparatusDefinition,
 } from "./autoclaveLogPresets.js";
+import { sha256Hex } from "@dental/shared";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA CONTRACTS & INTERFACES
@@ -316,9 +317,9 @@ export function evaluate5ChamberPoints(
 	let summaryRu = "Все 5 контрольных точек: СТЕРИЛЬНО (100% переход индикаторов)";
 	if (!areAllPointsPassed) {
 		if (failedIndices.length > 0) {
-			summaryRu = `Аварийный цикл стерилизации: химический термоиндикатор не сработал (цвет не достиг эталона). Партия бракуется. Не сработали точки: ${failedIndices.map((i) => `КТ-${i}`).join(", ")}`;
+			summaryRu = `Аварийный цикл стерилизации (БРАК СТЕРИЛИЗАЦИИ): химический термоиндикатор не сработал (цвет не достиг эталона). Партия бракуется. Не сработали точки: ${failedIndices.map((i) => `КТ-${i}`).join(", ")}`;
 		} else {
-			summaryRu = `Аварийный цикл стерилизации: химический термоиндикатор не сработал (проверено только ${points.length} из 5 обязательных точек). Партия бракуется.`;
+			summaryRu = `Аварийный цикл стерилизации (БРАК СТЕРИЛИЗАЦИИ): химический термоиндикатор не сработал (проверено только ${points.length} из 5 обязательных точек). Партия бракуется.`;
 		}
 	}
 
@@ -384,12 +385,7 @@ export function calculateDigitalStampHash(data: {
 	operatorName: string;
 }): string {
 	const raw = `${data.id}|${data.date}|${data.cycleNumber}|${data.sterilizerCode}|${data.actualTemp}|${data.actualPressure}|${data.actualTime}|${data.isPassed}|${data.operatorName}`;
-	let hash = 0x811c9dc5;
-	for (let i = 0; i < raw.length; i++) {
-		hash ^= raw.charCodeAt(i);
-		hash = Math.imul(hash, 0x01000193);
-	}
-	const hex = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase();
+	const hex = sha256Hex(raw).toUpperCase();
 	return `DENTE-CSO-257-${hex}`;
 }
 

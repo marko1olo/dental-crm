@@ -21,7 +21,7 @@ export const SummaryWorkStatement039uForm: React.FC<SummaryWorkStatement039uForm
 		return (
 			<div className="document-form-container form-039u-wrapper">
 				<DocumentPayloadCard
-					title="Сводная ведомость учета работы врача-стоматолога (Форма № 039/у-88)"
+					title="Сводная ведомость работы врача-стоматолога"
 					description="Ежемесячная/квартальная сводка лечебной работы и выработки УЕТ"
 				>
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>

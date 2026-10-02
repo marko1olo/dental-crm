@@ -73,7 +73,7 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 						onClick={() => setActiveJaw("mandible")}
 						className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
 							effectiveJaw === "mandible"
-								? "bg-purple-600 text-white shadow-xs"
+								? "bg-purple-950/70 text-purple-200 border border-purple-500/50 shadow-xs"
 								: "text-zinc-400 hover:text-zinc-200"
 						}`}
 						data-testid="cbct-fdi-tab-mandible"
@@ -86,7 +86,7 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 						onClick={() => setActiveJaw("maxilla")}
 						className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
 							effectiveJaw === "maxilla"
-								? "bg-purple-600 text-white shadow-xs"
+								? "bg-purple-950/70 text-purple-200 border border-purple-500/50 shadow-xs"
 								: "text-zinc-400 hover:text-zinc-200"
 						}`}
 						data-testid="cbct-fdi-tab-maxilla"
@@ -113,8 +113,8 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 								}}
 								className={`min-w-[26px] h-7 px-1 rounded flex items-center justify-center text-[11px] font-mono font-bold transition-all cursor-pointer relative ${
 									isSelected
-										? "bg-purple-600 text-white border border-purple-400 shadow-md ring-1 ring-purple-300 scale-105 z-10"
-										: "bg-zinc-900/90 text-zinc-300 hover:text-white hover:bg-zinc-800 border border-zinc-700/80 hover:border-purple-400/60"
+										? "bg-purple-950/90 text-purple-200 border border-purple-500/80 shadow-md ring-1 ring-purple-400/50 scale-105 z-10"
+										: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700/80 hover:border-purple-400/60"
 								}`}
 								title={`Сфокусировать срез и 3D-прицел на зубе #${tooth}`}
 								aria-label={`Зуб FDI ${tooth}`}
@@ -144,8 +144,8 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 								}}
 								className={`min-w-[26px] h-7 px-1 rounded flex items-center justify-center text-[11px] font-mono font-bold transition-all cursor-pointer relative ${
 									isSelected
-										? "bg-purple-600 text-white border border-purple-400 shadow-md ring-1 ring-purple-300 scale-105 z-10"
-										: "bg-zinc-900/90 text-zinc-300 hover:text-white hover:bg-zinc-800 border border-zinc-700/80 hover:border-purple-400/60"
+										? "bg-purple-950/90 text-purple-200 border border-purple-500/80 shadow-md ring-1 ring-purple-400/50 scale-105 z-10"
+										: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700/80 hover:border-purple-400/60"
 								}`}
 								title={`Сфокусировать срез и 3D-прицел на зубе #${tooth}`}
 								aria-label={`Зуб FDI ${tooth}`}
@@ -176,7 +176,7 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 							e.stopPropagation();
 							onClose();
 						}}
-						className="w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+						className="w-6 h-6 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer"
 						title="Скрыть зубную формулу FDI"
 						aria-label="Закрыть ленту зубов"
 						data-testid="cbct-fdi-close-btn"

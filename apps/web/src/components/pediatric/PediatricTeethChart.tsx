@@ -168,7 +168,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 				key={tooth.toothNumber}
 				type="button"
 				onClick={() => onSelectTooth?.(tooth.toothNumber)}
-				className={`relative flex flex-col items-center justify-center rounded-xl border p-1 transition-all select-none cursor-pointer touch-manipulation min-w-[36px] sm:min-w-[42px] min-h-[44px] sm:min-h-[48px] active:scale-95 ${
+				className={`relative flex flex-col items-center justify-center rounded-xl border p-1 transition-all select-none cursor-pointer touch-manipulation min-w-[40px] sm:min-w-[42px] min-h-[44px] sm:min-h-[48px] active:scale-95 ${
 					isSelected
 						? "border-teal-600 bg-teal-50/90 text-teal-950 shadow-sm ring-2 ring-teal-500/40 dark:border-teal-400 dark:bg-teal-950/70 dark:text-teal-100 font-extrabold z-10"
 						: `${findingClass} hover:border-teal-400 hover:bg-[var(--paper-soft,#f8fafc)]`
@@ -245,7 +245,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						<button
 							type="button"
 							onClick={() => onModeChange?.("primary")}
-							className={`min-h-[32px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 								!isMixed
 									? "bg-teal-600 text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -258,7 +258,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						<button
 							type="button"
 							onClick={() => onModeChange?.("mixed")}
-							className={`min-h-[32px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 								isMixed
 									? "bg-sky-600 text-white shadow-xs"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -275,7 +275,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						<button
 							type="button"
 							onClick={onSetAllHealthy}
-							className="min-h-[32px] sm:min-h-0 sm:h-7 px-2 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
 							title="1-клик: все молочные зубы здоровы (индекс кп=0)"
 							data-testid="pediatric-all-healthy-btn"
 						>
@@ -289,7 +289,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						<button
 							type="button"
 							onClick={onApplyMixedDentitionPreset}
-							className="min-h-[32px] sm:min-h-0 sm:h-7 px-2 rounded-lg border border-sky-500/30 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-sky-500/30 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
 							title="1-клик: смена резцов и появление первых моляров 16, 26, 36, 46"
 							data-testid="pediatric-mixed-preset-btn"
 						>

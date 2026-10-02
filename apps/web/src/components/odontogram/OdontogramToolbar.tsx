@@ -13,10 +13,12 @@ import {
 	FlaskConical,
 	Mic,
 	MicOff,
+	X,
 	Zap,
 } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
 import type { ToothState } from "./ToothChart";
+import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
 import {
 	ODONTOGRAM_VIEW_MODES,
 	type OdontogramViewOption,
@@ -33,6 +35,8 @@ export interface OdontogramToolbarProps {
 	setActiveStampTool: React.Dispatch<React.SetStateAction<ToothState | null>>;
 	onDentitionModeChange?: ((mode: "adult" | "pediatric" | "mixed") => void) | undefined;
 	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
+	onInvertSelection?: (() => void) | undefined;
+	onClearSelection?: (() => void) | undefined;
 	pediatricMode?: boolean | undefined;
 	isPediatricEffective: boolean;
 	handleMarkIntactDentition: () => void;
@@ -92,6 +96,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 	setActiveStampTool,
 	onDentitionModeChange,
 	dentitionMode,
+	onInvertSelection,
+	onClearSelection,
 	pediatricMode,
 	isPediatricEffective,
 	handleMarkIntactDentition,
@@ -273,6 +279,22 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 						</button>
 						<button
 							type="button"
+							onClick={() => handleQuickTriggerState("Crown")}
+							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+								activeStampTool === "Crown"
+									? "bg-purple-600 text-white font-black shadow-xs"
+									: "text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
+							}`}
+							title="Коронка (Кр): применить к выделенным зубам или включить штамп коронки"
+							data-testid="quick-trigger-crown-btn"
+						>
+							<span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
+								Коронка
+							</span>
+						</button>
+						<button
+							type="button"
 							onClick={() => handleQuickTriggerState("Missing")}
 							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 								activeStampTool === "Missing"
@@ -286,6 +308,35 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
 								Удален
 							</span>
+						</button>
+					</div>
+				)}
+
+				{/* Индикатор активного штампа (Мандат 8l/8aa) */}
+				{activeStampTool && (
+					<div
+						className="inline-flex items-center gap-1.5 px-2 h-7 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
+						data-testid="odontogram-active-stamp-indicator"
+					>
+						<span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+						<span>
+							Активен штамп:{" "}
+							<strong className="font-black text-amber-950 dark:text-amber-100">
+								{TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}
+							</strong>{" "}
+							<span className="hidden sm:inline font-normal text-amber-800 dark:text-amber-300">
+								(Клик по зубу красит зуб целиком)
+							</span>
+						</span>
+						<button
+							type="button"
+							onClick={() => setActiveStampTool(null)}
+							className="ml-1 p-0.5 rounded hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 hover:text-amber-950 dark:hover:text-white transition-all cursor-pointer"
+							title="Сбросить активный штамп"
+							aria-label="Сбросить штамп"
+							data-testid="clear-active-stamp-btn"
+						>
+							<X size={12} className="shrink-0" />
 						</button>
 					</div>
 				)}
@@ -534,6 +585,10 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 					PEDIATRIC_Q7={PEDIATRIC_Q7}
 					PEDIATRIC_Q8={PEDIATRIC_Q8}
 					PEDIATRIC_FRONT={PEDIATRIC_FRONT}
+					activeStampTool={activeStampTool}
+					selectedTeeth={selectedTeeth}
+					onInvertSelection={onInvertSelection}
+					onClearSelection={onClearSelection}
 				/>
 
 				{/* "Ещё..." Dropdown Menu */}

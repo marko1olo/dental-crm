@@ -1,0 +1,46 @@
+{
+  "agent": "RED_TEAM_PATIENT_BILLING_INVOICE_DUPLICATES_ORPHANS_INQUISITOR",
+  "status": "COMPLETED",
+  "phase": "VICTORY_AUDIT",
+  "completed_at": "2026-10-02T11:51:30Z",
+  "tasks": {
+    "reconnaissance": "COMPLETED",
+    "duplicates_identification": "COMPLETED",
+    "orphans_identification": "COMPLETED",
+    "ssot_consolidation": "COMPLETED",
+    "tests_and_typecheck": "COMPLETED"
+  },
+  "scope": {
+    "packages_shared_finance": "packages/shared/src/finance/ (except splitPayment.ts)",
+    "apps_web_finance_components": "apps/web/src/components/finance/ (except FastCheckoutPaymentSplit.tsx)",
+    "forbidden": ["KLKT", "DICOM", "Radiology", "FastCheckoutPaymentSplit.tsx", "splitPayment.ts"]
+  },
+  "findings_and_fixes": [
+    {
+      "defect": "110-line bespoke number-to-words generator with float drift in invoiceEngine.ts",
+      "fix": "Replaced with SSOT amountToWordsRu from @dental/shared/taxDeduction, eliminating float math and redundant triads code",
+      "test_proof": "invoiceEngine.test.ts passed (3/3 pass, Exit Code 0)"
+    },
+    {
+      "defect": "Bespoke hardcoded 9-code list in order804nFiscalEngine.ts for tax deduction category 02",
+      "fix": "Delegated to canonical resolveTaxDeductionCategoryShared covering all Government Decree No. 458 implantology & bone grafting codes",
+      "test_proof": "order804nFiscalEngine.test.ts passed (17/17 pass, Exit Code 0)"
+    },
+    {
+      "defect": "Twin clone CheckoutSplitModal.tsx (26 lines) duplicating PaymentSplitModal.tsx (33 lines)",
+      "fix": "Collapsed CheckoutSplitModal into a thin facade over canonical PaymentSplitModal complying with Mandate 8za (Anti-Duplicates)",
+      "test_proof": "zeroMockCashierInquisition.test.ts passed (12/12 pass, Exit Code 0)"
+    },
+    {
+      "defect": "Architectural orphan PatientBillingModal.tsx (832 lines) never mounted in CRM Finance UI",
+      "fix": "Mounted in FinanceView.tsx and FinanceToolbar.tsx as 'Акт А4 и гарантии' with Escape closing & state isolation; refactored to 798 lines (< 800 line ceiling under Mandate 1)",
+      "test_proof": "wave115StomxParity.test.ts (5/5), wave116StomxPricelistAndStageBilling.test.ts (4/4), warrantyAndOverdraftBillingAutonomy.test.tsx (7/7), billingModalErgonomicsP0.test.tsx (5/5) passed"
+    }
+  ],
+  "verification_suite": {
+    "total_tests_verified": 57,
+    "suites_count": 7,
+    "all_passed": true,
+    "exit_code": 0
+  }
+}

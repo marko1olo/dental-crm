@@ -54,6 +54,10 @@ uniform int u_slabSteps;        // Number of slab integration steps
 uniform bool u_trilinear;       // true = sub-voxel trilinear, false = nearest neighbor
 uniform int u_colorMap;        // 0 = grayscale, 1 = bone density (Misch D1-D4), 2 = endo, 3 = inverted
 uniform float u_sharpenAmount; // 0.0 .. 1.0 hardware unsharp masking / trabecular edge enhancement
+uniform float u_gamma;         // Non-linear gamma contrast curve
+uniform int u_useSoftKnee;     // 1 = enable soft-knee compression, 0 = linear DICOM
+uniform float u_softKneeCeiling; // Soft-knee peak brightness ceiling [0..255]
+uniform float u_airCutoffHU;   // HU cutoff below which voxels are strictly black (default -500.0)
 
 /**
  * Samples a continuous HU value using 8-point 3D Trilinear Sub-Voxel Interpolation.
@@ -177,24 +181,30 @@ void main() {
     // Calibrated DICOM PS 3.3 VOI Window / Level mapping
     float safeWW = max(1.0, u_windowWidth);
     float low = u_windowLevel - safeWW * 0.5;
-    float gray = clamp((finalHU - low) / safeWW, 0.0, 1.0);
+    float normVal = clamp((finalHU - low) / safeWW, 0.0, 1.0);
 
-    // Smooth clinical LUT curve with soft-knee shoulder:
-    // 1. Air background cutoff: HU <= -100 is strictly pitch black (0.0), eliminating background fog
-    // 2. Smooth rational shoulder compression capping peak enamel strictly under 180/255 (0.705)
-    if (finalHU <= -100.0) {
-        gray = 0.0;
-    } else {
+    // Dynamic non-linear gamma transfer
+    if (u_gamma > 0.01 && abs(u_gamma - 1.0) > 0.01) {
+        normVal = pow(normVal, u_gamma);
+    }
+
+    // Dynamic air cutoff & soft-knee enamel transfer function
+    if (finalHU <= u_airCutoffHU) {
+        normVal = 0.0;
+    } else if (u_useSoftKnee == 1) {
+        float peak = clamp(u_softKneeCeiling / 255.0, 0.2, 1.0);
         float corticalLevel = 0.52;
-        if (gray <= corticalLevel) {
-            gray = gray * (114.0 / 255.0 / corticalLevel);
+        if (normVal <= corticalLevel) {
+            normVal = normVal * (114.0 / 255.0 / corticalLevel);
         } else {
-            float dt = (gray - corticalLevel) / (1.0 - corticalLevel);
-            float maxComp = (178.0 - 114.0) / 255.0;
-            float comp = maxComp * (dt / (dt + 0.35));
-            gray = (114.0 / 255.0) + comp;
+            float dt = (normVal - corticalLevel) / (1.0 - corticalLevel);
+            float maxComp = max(0.01, peak - (114.0 / 255.0));
+            float comp = maxComp * (dt / max(0.001, dt + 0.35));
+            normVal = min(peak, (114.0 / 255.0) + comp);
         }
     }
+
+    float gray = normVal;
 
     if (u_invert) {
         // Negative / White Paper mode with smooth anti-blinding air transition
@@ -307,6 +317,10 @@ uniform int u_flipY;           // 0 = readPixels order (v_uv.y=0 is zTopMm), 1 =
 uniform float u_windowWidth;
 uniform float u_windowLevel;
 uniform int u_invert;
+uniform float u_gamma;             // Non-linear gamma (0.5..2.5, 1.0 = linear)
+uniform int u_useSoftKnee;         // 1 = enable rational enamel compression, 0 = pure linear DICOM
+uniform float u_softKneeCeiling;   // peak enamel intensity [50..255]
+uniform float u_airCutoffHU;       // air cutoff threshold (default -100.0 HU)
 uniform int u_trilinear;       // 1 = sub-voxel trilinear interpolation, 0 = nearest neighbor
 uniform int u_colorMap;        // 0 = grayscale, 1 = bone density (Misch D1-D4), 2 = endo, 3 = inverted
 uniform float u_sharpenAmount; // 0.0 .. 1.0 hardware unsharp masking
@@ -518,20 +532,24 @@ void main() {
     float low = u_windowLevel - safeWW * 0.5;
     float normVal = clamp((finalHU - low) / safeWW, 0.0, 1.0);
 
-    // Smooth clinical LUT curve with soft-knee shoulder:
-    // 1. Air background cutoff: HU <= -100 is strictly pitch black (0.0), eliminating background fog
-    // 2. Smooth rational shoulder compression capping peak enamel strictly under 180/255 (0.705)
-    if (finalHU <= -100.0) {
+    // Dynamic non-linear gamma transfer
+    if (u_gamma > 0.01 && abs(u_gamma - 1.0) > 0.01) {
+        normVal = pow(normVal, u_gamma);
+    }
+
+    // Dynamic air cutoff & soft-knee enamel transfer function
+    if (finalHU <= u_airCutoffHU) {
         normVal = 0.0;
-    } else {
+    } else if (u_useSoftKnee == 1) {
+        float peak = clamp(u_softKneeCeiling / 255.0, 0.2, 1.0);
         float corticalLevel = 0.52;
         if (normVal <= corticalLevel) {
             normVal = normVal * (114.0 / 255.0 / corticalLevel);
         } else {
             float dt = (normVal - corticalLevel) / (1.0 - corticalLevel);
-            float maxComp = (178.0 - 114.0) / 255.0;
-            float comp = maxComp * (dt / (dt + 0.35));
-            normVal = (114.0 / 255.0) + comp;
+            float maxComp = max(0.01, peak - (114.0 / 255.0));
+            float comp = maxComp * (dt / max(0.001, dt + 0.35));
+            normVal = min(peak, (114.0 / 255.0) + comp);
         }
     }
 

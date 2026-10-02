@@ -473,7 +473,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 								<ShieldCheck size={18} className="text-teal-400 shrink-0 mt-0.5" />
 								<div>
 									<strong className="text-[var(--ink,#f8fafc)] font-semibold block">
-										Защита врачебной тайны (ст. 13 323-ФЗ) и персональных данных (152-ФЗ)
+										Врачебная тайна и защита персональных данных
 									</strong>
 									<span className="text-[var(--muted,#94a3b8)]">
 										ФИО сокращены до инициалов, номера телефонов маскированы, нозологические диагнозы и зубные формулы обезличены для маркетинговой аналитики.

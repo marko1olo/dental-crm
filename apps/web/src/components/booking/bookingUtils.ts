@@ -14,6 +14,15 @@ import {
 } from "lucide-react";
 import type { BookingDoctorData } from "./BookingDoctorCard";
 import type { BookingSlotItem, CalendarDayItem } from "./BookingSlotPicker";
+import {
+	formatGoogleDate,
+	formatIcsDate,
+	formatRussianDate as canonicalFormatRussianDate,
+	formatRussianPhone as canonicalFormatRussianPhone,
+	formatYandexDate,
+	isValidRussianPhone as canonicalIsValidRussianPhone,
+	localDateString as canonicalLocalDateString,
+} from "../../utils/formatters";
 
 // ============================================================================
 // Types & Contracts
@@ -128,20 +137,10 @@ export const DEFAULT_DOCTORS: BookingDoctorData[] = [];
 // Utilities
 // ============================================================================
 
-export function localDateString(date: Date = new Date()): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
+export const localDateString = canonicalLocalDateString;
 
 export function formatRussianDate(isoDateString: string): string {
-	const [year, month, day] = isoDateString
-		.split("-")
-		.map((part) => Number.parseInt(part, 10));
-	if (!year || !month || !day) return isoDateString;
-	const date = new Date(year, month - 1, day);
-	return date.toLocaleDateString("ru-RU", {
+	return canonicalFormatRussianDate(isoDateString, {
 		weekday: "long",
 		year: "numeric",
 		month: "long",
@@ -149,36 +148,8 @@ export function formatRussianDate(isoDateString: string): string {
 	});
 }
 
-export function formatRussianPhone(value: string): string {
-	const digits = value.replace(/\D/g, "");
-	if (!digits) return "";
-	let normalized = digits;
-	if (digits.startsWith("8") || digits.startsWith("7")) {
-		normalized = digits.slice(1);
-	}
-	let result = "+7";
-	if (normalized.length > 0) {
-		result += ` (${normalized.slice(0, 3)}`;
-	}
-	if (normalized.length >= 3) {
-		result += `) ${normalized.slice(3, 6)}`;
-	}
-	if (normalized.length >= 6) {
-		result += `-${normalized.slice(6, 8)}`;
-	}
-	if (normalized.length >= 8) {
-		result += `-${normalized.slice(8, 10)}`;
-	}
-	return result;
-}
-
-export function isValidRussianPhone(value: string): boolean {
-	const digits = value.replace(/\D/g, "");
-	if (digits.startsWith("7") || digits.startsWith("8")) {
-		return digits.length === 11;
-	}
-	return digits.length === 10;
-}
+export const formatRussianPhone = canonicalFormatRussianPhone;
+export const isValidRussianPhone = canonicalIsValidRussianPhone;
 
 export function generateBookingReference(): string {
 	const currentYear = new Date().getFullYear();
@@ -198,13 +169,9 @@ export function generateIcsCalendarContent(event: {
 	startsAt: string;
 	endsAt: string;
 }): string {
-	const formatIcsDate = (iso: string) => {
-		const d = new Date(iso);
-		return `${d.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
-	};
 	const startStr = formatIcsDate(event.startsAt);
 	const endStr = formatIcsDate(event.endsAt);
-	const nowStr = formatIcsDate(new Date().toISOString());
+	const nowStr = formatIcsDate(new Date());
 	const uid = `dente-${Date.now()}@dente.clinic`;
 
 	return [
@@ -234,8 +201,6 @@ export function generateGoogleCalendarUrl(event: {
 	startsAt: string;
 	endsAt: string;
 }): string {
-	const formatGoogleDate = (iso: string) =>
-		`${new Date(iso).toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 	const params = new URLSearchParams({
 		action: "TEMPLATE",
 		text: event.title,
@@ -253,8 +218,6 @@ export function generateYandexCalendarUrl(event: {
 	startsAt: string;
 	endsAt: string;
 }): string {
-	const formatYandexDate = (iso: string) =>
-		`${new Date(iso).toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 	const params = new URLSearchParams({
 		name: event.title,
 		description: event.description,

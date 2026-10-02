@@ -205,7 +205,7 @@ export function useCbctStudioExports({
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const isMaxilla = targetTooth < 30;
 		const anatomyLabel = isMaxilla ? "пазухи" : "канала IAN";
-		const effectivePatientId = patientId || "zakharov";
+		const effectivePatientId = patientId || "cbct-patient";
 
 		// 1. Capture high-resolution slice image from cross-section canvas
 		let sliceDataUrl: string | null = null;

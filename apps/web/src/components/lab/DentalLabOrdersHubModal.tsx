@@ -48,6 +48,7 @@ import {
 	type LabTechnologicalStageId,
 } from "./orders/labWorkOrderPresets";
 import { mapRawApiOrderToWorkflowOrder } from "./dentalLabApiMapper";
+import { formatRuDate } from "./dentalLabOrderEngine";
 import { DentalLabOrdersKanbanBoard } from "./DentalLabOrdersKanbanBoard";
 import { DentalLabCreateOrderModal } from "./DentalLabCreateOrderModal";
 import {
@@ -390,7 +391,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const handleCreateOrder = useCallback((created: DentalLabWorkflowOrder) => {
 		setOrders((prev) => [created, ...prev]);
 		if (onSaveOrder) onSaveOrder(created);
-		showToast(`Наряд № ${created.orderNumber} успешно создан`);
+		const fittingMsg = created.fittingDate ? ` · Забронирован визит на примерку: ${formatRuDate(created.fittingDate)}` : "";
+		showToast(`Наряд № ${created.orderNumber} успешно создан${fittingMsg}`);
 
 		// Dispatch reactive event for CRM and chairside synchronization
 		if (typeof window !== "undefined") {

@@ -74,8 +74,21 @@ export interface CompileRemindersOptions {
 /**
  * Returns tomorrow's date formatted as YYYY-MM-DD in clinic timezone.
  */
-export function getTomorrowDateIso(baseDate: Date = new Date()): string {
+export function getTomorrowDateIso(baseDate: Date = new Date(), timezone?: string): string {
 	const tomorrow = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
+	if (timezone) {
+		try {
+			const formatter = new Intl.DateTimeFormat("en-CA", {
+				timeZone: timezone,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			});
+			return formatter.format(tomorrow);
+		} catch {
+			// ignore and fallback
+		}
+	}
 	return tomorrow.toISOString().slice(0, 10);
 }
 
@@ -117,9 +130,9 @@ export function compileTomorrowReminders(
 	targetDateIso?: string,
 	options?: CompileRemindersOptions,
 ): TomorrowRemindersSummary {
-	const dateIso = targetDateIso || getTomorrowDateIso();
 	const now = options?.now || new Date();
 	const timezone = options?.timezone || dashboard?.clinicSettings?.profile?.timezone || "Europe/Moscow";
+	const dateIso = targetDateIso || getTomorrowDateIso(now, timezone);
 	const baseUrl = options?.baseUrl || (typeof window !== "undefined" ? window.location.origin : "");
 
 	const quietHoursStatus = checkQuietHoursPolicy(now, timezone);
@@ -136,6 +149,20 @@ export function compileTomorrowReminders(
 	const allPatients = dashboard?.patients || [];
 	const allStaff = dashboard?.clinicSettings?.staff || [];
 	const allChairs = dashboard?.clinicSettings?.chairs || [];
+
+	// Build O(1) hash maps for fast lookup
+	const patientsMap = new Map<string, (typeof allPatients)[number]>();
+	for (const p of allPatients) {
+		if (p.id) patientsMap.set(p.id, p);
+	}
+	const staffMap = new Map<string, (typeof allStaff)[number]>();
+	for (const s of allStaff) {
+		if (s.id) staffMap.set(s.id, s);
+	}
+	const chairsMap = new Map<string, (typeof allChairs)[number]>();
+	for (const c of allChairs) {
+		if (c.id) chairsMap.set(c.id, c);
+	}
 
 	// Filter active appointments for the target date
 	const tomorrowAppointments = allAppointments.filter((a) => {
@@ -154,9 +181,9 @@ export function compileTomorrowReminders(
 	let smsAvailableCount = 0;
 
 	const reminders: TomorrowReminderItem[] = tomorrowAppointments.map((appt) => {
-		const patient = allPatients.find((p) => p.id === appt.patientId);
-		const doctor = allStaff.find((s) => s.id === appt.doctorUserId);
-		const chair = allChairs.find((c) => c.id === appt.chairId);
+		const patient = appt.patientId ? patientsMap.get(appt.patientId) : undefined;
+		const doctor = appt.doctorUserId ? staffMap.get(appt.doctorUserId) : undefined;
+		const chair = appt.chairId ? chairsMap.get(appt.chairId) : undefined;
 
 		const patientName = patient?.fullName || "Пациент";
 		const patientPhone = patient?.phone || null;
@@ -188,11 +215,16 @@ export function compileTomorrowReminders(
 
 		// Check allergy alerts
 		const rawAllergies =
-			(patient as { allergies?: string | null })?.allergies ||
-			(patient as { anamnesis?: { allergies?: string | null } })?.anamnesis?.allergies ||
+			(patient as { allergies?: string | string[] | null })?.allergies ||
+			(patient as { anamnesis?: { allergies?: string | string[] | null } })?.anamnesis?.allergies ||
 			"";
-		const hasAllergyWarning = Boolean(rawAllergies && rawAllergies.trim());
-		const allergyWarningText = hasAllergyWarning ? `[Внимание] ${rawAllergies.trim()}` : null;
+		const allergiesStr = Array.isArray(rawAllergies)
+			? rawAllergies.join(", ")
+			: typeof rawAllergies === "string"
+				? rawAllergies
+				: "";
+		const hasAllergyWarning = Boolean(allergiesStr && allergiesStr.trim());
+		const allergyWarningText = hasAllergyWarning ? `[Внимание] ${allergiesStr.trim()}` : null;
 
 		// Action links
 		const actionLinks = buildAppointmentActionLinks(appt.id, baseUrl);

@@ -213,7 +213,7 @@ export function AutoclaveRegisterTable({
 							borderRadius: "8px",
 						}}
 						data-testid="sanpin-autoclave-new-cycle-btn"
-						title="1-клик фоновая фиксация нормативного цикла стерилизации смены (Форма 257/у)"
+						title="1-клик фоновая фиксация нормативного цикла стерилизации смены"
 					>
 						<Plus size={14} className="shrink-0" />
 						<span className="shrink-0 whitespace-nowrap">
@@ -243,7 +243,7 @@ export function AutoclaveRegisterTable({
 								flexShrink: 0,
 							}}
 							aria-expanded={isMoreMenuOpen}
-							title="Дополнительные операции: Форма 257/у, вскрытие крафт-пакетов"
+							title="Дополнительные операции: журнал автоклава, вскрытие крафт-пакетов"
 							data-testid="autoclave-more-options-btn"
 						>
 							<MoreVertical size={14} color="var(--brand-primary, #2563eb)" />
@@ -325,7 +325,7 @@ export function AutoclaveRegisterTable({
 									data-testid="generate-monthly-form257-btn"
 								>
 									<Sparkles size={15} color="#0d9488" />
-									<span>Печать Формы 257/у за месяц</span>
+									<span>Печать журнала автоклава за месяц</span>
 								</button>
 
 								{/* Форма 257/у Студия */}
@@ -354,7 +354,7 @@ export function AutoclaveRegisterTable({
 									data-testid="open-journal-257-studio-btn"
 								>
 									<FileSpreadsheet size={15} color="#059669" />
-									<span>Студия журнала 257/у</span>
+									<span>Журнал автоклава</span>
 								</button>
 							</div>
 						)}
@@ -393,7 +393,7 @@ export function AutoclaveRegisterTable({
 											В клинике не зарегистрировано автоклавов
 										</div>
 										<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
-											Зарегистрируйте автоклав или сухожаровой шкаф клиники для ведения официального журнала контроля работы стерилизаторов (Форма № 257/у) и генерации крафт-пакетов.
+											Зарегистрируйте автоклав или сухожаровой шкаф клиники для ведения журнала стерилизации и генерации крафт-пакетов.
 										</div>
 										<button
 											type="button"
@@ -426,7 +426,7 @@ export function AutoclaveRegisterTable({
 												style={{ minHeight: "38px", padding: "0.4rem 1rem", fontSize: "0.825rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 												data-testid="empty-state-new-cycle-btn"
 											>
-												<Plus size={14} /> Внести цикл стерилизации (Форма 257/у)
+												<Plus size={14} /> Внести цикл стерилизации
 											</button>
 											<button
 												type="button"

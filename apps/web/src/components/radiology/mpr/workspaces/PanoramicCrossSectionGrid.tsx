@@ -354,7 +354,7 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 									onClick={() => handleStepChange(opt.step)}
 									className={`px-1.5 py-0.2 rounded font-mono font-medium transition-colors cursor-pointer ${
 										isCur
-											? "bg-amber-600/90 text-white font-bold shadow-xs"
+											? "bg-amber-950/70 text-amber-200 border border-amber-500/50 font-semibold shadow-xs"
 											: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 									}`}
 									title={`Шаг нарезки ${opt.label}`}
@@ -382,7 +382,7 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 									onClick={() => setSliceCount(cnt)}
 									className={`w-5 h-4.5 rounded font-mono font-medium flex items-center justify-center transition-colors cursor-pointer ${
 										isCur
-											? "bg-purple-600/90 text-white font-bold shadow-xs"
+											? "bg-purple-950/70 text-purple-200 border border-purple-500/50 font-semibold shadow-xs"
 											: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 									}`}
 									title={`${cnt} срезов в 2 ряда`}

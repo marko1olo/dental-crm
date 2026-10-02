@@ -669,7 +669,7 @@ export function FinancialAnalyticsModal({
 						)}
 					</section>
 
-					{/* 152-FZ & 323-FZ Medical Privacy Guarantee Banner */}
+					{/* Гарантия врачебной тайны и защиты персональных данных */}
 					<div className="fin-analytics-privacy-note" data-testid="financial-privacy-note">
 						<ShieldCheck size={16} className="text-teal-400 shrink-0" />
 						<span>
@@ -681,7 +681,7 @@ export function FinancialAnalyticsModal({
 				{/* 5. FOOTER */}
 				<footer className="fin-analytics-footer">
 					<div style={{ fontSize: 11, color: "var(--muted)" }}>
-						Управленческий учет ДЕНТЕ CRM • Фискализация чеков • Расчет в целочисленных копейках
+						Управленческий учет ДЕНТЕ CRM • Касса и чеки • Расчет в целочисленных копейках
 					</div>
 					<button
 						type="button"

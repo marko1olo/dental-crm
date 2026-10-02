@@ -33,11 +33,12 @@ test("Universal Auth Identity — getLiveTimeOfDayGreeting returns clinical gree
 	assert.ok(["morning", "day", "evening", "night"].includes(timeSlot));
 });
 
-test("Universal Auth Demo Roles — covers 5 clinical personas with full details", () => {
-	assert.equal(DEMO_ROLES.length, 5);
+test("Universal Auth Demo Roles — covers clinical personas with full details", () => {
+	assert.ok(DEMO_ROLES.length >= 5);
 
 	const roleIds = DEMO_ROLES.map((r) => r.id);
 	assert.ok(roleIds.includes("therapist"));
+	assert.ok(roleIds.includes("orthopedist"));
 	assert.ok(roleIds.includes("orthodontist"));
 	assert.ok(roleIds.includes("surgeon"));
 	assert.ok(roleIds.includes("owner"));

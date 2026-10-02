@@ -708,52 +708,87 @@
   margin-top: 2px;
 }
 
-/* Responsive Segmented Control (Section VI Apple HIG - no 2500px scroll) */
+/* Responsive 3-Package Comparator Strip */
 .copilot-et-segmented-control {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   padding: 4px;
   border-radius: 10px;
   background-color: var(--paper-soft, #f4f7f6);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
-  gap: 4px;
+  gap: 6px;
   box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .copilot-et-segmented-control {
+    grid-template-columns: 1fr;
+  }
 }
 
 .copilot-et-segment-btn {
-  min-height: 44px;
-  flex: 1;
-  padding: 6px 10px;
+  min-height: 52px;
+  padding: 8px 10px;
   border-radius: 8px;
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted, #6b7280);
+  background: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
+  text-align: center;
 }
 
 .copilot-et-segment-btn:hover {
-  color: var(--ink, #0f172a);
+  border-color: var(--line-strong, rgba(15, 118, 110, 0.3));
+  transform: translateY(-1px);
 }
 
 .copilot-et-segment-btn.active {
-  background-color: var(--paper, #ffffff);
-  color: var(--teal-dark, #0f766e);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background-color: var(--paper-strong, #ffffff);
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
 }
 
 .copilot-et-segment-btn.active.optimum {
-  color: var(--teal, #0d9488);
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 1.5px var(--teal, #0d9488);
 }
 
 .copilot-et-segment-btn.active.premium {
+  border-color: var(--amber, #d97706);
+  box-shadow: 0 0 0 1.5px var(--amber, #d97706);
+}
+
+.copilot-et-segment-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-et-segment-btn.active.optimum .copilot-et-segment-name {
+  color: var(--teal-dark, #0f766e);
+}
+
+.copilot-et-segment-btn.active.premium .copilot-et-segment-name {
   color: var(--amber, #d97706);
+}
+
+.copilot-et-segment-material {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted, #6b7280);
+}
+
+.copilot-et-segment-price {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+  margin-top: 1px;
 }
 
 /* Active Tier Presentation Pane */
@@ -783,20 +818,55 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .copilot-et-tier-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--ink, #0f172a);
   margin: 0;
 }
 
+.copilot-et-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: var(--teal-soft, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.6));
+}
+
+.copilot-et-badge.premium {
+  background-color: var(--amber-soft, #fef3c7);
+  color: var(--amber, #d97706);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.copilot-et-badge.economy {
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #6b7280);
+  border-color: var(--line, rgba(15, 118, 110, 0.2));
+}
+
+.copilot-et-crown-tech {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal-dark, #0f766e);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
 .copilot-et-price {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--teal-dark, #0f766e);
   letter-spacing: -0.02em;
+}
+
+.copilot-et-tier-body.premium .copilot-et-price {
+  color: var(--amber, #d97706);
 }
 
 /* Tax Deduction & Installment Badges */
@@ -842,6 +912,65 @@
   padding: 8px 10px;
   border-radius: 6px;
   background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.1));
+}
+
+/* Stages Breakdown Block with Checkmarks */
+.copilot-et-stages-block {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copilot-et-stages-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--teal-dark, #0f766e);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copilot-et-stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.copilot-et-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background-color: var(--paper, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.08));
+}
+
+.copilot-et-stage-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-et-stage-name {
+  font-weight: 600;
+}
+
+.copilot-et-stage-price {
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  flex-shrink: 0;
 }
 
 .copilot-et-advantages-list {
@@ -1249,6 +1378,36 @@
   box-shadow: 0 0 0 2px var(--teal-glow, rgba(13, 148, 136, 0.2));
 }
 
+.copilot-043-input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.25));
+  background-color: var(--paper-strong, #fafcfa);
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.copilot-043-input:focus {
+  outline: none;
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 2px var(--teal-glow, rgba(13, 148, 136, 0.2));
+}
+
+.copilot-043-diagnosis-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: var(--teal-soft, #ccfbf1);
+  border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.7));
+  font-size: 13px;
+  width: fit-content;
+}
+
 .copilot-043-actions {
   display: flex;
   align-items: center;
@@ -1490,27 +1649,27 @@
 }
 
 .copilot-sentiment-badge.sentiment-emergency {
-  background-color: rgba(220, 38, 38, 0.12);
-  color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.3);
+  background-color: var(--rust-soft, rgba(220, 38, 38, 0.12));
+  color: var(--rust, #dc2626);
+  border-color: var(--rust-soft, rgba(220, 38, 38, 0.3));
 }
 
 .copilot-sentiment-badge.sentiment-anxious {
-  background-color: rgba(217, 119, 6, 0.12);
-  color: #d97706;
-  border-color: rgba(217, 119, 6, 0.3);
+  background-color: var(--amber-soft, rgba(217, 119, 6, 0.12));
+  color: var(--amber, #d97706);
+  border-color: var(--amber-soft, rgba(217, 119, 6, 0.3));
 }
 
 .copilot-sentiment-badge.sentiment-negative {
-  background-color: rgba(225, 29, 72, 0.1);
-  color: #e11d48;
-  border-color: rgba(225, 29, 72, 0.25);
+  background-color: var(--rust-soft, rgba(225, 29, 72, 0.1));
+  color: var(--rust, #e11d48);
+  border-color: var(--rust-soft, rgba(225, 29, 72, 0.25));
 }
 
 .copilot-sentiment-badge.sentiment-positive {
-  background-color: rgba(16, 185, 129, 0.12);
-  color: #059669;
-  border-color: rgba(16, 185, 129, 0.3);
+  background-color: var(--teal-soft, rgba(16, 185, 129, 0.12));
+  color: var(--teal, #059669);
+  border-color: var(--teal-soft, rgba(16, 185, 129, 0.3));
 }
 
 .copilot-sentiment-badge.sentiment-neutral {
@@ -1527,13 +1686,13 @@
 }
 
 .copilot-proactive-card.critical {
-  border-left-color: #dc2626;
+  border-left-color: var(--rust, #dc2626);
   background-color: var(--paper-strong, #fff);
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 4px 14px var(--rust-soft, rgba(220, 38, 38, 0.1));
 }
 
 .copilot-proactive-card.urgent {
-  border-left-color: #d97706;
+  border-left-color: var(--amber, #d97706);
   background-color: var(--paper-strong, #fff);
 }
 
@@ -1559,13 +1718,13 @@
 }
 
 .copilot-proactive-card.critical .copilot-proactive-badge {
-  background-color: rgba(220, 38, 38, 0.15);
-  color: #dc2626;
+  background-color: var(--rust-soft, rgba(220, 38, 38, 0.15));
+  color: var(--rust, #dc2626);
 }
 
 .copilot-proactive-card.urgent .copilot-proactive-badge {
-  background-color: rgba(217, 119, 6, 0.15);
-  color: #d97706;
+  background-color: var(--amber-soft, rgba(217, 119, 6, 0.15));
+  color: var(--amber, #d97706);
 }
 
 .copilot-proactive-card.normal .copilot-proactive-badge {
@@ -1618,12 +1777,12 @@
 }
 
 .copilot-urgency-pill.critical {
-  background-color: #dc2626;
+  background-color: var(--rust, #dc2626);
   color: #ffffff;
 }
 
 .copilot-urgency-pill.urgent {
-  background-color: #d97706;
+  background-color: var(--amber, #d97706);
   color: #ffffff;
 }
 
@@ -1681,13 +1840,13 @@
 }
 
 .copilot-proactive-action-btn.danger {
-  background-color: #dc2626;
+  background-color: var(--rust, #dc2626);
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+  box-shadow: 0 2px 6px var(--rust-soft, rgba(220, 38, 38, 0.25));
 }
 
 .copilot-proactive-action-btn.danger:hover {
-  background-color: #b91c1c;
+  background-color: var(--rust, #b91c1c);
 }
 
 .copilot-proactive-action-btn.primary {
@@ -1714,7 +1873,7 @@
    10. WhatsApp Approval HitL Card
    ========================================================================== */
 .copilot-hitl-card {
-  border-left: 3px solid #25d366;
+  border-left: 3px solid var(--teal, #25d366);
 }
 
 .copilot-hitl-card.approved {
@@ -1741,8 +1900,8 @@
   gap: 5px;
   font-size: 11px;
   font-weight: 700;
-  color: #128c7e;
-  background-color: rgba(37, 211, 102, 0.12);
+  color: var(--teal-dark, #128c7e);
+  background-color: var(--teal-soft, rgba(37, 211, 102, 0.12));
   padding: 2px 8px;
   border-radius: 9999px;
 }
@@ -1864,10 +2023,10 @@
 }
 
 .copilot-hitl-approve-btn {
-  min-height: 44px;
-  height: auto;
-  padding: 10px 16px;
-  background-color: #128c7e;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 14px;
+  background-color: var(--teal, #128c7e);
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -1878,18 +2037,19 @@
   gap: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 6px rgba(18, 140, 126, 0.25);
+  box-shadow: 0 2px 6px var(--teal-glow, rgba(18, 140, 126, 0.25));
   touch-action: manipulation;
+  box-sizing: border-box;
 }
 
 .copilot-hitl-approve-btn:hover {
-  background-color: #075e54;
+  background-color: var(--teal-dark, #075e54);
 }
 
 .copilot-hitl-reject-btn {
-  min-height: 44px;
-  height: auto;
-  padding: 10px 14px;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 12px;
   background-color: var(--paper-soft, #f1f5f9);
   color: var(--muted, #64748b);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
@@ -1900,18 +2060,19 @@
   gap: 4px;
   cursor: pointer;
   touch-action: manipulation;
+  box-sizing: border-box;
 }
 
 .copilot-hitl-reject-btn:hover {
-  background-color: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
+  background-color: var(--rust-soft, rgba(220, 38, 38, 0.1));
+  color: var(--rust, #dc2626);
 }
 
 .copilot-hitl-discuss-btn {
-  min-height: 44px;
-  min-width: 44px;
-  height: 44px;
-  width: 44px;
+  min-height: 34px;
+  min-width: 34px;
+  height: 34px;
+  width: 34px;
   background-color: var(--paper-soft, #f1f5f9);
   color: var(--teal, #0d9488);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
@@ -1921,6 +2082,22 @@
   justify-content: center;
   cursor: pointer;
   touch-action: manipulation;
+  box-sizing: border-box;
+}
+
+@media (pointer: coarse) {
+  .copilot-hitl-approve-btn,
+  .copilot-hitl-reject-btn {
+    min-height: 44px;
+    height: 44px;
+    padding: 0 16px;
+  }
+  .copilot-hitl-discuss-btn {
+    min-height: 44px;
+    min-width: 44px;
+    height: 44px;
+    width: 44px;
+  }
 }
 
 .copilot-hitl-success-banner,

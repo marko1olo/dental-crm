@@ -22,7 +22,7 @@ export const searchKnowledgeBaseSchema = z.object({
 	query: z
 		.string()
 		.min(1, "Поисковый запрос не может быть пустым")
-		.describe("Вопрос или поисковый запрос (услуга, номенклатура 804н, протокол МКБ-10, гарантии клиники)"),
+		.describe("Вопрос или поисковый запрос (услуга, прейскурант, клинический протокол, гарантии клиники)"),
 	category: z
 		.enum(["all", "price_804n", "clinical_protocol", "guarantee", "sanpin", "faq"])
 		.optional()
@@ -50,7 +50,7 @@ export const searchKnowledgeBaseTool: ToolDefinition<
 > = {
 	name: "search_knowledge_base",
 	description:
-		"Семантический поиск по клинической базе знаний, официальному прайсу номенклатуры 804н и гарантийным обязательствам клиники с защитой от галлюцинаций цен.",
+		"Семантический поиск по клинической базе знаний, прейскуранту услуг клиники и гарантийным обязательствам с защитой от галлюцинаций цен.",
 	parameters: searchKnowledgeBaseSchema,
 	permissions: ["clinical.read"],
 	category: "read",

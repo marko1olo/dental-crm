@@ -125,6 +125,7 @@ export interface FormattedSoapResult {
 	readonly objectiveStatus: string;
 	readonly diagnosis: string;
 	readonly treatmentPlan: string;
+	readonly recommendations?: string | undefined;
 	readonly billLine: string;
 	readonly materialsSummary: string;
 	readonly service804n?: ClinicalService804n | undefined;
@@ -182,6 +183,7 @@ export function formatSoapFromPreset(
 		objectiveStatus: formattedStatus,
 		diagnosis: formattedDiagnosis,
 		treatmentPlan: fullPlanText,
+		recommendations: preset.recommendations || "",
 		billLine,
 		materialsSummary,
 		service804n: preset.service804n,

@@ -438,13 +438,19 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 	};
 
 	const handleAddRemainingToCard = () => {
-		if (remainingRub <= 0) return;
-		setCardAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+		if (remainingKop <= 0) return;
+		setCardAmountRub((prev) => {
+			const prevKop = Math.round(prev * 100);
+			const nextKop = prevKop + remainingKop;
+			return +(nextKop / 100).toFixed(2);
+		});
 	};
 
 	const handleAddRemainingToCash = () => {
-		if (remainingRub <= 0) return;
-		const nextCash = +(cashAmountRub + remainingRub).toFixed(2);
+		if (remainingKop <= 0) return;
+		const prevKop = Math.round(cashAmountRub * 100);
+		const nextKop = prevKop + remainingKop;
+		const nextCash = +(nextKop / 100).toFixed(2);
 		setCashAmountRub(nextCash);
 		if (cashTenderedRub < nextCash) {
 			setCashTenderedRub(nextCash);
@@ -452,28 +458,66 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 	};
 
 	const handleAddRemainingToSbp = () => {
-		if (remainingRub <= 0) return;
-		setSbpAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+		if (remainingKop <= 0) return;
+		setSbpAmountRub((prev) => {
+			const prevKop = Math.round(prev * 100);
+			const nextKop = prevKop + remainingKop;
+			return +(nextKop / 100).toFixed(2);
+		});
 	};
 
 	const handleAddRemainingToDeposit = () => {
-		if (remainingRub <= 0) return;
-		setDepositAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+		if (remainingKop <= 0) return;
+		const totalAvailDepositKop = Math.round(((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)) * 100);
+		const currentDepositKop = Math.round(depositAmountRub * 100);
+		const remainingAvailDepositKop = Math.max(0, totalAvailDepositKop - currentDepositKop);
+
+		const toAddKop = totalAvailDepositKop > 0
+			? Math.min(remainingKop, remainingAvailDepositKop)
+			: remainingKop;
+
+		if (toAddKop <= 0) return;
+
+		setDepositAmountRub((prev) => {
+			const prevKop = Math.round(prev * 100);
+			const nextKop = prevKop + toAddKop;
+			return +(nextKop / 100).toFixed(2);
+		});
+	};
+
+	const handleAddRemainingDepositPlusCard = () => {
+		if (remainingKop <= 0) return;
+		const totalAvailDepositKop = Math.round(((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)) * 100);
+		const currentDepositKop = Math.round(depositAmountRub * 100);
+		const remainingAvailDepositKop = Math.max(0, totalAvailDepositKop - currentDepositKop);
+
+		const depositTakeKop = Math.min(remainingKop, remainingAvailDepositKop);
+		const cardTakeKop = remainingKop - depositTakeKop;
+
+		if (depositTakeKop > 0) {
+			setDepositAmountRub((prev) => +(Math.round(prev * 100 + depositTakeKop) / 100).toFixed(2));
+		}
+		if (cardTakeKop > 0) {
+			setCardAmountRub((prev) => +(Math.round(prev * 100 + cardTakeKop) / 100).toFixed(2));
+		}
 	};
 
 	const handleAddRemainingToLoyalty = () => {
-		if (remainingRub <= 0) return;
-		setLoyaltyAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+		if (remainingKop <= 0) return;
+		setLoyaltyAmountRub((prev) => {
+			const prevKop = Math.round(prev * 100);
+			const nextKop = prevKop + remainingKop;
+			return +(nextKop / 100).toFixed(2);
+		});
 	};
 
 	const handleAddRemaining5050 = () => {
-		if (remainingRub <= 0) return;
-		const remKop = Math.round(remainingRub * 100);
-		const halfCardKop = Math.floor(remKop / 2);
-		const halfCashKop = remKop - halfCardKop;
-		setCardAmountRub((prev) => +(prev + halfCardKop / 100).toFixed(2));
+		if (remainingKop <= 0) return;
+		const halfCardKop = Math.floor(remainingKop / 2);
+		const halfCashKop = remainingKop - halfCardKop;
+		setCardAmountRub((prev) => +(Math.round(prev * 100 + halfCardKop) / 100).toFixed(2));
 		setCashAmountRub((prev) => {
-			const nextCash = +(prev + halfCashKop / 100).toFixed(2);
+			const nextCash = +(Math.round(prev * 100 + halfCashKop) / 100).toFixed(2);
 			if (cashTenderedRub < nextCash) {
 				setCashTenderedRub(nextCash);
 			}
@@ -482,10 +526,11 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 	};
 
 	const handleAddRemainingToFamily = () => {
-		if (remainingRub <= 0) return;
-		const availFam = Math.max(0, patientFamilyBalanceRub);
-		const toAdd = Math.min(remainingRub, availFam > 0 ? availFam : remainingRub);
-		setDepositAmountRub((prev) => +(prev + toAdd).toFixed(2));
+		if (remainingKop <= 0) return;
+		const availFamKop = Math.round(Math.max(0, patientFamilyBalanceRub) * 100);
+		const currentDepositKop = Math.round(depositAmountRub * 100);
+		const toAddKop = availFamKop > 0 ? Math.min(remainingKop, availFamKop) : remainingKop;
+		setDepositAmountRub((prev) => +(Math.round(prev * 100 + toAddKop) / 100).toFixed(2));
 	};
 
 	const handleExecutePayment = async (forceOfflineBuffer = false) => {
@@ -749,6 +794,7 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 		handleAddRemainingToCash,
 		handleAddRemainingToSbp,
 		handleAddRemainingToDeposit,
+		handleAddRemainingDepositPlusCard,
 		handleAddRemainingToLoyalty,
 		handleAddRemaining5050,
 		handleAddRemainingToFamily,

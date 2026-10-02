@@ -172,7 +172,7 @@ describe("3. SOAP Note Generator & Form 043/у Renderer", () => {
 		assert.strictEqual(result.assessment.icd10Code, "K02.1");
 		assert.strictEqual(result.assessment.validationStatus, "valid");
 		assert.ok(result.plan.materials.includes("Filtek Ultimate A2"));
-		assert.ok(result.form043Text.includes("ДНЕВНИК ВРАЧА-СТОМАТОЛОГА (МЕДИЦИНСКАЯ КАРТА 043/у)"));
+		assert.ok(result.form043Text.includes("ДНЕВНИК ВРАЧА-СТОМАТОЛОГА (МЕДИЦИНСКАЯ КАРТА)"));
 		assert.ok(result.form043Text.includes("Зуб: 36"));
 		assert.ok(result.form043Text.includes("[K02.1]"));
 	});
@@ -239,7 +239,7 @@ describe("3. SOAP Note Generator & Form 043/у Renderer", () => {
 			},
 		});
 
-		assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА 043/у"));
+		assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА"));
 		assert.ok(text.includes("Зуб: 48"));
 		assert.ok(text.includes("[K01.1] Ретенированные и дистопированные зубы"));
 		assert.ok(text.includes("проводниковая (Артикаин 1:100 000, 3.4 мл)"));

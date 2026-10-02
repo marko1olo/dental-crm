@@ -63,6 +63,8 @@ export const imagingSourceLabels: Record<ImagingSourceKind, string> = {
 	twain_wia: "TWAIN/WIA",
 	sensor_bridge: "Датчик",
 	folder_watch: "Папка",
+	hot_folder: "Hot Folder",
+	dicom_worklist: "DICOM Worklist",
 };
 
 export const pricelistSourceKindLabels: Record<PricelistSourceKind, string> = {

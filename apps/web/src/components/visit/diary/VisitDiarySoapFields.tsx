@@ -248,7 +248,7 @@ export function VisitDiarySoapFields({
 					<div className="vde-043__field" ref={icdRef}>
 						<label className="vde-043__label" htmlFor="diary-icd-search">
 							<span className="vde-043__letter vde-043__letter--a">III</span> —
-							Диагноз МКБ-10
+							Диагноз
 						</label>
 						{diary.diagnosisIcd10 ? (
 							<div
@@ -273,7 +273,7 @@ export function VisitDiarySoapFields({
 										}}
 										className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon shrink-0"
 										title="Сбросить диагноз"
-										aria-label="Сбросить диагноз МКБ-10"
+										aria-label="Сбросить диагноз"
 									>
 										<X className="w-3.5 h-3.5" />
 									</button>

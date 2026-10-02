@@ -736,6 +736,7 @@ export const AnatomicalToothSVG: React.FC<AnatomicalToothSVGProps> = React.memo(
 						surfaces={surfaces}
 						state={state}
 						onClick={onClick}
+						useSurfaces={useSurfaces}
 					/>
 				)}
 			</g>

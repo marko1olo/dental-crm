@@ -82,7 +82,8 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 							)}
 						</h2>
 						<p className="treatment-presenter-subtitle truncate">
-							Пациент: <strong className="text-[var(--tp-text-main)]">{patientName}</strong> · Врач: {doctorFullName}
+							Пациент: <strong className="text-[var(--tp-text-main)]">{patientName || "Не указан"}</strong>
+							{doctorFullName ? <> · Врач: {doctorFullName}</> : null}
 						</p>
 					</div>
 				</div>

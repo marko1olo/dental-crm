@@ -372,8 +372,8 @@ async function main() {
 						maxHU,
 						rescaleSlope: 1.0,
 						rescaleIntercept: -1000,
-						defaultWindowWidth: 2200,
-						defaultWindowLevel: 450,
+						defaultWindowWidth: 4025,
+						defaultWindowLevel: 525,
 						isDisposed: false,
 					};
 

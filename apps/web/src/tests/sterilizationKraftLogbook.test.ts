@@ -115,6 +115,10 @@ describe("SanPiN 3.3686-21 Sterilization Kraft-Bag & Chemical Integrator Suite",
 			assert.equal(calculateSanpinShelfLifeDays("kraft_self_seal", { manufacturerDays: 10 }), 20); // Clamped to min 20
 			assert.equal(calculateSanpinShelfLifeDays("kraft_self_seal", { manufacturerDays: 100 }), 50); // Clamped to max 50
 
+			// Combined heat-sealed pouch supports up to 365 days (1 year) per GOST R ISO 11607
+			assert.equal(calculateSanpinShelfLifeDays("paper_plastic_heat_seal", { manufacturerDays: 365 }), 365);
+			assert.equal(calculateSanpinShelfLifeDays("paper_plastic_heat_seal", { manufacturerDays: 500 }), 365); // Clamped to max 365
+
 			// Custom days overrides
 			assert.equal(calculateSanpinShelfLifeDays("kraft_self_seal", { customDays: 45 }), 45);
 		});

@@ -1,0 +1,25 @@
+{
+  "role": "Implant Ridge Morphometry & Anti-Fake Measurements Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely",
+    "Read AGENTS.md completely",
+    "Direct visual inspection of user screenshot media_1790933809174.png (unmasked absurd identical 23.3 mm badges on all slices)",
+    "Root-cause analysis: scan loop expanded through soft tissue noise to image canvas edge (93 px * 0.25 mm = 23.25 mm approx 23.3 mm)",
+    "Refactored cbctRidgeCaliperMath.ts: added cortical HU threshold (>= 280), rawHuData support, maxHalfSpanPx (5.75 mm), and anatomical corridor [3.0 .. 11.5 mm] validation",
+    "Refactored ImplantCrossSectionGrid.tsx: passed rawHuData, conditional caliper drawing only on detected ridge, replaced loud neon badges with compact HUD, honest empty state ('—') in footer",
+    "Refactored ImplantWorkspace.tsx: passed rawHuData, sanitized automated ridge measurements with model fallback and (модель) indicator",
+    "Added adversarial unit tests in implantCatalogAndCrossSection.test.ts (anti-edge-bleed and rawHuData tests)",
+    "Passed targeted test suite implantCatalogAndCrossSection.test.ts (9/9 PASSED)",
+    "Passed related test suites cbctCurvedMeasurements.test.ts and cbctClinicalExpansionFeatures.test.ts (15/15 PASSED)",
+    "Verified all scope files <= 800 lines (Mandate 8b)",
+    "Verified workspace encoding (check-encoding.mjs: 6908 files clean)",
+    "Prepared comprehensive verbatim inquisitor report for parent orchestrator"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Root cause of 23.3 mm: The previous pixel scan loop continued while brightness >= 50 until widthPx - 2, hitting the image canvas edge on noisy cross-sections. 93 pixels * 0.25 mm/px = 23.25 mm (~23.3 mm).",
+    "Fix: Cortical bone boundary detection with bone density thresholds (HU >= 280 / pixel >= 120), half-span ceiling (5.75 mm), anatomical sanity range (3.0 .. 11.5 mm), and flag isDetected/w2Valid/w4Valid/w6Valid.",
+    "UI: Replaced loud neon green/cyan/purple badges with quiet compact HUD and honest empty state when ridge is not detected."
+  ]
+}

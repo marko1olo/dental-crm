@@ -362,16 +362,16 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
 								<div className="text-xs font-semibold text-slate-500">
-									Наряд-заказ в зуботехническую лабораторию (ЗТЛ-1 · ГОСТ Р 51087-97)
+									Наряд-заказ в зуботехническую лабораторию (ГОСТ Р 51087-97 / СтАР)
 								</div>
 								<button
 									type="button"
 									onClick={form.handleCopyZtl1Protocol}
 									className="px-3 py-1.5 rounded-lg border border-teal-500 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 text-xs font-bold hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors flex items-center gap-1.5 min-h-[36px]"
-									title="Скопировать текстовый протокол наряда ЗТЛ-1 в медицинскую карту"
+									title="Скопировать текстовый протокол наряда в медицинскую карту"
 								>
 									<Copy size={14} />
-									Скопировать протокол ЗТЛ-1
+									Скопировать протокол наряда
 								</button>
 							</div>
 							<DentalLabPrintBlank

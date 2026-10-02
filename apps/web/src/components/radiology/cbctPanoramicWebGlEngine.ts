@@ -101,6 +101,10 @@ export class WebGl2PanoramicEngine {
 		useAnalyticalPoly: WebGLUniformLocation | null;
 		anteriorTroughRatio: WebGLUniformLocation | null;
 		sharpenAmount: WebGLUniformLocation | null;
+		gamma: WebGLUniformLocation | null;
+		useSoftKnee: WebGLUniformLocation | null;
+		softKneeCeiling: WebGLUniformLocation | null;
+		airCutoffHU: WebGLUniformLocation | null;
 	} | null = null;
 
 	constructor(gl: WebGL2RenderingContext) {
@@ -144,6 +148,10 @@ export class WebGl2PanoramicEngine {
 			useAnalyticalPoly: gl.getUniformLocation(prog, "u_useAnalyticalPoly"),
 			anteriorTroughRatio: gl.getUniformLocation(prog, "u_anteriorTroughRatio"),
 			sharpenAmount: gl.getUniformLocation(prog, "u_sharpenAmount"),
+			gamma: gl.getUniformLocation(prog, "u_gamma"),
+			useSoftKnee: gl.getUniformLocation(prog, "u_useSoftKnee"),
+			softKneeCeiling: gl.getUniformLocation(prog, "u_softKneeCeiling"),
+			airCutoffHU: gl.getUniformLocation(prog, "u_airCutoffHU"),
 		};
 		return true;
 	}
@@ -153,24 +161,26 @@ export class WebGl2PanoramicEngine {
 		archCurve: DentalArchCurve,
 		options: PanoramicReconstructionOptions = {},
 	): PanoramicReconstructionResult | null {
+		const gl = this.gl;
+		if (typeof gl.isContextLost === "function" && gl.isContextLost()) return null;
+		if (!volume || !volume.data || volume.isDisposed) return null;
 		if (!this.program || !this.vao || !this.uniforms) {
 			if (!this.init()) return null;
 		}
-		const gl = this.gl;
 		const defaultHeightMm = volume?.physicalSizeMm?.z ? Math.min(78.0, Math.max(55.0, volume.physicalSizeMm.z * 0.98)) : 74.0;
 		const {
 			heightMm = defaultHeightMm,
 			heightPx,
 			widthPx,
-			windowWidth = 2000,
-			windowLevel = 450,
-			projectionMode = "mip",
+			windowWidth = 4025,
+			windowLevel = 525,
+			projectionMode = "average",
 			centerZMm: userCenterZMm,
 			invert = false,
 			coarsePreview = false,
 		} = options;
 
-		const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 7.0;
+		const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 1.0;
 		// Isometric CPR resolution: 1 mm along arc = 1 mm along Z
 		const pixelSpacing = volume?.spacingMm?.x || 0.25;
 		const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / pixelSpacing));
@@ -269,21 +279,37 @@ export class WebGl2PanoramicEngine {
 				uploadD = downsampled.depth;
 			}
 
-			gl.texImage3D(
-				gl.TEXTURE_3D,
-				0,
-				gl.R16I,
-				uploadW,
-				uploadH,
-				uploadD,
-				0,
-				gl.RED_INTEGER,
-				gl.SHORT,
-				uploadData,
-			);
-			this.volumeTexture = tex;
-			this.volumeDataRef = volume.data;
-			this.uploadDim = { width: uploadW, height: uploadH, depth: uploadD, factor };
+			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+			gl.pixelStorei(gl.UNPACK_ROW_LENGTH, 0);
+			gl.pixelStorei(gl.UNPACK_IMAGE_HEIGHT, 0);
+			gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, 0);
+			gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0);
+			gl.pixelStorei(gl.UNPACK_SKIP_IMAGES, 0);
+
+			try {
+				gl.texImage3D(
+					gl.TEXTURE_3D,
+					0,
+					gl.R16I,
+					uploadW,
+					uploadH,
+					uploadD,
+					0,
+					gl.RED_INTEGER,
+					gl.SHORT,
+					uploadData,
+				);
+				this.volumeTexture = tex;
+				this.volumeDataRef = volume.data;
+				this.uploadDim = { width: uploadW, height: uploadH, depth: uploadD, factor };
+			} catch (err) {
+				console.warn("[cbctPanoramicWebGlEngine] texImage3D failed, releasing texture:", err);
+				gl.deleteTexture(tex);
+				this.volumeTexture = null;
+				this.volumeDataRef = null;
+				this.uploadDim = null;
+				return null;
+			}
 		}
 
 		// Upload or update 2D spline texture (outW x 2)
@@ -383,8 +409,8 @@ export class WebGl2PanoramicEngine {
 
 		gl.uniform1i(this.uniforms!.flipY, 0); // readPixels alignment: row 0 is zTopMm
 
-		const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth <= 3200 ? volume.defaultWindowWidth : 2000);
-		const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel <= 800 && volume.defaultWindowLevel >= 350 ? volume.defaultWindowLevel : 450);
+		const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 1000 ? volume.defaultWindowWidth : 4025);
+		const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel >= -200 && volume.defaultWindowLevel <= 2500 ? volume.defaultWindowLevel : 525);
 		gl.uniform1f(this.uniforms!.windowWidth, effectiveWW);
 		gl.uniform1f(this.uniforms!.windowLevel, effectiveWL);
 		gl.uniform1i(this.uniforms!.invert, invert ? 1 : 0);
@@ -404,6 +430,28 @@ export class WebGl2PanoramicEngine {
 		const effSharpen = (options as any).sharpenAmount ?? ((options as any).sharpen ? 0.18 : 0.0);
 		if (this.uniforms!.sharpenAmount) {
 			gl.uniform1f(this.uniforms!.sharpenAmount, effSharpen);
+		}
+
+		const effGamma = options.gamma ?? 1.50;
+		if (this.uniforms!.gamma) {
+			gl.uniform1f(this.uniforms!.gamma, effGamma);
+		}
+
+		const effUseSoftKnee = options.useSoftKnee !== undefined
+			? options.useSoftKnee
+			: (typeof options.softKnee === "object" ? Boolean(options.softKnee.enabled ?? false) : Boolean(options.softKnee));
+		if (this.uniforms!.useSoftKnee) {
+			gl.uniform1i(this.uniforms!.useSoftKnee, effUseSoftKnee ? 1 : 0);
+		}
+
+		const effCeiling = options.softKneeCeiling ?? (typeof options.softKnee === "object" && typeof options.softKnee?.peakEnamel === "number" ? options.softKnee.peakEnamel : 215.0);
+		if (this.uniforms!.softKneeCeiling) {
+			gl.uniform1f(this.uniforms!.softKneeCeiling, effCeiling);
+		}
+
+		const effAirCutoff = options.airCutoffHU ?? (typeof options.softKnee === "object" && typeof options.softKnee?.airCutoffHU === "number" ? options.softKnee.airCutoffHU : -500.0);
+		if (this.uniforms!.airCutoffHU) {
+			gl.uniform1f(this.uniforms!.airCutoffHU, effAirCutoff);
 		}
 
 		// Draw quad
@@ -431,22 +479,25 @@ export class WebGl2PanoramicEngine {
 
 	dispose(): void {
 		const gl = this.gl;
-		if (this.volumeTexture) {
-			gl.deleteTexture(this.volumeTexture);
-			this.volumeTexture = null;
+		const isLost = typeof gl.isContextLost === "function" && gl.isContextLost();
+		if (!isLost) {
+			if (this.volumeTexture) {
+				gl.deleteTexture(this.volumeTexture);
+			}
+			if (this.splineTexture) {
+				gl.deleteTexture(this.splineTexture);
+			}
+			if (this.program) {
+				gl.deleteProgram(this.program);
+			}
+			if (this.vao) {
+				gl.deleteVertexArray(this.vao);
+			}
 		}
-		if (this.splineTexture) {
-			gl.deleteTexture(this.splineTexture);
-			this.splineTexture = null;
-		}
-		if (this.program) {
-			gl.deleteProgram(this.program);
-			this.program = null;
-		}
-		if (this.vao) {
-			gl.deleteVertexArray(this.vao);
-			this.vao = null;
-		}
+		this.volumeTexture = null;
+		this.splineTexture = null;
+		this.program = null;
+		this.vao = null;
 		this.volumeDataRef = null;
 		this.splineBuffer = null;
 	}

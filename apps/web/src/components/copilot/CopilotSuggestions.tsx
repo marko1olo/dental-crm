@@ -1,5 +1,21 @@
 import React from 'react';
-import { Sparkles, Calendar, Users, FileText, Stethoscope, Search, Clock, ArrowRight } from 'lucide-react';
+import {
+  Sparkles,
+  Calendar,
+  Users,
+  FileText,
+  Stethoscope,
+  Search,
+  Clock,
+  ArrowRight,
+  CreditCard,
+  ShieldCheck,
+  ShieldAlert,
+  Sun,
+  UserCheck,
+  CalendarPlus,
+  Pill,
+} from 'lucide-react';
 import type { SuggestionCategory } from './copilotTypes';
 
 export interface SuggestionItem {
@@ -16,6 +32,15 @@ export interface CopilotSuggestionsProps {
 }
 
 const DEFAULT_CATEGORIES: SuggestionCategory[] = [
+  {
+    category: 'Быстрые действия у кресла',
+    items: [
+      { label: 'Заполнить дневник', prompt: 'Заполни дневник приёма по текущему пациенту', icon: 'FileText' },
+      { label: 'Составить смету', prompt: 'Рассчитай смету лечения на 3 тарифа: Эконом, Оптимум и Премиум', icon: 'CreditCard' },
+      { label: 'Проверить гарантию', prompt: 'Проверь гарантийный срок и статус ранее выполненных работ', icon: 'ShieldCheck' },
+      { label: 'Осмотр и формула', prompt: 'Покажи зубную формулу и зафиксируй статус зубов', icon: 'Stethoscope' },
+    ],
+  },
   {
     category: 'Рабочие сценарии',
     items: [
@@ -38,6 +63,35 @@ const DEFAULT_CATEGORIES: SuggestionCategory[] = [
     ],
   },
 ];
+
+const renderChipIcon = (iconName?: string) => {
+  switch (iconName) {
+    case 'FileText':
+      return <FileText size={14} />;
+    case 'CreditCard':
+      return <CreditCard size={14} />;
+    case 'ShieldCheck':
+      return <ShieldCheck size={14} />;
+    case 'ShieldAlert':
+      return <ShieldAlert size={14} />;
+    case 'Sun':
+      return <Sun size={14} />;
+    case 'UserCheck':
+      return <UserCheck size={14} />;
+    case 'CalendarPlus':
+      return <CalendarPlus size={14} />;
+    case 'Search':
+      return <Search size={14} />;
+    case 'Clock':
+      return <Clock size={14} />;
+    case 'Calendar':
+      return <Calendar size={14} />;
+    case 'Pill':
+      return <Pill size={14} />;
+    default:
+      return <Sparkles size={14} />;
+  }
+};
 
 export const CopilotSuggestions: React.FC<CopilotSuggestionsProps> = ({ onPick, categories = DEFAULT_CATEGORIES }) => {
   return (
@@ -62,11 +116,12 @@ export const CopilotSuggestions: React.FC<CopilotSuggestionsProps> = ({ onPick, 
                 type="button"
                 onClick={() => onPick(item.prompt)}
                 className="copilot-prompt-chip"
+                title={item.prompt}
               >
-                <span style={{ color: 'var(--teal)', display: 'flex', alignItems: 'center' }}>
-                  <Sparkles size={14} />
+                <span className="copilot-chip-icon text-[var(--teal)] flex items-center flex-shrink-0">
+                  {renderChipIcon(item.icon)}
                 </span>
-                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="copilot-chip-text flex-1 min-w-0 truncate">
                   {item.label}
                 </span>
               </button>

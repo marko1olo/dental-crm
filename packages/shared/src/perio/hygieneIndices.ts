@@ -47,6 +47,8 @@
  */
 
 import type { PerioToothRecord } from "./types.js";
+import type { SepaToothValue } from "../emr/periodontogram.js";
+import { convertSepaToothToPerioToothRecord } from "./adapters.js";
 
 /**
  * The 6 canonical Ramfjord/Green-Vermillion index teeth (FDI).
@@ -99,6 +101,106 @@ export const HYGIENE_INDEX_TEETH_CONFIG: readonly HygieneIndexToothDefinition[] 
 		anatomicalNameRu: "Правый нижний первый моляр",
 	},
 ] as const;
+
+/**
+ * WHO 6-Sextant Express Hygiene & Periodontal Index architecture (Mandates 8e, 8k):
+ * S1: 17-14 (Upper Right Posterior) -> Index Tooth 16 (Vestibular)
+ * S2: 13-23 (Upper Anterior)         -> Index Tooth 11 (Vestibular)
+ * S3: 24-27 (Upper Left Posterior)  -> Index Tooth 26 (Vestibular)
+ * S4: 37-34 (Lower Left Posterior)  -> Index Tooth 36 (Oral / Lingual)
+ * S5: 33-43 (Lower Anterior)         -> Index Tooth 31 (Vestibular)
+ * S6: 44-47 (Lower Right Posterior) -> Index Tooth 46 (Oral / Lingual)
+ */
+export type HygieneSextantKey = "S1" | "S2" | "S3" | "S4" | "S5" | "S6";
+
+export interface HygieneSextantDefinition {
+	readonly sextant: HygieneSextantKey;
+	readonly labelRu: string;
+	readonly anatomicalRegionRu: string;
+	readonly indexToothNumber: HygieneIndexToothNumber;
+	readonly teethRangeRu: string;
+	readonly surfaceAspect: "vestibular" | "oral";
+	readonly surfaceLabelRu: string;
+}
+
+export const WHO_HYGIENE_SEXTANTS: readonly HygieneSextantDefinition[] = [
+	{
+		sextant: "S1",
+		labelRu: "Секстант 1 (17-14)",
+		anatomicalRegionRu: "Верхний правый дистальный",
+		indexToothNumber: 16,
+		teethRangeRu: "17-14",
+		surfaceAspect: "vestibular",
+		surfaceLabelRu: "Вестибулярная (щечная)",
+	},
+	{
+		sextant: "S2",
+		labelRu: "Секстант 2 (13-23)",
+		anatomicalRegionRu: "Верхний фронтальный",
+		indexToothNumber: 11,
+		teethRangeRu: "13-23",
+		surfaceAspect: "vestibular",
+		surfaceLabelRu: "Вестибулярная (губная)",
+	},
+	{
+		sextant: "S3",
+		labelRu: "Секстант 3 (24-27)",
+		anatomicalRegionRu: "Верхний левый дистальный",
+		indexToothNumber: 26,
+		teethRangeRu: "24-27",
+		surfaceAspect: "vestibular",
+		surfaceLabelRu: "Вестибулярная (щечная)",
+	},
+	{
+		sextant: "S4",
+		labelRu: "Секстант 4 (37-34)",
+		anatomicalRegionRu: "Нижний левый дистальный",
+		indexToothNumber: 36,
+		teethRangeRu: "37-34",
+		surfaceAspect: "oral",
+		surfaceLabelRu: "Оральная (язычная)",
+	},
+	{
+		sextant: "S5",
+		labelRu: "Секстант 5 (33-43)",
+		anatomicalRegionRu: "Нижний фронтальный",
+		indexToothNumber: 31,
+		teethRangeRu: "33-43",
+		surfaceAspect: "vestibular",
+		surfaceLabelRu: "Вестибулярная (губная)",
+	},
+	{
+		sextant: "S6",
+		labelRu: "Секстант 6 (44-47)",
+		anatomicalRegionRu: "Нижний правый дистальный",
+		indexToothNumber: 46,
+		teethRangeRu: "44-47",
+		surfaceAspect: "oral",
+		surfaceLabelRu: "Оральная (язычная)",
+	},
+] as const;
+
+export interface HygieneSextantAssessment {
+	readonly sextant: HygieneSextantKey;
+	readonly indexToothNumber: HygieneIndexToothNumber;
+	readonly debrisScore: number;
+	readonly calculusScore: number;
+	readonly totalOhiScore: number;
+	readonly pmaScore: number;
+	readonly pmaPercent: number;
+	readonly kpiScore: number;
+	readonly isHealthy: boolean;
+	readonly summaryText: string;
+}
+
+export interface SextantHygieneCalculationResult {
+	readonly sextants: Record<HygieneSextantKey, HygieneSextantAssessment>;
+	readonly ohiS: OhiSResult;
+	readonly pma: PmaResult;
+	readonly kpi: KpiResult;
+	readonly assessedSextantsCount: number;
+	readonly summaryText043: string;
+}
 
 /**
  * Raw data per examined index tooth.
@@ -438,6 +540,149 @@ export function deriveHygieneFromPerioTeeth(
 	}
 
 	return result;
+}
+
+/**
+ * Automatically derives hygiene & periodontal index scores from SEPA relational snapshot teeth.
+ */
+export function deriveHygieneFromSepaTeeth(
+	teeth: readonly SepaToothValue[],
+): Record<number, HygieneToothAssessment> {
+	const perioTeeth = teeth.map(convertSepaToothToPerioToothRecord);
+	return deriveHygieneFromPerioTeeth(perioTeeth);
+}
+
+/**
+ * Formats a clean clinical summary string for WHO 6 sextants:
+ * S1(#16): OHI 0/PMA 0 | S2(#11): OHI 0/PMA 0 | ...
+ */
+export function formatSextantHygieneSummary(result: {
+	readonly sextants: Record<HygieneSextantKey, HygieneSextantAssessment>;
+}): string {
+	const order: HygieneSextantKey[] = ["S1", "S2", "S3", "S4", "S5", "S6"];
+	return order
+		.map((sKey) => {
+			const s = result.sextants[sKey];
+			if (!s) return `${sKey}: —`;
+			return `${sKey}(#${s.indexToothNumber}): OHI ${s.totalOhiScore}/PMA ${s.pmaScore}`;
+		})
+		.join(" | ");
+}
+
+/**
+ * Calculates WHO 6-Sextant Express Hygiene & Periodontal Indices (OHI-S, PMA, KPI)
+ * mapped to canonical index teeth (16, 11, 26, 36, 31, 46).
+ */
+export function calculateSextantHygieneIndices(
+	assessments: Record<number, HygieneToothAssessment> | readonly HygieneToothAssessment[],
+): SextantHygieneCalculationResult {
+	const teethMap = new Map<number, HygieneToothAssessment>();
+	if (Array.isArray(assessments)) {
+		for (const a of assessments) teethMap.set(a.toothNumber, a);
+	} else {
+		for (const [num, a] of Object.entries(assessments)) {
+			teethMap.set(Number(num), a);
+		}
+	}
+
+	const sextantsMap = {} as Record<HygieneSextantKey, HygieneSextantAssessment>;
+	let assessedCount = 0;
+
+	for (const def of WHO_HYGIENE_SEXTANTS) {
+		const assessment = teethMap.get(def.indexToothNumber);
+		const debris =
+			assessment &&
+			typeof assessment.debrisScore === "number" &&
+			Number.isFinite(assessment.debrisScore)
+				? Math.max(0, Math.min(3, assessment.debrisScore))
+				: 0;
+		const calculus =
+			assessment &&
+			typeof assessment.calculusScore === "number" &&
+			Number.isFinite(assessment.calculusScore)
+				? Math.max(0, Math.min(3, assessment.calculusScore))
+				: 0;
+		const pma =
+			assessment &&
+			typeof assessment.pmaScore === "number" &&
+			Number.isFinite(assessment.pmaScore)
+				? Math.max(0, Math.min(3, assessment.pmaScore))
+				: 0;
+		const kpi =
+			assessment &&
+			typeof assessment.kpiScore === "number" &&
+			Number.isFinite(assessment.kpiScore)
+				? Math.max(0, Math.min(4, assessment.kpiScore))
+				: 0;
+
+		const totalOhi = debris + calculus;
+		const pmaPercent = Math.round((pma / 3) * 1000) / 10;
+		const isHealthy = totalOhi === 0 && pma === 0 && kpi === 0;
+
+		if (
+			assessment &&
+			(assessment.debrisScore !== undefined ||
+				assessment.calculusScore !== undefined ||
+				assessment.pmaScore !== undefined ||
+				assessment.kpiScore !== undefined)
+		) {
+			assessedCount++;
+		}
+
+		sextantsMap[def.sextant] = {
+			sextant: def.sextant,
+			indexToothNumber: def.indexToothNumber,
+			debrisScore: debris,
+			calculusScore: calculus,
+			totalOhiScore: totalOhi,
+			pmaScore: pma,
+			pmaPercent,
+			kpiScore: kpi,
+			isHealthy,
+			summaryText: `${def.sextant} (зуб ${def.indexToothNumber}): OHI ${totalOhi} (налёт ${debris}, камень ${calculus}) | PMA ${pmaPercent}% | КПИ ${kpi}`,
+		};
+	}
+
+	const ohiS = calculateOhiSScore(assessments);
+	const pma = calculatePmaScore(assessments);
+	const kpi = calculateKpiScore(assessments);
+
+	const summaryLines = [
+		`ЭКСПРЕСС-СКРИНИНГ ГИГИЕНЫ ПО 6 СЕКСТАНТАМ ВОЗ (зубы 16, 11, 26, 36, 31, 46):`,
+		formatSextantHygieneSummary({ sextants: sextantsMap }),
+		`• Интегральный OHI-S: ${ohiS.ratingText}`,
+		`• Интегральный PMA: ${pma.ratingText}`,
+		`• Комплексный индекс Леуса (КПИ): ${kpi.ratingText}`,
+	];
+
+	return {
+		sextants: sextantsMap,
+		ohiS,
+		pma,
+		kpi,
+		assessedSextantsCount: assessedCount,
+		summaryText043: summaryLines.join("\n"),
+	};
+}
+
+/**
+ * Derives WHO 6-Sextant hygiene result directly from continuous 32-tooth periodontogram.
+ */
+export function deriveSextantHygieneFromPerioTeeth(
+	teeth: readonly PerioToothRecord[],
+): SextantHygieneCalculationResult {
+	const assessments = deriveHygieneFromPerioTeeth(teeth);
+	return calculateSextantHygieneIndices(assessments);
+}
+
+/**
+ * Derives WHO 6-Sextant hygiene result directly from SEPA periodontogram.
+ */
+export function deriveSextantHygieneFromSepaTeeth(
+	teeth: readonly SepaToothValue[],
+): SextantHygieneCalculationResult {
+	const assessments = deriveHygieneFromSepaTeeth(teeth);
+	return calculateSextantHygieneIndices(assessments);
 }
 
 /**

@@ -147,8 +147,13 @@ export function applySomaticNormToText(existingNotes?: string | null): string {
  * (e.g. "нет", "аллергий нет", "аллергии отрицает", "не отягощен", "норма", "-", "—").
  * Returns true if the statement declares NO allergies, or if it is empty/falsy.
  */
-export function isNegativeAllergyStatement(text?: string | null): boolean {
+export function isNegativeAllergyStatement(text?: string | string[] | null | unknown): boolean {
 	if (!text) return true;
+	if (Array.isArray(text)) {
+		if (text.length === 0) return true;
+		return text.every((item) => isNegativeAllergyStatement(item));
+	}
+	if (typeof text !== "string") return true;
 	const trimmed = text.trim();
 	if (!trimmed) return true;
 	const lower = trimmed.toLowerCase();

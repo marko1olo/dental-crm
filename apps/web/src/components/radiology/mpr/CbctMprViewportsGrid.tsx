@@ -10,6 +10,7 @@ import type {
 	RotationHandlePosition,
 	ViewportTransform,
 	CbctMeasurementRuler,
+	CbctAngleMeasurement,
 } from "../cbctMprMath";
 import { resetPlaneObliqueAngle } from "../cbctMprMath";
 import type { CrossSectionSliceData, DentalArchCurve } from "../dentalCurveEngine";
@@ -83,8 +84,9 @@ export interface CbctMprViewportsGridProps {
 	readonly activeCrossSection: CrossSectionSliceData | null | undefined;
 	readonly activeCrossSectionIdx: number; readonly crossSections: CrossSectionSliceData[];
 	readonly onLoadDemoVolume?: (() => void) | undefined;
-	readonly activeTool?: string | undefined; readonly onSelectTool?: ((tool: "ruler" | "crosshair") => void) | undefined;
+	readonly activeTool?: string | undefined; readonly onSelectTool?: ((tool: "ruler" | "crosshair" | "angle") => void) | undefined;
 	readonly rulers?: readonly CbctMeasurementRuler[] | undefined; readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
+	readonly angles?: readonly CbctAngleMeasurement[] | undefined; readonly onClearAngles?: ((plane?: CbctViewportType) => void) | undefined;
 	readonly onSelectQuickWlPreset?: ((preset: { windowWidth: number; windowLevel: number }) => void) | undefined;
 	readonly handleSelectTooth?: ((toothFdi: number | string) => void) | undefined;
 	readonly archCurve?: DentalArchCurve | undefined; readonly jawType?: "mandible" | "maxilla" | undefined;
@@ -125,7 +127,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	handlePanoMouseDown, handlePanoMouseMove, handlePanoMouseUp,
 	handleCrossSectionMouseDown, handleCrossSectionMouseMove, handleCrossSectionMouseUp,
 	dragImplantPart, hoveredImplantPart, activeCrossSection, activeCrossSectionIdx,
-	crossSections, activeTool, onSelectTool, rulers, onClearRulers, onSelectQuickWlPreset,
+	crossSections, activeTool, onSelectTool, rulers, onClearRulers, angles, onClearAngles, onSelectQuickWlPreset,
 	handleSelectTooth, archCurve, jawType, onSwitchJaw, activeToothFdi, isUnsharpActive,
 	onToggleUnsharp, onChangeCrossSectionIdx, selectedBrand, onSelectBrand,
 	selectedDiameterMm, onSelectDiameterMm, selectedLengthMm, onSelectLengthMm,
@@ -237,6 +239,8 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onSelectTool={onSelectTool}
 					rulers={rulers}
 					onClearRulers={onClearRulers}
+					angles={angles}
+					onClearAngles={onClearAngles}
 				/>
 			</div>
 
@@ -277,7 +281,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-axial"
 				/>
-				{onSwitchJaw && (
+				{onSwitchJaw && (studioMode === "panoramic" || studioMode === "implant") && (
 					<div
 						className="absolute top-8 left-1.5 z-30 pointer-events-auto inline-flex items-center bg-zinc-950/90 border border-zinc-800 rounded p-0.5 shadow-md backdrop-blur-md gap-0.5 text-[10px]"
 						role="group"
@@ -729,8 +733,13 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					isUnsharpActive={isUnsharpActive}
 					onToggleUnsharp={onToggleUnsharp}
 					crossSections={crossSections}
+					activeCrossSection={activeCrossSection}
 					activeCrossSectionIdx={activeCrossSectionIdx}
 					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
+					activeTool={activeTool}
+					onSelectTool={onSelectTool}
+					rulers={rulers}
+					onClearRulers={onClearRulers}
 				/>
 			) : studioMode === "implant" ? (
 				<ImplantWorkspace

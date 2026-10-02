@@ -11,7 +11,8 @@
  * - Mandate 8d & 8k: 0 cartoon emojis, CSS design tokens strictly.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import fs from "node:fs";
@@ -20,6 +21,70 @@ import { fileURLToPath } from "node:url";
 import { ChairsideCopilotHUD } from "../ChairsideCopilotHUD";
 import { VisitServiceBillingWidget, DEFAULT_CHAIRSIDE_SERVICES } from "../../visit/VisitServiceBillingWidget";
 import { ToothContextDrawer } from "../../diagnostics/ToothContextDrawer";
+
+interface MockFn {
+  (...args: any[]): any;
+  mock: { calls: any[][] };
+  mockResolvedValue: (val: any) => MockFn;
+  mockReturnValue: (val: any) => MockFn;
+}
+
+function createMockFn(impl?: Function): MockFn {
+  let returnValue: any;
+  let isResolved = false;
+  let resolvedValue: any;
+  const calls: any[][] = [];
+
+  const fn: any = (...args: any[]) => {
+    calls.push(args);
+    if (isResolved) return Promise.resolve(resolvedValue);
+    if (returnValue !== undefined) return returnValue;
+    if (impl) return impl(...args);
+    return undefined;
+  };
+
+  fn.mock = { calls };
+  fn.mockResolvedValue = (val: any) => {
+    isResolved = true;
+    resolvedValue = val;
+    return fn;
+  };
+  fn.mockReturnValue = (val: any) => {
+    returnValue = val;
+    return fn;
+  };
+  return fn;
+}
+
+const vi = {
+  fn: (impl?: Function) => createMockFn(impl),
+  restoreAllMocks: () => {},
+};
+
+const expect = (actual: any) => ({
+  toBe: (expected: any) => assert.strictEqual(actual, expected),
+  toBeNull: () => assert.strictEqual(actual, null),
+  toHaveLength: (expected: number) => assert.strictEqual(actual?.length, expected),
+  toContain: (expected: string) => {
+    assert.ok(
+      typeof actual === "string" && actual.includes(expected),
+      `Expected string to contain ${JSON.stringify(expected)}`,
+    );
+  },
+  toHaveBeenCalled: () => {
+    assert.ok(actual?.mock?.calls?.length > 0, `Expected mock to have been called`);
+  },
+  toHaveBeenCalledWith: (...args: any[]) => {
+    const calls = actual?.mock?.calls || [];
+    const matched = calls.some((call: any[]) => JSON.stringify(call) === JSON.stringify(args));
+    assert.ok(matched, `Expected mock to have been called with ${JSON.stringify(args)}, but got ${JSON.stringify(calls)}`);
+  },
+  not: {
+    toMatch: (regex: RegExp) => {
+      assert.ok(!regex.test(String(actual)), `Expected string not to match ${regex}`);
+    },
+  },
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -129,7 +194,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
             {
               id: "act-services",
               type: "apply_estimate_804n",
-              label: "Добавить услуги по 804н",
+              label: "Добавить услуги в план лечения",
               params: {
                 services: [
                   { code804n: "A16.07.002.010", title: "Препарирование полости", priceRub: 2500, toothNumber: 36 },
@@ -140,7 +205,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
             {
               id: "act-soap",
               type: "apply_soap_diary",
-              label: "Заполнить дневник 043/у (SOAP)",
+              label: "Заполнить дневник приёма",
               params: {
                 soap: {
                   complaint: "Кратковременные боли от сладкого в зубе 36",
@@ -253,6 +318,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         visitId="vis-1"
         patientId="pat-1"
         patientName="Петров В.В."
+        initialServices={DEFAULT_CHAIRSIDE_SERVICES}
       />
     );
 

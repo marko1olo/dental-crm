@@ -28,7 +28,7 @@ export const MdlpScannedItemsTable: React.FC<MdlpScannedItemsTableProps> = ({
 						<th>GTIN / SGTIN</th>
 						<th>Серия</th>
 						<th>Срок годности</th>
-						<th>Статус МДЛП</th>
+						<th>Статус маркировки</th>
 						<th>Сумма</th>
 						<th style={{ textAlign: "center" }}>Действия</th>
 					</tr>
@@ -110,7 +110,7 @@ export const MdlpScannedItemsTable: React.FC<MdlpScannedItemsTableProps> = ({
 									{item.status === "invalid_checksum" && (
 										<span className="mdlp-status-badge expired" title={item.statusReason}>
 											<XCircle className="w-3 h-3" />
-											<span>Ошибка КС</span>
+											<span>Ошибка кода</span>
 										</span>
 									)}
 									{item.status === "invalid_format" && (

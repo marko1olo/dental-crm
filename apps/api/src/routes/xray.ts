@@ -53,6 +53,7 @@ import {
 } from "../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
+import { LocalPacsStorageService } from "../services/imaging/localPacsStorageService.js";
 
 export {
 	createXrayScanSchema,
@@ -103,10 +104,40 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
 		const data = parsed.data;
 
-		// Normalize image: ensure data URI format
-		const imageDataUri = data.imageBase64.startsWith("data:")
-			? data.imageBase64
-			: `data:${data.mimeType};base64,${data.imageBase64}`;
+		// Парсим входной base64 и выделяем MIME-тип
+		let base64Payload = data.imageBase64;
+		let detectedMime = data.mimeType || "image/jpeg";
+		if (base64Payload.startsWith("data:")) {
+			const commaIndex = base64Payload.indexOf(",");
+			if (commaIndex !== -1) {
+				const header = base64Payload.slice(5, commaIndex);
+				const mimeMatch = header.match(/^([^;]+)/);
+				if (mimeMatch?.[1]) {
+					detectedMime = mimeMatch[1];
+				}
+				base64Payload = base64Payload.slice(commaIndex + 1);
+			}
+		}
+
+		const imageBuffer = Buffer.from(base64Payload, "base64");
+		const ext = detectedMime.includes("png")
+			? ".png"
+			: detectedMime.includes("webp")
+				? ".webp"
+				: ".jpg";
+		const baseName = (data.originalFilename || "xray_scan").replace(
+			/[^\w.-]/g,
+			"_",
+		);
+		const fileName = baseName.endsWith(ext) ? baseName : `${baseName}${ext}`;
+
+		// Ликвидируем хранение base64 в PostgreSQL: сохраняем файл в изолированное хранилище PACS на диске
+		const storedFile = await LocalPacsStorageService.storeXrayScanFile(
+			organizationId,
+			fileName,
+			imageBuffer,
+			detectedMime,
+		);
 
 		// Заключение с клиента (синхронный visiograph-ai) — в ту же строку, что и снимок.
 		const hasInlineReport =
@@ -126,9 +157,13 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 				organizationId,
 				patientId: data.patientId,
 				visitId: data.visitId ?? null,
-				imageDataUri,
+				imageDataUri: null, // PostgreSQL WAL и бэкапы чисты от base64 блоата!
+				storagePath: storedFile.storagePath,
+				fileUrl: `/api/xray/scans/file`,
+				fileSizeBytes: storedFile.fileSizeBytes,
+				sha256: storedFile.sha256,
 				originalFilename: data.originalFilename ?? null,
-				mimeType: data.mimeType,
+				mimeType: detectedMime,
 				kind: data.kind,
 				toothCode: data.toothCode ?? null,
 				notes: data.notes ?? null,
@@ -149,7 +184,10 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 		}
 
 		reply.code(201);
-		return scanToResponse(inserted);
+		const effectiveDataUri = data.imageBase64.startsWith("data:")
+			? data.imageBase64
+			: `data:${detectedMime};base64,${data.imageBase64}`;
+		return scanToResponse(inserted, true, effectiveDataUri);
 	});
 
 	app.post("/api/xray/scans/:id/analyze", async (request, reply) => {
@@ -174,11 +212,36 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
 		}
 
-		if (!scan.imageDataUri) {
+		if (!scan.imageDataUri && !scan.storagePath) {
 			reply.code(400);
 			return {
 				error: "XrayScanNoImage",
 				message: "Снимок не содержит изображения.",
+			};
+		}
+
+		let analysisImageDataUri = scan.imageDataUri;
+		if (
+			!analysisImageDataUri &&
+			scan.storagePath &&
+			existsSync(scan.storagePath)
+		) {
+			try {
+				const buf = await fs.readFile(scan.storagePath);
+				analysisImageDataUri = `data:${scan.mimeType || "image/jpeg"};base64,${buf.toString("base64")}`;
+			} catch (readErr) {
+				request.log.error(
+					{ readErr, scanId: id },
+					"Не удалось прочитать файл снимка с диска для анализа",
+				);
+			}
+		}
+
+		if (!analysisImageDataUri) {
+			reply.code(400);
+			return {
+				error: "XrayScanNoImage",
+				message: "Файл изображения недоступен на диске клиники.",
 			};
 		}
 
@@ -232,7 +295,7 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 		startDetachedXrayAnalysis({
 			scanId: id,
 			organizationId,
-			imageDataUri: scan.imageDataUri,
+			imageDataUri: analysisImageDataUri,
 		});
 
 		reply.code(202);
@@ -346,7 +409,24 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			diagnosis: scan.aiReport ?? "Рентгенологический снимок",
 		});
 
-		return scanToResponse(scan, true); // Include image
+		let resolvedImageDataUri = scan.imageDataUri;
+		if (
+			!resolvedImageDataUri &&
+			scan.storagePath &&
+			existsSync(scan.storagePath)
+		) {
+			try {
+				const buf = await fs.readFile(scan.storagePath);
+				resolvedImageDataUri = `data:${scan.mimeType || "image/jpeg"};base64,${buf.toString("base64")}`;
+			} catch (err) {
+				request.log.warn(
+					{ err, scanId: scan.id },
+					"Не удалось сформировать data URI из локального файла снимка",
+				);
+			}
+		}
+
+		return scanToResponse(scan, true, resolvedImageDataUri); // Include image
 	});
 
 	app.get("/api/xray/scans/:id/file", async (request, reply) => {
@@ -395,17 +475,7 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 			diagnosis: scan.aiReport ?? "Файл рентгенологического снимка",
 		});
 
-		if (scan.imageDataUri) {
-			const dataUri = scan.imageDataUri;
-			const commaIndex = dataUri.indexOf(",");
-			const base64Data =
-				commaIndex >= 0 ? dataUri.slice(commaIndex + 1) : dataUri;
-			const buffer = Buffer.from(base64Data, "base64");
-			reply.type(scan.mimeType || "image/jpeg");
-			reply.header("Content-Length", buffer.length);
-			return buffer;
-		}
-
+		// Приоритет 1: быстрое чтение с диска без расхода памяти на base64
 		if (scan.storagePath && existsSync(scan.storagePath)) {
 			try {
 				const buffer = await fs.readFile(scan.storagePath);
@@ -419,6 +489,18 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 					message: "Не удалось прочитать файл снимка с диска.",
 				};
 			}
+		}
+
+		// Приоритет 2: обратная совместимость для старых записей с base64 в БД
+		if (scan.imageDataUri) {
+			const dataUri = scan.imageDataUri;
+			const commaIndex = dataUri.indexOf(",");
+			const base64Data =
+				commaIndex >= 0 ? dataUri.slice(commaIndex + 1) : dataUri;
+			const buffer = Buffer.from(base64Data, "base64");
+			reply.type(scan.mimeType || "image/jpeg");
+			reply.header("Content-Length", buffer.length);
+			return buffer;
 		}
 
 		reply.code(404);
@@ -575,16 +657,27 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
 		const { id } = request.params as { id: string };
 
-		const result = await db
+		const [deleted] = await db
 			.delete(xrayScans)
 			.where(
 				and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
 			)
-			.returning({ id: xrayScans.id });
+			.returning({ id: xrayScans.id, storagePath: xrayScans.storagePath });
 
-		if (!result.length) {
+		if (!deleted) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
+		}
+
+		if (deleted.storagePath && existsSync(deleted.storagePath)) {
+			try {
+				await fs.unlink(deleted.storagePath);
+			} catch (unlinkErr) {
+				request.log.warn(
+					{ unlinkErr, path: deleted.storagePath },
+					"Не удалось физически удалить файл снимка с диска при удалении скана",
+				);
+			}
 		}
 
 		/*

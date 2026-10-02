@@ -4,7 +4,11 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
+	balanceSplitDepositPlusCard,
+	balanceSplitTenderRemainder,
 	buildFiscalReceiptPayloadSignature,
 	createFiscalCompositeIdempotencyKey,
 	verifyFiscalCompositeIdempotencyKey,
@@ -21,6 +25,7 @@ import {
 	type CheckoutSplitItem,
 	type FastCheckoutInput,
 } from "../components/payments/checkout/fastCheckoutEngine";
+import { FastCheckoutModal } from "../components/finance/FastCheckoutModal";
 
 describe("Fast Checkout Split-Payment Balancer & 1-Click Cash Fill Suite", () => {
 	const TOTAL_BILL_KOP = 450000; // 4 500.00 ₽
@@ -284,4 +289,79 @@ describe("Fast Checkout Split-Payment Balancer & 1-Click Cash Fill Suite", () =>
 			assert.equal(payload.idempotencyKey, compositeKey);
 		});
 	});
+
+	describe("6. Shared Engine: 1-Click Remainder & Combo Balancers (Zero-Drift)", () => {
+		it("balanceSplitTenderRemainder allocates exact remainder to SBP QR tender without kopeck drift", () => {
+			const current = {
+				cardKopecks: 300000,
+				cashKopecks: 200000,
+			};
+			const balanced = balanceSplitTenderRemainder({
+				actTotalKopecks: 1000000,
+				currentTenders: current,
+				targetKind: "sbp",
+			});
+			assert.equal(balanced.sbpKopecks, 500000);
+			const totalSum = (balanced.cardKopecks ?? 0) + (balanced.cashKopecks ?? 0) + (balanced.sbpKopecks ?? 0);
+			assert.equal(totalSum, 1000000);
+		});
+
+		it("balanceSplitDepositPlusCard exhausts patient deposit first and allocates remainder to card", () => {
+			const balanced = balanceSplitDepositPlusCard({
+				actTotalKopecks: 1250050,
+				currentTenders: {},
+				availableDepositKopecks: 400000,
+				secondaryTender: "card",
+			});
+			assert.equal(balanced.advanceDepositKopecks, 400000);
+			assert.equal(balanced.cardKopecks, 850050);
+			assert.equal((balanced.advanceDepositKopecks ?? 0) + (balanced.cardKopecks ?? 0), 1250050);
+		});
+
+		it("balanceSplitDepositPlusCard caps deposit at act total when deposit exceeds bill", () => {
+			const balanced = balanceSplitDepositPlusCard({
+				actTotalKopecks: 500000,
+				currentTenders: {},
+				availableDepositKopecks: 2000000,
+				secondaryTender: "card",
+			});
+			assert.equal(balanced.advanceDepositKopecks, 500000);
+			assert.equal(balanced.cardKopecks, 0);
+		});
+	});
+
+	describe("7. FastCheckoutModal UI Rendering: 1-Click Split Toggles & Remainder Buttons", () => {
+		it("renders simple split toggle button in simple cashier mode", () => {
+			const html = renderToString(
+				React.createElement(FastCheckoutModal, {
+					isOpen: true,
+					onClose: () => {},
+					totalBillRub: 4500,
+					patientDepositRub: 2000,
+					initialSimpleCashierMode: true,
+				})
+			);
+
+			assert.ok(html.includes('data-testid="simple-split-toggle-btn"'), "Must render split toggle in simple cashier mode");
+			assert.ok(html.includes("Сплит"), "Must have 'Сплит' label on toggle button");
+		});
+
+		it("renders 1-click combo '+ Депозит + Карта' button in split mode when deposit is available", () => {
+			const html = renderToString(
+				React.createElement(FastCheckoutModal, {
+					isOpen: true,
+					onClose: () => {},
+					totalBillRub: 7500,
+					patientDepositRub: 3000,
+					initialSimpleCashierMode: false,
+				})
+			);
+
+			assert.ok(html.includes('data-testid="split-fill-deposit-card-btn"'), "Must render '+ Депозит + Карта' combo button");
+			assert.ok(html.includes("+ Депозит + Карта"), "Must display '+ Депозит + Карта' label");
+			assert.ok(html.includes('data-testid="split-fill-sbp-btn"'), "Must render '+ в СБП' button");
+			assert.ok(html.includes('data-testid="split-fill-card-btn"'), "Must render '+ на Карту' button");
+		});
+	});
 });
+

@@ -279,21 +279,30 @@ export function getZakharovRidgeMeasurement(
  */
 export function buildZakharov043SoapProtocol(
 	measurement: ZakharovRidgeMeasurement,
-	patientName = "Захаров Иван Дмитриевич",
+	patientName = "Пациент",
 ): {
 	statusLocalis: string;
 	treatmentDescription: string;
 	diagnosisIcd10: string;
 	diagnosisTooth: string;
 } {
+	const isMandible = measurement.toothFdi >= 30;
+	const jawRu = isMandible ? "альвеолярной части нижней челюсти" : "альвеолярного отростка верхней челюсти";
+	const heightLabelRu = isMandible
+		? "H (остаточная высота над кортикальной пластинкой нижнечелюстного канала)"
+		: "H (остаточная высота до кортикальной пластинки дна верхнечелюстного синуса)";
+	const anatomyStatusRu = isMandible
+		? `Состояние нижнечелюстного канала: дистанция безопасности до N. alveolaris inferior: ${measurement.crestHeightH_Mm.toFixed(1)} мм.`
+		: `Состояние верхнечелюстного синуса: ${measurement.sinusFloorStatusRu}`;
+
 	const statusLocalis =
-		`КЛКТ-диагностика альвеолярного отростка верхней челюсти в области адентии зуба #${measurement.toothFdi} (${patientName}):\n` +
+		`КЛКТ-диагностика ${jawRu} в области адентии зуба #${measurement.toothFdi} (${patientName}):\n` +
 		`1. Анатомические замеры костного гребня:\n` +
-		`   • H (остаточная высота до кортикальной пластинки дна верхнечелюстного синуса): ${measurement.crestHeightH_Mm.toFixed(1)} мм.\n` +
+		`   • ${heightLabelRu}: ${measurement.crestHeightH_Mm.toFixed(1)} мм.\n` +
 		`   • W2 (ширина гребня на 2 мм апикальнее вершины): ${measurement.crestWidthW2_Mm.toFixed(1)} мм.\n` +
 		`   • W6 (базальная ширина гребня на 6 мм апикальнее вершины): ${measurement.basalWidthW6_Mm.toFixed(1)} мм.\n` +
 		`2. Архитектоника костной ткани по Misch: класс ${measurement.mischBoneClass} (средняя плотность: ${measurement.meanHU} HU).\n` +
-		`3. Состояние верхнечелюстного синуса: ${measurement.sinusFloorStatusRu}\n` +
+		`3. ${anatomyStatusRu}\n` +
 		`4. Клиническое заключение: выраженная вертикальная атрофия альвеолярного отростка в зоне отсутствующего зуба #${measurement.toothFdi}, дефицит высоты кости для стандартной имплантации (H < 8.0 мм).`;
 
 	const treatmentDescription =
@@ -317,7 +326,7 @@ export function buildZakharov043SoapProtocol(
  */
 export function exportZakharovRidgeTo043Emr(
 	measurement: ZakharovRidgeMeasurement,
-	patientName = "Захаров Иван Дмитриевич",
+	patientName = "Пациент",
 	onApplyCallback?: ((diaryText: string) => void) | undefined,
 ): void {
 	const soap = buildZakharov043SoapProtocol(measurement, patientName);
@@ -388,3 +397,11 @@ export function exportZakharovRidgeTo043Emr(
 		4500,
 	);
 }
+
+// ─── CANONICAL ALVEOLAR RIDGE ALIASES (ZERO-HARDCODE ARCHITECTURE) ─────────
+export type AlveolarRidgeMeasurement = ZakharovRidgeMeasurement;
+export type AlveolarEdentulousToothFdi = ZakharovEdentulousToothFdi;
+export const getAlveolarRidgeMeasurement = getZakharovRidgeMeasurement;
+export const buildAlveolarRidge043SoapProtocol = buildZakharov043SoapProtocol;
+export const exportAlveolarRidgeTo043Emr = exportZakharovRidgeTo043Emr;
+export const measureAlveolarRidgeFromVolume = measureZakharovRidgeFromVolume;

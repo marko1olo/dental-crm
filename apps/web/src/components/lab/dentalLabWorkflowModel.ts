@@ -180,7 +180,7 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 
 	const fittingDate = params.fittingDate
 		? parseDateToMidnight(params.fittingDate)
-		: (scheduledVisitDate || (preset.requiresFittingStage ? addWorkingDaysRu(expectedLabDate, 1) : undefined));
+		: (scheduledVisitDate || addWorkingDaysRu(expectedLabDate, 1));
 	const fittingDateIso = fittingDate ? formatDateToIsoDay(fittingDate) : undefined;
 
 	const unitPriceKopecks = params.pricePerUnitKopecks ??

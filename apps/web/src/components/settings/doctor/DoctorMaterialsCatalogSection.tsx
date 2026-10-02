@@ -2,7 +2,7 @@
  * apps/web/src/components/settings/doctor/DoctorMaterialsCatalogSection.tsx
  *
  * Реестр 90% стоматологических материалов РФ/СНГ с 1-клик выбором
- * и автогенерацией персонализированного фрагмента протокола ЕМК (Форма 043/у).
+ * и автогенерацией персонализированного фрагмента протокола для медкарты.
  *
  * Инварианты:
  * - Мандат 8b: строго <= 800 строк.
@@ -245,18 +245,18 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 				})}
 			</div>
 
-			{/* Живой протокол ЕМК (Форма 043/у) с подтягиванием любимых материалов врача */}
+			{/* Живой протокол для медкарты с подтягиванием любимых материалов врача */}
 			<div className="p-3 rounded-xl bg-[var(--paper)] border border-teal-500/30 space-y-2 mt-2">
 				<div className="flex items-center justify-between gap-2">
 					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Sparkles size={14} className="text-teal-600" />
-						<span>Автоматический фрагмент протокола ЕМК (Форма 043/у) с вашими материалами</span>
+						<span>Автоматический фрагмент протокола для медкарты с вашими материалами</span>
 					</span>
 					<button
 						type="button"
 						onClick={handleCopyLiveSnippet}
 						className="text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline inline-flex items-center gap-1 cursor-pointer"
-						title="Скопировать готовый текст для Формы 043/у"
+						title="Скопировать готовый текст для медкарты"
 					>
 						<Copy size={12} />
 						<span>Копировать</span>

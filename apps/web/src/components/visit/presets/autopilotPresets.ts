@@ -46,7 +46,7 @@ export const AUTOPILOT_CARIES_K021: DoctorAutopilotPreset = {
 		"6. Наложение изолирующей прокладки: светоотверждаемый стеклоиономерный цемент (СИЦ Vitrebond / Ionoseal) точечно на дно полости, полимеризация 20 сек.\n" +
 		"7. Тотальное/селективное травление 37% ортофосфорной кислотой (эмаль 20 сек, дентин 10 сек), смывание водой, деликатное подсушивание воздухом.\n" +
 		"8. Нанесение адгезивной системы (OptiBond FL / Single Bond, праймер + бонд), экспозиция 20 сек, раздувание струей воздуха, фотополимеризация 20 сек.\n" +
-		"9. Послойное моделирование и реставрация наногибридным фотополимерным композитом (Filtek Ultimate / Estelite Sigma Quick) с послойной полимеризацией по 20 сек. Восстановление анатомической формы жевательной поверхности, фиссур, окклюзионных бугров и плотного контактного пункта с помощью контурной матричной системы.\n" +
+		"9. Послойное моделирование и реставрация наногибридным фотополимерным композитом (Filtek Ultimate / Estelite Sigma Quick) с послойной полимеризацией по 20 сек. Восстановление анатомической формы жевательной поверхности, фиссур, окклюзионных бугров и плотного контактного пункта с помощью контурной матричной системы (A16.07.002.001).\n" +
 		"10. Финишная обработка и полировка: контроль и пришлифовка окклюзии по артикуляционной бумаге Bausch 40 мкм, шлифовка дисками Sof-Lex, полировка головками Enhance и пастой Prisma Gloss до сухого зеркального блеска.\n\n" +
 		"Гарантийные обязательства: гарантийный срок на световую композитную пломбу — 24 мес. (срок службы: 36 мес.) при регулярном профилактическом осмотре 1 раз в 6 месяцев.",
 	service804n: {
@@ -56,6 +56,15 @@ export const AUTOPILOT_CARIES_K021: DoctorAutopilotPreset = {
 		basePriceRub: 4800,
 		category: "therapy",
 	},
+	additionalServices804n: [
+		{
+			code804n: "A16.07.002.001",
+			title:
+				"Восстановление зуба пломбой с нарушением контактного пункта (A16.07.002.001)",
+			basePriceRub: 4800,
+			category: "therapy",
+		},
+	],
 	informedConsent:
 		"Информированное добровольное согласие (ИДС) на терапевтическое лечение зуба и местную анестезию оформлено и подписано в полном объеме.",
 	materialsToDeduct: [
@@ -258,7 +267,7 @@ export const AUTOPILOT_HYGIENE_AIRFLOW: DoctorAutopilotPreset = {
 	treatmentDescription:
 		"1. Определение гигиенического индекса, индикация зубных отложений раствором фуксина.\n" +
 		"2. Аппликационная анестезия маргинальной десны обезболивающим гелем (Лидокаин 2%).\n" +
-		"3. Ультразвуковой скейлинг (УЗ-скейлинг EMS/Piezon): бережное удаление минерализованных над- и поддесневых зубных отложений скейлером EMS Piezon Master с водяным охлаждением.\n" +
+		"3. Ультразвуковой скейлинг (УЗ-скейлинг EMS/Piezon, A16.07.051): бережное удаление минерализованных над- и поддесневых зубных отложений скейлером EMS Piezon Master с водяным охлаждением.\n" +
 		"4. Водно-воздушно-абразивная обработка аппаратом Air-Flow с оригинальным мелкодисперсным порошком на основе глицина (Air-Flow порошок на основе глицина 25 мкм, безопасен для эмали и поддесневых зон): полное удаление плотного пигментированного налета и биопленки.\n" +
 		"5. Полировка всех поверхностей зубов профессиональной полировочной пастой Cleanic с циркулярными щеточками и резиновыми чашечками до гладкого зеркального блеска. Межзубные контактные пункты обработаны флоссом и абразивными штрипсами.\n" +
 		"6. Медикаментозная антисептическая обработка десневого края 0.05% раствором хлоргексидина.\n" +
@@ -343,7 +352,7 @@ export const AUTOPILOT_EXTRACTION_K045: DoctorAutopilotPreset = {
 		"3. Местная анестезия: инфильтрационная и проводниковая анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Достигнуто полное и глубокое обезболивание.\n" +
 		"4. Синдесмотомия: бережное отслоение круговой связки зуба прямым распатором на глубину зубодесневой борозды.\n" +
 		"5. Люксация причинного зуба прямым/штыковидным элеватором с опорой на межзубную перегородку без избыточного давления на кортикальную пластинку.\n" +
-		"6. Наложение анатомических щипцов вдоль оси корня, продвижение щечек щипцов под десну, фиксация, аккуратная люксация/ротация и тракция зуба из альвеолы. Зуб удален полностью, верхушки корней сохранны.\n" +
+		"6. Наложение анатомических щипцов вдоль оси корня, продвижение щечек щипцов под десну, фиксация, аккуратная люксация/ротация и тракция зуба из альвеолы (A16.07.001.001). Зуб удален полностью, верхушки корней сохранны.\n" +
 		"7. Ревизия и тщательный кюретаж лунки острой ложкой: удаление грануляционной ткани, осколков альвеолы и патологической периапикальной капсулы.\n" +
 		"8. Антисептическое промывание лунки теплым 0.05% раствором хлоргексидина.\n" +
 		"9. Местный гемостаз: формирование полноценного кровяного сгустка, внесение в лунку кровоостанавливающего антисептического биоматериала (гемостатическая коллагеновая губка Альвостаз / Коллапол).\n" +
@@ -431,6 +440,140 @@ export const AUTOPILOT_NORM_HEALTHY: DoctorAutopilotPreset = {
 		"Индивидуальная гигиена полости рта 2 раза в день (зубная щетка, паста, флосс/ирригатор). Плановый профилактический осмотр через 6 месяцев.",
 };
 
+// ── 6. «1-КЛИК ПЕРИОДОНТИТ (К04.5)» ──
+export const AUTOPILOT_PERIODONTITIS_K045: DoctorAutopilotPreset = {
+	id: "autopilot_periodontitis_k045",
+	title: "1-клик Периодонтит (K04.5) — мехобработка каналов, NaOCl 3%, ЭДТА 17%, лечебная паста Ca(OH)2 на 10-14 дней, 804н A16.07.082",
+	shortBadge: "Периодонтит (1-клик)",
+	category: "therapy",
+	icd10: "K04.5",
+	icd10Label: "Хронический апикальный периодонтит",
+	toothState: "Periodontitis",
+	defaultTooth: 46,
+	is1ClickAutopilot: true,
+	complaint:
+		"Жалобы на чувство «выросшего зуба», дискомфорт или ноющую боль при накусывании на зуб, изменение цвета коронки.",
+	anamnesis:
+		"Зуб ранее лечен эндодонтически либо не лечен. Обострение возникло несколько дней назад. Аллергологический анамнез уточнен. Соматически здоров. Оформлено информированное добровольное согласие (ИДС).",
+	statusLocalis:
+		"Коронка изменена в цвете, глубокая кариозная полость или несостоятельная пломба. Зондирование устьев каналов безболезненно. Перкуссия умеренно болезненна. Термопроба отрицательна. На радиовизиографии: очаг деструкции костной ткани у верхушки корня (периапикальное разряжение). ЭОД > 100 мкА.",
+	anesthetic: {
+		drugKey: "ultracain_ds_forte",
+		drugName: "Артикаин 1:100 000 (Sol. Articaini 4% cum epinephrine 1:100 000 — 1.7 мл)",
+		carpulesCount: 1.0,
+		volumeMl: 1.7,
+	},
+	treatmentDescription:
+		"1. Информированное добровольное согласие (ИДС) подписано пациентом.\n" +
+		"2. Инфильтрационная/проводниковая анестезия Sol. Articaini 4% 1.8 мл (A11.07.012).\n" +
+		"3. Изоляция операционного поля коффердамом (A16.07.002.009).\n" +
+		"4. Препарирование кариозной полости, эндодонтический доступ, инструментальная ревизия и дезинфекция корневых каналов (A16.07.082).\n" +
+		"5. Рабочая длина подтверждена апекслокатором и радиовизиографией (A06.07.003).\n" +
+		"6. Механическая обработка машинными Ni-Ti файлами ProTaper/Reciproc под контролем эндомотора.\n" +
+		"7. Ирригация 3% раствором NaOCl с эндоактиватором и 17% гелем ЭДТА.\n" +
+		"8. Высушивание стерильными бумажными штифтами.\n" +
+		"9. Временная лечебная обтурация пастой гидроксида кальция (Calcept / Metapex) на 10–14 дней.\n" +
+		"10. Герметичная временная повязка Cavit/Clip.",
+	service804n: {
+		code804n: "A16.07.082",
+		title: "Инструментальная ревизия и дезинфекция корневых каналов при периодонтите",
+		basePriceRub: 5500,
+		category: "therapy",
+	},
+	additionalServices804n: [
+		{
+			code804n: "A16.07.008.002",
+			title: "Временное пломбирование корневого канала лечебной пастой гидроксида кальция",
+			basePriceRub: 1500,
+			category: "therapy",
+		},
+	],
+	informedConsent:
+		"Информированное добровольное согласие (ИДС) на эндодонтическое лечение периодонтита оформлено и подписано.",
+	materialsToDeduct: [
+		{
+			name: "Паста лечебная гидроксид кальция Calcept / Metapex",
+			category: "endo",
+			unit: "г",
+			quantity: 0.2,
+			unitCostRub: 650,
+		},
+		{
+			name: "Раствор натрия гипохлорита 3% для ирригации (NaOCl 3%)",
+			category: "endo",
+			unit: "мл",
+			quantity: 20,
+			unitCostRub: 12,
+		},
+		{
+			name: "Гель ЭДТА 17% для химического расширения каналов",
+			category: "endo",
+			unit: "мл",
+			quantity: 0.5,
+			unitCostRub: 240,
+		},
+		{
+			name: "Временная герметичная повязка Cavit / Septo-pack",
+			category: "endo",
+			unit: "г",
+			quantity: 0.3,
+			unitCostRub: 320,
+		},
+		{
+			name: "Анестетик артикаиновый 4% с эпинефрином 1:100000 1.7 мл",
+			category: "anesthesia",
+			unit: "карп.",
+			quantity: 1,
+			unitCostRub: 220,
+		},
+		{
+			name: "Платок коффердама Sanctuary Dental Dam",
+			category: "auxiliary",
+			unit: "шт.",
+			quantity: 1,
+			unitCostRub: 115,
+		},
+	],
+	recommendations:
+		"Не накусывать на причинный зуб твердую пищу. При умеренной боли — Нимесулид 100 мг. Явка через 10–14 дней на контрольный снимок и постоянную обтурацию.",
+	warrantyMonths: 12,
+	serviceLifeMonths: 24,
+};
+
+// ── 7. «1-КЛИК ПРОФГИГИЕНА (К05.1)» ──
+export const AUTOPILOT_HYGIENE_K051: DoctorAutopilotPreset = {
+	...AUTOPILOT_HYGIENE_AIRFLOW,
+	id: "autopilot_hygiene_k051",
+	title: "1-клик Профгигиена полости рта (K05.1) — УЗ-скейлинг EMS/Piezon, Air-Flow глицин, полировка Cleanic, глубокое фторирование",
+	shortBadge: "Профгигиена (1-клик)",
+	category: "hygiene",
+	icd10: "K05.1",
+	icd10Label: "Хронический катаральный гингивит / Профгигиена",
+	service804n: {
+		code804n: "A16.07.051",
+		title: "Комплексная профессиональная гигиена полости рта (УЗ-скейлинг EMS/Piezon, Air-Flow глицин, паста Cleanic, фторирование)",
+		basePriceRub: 5000,
+		category: "hygiene",
+	},
+};
+
+// ── 8. «1-КЛИК УДАЛЕНИЕ ЗУБА ПРОСТОЕ (К01.1)» ──
+export const AUTOPILOT_EXTRACTION_K011: DoctorAutopilotPreset = {
+	...AUTOPILOT_EXTRACTION_K045,
+	id: "autopilot_extraction_k011",
+	title: "1-клик Простое удаление зуба (K01.1) — инфильтрационная/проводниковая анестезия, элеватор, щипцы, кюретаж, гемостаз альвостазом",
+	shortBadge: "Удаление (1-клик)",
+	category: "surgery",
+	icd10: "K01.1",
+	icd10Label: "Простое хирургическое удаление зуба",
+	service804n: {
+		code804n: "A16.07.001.001",
+		title: "Удаление постоянного зуба (A16.07.001)",
+		basePriceRub: 3500,
+		category: "surgery",
+	},
+};
+
 /**
  * Каталог 1-кликовых автопилот-пресетов врача.
  */
@@ -438,7 +581,10 @@ export const DOCTOR_1CLICK_AUTOPILOT_PRESETS: readonly DoctorAutopilotPreset[] =
 	[
 		AUTOPILOT_CARIES_K021,
 		AUTOPILOT_PULPITIS_K040,
+		AUTOPILOT_PERIODONTITIS_K045,
+		AUTOPILOT_HYGIENE_K051,
 		AUTOPILOT_HYGIENE_AIRFLOW,
+		AUTOPILOT_EXTRACTION_K011,
 		AUTOPILOT_EXTRACTION_K045,
 		AUTOPILOT_NORM_HEALTHY,
 	];
@@ -452,17 +598,31 @@ export const DOCTOR_AUTOPILOT_PRESETS_MAP: Readonly<
 	autopilot_caries_k021: AUTOPILOT_CARIES_K021,
 	caries_k021: AUTOPILOT_CARIES_K021,
 	caries_medium: AUTOPILOT_CARIES_K021,
+	caries: AUTOPILOT_CARIES_K021,
 	autopilot_pulpitis_k040: AUTOPILOT_PULPITIS_K040,
 	pulpitis_k040: AUTOPILOT_PULPITIS_K040,
 	pulpitis_acute: AUTOPILOT_PULPITIS_K040,
+	pulpitis: AUTOPILOT_PULPITIS_K040,
+	autopilot_periodontitis_k045: AUTOPILOT_PERIODONTITIS_K045,
+	periodontitis_k045: AUTOPILOT_PERIODONTITIS_K045,
+	periodontitis_destructive: AUTOPILOT_PERIODONTITIS_K045,
+	periodontitis_chronic: AUTOPILOT_PERIODONTITIS_K045,
+	periodontitis: AUTOPILOT_PERIODONTITIS_K045,
+	autopilot_hygiene_k051: AUTOPILOT_HYGIENE_K051,
+	hygiene_k051: AUTOPILOT_HYGIENE_K051,
 	autopilot_hygiene_airflow: AUTOPILOT_HYGIENE_AIRFLOW,
 	hygiene_airflow: AUTOPILOT_HYGIENE_AIRFLOW,
 	hygiene_complex: AUTOPILOT_HYGIENE_AIRFLOW,
+	hygiene: AUTOPILOT_HYGIENE_K051,
+	autopilot_extraction_k011: AUTOPILOT_EXTRACTION_K011,
+	extraction_k011: AUTOPILOT_EXTRACTION_K011,
 	autopilot_extraction_k045: AUTOPILOT_EXTRACTION_K045,
 	extraction_k045: AUTOPILOT_EXTRACTION_K045,
-	surgery_extraction_simple: AUTOPILOT_EXTRACTION_K045,
+	surgery_extraction_simple: AUTOPILOT_EXTRACTION_K011,
+	extraction: AUTOPILOT_EXTRACTION_K011,
 	autopilot_norm_healthy: AUTOPILOT_NORM_HEALTHY,
 	norm_healthy: AUTOPILOT_NORM_HEALTHY,
+	norm: AUTOPILOT_NORM_HEALTHY,
 };
 
 // ── ФУНКЦИИ-ГЕНЕРАТОРЫ И ПОСТРОИТЕЛИ ──
@@ -476,17 +636,29 @@ export function build1ClickCariesPreset(
 	surfaces?: string,
 ): DoctorAutopilotPreset {
 	const tooth = toothNumber ?? 16;
-	const s = (surfaces && surfaces.trim()) || "O/MOD";
+	const trimmed = (surfaces ?? "").trim();
+	const hasSurfaces =
+		trimmed.length > 0 &&
+		trimmed.toLowerCase() !== "undefined" &&
+		trimmed.toLowerCase() !== "null";
 	const toothPrefix = `Зуб ${tooth}: `;
+
+	const statusLocalis = hasSurfaces
+		? `${toothPrefix}На поверхностях ${trimmed} кариозная полость средней глубины в пределах дентина. Зондирование по эмалево-дентинной границе слабо чувствительно, дно и стенки плотные, пигментированные. Перкуссия безболезненна. Холодовая проба кратковременно положительна, быстропроходящая. ЭОД 6–8 мкА.`
+		: `${toothPrefix}Кариозная полость средней глубины в пределах дентина. Зондирование по эмалево-дентинной границе слабо чувствительно, дно и стенки плотные, пигментированные. Перкуссия безболезненна. Холодовая проба кратковременно положительна, быстропроходящая. ЭОД 6–8 мкА.`;
+
+	const serviceTitle = hasSurfaces
+		? `Восстановление зуба пломбой с нарушением контактного пункта зуба II, III класса по Блэку с использованием фотополимерных материалов (поверхности ${trimmed}) (Зуб ${tooth})`
+		: `Восстановление зуба пломбой светового отверждения (лечение кариеса дентина) (Зуб ${tooth})`;
 
 	return {
 		...AUTOPILOT_CARIES_K021,
 		defaultTooth: tooth,
-		surfaces: s,
-		statusLocalis: `${toothPrefix}На поверхностях ${s} кариозная полость средней глубины в пределах дентина. Зондирование по эмалево-дентинной границе слабо чувствительно, дно и стенки плотные, пигментированные. Перкуссия безболезненна. Холодовая проба кратковременно положительна, быстропроходящая. ЭОД 6–8 мкА.`,
+		surfaces: hasSurfaces ? trimmed : undefined,
+		statusLocalis,
 		service804n: {
 			code804n: "A16.07.002.010",
-			title: `Восстановление зуба пломбой с нарушением контактного пункта зуба II, III класса по Блэку с использованием фотополимерных материалов (поверхности ${s}) (Зуб ${tooth})`,
+			title: serviceTitle,
 			basePriceRub: 4800,
 			category: "therapy",
 		},
@@ -514,28 +686,58 @@ export function build1ClickPulpitisPreset(
 }
 
 /**
- * Построитель 1-кликового протокола комплексной профгигиены Air-Flow.
+ * Построитель 1-кликового протокола периодонтита (K04.5).
  */
-export function build1ClickHygienePreset(): DoctorAutopilotPreset {
-	return { ...AUTOPILOT_HYGIENE_AIRFLOW };
-}
-
-/**
- * Построитель 1-кликового протокола удаления зуба (K04.5).
- */
-export function build1ClickExtractionPreset(
+export function build1ClickPeriodontitisPreset(
 	toothNumber?: number | null,
 ): DoctorAutopilotPreset {
-	const tooth = toothNumber ?? 48;
+	const tooth = toothNumber ?? 46;
 	const toothPrefix = `Зуб ${tooth}: `;
 
 	return {
-		...AUTOPILOT_EXTRACTION_K045,
+		...AUTOPILOT_PERIODONTITIS_K045,
 		defaultTooth: tooth,
-		statusLocalis: `${toothPrefix}${AUTOPILOT_EXTRACTION_K045.statusLocalis}`,
+		statusLocalis: `${toothPrefix}${AUTOPILOT_PERIODONTITIS_K045.statusLocalis}`,
 		service804n: {
-			...AUTOPILOT_EXTRACTION_K045.service804n!,
-			title: `${AUTOPILOT_EXTRACTION_K045.service804n!.title} (Зуб ${tooth})`,
+			...AUTOPILOT_PERIODONTITIS_K045.service804n!,
+			title: `${AUTOPILOT_PERIODONTITIS_K045.service804n!.title} (Зуб ${tooth})`,
+		},
+	};
+}
+
+/**
+ * Построитель 1-кликового протокола комплексной профгигиены Air-Flow (K05.1).
+ */
+export function build1ClickHygienePreset(
+	toothNumber?: number | null,
+): DoctorAutopilotPreset {
+	const preset = { ...AUTOPILOT_HYGIENE_K051 };
+	if (toothNumber) {
+		preset.defaultTooth = toothNumber;
+		preset.title = `${AUTOPILOT_HYGIENE_K051.title} (Зуб ${toothNumber})`;
+	}
+	return preset;
+}
+
+/**
+ * Построитель 1-кликового протокола удаления зуба (K01.1 / K04.5).
+ */
+export function build1ClickExtractionPreset(
+	toothNumber?: number | null,
+	icd10: "K01.1" | "K04.5" = "K01.1",
+): DoctorAutopilotPreset {
+	const tooth = toothNumber ?? 48;
+	const toothPrefix = `Зуб ${tooth}: `;
+	const base =
+		icd10 === "K04.5" ? AUTOPILOT_EXTRACTION_K045 : AUTOPILOT_EXTRACTION_K011;
+
+	return {
+		...base,
+		defaultTooth: tooth,
+		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
+		service804n: {
+			...base.service804n!,
+			title: `${base.service804n!.title} (Зуб ${tooth})`,
 		},
 	};
 }
@@ -563,25 +765,45 @@ export function apply1ClickClinicalAutopilot(
 		case "autopilot_caries_k021":
 		case "caries_k021":
 		case "caries_medium":
+		case "caries":
 			targetPreset = build1ClickCariesPreset(tooth, options.surfaces);
 			break;
 		case "autopilot_pulpitis_k040":
 		case "pulpitis_k040":
 		case "pulpitis_acute":
+		case "pulpitis":
 			targetPreset = build1ClickPulpitisPreset(tooth);
+			break;
+		case "autopilot_periodontitis_k045":
+		case "periodontitis_k045":
+		case "periodontitis_destructive":
+		case "periodontitis_chronic":
+		case "periodontitis":
+			targetPreset = build1ClickPeriodontitisPreset(tooth);
+			break;
+		case "autopilot_hygiene_k051":
+		case "hygiene_k051":
+		case "hygiene":
+			targetPreset = build1ClickHygienePreset(tooth);
 			break;
 		case "autopilot_hygiene_airflow":
 		case "hygiene_airflow":
 		case "hygiene_complex":
-			targetPreset = build1ClickHygienePreset();
+			targetPreset = build1ClickHygienePreset(tooth);
+			break;
+		case "autopilot_extraction_k011":
+		case "extraction_k011":
+		case "extraction":
+			targetPreset = build1ClickExtractionPreset(tooth, "K01.1");
 			break;
 		case "autopilot_extraction_k045":
 		case "extraction_k045":
 		case "surgery_extraction_simple":
-			targetPreset = build1ClickExtractionPreset(tooth);
+			targetPreset = build1ClickExtractionPreset(tooth, "K04.5");
 			break;
 		case "autopilot_norm_healthy":
 		case "norm_healthy":
+		case "norm":
 			targetPreset = build1ClickNormPreset();
 			break;
 		default: {
@@ -692,3 +914,9 @@ export function apply1ClickClinicalAutopilot(
 		odontogramState: targetPreset.toothState,
 	};
 }
+
+/**
+ * Алиас для 1-кликового автопилота врача (обратная совместимость и краткость).
+ */
+export const apply1ClickDoctorAutopilot = apply1ClickClinicalAutopilot;
+

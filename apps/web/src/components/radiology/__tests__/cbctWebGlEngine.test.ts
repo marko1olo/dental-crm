@@ -256,9 +256,10 @@ describe("CBCT Hardware WebGL2 GPU Engine (FEAT-010)", () => {
 		it("implements DICOM PS 3.3 linear VOI LUT Window/Level calculation", () => {
 			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("float safeWW = max(1.0, u_windowWidth);"));
 			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("float low = u_windowLevel - safeWW * 0.5;"));
-			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("float gray = clamp((finalHU - low) / safeWW, 0.0, 1.0);"));
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("float normVal = clamp((finalHU - low) / safeWW, 0.0, 1.0);"));
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("float gray = normVal;"));
 			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("if (u_invert)"));
-			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("gray = 1.0 - gray;"));
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("float invertedGray = 1.0 - gray;"));
 		});
 
 		it("supports all 4 slab modes: Single, MIP, MinIP, Average", () => {

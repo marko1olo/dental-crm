@@ -46,6 +46,8 @@ export interface CrossSectionRenderOptions {
 	readonly gamma?: number | undefined;
 	readonly airCutoffHU?: number | undefined;
 	readonly softKnee?: boolean | import("./cbctLutMath").SoftKneeConfig | undefined;
+	readonly outputBuffer?: Uint8ClampedArray | undefined;
+	readonly outputRawHu?: Int16Array | undefined;
 }
 
 export interface CrossSectionAffineBasis {
@@ -127,9 +129,9 @@ export function computeCrossSectionAffineBasis(
 	const world00Y = effCenterY - unitNormal.y * halfW;
 	const world00Z = effCenterZ + halfH;
 
-	const spX = sp.x || 0.2;
-	const spY = sp.y || 0.2;
-	const spZ = sp.z || 0.2;
+	const spX = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const spY = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const spZ = (sp?.z && sp.z > 0) ? sp.z : 0.2;
 
 	const vox00X = (world00X - origin.x) / spX;
 	const vox00Y = (world00Y - origin.y) / spY;
@@ -289,28 +291,38 @@ export function extractSingleCrossSectionSlice(
 	}
 
 	if (!pixelData) {
-		pixelData = new Uint8ClampedArray(widthPx * heightPx * 4);
-		rawHuData = new Int16Array(widthPx * heightPx);
+		const reqPixelBytes = widthPx * heightPx * 4;
+		const reqHuElements = widthPx * heightPx;
+		pixelData = options.outputBuffer && options.outputBuffer.length >= reqPixelBytes
+			? options.outputBuffer
+			: new Uint8ClampedArray(reqPixelBytes);
+		rawHuData = options.outputRawHu && options.outputRawHu.length >= reqHuElements
+			? options.outputRawHu
+			: new Int16Array(reqHuElements);
 		const lut = options.lut ?? get16BitLut(windowWidth, windowLevel, invert, gamma, softKnee ? { enabled: true, airCutoffHU } : { enabled: false, airCutoffHU });
+
+		const stepUx = stepVoxU.x;
+		const stepUy = stepVoxU.y;
+		const startX = vox00.x;
+		const startY = vox00.y;
+		const startZ = vox00.z;
 
 		// High-performance affine-basis rasterization fallback for headless environments:
 		// Zero heap allocations in the inner loop (no temporary objects or matrix conversions)
 		for (let y = 0; y < heightPx; y++) {
-			const curZ = vox00.z + y * stepVoxVz;
-			const rowStartX = vox00.x;
-			const rowStartY = vox00.y;
+			const curZ = startZ + y * stepVoxVz;
 			const rowIdx = y * widthPx * 4;
 			const huRowIdx = y * widthPx;
 
 			for (let x = 0; x < widthPx; x++) {
-				const curX = rowStartX + x * stepVoxU.x;
-				const curY = rowStartY + x * stepVoxU.y;
+				const curX = startX + x * stepUx;
+				const curY = startY + x * stepUy;
 
 				const hu = sampleVoxelTrilinearHU(curX, curY, curZ, volume);
 				rawHuData[huRowIdx + x] = Math.max(-32768, Math.min(32767, Math.round(hu)));
 				const gray = lut[(hu + 32768) & 0xffff]!;
 
-				const idx = rowIdx + x * 4;
+				const idx = rowIdx + (x << 2);
 				pixelData[idx] = gray;
 				pixelData[idx + 1] = gray;
 				pixelData[idx + 2] = gray;

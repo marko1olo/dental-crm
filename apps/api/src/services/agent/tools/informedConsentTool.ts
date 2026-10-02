@@ -57,7 +57,7 @@ export const generateInformedConsentIdsSchema = z.object({
 		.array(z.string())
 		.default([])
 		.optional()
-		.describe("Коды услуг по Номенклатуре Минздрава 804н"),
+		.describe("Коды услуг в прейскуранте"),
 	toothNumber: z
 		.union([z.number(), z.string()])
 		.optional()
@@ -197,7 +197,7 @@ export const generateInformedConsentIdsTool: ToolDefinition<
 > = {
 	name: "generate_informed_consent_ids",
 	description:
-		"Подбор регламентированных кодов и генерация бланка Информированного добровольного согласия (ИДС) по ст. 20 323-ФЗ, Приказу Минздрава РФ № 1051н, Форме 043/у и Номенклатуре 804н (терапия IDS-02, эндодонтия IDS-03, хирургия IDS-04, гигиена IDS-08, анестезия IDS-05).",
+		"Подбор кодов и генерация бланка Информированного добровольного согласия (ИДС) для медицинской карты и плана лечения (терапия IDS-02, эндодонтия IDS-03, хирургия IDS-04, гигиена IDS-08, анестезия IDS-05).",
 	parameters: generateInformedConsentIdsSchema,
 	permissions: ["clinical.read", "documents.generate"],
 	category: "read",

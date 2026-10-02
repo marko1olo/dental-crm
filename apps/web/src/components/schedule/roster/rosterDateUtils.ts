@@ -77,8 +77,8 @@ export function applyCellShiftPreset(
 		presetType,
 		doctorId,
 		assistantId,
-		staffList = DEFAULT_CLINIC_STAFF,
-		cabinets = CLINIC_CABINETS_CATALOG,
+		staffList = isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [],
+		cabinets = isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG : [],
 	} = params;
 
 	if (presetType === "clear") {

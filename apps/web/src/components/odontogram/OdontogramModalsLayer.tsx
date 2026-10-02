@@ -267,18 +267,81 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 									return;
 								}
 								const message = dictationApplyMessage(plan);
-								if (plan.applied.length > 0) {
+
+								// Разбор SOAP дневника 043/у и расширенных клинических статусов
+								let jsonBody: Record<string, unknown> | null = null;
+								try {
+									jsonBody = JSON.parse(rawBody) as Record<string, unknown>;
+								} catch {
+									// некритично, используем plan
+								}
+
+								// biome-ignore lint/suspicious/noExplicitAny: dynamic payload inspection
+								const emkUpdates = (jsonBody?.emkUpdates || (jsonBody?.payload as any)?.emkUpdates) as any;
+								if (
+									emkUpdates &&
+									(emkUpdates.complaint ||
+										emkUpdates.diagnosis ||
+										emkUpdates.treatmentPlan ||
+										emkUpdates.objectiveStatus)
+								) {
+									try {
+										window.dispatchEvent(
+											new CustomEvent("dente-apply-soap-protocol", {
+												detail: {
+													mode: "smart_append",
+													immediate: true,
+													soap: {
+														complaint: emkUpdates.complaint,
+														anamnesis: emkUpdates.anamnesis,
+														statusLocalis: emkUpdates.objectiveStatus,
+														diagnosisIcd10:
+															emkUpdates.diagnosisIcd10 || emkUpdates.diagnosis,
+														treatmentDescription: emkUpdates.treatmentPlan,
+														recommendations: emkUpdates.recommendations,
+													},
+												},
+											}),
+										);
+									} catch (err) {
+										logger.warn("[dictation parse] error dispatching soap protocol", err);
+									}
+								}
+
+								// Извлечение находок для одонтограммы (клинический статус с приоритетом над общим)
+								// biome-ignore lint/suspicious/noExplicitAny: dynamic list
+								const rawTeeth = (jsonBody?.toothUpdates || (jsonBody?.payload as any)?.toothUpdates) as any[];
+								const clinicalFindings: Array<{ toothNumber: number; state: ToothState }> = [];
+
+								if (Array.isArray(rawTeeth)) {
+									for (const item of rawTeeth) {
+										const num = Number(item.code);
+										if (num > 10 && item.clinicalState) {
+											clinicalFindings.push({
+												toothNumber: num,
+												state: item.clinicalState as ToothState,
+											});
+										}
+									}
+								}
+
+								const targetFindings =
+									clinicalFindings.length > 0
+										? clinicalFindings
+										: plan.applied.map((item) => ({
+												toothNumber: item.toothNumber,
+												state: item.state,
+											}));
+
+								if (targetFindings.length > 0) {
 									setAiPendingProposal({
 										source: "voice",
 										title: "Голосовая диктовка врача",
-										findings: plan.applied.map((item) => ({
-											toothNumber: item.toothNumber,
-											state: item.state,
-										})),
+										findings: targetFindings,
 									});
 									showToast(
-										`Голосом распознано: ${plan.applied.length} ${countLabel(plan.applied.length, "зуб", "зуба", "зубов")}. Подтвердите внесение в формулу.`,
-										"info",
+										`Голосом распознано: ${targetFindings.length} ${countLabel(targetFindings.length, "зуб", "зуба", "зубов")}. Дневник приёма и формула готовы к подтверждению.`,
+										"success",
 										8000,
 									);
 								} else {

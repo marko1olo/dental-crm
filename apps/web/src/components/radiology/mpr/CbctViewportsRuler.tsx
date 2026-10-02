@@ -12,8 +12,8 @@
  */
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
-import { Check, Copy, Ruler, Sparkles, Spline, Trash2 } from "lucide-react";
-import type { CbctMeasurementRuler, CbctViewportType, Point3D } from "../cbctMprMath";
+import { Check, Compass, Copy, Ruler, Sparkles, Spline, Trash2 } from "lucide-react";
+import type { CbctAngleMeasurement, CbctMeasurementRuler, CbctViewportType, Point3D } from "../cbctMprMath";
 import {
 	type EndoCanalMeasurement,
 	formatEndoCanalHudText,
@@ -110,14 +110,44 @@ export function getRulerSummary(
 }
 
 /**
+ * Filters active angles belonging to a specific viewport projection plane.
+ */
+export function filterAnglesByViewport(
+	angles: readonly CbctAngleMeasurement[],
+	viewport: CbctViewportType,
+): CbctAngleMeasurement[] {
+	return angles.filter((a) => a.plane === viewport);
+}
+
+/**
+ * Summary metrics of angle measurements placed on a slice.
+ */
+export function getAngleSummary(
+	angles: readonly CbctAngleMeasurement[],
+	viewport?: CbctViewportType,
+): { count: number; latestDeg: number | null } {
+	const filtered = viewport ? filterAnglesByViewport(angles, viewport) : angles;
+	if (filtered.length === 0) {
+		return { count: 0, latestDeg: null };
+	}
+	const latest = filtered[filtered.length - 1]?.angleDeg ?? null;
+	return {
+		count: filtered.length,
+		latestDeg: latest !== null ? Number(latest.toFixed(1)) : null,
+	};
+}
+
+/**
  * Props for Viewport Ruler Toolbar
  */
 export interface CbctViewportRulerToolbarProps {
 	readonly viewportType: CbctViewportType;
 	readonly activeTool?: string | undefined;
-	readonly onSelectTool?: ((tool: "ruler" | "crosshair") => void) | undefined;
+	readonly onSelectTool?: ((tool: "ruler" | "crosshair" | "angle") => void) | undefined;
 	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
 	readonly onClearRulers?: ((viewport?: CbctViewportType) => void) | undefined;
+	readonly angles?: readonly CbctAngleMeasurement[] | undefined;
+	readonly onClearAngles?: ((viewport?: CbctViewportType) => void) | undefined;
 	readonly className?: string | undefined;
 	readonly colorMap?: CbctColorMapMode | number | undefined;
 	readonly onSelectColorMap?: ((mode: CbctColorMapMode) => void) | undefined;
@@ -140,6 +170,8 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 	onSelectTool,
 	rulers = [],
 	onClearRulers,
+	angles = [],
+	onClearAngles,
 	className = "",
 	sharpenAmount,
 	onChangeSharpenAmount,
@@ -151,12 +183,19 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 	onClearEndoCanals,
 }) => {
 	const isRulerActive = activeTool === "ruler";
+	const isAngleActive = activeTool === "angle";
 	const isEndoActive = activeTool === "endo_canal" || isEndoCanalActive;
 	const viewportRulers = useMemo(
 		() => filterRulersByViewport(rulers, viewportType),
 		[rulers, viewportType],
 	);
 	const summary = useMemo(() => getRulerSummary(viewportRulers), [viewportRulers]);
+
+	const viewportAngles = useMemo(
+		() => filterAnglesByViewport(angles, viewportType),
+		[angles, viewportType],
+	);
+	const angleSummary = useMemo(() => getAngleSummary(viewportAngles), [viewportAngles]);
 
 	const [localSharpen, setLocalSharpen] = useState<number>(() => {
 		if (sharpenAmount !== undefined) return sharpenAmount;
@@ -199,12 +238,29 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 		[isRulerActive, onSelectTool],
 	);
 
+	const handleToggleAngle = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			if (!onSelectTool) return;
+			onSelectTool(isAngleActive ? "crosshair" : "angle");
+		},
+		[isAngleActive, onSelectTool],
+	);
+
 	const handleClear = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
 			onClearRulers?.(viewportType);
 		},
 		[onClearRulers, viewportType],
+	);
+
+	const handleClearAngles = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			onClearAngles?.(viewportType);
+		},
+		[onClearAngles, viewportType],
 	);
 
 	return (
@@ -219,7 +275,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 				className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-sm shadow-xs ${
 					isRulerActive
 						? "bg-amber-500/25 text-amber-200 border border-amber-400/80 shadow-amber-950/40 ring-1 ring-amber-400/50"
-						: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-700/80 hover:border-amber-400/60"
+						: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700/80 hover:border-amber-400/60"
 				}`}
 				title="Экранная линейка: замер расстояния на срезе клик-драгом [M]"
 				aria-pressed={isRulerActive}
@@ -230,6 +286,27 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 				<span className="text-[11px] font-bold">Линейка</span>
 				<kbd className="hidden sm:inline-block text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-amber-300/90 border border-zinc-700 font-mono">
 					M
+				</kbd>
+			</button>
+
+			{/* 1b. Angle Tool Toggle Button (Strictly 28px height, 1-click active) */}
+			<button
+				type="button"
+				onClick={handleToggleAngle}
+				className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-sm shadow-xs ${
+					isAngleActive
+						? "bg-amber-500/25 text-amber-200 border border-amber-400/80 shadow-amber-950/40 ring-1 ring-amber-400/50"
+						: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700/80 hover:border-amber-400/60"
+				}`}
+				title="Экранный угломер: замер угла в градусах кликом по 3 точкам [A]"
+				aria-pressed={isAngleActive}
+				aria-label="Угломер"
+				data-testid={`cbct-viewport-angle-btn-${viewportType}`}
+			>
+				<Compass className={`w-3.5 h-3.5 shrink-0 ${isAngleActive ? "text-amber-300" : "text-zinc-400"}`} />
+				<span className="text-[11px] font-bold">Угол</span>
+				<kbd className="hidden sm:inline-block text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-amber-300/90 border border-zinc-700 font-mono">
+					A
 				</kbd>
 			</button>
 
@@ -248,7 +325,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 					className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-sm shadow-xs ${
 						isEndoActive
 							? "bg-teal-500/25 text-teal-200 border border-teal-400/80 shadow-teal-950/40 ring-1 ring-teal-400/50"
-							: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-700/80 hover:border-teal-400/60"
+							: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700/80 hover:border-teal-400/60"
 					}`}
 					title="Эндо-калипер: замер длины и кривизны корневого канала (по Шнайдеру) [E]"
 					aria-pressed={isEndoActive}
@@ -302,7 +379,7 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 					className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-sm shadow-xs ${
 						activeSharpen > 0
 							? "bg-emerald-500/25 text-emerald-200 border border-emerald-400/80 shadow-emerald-950/40 ring-1 ring-emerald-400/50"
-							: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-700/80 hover:border-emerald-400/60"
+							: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-700/80 hover:border-emerald-400/60"
 					}`}
 					title={`Резкость балочек кости (Лапласиан): ${activeSharpen <= 0.05 ? "Выкл" : activeSharpen <= 0.55 ? "50%" : "100%"}`}
 					aria-label="Резкость балочек"
@@ -343,6 +420,39 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 					title="Очистить все замеры линейки на этом срезе"
 					aria-label="Очистить замеры"
 					data-testid={`cbct-clear-rulers-btn-${viewportType}`}
+				>
+					<Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-rose-400" />
+				</button>
+			)}
+
+			{/* 2b. Angle Live Measurements Badge */}
+			{angleSummary.count > 0 && (
+				<div
+					className="h-7 min-h-[28px] max-h-[28px] px-2 py-0.5 rounded-md bg-zinc-900/90 border border-zinc-700/80 backdrop-blur-sm text-xs font-mono flex items-center gap-1.5 shadow-xs"
+					data-testid={`cbct-angle-count-${viewportType}`}
+					title={`${angleSummary.count} замер(ов) угла на проекции ${viewportType}. Последний: ${angleSummary.latestDeg ?? 0}°`}
+				>
+					<span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+					<span className="text-zinc-300 text-[10px] font-bold">
+						{angleSummary.count} угл.
+					</span>
+					{angleSummary.latestDeg !== null && (
+						<span className="text-amber-300 font-bold text-[11px]">
+							{angleSummary.latestDeg}°
+						</span>
+					)}
+				</div>
+			)}
+
+			{/* 3b. Angle Quick Clear Button */}
+			{angleSummary.count > 0 && onClearAngles && (
+				<button
+					type="button"
+					onClick={handleClearAngles}
+					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+					title="Очистить все замеры углов на этом срезе"
+					aria-label="Очистить углы"
+					data-testid={`cbct-clear-angles-btn-${viewportType}`}
 				>
 					<Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-rose-400" />
 				</button>
@@ -415,12 +525,12 @@ export const CbctEndoCanalHud: React.FC<CbctEndoCanalHudProps> = ({
 			role="status"
 			aria-label="Результат замера канала"
 			data-testid="cbct-endo-canal-hud"
-			className={`inline-flex items-center gap-2 pointer-events-auto select-none bg-zinc-950/92 border border-teal-500/60 shadow-xl backdrop-blur-md px-2.5 py-1 rounded-md text-xs text-zinc-100 ${className}`}
+			className={`inline-flex items-center gap-2 pointer-events-auto select-none bg-zinc-950/92 border border-teal-500/60 shadow-xl backdrop-blur-md px-2.5 py-1 rounded-md text-xs text-zinc-300 ${className}`}
 		>
 			{/* 1. Icon & Core Result Text: «Канал: 21.2 мм, изгиб 18°» */}
 			<div className="flex items-center gap-1.5 font-mono">
 				<Spline className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-				<span className="font-bold text-zinc-100 whitespace-nowrap text-[12px]" data-testid="cbct-endo-hud-text">
+				<span className="font-bold text-zinc-200 whitespace-nowrap text-[12px]" data-testid="cbct-endo-hud-text">
 					{hudText}
 				</span>
 			</div>
@@ -439,8 +549,8 @@ export const CbctEndoCanalHud: React.FC<CbctEndoCanalHudProps> = ({
 				onClick={handleCopyToProtocol}
 				className={`h-6 min-h-[24px] max-h-[24px] px-2 rounded text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
 					copied
-						? "bg-emerald-600 text-white font-bold border border-emerald-400 shadow-xs"
-						: "bg-teal-600/80 hover:bg-teal-600 text-white border border-teal-400/80 hover:border-teal-300 shadow-xs"
+						? "bg-emerald-950/70 text-emerald-200 font-medium border border-emerald-500/50 shadow-xs"
+						: "bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 hover:text-teal-200 border border-teal-500/50 shadow-xs"
 				}`}
 				title="Скопировать замер в протокол эндодонтии (Форма 043/у)"
 				aria-label="В дневник"
@@ -448,12 +558,12 @@ export const CbctEndoCanalHud: React.FC<CbctEndoCanalHudProps> = ({
 			>
 				{copied ? (
 					<>
-						<Check className="w-3 h-3 text-white shrink-0" />
+						<Check className="w-3 h-3 text-emerald-200 shrink-0" />
 						<span>Скопировано</span>
 					</>
 				) : (
 					<>
-						<Copy className="w-3 h-3 text-teal-100 shrink-0" />
+						<Copy className="w-3 h-3 text-teal-300 shrink-0" />
 						<span>В дневник</span>
 					</>
 				)}
@@ -485,9 +595,11 @@ export const CbctEndoCanalHud: React.FC<CbctEndoCanalHudProps> = ({
 export interface CbctViewportsRulerOverlayProps {
 	readonly viewportType: CbctViewportType;
 	readonly activeTool?: string | undefined;
-	readonly onSelectTool?: ((tool: "ruler" | "crosshair") => void) | undefined;
+	readonly onSelectTool?: ((tool: "ruler" | "crosshair" | "angle") => void) | undefined;
 	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
 	readonly onClearRulers?: ((viewport?: CbctViewportType) => void) | undefined;
+	readonly angles?: readonly CbctAngleMeasurement[] | undefined;
+	readonly onClearAngles?: ((viewport?: CbctViewportType) => void) | undefined;
 	readonly windowWidth?: number | undefined;
 	readonly windowLevel?: number | undefined;
 	readonly onSelectQuickWlPreset?: ((preset: { windowWidth: number; windowLevel: number }) => void) | undefined;
@@ -515,6 +627,8 @@ export const CbctViewportsRulerOverlay: React.FC<CbctViewportsRulerOverlayProps>
 	onSelectTool,
 	rulers = [],
 	onClearRulers,
+	angles = [],
+	onClearAngles,
 	windowWidth,
 	windowLevel,
 	onSelectQuickWlPreset,
@@ -548,6 +662,8 @@ export const CbctViewportsRulerOverlay: React.FC<CbctViewportsRulerOverlayProps>
 					onSelectTool={onSelectTool}
 					rulers={rulers}
 					onClearRulers={onClearRulers}
+					angles={angles}
+					onClearAngles={onClearAngles}
 					colorMap={colorMap}
 					onSelectColorMap={onSelectColorMap}
 					sharpenAmount={sharpenAmount}

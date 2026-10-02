@@ -15,6 +15,7 @@ import {
 import { getSharedCbctWorkerBridge } from "./cbctWorkerBridge";
 import type { DecodeDicomSliceTask } from "./cbctWorkerBridge";
 import { showToast } from "../../GlobalToast";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 
 export interface UseCbctDicomLoaderParams {
 	jawType: "mandible" | "maxilla";
@@ -54,7 +55,6 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 	const alignArchAndCrosshair = useCallback((vol: CbctVoxelVolume) => {
 		const arch = autoDetectDentalArch(vol, jawType);
 		setArchCurve(arch);
-		setShowDentalArch(true);
 		const occlusalZMm = findOcclusalZPlane(vol, jawType);
 		let archCenterX = 0;
 		let archCenterY = 0;
@@ -69,7 +69,7 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 		}
 		setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 		return arch;
-	}, [jawType, setArchCurve, setShowDentalArch, setCrosshairMm]);
+	}, [jawType, setArchCurve, setCrosshairMm]);
 
 	const handleProgressiveVolumeReady = useCallback(
 		(previewVol: CbctVoxelVolume, loadId: number) => {
@@ -172,7 +172,9 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 			setDicomLoadingStatus("Загрузка исследования из DICOMweb...");
 			setDicomProgress(5);
 			try {
+				const authHeaders = getDenteAuthHeaders();
 				const vol = await buildVolumeFromDicomweb(studyUid, seriesUid, {
+					headers: authHeaders,
 					onProgress: (pct, msg) => {
 						if (currentLoadId !== activeLoadIdRef.current) return;
 						setDicomProgress(pct);
@@ -495,13 +497,14 @@ interface DemoCbctManifest {
 				let loaded = 0;
 				const files: File[] = [];
 				const CHUNK_SIZE = 10;
+				const authHeaders = getDenteAuthHeaders({ Accept: "application/dicom" });
 				for (let i = 0; i < imageIds.length; i += CHUNK_SIZE) {
 					if (currentLoadId !== activeLoadIdRef.current) return;
 					const chunk = imageIds.slice(i, i + CHUNK_SIZE);
 					const chunkFiles = await Promise.all(
 						chunk.map(async (id, idx) => {
 							const cleanUrl = id.replace(/^wadouri:/, "");
-							const res = await fetch(cleanUrl);
+							const res = await fetch(cleanUrl, { headers: authHeaders });
 							if (!res.ok) throw new Error(`HTTP ${res.status} при загрузке среза ${i + idx + 1}`);
 							const blob = await res.blob();
 							return new File([blob], `slice_${String(i + idx).padStart(3, "0")}.dcm`, { type: "application/dicom" });

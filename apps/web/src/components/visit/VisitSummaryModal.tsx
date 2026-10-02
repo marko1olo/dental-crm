@@ -569,10 +569,10 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							</div>
 							<div>
 								<div className="font-bold text-sm text-[var(--ink)]">
-									1-Click Синтез дневника по МКБ-10 и формуле
+									1-Click Заполнение дневника по диагнозу и формуле
 								</div>
 								<div className="text-xs text-[var(--muted)]">
-									Автозаполнение жалоб (S), статуса (O), диагноза (A) и протокола (P) по клиническим стандартам СтАР
+									Автозаполнение жалоб, осмотра, диагноза и плана лечения по клиническим стандартам
 								</div>
 							</div>
 						</div>
@@ -624,7 +624,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							data-testid="summary-synthesize-protocol-btn"
 						>
 							<Sparkles className="w-4 h-4" />
-							<span>Сформировать дневник по МКБ-10 и формуле</span>
+							<span>Заполнить дневник по диагнозу и формуле</span>
 						</button>
 						<button
 							type="button"
@@ -694,7 +694,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								}
 							}}
 							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/40 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
-							title="Сформировать дневник приёма по МКБ-10 и формуле зубов"
+							title="Сформировать дневник приёма по диагнозу и зубной формуле"
 							data-testid="summary-open-protocol-generator-btn"
 						>
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />

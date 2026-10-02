@@ -313,7 +313,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 								{targetLabelRu}
 							</h3>
 							<span className="text-xs text-[var(--odontogram-ink-muted,#64748b)]">
-								Челюстно-окклюзионная диагностика и внесение в Форму 043/у
+								Челюстно-окклюзионная диагностика и внесение в медицинскую карту
 							</span>
 						</div>
 					</div>
@@ -515,7 +515,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 						data-testid="jaw-modal-apply-btn"
 					>
 						{selectedPreset ? <Check size={14} /> : <Zap size={14} />}
-						<span>{selectedPreset ? "Внести в карту 043/у (1 клик)" : "Норма в 1 клик (043/у)"}</span>
+						<span>{selectedPreset ? "Внести в карту (1 клик)" : "Норма в 1 клик"}</span>
 					</button>
 				</div>
 			</div>

@@ -196,8 +196,10 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			assert.equal(getToothStateFromHotkey("ц"), "Crown");
 			assert.equal(getToothStateFromHotkey("и"), "Implant");
 			assert.equal(getToothStateFromHotkey("0"), "Missing");
+			assert.equal(getToothStateFromHotkey("x"), "Missing");
+			assert.equal(getToothStateFromHotkey("х"), "Missing");
 			assert.equal(getToothStateFromHotkey("з"), "Healthy");
-			assert.equal(getToothStateFromHotkey("x"), null);
+			assert.equal(getToothStateFromHotkey("q"), null);
 		});
 	});
 

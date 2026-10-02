@@ -378,7 +378,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						disabled={isWritingOffCarpules}
 						onClick={() => handleQuickWriteoffCarpules()}
 						className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-bold text-xs cursor-pointer transition-colors bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
-						title="Списать пустую карпулу анестетика в 1 клик без комиссии (СанПиН 3.3686-21, ПКУ)"
+						title="Утилизировать пустую карпулу анестетика в 1 клик"
 					>
 						<Syringe size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="hidden sm:inline">

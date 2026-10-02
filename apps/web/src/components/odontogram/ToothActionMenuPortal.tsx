@@ -27,7 +27,7 @@ export interface ToothActionMenuConfig {
 	y: number;
 	position: "top" | "bottom";
 	caretOffset: number;
-	surfaces?: string[];
+	surfaces?: string[] | undefined;
 }
 
 export interface ToothActionMenuPortalProps {
@@ -163,65 +163,7 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 					)}
 				</div>
 
-				{/* Quick Surface Chips in 1 Compact Neat Row (Miller Law, CLIN-03) */}
-				<div className="col-span-2 flex flex-col gap-1 mb-2 p-2 rounded-xl bg-[var(--odontogram-surface,#f1f5f9)] dark:bg-zinc-800/60 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50">
-					<div className="flex items-center justify-between px-1">
-						<span className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)]">
-							Поверхности (1 клик):
-						</span>
-						<span className="text-[11px] font-mono font-bold text-[var(--teal,#0d9488)]">
-							{activeSurfaces.length > 0 ? `[${activeSurfaces.join("")}]` : "вся коронка"}
-						</span>
-					</div>
-					<div className="flex items-center justify-between gap-1 flex-nowrap overflow-x-auto py-0.5">
-						{[
-							{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
-							{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
-							{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
-							{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
-							{ label: "M", surfs: ["M"], title: "Медиальная (M)" },
-							{ label: "D", surfs: ["D"], title: "Дистальная (D)" },
-							{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
-							{ label: "L", surfs: ["L"], title: "Язычная / Нёбная (L)" },
-							{ label: "К", surfs: ["K"], title: "Контактная / Коронковая (К)" },
-							{ label: "А", surfs: ["A"], title: "Апикальная (А)" },
-						].map((chip) => {
-							const isSelected = chip.surfs.length > 0 && chip.surfs.every((s) => activeSurfaces.includes(s));
-							return (
-								<button
-									key={chip.label}
-									type="button"
-									onClick={() => {
-										setActiveSurfaces((prev) =>
-											isSelected
-												? prev.filter((s) => !chip.surfs.includes(s))
-												: Array.from(new Set([...prev, ...chip.surfs])),
-										);
-									}}
-									className={`flex-1 min-h-[44px] sm:min-h-[32px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
-										isSelected
-											? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-											: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"
-									}`}
-									title={chip.title}
-									data-testid={`odontogram-module-surf-${chip.label}`}
-								>
-									{chip.label}
-								</button>
-							);
-						})}
-					</div>
-					<details className="mt-1">
-						<summary className="text-[11px] text-[var(--muted,#64748b)] cursor-pointer hover:underline text-center">
-							Анатомическая 2D схема
-						</summary>
-						<div className="flex justify-center p-1">
-							<SurfaceSelector selected={activeSurfaces} onChange={setActiveSurfaces} size={60} />
-						</div>
-					</details>
-				</div>
-
-				{/* 1-Tap Tooth Status Assignment */}
+				{/* 1-Tap Tooth Status Assignment (Hot Path: Diagnosis First, No Mandatory Surface Clicking) */}
 				{TOOTH_STATE_ACTIONS.map((action) => (
 					<button
 						key={action.state}
@@ -232,6 +174,68 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 						<span className="min-w-0 break-words text-center leading-tight">{action.label}</span>
 					</button>
 				))}
+
+				{/* Optional Surfaces Accordion (Tier 2 Warm Context: Under States, Closed by Default) */}
+				<details className="odontogram-surfaces-accordion col-span-2 group rounded-xl bg-[var(--odontogram-surface,#f1f5f9)] dark:bg-zinc-800/60 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50 p-2 transition-all">
+					<summary className="flex items-center justify-between cursor-pointer select-none px-1 text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] dark:hover:text-zinc-100 transition-colors">
+						<span className="flex items-center gap-1.5">
+							<span>Указать поверхности (опционально)</span>
+							<span className="text-[10px] text-[var(--muted,#64748b)] font-normal group-open:hidden">▾ раскрыть</span>
+							<span className="text-[10px] text-[var(--muted,#64748b)] font-normal hidden group-open:inline">▴ свернуть</span>
+						</span>
+						<span className="text-[11px] font-mono font-bold text-[var(--teal,#0d9488)]">
+							{activeSurfaces.length > 0 ? `[${activeSurfaces.join("")}]` : "вся коронка"}
+						</span>
+					</summary>
+					<div className="flex flex-col gap-1 mt-2 pt-2 border-t border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50">
+						<div className="flex items-center justify-between gap-1 flex-nowrap overflow-x-auto py-0.5">
+							{[
+								{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
+								{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
+								{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
+								{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
+								{ label: "M", surfs: ["M"], title: "Медиальная (M)" },
+								{ label: "D", surfs: ["D"], title: "Дистальная (D)" },
+								{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
+								{ label: "L", surfs: ["L"], title: "Язычная / Нёбная (L)" },
+								{ label: "К", surfs: ["K"], title: "Контактная / Коронковая (К)" },
+								{ label: "А", surfs: ["A"], title: "Апикальная (А)" },
+							].map((chip) => {
+								const isSelected = chip.surfs.length > 0 && chip.surfs.every((s) => activeSurfaces.includes(s));
+								return (
+									<button
+										key={chip.label}
+										type="button"
+										onClick={() => {
+											setActiveSurfaces((prev) =>
+												isSelected
+													? prev.filter((s) => !chip.surfs.includes(s))
+													: Array.from(new Set([...prev, ...chip.surfs])),
+											);
+										}}
+										className={`flex-1 min-h-[44px] sm:min-h-[32px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+											isSelected
+												? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+												: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"
+										}`}
+										title={chip.title}
+										data-testid={`odontogram-module-surf-${chip.label}`}
+									>
+										{chip.label}
+									</button>
+								);
+							})}
+						</div>
+						<details className="mt-1">
+							<summary className="text-[11px] text-[var(--muted,#64748b)] cursor-pointer hover:underline text-center">
+								Анатомическая 2D схема
+							</summary>
+							<div className="flex justify-center p-1">
+								<SurfaceSelector selected={activeSurfaces} onChange={setActiveSurfaces} size={60} />
+							</div>
+						</details>
+					</div>
+				</details>
 
 				<button
 					type="button"
@@ -352,7 +356,7 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 						showToast(`Протокол для зуба #${num} внесён в дневник приёма`, "success");
 						onClose();
 					}}
-					aria-label="Вставить в дневник 043/у"
+					aria-label="Вставить в дневник приёма"
 					className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
 				>
 					<Sparkles className="w-4 h-4 inline mr-2 shrink-0" />

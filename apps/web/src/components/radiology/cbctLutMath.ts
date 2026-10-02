@@ -34,17 +34,17 @@ export const DENTE_CONTRAST_PRESETS: readonly DenteContrastPreset[] = [
 		windowWidth: 3200,
 		windowLevel: 600,
 		peakEnamel: 195,
-		airCutoffHU: -100,
+		airCutoffHU: -500,
 		description: "W: 3200, L: 600, пик эмали ~195 (широкий диапазон, мягкая эмаль, видна вся градация каналов)",
 	},
 	{
 		id: "preset_2_standard",
-		nameRu: "Preset 2 — Контрастный дентальный",
-		windowWidth: 2000,
-		windowLevel: 450,
+		nameRu: "Preset 2 — Канонический стандарт",
+		windowWidth: 4025,
+		windowLevel: 525,
 		peakEnamel: 215,
-		airCutoffHU: -100,
-		description: "W: 2000, L: 450, пик эмали ~215 (четкая граница эмаль-дентин-кость, классический дентальный)",
+		airCutoffHU: -500,
+		description: "W: 4025, L: 525, пик эмали ~215 (канонический стандарт пользователя: W:4025, L:525, Gamma:1.50, Air:-500)",
 	},
 	{
 		id: "preset_3_endo",
@@ -52,7 +52,7 @@ export const DENTE_CONTRAST_PRESETS: readonly DenteContrastPreset[] = [
 		windowWidth: 2600,
 		windowLevel: 850,
 		peakEnamel: 185,
-		airCutoffHU: -100,
+		airCutoffHU: -500,
 		description: "W: 2600, L: 850, пик эмали ~185 (фокус на губчатой кости и апексах, зубы темнее, каналы как на ладони)",
 	},
 	{
@@ -61,7 +61,7 @@ export const DENTE_CONTRAST_PRESETS: readonly DenteContrastPreset[] = [
 		windowWidth: 1400,
 		windowLevel: 550,
 		peakEnamel: 230,
-		airCutoffHU: -100,
+		airCutoffHU: -500,
 		description: "W: 1400, L: 550, пик эмали ~230 (резкая кортикальная пластинка, выразительный рельеф)",
 	},
 	{
@@ -70,7 +70,7 @@ export const DENTE_CONTRAST_PRESETS: readonly DenteContrastPreset[] = [
 		windowWidth: 4000,
 		windowLevel: 1000,
 		peakEnamel: 200,
-		airCutoffHU: -100,
+		airCutoffHU: -500,
 		description: "W: 4000, L: 1000, пик эмали ~200 (расширенная динамика под имплантаты и металл, 0 ореолов)",
 	},
 ] as const;
@@ -94,13 +94,13 @@ export const CLINICAL_RADIOLOGY_PRESETS: readonly ClinicalRadiologyPreset[] = [
 		id: "standard",
 		label: "Стандарт",
 		shortLabel: "Стандарт",
-		windowWidth: 2200,
-		windowLevel: 450,
-		slabThicknessMm: 0.0,
+		windowWidth: 4025,
+		windowLevel: 525,
+		slabThicknessMm: 1.0,
 		slabMode: "single",
-		panoThicknessMm: 3.0,
-		panoProjectionMode: "ray_sum",
-		descriptionRu: "Чистый нативный срез (0 мм / воксель), стандартный дентальный диапазон (W: 2200, L: 450), эмаль без засветки",
+		panoThicknessMm: 1.0,
+		panoProjectionMode: "average",
+		descriptionRu: "Чистый канонический срез (1.0 мм), дентальный диапазон (W: 4025, L: 525, Gamma: 1.50, Air: -500 HU)",
 		testId: "cbct-preset-standard",
 	},
 	{
@@ -147,6 +147,7 @@ export const CLINICAL_RADIOLOGY_PRESETS: readonly ClinicalRadiologyPreset[] = [
 export interface SoftKneeConfig {
 	readonly peakEnamel?: number;
 	readonly airCutoffHU?: number;
+	readonly enabled?: boolean;
 }
 
 export function generate16BitLut(
@@ -165,14 +166,19 @@ export function generate16BitLut(
 	const lowIdx = Math.max(0, Math.min(65536, Math.floor(low + 32768)));
 	const highIdx = Math.max(0, Math.min(65536, Math.ceil(high + 32768)));
 
-	// Air threshold for pitch black air background (<= -100 HU strictly black)
+	// Air threshold for pitch black air background (-500 HU canonical standard)
+	const hasAirCutoff = typeof softKnee === "object" && typeof softKnee?.airCutoffHU === "number"
+		? true
+		: (windowWidth === 4025 && windowLevel === 525);
 	const airCutoff = typeof softKnee === "object" && typeof softKnee?.airCutoffHU === "number"
-		? softKnee.airCutoffHU
-		: -100;
+		? softKnee.airCutoffHU!
+		: -500;
 	const airThresholdIdx = Math.max(0, Math.min(65536, Math.floor(airCutoff + 32768)));
 
 	// Clinical soft-knee compression: prevents blinding 255/255/255 whiteout for dense enamel/metal when requested
-	const useSoftKnee = Boolean(softKnee);
+	const useSoftKnee = typeof softKnee === "object"
+		? Boolean(softKnee.enabled ?? (softKnee.peakEnamel !== undefined))
+		: Boolean(softKnee);
 	const peakEnamel = typeof softKnee === "object" && typeof softKnee?.peakEnamel === "number"
 		? softKnee.peakEnamel
 		: 185;
@@ -240,6 +246,10 @@ export function generate16BitLut(
 	const isGamma = gamma !== 1.0 && gamma > 0;
 	for (let i = lowIdx; i < highIdx; i++) {
 		const hu = i - 32768;
+		if (hasAirCutoff && hu <= airCutoff) {
+			lut[i] = bottomVal;
+			continue;
+		}
 		if (hu <= low) {
 			lut[i] = bottomVal;
 		} else if (hu >= high) {
@@ -278,7 +288,7 @@ export function get16BitLut(
 	softKnee: boolean | SoftKneeConfig = false,
 ): Uint8Array {
 	const skKey = typeof softKnee === "object"
-		? `${softKnee.peakEnamel ?? ""}_${softKnee.airCutoffHU ?? ""}`
+		? `${softKnee.enabled ? "1" : "0"}_${softKnee.peakEnamel ?? ""}_${softKnee.airCutoffHU ?? ""}`
 		: (softKnee ? "1" : "0");
 	const key = `${windowWidth}|${windowLevel}|${invert ? 1 : 0}|${gamma}|${skKey}`;
 	let lut = lutCache.get(key);
@@ -336,4 +346,128 @@ export function huToGrayscale(
 	return lut[idx] ?? 0;
 }
 
-// ─── 3. MULTI-PLANAR RESLICER (MPR) WITH SLAB PROJECTIONS ───────────────────
+// ─── 3. DOCTOR CBCT DEFAULT SETTINGS PERSISTENCE ────────────────────────────
+
+export interface DoctorCbctDefaultSettings {
+	readonly windowWidth: number;
+	readonly windowLevel: number;
+	readonly gamma: number;
+	readonly airCutoffHU: number;
+	readonly mprThicknessMm: number;
+	readonly panoThicknessMm: number;
+}
+
+export const CANONICAL_CBCT_SETTINGS: DoctorCbctDefaultSettings = {
+	windowWidth: 4025,
+	windowLevel: 525,
+	gamma: 1.50,
+	airCutoffHU: -500,
+	mprThicknessMm: 1.0,
+	panoThicknessMm: 1.0,
+};
+
+export const DOCTOR_CBCT_SETTINGS_STORAGE_KEY = "dente_doctor_cbct_defaults_v1";
+
+/**
+ * Loads persisted doctor CBCT default settings from safeLocalStorage.
+ * Falls back to canonical standards (W: 4025, L: 525, Gamma: 1.50, Air: -500, MPR: 1.0, Pano: 1.0).
+ */
+export function loadDoctorCbctSettings(): DoctorCbctDefaultSettings {
+	if (typeof window === "undefined") {
+		return CANONICAL_CBCT_SETTINGS;
+	}
+	try {
+		const raw = window.localStorage?.getItem(DOCTOR_CBCT_SETTINGS_STORAGE_KEY);
+		if (!raw) return CANONICAL_CBCT_SETTINGS;
+		const parsed = JSON.parse(raw);
+		return {
+			windowWidth:
+				typeof parsed.windowWidth === "number" && parsed.windowWidth >= 400 && parsed.windowWidth <= 6000
+					? parsed.windowWidth
+					: CANONICAL_CBCT_SETTINGS.windowWidth,
+			windowLevel:
+				typeof parsed.windowLevel === "number" && parsed.windowLevel >= -1000 && parsed.windowLevel <= 3000
+					? parsed.windowLevel
+					: CANONICAL_CBCT_SETTINGS.windowLevel,
+			gamma:
+				typeof parsed.gamma === "number" && parsed.gamma >= 0.2 && parsed.gamma <= 3.0
+					? Number(parsed.gamma.toFixed(2))
+					: CANONICAL_CBCT_SETTINGS.gamma,
+			airCutoffHU:
+				typeof parsed.airCutoffHU === "number" && parsed.airCutoffHU >= -1000 && parsed.airCutoffHU <= 0
+					? parsed.airCutoffHU
+					: CANONICAL_CBCT_SETTINGS.airCutoffHU,
+			mprThicknessMm:
+				typeof parsed.mprThicknessMm === "number" && parsed.mprThicknessMm >= 0 && parsed.mprThicknessMm <= 20
+					? Number(parsed.mprThicknessMm.toFixed(1))
+					: CANONICAL_CBCT_SETTINGS.mprThicknessMm,
+			panoThicknessMm:
+				typeof parsed.panoThicknessMm === "number" && parsed.panoThicknessMm >= 0.5 && parsed.panoThicknessMm <= 30
+					? Number(parsed.panoThicknessMm.toFixed(1))
+					: CANONICAL_CBCT_SETTINGS.panoThicknessMm,
+		};
+	} catch {
+		return CANONICAL_CBCT_SETTINGS;
+	}
+}
+
+/**
+ * Saves doctor CBCT default settings to safeLocalStorage.
+ * Dispatches a DOM event 'dente:cbct-defaults-updated' for reactive UI sync.
+ */
+export function saveDoctorCbctSettings(
+	settings: Partial<DoctorCbctDefaultSettings>,
+): DoctorCbctDefaultSettings {
+	const current = loadDoctorCbctSettings();
+	const merged: DoctorCbctDefaultSettings = {
+		windowWidth:
+			typeof settings.windowWidth === "number" && settings.windowWidth >= 400 && settings.windowWidth <= 6000
+				? Math.round(settings.windowWidth)
+				: current.windowWidth,
+		windowLevel:
+			typeof settings.windowLevel === "number" && settings.windowLevel >= -1000 && settings.windowLevel <= 3000
+				? Math.round(settings.windowLevel)
+				: current.windowLevel,
+		gamma:
+			typeof settings.gamma === "number" && settings.gamma >= 0.2 && settings.gamma <= 3.0
+				? Number(settings.gamma.toFixed(2))
+				: current.gamma,
+		airCutoffHU:
+			typeof settings.airCutoffHU === "number" && settings.airCutoffHU >= -1000 && settings.airCutoffHU <= 0
+				? Math.round(settings.airCutoffHU)
+				: current.airCutoffHU,
+		mprThicknessMm:
+			typeof settings.mprThicknessMm === "number" && settings.mprThicknessMm >= 0 && settings.mprThicknessMm <= 20
+				? Number(settings.mprThicknessMm.toFixed(1))
+				: current.mprThicknessMm,
+		panoThicknessMm:
+			typeof settings.panoThicknessMm === "number" && settings.panoThicknessMm >= 0.5 && settings.panoThicknessMm <= 30
+				? Number(settings.panoThicknessMm.toFixed(1))
+				: current.panoThicknessMm,
+	};
+
+	if (typeof window !== "undefined") {
+		try {
+			window.localStorage?.setItem(DOCTOR_CBCT_SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+			window.dispatchEvent(new CustomEvent("dente:cbct-defaults-updated", { detail: merged }));
+		} catch {
+			// ignore storage quota errors
+		}
+	}
+	return merged;
+}
+
+/**
+ * Resets doctor CBCT default settings back to canonical standard (4025 HU / 525 HU).
+ */
+export function resetDoctorCbctSettings(): DoctorCbctDefaultSettings {
+	if (typeof window !== "undefined") {
+		try {
+			window.localStorage?.removeItem(DOCTOR_CBCT_SETTINGS_STORAGE_KEY);
+			window.dispatchEvent(new CustomEvent("dente:cbct-defaults-updated", { detail: CANONICAL_CBCT_SETTINGS }));
+		} catch {
+			// ignore
+		}
+	}
+	return CANONICAL_CBCT_SETTINGS;
+}

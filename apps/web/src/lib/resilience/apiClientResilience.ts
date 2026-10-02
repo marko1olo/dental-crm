@@ -75,15 +75,20 @@ export function isTransientNetworkFailure(error: unknown, status?: number): bool
 	}
 
 	if (error instanceof Error) {
+		if (error.name === "AbortError") {
+			return false;
+		}
 		const msg = error.message.toLowerCase();
+		if (msg.includes("abort") || msg.includes("aborted")) {
+			return false;
+		}
 		if (
 			msg.includes("failed to fetch") ||
 			msg.includes("networkerror") ||
 			msg.includes("network request failed") ||
 			msg.includes("load failed") ||
 			msg.includes("econnrefused") ||
-			msg.includes("etimedout") ||
-			msg.includes("abort")
+			msg.includes("etimedout")
 		) {
 			return true;
 		}

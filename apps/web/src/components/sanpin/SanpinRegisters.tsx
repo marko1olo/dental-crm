@@ -107,39 +107,39 @@ export interface SanpinCategoryDef {
 export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 	{
 		id: "sterilization",
-		label: "Стерилизация и автоклавы",
+		label: "Стерилизация",
 		shortLabel: "Стерилизация",
 		icon: Flame,
 		tabs: [
-			{ id: "autoclave", label: "Журнал автоклавирования", shortLabel: "Автоклавирование", category: "sterilization", icon: Flame },
-			{ id: "sterilizers", label: "Парк стерилизаторов клиники", shortLabel: "Парк оборудования", category: "sterilization", icon: Gauge },
-			{ id: "pso", label: "Контроль стерилизации (ПСО и пробы)", shortLabel: "Контроль ПСО", category: "sterilization", icon: FlaskConical },
-			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Готовность кабинета", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар / Пакет", category: "sterilization", icon: Sparkles },
+			{ id: "autoclave", label: "Журнал автоклава", shortLabel: "Автоклав", category: "sterilization", icon: Flame },
+			{ id: "sterilizers", label: "Парк стерилизаторов", shortLabel: "Оборудование", category: "sterilization", icon: Gauge },
+			{ id: "pso", label: "Проверка чистоты инструментов (пробы)", shortLabel: "Пробы чистоты", category: "sterilization", icon: FlaskConical },
+			{ id: "cabinet_readiness", label: "Готовность кабинета к приёму", shortLabel: "Готовность кабинета", category: "sterilization", icon: ShieldCheck },
+			{ id: "retroactive_batch", label: "Сухожар и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Sparkles },
 		],
 	},
 	{
 		id: "disinfection",
-		label: "Дезинфекция и уборка",
-		shortLabel: "Дезинфекция",
+		label: "Уборки и дезинфекция",
+		shortLabel: "Уборки",
 		icon: Sparkles,
 		tabs: [
-			{ id: "disinfectants", label: "Дезсредства и рабочие растворы", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
-			{ id: "bactericidal", label: "Бактерицидные установки (Дезар / УФ)", shortLabel: "Дезар / УФ", category: "disinfection", icon: Wind },
-			{ id: "cleaning", label: "Журнал генеральных уборок", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
-			{ id: "bac_lab", label: "Анти-ВИЧ аптечка и баклаборатория", shortLabel: "Анти-ВИЧ / Бакпосев", category: "disinfection", icon: Activity },
+			{ id: "disinfectants", label: "Дезсредства и растворы", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
+			{ id: "bactericidal", label: "Обеззараживание воздуха (рециркуляторы)", shortLabel: "Чистый воздух", category: "disinfection", icon: Wind },
+			{ id: "cleaning", label: "Генеральные уборки", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
+			{ id: "bac_lab", label: "Проверка стерильности (смывы)", shortLabel: "Смывы", category: "disinfection", icon: Activity },
 		],
 	},
 	{
 		id: "waste_climate",
-		label: "Отходы и климат",
-		shortLabel: "Отходы и климат",
+		label: "Отходы и микроклимат",
+		shortLabel: "Отходы",
 		icon: Recycle,
 		tabs: [
-			{ id: "waste", label: "Утилизация медицинских отходов (Класс Б)", shortLabel: "Медотходы", category: "waste_climate", icon: Recycle },
-			{ id: "needle_disposal", label: "Острый инструментарий и утилизация игл", shortLabel: "Утилизация игл", category: "waste_climate", icon: Trash2 },
-			{ id: "temperature", label: "Температура и влажность холодильников", shortLabel: "T° Холодильников", category: "waste_climate", icon: Thermometer },
-			{ id: "biohazard", label: "Аварийные ситуации", shortLabel: "Аварийные ситуации", category: "waste_climate", icon: ShieldAlert },
+			{ id: "waste", label: "Утилизация отходов", shortLabel: "Отходы", category: "waste_climate", icon: Recycle },
+			{ id: "needle_disposal", label: "Утилизация игл", shortLabel: "Иглы", category: "waste_climate", icon: Trash2 },
+			{ id: "temperature", label: "Температура холодильников", shortLabel: "Холодильники", category: "waste_climate", icon: Thermometer },
+			{ id: "biohazard", label: "Журнал аварийных ситуаций", shortLabel: "Аварии", category: "waste_climate", icon: ShieldAlert },
 		],
 	},
 ];
@@ -277,8 +277,8 @@ function DisinfectantsRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ УЧЕТА ПОЛУЧЕНИЯ, РАСХОДА ДЕЗИНФИЦИРУЮЩИХ СРЕДСТВ И ПРИГОТОВЛЕНИЯ РАБОЧИХ РАСТВОРОВ</h2>
-				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней» (п. 3582)">Дезсредства и рабочие растворы клиники</p>
+				<h2>ЖУРНАЛ ДЕЗСРЕДСТВ И РАБОЧИХ РАСТВОРОВ</h2>
+				<p title="Учет дезинфицирующих средств клиники">Дезсредства и рабочие растворы клиники</p>
 			</div>
 
 			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
@@ -442,8 +442,8 @@ function BacLabRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ БАКТЕРИОЛОГИЧЕСКОГО КОНТРОЛЯ И СМЫВОВ НА СТЕРИЛЬНОСТЬ</h2>
-				<p title="СанПиН 3.3686-21 (п. 3640) / МУК 4.2.2942-11 «Методы санитарно-бактериологических исследований»">Контроль стерильности и санитарно-бактериологические исследования</p>
+				<h2>ЖУРНАЛ ПРОВЕРКИ СТЕРИЛЬНОСТИ (СМЫВЫ)</h2>
+				<p title="Контроль чистоты и бактериологические исследования">Контроль стерильности и санитарно-бактериологические исследования</p>
 			</div>
 
 			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
@@ -592,8 +592,8 @@ function NeedleDisposalRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>УТИЛИЗАЦИЯ ОСТРОГО ИНСТРУМЕНТАРИЯ И ИГЛ</h2>
-				<p title="СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к содержанию территорий и обращению с отходами» (разд. X)">Обезвреживание карпульных игл, лезвий и колющих отходов класса Б</p>
+				<h2>УТИЛИЗАЦИЯ ИГЛ И ОСТРЫХ ИНСТРУМЕНТОВ</h2>
+				<p title="Безопасный сбор и утилизация использованных игл">Обезвреживание карпульных игл, лезвий и колющих отходов</p>
 			</div>
 
 			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
@@ -1216,8 +1216,8 @@ function SanpinRegistersInner() {
 						<ShieldCheck size={20} color="var(--brand-primary, #2563eb)" />
 						<span>Стерилизационная и санитарный контроль</span>
 					</h1>
-					<span className="sanpin-badge-gov" title="Соответствует СанПиН 3.3686-21 и 2.1.3684-21" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
-						<CheckCircle2 size={12} /> Соответствует СанПиН
+					<span className="sanpin-badge-gov" title="Норма стерилизации и чистоты" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
+						<CheckCircle2 size={12} /> Норма стерилизации
 					</span>
 					<span className="sanpin-badge-quality" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
 						<ShieldCheck size={13} /> Контроль качества: 100% норма (0 отклонений)
@@ -1298,13 +1298,13 @@ function SanpinRegistersInner() {
 						aria-busy={autoFilling}
 						className="sanpin-btn-primary-cta touch-manipulation"
 						data-testid="sanpin-1click-autopilot-primary-btn"
-						title={`Автоматическое пакетное заполнение журналов СанПиН за ${autofillPeriod === "day" ? "день" : autofillPeriod === "week" ? "неделю" : "месяц"} (100% норма, 0 отклонений)`}
+						title={`Сформировать все журналы в 1 клик за ${autofillPeriod === "day" ? "день" : autofillPeriod === "week" ? "неделю" : "месяц"} (Автоклав, пробы чистоты, воздух, отходы, холодильники — 100% норма, 0 ручного ввода)`}
 					>
-						<Check size={15} />
+						<Sparkles size={15} />
 						<span>
 							{autoFilling
 								? "Заполнение..."
-								: `Автозаполнение журнала (${autofillPeriod === "day" ? "День" : autofillPeriod === "week" ? "Неделя" : "Месяц"})`}
+								: `Заполнить журналы (${autofillPeriod === "day" ? "День" : autofillPeriod === "week" ? "Неделя" : "Месяц"})`}
 						</span>
 					</button>
 
@@ -1314,7 +1314,7 @@ function SanpinRegistersInner() {
 						onClick={handlePrintConsolidatedBinder}
 						className="sanpin-btn-export-cta touch-manipulation"
 						data-testid="sanpin-regulatory-export-btn"
-						title="Нормативная печать журналов (Формы 257/у и 366/у) для проверок в 1 клик"
+						title="Печать журналов стерилизации и проверок чистоты в 1 клик"
 					>
 						<Printer size={15} />
 						<span>Печать журнала для проверок</span>
@@ -1470,7 +1470,7 @@ function SanpinRegistersInner() {
 									data-testid="print-consolidated-binder-btn"
 								>
 									<FileBadge size={15} color="var(--teal)" />
-									<span>Нормативная выгрузка (Формы 257/у и 366/у)</span>
+									<span>Выгрузка журналов для проверки</span>
 								</button>
 
 								{/* CSV */}
@@ -1585,7 +1585,7 @@ function SanpinRegistersInner() {
 									data-testid="open-journal-257-header-btn"
 								>
 									<FileSpreadsheet size={15} color="var(--teal)" />
-									<span>Журнал 257/у</span>
+									<span>Журнал автоклава</span>
 								</button>
 
 								{/* Печать текущей вкладки */}
@@ -1747,7 +1747,7 @@ function SanpinRegistersInner() {
 						onClick={() => handleSelectTab("autoclave")}
 						style={{ cursor: "pointer" }}
 					>
-						<span className="sanpin-kpi-label">Стерилизация (257/у)</span>
+						<span className="sanpin-kpi-label">Стерилизация</span>
 						<span className="sanpin-kpi-value">{summary.sterilization?.totalCyclesToday ?? 0} циклов</span>
 						<span className="sanpin-kpi-subtext" style={{ color: "#059669", fontWeight: 600 }}>
 							Успешно: {summary.sterilization?.passedToday ?? 0}

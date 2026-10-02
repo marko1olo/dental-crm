@@ -5,6 +5,7 @@ import { parse as parseDotEnvFile } from "dotenv";
 const loadedEnvFiles: string[] = [];
 
 const mergeableKeyListEnvNames = new Set([
+	"GEMINI_API_KEYS",
 	"GROQ_API_KEYS",
 	"OPENAI_API_KEYS",
 	"DEEPGRAM_API_KEYS",

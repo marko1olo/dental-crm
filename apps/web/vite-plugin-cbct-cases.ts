@@ -92,29 +92,80 @@ function loadSeriesVolumeSync(seriesPath: string, patientName: string, id: strin
 	if (!existsSync(resolvedPath)) {
 		throw new Error(`Directory not found: ${resolvedPath}`);
 	}
-	let files = readdirSync(resolvedPath).filter((f) => f.toLowerCase().endsWith(".dcm")).sort();
-	if (files.length === 0) {
+	const rawFiles = readdirSync(resolvedPath).filter((f) => f.toLowerCase().endsWith(".dcm"));
+	if (rawFiles.length === 0) {
 		throw new Error(`No .dcm files in: ${resolvedPath}`);
 	}
 
-	const sliceCount = files.length;
-	const firstBuf = readFileSync(path.join(resolvedPath, files[0]!));
-	const firstHdr = parseDicomSliceHeader(firstBuf.buffer.slice(firstBuf.byteOffset, firstBuf.byteOffset + firstBuf.byteLength));
-	const lastBuf = readFileSync(path.join(resolvedPath, files[files.length - 1]!));
-	const lastHdr = parseDicomSliceHeader(lastBuf.buffer.slice(lastBuf.byteOffset, lastBuf.byteOffset + lastBuf.byteLength));
-
-	const z0 = firstHdr.imagePositionPatient?.[2] ?? 0;
-	const zLast = lastHdr.imagePositionPatient?.[2] ?? 0;
-	if (z0 > zLast) {
-		files.reverse(); // Inferior -> Superior
+	interface ParsedSliceEntry {
+		fileName: string;
+		filePath: string;
+		z: number;
+		instanceNumber: number;
+		header: ReturnType<typeof parseDicomSliceHeader>;
 	}
 
-	const w = firstHdr.cols;
-	const h = firstHdr.rows;
-	const d = sliceCount;
+	// 1. Scan and parse slice headers (up to 128KB header slice to cover full metadata without loading pixel data)
+	const parsed: ParsedSliceEntry[] = [];
+	const dimCounts = new Map<string, number>();
+
+	for (const f of rawFiles) {
+		const filePath = path.join(resolvedPath, f);
+		const buf = readFileSync(filePath);
+		const headerLen = Math.min(buf.byteLength, 131072);
+		const hdr = parseDicomSliceHeader(buf.buffer.slice(buf.byteOffset, buf.byteOffset + headerLen));
+		if (hdr.cols > 0 && hdr.rows > 0) {
+			const key = `${hdr.cols}x${hdr.rows}`;
+			dimCounts.set(key, (dimCounts.get(key) || 0) + 1);
+			const z = hdr.imagePositionPatient?.[2] ?? hdr.sliceLocationZ ?? 0;
+			parsed.push({
+				fileName: f,
+				filePath,
+				z,
+				instanceNumber: hdr.instanceNumber ?? 0,
+				header: hdr,
+			});
+		}
+	}
+
+	// 2. Identify dominant volume dimensions (eliminates 2D scout/localizer thumbnails like 256x256 I0000313.dcm)
+	let domKey = "";
+	let maxCount = 0;
+	for (const [k, count] of dimCounts.entries()) {
+		if (count > maxCount) {
+			maxCount = count;
+			domKey = k;
+		}
+	}
+	const [domCols, domRows] = domKey.split("x").map(Number) as [number, number];
+
+	// 3. Filter dominant slices with 16-bit CT representation
+	const filtered = parsed.filter(
+		(p) => p.header.cols === domCols && p.header.rows === domRows && (p.header.bitsAllocated === 16 || p.header.bitsStored >= 12),
+	);
+
+	if (filtered.length === 0) {
+		throw new Error(`No valid 16-bit CT slices matching ${domCols}x${domRows} in: ${resolvedPath}`);
+	}
+
+	// 4. Sort slices geometrically along physical Z (inferior -> superior), with instanceNumber fallback
+	const hasDistinctZ = filtered.some((p) => p.z !== filtered[0]!.z);
+	if (hasDistinctZ) {
+		filtered.sort((a, b) => a.z - b.z);
+	} else {
+		filtered.sort((a, b) => a.instanceNumber - b.instanceNumber);
+	}
+
+	const firstHdr = filtered[0]!.header;
+	const lastHdr = filtered[filtered.length - 1]!.header;
+	const z0 = filtered[0]!.z;
+	const zLast = filtered[filtered.length - 1]!.z;
+	const w = domCols;
+	const h = domRows;
+	const d = filtered.length;
 	const spX = firstHdr.pixelSpacing?.x || 0.25;
 	const spY = firstHdr.pixelSpacing?.y || 0.25;
-	const spZ = Math.abs(zLast - z0) / Math.max(1, d - 1) || firstHdr.sliceThickness || 0.25;
+	const spZ = hasDistinctZ && d > 1 ? Math.abs(zLast - z0) / (d - 1) : firstHdr.sliceThickness || 0.25;
 
 	const totalVoxels = w * h * d;
 	const data = new Int16Array(totalVoxels);
@@ -133,8 +184,8 @@ function loadSeriesVolumeSync(seriesPath: string, patientName: string, id: strin
 	let globalMaxHU = -32768;
 
 	for (let z = 0; z < d; z++) {
-		const buf = readFileSync(path.join(resolvedPath, files[z]!));
-		const hdr = parseDicomSliceHeader(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+		const buf = readFileSync(filtered[z]!.filePath);
+		const hdr = parseDicomSliceHeader(buf.buffer.slice(buf.byteOffset, buf.byteOffset + Math.min(buf.byteLength, 131072)));
 		const offset = hdr.pixelDataByteOffset;
 		const baseIdx = z * sliceVoxelCount;
 		const sliceArrayBuf = buf.buffer.slice(buf.byteOffset + offset, buf.byteOffset + offset + sliceVoxelCount * 2);

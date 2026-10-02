@@ -502,8 +502,8 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 					icd10: "K04.0",
 					anesthesia: "Артикаин 1:100 000 (1.7 мл)",
 					description:
-						"Рекомендован эндодонтический протокол СтАР (NaOCl 2.5% + EDTA 17% + Metapex) и анестезия Sol. Ultracaini DS Forte (Артикаин 1:100 000). Заполнить форму 043/у в 1 клик?",
-					actionPrompt: `Заполни дневник 043/у для зуба #${activeTooth} по протоколу эндодонтического лечения пульпита K04.0 с анестезией Артикаин 1:100 000.`,
+						"Рекомендован эндодонтический протокол (NaOCl 2.5% + EDTA 17% + Metapex) и анестезия Sol. Ultracaini DS Forte (Артикаин 1:100 000). Заполнить дневник приёма в 1 клик?",
+					actionPrompt: `Заполни дневник приёма для зуба #${activeTooth} по протоколу эндодонтического лечения пульпита K04.0 с анестезией Артикаин 1:100 000.`,
 					form043: {
 						tooth: activeTooth,
 						diagnosis: `K04.0 Пульпит зуба #${activeTooth}`,
@@ -537,8 +537,8 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 					icd10: "K02.1",
 					anesthesia: "Артикаин 1:200 000 (1.7 мл)",
 					description:
-						"Рекомендован протокол прямой композитной реставрации (OptiBond FL + Filtek Ultimate) и анестезия Sol. Ultracaini DS (1:200 000). Заполнить форму 043/у в 1 клик?",
-					actionPrompt: `Заполни форму 043/у для зуба #${activeTooth} по протоколу препарирования и пломбирования кариеса дентина K02.1.`,
+						"Рекомендован протокол прямой композитной реставрации (OptiBond FL + Filtek Ultimate) и анестезия Sol. Ultracaini DS (1:200 000). Заполнить дневник приёма в 1 клик?",
+					actionPrompt: `Заполни дневник приёма для зуба #${activeTooth} по протоколу лечения кариеса дентина K02.1.`,
 					form043: {
 						tooth: activeTooth,
 						diagnosis: `K02.1 Кариес дентина зуба #${activeTooth}`,

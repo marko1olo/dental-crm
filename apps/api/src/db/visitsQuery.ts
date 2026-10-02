@@ -474,11 +474,23 @@ export async function acceptVisitDraftInDb(
 
 		// Execute atomic material deduction only on initial signing (never double-deduct on amendment)
 		if (!isAmendingSigned) {
+			let signingDoctorId: string | null = null;
+			if (visit.appointmentId) {
+				const [appRow] = await tx
+					.select({ doctorUserId: schema.appointments.doctorUserId })
+					.from(schema.appointments)
+					.where(eq(schema.appointments.id, visit.appointmentId))
+					.limit(1);
+				if (appRow?.doctorUserId) {
+					signingDoctorId = appRow.doctorUserId;
+				}
+			}
+
 			try {
 				await deductMaterialsForVisit(tx, {
 					organizationId,
 					visitId: input.visitId,
-					userId: null,
+					userId: signingDoctorId,
 					transactionType: "auto_deduct",
 				});
 			} catch (deductionError) {

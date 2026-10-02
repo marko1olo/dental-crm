@@ -1,3 +1,4 @@
+import "./setupCornerstonePolyfill";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -226,6 +227,65 @@ describe("DicomArchiveUploader - DICOM filter and format validation", () => {
 		assert.equal(typeof DicomArchiveUploader, "function");
 		assert.equal(typeof ImagingDicomArchiveUploader, "function");
 		assert.equal(DicomArchiveUploader, ImagingDicomArchiveUploader);
+	});
+
+	test("verifies DicomArchiveUploader is re-exported from radiology domain per Mandate 8l", async () => {
+		const radiologyModule = await import("../components/radiology/DicomArchiveUploader");
+		assert.equal(typeof radiologyModule.DicomArchiveUploader, "function");
+		assert.equal(radiologyModule.DicomArchiveUploader, DicomArchiveUploader);
+	});
+
+	test("uploadDicomFileToStow dispatches STOW-RS POST with Authorization headers", async () => {
+		const { uploadDicomFileToStow } = await import("../components/dicom/DicomArchiveUploader");
+		const originalFetch = globalThis.fetch;
+		let calledUrl = "";
+		let calledMethod = "";
+		let headersObj: Record<string, string> = {};
+
+		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			calledUrl = String(input);
+			calledMethod = init?.method ?? "GET";
+			headersObj = (init?.headers ?? {}) as Record<string, string>;
+			return { ok: true, status: 200 } as unknown as Response;
+		}) as typeof fetch;
+
+		try {
+			const dummyBlob = new Blob([new Uint8Array([1, 2, 3, 4])], { type: "application/dicom" });
+			const result = await uploadDicomFileToStow(dummyBlob);
+			assert.equal(result, true);
+			assert.equal(calledUrl, "/api/dicomweb/studies");
+			assert.equal(calledMethod, "POST");
+			assert.equal(headersObj["Content-Type"], "application/dicom");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
+	test("uploadDicomFileToStow with patientId and doctorId appends query parameters", async () => {
+		const { uploadDicomFileToStow } = await import("../components/dicom/DicomArchiveUploader");
+		const originalFetch = globalThis.fetch;
+		let calledUrl = "";
+
+		globalThis.fetch = (async (input: RequestInfo | URL) => {
+			calledUrl = String(input);
+			return { ok: true, status: 200 } as unknown as Response;
+		}) as typeof fetch;
+
+		try {
+			const dummyBlob = new Blob([new Uint8Array([1, 2, 3])], { type: "application/dicom" });
+			const result = await uploadDicomFileToStow(dummyBlob, "patient-007", "doctor-999");
+			assert.equal(result, true);
+			assert.equal(calledUrl, "/api/dicomweb/studies?patientId=patient-007&doctorId=doctor-999");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
+	test("extractDicomHeaderInfo safely handles raw binary and falls back to generated UID", async () => {
+		const { extractDicomHeaderInfo } = await import("../components/dicom/dicomOfflineSync");
+		const buffer = new ArrayBuffer(64);
+		const info = extractDicomHeaderInfo(buffer);
+		assert.ok(info.studyInstanceUid.startsWith("1.2.643.5.1.13.2."));
 	});
 
 	test("sortDicomEntries sorts KaVo OP300 and standard DICOM slices numerically", () => {

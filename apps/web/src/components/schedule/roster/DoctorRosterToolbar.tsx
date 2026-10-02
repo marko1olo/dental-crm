@@ -149,6 +149,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 		}, [cabinets]);
 
 		const [selectedDoctorId, setSelectedDoctorId] = React.useState<string>(() => doctors[0]?.id || "");
+		const [isPresetMenuOpen, setIsPresetMenuOpen] = React.useState<boolean>(false);
 		const [selectedChairKey, setSelectedChairKey] = React.useState<string>(() => {
 			const firstChair = allChairs[0];
 			return firstChair ? `${firstChair.cabinetId}:::${firstChair.chairId}` : "";
@@ -361,150 +362,209 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								<Sparkles size={16} />
 								<span>Автозаполнение по шаблону</span>
 							</button>
-							<div className="roster-preset-dropdown">
+							<div className="roster-preset-dropdown" style={{ position: "relative" }}>
 								<button
 									type="button"
 									className="roster-btn roster-btn-secondary"
 									style={{ minHeight: "34px", height: "34px" }}
 									title="Применить типовой график сменности ко всем врачам"
+									onClick={() => setIsPresetMenuOpen((prev) => !prev)}
+									aria-expanded={isPresetMenuOpen}
 								>
 									<Layers size={16} />
 									<span>Шаблоны графиков ▾</span>
 								</button>
-								<div className="roster-preset-menu">
-									<button
-										type="button"
-										onClick={() => onApplyPreset("five_day", "5/2")}
+								{isPresetMenuOpen && (
+									<div
+										className="roster-preset-menu"
+										style={{
+											position: "absolute",
+											top: "calc(100% + 4px)",
+											left: 0,
+											zIndex: 50,
+											background: "var(--paper, #ffffff)",
+											border: "1px solid var(--line, #e2e8f0)",
+											borderRadius: "8px",
+											boxShadow: "var(--shadow-3, 0 10px 15px -3px rgba(0,0,0,0.1))",
+											display: "flex",
+											flexDirection: "column",
+											minWidth: "260px",
+											padding: "4px",
+										}}
 									>
-										Пятидневка (5/2, Пн-Пт 6.6ч)
-									</button>
-									<button
-										type="button"
-										onClick={() => onApplyPreset("two_two", "2/2")}
-									>
-										Сменный 2 через 2 (2/2, 12ч)
-									</button>
-									<button
-										type="button"
-										onClick={() =>
-											onApplyPreset("morning", "Утренние смены")
-										}
-									>
-										Все утренние (08:30–14:30)
-									</button>
-									<button
-										type="button"
-										onClick={() =>
-											onApplyPreset("evening", "Вечерние смены")
-										}
-									>
-										Все вечерние (14:30–20:30)
-									</button>
-									<button
-										type="button"
-										onClick={() =>
-											onApplyPreset("full_day", "Полный день")
-										}
-									>
-										Полный день (12ч смены)
-									</button>
-									{onCopyWeekToNextWeek && (
 										<button
 											type="button"
-											data-testid="dropdown-copy-next-week"
-											onClick={onCopyWeekToNextWeek}
+											onClick={() => {
+												onApplyPreset("five_day", "5/2");
+												setIsPresetMenuOpen(false);
+											}}
 										>
-											Копировать на след. неделю (+7 дней)
+											Пятидневка (5/2, Пн-Пт 6.6ч)
 										</button>
-									)}
-									{onCopyWeekToMonth && (
 										<button
 											type="button"
-											data-testid="dropdown-copy-month"
-											onClick={onCopyWeekToMonth}
+											onClick={() => {
+												onApplyPreset("two_two", "2/2");
+												setIsPresetMenuOpen(false);
+											}}
 										>
-											Копировать на 4 недели (месяц)
+											Сменный 2 через 2 (2/2, 12ч)
 										</button>
-									)}
-									{onClearWeek && (
 										<button
 											type="button"
-											data-testid="dropdown-clear-week"
-											onClick={onClearWeek}
-											style={{ color: "var(--bad-fg, #ef4444)" }}
+											onClick={() => {
+												onApplyPreset("morning", "Утренние смены");
+												setIsPresetMenuOpen(false);
+											}}
 										>
-											Очистить смены недели
+											Все утренние (08:30–14:30)
 										</button>
-									)}
-									{onApplyDoctorChairWeeklyTemplate && (
-										<>
-											<div
-												style={{
-													borderTop: "1px solid var(--line, #cbd5e1)",
-													margin: "0.25rem 0",
-													padding: "0.25rem 0.75rem 0.125rem",
-													fontSize: "0.6875rem",
-													fontWeight: 700,
-													color: "var(--muted, #64748b)",
-													textTransform: "uppercase",
+										<button
+											type="button"
+											onClick={() => {
+												onApplyPreset("evening", "Вечерние смены");
+												setIsPresetMenuOpen(false);
+											}}
+										>
+											Все вечерние (14:30–20:30)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												onApplyPreset("full_day", "Полный день");
+												setIsPresetMenuOpen(false);
+											}}
+										>
+											Полный день (12ч смены)
+										</button>
+										{onCopyWeekToNextWeek && (
+											<button
+												type="button"
+												data-testid="dropdown-copy-next-week"
+												onClick={() => {
+													onCopyWeekToNextWeek();
+													setIsPresetMenuOpen(false);
 												}}
 											>
-												Закрепление за креслом (StomX)
-											</div>
+												Копировать на след. неделю (+7 дней)
+											</button>
+										)}
+										{onCopyWeekToMonth && (
 											<button
 												type="button"
-												data-testid="toolbar-template-mon-wed-fri"
-												onClick={() => handleApplyTemplate("mon_wed_fri_morning")}
+												data-testid="dropdown-copy-month"
+												onClick={() => {
+													onCopyWeekToMonth();
+													setIsPresetMenuOpen(false);
+												}}
 											>
-												Пн/Ср/Пт (Утро 08:00–14:00)
+												Копировать на 4 недели (месяц)
 											</button>
+										)}
+										{onClearWeek && (
 											<button
 												type="button"
-												data-testid="toolbar-template-tue-thu-sat"
-												onClick={() => handleApplyTemplate("tue_thu_sat_evening")}
+												data-testid="dropdown-clear-week"
+												onClick={() => {
+													onClearWeek();
+													setIsPresetMenuOpen(false);
+												}}
+												style={{ color: "var(--bad-fg, #ef4444)" }}
 											>
-												Вт/Чт/Сб (Вечер 14:00–20:00)
+												Очистить смены недели
 											</button>
+										)}
+										{onApplyDoctorChairWeeklyTemplate && (
+											<>
+												<div
+													style={{
+														borderTop: "1px solid var(--line, #cbd5e1)",
+														margin: "0.25rem 0",
+														padding: "0.25rem 0.75rem 0.125rem",
+														fontSize: "0.6875rem",
+														fontWeight: 700,
+														color: "var(--muted, #64748b)",
+														textTransform: "uppercase",
+													}}
+												>
+													Закрепление за креслом (StomX)
+												</div>
+												<button
+													type="button"
+													data-testid="toolbar-template-mon-wed-fri"
+													onClick={() => {
+														handleApplyTemplate("mon_wed_fri_morning");
+														setIsPresetMenuOpen(false);
+													}}
+												>
+													Пн/Ср/Пт (Утро 08:00–14:00)
+												</button>
+												<button
+													type="button"
+													data-testid="toolbar-template-tue-thu-sat"
+													onClick={() => {
+														handleApplyTemplate("tue_thu_sat_evening");
+														setIsPresetMenuOpen(false);
+													}}
+												>
+													Вт/Чт/Сб (Вечер 14:00–20:00)
+												</button>
+												<button
+													type="button"
+													data-testid="toolbar-template-two-two"
+													onClick={() => {
+														handleApplyTemplate("two_two_full");
+														setIsPresetMenuOpen(false);
+													}}
+												>
+													2/2 (Полный день 08:00–20:00)
+												</button>
+												<button
+													type="button"
+													data-testid="toolbar-template-daily-morning"
+													onClick={() => {
+														handleApplyTemplate("daily_morning");
+														setIsPresetMenuOpen(false);
+													}}
+												>
+													Каждый день (Утро 08:00–14:00)
+												</button>
+												<button
+													type="button"
+													data-testid="toolbar-template-five-day"
+													onClick={() => {
+														handleApplyTemplate("five_day_standard");
+														setIsPresetMenuOpen(false);
+													}}
+												>
+													Пятидневка (09:00–18:00)
+												</button>
+												<button
+													type="button"
+													data-testid="toolbar-template-even-odd"
+													onClick={() => {
+														handleApplyTemplate("even_odd_month");
+														setIsPresetMenuOpen(false);
+													}}
+												>
+													Чётные / Нечётные (Врач А/Б)
+												</button>
+											</>
+										)}
+										{onRotateShifts && (
 											<button
 												type="button"
-												data-testid="toolbar-template-two-two"
-												onClick={() => handleApplyTemplate("two_two_full")}
+												data-testid="toolbar-rotate-shifts"
+												onClick={() => {
+													onRotateShifts();
+													setIsPresetMenuOpen(false);
+												}}
 											>
-												2/2 (Полный день 08:00–20:00)
+												Ротация смен (Утро ⇄ Вечер)
 											</button>
-											<button
-												type="button"
-												data-testid="toolbar-template-daily-morning"
-												onClick={() => handleApplyTemplate("daily_morning")}
-											>
-												Каждый день (Утро 08:00–14:00)
-											</button>
-											<button
-												type="button"
-												data-testid="toolbar-template-five-day"
-												onClick={() => handleApplyTemplate("five_day_standard")}
-											>
-												Пятидневка (09:00–18:00)
-											</button>
-											<button
-												type="button"
-												data-testid="toolbar-template-even-odd"
-												onClick={() => handleApplyTemplate("even_odd_month")}
-											>
-												Чётные / Нечётные (Врач А/Б)
-											</button>
-										</>
-									)}
-									{onRotateShifts && (
-										<button
-											type="button"
-											data-testid="toolbar-rotate-shifts"
-											onClick={onRotateShifts}
-										>
-											Ротация смен (Утро ⇄ Вечер)
-										</button>
-									)}
-								</div>
+										)}
+									</div>
+								)}
 							</div>
 						</div>
 					</div>

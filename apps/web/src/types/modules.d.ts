@@ -51,3 +51,20 @@ declare module "jpeg-lossless-decoder-js" {
 	export default jpeg;
 }
 
+declare module "dicom-parser" {
+	export interface DicomDataSet {
+		string(tag: string): string | undefined;
+		uint16(tag: string): number | undefined;
+		uint32(tag: string): number | undefined;
+		elements: Record<string, { dataOffset: number; length: number }>;
+	}
+	export function parseDicom(
+		byteArray: Uint8Array,
+		options?: { untilTag?: string },
+	): DicomDataSet;
+	const dicomParser: {
+		parseDicom: typeof parseDicom;
+	};
+	export default dicomParser;
+}
+

@@ -17,7 +17,7 @@
 import React from "react";
 import {
 	ShieldCheck,
-	Tablet,
+	FileText,
 	FileCheck,
 	Award,
 	History,
@@ -84,10 +84,10 @@ export function VisitConsentsTab(props: VisitConsentsTabProps) {
 						onClick={onOpenInformedConsentModal}
 						data-testid="btn-visit-open-consent-modal"
 						className="vct-btn vct-btn-secondary"
-						title="Открыть полный каталог бланков согласий и планшетной подписи"
+						title="Открыть каталог бланков согласий (печать А4 и архив)"
 					>
-						<Tablet size={14} />
-						<span>Выбрать бланк ИДС</span>
+						<FileText size={14} />
+						<span>Бланки согласий ИДС</span>
 					</button>
 					<button
 						type="button"
@@ -206,9 +206,9 @@ export function VisitConsentsTab(props: VisitConsentsTabProps) {
 						type="button"
 						onClick={onOpenInformedConsentModal}
 						className="vct-btn vct-btn-secondary"
-						title="Открыть модальное окно выбора любого специализированного бланка ИДС"
+						title="Открыть каталог всех бланков информированных добровольных согласий (ИДС)"
 					>
-						<Tablet size={13} />
+						<FileText size={13} />
 						<span>Все бланки ИДС</span>
 					</button>
 				</div>

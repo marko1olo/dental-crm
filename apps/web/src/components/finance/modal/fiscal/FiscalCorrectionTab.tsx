@@ -35,10 +35,10 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 				<ShieldAlert size={24} className="text-amber-600 shrink-0 mt-0.5" />
 				<div>
 					<h4 className="font-extrabold text-sm text-amber-950 dark:text-amber-200">
-						Кассовый чек коррекции по 54-ФЗ (ФФД 1.2)
+						Чек коррекции
 					</h4>
 					<p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
-						Применяется при исправлении ошибок кассира или оформлении расчетов, произведенных без применения ККТ (с указанием документа-основания: Теги 1173, 1178, 1179).
+						Применяется при исправлении ошибок кассира или оформлении расчетов без кассы (с указанием документа-основания).
 					</p>
 				</div>
 			</div>
@@ -46,7 +46,7 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div>
 					<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-						Тип коррекции (Тег 1173):
+						Тип коррекции:
 					</label>
 					<div className="flex gap-2">
 						<button
@@ -58,7 +58,7 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 									: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							Самостоятельно (0)
+							Самостоятельно
 						</button>
 						<button
 							type="button"
@@ -69,14 +69,14 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 									: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							По предписанию (1)
+							По предписанию
 						</button>
 					</div>
 				</div>
 
 				<div>
 					<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-						Дата документа-основания (Тег 1178):
+						Дата документа-основания:
 					</label>
 					<input
 						type="date"
@@ -88,7 +88,7 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 
 				<div>
 					<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
-						Номер документа-основания (Тег 1179):
+						Номер документа-основания:
 					</label>
 					<input
 						type="text"
@@ -107,7 +107,7 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 						type="text"
 						value={correctionReason}
 						onChange={(e) => setCorrectionReason(e.target.value)}
-						placeholder="Сбой ККТ / Ошибка оператора"
+						placeholder="Сбой кассы / Ошибка оператора"
 						className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
 					/>
 				</div>
@@ -117,14 +117,14 @@ export const FiscalCorrectionTab: React.FC<FiscalCorrectionTabProps> = ({
 				type="button"
 				onClick={() => handleExecuteFiscalization()}
 				disabled={isFiscalizing}
-				title={isFiscalizing ? "Идет фискализация чека коррекции в ККТ..." : undefined}
+				title={isFiscalizing ? "Идет печать чека коррекции на кассе..." : undefined}
 				className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
 			>
 				<ShieldCheck size={18} />
 				<span>
 					{isFiscalizing
-						? "Фискализация чека коррекции..."
-						: `Пробить чек коррекции на ${formatMoneyRu(totalSumRub)}`}
+						? "Печать чека коррекции..."
+						: `Напечатать чек коррекции на ${formatMoneyRu(totalSumRub)}`}
 				</span>
 			</button>
 		</div>

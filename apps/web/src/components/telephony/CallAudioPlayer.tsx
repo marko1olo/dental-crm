@@ -73,12 +73,37 @@ export function CallAudioPlayer({
 		}
 	}, [isMuted, volumeLevel]);
 
-	// Audio cleanup on unmount to prevent audio leaks
+	// Track change reset: clean up previous playback, reset timer, and revoke blob URL
+	useEffect(() => {
+		const prevUrl = recordingUrl;
+		if (audioRef.current) {
+			audioRef.current.pause();
+			audioRef.current.currentTime = 0;
+		}
+		setIsPlaying(false);
+		setCurrentTime(0);
+		setHoverTime(null);
+		setAudioDuration(durationSeconds);
+
+		return () => {
+			if (prevUrl?.startsWith("blob:")) {
+				try {
+					URL.revokeObjectURL(prevUrl);
+				} catch {}
+			}
+		};
+	}, [recordingUrl, durationSeconds]);
+
+	// Audio cleanup on unmount to prevent audio leaks (Mandate 8b & 8l contract)
 	useEffect(() => {
 		return () => {
 			if (audioRef.current) {
 				audioRef.current.pause();
+				audioRef.current.currentTime = 0;
 				audioRef.current.src = "";
+				try {
+					audioRef.current.removeAttribute("src");
+				} catch {}
 				audioRef.current.load();
 			}
 		};
@@ -93,7 +118,11 @@ export function CallAudioPlayer({
 			audioRef.current
 				.play()
 				.then(() => setIsPlaying(true))
-				.catch((err) => {
+				.catch((err: unknown) => {
+					if (err instanceof Error && err.name === "AbortError") {
+						// Ignored: intentional interruption by user pause/switch
+						return;
+					}
 					console.warn("[CallAudioPlayer] Audio playback failed:", err);
 					setIsPlaying(false);
 				});

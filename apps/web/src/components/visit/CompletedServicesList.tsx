@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Check, Trash2 } from "lucide-react";
 import { money } from "../../AppHelpers";
 import {

@@ -586,7 +586,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer border border-zinc-700/60"
+							className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer border border-zinc-700/60"
 							data-testid="cbct-btn-cancel-implant"
 						>
 							Отмена
@@ -595,7 +595,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 						<button
 							type="button"
 							onClick={handleRecordToDiary}
-							className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-200 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-pointer border border-zinc-700"
+							className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-300 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-pointer border border-zinc-700"
 							data-testid="cbct-btn-apply-to-diary"
 						>
 							В дневник 043/у

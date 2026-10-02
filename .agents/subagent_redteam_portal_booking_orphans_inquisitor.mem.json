@@ -1,0 +1,54 @@
+{
+  "role": "RED TEAM PATIENT PORTAL & ONLINE BOOKING DUPLICATES & ORPHANS INQUISITOR",
+  "started_at": "2026-10-02T15:35:00Z",
+  "updated_at": "2026-10-02T16:01:00Z",
+  "status": "completed",
+  "completed_steps": [
+    "mandatory_authority_reading",
+    "codebase_reconnaissance_portal_and_booking",
+    "identify_duplicates_and_orphaned_components",
+    "identify_mock_balances_and_insecure_otps",
+    "unify_booking_and_portal_ssot",
+    "connect_portal_to_real_endpoints",
+    "verify_tests_and_typecheck",
+    "final_verbatim_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL_VULNERABILITY",
+      "description": "Insecure static OTP bypass codes ('0000', '1234', '000000', '123456') in publicBookingQueueService.ts permitted unauthorized phone verification in production without environment gate.",
+      "resolution": "Locked behind namedDevelopmentModeActive() and explicit NODE_ENV test/development check; strictly rejected in production. Added test 12."
+    },
+    {
+      "severity": "SECURITY_DEFECT",
+      "description": "Hardcoded fallback expectedCode '748291' in PatientCabinetModal.tsx allowed bypassing SMS OTP if sentOtp was not generated.",
+      "resolution": "Removed fallback; sentOtp is strictly required."
+    },
+    {
+      "severity": "ORPHAN_ENDPOINT_MISSING",
+      "description": "Patient portal had no backend endpoint to cancel appointments (PATCH /appointments/:id/cancel) or fetch bookable clinic doctors (GET /doctors).",
+      "resolution": "Implemented PATCH /api/portal/appointments/:id/cancel with tenant isolation and status guards; implemented GET /api/portal/doctors."
+    },
+    {
+      "severity": "MOCK_BALANCE_AND_MISSING_SCHEDULE",
+      "description": "GET /api/portal/me only returned visits, ignoring scheduled appointments table, patient relationships, and family group balance.",
+      "resolution": "Expanded GET /api/portal/me to return enriched appointments from schedule, familyGroups balance, and familyMembers from patientRelationships."
+    },
+    {
+      "severity": "FRONTEND_ORPHAN",
+      "description": "PatientCabinetModal only updated local React state upon booking or cancellation without calling backend APIs.",
+      "resolution": "Wired handleBookingSubmit to POST /api/portal/appointments and handleCancelAppointment to PATCH /api/portal/appointments/:id/cancel."
+    }
+  ],
+  "modified_files": [
+    "apps/api/src/services/publicBookingQueueService.ts",
+    "apps/api/src/routes/portal.ts",
+    "apps/api/src/tests/publicBookingQueue.test.ts",
+    "apps/web/src/components/portal/patientCabinet/patientCabinetMapper.ts",
+    "apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx",
+    "apps/web/src/components/portal/patientCabinet/sheets/BookingSheet.tsx",
+    "apps/web/src/tests/patientCabinet.test.ts"
+  ],
+  "commit": "06ab05fbe"
+}

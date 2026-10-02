@@ -330,6 +330,10 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 						slabMode,
 						slabThicknessMm,
 						interpolation: "trilinear",
+						gamma: 1.50,
+						useSoftKnee: false,
+						softKneeCeiling: 215.0,
+						airCutoffHU: -500.0,
 					},
 					{
 						axial: axialOffscreenRef.current,
@@ -384,6 +388,10 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 						slabMode,
 						slabThicknessMm,
 						interpolation: "trilinear",
+						gamma: 1.50,
+						useSoftKnee: false,
+						softKneeCeiling: 215.0,
+						airCutoffHU: -500.0,
 					},
 					requestId: reqId,
 				})
@@ -704,6 +712,13 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 					crossSections,
 					hoveredToothMarkerFdi: null,
 					invertColors,
+					rulers,
+					activeRuler,
+					angles,
+					activeAngle,
+					selectedMeasurement,
+					hoveredMeasurementHandle,
+					draggingMeasurementHandle,
 				});
 			}
 		}
@@ -732,6 +747,12 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 					hoveredImplantPart,
 					dragImplantPart,
 					invertColors,
+					rulers,
+					activeRuler,
+					angles,
+					activeAngle,
+					hoveredMeasurementHandle,
+					draggingMeasurementHandle,
 				});
 			}
 		}

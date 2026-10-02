@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, CheckCircle2, Printer, Tablet } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Printer, FileText } from "lucide-react";
 import type { ClinicalConsentConfig } from "./visitConsentTypes";
 
 export interface Consent1ClickBatchBannerProps {
@@ -55,10 +55,10 @@ export function Consent1ClickBatchBanner({
 						type="button"
 						onClick={onOpenInformedConsentModal}
 						className="vct-btn vct-btn-secondary"
-						title="Передать планшет пациенту для стилусной touch-подписи"
+						title="Открыть каталог бланков ИДС (печать бланков или подпись на экране при наличии планшета)"
 					>
-						<Tablet size={14} />
-						<span>Планшет / ЭЦП</span>
+						<FileText size={14} />
+						<span>Бланки / Экран</span>
 					</button>
 				</div>
 			</div>
@@ -76,7 +76,7 @@ export function Consent1ClickBatchBanner({
 						Все необходимые согласия на сегодня оформлены и активны
 					</div>
 					<div className="vct-package-desc">
-						Юридический щит врача активен. Вмешательства текущего визита обеспечены подписанной документацией (бумага / планшет).
+						Юридический щит врача активен. Вмешательства текущего визита обеспечены подписанной документацией (бумага / электронный архив).
 					</div>
 				</div>
 			</div>

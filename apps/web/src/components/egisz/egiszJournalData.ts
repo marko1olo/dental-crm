@@ -16,7 +16,14 @@ import {
 	SAMPLE_DENTAL_SEMD_105_PRESET,
 } from "./egiszRemdEngine";
 
-export type RemdDocumentStatus = "draft" | "signed" | "sent" | "registered" | "error";
+export type RemdDocumentStatus =
+	| "draft"
+	| "signed"
+	| "sent"
+	| "registered"
+	| "accepted_by_egisz"
+	| "rejected_by_egisz"
+	| "error";
 
 export interface RemdValidationError {
 	errorCode: string;

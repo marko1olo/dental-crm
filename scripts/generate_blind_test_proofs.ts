@@ -19,6 +19,7 @@ import {
 import { parseDicomSliceHeader } from "../apps/web/src/components/radiology/dicomSliceHeaderParser";
 import { findOcclusalZPlane, extractAxialMIPSlab, type AxialMIPSlab } from "../apps/web/src/components/radiology/cbctAutoArchEngine";
 import type { CbctVoxelVolume } from "../apps/web/src/components/radiology/cbctMprMath";
+import { generate16BitLut } from "../apps/web/src/components/radiology/cbctLutMath";
 import {
 	runMethod1_DynamicProgrammingRidge,
 	runMethod2_PolynomialRansacActiveContour,
@@ -157,8 +158,8 @@ async function loadVolume(cfg: PatientConfig): Promise<CbctVoxelVolume> {
 		data,
 		minHU: -1000,
 		maxHU: 3000,
-		defaultWindowWidth: 3500,
-		defaultWindowLevel: 800,
+		defaultWindowWidth: 4025,
+		defaultWindowLevel: 525,
 		isDisposed: false,
 	};
 }
@@ -166,18 +167,17 @@ async function loadVolume(cfg: PatientConfig): Promise<CbctVoxelVolume> {
 function mipToBase64Jpeg(mip: AxialMIPSlab): string {
 	const { width, height, data } = mip;
 	const rgba = new Uint8Array(width * height * 4);
-	const minHU = 750 - 3200 / 2;
-	const maxHU = 750 + 3200 / 2;
+	// Canonical user contrast LUT (W: 4025, L: 525, Gamma: 1.50, Air Cutoff: -500 HU, Soft-Knee: false)
+	const lut = generate16BitLut(4025, 525, false, 1.50, { airCutoffHU: -500, enabled: false });
 
 	for (let i = 0; i < data.length; i++) {
 		const hu = data[i] ?? -1000;
-		let norm = (hu - minHU) / (maxHU - minHU);
-		norm = Math.max(0, Math.min(1, norm));
-		const val = Math.round(Math.pow(norm, 0.92) * 255);
+		const lutIdx = (Math.max(-32768, Math.min(32767, Math.round(hu))) + 32768) & 0xffff;
+		const val = lut[lutIdx] ?? 0;
 		const idx = i * 4;
 		rgba[idx] = val;
-		rgba[idx + 1] = Math.round(val * 0.97);
-		rgba[idx + 2] = Math.round(val * 0.93);
+		rgba[idx + 1] = val;
+		rgba[idx + 2] = val;
 		rgba[idx + 3] = 255;
 	}
 	return Buffer.from(rgba.buffer).toString("base64");

@@ -7,7 +7,7 @@
  * 4. 1-Click Form 043/u Documentation Automation
  */
 
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { spawn, execSync } from "node:child_process";
 import { chromium } from "playwright";
@@ -234,6 +234,7 @@ async function main() {
 			localStorage.setItem("dente_demo_showcase", "true");
 			localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true, onboardingStep: "done", version: 1 }));
 			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done", completed: true, onboardingDismissed: true, onboardingStep: "done", version: 1 }));
+			localStorage.setItem("dente_doctor_cbct_defaults_v1", JSON.stringify({ windowWidth: 4025, windowLevel: 525, gamma: 1.50, airCutoffHU: -500, mprThicknessMm: 1.0, panoThicknessMm: 1.0 }));
 		});
 
 		page.on("pageerror", (err) => console.error("[Browser Page Error]", err.message));
@@ -396,8 +397,8 @@ async function main() {
 				maxHU,
 				rescaleSlope: 1.0,
 				rescaleIntercept: -1000,
-				defaultWindowWidth: 4400,
-				defaultWindowLevel: 1300,
+				defaultWindowWidth: 4025,
+				defaultWindowLevel: 525,
 				isDisposed: false,
 			};
 
@@ -454,10 +455,10 @@ async function main() {
 		await page.waitForTimeout(2000);
 
 		// Switch to Maxilla (Upper jaw for Zakharov)
-		const switchMaxillaBtn = page.locator("[data-testid='cbct-jaw-switch-maxilla-btn']");
+		const switchMaxillaBtn = page.locator("[data-testid='cbct-jaw-switch-maxilla-btn'], [data-testid='cbct-axial-switch-maxilla-btn']").first();
 		if (await switchMaxillaBtn.isVisible()) {
 			console.log("Switching to Maxilla (Upper Jaw)...");
-			await switchMaxillaBtn.click();
+			await switchMaxillaBtn.click({ force: true });
 			await page.waitForTimeout(1500);
 		}
 

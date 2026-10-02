@@ -13,4 +13,7 @@ export * from './PhotoCalibrationDrawer';
 export * from './PhotoCollageExportSheet';
 export * from './ClinicalPhotoProtocolModal';
 export * from './photoProtocolEngine';
-
+export * from './chairsidePhotoCompressor';
+export * from './useClipboardPhotoPaste';
+export * from './IntraoralCameraModal';
+export * from '../visit/BeforeAfterSplitter';

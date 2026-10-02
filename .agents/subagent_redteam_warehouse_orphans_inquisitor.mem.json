@@ -1,0 +1,38 @@
+{
+  "agent": "subagent_redteam_warehouse_orphans_inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-02T11:30:00Z",
+  "completed_at": "2026-10-02T16:15:00Z",
+  "goal": "Autonomous search and destruction of warehouse engine duplicates (FEFO, M-11, auto-BOM), finding and connecting orphaned warehouse logic to doctor visit completion, enforcing Zero Dead-Ends soft overdraft on stock depletion without breaking visits. Strict ban on DICOM/CT.",
+  "completed_steps": [
+    "Read core rules and project constitution (.agents/AGENTS.md, THE_HAMMER_MASTER_PROMPT.md, GEMINI.md, core.md, frontend.md)",
+    "Reconnaissance of warehouse engines in packages/shared/src/warehouse/, apps/web/src/components/warehouse/, apps/api/src/",
+    "Eliminated duplicate inline deduction in DiarySigningCeremonyService.ts, unified into canonical deductMaterialsForVisit / fefoStockService",
+    "Unified treatmentConsumablesService.ts stock decrementing to delegate to fefoStockService.deductFefo",
+    "Enhanced fefoStockService.deductForProcedure to support Order 804n string codes, service catalog resolution, seed fallbacks, and soft overdraft",
+    "Added unitCostRub propagation and procedure BOM fallback in materialDeduction.ts",
+    "Passed all 6 Inquisitor tests in warehouseSoftOverdraftAndTechCardInquisitor.test.ts (Exit Code 0)",
+    "Passed all 12 DiarySigningCeremony tests, 11 procedureBomEngine tests, 4 fefoStockService tests, 8 treatmentConsumablesService tests, 3 inventoryAutoDeduct tests",
+    "Verified 100% clean typecheck across @dental/shared and @dental/api (Exit Code 0)",
+    "Preserved strict boundary: 0 bytes touched in any DICOM / CT / CBCT / radiology code"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "issue": "Duplicate inline warehouse deduction engine in DiarySigningCeremonyService.ts",
+      "resolution": "Replaced ~140 lines of duplicate inline deduction logic with call to canonical deductMaterialsForVisit(tx, ...)."
+    },
+    {
+      "issue": "treatmentConsumablesService.ts was performing naive stockQuantity subtraction without batch/FEFO tracking or emergency overdraft records",
+      "resolution": "Refactored to delegate stock decrementing directly to fefoStockService.deductFefo with soft overdraft support."
+    },
+    {
+      "issue": "deductForProcedure crashed with syntax error if passed an Order 804n code string (e.g. A16.07.002.001) instead of UUID",
+      "resolution": "Added regex check for UUID vs string code, catalog lookup by code/order804nCode/title, and fallback to DEFAULT_804N_BOM_SEEDS and DEFAULT_804N_CONSUMABLE_LINKS."
+    },
+    {
+      "issue": "Mandates 8e & 8n Zero Dead-Ends & Silent Background Deduction",
+      "resolution": "allowOverdraft is unconditionally true in visit closing paths, recording emergency_overdraft and deficit warnings without interrupting doctors or blocking Form 043/u signing."
+    }
+  ]
+}

@@ -288,6 +288,29 @@ export const VoiceAssistantUI = memo(function VoiceAssistantUI({
 					onMouseLeave={handleLeave}
 					onTouchStart={handleStart}
 					onTouchEnd={handleEnd}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							if (isListening) {
+								stopListening();
+								isToggleModeRef.current = false;
+							} else {
+								startListening();
+								isToggleModeRef.current = true;
+							}
+						}
+					}}
+					onClick={() => {
+						if (!isHoldingRef.current && Date.now() - clickTimeRef.current > 300) {
+							if (isListening) {
+								stopListening();
+								isToggleModeRef.current = false;
+							} else {
+								startListening();
+								isToggleModeRef.current = true;
+							}
+						}
+					}}
 					aria-pressed={isListening}
 					className="dnt-actions__control dnt-actions__control--primary"
 					style={{

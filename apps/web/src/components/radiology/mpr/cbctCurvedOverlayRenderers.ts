@@ -1,4 +1,6 @@
 import type {
+	CbctAngleMeasurement,
+	CbctMeasurementRuler,
 	CbctVoxelVolume,
 	Point3D,
 	SlabProjectionMode,
@@ -6,11 +8,20 @@ import type {
 } from "../cbctMprMath";
 import {
 	ROMEXIS_COLORS,
+	calculateAngleBetween3Points3D,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
 	slicePxToScreenPx,
 	worldMmToVoxel,
 } from "../cbctMprMath";
+import {
+	panoramicWorldMmToSlicePx,
+	crossSectionWorldMmToSlicePx,
+} from "../cbctCoordinateMath";
+import {
+	drawCbctAngleMeasurement,
+	drawCbctMeasurementRuler,
+} from "../cbctOverlayMeasurementRenderers";
 import type {
 	DentalArchCurve,
 	CrossSectionSliceData,
@@ -51,6 +62,47 @@ export interface PanoramicOverlayParams {
 	crossSections: CrossSectionSliceData[];
 	hoveredToothMarkerFdi: number | null;
 	invertColors: boolean;
+	rulers?: readonly CbctMeasurementRuler[];
+	activeRuler?: (CbctMeasurementRuler & { currentMm: Point3D }) | null;
+	angles?: readonly CbctAngleMeasurement[];
+	activeAngle?: (CbctAngleMeasurement & { currentMm: Point3D }) | null;
+	selectedMeasurement?: { id?: string; type?: string } | null;
+	hoveredMeasurementHandle?: { id: string; handleIndex: number } | null;
+	draggingMeasurementHandle?: { id: string; handleIndex: number } | null;
+}
+
+function drawScreenSpaceMeasurements(
+	ctx: CanvasRenderingContext2D,
+	plane: "panoramic" | "cross_section",
+	toScreen: (pt: Point3D) => { x: number; y: number },
+	invertColors: boolean,
+	rulers: readonly CbctMeasurementRuler[],
+	activeRuler: (CbctMeasurementRuler & { currentMm: Point3D }) | null,
+	angles: readonly CbctAngleMeasurement[],
+	activeAngle: (CbctAngleMeasurement & { currentMm: Point3D }) | null,
+	selectedId?: string,
+	hoveredHandle?: { id: string; handleIndex: number } | null,
+	draggingHandle?: { id: string; handleIndex: number } | null,
+): void {
+	for (const r of rulers) {
+		if (r.plane !== plane) continue;
+		const h = hoveredHandle?.id === r.id ? hoveredHandle.handleIndex : draggingHandle?.id === r.id ? draggingHandle.handleIndex : null;
+		drawCbctMeasurementRuler(ctx, toScreen(r.startMm), toScreen(r.endMm), r.distanceMm, selectedId === r.id, h, invertColors);
+	}
+	if (activeRuler && activeRuler.plane === plane) {
+		const dist = Math.hypot(activeRuler.currentMm.x - activeRuler.startMm.x, activeRuler.currentMm.z - activeRuler.startMm.z);
+		drawCbctMeasurementRuler(ctx, toScreen(activeRuler.startMm), toScreen(activeRuler.currentMm), dist, true, null, invertColors);
+	}
+	for (const a of angles) {
+		if (a.plane !== plane) continue;
+		const h = hoveredHandle?.id === a.id ? hoveredHandle.handleIndex : draggingHandle?.id === a.id ? draggingHandle.handleIndex : null;
+		drawCbctAngleMeasurement(ctx, toScreen(a.startMm), toScreen(a.vertexMm), toScreen(a.endMm), a.angleDeg, selectedId === a.id, h);
+	}
+	if (activeAngle && activeAngle.plane === plane) {
+		const pv = activeAngle.vertexMm ? toScreen(activeAngle.vertexMm) : toScreen(activeAngle.currentMm);
+		const deg = activeAngle.vertexMm ? calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, activeAngle.currentMm) : 0;
+		drawCbctAngleMeasurement(ctx, toScreen(activeAngle.startMm), pv, toScreen(activeAngle.currentMm), deg, true, null);
+	}
 }
 
 export function drawPanoramicOverlay(
@@ -74,6 +126,13 @@ export function drawPanoramicOverlay(
 		crossSections,
 		hoveredToothMarkerFdi,
 		invertColors,
+		rulers = [],
+		activeRuler = null,
+		angles = [],
+		activeAngle = null,
+		selectedMeasurement = null,
+		hoveredMeasurementHandle = null,
+		draggingMeasurementHandle = null,
 	} = params;
 
 	const canvas = ctx.canvas;
@@ -346,6 +405,21 @@ export function drawPanoramicOverlay(
 		ctx.fillText(`#${implant3DWorld.targetToothFdi}`, pEntryScreen.x, badgeY + 6);
 		ctx.restore();
 	}
+
+	// PASS 2: Rulers & Angles on Panoramic Viewport
+	drawScreenSpaceMeasurements(
+		ctx,
+		"panoramic",
+		(pt) => slicePxToScreenPx(panoramicWorldMmToSlicePx(pt, activePano, archCurve.totalArcLengthMm), transform),
+		invertColors,
+		rulers,
+		activeRuler,
+		angles,
+		activeAngle,
+		selectedMeasurement?.id,
+		hoveredMeasurementHandle,
+		draggingMeasurementHandle,
+	);
 }
 
 export interface CrossSectionOverlayParams {
@@ -365,6 +439,12 @@ export interface CrossSectionOverlayParams {
 	hoveredImplantPart: string | null;
 	dragImplantPart: string | null;
 	invertColors: boolean;
+	rulers?: readonly CbctMeasurementRuler[];
+	activeRuler?: (CbctMeasurementRuler & { currentMm: Point3D }) | null;
+	angles?: readonly CbctAngleMeasurement[];
+	activeAngle?: (CbctAngleMeasurement & { currentMm: Point3D }) | null;
+	hoveredMeasurementHandle?: { id: string; handleIndex: number } | null;
+	draggingMeasurementHandle?: { id: string; handleIndex: number } | null;
 }
 
 export function drawCrossSectionOverlay(
@@ -383,6 +463,12 @@ export function drawCrossSectionOverlay(
 		hoveredImplantPart,
 		dragImplantPart,
 		invertColors,
+		rulers = [],
+		activeRuler = null,
+		angles = [],
+		activeAngle = null,
+		hoveredMeasurementHandle = null,
+		draggingMeasurementHandle = null,
 	} = params;
 
 	const canvas = ctx.canvas;
@@ -604,4 +690,19 @@ export function drawCrossSectionOverlay(
 		);
 		ctx.restore();
 	}
+
+	// PASS 2: Rulers & Angles on Cross-Section Viewport
+	drawScreenSpaceMeasurements(
+		ctx,
+		"cross_section",
+		(pt) => slicePxToScreenPx(crossSectionWorldMmToSlicePx(pt, activeCrossSection, canvas.width), transform),
+		invertColors,
+		rulers,
+		activeRuler,
+		angles,
+		activeAngle,
+		(selectedMeasurement as { id?: string } | null)?.id,
+		hoveredMeasurementHandle,
+		draggingMeasurementHandle,
+	);
 }

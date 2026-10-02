@@ -10,8 +10,9 @@ import { chromium } from 'playwright';
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/copilot';
 const BRAIN_PARENT = 'C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f';
 const BRAIN_CURRENT = 'C:/Users/Admin/.gemini/antigravity/brain/660c4f4b-44ee-49d6-b275-35bfe7c31ff7';
+const BRAIN_THIS_SESSION = 'C:/Users/Admin/.gemini/antigravity/brain/3ecb1380-062d-4e0e-b732-907ecfc7dc48';
 
-const TARGET_DIRS = [PROOFS_DIR, BRAIN_PARENT, BRAIN_CURRENT];
+const TARGET_DIRS = [PROOFS_DIR, BRAIN_PARENT, BRAIN_CURRENT, BRAIN_THIS_SESSION];
 for (const dir of TARGET_DIRS) {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -148,7 +149,7 @@ const MOCK_MESSAGES = [
   {
     kind: 'text',
     role: 'user',
-    text: 'Покажи приемы на сегодня и проверь статус заполнения формы 043/у по терапевтическим пациентам.',
+    text: 'Покажи приемы на сегодня и проверь статус заполнения медицинских карт по терапевтическим пациентам.',
   },
   {
     kind: 'tool',
@@ -183,7 +184,7 @@ const MOCK_MESSAGES = [
 - **10:00 - 11:00** · **Иванов И.И.** (Кабинет 1) — *Терапевтический прием*
 - **11:30 - 12:30** · **Смирнова Е.П.** (Кабинет 2) — *Ортопедическая консультация*
 
-### Клинический аудит 043/у:
+### Клинический аудит медицинских карт:
 1. **Иванов И.И.**: Отсутствует запись о проводниковой анестезии и ISQ денситометрии.
 2. **Смирнова Е.П.**: План лечения согласован, требуется сформировать гарантийный талон.`,
   },
@@ -211,6 +212,11 @@ const browser = await chromium.launch({
 });
 
 async function setupPageMocks(page, theme) {
+  page.on('pageerror', (err) => console.error(`[PAGE ERROR ${theme}]:`, err.message));
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') console.error(`[CONSOLE ERROR ${theme}]:`, msg.text());
+  });
+
   await page.addInitScript(({ themeName, mockUser }) => {
     localStorage.setItem('dente_clinic_token', 'test-clinic-token-123');
     localStorage.setItem('dente_staff_token', 'test-staff-token-456');
@@ -279,7 +285,7 @@ async function setupPageMocks(page, theme) {
             {
               id: 'nudge-1',
               kind: 'emr_alert',
-              payload: { title: 'Заполнить зубную формулу 043/у', description: 'Пациент Иванов И.И. в кресле' },
+              payload: { title: 'Заполнить зубную формулу', description: 'Пациент Иванов И.И. в кресле' },
               created_at: new Date().toISOString(),
               expires_at: new Date(Date.now() + 3600000).toISOString(),
             },
@@ -319,6 +325,43 @@ async function ensureWorkspaceUnlocked(page) {
   } catch {}
 }
 
+async function waitForCopilotReady(page) {
+  // 1. Wait for boot state / splash screen to disappear
+  await page.waitForFunction(() => {
+    const splash = document.querySelector('.loading-splash, [data-splash], .boot-state');
+    return !splash;
+  }, { timeout: 35000 }).catch(() => {});
+
+  // 2. Unlock workspace if needed
+  await ensureWorkspaceUnlocked(page);
+
+  // 3. Wait until window.__denteCopilot is mounted and operational
+  await page.waitForFunction(() => typeof window !== 'undefined' && Boolean(window.__denteCopilot), { timeout: 30000 });
+  await page.waitForTimeout(600);
+}
+
+async function openCopilot(page, { messages, pending, tab = 'chat' } = {}) {
+  await page.evaluate(({ msgs, pend, activeTab }) => {
+    if (window.__denteCopilot) {
+      if (msgs) window.__denteCopilot.setMessages(msgs);
+      if (pend) window.__denteCopilot.setPending(pend);
+      window.__denteCopilot.setActiveTab(activeTab);
+      window.__denteCopilot.open();
+    }
+  }, { msgs: messages, pend: pending, activeTab: tab });
+
+  for (let i = 0; i < 30; i++) {
+    const isOpen = await page.locator('.copilot-drawer.open').isVisible().catch(() => false);
+    if (isOpen) break;
+    await page.evaluate(() => {
+      if (window.__denteCopilot) window.__denteCopilot.open();
+    }).catch(() => {});
+    await page.waitForTimeout(500);
+  }
+  await page.waitForSelector('.copilot-drawer.open', { state: 'visible', timeout: 25000 });
+  await page.waitForTimeout(600);
+}
+
 const capturedFiles = [];
 
 // 1. PC Dark Mode (1440x900)
@@ -332,18 +375,9 @@ const capturedFiles = [];
   const page = await context.newPage();
   await setupPageMocks(page, 'dark');
   await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await ensureWorkspaceUnlocked(page);
+  await waitForCopilotReady(page);
+  await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
-  await page.evaluate((data) => {
-    if (window.__denteCopilot) {
-      window.__denteCopilot.open();
-      window.__denteCopilot.setMessages(data.messages);
-      window.__denteCopilot.setActiveTab('chat');
-    }
-  }, { messages: MOCK_MESSAGES });
-
-  await page.waitForTimeout(600);
   const outPath = path.join(PROOFS_DIR, '01_copilot_drawer_pc_dark_1440.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
   capturedFiles.push('01_copilot_drawer_pc_dark_1440.png');
@@ -361,18 +395,9 @@ const capturedFiles = [];
   const page = await context.newPage();
   await setupPageMocks(page, 'light');
   await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await ensureWorkspaceUnlocked(page);
+  await waitForCopilotReady(page);
+  await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
-  await page.evaluate((data) => {
-    if (window.__denteCopilot) {
-      window.__denteCopilot.open();
-      window.__denteCopilot.setMessages(data.messages);
-      window.__denteCopilot.setActiveTab('chat');
-    }
-  }, { messages: MOCK_MESSAGES });
-
-  await page.waitForTimeout(600);
   const outPath = path.join(PROOFS_DIR, '01_copilot_drawer_pc_light_1440.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
   capturedFiles.push('01_copilot_drawer_pc_light_1440.png');
@@ -390,18 +415,10 @@ const capturedFiles = [];
   const page = await context.newPage();
   await setupPageMocks(page, 'dark');
   await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await ensureWorkspaceUnlocked(page);
+  await waitForCopilotReady(page);
+  await openCopilot(page, { pending: MOCK_PENDING, tab: 'pending' });
+  await page.waitForSelector('.copilot-action-confirm-card', { state: 'visible', timeout: 8000 });
 
-  await page.evaluate((data) => {
-    if (window.__denteCopilot) {
-      window.__denteCopilot.open();
-      window.__denteCopilot.setPending(data.pending);
-      window.__denteCopilot.setActiveTab('pending');
-    }
-  }, { pending: MOCK_PENDING });
-
-  await page.waitForTimeout(600);
   const outPath = path.join(PROOFS_DIR, '02_copilot_confirm_action_card_pc_dark_1440.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
   capturedFiles.push('02_copilot_confirm_action_card_pc_dark_1440.png');
@@ -420,18 +437,9 @@ const capturedFiles = [];
   const page = await context.newPage();
   await setupPageMocks(page, 'dark');
   await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await ensureWorkspaceUnlocked(page);
+  await waitForCopilotReady(page);
+  await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
-  await page.evaluate((data) => {
-    if (window.__denteCopilot) {
-      window.__denteCopilot.open();
-      window.__denteCopilot.setMessages(data.messages);
-      window.__denteCopilot.setActiveTab('chat');
-    }
-  }, { messages: MOCK_MESSAGES });
-
-  await page.waitForTimeout(600);
   const outPath = path.join(PROOFS_DIR, '03_copilot_drawer_mobile_dark_390.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
   capturedFiles.push('03_copilot_drawer_mobile_dark_390.png');
@@ -450,18 +458,9 @@ const capturedFiles = [];
   const page = await context.newPage();
   await setupPageMocks(page, 'light');
   await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await page.waitForTimeout(800);
-  await ensureWorkspaceUnlocked(page);
+  await waitForCopilotReady(page);
+  await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
-  await page.evaluate((data) => {
-    if (window.__denteCopilot) {
-      window.__denteCopilot.open();
-      window.__denteCopilot.setMessages(data.messages);
-      window.__denteCopilot.setActiveTab('chat');
-    }
-  }, { messages: MOCK_MESSAGES });
-
-  await page.waitForTimeout(600);
   const outPath = path.join(PROOFS_DIR, '03_copilot_drawer_mobile_light_390.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
   capturedFiles.push('03_copilot_drawer_mobile_light_390.png');
@@ -473,7 +472,8 @@ await browser.close();
 console.log('\n[COPY] Distributing visual proofs to artifact directories...');
 for (const fname of capturedFiles) {
   const src = path.join(PROOFS_DIR, fname);
-  for (const dstDir of [BRAIN_PARENT, BRAIN_CURRENT]) {
+  for (const dstDir of TARGET_DIRS) {
+    if (dstDir === PROOFS_DIR) continue;
     const dst = path.join(dstDir, fname);
     copyFileSync(src, dst);
   }

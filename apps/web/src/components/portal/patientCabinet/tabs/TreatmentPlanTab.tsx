@@ -542,6 +542,10 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 											type="button"
 											className="pc-stage-chevron-btn"
 											aria-label={isExpanded ? "Свернуть" : "Развернуть"}
+											onClick={(e) => {
+												e.stopPropagation();
+												toggleStage(stage.id);
+											}}
 										>
 											{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
 										</button>
@@ -621,6 +625,10 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 						type="button"
 						className="pc-btn-secondary pc-btn-compact"
 						aria-label={isPassportExpanded ? "Свернуть" : "Развернуть"}
+						onClick={(e) => {
+							e.stopPropagation();
+							setIsPassportExpanded(!isPassportExpanded);
+						}}
 					>
 						{isPassportExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
 						<span>{isPassportExpanded ? "Скрыть" : "Показать карточки"}</span>

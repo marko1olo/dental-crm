@@ -11,6 +11,7 @@ import {
 	type PrescriptionDoctorUkep,
 } from "@dental/shared";
 import {
+	AlertTriangle,
 	Award,
 	Copy,
 	PenTool,
@@ -50,7 +51,10 @@ import {
 } from "./prescriptionApiClient";
 import { PrescriptionSheetPreview } from "./PrescriptionSheetPreview";
 import { PrescriptionDrugCatalogSelector } from "./PrescriptionDrugCatalogSelector";
-import { generatePrescriptionPrintHtml } from "./prescriptionPrintHtml";
+import {
+	generatePrescriptionPrintHtml,
+	generatePatientMemoPrintHtml,
+} from "./prescriptionPrintHtml";
 
 export type PrescriptionFormType = "107-1u" | "148-1u-88";
 
@@ -195,11 +199,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			const matching = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
 				d.recommendedForIcd10.some((code) => icd.startsWith(code)),
 			);
-			if (matching.length > 0) {
-				setSelectedDrugIds(matching.slice(0, 2).map((d) => d.id));
-			} else {
-				setSelectedDrugIds(["nimesulide_100"]);
-			}
+			setSelectedDrugIds(matching.length > 0 ? matching.slice(0, 2).map((d) => d.id) : ["nimesulide_100"]);
 		}
 
 		const year = new Date().getFullYear();
@@ -220,10 +220,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		setIsUkepSigned(false);
 		setUkepSignature(null);
 
-		// Backend synchronization: query existing prescriptions for patient
-		if (patient?.id) {
-			fetchPatientPrescriptions(patient.id).catch(() => {});
-		}
+		if (patient?.id) fetchPatientPrescriptions(patient.id).catch(() => {});
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
@@ -246,27 +243,17 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const fullCatalog = useMemo(() => buildMergedPrescriptionCatalog(), []);
 
 	const filteredCatalog = useMemo(() => {
+		const q = searchQuery.toLowerCase();
 		return fullCatalog.filter((drug) => {
-			const matchesSearch =
-				searchQuery === "" ||
-				drug.tradeNameRu.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				drug.activeSubstanceRu.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				drug.latinRp.toLowerCase().includes(searchQuery.toLowerCase());
-			const matchesCategory =
-				categoryFilter === "all" || drug.category === categoryFilter;
-			return matchesSearch && matchesCategory;
+			const matchesSearch = !q || drug.tradeNameRu.toLowerCase().includes(q) || drug.activeSubstanceRu.toLowerCase().includes(q) || drug.latinRp.toLowerCase().includes(q);
+			return matchesSearch && (categoryFilter === "all" || drug.category === categoryFilter);
 		});
 	}, [fullCatalog, searchQuery, categoryFilter]);
 
 	const toggleDrug = (id: string) => {
-		if (activeForm === "148-1u-88") {
-			setSelectedDrugIds([id]);
-			return;
-		}
+		if (activeForm === "148-1u-88") { setSelectedDrugIds([id]); return; }
 		setSelectedDrugIds((prev) => {
-			if (prev.includes(id)) {
-				return prev.filter((dId) => dId !== id);
-			}
+			if (prev.includes(id)) return prev.filter((dId) => dId !== id);
 			if (prev.length >= 3) {
 				showToast("На одном рецептурном бланке допускается не более 3 препаратов", "warning", 3000);
 				return prev;
@@ -332,6 +319,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	const penicillinConflict = allergyConflicts.some((c) => c.type === "penicillin");
 	const nsaidConflict = allergyConflicts.some((c) => c.type === "nsaid");
+	const anestheticConflict = allergyConflicts.some((c) => c.type === "anesthetic");
 
 	const validityAudit = useMemo(() => {
 		const daysNum = Number.parseInt(validityDays, 10) || 60;
@@ -340,43 +328,23 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	const generatePrintHtml = useCallback((): string => {
 		return generatePrescriptionPrintHtml({
-			customSeriesNumber,
-			clinic,
-			address,
-			phone,
-			ogrn,
-			inn,
-			licNum,
-			activeForm,
-			prescriptionDate,
-			patientName,
-			patientBirth,
-			patientCard,
-			patientAddress,
-			docName,
-			docSpecialty,
-			activeItems,
-			validityDays,
+			customSeriesNumber, clinic, address, phone, ogrn, inn, licNum,
+			activeForm, prescriptionDate, patientName, patientBirth, patientCard,
+			patientAddress, docName, docSpecialty, activeItems, validityDays,
 		});
-	}, [
-		customSeriesNumber,
-		clinic,
-		address,
-		phone,
-		ogrn,
-		inn,
-		licNum,
-		activeForm,
-		prescriptionDate,
-		patientName,
-		patientBirth,
-		patientCard,
-		patientAddress,
-		docName,
-		docSpecialty,
-		activeItems,
-		validityDays,
-	]);
+	}, [customSeriesNumber, clinic, address, phone, ogrn, inn, licNum, activeForm, prescriptionDate, patientName, patientBirth, patientCard, patientAddress, docName, docSpecialty, activeItems, validityDays]);
+
+	const handlePrintPatientMemo = useCallback(() => {
+		if (activeItems.length === 0) {
+			showToast("Выберите хотя бы один препарат для памятки", "warning", 3000);
+			return;
+		}
+		const memoHtml = generatePatientMemoPrintHtml({
+			clinic, address, phone, patientName, patientBirth,
+			patientCard, docName, docSpecialty, prescriptionDate, activeItems,
+		});
+		handlePrint(memoHtml);
+	}, [clinic, address, phone, patientName, patientBirth, patientCard, docName, docSpecialty, prescriptionDate, activeItems]);
 
 	const persistPrescriptionToBackend = useCallback(async () => {
 		if (!patient?.id) return;
@@ -387,13 +355,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				prescribingDoctorId: (patient as any)?.doctorId || "00000000-0000-0000-0000-000000000001",
 				formType: activeForm === "148-1u-88" ? "form_148_1_u_88" : "form_107_1_u",
 				validityPeriod:
-					validityDays === "15"
-						? "days_15"
-						: validityDays === "30"
-							? "days_30"
-							: validityDays === "365"
-								? "year_1"
-								: "days_60",
+					validityDays === "15" ? "days_15" : validityDays === "30" ? "days_30" : validityDays === "365" ? "year_1" : "days_60",
 				isSpecialChronicIndication: isChronicSpecialCare,
 				chronicDispenseFrequencyNotes: chronicPeriodicity || null,
 				patientAddress: patientAddress || null,
@@ -421,21 +383,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		} catch (e) {
 			console.warn("[PrescriptionPrintModal] backend sync notice:", e);
 		}
-	}, [
-		patient?.id,
-		activeForm,
-		validityDays,
-		isChronicSpecialCare,
-		chronicPeriodicity,
-		patientAddress,
-		patientSnils,
-		patientOmsPolicy,
-		diary?.diagnosisIcd10,
-		customSeriesNumber,
-		activeItems,
-		ukepSignature,
-		onPrescriptionCreated,
-	]);
+	}, [patient?.id, activeForm, validityDays, isChronicSpecialCare, chronicPeriodicity, patientAddress, patientSnils, patientOmsPolicy, diary?.diagnosisIcd10, customSeriesNumber, activeItems, ukepSignature, onPrescriptionCreated]);
 
 	const handleSignUkep = async () => {
 		setIsSigningUkep(true);
@@ -673,6 +621,24 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 				</div>
 
+				{/* Prominent Allergy Conflict Banner (Doctor Autonomy Preserved) */}
+				{allergyConflicts.length > 0 && (
+					<div
+						data-testid="prescription-allergy-modal-banner"
+						className="mx-4 sm:mx-6 mt-3 p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2 shrink-0"
+					>
+						<div className="flex items-center gap-2 min-w-0">
+							<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+							<span className="font-bold truncate">
+								Внимание: обнаружен конфликт с аллергологическим анамнезом ({allergyConflicts.map((c) => c.matchedAllergyTerm).join(", ")})
+							</span>
+						</div>
+						<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+							Автономия врача (Печать доступна)
+						</span>
+					</div>
+				)}
+
 				{/* Modal Body */}
 				<div className="flex flex-col lg:flex-row flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-[var(--line)]">
 					{/* Left Column: Fast Presets & Drug Search */}
@@ -710,6 +676,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						patientAddress={patientAddress}
 						onPatientAddressChange={setPatientAddress}
 						activeForm={activeForm}
+						patientAllergies={resolvedPatientAllergies}
 					/>
 
 					{/* Right Column: Sheet Preview */}
@@ -717,6 +684,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						customSeriesNumber={customSeriesNumber}
 						penicillinConflict={penicillinConflict}
 						nsaidConflict={nsaidConflict}
+						anestheticConflict={anestheticConflict}
 						ddiSafetyAudit={null}
 						withStampAndSignature={withStampAndSignature}
 						clinic={clinic}
@@ -779,6 +747,16 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						>
 							<ShieldCheck className="w-4 h-4 text-emerald-600" />
 							{isUkepSigned ? "УКЭП подписана" : isSigningUkep ? "Подписание..." : "Подписать УКЭП"}
+						</button>
+						<button
+							type="button"
+							data-testid="print-patient-memo-btn"
+							onClick={handlePrintPatientMemo}
+							title="Распечатать понятную памятку со схемой приёма для пациента (без латыни)"
+							className="h-8 px-3 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer flex items-center gap-1.5"
+						>
+							<Printer className="w-3.5 h-3.5 text-[var(--teal)]" />
+							Печать памятки
 						</button>
 						<button
 							type="button"

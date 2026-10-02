@@ -36,8 +36,9 @@ export function saveLastActivePatient(patient: {
 }
 
 export function getLastActivePatient(): LastActivePatientData | null {
-	const parsed = safeLocalStorageGetJson<LastActivePatientData>(
+	const parsed = safeLocalStorageGetJson<LastActivePatientData | null>(
 		DENTE_LAST_ACTIVE_PATIENT_KEY,
+		null,
 	);
 	if (
 		parsed &&

@@ -457,11 +457,11 @@ export function BactericidalRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ УЧЕТА РАБОТЫ БАКТЕРИЦИДНЫХ ОБЛУЧАТЕЛЕЙ И РЕЦИРКУЛЯТОРОВ ВОЗДУХА</h2>
-				<p>Руководство Р 3.5.1904-04 / СанПиН 3.3686-21</p>
+				<h2>ОБЕЗЗАРАЖИВАНИЕ ВОЗДУХА (РЕЦИРКУЛЯТОРЫ)</h2>
+				<p>Учет наработки ламп и дезинфекция воздуха кабинетов</p>
 			</div>
 
-			{/* Dominant 1-Click Pre-Shift 30min Hero Banner (SanPiN 3.3686-21) */}
+			{/* Dominant 1-Click Pre-Shift 30min Hero Banner */}
 			<div
 				style={{
 					background: "linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(13, 148, 136, 0.06) 100%)",
@@ -491,14 +491,14 @@ export function BactericidalRegisterTab() {
 								letterSpacing: "0.05em",
 							}}
 						>
-							СанПиН 3.3686-21
+							Чистый воздух
 						</span>
 						<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
 							Подготовка воздуха перед началом рабочей смены
 						</span>
 					</div>
 					<h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)" }}>
-						Дезинфекция воздуха кабинетов и учет наработки ламп (СанПиН 3.3686-21)
+						Дезинфекция воздуха кабинетов и учет наработки ламп
 					</h3>
 					<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
 						1-клик фиксация утреннего кварцевания и закрытия смены без ручных расчетов на калькуляторе.
@@ -529,7 +529,7 @@ export function BactericidalRegisterTab() {
 							opacity: submitting ? 0.7 : 1,
 						}}
 						data-testid="bactericidal-open-morning-shift-btn"
-						title="Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): зафиксировать предсменное обеззараживание воздуха по СанПиН 3.3686-21 для всех аппаратов"
+						title="Открыть утреннюю смену: зафиксировать предсменное обеззараживание воздуха для всех аппаратов"
 					>
 						<Sun size={17} />
 						<span>Открыть утреннюю смену (кварцевание 30 мин + норма)</span>
@@ -627,7 +627,7 @@ export function BactericidalRegisterTab() {
 									letterSpacing: "0.05em",
 								}}
 							>
-								СанПиН 3.3686-21 • Zero-Setup
+								Чистый воздух • Zero-Setup
 							</span>
 							<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
 								Быстрый старт для соло-врача и малых клиник

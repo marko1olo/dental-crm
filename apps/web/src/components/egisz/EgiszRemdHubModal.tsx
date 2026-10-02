@@ -326,18 +326,18 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						</div>
 						<div style={{ minWidth: 0 }}>
 							<div className="egisz-main-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-								СЭМД ЕГИСЗ CDA R2 &bull; РЭМД Минздрава & Справки для налогового вычета — Хаб электронных медицинских документов
+								Электронные медкарты и справки для налоговой — Отправка в Минздрав
 								<span className="egisz-moh-badge egisz-badge-teal" style={{ marginLeft: "0.5rem", fontSize: "0.75rem", padding: "0.15rem 0.45rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
 							</div>
 							<div className="egisz-sub-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-								Федеральный реестр медицинских документов (63-ФЗ, 947н) &bull; СЭМД ЕГИСЗ CDA R2 &bull; Налоговый вычет (Приказ ЕД-7-11/755@)
+								Электронные медицинские карты и протоколы приёма • Справки для налогового вычета (13%)
 							</div>
 						</div>
 					</div>
 
 					{/* Document Mode Switcher per Hick's Law: 1 compact row 32-36px */}
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
-						<div className="egisz-doc-filter-toolbar" role="toolbar" aria-label="Фильтр видов СЭМД">
+						<div className="egisz-doc-filter-toolbar" role="toolbar" aria-label="Фильтр видов документов">
 							<button
 								type="button"
 								data-testid="doc-type-btn-302"
@@ -463,7 +463,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						onClick={() => setActiveTab("journal")}
 					>
 						<Archive size={16} />
-						Журнал документов РЭМД
+						Журнал отправки в Минздрав
 					</button>
 				</nav>
 
@@ -724,7 +724,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							}}
 						>
 							<Send size={16} />
-							{isSending ? "Отправка в РЭМД..." : activeDocType === "cda_semd" ? "Отправить в РЭМД ЕГИСЗ" : "Сформировать и отправить в ФНС"}
+							{isSending ? "Отправка в Минздрав..." : activeDocType === "cda_semd" ? "Отправить в Минздрав" : "Сформировать и отправить в налоговую"}
 						</button>
 					</div>
 				</footer>

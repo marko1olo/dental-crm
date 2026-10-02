@@ -5,37 +5,28 @@
  */
 
 import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
 import { insuranceRoutes } from "../../routes/insurance.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../../tests/support/fixtureOrganizations.js";
 
-async function getOrCreateTestOrg(): Promise<string> {
-	const existing = await db
-		.select({ id: organizations.id })
-		.from(organizations)
-		.limit(1);
-	if (existing.length > 0 && existing[0]?.id) {
-		return existing[0].id;
-	}
-	const [created] = await db
-		.insert(organizations)
-		.values({
-			name: "Тестовая Стоматология ДМС",
-			loginId: `test_dms_org_${Date.now()}`,
-		})
-		.returning({ id: organizations.id });
-	return created!.id;
-}
+const NAMESPACE = "dmsGuaranteePersistence";
+const ORG_ID = fixtureUuid(NAMESPACE, 1);
+const TEST_USER_ID = fixtureUuid(NAMESPACE, 2);
 
-const TEST_USER_ID = "00000000-0000-7000-8000-000000000002";
+import { createTenantTestApp } from "../../tests/support/tenantTestApp.js";
 
 async function buildTestApp() {
 	process.env.NODE_ENV = "test";
-	const app = Fastify();
+	const app = createTenantTestApp();
 	await app.register(insuranceRoutes);
 	await app.ready();
 	return app;
@@ -52,24 +43,44 @@ function createStaffHeaders(organizationId: string, userId = TEST_USER_ID, role 
 }
 
 describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () => {
+	before(async () => {
+		await purgeFixtureOrganizations([ORG_ID]);
+	});
+
+	after(async () => {
+		await purgeFixtureOrganizations([ORG_ID]);
+	});
+
 	it("persists guarantee letter for SOGAZ, reads from DB, records usage, and prevents overflow", async () => {
-		const orgId = await getOrCreateTestOrg();
+		const orgId = ORG_ID;
 		const app = await buildTestApp();
 		const headers = createStaffHeaders(orgId);
 
-		// 1. Ensure test patient exists
-		const [testPatient] = await db
-			.insert(patients)
-			.values({
-				organizationId: orgId,
-				fullName: "Иванов Иван Дмитриевич (ДМС Тест)",
-				phone: `+7999${Math.floor(1000000 + Math.random() * 9000000)}`,
-				birthDate: "1988-04-12",
-				status: "active",
-			})
-			.returning();
+		let testPatientId = "";
+		let testPatientFullName = "Иванов Иван Дмитриевич (ДМС Тест)";
 
-		assert.ok(testPatient, "Test patient must be created in DB");
+		await withFixtureTenant(orgId, async () => {
+			await db.insert(organizations).values({
+				id: orgId,
+				name: "Тестовая Стоматология ДМС",
+				loginId: `test_dms_org_${Date.now()}`,
+			});
+
+			const [testPatient] = await db
+				.insert(patients)
+				.values({
+					organizationId: orgId,
+					fullName: testPatientFullName,
+					phone: "+79991234567",
+					birthDate: "1988-04-12",
+					status: "active",
+				})
+				.returning();
+			assert.ok(testPatient, "Test patient must be created in DB");
+			testPatientId = testPatient.id;
+		});
+
+		const testPatient = { id: testPatientId, fullName: testPatientFullName };
 
 		// 2. Create DMS Guarantee Letter via POST /api/insurance/guarantee-letters
 		const createRes = await app.inject({

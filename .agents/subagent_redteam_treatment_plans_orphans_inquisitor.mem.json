@@ -1,0 +1,58 @@
+{
+  "subagent": "RED TEAM ODONTOGRAM & TREATMENT PLANS DUPLICATES & ORPHANS INQUISITOR",
+  "created_at": "2026-10-02T15:28:45Z",
+  "updated_at": "2026-10-02T15:53:00Z",
+  "status": "completed",
+  "completed_steps": [
+    "Read Core Rules, Frontend Rules, Engineering Rules, GEMINI.md, THE HAMMER MASTER PROMPT",
+    "Initialized subagent memory checkpoint",
+    "Audited files in scope: packages/shared/src/treatment-plans/treatmentPlanEngine.ts, apps/web/src/components/treatment-plans/TreatmentPlanWizard.tsx, treatmentPlanStageMutations.ts, treatmentPlanPricingEngine.ts, treatmentPlanMath.ts, planPricing.ts",
+    "Eliminated clinical misclassification in TreatmentPlanWizard.tsx (A16.07.006 implant prosthetics now routes to Stage 3 Orthopedics via canonical classifyProcedureStage instead of Stage 2 Surgery)",
+    "Fixed Stage 3 priority over Stage 2 in packages/shared/src/treatment-plans/treatmentPlanEngine.ts so implant-supported prosthetics are never falsely classified into surgery",
+    "Eliminated float drift across all stage mutators (updateItemQuantityInStages, updateItemPriceInStages, updateItemInStages, removeItemFromStages, addItemToPlanStages, mergeIncomingPlanItem, mergePersistedPlanItems) using parseKopecks and computeStageItemsTotalKopecks",
+    "Collapsed 4x duplicate 0% installment calculations onto canonical splitKopecks SSOT in planPricing.ts and treatmentPlanPricingEngine.ts",
+    "Collapsed 3x duplicate NDFL 13% tax deduction calculations onto calculateNdflDeduction SSOT with shared ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024",
+    "Verified all test suites: treatmentPlanEngine.test.ts (20/20 PASS), treatmentPlanStageMutations.test.ts (7/7 PASS), planPricing.test.ts (45/45 PASS), treatmentPlanMath.test.ts (15/15 PASS), treatmentPlanStagesEngine.test.ts + planPriceValidationEngine.test.ts + stagePaymentEngine.test.ts + treatmentPlanMaterialEngine.test.ts (42/42 PASS)",
+    "Verified full TypeScript typecheck: npm run typecheck -w @dental/web (EXIT CODE 0, 0 errors)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL_CLINICAL_BUG",
+      "location": "apps/web/src/components/treatment-plans/TreatmentPlanWizard.tsx:86-94, 187-197",
+      "description": "Хардкод распределения стадий классифицировал код A16.07.006 («Протезирование зуба с использованием имплантата») как этап 2 (Хирургия) вместо этапа 3 (Ортопедия). Врач получал коронки на имплантатах в хирургической смете.",
+      "resolution": "Заменен на канонический SSOT classifyProcedureStage(item.code, item.category) из @dental/shared."
+    },
+    {
+      "severity": "CRITICAL_LOGIC_BUG",
+      "location": "packages/shared/src/treatment-plans/treatmentPlanEngine.ts:370-415",
+      "description": "В classifyProcedureStage блок хирургии шел до ортопедии и проверял cat.includes('имплант'). Из-за этого услуга 'Протезирование на имплантатах' или 'Коронка на импланте' ошибочно улетала в этап 2.",
+      "resolution": "Ортопедический этап с кодами A16.07.006/004/003/005 и ортопедическими ключевыми словами поднят выше хирургии."
+    },
+    {
+      "severity": "HIGH_FLOAT_DRIFT",
+      "location": "apps/web/src/components/treatment-plans/treatmentPlanStageMutations.ts:54, 100, 153, 172, 238, 394, 421",
+      "description": "Суммирование стоимости этапов выполнялось через Math.round(it.priceRub * 100) и Math.round(it.unitPriceRub * it.quantity * 100), накапливая копеечные погрешности IEEE 754 при повторных мутациях.",
+      "resolution": "Все мутаторы переведены на parseKopecks и computeStageItemsTotalKopecks с sumKopecks."
+    },
+    {
+      "severity": "DUPLICATE_CODE_4X",
+      "location": "planPricing.ts, treatmentPlanPricingEngine.ts, treatmentPlanMath.ts, treatmentPlanEngine.ts",
+      "description": "Четверной параллельный расчет беспроцентной рассрочки 0% с ручным распределением остатка.",
+      "resolution": "Схлопнут на канонический splitKopecks из @dental/shared."
+    },
+    {
+      "severity": "DUPLICATE_CODE_3X",
+      "location": "treatmentPlanMath.ts:163-207, treatmentPlanPricingEngine.ts:178-225",
+      "description": "Тройной дубликат расчета 13% социального налогового вычета НДФЛ со скрытым хардкодом лимита 150 000 ₽.",
+      "resolution": "Схлопнут на calculateNdflDeduction из treatmentPlanPricingEngine.ts с константой ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 из @dental/shared."
+    }
+  ],
+  "invariants_strictly_honored": [
+    "Zero modifications to CBCT/DICOM/Radiology files (ctImplantIntegrationBridge.ts untouched)",
+    "Zero modifications to ChairsideDiagnosisPackageCard.tsx, CompletedServicesChecklist.tsx, treatmentEstimatorBundles.ts",
+    "All edited files strictly <= 800 lines",
+    "All money handled strictly in integer Kopecks",
+    "Zero mocks introduced, all tests pass with Exit Code 0"
+  ]
+}

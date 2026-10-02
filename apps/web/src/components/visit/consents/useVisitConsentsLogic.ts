@@ -32,6 +32,7 @@ import {
 	type ConsentStatusType,
 	CONSENT_KEY_TO_DOCUMENT_KIND,
 	DOCUMENT_KIND_TO_CONSENT_KEY,
+	resolveConsentKeyFromDocument,
 	CLINICAL_CONSENTS_LIST,
 } from "./visitConsentTypes";
 
@@ -307,12 +308,7 @@ export function useVisitConsentsLogic({
 							Boolean(doc.signatureAttestation);
 						if (!isDocSigned) continue;
 
-						let consentKey: ConsentTemplateKey | null = null;
-						if (doc.payload?.consentKey && typeof doc.payload.consentKey === "string" && doc.payload.consentKey in next) {
-							consentKey = doc.payload.consentKey as ConsentTemplateKey;
-						} else if (doc.kind && doc.kind in DOCUMENT_KIND_TO_CONSENT_KEY) {
-							consentKey = DOCUMENT_KIND_TO_CONSENT_KEY[doc.kind] ?? null;
-						}
+						const consentKey = resolveConsentKeyFromDocument(doc);
 
 						if (consentKey && !next[consentKey]?.isSigned) {
 							const signedDateStr = doc.signatureAttestation?.signedAt

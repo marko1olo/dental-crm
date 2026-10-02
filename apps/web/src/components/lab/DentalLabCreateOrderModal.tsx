@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { X, CheckCircle2 } from "lucide-react";
+import { X, CheckCircle2, Sparkles, AlertTriangle, Calendar, Zap } from "lucide-react";
 import {
 	type OrthopedicWorkTypeId,
 	ORTHOPEDIC_WORK_TYPES,
@@ -13,6 +13,11 @@ import {
 	type DentalLabWorkflowOrder,
 	createDentalLabOrder,
 } from "./dentalLabWorkflowEngine";
+import {
+	calculateLabReadinessDate,
+	checkFittingAppointmentCollision,
+	formatRuDate,
+} from "./dentalLabOrderEngine";
 import {
 	VITA_CLASSICAL_SHADES,
 	VITA_3D_MASTER_SHADES,
@@ -63,15 +68,15 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 	const [newDoctorPercent, setNewDoctorPercent] = useState<number>(20);
 	const [newInitialStatus, setNewInitialStatus] = useState<LabWorkflowStatus>("draft");
 	const [newExpectedLabDate, setNewExpectedLabDate] = useState<string>(() => {
-		const d = new Date();
-		d.setDate(d.getDate() + 5);
-		return d.toISOString().slice(0, 10);
+		const preset = ORTHOPEDIC_WORK_TYPES.crown_zirconia;
+		return calculateLabReadinessDate(new Date(), preset?.standardTurnaroundWorkingDays || 5);
 	});
 	const [newFittingDate, setNewFittingDate] = useState<string>(() => {
-		const d = new Date();
-		d.setDate(d.getDate() + 6);
-		return d.toISOString().slice(0, 10);
+		const preset = ORTHOPEDIC_WORK_TYPES.crown_zirconia;
+		const labDate = calculateLabReadinessDate(new Date(), preset?.standardTurnaroundWorkingDays || 5);
+		return calculateLabReadinessDate(labDate, 1);
 	});
+	const [autoBookFitting, setAutoBookFitting] = useState<boolean>(true);
 	const [newAppointmentId, setNewAppointmentId] = useState<string>("");
 	const [newClinicalNotes, setNewClinicalNotes] = useState<string>("");
 	const [newImplantPlatform, setNewImplantPlatform] = useState<ImplantPlatformType | "">("");
@@ -90,6 +95,39 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 
 	if (!isOpen) return null;
 
+	const handleWorkTypeChange = (val: OrthopedicWorkTypeId) => {
+		setNewWorkType(val);
+		const preset = ORTHOPEDIC_WORK_TYPES[val];
+		if (preset) {
+			setNewPriceRub(preset.defaultPriceKopecks / 100);
+			setNewCostRub(preset.defaultCostKopecks / 100);
+			const labDate = calculateLabReadinessDate(new Date(), preset.standardTurnaroundWorkingDays);
+			setNewExpectedLabDate(labDate);
+			const fitDate = calculateLabReadinessDate(labDate, 1);
+			setNewFittingDate(fitDate);
+		}
+	};
+
+	const handleApplyQuickPreset = (
+		workType: OrthopedicWorkTypeId,
+		shade: string,
+		stumpShade = "ND2",
+	) => {
+		const preset = ORTHOPEDIC_WORK_TYPES[workType];
+		if (!preset) return;
+		setNewWorkType(workType);
+		setNewShade(shade);
+		setNewStumpShade(stumpShade);
+		setNewPriceRub(preset.defaultPriceKopecks / 100);
+		setNewCostRub(preset.defaultCostKopecks / 100);
+		const labDate = calculateLabReadinessDate(new Date(), preset.standardTurnaroundWorkingDays);
+		setNewExpectedLabDate(labDate);
+		const fitDate = calculateLabReadinessDate(labDate, 1);
+		setNewFittingDate(fitDate);
+	};
+
+	const collision = checkFittingAppointmentCollision(newExpectedLabDate, newFittingDate);
+
 	const handleCreateOrderSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!newPatientName.trim()) return;
@@ -102,6 +140,9 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 		const defaultTeeth = currentToothNumber && !isNaN(Number(currentToothNumber))
 			? [Number(currentToothNumber)]
 			: [11];
+
+		const pricePerUnitKopecks = Math.max(0, Math.round(newPriceRub * 100));
+		const costPerUnitKopecks = Math.max(0, Math.round(newCostRub * 100));
 
 		const created = createDentalLabOrder({
 			patientId: currentPatientId || `pat-${Date.now()}`,
@@ -117,6 +158,8 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 			stumpShadeCode: newStumpShade,
 			pricePerUnitRub: newPriceRub,
 			costPerUnitRub: newCostRub,
+			pricePerUnitKopecks,
+			costPerUnitKopecks,
 			doctorPercent: newDoctorPercent,
 			initialStatus: newInitialStatus,
 			expectedLabDate: newExpectedLabDate,
@@ -128,6 +171,47 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 			fixationType: newFixationType || undefined,
 			techStage: newTechStage,
 		});
+
+		if (autoBookFitting) {
+			const teethLabel = created.selectedTeeth.join(", ");
+			const workTypeTitle = ORTHOPEDIC_WORK_TYPES[newWorkType]?.shortNameRu || "Конструкция ЗТЛ";
+			const appointmentDraft = {
+				patientId: created.patientId,
+				patientName: created.patientName,
+				patientPhone: "",
+				doctorId: created.doctorId,
+				doctorName: created.doctorName,
+				serviceTitle: `Примерка и фиксация: ${workTypeTitle} (зуб ${teethLabel})`,
+				serviceCode: "A16.07.004", // Приказ Минздрава РФ 804н
+				durationMinutes: 45,
+				scheduledDate: newFittingDate,
+				targetDate: newFittingDate,
+				stageKind: "stage_3_orthopedics",
+				orderNumber: created.orderNumber,
+				notes: `Автобронь примерки из ЗТЛ № ${created.orderNumber} (${created.materialName}, зуб ${teethLabel}, цвет ${created.shadeCode}). План готовности ЗТЛ: ${formatRuDate(newExpectedLabDate)}.`,
+			};
+
+			if (typeof window !== "undefined") {
+				try {
+					window.localStorage.setItem(
+						"dente_schedule_quick_booking_draft",
+						JSON.stringify(appointmentDraft),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente-quick-appointment-draft", {
+							detail: appointmentDraft,
+						}),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente-open-quick-booking", {
+							detail: appointmentDraft,
+						}),
+					);
+				} catch {
+					// quota fallback
+				}
+			}
+		}
 
 		onCreateOrder(created);
 		onClose();
@@ -151,6 +235,88 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 
 				<form onSubmit={handleCreateOrderSubmit}>
 					<div className="ztl-detail-body">
+						{/* 1-Click Chairside Express Presets Bar */}
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "6px",
+								flexWrap: "wrap",
+								padding: "8px 10px",
+								background: "var(--paper-soft, #f8fafc)",
+								border: "1px solid var(--line, #e2e8f0)",
+								borderRadius: "8px",
+								marginBottom: "10px",
+							}}
+						>
+							<span style={{ fontSize: "11.5px", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px", color: "var(--ink, #1e293b)" }}>
+								<Zap size={13} className="text-amber-500" />
+								<span>1-Клик пресеты:</span>
+							</span>
+							<button
+								type="button"
+								className="ztl-chip"
+								style={{ fontSize: "11px", padding: "3px 8px", cursor: "pointer" }}
+								onClick={() => handleApplyQuickPreset("crown_zirconia", "A2", "ND2")}
+								title="Коронка ZrO2 Katana ML: 5 раб. дн., цвет А2, 22 000 ₽"
+							>
+								ZrO₂ Katana (A2, 5 дн.)
+							</button>
+							<button
+								type="button"
+								className="ztl-chip"
+								style={{ fontSize: "11px", padding: "3px 8px", cursor: "pointer" }}
+								onClick={() => handleApplyQuickPreset("crown_emax", "A1", "ND1")}
+								title="Коронка IPS e.max Press: 5 раб. дн., цвет А1, 24 000 ₽"
+							>
+								e.max Press (A1, 5 дн.)
+							</button>
+							<button
+								type="button"
+								className="ztl-chip"
+								style={{ fontSize: "11px", padding: "3px 8px", cursor: "pointer" }}
+								onClick={() => handleApplyQuickPreset("metal_ceramic", "A3")}
+								title="Металлокерамика Co-Cr: 6 раб. дн., цвет А3, 14 000 ₽"
+							>
+								Металлокерамика (A3, 6 дн.)
+							</button>
+							<button
+								type="button"
+								className="ztl-chip"
+								style={{ fontSize: "11px", padding: "3px 8px", cursor: "pointer" }}
+								onClick={() => handleApplyQuickPreset("temporary_pmma", "A2")}
+								title="Временная коронка PMMA CAD/CAM: 2 раб. дн., цвет А2, 2 500 ₽"
+							>
+								Временная PMMA (2 дн.)
+							</button>
+						</div>
+
+						{/* Fitting Collision Guard Alert Banner */}
+						{collision.hasCollision && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "flex-start",
+									gap: "8px",
+									padding: "10px 12px",
+									background: "rgba(245, 158, 11, 0.12)",
+									border: "1px solid rgba(245, 158, 11, 0.45)",
+									borderRadius: "8px",
+									marginBottom: "10px",
+									color: "#92400e",
+									fontSize: "12px",
+								}}
+								role="alert"
+								data-testid="ztl-create-order-collision-banner"
+							>
+								<AlertTriangle size={16} className="shrink-0 text-amber-600 mt-0.5" />
+								<div>
+									<strong style={{ display: "block" }}>Внимание: прием на примерку назначен раньше готовности лаборатории!</strong>
+									<span style={{ fontSize: "11px" }}>{collision.warningRu}</span>
+								</div>
+							</div>
+						)}
+
 						<div className="ztl-form-grid-2">
 							<div className="ztl-form-group">
 								<label className="ztl-form-label">Пациент (Ф.И.О.) *</label>
@@ -210,19 +376,11 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 									className="ztl-select"
 									style={{ width: "100%" }}
 									value={newWorkType}
-									onChange={(e) => {
-										const val = e.target.value as OrthopedicWorkTypeId;
-										setNewWorkType(val);
-										const preset = ORTHOPEDIC_WORK_TYPES[val];
-										if (preset) {
-											setNewPriceRub(preset.defaultPriceKopecks / 100);
-											setNewCostRub(preset.defaultCostKopecks / 100);
-										}
-									}}
+									onChange={(e) => handleWorkTypeChange(e.target.value as OrthopedicWorkTypeId)}
 								>
 									{Object.values(ORTHOPEDIC_WORK_TYPES).map((t) => (
 										<option key={t.id} value={t.id}>
-											{t.nameRu}
+											{t.nameRu} ({t.standardTurnaroundWorkingDays} раб. дн.)
 										</option>
 									))}
 								</select>
@@ -395,6 +553,38 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 									onChange={(e) => setNewFittingDate(e.target.value)}
 								/>
 							</div>
+						</div>
+
+						{/* 1-Click Auto-Booking of Fitting Appointment in Doctor Schedule */}
+						<div
+							className="ztl-form-group"
+							style={{
+								gridColumn: "1 / -1",
+								background: "var(--paper-soft, #f0fdf4)",
+								border: "1px solid var(--line, #bbf7d0)",
+								padding: "10px 12px",
+								borderRadius: "8px",
+								display: "flex",
+								flexDirection: "column",
+								gap: "4px",
+							}}
+							data-testid="ztl-auto-book-fitting-wrap"
+						>
+							<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontWeight: 700, fontSize: "12px", color: "var(--teal-strong, #166534)" }}>
+								<input
+									type="checkbox"
+									checked={autoBookFitting}
+									onChange={(e) => setAutoBookFitting(e.target.checked)}
+									style={{ width: "16px", height: "16px", accentColor: "var(--teal, #0d9488)", cursor: "pointer" }}
+									data-testid="ztl-auto-book-fitting-checkbox"
+								/>
+								<span>Автоматически забронировать визит на примерку в расписании врача (1 клик)</span>
+							</label>
+							{autoBookFitting && (
+								<p style={{ margin: "2px 0 0 24px", fontSize: "11px", color: "var(--muted, #4b5563)" }}>
+									Слот на примерку: <strong>{formatRuDate(newFittingDate)}</strong> · Время приема: <strong>45 мин</strong> · Процедура: <em>Примерка и фиксация ({ORTHOPEDIC_WORK_TYPES[newWorkType]?.shortNameRu || "ортопедия"})</em>
+								</p>
+							)}
 						</div>
 
 						<div className="ztl-form-grid-2">

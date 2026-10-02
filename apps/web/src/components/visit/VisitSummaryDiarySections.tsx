@@ -58,7 +58,7 @@ export const VisitSummaryDiarySections: React.FC<VisitSummaryDiarySectionsProps>
 						</div>
 					) : (
 						<span className="inline-flex items-center px-3 py-2 min-h-[44px] text-xs text-[var(--muted)] min-w-0 break-words">
-							Код МКБ-10 не указан
+							Диагноз не указан
 						</span>
 					)}
 					{synthesizedDiaryPreview?.toothNumber || diary.diagnosisTooth ? (

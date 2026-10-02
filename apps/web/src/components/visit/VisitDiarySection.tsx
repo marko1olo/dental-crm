@@ -288,7 +288,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			{/* ── Header ── */}
 			<div className="vde-043__header">
 				<div className="vde-043__header-title-wrap">
-					<div className="vde-043__form-badge">043/у</div>
+					<div className="vde-043__form-badge">ЭМК</div>
 					<h3 className="vde-043__title">Дневник приёма</h3>
 					{lastSavedAt ? (
 						<span
@@ -324,7 +324,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						title="Открыть каталог 1-клик клинических протоколов и шаблонов дневника"
 					>
 						<Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-						<span>1-Click Протоколы 043/у</span>
+						<span>Клинические протоколы</span>
 					</button>
 					<button
 						type="button"
@@ -540,13 +540,13 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						</div>
 						<div className="min-w-0">
 							<div className="text-sm sm:text-base font-black text-[var(--ink)] flex items-center gap-2 flex-wrap">
-								<span>Подставить шаблон СтАР в дневник?</span>
+								<span>Подставить клинический протокол в дневник?</span>
 								<span className="text-xs px-2 py-0.5 rounded-md font-mono font-bold bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] truncate">
 									{pendingSoapSuggestion.title}
 								</span>
 							</div>
 							<div className="text-xs text-[var(--muted)] mt-0.5 truncate">
-								{pendingSoapSuggestion.source}: Жалобы (S), Объективно (O), Диагноз МКБ-10 (A), План (P)
+								{pendingSoapSuggestion.source}: Жалобы, осмотр, диагноз, план лечения
 							</div>
 						</div>
 					</div>
@@ -560,7 +560,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							}}
 							className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-black text-sm sm:text-base shadow-sm transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
 							data-testid="btn-apply-soap-suggestion"
-							title="Внести структурированный протокол СтАР в дневник приёма"
+							title="Внести клинический протокол в дневник приёма"
 						>
 							<Check size={18} />
 							<span>Применить (1 клик)</span>

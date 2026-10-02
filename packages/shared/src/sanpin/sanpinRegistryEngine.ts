@@ -24,6 +24,7 @@ import {
 	type UvRecirculatorModelDefinition,
 } from "./sanpinJournalsPresets.js";
 import { renderDigitalSignatureStampHtml } from "../crypto/visualSignatureStamp.js";
+import { sha256Hex } from "../sync/hashing.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA TYPES & INTERFACES
@@ -608,12 +609,7 @@ export function calculateDigitalStampHash(data: {
 	operatorName: string;
 }): string {
 	const raw = `${data.id}|${data.date}|${data.cycleNumber}|${data.sterilizerCode}|${data.actualTemp}|${data.actualPressure}|${data.actualTime}|${data.isPassed}|${data.operatorName}`;
-	let hash = 0x811c9dc5;
-	for (let i = 0; i < raw.length; i++) {
-		hash ^= raw.charCodeAt(i);
-		hash = Math.imul(hash, 0x01000193);
-	}
-	const hex = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase();
+	const hex = sha256Hex(raw).toUpperCase();
 	return `DENTE-CSO-257-${hex}`;
 }
 

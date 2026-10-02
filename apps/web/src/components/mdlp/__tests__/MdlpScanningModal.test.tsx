@@ -80,5 +80,23 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 		assert.ok(names.some((n) => n.includes("Септанест")));
 		assert.ok(names.some((n) => n.includes("Скандонест")));
 		assert.ok(names.some((n) => n.includes("Dentium")));
+		assert.ok(names.some((n) => n.includes("Хлоргексидин")));
+		assert.ok(names.some((n) => n.includes("Мирамистин")));
+	});
+
+	it("MdlpScanningModal renders Scheme 444 tab and supports initialMode disposal_444", () => {
+		const html = renderToStaticMarkup(
+			createElement(MdlpScanningModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialMode: "disposal_444",
+				clinicName: "ООО «Денте Стоматология»",
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"mdlp-tab-disposal-444\""));
+		assert.ok(html.includes("Медпомощь 043/у (Схема 444)"));
+		assert.ok(html.includes("АКТ-444-0042"));
+		assert.ok(html.includes("Схема 444"));
 	});
 });

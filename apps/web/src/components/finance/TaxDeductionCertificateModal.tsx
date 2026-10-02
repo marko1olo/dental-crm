@@ -492,7 +492,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 
 		try {
 			await hardwarePrinter.printHtmlWithPopupFallback(html, {
-				title: `Справка КНД 1151156 за ${selectedYear} г.`,
+				title: `Справка для налоговой (вычет 13%) за ${selectedYear} г.`,
 				downloadFilename: `tax_certificate_knd1151156_${selectedYear}.html`,
 			});
 		} catch {
@@ -517,17 +517,17 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		}
 		const params = getCertificateParams();
 		downloadFnsTaxXmlFile(params);
-		showToast(`Файл ${xmlRepresentation.fileName} успешно выгружен для ТКС`, "success");
+		showToast(`Файл ${xmlRepresentation.fileName} успешно выгружен для отправки`, "success");
 	};
 
 	const handleDownloadNoMedoplXml = () => {
 		if (yearPayments.length === 0) {
-			showToast("Нет подтвержденных оплат за выбранный период для выгрузки NO_MEDOPL", "warning");
+			showToast("Нет подтвержденных оплат за выбранный период для выгрузки", "warning");
 			return;
 		}
 		const params = getCertificateParams();
 		downloadFnsNoMedoplXmlFile(params);
-		showToast("Файл NO_MEDOPL (Формат 5.01) выгружен для ФНС", "success");
+		showToast("Электронная справка выгружена для налоговой", "success");
 	};
 
 	const handleDownloadBatchXml = () => {
@@ -536,23 +536,23 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			return;
 		}
 		downloadFnsBatchTaxXmlFile(familyBatchResult.batch);
-		showToast(`Пакетный реестр XML (${familyBatchResult.certificatesCount} справок) выгружен для ТКС`, "success");
+		showToast(`Пакет справок (${familyBatchResult.certificatesCount} шт.) выгружен для отправки`, "success");
 	};
 
 	const handleDownloadBatchNoMedoplXml = () => {
 		if (familyBatchResult.totalPaymentsCount === 0) {
-			showToast("Нет подтвержденных оплат за выбранный период для выгрузки NO_MEDOPL", "warning");
+			showToast("Нет подтвержденных оплат за выбранный период для выгрузки", "warning");
 			return;
 		}
 		downloadFnsBatchNoMedoplXmlFile(familyBatchResult.batch);
-		showToast(`Пакетный файл NO_MEDOPL 5.01 (${familyBatchResult.certificatesCount} справок) выгружен для ФНС`, "success");
+		showToast(`Пакет электронных справок (${familyBatchResult.certificatesCount} шт.) выгружен для налоговой`, "success");
 	};
 
 	const handlePrintBatch = async () => {
 		const html = renderTaxDeductionBatchCertificateHtml(familyBatchResult.batch);
 		try {
 			await hardwarePrinter.printHtmlWithPopupFallback(html, {
-				title: `Пакет справок КНД 1151156 (${familyBatchResult.certificatesCount} шт.)`,
+				title: `Пакет справок для налоговой (${familyBatchResult.certificatesCount} шт.)`,
 				downloadFilename: `batch_tax_certificates_${selectedYear}.html`,
 			});
 		} catch {
@@ -596,7 +596,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		const html = renderOfficialTaxCertificateKnd1151156Html(blankParams);
 		try {
 			await hardwarePrinter.printHtmlWithPopupFallback(html, {
-				title: `Бланк справки КНД 1151156`,
+				title: `Бланк справки для налоговой`,
 				downloadFilename: `blank_tax_certificate.html`,
 			});
 		} catch {
@@ -627,7 +627,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 									Справка для налогового вычета (13% НДФЛ)
 								</h2>
 								<span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono text-[11px] font-bold border border-teal-500/20">
-									ФНС 13%
+									Вычет 13%
 								</span>
 								<span
 									data-testid="tax-certificate-stamp-badge"

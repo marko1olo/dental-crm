@@ -87,7 +87,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
     }
   }, [value]);
 
-  const DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации по Форме 043/у";
+  const DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации для дневника приёма";
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -271,23 +271,23 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
       {/* Footer info & hotkeys */}
       <div className="copilot-composer-footer">
         <div className="copilot-trust-note">
-          <ShieldCheck size={15} style={{ color: 'var(--teal, #0d9488)' }} />
-          <span>Данные защищены 152-ФЗ</span>
+          <ShieldCheck size={15} style={{ color: 'var(--teal)' }} />
+          <span>Медицинская тайна и защита данных</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>
+        <div className="copilot-footer-actions">
+          <span className="copilot-hotkey-hint">
             Горячие клавиши: <span className="copilot-kbd">Ctrl+K</span>
           </span>
           {onReset && (
             <button
               type="button"
               onClick={onReset}
-              className="copilot-icon-btn copilot-reset-btn"
-              title="Очистить диалог"
-              aria-label="Очистить диалог"
+              className="copilot-reset-btn"
+              title="Сброс / Очистить диалог"
+              aria-label="Сброс / Очистить диалог"
             >
-              <RotateCcw size={14} style={{ marginRight: '4px' }} />
+              <RotateCcw size={13} style={{ flexShrink: 0 }} />
               <span>Сброс</span>
             </button>
           )}

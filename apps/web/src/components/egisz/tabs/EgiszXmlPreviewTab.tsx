@@ -70,7 +70,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 		<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
 				<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-					Канонический вид XML (C14N, UTF-8 без BOM, тегов: {xmlValidation.tagCount})
+					Структура данных документа (XML, тегов: {xmlValidation.tagCount})
 				</div>
 				<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 					<button
@@ -92,7 +92,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						}}
 					>
 						<CheckCircle2 size={14} />
-						<span>1-Клик Валидация XML</span>
+						<span>Проверить XML</span>
 					</button>
 					<button
 						type="button"
@@ -114,7 +114,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						}}
 					>
 						<Download size={14} />
-						<span>Экспорт XML CDA</span>
+						<span>Скачать XML</span>
 					</button>
 					<button
 						type="button"
@@ -136,7 +136,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						}}
 					>
 						<FileArchive size={14} />
-						<span>1-Клик ZIP (XML + ЭЦП)</span>
+						<span>Скачать архив (XML + подпись)</span>
 					</button>
 					<button
 						type="button"
@@ -158,7 +158,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						}}
 					>
 						<Send size={14} />
-						<span>Отправить в РЭМД ЕГИСЗ (Шлюз Минздрава)</span>
+						<span>Отправить в Минздрав</span>
 					</button>
 					<button
 						type="button"
@@ -192,7 +192,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("header")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>1. Заголовок CDA (Header &amp; Template ID)</span>
+						<span>1. Заголовок документа</span>
 						{collapsedSections.header ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.header && (
@@ -211,7 +211,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("frmo")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>2. Медицинская организация (OID OGRN/FRMO &amp; Custodian)</span>
+						<span>2. Клиника (организация)</span>
 						{collapsedSections.frmo ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.frmo && (
@@ -232,7 +232,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("doctor")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>3. Врач-автор документа (Doctor SNILS/FRMR &amp; Position)</span>
+						<span>3. Врач (автор документа)</span>
 						{collapsedSections.doctor ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.doctor && (
@@ -252,7 +252,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("patient")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>4. Пациент (Patient SNILS/Polis OMS/DMS &amp; Demographics)</span>
+						<span>4. Пациент</span>
 						{collapsedSections.patient ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.patient && (
@@ -272,7 +272,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("diagnosis")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>5. Диагноз МКБ-10 и локализация зуба (Diagnosis)</span>
+						<span>5. Диагноз и зуб</span>
 						{collapsedSections.diagnosis ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.diagnosis && (
@@ -289,7 +289,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("dentalFormula")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>6. Зубная формула и одонтограмма (Dental Formula Block)</span>
+						<span>6. Зубная формула</span>
 						{collapsedSections.dentalFormula ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.dentalFormula && (
@@ -308,7 +308,7 @@ export const EgiszXmlPreviewTab: React.FC<EgiszXmlPreviewTabProps> = ({
 						onClick={() => onToggleSection("procedures")}
 						style={{ width: "100%", padding: "0.6rem 0.875rem", textAlign: "left", fontWeight: 700, fontSize: "0.8125rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper-strong)", border: "none", cursor: "pointer" }}
 					>
-						<span>7. Оказанные медицинские услуги (Номенклатура V001 &amp; LOINC 47519-4)</span>
+						<span>7. Оказанные медицинские услуги</span>
 						{collapsedSections.procedures ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
 					</button>
 					{!collapsedSections.procedures && (

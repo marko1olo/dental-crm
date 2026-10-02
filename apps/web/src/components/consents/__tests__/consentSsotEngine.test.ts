@@ -9,6 +9,7 @@ import {
 	getConsentStatutoryTitle,
 	isConsentCovered,
 } from "../consentSsotEngine";
+import { resolveConsentKeyFromDocument } from "../../visit/consents/visitConsentTypes";
 
 describe("Consent SSOT Engine Suite (323-ФЗ, 1051н, 152-ФЗ, Mandates 8e & 8n)", () => {
 	describe("1. Statutory Consent Titles & Dictionary", () => {
@@ -143,6 +144,77 @@ describe("Consent SSOT Engine Suite (323-ФЗ, 1051н, 152-ФЗ, Mandates 8e & 8
 			assert.equal(isConsentCovered("CONSENT_ANESTHESIA", keys), true);
 			assert.equal(isConsentCovered("CONSENT_THERAPY", new Set(keys)), true);
 			assert.equal(isConsentCovered("CONSENT_SURGERY_IMPLANT", keys), false);
+		});
+	});
+
+	describe("7. Document to Consent Key Reverse Resolution (Mandate 8za SSOT)", () => {
+		it("resolves direct consentKey from payload", () => {
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "procedure_specific_consent_packet",
+					payload: { consentKey: "CONSENT_THERAPY" },
+				}),
+				"CONSENT_THERAPY",
+			);
+		});
+
+		it("resolves procedure types to corresponding consent keys", () => {
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "procedure_specific_consent_packet",
+					payload: { procedureType: "therapy_endo_restoration" },
+				}),
+				"CONSENT_THERAPY",
+			);
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "procedure_specific_consent_packet",
+					payload: { procedureType: "surgery_extraction" },
+				}),
+				"CONSENT_SURGERY_IMPLANT",
+			);
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "procedure_specific_consent_packet",
+					payload: { procedureType: "prosthetics" },
+				}),
+				"CONSENT_ORTHOPEDICS",
+			);
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "procedure_specific_consent_packet",
+					payload: { procedureType: "professional_hygiene" },
+				}),
+				"CONSENT_HYGIENE_BLEACHING",
+			);
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "procedure_specific_consent_packet",
+					payload: { procedureSpecificConsent: { procedureType: "minor_general" } },
+				}),
+				"CONSENT_PEDIATRIC",
+			);
+		});
+
+		it("resolves legacy and statutory document kinds", () => {
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "informed_consent",
+				}),
+				"CONSENT_INSPECTION_1051N",
+			);
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "anesthesia_consent_log",
+				}),
+				"CONSENT_ANESTHESIA",
+			);
+			assert.equal(
+				resolveConsentKeyFromDocument({
+					kind: "personal_data_processing_consent",
+				}),
+				"CONSENT_PERSONAL_DATA",
+			);
 		});
 	});
 });

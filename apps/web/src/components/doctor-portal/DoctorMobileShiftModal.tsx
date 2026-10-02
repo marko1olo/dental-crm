@@ -623,7 +623,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 														</div>
 														<div className="text-[10px] text-[var(--muted)]">
 															Код: {srv.code804n} • {srv.commissionPercent ?? 25}% сделка
-															{(srv.directLabZtlCostKop ?? 0) > 0 && ` • Вычет ЗТЛ: −${formatKopecksRu(srv.directLabZtlCostKop!)}`}
+															{(srv.directLabZtlCostKop ?? 0) > 0 && ` • Вычет ЗТЛ: −${formatKopecksRu(srv.directLabZtlCostKop ?? 0)}`}
 														</div>
 													</div>
 													<div className="text-right whitespace-nowrap">

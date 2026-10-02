@@ -104,33 +104,70 @@ export function AutoclaveJournal257Tab({
 		URL.revokeObjectURL(url);
 	};
 
+	const getDynamicDateBounds = () => {
+		const now = new Date();
+		const currentY = now.getFullYear();
+		const currentM = now.getMonth();
+		const pad = (n: number) => String(n).padStart(2, "0");
+		const daysInCurMonth = new Date(currentY, currentM + 1, 0).getDate();
+		return {
+			now,
+			currentY,
+			currentM,
+			pad,
+			today: `${currentY}-${pad(currentM + 1)}-${pad(now.getDate())}`,
+			currentMonthStart: `${currentY}-${pad(currentM + 1)}-01`,
+			currentMonthEnd: `${currentY}-${pad(currentM + 1)}-${pad(daysInCurMonth)}`,
+			currentMonthNameRu: now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }),
+		};
+	};
+
 	const handlePresetChange = (preset: string) => {
 		setPeriodPreset(preset);
+		const { now, currentY, currentM, pad, today, currentMonthStart, currentMonthEnd } =
+			getDynamicDateBounds();
+
 		if (preset === "all") {
 			setStartDate("");
 			setEndDate("");
-		} else if (preset === "sep_2026") {
-			setStartDate("2026-09-01");
-			setEndDate("2026-09-30");
 		} else if (preset === "today") {
-			setStartDate("2026-09-25");
-			setEndDate("2026-09-25");
+			setStartDate(today);
+			setEndDate(today);
 		} else if (preset === "week") {
-			setStartDate("2026-09-21");
-			setEndDate("2026-09-27");
-		} else if (preset === "aug_2026") {
-			setStartDate("2026-08-01");
-			setEndDate("2026-08-31");
-		} else if (preset === "q3_2026") {
-			setStartDate("2026-07-01");
-			setEndDate("2026-09-30");
+			const dayOfWeek = now.getDay();
+			const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+			const monday = new Date(now);
+			monday.setDate(now.getDate() + diffToMonday);
+			const sunday = new Date(monday);
+			sunday.setDate(monday.getDate() + 6);
+			setStartDate(
+				`${monday.getFullYear()}-${pad(monday.getMonth() + 1)}-${pad(monday.getDate())}`,
+			);
+			setEndDate(
+				`${sunday.getFullYear()}-${pad(sunday.getMonth() + 1)}-${pad(sunday.getDate())}`,
+			);
+		} else if (preset === "current_month" || preset === "sep_2026") {
+			setStartDate(currentMonthStart);
+			setEndDate(currentMonthEnd);
+		} else if (preset === "prev_month" || preset === "aug_2026") {
+			const prevMonthDate = new Date(currentY, currentM - 1, 1);
+			const prevY = prevMonthDate.getFullYear();
+			const prevM = prevMonthDate.getMonth();
+			const daysInPrevMonth = new Date(prevY, prevM + 1, 0).getDate();
+			setStartDate(`${prevY}-${pad(prevM + 1)}-01`);
+			setEndDate(`${prevY}-${pad(prevM + 1)}-${pad(daysInPrevMonth)}`);
+		} else if (preset === "current_quarter" || preset === "q3_2026") {
+			const quarterStartMonth = Math.floor(currentM / 3) * 3;
+			const quarterEndMonth = quarterStartMonth + 2;
+			const daysInQEnd = new Date(currentY, quarterEndMonth + 1, 0).getDate();
+			setStartDate(`${currentY}-${pad(quarterStartMonth + 1)}-01`);
+			setEndDate(`${currentY}-${pad(quarterEndMonth + 1)}-${pad(daysInQEnd)}`);
 		}
 	};
 
 	const periodLabel = useMemo(() => {
 		if (startDate && endDate) {
 			if (startDate === endDate) return `за ${startDate}`;
-			if (startDate === "2026-09-01" && endDate === "2026-09-30") return "за Сентябрь 2026 г.";
 			return `с ${startDate} по ${endDate}`;
 		}
 		if (startDate) return `с ${startDate}`;
@@ -145,8 +182,9 @@ export function AutoclaveJournal257Tab({
 				? missingDaysAudit.missingDates
 				: undefined;
 
-		const start = startDate || "2026-09-01";
-		const end = endDate || "2026-09-30";
+		const { currentMonthStart, currentMonthEnd } = getDynamicDateBounds();
+		const start = startDate || currentMonthStart;
+		const end = endDate || currentMonthEnd;
 		const generated = generateBatchForm257Records({
 			startDate: targetDates ? undefined : start,
 			endDate: targetDates ? undefined : end,
@@ -154,7 +192,10 @@ export function AutoclaveJournal257Tab({
 			excludeSundays: targetDates ? false : true,
 			cyclesPerDay: 2,
 			packsPerCycle: 14,
-			sterilizerId: selectedSterilizerId !== "all" ? selectedSterilizerId : "autoclave-melag-vacuklav-23b",
+			sterilizerId:
+				selectedSterilizerId !== "all"
+					? selectedSterilizerId
+					: "autoclave-melag-vacuklav-23b",
 			operatorStaffFullName: clinicInfo.headNurse || "Сотрудник ЦСО / Врач",
 			headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
 			isHeadNurseVerified: true,
@@ -166,19 +207,24 @@ export function AutoclaveJournal257Tab({
 		if (!startDate || !endDate) {
 			setStartDate(start);
 			setEndDate(end);
-			setPeriodPreset("sep_2026");
+			setPeriodPreset("current_month");
 		}
 	};
 
-	// 1-Клик: Генерация и печать Формы 257/у за текущий месяц (Сентябрь 2026)
+	// 1-Клик: Генерация и печать Формы 257/у за текущий месяц
 	const handleGenerateMonthlyForm257 = () => {
+		const { currentMonthStart, currentMonthEnd, currentMonthNameRu } = getDynamicDateBounds();
+
 		const generatedRecords = generateBatchForm257Records({
-			startDate: "2026-09-01",
-			endDate: "2026-09-30",
+			startDate: currentMonthStart,
+			endDate: currentMonthEnd,
 			excludeSundays: true,
 			cyclesPerDay: 2,
 			packsPerCycle: 14,
-			sterilizerId: selectedSterilizerId !== "all" ? selectedSterilizerId : "autoclave-melag-vacuklav-23b",
+			sterilizerId:
+				selectedSterilizerId !== "all"
+					? selectedSterilizerId
+					: "autoclave-melag-vacuklav-23b",
 			operatorStaffFullName: clinicInfo.headNurse || "Сотрудник ЦСО / Врач",
 			headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
 			isHeadNurseVerified: true,
@@ -187,14 +233,14 @@ export function AutoclaveJournal257Tab({
 		if (onBatchAddRecords) {
 			onBatchAddRecords(generatedRecords);
 		}
-		setStartDate("2026-09-01");
-		setEndDate("2026-09-30");
-		setPeriodPreset("sep_2026");
+		setStartDate(currentMonthStart);
+		setEndDate(currentMonthEnd);
+		setPeriodPreset("current_month");
 
 		const printHtml = generateForm257PrintHtml(
 			generatedRecords,
 			clinicInfo,
-			"за Сентябрь 2026 г.",
+			`за ${currentMonthNameRu}`,
 		);
 
 		const printWindow = window.open("", "_blank");
@@ -399,11 +445,11 @@ export function AutoclaveJournal257Tab({
 								border: "none",
 								boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
 							}}
-							title="1-клик формирование нормативной выгрузки СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора"
+							title="1-клик формирование журналов стерилизации и проверок качества для проверок"
 							data-testid="journal-tab-regulatory-export-btn"
 						>
 							<FileBadge size={16} />
-							<span>Нормативная выгрузка СанПиН</span>
+							<span>Выгрузка журналов для проверки</span>
 						</button>
 
 						<button
@@ -415,11 +461,11 @@ export function AutoclaveJournal257Tab({
 								padding: "0.5rem 0.875rem",
 								fontWeight: 600,
 							}}
-							title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
+							title="Автоматическое формирование и печать журнала стерилизаторов за текущий месяц"
 							data-testid="journal-tab-generate-monthly-form257-btn"
 						>
 							<DentalForm043 size={16} color="var(--teal, #0d9488)" />
-							<span>Форма 257/у (Месяц)</span>
+							<span>Журнал за месяц</span>
 						</button>
 
 						<button
@@ -440,7 +486,7 @@ export function AutoclaveJournal257Tab({
 							style={{ minHeight: "40px", padding: "0.5rem 1rem" }}
 						>
 							<Printer size={16} />
-							Печать Формы 257/у (А4)
+							Печать журнала автоклава (А4)
 						</button>
 					</div>
 				</div>
@@ -471,11 +517,11 @@ export function AutoclaveJournal257Tab({
 								data-testid="journal-tab-period-preset-select"
 							>
 								<option value="all">За всё время</option>
-								<option value="sep_2026">Сентябрь 2026 (Текущий месяц)</option>
-								<option value="today">Сегодня (25.09.2026)</option>
+								<option value="current_month">Текущий месяц</option>
+								<option value="today">Сегодня</option>
 								<option value="week">Текущая неделя</option>
-								<option value="aug_2026">Август 2026</option>
-								<option value="q3_2026">III Квартал 2026</option>
+								<option value="prev_month">Прошлый месяц</option>
+								<option value="current_quarter">Текущий квартал</option>
 								<option value="custom">Произвольные даты</option>
 							</select>
 						</div>
@@ -553,7 +599,7 @@ export function AutoclaveJournal257Tab({
 							Журнал стерилизации пуст
 						</div>
 						<div style={{ fontSize: "0.875rem", marginTop: "0.375rem", maxWidth: "420px", lineHeight: 1.4 }}>
-							В клинике пока не зарегистрировано ни одного цикла работы стерилизаторов (Форма № 257/у).
+							В клинике пока не зарегистрировано ни одного цикла работы стерилизаторов.
 						</div>
 						{onOpenNewCycle && (
 							<button

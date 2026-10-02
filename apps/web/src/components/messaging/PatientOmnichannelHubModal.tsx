@@ -11,44 +11,11 @@
 
 import React, { useId, useMemo, useRef, useState } from "react";
 import {
-	Activity,
-	AlertTriangle,
-	ArrowUpRight,
-	Bot,
-	Calendar,
-	Check,
-	CheckCheck,
-	CheckCircle2,
-	ChevronRight,
-	Clock,
-	CreditCard,
-	FileText,
-	Filter,
-	HeartHandshake,
-	HelpCircle,
-	History,
-	Layers,
-	MessageCircle,
-	MessageSquare,
-	MessagesSquare,
-	Paperclip,
-	Phone,
-	Plus,
-	QrCode,
-	RefreshCw,
-	Search,
-	Send,
-	ShieldCheck,
-	Sparkles,
-	Star,
-	ThumbsDown,
-	ThumbsUp,
-	TrendingUp,
-	User,
-	UserCheck,
-	Users,
-	X,
-	Zap,
+	Activity, AlertTriangle, ArrowUpRight, Bot, Calendar, Check, CheckCheck,
+	CheckCircle2, ChevronRight, Clock, CreditCard, FileText, Filter, HeartHandshake,
+	HelpCircle, History, Layers, MessageCircle, MessageSquare, MessagesSquare,
+	Paperclip, Phone, Plus, QrCode, RefreshCw, Search, Send, ShieldCheck,
+	Sparkles, Star, ThumbsDown, ThumbsUp, TrendingUp, User, UserCheck, Users, X, Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { SbpPaymentQrModal } from "./SbpPaymentQrModal.js";
@@ -65,6 +32,8 @@ import {
 	replaceTemplateVariables,
 } from "./omnichannelEngine.js";
 import type {
+	InteractiveButtonPayload,
+	MessageAttachment,
 	NpsReview,
 	NpsReviewStatus,
 	NpsUrgency,
@@ -122,6 +91,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	const [messageText, setMessageText] = useState<string>("");
 	const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string>("");
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
 	// Отзывы NPS
 	const [npsReviews, setNpsReviews] = useState<readonly NpsReview[]>(DEFAULT_NPS_REVIEWS);
@@ -246,6 +216,59 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 		if (onSendMessage) {
 			onSendMessage(newMsg);
 		}
+	};
+
+	// Обработка клика по интерактивной кнопке быстрого ответа
+	const handleInteractiveButtonClick = (btn: InteractiveButtonPayload, originalMsg: OmnichannelMessage) => {
+		const replyMsg: OmnichannelMessage = {
+			id: `msg-${Date.now()}`,
+			patientId: selectedPatientId,
+			channel: originalMsg.channel,
+			direction: "outbound",
+			senderName: "Администратор клиники",
+			senderType: "clinic_staff",
+			timestamp: new Date().toISOString(),
+			body: `Выбрано действие: ${btn.title}`,
+			status: "sent",
+		};
+		setMessagesByPatient((prev) => ({
+			...prev,
+			[selectedPatientId]: [...(prev[selectedPatientId] || []), replyMsg],
+		}));
+		onSendMessage?.(replyMsg);
+		showToast(`Действие «${btn.title}» выполнено`, "success");
+	};
+
+	// Прикрепление файла через скрепку
+	const handleAttachFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		const newAtt: MessageAttachment = {
+			id: `att-${Date.now()}`,
+			name: file.name,
+			type: file.type.includes("pdf") ? "pdf" : file.type.includes("image") ? "image" : "document",
+			url: URL.createObjectURL(file),
+			sizeFormatted: `${(file.size / 1024).toFixed(1)} КБ`,
+		};
+		const attMsg: OmnichannelMessage = {
+			id: `msg-${Date.now()}`,
+			patientId: selectedPatientId,
+			channel: inputChannel,
+			direction: "outbound",
+			senderName: "Администратор клиники",
+			senderType: "clinic_staff",
+			timestamp: new Date().toISOString(),
+			body: `Прикреплен файл: ${file.name}`,
+			attachments: [newAtt],
+			status: "sent",
+		};
+		setMessagesByPatient((prev) => ({
+			...prev,
+			[selectedPatientId]: [...(prev[selectedPatientId] || []), attMsg],
+		}));
+		onSendMessage?.(attMsg);
+		showToast(`Файл «${file.name}» прикреплен к переписке`, "success");
+		e.target.value = "";
 	};
 
 	// Открытие модального окна СБП для текущего пациента
@@ -496,34 +519,10 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 									<div className="hub-chat-header-actions">
 										{/* Фильтр каналов в ленте */}
 										<div className="hub-filter-channels-group">
-											<button
-												type="button"
-												className={`hub-filter-btn ${channelFilter === "all" ? "active" : ""}`}
-												onClick={() => setChannelFilter("all")}
-											>
-												Все
-											</button>
-											<button
-												type="button"
-												className={`hub-filter-btn ${channelFilter === "whatsapp" ? "active" : ""}`}
-												onClick={() => setChannelFilter("whatsapp")}
-											>
-												WhatsApp
-											</button>
-											<button
-												type="button"
-												className={`hub-filter-btn ${channelFilter === "telegram" ? "active" : ""}`}
-												onClick={() => setChannelFilter("telegram")}
-											>
-												Telegram
-											</button>
-											<button
-												type="button"
-												className={`hub-filter-btn ${channelFilter === "sms" ? "active" : ""}`}
-												onClick={() => setChannelFilter("sms")}
-											>
-												SMS
-											</button>
+											<button type="button" className={`hub-filter-btn ${channelFilter === "all" ? "active" : ""}`} onClick={() => setChannelFilter("all")}>Все</button>
+											<button type="button" className={`hub-filter-btn ${channelFilter === "whatsapp" ? "active" : ""}`} onClick={() => setChannelFilter("whatsapp")}>WhatsApp</button>
+											<button type="button" className={`hub-filter-btn ${channelFilter === "telegram" ? "active" : ""}`} onClick={() => setChannelFilter("telegram")}>Telegram</button>
+											<button type="button" className={`hub-filter-btn ${channelFilter === "sms" ? "active" : ""}`} onClick={() => setChannelFilter("sms")}>SMS</button>
 										</div>
 
 										{/* 1-клик счет СБП */}
@@ -581,6 +580,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 																		key={btn.id}
 																		type="button"
 																		className={`hub-msg-interactive-btn ${btn.variant || "secondary"}`}
+																		onClick={() => handleInteractiveButtonClick(btn, msg)}
 																	>
 																		{btn.title}
 																	</button>
@@ -684,12 +684,21 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 										/>
 
 										<div className="hub-textarea-actions">
+											<input
+												type="file"
+												ref={attachmentInputRef}
+												style={{ display: "none" }}
+												aria-hidden="true"
+												tabIndex={-1}
+												onChange={handleAttachFile}
+											/>
 											<button
 												type="button"
 												className="hub-icon-action-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
 												style={{ minHeight: "44px", minWidth: "44px" }}
 												title="Прикрепить файл или план лечения"
 												aria-label="Прикрепить файл или план лечения"
+												onClick={() => attachmentInputRef.current?.click()}
 											>
 												<Paperclip size={16} />
 											</button>

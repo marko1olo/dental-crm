@@ -67,7 +67,7 @@ test("Workspace Role Specialization & Clinical Ergonomics Verification", async (
 		const therapist = CLINICAL_ROLE_PRESETS.find((p) => p.key === "therapist")!;
 		assert.ok(therapist, "Therapist preset must exist");
 		assert.ok(therapist.badge.includes("FDI") || therapist.badge.includes("043/у"));
-		assert.ok(therapist.clinicalFocus.includes("043/у"));
+		assert.ok(therapist.clinicalFocus.includes("дневник") || therapist.clinicalFocus.includes("043/у"));
 		assert.ok(therapist.priorityToggleKeys.includes("hasClinicalRules"));
 		assert.ok(therapist.priorityToggleKeys.includes("aiEnableTreatmentPlan"));
 		assert.strictEqual(therapist.presetFlags.hasClinicalRules, true);

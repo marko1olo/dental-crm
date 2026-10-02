@@ -7,6 +7,40 @@ export interface DentalLabFdiOdontogramPickerProps {
 	toggleTooth: (tooth: number) => void;
 	selectQuadrant: (teeth: number[]) => void;
 	jawScope?: JawScope | null;
+	constructionType?: string;
+}
+
+const UPPER_ARCH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+const LOWER_ARCH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+
+export function getBridgeSpanTeeth(currentTeeth: number[]): number[] {
+	const resultSet = new Set<number>(currentTeeth);
+
+	// Process upper arch
+	const upperSelected = currentTeeth.filter((t) => UPPER_ARCH.includes(t));
+	if (upperSelected.length >= 2) {
+		const indices = upperSelected.map((t) => UPPER_ARCH.indexOf(t));
+		const minIdx = Math.min(...indices);
+		const maxIdx = Math.max(...indices);
+		for (let i = minIdx; i <= maxIdx; i++) {
+			const tooth = UPPER_ARCH[i];
+			if (tooth !== undefined) resultSet.add(tooth);
+		}
+	}
+
+	// Process lower arch
+	const lowerSelected = currentTeeth.filter((t) => LOWER_ARCH.includes(t));
+	if (lowerSelected.length >= 2) {
+		const indices = lowerSelected.map((t) => LOWER_ARCH.indexOf(t));
+		const minIdx = Math.min(...indices);
+		const maxIdx = Math.max(...indices);
+		for (let i = minIdx; i <= maxIdx; i++) {
+			const tooth = LOWER_ARCH[i];
+			if (tooth !== undefined) resultSet.add(tooth);
+		}
+	}
+
+	return Array.from(resultSet).sort((a, b) => a - b);
 }
 
 export function DentalLabFdiOdontogramPicker({
@@ -15,7 +49,13 @@ export function DentalLabFdiOdontogramPicker({
 	toggleTooth,
 	selectQuadrant,
 	jawScope = null,
+	constructionType,
 }: DentalLabFdiOdontogramPickerProps) {
+	const handleConnectBridgeSpan = () => {
+		const expanded = getBridgeSpanTeeth(selectedTeeth);
+		setSelectedTeeth(expanded);
+	};
+
 	return (
 		<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-4">
 			<div className="flex items-center justify-between flex-wrap gap-2.5">
@@ -48,6 +88,21 @@ export function DentalLabFdiOdontogramPicker({
 					>
 						Нижняя
 					</button>
+					{selectedTeeth.length >= 2 && (
+						<button
+							type="button"
+							onClick={handleConnectBridgeSpan}
+							className={`lab-quadrant-btn transition-colors ${
+								constructionType === "bridge"
+									? "bg-teal-600 text-white font-extrabold ring-2 ring-teal-400"
+									: "text-teal-700 dark:text-teal-300 font-bold border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/40 hover:bg-teal-100 dark:hover:bg-teal-900/60"
+							}`}
+							title="Заполнить промежуточные единицы мостовидного протеза между выбранными опорами"
+							data-testid="bridge-connect-span-btn"
+						>
+							Соединить мост
+						</button>
+					)}
 					<button
 						type="button"
 						onClick={() => setSelectedTeeth([])}

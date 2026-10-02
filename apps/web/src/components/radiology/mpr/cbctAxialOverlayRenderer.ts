@@ -73,7 +73,14 @@ export function drawAxialMprOverlay(
 	ctx.translate(transform.panX, transform.panY);
 	ctx.scale(transform.zoom, transform.zoom);
 
-	if (showDentalArch && archCurve) {
+	// Arch rendering is strictly restricted to Panoramic/OPTG mode (Mandate 8l)
+	const shouldRenderArch = Boolean(
+		showDentalArch &&
+		archCurve &&
+		studioMode === "panoramic"
+	);
+
+	if (shouldRenderArch && archCurve) {
 		ctx.save();
 		ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
 		ctx.lineWidth = 1.5;
@@ -102,7 +109,7 @@ export function drawAxialMprOverlay(
 		ctx.restore();
 	}
 
-	if (activeCrossSection) {
+	if (activeCrossSection && (studioMode === "panoramic" || studioMode === "implant")) {
 		const norm2D = activeCrossSection.normalVector2D;
 		const rayHalfLenMm = activeCrossSection.widthMm / 2.0;
 		const rayP1Mm = {
@@ -462,7 +469,7 @@ export function drawAxialMprOverlay(
 		isHovered,
 	});
 
-	if (showDentalArch && archCurve) {
+	if (shouldRenderArch && archCurve) {
 		drawDentalArchControlPointManipulators(ctx, {
 			archCurve,
 			volume,

@@ -86,15 +86,15 @@
 }
 
 .copilot-header-badge {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
+  padding: 2px 7px;
+  border-radius: 6px;
   background-color: var(--teal-soft, #ccfbf1);
   color: var(--teal-dark, #0f766e);
   border: 1px solid var(--teal-surface, rgba(204, 251, 241, 0.5));
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .copilot-header-actions {
@@ -104,9 +104,11 @@
 }
 
 .copilot-icon-btn {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 8px;
+  min-width: 32px;
+  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
   border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
@@ -119,10 +121,57 @@
   box-sizing: border-box;
 }
 
+@media (pointer: coarse) {
+  .copilot-icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+    padding: 8px;
+  }
+}
+
 .copilot-icon-btn:hover {
   color: var(--ink, #0f172a);
   background-color: var(--paper-soft, #f4f7f6);
   border-color: var(--line, rgba(15, 118, 110, 0.15));
+}
+
+/* Context Awareness Telemetry Bar */
+.copilot-context-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 14px;
+  background-color: var(--paper-soft, rgba(15, 118, 110, 0.04));
+  border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  font-size: 12px;
+  color: var(--ink, #0f172a);
+}
+
+.copilot-context-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background-color: var(--paper-strong, #ffffff);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  white-space: nowrap;
+}
+
+.copilot-context-chip.active-view {
+  color: var(--teal-dark, #0f766e);
+  background-color: var(--teal-soft, #ccfbf1);
+  border-color: var(--teal-surface, rgba(13, 148, 136, 0.2));
+}
+
+.copilot-context-chip.doctor {
+  color: var(--muted, #64748b);
 }
 
 /* Tabs */
@@ -137,8 +186,8 @@
 
 .copilot-tab-btn {
   flex: 1;
-  min-height: 44px;
-  padding: 8px 14px;
+  min-height: 34px;
+  padding: 6px 12px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -149,9 +198,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.15s ease;
   box-sizing: border-box;
+}
+
+@media (pointer: coarse) {
+  .copilot-tab-btn {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
 }
 
 .copilot-tab-btn:hover {
@@ -662,9 +718,9 @@
 }
 
 .copilot-btn-secondary {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 16px;
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0 14px;
   border-radius: 8px;
   background-color: var(--paper, #ffffff);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
@@ -686,9 +742,9 @@
 }
 
 .copilot-btn-destructive {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 18px;
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0 14px;
   border-radius: 8px;
   background-color: var(--rust, #b91c1c);
   color: #ffffff;
@@ -706,13 +762,13 @@
 }
 
 .copilot-btn-destructive:hover {
-  background-color: #991b1b;
+  filter: brightness(0.9);
 }
 
 .copilot-btn-primary {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 18px;
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0 14px;
   border-radius: 8px;
   background-color: var(--teal, #0d9488);
   color: #ffffff;
@@ -731,6 +787,16 @@
 
 .copilot-btn-primary:hover {
   background-color: var(--teal-dark, #0f766e);
+}
+
+@media (pointer: coarse) {
+  .copilot-btn-secondary,
+  .copilot-btn-destructive,
+  .copilot-btn-primary {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 18px;
+  }
 }
 
 /* Tool execution status block */
@@ -850,7 +916,7 @@
 
 .copilot-prompt-chip {
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   background-color: var(--paper-strong, #fafcfa);
   border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
@@ -862,14 +928,23 @@
   align-items: center;
   gap: 8px;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .copilot-prompt-chip:hover {
   background-color: var(--teal-soft, #ccfbf1);
   color: var(--teal-dark, #0f766e);
   border-color: var(--teal, #0d9488);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.15));
+}
+
+.copilot-prompt-chip:active {
+  transform: translateY(0);
 }
 
 /* Composer */
@@ -994,15 +1069,31 @@
 }
 
 .copilot-reset-btn {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
+  width: auto;
+  min-width: auto;
+  height: 26px;
+  min-height: 26px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
+  color: var(--muted, #6b7280);
+  background: transparent;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.2));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.copilot-reset-btn:hover {
+  color: var(--rust, #b91c1c);
+  border-color: var(--rust, #b91c1c);
+  background-color: var(--rust-soft, rgba(254, 226, 226, 0.4));
 }
 
 .copilot-composer-box {
@@ -1187,6 +1278,13 @@
   transform: translateY(0) scale(0.98);
 }
 
+.copilot-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* Mobile Responsive Override */
 @media (max-width: 768px) {
   .copilot-drawer,
@@ -1204,5 +1302,14 @@
   }
   .copilot-msg-bubble {
     max-width: 90%;
+  }
+  .copilot-hotkey-hint {
+    display: none !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .copilot-hotkey-hint {
+    display: none !important;
   }
 }

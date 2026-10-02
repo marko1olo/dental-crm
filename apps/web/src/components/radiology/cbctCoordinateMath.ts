@@ -45,30 +45,30 @@ export function worldMmToSlicePxContinuous(
 	volume: CbctVoxelVolume,
 ): { x: number; y: number } {
 	const sp = volume.spacingMm;
+	const spX = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const spY = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const spZ = (sp?.z && sp.z > 0) ? sp.z : 0.2;
 	const vox = worldMmToVoxelContinuous(pointMm, volume);
 	const depthMax = volume.dimensions.depth - 1;
-	const isIsotropicZ = Math.abs((sp?.z || 0.2) - (sp?.x || 0.2)) < 1e-4;
+	const isIsotropicZCoronal = Math.abs(spZ - spX) < 1e-4;
+	const isIsotropicZSagittal = Math.abs(spZ - spY) < 1e-4;
 
 	switch (plane) {
 		case "axial":
 			return { x: vox.x, y: vox.y };
 		case "coronal": {
-			if (isIsotropicZ) {
+			if (isIsotropicZCoronal) {
 				return { x: vox.x, y: depthMax - vox.z };
 			}
-			const spX = sp?.x || 0.2;
-			const spZ = sp?.z || 0.2;
 			const heightPx = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spX));
 			const maxSliceY = heightPx - 1;
 			const y = maxSliceY - (vox.z * spZ) / spX;
 			return { x: vox.x, y: Math.max(0, Math.min(maxSliceY, y)) };
 		}
 		case "sagittal": {
-			if (isIsotropicZ) {
+			if (isIsotropicZSagittal) {
 				return { x: vox.y, y: depthMax - vox.z };
 			}
-			const spY = sp?.y || 0.2;
-			const spZ = sp?.z || 0.2;
 			const heightPx = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spY));
 			const maxSliceY = heightPx - 1;
 			const y = maxSliceY - (vox.z * spZ) / spY;
@@ -109,6 +109,83 @@ export function worldMmToScreenPx(
 }
 
 /**
+ * Converts a 3D physical coordinate on a panoramic reconstruction to 2D slice pixel coordinates.
+ */
+export function panoramicWorldMmToSlicePx(
+	pointMm: Point3D,
+	panoDimensions: { readonly widthPx: number; readonly heightPx: number; readonly heightMm?: number | undefined; readonly centerZMm?: number | undefined },
+	totalArcLengthMm = 100.0,
+): { x: number; y: number } {
+	const totalArc = totalArcLengthMm > 0 ? totalArcLengthMm : 100.0;
+	const panoHMm = panoDimensions.heightMm ?? 74.0;
+	const centerZMm = panoDimensions.centerZMm ?? 0.0;
+	const zTopMm = centerZMm + panoHMm / 2.0;
+
+	const sliceX = (pointMm.x / totalArc) * panoDimensions.widthPx;
+	const sliceY = ((zTopMm - pointMm.z) / panoHMm) * panoDimensions.heightPx;
+	return { x: sliceX, y: sliceY };
+}
+
+/**
+ * Converts 2D slice pixel coordinates on a panoramic reconstruction back to 3D physical millimeter coordinates.
+ */
+export function panoramicSlicePxToWorldMm(
+	slicePx: { readonly x: number; readonly y: number },
+	panoDimensions: { readonly widthPx: number; readonly heightPx: number; readonly heightMm?: number | undefined; readonly centerZMm?: number | undefined },
+	totalArcLengthMm = 100.0,
+): Point3D {
+	const totalArc = totalArcLengthMm > 0 ? totalArcLengthMm : 100.0;
+	const panoHMm = panoDimensions.heightMm ?? 74.0;
+	const centerZMm = panoDimensions.centerZMm ?? 0.0;
+	const zTopMm = centerZMm + panoHMm / 2.0;
+
+	const xMm = (slicePx.x / panoDimensions.widthPx) * totalArc;
+	const zMm = zTopMm - (slicePx.y / panoDimensions.heightPx) * panoHMm;
+	return { x: Number(xMm.toFixed(2)), y: 0, z: Number(zMm.toFixed(2)) };
+}
+
+/**
+ * Converts a 3D physical millimeter coordinate on a cross-section slice to 2D slice pixel coordinates.
+ */
+export function crossSectionWorldMmToSlicePx(
+	pointMm: Point3D,
+	crossDimensions: { readonly widthPx: number; readonly heightPx: number; readonly pixelSpacingMm?: number | undefined },
+	canvasWidth?: number | undefined,
+): { x: number; y: number } {
+	const pxSpacing = (Number.isFinite(crossDimensions.pixelSpacingMm) && (crossDimensions.pixelSpacingMm ?? 0) > 0)
+		? crossDimensions.pixelSpacingMm!
+		: 0.25;
+	const cW = canvasWidth ?? crossDimensions.widthPx;
+	const centerX = cW / 2;
+	const topY = 20;
+
+	const sliceX = centerX + pointMm.x / pxSpacing;
+	const sliceY = topY + pointMm.z / pxSpacing;
+	return { x: sliceX, y: sliceY };
+}
+
+/**
+ * Converts 2D slice pixel coordinates on a cross-section slice back to 3D physical millimeter coordinates.
+ */
+export function crossSectionSlicePxToWorldMm(
+	slicePx: { readonly x: number; readonly y: number },
+	crossDimensions: { readonly widthPx: number; readonly heightPx: number; readonly pixelSpacingMm?: number | undefined },
+	canvasWidth?: number | undefined,
+): Point3D {
+	const pxSpacing = (Number.isFinite(crossDimensions.pixelSpacingMm) && (crossDimensions.pixelSpacingMm ?? 0) > 0)
+		? crossDimensions.pixelSpacingMm!
+		: 0.25;
+	const cW = canvasWidth ?? crossDimensions.widthPx;
+	const centerX = cW / 2;
+	const topY = 20;
+
+	const xMm = (slicePx.x - centerX) * pxSpacing;
+	const zMm = (slicePx.y - topY) * pxSpacing;
+	return { x: Number(xMm.toFixed(2)), y: 0, z: Number(zMm.toFixed(2)) };
+}
+
+
+/**
  * Converts slice pixel coordinates on a given viewport back to a 3D physical world point (mm).
  */
 export function slicePxToWorldMm(
@@ -119,13 +196,38 @@ export function slicePxToWorldMm(
 ): Point3D {
 	const curVox = worldMmToVoxel(currentCrosshairMm, volume);
 	const depthMax = volume.dimensions.depth - 1;
+	const sp = volume.spacingMm;
+	const spX = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const spY = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const spZ = (sp?.z && sp.z > 0) ? sp.z : 0.2;
+
 	switch (plane) {
 		case "axial":
 			return voxelToWorldMm({ x: Math.round(pixel.x), y: Math.round(pixel.y), z: curVox.z }, volume);
-		case "coronal":
-			return voxelToWorldMm({ x: Math.round(pixel.x), y: curVox.y, z: depthMax - Math.round(pixel.y) }, volume);
-		case "sagittal":
-			return voxelToWorldMm({ x: curVox.x, y: Math.round(pixel.x), z: depthMax - Math.round(pixel.y) }, volume);
+		case "coronal": {
+			const isIsotropicZ = Math.abs(spZ - spX) < 1e-4;
+			let voxZ: number;
+			if (isIsotropicZ) {
+				voxZ = depthMax - Math.round(pixel.y);
+			} else {
+				const heightPx = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spX));
+				const maxSliceY = heightPx - 1;
+				voxZ = Math.round(((maxSliceY - pixel.y) * spX) / spZ);
+			}
+			return voxelToWorldMm({ x: Math.round(pixel.x), y: curVox.y, z: Math.max(0, Math.min(depthMax, voxZ)) }, volume);
+		}
+		case "sagittal": {
+			const isIsotropicZ = Math.abs(spZ - spY) < 1e-4;
+			let voxZ: number;
+			if (isIsotropicZ) {
+				voxZ = depthMax - Math.round(pixel.y);
+			} else {
+				const heightPx = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spY));
+				const maxSliceY = heightPx - 1;
+				voxZ = Math.round(((maxSliceY - pixel.y) * spY) / spZ);
+			}
+			return voxelToWorldMm({ x: curVox.x, y: Math.round(pixel.x), z: Math.max(0, Math.min(depthMax, voxZ)) }, volume);
+		}
 		default:
 			return voxelToWorldMm({ x: Math.round(pixel.x), y: Math.round(pixel.y), z: curVox.z }, volume);
 	}
@@ -140,10 +242,11 @@ export function calculateSlabVoxelBounds(
 	voxelSpacingMm: number,
 	maxVoxelIndex: number,
 ): { startVoxel: number; endVoxel: number; halfSlabVoxels: number } {
-	if (slabThicknessMm <= voxelSpacingMm) {
+	const validSpacing = (Number.isFinite(voxelSpacingMm) && voxelSpacingMm > 0) ? voxelSpacingMm : 0.2;
+	if (slabThicknessMm <= validSpacing) {
 		return { startVoxel: centerVoxel, endVoxel: centerVoxel, halfSlabVoxels: 0 };
 	}
-	const slabVoxelCount = Math.max(1, Math.round(slabThicknessMm / voxelSpacingMm));
+	const slabVoxelCount = Math.max(1, Math.round(slabThicknessMm / validSpacing));
 	const halfSlabVoxels = Math.floor(slabVoxelCount / 2);
 	const startVoxel = Math.max(0, centerVoxel - halfSlabVoxels);
 	const endVoxel = Math.min(maxVoxelIndex, centerVoxel + halfSlabVoxels);
@@ -169,13 +272,18 @@ export function worldMmToVoxel(
 		volume = arg2 as CbctVoxelVolume;
 	}
 
+	const sp = volume.spacingMm;
+	const sx = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const sy = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const sz = (sp?.z && sp.z > 0) ? sp.z : 0.2;
+
 	const relX = pointMm.x - volume.originMm.x;
 	const relY = pointMm.y - volume.originMm.y;
 	const relZ = pointMm.z - volume.originMm.z;
 
-	const vx = Math.round(relX / volume.spacingMm.x);
-	const vy = Math.round(relY / volume.spacingMm.y);
-	const vz = Math.round(relZ / volume.spacingMm.z);
+	const vx = Math.round(relX / sx);
+	const vy = Math.round(relY / sy);
+	const vz = Math.round(relZ / sz);
 
 	return {
 		x: Math.max(0, Math.min(volume.dimensions.width - 1, vx)),
@@ -212,10 +320,15 @@ export function voxelToWorldMm(
 		vz = vox.z;
 	}
 
+	const sp = volume.spacingMm;
+	const sx = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const sy = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const sz = (sp?.z && sp.z > 0) ? sp.z : 0.2;
+
 	return {
-		x: Number((volume.originMm.x + vx * volume.spacingMm.x).toFixed(2)),
-		y: Number((volume.originMm.y + vy * volume.spacingMm.y).toFixed(2)),
-		z: Number((volume.originMm.z + vz * volume.spacingMm.z).toFixed(2)),
+		x: Number((volume.originMm.x + vx * sx).toFixed(2)),
+		y: Number((volume.originMm.y + vy * sy).toFixed(2)),
+		z: Number((volume.originMm.z + vz * sz).toFixed(2)),
 	};
 }
 
@@ -317,9 +430,13 @@ export function worldMmToVoxelContinuous(
 	pointMm: Point3D,
 	volume: CbctVoxelVolume,
 ): { x: number; y: number; z: number } {
+	const sp = volume.spacingMm;
+	const sx = (sp?.x && sp.x > 0) ? sp.x : 0.2;
+	const sy = (sp?.y && sp.y > 0) ? sp.y : 0.2;
+	const sz = (sp?.z && sp.z > 0) ? sp.z : 0.2;
 	return {
-		x: (pointMm.x - volume.originMm.x) / (volume.spacingMm.x || 0.2),
-		y: (pointMm.y - volume.originMm.y) / (volume.spacingMm.y || 0.2),
-		z: (pointMm.z - volume.originMm.z) / (volume.spacingMm.z || 0.2),
+		x: (pointMm.x - volume.originMm.x) / sx,
+		y: (pointMm.y - volume.originMm.y) / sy,
+		z: (pointMm.z - volume.originMm.z) / sz,
 	};
 }

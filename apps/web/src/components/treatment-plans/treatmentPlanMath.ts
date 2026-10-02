@@ -17,7 +17,9 @@ import {
 	sumKopecks,
 	calculatePlanTaxDeductionBreakdown,
 	calculateStaged304030Schedule,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 } from "@dental/shared";
+import { calculateNdflDeduction } from "./treatmentPlanPricingEngine";
 import type {
 	NdflDeductionResult,
 	TierInstallmentPlan,
@@ -29,8 +31,8 @@ import type {
 /**
  * Лимит налоговой базы для обычного лечения (Код 01) по ст. 219 НК РФ: 150 000 руб = 15 000 000 копеек.
  */
-export const NDFL_STANDARD_ANNUAL_LIMIT_RUB = 150_000;
-export const NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS = (150_000 * 100) as Kopecks;
+export const NDFL_STANDARD_ANNUAL_LIMIT_RUB = ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024;
+export const NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS = (ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 * 100) as Kopecks;
 
 /**
  * Форматирует сумму в рублях для отображения пациенту у кресла.
@@ -157,6 +159,7 @@ export function calculateChairsideInstallments(
 
 /**
  * Рассчитывает социальный налоговый вычет 13% НДФЛ по ст. 219 НК РФ.
+ * Делегирует в канонический расчет calculateNdflDeduction (Мандат 8s SSOT).
  * - Код 01 (Обычное лечение): лимит базы 150 000 ₽ в год, максимум возврата 19 500 ₽.
  * - Код 02 (Дорогостоящее лечение: имплантация, костная пластика, синус-лифтинг): без лимита базы!
  */
@@ -164,46 +167,7 @@ export function calculateChairsideTaxDeduction(
 	totalKopecks: Kopecks,
 	isHighCostTreatment: boolean,
 ): NdflDeductionResult {
-	if (totalKopecks <= 0) {
-		return {
-			code: isHighCostTreatment ? "02" : "01",
-			codeDescription: isHighCostTreatment
-				? "Дорогостоящее лечение (Код 02) — вычет со всей суммы без ограничений"
-				: "Обычное лечение (Код 01) — лимит базы 150 000 ₽",
-			isHighCostCode02: isHighCostTreatment,
-			isHighCostTreatment,
-			baseKopecks: 0 as Kopecks,
-			refundKopecks: 0 as Kopecks,
-			refundRub: 0,
-			finalPriceWithRefundRub: 0,
-			annualLimitRub: isHighCostTreatment ? undefined : NDFL_STANDARD_ANNUAL_LIMIT_RUB,
-		};
-	}
-
-	let eligibleBaseKopecks = totalKopecks;
-	if (!isHighCostTreatment && totalKopecks > NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS) {
-		eligibleBaseKopecks = NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS;
-	}
-
-	// 13% от базы
-	const refundKopecks = percentageOfKopecks(eligibleBaseKopecks, 1300); // 13.00%
-	const refundRub = Math.round(refundKopecks / 100);
-	const totalRub = Math.round(totalKopecks / 100);
-	const finalPriceWithRefundRub = Math.max(0, totalRub - refundRub);
-
-	return {
-		code: isHighCostTreatment ? "02" : "01",
-		codeDescription: isHighCostTreatment
-			? "Дорогостоящее лечение (Код 02) — вычет 13% со всей суммы без ограничений"
-			: "Обычное лечение (Код 01) — лимит базы 150 000 ₽ (макс. возврат 19 500 ₽)",
-		isHighCostCode02: isHighCostTreatment,
-		isHighCostTreatment,
-		baseKopecks: eligibleBaseKopecks,
-		refundKopecks,
-		refundRub,
-		finalPriceWithRefundRub,
-		annualLimitRub: isHighCostTreatment ? undefined : NDFL_STANDARD_ANNUAL_LIMIT_RUB,
-	};
+	return calculateNdflDeduction(totalKopecks, isHighCostTreatment);
 }
 
 /**

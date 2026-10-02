@@ -8,6 +8,7 @@ import {
 	HeartPulse,
 	History,
 	Printer,
+	Scan,
 	ShieldCheck,
 	User,
 	Users,
@@ -25,6 +26,9 @@ import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
+import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
+import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
+import { ToothMolar } from "../icons/DentalIcons";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	STOMX_REPRESENTATIVE_CATALOG,
@@ -85,7 +89,7 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 	};
 }
 
-export type PatientCardTab = "general" | "anamnesis" | "visits" | "family";
+export type PatientCardTab = "general" | "formula" | "anamnesis" | "visits" | "radiology" | "family";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
@@ -343,7 +347,22 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								<span>Основные и паспортные</span>
 							</button>
 
-							{/* Вкладка 2: Медицинский статус и соматика */}
+							{/* Вкладка 2: Зубная формула (Одонтограмма) */}
+							<button
+								type="button"
+								data-testid="tab-patient-formula"
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+									activeTab === "formula"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
+								}`}
+								onClick={() => setActiveTab("formula")}
+							>
+								<ToothMolar className="w-3.5 h-3.5 shrink-0" />
+								<span>Зубная формула</span>
+							</button>
+
+							{/* Вкладка 3: Медицинский статус и соматика */}
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
@@ -373,7 +392,22 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								<span>История визитов и финансы</span>
 							</button>
 
-							{/* Вкладка 4: Семья и представители */}
+							{/* Вкладка 4: Снимки и КТ */}
+							<button
+								type="button"
+								data-testid="tab-patient-radiology"
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+									activeTab === "radiology"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
+								}`}
+								onClick={() => setActiveTab("radiology")}
+							>
+								<Scan className="w-3.5 h-3.5 shrink-0" />
+								<span>Снимки и КТ</span>
+							</button>
+
+							{/* Вкладка 5: Семья и представители */}
 							<button
 								type="button"
 								data-testid="tab-patient-family"
@@ -404,17 +438,31 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 
 					{/* Modal Body */}
 					<div className="p-3 sm:p-5 overflow-y-auto flex-1">
-						<PatientGeneralInfoTab
-							patient={patientData}
-							safetyProfile={safetyProfile}
-							onUpdatePatient={handleUpdatePatientField}
-							onUpdateSafetyProfile={setSafetyProfile}
-							onApplySomaticNorm={handleApplyNorm}
-							disabled={disabled}
-							activeSection={activeTab === "anamnesis" ? "somatic" : activeTab}
-							onNavigateToVisit={onNavigateToVisit}
-							onNewAppointment={onNewAppointment}
-						/>
+						{activeTab === "formula" ? (
+							<PatientDentalFormulaTab
+								patientId={patientData.id || ""}
+								patientBirthDate={patientData.birthDate}
+								patientName={patientData.fullName}
+							/>
+						) : activeTab === "radiology" ? (
+							<PatientRadiologyTab
+								patientId={patientData.id}
+								patientName={patientData.fullName}
+								patientBirthDate={patientData.birthDate}
+							/>
+						) : (
+							<PatientGeneralInfoTab
+								patient={patientData}
+								safetyProfile={safetyProfile}
+								onUpdatePatient={handleUpdatePatientField}
+								onUpdateSafetyProfile={setSafetyProfile}
+								onApplySomaticNorm={handleApplyNorm}
+								disabled={disabled}
+								activeSection={activeTab === "anamnesis" ? "somatic" : activeTab}
+								onNavigateToVisit={onNavigateToVisit}
+								onNewAppointment={onNewAppointment}
+							/>
+						)}
 					</div>
 
 					{/* Modal Footer */}

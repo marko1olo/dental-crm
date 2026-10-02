@@ -411,6 +411,10 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 											aria-pressed={isCompleted}
 											aria-label={`Отметить: ${item.title}`}
 											data-testid={"toggle-btn-" + item.id}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleToggleItem(item.id);
+											}}
 										>
 											<Check size={24} strokeWidth={3} />
 										</button>

@@ -6,6 +6,14 @@
  * Mandates 8b (<=800 lines), 8c (Density), 8d (Zero emojis), 8e (Autonomy), 8n (Solo Doctor).
  */
 
+import {
+	cleanPhoneDigits,
+	formatPhoneNumber,
+	formatRussianDate as canonicalFormatRussianDate,
+	isValidRussianPhone,
+	localDateString,
+} from "../../utils/formatters";
+
 export type BookingStep = "doctor" | "slot" | "contacts" | "confirmation";
 
 export type VerificationMethod = "sms" | "flash_call";
@@ -118,39 +126,18 @@ export const SERVICE_CATEGORIES = [
 /**
  * Normalizes phone string to clean Russian digits (10 or 11 digits).
  */
-export function normalizePhoneDigits(phone: string): string {
-	const digits = String(phone ?? "").replace(/\D/g, "");
-	if (digits.startsWith("8") && digits.length === 11) {
-		return `7${digits.slice(1)}`;
-	}
-	return digits;
-}
+export const normalizePhoneDigits = cleanPhoneDigits;
 
 /**
  * Formats user input as Russian phone number: +7 (999) 000-00-00
  */
-export function formatPhoneRu(value: string): string {
-	const digits = value.replace(/\D/g, "");
-	let clean = digits;
-	if (clean.startsWith("7") || clean.startsWith("8")) {
-		clean = clean.slice(1);
-	}
-	clean = clean.slice(0, 10);
-
-	if (clean.length === 0) return "";
-	if (clean.length <= 3) return `+7 (${clean}`;
-	if (clean.length <= 6) return `+7 (${clean.slice(0, 3)}) ${clean.slice(3)}`;
-	if (clean.length <= 8) {
-		return `+7 (${clean.slice(0, 3)}) ${clean.slice(3, 6)}-${clean.slice(6)}`;
-	}
-	return `+7 (${clean.slice(0, 3)}) ${clean.slice(3, 6)}-${clean.slice(6, 8)}-${clean.slice(8, 10)}`;
-}
+export const formatPhoneRu = formatPhoneNumber;
 
 /**
  * Validates Russian mobile number (10 national digits).
  */
 export function isValidRuPhone(phone: string): boolean {
-	const clean = normalizePhoneDigits(phone);
+	const clean = cleanPhoneDigits(phone);
 	const last10 = clean.slice(-10);
 	return last10.length === 10 && last10.startsWith("9");
 }
@@ -205,29 +192,17 @@ export function groupSlotsByDayPeriod(slots: BookingSlot[]): {
 /**
  * Generates local date string YYYY-MM-DD
  */
-export function toLocalDateString(d: Date = new Date()): string {
-	const year = d.getFullYear();
-	const month = String(d.getMonth() + 1).padStart(2, "0");
-	const day = String(d.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
+export const toLocalDateString = localDateString;
 
 /**
  * Formats Russian date display: "Понедельник, 28 сентября"
  */
 export function formatRussianDate(dateStr: string): string {
-	try {
-		const [y, m, d] = dateStr.split("-").map(Number);
-		if (!y || !m || !d) return dateStr;
-		const dateObj = new Date(y, m - 1, d);
-		return dateObj.toLocaleDateString("ru-RU", {
-			weekday: "long",
-			day: "numeric",
-			month: "long",
-		});
-	} catch {
-		return dateStr;
-	}
+	return canonicalFormatRussianDate(dateStr, {
+		weekday: "long",
+		day: "numeric",
+		month: "long",
+	});
 }
 
 /**

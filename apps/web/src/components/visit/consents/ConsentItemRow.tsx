@@ -176,7 +176,7 @@ export function ConsentItemRow({
 									}}
 								>
 									<Tablet size={14} style={{ color: "var(--teal)" }} />
-									<span>Подпись на планшете</span>
+									<span>Подпись на экране (если есть планшет)</span>
 								</button>
 								<div className="vct-dropdown-divider" />
 								<button

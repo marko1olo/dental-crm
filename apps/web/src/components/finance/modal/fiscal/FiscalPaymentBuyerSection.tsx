@@ -54,16 +54,16 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
 						<User size={15} className="text-teal-600 dark:text-teal-400" />
-						<span>Тип плательщика (54-ФЗ):</span>
+						<span>Тип плательщика:</span>
 					</div>
 					<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
 						{payerType === "individual" ? (
 							<>
 								<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-								<span>54-ФЗ: ИНН с физлиц НЕ требуется</span>
+								<span>Для физлиц ИНН не требуется</span>
 							</>
 						) : (
-							"54-ФЗ: B2B расчет (Теги 1227 / 1228)"
+							"Оплата от организации / ИП"
 						)}
 					</span>
 				</div>
@@ -78,7 +78,7 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-[var(--border,#cbd5e1)] hover:bg-slate-50 dark:hover:bg-slate-800"
 						}`}
 						data-testid="btn-payer-type-individual"
-						title="Физическое лицо (гражданин) — оплата картой, наличными или СБП. По закону 54-ФЗ ИНН строго НЕ требуется."
+						title="Физическое лицо (гражданин) — оплата картой, наличными или СБП. ИНН не требуется."
 					>
 						<User size={15} />
 						<span>Физическое лицо (без ИНН)</span>
@@ -93,10 +93,10 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-[var(--border,#cbd5e1)] hover:bg-slate-50 dark:hover:bg-slate-800"
 						}`}
 						data-testid="btn-payer-type-legal"
-						title="Юридическое лицо или Индивидуальный предприниматель (безналичный B2B расчет по ст. 4.7 54-ФЗ)"
+						title="Юридическое лицо или Индивидуальный предприниматель (оплата по счету или корпоративной карте)"
 					>
 						<Building2 size={15} />
-						<span>Юрлицо / ИП (B2B расчет)</span>
+						<span>Юрлицо / ИП</span>
 					</button>
 				</div>
 
@@ -105,20 +105,20 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 					<div className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-[11.5px] text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
 						<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
 						<span>
-							По закону 54-ФЗ (п. 1 ст. 4.7) при расчетах с гражданами ИНН покупателя <strong>не требуется</strong>. Не требуется для физлиц (54-ФЗ). Чек пробивается мгновенно в 1 клик.
+							При расчетах с пациентами-физлицами ИНН <strong>не требуется</strong>. Чек печатается мгновенно в 1 клик.
 						</span>
 					</div>
 				) : (
-					/* B2B Legal Entity / IP: Optional requisites inputs (Tags 1227 and 1228) */
+					/* B2B Legal Entity / IP: Optional requisites inputs */
 					<div className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 space-y-2.5" data-testid="b2b-requisites-box">
 						<div className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
 							<FileText size={14} />
-							<span>Реквизиты покупателя (ФФД 1.2 Теги 1227 / 1228):</span>
+							<span>Реквизиты организации / ИП:</span>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 							<div>
 								<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
-									Наименование юрлица или ИП (Тег 1227):
+									Наименование юрлица или ИП:
 								</label>
 								<input
 									type="text"
@@ -130,7 +130,7 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 							</div>
 							<div>
 								<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
-									ИНН покупателя (Тег 1228, 10 или 12 цифр):
+									ИНН покупателя (10 или 12 цифр):
 								</label>
 								<input
 									type="text"
@@ -148,10 +148,10 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 				)}
 			</div>
 
-			{/* 54-FZ Electronic Contact Input */}
+			{/* Electronic Contact Input */}
 			<div className="space-y-1.5 pt-1">
 				<label className="block text-xs font-semibold text-[var(--muted,#64748b)]">
-					Телефон или Email для отправки электронного чека (54-ФЗ, Тег 1008):
+					Телефон или Email для электронного чека:
 				</label>
 				<input
 					type="text"

@@ -27,7 +27,7 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 				reply,
 				"doctor preferences read",
 			);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const identity = getRequestIdentity(request);
 			const query = request.query as { doctorId?: string } | undefined;
@@ -63,7 +63,7 @@ export async function registerDoctorPreferencesRoutes(app: FastifyInstance) {
 				reply,
 				"doctor preferences write",
 			);
-			if (!orgId) return;
+			if (!orgId) return reply;
 
 			const parsed = putDoctorPreferencesBodySchema.safeParse(request.body);
 			if (!parsed.success) {

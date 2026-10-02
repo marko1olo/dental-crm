@@ -1,0 +1,55 @@
+{
+  "role": "RED TEAM SCHEDULE, SHIFTS & WAITLIST DUPLICATES & ORPHANS INQUISITOR",
+  "status": "COMPLETED",
+  "forbidden_scope": ["CBCT", "DICOM", "Radiology", "CT", "XRay"],
+  "domain_scope": [
+    "Schedule grid",
+    "Appointment booking",
+    "Chair / dental units booking",
+    "Doctor shifts / rostering",
+    "Waitlist / лист ожидания",
+    "Free slot search algorithms",
+    "Collision detection algorithms"
+  ],
+  "steps_completed": [
+    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Initialized subagent memory checkpoint",
+    "Executed comprehensive code reconnaissance across packages/shared, apps/api, apps/web for schedule, roster, waitlist, slots, and collision engines",
+    "Identified and fixed Defect 1: Unquarantined demo staff fallback in doctorWeeklyScheduleGenerator.ts, rosterChairWeeklyTemplates.ts, rosterDateRangeBinding.ts, and rosterDateUtils.ts (Mandate 8y quarantine)",
+    "Identified and fixed Defect 2: Duplication of interval collision and overlap math between chairRosterMath.ts, doctorFreeSlotsEngine.ts, scheduleCollisionUtils.ts, and @dental/shared shiftCollisionEngine.ts (Mandate 8za SSOT consolidation)",
+    "Updated scheduleShiftRosterIntegration.test.tsx edge case 1 to verify Mandate 8y fail-closed production empty state and demo showcase fallback",
+    "Verified 100% pass on all 27 tests in scheduleShiftRosterIntegration.test.tsx",
+    "Verified 100% pass on all 18 tests in scheduleGridLongAppointments.test.ts",
+    "Verified 100% pass on all 16 tests in scheduleCollisionUtils.test.ts",
+    "Verified 100% pass on all 9 tests in doctorFreeSlotsEngine.test.ts",
+    "Verified 100% pass on all 66 tests across DoctorShiftRoster, scheduleShiftRosterIntegration, and chairDoctorRosterStomXParity",
+    "Verified 100% pass on all 26 tests in waitlistCancellation.test.ts and WaitlistQuickFillModal.test.tsx",
+    "Verified 100% pass on all 40 tests in treatmentPlanStagesMining.test.ts and patientShiftQueueEngine.test.ts",
+    "Verified UTF-8 encoding across all 6977 files via check:encoding (Exit Code 0)",
+    "Confirmed zero touch on CBCT/CT/DICOM/Radiology files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-1-FIXED",
+      "severity": "CRITICAL",
+      "summary": "Unquarantined DEFAULT_CLINIC_STAFF fallback in shift generation engines",
+      "details": "doctorWeeklyScheduleGenerator.ts, rosterChairWeeklyTemplates.ts, rosterDateRangeBinding.ts, and rosterDateUtils.ts leaked DEFAULT_CLINIC_STAFF into production when staffList was empty or omitted. Quarantined behind isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [].",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DEFECT-2-FIXED",
+      "severity": "HIGH",
+      "summary": "Duplicated collision and interval overlap math across web components",
+      "details": "chairRosterMath.ts, doctorFreeSlotsEngine.ts, and scheduleCollisionUtils.ts had hand-rolled timestamp inequality checks. Consolidated onto canonical SSOT functions areIntervalsOverlapping and calculateOverlapDurationMinutes from @dental/shared/schedule/shiftCollisionEngine.",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "ORPHAN-AUDIT-VERIFIED",
+      "severity": "INFO",
+      "summary": "Waitlist matches and freed slots endpoints fully connected to UI",
+      "details": "Confirmed GET /api/appointments/:appointmentId/waitlist-matches is actively consumed by WaitlistMatchesBlock.tsx in AppointmentCard, AppointmentModalPatientSection, and FreedSlotsPanel. Verified 152-FZ compliance (no clinical diagnosis in notifications).",
+      "status": "VERIFIED"
+    }
+  ]
+}

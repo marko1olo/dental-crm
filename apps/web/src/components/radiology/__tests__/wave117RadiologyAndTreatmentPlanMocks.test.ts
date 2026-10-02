@@ -89,6 +89,16 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 			false,
 			"TreatmentPlanPresenterModal.tsx must not contain 'Смирнова Екатерина Васильевна'",
 		);
+		assert.strictEqual(
+			presenterContent.includes("Иванов Иван Иванович"),
+			false,
+			"TreatmentPlanPresenterModal.tsx must not contain 'Иванов Иван Иванович'",
+		);
+		assert.strictEqual(
+			presenterContent.includes("Д-р Смирнов А. В."),
+			false,
+			"TreatmentPlanPresenterModal.tsx must not contain 'Д-р Смирнов А. В.'",
+		);
 	});
 
 	it("verifies absence of 'Кузнецов М.С.' in MedicalWasteJournalModal.tsx", () => {

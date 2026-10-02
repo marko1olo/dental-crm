@@ -80,11 +80,11 @@ async function loadVoxelVolume(cfg: PatientBenchmarkConfig): Promise<CbctVoxelVo
 	}
 }
 
-function slabToRgbaArray(slab: AxialMIPSlab, wl = 450, ww = 2200): Uint8ClampedArray {
+function slabToRgbaArray(slab: AxialMIPSlab, wl = 525, ww = 4025): Uint8ClampedArray {
 	const count = slab.width * slab.height;
 	const rgba = new Uint8ClampedArray(count * 4);
-	// Canonical clinical radiology preset (W: 2200, L: 450): enamel peak clamped to 180/255, bone ~90..120, air <= -100 pure black
-	const lut = generate16BitLut(ww, wl, false, 1.15, { peakEnamel: 180, airCutoffHU: -100 });
+	// Canonical user contrast preset (W: 4025, L: 525, Gamma: 1.50, Air: -500 HU, Soft-Knee: false):
+	const lut = generate16BitLut(ww, wl, false, 1.50, { airCutoffHU: -500, enabled: false });
 
 	for (let i = 0; i < count; i++) {
 		const hu = slab.data[i] ?? -1000;
@@ -109,9 +109,9 @@ async function renderDualJawScreenshot(
 ): Promise<void> {
 	const page = await browser.newPage({ viewport: { width: 1440, height: 1180 } });
 
-	// Canonical standard clinical contrast windowing (W/L: 2200/450, gamma 1.15, peakEnamel 185)
-	const mandRgba = Array.from(slabToRgbaArray(mandible.slab, 450, 2200));
-	const maxRgba = Array.from(slabToRgbaArray(maxilla.slab, 450, 2200));
+	// Canonical user contrast windowing (W/L: 4025/525, gamma 1.50, airCutoff -500 HU, soft-knee: false, slab 1.0 mm)
+	const mandRgba = Array.from(slabToRgbaArray(mandible.slab, 525, 4025));
+	const maxRgba = Array.from(slabToRgbaArray(maxilla.slab, 525, 4025));
 
 	const mandTrough = getFocalTroughBoundaryCurves(mandible.arch.curve.splinePointsMm, 14.0, {
 		enabled: true,
@@ -127,28 +127,34 @@ async function renderDualJawScreenshot(
 		molarThicknessMm: 20.0,
 	});
 
-	// Reconstruct canonical clinical panorama along the detected dental arch with 3.0 mm ray-sum (CLINICAL_RADIOLOGY_PRESETS.standard)
+	// Reconstruct canonical clinical panorama along the detected dental arch with 1.0 mm layer (user canonical DENTE)
 	const activeArchForPano = mandible.arch.curve.splinePointsMm.length > 0 ? mandible.arch.curve : maxilla.arch.curve;
 	const panoRes = reconstructPanoramicView(vol, activeArchForPano, {
-		windowWidth: 2200,
-		windowLevel: 450,
-		projectionMode: "ray_sum",
-		focalTroughThicknessMm: 3.0,
+		windowWidth: 4025,
+		windowLevel: 525,
+		gamma: 1.50,
+		airCutoffHU: -500,
+		useSoftKnee: false,
+		projectionMode: "average",
+		focalTroughThicknessMm: 1.0,
 		heightMm: 72.0,
-		softKnee: { peakEnamel: 180, airCutoffHU: -100 },
+		softKnee: { airCutoffHU: -500, enabled: false },
 	});
 
 	// Separate upper and lower tooth markers for anatomical dual-jaw ribbon display
 	const upperMarkers = maxilla.arch.curve.splinePointsMm.length > 0
 		? reconstructPanoramicView(vol, maxilla.arch.curve, {
-				windowWidth: 2200,
-				windowLevel: 450,
-				projectionMode: "ray_sum",
-				focalTroughThicknessMm: 3.0,
+				windowWidth: 4025,
+				windowLevel: 525,
+				gamma: 1.50,
+				airCutoffHU: -500,
+				useSoftKnee: false,
+				projectionMode: "average",
+				focalTroughThicknessMm: 1.0,
 				heightMm: 72.0,
 				widthPx: panoRes.widthPx,
 				heightPx: panoRes.heightPx,
-				softKnee: { peakEnamel: 180, airCutoffHU: -100 },
+				softKnee: { airCutoffHU: -500, enabled: false },
 		  }).toothMarkersOnPano.filter((m) => (m.isUpper ?? true) && maxilla.arch.presentTeethFdi.includes(m.toothFdi))
 		: [];
 
@@ -387,7 +393,7 @@ async function renderDualJawScreenshot(
 				<div>
 					Зубы: <span class="present-tag">${renderPayload.mandible.present.length} FDI</span> ${renderPayload.mandible.missing.length > 0 ? `<span class="missing-tag">(отсутствуют: ${renderPayload.mandible.missing.join(", ")})</span>` : `<span class="present-tag">(полный зубной ряд)</span>`}
 				</div>
-				<div>Физический 16-bit MIP • Окно W/L: 2200/450 (Клинический полутон PACS)</div>
+				<div>Окно W/L: 4025/525 (Канонический DENTE HU), Gamma 1.50, Air -500, Slab 1.0 мм</div>
 			</div>
 		</div>
 
@@ -409,7 +415,7 @@ async function renderDualJawScreenshot(
 				<div>
 					Зубы: <span class="present-tag">${renderPayload.maxilla.present.length} FDI</span> ${renderPayload.maxilla.missing.length > 0 ? `<span class="missing-tag">(отсутствуют: ${renderPayload.maxilla.missing.join(", ")})</span>` : `<span class="present-tag">(полный зубной ряд)</span>`}
 				</div>
-				<div>Анатомическая граница Tuber Maxillae • Окно W/L: 2200/450</div>
+				<div>Окно W/L: 4025/525 (Канонический DENTE HU), Gamma 1.50, Air -500, Slab 1.0 мм</div>
 			</div>
 		</div>
 
@@ -420,9 +426,9 @@ async function renderDualJawScreenshot(
 					РЕКОНСТРУИРОВАННАЯ КЛИНИЧЕСКАЯ ПАНОРАМА (ОПТГ) — ПОЛУТОНОВОЙ РЕНТГЕН
 				</div>
 				<div class="panel-meta">
-					<span>Окно W/L: 2200 / 450</span>
-					<span>Слой: 3.0 мм (Ray-Sum 35/65)</span>
-					<span>Мягкий полутон • Видимость трабекул, периодонта и пульпарных каналов</span>
+					<span>Окно W/L: 4025/525 (Канонический DENTE HU), Gamma 1.50, Air -500, Slab 1.0 мм</span>
+					<span>Слой ОПТГ: 1.0 мм • Soft-Knee: ВЫКЛ</span>
+					<span>Канонический дентальный контраст DENTE</span>
 				</div>
 			</div>
 			<div class="canvas-wrapper-pano">
@@ -685,6 +691,7 @@ export async function runMultiPatientBenchmark(): Promise<void> {
 		console.log(`    ✓ Saved screenshot: ${outPath}`);
 
 		const brainDirs = [
+			"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\9bd515d4-936b-4ea4-8192-7c7792988575",
 			"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\9be937c5-de3e-4bb9-9503-496e0919bf0a",
 			"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\df880520-dc90-48e7-ab9e-032bd60d9f31",
 			"C:\\Users\\Admin\\.gemini\\antigravity\\brain\\01de3ad9-8f5d-43c7-b8be-544bfa67c606",

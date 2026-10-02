@@ -152,7 +152,7 @@ const estimateItemSchema = z.object({
 	nomenclatureCode: z
 		.string()
 		.optional()
-		.describe("Код услуги по Номенклатуре Минздрава РФ 804н (например, A16.07.002, A16.07.054)"),
+		.describe("Код услуги в прейскуранте (например, A16.07.002, A16.07.054)"),
 	basePriceRub: z
 		.number()
 		.min(0, "Базовая цена не может быть отрицательной")

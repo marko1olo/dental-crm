@@ -233,7 +233,7 @@ export const DentalLabTrackerCard: React.FC<DentalLabTrackerCardProps> = ({
 									className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] inline-flex items-center gap-1.5 cursor-pointer"
 								>
 									<Printer className="w-3.5 h-3.5 text-teal-600" />
-									<span>Печать бланка ЗТЛ-1</span>
+									<span>Печать заказ-наряда</span>
 								</button>
 							</div>
 						)}

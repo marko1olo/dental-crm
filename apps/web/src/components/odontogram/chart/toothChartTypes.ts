@@ -118,7 +118,7 @@ export const FAST_TOOTH_PRESETS: readonly FastToothPreset[] = [
 		title: "Профгигиена выполнена (Ультразвук + Air-Flow + полировка)",
 		shortTitle: "Профгигиена (УЗ + Air-Flow)",
 		description: "Снятие зубных отложений УЗ + Air-Flow + полировка Detartrine + фторирование Bifluorid",
-		badge: "043/у",
+		badge: "В дневник",
 		icd10: "Z01.2",
 		code804n: "A16.07.051",
 	},
@@ -268,7 +268,7 @@ export function applyFastExtractionProtocol(toothNumber: number): {
 export interface ToothData {
 	toothNumber: number;
 	state: ToothState;
-	surfaces?: string[];
+	surfaces?: string[] | undefined;
 	material?: RestorativeMaterialKey;
 	canalObturation?: CanalObturationMaterial;
 	hasPost?: boolean;

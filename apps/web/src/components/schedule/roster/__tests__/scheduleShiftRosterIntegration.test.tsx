@@ -50,6 +50,10 @@ import {
 	generateFormT13Matrix,
 	exportFormT13ToCsv,
 } from "../doctorShiftRosterEngine";
+import {
+	enableDemoShowcaseMode,
+	disableDemoShowcaseMode,
+} from "../../../../lib/demoMode";
 
 import type {
 	CabinetDefinition,
@@ -816,38 +820,58 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 	describe("Adversarial Red-Team Edge Cases: 0 Doctors, 1 Doctor, Asymmetry, Colliding Preferences (Mandate 8m, 8n)", () => {
 		const startDate = "2026-08-24";
 
-		it("edge case 1: handles 0 doctors in staffList by falling back to real default doctors without scheduling assistants as doctors", () => {
-			const emptyStaffShifts = generateWeeklyScheduleForStaffAndCabinets(
-				startDate,
-				[],
-				mockRealCabinets,
-				"five_day",
-			);
-			assert.ok(emptyStaffShifts.length > 0, "Must generate fallback shifts for empty staff");
-			assert.ok(emptyStaffShifts.every((s) => s.doctorRole !== "assistant"));
+		it("edge case 1: handles 0 doctors in staffList with Mandate 8y production quarantine and demo fallback", () => {
+			try {
+				// Production Mode (Mandate 8y): Zero leakage of synthetic doctors into production
+				disableDemoShowcaseMode();
+				const prodEmptyShifts = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					[],
+					mockRealCabinets,
+					"five_day",
+				);
+				assert.equal(
+					prodEmptyShifts.length,
+					0,
+					"Production mode must NOT inject synthetic demo doctors when staffList is empty (Mandate 8y)",
+				);
 
-			const assistantOnlyStaff: StaffMember[] = [
-				{
-					id: "asst-only",
-					fullName: "Медсестра Без Врача",
-					shortName: "Медсестра Б.В.",
-					role: "assistant",
-					tabNumber: "00999",
-					isDoctor: false,
-					isAssistant: true,
-					weeklyHourLimit: 39,
-					avatarColor: "#64748b",
-				},
-			];
+				// Demo / Showcase Mode: Resilient fallback to default clinic staff
+				enableDemoShowcaseMode();
+				const demoEmptyStaffShifts = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					[],
+					mockRealCabinets,
+					"five_day",
+				);
+				assert.ok(demoEmptyStaffShifts.length > 0, "Demo mode must generate fallback shifts for empty staff");
+				assert.ok(demoEmptyStaffShifts.every((s) => s.doctorRole !== "assistant"));
 
-			const asstShifts = generateWeeklyScheduleForStaffAndCabinets(
-				startDate,
-				assistantOnlyStaff,
-				mockRealCabinets,
-				"five_day",
-			);
-			assert.ok(asstShifts.length > 0, "Must fallback to real doctors when only assistants present");
-			assert.ok(asstShifts.every((s) => s.doctorRole !== "assistant"), "Assistant must never be assigned as doctor to a chair");
+				const assistantOnlyStaff: StaffMember[] = [
+					{
+						id: "asst-only",
+						fullName: "Медсестра Без Врача",
+						shortName: "Медсестра Б.В.",
+						role: "assistant",
+						tabNumber: "00999",
+						isDoctor: false,
+						isAssistant: true,
+						weeklyHourLimit: 39,
+						avatarColor: "#64748b",
+					},
+				];
+
+				const asstShifts = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					assistantOnlyStaff,
+					mockRealCabinets,
+					"five_day",
+				);
+				assert.ok(asstShifts.length > 0, "Must fallback to real doctors when only assistants present in demo mode");
+				assert.ok(asstShifts.every((s) => s.doctorRole !== "assistant"), "Assistant must never be assigned as doctor to a chair");
+			} finally {
+				disableDemoShowcaseMode();
+			}
 		});
 
 		it("edge case 2: handles 1 solo doctor on 1 chair and on 3 chairs cleanly with zero double-bookings in all presets", () => {

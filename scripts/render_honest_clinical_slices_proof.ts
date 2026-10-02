@@ -81,14 +81,14 @@ async function main() {
 	console.log(`✓ Zakharov Mandible Arch: Enamel density=${zakharovMandibleParabola.meanEnamelHU} HU, Arc length=${zakharovMandibleParabola.totalLengthMm}mm, points=${zakharovMandibleParabola.points.length}`);
 
 	console.log("=== 3. GENERATING HIGH-DEFINITION OPG PANORAMAS (UNSHARP MASKING) ===");
-	// Soft natural radiographic contrast without harsh burnouts (W: 2000, L: 450, subtle unsharp alpha 0.16)
+	// Soft natural radiographic contrast without harsh burnouts (W: 4025, L: 525, subtle unsharp alpha 0.18)
 	const zakharovOPG = reconstructHighDefPanoramicOPG(volZakharov, zakharovMandibleParabola, {
 		focalTroughMm: 6.0,
 		verticalHeightMm: 52.0,
 		pixelSpacingMm: 0.12,
 		unsharpAlpha: 0.18,
-		windowWidth: 2000,
-		windowLevel: 450,
+		windowWidth: 4025,
+		windowLevel: 525,
 	});
 	console.log(`✓ Zakharov High-Def OPG reconstructed with natural soft contrast (${zakharovOPG.widthPx}x${zakharovOPG.heightPx}, trough: ${zakharovOPG.focalTroughMm}mm)`);
 
@@ -386,10 +386,10 @@ async function main() {
 				<div class="header-left">
 					<h1 class="main-title">КЛКТ КЛИНИЧЕСКИЙ РЕНТГЕН-ПЛАНШЕТ • ЧЕСТНЫЕ СРЕЗЫ И АДАПТИВНАЯ ДУГА</h1>
 					<span class="badge-real">✓ 100% ЧЕСТНЫЕ ВОКСЕЛИ HU (БЕЗ МОКАПОВ)</span>
-					<span class="badge-filter">МЯГКИЙ РЕНТГЕН-КОНТРАСТ (W: 2000 | L: 450)</span>
+					<span class="badge-filter">МЯГКИЙ РЕНТГЕН-КОНТРАСТ (W: 4025 | L: 525)</span>
 				</div>
 				<div class="header-right">
-					W: 2000 HU | L: 450 HU • ISOVOXEL 0.25mm / 0.20mm • СТРОГИЙ АНАТОМИЧЕСКИЙ СРЕЗ (MIP 1.0mm)
+					W: 4025 HU | L: 525 HU • ISOVOXEL 0.25mm / 0.20mm • СТРОГИЙ АНАТОМИЧЕСКИЙ СРЕЗ (MIP 1.0mm)
 				</div>
 			</div>
 
@@ -409,7 +409,7 @@ async function main() {
 				<div class="viewport-card">
 					<div class="card-title-row">
 						<span class="viewport-title">ОКНО 2: Реконструированная ОПТГ панорама (CPR) высокой четкости • Мягкий рентген-контраст</span>
-						<span class="viewport-meta">Толщина слэба: ${zakharovOPG.focalTroughMm.toFixed(1)} мм • W: 2000 HU / L: 450 HU (мягкий естественный контраст) • Изометрический CPR 1:1</span>
+						<span class="viewport-meta">Толщина слэба: ${zakharovOPG.focalTroughMm.toFixed(1)} мм • W: 4025 HU / L: 525 HU (мягкий естественный контраст) • Изометрический CPR 1:1</span>
 					</div>
 					<div class="canvas-container" style="background: #000; width: 100%;">
 						<canvas id="canvas-opg" width="${zakharovOPG.widthPx}" height="${zakharovOPG.heightPx}" style="width: 100%; height: 280px; display: block; border-radius: 4px;"></canvas>

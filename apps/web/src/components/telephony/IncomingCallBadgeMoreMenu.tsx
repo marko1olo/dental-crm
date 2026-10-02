@@ -3,6 +3,7 @@ import {
 	BellOff,
 	Calendar,
 	Check,
+	Clock,
 	Copy,
 	ExternalLink,
 	PhoneForwarded,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import type {
+	CallOutcome,
 	IncomingCallPayload,
 	PatientUpcomingAppointmentSummary,
 } from "../../store/telephonyTypes";
@@ -43,6 +45,7 @@ export interface IncomingCallBadgeMoreMenuProps {
 	onToggleOutcomePanel: () => void;
 	onOpenFullPatientView: () => void;
 	onClose: () => void;
+	onRecordOutcome?: (outcome: CallOutcome) => void;
 }
 
 export function IncomingCallBadgeMoreMenu({
@@ -67,6 +70,7 @@ export function IncomingCallBadgeMoreMenu({
 	onToggleOutcomePanel,
 	onOpenFullPatientView,
 	onClose,
+	onRecordOutcome,
 }: IncomingCallBadgeMoreMenuProps) {
 	return (
 		<div className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5">
@@ -238,6 +242,22 @@ export function IncomingCallBadgeMoreMenu({
 				<Check size={13} className="text-[var(--teal)]" />
 				<span>Фиксация исхода</span>
 			</button>
+
+			{onRecordOutcome && (
+				<button
+					type="button"
+					onClick={() => {
+						onRecordOutcome("callback_15m");
+						onClose();
+					}}
+					className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+					data-testid="badge-action-callback-15m"
+					title="Перезвонить через 15 минут (фиксация исхода в 1 клик)"
+				>
+					<Clock size={13} className="text-amber-500" />
+					<span>Перезвонить через 15 мин</span>
+				</button>
+			)}
 
 			<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
 

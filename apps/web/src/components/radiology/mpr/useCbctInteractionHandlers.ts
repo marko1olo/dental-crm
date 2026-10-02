@@ -161,6 +161,10 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		handleSelectTooth, panoCanvasRef, crossSectionCanvasRef,
 		isDraggingWL, setIsDraggingWL, isPanning, setIsPanning, isDraggingZoom, setIsDraggingZoom,
 		hasDraggedZoomRef,
+		rulers, setRulers, activeRuler, setActiveRuler,
+		angles, setAngles, activeAngle, setActiveAngle,
+		hoveredMeasurementHandle, setHoveredMeasurementHandle,
+		draggingMeasurementHandle, setDraggingMeasurementHandle,
 	});
 
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -274,8 +278,8 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			return;
 		}
 
-		// Dental arch anchor drag on Axial canvas (Mandate 8e: Doctor Autonomy)
-		if (plane === "axial" && showDentalArch && archCurve) {
+		// Dental arch anchor drag on Axial canvas (Mandate 8e: Doctor Autonomy & Mandate 8l: OPTG only)
+		if (plane === "axial" && showDentalArch && archCurve && studioMode === "panoramic") {
 			const archHit = hitTestDentalArchControlPoint(
 				pointerPx,
 				archCurve,
@@ -305,7 +309,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		setIsDraggingCrosshair(plane);
 		const newWorldMm = calculateCrosshairDragWorldMm(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume);
 		setCrosshairMm(newWorldMm);
-	}, [volume, activeTool, windowWidth, windowLevel, rulers, angles, probeMarkers, crosshairMm, obliqueAngles, transforms, activeAngle, nervePoints.length, showDentalArch, archCurve, setDraggingMeasurementHandle, setSelectedMeasurement, setRulers, setAngles, setProbeMarkers, setTransforms, setActiveRuler, setActiveAngle, setNervePoints, setCrosshairMm, setIsDraggingArchAnchor]);
+	}, [volume, activeTool, studioMode, windowWidth, windowLevel, rulers, angles, probeMarkers, crosshairMm, obliqueAngles, transforms, activeAngle, nervePoints.length, showDentalArch, archCurve, setDraggingMeasurementHandle, setSelectedMeasurement, setRulers, setAngles, setProbeMarkers, setTransforms, setActiveRuler, setActiveAngle, setNervePoints, setCrosshairMm, setIsDraggingArchAnchor]);
 
 	const handleCanvasMouseMove = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
@@ -426,7 +430,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			if (handleHit) setHoveredMeasurementHandle({ id: handleHit.id, handleIndex: handleHit.handleIndex, plane });
 			else if (hoveredMeasurementHandle?.plane === plane) setHoveredMeasurementHandle(null);
 
-			if (plane === "axial" && showDentalArch && archCurve) {
+			if (plane === "axial" && showDentalArch && archCurve && studioMode === "panoramic") {
 				const archHit = hitTestDentalArchControlPoint(
 					pointerPx,
 					archCurve,
@@ -444,7 +448,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 				setHoveredArchAnchorIdx(null);
 			}
 		}
-	}, [volume, isDraggingArchAnchor, transforms, crosshairMm, obliqueAngles, draggingMeasurementHandle, isDraggingWL, isPanning, isDraggingZoom, activeRuler, activeAngle, activeTool, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, hoveredHandle, showDentalArch, archCurve, hoveredArchAnchorIdx, rulers, angles, probeMarkers, hoveredMeasurementHandle, setArchCurve, setRulers, setAngles, setActiveProbe, setWindowWidth, setWindowLevel, setTransforms, setActiveRuler, setActiveAngle, setObliqueAngles, setCrosshairMm, setHoveredArchAnchorIdx, setHoveredMeasurementHandle]);
+	}, [volume, isDraggingArchAnchor, transforms, crosshairMm, obliqueAngles, draggingMeasurementHandle, isDraggingWL, isPanning, isDraggingZoom, activeRuler, activeAngle, activeTool, studioMode, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, hoveredHandle, showDentalArch, archCurve, hoveredArchAnchorIdx, rulers, angles, probeMarkers, hoveredMeasurementHandle, setArchCurve, setRulers, setAngles, setActiveProbe, setWindowWidth, setWindowLevel, setTransforms, setActiveRuler, setActiveAngle, setObliqueAngles, setCrosshairMm, setHoveredArchAnchorIdx, setHoveredMeasurementHandle]);
 
 	const handleCanvasMouseUp = useCallback(() => {
 		if (rafCrosshairIdRef.current !== null) { cancelAnimationFrame(rafCrosshairIdRef.current); rafCrosshairIdRef.current = null; }

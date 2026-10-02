@@ -74,35 +74,6 @@ export interface PatientBillingTreatmentPlan {
 	readonly activeStage?: PatientBillingPlanStage | undefined;
 }
 
-/**
- * Wave 115 & 116 Touch Target & Subcomponent Delegation Contracts (Mandate 8c, 8s):
- * The following delegated subcomponents enforce min-h-[44px] touch targets and StomX parity:
- * - data-testid="select-loyalty-discount" min-h-[44px]
- * - data-testid="btn-round-hundreds" min-h-[44px]
- * - data-testid="btn-discount-3" min-h-[44px]
- * - data-testid="btn-discount-5" min-h-[44px]
- * - data-testid="btn-discount-10" min-h-[44px]
- * - data-testid="btn-discount-warranty" min-h-[44px]
- * - data-testid="btn-discount-colleague" min-h-[44px]
- * - data-testid="btn-discount-reset" min-h-[44px]
- * - data-testid="btn-express-pay-card" min-h-[44px]
- * - data-testid="btn-express-pay-cash" min-h-[44px]
- * - data-testid="btn-express-pay-sbp" min-h-[44px]
- * - data-testid="tender-btn-card" min-h-[44px]
- * - data-testid="tender-btn-sbp" min-h-[44px]
- * - data-testid="tender-btn-cash" min-h-[44px]
- * - data-testid="tender-btn-family" min-h-[44px]
- * - data-testid="tender-btn-deposit" min-h-[44px]
- * - data-testid="tender-btn-installment" min-h-[44px]
- * - data-testid="btn-print-billing-act" min-h-[44px]
- * - data-testid="btn-fiscalize-54fz" min-h-[44px]
- * - data-testid="btn-footer-send-whatsapp" min-h-[44px]
- * - data-testid="btn-footer-partial-refund" min-h-[44px]
- * - data-testid="patient-billing-plan-stage-panel"
- * - data-testid="btn-tender-plan-stage" className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-600"
- * - plan-stage-item-
- */
-
 export interface PatientBillingModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -143,6 +114,35 @@ export interface PatientBillingModalProps {
 	readonly onPayTreatmentPlanStage?: ((stageId: string, stageAmountRub: number) => void) | undefined;
 }
 
+/**
+ * Wave 115 & 116 Touch Target & Subcomponent Delegation Contracts (Mandate 8c, 8s):
+ * The following delegated subcomponents enforce min-h-[44px] touch targets and StomX parity:
+ * - data-testid="select-loyalty-discount" min-h-[44px]
+ * - data-testid="btn-round-hundreds" min-h-[44px]
+ * - data-testid="btn-discount-3" min-h-[44px]
+ * - data-testid="btn-discount-5" min-h-[44px]
+ * - data-testid="btn-discount-10" min-h-[44px]
+ * - data-testid="btn-discount-warranty" min-h-[44px]
+ * - data-testid="btn-discount-colleague" min-h-[44px]
+ * - data-testid="btn-discount-reset" min-h-[44px]
+ * - data-testid="btn-express-pay-card" min-h-[44px]
+ * - data-testid="btn-express-pay-cash" min-h-[44px]
+ * - data-testid="btn-express-pay-sbp" min-h-[44px]
+ * - data-testid="tender-btn-card" min-h-[44px]
+ * - data-testid="tender-btn-sbp" min-h-[44px]
+ * - data-testid="tender-btn-cash" min-h-[44px]
+ * - data-testid="tender-btn-family" min-h-[44px]
+ * - data-testid="tender-btn-deposit" min-h-[44px]
+ * - data-testid="tender-btn-installment" min-h-[44px]
+ * - data-testid="btn-print-billing-act" min-h-[44px]
+ * - data-testid="btn-fiscalize-54fz" min-h-[44px]
+ * - data-testid="btn-footer-send-whatsapp" min-h-[44px]
+ * - data-testid="btn-footer-partial-refund" min-h-[44px]
+ * - data-testid="patient-billing-plan-stage-panel"
+ * - data-testid="btn-tender-plan-stage" className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-600"
+ * - plan-stage-item-
+ */
+
 export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	isOpen,
 	onClose,
@@ -171,16 +171,11 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const appLogic = useOptionalAppLogicContext();
 	const clinicProfile = appLogic?.clinic;
 
-	const resolvedClinicName = propClinicName || clinicProfile?.clinicName || "Стоматологическая клиника ДЕНТЕ";
-	const resolvedLegalName = propClinicLegalName || clinicProfile?.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
-	const resolvedInn = propClinicInn || clinicProfile?.inn || "7707083893";
-	const resolvedKpp = propClinicKpp || clinicProfile?.kpp || "770101001";
-	const resolvedOgrn = propClinicOgrn || clinicProfile?.ogrn || "1027700132195";
-	const resolvedLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "ЛО41-01137-77/00368421";
-	const resolvedLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "12.10.2021";
-	const resolvedAddress = propClinicAddress || clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
-	const resolvedPhone = propClinicPhone || clinicProfile?.phone || "+7 (495) 789-01-23";
-	const resolvedChiefDoctor = propChiefDoctorName || (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "Смирнов Александр Владимирович";
+	const resolvedClinicName = propClinicName || clinicProfile?.clinicName || "Стоматологическая клиника ДЕНТЕ", resolvedLegalName = propClinicLegalName || clinicProfile?.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
+	const resolvedInn = propClinicInn || clinicProfile?.inn || "7707083893", resolvedKpp = propClinicKpp || clinicProfile?.kpp || "770101001";
+	const resolvedOgrn = propClinicOgrn || clinicProfile?.ogrn || "1027700132195", resolvedLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "ЛО41-01137-77/00368421";
+	const resolvedLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "12.10.2021", resolvedAddress = propClinicAddress || clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
+	const resolvedPhone = propClinicPhone || clinicProfile?.phone || "+7 (495) 789-01-23", resolvedChiefDoctor = propChiefDoctorName || (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "Смирнов Александр Владимирович";
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");
 	const [selectedTender, setSelectedTender] = useState<PatientBillingPaymentMethod>("card");
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
@@ -339,21 +334,9 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 
 		return baseItems.map((s) => {
 			const isW = itemWarrantyMap[s.id] ?? !!s.isWarranty;
-			if (isW) {
-				return {
-					...s,
-					isWarranty: true,
-					warrantyDiscountPercent: 100,
-					warrantyPriceRub: s.priceRub * s.quantity,
-					warrantySourceAppointmentId: s.warrantySourceAppointmentId ?? null,
-				};
-			}
-			return {
-				...s,
-				isWarranty: false,
-				warrantyDiscountPercent: undefined,
-				warrantyPriceRub: 0,
-			};
+			return isW
+				? { ...s, isWarranty: true, warrantyDiscountPercent: 100, warrantyPriceRub: s.priceRub * s.quantity, warrantySourceAppointmentId: s.warrantySourceAppointmentId ?? null }
+				: { ...s, isWarranty: false, warrantyDiscountPercent: undefined, warrantyPriceRub: 0 };
 		});
 	}, [isStageApplied, selectedStage, initialServices, customAmountRub, customServiceName, itemWarrantyMap]);
 
@@ -431,24 +414,8 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			},
 			items: services,
 		};
-	}, [
-		actNumber,
-		contractNumber,
-		contractDateIso,
-		resolvedClinicName,
-		resolvedLegalName,
-		resolvedInn,
-		resolvedKpp,
-		resolvedOgrn,
-		resolvedLicenseNumber,
-		resolvedLicenseDate,
-		resolvedAddress,
-		resolvedPhone,
-		resolvedChiefDoctor,
-		patient,
-		doctor,
-		services,
-	]);
+	}, [actNumber, contractNumber, contractDateIso, resolvedClinicName, resolvedLegalName, resolvedInn,
+		resolvedKpp, resolvedOgrn, resolvedLicenseNumber, resolvedLicenseDate, resolvedAddress, resolvedPhone, resolvedChiefDoctor, patient, doctor, services]);
 
 	const summary = useMemo(() => compileCompletedWorksAct(actParams), [actParams]);
 	const printableHtml = useMemo(() => generateCompletedActAndWarrantyHtml(actParams), [actParams]);

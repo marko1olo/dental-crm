@@ -498,7 +498,7 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 				{/* 4. Загрузка кресел клиники */}
 				<div className="cad-kpi-card" style={{ "--kpi-accent": "var(--ok-fg, #10b981)" } as React.CSSProperties}>
 					<div className="cad-kpi-header">
-						<span className="cad-kpi-label">Загрузка кресел (СанПиН)</span>
+						<span className="cad-kpi-label">Загрузка кресел</span>
 						<Activity size={16} className="cad-kpi-icon" />
 					</div>
 					<div className="cad-kpi-value">
@@ -512,11 +512,11 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 				</div>
 			</section>
 
-			{/* СанПиН 3.3686-21 нормативная памятка */}
+			{/* Памятка по буферу подготовки кабинета */}
 			<div className="cad-sanpin-note" role="note">
 				<Clock size={14} style={{ color: "var(--teal, #0d9488)", flexShrink: 0 }} />
 				<span>
-					Норматив СанПиН 3.3686-21: в полезную загрузку включен буфер 15 мин на санитарную дезинфекцию и проветривание кабинета между пациентами.
+					В полезную загрузку включен буфер 15 мин на подготовку и проветривание кабинета между пациентами.
 				</span>
 			</div>
 
@@ -714,7 +714,7 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 						<div className="cad-panel-title-row">
 							<h3 className="cad-panel-title">
 								<CreditCard size={16} style={{ color: "var(--teal, #0d9488)" }} />
-								<span>Структура способов оплат по 54-ФЗ</span>
+								<span>Структура способов оплаты</span>
 							</h3>
 						</div>
 						{financialSummary.paymentMethods.length === 0 ? (

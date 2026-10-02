@@ -41,7 +41,7 @@ export const CbctEmptyVolumeDropzone: React.FC<CbctEmptyVolumeDropzoneProps> = (
 					<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shadow-inner">
 						<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
 					</div>
-					<h3 className="text-sm font-bold text-zinc-100 mb-1">
+					<h3 className="text-sm font-bold text-zinc-200 mb-1">
 						{dicomLoadingStatus}
 					</h3>
 					<div className="w-64 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
@@ -67,7 +67,7 @@ export const CbctEmptyVolumeDropzone: React.FC<CbctEmptyVolumeDropzoneProps> = (
 						<button
 							type="button"
 							onClick={() => folderInputRef.current?.click()}
-							className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+							className="px-3 py-1.5 rounded-lg bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-200 hover:text-cyan-100 border border-cyan-500/50 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
 							data-testid="cbct-btn-select-folder-empty"
 						>
 							<FolderOpen className="w-4 h-4" />

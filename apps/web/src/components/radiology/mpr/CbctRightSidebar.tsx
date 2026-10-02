@@ -122,7 +122,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 						className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
 							isTarget
 								? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
+								: "bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800"
 						}`}
 					>
 						{fdi}
@@ -150,7 +150,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 					<span className="text-xs font-bold text-cyan-400">
 						Срез #{activeCrossSection?.sliceIndex ?? 1} из {crossSections.length}
 					</span>
-					<span className="px-2.5 py-1 rounded bg-zinc-900 text-zinc-100 font-bold text-xs border border-zinc-800">
+					<span className="px-2.5 py-1 rounded bg-zinc-900 text-zinc-300 font-bold text-xs border border-zinc-800">
 						Зуб FDI: {activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "—"}
 					</span>
 				</div>
@@ -173,7 +173,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))}
-						className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
+						className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
 						title="Предыдущий срез"
 					>
 						<ChevronLeft className="w-5 h-5" />
@@ -181,7 +181,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveCrossSectionIdx((prev) => Math.min(crossSections.length - 1, prev + 1))}
-						className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
+						className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs"
 						title="Следующий срез"
 					>
 						<ChevronRight className="w-5 h-5" />
@@ -189,7 +189,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsSidebarOpen(false)}
-						className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs ml-1"
+						className="p-2.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] flex items-center justify-center border border-zinc-800 transition-colors shadow-xs ml-1"
 						title="Скрыть панель"
 						data-testid="cbct-close-sidebar-btn"
 					>
@@ -312,7 +312,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							setStudioMode("implant");
 							setIsSidebarOpen(true);
 						}}
-						className="w-full py-2.5 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 hover:text-cyan-300 border border-zinc-800 hover:border-cyan-500/60 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
+						className="w-full py-2.5 px-4 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-cyan-300 border border-zinc-800 hover:border-cyan-500/60 text-xs font-bold flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-xs"
 						data-testid="cbct-switch-to-implant-mode-btn"
 					>
 						<CircleDot className="w-4 h-4 text-amber-400" />
@@ -607,7 +607,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									className={`py-2 px-1 rounded-md text-xs font-bold capitalize min-h-[44px] transition-colors border flex items-center justify-center ${
 										selectedBrand === key
 											? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
-											: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 border-zinc-800 hover:bg-zinc-800"
+											: "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border-zinc-800 hover:bg-zinc-800"
 									}`}
 								>
 									{label}
@@ -701,7 +701,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<button
 									type="button"
 									onClick={handleExportToFinance}
-									className="w-full py-2 px-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all min-h-[42px] shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
+									className="w-full py-2 px-2 rounded-md bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 hover:text-emerald-200 border border-emerald-500/50 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all min-h-[42px] shadow-xs active:scale-98 cursor-pointer"
 									data-testid="cbct-btn-export-finance"
 									title="Добавить услугу КТ челюстей (A06.07.012, 3800 ₽) в финансовый акт визита и план"
 								>
@@ -711,7 +711,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							</div>
 
 							<div className="grid grid-cols-4 gap-1">
-								<button type="button" onClick={handleExportToEmr} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="cbct-btn-export-emr" data-testid-legacy="copy-diary-btn" title="Записать протокол КТ и замеры кости в ЭМК и дневник приёма">
+								<button type="button" onClick={handleExportToEmr} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-200 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="cbct-btn-export-emr" data-testid-legacy="copy-diary-btn" title="Записать протокол КТ и замеры кости в ЭМК и дневник приёма">
 									<FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
 									<span className="truncate">В ЭМК</span>
 								</button>
@@ -750,7 +750,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 										setImplantEntryXOffsetMm(0); setImplantEntryDepthMm(2.0); setImplantAngulationDeg(0);
 										showToast("Положение имплантата центрировано на гребне", "info");
 									}}
-									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
+									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
 									data-testid="reset-center-btn"
 									title="Центрировать имплантат на гребне"
 								>
@@ -763,7 +763,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 										if (handleShareReport) handleShareReport();
 										else showToast("Ссылка на КЛКТ-исследование скопирована в буфер", "success");
 									}}
-									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
+									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
 									data-testid="cbct-btn-share-report"
 									title="Поделиться исследованием / протоколом"
 								>

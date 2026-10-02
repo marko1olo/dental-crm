@@ -33,6 +33,7 @@ import {
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
 import { DoctorPayrollModal } from "./components/finance/payroll/DoctorPayrollModal";
+import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 /** Calendar date in local clinic time. */
@@ -444,6 +445,164 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			hasActiveOvertime: new Date().getHours() >= 21,
 		};
 	}, [todayAppointments, dashboard?.payments, todayIso]);
+
+	// ─── Shift Doctor Roster & Piece-Rate Services (Mandate 8za SSOT & 8e Autonomy) ───
+	const shiftDoctorsList = useMemo(() => {
+		const staff = dashboard?.clinicSettings?.staff ?? [];
+		const activeDoctors = staff.filter(
+			(member: any) => member.active && member.role === "doctor",
+		);
+		if (activeDoctors.length === 0) return undefined;
+		return activeDoctors.map((doc: any) => ({
+			id: String(doc.id),
+			name: String(doc.fullName || doc.name || "Лечащий врач"),
+			specialtyId: String(doc.specialty || doc.specialtyId || "general_dentist"),
+		}));
+	}, [dashboard?.clinicSettings?.staff]);
+
+	const shiftActiveDoctorId = useMemo(() => {
+		if (inChairAppointment?.doctorUserId) {
+			return inChairAppointment.doctorUserId;
+		}
+		if (shiftDoctorsList && shiftDoctorsList.length > 0) {
+			return shiftDoctorsList[0]?.id;
+		}
+		return undefined;
+	}, [inChairAppointment?.doctorUserId, shiftDoctorsList]);
+
+	const shiftCompletedServices = useMemo(() => {
+		const items: DoctorCompletedServiceItem[] = [];
+
+		for (const app of todayAppointments) {
+			const patient =
+				patientsById.get(app.patientId) ??
+				(app.patientId === currentPatient?.id ? currentPatient : null);
+			const patientName = patient?.fullName || app.patientFullName || "Пациент";
+			const medicalCardNumber =
+				patient?.medicalCardNumber ||
+				patient?.cardNumber ||
+				app.medicalCardNumber ||
+				"043/у";
+			const docId = app.doctorUserId || shiftActiveDoctorId || undefined;
+
+			// Resolve clinical category from appointment or specialty
+			let category: DoctorCompletedServiceItem["category"] = "therapy";
+			const catRaw = String(app.category || "").toLowerCase();
+			if (["orthopedics", "orthopedic", "cad_cam"].includes(catRaw)) {
+				category = "orthopedics";
+			} else if (["surgery", "implant", "implantation"].includes(catRaw)) {
+				category = "surgery";
+			} else if (["orthodontics", "orthodontic", "aligner"].includes(catRaw)) {
+				category = "orthodontics";
+			} else if (["hygiene", "pro_hygiene"].includes(catRaw)) {
+				category = "hygiene";
+			} else if (["retail", "retail_hygiene"].includes(catRaw)) {
+				category = "retail_hygiene";
+			} else if (["pediatric", "pediatric_dentist"].includes(catRaw)) {
+				category = "pediatric";
+			} else {
+				// Infer from doctor specialty or appointment reason
+				const doc = staffById.get(docId);
+				const spec = String(doc?.specialty || doc?.specialtyId || "").toLowerCase();
+				const reason = String(app.reason || "").toLowerCase();
+				if (
+					spec.includes("orthoped") ||
+					reason.includes("коронк") ||
+					reason.includes("протез") ||
+					reason.includes("винир")
+				) {
+					category = "orthopedics";
+				} else if (
+					spec.includes("surg") ||
+					spec.includes("implant") ||
+					reason.includes("имплант") ||
+					reason.includes("удал")
+				) {
+					category = "surgery";
+				} else if (
+					spec.includes("orthodont") ||
+					reason.includes("брекет") ||
+					reason.includes("элайн")
+				) {
+					category = "orthodontics";
+				} else if (
+					spec.includes("hygien") ||
+					reason.includes("гигиен") ||
+					reason.includes("air-flow")
+				) {
+					category = "hygiene";
+				} else if (spec.includes("pediatric") || reason.includes("детск")) {
+					category = "pediatric";
+				}
+			}
+
+			// Sub-services if array exists
+			const rawServices = app.services || app.items || app.completedServices;
+			if (Array.isArray(rawServices) && rawServices.length > 0) {
+				for (let idx = 0; idx < rawServices.length; idx++) {
+					const srv = rawServices[idx];
+					const srvPrice =
+						Number(srv.priceRub || srv.costRub || srv.amountRub) || 0;
+					items.push({
+						id: String(srv.id || `${app.id}-srv-${idx + 1}`),
+						dateIso: todayIso,
+						patientName,
+						medicalCardNumber,
+						serviceNameRu: String(
+							srv.name ||
+								srv.title ||
+								srv.serviceNameRu ||
+								app.reason ||
+								"Стоматологическая процедура",
+						),
+						category: (srv.category as any) || category,
+						grossRevenueKop: Math.round(srvPrice * 100),
+						labCostKop: Math.round((Number(srv.labCostRub) || 0) * 100),
+						materialCostKop: Math.round((Number(srv.materialCostRub) || 0) * 100),
+						doctorId: docId,
+						performerId: srv.performerId || docId,
+					});
+				}
+			} else {
+				// Entire appointment billed item
+				const appPrice =
+					Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) || 0;
+				const isCompletedOrActive = [
+					"completed",
+					"done",
+					"in_chair",
+					"in_treatment",
+					"in_progress",
+				].includes(String(app.status || "").toLowerCase());
+				if (isCompletedOrActive || appPrice > 0) {
+					items.push({
+						id: String(app.id),
+						dateIso: todayIso,
+						patientName,
+						medicalCardNumber,
+						serviceNameRu: String(
+							app.reason || app.title || "Прием врача-стоматолога",
+						),
+						category,
+						grossRevenueKop: Math.round(appPrice * 100),
+						labCostKop: Math.round((Number(app.labCostRub) || 0) * 100),
+						materialCostKop: Math.round((Number(app.materialCostRub) || 0) * 100),
+						doctorId: docId,
+						performerId: docId,
+					});
+				}
+			}
+		}
+
+		return items;
+	}, [
+		todayAppointments,
+		patientsById,
+		currentPatient,
+		shiftActiveDoctorId,
+		todayIso,
+		staffById,
+	]);
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		try {
@@ -1586,9 +1745,13 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 					isOpen={isPayrollModalOpen}
 					onClose={() => setIsPayrollModalOpen(false)}
 					clinicName={dashboard?.clinicName}
+					doctorsList={shiftDoctorsList}
+					initialDoctorId={shiftActiveDoctorId}
+					initialServices={shiftCompletedServices}
 					initialPeriodStart={todayIso}
 					initialPeriodEnd={todayIso}
 					initialBasePercentage={30}
+					useClinicalCategoryRates={true}
 				/>
 			)}
 

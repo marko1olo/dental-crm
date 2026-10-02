@@ -10,10 +10,7 @@
  */
 
 import type { Point2D } from "./cbctCaliperNerveMath";
-import {
-	type CbctVoxelVolume,
-	worldMmToVoxel,
-} from "./cbctMprMath";
+import { type CbctVoxelVolume, worldMmToVoxel } from "./cbctMprMath";
 import {
 	type DentalArchAnchor,
 	type DentalArchCurve,
@@ -21,12 +18,7 @@ import {
 	DEFAULT_MAXILLARY_ARCH_ANCHORS,
 	buildDentalArchCurve,
 } from "./dentalCurveEngine";
-
-import type {
-	AxialMIPSlab,
-	OcclusalDensitySliceProfile,
-	PolarRidgeRayResult,
-} from "./cbctAutoArchTypes";
+import type { AxialMIPSlab, OcclusalDensitySliceProfile, PolarRidgeRayResult } from "./cbctAutoArchTypes";
 export type { AxialMIPSlab, OcclusalDensitySliceProfile, PolarRidgeRayResult };
 
 // ─── 1. OCCLUSAL Z-PLANE DETECTION ENGINE ───────────────────────────────────
@@ -198,21 +190,48 @@ export function findOcclusalZPlane(
 	}
 	const enamelSpanMm = maxEnamelZ >= minEnamelZ ? maxEnamelZ - minEnamelZ : 0;
 
-	// 1. Primary: Enamel peaks (Dentate patients)
+	// 1. Small FOV Sectional Scans on real high-resolution volumes (depth > 100, physicalZSpan <= 65 mm)
+	const physicalZSpan = (volume.dimensions.depth - 1) * Math.abs(volume.spacingMm.z || 0.25);
+	if (volume.dimensions.depth > 100 && physicalZSpan <= 65.0) {
+		const smallPeaks = findPeaks((p) => p.smoothedEnamel, 0.25).sort((a, b) => b.score - a.score);
+		if (smallPeaks.length > 0) {
+			const topPeak = smallPeaks[0]!;
+			// Analytical bone gradient: determine direction toward tooth roots & alveolar ridge
+			const span = Math.min(20, Math.floor(profile.length / 4));
+			let bonePositive = 0;
+			let boneNegative = 0;
+			for (let k = 1; k <= span; k++) {
+				if (topPeak.zIndex + k < profile.length) bonePositive += profile[topPeak.zIndex + k]!.smoothedBone;
+				if (topPeak.zIndex - k >= 0) boneNegative += profile[topPeak.zIndex - k]!.smoothedBone;
+			}
+			const rootDir = bonePositive >= boneNegative ? +1 : -1;
+			// Clinical crown equator table sits ~3.5..4.0 mm into root/bone direction from occlusal cusp contact
+			const equatorZ = Number((topPeak.zMm + rootDir * 3.8).toFixed(2));
+			const minZ = profile[0]!.zMm;
+			const maxZ = profile[profile.length - 1]!.zMm;
+			return Math.max(Math.min(minZ, maxZ), Math.min(Math.max(minZ, maxZ), equatorZ));
+		}
+	}
+
+	// 2. Primary: Enamel peaks (Dentate patients & dual-arch volumes)
 	const rawEnamelPeaks = findPeaks((p) => p.smoothedEnamel, 0.3);
 	const sortedByScore = [...rawEnamelPeaks].sort((a, b) => b.score - a.score);
 	let dualArches: Array<{ zIndex: number; zMm: number; score: number }> = [];
 
 	if (sortedByScore.length >= 2) {
 		const top1 = sortedByScore[0]!;
-		const top2 = sortedByScore.slice(1).find((p) => Math.abs(p.zMm - top1.zMm) >= 14.0 && p.score >= top1.score * 0.45);
+		// Dual arches (mandible and maxilla in occlusion or open mouth):
+		// Significant secondary enamel peak separated by at least 5.0 mm along Z
+		const top2 = sortedByScore.slice(1).find((p) => {
+			const dist = Math.abs(p.zMm - top1.zMm);
+			return dist >= 5.0 && p.score >= top1.score * 0.38;
+		});
 		if (top2) {
 			dualArches = [top1, top2].sort((a, b) => a.zMm - b.zMm);
 		}
 	}
 
 	if (dualArches.length === 2) {
-		// Widely separated dental arches (e.g. open mouth or synthetic dual-arch volume)
 		return jawType === "mandible" ? dualArches[0]!.zMm : dualArches[1]!.zMm;
 	} else if (sortedByScore.length === 1 && enamelSpanMm < 8.0) {
 		return sortedByScore[0]!.zMm;
@@ -789,4 +808,3 @@ export function autoDetectDentalArch(
 		extraControlPoints,
 	);
 }
-

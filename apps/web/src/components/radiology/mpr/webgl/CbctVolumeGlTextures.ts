@@ -33,6 +33,10 @@ export interface GlSliceRenderOptions {
 	clampDpr?: boolean | undefined;
 	colorMap?: CbctColorMapMode | number | undefined;
 	sharpenAmount?: number | undefined;
+	gamma?: number | undefined;
+	useSoftKnee?: boolean | undefined;
+	softKneeCeiling?: number | undefined;
+	airCutoffHU?: number | undefined;
 }
 
 export function resolveColorMapCode(colorMap?: CbctColorMapMode | number): number {
@@ -382,7 +386,8 @@ export function uploadVolumeTo3DTexture(
 	volume: CbctVoxelVolume,
 	max3dSize = 2048,
 ): VolumeTextureUploadResult | null {
-	if (!volume.data) return null;
+	if (typeof gl.isContextLost === "function" && gl.isContextLost()) return null;
+	if (!volume.data || volume.isDisposed) return null;
 	const rawData = volume.data;
 	const texture = gl.createTexture();
 	if (!texture) return null;
@@ -396,6 +401,18 @@ export function uploadVolumeTo3DTexture(
 	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 	let step = 1;
+
+	// Mandate 8l & User Order: On mobile devices (phones & touch tablets with limited VRAM),
+	// automatically enforce Progressive LOD 2x (300x300x156 = 28 MB instead of 224 MB)
+	// to prevent WebKit webglcontextlost, tab crashes, and ensure instant 60 FPS rendering!
+	const isMobileOrTablet = typeof window !== "undefined" && (
+		window.innerWidth < 768 ||
+		(typeof navigator !== "undefined" && navigator.maxTouchPoints > 0 && window.innerWidth < 1024)
+	);
+	if (isMobileOrTablet && step < 2) {
+		step = 2;
+	}
+
 	while (
 		Math.ceil(volume.dimensions.width / step) > max3dSize ||
 		Math.ceil(volume.dimensions.height / step) > max3dSize ||
@@ -418,6 +435,11 @@ export function uploadVolumeTo3DTexture(
 		uploadDepth = downsampled.depth;
 	}
 
+	gl.pixelStorei(gl.UNPACK_ROW_LENGTH, 0);
+	gl.pixelStorei(gl.UNPACK_IMAGE_HEIGHT, 0);
+	gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, 0);
+	gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0);
+	gl.pixelStorei(gl.UNPACK_SKIP_IMAGES, 0);
 	gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
 
 	let uploadSuccess = false;

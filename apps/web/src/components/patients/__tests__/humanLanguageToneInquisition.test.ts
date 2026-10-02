@@ -217,4 +217,60 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 			"Form043TabSections must not contain 'Anamnesis vitae)'",
 		);
 	});
+
+	it("11. VisitProtocolView.tsx: free of 'Форма 043/у', '(Subjective)', '(Status localis)'", () => {
+		const filePath = path.join(webSrcRoot, "components/patients/VisitProtocolView.tsx");
+		const content = fs.readFileSync(filePath, "utf-8");
+
+		assert.ok(!content.includes("Протокол визита (Форма 043/у)"), "Must not use 'Протокол визита (Форма 043/у)'");
+		assert.ok(!content.includes("Жалобы пациента (Subjective):"), "Must not use 'Subjective'");
+		assert.ok(!content.includes("Данные объективного осмотра (Status localis):"), "Must not use 'Status localis'");
+		assert.ok(!content.includes("Клинический диагноз по МКБ-10:"), "Must not use 'по МКБ-10'");
+		assert.ok(!content.includes("Медицинская документация Форма 043/у"), "Must not use 'Форма 043/у' in footer");
+
+		assert.ok(content.includes("Протокол приёма"));
+		assert.ok(content.includes("Жалобы пациента:"));
+		assert.ok(content.includes("Осмотр и зубная формула:"));
+		assert.ok(content.includes("Клинический диагноз:"));
+	});
+
+	it("12. Doctor Settings: Templates & Materials Catalog free of bureaucratic 043/у bloat", () => {
+		const tplPath = path.join(webSrcRoot, "components/settings/doctor/DoctorForm043TemplatesSection.tsx");
+		const tplContent = fs.readFileSync(tplPath, "utf-8");
+		assert.ok(!tplContent.includes("Тестовый диагноз МКБ-10:"), "Must not use 'Тестовый диагноз МКБ-10:'");
+		assert.ok(tplContent.includes("Тестовый диагноз:"));
+
+		const matPath = path.join(webSrcRoot, "components/settings/doctor/DoctorMaterialsCatalogSection.tsx");
+		const matContent = fs.readFileSync(matPath, "utf-8");
+		assert.ok(!matContent.includes("(Форма 043/у)"), "Must not use '(Форма 043/у)' in visible snippet title or button");
+		assert.ok(matContent.includes("Автоматический фрагмент протокола для медкарты с вашими материалами"));
+		assert.ok(matContent.includes("Скопировать готовый текст для медкарты"));
+	});
+
+	it("13. ImplantWorkspace.tsx: ridge export and actions use human clinical language instead of 043/у", () => {
+		const filePath = path.join(webSrcRoot, "components/radiology/mpr/workspaces/ImplantWorkspace.tsx");
+		const content = fs.readFileSync(filePath, "utf-8");
+
+		assert.ok(!content.includes('"Текст 043/у"'), "Must not use 'Текст 043/у'");
+		assert.ok(!content.includes("<span>В 043/у</span>"), "Must not use 'В 043/у'");
+		assert.ok(!content.includes("Редактирование протокола 043/у"), "Must not use 'Редактирование протокола 043/у'");
+		assert.ok(!content.includes("<span>В медкарту 043/у</span>"), "Must not use 'В медкарту 043/у'");
+
+		assert.ok(content.includes('"Текст протокола"'));
+		assert.ok(content.includes("<span>В медкарту</span>"));
+		assert.ok(content.includes("Редактирование протокола ("));
+	});
+
+	it("14. VisitDiarySection.tsx & VisitSummaryModal.tsx: protocols and synthesis buttons humanized", () => {
+		const diaryPath = path.join(webSrcRoot, "components/visit/VisitDiarySection.tsx");
+		const diaryContent = fs.readFileSync(diaryPath, "utf-8");
+		assert.ok(!diaryContent.includes("1-Click Протоколы 043/у"), "Must not use '1-Click Протоколы 043/у'");
+		assert.ok(!diaryContent.includes("Подставить шаблон СтАР в дневник?"), "Must not use 'шаблон СтАР'");
+		assert.ok(diaryContent.includes("Клинические протоколы"));
+
+		const modalPath = path.join(webSrcRoot, "components/visit/VisitSummaryModal.tsx");
+		const modalContent = fs.readFileSync(modalPath, "utf-8");
+		assert.ok(!modalContent.includes("1-Click Синтез дневника по МКБ-10 и формуле"), "Must not use bird language in synthesis modal");
+		assert.ok(modalContent.includes("1-Click Заполнение дневника по диагнозу и формуле"));
+	});
 });

@@ -76,7 +76,8 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 				<Undo2 size={24} className="text-rose-600 shrink-0 mt-0.5" />
 				<div>
 					<h4 className="font-extrabold text-sm text-rose-950 dark:text-rose-200">
-						Формирование чека возврата прихода (ФФД 1.2 Тег 1054 = 2)
+						<span>Оформление чека возврата</span>
+						<span className="sr-only">Формирование чека возврата прихода (ФФД 1.2 Тег 1054 = 2)</span>
 					</h4>
 					<p className="text-xs text-rose-800 dark:text-rose-300 mt-1">
 						Отметьте позиции, от которых пациент отказался, или оформите возврат аванса/депозита. Сумма возврата будет автоматически распределена с сохранением копеечной точности по методу наибольших остатков.
@@ -164,7 +165,7 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 					>
 						{STOMX_CASH_EXPENSE_CATEGORIES.map((cat) => (
 							<option key={cat.id} value={cat.alias}>
-								{cat.name} ({cat.isFiscalRefund ? "Чек 54-ФЗ Возврат" : "Без чека"})
+								{cat.name} ({cat.isFiscalRefund ? "Чек возврата" : "Без чека"})
 							</option>
 						))}
 					</select>
@@ -179,11 +180,12 @@ export const FiscalRefundTab: React.FC<FiscalRefundTabProps> = ({
 				>
 					<div className="flex items-center gap-2 text-rose-950 dark:text-rose-200 font-bold text-xs sm:text-sm">
 						<Wallet size={18} className="text-rose-600 shrink-0" />
-						<span>Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)</span>
+						<span>Возврат аванса / денежных средств по чеку</span>
+						<span className="sr-only">Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)</span>
 					</div>
 					<p className="text-xs text-rose-800 dark:text-rose-300">
 						{activeItems.length === 0
-							? "Услуги плана лечения не привязаны. Введите сумму к возврату и назначение платежа для фискализации чека возврата прихода (ФФД 1.2 Тег 1054 = 2)."
+							? "Услуги плана лечения не привязаны. Введите сумму к возврату и назначение платежа для печати чека возврата."
 							: "Режим возврата аванса/депозита без изменения состава оказанных услуг плана лечения."}
 					</p>
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

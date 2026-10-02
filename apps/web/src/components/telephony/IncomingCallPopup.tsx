@@ -1,23 +1,9 @@
-import {
-	CalendarCheck,
-	Check,
-	ChevronDown,
-	ChevronUp,
-	Clock,
-	MoreHorizontal,
-	PhoneCall,
-	PhoneOff,
-	UserCheck,
-	X,
-} from "lucide-react";
+import { CalendarCheck, Check, ChevronDown, ChevronUp, Clock, MoreHorizontal, PhoneCall, PhoneOff, UserCheck, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { captureLeadFromIncomingCall } from "./telephonyAttribution";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-} from "../../lib/safeLocalStorage";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -29,10 +15,7 @@ import {
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
 import { CallAudioPlayer } from "./CallAudioPlayer";
-import {
-	IncomingCallQuickBooking,
-	type QuickSlotType,
-} from "./IncomingCallQuickBooking";
+import { IncomingCallQuickBooking, type QuickSlotType } from "./IncomingCallQuickBooking";
 import { IncomingCallerCard } from "./IncomingCallerCard";
 import { IncomingCallPastHistory } from "./IncomingCallPastHistory";
 import { IncomingCallBadgeMoreMenu } from "./IncomingCallBadgeMoreMenu";
@@ -91,6 +74,11 @@ export function IncomingCallPopup() {
 	const closeCallDrawer = useTelephonyStore((s) => s.closeCallDrawer);
 	const toggleCallDrawer = useTelephonyStore((s) => s.toggleCallDrawer);
 	const recordCallOutcome = useTelephonyStore((s) => s.recordCallOutcome);
+	const activeLineId = useTelephonyStore((s) => s.activeLineId);
+	const line1 = useTelephonyStore((s) => s.line1);
+	const line2 = useTelephonyStore((s) => s.line2);
+	const switchLine = useTelephonyStore((s) => s.switchLine);
+	const secondaryLine = activeLineId === 1 ? line2 : line1;
 
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
@@ -461,6 +449,36 @@ export function IncomingCallPopup() {
 								{formatDurationTimer(elapsedSeconds)}
 							</span>
 							<div className="flex items-center gap-1 shrink-0">
+								{secondaryLine?.call && secondaryLine.state === "ringing" && (
+									<button
+										type="button"
+										onClick={() => {
+											switchLine(secondaryLine.lineId as 1 | 2);
+											answerCall();
+											showToast(`Линия ${secondaryLine.lineId} активна (Линия ${activeLineId} на удержании)`, "info");
+										}}
+										className="px-2.5 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95 animate-pulse shrink-0"
+										title={`Ответить со 2-й линии (${secondaryLine.call.phone}) с удержанием 1-й`}
+										data-testid="capsule-switch-secondary-line-btn"
+									>
+										<PhoneCall size={12} />
+										<span>Л{secondaryLine.lineId}: Ответить</span>
+									</button>
+								)}
+								{secondaryLine?.call && secondaryLine.state === "held" && (
+									<button
+										type="button"
+										onClick={() => {
+											switchLine(secondaryLine.lineId as 1 | 2);
+											showToast(`Возврат к Линии ${secondaryLine.lineId}`, "info");
+										}}
+										className="px-2.5 py-1 rounded-full bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] cursor-pointer active:scale-95 shrink-0"
+										title={`Вернуться к удерживаемой Линии ${secondaryLine.lineId}`}
+										data-testid="capsule-resume-secondary-line-btn"
+									>
+										<span>Л{secondaryLine.lineId} [Hold]</span>
+									</button>
+								)}
 								{!isCallAnswered ? (
 									<>
 										<button type="button" onClick={handleAnswerCall} className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95" title="Принять вызов" data-testid="capsule-answer-call-btn">
@@ -550,6 +568,61 @@ export function IncomingCallPopup() {
 									</button>
 								</div>
 							</div>
+
+							{/* Two-Line Concurrency Secondary Call Banner (Anti-Matryoshka) */}
+							{secondaryLine?.call && secondaryLine.state === "ringing" && (
+								<div
+									className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 w-full"
+									data-testid="incoming-secondary-line-banner"
+								>
+									<div className="flex items-center gap-1.5 min-w-0">
+										<span className="relative flex h-2 w-2 shrink-0">
+											<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+											<span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+										</span>
+										<span className="font-bold shrink-0">Л{secondaryLine.lineId} звонит:</span>
+										<span className="truncate">{secondaryLine.call.patientName || secondaryLine.call.phone}</span>
+									</div>
+									<button
+										type="button"
+										onClick={() => {
+											switchLine(secondaryLine.lineId as 1 | 2);
+											answerCall();
+											showToast(`Переключено на Линию ${secondaryLine.lineId} (Линия ${activeLineId} на удержании)`, "info");
+										}}
+										className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer shadow-xs min-h-[32px]"
+										data-testid="answer-secondary-line-btn"
+										title={`Ответить со 2-й линии с удержанием Линии ${activeLineId}`}
+									>
+										Ответить (Hold Л{activeLineId})
+									</button>
+								</div>
+							)}
+
+							{secondaryLine?.call && secondaryLine.state === "held" && (
+								<div
+									className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-slate-500/10 border border-slate-500/20 text-xs text-[var(--muted,#64748b)] w-full"
+									data-testid="secondary-line-held-banner"
+								>
+									<div className="flex items-center gap-1.5 min-w-0">
+										<span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+										<span className="font-bold shrink-0">Л{secondaryLine.lineId} [Hold]:</span>
+										<span className="truncate">{secondaryLine.call.patientName || secondaryLine.call.phone}</span>
+									</div>
+									<button
+										type="button"
+										onClick={() => {
+											switchLine(secondaryLine.lineId as 1 | 2);
+											showToast(`Возврат к Линии ${secondaryLine.lineId}`, "info");
+										}}
+										className="px-2 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer min-h-[32px]"
+										data-testid="resume-secondary-line-btn"
+										title={`Вернуться к Линии ${secondaryLine.lineId}`}
+									>
+										Вернуться к Л{secondaryLine.lineId}
+									</button>
+								</div>
+							)}
 
 							{/* Caller Identity and Clinical / Financial Snapshot (Extracted Component) */}
 							<IncomingCallerCard
@@ -647,6 +720,11 @@ export function IncomingCallPopup() {
 											}}
 											onOpenFullPatientView={handleOpenFullPatientView}
 											onClose={() => setShowBadgeMoreMenu(false)}
+											onRecordOutcome={(outcome) => {
+												recordCallOutcome(outcome);
+												dismissCall();
+												showToast(outcome === "callback_15m" ? "Запланирован перезвон через 15 минут" : "Исход зафиксирован", "info");
+											}}
 										/>
 									)}
 								</div>

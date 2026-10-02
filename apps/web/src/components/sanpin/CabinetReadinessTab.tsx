@@ -222,7 +222,7 @@ export function CabinetReadinessTab() {
 		setHistoryRecords((prev) => [record, ...prev]);
 		if (record.isFullyReady) {
 			showToast(
-				`${selectedCabinet} успешно подготовлен: «${currentPreset.shortLabelRu}». Статус готовности зафиксирован в журнале СанПиН.`,
+				`${selectedCabinet} успешно подготовлен: «${currentPreset.shortLabelRu}». Статус готовности зафиксирован в журнале.`,
 				"success",
 			);
 		} else {
@@ -296,12 +296,12 @@ export function CabinetReadinessTab() {
 				forcepsReady: true,
 				isNotRequiredForProfile: !currentPreset.requiresCofferdam,
 			},
-			notes: notes || "Подтверждена готовность всех узлов кабинета к смене (норма СанПиН)",
+			notes: notes || "Подтверждена готовность всех узлов кабинета к смене",
 		});
 
 		setHistoryRecords((prev) => [record, ...prev]);
 		showToast(
-			`${selectedCabinet}: готовность к смене подтверждена по норме СанПиН (1 клик)`,
+			`${selectedCabinet}: готовность к смене подтверждена (1 клик)`,
 			"success",
 		);
 	};
@@ -311,11 +311,11 @@ export function CabinetReadinessTab() {
 			cabinetNumber: selectedCabinet,
 			appointmentType: selectedProfile,
 			operatorStaffFullName: nurseName || "Персонал клиники",
-			notes: "Приём начат (норма по бумажному журналу СанПиН 3.3686-21, без блокировок врача)",
+			notes: "Приём начат (отметка в журнале, без блокировок врача)",
 		});
 		setHistoryRecords((prev) => [record, ...prev]);
 		showToast(
-			`${selectedCabinet}: приём начат в штатном режиме (норма СанПиН / бумажный журнал). Блокировки сняты.`,
+			`${selectedCabinet}: приём начат в штатном режиме. Блокировки сняты.`,
 			"success",
 		);
 	};
@@ -352,7 +352,7 @@ export function CabinetReadinessTab() {
 						Экспресс-чек-лист: «Готовность кабинета и стоматологической установки»
 					</h2>
 					<p className="sanpin-pane-desc">
-						Стандартизированный протокол подготовки кабинета по СанПиН 3.3686-21. Ведение в CRM опционально: при использовании бумажных журналов приём пациентов ведётся в штатном режиме без задержек и блокировок.
+						Стандартный протокол подготовки кабинета. Ведение в CRM опционально: при использовании бумажных журналов приём пациентов ведётся в штатном режиме без задержек и блокировок.
 					</p>
 				</div>
 
@@ -362,7 +362,7 @@ export function CabinetReadinessTab() {
 						onClick={handleStartAppointmentPaperLogNorm}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "var(--teal)", color: "var(--on-teal, #fff)", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
-						title="1 Клик врачу: Начать приём без блокировок по норме СанПиН (бумажный журнал)"
+						title="1 Клик врачу: Начать приём без блокировок (бумажный журнал)"
 						data-testid="cabinet-readiness-start-appointment-btn"
 					>
 						<CheckCircle2 size={18} /> <span>Начать приём (норма)</span>
@@ -376,7 +376,7 @@ export function CabinetReadinessTab() {
 						title="1 Клик: Отметить все пункты текущего профиля как готовые"
 						data-testid="cabinet-readiness-autofill-btn"
 					>
-						<Zap size={18} /> <span>Кабинет готов к смене (норма СанПиН)</span>
+						<Zap size={18} /> <span>Кабинет готов к смене</span>
 					</button>
 
 					<button
@@ -407,7 +407,7 @@ export function CabinetReadinessTab() {
 			>
 				<div className="flex items-center gap-2 min-w-0">
 					<span className="px-1.5 py-0.5 rounded bg-[var(--teal,#0d9488)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0">
-						СанПиН 3.3686-21
+						Готовность
 					</span>
 					<span className="text-xs font-semibold text-ink truncate">
 						{selectedCabinet} • {currentPreset.shortLabelRu}: норма дезинфекции поверхностей, наконечники 5 кл., лоток, аспирация
@@ -416,7 +416,7 @@ export function CabinetReadinessTab() {
 
 				<div className="flex items-center gap-2 shrink-0 text-xs text-muted">
 					<Save size={13} color="var(--ok-fg)" />
-					<span className="text-[11px]">Норма СанПиН соблюдена (автосохранение)</span>
+					<span className="text-[11px]">Кабинет проверен (автосохранение)</span>
 				</div>
 			</div>
 

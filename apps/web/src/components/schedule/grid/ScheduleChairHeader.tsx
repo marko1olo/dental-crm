@@ -117,6 +117,7 @@ export function ScheduleChairHeader({
               aria-hidden="true"
               tabIndex={-1}
               data-testid={`chair-quick-doctor-chip-${chair.id}-${d.id}`}
+              onClick={() => handleConfirmAssignDoctor?.(chair.id, d.id, assignment?.shiftPreset || "full")}
             />
           ))}
           <span
@@ -212,6 +213,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label={`Дежурный врач: ${assignment?.doctorName || ""}`}
           data-testid={`chair-header-doctor-badge-${chair.id}`}
+          onClick={() => openAssignModal(chair.id)}
         />
         <button
           type="button"
@@ -221,6 +223,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Настройки кресла"
           data-testid={`btn-chair-settings-${chair.id}`}
+          onClick={() => onEditChair?.(chair)}
         />
         <button
           type="button"
@@ -230,6 +233,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Очистить смену"
           data-testid={`btn-chair-unassign-${chair.id}`}
+          onClick={() => handleUnassignDoctor?.(chair.id)}
         />
         <button
           type="button"
@@ -239,6 +243,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Скопировать смену"
           data-testid={`btn-chair-copy-shift-${chair.id}`}
+          onClick={() => handleAssignDoctorWeek?.(chair.id, assignment?.doctorId || "")}
         />
         <button
           type="button"
@@ -248,6 +253,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Вставить смену"
           data-testid={`btn-chair-paste-shift-${chair.id}`}
+          onClick={() => handleAssignDoctorWeek?.(chair.id, assignment?.doctorId || "")}
         />
         <button
           type="button"
@@ -257,6 +263,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Повторить на неделю"
           data-testid={`btn-chair-repeat-week-${chair.id}`}
+          onClick={() => handleAssignDoctorWeek?.(chair.id, assignment?.doctorId || "")}
         />
         <button
           type="button"
@@ -266,6 +273,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Повторить на месяц"
           data-testid={`btn-chair-repeat-month-${chair.id}`}
+          onClick={() => handleAssignDoctorMonth?.(chair.id, assignment?.doctorId || "")}
         />
         <button
           type="button"
@@ -275,6 +283,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Подменить врача"
           data-testid={`btn-chair-substitute-${chair.id}`}
+          onClick={() => handleQuickSubstituteDoctor?.(chair.id, suggestedDoctor?.id || "")}
         />
         <button
           type="button"
@@ -284,6 +293,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Сохранить как шаблон"
           data-testid={`btn-chair-save-template-${chair.id}`}
+          onClick={() => handleBindDoctorToChair?.(chair.id, assignment?.doctorId || "")}
         />
         <button
           type="button"
@@ -293,6 +303,7 @@ export function ScheduleChairHeader({
           tabIndex={-1}
           aria-label="Применить шаблон"
           data-testid={`btn-chair-load-template-${chair.id}`}
+          onClick={() => handleBindDoctorToChair?.(chair.id, assignment?.doctorId || "")}
         />
         <button
           type="button"

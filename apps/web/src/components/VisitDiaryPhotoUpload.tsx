@@ -1,6 +1,6 @@
-import { Camera, Paperclip, Search } from "lucide-react";
+import { Camera, MoveHorizontal, Paperclip, Search } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	AUTHED_API_FILE_FAILURE,
 	fetchAuthedApiFileObjectUrl,
@@ -9,7 +9,10 @@ import { actionFailureToast, requestFailureCause } from "../lib/panelStateText";
 import { readDenteClinicToken } from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
 import { showToast } from "./GlobalToast";
-import { decodeHeicImage } from "../services/imaging/heicDecoder";
+import { compressChairsidePhoto } from "./photography/chairsidePhotoCompressor";
+import { useClipboardPhotoPaste } from "./photography/useClipboardPhotoPaste";
+import { IntraoralCameraModal } from "./photography/IntraoralCameraModal";
+import { BeforeAfterSplitter } from "./visit/BeforeAfterSplitter";
 
 interface Attachment {
 	id: string;
@@ -61,6 +64,8 @@ export function VisitDiaryPhotoUpload({
 }: VisitDiaryPhotoUploadProps) {
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
+	const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+	const [isBeforeAfterOpen, setIsBeforeAfterOpen] = useState(false);
 	const [loadState, setLoadState] = useState<AttachmentsLoadState>({
 		phase: "loading",
 	});
@@ -255,149 +260,62 @@ export function VisitDiaryPhotoUpload({
 			onPrintPhotosChange?.([]);
 		};
 	}, [onPrintPhotosChange]);
-	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		/*
-		 * БЫЛО: if (!diaryId) return — молча. Врач выбирал файл, ничего не
-		 * происходило (кнопка видна только при diaryId, но race/state мог
-		 * обойти). СТАЛО: явный toast.
-		 */
-		if (!diaryId) {
-			showToast(
-				"Сначала сохраните черновик дневника — без id записи снимок прикрепить нельзя.",
-				"info",
-				10000,
-			);
-			e.target.value = "";
-			return;
-		}
-		if (isLocked) {
-			showToast(
-				"Дневник уже подписан — новые фото к закрытой карте не прикрепляются.",
-				"info",
-				10000,
-			);
-			e.target.value = "";
-			return;
-		}
-
-		setIsUploading(true);
-		let localObjectUrl: string | null = null;
-		let compressedBlob: Blob | null = null;
-		try {
-			try {
-				const decoded = await decodeHeicImage(file, {
-					targetFormat: "webp",
-					quality: 0.85,
-					maxDimension: 1200,
-					preserveColorProfile: true,
-					applyExifRotation: true,
-				});
-				const res = await fetch(decoded.dataUrl);
-				if (!res.ok) throw new Error("DECODE_FETCH_FAILED");
-				compressedBlob = await res.blob();
-			} catch (_heicErr) {
-				const img = new Image();
-				localObjectUrl = URL.createObjectURL(file);
-
-				try {
-					await new Promise<void>((resolve, reject) => {
-						img.onload = () => resolve();
-						img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
-						// biome-ignore lint/style/noNonNullAssertion: automated suppression
-						img.src = localObjectUrl!;
-					});
-				} catch {
-					showToast(
-						"Файл не открылся как изображение. Выберите снимок JPG, PNG, HEIC или WEBP.",
-						"error",
-						12000,
-					);
-					return;
-				}
-
-				const canvas = document.createElement("canvas");
-				let width = img.width;
-				let height = img.height;
-
-				const MAX_SIZE = 1200;
-				if (width > height && width > MAX_SIZE) {
-					height *= MAX_SIZE / width;
-					width = MAX_SIZE;
-				} else if (height > MAX_SIZE) {
-					width *= MAX_SIZE / height;
-					height = MAX_SIZE;
-				}
-
-				canvas.width = width;
-				canvas.height = height;
-				const ctx = canvas.getContext("2d");
-				if (!ctx) {
-					showToast(
-						"Не удалось подготовить снимок на этом рабочем месте (нет canvas). Попробуйте другой браузер или ПК.",
-						"error",
-						12000,
-					);
-					return;
-				}
-				ctx.drawImage(img, 0, 0, width, height);
-
-				compressedBlob = await new Promise<Blob | null>((resolve) =>
-					canvas.toBlob(resolve, "image/webp", 0.8),
-				);
-			}
-
-			if (!compressedBlob) {
+	const uploadBlobAttachment = useCallback(
+		async (compressedBlob: Blob, fileName: string) => {
+			if (!diaryId) {
 				showToast(
-					"Не удалось сжать снимок перед отправкой. Выберите другой файл или уменьшите размер.",
-					"error",
-					12000,
+					"Сначала сохраните черновик дневника — без id записи снимок прикрепить нельзя.",
+					"info",
+					10000,
+				);
+				return;
+			}
+			if (isLocked) {
+				showToast(
+					"Дневник уже подписан — новые фото к закрытой карте не прикрепляются.",
+					"info",
+					10000,
 				);
 				return;
 			}
 
-			const formData = new FormData();
-			formData.append("file", compressedBlob, "photo.webp");
-			formData.append("entityType", "diary");
-			formData.append("entityId", diaryId);
+			setIsUploading(true);
+			try {
+				const formData = new FormData();
+				formData.append("file", compressedBlob, fileName || "photo.webp");
+				formData.append("entityType", "diary");
+				formData.append("entityId", diaryId);
 
-			const clinicToken = readDenteClinicToken() || null;
+				const clinicToken = readDenteClinicToken() || null;
 
-			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
-				method: "POST",
-				headers: {
-					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-				},
-				body: formData,
-			});
-			const rawBody = await res.text();
-			if (!res.ok) {
-				/*
-				 * БЫЛО: throw new Error("Upload failed") → «Ошибка загрузки:
-				 * Upload failed». Серверный message (RU) отбрасывался.
-				 */
-				logger.error(
-					`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`,
-				);
-				let serverMessage: string | null = null;
-				try {
-					const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
-					if (
-						parsed &&
-						typeof parsed === "object" &&
-						!Array.isArray(parsed) &&
-						typeof (parsed as { message?: unknown }).message === "string"
-					) {
-						const m = (parsed as { message: string }).message.trim();
-						// Не показываем машинные коды латиницей (AttachmentNotSaved без message уже закрыт на API).
-						if (m && !/^[A-Za-z][A-Za-z0-9_]+$/.test(m)) serverMessage = m;
+				const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
+					method: "POST",
+					headers: {
+						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+					},
+					body: formData,
+				});
+				const rawBody = await res.text();
+				if (!res.ok) {
+					logger.error(
+						`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`,
+					);
+					let serverMessage: string | null = null;
+					try {
+						const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
+						if (
+							parsed &&
+							typeof parsed === "object" &&
+							!Array.isArray(parsed) &&
+							typeof (parsed as { message?: unknown }).message === "string"
+						) {
+							const m = (parsed as { message: string }).message.trim();
+							if (m && !/^[A-Za-z][A-Za-z0-9_]+$/.test(m)) serverMessage = m;
+						}
+					} catch {
+						/* ignore */
 					}
-				} catch {
-					/* тело не JSON — ниже status fallback */
-				}
-				// Мандат 8e: Защита от потери данных (Autosave / Offline)
-				if (compressedBlob) {
+					// Мандат 8e: Защита от потери данных (Autosave / Offline)
 					try {
 						const { saveOfflineDraft } = await import("../services/offline/index.js");
 						const reader = new FileReader();
@@ -421,51 +339,49 @@ export function VisitDiaryPhotoUpload({
 					} catch {
 						// non-fatal offline draft fallback
 					}
+
+					showToast(
+						serverMessage ??
+							`Снимок не загружен: ${requestFailureCause(res.status)}. Повторите загрузку.`,
+						"error",
+						14000,
+					);
+					return;
 				}
 
-				showToast(
-					serverMessage ??
-						`Снимок не загружен: ${requestFailureCause(res.status)}. Повторите загрузку; файл на экране не пропал из выбора — выберите его снова.`,
-					"error",
-					14000,
-				);
-				return;
-			}
-
-			let data: { file?: Attachment } | null = null;
-			try {
-				const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
-				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-					data = parsed as { file?: Attachment };
+				let data: { file?: Attachment } | null = null;
+				try {
+					const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
+					if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+						data = parsed as { file?: Attachment };
+					}
+				} catch {
+					data = null;
 				}
-			} catch {
-				data = null;
-			}
-			const uploaded = data?.file;
-			if (
-				uploaded &&
-				typeof uploaded === "object" &&
-				typeof uploaded.id === "string" &&
-				uploaded.id
-			) {
-				setAttachments((prev) => [...prev, uploaded]);
-				setLoadState({ phase: "ready" });
-				showToast("Фото сжато в WebP и загружено", "success");
-			} else {
-				logger.error(
-					"[diary photo upload] 2xx без file",
-					rawBody.slice(0, 200),
-				);
-				showToast(
-					"Сервер принял снимок, но не вернул карточку вложения. Нажмите «Повторить» в списке снимков — файл мог уже сохраниться.",
-					"info",
-					14000,
-				);
-				reloadAttachments();
-			}
-		} catch (err) {
-			// Мандат 8e: Защита от потери данных при полном обрыве сети
-			if (compressedBlob) {
+				const uploaded = data?.file;
+				if (
+					uploaded &&
+					typeof uploaded === "object" &&
+					typeof uploaded.id === "string" &&
+					uploaded.id
+				) {
+					setAttachments((prev) => [...prev, uploaded]);
+					setLoadState({ phase: "ready" });
+					showToast("Фото сжато в WebP и прикреплено", "success");
+				} else {
+					logger.error(
+						"[diary photo upload] 2xx без file",
+						rawBody.slice(0, 200),
+					);
+					showToast(
+						"Сервер принял снимок, но не вернул карточку вложения. Нажмите «Повторить» в списке снимков — файл мог уже сохраниться.",
+						"info",
+						14000,
+					);
+					reloadAttachments();
+				}
+			} catch (err) {
+				// Мандат 8e: Защита от потери данных при полном обрыве сети
 				try {
 					const { saveOfflineDraft } = await import("../services/offline/index.js");
 					const reader = new FileReader();
@@ -490,28 +406,36 @@ export function VisitDiaryPhotoUpload({
 				} catch {
 					// non-fatal
 				}
+				logger.error("[diary photo upload] запрос не выполнен", err);
+				showToast(
+					`Снимок не загружен: ${requestFailureCause(null)}. Проверьте сеть и повторите.`,
+					"error",
+					14000,
+				);
+			} finally {
+				setIsUploading(false);
 			}
-			// Сеть / выключенный API — без err.message латиницей.
-			logger.error("[diary photo upload] запрос не выполнен", err);
-			showToast(
-				`Снимок не загружен: ${requestFailureCause(null)}. Проверьте сеть и повторите.`,
-				"error",
-				14000,
-			);
-		} finally {
-			if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
-			setIsUploading(false);
-			e.target.value = "";
-		}
-	};
+		},
+		[diaryId, isLocked, visitId, reloadAttachments],
+	);
 
-	const handleCameraCapture = async () => {
+	// 1-Click Clipboard Photo Paste Hook (Ctrl+V)
+	useClipboardPhotoPaste({
+		enabled: !isLocked && Boolean(diaryId),
+		onPhotoReceived: uploadBlobAttachment,
+	});
+
+	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
 		if (!diaryId) {
 			showToast(
 				"Сначала сохраните черновик дневника — без id записи снимок прикрепить нельзя.",
 				"info",
 				10000,
 			);
+			e.target.value = "";
 			return;
 		}
 		if (isLocked) {
@@ -520,115 +444,39 @@ export function VisitDiaryPhotoUpload({
 				"info",
 				10000,
 			);
+			e.target.value = "";
 			return;
 		}
 
 		setIsUploading(true);
 		try {
-			const { captureMobileCameraPhoto } = await import("../native/mobileBridge.js");
-			const result = await captureMobileCameraPhoto({
-				resolution: "high",
-				viewCategory: "occlusion",
-				facingMode: "environment",
+			const compressedBlob = await compressChairsidePhoto(file, {
+				maxDimension: 1920,
+				quality: 0.85,
+				targetMime: "image/webp",
 			});
-
-			if (!result.success || !result.dataUrl) {
-				if (result.error && !result.error.toLowerCase().includes("отмен")) {
-					showToast(`Не удалось сделать снимок: ${result.error}`, "error", 8000);
-				}
-				return;
-			}
-
-			// Преобразование снимка в WebP Blob для загрузки в 043/у
-			let blob: Blob;
-			try {
-				const resBlob = await fetch(result.dataUrl);
-				if (!resBlob.ok) throw new Error("FETCH_BLOB_FAILED");
-				blob = await resBlob.blob();
-			} catch {
-				const arr = result.dataUrl.split(",");
-				const mime = arr[0]?.match(/:(.*?);/)?.[1] || "image/webp";
-				const bstr = atob(arr[1] || "");
-				let n = bstr.length;
-				const u8arr = new Uint8Array(n);
-				while (n--) {
-					u8arr[n] = bstr.charCodeAt(n);
-				}
-				blob = new Blob([u8arr], { type: mime });
-			}
-
-			const formData = new FormData();
-			formData.append("file", blob, "chairside_camera.webp");
-			formData.append("entityType", "diary");
-			formData.append("entityId", diaryId);
-
-			const clinicToken = readDenteClinicToken() || null;
-
-			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
-				method: "POST",
-				headers: {
-					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-				},
-				body: formData,
-			});
-
-			if (!res.ok) {
-				// Мандат 8e: Защита от потери данных (Autosave / Offline)
-				try {
-					const { saveOfflineDraft } = await import("../services/offline/index.js");
-					await saveOfflineDraft(
-						`photo_attachment_${diaryId}_${Date.now()}`,
-						"DIARY_043_DRAFT",
-						visitId,
-						{
-							diaryId,
-							visitId,
-							dataUrl: result.dataUrl,
-							capturedAt: result.capturedAt || new Date().toISOString(),
-						},
-					);
-					showToast("Снимок сохранен локально (офлайн-режим)", "info", 6000);
-				} catch {
-					showToast(
-						`Снимок не загружен: ${requestFailureCause(res.status)}. Проверьте сеть.`,
-						"error",
-						10000,
-					);
-				}
-				return;
-			}
-
-			const rawBody = await res.text();
-			let data: { file?: Attachment } | null = null;
-			try {
-				const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
-				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-					data = parsed as { file?: Attachment };
-				}
-			} catch {
-				data = null;
-			}
-
-			const uploaded = data?.file;
-			if (
-				uploaded &&
-				typeof uploaded === "object" &&
-				typeof uploaded.id === "string" &&
-				uploaded.id
-			) {
-				setAttachments((prev) => [...prev, uploaded]);
-				setLoadState({ phase: "ready" });
-				showToast("Фото с камеры успешно прикреплено", "success");
-			} else {
-				reloadAttachments();
-			}
+			const targetName = file.name.replace(/\.[^.]+$/, "") + ".webp";
+			await uploadBlobAttachment(compressedBlob, targetName);
 		} catch (err) {
-			logger.error("[diary camera capture] error", err);
-			showToast(`Ошибка съемки камерой: ${requestFailureCause(null)}`, "error", 10000);
+			logger.error("[handlePhotoUpload] compression failed", err);
+			showToast(
+				"Файл не открылся как изображение. Выберите снимок JPG, PNG, HEIC или WEBP.",
+				"error",
+				10000,
+			);
 		} finally {
 			setIsUploading(false);
+			e.target.value = "";
 		}
 	};
+
+	const splitterPhotos = useMemo(() => {
+		return attachments.map((att) => ({
+			id: att.id,
+			url: photoObjectUrls[att.id] || att.url,
+			name: att.name,
+		}));
+	}, [attachments, photoObjectUrls]);
 
 	return (
 		<div className="space-y-1.5 lg:col-span-2">
@@ -639,25 +487,34 @@ export function VisitDiaryPhotoUpload({
 				</span>
 				{!isLocked && diaryId && (
 					<div className="flex items-center gap-2">
-						<label
-							htmlFor="visit-diary-camera-capture"
+						<span
+							className="hidden sm:inline-flex text-[10px] text-[var(--muted)] font-mono border border-[var(--line)] px-1.5 py-0.5 rounded bg-[var(--paper)]"
+							title="Вставка снимка или скриншота прямо клавишами Ctrl+V"
+						>
+							Ctrl+V: вставить
+						</span>
+						{attachments.length >= 2 && (
+							<button
+								type="button"
+								onClick={() => setIsBeforeAfterOpen(true)}
+								className="cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)]"
+								title="Сравнить снимки До/После (интерактивная шторка для экрана пациента)"
+							>
+								<MoveHorizontal className="w-3.5 h-3.5 text-[var(--accent)]" />
+								<span>До / После</span>
+							</button>
+						)}
+						<button
+							type="button"
+							onClick={() => setIsCameraModalOpen(true)}
 							className={`cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)] ${
 								isUploading || isLocked ? "opacity-50 pointer-events-none" : ""
 							}`}
-							title="Сделать снимок камерой устройства (смартфон / планшет / веб-камера)"
+							title="Сделать снимок с интраоральной USB/UVC камеры или веб-камеры (WebRTC захват)"
 						>
 							<Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
 							<span>{isUploading ? "Сжатие..." : "Снимок с камеры"}</span>
-							<input
-								id="visit-diary-camera-capture"
-								type="file"
-								accept="image/*"
-								capture="environment"
-								className="hidden"
-								onChange={handlePhotoUpload}
-								disabled={isUploading || isLocked}
-							/>
-						</label>
+						</button>
 						<label
 							htmlFor="visit-diary-photo-upload"
 							className={`cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)] ${
@@ -748,6 +605,25 @@ export function VisitDiaryPhotoUpload({
 							? "Нет прикрепленных фото."
 							: "Нажмите «Прикрепить фото», чтобы добавить снимки лечения."
 						: "Сначала сохраните дневник, чтобы прикрепить фото."}
+				</div>
+			)}
+
+			{/* Модальное окно прямого захвата с интраоральной камеры (WebRTC) */}
+			<IntraoralCameraModal
+				isOpen={isCameraModalOpen}
+				onClose={() => setIsCameraModalOpen(false)}
+				onCapturePhoto={uploadBlobAttachment}
+			/>
+
+			{/* Интерактивный режим сравнения До/После для экрана пациента */}
+			{isBeforeAfterOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-xs animate-in fade-in duration-150">
+					<div className="w-full max-w-4xl">
+						<BeforeAfterSplitter
+							photos={splitterPhotos}
+							onClose={() => setIsBeforeAfterOpen(false)}
+						/>
+					</div>
 				</div>
 			)}
 		</div>

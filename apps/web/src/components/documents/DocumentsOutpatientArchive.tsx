@@ -382,10 +382,10 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 						data-testid="archive-quick-blank-consent-btn"
 						onClick={handlePrintBlankConsent}
 						className="min-h-[44px] sm:min-h-[34px] px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
-						title="Распечатать чистый бланк информированного согласия (ИДС) со строками «________» для ручного заполнения"
+						title="Распечатать чистый бланк информированного согласия на лечение со строками «________» для ручного заполнения"
 					>
 						<FileText size={14} className="text-teal-600 dark:text-teal-400" />
-						<span>Бланк ИДС</span>
+						<span>Бланк согласия</span>
 					</button>
 
 					<button
@@ -393,10 +393,10 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 						data-testid="archive-quick-blank-form043-btn"
 						onClick={handlePrintBlankForm043}
 						className="min-h-[44px] sm:min-h-[34px] px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
-						title="Распечатать чистую амбулаторную медкарту 043/у со строками «________» и зубной формулой FDI"
+						title="Распечатать чистую амбулаторную медкарту со строками «________» и зубной формулой FDI"
 					>
 						<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400" />
-						<span>Бланк медкарты 043/у</span>
+						<span>Бланк медкарты</span>
 					</button>
 				</div>
 

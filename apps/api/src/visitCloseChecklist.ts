@@ -64,7 +64,7 @@ type VisitCloseChecklistVisit = {
 };
 
 type VisitCloseChecklistImagingStudy = {
-	readonly patientId: string;
+	readonly patientId: string | null;
 	readonly visitId: string | null;
 	readonly status: string;
 };

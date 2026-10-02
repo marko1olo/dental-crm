@@ -12,6 +12,10 @@ import {
 	type KraftPackageRecord,
 } from "./kraft/kraftPackageEngine";
 import {
+	type ClinicAutoclaveDevice,
+	loadSavedClinicAutoclaves,
+} from "./AutoclaveEquipmentModal";
+import {
 	createDefault5ChamberPoints,
 	createForm257Record,
 	DEFAULT_CLINIC_LEGAL_INFO,
@@ -179,12 +183,25 @@ export function handlePrintBatchPouches(log: SterilizationLogRecord, count = 10)
 	);
 }
 
-export function handleGenerateMonthlyForm257(): void {
+export function handleGenerateMonthlyForm257(
+	sterilizerId?: string,
+	clinicDevices?: ClinicAutoclaveDevice[],
+): void {
 	const now = new Date();
 	const currentYear = now.getFullYear();
 	const currentMonth = now.getMonth();
 	const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 	const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+
+	const devices = clinicDevices && clinicDevices.length > 0 ? clinicDevices : loadSavedClinicAutoclaves();
+	const matchedDevice = sterilizerId && sterilizerId !== "all"
+		? devices.find((d) => d.id === sterilizerId || d.brandModelRu.includes(sterilizerId))
+		: devices.find((d) => d.isOperational) || devices[0];
+
+	const targetSterilizerId = matchedDevice?.id || "autoclave-melag-vacuklav-23b";
+	const targetSterilizerCode = matchedDevice?.inventoryNumber || matchedDevice?.id || "АК-01";
+	const targetSterilizerBrandModel = matchedDevice?.brandModelRu || "Melag Vacuklav 23 B+";
+	const targetSterilizerSerialNumber = matchedDevice?.serialNumber || "MEL-2024-9812";
 
 	const generatedRecords: Form257Record[] = [];
 
@@ -200,7 +217,10 @@ export function handleGenerateMonthlyForm257(): void {
 			createForm257Record({
 				date: dateStr,
 				cycleNumber: 1,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
+				sterilizerId: targetSterilizerId,
+				sterilizerCode: targetSterilizerCode,
+				sterilizerBrandModel: targetSterilizerBrandModel,
+				sterilizerSerialNumber: targetSterilizerSerialNumber,
 				regimeId: "steam_134_5min",
 				sensors: {
 					actualTemperatureCelsius: 134.4,
@@ -225,7 +245,10 @@ export function handleGenerateMonthlyForm257(): void {
 			createForm257Record({
 				date: dateStr,
 				cycleNumber: 2,
-				sterilizerId: "autoclave-melag-vacuklav-23b",
+				sterilizerId: targetSterilizerId,
+				sterilizerCode: targetSterilizerCode,
+				sterilizerBrandModel: targetSterilizerBrandModel,
+				sterilizerSerialNumber: targetSterilizerSerialNumber,
 				regimeId: "steam_134_20min_prion",
 				sensors: {
 					actualTemperatureCelsius: 134.2,

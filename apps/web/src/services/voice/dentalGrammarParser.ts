@@ -917,29 +917,39 @@ export function extractAnesthesiaIntent(text: string): AnesthesiaVoiceItem | nul
 	}
 
 	let cartridgeCount = 1;
-	if (lower.includes("одна карпула") || lower.includes("1 карпула") || lower.includes("одну карпулу")) {
+	if (lower.includes("полторы карпулы") || lower.includes("1.5 карпулы") || lower.includes("1,5 карпулы")) {
+		cartridgeCount = 1.5;
+	} else if (lower.includes("две с половиной карпулы") || lower.includes("2.5 карпулы") || lower.includes("2,5 карпулы")) {
+		cartridgeCount = 2.5;
+	} else if (lower.includes("одна карпула") || lower.includes("1 карпула") || lower.includes("одну карпулу")) {
 		cartridgeCount = 1;
 	} else if (lower.includes("две карпулы") || lower.includes("2 карпулы") || lower.includes("две карпула")) {
 		cartridgeCount = 2;
 	} else if (lower.includes("три карпулы") || lower.includes("3 карпулы")) {
 		cartridgeCount = 3;
-	} else if (lower.includes("пол карпулы") || lower.includes("половина карпулы") || lower.includes("0.5 карпулы")) {
+	} else if (lower.includes("пол карпулы") || lower.includes("половина карпулы") || lower.includes("0.5 карпулы") || lower.includes("0,5 карпулы")) {
 		cartridgeCount = 0.5;
 	} else {
-		const cartMatch = lower.match(/(d+[.,]?d*)s*(?:карпул|ампул|карп)/);
+		const cartMatch = lower.match(/(\d+[.,]?\d*)\s*(?:карпул|ампул|карп)/);
 		if (cartMatch && cartMatch[1]) {
 			cartridgeCount = parseFloat(cartMatch[1].replace(",", "."));
 		}
 	}
 
 	let volumeMl = Number((matchedConfig.defaultVolumeMl * cartridgeCount).toFixed(2));
-	const volMatch = lower.match(/(d+[.,]?d*)s*(?:мл|миллилитр)/);
+	const volMatch = lower.match(/(\d+[.,]?\d*)\s*(?:мл|миллилитр)/);
 	if (volMatch && volMatch[1]) {
 		volumeMl = parseFloat(volMatch[1].replace(",", "."));
 	}
 
 	let technique: "infiltration" | "conduction" | "application" | "intraligamentary" = "infiltration";
-	if (lower.includes("проводников") || lower.includes("мандибулярн") || lower.includes("торасальн")) {
+	if (
+		lower.includes("проводников") ||
+		lower.includes("мандибулярн") ||
+		lower.includes("торасальн") ||
+		lower.includes("торусальн") ||
+		lower.includes("туберальн")
+	) {
 		technique = "conduction";
 	} else if (lower.includes("аппликацион") || lower.includes("гель") || lower.includes("спрей")) {
 		technique = "application";

@@ -828,3 +828,5 @@ export function generateWaveformBars(
 	const barCount = Math.max(1, count);
 	return new Array(barCount).fill(0.5);
 }
+
+export { resolvePatientCategory } from "@dental/shared";

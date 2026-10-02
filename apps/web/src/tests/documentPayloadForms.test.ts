@@ -396,7 +396,10 @@ describe("формы рисуются и сохранили текст, кото
 		const html = renderForm(
 			createElement(PersonalDataProcessingConsentForm, { clinicProfileDraft }),
 		);
-		assert.ok(html.includes("Согласие на ПДн"));
+		assert.ok(
+			html.includes("Согласие на обработку персональных данных") ||
+				html.includes("Согласие на ПДн"),
+		);
 		assert.ok(html.includes(clinicProfileDraft.legalName));
 		assert.ok(html.includes(clinicProfileDraft.inn));
 		assert.ok(html.includes(clinicProfileDraft.address));

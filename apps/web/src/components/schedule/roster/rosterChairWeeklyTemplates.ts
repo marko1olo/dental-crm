@@ -38,8 +38,8 @@ export function applyDoctorChairWeeklyTemplate(
 		doctorBId,
 		chairId,
 		cabinetId,
-		staffList = DEFAULT_CLINIC_STAFF,
-		cabinets = CLINIC_CABINETS_CATALOG,
+		staffList = isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [],
+		cabinets = isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG : [],
 	} = params;
 
 	const template = DOCTOR_CHAIR_ROSTER_TEMPLATES.find((t) => t.id === templateId);

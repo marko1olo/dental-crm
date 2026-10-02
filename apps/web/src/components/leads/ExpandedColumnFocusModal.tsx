@@ -835,6 +835,11 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 														type="button"
 														className="expanded-focus-checkbox-btn"
 														aria-label="Выбрать строку"
+														aria-checked={isSelected}
+														onClick={(e) => {
+															e.stopPropagation();
+															toggleSelectLead(lead.id, e);
+														}}
 													>
 														{isSelected ? (
 															<CheckSquare size={14} className="text-[var(--teal)]" />

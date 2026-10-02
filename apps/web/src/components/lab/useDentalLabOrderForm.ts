@@ -284,6 +284,12 @@ export function useDentalLabOrderForm({
 		setTranslucency(ONE_CLICK_LAB_DEFAULTS.translucency);
 		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
 		setDueDate(due.toISOString().slice(0, 10));
+		const fitDate = addWorkingDays(due, 1);
+		const fitDateIso = fitDate.toISOString().slice(0, 10);
+		setCeramicTrialDate(fitDateIso);
+		if (!scheduledVisitDate) {
+			setScheduledVisitDate(fitDateIso);
+		}
 		showToast(
 			`Применен 1-клик пресет: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
 			"success",
@@ -309,6 +315,12 @@ export function useDentalLabOrderForm({
 		}
 		const due = addWorkingDays(new Date(), preset.workingDays);
 		setDueDate(due.toISOString().slice(0, 10));
+		const fitDate = addWorkingDays(due, 1);
+		const fitDateIso = fitDate.toISOString().slice(0, 10);
+		setCeramicTrialDate(fitDateIso);
+		if (!scheduledVisitDate) {
+			setScheduledVisitDate(fitDateIso);
+		}
 		setPriceRubInput(String(preset.priceRub));
 		showToast(
 			`Пресет применен: ${preset.title} (${preset.shortDesc})`,
@@ -511,6 +523,61 @@ export function useDentalLabOrderForm({
 				onSaveOrder(resultData);
 			}
 
+			// 1. Dispatch custom event for reactive CRM synchronization
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-lab-order-created", { detail: resultData }),
+				);
+			}
+
+			// 2. 1-Click Chairside Auto-Booking of Fitting Appointment in Doctor Schedule
+			const effectiveFittingDate =
+				scheduledVisitDate ||
+				ceramicTrialDate ||
+				(dueDate ? addWorkingDays(new Date(dueDate), 1).toISOString().slice(0, 10) : "");
+
+			if (effectiveFittingDate && typeof window !== "undefined") {
+				const toothLabel =
+					resultData.toothFdi ||
+					(selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "11");
+				const matTitle =
+					LAB_MATERIALS.find((m) => m.id === material)?.name || material;
+				const appointmentDraft = {
+					patientId: effectivePatientId,
+					patientName: formPatientName,
+					patientPhone: "",
+					doctorId: formDoctorId || "doc-current",
+					doctorName: formDoctorName || "Врач-ортопед",
+					serviceTitle: `Примерка и фиксация: ${matTitle} (зуб ${toothLabel})`,
+					serviceCode: "A16.07.004", // Номенклатура 804н
+					durationMinutes: 45,
+					scheduledDate: effectiveFittingDate,
+					targetDate: effectiveFittingDate,
+					stageKind: "stage_3_orthopedics",
+					orderNumber: gostOrderNumber,
+					notes: `Автобронь примерки из ЗТЛ № ${gostOrderNumber} (${matTitle}, зуб ${toothLabel}, цвет ${finalShade}). Дедлайн ЗТЛ: ${dueDate || "—"}.`,
+				};
+
+				try {
+					window.localStorage.setItem(
+						"dente_schedule_quick_booking_draft",
+						JSON.stringify(appointmentDraft),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente-quick-appointment-draft", {
+							detail: appointmentDraft,
+						}),
+					);
+					window.dispatchEvent(
+						new CustomEvent("dente-open-quick-booking", {
+							detail: appointmentDraft,
+						}),
+					);
+				} catch {
+					// quota fallback
+				}
+			}
+
 			onClose();
 		} catch (err: any) {
 			showToast(err.message || "Ошибка сохранения наряда ЗТЛ", "error");
@@ -557,9 +624,9 @@ export function useDentalLabOrderForm({
 			};
 			const protocolText = formatLabOrderFormZtl1A4Protocol(synthOrder, "Стоматологическая клиника DENTE");
 			navigator.clipboard.writeText(protocolText);
-			showToast("Протокол наряда ЗТЛ-1 скопирован в буфер", "success");
+			showToast("Протокол наряда скопирован в буфер", "success");
 		} catch (_e) {
-			showToast("Не удалось скопировать протокол ЗТЛ-1", "error");
+			showToast("Не удалось скопировать протокол наряда", "error");
 		}
 	};
 

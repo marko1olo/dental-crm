@@ -44,21 +44,21 @@ export interface HotFolderItem {
 export interface HotFolderIntakeModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	patientName?: string;
-	patientCardNumber?: string;
-	patientBirthDate?: string;
-	doctorName?: string;
-	activeToothFdi?: string;
-	onAttachToEmr?: (result: {
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientCardNumber?: string | undefined;
+	patientBirthDate?: string | undefined;
+	doctorName?: string | undefined;
+	activeToothFdi?: string | undefined;
+	onAttachToEmr?: ((result: {
 		study: RadiologyStudy;
 		teethFdi: string[];
 		protocolNote: string;
 		clinicalPurpose: string;
 		doseMicrosv: number;
-	}) => void;
-	onExportDicom?: (item: HotFolderItem) => void;
-	onSendToLab?: (item: HotFolderItem, note: string) => void;
+	}) => void) | undefined;
+	onExportDicom?: ((item: HotFolderItem) => void) | undefined;
+	onSendToLab?: ((item: HotFolderItem, note: string) => void) | undefined;
 }
 
 /**

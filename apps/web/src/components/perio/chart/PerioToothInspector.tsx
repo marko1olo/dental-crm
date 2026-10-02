@@ -3,6 +3,7 @@ import {
 	FURCATION_GRADES,
 	isFurcationEligibleTooth,
 	MOBILITY_GRADES,
+	PERIO_SITE_KEYS,
 	PERIO_SITES_CONFIG,
 	type PerioSiteKey,
 	type PerioToothRecord,
@@ -171,6 +172,122 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 					</div>
 				)}
 			</div>
+
+			{/* Express Pathology Focus for Selected Tooth (Mandates 8e, 8k: Fast Single-Tooth Focus) */}
+			{!readOnly && !selectedTooth.isMissing && (
+				<div className="flex items-center gap-1.5 flex-wrap pt-2 pb-1 border-t border-[var(--line)]">
+					<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
+						Фокус патологии зуба #{selectedTooth.toothNumber}:
+					</span>
+
+					{/* 1-Tap Reset Tooth to Norm */}
+					<button
+						type="button"
+						onClick={() => {
+							for (const key of PERIO_SITE_KEYS) {
+								onUpdateToothSite(selectedTooth.toothNumber, key, () => ({
+									probingDepthMm: 2,
+									gingivalMarginMm: 0,
+									bleedingOnProbing: false,
+									suppuration: false,
+									plaque: false,
+									calculus: false,
+									calMm: 2,
+								}));
+							}
+							onUpdateToothProperties(selectedTooth.toothNumber, { mobility: 0, furcation: 0 });
+						}}
+						className="min-h-[36px] sm:min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 cursor-pointer transition-all flex items-center gap-1"
+						title="Сбросить выбранный зуб в норму (глубина 2 мм, BOP 0, подвижность 0)"
+						data-testid="inspector-reset-tooth-norm"
+					>
+						<Check size={12} />
+						<span>Интактен (2 мм)</span>
+					</button>
+
+					{/* 1-Tap Pocket 4mm */}
+					<button
+						type="button"
+						onClick={() => {
+							for (const key of PERIO_SITE_KEYS) {
+								onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => ({
+									probingDepthMm: 4,
+									bleedingOnProbing: true,
+									calMm: calculateClinicalAttachmentLevel(4, prev.gingivalMarginMm ?? 0),
+								}));
+							}
+						}}
+						className="min-h-[36px] sm:min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 cursor-pointer transition-all"
+						title="Установить карманы 4 мм + BOP на выбранном зубе"
+						data-testid="inspector-focus-pocket-4mm"
+					>
+						Карман 4 мм (BOP+)
+					</button>
+
+					{/* 1-Tap Pocket 5mm */}
+					<button
+						type="button"
+						onClick={() => {
+							for (const key of PERIO_SITE_KEYS) {
+								onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => ({
+									probingDepthMm: 5,
+									bleedingOnProbing: true,
+									calculus: true,
+									calMm: calculateClinicalAttachmentLevel(5, prev.gingivalMarginMm ?? 0),
+								}));
+							}
+						}}
+						className="min-h-[36px] sm:min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold bg-orange-500/15 hover:bg-orange-500/25 text-orange-800 dark:text-orange-300 border border-orange-500/30 cursor-pointer transition-all"
+						title="Установить карманы 5 мм + зубной камень + BOP на выбранном зубе"
+						data-testid="inspector-focus-pocket-5mm"
+					>
+						Карман 5 мм + BOP
+					</button>
+
+					{/* 1-Tap Pocket >= 6mm with Suppuration */}
+					<button
+						type="button"
+						onClick={() => {
+							for (const key of PERIO_SITE_KEYS) {
+								onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => ({
+									probingDepthMm: 7,
+									bleedingOnProbing: true,
+									suppuration: true,
+									calculus: true,
+									calMm: calculateClinicalAttachmentLevel(7, prev.gingivalMarginMm ?? 0),
+								}));
+							}
+							onUpdateToothProperties(selectedTooth.toothNumber, { mobility: 2 });
+						}}
+						className="min-h-[36px] sm:min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300 border border-rose-500/30 cursor-pointer transition-all"
+						title="Установить глубокие карманы 7 мм + гноетечение + подвижность II ст."
+						data-testid="inspector-focus-pocket-severe"
+					>
+						Карман &ge; 6 мм (Гной)
+					</button>
+
+					{/* 1-Tap Gingival Margin Recession +2mm */}
+					<button
+						type="button"
+						onClick={() => {
+							for (const key of ["distoBuccal", "midBuccal", "mesioBuccal"] as const) {
+								onUpdateToothSite(selectedTooth.toothNumber, key, (prev) => {
+									const pd = prev.probingDepthMm ?? 2;
+									return {
+										gingivalMarginMm: 2,
+										calMm: calculateClinicalAttachmentLevel(pd, 2),
+									};
+								});
+							}
+						}}
+						className="min-h-[36px] sm:min-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-800 dark:text-purple-300 border border-purple-500/30 cursor-pointer transition-all"
+						title="Установить рецессию десны +2 мм по вестибулярной поверхности"
+						data-testid="inspector-focus-recession-2mm"
+					>
+						Рецессия +2 мм (GM)
+					</button>
+				</div>
+			)}
 
 			{/* 6 Sites Granular Controls */}
 			{!selectedTooth.isMissing && (

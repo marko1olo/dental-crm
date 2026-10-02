@@ -69,7 +69,7 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
 				<div>
 					<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-						Вид СЭМД ЕГИСЗ РЭМД
+						Вид медицинского документа
 					</label>
 					<select
 						value={semdDocCode}
@@ -85,9 +85,9 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 							fontSize: "0.875rem",
 						}}
 					>
-						<option value="105">СЭМД 105: Протокол консультации стоматолога (ф. 043/у)</option>
-						<option value="302">СЭМД 302: Первичный консультативно-диагностический осмотр</option>
-						<option value="303">СЭМД 303: Протокол лечебно-диагностического вмешательства</option>
+						<option value="105">Консультация стоматолога (Протокол приёма)</option>
+						<option value="302">Первичный осмотр и диагностика</option>
+						<option value="303">Протокол лечения и вмешательства</option>
 					</select>
 				</div>
 
@@ -185,7 +185,7 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "0.875rem", background: "var(--paper-strong)" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-						Зубная формула (FDI ISO 3950 / Одонтограмма 043/у)
+						Зубная формула (Одонтограмма)
 					</div>
 					<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 						Выбран зуб: <strong style={{ color: "var(--primary)" }}>{selectedTooth}</strong> (Статус: {DENTAL_TOOTH_STATUS_DICTIONARY[toothStates[selectedTooth] || "Healthy"]?.labelRu || "Интактен"})

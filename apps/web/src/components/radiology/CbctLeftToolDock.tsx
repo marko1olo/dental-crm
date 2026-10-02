@@ -441,7 +441,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={onAutoDetectArch}
-							className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 bg-zinc-900 text-purple-300 hover:text-white hover:bg-purple-950/40 border border-[var(--line,#27272a)] hover:border-purple-500/80 shadow-xs"
+							className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 bg-zinc-900 text-purple-300 hover:text-purple-200 hover:bg-purple-950/40 border border-[var(--line,#27272a)] hover:border-purple-500/80 shadow-xs"
 							title="Сгенерировать дугу автоматически (по плотности эмали/кости)"
 							aria-label="Сгенерировать дугу автоматически"
 							data-testid="cbct-tool-auto-arch"

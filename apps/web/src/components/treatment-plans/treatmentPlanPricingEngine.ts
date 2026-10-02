@@ -10,6 +10,7 @@ import {
 	splitKopecks,
 	calculatePlanTaxDeductionBreakdown,
 	calculateStaged304030Schedule,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 } from "@dental/shared";
 import type {
 	LoyaltyBonusDeduction,
@@ -141,17 +142,19 @@ export function calculateLoyaltyBonusDeduction(
 			: (0 as Kopecks);
 
 	const afterDiscountKopecks = Math.max(0, grossKopecks - discountKopecks) as Kopecks;
-	const afterDiscountRub = Math.round(afterDiscountKopecks / 100);
+	const availableBalanceKopecks = Math.max(0, parseKopecks(availablePatientBalanceRub)) as Kopecks;
+	const requestedBonusKopecks = Math.max(0, parseKopecks(requestedBonusToSpendRub)) as Kopecks;
 
-	const maxSpendableBonusRub = Math.max(
-		0,
-		Math.min(availablePatientBalanceRub, afterDiscountRub),
-	);
-	const appliedBonusRub = Math.max(
-		0,
-		Math.min(requestedBonusToSpendRub, maxSpendableBonusRub),
-	);
-	const appliedBonusKopecks = parseKopecks(appliedBonusRub);
+	// Бонусы нельзя списать больше, чем сумма после скидки (в копейках) и больше, чем доступный баланс
+	const maxSpendableBonusKopecks = Math.min(
+		availableBalanceKopecks,
+		afterDiscountKopecks,
+	) as Kopecks;
+	const appliedBonusKopecks = Math.min(
+		requestedBonusKopecks,
+		maxSpendableBonusKopecks,
+	) as Kopecks;
+	const appliedBonusRub = Math.floor(appliedBonusKopecks / 100);
 
 	const netPayableKopecks = Math.max(
 		0,
@@ -180,18 +183,19 @@ export function calculateNdflDeduction(
 	const code = isHighCostCode02 ? "02" : "01";
 	const codeDescription = isHighCostCode02
 		? "Код 02 — Дорогостоящее лечение (имплантация, костная пластика, синус-лифтинг) — налоговый вычет 13% со всей суммы без ограничений"
-		: "Код 01 — Обычное медицинское лечение (терапия, гигиена, ортопедия) — налоговый вычет 13% с лимитом налоговой базы 150 000 ₽ (макс. возврат 19 500 ₽)";
+		: `Код 01 — Обычное медицинское лечение (терапия, гигиена, ортопедия) — налоговый вычет 13% с лимитом налоговой базы ${ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024.toLocaleString("ru-RU")} ₽ (макс. возврат 19 500 ₽)`;
 
 	if (totalKopecks <= 0) {
 		return {
 			code,
 			codeDescription,
 			isHighCostCode02,
+			isHighCostTreatment: isHighCostCode02,
 			baseKopecks: 0 as Kopecks,
 			refundKopecks: 0 as Kopecks,
 			refundRub: 0,
 			finalPriceWithRefundRub: 0,
-			annualLimitRub: isHighCostCode02 ? undefined : 150000,
+			annualLimitRub: isHighCostCode02 ? undefined : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 		};
 	}
 
@@ -201,7 +205,7 @@ export function calculateNdflDeduction(
 		baseKopecks = totalKopecks;
 		refundKopecks = percentageOfKopecks(totalKopecks, 1300); // 13.00%
 	} else {
-		const cap = parseKopecks(150000);
+		const cap = parseKopecks(ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024);
 		baseKopecks = Math.min(totalKopecks, cap) as Kopecks;
 		refundKopecks = percentageOfKopecks(baseKopecks, 1300);
 	}
@@ -214,11 +218,12 @@ export function calculateNdflDeduction(
 		code,
 		codeDescription,
 		isHighCostCode02,
+		isHighCostTreatment: isHighCostCode02,
 		baseKopecks,
 		refundKopecks,
 		refundRub,
 		finalPriceWithRefundRub,
-		annualLimitRub: isHighCostCode02 ? undefined : 150000,
+		annualLimitRub: isHighCostCode02 ? undefined : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	};
 }
 

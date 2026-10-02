@@ -228,13 +228,13 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 									Горячие клавиши и управление КЛКТ
 								</h3>
 								<span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 font-mono border border-zinc-800">
-									DICOM / Romexis 6
+									16-bit DICOM
 								</span>
 							</div>
 							<button
 								type="button"
 								onClick={onToggleHelp}
-								className="w-8 h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center border border-zinc-800 transition-colors"
+								className="w-8 h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 flex items-center justify-center border border-zinc-800 transition-colors"
 								aria-label="Закрыть справку"
 							>
 								<X className="w-4 h-4" />

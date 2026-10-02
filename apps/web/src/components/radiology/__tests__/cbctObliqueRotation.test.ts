@@ -165,37 +165,30 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			assert.equal(sampleVoxelHUTrilinear(testVolume, 40, 40, 200), -1000);
 		});
 
-		it("applies rescaleSlope and rescaleIntercept to trilinear HU sampling", () => {
+		it("preserves pre-calibrated Hounsfield Units (HU) without duplicate rescale distortion", () => {
 			const scaledVolume = {
 				...testVolume,
 				rescaleSlope: 1.5,
 				rescaleIntercept: -100,
 			};
 			const rawVal = sampleVoxelHU(40, 40, 30, testVolume);
-			const expectedScaled = Math.max(-1000, Math.min(3071, Math.round(rawVal * 1.5 - 100)));
 
+			// Volume buffer is already strictly calibrated in HU at ingestion.
+			// sampleVoxelHUTrilinear must preserve calibrated HU without secondary rescale distortion.
 			const scaledHU = sampleVoxelHUTrilinear(scaledVolume, 40, 40, 30);
-			assert.equal(scaledHU, expectedScaled);
+			assert.equal(scaledHU, rawVal);
 
 			// Test alias with (x, y, z, volume) parameter ordering
 			const aliasHU = sampleVoxelTrilinearHU(40, 40, 30, scaledVolume);
-			assert.equal(aliasHU, expectedScaled);
+			assert.equal(aliasHU, rawVal);
 		});
 
-		it("clamps trilinear sampled values to physical HU range [-1000 .. 3071]", () => {
-			const extremeVolume = {
-				...testVolume,
-				rescaleSlope: 10.0,
-				rescaleIntercept: 5000,
-			};
-			assert.equal(sampleVoxelHUTrilinear(extremeVolume, 40, 40, 30), 3071);
+		it("clamps trilinear sampled values to physical 16-bit HU range [-32768 .. 32767]", () => {
+			const extremeVolume = createEmptyCbctVolume(10, 10, 10, 0.5, 32767);
+			assert.equal(sampleVoxelHUTrilinear(extremeVolume, 5, 5, 5), 32767);
 
-			const subZeroVolume = {
-				...testVolume,
-				rescaleSlope: 1.0,
-				rescaleIntercept: -10000,
-			};
-			assert.equal(sampleVoxelHUTrilinear(subZeroVolume, 40, 40, 30), -1000);
+			const subZeroVolume = createEmptyCbctVolume(10, 10, 10, 0.5, -32768);
+			assert.equal(sampleVoxelHUTrilinear(subZeroVolume, 5, 5, 5), -32768);
 		});
 	});
 
@@ -538,6 +531,32 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			// Drag to dx = 100, dy = 1 -> tiny angle
 			const angle = calculateAngleFromHandleDrag(center, { x: 200, y: 101 }, "u_pos");
 			assert.ok(Math.abs(angle - 0.6) <= 0.1, `Expected ~0.6 deg, got ${angle}`);
+		});
+
+		it("correctly handles anisotropic voxel spacing (dx != dy != dz) without distortion", () => {
+			const anisoVol = {
+				...testVolume,
+				dimensions: { width: 60, height: 60, depth: 40 },
+				spacingMm: { x: 0.25, y: 0.30, z: 0.50 },
+			};
+			const coronal = extractObliqueMprSlice(anisoVol, "coronal", { x: 0, y: 0, z: 0 });
+			const expectedCoronalH = Math.round((40 * 0.50) / 0.25); // 80
+			assert.equal(coronal.metadata.heightPx, expectedCoronalH);
+
+			const sagittal = extractObliqueMprSlice(anisoVol, "sagittal", { x: 0, y: 0, z: 0 });
+			const expectedSagittalH = Math.round((40 * 0.50) / 0.30); // 67
+			assert.equal(sagittal.metadata.heightPx, expectedSagittalH);
+		});
+
+		it("safely handles zero or negative voxel spacing without crashing or zero division", () => {
+			const zeroSpVol = {
+				...testVolume,
+				spacingMm: { x: 0, y: -0.1, z: 0 } as any,
+			};
+			const res = extractObliqueMprSlice(zeroSpVol, "axial", { x: 0, y: 0, z: 0 });
+			assert.ok(res.metadata.widthPx > 0);
+			assert.ok(res.metadata.heightPx > 0);
+			assert.ok(!Number.isNaN(res.metadata.pixelSpacingX));
 		});
 	});
 

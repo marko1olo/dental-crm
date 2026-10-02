@@ -27,6 +27,7 @@ import { callCashShiftApi } from "./components/finance/cashShiftApi";
 import { FinanceToolbar } from "./components/finance/FinanceToolbar";
 import { FinanceInvoicesModal } from "./components/finance/FinanceInvoicesModal";
 import { FinanceCashboxModal } from "./components/finance/FinanceCashboxModal";
+import { PatientBillingModal } from "./components/finance/PatientBillingModal";
 
 const ManagerialPnlDashboardModal = lazy(() =>
 	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
@@ -328,6 +329,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isFinanceOptionsOpen, setIsFinanceOptionsOpen] = useState(false);
 	const [isCashShiftOpen, setIsCashShiftOpen] = useState(false);
 	const [isCashboxOpen, setIsCashboxOpen] = useState(false);
+	const [isBillingActOpen, setIsBillingActOpen] = useState(false);
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		const saved = safeLocalStorageGetItem("dente_cash_shift_open");
@@ -503,11 +505,15 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					setIsCashboxOpen(false);
 					return;
 				}
+				if (isBillingActOpen) {
+					setIsBillingActOpen(false);
+					return;
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen]);
+	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen]);
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-32 max-sm:pb-48 max-w-full min-w-0 overflow-x-hidden" id="finance">
@@ -531,6 +537,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				onOpenPnl={() => setIsPnlOpen(true)}
 				onGoToDocuments={onGoToDocuments}
 				onOpenCashbox={() => setIsCashboxOpen(true)}
+				onOpenBillingAct={() => setIsBillingActOpen(true)}
 			/>
 
 			{isCashShiftOpen && (
@@ -762,6 +769,27 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					setIsCashboxOpen(false);
 				}}
 			/>
+
+			{isBillingActOpen && (
+				<PatientBillingModal
+					isOpen={isBillingActOpen}
+					onClose={() => setIsBillingActOpen(false)}
+					patient={documentPatient ? {
+						id: documentPatient.id,
+						fullName: documentPatient.fullName,
+						birthDate: documentPatient.birthDate,
+						phone: documentPatient.phone,
+						address: documentPatient.address,
+						medicalCardNumber: documentPatient.medicalCardNumber,
+						depositRub: documentPatient.depositRub,
+						familyBalanceRub: documentPatient.familyBalanceRub,
+					} : null}
+					patientDepositRub={documentPatient?.depositRub ?? 0}
+					patientFamilyBalanceRub={documentPatient?.familyBalanceRub ?? 0}
+					clinicName={dashboard?.clinicSettings?.name}
+					clinicInn={dashboard?.clinicSettings?.inn}
+				/>
+			)}
 		</div>
 	);
 }

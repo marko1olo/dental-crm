@@ -160,8 +160,16 @@ describe("Odontogram High-Speed Keyboard Triggers & 1-Key Assigning", () => {
 		assert.equal(getToothStateFromHotkey("e", "p"), "Periodontitis");
 	});
 
+	test("Keys 'x' and 'х' (Cyrillic) trigger Missing status", () => {
+		assert.equal(getToothStateFromHotkey("x"), "Missing");
+		assert.equal(getToothStateFromHotkey("X"), "Missing");
+		assert.equal(getToothStateFromHotkey("х"), "Missing");
+		assert.equal(getToothStateFromHotkey("Х"), "Missing");
+	});
+
 	test("Non-matching or garbage keys return null without throwing", () => {
-		assert.equal(getToothStateFromHotkey("x"), null);
+		assert.equal(getToothStateFromHotkey("q"), null);
+		assert.equal(getToothStateFromHotkey("j"), null);
 		assert.equal(getToothStateFromHotkey("!"), null);
 		assert.equal(getToothStateFromHotkey(""), null);
 		assert.equal(getToothStateFromHotkey("123"), null);

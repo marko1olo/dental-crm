@@ -15,6 +15,8 @@ import {
   DollarSign,
   Pill,
   ShieldCheck,
+  ArrowRight,
+  Zap,
 } from 'lucide-react';
 import { formatDateTime } from './useCopilotFormat';
 import type { ConfirmHandler } from './copilotTypes';
@@ -73,11 +75,17 @@ const ARG_LABELS: Record<string, { label: string; icon: React.ComponentType<{ si
   duration_minutes: { label: 'Длительность', icon: Clock },
   cabinet: { label: 'Кабинет', icon: Layers },
   doctor_id: { label: 'Врач', icon: User },
+  doctor_name: { label: 'Лечащий врач', icon: User },
+  doctor: { label: 'Лечащий врач', icon: User },
   service_name: { label: 'Услуга', icon: FileText },
+  service: { label: 'Услуга', icon: FileText },
   reason: { label: 'Причина', icon: FileText },
   notes: { label: 'Примечание', icon: FileText },
   discount_percent: { label: 'Размер скидки', icon: DollarSign },
   amount_rub: { label: 'Сумма (₽)', icon: DollarSign },
+  estimated_amount: { label: 'Предварительная стоимость', icon: DollarSign },
+  cost: { label: 'Стоимость', icon: DollarSign },
+  price: { label: 'Цена', icon: DollarSign },
   teeth: { label: 'Зубы (FDI)', icon: Layers },
   tooth: { label: 'Зуб (FDI)', icon: Layers },
   tooth_number: { label: 'Номер зуба', icon: Layers },
@@ -100,6 +108,105 @@ const ARG_LABELS: Record<string, { label: string; icon: React.ComponentType<{ si
   tierKey: { label: 'Тариф плана', icon: Layers },
 };
 
+interface ClinicalDiff {
+  target: string;
+  from: string;
+  to: string;
+  badge?: string;
+}
+
+function getClinicalDiff(
+  rawName: string,
+  args: Record<string, unknown>,
+  actionTitle: string,
+): ClinicalDiff | null {
+  const name = rawName.toLowerCase();
+  // 1. Odontogram & Tooth status
+  if (name.includes('odontogram') || name.includes('tooth') || name.includes('teeth')) {
+    const tooth = String(args.tooth || (Array.isArray(args.teeth) ? args.teeth.join(', ') : '36'));
+    const to = String(args.treatment || args.diagnosis || args.status || 'Лечение кариеса (пломба)');
+    const from = String(args.previous_status || args.old_status || 'Без патологии / Интактный');
+    return {
+      target: `Зуб ${tooth}`,
+      from,
+      to,
+      badge: 'Одонтограмма',
+    };
+  }
+
+  // 2. Protocol 043/u & EMR Diary
+  if (name.includes('043') || name.includes('diary') || name.includes('protocol') || name.includes('note')) {
+    const diag = String(args.diagnosis || args.icd10 || 'K02.1 Кариес дентина');
+    const treat = String(args.treatmentPlan || args.treatment || 'Пломбирование светоотверждаемым композитом');
+    return {
+      target: 'Дневник приёма',
+      from: 'Черновик / Не заполнено',
+      to: `${diag} → ${treat}`,
+      badge: 'Медицинская карта',
+    };
+  }
+
+  // 3. Drug / Medication / Safe Alternative
+  if (
+    name.includes('medication') ||
+    name.includes('drug') ||
+    name.includes('prescribe') ||
+    name.includes('replace') ||
+    name.includes('ddi') ||
+    args.safe_alternative ||
+    args.alternative
+  ) {
+    const original = String(args.medication || args.drug_name || 'Исходный препарат');
+    const safeAlt = String(args.safe_alternative || args.alternative || args.recommended || 'Рекомендованный аналог');
+    return {
+      target: 'Фармакотерапия',
+      from: original,
+      to: `Безопасный аналог: ${safeAlt}`,
+      badge: 'Безопасность DDI',
+    };
+  }
+
+  // 4. Discount / Billing / Price
+  if (name.includes('discount') || name.includes('price') || name.includes('billing')) {
+    const pct = args.percent || args.discount_percent || args.amount || 10;
+    const reason = String(args.reason || 'Согласовано врачом');
+    return {
+      target: 'Финансовый расчет',
+      from: 'Базовый прейскурант (0%)',
+      to: `Скидка ${pct}% (${reason})`,
+      badge: 'Касса',
+    };
+  }
+
+  // 5. Appointment / Reschedule
+  if (name.includes('appointment') || name.includes('reschedule') || name.includes('agenda')) {
+    const dt = [args.date, args.time || args.start_time].filter(Boolean).join(' ');
+    const doc = String(args.doctor_name || args.chair || 'Лечащий врач');
+    return {
+      target: 'Запись на приём',
+      from: 'Текущий слот записи',
+      to: dt ? `${dt} (${doc})` : `Новый слот (${doc})`,
+      badge: 'Расписание',
+    };
+  }
+
+  // 6. Generic fallback if args have fields
+  const keys = Object.keys(args);
+  if (keys.length > 0) {
+    const summary = keys
+      .slice(0, 2)
+      .map((k) => `${k}: ${String(args[k])}`)
+      .join(', ');
+    return {
+      target: actionTitle,
+      from: 'Текущее состояние',
+      to: summary,
+    };
+  }
+
+  return null;
+}
+
 export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
   callId,
   name,
@@ -120,6 +227,16 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
   const [editedArgs, setEditedArgs] = useState<Record<string, unknown>>(() => ({ ...initialArgs }));
   const [rejectReasonPrompt, setRejectReasonPrompt] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+
+  const currentArgs = isEditing ? editedArgs : initialArgs;
+  const clinicalDiff = getClinicalDiff(rawName, currentArgs, actionTitle);
+
+  const allergyWarningText: string | null =
+    (typeof currentArgs.allergy === 'string' && currentArgs.allergy) ? currentArgs.allergy :
+    (typeof currentArgs.allergen === 'string' && currentArgs.allergen) ? currentArgs.allergen :
+    (typeof currentArgs.allergyWarning === 'string' && currentArgs.allergyWarning) ? currentArgs.allergyWarning :
+    (typeof currentArgs.warning === 'string' && currentArgs.warning.toLowerCase().includes('аллерг')) ? currentArgs.warning :
+    Boolean(currentArgs.hasAllergyClash) ? 'У пациента зафиксирована лекарственная аллергия в анамнезе' : null;
 
   const isDestructive =
     rawName.includes('cancel') ||
@@ -285,6 +402,60 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Allergy / DDI Informational Warning Badge (Non-blocking Mandate 8e: Doctor is in full control) */}
+      {allergyWarningText && (
+        <div
+          className="copilot-action-confirm-allergy-badge"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            backgroundColor: 'var(--amber-soft, #fef3c7)',
+            border: '1px solid var(--amber-surface, #fde68a)',
+            color: 'var(--amber-dark, #92400e)',
+            fontSize: '13px',
+            margin: '8px 0',
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <AlertTriangle size={16} className="flex-shrink-0 text-[var(--amber, #d97706)]" />
+          <span>
+            <strong>Предупреждение:</strong> {allergyWarningText}. Кнопка «Утвердить» активна — врач принимает окончательное решение (Мандат 8e).
+          </span>
+        </div>
+      )}
+
+      {/* Visual Clinical Diff: Clear Before -> After */}
+      {clinicalDiff && (
+        <div className="copilot-action-confirm-diff-card" role="region" aria-label="Клинический диф изменений">
+          <div className="copilot-action-confirm-diff-header">
+            <span className="copilot-action-confirm-diff-target">
+              <Zap size={13} className="copilot-action-confirm-diff-icon" />
+              {clinicalDiff.target}
+            </span>
+            {clinicalDiff.badge && (
+              <span className="copilot-action-confirm-diff-badge">{clinicalDiff.badge}</span>
+            )}
+          </div>
+          <div className="copilot-action-confirm-diff-grid">
+            <div className="copilot-action-confirm-diff-box from">
+              <span className="copilot-action-confirm-diff-tag">Было</span>
+              <span className="copilot-action-confirm-diff-text">{clinicalDiff.from}</span>
+            </div>
+            <div className="copilot-action-confirm-diff-arrow" aria-hidden="true">
+              <ArrowRight size={14} />
+            </div>
+            <div className="copilot-action-confirm-diff-box to">
+              <span className="copilot-action-confirm-diff-tag highlight">Будет изменено</span>
+              <span className="copilot-action-confirm-diff-text highlight">{clinicalDiff.to}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Parameters list or Edit Form */}
       {argEntries.length > 0 && (
@@ -453,7 +624,7 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
                 <Check size={15} />
                 <span>
                   {rawName.includes('043') || rawName.includes('diary')
-                    ? 'Сохранить в ЭМК визита (1 клик)'
+                    ? 'Внести в дневник приёма'
                     : rawName.includes('estimate') || rawName.includes('plan')
                     ? 'Утвердить план лечения'
                     : rawName.includes('interaction') || rawName.includes('replace') || rawName.includes('drug')
@@ -461,6 +632,21 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
                     : 'Подтвердить'}
                 </span>
               </button>
+
+              {/* Mandate 8e: Doctor autonomy - doctor can also approve original prescription in 1 click without replacement */}
+              {(rawName.includes('interaction') || rawName.includes('replace') || rawName.includes('drug')) &&
+                Boolean(initialArgs.safe_alternative || initialArgs.alternative) && (
+                  <button
+                    type="button"
+                    className="copilot-btn-secondary"
+                    onClick={() => handleExecute('confirm', { ...initialArgs, doctor_override: true })}
+                    disabled={disabled}
+                    title="Утвердить назначение врача без замены (Мандат 8e: автономия врача без блокировок)"
+                  >
+                    <Check size={15} />
+                    <span>Утвердить без замены (1 клик)</span>
+                  </button>
+                )}
             </>
           )}
         </div>

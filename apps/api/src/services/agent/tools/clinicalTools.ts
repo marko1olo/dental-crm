@@ -78,7 +78,7 @@ export function render043Text(autopilot: EmrAutopilotResult): string {
 	const d = autopilot.diaryEntry;
 	return [
 		`═══════════════════════════════════════════════════════════════════════════`,
-		`ДНЕВНИК ПРИЁМА ВРАЧА-СТОМАТОЛОГА (ФОРМА № 043/У, ПРИКАЗ МИНЗДРАВА № 834Н)`,
+		`ДНЕВНИК ПРИЁМА ВРАЧА-СТОМАТОЛОГА`,
 		`═══════════════════════════════════════════════════════════════════════════`,
 		`Дата и время приёма: ${d.entryDate} ${d.entryTime || ""}`.trim(),
 		`Зуб (FDI): ${d.toothNumber || "—"} | Диагноз МКБ-10: ${d.assessmentIcd10Code} (${d.assessmentDiagnosisText})`,
@@ -105,7 +105,7 @@ export function render043Text(autopilot: EmrAutopilotResult): string {
 		`Рекомендации и назначения на дом:`,
 		`  ${d.homeCareRecommendations || "Соблюдение гигиены полости рта, щадящая диета 2-3 дня, плановый осмотр через 6 месяцев."}`,
 		`─────────────────────────────────────────────────────────────────────────────`,
-		`Расчет стоимости по Номенклатуре Минздрава 804н: ${autopilot.billingEstimate.formattedTotal} (${autopilot.billingEstimate.totalKopecks} коп.)`,
+		`Стоимость услуг: ${autopilot.billingEstimate.formattedTotal} (${autopilot.billingEstimate.totalKopecks} коп.)`,
 		`Подпись лечащего врача: ${d.doctorFullName} ____________________`,
 		`═══════════════════════════════════════════════════════════════════════════`,
 	]
@@ -416,7 +416,7 @@ const getEmrCardSchema = z.object({
 		.boolean()
 		.optional()
 		.default(true)
-		.describe("Включать ли историю приемов и дневников 043/у"),
+		.describe("Включать ли историю приемов и дневников приёма"),
 	includeTreatmentPlans: z
 		.boolean()
 		.optional()
@@ -432,7 +432,7 @@ const getEmrCardSchema = z.object({
 export const getEmrCardTool: ToolDefinition<typeof getEmrCardSchema> = {
 	name: "get_emr_card",
 	description:
-		"Получение полной электронной медицинской карты (ЭМК 043/у): профиль, визиты, диагнозы МКБ-10, аллергии и активные планы лечения.",
+		"Получение полной электронной медицинской карты (ЭМК): профиль, визиты, диагнозы МКБ-10, аллергии и активные планы лечения.",
 	parameters: getEmrCardSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -804,7 +804,7 @@ export const generateVisitDiaryTool: ToolDefinition<
 > = {
 	name: "generate_visit_diary",
 	description:
-		"Генератор протокола приёма врача-стоматолога по форме 043/у (Приказ Минздрава № 834н): Жалобы, Анамнез, Объективный статус по зубу FDI, Диагноз МКБ-10, Лечение, Рекомендации и расчет номенклатуры 804н.",
+		"Генератор протокола дневника приёма врача-стоматолога: Жалобы, Анамнез, Объективный статус по зубу FDI, Диагноз МКБ-10, Лечение, Рекомендации и расчёт стоимости услуг.",
 	parameters: generateVisitDiarySchema,
 	permissions: ["clinical.read", "clinical.write"],
 	category: "write",
@@ -968,7 +968,7 @@ const createPrescription107Schema = z.object({
 	medicalCardNumber: z
 		.string()
 		.optional()
-		.describe("Номер медицинской карты 043/у"),
+		.describe("Номер медицинской карты"),
 	doctorFullName: z
 		.string()
 		.optional()
@@ -1268,7 +1268,7 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 > = {
 	name: "suggest_treatment_plan",
 	description:
-		"Генератор 3-уровневого комплексного плана лечения (Эконом / Оптимум / Премиум) с разбивкой на 3 клинических этапа (Терапия, Хирургия, Ортопедия), номенклатурой 804н и расчетом в целочисленных копейках.",
+		"Генератор 3-уровневого комплексного плана лечения (Эконом / Оптимум / Премиум) с разбивкой на 3 клинических этапа (Терапия, Хирургия, Ортопедия), услугами и расчетом в целочисленных копейках.",
 	parameters: suggestTreatmentPlanSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -1709,7 +1709,7 @@ export const getPatientTimelineTool: ToolDefinition<
 > = {
 	name: "get_patient_timeline",
 	description:
-		"Извлечение единой хронологической истории пациента: приемы (дневники 043/у, жалобы, диагнозы), планы лечения, финансовые транзакции и заказы зуботехнической лаборатории.",
+		"Извлечение единой хронологической истории пациента: приемы (дневники приёма, жалобы, диагнозы), планы лечения, финансовые транзакции и заказы зуботехнической лаборатории.",
 	parameters: getPatientTimelineSchema,
 	permissions: ["clinical.read"],
 	category: "read",

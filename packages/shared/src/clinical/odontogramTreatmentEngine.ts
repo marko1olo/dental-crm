@@ -185,11 +185,11 @@ export interface BridgeToothConfig {
 export interface MultiToothTreatment {
 	id: string;
 	type: "bridge" | "splint";
-	material?: string;
+	material?: string | undefined;
 	status: TreatmentStatus;
 	teeth: BridgeToothConfig[];
-	notes?: string;
-	createdAt?: string;
+	notes?: string | undefined;
+	createdAt?: string | undefined;
 }
 
 export interface OdontogramState {

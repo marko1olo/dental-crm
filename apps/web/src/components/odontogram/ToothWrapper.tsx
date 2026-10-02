@@ -459,7 +459,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							selectedTeeth?.includes(number) && selectedTeeth.length > 0
 								? selectedTeeth
 								: [number];
-						onQuickStateChange(targets, activeStamp, surfaces);
+						onQuickStateChange(targets, activeStamp, []);
 						return;
 					}
 					onClick(e, number);
@@ -472,7 +472,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 								selectedTeeth?.includes(number) && selectedTeeth.length > 0
 									? selectedTeeth
 									: [number];
-							onQuickStateChange(targets, activeStamp, surfaces);
+							onQuickStateChange(targets, activeStamp, []);
 							return;
 						}
 						onClick(e as unknown as React.MouseEvent, number);
@@ -651,7 +651,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Caries", surfaces);
+										onQuickStateChange(targets, "Caries", useSurfaces ? surfaces : undefined);
 									}}
 									className="touch-quick-state-btn bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40"
 									title="Кариес"
@@ -667,7 +667,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Filled", surfaces);
+										onQuickStateChange(targets, "Filled", useSurfaces ? surfaces : undefined);
 									}}
 									className="touch-quick-state-btn bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40"
 									title="Пломба"
@@ -683,7 +683,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Pulpitis", surfaces);
+										onQuickStateChange(targets, "Pulpitis", useSurfaces ? surfaces : undefined);
 									}}
 									className="touch-quick-state-btn bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40"
 									title="Пульпит"
@@ -699,7 +699,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Periodontitis", surfaces);
+										onQuickStateChange(targets, "Periodontitis", useSurfaces ? surfaces : undefined);
 									}}
 									className="touch-quick-state-btn bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40"
 									title="Периодонтит"
@@ -716,7 +716,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Crown", surfaces);
+										onQuickStateChange(targets, "Crown", useSurfaces ? surfaces : undefined);
 									}}
 									className="touch-quick-state-btn bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40"
 									title="Коронка"
@@ -749,7 +749,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Missing", surfaces);
+										onQuickStateChange(targets, "Missing", undefined);
 									}}
 									className="touch-quick-state-btn bg-slate-500/15 hover:bg-slate-500 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40"
 									title="Удален"
@@ -765,7 +765,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 											selectedTeeth?.includes(number) && selectedTeeth.length > 0
 												? selectedTeeth
 												: [number];
-										onQuickStateChange(targets, "Healthy", surfaces);
+										onQuickStateChange(targets, "Healthy", []);
 									}}
 									className="touch-quick-state-btn bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40"
 									title="Здоров"

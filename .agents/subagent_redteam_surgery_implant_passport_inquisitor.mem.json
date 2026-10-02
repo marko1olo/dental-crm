@@ -1,0 +1,39 @@
+{
+  "agent": "subagent_redteam_surgery_implant_passport_inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-02T12:10:00Z",
+  "completed_at": "2026-10-02T12:28:00Z",
+  "scope": {
+    "target": "Surgery protocols, implant warranty passport, fast clinical presets",
+    "forbidden": "CBCT, DICOM, CT planning, Radiology (Ironclad: 0 modifications)"
+  },
+  "completed_steps": [
+    "Full reading of Core, Frontend, Engineering, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Scope census and reconnaissance across surgery and implant passport components",
+    "Audit surgery and implant routes in API and frontend",
+    "Detect and eliminate academic bloat (differential equations, pseudo-scientific simulations, bone resorption mechanics)",
+    "Audit clinical surgery 1-click protocols: anesthesia -> incision -> osteotomy -> torque -> suturing -> recommendations",
+    "Added missing canonical 1-click closed transalveolar sinus-lift norm (surgery_sinus_lift_closed, Summers osteotome technique, Valsalva test, 804n A16.07.041, K08.2)",
+    "Audit implant passport form: system, size (diameter x length), tooth FDI, torque, lot number, serial number, GS1 DataMatrix scanner, physical blister sticker area",
+    "Fixed FDI tooth badge regression in VisitSurgeryProtocolTab.tsx",
+    "Audit printable A4 warranty certificate / passport for patient (zero emojis, official StAR / Form 043/u layout)",
+    "Run targeted surgery and implant tests (surgeryCockpitModal: 5/5, surgeryProtocols: 17/17, implantPassport: 18/18, warrantyPassport: 18/18, surgeryRoutes: 6/6, implantStabilityEngine: 5/5, warrantyAndLabQr: 14/14 - ALL PASS)",
+    "Run encoding check (6989 files verified, 0 errors, Exit Code 0)",
+    "Run @dental/shared typecheck (Exit Code 0)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "Missing explicit 'FDI' indicator in VisitSurgeryProtocolTab tooth header",
+      "severity": "medium",
+      "fixed_in": "apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx",
+      "resolution": "Updated badge to 'Зуб FDI #${effectiveTooth}' and header to 'Зуб операции (FDI):'"
+    },
+    {
+      "defect": "Missing canonical closed transalveolar sinus-lift 1-click norm in surgery norms catalog",
+      "severity": "medium",
+      "fixed_in": "packages/shared/src/types/surgery.ts & apps/web/src/components/surgery/surgeryNormsCatalog.ts",
+      "resolution": "Added surgery_sinus_lift_closed with Summers osteotome protocol, Valsalva test, bone xenograft, 804n A16.07.041, K08.2"
+    }
+  ]
+}

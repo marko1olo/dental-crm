@@ -41,12 +41,21 @@ export function DentalLabShadePicker({
 	showBleachTab = true,
 	compact = false,
 }: DentalLabShadePickerProps) {
-	const currentSystem = shadeSystem || "classical";
+	const [internalSystem, setInternalSystem] = React.useState<"classical" | "3d_master" | "bleach">(shadeSystem || "classical");
+	const currentSystem = onShadeSystemChange ? (shadeSystem || "classical") : internalSystem;
 	const currentSwatch = SHADE_SWATCH_MAP[selectedShade];
+
+	React.useEffect(() => {
+		if (shadeSystem) {
+			setInternalSystem(shadeSystem);
+		}
+	}, [shadeSystem]);
 
 	const handleSystemTabClick = (sys: "classical" | "3d_master" | "bleach") => {
 		if (onShadeSystemChange) {
 			onShadeSystemChange(sys);
+		} else {
+			setInternalSystem(sys);
 		}
 	};
 
@@ -101,7 +110,7 @@ export function DentalLabShadePicker({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-1.5 flex-wrap">
 					<span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
 						Выбранный оттенок:
 					</span>
@@ -115,6 +124,16 @@ export function DentalLabShadePicker({
 						)}
 						<span>{selectedShade || "—"}</span>
 					</span>
+					{selectedStumpShade && (
+						<span
+							className="text-xs font-mono font-bold px-2 py-1 rounded-md bg-amber-700 dark:bg-amber-600 text-white shadow-xs inline-flex items-center gap-1.5"
+							title={`Культя зуба: ${selectedStumpShade}`}
+							data-testid="selected-stump-shade-header-chip"
+						>
+							<span className="text-[10px] opacity-80">Культя:</span>
+							<span>{selectedStumpShade}</span>
+						</span>
+					)}
 				</div>
 			</div>
 

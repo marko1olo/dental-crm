@@ -45,6 +45,7 @@ export interface IncomingCallPayload {
 	clinicPhone?: string | undefined;
 	recordingUrl?: string | undefined;
 	callStartedAt?: number | undefined;
+	endedAt?: number | undefined;
 	transcript?: SpeechTranscriptUtterance[] | undefined;
 	virtualNumber?: string | undefined;
 	calledDid?: string | undefined;
@@ -337,5 +338,9 @@ export interface CallerIdentificationResult {
 	readonly activeTreatmentPlan?: PatientActiveTreatmentPlanSummary | null;
 	readonly financialSummary: PatientFinancialSummary;
 	readonly nextVisit: PatientNextVisitSummary;
+	readonly lastVisit?: PatientLastVisitSummary | null;
+	readonly patientCategory?: TelephonyPatientCategory;
 }
+
+export type TelephonyPatientCategory = "VIP" | "Постоянный" | "Первичный";
 

@@ -303,14 +303,14 @@ export function PsoRegisterTab() {
 			printWin.focus();
 			setTimeout(() => printWin.print(), 500);
 		}
-		showToast("Сформирован официальный регламентный журнал ПСО (Форма 366/у) для проверки Роспотребнадзора!", "success");
+		showToast("Сформирован официальный журнал проверки чистоты инструментов (пробы)!", "success");
 	};
 
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>КОНТРОЛЬ СТЕРИЛИЗАЦИИ (ПСО И ПРОБЫ)</h2>
-				<p title="Санитарно-эпидемиологические требования по профилактике инфекционных болезней">Журнал контроля качества предстерилизационной очистки (азопирам)</p>
+				<h2>ПРОВЕРКА ЧИСТОТЫ ИНСТРУМЕНТОВ (ПРОБЫ)</h2>
+				<p title="Контроль качества предстерилизационной очистки">Азопирамовая и фенолфталеиновая пробы</p>
 			</div>
 
 			{/* Table of logs with Integrated Compact Header */}
@@ -347,7 +347,7 @@ export function PsoRegisterTab() {
 							className="sanpin-select shrink-0 whitespace-nowrap"
 							style={{ minHeight: "36px", height: "36px", fontSize: "0.825rem", padding: "0.35rem 0.75rem", borderRadius: "8px", flexShrink: 0, whiteSpace: "nowrap" }}
 						>
-							<option value="all">Все пробы ПСО</option>
+							<option value="all">Все пробы чистоты</option>
 							<option value="approved">Партия допущена (Проба отрицательная)</option>
 							<option value="rejected">Брак / Повторная очистка</option>
 						</select>
@@ -370,11 +370,11 @@ export function PsoRegisterTab() {
 								gap: "0.35rem",
 								borderRadius: "8px",
 							}}
-							title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) с синей печатью ЭЦП ГОСТ"
+							title="Автоматическое формирование и печать журнала проверки чистоты инструментов с электронной подписью"
 							data-testid="generate-monthly-form366-btn"
 						>
 							<Sparkles size={14} color="#0d9488" className="shrink-0" />
-							<span className="shrink-0 whitespace-nowrap">Печать журнала ПСО</span>
+							<span className="shrink-0 whitespace-nowrap">Печать журнала проб</span>
 						</button>
 
 						<button
@@ -458,10 +458,10 @@ export function PsoRegisterTab() {
 									<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", maxWidth: "560px", margin: "0 auto" }}>
 										<FlaskConical size={36} color="var(--brand-primary, #2563eb)" />
 										<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
-											Журнал предстерилизационной очистки пуст
+											Журнал проверки чистоты пуст
 										</div>
 										<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
-											Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов (Форма № 366/у).
+											Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов.
 										</div>
 										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
 											<button
@@ -481,7 +481,7 @@ export function PsoRegisterTab() {
 												className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 												style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 											>
-												<Plus size={15} /> Внести запись ПСО вручную
+												<Plus size={15} /> Внести пробу вручную
 											</button>
 										</div>
 									</div>

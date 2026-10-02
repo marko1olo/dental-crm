@@ -127,6 +127,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 		handleAddRemainingToCash,
 		handleAddRemainingToSbp,
 		handleAddRemainingToDeposit,
+		handleAddRemainingDepositPlusCard,
 		handleAddRemainingToLoyalty,
 		handleAddRemaining5050,
 		handleAddRemainingToFamily,
@@ -533,9 +534,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 						onAddRemainingToCash={handleAddRemainingToCash}
 						onAddRemainingToSbp={handleAddRemainingToSbp}
 						onAddRemainingToDeposit={handleAddRemainingToDeposit}
+						onAddRemainingDepositPlusCard={handleAddRemainingDepositPlusCard}
 						onAddRemainingToLoyalty={handleAddRemainingToLoyalty}
 						onAddRemainingToFamily={handleAddRemainingToFamily}
 						onAddRemaining5050={handleAddRemaining5050}
+						onSwitchToSplitMode={() => setIsSimpleCashierMode(false)}
 					/>
 
 					{/* Family Balance Section */}

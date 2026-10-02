@@ -321,3 +321,126 @@ export function getDoctorChairSessionsStorageKey(doctorId?: string): string {
 	const sanitized = (doctorId || "current_doctor").trim().replace(/[^a-zA-Z0-9_-]/g, "_");
 	return `dente_chair_sessions_${sanitized}`;
 }
+
+export interface ChairsideVisitDraftPayload {
+	readonly visitId: string;
+	readonly chairId?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly savedAtIso?: string | undefined;
+	readonly timestamp?: number | undefined;
+	readonly version?: number | undefined;
+	readonly activeTooth?: number | string | undefined;
+	readonly activeTab?: string | undefined;
+	readonly noteForm?: Record<string, any> | undefined;
+	readonly diary?: {
+		readonly complaint?: string | undefined;
+		readonly anamnesis?: string | undefined;
+		readonly objectiveStatus?: string | undefined;
+		readonly diagnosis?: string | undefined;
+		readonly treatmentPlan?: string | undefined;
+		readonly recommendations?: string | undefined;
+		readonly icd10?: string | undefined;
+		readonly toothNumber?: number | string | undefined;
+		readonly [key: string]: any;
+	} | undefined;
+}
+
+/**
+ * Гарантированное сохранение черновика приёма у кресла в локальное хранилище.
+ * Обеспечивает мгновенное восстановление (за 1 секунду) при случайном выдергивании питания или падении сети.
+ */
+export function saveChairsideVisitDraft(
+	visitIdOrDraft: string | (Partial<ChairsideVisitDraftPayload> & { visitId: string }),
+	maybeDraft?: (Omit<ChairsideVisitDraftPayload, "visitId" | "savedAtIso" | "version"> & {
+		savedAtIso?: string | undefined;
+		version?: number | undefined;
+	}) | undefined,
+): ChairsideVisitDraftPayload {
+	let visitId: string;
+	let draftData: Partial<ChairsideVisitDraftPayload>;
+
+	if (typeof visitIdOrDraft === "string") {
+		visitId = visitIdOrDraft;
+		draftData = (maybeDraft as unknown as Partial<ChairsideVisitDraftPayload>) || { diary: {} };
+	} else {
+		visitId = visitIdOrDraft.visitId;
+		draftData = visitIdOrDraft;
+	}
+
+	const now = Date.now();
+	const payload: ChairsideVisitDraftPayload = {
+		visitId,
+		chairId: draftData.chairId,
+		patientId: draftData.patientId,
+		patientName: draftData.patientName,
+		doctorId: draftData.doctorId,
+		savedAtIso: draftData.savedAtIso || new Date(now).toISOString(),
+		timestamp: draftData.timestamp ?? now,
+		version: draftData.version ?? 1,
+		activeTooth: draftData.activeTooth ?? (draftData.diary as any)?.toothNumber,
+		activeTab: draftData.activeTab,
+		noteForm: draftData.noteForm,
+		diary: draftData.diary || {},
+	};
+	if (typeof window !== "undefined" && window.localStorage) {
+		try {
+			const key = getIsolatedVisitDraftStorageKey(visitId);
+			window.localStorage.setItem(key, JSON.stringify(payload));
+		} catch {
+			// Игнорируем ошибки квоты в приватном режиме Safari
+		}
+	}
+	return payload;
+}
+
+/**
+ * Чтение сохранённого черновика визита у кресла.
+ */
+export function loadChairsideVisitDraft(visitId: string): ChairsideVisitDraftPayload | null {
+	if (typeof window === "undefined" || !window.localStorage) {
+		return null;
+	}
+	try {
+		const key = getIsolatedVisitDraftStorageKey(visitId);
+		const raw = window.localStorage.getItem(key);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		if (parsed && typeof parsed === "object" && parsed.visitId) {
+			return parsed as ChairsideVisitDraftPayload;
+		}
+	} catch {
+		// Игнорируем ошибки синтаксиса
+	}
+	return null;
+}
+
+/**
+ * Очистка сохранённого черновика после успешного закрытия визита.
+ */
+export function clearChairsideVisitDraft(visitId: string): void {
+	if (typeof window === "undefined" || !window.localStorage) return;
+	try {
+		const key = getIsolatedVisitDraftStorageKey(visitId);
+		window.localStorage.removeItem(key);
+	} catch {
+		// ignore
+	}
+}
+
+/**
+ * Проверка актуальности черновика (по умолчанию до 24 часов).
+ */
+export function isChairsideDraftRecent(draft: ChairsideVisitDraftPayload, maxAgeMinutes = 1440): boolean {
+	let savedMs: number = NaN;
+	if (draft.timestamp && typeof draft.timestamp === "number") {
+		savedMs = draft.timestamp;
+	} else if (draft.savedAtIso) {
+		savedMs = new Date(draft.savedAtIso).getTime();
+	}
+	if (Number.isNaN(savedMs)) return false;
+	const diffMs = Math.max(0, Date.now() - savedMs);
+	return diffMs <= maxAgeMinutes * 60 * 1000;
+}
+

@@ -169,7 +169,7 @@ function capitalizeFirst(text: string): string {
 	return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
-/** Очистка и безопасное форматирование поверхностей зуба (без [object Object]). */
+/** Очистка и безопасное форматирование поверхностей зуба (без [object Object], undefined, null). */
 export function formatSurfacesText(surfaces: unknown): string {
 	if (!surfaces) return "";
 	if (Array.isArray(surfaces)) {
@@ -183,12 +183,16 @@ export function formatSurfacesText(surfaces: unknown): string {
 				}
 				return "";
 			})
-			.filter((s) => s.length > 0 && s !== "[object Object]");
+			.filter((s) => {
+				const low = s.toLowerCase();
+				return s.length > 0 && s !== "[object Object]" && low !== "undefined" && low !== "null";
+			});
 		return cleaned.length > 0 ? cleaned.join(", ") : "";
 	}
 	if (typeof surfaces === "string") {
 		const trimmed = surfaces.trim();
-		return trimmed !== "[object Object]" ? trimmed : "";
+		const low = trimmed.toLowerCase();
+		return trimmed !== "[object Object]" && low !== "undefined" && low !== "null" ? trimmed : "";
 	}
 	return "";
 }

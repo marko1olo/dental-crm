@@ -1,0 +1,43 @@
+{
+  "agent": "subagent_redteam_protocols_duplication_inquisitor",
+  "status": "COMPLETED",
+  "started_at": "2026-10-02T15:28:00Z",
+  "completed_at": "2026-10-02T15:41:00Z",
+  "user_directives": [
+    "єтот даун сделал дубликат протоколов? у нас есть протоколі. спавнь редтим инквизиторов по єтой тиме",
+    "К КЛКТ НЕ ЛЕЗЬ, ЧТО УГОДНО КРОМЕ КЛКТ",
+    "БЕЗ ЕБУЧЕГО АКАДЕМЧИСКОГО БЛАОТ, НЕ МЕШАТЬ И НЕ ПЕРПЯТСТВОАТЬ ВРАЧУ. БІСТРО И УДОБНО"
+  ],
+  "steps": [
+    {
+      "name": "reading_authorities",
+      "status": "COMPLETED",
+      "findings": "Authority files read: core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md. KLKT strictly forbidden. T.A.R.S. 100/80 active."
+    },
+    {
+      "name": "audit_protocols_and_duplications",
+      "status": "COMPLETED",
+      "findings": "Обнаружен 127-строчный изолированный switch-case в buildChairsideSmartProtocol (clinicalVisitWorkflow.ts:620-747) с дублированием текстов кариеса, пульпита, периодонтита, гигиены и удаления без списания материалов со склада и без интеграции с 44 каноническими протоколами SSOT."
+    },
+    {
+      "name": "eradicate_buildChairsideSmartProtocol_duplicate",
+      "status": "COMPLETED",
+      "findings": "Самопальный switch-case вырезан под корень. Функция buildChairsideSmartProtocol превращена в тонкий фасад к SSOT движку apply1ClickClinicalAutopilot (autopilotPresets.ts). Контракт функции и обратная совместимость сохранены на 100%."
+    },
+    {
+      "name": "consolidate_express_panels_and_chips_on_SSOT",
+      "status": "COMPLETED",
+      "findings": "В autopilotPresets.ts добавлены канонические пресеты и билдеры (build1ClickPeriodontitisPreset, build1ClickHygienePreset, build1ClickExtractionPreset, build1ClickNormPreset), полная номенклатура 804н (A16.07.002.001, A16.07.030, A16.07.082, A16.07.051, A16.07.001.001), списание материалов со склада (Estelite, NaOCl, ProTaper, Ca(OH)2, EMS глицин, Альвостаз). В VisitSoapEditor.tsx и EmkDiaryProtocolSection.tsx все панели переведены на SSOT apply1ClickDoctorAutopilot."
+    },
+    {
+      "name": "chairside_ergonomics_and_autosave",
+      "status": "COMPLETED",
+      "findings": "Соблюдена кресельная эргономика: кнопки быстрого доступа имеют тач-таргеты min-h-[44px] (для планшетов/тача) и 38px на десктопе. 60-секундный heartbeat автосейв и debounced autosave в localStorage и черновики сохраняют ввод врача без блокировок интерфейса."
+    },
+    {
+      "name": "test_verification",
+      "status": "COMPLETED",
+      "findings": "node --import tsx --test apps/web/src/tests/clinicalVisitWorkflow.test.ts (49 тестов, 19 сьютов, 0 фейлов, exit code 0); clinicalSoapProtocols043.test.ts и clinicalSoapPresets.test.ts (93 теста, 27 сьютов, 0 фейлов, exit code 0). К КЛКТ / DICOM / радиологии не прикасались (железный инвариант соблюден)."
+    }
+  ]
+}

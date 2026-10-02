@@ -12,7 +12,7 @@
  *    inventing fake markers or placing phantom circles on bare bone.
  * 4. Anatomical boundaries: smooth distal termination at Tuber Maxillae
  *    and retromolar triangle, zero buccal flaring, zero ramal overshoot.
- * 5. Small FOV sectional scan ridge tracing (Sumarokova, Amirova).
+ * 5. Small FOV sectional scan ridge tracing (targeted sectoral FOV).
  *
  * Governed by Mandate 8b (file size <= 800 lines).
  */
@@ -59,6 +59,10 @@ export interface EnamelBead {
 	dMm: number;
 	weight: number;
 	count: number;
+	areaMm2?: number | undefined;
+	circularity?: number | undefined;
+	aspectRatio?: number | undefined;
+	hasPulp?: boolean | undefined;
 }
 
 /**
@@ -115,18 +119,22 @@ export function extractEnamelBeadsDistanceTransform(
 	}
 
 	const minThicknessVox = Math.max(2, Math.round(0.7 / spX));
-	const searchR = Math.max(3, Math.round(1.1 / spX));
-	const rawPeaks: Array<{ wx: number; wy: number; dMm: number; hu: number; weight: number }> = [];
+	const searchR = Math.max(2, Math.round(0.8 / spX));
+	const rawPeaks: EnamelBead[] = [];
 
-	for (let y = searchR; y < height - searchR; y++) {
-		for (let x = searchR; x < width - searchR; x++) {
+	const margin = Math.max(2, Math.round(0.2 / spX));
+	for (let y = margin; y < height - margin; y++) {
+		for (let x = margin; x < width - margin; x++) {
 			const idx = y * width + x;
 			const dVal = dist[idx]!;
 			if (dVal < minThicknessVox) continue;
 
 			let isMax = true;
-			for (let dy = -searchR; dy <= searchR; dy++) {
-				for (let dx = -searchR; dx <= searchR; dx++) {
+			const rLimY = Math.min(y, height - 1 - y, searchR);
+			const rLimX = Math.min(x, width - 1 - x, searchR);
+
+			for (let dy = -rLimY; dy <= rLimY; dy++) {
+				for (let dx = -rLimX; dx <= rLimX; dx++) {
 					if (dx === 0 && dy === 0) continue;
 					if (dist[(y + dy) * width + (x + dx)]! > dVal) {
 						isMax = false;
@@ -137,26 +145,82 @@ export function extractEnamelBeadsDistanceTransform(
 			}
 
 			if (isMax) {
-				// Honest 2D Enamel Mass Centroids: c_x = sum(x * HU)/sum(HU), c_y = sum(y * HU)/sum(HU)
+				// Window for morphological moments around peak (radius 3.5 mm)
 				const winR = Math.round(3.5 / spX);
-				let sumHU = 0;
-				let sumHUX = 0;
-				let sumHUY = 0;
+				let sumHU = 0, sumHUX = 0, sumHUY = 0;
+				let sumX = 0, sumY = 0, sumX2 = 0, sumY2 = 0, sumXY = 0;
+				let count = 0, perimCount = 0;
 				let maxHU = data[idx] ?? -1000;
 
 				for (let wy = Math.max(0, y - winR); wy <= Math.min(height - 1, y + winR); wy++) {
 					const rowOff = wy * width;
 					for (let wx = Math.max(0, x - winR); wx <= Math.min(width - 1, x + winR); wx++) {
+						const distCenter = Math.hypot(wx - x, wy - y) * spX;
+						if (distCenter > 3.8) continue;
+
 						const vHu = data[rowOff + wx] ?? -1000;
-						if (vHu >= 1100) {
-							const w = vHu;
+						if (vHu >= 1050) {
+							const w = Math.max(1, vHu);
 							sumHU += w;
 							sumHUX += w * (originMm.x + wx * spX);
 							sumHUY += w * (originMm.y + wy * spY);
+							sumX += wx;
+							sumY += wy;
+							sumX2 += wx * wx;
+							sumY2 += wy * wy;
+							sumXY += wx * wy;
+							count++;
 							if (vHu > maxHU) maxHU = vHu;
+
+							const deltas: ReadonlyArray<readonly [number, number]> = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+							for (const [pdx, pdy] of deltas) {
+								const nx = wx + pdx, ny = wy + pdy;
+								if (nx < 0 || nx >= width || ny < 0 || ny >= height || (data[ny * width + nx] ?? -1000) < 1050) {
+									perimCount++;
+									break;
+								}
+							}
 						}
 					}
 				}
+
+				if (count < 8) continue;
+				const pixelArea = spX * spY;
+				const areaMm2 = count * pixelArea;
+				if (areaMm2 < 5.0 || areaMm2 > 200.0) continue;
+
+				const avgX = sumX / count;
+				const avgY = sumY / count;
+				const u20 = sumX2 / count - avgX * avgX;
+				const u02 = sumY2 / count - avgY * avgY;
+				const u11 = sumXY / count - avgX * avgY;
+				const common = Math.sqrt((u20 - u02) ** 2 + 4 * (u11 ** 2));
+				const l1 = (u20 + u02 + common) / 2;
+				const l2 = (u20 + u02 - common) / 2;
+				const aspectRatio = l1 > 0 ? Math.sqrt(Math.max(0, l2) / l1) : 0;
+
+				const perimMm = perimCount * Math.sqrt(pixelArea);
+				const circularity = perimMm > 0 ? (4 * Math.PI * areaMm2) / (perimMm * perimMm) : 0;
+
+				// Cortical bone stripe elimination: long narrow stripes (circ < 0.25, asp < 0.30)
+				if (circularity < 0.25 && aspectRatio < 0.30) continue;
+				if (circularity < 0.14) continue;
+
+				// Core sampling for pulp cavity or canal filling
+				const coreR = Math.max(1, Math.round(1.2 / spX));
+				let minCoreHU = 9999, maxCoreHU = -1000;
+				for (let cdy = -coreR; cdy <= coreR; cdy++) {
+					for (let cdx = -coreR; cdx <= coreR; cdx++) {
+						const px = Math.round(avgX + cdx);
+						const py = Math.round(avgY + cdy);
+						if (px >= 0 && px < width && py >= 0 && py < height) {
+							const chu = data[py * width + px] ?? -1000;
+							if (chu < minCoreHU) minCoreHU = chu;
+							if (chu > maxCoreHU) maxCoreHU = chu;
+						}
+					}
+				}
+				const hasPulp = minCoreHU <= 650 || maxCoreHU >= 2200;
 
 				const comX = sumHU > 0 ? sumHUX / sumHU : originMm.x + x * spX;
 				const comY = sumHU > 0 ? sumHUY / sumHU : originMm.y + y * spY;
@@ -167,38 +231,47 @@ export function extractEnamelBeadsDistanceTransform(
 					dMm: dVal * spX,
 					hu: maxHU,
 					weight: sumHU,
+					count: 1,
+					areaMm2,
+					circularity,
+					aspectRatio,
+					hasPulp,
 				});
 			}
 		}
 	}
 
-	// Cluster multi-cusp peaks of the same tooth crown within 5.2 mm (bucco-lingual bicuspid width)
+	// Cluster multi-cusp peaks of the same tooth crown without snowball chaining:
+	// Order by weight descending so the dominant anatomical cusp anchors the crown centroid
+	rawPeaks.sort((a, b) => b.weight - a.weight);
+
 	const clustered: EnamelBead[] = [];
 	for (const p of rawPeaks) {
-		let merged = false;
-		for (const c of clustered) {
-			const distMm = Math.hypot(p.wx - c.wx, p.wy - c.wy);
-			if (distMm <= 5.2) {
-				const wTotal = c.weight + p.weight;
-				c.wx = (c.wx * c.weight + p.wx * p.weight) / wTotal;
-				c.wy = (c.wy * c.weight + p.wy * p.weight) / wTotal;
-				c.hu = Math.max(c.hu, p.hu);
-				c.dMm = Math.max(c.dMm, p.dMm);
-				c.weight = wTotal;
-				c.count += 1;
-				merged = true;
-				break;
+		const existing = clustered.find((c) => {
+			const distMm = Math.hypot(c.wx - p.wx, c.wy - p.wy);
+			// Anterior incisors/canines (tight crown diameter <= 3.2 mm)
+			if (distMm <= 3.2) return true;
+			// Posterior molars/premolars bucco-lingual cusp pair (dist <= 6.2 mm, mesio-distal delta Y <= 4.0 mm)
+			if (c.wy >= -5.0 && p.wy >= -5.0 && distMm <= 6.2 && Math.abs(c.wy - p.wy) <= 4.0) {
+				return true;
 			}
-		}
-		if (!merged) {
-			clustered.push({
-				wx: p.wx,
-				wy: p.wy,
-				hu: p.hu,
-				dMm: p.dMm,
-				weight: p.weight,
-				count: 1,
-			});
+			return false;
+		});
+
+		if (!existing) {
+			clustered.push({ ...p });
+		} else {
+			const wTotal = existing.weight + p.weight;
+			existing.wx = (existing.wx * existing.weight + p.wx * p.weight) / wTotal;
+			existing.wy = (existing.wy * existing.weight + p.wy * p.weight) / wTotal;
+			existing.hu = Math.max(existing.hu, p.hu);
+			existing.dMm = Math.max(existing.dMm, p.dMm);
+			existing.areaMm2 = Math.max(existing.areaMm2 ?? 0, p.areaMm2 ?? 0);
+			existing.circularity = Math.max(existing.circularity ?? 0, p.circularity ?? 0);
+			existing.aspectRatio = Math.max(existing.aspectRatio ?? 0, p.aspectRatio ?? 0);
+			existing.hasPulp = existing.hasPulp || p.hasPulp;
+			existing.weight = wTotal;
+			existing.count += 1;
 		}
 	}
 
@@ -209,6 +282,10 @@ export function extractEnamelBeadsDistanceTransform(
 		dMm: Number(c.dMm.toFixed(2)),
 		weight: c.weight,
 		count: c.count,
+		areaMm2: c.areaMm2 !== undefined ? Number(c.areaMm2.toFixed(1)) : undefined,
+		circularity: c.circularity !== undefined ? Number(c.circularity.toFixed(2)) : undefined,
+		aspectRatio: c.aspectRatio !== undefined ? Number(c.aspectRatio.toFixed(2)) : undefined,
+		hasPulp: c.hasPulp,
 	}));
 }
 
@@ -363,7 +440,7 @@ export function fitOrthodonticParabola(
 }
 
 /**
- * Detects unilateral dental arch for Small FOV / Targeted sector scans (FOV < 60 mm, e.g. Amirova, Sumarokova).
+ * Detects unilateral dental arch for Small FOV / Targeted sector scans (FOV < 60 mm).
  * Extracts honest crown enamel centroids and builds an interpolating spline through them.
  */
 export function detectSmallFovSegmentalArch(
@@ -372,61 +449,53 @@ export function detectSmallFovSegmentalArch(
 	focalThicknessMm = 14.0,
 ): HonestDentalArchResult {
 	const rawBeads = extractEnamelBeadsDistanceTransform(mip, 1150);
-	const validBeads = rawBeads.filter((b) => b.dMm >= 1.5 && b.hu >= 1350);
+	const validBeads = rawBeads.filter((b) => b.dMm >= 0.8 && b.hu >= 1250);
 
 	// Sort beads along increasing Y (anterior to posterior)
 	validBeads.sort((a, b) => a.wy - b.wy);
 
-	// Compute principal axis of the teeth in small FOV
-	let meanX = 0;
-	let meanY = 0;
-	for (const b of validBeads) {
-		meanX += b.wx;
-		meanY += b.wy;
-	}
-	if (validBeads.length > 0) {
-		meanX /= validBeads.length;
-		meanY /= validBeads.length;
-	}
-
-	// Line direction from first to last bead
-	let dirX = 0;
-	let dirY = 1;
-	if (validBeads.length >= 2) {
-		const first = validBeads[0]!;
-		const last = validBeads[validBeads.length - 1]!;
-		const len = Math.hypot(last.wx - first.wx, last.wy - first.wy);
-		if (len > 1e-3) {
-			dirX = (last.wx - first.wx) / len;
-			dirY = (last.wy - first.wy) / len;
-		}
-	}
-	const normX = -dirY;
-	const normY = dirX;
-
-	// Filter out beads that deviate laterally (> 5.5 mm perpendicular to dental ridge line)
-	const inCorridor = validBeads.filter((b) => {
-		const perpDist = Math.abs((b.wx - meanX) * normX + (b.wy - meanY) * normY);
-		return perpDist <= 5.5;
-	});
-
-	// Deduplicate any close multi-cusp peaks within 5.2 mm
+	// Filter out lateral cortical ramus spikes and deduplicate close crowns
 	const cleanBeads: EnamelBead[] = [];
-	for (const b of inCorridor) {
-		const existing = cleanBeads.find((c) => Math.hypot(c.wx - b.wx, c.wy - b.wy) < 5.2);
-		if (!existing) {
+	for (const b of validBeads) {
+		if (cleanBeads.length > 0) {
+			const prev = cleanBeads[cleanBeads.length - 1]!;
+			const step = Math.hypot(b.wx - prev.wx, b.wy - prev.wy);
+			// Reject lateral ramus/bone spike deviating sharply from alveolar crest
+			if (step > 15.0 && b.dMm < 1.5) continue;
+			// Lateral jump > 7.5 mm relative to previous tooth with small delta Y
+			const dLateral = Math.abs(b.wx) - Math.abs(prev.wx);
+			if (dLateral > 7.5 && (b.wy - prev.wy) < 7.0 && b.dMm < 2.0) continue;
+		}
+		const tooClose = cleanBeads.find((c) => Math.hypot(c.wx - b.wx, c.wy - b.wy) < 4.2);
+		if (!tooClose) {
 			cleanBeads.push(b);
-		} else if (b.hu > existing.hu) {
-			const idx = cleanBeads.indexOf(existing);
+		} else if (b.hu > tooClose.hu) {
+			const idx = cleanBeads.indexOf(tooClose);
 			cleanBeads[idx] = b;
 		}
 	}
 
-	const isLeftPatientSide = cleanBeads.length > 0 ? cleanBeads[0]!.wx >= 0 : true;
+	// Quadrant determination: for dental arch, if dX/dY > 0, arch curves into patient Left (Quadrant 2 or 3)
+	// If dX/dY < 0, arch curves into patient Right (Quadrant 1 or 4)
+	let isLeftPatientSide = true;
+	if (cleanBeads.length >= 2) {
+		const first = cleanBeads[0]!;
+		const last = cleanBeads[cleanBeads.length - 1]!;
+		isLeftPatientSide = (last.wx - first.wx) >= -0.5;
+	} else if (cleanBeads.length > 0) {
+		isLeftPatientSide = cleanBeads[0]!.wx >= 0;
+	}
 	const qPrefix = jawType === "mandible" ? (isLeftPatientSide ? "3" : "4") : (isLeftPatientSide ? "2" : "1");
 
+	// Anatomical starting FDI tooth number:
+	// Based on posterior-most tooth molar morphology and retromolar depth
+	const lastBead = cleanBeads[cleanBeads.length - 1];
+	const isLastMolar3 = (lastBead?.wy ?? 0) > 17.0; // retromolar triangle depth (tooth 28/38)
+	const endToothNum = isLastMolar3 ? 8 : (cleanBeads.length >= 6 ? 6 : Math.min(8, 3 + cleanBeads.length));
+	const startToothNum = Math.max(1, endToothNum - cleanBeads.length + 1);
+
 	const anchors: HonestToothAnchor[] = cleanBeads.map((b, idx) => {
-		const toothNum = Math.min(8, 4 + idx);
+		const toothNum = Math.min(8, startToothNum + idx);
 		const fdi = `${qPrefix}${toothNum}`;
 		return {
 			id: `ha_${fdi}`,

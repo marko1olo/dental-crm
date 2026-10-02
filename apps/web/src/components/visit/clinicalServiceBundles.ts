@@ -1,3 +1,53 @@
+/**
+ * apps/web/src/components/visit/clinicalServiceBundles.ts
+ *
+ * DENTE Dental CRM — Clinical Service Packages & 804n Nomenclature Mapping.
+ * Fully aligned with @dental/shared/clinical/diagnosisServiceBundles.
+ * Preserves 100% backward compatibility with existing tests and modules.
+ */
+
+import {
+	CARIES_DIAGNOSIS_BUNDLE,
+	PULPITIS_DIAGNOSIS_BUNDLE,
+	PERIODONTITIS_DIAGNOSIS_BUNDLE,
+	EXTRACTION_DIAGNOSIS_BUNDLE,
+	HYGIENE_DIAGNOSIS_BUNDLE,
+	CROWN_DIAGNOSIS_BUNDLE,
+	CANONICAL_DIAGNOSIS_BUNDLES,
+	getDiagnosisBundleByToothState,
+	getDiagnosisBundleByIcd10,
+	resolveServicePriceAgainstCatalog,
+	createCustomizedBundle,
+	exportCustomizedBundleToCashier54Fz,
+	type CanonicalDiagnosisBundle,
+	type CanonicalDiagnosisService,
+	type CustomizedBundleItem,
+	type CustomizedBundleResult,
+	type Cashier54FzItemPayload,
+	type Cashier54FzBundleExport,
+} from "@dental/shared";
+
+export {
+	CARIES_DIAGNOSIS_BUNDLE,
+	PULPITIS_DIAGNOSIS_BUNDLE,
+	PERIODONTITIS_DIAGNOSIS_BUNDLE,
+	EXTRACTION_DIAGNOSIS_BUNDLE,
+	HYGIENE_DIAGNOSIS_BUNDLE,
+	CROWN_DIAGNOSIS_BUNDLE,
+	CANONICAL_DIAGNOSIS_BUNDLES,
+	getDiagnosisBundleByToothState,
+	getDiagnosisBundleByIcd10,
+	resolveServicePriceAgainstCatalog,
+	createCustomizedBundle,
+	exportCustomizedBundleToCashier54Fz,
+	type CanonicalDiagnosisBundle,
+	type CanonicalDiagnosisService,
+	type CustomizedBundleItem,
+	type CustomizedBundleResult,
+	type Cashier54FzItemPayload,
+	type Cashier54FzBundleExport,
+};
+
 export interface ClinicalServiceBundle {
 	id: string;
 	title: string;
@@ -11,6 +61,10 @@ export interface ClinicalServiceBundle {
 	}>;
 }
 
+/**
+ * Historical 4 presets for quick toolbar buttons in CompletedServicesChecklist.
+ * Maintained with exact property values for full test contract stability.
+ */
 export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 	{
 		id: "caries",

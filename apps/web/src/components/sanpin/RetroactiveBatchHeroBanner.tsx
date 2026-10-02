@@ -341,7 +341,7 @@ export function RetroactiveBatchHeroBanner({
 				{/* Autoclave Regime Selection */}
 				<div className="sanpin-form-group">
 					<label className="sanpin-form-label" style={{ fontWeight: 700 }}>
-						Режим автоклавирования (Форма 257/у):
+						Режим автоклавирования:
 					</label>
 					<select
 						value={autoclaveRegimeId}

@@ -26,6 +26,97 @@ export const DOCUMENT_KIND_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = 
 	personal_data_processing_consent: "CONSENT_PERSONAL_DATA",
 };
 
+export const PROCEDURE_TYPE_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {
+	// Therapy & Endo
+	therapy_endo_restoration: "CONSENT_THERAPY",
+	deep_caries: "CONSENT_THERAPY",
+	superficial_medium_caries: "CONSENT_THERAPY",
+	pulpitis_endodontics: "CONSENT_THERAPY",
+	periodontology: "CONSENT_THERAPY",
+
+	// Surgery & Implantology
+	surgery_extraction: "CONSENT_SURGERY_IMPLANT",
+	implantation_bone_graft: "CONSENT_SURGERY_IMPLANT",
+	implantation: "CONSENT_SURGERY_IMPLANT",
+	sinus_lifting: "CONSENT_SURGERY_IMPLANT",
+
+	// Orthopedics & Prosthetics
+	prosthetics: "CONSENT_ORTHOPEDICS",
+	veneers: "CONSENT_ORTHOPEDICS",
+	fixed_prosthetics: "CONSENT_ORTHOPEDICS",
+	removable_prosthetics: "CONSENT_ORTHOPEDICS",
+
+	// Orthodontics
+	orthodontics: "CONSENT_ORTHODONTICS",
+
+	// Hygiene & Bleaching
+	hygiene_whitening: "CONSENT_HYGIENE_BLEACHING",
+	professional_hygiene: "CONSENT_HYGIENE_BLEACHING",
+	teeth_whitening: "CONSENT_HYGIENE_BLEACHING",
+
+	// Pediatric & Anesthesia & Other
+	minor_general: "CONSENT_PEDIATRIC",
+	local_anesthesia: "CONSENT_ANESTHESIA",
+	sedation: "CONSENT_SEDATION",
+	photoprotocol: "CONSENT_PHOTOPROTOCOL",
+	egisz_refusal: "CONSENT_EGISZ_REFUSAL",
+	medical_intervention_refusal: "CONSENT_TREATMENT_REFUSAL",
+	warranty_policy: "CONSENT_WARRANTY_POLICY",
+	warranty_passport: "CONSENT_WARRANTY_PASSPORT",
+	somatic_health_questionnaire: "CONSENT_HEALTH_QUESTIONNAIRE",
+};
+
+export const ALL_CONSENT_TEMPLATE_KEYS = new Set<ConsentTemplateKey>([
+	"CONSENT_THERAPY",
+	"CONSENT_SURGERY_IMPLANT",
+	"CONSENT_ORTHODONTICS",
+	"CONSENT_ORTHOPEDICS",
+	"CONSENT_HYGIENE_BLEACHING",
+	"CONSENT_ANESTHESIA",
+	"CONSENT_PERSONAL_DATA",
+	"CONSENT_INSPECTION_1051N",
+	"CONSENT_PEDIATRIC",
+	"CONSENT_EGISZ_REFUSAL",
+	"CONSENT_TREATMENT_REFUSAL",
+	"CONSENT_WARRANTY_PASSPORT",
+	"CONSENT_WARRANTY_POLICY",
+	"CONSENT_SEDATION",
+	"CONSENT_PHOTOPROTOCOL",
+	"CONSENT_HEALTH_QUESTIONNAIRE",
+]);
+
+export function isConsentTemplateKey(val: unknown): val is ConsentTemplateKey {
+	return typeof val === "string" && ALL_CONSENT_TEMPLATE_KEYS.has(val as ConsentTemplateKey);
+}
+
+export function resolveConsentKeyFromDocument(doc: {
+	kind?: string | undefined;
+	payload?: Record<string, unknown> | null | undefined;
+}): ConsentTemplateKey | null {
+	// 1. Direct consent key in payload
+	const payloadConsentKey = doc.payload?.consentKey;
+	if (isConsentTemplateKey(payloadConsentKey)) {
+		return payloadConsentKey;
+	}
+
+	// 2. Procedure type mapping for procedure-specific consents
+	const procType =
+		(doc.payload?.procedureType as string | undefined) ||
+		((doc.payload?.procedureSpecificConsent as Record<string, unknown> | undefined)?.procedureType as string | undefined) ||
+		((doc.payload?.procedureSpecific as Record<string, unknown> | undefined)?.procedureType as string | undefined);
+
+	if (typeof procType === "string" && procType in PROCEDURE_TYPE_TO_CONSENT_KEY) {
+		return PROCEDURE_TYPE_TO_CONSENT_KEY[procType] ?? null;
+	}
+
+	// 3. Document kind mapping
+	if (doc.kind && doc.kind in DOCUMENT_KIND_TO_CONSENT_KEY) {
+		return DOCUMENT_KIND_TO_CONSENT_KEY[doc.kind] ?? null;
+	}
+
+	return null;
+}
+
 export interface VisitConsentsTabPatient {
 	id?: string | null | undefined;
 	fullName?: string | null | undefined;

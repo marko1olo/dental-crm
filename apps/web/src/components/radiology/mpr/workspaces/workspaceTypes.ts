@@ -40,6 +40,8 @@ export interface WorkspaceCommonProps {
 	readonly activeCrossSectionIdx?: number | undefined;
 	readonly crossSections?: CrossSectionSliceData[] | undefined;
 	readonly onChangeCrossSectionIdx?: ((idx: number) => void) | undefined;
+	readonly crossSectionStepMm?: number | undefined;
+	readonly onChangeCrossSectionStepMm?: ((step: number) => void) | undefined;
 	readonly handleSelectTooth?: ((toothFdi: number | string) => void) | undefined;
 	readonly isUnsharpActive?: boolean | undefined;
 	readonly onToggleUnsharp?: (() => void) | undefined;
@@ -61,4 +63,15 @@ export interface WorkspaceCommonProps {
 	readonly nerveSafetyStatus?: "safe" | "warning" | "danger" | "unmeasured" | undefined;
 	readonly handleExportToEmr?: (() => void) | undefined;
 	readonly handleExportToPlan?: (() => void) | undefined;
+	// Interactive implant positioning
+	readonly implantEntryXOffsetMm?: number | undefined;
+	readonly onChangeImplantEntryXOffsetMm?: ((val: number) => void) | undefined;
+	readonly implantEntryDepthMm?: number | undefined;
+	readonly onChangeImplantEntryDepthMm?: ((val: number) => void) | undefined;
+	readonly implantAngulationDeg?: number | undefined;
+	readonly onChangeImplantAngulationDeg?: ((val: number) => void) | undefined;
+	readonly activeTool?: string | undefined;
+	readonly onSelectTool?: ((tool: any) => void) | undefined;
+	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
+	readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
 }

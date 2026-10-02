@@ -138,6 +138,7 @@ export function generateBilateralAcceptanceActHtml(params: BilateralAcceptanceAc
 			<td style="border: 1px solid #000; padding: 4px;">${r.visitDate}</td>
 			<td style="border: 1px solid #000; padding: 4px; font-weight: 600;">${r.patientFullName}</td>
 			<td style="border: 1px solid #000; padding: 4px;">${r.policyNumber}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${r.letterNumber || "—"}</td>
 			<td style="border: 1px solid #000; padding: 4px; font-family: monospace;">${r.serviceCode804n}</td>
 			<td style="border: 1px solid #000; padding: 4px;">${r.serviceName} ${r.toothNumber ? `(зуб ${r.toothNumber})` : ""}</td>
 			<td style="text-align: center; border: 1px solid #000; padding: 4px;">${r.quantity}</td>
@@ -198,6 +199,7 @@ export function generateBilateralAcceptanceActHtml(params: BilateralAcceptanceAc
 				<th>Дата</th>
 				<th>Застрахованный (Пациент)</th>
 				<th>Полис ДМС</th>
+				<th>№ Гар. письма</th>
 				<th>Код услуги</th>
 				<th>Наименование услуги</th>
 				<th>Кол-во</th>
@@ -209,7 +211,7 @@ export function generateBilateralAcceptanceActHtml(params: BilateralAcceptanceAc
 		<tbody>
 			${rowsHtml}
 			<tr style="font-weight: bold; background: #fafafa;">
-				<td colspan="6" style="border: 1px solid #000; padding: 6px; text-align: right;">ИТОГО К ОПЛАТЕ СТРАХОВЩИКОМ:</td>
+				<td colspan="7" style="border: 1px solid #000; padding: 6px; text-align: right;">ИТОГО К ОПЛАТЕ СТРАХОВЩИКОМ:</td>
 				<td style="border: 1px solid #000; padding: 6px; text-align: center;">${summary.totalServicesCount}</td>
 				<td style="border: 1px solid #000; padding: 6px; text-align: right;">${formatRubKopecks(summary.totalAmountRub)}</td>
 				<td style="border: 1px solid #000; padding: 6px; text-align: right; color: #000; font-size: 10.5pt;">${formatRubKopecks(summary.totalDmsCoveredRub)}</td>

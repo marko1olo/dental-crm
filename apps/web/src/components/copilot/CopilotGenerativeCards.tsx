@@ -820,54 +820,69 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 							tierKey: "economy" as const,
 							tierName: "Тариф «Эконом»",
 							badge: "Базовый",
-							totalRub: 42000,
-							taxDeductionRub: 5460,
-							netCostAfterDeductionRub: 36540,
-							monthlyInstallmentRub: 3500,
+							totalRub: 45000,
+							taxDeductionRub: 5850,
+							netCostAfterDeductionRub: 39150,
+							monthlyInstallmentRub: 3750,
 							installmentMonths: 12,
 							warrantyDescription: "1 год официальной гарантии",
 							materialsDescription:
-								"Базовые сертифицированные композиты (Filtek Z250) и металлокерамика Co-Cr",
+								"Сертифицированные клинические материалы и стандартный протокол лечения",
 							keyAdvantages: [
-								"Доступная стоимость санации",
-								"Сертифицированные материалы",
-								"Гарантия 1 год",
+								"Доступная стоимость санации по клиническому стандарту",
+								"Проверенные сертифицированные материалы",
+								"Официальная гарантия 1 год",
+							],
+							stages: [
+								{ stageName: "Первичная санация и подготовка", proceduresCount: 2, totalRub: 15000 },
+								{ stageName: "Клинический этап лечения", proceduresCount: 1, totalRub: 12000 },
+								{ stageName: "Финишная обработка и контроль", proceduresCount: 1, totalRub: 18000 },
 							],
 						},
 						{
 							tierKey: "optimum" as const,
 							tierName: "Тариф «Оптимум»",
-							badge: "★ Рекомендуемый (Выбор врачей)",
-							totalRub: 78500,
-							taxDeductionRub: 10205,
-							netCostAfterDeductionRub: 68295,
-							monthlyInstallmentRub: 6540,
+							badge: "★ Рекомендуемый",
+							totalRub: 84500,
+							taxDeductionRub: 10985,
+							netCostAfterDeductionRub: 73515,
+							monthlyInstallmentRub: 7042,
 							installmentMonths: 12,
 							warrantyDescription: "2 года расширенной гарантии",
 							materialsDescription:
-								"Нанокомпозиты Estelite Sigma Quick, безметалловая керамика IPS e.max Press",
+								"Высокоэстетичные материалы, бережное препарирование и адгезивный протокол",
 							keyAdvantages: [
-								"Идеальный баланс эстетики и долговечности",
-								"Керамика e.max и наногибрид",
+								"Высокая эстетика и биосовместимость",
+								"Бережное препарирование твердых тканей зуба",
 								"Расширенная гарантия 2 года",
+							],
+							stages: [
+								{ stageName: "Подготовка и изоляция операционного поля", proceduresCount: 2, totalRub: 24500 },
+								{ stageName: "Высокоточный этап восстановления", proceduresCount: 1, totalRub: 20000 },
+								{ stageName: "Фиксация и полировка", proceduresCount: 1, totalRub: 40000 },
 							],
 						},
 						{
 							tierKey: "premium" as const,
 							tierName: "Тариф «Премиум»",
-							badge: "VIP / Индивидуальный",
-							totalRub: 135000,
-							taxDeductionRub: 17550,
-							netCostAfterDeductionRub: 117450,
-							monthlyInstallmentRub: 11250,
+							badge: "VIP / Максимум",
+							totalRub: 148000,
+							taxDeductionRub: 19240,
+							netCostAfterDeductionRub: 128760,
+							monthlyInstallmentRub: 12333,
 							installmentMonths: 12,
 							warrantyDescription: "Пожизненная гарантия на конструкции",
 							materialsDescription:
-								"CAD/CAM диоксид циркония Multi-Layer, индивидуальные титановые абатменты",
+								"Премиальные нанотехнологичные материалы, микроскопный контроль и максимальный комфорт",
 							keyAdvantages: [
-								"Максимальная биосовместимость",
-								"Персональный куратор лечения",
-								"Пожизненная гарантия",
+								"Максимальная прочность и непревзойденная эстетика",
+								"100% биоинертность и гипоаллергенность",
+								"Персональный сервис и максимальная гарантия",
+							],
+							stages: [
+								{ stageName: "Высокоточная диагностика и изоляция", proceduresCount: 3, totalRub: 38000 },
+								{ stageName: "Прецизионный этап лечения под увеличением", proceduresCount: 1, totalRub: 50000 },
+								{ stageName: "Идеальная анатомическая интеграция", proceduresCount: 1, totalRub: 60000 },
 							],
 						},
 					];
@@ -960,10 +975,11 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 				</div>
 			</div>
 
-			{/* Segmented Control Switcher (Apple HIG standard, no 2500px scroll!) */}
+			{/* 3-Package Comparator Strip */}
 			<div className="copilot-et-segmented-control" role="tablist">
 				{tiers.map((tier) => {
 					const isSelected = tier.tierKey === currentTierKey;
+					const badgeText = tier.badge || (tier.tierKey === "optimum" ? "Рекомендуемый" : tier.tierKey === "premium" ? "Премиум" : "Базовый");
 					return (
 						<button
 							key={tier.tierKey}
@@ -973,12 +989,16 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 							onClick={() => handleTierSwitch(tier.tierKey)}
 							className={`copilot-et-segment-btn ${isSelected ? `active ${tier.tierKey}` : ""}`}
 						>
-							<span>
+							<span className="copilot-et-segment-name">
 								{tier.tierKey === "optimum"
 									? "★ Оптимум"
 									: tier.tierKey === "premium"
 										? "Премиум"
 										: "Эконом"}
+							</span>
+							<span className="copilot-et-segment-material">{badgeText}</span>
+							<span className="copilot-et-segment-price tabular-nums">
+								{formatMoney(tier.totalRub)}
 							</span>
 						</button>
 					);
@@ -988,15 +1008,23 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 			{/* Active Tier Presentation Body */}
 			{activeTierObj && (
 				<div className={`copilot-et-tier-body ${activeTierObj.tierKey}`}>
-					{/* Price & Badge */}
+					{/* Price & Technology Row */}
 					<div className="copilot-et-price-row">
 						<div>
-							<h5 className="copilot-et-tier-title">
-								{activeTierObj.tierName}
-							</h5>
-							<span className="text-xs font-semibold text-[var(--teal-dark)]">
-								{activeTierObj.badge}
-							</span>
+							<div className="flex items-center gap-2 flex-wrap">
+								<h5 className="copilot-et-tier-title">
+									{activeTierObj.tierName}
+								</h5>
+								<span className={`copilot-et-badge ${activeTierObj.tierKey}`}>
+									{activeTierObj.badge}
+								</span>
+							</div>
+							{activeTierObj.materialsDescription && (
+								<div className="copilot-et-crown-tech">
+									<Layers size={13} className="text-[var(--teal)] inline mr-1" />
+									<span>{activeTierObj.materialsDescription}</span>
+								</div>
+							)}
 						</div>
 						<div className="text-right">
 							<span className="copilot-et-price tabular-nums">
@@ -1048,6 +1076,61 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 						<div>{activeTierObj.materialsDescription}</div>
 					</div>
 
+					{/* Stages Breakdown with Green Checkmarks */}
+					<div className="copilot-et-stages-block">
+						<div className="copilot-et-stages-header">
+							<CheckCircle2 size={13} className="text-[var(--teal)]" />
+							<span>Этапы плана лечения:</span>
+						</div>
+						<div className="copilot-et-stages-list">
+							{(activeTierObj.stages && activeTierObj.stages.length > 0
+								? activeTierObj.stages
+								: [
+										{
+											stageName: "Терапевтическая подготовка и препарирование",
+											proceduresCount: 2,
+											totalRub: Math.round(activeTierObj.totalRub * 0.3),
+										},
+										{
+											stageName: "Оптические слепки / сканирование и лаборатория",
+											proceduresCount: 1,
+											totalRub: Math.round(activeTierObj.totalRub * 0.25),
+										},
+										{
+											stageName:
+												activeTierObj.tierKey === "economy"
+													? "Примерка и фиксация металлокерамики Co-Cr"
+													: activeTierObj.tierKey === "optimum"
+														? "Адгезивная фиксация керамической коронки e.max"
+														: "Прецизионная посадка коронки из диоксида циркония",
+											proceduresCount: 1,
+											totalRub: Math.round(activeTierObj.totalRub * 0.45),
+										},
+									]
+							).map((stage, idx) => (
+								<div key={idx} className="copilot-et-stage-row">
+									<div className="copilot-et-stage-info">
+										<CheckCircle2
+											size={14}
+											className="text-[var(--teal)] flex-shrink-0"
+										/>
+										<span className="copilot-et-stage-name">
+											{stage.stageName}
+											{stage.proceduresCount ? (
+												<span className="text-[var(--muted)] font-normal text-[11px] ml-1">
+													({stage.proceduresCount} проц.)
+												</span>
+											) : null}
+										</span>
+									</div>
+									<span className="copilot-et-stage-price tabular-nums">
+										{formatMoney(stage.totalRub)}
+									</span>
+								</div>
+							))}
+						</div>
+					</div>
+
 					{/* Key Advantages */}
 					<ul className="copilot-et-advantages-list">
 						{activeTierObj.keyAdvantages.map((adv, i) => (
@@ -1061,29 +1144,7 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 						))}
 					</ul>
 
-					{/* Stage breakdown if available */}
-					{activeTierObj.stages && activeTierObj.stages.length > 0 && (
-						<div className="pt-2 border-t border-[var(--line)] space-y-1">
-							<div className="text-[11px] font-bold uppercase text-[var(--muted)] tracking-wider">
-								Этапы лечения:
-							</div>
-							{activeTierObj.stages.map((stage, idx) => (
-								<div
-									key={idx}
-									className="flex justify-between text-xs text-[var(--ink)]"
-								>
-									<span>
-										{stage.stageName} ({stage.proceduresCount} проц.)
-									</span>
-									<span className="font-semibold tabular-nums">
-										{formatMoney(stage.totalRub)}
-									</span>
-								</div>
-							))}
-						</div>
-					)}
-
-					{/* Apply Tier Action */}
+					{/* 1-Click Apply Tier Action Button */}
 					<button
 						type="button"
 						onClick={handleApply}
@@ -1099,8 +1160,8 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 							</>
 						) : (
 							<>
-								<Sparkles size={16} />
-								<span>Применить тариф в план лечения</span>
+								<Check size={16} />
+								<span>Выбрать вариант (1 клик) • Применить тариф в план лечения</span>
 							</>
 						)}
 					</button>
@@ -1439,7 +1500,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 						className={`copilot-043-status-pill ${savedStatus ? "saved" : isEditing ? "editing" : "pending"}`}
 					>
 						{savedStatus
-							? "В ЭМК визита"
+							? "В медкарте"
 							: isEditing
 								? "Правка"
 								: "Черновик дневника"}
@@ -1496,6 +1557,23 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 				</div>
 
 				<div className="copilot-043-field">
+					<span className="copilot-043-field-label">Диагноз (МКБ-10):</span>
+					{isEditing ? (
+						<input
+							type="text"
+							className="copilot-043-input"
+							value={formData.diagnosis || ""}
+							onChange={(e) => handleFieldChange("diagnosis", e.target.value)}
+						/>
+					) : (
+						<div className="copilot-043-diagnosis-pill">
+							<Stethoscope size={13} className="text-[var(--teal)] flex-shrink-0" />
+							<span className="font-bold text-[var(--ink)]">{formData.diagnosis}</span>
+						</div>
+					)}
+				</div>
+
+				<div className="copilot-043-field">
 					<span className="copilot-043-field-label">
 						Лечение и пломбирование:
 					</span>
@@ -1532,7 +1610,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 							onClick={handleSave}
 						>
 							<Save size={15} />
-							<span>Сохранить в ЭМК визита (1 клик)</span>
+							<span>Внести в дневник приёма</span>
 						</button>
 					</>
 				) : (
@@ -1540,17 +1618,17 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 						type="button"
 						className={`copilot-043-save-btn ${savedStatus ? "saved" : ""}`}
 						onClick={handleSave}
-						title="Сохранить дневник приёма в электронную медкарту визита"
+						title="Внести в дневник приёма"
 					>
 						{savedStatus ? (
 							<>
 								<CheckCircle2 size={16} />
-								<span>Дневник приёма сохранён в ЭМК визита</span>
+								<span>Дневник приёма сохранён в медкарту</span>
 							</>
 						) : (
 							<>
 								<Check size={16} />
-								<span>Сохранить в ЭМК визита (1 клик)</span>
+								<span>Внести в дневник приёма</span>
 							</>
 						)}
 					</button>
@@ -1623,7 +1701,7 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
 					</div>
 					<p className="copilot-ddi-desc">
 						{data.description ||
-							"Обнаружена аллергия на пенициллины в анамнезе пациента (K02.1 / K04.0). Назначение препарата заблокировано клиническим протоколом."}
+							"Обнаружена аллергия на пенициллины в анамнезе пациента (K02.1 / K04.0). Доступны безопасные аналоги. Окончательное решение принимает лечащий врач (Мандат 8e: без блокировок)."}
 					</p>
 				</div>
 			</div>
@@ -1677,16 +1755,33 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
 						</span>
 					</div>
 				) : (
-					<button
-						type="button"
-						className="copilot-ddi-replace-btn"
-						onClick={handleReplace}
-						disabled={disabled}
-						title="Заменить опасный препарат на клинически безопасный аналог"
-					>
-						<ShieldCheck size={16} />
-						<span>Заменить на безопасный препарат ({selectedAlt})</span>
-					</button>
+					<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", width: "100%" }}>
+						<button
+							type="button"
+							className="copilot-ddi-replace-btn"
+							onClick={handleReplace}
+							disabled={disabled}
+							title="Заменить опасный препарат на клинически безопасный аналог"
+							style={{ flex: 1, minWidth: "200px" }}
+						>
+							<ShieldCheck size={16} />
+							<span>Заменить на безопасный препарат ({selectedAlt})</span>
+						</button>
+						<button
+							type="button"
+							className="copilot-btn-secondary"
+							onClick={() => {
+								setReplacedStatus(true);
+								onOverride?.();
+							}}
+							disabled={disabled}
+							title="Утвердить назначение врача без замены (Мандат 8e: автономия врача без блокировок)"
+							style={{ minHeight: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+						>
+							<Check size={16} />
+							<span>Утвердить (1 клик)</span>
+						</button>
+					</div>
 				)}
 			</div>
 		</div>

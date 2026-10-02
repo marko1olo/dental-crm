@@ -1,11 +1,31 @@
 import React from "react";
-import { Bold, Eraser, FileCheck, Italic, List, Pill, PlusCircle, Tag } from "lucide-react";
+import { Bold, Eraser, FileCheck, Italic, List, Pill, PlusCircle, Sparkles, Tag, Zap } from "lucide-react";
 import { DebouncedEmkTextarea } from "./DebouncedEmkTextarea";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
+import { formatSoapFromPreset, getPresetsByIcd10 } from "../clinicalSoapPresets";
+import {
+	buildChairsideSmartProtocol,
+	type ChairsideSmartProtocolKey,
+} from "../clinicalVisitWorkflow";
+import { showToast } from "../../GlobalToast";
 
 export interface EmkDiaryProtocolSectionProps extends EmkSectionProps {
 	onOpenTemplatesModal?: () => void;
 }
+
+const EXPRESS_PROTOCOLS: Array<{
+	key: ChairsideSmartProtocolKey;
+	label: string;
+	shortName: string;
+	code: string;
+	color: string;
+}> = [
+	{ key: "caries", label: "Кариес дентина (K02.1)", shortName: "Кариес", code: "K02.1", color: "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15" },
+	{ key: "pulpitis", label: "Острый пульпит (K04.0)", shortName: "Пульпит", code: "K04.0", color: "text-rose-600 dark:text-rose-400 border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/15" },
+	{ key: "periodontitis", label: "Хронический периодонтит (K04.5)", shortName: "Периодонтит", code: "K04.5", color: "text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/15" },
+	{ key: "hygiene", label: "Профгигиена полости рта (K05.1)", shortName: "Гигиена", code: "K05.1", color: "text-teal-600 dark:text-teal-400 border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/15" },
+	{ key: "extraction", label: "Простое удаление зуба (K01.1)", shortName: "Удаление", code: "K01.1", color: "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/15" },
+];
 
 export function EmkDiaryProtocolSection({
 	visitNoteForm,
@@ -21,6 +41,7 @@ export function EmkDiaryProtocolSection({
 		{ code: "K04.0", label: `${toothPrefix}K04.0 Пульпит начальный / острый очаговый` },
 		{ code: "K04.03", label: `${toothPrefix}K04.03 Хронический фиброзный пульпит` },
 		{ code: "K04.5", label: `${toothPrefix}K04.5 Хронический апикальный периодонтит` },
+		{ code: "K01.1", label: `${toothPrefix}K01.1 Простое удаление зуба (ретенция/дистопия)` },
 		{ code: "K05.3", label: "K05.3 Хронический генерализованный пародонтит легкой/средней степени" },
 		{ code: "K05.1", label: "K05.1 Хронический катаральный гингивит" },
 		{ code: "K03.6", label: "K03.6 Зубные отложения (над- и поддесневой зубной камень)" },
@@ -37,6 +58,85 @@ export function EmkDiaryProtocolSection({
 		"Плановый контрольный осмотр через 6 месяцев.",
 	];
 
+	const handleApplyExpressProtocol = (key: ChairsideSmartProtocolKey) => {
+		const smart = buildChairsideSmartProtocol(key, activeTooth ?? undefined, { isLocked });
+		updateVisitNoteField("diagnosis", smart.diagnosis);
+		updateVisitNoteField("complaint", smart.complaint);
+		updateVisitNoteField("anamnesis", smart.anamnesis);
+		updateVisitNoteField("objectiveStatus", smart.objectiveStatus);
+		updateVisitNoteField("treatmentPlan", smart.treatmentPlan);
+		if (smart.recommendations) {
+			updateVisitNoteField("recommendations", smart.recommendations);
+		}
+		showToast(`Умный протокол: ${smart.title} применён к дневнику`, "success", 2500);
+	};
+
+	const handleSelectIcd10 = (chip: { code: string; label: string }, autoSoap: boolean = false) => {
+		updateVisitNoteField("diagnosis", chip.label);
+
+		let complaint = "";
+		let anamnesis = "";
+		let objectiveStatus = "";
+		let treatmentPlan = "";
+		let recommendations = "";
+
+		const presets = getPresetsByIcd10(chip.code);
+		const preset = presets[0];
+		if (preset) {
+			const formatted = formatSoapFromPreset(preset, activeTooth ?? undefined);
+			complaint = formatted.complaint;
+			anamnesis = formatted.anamnesis;
+			objectiveStatus = formatted.objectiveStatus;
+			treatmentPlan = formatted.treatmentPlan;
+			recommendations = formatted.recommendations || "";
+		} else {
+			// Fallback к chairside smart протоколам если пресета нет в каталоге (например K01.1, K05.1)
+			let smartKey: ChairsideSmartProtocolKey | null = null;
+			if (chip.code.startsWith("K02")) smartKey = "caries";
+			else if (chip.code.startsWith("K04.0")) smartKey = "pulpitis";
+			else if (chip.code.startsWith("K04.5")) smartKey = "periodontitis";
+			else if (chip.code.startsWith("K01")) smartKey = "extraction";
+			else if (chip.code.startsWith("K05") || chip.code.startsWith("K03") || chip.code.startsWith("Z01")) smartKey = "hygiene";
+
+			if (smartKey) {
+				const smart = buildChairsideSmartProtocol(smartKey, activeTooth ?? undefined, { isLocked });
+				complaint = smart.complaint;
+				anamnesis = smart.anamnesis;
+				objectiveStatus = smart.objectiveStatus;
+				treatmentPlan = smart.treatmentPlan;
+				recommendations = smart.recommendations;
+			}
+		}
+
+		let fieldsUpdatedCount = 0;
+
+		// При явном запросе на autoSoap или если поля еще пустые — заполняем разделы дневника
+		if (complaint && (autoSoap || !visitNoteForm?.complaint?.trim())) {
+			updateVisitNoteField("complaint", complaint);
+			fieldsUpdatedCount++;
+		}
+		if (anamnesis && (autoSoap || !visitNoteForm?.anamnesis?.trim())) {
+			updateVisitNoteField("anamnesis", anamnesis);
+			fieldsUpdatedCount++;
+		}
+		if (objectiveStatus && (autoSoap || !visitNoteForm?.objectiveStatus?.trim())) {
+			updateVisitNoteField("objectiveStatus", objectiveStatus);
+			fieldsUpdatedCount++;
+		}
+		if (treatmentPlan && (autoSoap || !visitNoteForm?.treatmentPlan?.trim())) {
+			updateVisitNoteField("treatmentPlan", treatmentPlan);
+			fieldsUpdatedCount++;
+		}
+		if (recommendations && (autoSoap || !visitNoteForm?.recommendations?.trim())) {
+			updateVisitNoteField("recommendations", recommendations);
+			fieldsUpdatedCount++;
+		}
+
+		if (fieldsUpdatedCount > 0) {
+			showToast(`SOAP-протокол ${chip.code} применён к дневнику (${fieldsUpdatedCount} разд.)`, "success", 2500);
+		}
+	};
+
 	const handleAddChip = (fieldKey: string, chipText: string) => {
 		const current = visitNoteForm?.[fieldKey] || "";
 		updateVisitNoteField(fieldKey, appendClinicalText(current, chipText, " "));
@@ -51,6 +151,32 @@ export function EmkDiaryProtocolSection({
 
 	return (
 		<div className="flex flex-col gap-4">
+			{/* 1-клик протоколы у кресла (Мандаты 8e, 8i, 8k, Touch ergonomics >= 44px) */}
+			<div className="flex flex-col gap-2 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,var(--paper))]">
+				<div className="flex items-center justify-between gap-2">
+					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<Sparkles size={14} className="text-amber-500" />
+						<span>1-клик клинические протоколы у кресла</span>
+					</span>
+					<span className="text-[11px] text-[var(--muted)]">Клинические стандарты лечения</span>
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+					{EXPRESS_PROTOCOLS.map((proto) => (
+						<button
+							key={proto.key}
+							type="button"
+							data-testid={`btn-emk-express-${proto.key}`}
+							onClick={() => handleApplyExpressProtocol(proto.key)}
+							className={`min-h-[44px] sm:min-h-[38px] px-2.5 py-1.5 rounded-md border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
+							title={`Заполнить полный SOAP: ${proto.label}`}
+						>
+							<span className="font-mono text-[11px] font-bold">{proto.code}</span>
+							<span className="truncate">{proto.shortName}</span>
+						</button>
+					))}
+				</div>
+			</div>
+
 			{/* Диагноз */}
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center justify-between gap-2">
@@ -70,19 +196,33 @@ export function EmkDiaryProtocolSection({
 					className="w-full min-h-[60px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
-				{/* Быстрые чипы МКБ-10 */}
+				{/* Быстрые чипы МКБ-10 с 1-клик SOAP генерацией (Мандаты 8e, 8i) */}
 				<div className="flex items-center gap-1.5 flex-wrap">
 					{icd10Chips.map((chip, idx) => (
-						<button
+						<div
 							key={idx}
-							type="button"
-							onClick={() => updateVisitNoteField("diagnosis", chip.label)}
-							className="px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1"
-							title={chip.label}
+							className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs hover:border-[var(--teal)] transition-all"
 						>
-							<span className="font-mono font-bold text-[var(--teal)]">{chip.code}</span>
-							<span className="max-w-[180px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
-						</button>
+							<button
+								type="button"
+								onClick={() => handleSelectIcd10(chip, false)}
+								className="px-2 py-0.5 text-[11px] font-medium text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer inline-flex items-center gap-1"
+								title={`${chip.label} (клик: диагноз + умное заполнение пустых разделов)`}
+							>
+								<span className="font-mono font-bold text-[var(--teal)]">{chip.code}</span>
+								<span className="max-w-[150px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
+							</button>
+							<button
+								type="button"
+								data-testid={`btn-auto-soap-${chip.code.replace(".", "_")}`}
+								onClick={() => handleSelectIcd10(chip, true)}
+								className="px-1.5 py-0.5 text-[10px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--muted)] border-l border-[var(--line)] cursor-pointer inline-flex items-center gap-0.5 transition-colors"
+								title={`Заполнить полный клинический SOAP-дневник для ${chip.code} в 1 клик`}
+							>
+								<Sparkles size={10} className="text-[var(--teal)]" />
+								<span>SOAP</span>
+							</button>
+						</div>
 					))}
 				</div>
 			</div>

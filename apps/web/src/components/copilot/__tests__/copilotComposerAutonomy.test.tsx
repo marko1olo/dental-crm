@@ -89,7 +89,7 @@ describe("CopilotComposer & Voice Dictation Autonomy (Mandates 8d, 8e, 8k, 8n)",
 		const sourceCode = fs.readFileSync(componentPath, "utf-8");
 
 		// Check default prompt constant and toast
-		expect(sourceCode).toContain('DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации по Форме 043/у"');
+		expect(sourceCode).toContain('DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации для дневника приёма"');
 		expect(sourceCode).toContain('showToast("Подставлен клинический запрос по умолчанию", "info")');
 		// Check disabled prop is strictly {busy}
 		expect(sourceCode).toContain("disabled={busy}");

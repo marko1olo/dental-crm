@@ -641,6 +641,22 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
     setIsSaving(true);
     setError(null);
 
+    const effectiveIsCito = Boolean(
+      isCito ||
+      collision.isCitoOverbooking ||
+      isCitoAppointment({ reason, comment }) ||
+      (reason ?? "").toLowerCase().includes("cito") ||
+      (reason ?? "").toLowerCase().includes("острая боль") ||
+      (comment ?? "").toLowerCase().includes("cito") ||
+      (comment ?? "").toLowerCase().includes("острая боль"),
+    );
+
+    const allowOverbooking = Boolean(
+      effectiveIsCito ||
+      collision.hasCollision ||
+      collision.isCitoOverbooking,
+    );
+
     const success = await onSave(appointment.id, {
       patientId: effectivePatientId || null,
       doctorUserId: effectiveDoctorUserId,
@@ -651,8 +667,11 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
       status,
       reason,
       comment,
-      isCito,
-      cito: isCito,
+      isCito: effectiveIsCito,
+      cito: effectiveIsCito,
+      allowEmergencyOverride: allowOverbooking,
+      allowOverbooking: allowOverbooking,
+      urgency: effectiveIsCito ? "emergency" : undefined,
     } as any);
 
     setIsSaving(false);

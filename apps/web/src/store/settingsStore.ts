@@ -30,6 +30,10 @@ import {
 	defaultTelegramPostVisitCheckupDelayDrafts,
 	type TelegramPostVisitCheckupDelayDrafts,
 } from "../workspaceStaticOptions";
+import {
+	type DoctorCbctDefaultSettings,
+	loadDoctorCbctSettings,
+} from "../components/radiology/cbctLutMath";
 import { resolveUpdater } from "./updater";
 
 export type ClinicMode =
@@ -117,6 +121,7 @@ export interface SettingsState {
 	scheduleAdminSecretDemand: string;
 	telegramSendingItemId: string | null;
 	telegramRevokingLinkId: string | null;
+	cbctDefaults: DoctorCbctDefaultSettings;
 }
 
 export interface SettingsActions {
@@ -339,6 +344,11 @@ export interface SettingsActions {
 	setTelegramRevokingLinkId: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
+	setCbctDefaults: (
+		val:
+			| DoctorCbctDefaultSettings
+			| ((prev: DoctorCbctDefaultSettings) => DoctorCbctDefaultSettings),
+	) => void;
 }
 
 const initialSettingsState: SettingsState = {
@@ -404,6 +414,7 @@ const initialSettingsState: SettingsState = {
 	scheduleAdminSecretDemand: "",
 	telegramSendingItemId: null,
 	telegramRevokingLinkId: null,
+	cbctDefaults: loadDoctorCbctSettings(),
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -717,6 +728,10 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
 					val,
 					state.telegramRevokingLinkId,
 				),
+			})),
+		setCbctDefaults: (val) =>
+			set((state) => ({
+				cbctDefaults: resolveUpdater(val, state.cbctDefaults),
 			})),
 	}),
 );

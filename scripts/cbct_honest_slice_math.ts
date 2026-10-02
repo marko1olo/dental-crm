@@ -385,8 +385,8 @@ export function reconstructHighDefPanoramicOPG(
 		}
 	}
 
-	const ww = options.windowWidth ?? 2000;
-	const wl = options.windowLevel ?? 450;
+	const ww = options.windowWidth ?? 4025;
+	const wl = options.windowLevel ?? 525;
 	const low = wl - ww / 2;
 	const high = wl + ww / 2;
 	const rgba = new Uint8ClampedArray(outW * outH * 4);
@@ -687,7 +687,7 @@ export function extractHonestPhysicalCrossSection(
 			}
 		}
 	}
-	const meanHU = countHU > 0 ? Math.round(sumHU / countHU) : 450;
+	const meanHU = countHU > 0 ? Math.round(sumHU / countHU) : 525;
 
 	let misch: "D1" | "D2" | "D3" | "D4" = "D3";
 	if (meanHU >= 850) misch = "D1";

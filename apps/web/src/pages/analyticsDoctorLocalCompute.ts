@@ -89,6 +89,33 @@ export function computeLocalAnalyticsData(
 		cutoffDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 	}
 
+function getPaymentAmountRub(p: Record<string, unknown>): number {
+	if (typeof p.amount === "number" && Number.isFinite(p.amount)) return p.amount;
+	if (typeof p.amountRub === "number" && Number.isFinite(p.amountRub)) return p.amountRub;
+	if (typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)) {
+		return Math.round(p.amountKopecks) / 100;
+	}
+	if (typeof p.amount === "string") {
+		const val = Number(p.amount);
+		if (Number.isFinite(val)) return val;
+	}
+	if (typeof p.amountRub === "string") {
+		const val = Number(p.amountRub);
+		if (Number.isFinite(val)) return val;
+	}
+	return 0;
+}
+
+function getPaymentDate(p: Record<string, unknown>): Date | null {
+	const raw = p.paidAt ?? p.createdAt ?? p.date;
+	if (raw instanceof Date) return Number.isNaN(raw.getTime()) ? null : raw;
+	if (typeof raw === "string" && raw.trim().length > 0) {
+		const d = new Date(raw);
+		return Number.isNaN(d.getTime()) ? null : d;
+	}
+	return null;
+}
+
 	const filterByDate = (dateStr: unknown): boolean => {
 		if (!cutoffDate) return true;
 		if (typeof dateStr !== "string" || !dateStr) return true;
@@ -99,9 +126,11 @@ export function computeLocalAnalyticsData(
 	const appointments = rawAppointments.filter((a) =>
 		filterByDate(a.startsAt || a.createdAt),
 	);
-	const payments = rawPayments.filter((p) =>
-		filterByDate(p.createdAt || p.paidAt),
-	);
+	const payments = rawPayments.filter((p) => {
+		if (!cutoffDate) return true;
+		const d = getPaymentDate(p);
+		return d ? d >= cutoffDate : true;
+	});
 	const visits = rawVisits.filter((v) => filterByDate(v.createdAt || v.date));
 	const patients = rawPatients;
 
@@ -119,8 +148,7 @@ export function computeLocalAnalyticsData(
 	let bonusRevenue = 0;
 
 	for (const p of payments) {
-		const amt =
-			typeof p.amount === "number" && Number.isFinite(p.amount) ? p.amount : 0;
+		const amt = getPaymentAmountRub(p);
 		if (amt <= 0) continue;
 		totalRevenue += amt;
 		const method = String(p.method || p.paymentMethod || "card").toLowerCase();
@@ -299,8 +327,7 @@ export function computeLocalAnalyticsData(
 	// Map payment -> doctor revenue
 	const doctorRevenueMap = new Map<string, number>();
 	for (const p of payments) {
-		const amt =
-			typeof p.amount === "number" && Number.isFinite(p.amount) ? p.amount : 0;
+		const amt = getPaymentAmountRub(p);
 		if (amt <= 0) continue;
 		const dId =
 			String(p.doctorUserId || "") ||
@@ -423,19 +450,17 @@ export function computeLocalAnalyticsData(
 		},
 	);
 
-	// 5. Когорты LTV
+	// 5. Когорты LTV (только подтвержденные даты без фантомных месяцев)
 	const cohortMap = new Map<string, number>();
 	for (const p of payments) {
-		const dateStr = typeof p.createdAt === "string" ? p.createdAt : "";
-		const date = new Date(dateStr);
-		const monthKey = Number.isNaN(date.getTime())
-			? "2026-08"
-			: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+		const date = getPaymentDate(p);
+		if (!date) continue;
+		const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 		const prev = cohortMap.get(monthKey) || 0;
-		cohortMap.set(
-			monthKey,
-			prev + (typeof p.amount === "number" ? p.amount : 0),
-		);
+		const amt = getPaymentAmountRub(p);
+		if (amt > 0) {
+			cohortMap.set(monthKey, prev + amt);
+		}
 	}
 	const cohortLtvJson: CohortLtvPoint[] = Array.from(cohortMap.entries()).map(
 		([cohort, amt]) => ({

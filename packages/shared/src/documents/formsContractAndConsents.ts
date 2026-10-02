@@ -436,3 +436,22 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 </body>
 </html>`;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// СТОМX И ПРОЦЕДУРНЫЕ СОГЛАСИЯ — ЕДИНЫЙ ВХОД (МАНДАТ 8za SSOT)
+// ═══════════════════════════════════════════════════════════════════════════
+export {
+	generateStomxConsentHtml,
+	type GenerateStomxConsentOptions,
+} from "../legal/stomxConsentHtmlGenerator.js";
+export {
+	STOMX_SPECIALIZED_CONSENT_PRESETS,
+	LEGACY_CONSENT_PRESETS,
+} from "../legal/stomxConsentPresets.js";
+export {
+	STOMX_LEGAL_CONSENTS_CATALOG,
+	getStomxTemplateMetadata,
+	type StomxLegalConsentTemplateMetadata,
+	type StomxVariableContext,
+} from "../legal/stomxLegalConsentsCatalog.js";
+

@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	formatPhoneDisplay,
 	fuzzyMatchPhone,
 	normalizePhoneDigits,
 	useTelephonyStore,
 } from "../../../store/telephonyStore";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const telephonyDir = path.resolve(__dirname, "..");
 
 test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 	// Reset store before test
@@ -159,5 +166,68 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 
 		assert.equal(formatPhoneDisplay("79161234567"), "+7 (916) 123-45-67");
 		assert.equal(formatPhoneDisplay("89161234567"), "+7 (916) 123-45-67");
+	});
+
+	await t.test("5. Anti-Matryoshka two-line UI contracts in IncomingCallPopup and TelephonyWidgetHeader", () => {
+		const popupSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallPopup.tsx"), "utf-8");
+		const headerSource = fs.readFileSync(path.join(telephonyDir, "TelephonyWidgetHeader.tsx"), "utf-8");
+		const moreMenuSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallBadgeMoreMenu.tsx"), "utf-8");
+
+		// Anti-Matryoshka banner in expanded badge
+		assert.ok(
+			popupSource.includes('data-testid="incoming-secondary-line-banner"'),
+			"IncomingCallPopup must include secondary line banner rather than launching nested modals",
+		);
+		assert.ok(
+			popupSource.includes('data-testid="answer-secondary-line-btn"'),
+			"IncomingCallPopup must provide 1-tap answer button with automatic hold on active line",
+		);
+		assert.ok(
+			popupSource.includes('data-testid="capsule-switch-secondary-line-btn"'),
+			"IncomingCallPopup capsule must show secondary incoming line pill",
+		);
+
+		// TelephonyWidgetHeader two-line tabs
+		assert.ok(
+			headerSource.includes("line1") && headerSource.includes("line2"),
+			"TelephonyWidgetHeader must accept line1 and line2 props for concurrent line visualization",
+		);
+
+		// 1-tap callback in more menu
+		assert.ok(
+			moreMenuSource.includes('data-testid="badge-action-callback-15m"'),
+			"IncomingCallBadgeMoreMenu must provide 1-tap 'Перезвонить через 15 мин' action",
+		);
+	});
+
+	await t.test("6. Solo-doctor sovereignty: 1-click callback 15m scheduling calculation", () => {
+		useTelephonyStore.setState({
+			callHistory: [],
+			activeCall: null,
+		});
+
+		useTelephonyStore.getState().triggerIncomingCall({
+			callId: "call-busy-chair",
+			phone: "+79991234567",
+			patientId: null,
+			patientName: "Срочный Пациент",
+			status: "ringing",
+		});
+
+		const before = Date.now();
+		useTelephonyStore.getState().recordCallOutcome("callback_15m");
+		const history = useTelephonyStore.getState().callHistory;
+
+		assert.equal(history.length, 1);
+		assert.equal(history[0]?.outcome, "callback_15m");
+		assert.ok(history[0]?.callbackDueAt, "callbackDueAt must be defined");
+
+		const dueTime = new Date(history[0]!.callbackDueAt!).getTime();
+		const expectedMinTime = before + 15 * 60 * 1000 - 1000;
+		const expectedMaxTime = Date.now() + 15 * 60 * 1000 + 1000;
+		assert.ok(
+			dueTime >= expectedMinTime && dueTime <= expectedMaxTime,
+			"callbackDueAt must be scheduled exactly 15 minutes into the future",
+		);
 	});
 });

@@ -206,6 +206,72 @@ describe("Real DICOM Series Volume Loader & Ingestion Engine", () => {
     }
   });
 
+  it("buildVolumeFromDicomweb propagates Authorization headers and downloads slices concurrently", async () => {
+    const studyUid = "1.2.3.4.999";
+    const seriesUid = "1.2.3.4.999.1";
+    const sops = Array.from({ length: 12 }, (_, i) => `1.2.3.4.999.1.${i + 1}`);
+
+    const fixturePath = "C:/Clinic_MVP/dental-crm/apps/web/public/radiology/kavo_op300_cbct_slice.dcm";
+    const realBuf = fs.readFileSync(fixturePath);
+
+    const originalFetch = globalThis.fetch;
+    const recordedHeaders: Array<Record<string, string>> = [];
+    let activeConcurrentRequests = 0;
+    let maxObservedConcurrency = 0;
+
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const urlStr = String(input);
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      recordedHeaders.push(headers);
+
+      if (urlStr.includes("/metadata")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => sops.map((sop) => ({ "00080018": { Value: [sop] } })),
+        } as unknown as Response;
+      }
+
+      activeConcurrentRequests++;
+      if (activeConcurrentRequests > maxObservedConcurrency) {
+        maxObservedConcurrency = activeConcurrentRequests;
+      }
+
+      // Small async delay to allow concurrent workers to overlap
+      await new Promise((r) => setTimeout(r, 20));
+
+      activeConcurrentRequests--;
+
+      return {
+        ok: true,
+        status: 200,
+        arrayBuffer: async () => realBuf.buffer.slice(realBuf.byteOffset, realBuf.byteOffset + realBuf.byteLength),
+      } as unknown as Response;
+    }) as typeof fetch;
+
+    try {
+      const vol = await buildVolumeFromDicomweb(studyUid, seriesUid, {
+        baseUrl: "https://pacs.clinic.dente:4100",
+        headers: { Authorization: "Bearer test-jwt-token-12345" },
+        concurrency: 6,
+      });
+
+      assert.equal(vol.dimensions.width, 468);
+      assert.equal(vol.dimensions.height, 468);
+      // Concurrency must have allowed multiple requests in flight simultaneously (>= 2 and <= 6)
+      assert.ok(maxObservedConcurrency >= 2, `Expected concurrent downloads (observed ${maxObservedConcurrency})`);
+      assert.ok(maxObservedConcurrency <= 6, `Concurrency ceiling violated (${maxObservedConcurrency} > 6)`);
+
+      // Verify Authorization header was sent on metadata and instance requests
+      assert.ok(recordedHeaders.length >= 13);
+      for (const h of recordedHeaders) {
+        assert.equal(h.Authorization, "Bearer test-jwt-token-12345");
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("builds and auto-centers 3D CBCT volume from 50-slice demo dataset (Zakharov I.D.)", async () => {
     const demoDir = path.resolve(process.cwd(), "apps/web/public/radiology/demo_cbct");
     assert.ok(fs.existsSync(demoDir), "Demo CBCT directory must exist");

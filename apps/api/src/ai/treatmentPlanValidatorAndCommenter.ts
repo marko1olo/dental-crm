@@ -410,7 +410,28 @@ const AI_MODEL_CASCADE: Array<{
 		keyProviderId: "google_speech",
 		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
 	},
-	// 4. Gemini 2.5 Flash
+	// 4. Gemini 3.8 Flash
+	{
+		provider: "gemini",
+		model: "gemini-3.8-flash",
+		keyProviderId: "google_speech",
+		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+	},
+	// 5. Gemini 3.7 Flash
+	{
+		provider: "gemini",
+		model: "gemini-3.7-flash",
+		keyProviderId: "google_speech",
+		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+	},
+	// 6. Gemini 3.5 Flash
+	{
+		provider: "gemini",
+		model: "gemini-3.5-flash",
+		keyProviderId: "google_speech",
+		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+	},
+	// 7. Gemini 2.5 Flash
 	{
 		provider: "gemini",
 		model: "gemini-2.5-flash",

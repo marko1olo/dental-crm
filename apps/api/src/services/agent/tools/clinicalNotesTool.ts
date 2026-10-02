@@ -87,7 +87,7 @@ export function renderForm043Diary(soap: Omit<SoapNoteStructure, "form043Text">)
 	const specialtyRu = specialtyRuMap[soap.specialty] || "Стоматология";
 
 	const lines: string[] = [
-		`ДНЕВНИК ВРАЧА-СТОМАТОЛОГА (МЕДИЦИНСКАЯ КАРТА 043/у)`,
+		`ДНЕВНИК ВРАЧА-СТОМАТОЛОГА (МЕДИЦИНСКАЯ КАРТА)`,
 		`Специальность: ${specialtyRu} | Локализация: ${toothStr}`,
 		`─────────────────────────────────────────────────────────────────────────────`,
 		`S (Subiectivus / Жалобы и анамнез):`,
@@ -244,7 +244,7 @@ const generateSoapNoteSchema = z.object({
 export const generateSoapNoteTool: ToolDefinition<typeof generateSoapNoteSchema> = {
 	name: "generate_soap_note",
 	description:
-		"Генератор структурированных клинических SOAP-дневников (форма 043/у) по стоматологическим специализациям (Терапия, Ортопедия, Хирургия, Пародонтология, Детство) с валидацией диагнозов МКБ-10 и формулы зубов FDI.",
+		"Генератор структурированных клинических SOAP-дневников приёма по стоматологическим специализациям (Терапия, Ортопедия, Хирургия, Пародонтология, Детство) с валидацией диагнозов МКБ-10 и формулы зубов FDI.",
 	parameters: generateSoapNoteSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -533,7 +533,7 @@ const syncEmr043Schema = z.object({
 export const syncEmr043Tool: ToolDefinition<typeof syncEmr043Schema> = {
 	name: "sync_emr_043",
 	description:
-		"Синхронизация и сохранение дневника приема 043/у в электронную медицинскую карту пациента с тенантной изоляцией.",
+		"Синхронизация и сохранение дневника приёма в электронную медицинскую карту пациента с тенантной изоляцией.",
 	parameters: syncEmr043Schema,
 	permissions: ["clinical.write"],
 	category: "write",

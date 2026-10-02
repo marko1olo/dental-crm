@@ -52,8 +52,8 @@ export function createEmptyCbctVolume(
 		data: buffer,
 		minHU: defaultHU,
 		maxHU: defaultHU,
-		defaultWindowWidth: 2000,
-		defaultWindowLevel: 400,
+		defaultWindowWidth: 4025,
+		defaultWindowLevel: 525,
 		isDisposed: false,
 	};
 }

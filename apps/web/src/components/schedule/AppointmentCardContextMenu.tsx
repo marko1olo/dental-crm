@@ -210,10 +210,10 @@ export function AppointmentCardContextMenu({
 							useAppStore.getState().setCurrentView("patients");
 							showToast(`Открыта карта пациента: ${appointmentPatientName}`, "info");
 						}}
-						title="Открыть амбулаторную карту пациента (ЭМК)"
+						title="Открыть медицинскую карту пациента"
 					>
 						<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-						<span>Карта пациента (ЭМК)</span>
+						<span>Медицинская карта</span>
 					</button>
 					<button
 						type="button"

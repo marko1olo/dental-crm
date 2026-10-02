@@ -1,4 +1,4 @@
-import type { Appointment, Dashboard } from "@dental/shared";
+import { type Appointment, type Dashboard, areIntervalsOverlapping } from "@dental/shared";
 
 export type SuggestedSlot = {
 	timeDisplay: string;
@@ -101,7 +101,7 @@ export function findNearestAvailableSlot(
 				const bStart = Date.parse(block.startsAt);
 				const bEnd = Date.parse(block.endsAt);
 				if (!Number.isFinite(bStart) || !Number.isFinite(bEnd)) continue;
-				if (startMs < bEnd && endMs > bStart) return false;
+				if (areIntervalsOverlapping(startMs, endMs, bStart, bEnd)) return false;
 			}
 		}
 
@@ -110,7 +110,7 @@ export function findNearestAvailableSlot(
 			const aStart = Date.parse(a.startsAt);
 			const aEnd = Date.parse(a.endsAt);
 			if (!Number.isFinite(aStart) || !Number.isFinite(aEnd)) continue;
-			if (startMs < aEnd && endMs > aStart) {
+			if (areIntervalsOverlapping(startMs, endMs, aStart, aEnd)) {
 				if (draft.patientId && a.patientId === draft.patientId) return false;
 				if (draft.doctorUserId && a.doctorUserId === draft.doctorUserId)
 					return false;
@@ -131,7 +131,7 @@ export function findNearestAvailableSlot(
 	const overlappingAppts = activeAppointments.filter((a) => {
 		const aStart = Date.parse(a.startsAt);
 		const aEnd = Date.parse(a.endsAt);
-		const timeOverlaps = draftStart < aEnd && draftEnd > aStart;
+		const timeOverlaps = areIntervalsOverlapping(draftStart, draftEnd, aStart, aEnd);
 		if (!timeOverlaps) return false;
 		return (
 			(draft.doctorUserId && a.doctorUserId === draft.doctorUserId) ||
@@ -308,7 +308,7 @@ export function checkAppointmentResourceCollision(
 			const blockStart = Date.parse(block.startsAt);
 			const blockEnd = Date.parse(block.endsAt);
 			if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd)) continue;
-			if (draftStart < blockEnd && draftEnd > blockStart) {
+			if (areIntervalsOverlapping(draftStart, draftEnd, blockStart, blockEnd)) {
 				const chairObj = options.chairs?.find((c) => c.id === draft.chairId);
 				const name = chairObj?.name ?? "Кресло";
 				const blockTimeStr = `${format(block.startsAt)}–${format(block.endsAt)}`;
@@ -352,8 +352,8 @@ export function checkAppointmentResourceCollision(
 			const apptEnd = Date.parse(appt.endsAt);
 			if (!Number.isFinite(apptStart) || !Number.isFinite(apptEnd)) continue;
 
-			// Interval overlap: (draftStart < apptEnd) && (draftEnd > apptStart)
-			const overlaps = draftStart < apptEnd && draftEnd > apptStart;
+			// Interval overlap via SSOT engine
+			const overlaps = areIntervalsOverlapping(draftStart, draftEnd, apptStart, apptEnd);
 			if (!overlaps) continue;
 
 			const timeIntervalStr = `${format(appt.startsAt)}–${format(appt.endsAt)}`;

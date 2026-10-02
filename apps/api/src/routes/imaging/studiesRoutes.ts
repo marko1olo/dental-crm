@@ -31,14 +31,18 @@ import {
 import { withTenantCtx } from "../../db/rls.js";
 import { previewSvg } from "./previewSvg.js";
 import {
+	bindPatientToStudyInDb,
 	createImagingStudyInDb,
 	getAllImagingStudies,
 	getImagingStudiesForPatient,
+	getImagingStudiesWithFilters,
 	getImagingStudyById,
 	getOrCreateImagingViewerSession,
 	saveImagingViewerSession,
+	unbindPatientFromStudyInDb,
 	updateImagingStudyInDb,
 } from "../../db/imagingQuery.js";
+import { autoBindUnassignedStudies } from "./patientFioBindingEngine.js";
 import {
 	getPatientByIdFromDb,
 	getPatientsFromDb,
@@ -72,25 +76,42 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 
 		const querySchema = z.object({
 			patientId: z.string().uuid().optional(),
+			patient_id: z.string().uuid().optional(),
+			modality: z.string().optional(),
+			bindingStatus: z
+				.enum(["auto_bound", "manual_bound", "pending_review", "unassigned"])
+				.optional(),
+			binding_status: z
+				.enum(["auto_bound", "manual_bound", "pending_review", "unassigned"])
+				.optional(),
+			search: z.string().optional(),
+			limit: z.coerce.number().int().positive().max(500).optional(),
+			offset: z.coerce.number().int().nonnegative().optional(),
 		});
 		const parsedQuery = querySchema.safeParse(request.query);
 		if (!parsedQuery.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Параметр patientId должен быть валидным UUID.",
+				message: "Некорректные параметры фильтрации исследований.",
 				details: parsedQuery.error.issues,
 			});
 		}
-		const patientId = parsedQuery.data.patientId;
-		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
-		// а не клиника, приславшая запрос. В установке на несколько клиник врач
-		// клиники Б получал 404 на собственное исследование, а в худшем случае —
-		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
+		const effectivePatientId =
+			parsedQuery.data.patientId ?? parsedQuery.data.patient_id;
+		const effectiveBindingStatus =
+			parsedQuery.data.bindingStatus ?? parsedQuery.data.binding_status;
+
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
-		const studies = patientId
-			? await getImagingStudiesForPatient(orgId, patientId)
-			: await getAllImagingStudies(orgId);
+
+		const studies = await getImagingStudiesWithFilters(orgId, {
+			patientId: effectivePatientId,
+			modality: parsedQuery.data.modality,
+			bindingStatus: effectiveBindingStatus,
+			search: parsedQuery.data.search,
+			limit: parsedQuery.data.limit,
+			offset: parsedQuery.data.offset,
+		});
 		return studies.map((study) => imagingStudySchema.parse(study));
 	});
 
@@ -393,5 +414,103 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 		const study = await updateImagingStudyInDb(orgId, id, parsed.data);
 		if (!study) return sendImagingStudyNotFound(reply);
 		return reply.send(imagingStudySchema.parse(study));
+	});
+
+	/**
+	 * Ручная привязка КТ/исследования к пациенту (контроль врача)
+	 * POST /api/imaging/studies/:id/bind-patient
+	 */
+	app.post("/api/imaging/studies/:id/bind-patient", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"imaging bind patient",
+			))
+		)
+			return;
+
+		const { id } = request.params as { id: string };
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const bindBodySchema = z.object({
+			patientId: z.string().uuid(),
+		});
+		const parsed = bindBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Необходимо передать валидный UUID пациента в поле patientId.",
+				details: parsed.error.issues,
+			});
+		}
+
+		try {
+			const updated = await bindPatientToStudyInDb(
+				orgId,
+				id,
+				parsed.data.patientId,
+			);
+			if (!updated) {
+				return sendImagingStudyNotFound(reply);
+			}
+			return reply.code(200).send(imagingStudySchema.parse(updated));
+		} catch (err) {
+			return reply.code(400).send({
+				error: "BindingFailed",
+				message:
+					err instanceof Error
+						? err.message
+						: "Ошибка при привязке исследования к пациенту.",
+			});
+		}
+	});
+
+	/**
+	 * Отвязка исследования от пациента (перевод в unassigned)
+	 * POST /api/imaging/studies/:id/unbind-patient
+	 */
+	app.post("/api/imaging/studies/:id/unbind-patient", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"imaging unbind patient",
+			))
+		)
+			return;
+
+		const { id } = request.params as { id: string };
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const updated = await unbindPatientFromStudyInDb(orgId, id);
+		if (!updated) {
+			return sendImagingStudyNotFound(reply);
+		}
+		return reply.code(200).send(imagingStudySchema.parse(updated));
+	});
+
+	/**
+	 * Запуск автоматического сканирования и автопривязки неразобранных КТ по базе пациентов
+	 * POST /api/imaging/studies/auto-bind-scan
+	 */
+	app.post("/api/imaging/studies/auto-bind-scan", async (request, reply) => {
+		if (
+			!(await requireClinicalMutationAccess(
+				request,
+				reply,
+				"imaging auto bind scan",
+			))
+		)
+			return;
+
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
+		const summary = await autoBindUnassignedStudies(orgId);
+		return reply.code(200).send(summary);
 	});
 }

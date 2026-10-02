@@ -1049,7 +1049,7 @@ export function PatientCreationModal({
 									title="Переключить режим ребенка (<18 лет) для привязки родителя"
 								>
 									<Baby size={12} className="shrink-0" />
-									<span>{isChild ? "👶 Ребёнок (<18)" : "+ Ребёнок"}</span>
+									<span>{isChild ? "Ребёнок (<18)" : "+ Ребёнок"}</span>
 								</button>
 							</div>
 							<input
@@ -1092,9 +1092,9 @@ export function PatientCreationModal({
 							{/* 1-Click Role Chips */}
 							<div className="flex items-center gap-1.5 flex-wrap">
 								{[
-									{ role: "Мама", label: "👩 Мама", testId: "chip-rep-role-mother" },
-									{ role: "Папа", label: "👨 Папа", testId: "chip-rep-role-father" },
-									{ role: "Опекун", label: "🛡 Опекун", testId: "chip-rep-role-guardian" },
+									{ role: "Мама", label: "Мама", testId: "chip-rep-role-mother" },
+									{ role: "Папа", label: "Папа", testId: "chip-rep-role-father" },
+									{ role: "Опекун", label: "Опекун", testId: "chip-rep-role-guardian" },
 								].map((item) => (
 									<button
 										key={item.role}

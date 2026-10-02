@@ -55,9 +55,26 @@ export interface ParsedDicomSliceHeader {
   numberOfFrames?: number | undefined;
   patientName?: string | undefined;
   studyDate?: string | undefined;
+  imageType?: string | undefined;
   imagePositionPatient?: [number, number, number] | undefined;
   imageOrientationPatient?: [number, number, number, number, number, number] | undefined;
   transferSyntaxUid?: string | undefined;
+}
+
+/**
+ * Evaluates whether a slice is a 2D Scout / Localizer / Topogram / Surview image
+ * rather than an axial cross-sectional tomography slice.
+ * Standards: DICOM Part 3 C.7.6.1.1.2 (ImageType) and C.7.6.2 (Image Plane).
+ */
+export function isLocalizerOrScoutSlice(header: ParsedDicomSliceHeader): boolean {
+  const typeStr = (header.imageType || "").toUpperCase();
+  return (
+    typeStr.includes("LOCALIZER") ||
+    typeStr.includes("SCOUT") ||
+    typeStr.includes("SURVIEW") ||
+    typeStr.includes("TOPOGRAM") ||
+    typeStr.includes("SCANOGRAM")
+  );
 }
 
 export interface DicomSliceEntry {
@@ -150,6 +167,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   let numberOfFrames = 1;
   let patientName = "Не указан";
   let studyDate = "";
+  let imageType: string | undefined;
   let transferSyntaxUid: string | undefined;
   let imagePositionPatient: [number, number, number] | undefined;
   let imageOrientationPatient: [number, number, number, number, number, number] | undefined;
@@ -232,6 +250,16 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
           const raw = new Uint8Array(buffer, tagValOff, Math.min(tagLen, 64));
           const decoded = decodeDicomString(raw);
           if (decoded) patientName = decoded;
+        } catch {}
+      }
+    } else if (group === 0x0008 && element === 0x0008) {
+      // ImageType
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
+        try {
+          imageType = new TextDecoder("ascii")
+            .decode(new Uint8Array(buffer, tagValOff, tagLen))
+            .replace(/\0+$/, "")
+            .trim();
         } catch {}
       }
     } else if (group === 0x0008 && element === 0x0020) {
@@ -422,6 +450,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
     numberOfFrames,
     patientName,
     studyDate,
+    imageType,
     imagePositionPatient,
     imageOrientationPatient,
     transferSyntaxUid,

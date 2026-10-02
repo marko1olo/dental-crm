@@ -32,6 +32,10 @@ export interface WorkerRenderSliceOptions {
 	slabMode?: SlabProjectionMode | undefined;
 	slabThicknessMm?: number | undefined;
 	interpolation?: "nearest" | "trilinear" | undefined;
+	gamma?: number | undefined;
+	useSoftKnee?: boolean | undefined;
+	softKneeCeiling?: number | undefined;
+	airCutoffHU?: number | undefined;
 }
 
 export interface WorkerRenderSliceParams {

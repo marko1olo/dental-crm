@@ -349,10 +349,10 @@ export function SterilizationCycleModal({
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast(`Цикл стерилизации №${cycleNumber} зафиксирован в Журнале (Форма № 257/у)`, "success");
+				showToast(`Цикл стерилизации №${cycleNumber} зафиксирован в журнале автоклава`, "success");
 			} else {
 				// Local fallback toast
-				showToast(`Цикл №${cycleNumber} сохранен локально (Форма № 257/у)`, "success");
+				showToast(`Цикл №${cycleNumber} сохранен локально`, "success");
 			}
 
 			if (onCycleCreated) onCycleCreated();
@@ -375,10 +375,10 @@ export function SterilizationCycleModal({
 						<Flame size={22} color="#0284c7" />
 						<div>
 							<h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
-								Фиксация цикла стерилизации (Форма № 257/у)
+								Фиксация цикла стерилизации
 							</h3>
 							<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-								СанПиН 3.3686-21: аппараты клиники, термоиндикаторы 4/5 классов, крафт-пакеты
+								Стерилизация: аппараты клиники, термоиндикаторы 4/5 классов, крафт-пакеты
 							</div>
 						</div>
 					</div>
@@ -694,7 +694,7 @@ export function SterilizationCycleModal({
 							)}
 							<div style={{ fontSize: "0.8rem", fontWeight: 700, color: isCycleSterileCompliant ? "#059669" : "#dc2626" }}>
 								{isCycleSterileCompliant
-									? "Все параметры и термоиндикаторы соответствуют нормативам СанПиН 3.3686-21. Партия стерильна."
+									? "Все параметры и термоиндикаторы соответствуют норме. Партия стерильна."
 									: "ВНИМАНИЕ: Нарушение параметров цикла или термоиндикаторов! Инструменты подлежат браковке и повторной стерилизации."}
 							</div>
 						</div>

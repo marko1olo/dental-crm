@@ -83,8 +83,8 @@ export async function fetchPatientTreatmentPlans(
 export interface ExportCashierParams {
 	patientId: string;
 	patientName: string;
-	patientPhone: string;
-	doctorName: string;
+	patientPhone?: string | undefined;
+	doctorName?: string | undefined;
 	stages: readonly TreatmentPlanStage[];
 	currentTier: TreatmentPlanTier;
 	loyaltyDeduction: {
@@ -156,13 +156,20 @@ export function exportPlanToCashier({
 		totalAmountRub: netTotalRub,
 		paidAmountRub: 0,
 		status: (netTotalRub === 0 ? "warranty_100" : "issued") as BillingInvoice["status"],
-		items: allItems.map((it, idx) => ({
-			id: it.id || `item-${idx}`,
-			code: it.code804n || "A16.07.002",
-			name: `${it.name}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`,
-			quantity: it.quantity || 1,
-			priceRub: it.unitPriceRub || 0,
-		})),
+		items: allItems.map((it, idx) => {
+			const qty = it.quantity || 1;
+			const netUnitPriceRub =
+				typeof it.priceRub === "number" && qty > 0
+					? Number((it.priceRub / qty).toFixed(2))
+					: (it.unitPriceRub || 0);
+			return {
+				id: it.id || `item-${idx}`,
+				code: it.code804n || "A16.07.002",
+				name: `${it.name}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`,
+				quantity: qty,
+				priceRub: netUnitPriceRub,
+			};
+		}),
 		createdAt: new Date().toISOString(),
 		notes: exportData.notes,
 	};

@@ -183,9 +183,9 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 					? `Сляб ${slabThicknessMm.toFixed(1)} мм`
 					: "Срез 1.0 мм";
 			case "cross_section":
-				return toothFdi ? `FDI #${toothFdi}` : null;
+				return null;
 		}
-	}, [viewportType, coordinateMm, toothFdi, slabThicknessMm]);
+	}, [viewportType, coordinateMm, slabThicknessMm]);
 
 	return (
 		<div
@@ -204,16 +204,16 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				}}
 			>
 				<div
-					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-900/90 backdrop-blur-sm border border-zinc-700/80 shadow-md text-xs font-semibold whitespace-nowrap min-w-0 shrink"
+					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-950/85 backdrop-blur-sm border border-zinc-800 shadow-sm text-xs font-medium whitespace-nowrap min-w-0 shrink"
 					style={{ borderLeftColor: labels.planeColor, borderLeftWidth: 3 }}
 				>
 					<span
 						className="w-1.5 h-1.5 rounded-full shrink-0"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-zinc-100 tracking-wide font-semibold text-[11.5px] truncate">{labels.planeNameRu}</span>
+					<span className="text-zinc-400 font-medium text-[11px] truncate">{labels.planeNameRu}</span>
 					{coordText && (
-						<span className="font-mono text-zinc-400 text-[10px] font-medium ml-1 whitespace-nowrap shrink-0">
+						<span className="font-mono text-zinc-500 text-[10px] ml-1 whitespace-nowrap shrink-0">
 							({coordText})
 						</span>
 					)}
@@ -264,8 +264,8 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 						data-testid={`cbct-reset-angle-badge-${viewportType}`}
 					>
 						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
-						<RotateCcw size={10} className="inline text-slate-400 hover:text-white shrink-0 ml-0.5" />
-						<span className="text-[10px] text-slate-400 hover:text-white font-bold">0°</span>
+						<RotateCcw size={10} className="inline text-slate-400 hover:text-zinc-200 shrink-0 ml-0.5" />
+						<span className="text-[10px] text-slate-400 hover:text-zinc-200 font-bold">0°</span>
 					</button>
 				)}
 
@@ -276,12 +276,12 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onResetView();
 						}}
-						className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-1.5 py-0.5 rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-700/80 shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+						className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-1.5 py-0.5 rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/80 shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
 						title="Сброс вида: поворот 0.0°, масштаб 1.0x, перекрестие по центру"
 						data-testid={`cbct-reset-view-${viewportType}-btn`}
 						aria-label="Сброс вида"
 					>
-						<RotateCcw size={11} className="text-slate-400 hover:text-white" />
+						<RotateCcw size={11} className="text-slate-400 hover:text-zinc-200" />
 						<span className="text-[10px] font-mono font-bold">Сброс</span>
 					</button>
 				)}
@@ -293,7 +293,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 							e.stopPropagation();
 							onToggleMaximize();
 						}}
-						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-700/80 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
+						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/80 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
 						data-testid={`cbct-maximize-${viewportType}-btn`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
@@ -309,28 +309,28 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 
 			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (High-contrast dark underlay pad with 1px border) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-900/90 text-zinc-100 border border-zinc-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
+				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
 			</div>
 
 			<div
-				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-900/90 text-zinc-100 border border-zinc-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
+				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10"
 				title={labels.bottomTooltipRu}
 			>
 				{labels.bottom}
 			</div>
 
 			<div
-				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-900/90 text-zinc-100 border border-zinc-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10`}
+				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10`}
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}
 			</div>
 
 			<div
-				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-900/90 text-zinc-100 border border-zinc-700/80 font-mono font-bold text-xs shadow-md pointer-events-none z-10"
+				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10"
 				title={labels.rightTooltipRu}
 			>
 				{labels.right}

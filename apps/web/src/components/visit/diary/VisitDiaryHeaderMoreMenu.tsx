@@ -61,7 +61,7 @@ export function VisitDiaryHeaderMoreMenu({
 				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
 			>
 				<Pill className="w-4 h-4 text-blue-500 shrink-0" />
-				<span>Рецепт (107-1/у)</span>
+				<span>Рецепт на лекарства</span>
 			</button>
 			<button
 				type="button"

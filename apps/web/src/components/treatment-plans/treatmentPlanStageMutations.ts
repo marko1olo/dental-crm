@@ -3,7 +3,12 @@
  * Вынесены из useTreatmentPlanLogic.ts строго по Мандату 8b (лимит строк <= 800).
  */
 
-import { type Kopecks, parseKopecks } from "@dental/shared";
+import {
+	type Kopecks,
+	classifyProcedureStage,
+	parseKopecks,
+	sumKopecks,
+} from "@dental/shared";
 import type {
 	TreatmentPlanItem,
 	TreatmentPlanStage,
@@ -11,6 +16,10 @@ import type {
 } from "./types";
 import { romanizeStageNumber } from "./types";
 import type { TreatmentPlanStageStatus } from "./TreatmentPlanStageCard";
+
+function computeStageItemsTotalKopecks(items: readonly TreatmentPlanItem[]): Kopecks {
+	return sumKopecks(items.map((it) => parseKopecks(it.priceRub || 0)));
+}
 
 export function updateItemQuantityInStages(
 	stages: readonly TreatmentPlanStage[],
@@ -51,10 +60,7 @@ export function updateItemQuantityInStages(
 		});
 		if (!modified) return st;
 
-		const stTotalKopecks = updatedItems.reduce(
-			(acc, it) => acc + Math.round(it.priceRub * 100),
-			0,
-		);
+		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
 		return {
 			...st,
 			items: updatedItems,
@@ -97,10 +103,7 @@ export function updateItemPriceInStages(
 		});
 		if (!modified) return st;
 
-		const stTotalKopecks = updatedItems.reduce(
-			(acc, it) => acc + Math.round(it.priceRub * 100),
-			0,
-		);
+		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
 		return {
 			...st,
 			items: updatedItems,
@@ -149,10 +152,7 @@ export function updateItemInStages(
 		});
 		if (!modified) return st;
 
-		const stTotalKopecks = updatedItems.reduce(
-			(acc, it) => acc + Math.round(it.priceRub * 100),
-			0,
-		);
+		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
 		return {
 			...st,
 			items: updatedItems,
@@ -169,10 +169,7 @@ export function removeItemFromStages(
 	return stages.map((st) => {
 		if (!st.items.some((it) => it.id === itemId)) return st;
 		const updatedItems = st.items.filter((it) => it.id !== itemId);
-		const stTotalKopecks = updatedItems.reduce(
-			(acc, it) => acc + Math.round(it.priceRub * 100),
-			0,
-		);
+		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
 		return {
 			...st,
 			items: updatedItems,
@@ -190,13 +187,15 @@ export function addItemToPlanStages(
 	const unitPriceRub = newItemData.unitPriceRub || 0;
 	const qty = newItemData.quantity || 1;
 	const discRub = newItemData.discountRub || 0;
-	const grossKopecks = Math.round(unitPriceRub * qty * 100);
-	const discKopecks = Math.round(discRub * 100);
-	const netKopecks = Math.max(0, grossKopecks - discKopecks);
+	const unitPriceKop = parseKopecks(unitPriceRub);
+	const grossKopecks = (unitPriceKop * qty) as Kopecks;
+	const discKopecks = parseKopecks(discRub);
+	const netKopecks = Math.max(0, grossKopecks - discKopecks) as Kopecks;
 	const netRub = netKopecks / 100;
 
 	const stageKind: TreatmentPlanStageKind =
-		targetStageNumber === 2
+		newItemData.stageKind ||
+		(targetStageNumber === 2
 			? "stage_2_surgery"
 			: targetStageNumber === 3
 				? "stage_3_orthopedics"
@@ -204,7 +203,7 @@ export function addItemToPlanStages(
 					? "stage_4_orthodontics"
 					: targetStageNumber === 5
 						? "stage_5_periodontics"
-						: "stage_1_therapy";
+						: "stage_1_therapy");
 
 	const existingStage = stages.find((s) => s.stageNumber === targetStageNumber);
 	const stageItemIndex = (existingStage?.items.length ?? 0) + 1;
@@ -235,11 +234,7 @@ export function addItemToPlanStages(
 		return stages.map((s) => {
 			if (s.stageNumber !== targetStageNumber) return s;
 			const updatedItems = [...s.items, newItem];
-			const totalKopecks = updatedItems.reduce((acc, it) => {
-				const g = Math.round(it.unitPriceRub * it.quantity * 100);
-				const d = Math.round(it.discountRub * 100);
-				return (acc + Math.max(0, g - d)) as Kopecks;
-			}, 0 as Kopecks);
+			const totalKopecks = computeStageItemsTotalKopecks(updatedItems);
 			return {
 				...s,
 				items: updatedItems,
@@ -391,7 +386,7 @@ export function mergeIncomingPlanItem(
 				return st;
 			}
 			const updatedItems = [...st.items, newItem];
-			const totalKopecks = updatedItems.reduce((acc, it) => acc + Math.round((it.priceRub || 0) * 100), 0);
+			const totalKopecks = computeStageItemsTotalKopecks(updatedItems);
 			return {
 				...st,
 				items: updatedItems,
@@ -418,7 +413,7 @@ export function mergePersistedPlanItems(
 		if (newUnique.length === 0) return st;
 		changed = true;
 		const updatedItems = [...st.items, ...newUnique];
-		const totalKopecks = updatedItems.reduce((acc, it) => acc + Math.round((it.priceRub || 0) * 100), 0);
+		const totalKopecks = computeStageItemsTotalKopecks(updatedItems);
 		return {
 			...st,
 			items: updatedItems,

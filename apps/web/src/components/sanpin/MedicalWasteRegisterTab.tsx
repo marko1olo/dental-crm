@@ -235,8 +235,8 @@ export function MedicalWasteRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>УТИЛИЗАЦИЯ МЕДИЦИНСКИХ ОТХОДОВ</h2>
-				<p title="СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к обращению с медицинскими отходами»">Технологический учет образования и передачи отходов классов А, Б, В, Г</p>
+				<h2>УТИЛИЗАЦИЯ ОТХОДОВ</h2>
+				<p title="Учет образования и передачи отходов">Учет образования и передачи отходов клиники</p>
 			</div>
 
 			{/* Mini summary cards for waste categories */}
@@ -312,11 +312,11 @@ export function MedicalWasteRegisterTab() {
 							gap: "0.45rem",
 							whiteSpace: "nowrap",
 						}}
-						title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"
+						title="1-Клик сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
 						data-testid="nurse-waste-quick-shift-tab-btn"
 					>
 						<Sparkles size={16} />
-						<span>{isQuickShiftLoading ? "Списание отходов..." : "1-Клик отходы смены (Класс Б)"}</span>
+						<span>{isQuickShiftLoading ? "Списание отходов..." : "1-Клик отходы смены"}</span>
 					</button>
 
 					<button
@@ -327,7 +327,7 @@ export function MedicalWasteRegisterTab() {
 						title="Интерактивный технологический журнал учета отходов и печать термоэтикеток"
 						data-testid="open-waste-journal-modal-btn"
 					>
-						<Tag size={16} /> <span>Термоэтикетка 58x40 мм / Журнал отходов</span>
+						<Tag size={16} /> <span>Наклейки на пакеты / Журнал отходов</span>
 					</button>
 					<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
 						<Printer size={15} /> Печать журнала отходов
