@@ -1,6 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
+	// Hard kill: whole test ≤ 60 s, single action ≤ 15 s
+	timeout: 60_000,
+	actionTimeout: 15_000,
+	navigationTimeout: 20_000,
 	// Look for test files in the "tests/e2e" directory, relative to this configuration file.
 	testDir: "./tests/e2e",
 
