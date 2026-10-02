@@ -63,16 +63,23 @@ graph TD
 
 ### 💻 2. ПК 136 (Dell Vostro 15 3510 — Основной Клинический Ноутбук)
 - **Модель:** Dell Vostro 15 3510
-- **Характеристики:** Intel Core i7-1165G7 (4 ядра, 8 потоков), 16 GB RAM, NVMe SSD.
-- **ОС:** Windows 10/11 Pro 64-bit.
+- **Характеристики:** Intel Core i7-1165G7 (4 ядра, 8 потоков), 16 GB RAM, NVMe SSD (216.8 GB свободно).
+- **ОС:** Windows 11 Pro 64-bit (Hostname: `VOSTRO`).
 - **Сетевые адреса:**
   - Локальный Wi-Fi: `192.168.0.136`
   - WireGuard VPN: `10.77.0.4` (интерфейс `hades-wg-4`)
 - **Учетная запись Windows:**
-  - Логин: `5800r`
-  - Пароль: уточняется у владельца (не совпадает со стандартными `2580` / `12345`).
-- **Статус сетевых портов:**
-  - TCP `5985` (WinRM): **ОТКРЫТ И ДОСТУПЕН** (`TcpTestSucceeded: True` по обоим адресам: `192.168.0.136` и `10.77.0.4`).
+  - Логин: `vostro\dell` (или `dell`)
+  - Пароль: `2580`
+- **Службы управления и базы данных:**
+  - **WinRM (WS-Management):** Status: Running, порт `5985` открыт и проверен (`TcpTestSucceeded: True`).
+  - **PostgreSQL 9.2:** Status: Running, обслуживает клиническую базу Vatech.
+  - **WireGuardTunnel$hades-wg-4:** Status: Running (Automatic), настроен авто-перезапуск при сбоях (задержка 3000 мс).
+  - **Сторожевой таймер (Watchdog):** Служба `ClinicWireGuardWatchdog` в Task Scheduler проверяет шлюз `10.77.0.1` каждые 2 минуты.
+  - **Электропитание:** Схема «Сбалансированная», при закрытии крышки уходит в СОН (`LIDACTION = 1`, перегрев исключен).
+- **Статус доступа:**
+  - WinRM: **100% ДОСТУПЕН** (выполняет удаленные команды от `vostro\dell`).
+  - SMB: **100% ДОСТУПЕН** (`\\10.77.0.4\c$` монтируется как диск `Y:`).
 
 ---
 
@@ -124,37 +131,33 @@ graph TD
 
 ## 3. Рецепты и Команды Быстрого Подключения (Playbook)
 
-### Подключение сетевого диска к Старому Ноутбуку (ПК 233)
-Через локальную сеть:
-```powershell
-net use Z: \\192.168.0.233\c$ 12345 /user:админ /persistent:no
-```
-Через WireGuard (из любой точки мира):
-```powershell
-net use Z: \\10.77.0.6\c$ 12345 /user:админ /persistent:no
-```
+### Подключение сетевых дисков через WireGuard VPN (из любой точки мира)
+- **Старый ноутбук (10.77.0.6):**
+  ```powershell
+  net use Z: \\10.77.0.6\c$ 12345 /user:админ /persistent:no
+  ```
+- **Dell Vostro (10.77.0.4):**
+  ```powershell
+  net use Y: \\10.77.0.4\c$ 2580 /user:vostro\dell /persistent:no
+  ```
 
-### Настройка WinRM TrustedHosts на локальной машине (ПК 240)
-Поскольку машины находятся в рабочей группе (Workgroup), для выполнения удаленных команд WinRM (`Invoke-Command`, `Enter-PSSession`) с ПК 240 необходимо однократно добавить целевые хосты в доверенные.
-Запустите PowerShell **от имени Администратора** и выполните:
+### Сводный опрос всего парка компьютеров (Телеметрия в 1 клик):
 ```powershell
-Set-Item WSMan:\localhost\Client\TrustedHosts -Value '*' -Force
+powershell -ExecutionPolicy Bypass -File C:\Users\Admin\Desktop\MANAGE_CLINIC_NETWORK.ps1 summary
 ```
 
 ### Вход в интерактивную консоль WinRM:
-К старому ноутбуку (`10.77.0.6`):
-```powershell
-$cred = Get-Credential  # Ввести логин: админ, пароль: 12345
-Enter-PSSession -ComputerName 10.77.0.6 -Credential $cred
-```
-К Dell Vostro (`10.77.0.4`):
-```powershell
-$cred = Get-Credential  # Ввести логин: 5800r, реальный пароль
-Enter-PSSession -ComputerName 10.77.0.4 -Credential $cred
-```
+- **К Старому ноутбуку (10.77.0.6):**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File C:\Users\Admin\Desktop\MANAGE_CLINIC_NETWORK.ps1 winrm-old
+  ```
+- **К Dell Vostro (10.77.0.4):**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File C:\Users\Admin\Desktop\MANAGE_CLINIC_NETWORK.ps1 winrm-dell
+  ```
 
-### Проверка сетевой доступности портов:
+### Выполнение команд в 1 строку через WireGuard:
 ```powershell
-Test-NetConnection 10.77.0.4 -Port 5985
-Test-NetConnection 10.77.0.6 -Port 5985
+powershell -ExecutionPolicy Bypass -File C:\Users\Admin\Desktop\MANAGE_CLINIC_NETWORK.ps1 cmd-dell "hostname; whoami"
+powershell -ExecutionPolicy Bypass -File C:\Users\Admin\Desktop\MANAGE_CLINIC_NETWORK.ps1 cmd-old "hostname; whoami"
 ```
