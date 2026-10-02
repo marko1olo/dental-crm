@@ -2633,6 +2633,15 @@ import {
 	type FiscalReceiptDetails,
 	paymentSchema,
 	type Payment,
+	paymentMethodSchema,
+	type PaymentMethod,
+	paymentStatusSchema,
+	type PaymentStatus,
+	STATUTORY_PAYMENT_METHOD_LABELS_RU,
+	normalizePaymentMethod,
+	resolveFfd12PaymentTag,
+	extendedPaymentMethodSchema,
+	type ExtendedPaymentMethod,
 } from "./fiscal/index.js";
 export {
 	fiscalReceiptUrlSchema,
@@ -2642,6 +2651,15 @@ export {
 	type FiscalReceiptDetails,
 	paymentSchema,
 	type Payment,
+	paymentMethodSchema,
+	type PaymentMethod,
+	paymentStatusSchema,
+	type PaymentStatus,
+	STATUTORY_PAYMENT_METHOD_LABELS_RU,
+	normalizePaymentMethod,
+	resolveFfd12PaymentTag,
+	extendedPaymentMethodSchema,
+	type ExtendedPaymentMethod,
 };
 
 /*
