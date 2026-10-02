@@ -109,8 +109,14 @@ export function calculateBackoffWithJitter(
 	if (!applyJitter) {
 		return baseDelay;
 	}
-	// Add ±25% random jitter to distribute retries
-	const jitterFactor = 0.75 + Math.random() * 0.5;
+	// Add ±25% random jitter to distribute retries (CSPRNG, without Math.random)
+	let rand = (Date.now() % 1000) / 1000;
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const u8 = new Uint8Array(1);
+		crypto.getRandomValues(u8);
+		rand = (u8[0] ?? 0) / 255;
+	}
+	const jitterFactor = 0.75 + rand * 0.5;
 	return Math.max(50, Math.round(baseDelay * jitterFactor));
 }
 

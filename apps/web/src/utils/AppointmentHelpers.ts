@@ -372,114 +372,11 @@ export function appointmentScheduleDraftSignature(
 	return JSON.stringify(appointmentUpdateInputFromDraft(draft));
 }
 
-export function appointmentScheduleDateMissingSteps(
-	draft: AppointmentScheduleDraft,
-): string[] {
-	const startsAt = draft.startsAt.trim();
-	const endsAt = draft.endsAt.trim();
-	const startsAtMs = Date.parse(startsAt);
-	const endsAtMs = Date.parse(endsAt);
-	return [
-		!startsAt ? "укажите начало приема" : null,
-		startsAt && !Number.isFinite(startsAtMs)
-			? "проверьте дату начала приема"
-			: null,
-		!endsAt ? "укажите окончание приема" : null,
-		endsAt && !Number.isFinite(endsAtMs)
-			? "проверьте дату окончания приема"
-			: null,
-		Number.isFinite(startsAtMs) &&
-		Number.isFinite(endsAtMs) &&
-		endsAtMs <= startsAtMs
-			? "окончание приема должно быть позже начала"
-			: null,
-	].filter((step): step is string => Boolean(step));
-}
-
-/**
- * Чего не хватает записи, человеческими словами.
- *
- * Различает «не выбрано» и «в клинике вообще нет». Раньше клиника без кресел
- * получала подсказку «выберите кресло» при пустом списке кресел: указание,
- * которое невозможно выполнить, и кнопка создания заперта без объяснения, куда
- * идти. То же с врачом и пациентами у только что заведённой клиники.
- *
- * `resources` необязателен: без него поведение прежнее.
- */
-
-export function isTechnicalBreakAppointment(
-	item: { reason?: string | null; comment?: string | null } | null | undefined,
-): boolean {
-	if (!item) return false;
-	const r = String(item.reason || "").toLowerCase();
-	const c = String(item.comment || "").toLowerCase();
-	return (
-		r.includes("служебный перерыв") ||
-		r.includes("технический перерыв") ||
-		r.includes("служебная бронь") ||
-		r.includes("служебная блокировка") ||
-		r.includes("санобработка") ||
-		r.includes("обед") ||
-		r.includes("перерыв") ||
-		r.includes("отпуск") ||
-		r.includes("учеба") ||
-		r.includes("учёба") ||
-		r.includes("отсутствует") ||
-		r.includes("консилиум") ||
-		r.includes("другое (блокировка)") ||
-		r.includes("другое (служебное)") ||
-		r.includes("блокировка") ||
-		c.includes("служебная бронь") ||
-		c.includes("служебная блокировка") ||
-		c.includes("технический интервал") ||
-		c.includes("блокировка")
-	);
-}
-
-export function appointmentScheduleMissingFields(
-	draft: AppointmentScheduleDraft,
-	clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined,
-	staff: Dashboard["clinicSettings"]["staff"] | null | undefined,
-	resources?: {
-		chairs?: Dashboard["clinicSettings"]["chairs"] | null;
-		patients?: Dashboard["patients"] | null;
-	},
-): string[] {
-	const missing: string[] = [];
-	const activeStaff = (staff || []).filter((member) => member.active);
-	const hasDoctor = activeStaff.some(
-		(member) => member.role === "doctor" || member.role === "owner",
-	);
-	const activeChairs = resources?.chairs
-		? resources.chairs.filter((chair) => chair.active)
-		: null;
-	const patients = resources?.patients ?? null;
-
-	const isTechnicalBreak = isTechnicalBreakAppointment(draft);
-	if (!draft.patientId && !isTechnicalBreak) {
-		missing.push(
-			patients && patients.length === 0
-				? "в клинике ещё нет пациентов — создайте карточку в разделе «Пациенты»"
-				: "выберите пациента",
-		);
-	}
-	if (!draft.doctorUserId) {
-		missing.push(
-			staff && !hasDoctor
-				? "в клинике нет врача — добавьте сотрудника в настройках"
-				: "выберите врача",
-		);
-	}
-	if (!draft.chairId) {
-		missing.push(
-			activeChairs && activeChairs.length === 0
-				? "в клинике нет кресел — добавьте кресло в настройках"
-				: "выберите кресло",
-		);
-	}
-	missing.push(...appointmentScheduleDateMissingSteps(draft));
-	return missing;
-}
+export {
+	appointmentScheduleDateMissingSteps,
+	isTechnicalBreakAppointment,
+	appointmentScheduleMissingFields,
+} from "../AppHelpers";
 
 export const appointmentReadinessLabels: Record<
 	Dashboard["appointmentReadiness"][number]["state"],

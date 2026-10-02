@@ -1344,25 +1344,6 @@ export const clinicalRuleActionSchema = z.enum([
 ]);
 export type ClinicalRuleAction = z.infer<typeof clinicalRuleActionSchema>;
 
-export const paymentMethodSchema = z.enum([
-	"cash",
-	"card",
-	"bank_transfer",
-	"online",
-	"insurance",
-	"family_wallet",
-	"other",
-]);
-export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
-
-export const paymentStatusSchema = z.enum([
-	"planned",
-	"paid",
-	"refunded",
-	"voided",
-]);
-export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
-
 /**
  * Значения обязаны совпадать с pgEnum "communication_channel" в
  * apps/api/src/db/schema.ts. БЫЛО: в базе восемь значений, здесь шесть — vk и

@@ -31,6 +31,136 @@ export const paymentStatusSchema = z.enum([
 ]);
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 
+/**
+ * Statutory Russian labels for payment methods under FFD 1.2 (54-FZ).
+ */
+export const STATUTORY_PAYMENT_METHOD_LABELS_RU: Record<PaymentMethod, string> = {
+	cash: "Наличные (Тег 1031)",
+	card: "Банковская карта (Тег 1081)",
+	online: "СБП / Электронные средства (Тег 1081)",
+	bank_transfer: "Банковский перевод на р/с (Тег 1081)",
+	family_wallet: "Аванс / Семейный депозит (Тег 1215)",
+	insurance: "Страховая компания ДМС (Тег 1216/1217)",
+	other: "Иной способ расчета",
+};
+
+/**
+ * Normalizes any UI or API payment method alias to statutory PaymentMethod.
+ */
+export function normalizePaymentMethod(alias: string | null | undefined): PaymentMethod {
+	if (!alias) return "cash";
+	const normalized = alias.trim().toLowerCase();
+	switch (normalized) {
+		case "cash":
+		case "нал":
+		case "наличные":
+			return "cash";
+		case "card":
+		case "bank_card":
+		case "card_terminal":
+		case "терминал":
+		case "карта":
+		case "эквайринг":
+			return "card";
+		case "online":
+		case "sbp":
+		case "sbp_qr":
+		case "sberpay_qr":
+		case "biometry":
+		case "qr":
+		case "сбп":
+			return "online";
+		case "bank_transfer":
+		case "bank_invoice":
+		case "расчетный_счет":
+		case "безнал":
+			return "bank_transfer";
+		case "family_wallet":
+		case "family_balance":
+		case "family_deposit":
+		case "patient_deposit":
+		case "advance_deposit":
+		case "deposit":
+		case "аванс":
+		case "депозит":
+			return "family_wallet";
+		case "insurance":
+		case "dms_insurance":
+		case "дмс":
+		case "страховая":
+			return "insurance";
+		default:
+			return "other";
+	}
+}
+
+/**
+ * Resolves statutory FFD 1.2 Tag (1031, 1081, 1215, 1216, 1217) for any payment method or alias.
+ */
+export function resolveFfd12PaymentTag(alias: string | null | undefined): 1031 | 1081 | 1215 | 1216 | 1217 {
+	if (!alias) return 1031;
+	const normalized = alias.trim().toLowerCase();
+	switch (normalized) {
+		case "cash":
+		case "нал":
+		case "наличные":
+			return 1031; // Наличные
+		case "card":
+		case "bank_card":
+		case "card_terminal":
+		case "online":
+		case "sbp":
+		case "sbp_qr":
+		case "sberpay_qr":
+		case "biometry":
+		case "bank_transfer":
+		case "bank_invoice":
+		case "терминал":
+		case "карта":
+		case "эквайринг":
+		case "qr":
+		case "сбп":
+		case "безнал":
+			return 1081; // Безналичные / электронные
+		case "family_wallet":
+		case "family_balance":
+		case "family_deposit":
+		case "patient_deposit":
+		case "advance_deposit":
+		case "deposit":
+		case "advance":
+		case "аванс":
+		case "депозит":
+			return 1215; // Зачет аванса / предоплаты
+		case "credit":
+		case "рассрочка":
+		case "кредит":
+			return 1216; // Постоплата / кредит
+		case "insurance":
+		case "dms_insurance":
+		case "certificate_or_bonus":
+		case "loyalty_points":
+		case "certificate":
+		case "bonus":
+		case "бонусы":
+		case "сертификат":
+		case "дмс":
+		case "страховая":
+			return 1217; // Встречное предоставление
+		default:
+			return 1081;
+	}
+}
+
+/**
+ * Extended payment method schema supporting compound/split and UI modes.
+ */
+export const extendedPaymentMethodSchema = z.union([
+	paymentMethodSchema,
+	z.enum(["split", "mixed", "sbp", "deposit", "credit", "certificate", "bonus"]),
+]);
+export type ExtendedPaymentMethod = z.infer<typeof extendedPaymentMethodSchema>;
+
 // ─── 2. RECEIPT URL & ISSUE DATE ─────────────────────────────────────────────
 
 export const fiscalReceiptUrlSchema = z
