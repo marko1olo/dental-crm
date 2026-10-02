@@ -19,6 +19,7 @@ import {
 	UPPER_TEETH_PEDIATRIC,
 } from "../ClassicGostOdontogram";
 import type { ToothData, ToothState } from "../ToothChart";
+import type { CrmToothState } from "@dental/shared";
 
 describe("Classic GOST Tooth Formula 043/u — FDI Dual-Jaw Grid Architecture", () => {
 	test("Взрослая зубная формула содержит ровно 32 зуба (16 верхняя челюсть, 16 нижняя челюсть)", () => {
@@ -53,7 +54,7 @@ describe("Classic GOST Tooth Formula 043/u — FDI Dual-Jaw Grid Architecture", 
 
 describe("Classic GOST 043/u — Official Abbreviations & Clinical State Mappings", () => {
 	test("Все официальные буквенные обозначения ГОСТ 043/у соответствуют клиническим состояниям", () => {
-		const expectedMappings: Record<ToothState, GostToothAbbreviation> = {
+		const expectedMappings: Record<CrmToothState, GostToothAbbreviation> = {
 			Caries: "К",
 			Filled: "П",
 			Pulpitis: "Пт",

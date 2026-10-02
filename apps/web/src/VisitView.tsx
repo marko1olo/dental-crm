@@ -16,6 +16,8 @@ import { PatientAvatar } from "./components/PatientAvatar";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
+import { SomaticSafetyAlertWidget } from "./components/clinical/SomaticSafetyAlertWidget";
 import { VisitConsentsTab } from "./components/visit/VisitConsentsTab";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
@@ -85,17 +87,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	// Modals state
 	const [endoModalToothNumber, setEndoModalToothNumber] = useState<any>(null);
 	const [endoModalToothState, setEndoModalToothState] = useState<string>("idle");
-	const [isEndoModalOpen, setIsEndoModalOpen] = useState(false);
-	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState(false);
 	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = useState<any>(null);
-	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState(false);
-	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState(false);
-	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
-	const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = useState(false);
-	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
-	const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
-	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false);
-	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
+	const [isEndoModalOpen, setIsEndoModalOpen] = useState(false); const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState(false);
+	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState(false); const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState(false);
+	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false); const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = useState(false);
+	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false); const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
+	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false); const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
 
 	const headerMoreMenuRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -227,25 +224,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 	const handleFinishVisitAction = useCallback(async () => {
 		if (typeof updateVisitNoteField === "function") {
-			if (!visitNoteForm?.diagnosis) {
-				updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
-			}
-			if (!visitNoteForm?.treatmentPlan) {
-				updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Санация.");
-			}
-			if (!visitNoteForm?.complaint) {
-				updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");
-			}
-			if (!visitNoteForm?.anamnesis) {
-				updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
-			}
-			if (!visitNoteForm?.objectiveStatus) {
-				updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
-			}
+			if (!visitNoteForm?.diagnosis) updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
+			if (!visitNoteForm?.treatmentPlan) updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Санация.");
+			if (!visitNoteForm?.complaint) updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");
+			if (!visitNoteForm?.anamnesis) updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
+			if (!visitNoteForm?.objectiveStatus) updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
 		}
-		if (typeof flushPendingVisitSaves === "function") {
-			await flushPendingVisitSaves();
-		}
+		if (typeof flushPendingVisitSaves === "function") await flushPendingVisitSaves();
 		showToast("Приём успешно завершён", "success");
 	}, [flushPendingVisitSaves, updateVisitNoteField, visitNoteForm]);
 
@@ -281,9 +266,25 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				setToothState(String(detail.toothNumber), detail.state);
 			}
 		};
+		const handleOpenToothClinicalModal = (e: Event) => {
+			const detail = (e as CustomEvent<{ toothNumber?: number | string; code?: string; state?: string }>).detail;
+			if (detail) {
+				const code = String(detail.code || detail.toothNumber || "");
+				if (code) {
+					setSelectedToothForMenu({
+						code,
+						state: detail.state || (toothStateByCode as Record<string, string>)?.[code] || "Healthy",
+					});
+				}
+			}
+		};
 		window.addEventListener("dente-update-tooth-state", handleToothStateUpdate);
-		return () => window.removeEventListener("dente-update-tooth-state", handleToothStateUpdate);
-	}, [setToothState]);
+		window.addEventListener("dente-open-tooth-clinical-modal", handleOpenToothClinicalModal);
+		return () => {
+			window.removeEventListener("dente-update-tooth-state", handleToothStateUpdate);
+			window.removeEventListener("dente-open-tooth-clinical-modal", handleOpenToothClinicalModal);
+		};
+	}, [setToothState, toothStateByCode]);
 
 	const appendToEMKField = useCallback((field: string, text: string) => {
 		if (typeof updateVisitNoteField === "function") {
@@ -356,6 +357,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+							{/* Somatic Safety Alerts & Stop-factors */}
+							<SomaticSafetyAlertWidget
+								patient={activePatient}
+								variant="header"
+								onApplyNorm={handleApplySomaticNormQuick}
+								onSyncToDiary={(text) => {
+									if (updateVisitNoteField) {
+										const current = visitNoteForm?.anamnesis || "";
+										updateVisitNoteField("anamnesis", current ? `${current}\n${text}` : text);
+									}
+								}}
+							/>
+
 							{/* Кнопка физиологической нормы 043/у (1-клик) — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
 							<button
 								type="button"
@@ -487,38 +501,23 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					{/* Строка 2: Вкладки приёма с плавным фейдом по краям на мобильных */}
 					<div className="relative border-t border-[var(--glass-border)]/50 bg-[var(--paper-soft)]">
 						<div className="flex items-center gap-1.5 px-2 py-1 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
-							<button
-								type="button"
-								data-testid="visit-subtab-emk"
-								className={`visit-subtab-btn ${visitSubViewTab === "emk" ? "active" : ""}`}
-								onClick={() => handleTabChange("emk")}
-							>
-								Дневник приёма
-							</button>
-							<button
-								type="button"
-								data-testid="visit-subtab-odontogram"
-								className={`visit-subtab-btn ${visitSubViewTab === "odontogram" ? "active" : ""}`}
-								onClick={() => handleTabChange("odontogram")}
-							>
-								Зубная формула
-							</button>
-							<button
-								type="button"
-								data-testid="visit-subtab-diagnostics"
-								className={`visit-subtab-btn ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
-								onClick={() => handleTabChange("diagnostics")}
-							>
-								Диагностика
-							</button>
-							<button
-								type="button"
-								data-testid="visit-subtab-consents"
-								className={`visit-subtab-btn ${visitSubViewTab === "consents" ? "active" : ""}`}
-								onClick={() => handleTabChange("consents")}
-							>
-								Согласия
-							</button>
+							{[
+								{ id: "emk", testId: "visit-subtab-emk", label: "Дневник приёма" },
+								{ id: "odontogram", testId: "visit-subtab-odontogram", label: "Зубная формула" },
+								{ id: "diagnostics", testId: "visit-subtab-diagnostics", label: "Диагностика" },
+								{ id: "consents", testId: "visit-subtab-consents", label: "Согласия" },
+								{ id: "anamnesis", testId: "visit-subtab-anamnesis", label: "Анамнез" },
+							].map((tab) => (
+								<button
+									key={tab.id}
+									type="button"
+									data-testid={tab.testId}
+									className={`visit-subtab-btn ${visitSubViewTab === tab.id ? "active" : ""}`}
+									onClick={() => handleTabChange(tab.id)}
+								>
+									{tab.label}
+								</button>
+							))}
 						</div>
 						{/* Плавный градиентный фейд по правому краю на мобильных экранах для индикации горизонтального скролла */}
 						<div className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--paper-soft)] to-transparent" aria-hidden="true" />
@@ -541,6 +540,23 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 					<div style={{ display: visitSubViewTab === "diagnostics" ? "block" : "none" }}>
 						<VisitDiagnosticsTab />
+					</div>
+
+					<div style={{ display: visitSubViewTab === "anamnesis" ? "block" : "none" }}>
+						<VisitAnamnesisTab
+							onAppendAnamnesis={(text) => {
+								if (updateVisitNoteField) {
+									const cur = visitNoteForm?.anamnesis || "";
+									updateVisitNoteField("anamnesis", cur ? `${cur}\n${text}` : text);
+								}
+							}}
+							onAppendComorbidities={(text) => {
+								if (updateVisitNoteField) {
+									const cur = visitNoteForm?.anamnesis || "";
+									updateVisitNoteField("anamnesis", cur ? `${cur}\nСопутствующие: ${text}` : `Сопутствующие: ${text}`);
+								}
+							}}
+						/>
 					</div>
 
 					{visitSubViewTab === "consents" && (
@@ -729,27 +745,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				selectedToothForMenu={selectedToothForMenu}
 				closeClinicalModal={() => setSelectedToothForMenu(null)}
 				toothStateByCode={toothStateByCode}
-				materialCategory={materialCategory}
-				setMaterialCategory={setMaterialCategory}
+				materialCategory={materialCategory} setMaterialCategory={setMaterialCategory}
 				handleSelectDiagnosis={(state, text, field) => {
 					if (selectedToothForMenu?.code) {
 						setToothState(selectedToothForMenu.code, state);
-						if (text && field) {
-							appendToEMKField(field, `Зуб ${selectedToothForMenu.code}: ${text}`);
-						}
+						if (text && field) appendToEMKField(field, `Зуб ${selectedToothForMenu.code}: ${text}`);
 					}
 					setSelectedToothForMenu(null);
 				}}
 				handleSelectSurface={() => {}}
 				selectedSurfaces={selectedSurfaces}
-				isSurfaceMode={isSurfaceMode}
-				setIsSurfaceMode={setIsSurfaceMode}
-				setEndoModalToothNumber={setEndoModalToothNumber}
-				setEndoModalToothState={setEndoModalToothState}
-				setIsEndoModalOpen={setIsEndoModalOpen}
-				appendToEMKField={appendToEMKField}
-				setLabOrderModalToothNumber={setLabOrderModalToothNumber}
-				setIsLabOrderModalOpen={setIsLabOrderModalOpen}
+				isSurfaceMode={isSurfaceMode} setIsSurfaceMode={setIsSurfaceMode}
+				setEndoModalToothNumber={setEndoModalToothNumber} setEndoModalToothState={setEndoModalToothState}
+				setIsEndoModalOpen={setIsEndoModalOpen} appendToEMKField={appendToEMKField}
+				setLabOrderModalToothNumber={setLabOrderModalToothNumber} setIsLabOrderModalOpen={setIsLabOrderModalOpen}
 				visitWarnings={visitWarnings}
 			/>
 
@@ -757,34 +766,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			<VisitViewModals
 				endoModalToothNumber={endoModalToothNumber}
 				endoModalToothState={endoModalToothState}
-				isEndoModalOpen={isEndoModalOpen}
-				setIsEndoModalOpen={setIsEndoModalOpen}
+				isEndoModalOpen={isEndoModalOpen} setIsEndoModalOpen={setIsEndoModalOpen}
 				setEndoModalToothNumber={setEndoModalToothNumber}
-				isLabOrderModalOpen={isLabOrderModalOpen}
-				setIsLabOrderModalOpen={setIsLabOrderModalOpen}
-				labOrderModalToothNumber={labOrderModalToothNumber}
-				setLabOrderModalToothNumber={setLabOrderModalToothNumber}
-				isStagePaymentModalOpen={isStagePaymentModalOpen}
-				setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
-				isPriceValidatorModalOpen={isPriceValidatorModalOpen}
-				setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
+				isLabOrderModalOpen={isLabOrderModalOpen} setIsLabOrderModalOpen={setIsLabOrderModalOpen}
+				labOrderModalToothNumber={labOrderModalToothNumber} setLabOrderModalToothNumber={setLabOrderModalToothNumber}
+				isStagePaymentModalOpen={isStagePaymentModalOpen} setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
+				isPriceValidatorModalOpen={isPriceValidatorModalOpen} setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
 				priceValidatorPlanPayload={activePlan || undefined}
 				priceValidatorCatalogList={dashboard?.serviceCatalog}
-				isEmergencyModalOpen={isEmergencyModalOpen}
-				setIsEmergencyModalOpen={setIsEmergencyModalOpen}
-				isVoiceDictationModalOpen={isVoiceDictationModalOpen}
-				setIsVoiceDictationModalOpen={setIsVoiceDictationModalOpen}
+				isEmergencyModalOpen={isEmergencyModalOpen} setIsEmergencyModalOpen={setIsEmergencyModalOpen}
+				isVoiceDictationModalOpen={isVoiceDictationModalOpen} setIsVoiceDictationModalOpen={setIsVoiceDictationModalOpen}
 				selectedToothForMenu={selectedToothForMenu}
-				isWarrantyModalOpen={isWarrantyModalOpen}
-				setIsWarrantyModalOpen={setIsWarrantyModalOpen}
-				isDoctorShiftModalOpen={isDoctorShiftModalOpen}
-				setIsDoctorShiftModalOpen={setIsDoctorShiftModalOpen}
-				isInformedConsentModalOpen={isInformedConsentModalOpen}
-				setIsInformedConsentModalOpen={setIsInformedConsentModalOpen}
-				activePatient={activePatient}
-				activeDoctor={activeDoctor}
-				dashboard={dashboard}
-				patientAge={patientAge}
+				isWarrantyModalOpen={isWarrantyModalOpen} setIsWarrantyModalOpen={setIsWarrantyModalOpen}
+				isDoctorShiftModalOpen={isDoctorShiftModalOpen} setIsDoctorShiftModalOpen={setIsDoctorShiftModalOpen}
+				isInformedConsentModalOpen={isInformedConsentModalOpen} setIsInformedConsentModalOpen={setIsInformedConsentModalOpen}
+				activePatient={activePatient} activeDoctor={activeDoctor}
+				dashboard={dashboard} patientAge={patientAge}
 				appendToEMKField={appendToEMKField}
 				setToothState={setToothState}
 				visitNoteForm={visitNoteForm}

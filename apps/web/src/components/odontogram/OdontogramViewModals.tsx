@@ -1,11 +1,12 @@
 /**
  * DENTE Dental CRM — Odontogram Secondary View Modals & Drawers
  *
- * Houses lazily loaded clinical modals (Cephalometry, Jaw Occlusion, Treatment Plan Wizard)
+ * Houses lazily loaded clinical modals (Cephalometry, Jaw Occlusion, Treatment Plan Wizard, Orthopedics Chairside)
  * and inspection drawers (Tooth Context Drawer, Endo Canal Measurement, Radial Menu).
  */
 
 import React from "react";
+import { X } from "lucide-react";
 import type { ToothData, ToothState } from "./ToothChart";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
@@ -25,6 +26,11 @@ const JawOcclusionModal = React.lazy(() =>
 const TreatmentPlanWizard = React.lazy(() =>
 	import("./TreatmentPlanWizard").then((m) => ({
 		default: m.TreatmentPlanWizard,
+	})),
+);
+const OrthopedicsChairsidePanel = React.lazy(() =>
+	import("../orthopedics/OrthopedicsChairsidePanel").then((m) => ({
+		default: m.OrthopedicsChairsidePanel,
 	})),
 );
 
@@ -60,6 +66,9 @@ export interface OdontogramViewModalsProps {
 	// Jaw occlusion modal
 	activeJawModalTarget: "JU" | "JL" | "C" | null;
 	onCloseJawModal: () => void;
+	// Orthopedics chairside panel
+	orthoDrawerTooth?: number | null | undefined;
+	onCloseOrthoDrawer?: (() => void) | undefined;
 }
 
 export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.memo(({
@@ -81,6 +90,8 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 	onCloseOrthoCeph,
 	activeJawModalTarget,
 	onCloseJawModal,
+	orthoDrawerTooth,
+	onCloseOrthoDrawer,
 }) => {
 	return (
 		<>
@@ -170,6 +181,41 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 						onClose={onCloseJawModal}
 					/>
 				</React.Suspense>
+			)}
+
+			{/* Tier 2 Orthopedics Chairside Panel (VITA shades, preparation margins, ZTL orders) */}
+			{orthoDrawerTooth !== null && orthoDrawerTooth !== undefined && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="ortho-chairside-title"
+				>
+					<div className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
+						<div className="flex items-center justify-between border-b border-[var(--glass-border)] pb-3">
+							<h3 id="ortho-chairside-title" className="text-base font-bold text-[var(--ink)] m-0">
+								Ортопедический протокол и наряд в ЗТЛ (Зуб {orthoDrawerTooth})
+							</h3>
+							<button
+								type="button"
+								onClick={onCloseOrthoDrawer}
+								className="w-8 h-8 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer"
+								aria-label="Закрыть панель ортопедии"
+							>
+								<X size={18} />
+							</button>
+						</div>
+						<React.Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка ортопедической панели...</div>}>
+							<OrthopedicsChairsidePanel
+								patientId={patientId}
+								activeToothFdi={orthoDrawerTooth}
+								onToothSelect={(tooth) => {
+									showToast(`Выбран зуб ${tooth} для ортопедии`, "info");
+								}}
+							/>
+						</React.Suspense>
+					</div>
+				</div>
 			)}
 		</>
 	);

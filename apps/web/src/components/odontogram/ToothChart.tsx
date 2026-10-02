@@ -1,5 +1,3 @@
-export type { ToothState } from "./chart/toothChartTypes";
-
 import type React from "react";
 import { useCallback, useEffect, memo, useRef, useState, useMemo } from "react";
 import { X } from "lucide-react";
@@ -24,7 +22,8 @@ export * from "./chart/ToothChartToolbar";
 export * from "./chart/ToothArchGrid";
 
 import {
-		type ToothChartProps,
+	type ToothChartProps,
+	type ToothState,
 	type ToothData,
 	type DentitionMode,
 	type OdontogramQuadrantId,

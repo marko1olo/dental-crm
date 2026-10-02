@@ -7,6 +7,5 @@ export * from "./EmkDiaryProtocolSection";
 export * from "./EmkAnesthesiaSection";
 export * from "./EmkEndoSection";
 export * from "./EmkServicesSection";
-export * from "./EmkModals";
 export * from "./EmkPrintableForm043";
 export * from "./EmkToolbar";

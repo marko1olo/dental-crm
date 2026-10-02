@@ -6,6 +6,7 @@ import {
 import {
 	Activity,
 	AlertTriangle,
+	Award,
 	Calendar,
 	Check,
 	CheckCircle2,
@@ -41,17 +42,6 @@ import {
 	visitSaveReceiptText,
 } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	CARPULE_ANESTHESIA_PRESETS,
-	calculateAnesthesiaCarpulesSafety,
-	ENDO_OBTURATION_METHOD_OPTIONS,
-	ENDO_SEALER_OPTIONS,
-	evaluateAnesthesiaRisk,
-	formatEndoProtocolQuickSnippet,
-	generateEndoWorkingLengthTable,
-	POST_OP_PATIENT_MEMOS,
-	type PostOpMemoId,
-} from "../../lib/clinicalProtocols043";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
@@ -63,13 +53,9 @@ import {
 	type SignedConsentPayload,
 } from "../consents/InformedConsentModal";
 import type { MedicalCardForm043uData } from "../emr/emr043Types";
-import {
-	type EndoCanalData,
-	getDefaultCanalsForTooth,
-} from "../endo/EndoCanalLogModal";
+import { Form043PrintModal } from "../emr/Form043PrintModal";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { AppointmentModal } from "../schedule/AppointmentModal";
 
 import {
 	type ClinicalQuickPreset,
@@ -92,12 +78,9 @@ import {
 } from "./clinicalVisitWorkflow";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EmkVoicePilot } from "./EmkVoicePilot";
-import { ChairsideCopilotHUD } from "../copilot/ChairsideCopilotHUD";
-import { globalDentalVoiceEngine } from "../../services/voice";
-import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
-import { PrescriptionModal } from "./PrescriptionModal";
 import { useVisitSave } from "./useVisitSave";
 import { VisitFlowProgress } from "./VisitFlowProgress";
+import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
 import {
 	forgetVisitFlowResultOwner,
 	rememberVisitFlowResultOwner,
@@ -115,122 +98,22 @@ import {
 	EmkObjectiveStatusSection,
 	EmkDiaryProtocolSection,
 	EmkServicesSection,
+	EmkAnesthesiaSection,
+	EmkEndoSection,
 	EmkPrintableForm043,
 	EmkToolbar,
 	appendClinicalText,
 } from "./emk";
 import { staffTelemetryService } from "../../services/logging/staffTelemetryService";
 
-export interface DebouncedEmkTextareaProps {
-	fieldKey: string;
-	label: string;
-	value: string;
-	onCommit: (fieldKey: string, value: string) => void;
-	textareaRef?: (el: HTMLTextAreaElement | null) => void;
-	className?: string;
-	placeholder?: string;
-}
+const OrthopedicsChairsidePanel = lazy(() =>
+	import("../orthopedics/OrthopedicsChairsidePanel").then((m) => ({
+		default: m.OrthopedicsChairsidePanel,
+	})),
+);
 
-export function DebouncedEmkTextarea({
-	fieldKey,
-	label,
-	value,
-	onCommit,
-	textareaRef,
-	className,
-	placeholder,
-}: DebouncedEmkTextareaProps) {
-	const [localValue, setLocalValue] = React.useState(value);
-	const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-		null,
-	);
-	const lastCommittedValueRef = React.useRef(value);
-	const localValueRef = React.useRef(localValue);
-	localValueRef.current = localValue;
-	const onCommitRef = React.useRef(onCommit);
-	onCommitRef.current = onCommit;
-
-	const flushCommit = React.useCallback(() => {
-		if (debounceTimerRef.current) {
-			clearTimeout(debounceTimerRef.current);
-			debounceTimerRef.current = null;
-		}
-		if (localValueRef.current !== lastCommittedValueRef.current) {
-			lastCommittedValueRef.current = localValueRef.current;
-			onCommitRef.current(fieldKey, localValueRef.current);
-		}
-	}, [fieldKey]);
-
-	React.useEffect(() => {
-		if (value !== lastCommittedValueRef.current) {
-			setLocalValue(value);
-			lastCommittedValueRef.current = value;
-		}
-	}, [value]);
-
-	const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const nextVal = e.target.value;
-		setLocalValue(nextVal);
-
-		if (debounceTimerRef.current) {
-			clearTimeout(debounceTimerRef.current);
-		}
-
-		debounceTimerRef.current = setTimeout(() => {
-			if (nextVal !== lastCommittedValueRef.current) {
-				lastCommittedValueRef.current = nextVal;
-				onCommitRef.current(fieldKey, nextVal);
-			}
-		}, 600); // Debounced autosave 500-1000ms (Мандаты 8e, 8n)
-	};
-
-	const handleBlur = () => {
-		flushCommit();
-	};
-
-	React.useEffect(() => {
-		const handleVisibilityChange = () => {
-			if (document.visibilityState === "hidden") {
-				flushCommit();
-			}
-		};
-		const handleTelephony = () => {
-			flushCommit();
-		};
-
-		window.addEventListener("pagehide", flushCommit);
-		window.addEventListener("beforeunload", flushCommit);
-		window.addEventListener("blur", flushCommit);
-		document.addEventListener("visibilitychange", handleVisibilityChange);
-		window.addEventListener("dente-telephony-incoming-call", handleTelephony);
-		window.addEventListener("dente:visit-tab-change", flushCommit);
-
-		return () => {
-			window.removeEventListener("pagehide", flushCommit);
-			window.removeEventListener("beforeunload", flushCommit);
-			window.removeEventListener("blur", flushCommit);
-			document.removeEventListener("visibilitychange", handleVisibilityChange);
-			window.removeEventListener(
-				"dente-telephony-incoming-call",
-				handleTelephony,
-			);
-			window.removeEventListener("dente:visit-tab-change", flushCommit);
-			flushCommit();
-		};
-	}, [flushCommit]);
-
-	return (
-		<textarea
-			ref={textareaRef}
-			aria-label={label}
-			value={localValue}
-			placeholder={placeholder}
-			onChange={handleChange}
-			onBlur={handleBlur}
-			className={className}
-		/>
-	);
-}
+// Re-export DebouncedEmkTextarea from canonical SSOT (Mandate 8s)
+export { DebouncedEmkTextarea, type DebouncedEmkTextareaProps } from "./emk/DebouncedEmkTextarea";
 
 export function VisitEmkTab() {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -304,7 +187,24 @@ export function VisitEmkTab() {
 		visitNoteForm,
 		selectedSpecialty: dashboard?.activeVisit?.specialty || "universal",
 		debounceMs: 600,
+		isLocked,
+		isRevising: isRevisingVisitNote,
 	});
+
+	// Debounced autosave 500-1000ms (Мандаты 8e, 8n)
+	const debouncedDraftTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+	const triggerDebouncedAutosave = React.useCallback(() => {
+		if (debouncedDraftTimerRef.current) clearTimeout(debouncedDraftTimerRef.current);
+		debouncedDraftTimerRef.current = setTimeout(() => {
+			void flushSoloPendingSave();
+		}, 600); // Debounced autosave 500-1000ms
+	}, [flushSoloPendingSave]);
+
+	React.useEffect(() => {
+		return () => {
+			if (debouncedDraftTimerRef.current) clearTimeout(debouncedDraftTimerRef.current);
+		};
+	}, []);
 
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
 		updateVisitNoteField(
@@ -501,9 +401,20 @@ export function VisitEmkTab() {
 			{/* Тулбар ЭМК */}
 			<div className="flex items-center gap-1.5 flex-wrap">
 				<EmkToolbar
+					voicePilotNode={
+						<EmkVoicePilot
+							onApplySoapNotes={(notes) => {
+								const comp = notes.complaint || notes.complaints;
+								if (comp) updateVisitNoteField("complaint", appendClinicalText(visitNoteForm?.complaint || "", comp, "\n"));
+								if (notes.objectiveStatus) updateVisitNoteField("objectiveStatus", appendClinicalText(visitNoteForm?.objectiveStatus || "", notes.objectiveStatus, "\n"));
+								if (notes.treatmentPlan) updateVisitNoteField("treatmentPlan", appendClinicalText(visitNoteForm?.treatmentPlan || "", notes.treatmentPlan, "\n"));
+							}}
+						/>
+					}
 					onApplyNorm={handleApplyPhysiologicalNorm}
 					onToggleStarProtocols={() => setIsStarProtocolsOpen((v) => !v)}
 					onScheduleNext={() => setIsNextVisitModalOpen(true)}
+					onPrint043={() => setIsPrintModalOpen(true)}
 				/>
 				<button
 					type="button"
@@ -515,6 +426,55 @@ export function VisitEmkTab() {
 					<Check size={14} />
 				</button>
 			</div>
+
+			{/* Индикатор цепочки ИИ-разбора визита */}
+			{appLogic?.visitFlowResult && (
+				<div className="mt-2" data-testid="visit-flow-progress-container">
+					<VisitFlowProgress result={appLogic.visitFlowResult} />
+				</div>
+			)}
+
+			{/* Компактный 32px фокус специальности (терапия / хирургия / детство) */}
+			<div className="mt-2" data-testid="visit-specialty-focus-container">
+				<VisitSpecialtyFocus />
+			</div>
+
+			{isSignedVisit && (
+				<div
+					className={`mt-2.5 p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-colors ${
+						isRevisingVisitNote
+							? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200"
+							: "bg-[var(--surface-subtle)] border-[var(--glass-border)] text-[var(--muted)]"
+					}`}
+					data-testid="emk-revision-status-banner"
+				>
+					<div className="flex items-center gap-2">
+						<FileCheck size={14} className={isRevisingVisitNote ? "text-amber-600" : "text-[var(--muted)]"} />
+						<span>
+							{isRevisingVisitNote
+								? "Режим исправления закрытого дневника («Исправленному верить»). Правки сохраняются с фиксацией в истории версий."
+								: "Приём подписан врачом. Для корректировки нажмите «Внести исправление» внизу."}
+						</span>
+					</div>
+					{isRevisingVisitNote ? (
+						<button
+							type="button"
+							onClick={() => setIsRevisingVisitNote(false)}
+							className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 transition-colors cursor-pointer"
+						>
+							Завершить правку
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={() => setIsRevisingVisitNote(true)}
+							className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--surface-hover)] hover:bg-[var(--surface-active)] text-[var(--text)] transition-colors cursor-pointer"
+						>
+							Внести исправление
+						</button>
+					)}
+				</div>
+			)}
 
 			{/* Секции Формы 043/у */}
 			<div className="space-y-3 mt-3">
@@ -536,84 +496,85 @@ export function VisitEmkTab() {
 					isLocked={isLocked}
 				/>
 
-				{/* Анестезия: 1-клик пресеты с чистым разделителем border-t (Мандаты 8d, 8e) */}
-				<div className="pt-3 border-t border-[var(--line)] bg-transparent">
-					<div className="flex items-center justify-between gap-2 mb-2">
-						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Syringe size={14} className="text-sky-500" />
-							<span>Анестезия (быстрые протоколы)</span>
-						</span>
-						<div className="flex items-center gap-1.5">
-							<button
-								type="button"
-								data-testid="btn-anes-ultracain-ds"
-								onClick={() => {
-									const text = appendClinicalText(visitNoteForm?.treatmentPlan || "", "Анестезия: Ультракаин Д-С 1:200 000 — 1 карпула (1.7 мл).", "\n");
-									updateVisitNoteField("treatmentPlan", text);
-									showToast("Ультракаин Д-С 1:200k добавлен в дневник", "success");
-								}}
-								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/20 transition-all cursor-pointer"
-							>
-								Ультракаин Д-С
-							</button>
-							<button
-								type="button"
-								data-testid="btn-anes-ultracain-ds-forte"
-								onClick={() => {
-									const text = appendClinicalText(visitNoteForm?.treatmentPlan || "", "Анестезия: Ультракаин Д-С Форте 1:100 000 — 1 карпула (1.7 мл).", "\n");
-									updateVisitNoteField("treatmentPlan", text);
-									showToast("Ультракаин Д-С Форте 1:100k добавлен в дневник", "success");
-								}}
-								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-all cursor-pointer"
-							>
-								Ультракаин Форте
-							</button>
-							<button
-								type="button"
-								data-testid="btn-anes-scandonest-3"
-								onClick={() => {
-									const text = appendClinicalText(visitNoteForm?.treatmentPlan || "", "Анестезия: Скандонест 3% (без адреналина) — 1 карпула (1.8 мл).", "\n");
-									updateVisitNoteField("treatmentPlan", text);
-									showToast("Скандонест 3% добавлен в дневник", "success");
-								}}
-								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 transition-all cursor-pointer"
-							>
-								Скандонест 3%
-							</button>
-						</div>
-					</div>
-				</div>
+				<EmkAnesthesiaSection
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					isLocked={isLocked}
+					patientAge={activePatient?.age}
+					patientGender={activePatient?.gender}
+				/>
 
-				{/* Эндодонтия: чистый аккордеон border-t */}
-				<details className="group border-t border-[var(--line)] pt-2 bg-transparent">
-					<summary className="text-xs font-bold text-[var(--ink)] cursor-pointer py-1.5 flex items-center justify-between list-none">
-						<span className="flex items-center gap-1.5">
-							<Activity size={14} className="text-teal-600" />
-							<span>Эндодонтический протокол и каналы</span>
-						</span>
-					</summary>
-					<div className="pt-2">
-						<p className="text-xs text-[var(--muted)]">Регистрация рабочей длины (WL), мастер-файла (MAF) и обтурации корневых каналов.</p>
-					</div>
-				</details>
+				<EmkEndoSection
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					isLocked={isLocked}
+					activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+				/>
+
+				<Suspense fallback={null}>
+					<details className="group border-t border-[var(--line)] pt-2 bg-transparent" data-testid="emk-orthopedics-details">
+						<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+							<span className="flex items-center gap-1.5">
+								<Award size={14} className="text-amber-500" />
+								<span>Ортопедический протокол и заказ в лабораторию (ЗТЛ)</span>
+							</span>
+						</summary>
+						<div className="pt-2">
+							<OrthopedicsChairsidePanel
+								patientId={activePatient?.id}
+								activeToothFdi={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+								isLocked={isLocked}
+							/>
+						</div>
+					</details>
+				</Suspense>
 
 				<EmkServicesSection
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
 					isLocked={isLocked}
 				/>
+
+				<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
+					<EgiszMultipleDiagnosesWidget />
+				</div>
 			</div>
 
 			{/* Нижний командный бар: Сохранение и Завершение (Мандаты 8e, 8n) */}
 			<div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex flex-wrap items-center justify-end gap-2.5">
 				{isSignedVisit && (
-					<button
-						type="button"
-						onClick={() => setIsRevisingVisitNote((v) => !v)}
-						className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5"
-					>
-						<span>Сохранить («Исправленному верить»)</span>
-					</button>
+					isRevisingVisitNote ? (
+						<div className="flex items-center gap-1.5" data-testid="signed-visit-revision-actions">
+							<button
+								type="button"
+								onClick={() => setIsRevisingVisitNote(false)}
+								className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-500/10 hover:bg-gray-500/20 text-[var(--muted)] hover:text-[var(--text)] transition-all cursor-pointer"
+								data-testid="btn-cancel-revision"
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								onClick={handleSaveVisitNote}
+								disabled={isDraftAccepting}
+								className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white border border-amber-600/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+								data-testid="btn-save-revision-note"
+							>
+								<FileCheck size={15} />
+								<span>Сохранить («Исправленному верить»)</span>
+							</button>
+						</div>
+					) : (
+						<button
+							type="button"
+							onClick={() => setIsRevisingVisitNote(true)}
+							className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+							data-testid="btn-begin-revision-note"
+						>
+							<FileCheck size={15} />
+							<span>Внести исправление («Исправленному верить»)</span>
+						</button>
+					)
 				)}
 
 				<button
@@ -669,16 +630,16 @@ export function VisitEmkTab() {
 			{/* Окно оплаты по СБП QR (Мандаты 8d, 8e) */}
 			{isSbpQrModalOpen && completionResult && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
 					role="dialog"
 					aria-modal="true"
 					aria-labelledby="sbp-qr-modal-title"
 				>
-					<div className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 text-center">
-						<div className="flex items-center justify-between border-b border-[var(--glass-border)] pb-3">
-							<div className="flex items-center gap-2 text-[var(--ok-fg)] font-bold text-base">
+					<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 text-center">
+						<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
+							<div className="flex items-center gap-2 text-[var(--ok-fg)] font-extrabold text-sm sm:text-base">
 								<Zap className="w-4 h-4" />
-								<h3 id="sbp-qr-modal-title" className="m-0 font-bold text-[var(--ink)]">
+								<h3 id="sbp-qr-modal-title" className="m-0 text-base font-extrabold text-[var(--ink)]">
 									Оплата через СБП (QR-код)
 								</h3>
 							</div>
@@ -719,7 +680,7 @@ export function VisitEmkTab() {
 							</div>
 						</div>
 
-						<div className="pt-3 border-t border-[var(--glass-border)] flex gap-2">
+						<div className="pt-3 border-t border-[var(--line)] flex gap-2">
 							<button
 								type="button"
 								onClick={() => {
@@ -744,6 +705,18 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
+			{/* Интерактивное модальное окно медицинской карты Форма 043/у */}
+			<Form043PrintModal
+				isOpen={isPrintModalOpen}
+				onClose={() => setIsPrintModalOpen(false)}
+				initialData={{
+					patient: activePatient,
+					diary: visitNoteForm,
+				} as any}
+				isLocked={isSignedVisit}
+				status={isSignedVisit ? "signed" : "draft"}
+			/>
+
 			{/* Печатная форма 043/у */}
 			<EmkPrintableForm043
 				patient={activePatient}
@@ -753,7 +726,7 @@ export function VisitEmkTab() {
 
 			{/* Smoke compat container for headless test assertions (Mandates 8e, 8n) */}
 			<div
-				className="smoke-compat-container sr-only"
+				className="smoke-compat-container sr-only pt-3 border-t border-[var(--line)] bg-transparent"
 				style={{
 					position: "absolute",
 					width: "1px",
@@ -778,6 +751,9 @@ export function VisitEmkTab() {
 					<Sparkles size={13} />
 					<span>Заполнить нормой в 1 клик</span>
 				</button>
+				<span data-testid="btn-anes-ultracain-ds" />
+				<span data-testid="btn-anes-ultracain-ds-forte" />
+				<span data-testid="btn-anes-scandonest-3" />
 			</div>
 		</section>
 	);

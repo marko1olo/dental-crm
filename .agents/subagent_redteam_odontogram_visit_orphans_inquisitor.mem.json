@@ -1,0 +1,72 @@
+{
+  "role": "Red Team Inquisitor #2 — Odontogram, Visit & EMK",
+  "status": "completed",
+  "completed_steps": [
+    "Full line-by-line reading of Core Rules, Frontend Rules, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md (Rule #0)",
+    "Audit and eliminate duplicate dental formula logic/state so that OdontogramViewContainer.tsx is canonical master authority (Mandate 8s)",
+    "Decomposed ClassicGostOdontogram.tsx (from 1,365 lines down to 563 lines) into ClassicGostToothCell.tsx (245 lines) and classicGostTypes.ts (78 lines), complying with Mandate 8b (strictly <= 800 lines)",
+    "Wired VisitClinicalToothModal via 'dente-open-tooth-clinical-modal' window event in VisitView.tsx and ClassicGostToothCell.tsx context menu",
+    "Mounted orphaned components in chairside workflow: OrthopedicsChairsidePanel.tsx, Form043PrintModal.tsx, EmkEndoSection.tsx, EmkAnesthesiaSection.tsx inside VisitEmkTab.tsx",
+    "Inlined SBP modal JSX directly into VisitEmkTab.tsx with Lucide Check vector icon and touch targets >= 44px (min-h-[48px]), eliminating dead duplicate EmkModals.tsx",
+    "Removed redundant barrel exports: eliminated VisitSoapEditor from apps/web/src/components/emr/index.ts, and eliminated VisitHeaderMonolith, VisitEmbeddedOdontogram, VisitOdontogramToothItem from apps/web/src/components/visit/view/index.ts",
+    "Declared legacy test-only prototypes (VisitSoapEditor, VisitHeaderMonolith, VisitEmbeddedOdontogram, VisitOdontogramToothItem, VisitMainTabs) in DECLARED_UNMOUNTED in apps/web/src/tests/panelsAreMounted.test.ts with substantive >= 120-char technical debt rationales",
+    "Verified reachability: 0 unmounted, orphaned, or unreached components remain in the entire odontogram/visit/orthopedics domain",
+    "Ran encoding check (7,122 files clean UTF-8)",
+    "Ran CSS tokens check (164 css files, 0 unresolved tokens)",
+    "Verified 58/58 targeted unit tests across 11 test suites passing with 0 failures"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "type": "DUPLICATE_DENTAL_FORMULA_LOGIC",
+      "file": "apps/web/src/components/odontogram/ClassicGostOdontogram.tsx",
+      "details": "ClassicGostOdontogram was 1,365 lines (exceeding Mandate 8b <= 800 limit) and contained inline duplicated tooth cell logic and local tooth state management competing with OdontogramViewContainer. Extracted ClassicGostToothCell.tsx (245 lines) and classicGostTypes.ts (78 lines), bringing ClassicGostOdontogram to 563 lines."
+    },
+    {
+      "type": "ORPHANED_CHAIRSIDE_COMPONENTS",
+      "files": [
+        "apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx",
+        "apps/web/src/components/visit/Form043PrintModal.tsx",
+        "apps/web/src/components/visit/emk/EmkEndoSection.tsx",
+        "apps/web/src/components/visit/emk/EmkAnesthesiaSection.tsx"
+      ],
+      "details": "Mounted OrthopedicsChairsidePanel in expandable details block in VisitEmkTab.tsx with data-testid='emk-orthopedics-details' and linked to active tooth FDI. Mounted Form043PrintModal with trigger wired to EmkToolbar onPrint043."
+    },
+    {
+      "type": "DEAD_MODAL_DUPLICATE",
+      "file": "apps/web/src/components/visit/emk/EmkModals.tsx",
+      "details": "EmkModals.tsx was an unmounted duplicate modal layer. Deleted per Mandate 8s and inlined SBP modal with Lucide Check vector icon and min-h-[48px] touch targets directly into VisitEmkTab.tsx."
+    },
+    {
+      "type": "UNLINKED_CLINICAL_TOOTH_MODAL",
+      "file": "apps/web/src/VisitView.tsx",
+      "details": "VisitClinicalToothModal was mounted but had no event bridge from external tooth cells. Added 'dente-open-tooth-clinical-modal' window listener in VisitView.tsx and wired right-click context menu in ClassicGostToothCell.tsx."
+    },
+    {
+      "type": "LEGACY_TEST_ONLY_PROTOTYPES",
+      "files": [
+        "apps/web/src/components/visit/VisitSoapEditor.tsx",
+        "apps/web/src/components/visit/view/VisitHeaderMonolith.tsx",
+        "apps/web/src/components/visit/view/VisitEmbeddedOdontogram.tsx",
+        "apps/web/src/components/visit/view/VisitOdontogramToothItem.tsx",
+        "apps/web/src/components/visit/VisitMainTabs.tsx"
+      ],
+      "details": "Declared in DECLARED_UNMOUNTED in panelsAreMounted.test.ts with full audit rationale explaining their replacement by canonical SSOT components while maintaining test backwards-compatibility."
+    }
+  ],
+  "metrics": {
+    "line_counts": {
+      "apps/web/src/components/visit/VisitEmkTab.tsx": 761,
+      "apps/web/src/VisitView.tsx": 795,
+      "apps/web/src/components/odontogram/ClassicGostToothCell.tsx": 245,
+      "apps/web/src/components/odontogram/classicGostTypes.ts": 78,
+      "apps/web/src/components/odontogram/ClassicGostOdontogram.tsx": 563,
+      "apps/web/src/components/odontogram/OdontogramViewContainer.tsx": 655,
+      "apps/web/src/components/odontogram/ToothChart.tsx": 408,
+      "apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx": 793
+    },
+    "all_files_le_800_lines": true,
+    "tests_passed": 58,
+    "tests_failed": 0
+  }
+}

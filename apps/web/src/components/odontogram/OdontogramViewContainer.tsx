@@ -157,6 +157,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+	const [orthoDrawerTooth, setOrthoDrawerTooth] = useState<number | null>(null);
 	const [activeJawModalTarget, setActiveJawModalTarget] = useState<
 		"JU" | "JL" | "C" | null
 	>(null);
@@ -403,6 +404,17 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 		return () => unsub();
 	}, [onQuickStateChange, onQuadrantChange, pediatricMode, onTogglePerio, isPerioOpen]);
 
+	// Listen for custom event to open Orthopedics Chairside Panel
+	useEffect(() => {
+		const handleOpenOrtho = (e: Event) => {
+			const detail = (e as CustomEvent<{ toothNumber?: number | string }>).detail;
+			const tooth = detail?.toothNumber ? Number(detail.toothNumber) : (selectedTeeth[0] || 16);
+			setOrthoDrawerTooth(tooth);
+		};
+		window.addEventListener("dente-open-orthopedics-panel", handleOpenOrtho);
+		return () => window.removeEventListener("dente-open-orthopedics-panel", handleOpenOrtho);
+	}, [selectedTeeth]);
+
 	const handleRadialSelectState = useCallback(
 		(state: ToothState, surfaces?: readonly string[]) => {
 			if (!radialMenuData) return;
@@ -507,7 +519,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					onOpenFastCheckout={onOpenFastCheckout}
 					allergyText={allergyText}
 					selectedTeeth={selectedTeeth}
-					onOneClickLabOrder={onOneClickLabOrder}
+					onOneClickLabOrder={(teeth) => {
+						onOneClickLabOrder?.(teeth);
+						const targetTooth = teeth[0] || selectedTeeth[0] || 16;
+						setOrthoDrawerTooth(targetTooth);
+					}}
 					onToggleEstimator={onToggleEstimator}
 					isEstimatorOpen={isEstimatorOpen}
 					isLiveInvoiceOpen={isLiveInvoiceOpen}
@@ -629,6 +645,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 				onCloseOrthoCeph={() => setIsOrthoCephOpen(false)}
 				activeJawModalTarget={activeJawModalTarget}
 				onCloseJawModal={() => setActiveJawModalTarget(null)}
+				orthoDrawerTooth={orthoDrawerTooth}
+				onCloseOrthoDrawer={() => setOrthoDrawerTooth(null)}
 			/>
 		</div>
 	);

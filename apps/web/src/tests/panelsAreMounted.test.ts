@@ -258,6 +258,36 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Чеклист предполетной подготовки ассистента и стерильности кабинета перед приемом пациента по стандартам СанПиН (components/chairside/ChairsidePreFlightChecklist.tsx:128). Вызывается из мобильного ассистентского терминала.",
 	},
+	{
+		file: "components/visit/VisitSoapEditor.tsx",
+		name: "VisitSoapEditor",
+		reason:
+			"Устаревший монолитный редактор дневника приёма (900 строк), заменённый модульной системой EMK (VisitEmkTab, EmkToolbar, SoapNoteCard, EmkEndoSection). Сохранён исключительно для обратной совместимости со старыми тестами (VisitSoapEditorStomxIntegration.test.tsx, diaryDraftResilience.test.ts).",
+	},
+	{
+		file: "components/visit/view/VisitHeaderMonolith.tsx",
+		name: "VisitHeaderMonolith",
+		reason:
+			"Устаревший монолитный заголовок визита, вытесненный компактной 2-строчной клинической шапкой и панелью быстрого фокуса в каноническом VisitView.tsx (VisitFocusBar). Сохранён как исторический прототип.",
+	},
+	{
+		file: "components/visit/view/VisitEmbeddedOdontogram.tsx",
+		name: "VisitEmbeddedOdontogram",
+		reason:
+			"Экспериментальный прототип встроенной зубной формулы, вытесненный каноническим контейнером OdontogramViewContainer.tsx (ГОСТ и анатомический вид). Сохранён для экспорта констант PATHOLOGY_STAMPS в perspectiveOdontogram.test.ts.",
+	},
+	{
+		file: "components/visit/view/VisitOdontogramToothItem.tsx",
+		name: "VisitOdontogramToothItem",
+		reason:
+			"Подкомпонент устаревшей встроенной формулы VisitEmbeddedOdontogram.tsx. В активном интерфейсе заменён каноническими ячейками ClassicGostToothCell.tsx и ToothChart.tsx. Сохранён для тестов perspectiveOdontogram.test.ts.",
+	},
+	{
+		file: "components/visit/VisitMainTabs.tsx",
+		name: "VisitMainTabs",
+		reason:
+			"Подкомпонент навигации устаревшего VisitHeaderMonolith.tsx. В живом интерфейсе переключение вкладок визита (ЭМК, Формула, Смета, Снимки) реализовано компактными кнопками навигации непосредственно в VisitView.tsx.",
+	},
 	/*
 	 * SanpinCycleModal УДАЛЁН per Mandate 8s (бутафорский фасад-заглушка с display: none; канонические журналы: SanpinRegisters).
 	 */
