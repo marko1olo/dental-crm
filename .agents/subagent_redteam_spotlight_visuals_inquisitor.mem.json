@@ -1,59 +1,125 @@
 {
   "role": "Red Team Spotlight Visuals, Animations & Guided Tour UX Inquisitor",
-  "status": "inquisition_completed",
-  "self_inquisition_defect_list": [
+  "status": "wave_3_visual_proof_completed",
+  "wave_2_defect_list": [
     {
-      "defect_id": "DEFECT-1",
+      "defect_id": "DEFECT-W2-1",
+      "severity": "High",
+      "area": "Animation & Cinematic Smoothness",
+      "description": "Animation pop-in and double-ring asymmetry in tour-halo-pulse. Keyframe 0% began with opacity: 0.85, creating an abrupt flicker at the 2.2s repeat wrap. Furthermore, the delayed ring started at inset: -14px vs primary ring at inset: -8px, breaking harmonic concentricity.",
+      "fix": "Standardized both rings to identical inset: -6px with a smooth 0% -> 15% opacity ramp (0% opacity: 0, 15% opacity: 0.75, 100% opacity: 0). Added will-change: transform, opacity and transform: translateZ(0) for 60/120fps hardware GPU compositing."
+    },
+    {
+      "defect_id": "DEFECT-W2-2",
+      "severity": "High",
+      "area": "Pointer Badge Animation Clobbering",
+      "description": "Static transform: translateX(-50%) on .tour-pointer-badge-top was overridden and wiped out by @keyframes tour-pointer-bounce-vertical which only animated translateY, causing the badge to snap off-center horizontally during playback.",
+      "fix": "Included translateX(-50%) directly in @keyframes tour-pointer-bounce-vertical, and translateY(-50%) in @keyframes tour-pointer-bounce-horizontal."
+    },
+    {
+      "defect_id": "DEFECT-W2-3",
+      "severity": "High",
+      "area": "Theme Integration & Neon Medical Halo",
+      "description": "Hardcoded cyan colors (#0ea5e9, rgba(14, 165, 233, ...)) conflicted with themes like Sakura (pink/rose), Warm Sand (amber), Emerald (forest green), and Contrast. The backdrop rule only defined [data-theme='dark'], leaving Night, OLED, Ocean, Cyber X-Ray, etc. with slate-900 fallback.",
+      "fix": "Introduced CSS variables (--tour-halo-color, --tour-halo-color-bright, --tour-halo-rgb, --tour-halo-glow, --tour-spotlight-backdrop) for all 10 themes in guided-tour.css. Extended PulsingHaloAnchor with colorTheme='auto' default and dynamic theme override support."
+    },
+    {
+      "defect_id": "DEFECT-W2-4",
+      "severity": "Critical",
+      "area": "Tooltip Arrow Geometry on Side Placements",
+      "description": "Side tooltip placements (left/right) had arrow vertical position hardcoded to top: 50% of the tooltip card. When the card was constrained by viewport margins, the arrow pointed at empty space up to 100px away from the actual target center.",
+      "fix": "Implemented arrowOffsetYPx calculation in calculateTooltipPlacement: Math.max(18, Math.min(height - 18, Math.round(targetCenterY - top))). CoachMarkTooltip now positions side arrows with laser precision directly at targetCenterY."
+    },
+    {
+      "defect_id": "DEFECT-W2-5",
       "severity": "Medium",
-      "description": "Visual flicker when spotlight cutout appeared/disappeared due to abrupt unmounting of SVG rect",
-      "fix": "Cutout rect remains mounted with smooth CSS opacity transition (0 -> 1) and coordinate interpolation"
+      "area": "Tooltip Pointer Arrow Clipping",
+      "description": ".tour-coach-tooltip had overflow: hidden, clipping the protruding diamond arrow that sat at top/bottom/left/right: -7px.",
+      "fix": "Set overflow: visible on .tour-coach-tooltip while keeping overflow-y: auto in card body. Added rounded-t-xl to Header and rounded-b-xl to Footer to preserve card corner rounding."
     },
     {
-      "defect_id": "DEFECT-2",
+      "defect_id": "DEFECT-W2-6",
       "severity": "High",
-      "description": "Partially offscreen elements with negative left/top coordinates caused incorrect width/height expansion",
-      "fix": "calculateSpotlightCutout now clamps boundaries defensively: rawRight and rawBottom clamped to viewport"
+      "area": "Retina & Pinch-Zoom VisualViewport Tracking",
+      "description": "SpotlightOverlay and CoachMarkTooltip read only window.innerWidth/innerHeight and listened solely to window.resize, ignoring visualViewport scaling on Retina displays and pinch-to-zoom gestures.",
+      "fix": "Connected window.visualViewport with fallback to innerWidth/innerHeight, listening to both resize and scroll on visualViewport and window with safe unmount cleanup."
     },
     {
-      "defect_id": "DEFECT-3",
-      "severity": "High",
-      "description": "Mobile screen overflow: 380px tooltip caused horizontal scroll on 375px screens and cut off buttons on short viewports",
-      "fix": "calculateTooltipPlacement clamps width to (viewport.width - 32px) and maxHeight to (viewport.height - 32px) with overflow-y: auto"
-    },
-    {
-      "defect_id": "DEFECT-4",
-      "severity": "High",
-      "description": "Target elements located outside initial viewport caused offscreen spotlight positioning without auto-scrolling",
-      "fix": "Integrated automatic targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) upon step change"
-    },
-    {
-      "defect_id": "DEFECT-5",
-      "severity": "High",
-      "description": "Layout thrashing: synchronous getBoundingClientRect in raw scroll listeners caused FPS drops during fast scrolling",
-      "fix": "Throttled all scroll and resize measurement passes via requestAnimationFrame with cancellation on unmount"
-    },
-    {
-      "defect_id": "DEFECT-6",
+      "defect_id": "DEFECT-W2-7",
       "severity": "Medium",
-      "description": "Static viewport dimensions in SpotlightOverlay and CoachMarkTooltip ignored browser resize/rotation",
-      "fix": "Added dynamic useState viewport tracking with clean window.addEventListener('resize') subscriptions"
-    },
-    {
-      "defect_id": "DEFECT-7",
-      "severity": "Low",
-      "description": "Ultra-narrow elements (e.g. 2px divider) with 8px borderRadius caused distorted elliptical cutouts",
-      "fix": "rx is clamped to Math.min(borderRadius, Math.floor(width / 2), Math.floor(height / 2))"
-    },
-    {
-      "defect_id": "DEFECT-8",
-      "severity": "Medium",
-      "description": "Risk of murky text contrast in Dark themes due to fallback token leakage",
-      "fix": "Explicit high-contrast CSS rules in guided-tour.css (.tour-coach-tooltip h3: #f8fafc, p: #cbd5e1)"
+      "area": "Dynamic Target Border Radius in Halo",
+      "description": "Circular targets (e.g. 36x36px icon buttons, avatars) showed square 8px pulsing halos around circular spotlight cutouts.",
+      "fix": "Added borderRadius prop to PulsingHaloAnchor with automatic detection for square/circular buttons (width === height && width <= 48 -> borderRadius: 9999px)."
     }
   ],
+  "wave_3_visual_proof": {
+    "scope": "12 Clinical Knowledge Base Guides + Component Spotlight Harmonization",
+    "completed_guides": [
+      {
+        "file": "apps/web/src/components/help/ScheduleGuide.tsx",
+        "schematic": "Interactive 2-chair schedule grid mockup (Doctor Barabash & Doctor Ivanov, 09:00-13:00 timeline, [Завершён], [● В кресле], free slot booking simulator with 5s reservation)"
+      },
+      {
+        "file": "apps/web/src/components/help/OdontogramGuide.tsx",
+        "schematic": "Interactive anatomical dental formula mockup (Adult 11-48 & Child 51-85 toggle, 1-click Autonorm Shift+N, tooth surface selector: Caries, Pulpitis, Crown, Missing, Restoration)"
+      },
+      {
+        "file": "apps/web/src/components/help/MedicalRecordGuide.tsx",
+        "schematic": "Interactive SOAP 043/y medical record card mockup (Subjective, Objective, Assessment, Plan, 1-click Autonorm, voice dictation simulator, passive non-blocking allergy badge, debounced autosave, F12 print)"
+      },
+      {
+        "file": "apps/web/src/components/help/CashierGuide.tsx",
+        "schematic": "Interactive 54-FZ split-cashier checkout mockup (Cash, POS Card, SBP QR, Family Balance presets, exact-to-the-kopeck tender, printed fiscal receipt strip preview with FFD 1.2 tags)"
+      },
+      {
+        "file": "apps/web/src/components/help/Imaging3DGuide.tsx",
+        "schematic": "Interactive 3D MPR & Visiograph diagnostic cockpit mockup (4-quadrant layout: Axial, Coronal, Sagittal, Synthetic Panorama; bone caliper measurement overlay: 6.8mm width, 11.4mm height, 3.2mm safe distance to mandibular nerve)"
+      },
+      {
+        "file": "apps/web/src/components/help/TreatmentPlansGuide.tsx",
+        "schematic": "Interactive 3-tier treatment plan comparison mockup (Base 45k ₽, Optimal 92k ₽ with e.max/zirconia, Premium 185k ₽; clinical stages with stage checkmarks and 0% installment calculations)"
+      },
+      {
+        "file": "apps/web/src/components/help/DentalLabGuide.tsx",
+        "schematic": "Interactive Dental Lab (ЗТЛ) work order mockup (VITA Classic shade selector swatches A1..B2, 5-stage production stepper, technician status)"
+      },
+      {
+        "file": "apps/web/src/components/help/InventoryWarehouseGuide.tsx",
+        "schematic": "Interactive 7-column warehouse nomenclature table mockup (FEFO auto-priority, 1-click carpool deduction, soft negative overdraft demonstration -2 pcs with non-blocking warning)"
+      },
+      {
+        "file": "apps/web/src/components/help/SanPiNAutoclaveGuide.tsx",
+        "schematic": "Interactive SanPiN sterilization journal mockup (Melag Vacuklav 40B+ 134°C cycle, azopyram/phenolphthalein negative test badges, chemical integrator, TSPL kraft pouch barcode label preview)"
+      },
+      {
+        "file": "apps/web/src/components/help/LeadsTelephonyGuide.tsx",
+        "schematic": "Interactive 4-column Kanban board mockup (New, Qualified, Consultation, Arrived) + quiet incoming call notification indicator that doesn't block the screen"
+      },
+      {
+        "file": "apps/web/src/components/help/LanMeshGuide.tsx",
+        "schematic": "Interactive local network topology diagram (3 clinic nodes: Reception, Surgery, Laptop Chief Doctor) with P2P Wi-Fi CRDT sync status, quiet green LAN beacon, and 5-second PIN/QR pairing"
+      },
+      {
+        "file": "apps/web/src/components/help/AnalyticsReportsGuide.tsx",
+        "schematic": "Interactive financial KPI dashboard mockup (Daily Revenue 185k ₽, Average Check 14.2k ₽, Chair utilization 82%, and T-51 piece-rate net payroll calculation with automatic ZTL lab deduction)"
+      }
+    ],
+    "harmonized_spotlight_targets": [
+      { "component": "Omnibar.tsx", "attribute": "id=\"omnibar-input\"" },
+      { "component": "PaymentCapture.tsx", "attribute": "id=\"cashier-tender-action-btn\"" },
+      { "component": "VisitSoapEditor.tsx", "attribute": "id=\"diary-autosave-status\" and data-tour=\"diary-autosave-status\"" },
+      { "component": "VisitDiarySection.tsx", "attribute": "data-tour=\"visit-diary\"" },
+      { "component": "VisitEmbeddedOdontogram.tsx", "attribute": "data-tour=\"odontogram-formula\" and data-testid=\"odontogram-formula\"" },
+      { "component": "DicomViewerModal.tsx", "attribute": "id=\"dicom-mpr-toolbar\" and data-tour=\"imaging-filter\"" },
+      { "component": "ScheduleFilterStrip.tsx", "attribute": "data-tour=\"schedule-booking\"" }
+    ]
+  },
   "verification": {
-    "unit_tests": "24/24 passing (16 spotlight tests + 8 tour tests, 5.68ms)",
-    "encoding": "7048 files checked, 0 errors, UTF-8 strict",
-    "line_limits": "All files <= 800 lines (Mandate 8b)"
+    "unit_tests": "50/50 passing across 4 test suites (knowledgeBaseHub, clinicalQuestTourEngine, DoctorClinicalTrainingTour), Exit Code 0",
+    "encoding": "7102 files checked, 0 errors, UTF-8 strict (npm run check:encoding)",
+    "css_tokens": "164 css files, 0 unresolved tokens in any theme (npm run check:css-tokens)",
+    "line_limits": "All 12 clinical guides and tour components strictly <= 800 lines (Mandate 8b)",
+    "anti_duplicate": "Zero duplicates created (Mandate 8s)",
+    "single_compiler_gate": "Complied with Mandate 8t: zero global typecheck/build launched"
   }
 }

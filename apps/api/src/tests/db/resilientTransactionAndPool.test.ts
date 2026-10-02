@@ -17,6 +17,7 @@ import {
 	getPoolWatchdog,
 	startPoolWatchdog,
 	stopPoolWatchdog,
+	terminateHungPoolTransactions,
 } from "../../db/poolWatchdog.js";
 import {
 	RETRYABLE_PG_CODES,
@@ -312,6 +313,62 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 			assert.equal(recordedTenants[0], FIXTURE_ORG);
 			assert.equal(recordedTenants[1], FIXTURE_ORG);
 		});
+
+		test("guarantees clinic and organization context (app.current_clinic, app.current_organization_id) is preserved across retries", async (t) => {
+			if (!dbAvailable) return t.skip("Database is unavailable");
+
+			const FIXTURE_CLINIC = "clinic-branch-001";
+			let attempts = 0;
+			const recordedContexts: Array<{
+				tenant: string | null;
+				org: string | null;
+				clinic: string | null;
+			}> = [];
+
+			const result = await withResilientTransaction(
+				async (tx) => {
+					attempts++;
+					const ctxRes = await tx.execute(
+						sql`SELECT current_setting('app.current_tenant', true) AS tenant,
+								   current_setting('app.current_organization_id', true) AS org,
+								   current_setting('app.current_clinic', true) AS clinic`,
+					);
+					// biome-ignore lint/suspicious/noExplicitAny: query row access
+					const row = (ctxRes as any).rows?.[0] ?? {};
+					recordedContexts.push({
+						tenant: row.tenant ?? null,
+						org: row.org ?? null,
+						clinic: row.clinic ?? null,
+					});
+
+					if (attempts === 1) {
+						const err = new Error("transient serialization failure");
+						// biome-ignore lint/suspicious/noExplicitAny: error property injection
+						(err as any).code = "40001";
+						throw err;
+					}
+
+					return "clinic_isolated_success";
+				},
+				{
+					tenantId: FIXTURE_ORG,
+					clinicId: FIXTURE_CLINIC,
+					maxRetries: 2,
+					initialBackoffMs: 15,
+					jitterMs: 0,
+				},
+			);
+
+			assert.equal(result, "clinic_isolated_success");
+			assert.equal(attempts, 2);
+			assert.equal(recordedContexts.length, 2);
+			assert.equal(recordedContexts[0].tenant, FIXTURE_ORG);
+			assert.equal(recordedContexts[0].org, FIXTURE_ORG);
+			assert.equal(recordedContexts[0].clinic, FIXTURE_CLINIC);
+			assert.equal(recordedContexts[1].tenant, FIXTURE_ORG);
+			assert.equal(recordedContexts[1].org, FIXTURE_ORG);
+			assert.equal(recordedContexts[1].clinic, FIXTURE_CLINIC);
+		});
 	});
 
 	// =========================================================================
@@ -387,6 +444,19 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 			assert.match(
 				failReport.lastError || "",
 				/Simulated connection timeout/,
+			);
+		});
+
+		test("terminateHungPoolTransactions executes safely and tracks telemetry", async (t) => {
+			if (!dbAvailable) return t.skip("Database is unavailable");
+
+			const result = await terminateHungPoolTransactions(30, pool);
+			assert.ok(typeof result.terminatedCount === "number");
+			assert.ok(Array.isArray(result.pids));
+
+			const health = getPoolHealth();
+			assert.ok(
+				typeof health.totalTerminatedHungTransactions === "number",
 			);
 		});
 	});

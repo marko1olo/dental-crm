@@ -16,7 +16,7 @@ import {
 	isSomaticSafetyFieldOrRisk,
 	mergeSomaticSafetyField,
 } from "./crdt.js";
-import { computePayloadHash, createCompositeIdempotencyKey } from "./hashing.js";
+import { computePayloadHash, createCompositeIdempotencyKey, generateUuidV7 } from "./hashing.js";
 import {
 	type ConflictResolutionStrategy,
 	type FieldConflictDetail,
@@ -992,7 +992,7 @@ export function createAssistantCitoEvent(params: {
 	callId?: string;
 	calledAt?: string;
 }): LanAssistantCitoEvent {
-	const callId = params.callId || `cito-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+	const callId = params.callId || `cito-${generateUuidV7().slice(0, 18)}`;
 	const calledAt = params.calledAt || new Date().toISOString();
 	const event: LanAssistantCitoEvent = {
 		callId,
@@ -1024,7 +1024,7 @@ export function createInvoiceTransferEvent(params: {
 	transferId?: string;
 	transferredAt?: string;
 }): LanInvoiceTransferEvent {
-	const transferId = params.transferId || `inv-tx-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+	const transferId = params.transferId || `inv-tx-${generateUuidV7().slice(0, 18)}`;
 	const transferredAt = params.transferredAt || new Date().toISOString();
 
 	// Calculate total amount in kopecks & rubles if not provided
@@ -1080,7 +1080,7 @@ export function createLanP2PMessage<TPayload extends Record<string, unknown>>(pa
 }): LanP2PMessage<TPayload> {
 	const messageId =
 		params.messageId ||
-		`p2p-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+		`p2p-${generateUuidV7()}`;
 	const sentAt = params.sentAt || new Date().toISOString();
 
 	const signature = computePayloadHash({

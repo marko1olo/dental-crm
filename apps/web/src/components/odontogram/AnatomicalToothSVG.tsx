@@ -117,14 +117,8 @@ export const AnatomicalToothSVG: React.FC<AnatomicalToothSVGProps> = React.memo(
 	const scaledWidth = scaleCssPx(`${Math.round(geom.standardWidthPx * 1.3)}px`, scale);
 	const scaledHeight = scaleCssPx(`${Math.round(geom.standardHeightPx * 1.3)}px`, scale);
 
-	// Mandate 8c: Root canals in incisors/canines (11–43, 51–83) must run continuously to the root apex
-	const toothPos = number % 10;
-	const isIncisorOrCanine = toothPos >= 1 && toothPos <= 3;
-	const isToothPresent = (state as string) !== "Missing" && (state as string) !== "Extracted";
-	const shouldRenderCanalsAndPulp =
-		state === "Pulpitis" ||
-		showPulpAndCanals ||
-		(isIncisorOrCanine && isToothPresent);
+	// Pulp and canals render ONLY if explicitly diagnosed with Pulpitis or toggled via showPulpAndCanals
+	const shouldRenderCanalsAndPulp = state === "Pulpitis" || !!showPulpAndCanals;
 
 	const isRightSide =
 		(number >= 21 && number <= 28) ||

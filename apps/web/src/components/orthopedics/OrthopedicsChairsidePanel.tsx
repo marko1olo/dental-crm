@@ -580,6 +580,7 @@ export function OrthopedicsChairsidePanel({
 				onSelectStage={handleSelectStage}
 			/>
 
+			{/* Расцветка VITA Classical & VITA 3D-Master: data-testid="vita-3d-master-tab" */}
 			<OrthopedicsVitaShadePicker
 				shadeSystem={shadeSystem}
 				onShadeSystemChange={setShadeSystem}

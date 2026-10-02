@@ -48,6 +48,7 @@ import { NotificationBell } from "./components/notifications/NotificationBell";
 import { resolveTelephonyWsUrl } from "./components/telephony/IncomingCallPopup";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { ThemeQuickAccessWidget } from "./components/workspace/ThemeQuickAccessWidget";
+import { DoctorQuestHeaderChip } from "./components/workspace/WorkspaceHeaderBar";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { lazyWithRetry } from "./lib/lazyWithRetry";
 import "./styles/modules/sidebar.css";
@@ -1031,6 +1032,11 @@ export function WorkspaceTopbar({
 					/>{" "}
 					{workspaceTopbarLabels.copilot.label}
 				</button>
+
+				{/*
+          ИНТЕРАКТИВНЫЙ КВЕСТ ВРАЧА (3 мин) — мгновенный запуск обучения ключевым операциям в 1 клик.
+        */}
+				<DoctorQuestHeaderChip />
 
 				{/*
           БАЗА ЗНАНИЙ И ОБУЧЕНИЕ — быстрый вызов интерактивного центра обучения и всех 12 руководств.

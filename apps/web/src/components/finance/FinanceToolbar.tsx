@@ -213,6 +213,7 @@ export function FinanceToolbar({
 								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
 								role="menuitem"
 								data-testid="btn-finance-open-cashbox"
+								data-tour="fast-cashier"
 							>
 								<Banknote
 									size={14}

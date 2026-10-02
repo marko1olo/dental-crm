@@ -11,7 +11,7 @@
  * - Hotkeys (Ctrl+I), FAQs, and interactive tour button
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
 	AlertTriangle,
 	Archive,
@@ -19,16 +19,31 @@ import {
 	CheckCircle2,
 	Gamepad2,
 	HelpCircle,
+	Minus,
+	MousePointer,
 	PackageCheck,
+	Plus,
 	RefreshCw,
 	Sparkles,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const InventoryWarehouseGuide: React.FC = () => {
+export const InventoryWarehouseGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [carpoolStock, setCarpoolStock] = useState(48);
+	const [compositeStock, setCompositeStock] = useState(-2); // Demonstrates soft overdraft
+
 	const handleLaunchTour = () => {
-		startDoctorTour("solo_doctor");
+		if (onLaunchTour) {
+			onLaunchTour("solo_doctor");
+		} else {
+			startDoctorTour("solo_doctor");
+		}
+	};
+
+	const handleDeductCarpool = () => {
+		setCarpoolStock((prev) => Math.max(0, prev - 1));
 	};
 
 	return (
@@ -48,6 +63,125 @@ export const InventoryWarehouseGuide: React.FC = () => {
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
 						Фоновый автоматический учёт стоматологических материалов, анестетиков, боров и перчаток.
 						Списание происходит строго по техкартам оказанных услуг без отвлечения врача у кресла и без блокировок.
+					</div>
+				</div>
+			</div>
+
+			{/* НАГЛЯДНАЯ СХЕМА СКЛАДА (Visual Inventory Table Proof) */}
+			<div className="p-3.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
+						<MousePointer size={14} className="text-emerald-500" />
+						<span>Складская номенклатура (7 калиброванных колонок)</span>
+					</div>
+
+					{/* 1-Click Deduct CTA */}
+					<button
+						type="button"
+						onClick={handleDeductCarpool}
+						className="px-2.5 py-1 rounded bg-teal-500/15 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-[10px] flex items-center gap-1 hover:bg-teal-500/25 transition-all cursor-pointer"
+						title="Списать 1 карпулу анестетика в 1 клик без комиссии"
+					>
+						<Minus size={11} />
+						<span>Списать 1 карпулу (1 клик)</span>
+					</button>
+				</div>
+
+				{/* Visual Mockup Table Window */}
+				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden shadow-xs space-y-0">
+					<div className="overflow-x-auto">
+						<table className="w-full text-[11px] text-left">
+							<thead>
+								<tr className="border-b border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] text-[10px] uppercase font-bold tracking-wider">
+									<th className="py-2 px-3 font-semibold">Артикул</th>
+									<th className="py-2 px-3 font-semibold">Наименование</th>
+									<th className="py-2 px-3 font-semibold">Партия FEFO</th>
+									<th className="py-2 px-3 font-semibold">Срок годности</th>
+									<th className="py-2 px-3 font-semibold">Остаток</th>
+									<th className="py-2 px-3 font-semibold">Резерв</th>
+									<th className="py-2 px-3 font-semibold text-right">Статус</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-[var(--line)]/50 bg-[var(--paper)]">
+								{/* Row 1: Carpools */}
+								<tr className="hover:bg-[var(--paper-soft)]/60 transition-colors">
+									<td className="py-2 px-3 font-mono text-[10px] text-[var(--muted)]">ART-100</td>
+									<td className="py-2 px-3 font-medium text-[var(--ink)]">
+										Артикаин 1:100 000 с адреналином (карпулы 1.7 мл)
+									</td>
+									<td className="py-2 px-3">
+										<span className="px-1.5 py-0.2 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 font-mono text-[10px]">
+											#2411 (FEFO-1)
+										</span>
+									</td>
+									<td className="py-2 px-3 text-[var(--muted)]">12.2026</td>
+									<td className="py-2 px-3 font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+										{carpoolStock} шт
+									</td>
+									<td className="py-2 px-3 text-[var(--muted)] font-mono">10 шт</td>
+									<td className="py-2 px-3 text-right">
+										<span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold text-[10px]">
+											✓ В наличии
+										</span>
+									</td>
+								</tr>
+
+								{/* Row 2: Soft Overdraft Demo */}
+								<tr className="hover:bg-[var(--paper-soft)]/60 transition-colors bg-amber-500/5">
+									<td className="py-2 px-3 font-mono text-[10px] text-[var(--muted)]">CMP-FIL</td>
+									<td className="py-2 px-3 font-medium text-[var(--ink)]">
+										Filtek Z250 (Универсальный композит шприц 4г, A2)
+									</td>
+									<td className="py-2 px-3">
+										<span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono text-[10px]">
+											#9082
+										</span>
+									</td>
+									<td className="py-2 px-3 text-[var(--muted)]">08.2027</td>
+									<td className="py-2 px-3 font-bold text-amber-600 dark:text-amber-400 font-mono">
+										{compositeStock} шт
+									</td>
+									<td className="py-2 px-3 text-[var(--muted)] font-mono">3 шт</td>
+									<td className="py-2 px-3 text-right">
+										<span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold text-[10px] border border-amber-500/30">
+											⚠ Мягкий овердрафт
+										</span>
+									</td>
+								</tr>
+
+								{/* Row 3: Bonding agent */}
+								<tr className="hover:bg-[var(--paper-soft)]/60 transition-colors">
+									<td className="py-2 px-3 font-mono text-[10px] text-[var(--muted)]">BND-SLP</td>
+									<td className="py-2 px-3 font-medium text-[var(--ink)]">
+										Single Bond Universal (Адгезив флакон 5мл)
+									</td>
+									<td className="py-2 px-3">
+										<span className="px-1.5 py-0.2 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono text-[10px]">
+											#5512
+										</span>
+									</td>
+									<td className="py-2 px-3 text-[var(--muted)]">04.2026</td>
+									<td className="py-2 px-3 font-bold text-[var(--ink)] font-mono">
+										4 шт
+									</td>
+									<td className="py-2 px-3 text-[var(--muted)] font-mono">2 шт</td>
+									<td className="py-2 px-3 text-right">
+										<span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold text-[10px]">
+											✓ В наличии
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					{/* Bottom Notice: Mandate 8e Autonomy */}
+					<div className="px-4 py-2 bg-[var(--paper)] border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2 text-[10px] text-[var(--muted)]">
+						<div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-medium">
+							<AlertTriangle size={12} className="shrink-0" />
+							<span>Задержка накладной не блокирует операцию: минус фиксируется и закроется при оприходовании</span>
+						</div>
+						<span className="font-mono">FEFO приоритет списания активен</span>
 					</div>
 				</div>
 			</div>

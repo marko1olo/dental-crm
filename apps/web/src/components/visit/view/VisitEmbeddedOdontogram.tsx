@@ -257,7 +257,12 @@ export function VisitEmbeddedOdontogram({
 	}, [lowerRow]);
 
 	return (
-		<section className="tooth-map" aria-label="Зубная формула">
+		<section
+			className="tooth-map"
+			aria-label="Зубная формула"
+			data-tour="odontogram-formula"
+			data-testid="odontogram-formula"
+		>
 			{/* Шапка зубной формулы с человеческой терминологией и переключателем прикуса (Мандаты 8c, 8z) */}
 			<div className="tooth-map-head flex flex-wrap items-center justify-between gap-3 mb-2">
 				<div>

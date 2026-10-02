@@ -176,28 +176,57 @@ export function calculateOverlapDurationMinutes(
 	return Math.round((overlapEnd - overlapStart) / 60000);
 }
 
+export interface ScheduleOverlapTarget {
+	readonly id?: string | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorUserId?: string | null | undefined;
+	readonly cabinetId?: string | null | undefined;
+	readonly chairId?: string | null | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly startTime?: string | Date | undefined;
+	readonly startsAt?: string | Date | undefined;
+	readonly endTime?: string | Date | undefined;
+	readonly endsAt?: string | Date | undefined;
+}
+
+export type ScheduleOverlapItem =
+	| ScheduledAppointment
+	| {
+			readonly id?: string | undefined;
+			readonly doctorId?: string | null | undefined;
+			readonly doctorUserId?: string | null | undefined;
+			readonly cabinetId?: string | null | undefined;
+			readonly chairId?: string | null | undefined;
+			readonly patientId?: string | null | undefined;
+			readonly startTime?: string | Date | undefined;
+			readonly startsAt?: string | Date | undefined;
+			readonly endTime?: string | Date | undefined;
+			readonly endsAt?: string | Date | undefined;
+			readonly status?: string | undefined;
+	  };
+
 /**
  * Checks for scheduling collisions across Doctor, Cabinet, and Patient.
+ * Seamlessly accepts both ScheduledAppointment and canonical Appointment (Mandates 8b, 8e, 8n).
  */
 export function checkScheduleOverlap(
-	target: {
-		readonly id?: string | undefined;
-		readonly doctorId: string;
-		readonly cabinetId?: string | null | undefined;
-		readonly patientId?: string | undefined;
-		readonly startTime: string;
-		readonly endTime: string;
-	},
-	existingAppointments: readonly ScheduledAppointment[],
+	target: ScheduleOverlapTarget,
+	existingAppointments: readonly ScheduleOverlapItem[],
 	options: ScheduleOverlapOptions = {},
 ): ScheduleCollisionResult {
 	const { ignoreCancelled = true, ignoreSelfId = target.id, allowCabinetDoubleBooking = false } = options;
 	const conflicts: ScheduleCollisionDetail[] = [];
 
-	const targetStart = new Date(target.startTime).getTime();
-	const targetEnd = new Date(target.endTime).getTime();
+	const targetDoctorId = target.doctorId ?? target.doctorUserId ?? undefined;
+	const targetCabinetId = target.cabinetId ?? target.chairId ?? undefined;
+	const targetPatientId = target.patientId ?? undefined;
+	const rawTargetStart = target.startTime ?? target.startsAt;
+	const rawTargetEnd = target.endTime ?? target.endsAt;
 
-	if (targetEnd <= targetStart) {
+	const targetStart = rawTargetStart ? new Date(rawTargetStart).getTime() : NaN;
+	const targetEnd = rawTargetEnd ? new Date(rawTargetEnd).getTime() : NaN;
+
+	if (Number.isNaN(targetStart) || Number.isNaN(targetEnd) || targetEnd <= targetStart) {
 		conflicts.push({
 			type: "outside_shift_bounds",
 			descriptionRu: "Время окончания приема должно быть строго позже времени начала.",
@@ -214,34 +243,42 @@ export function checkScheduleOverlap(
 		if (ignoreSelfId && apt.id === ignoreSelfId) continue;
 		if (ignoreCancelled && (apt.status === "cancelled" || apt.status === "no_show")) continue;
 
-		const aptStart = new Date(apt.startTime).getTime();
-		const aptEnd = new Date(apt.endTime).getTime();
+		const aptDoctorId = ("doctorId" in apt && apt.doctorId ? apt.doctorId : ("doctorUserId" in apt ? apt.doctorUserId : undefined)) ?? undefined;
+		const aptCabinetId = ("cabinetId" in apt && apt.cabinetId ? apt.cabinetId : ("chairId" in apt ? apt.chairId : undefined)) ?? undefined;
+		const aptPatientId = apt.patientId ?? undefined;
+		const rawAptStart = "startTime" in apt && apt.startTime ? apt.startTime : ("startsAt" in apt ? apt.startsAt : undefined);
+		const rawAptEnd = "endTime" in apt && apt.endTime ? apt.endTime : ("endsAt" in apt ? apt.endsAt : undefined);
+
+		const aptStart = rawAptStart ? new Date(rawAptStart).getTime() : NaN;
+		const aptEnd = rawAptEnd ? new Date(rawAptEnd).getTime() : NaN;
+
+		if (Number.isNaN(aptStart) || Number.isNaN(aptEnd)) continue;
 
 		if (Math.max(targetStart, aptStart) < Math.min(targetEnd, aptEnd)) {
 			const overlapMin = calculateOverlapDurationMinutes(new Date(targetStart), new Date(targetEnd), new Date(aptStart), new Date(aptEnd));
 
 			// 1. Doctor collision
-			if (apt.doctorId === target.doctorId) {
+			if (targetDoctorId && aptDoctorId === targetDoctorId) {
 				conflicts.push({
 					type: "doctor_overlap",
 					conflictingAppointmentId: apt.id,
-					descriptionRu: `Врач уже занят на приеме (с ${new Date(apt.startTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} до ${new Date(apt.endTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}). Наложение: ${overlapMin} мин.`,
+					descriptionRu: `Врач уже занят на приеме (с ${new Date(aptStart).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} до ${new Date(aptEnd).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}). Наложение: ${overlapMin} мин.`,
 					overlapDurationMinutes: overlapMin,
 				});
 			}
 
 			// 2. Cabinet collision
-			if (!allowCabinetDoubleBooking && target.cabinetId && apt.cabinetId && target.cabinetId === apt.cabinetId) {
+			if (!allowCabinetDoubleBooking && targetCabinetId && aptCabinetId && targetCabinetId === aptCabinetId) {
 				conflicts.push({
 					type: "cabinet_overlap",
 					conflictingAppointmentId: apt.id,
-					descriptionRu: `Кабинет/кресло уже занято другим приемом (с ${new Date(apt.startTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} до ${new Date(apt.endTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}). Наложение: ${overlapMin} мин.`,
+					descriptionRu: `Кабинет/кресло уже занято другим приемом (с ${new Date(aptStart).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} до ${new Date(aptEnd).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}). Наложение: ${overlapMin} мин.`,
 					overlapDurationMinutes: overlapMin,
 				});
 			}
 
 			// 3. Patient double booking
-			if (target.patientId && apt.patientId === target.patientId) {
+			if (targetPatientId && aptPatientId === targetPatientId) {
 				conflicts.push({
 					type: "patient_double_booking",
 					conflictingAppointmentId: apt.id,

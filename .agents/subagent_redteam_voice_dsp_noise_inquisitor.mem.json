@@ -1,0 +1,51 @@
+{
+  "agent": "subagent_redteam_voice_dsp_noise_inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-02T22:45:00Z",
+  "completed_at": "2026-10-02T23:55:00Z",
+  "current_phase": "delivered",
+  "completed_steps": [
+    "Read supreme constitution and rules: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md",
+    "Deep audit of existing voice and audio implementations (UnifiedAudioClient, voiceDictationEngine, VadEngine, AudioStreamManager)",
+    "Implemented clinical Web Audio DSP pipeline in audioFilters.ts & voiceProcessor.ts (High-pass 80-120Hz, dual notch filters for 4.5kHz & 6.0kHz turbine whistle harmonics, dynamic range compressor -38dB/8:1 for far-field doctor capture, brickwall limiter -2dB/20:1, non-linear soft-clipping saturation guard tanh(x), spectral noise gating for saliva ejector)",
+    "Implemented DentalCabinetAcousticSimulator for stress-testing noisy dental clinics (compressor hum 120/240Hz, turbine whistles 4.5/6.0kHz with micro-jitter, pink noise aspiration, and 1/r far-field attenuation with early reflections)",
+    "Connected Web Audio DSP chain into AudioStreamManager.ts with dynamic profile switching (setDspProfile/getDspProfile)",
+    "Enhanced UnifiedAudioClient.ts and voiceDictationEngine.ts with runtime setDspProfile/getDspProfile and listener hooks",
+    "Implemented UI components: AudioSpectrumWidget.tsx & .css (60 FPS Canvas spectrum visualizer with clinical zones 0-150Hz, 300-3.4kHz, 4.5-6kHz, >7kHz and live badges), NoiseSuppressionControl.tsx & .css (segmented profile selector, filter toggles, far-field makeup gain slider), MicrophoneCalibrationModal.tsx & .css (calibration modal with live spectrum, noise floor calibration, acoustic verdict, turbine noise simulator, FDI test buttons)",
+    "Re-exported new components and services in apps/web/src/components/audio/index.ts and apps/web/src/services/voice/index.ts",
+    "Wrote and verified comprehensive unit tests in audioDspFilters.test.ts (14/14 passed)",
+    "Verified existing test suites: audioDspAndVad.test.ts (13/13 passed), AudioStreamManager.test.ts (11/11 passed), dentalGrammarParser.test.ts (42/42 passed), dictationToothUpdates.test.ts (10/10 passed)",
+    "Passed static checks: check-encoding.mjs (7097 files clean), check-css-tokens.mjs (0 errors)",
+    "Fixed CSS token bug in MicrophoneCalibrationModal.css (replaced undefined --paper-hover with canonical tokens)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "module": "apps/web/src/components/audio/AudioStreamManager.ts",
+      "issue": "Previously only had a single fixed 4000 Hz notch filter with no dynamics compressor or limiter, causing audio clipping during sharp dental tool clatter and severe dropouts for quiet far-field doctor speech.",
+      "resolution": "Extended DentalNoiseFilterOptions with dspProfile, enableTurbineNotch2 (6kHz), enableCompressor, and enableLimiter; inserted DynamicsCompressorNode and Limiter into the live Web Audio graph with runtime profile switching."
+    },
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "module": "apps/web/src/services/voice/audioFilters.ts",
+      "issue": "Absence of clinical presets, soft-clipping saturation guard, and signal-to-noise ratio estimation.",
+      "resolution": "Implemented 4 canonical clinical DSP presets (clean_studio, dental_balanced, far_field_boost, ultra_noise_rejection), tanh-based soft-clipping saturation guard, spectral noise gating, and calculateSnrDb / evaluateAcousticQuality."
+    },
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "module": "apps/web/src/components/audio/MicrophoneCalibrationModal.css",
+      "issue": "check-css-tokens flagged undefined token --paper-hover with light fallback #e2e8f0.",
+      "resolution": "Replaced with canonical design system tokens var(--paper-subtle, var(--paper-soft)) and var(--paper-strong)."
+    }
+  ],
+  "test_metrics": {
+    "audioDspFilters": "14/14 pass",
+    "audioDspAndVad": "13/13 pass",
+    "AudioStreamManager": "11/11 pass",
+    "dentalGrammarParser": "42/42 pass",
+    "dictationToothUpdates": "10/10 pass",
+    "encoding": "7097 files clean",
+    "cssTokens": "100% valid tokens, 0 errors"
+  }
+}

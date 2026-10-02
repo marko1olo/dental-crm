@@ -18,6 +18,8 @@ import { VisitMainTabs, type VisitSubViewTab } from "../VisitMainTabs";
 import { usePatientStore } from "../../../store/patientStore";
 import { useAppStore } from "../../../store/appStore";
 import { showToast } from "../../GlobalToast";
+import { useSoftPresence } from "../../../hooks/useSoftPresence";
+import { SoftPresenceIndicator } from "../../presence/SoftPresenceIndicator";
 
 export interface VisitHeaderMonolithProps {
 	// biome-ignore lint/suspicious/noExplicitAny: patient
@@ -84,6 +86,13 @@ export function VisitHeaderMonolith({
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
 }: VisitHeaderMonolithProps) {
+	const visitId = activeAppointment?.id || activeAppointment?.appointmentId;
+	const patientId = activePatient?.id || activePatient?.patientId;
+	const { activePeers, summaryText } = useSoftPresence({
+		visitId: typeof visitId === "string" ? visitId : undefined,
+		patientId: typeof patientId === "string" ? patientId : undefined,
+	});
+
 	return (
 		<header
 			className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0 sticky top-0 z-30 backdrop-blur-md"
@@ -172,6 +181,12 @@ export function VisitHeaderMonolith({
 							</span>
 						</span>
 					))}
+
+					{/* Индикатор мягкого совместного присутствия (Soft Presence) */}
+					<SoftPresenceIndicator
+						activePeers={activePeers}
+						summaryText={summaryText}
+					/>
 				</div>
 
 				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">

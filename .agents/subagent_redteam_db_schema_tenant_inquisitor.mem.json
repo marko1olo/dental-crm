@@ -1,0 +1,78 @@
+{
+  "subagent": "redteam_db_schema_tenant_inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-02T13:42:00Z",
+  "completed_at": "2026-10-02T13:57:00Z",
+  "scope": [
+    "apps/api/src/db/schema/",
+    "apps/api/src/db/rls.ts",
+    "apps/api/src/db/schema.ts",
+    "apps/api/src/db/migrate.ts",
+    "apps/api/drizzle/"
+  ],
+  "completed_steps": [
+    "Full read of constitutional documents: core.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DATABASE.md, GEMINI.md",
+    "Reconnaissance of apps/api/src/db/schema/ and rls.ts",
+    "Audit scale sovereignty (Solo doctor vs Small clinic vs Network/Multi-branch vs Master SaaS Platform Server)",
+    "Audit Drizzle schema: FK onDelete, cascade vs set null vs restrict, composite indexes for tenant-isolated hot paths",
+    "Audit data types: monetary amounts in numeric(12,2)/mode: 'number', timestamptz for dates, JSONB defaults",
+    "Audit RLS policies in rls.ts: PostgreSQL 18 compliance, fail-closed isolation, recursion prevention, bypass protection",
+    "Implement in-place schema hardening across schedule.ts, clinical.ts, billing.ts, finance.ts, auth.ts, patients.ts",
+    "Create atomic migration 0208_hardened_indexes_and_fk_cascades.sql",
+    "Add automated schema tenant integrity test apps/api/src/db/tests/schemaTenantIntegrity.test.ts",
+    "Verify via check-encoding (7067 files, 0 errors) and db tests (18/18 passed in 1016ms)",
+    "Document findings and write final Red Team Inquisitor Report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "HIGH",
+      "area": "Foreign Key Cascades",
+      "defect": "Missing explicit onDelete clauses on appointments, visits, treatmentItems, and payments caused no-action defaults, leading to potential foreign key constraint violations during cancellation, soft-deletion, or test cleanup."
+    },
+    {
+      "severity": "HIGH",
+      "area": "Multi-Tenant Indexing Hot Paths",
+      "defect": "Frequent tenant queries filtering by (organization_id, status), (organization_id, patient_id), or (organization_id, created_at) lacked composite B-Tree indexes, threatening query degradation under large table volumes."
+    },
+    {
+      "severity": "MEDIUM",
+      "area": "Scale Sovereignty (Solo Doctor vs Multi-Branch)",
+      "defect": "Solo doctor mode operates with single clinic and chair, but lacked optimized composite indexes for active chairs and staff filtering."
+    }
+  ],
+  "fixed_defects": [
+    {
+      "file": "apps/api/src/db/schema/schedule.ts",
+      "fix": "Added onDelete: 'set null' to appointments (chairId, assistantUserId, doctorUserId, patientId); added composite indexes idxAppointmentsOrgStatus and idxAppointmentsOrgPatient; added chairs orgActiveIdx."
+    },
+    {
+      "file": "apps/api/src/db/schema/clinical.ts",
+      "fix": "Added onDelete: 'set null' to visits.appointmentId; added composite indexes idxVisitsOrgPatient, idxVisitsOrgCreatedAt, idxVisitsOrgStatus to visits; added onDelete: 'set null' on treatmentItems.visitId and onDelete: 'restrict' on treatmentItems.serviceId with composite indexes idxTreatmentItemsOrgPatient and idxTreatmentItemsOrgStatus."
+    },
+    {
+      "file": "apps/api/src/db/schema/billing.ts",
+      "fix": "Added onDelete: 'set null' to payments.visitId; added composite indexes idxPaymentsOrgPatient and idxPaymentsOrgStatus to payments."
+    },
+    {
+      "file": "apps/api/src/db/schema/finance.ts",
+      "fix": "Added composite indexes orgCreatedAtIdx and orgBoxCreatedAtIdx to cashOperations."
+    },
+    {
+      "file": "apps/api/src/db/schema/auth.ts",
+      "fix": "Added composite index orgRoleActiveIdx to users."
+    },
+    {
+      "file": "apps/api/src/db/schema/patients.ts",
+      "fix": "Added composite index idxPatientsOrgStatus to patients."
+    },
+    {
+      "file": "apps/api/drizzle/0208_hardened_indexes_and_fk_cascades.sql",
+      "fix": "Created transactional migration 0208 with IF NOT EXISTS indexes and safe foreign key constraints update."
+    },
+    {
+      "file": "apps/api/src/db/tests/schemaTenantIntegrity.test.ts",
+      "fix": "Added automated regression test verifying 4-tier scaling rules, foreign key bindings, and migration registration."
+    }
+  ]
+}

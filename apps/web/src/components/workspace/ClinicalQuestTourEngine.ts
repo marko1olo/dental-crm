@@ -159,8 +159,8 @@ export const SOLO_DOCTOR_TRACK_STEPS: readonly QuestStep[] = [
 		clinicalTip:
 			"Свобода скидок врача (вплоть до 100% на гарантийные переделки) без мастер-паролей.",
 		shortcutBadge: "F9 — быстрый чек • Сплит: нал + карта + семья",
-		targetSelector: '[data-tour="cashier-pay"], [data-tour="fast-cashier"], #cashier-tender-action-btn',
-		fallbackTargetSelector: 'a[href="#finance"]',
+		targetSelector: '[data-tour="cashier-pay"], [data-tour="fast-cashier"], #cashier-tender-action-btn, [data-testid="payment-submit-button"]',
+		fallbackTargetSelector: 'a[href="#finance"], [data-testid="btn-finance-open-cashbox"]',
 		viewTarget: "finance",
 		actionLabel: "Открыть кассу",
 		rewardBadge: "+1 к чистым чекам без долгов",
@@ -433,17 +433,57 @@ export function saveQuestProgress(state: QuestProgressState): void {
 		} else {
 			window.localStorage.removeItem(DENTE_TOUR_STORAGE_KEY);
 		}
+		if (typeof window.dispatchEvent === "function") {
+			const evt =
+				typeof CustomEvent === "function"
+					? new CustomEvent("dente:quest-progress-updated", { detail: state })
+					: ({ type: "dente:quest-progress-updated", detail: state } as unknown as Event);
+			window.dispatchEvent(evt);
+		}
 	} catch (e) {
 		console.warn("DENTE Quest Tour Engine: failed to persist quest progress", e);
 	}
 }
 
-export function startQuestTrack(trackId: QuestTrackId): QuestProgressState {
+export function pauseQuestTour(): QuestProgressState {
 	const current = loadQuestProgress();
 	const next: QuestProgressState = {
 		...current,
+		isTourActive: false,
+	};
+	saveQuestProgress(next);
+	return next;
+}
+
+export function startQuestTrack(
+	trackId: QuestTrackId,
+	options: { reset?: boolean } = {},
+): QuestProgressState {
+	const current = loadQuestProgress();
+	const track =
+		CLINICAL_QUEST_TRACKS.find((t) => t.id === trackId) ||
+		CLINICAL_QUEST_TRACKS[0]!;
+
+	let nextStepIndex = 0;
+	if (!options.reset) {
+		const trackProgress = current.tracksProgress[trackId];
+		if (trackProgress && !trackProgress.completed && trackProgress.completedStepIds.length > 0) {
+			const firstUncompleted = track.steps.findIndex(
+				(s) => !trackProgress.completedStepIds.includes(s.id),
+			);
+			nextStepIndex =
+				firstUncompleted >= 0
+					? firstUncompleted
+					: Math.min(current.currentStepIndex, track.steps.length - 1);
+		} else if (current.activeTrackId === trackId && current.currentStepIndex > 0) {
+			nextStepIndex = Math.min(current.currentStepIndex, track.steps.length - 1);
+		}
+	}
+
+	const next: QuestProgressState = {
+		...current,
 		activeTrackId: trackId,
-		currentStepIndex: 0,
+		currentStepIndex: nextStepIndex,
 		isTourActive: true,
 		isDismissedPermanently: false,
 	};
@@ -523,12 +563,26 @@ export function dismissQuestTourPermanently(): QuestProgressState {
 	return next;
 }
 
+export function getNextTrackId(currentTrackId: QuestTrackId): QuestTrackId | null {
+	const currentIndex = CLINICAL_QUEST_TRACKS.findIndex((t) => t.id === currentTrackId);
+	if (currentIndex >= 0 && currentIndex < CLINICAL_QUEST_TRACKS.length - 1) {
+		return CLINICAL_QUEST_TRACKS[currentIndex + 1]!.id;
+	}
+	return null;
+}
+
 export function resetQuestProgress(trackId?: QuestTrackId): QuestProgressState {
 	const current = loadQuestProgress();
 	if (trackId) {
+		const track = CLINICAL_QUEST_TRACKS.find((t) => t.id === trackId);
+		const trackStepIds = new Set(track ? track.steps.map((s) => s.id) : []);
+		const filteredCompletedStepIds = current.completedStepIds.filter((id) => !trackStepIds.has(id));
+
 		const next: QuestProgressState = {
 			...current,
+			isTourActive: current.activeTrackId === trackId ? true : current.isTourActive,
 			currentStepIndex: current.activeTrackId === trackId ? 0 : current.currentStepIndex,
+			completedStepIds: filteredCompletedStepIds,
 			tracksProgress: {
 				...current.tracksProgress,
 				[trackId]: { completed: false, completedStepIds: [] },

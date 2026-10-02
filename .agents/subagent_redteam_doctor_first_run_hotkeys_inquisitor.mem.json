@@ -1,0 +1,46 @@
+{
+  "role": "Red Team Inquisitor: Doctor First-Run & Clinical Hotkeys",
+  "status": "completed",
+  "completed_steps": [
+    "Read supreme constitution and rules: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md, frontend.md",
+    "Inspect doctor first-run files and hotkeys: DoctorClinicalTrainingTour.tsx, WorkspaceHeaderBar.tsx, ClinicalQuestTourEngine.ts, keyboardShortcuts.ts, useDesktopShortcuts.ts, App.tsx",
+    "Audit training entry points: clinic header button / chip, F1 / Shift+? shortcuts, localStorage DENTE_TOUR_STORAGE_KEY first-visit behavior",
+    "Audit doctor autonomy: Esc / X 1-click dismissal during tour, progress retention for resuming later",
+    "Self-fix and polish defects on the spot with zero duplicates, <= 800 lines limit, and clean design",
+    "Execute targeted unit tests: clinicalQuestTourEngine.test.ts, clinicalGuidanceAndShortcuts.test.ts, knowledgeBaseHub.test.ts, omniPlatformAdaptor.test.ts",
+    "Final verbatim report with defect list and verification proof to parent"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "CRITICAL: Progress wipe in startQuestTrack reset currentStepIndex to 0 unconditionally",
+      "severity": "CRITICAL",
+      "fix": "Intelligently resume from first uncompleted step or currentStepIndex unless explicitly reset with { reset: true }",
+      "verified": true
+    },
+    {
+      "defect": "HIGH: useDesktopShortcuts prioritized onShortcutsOverlay over onF1Help, swallowing F1 help drawer / knowledge hub",
+      "severity": "HIGH",
+      "fix": "Reordered F1 key handling to prioritize onF1Help callback, dispatching dente:open-knowledge-hub, with fallback to onShortcutsOverlay",
+      "verified": true
+    },
+    {
+      "defect": "MEDIUM: Missing 1-click Doctor Quest launch chip in WorkspaceTopbar",
+      "severity": "MEDIUM",
+      "fix": "Created DoctorQuestHeaderChip in WorkspaceHeaderBar.tsx and integrated in workspaceShell.tsx next to learning button",
+      "verified": true
+    },
+    {
+      "defect": "MEDIUM: saveQuestProgress threw TypeError in Node.js test environment when window.dispatchEvent was undefined",
+      "severity": "MEDIUM",
+      "fix": "Guarded window.dispatchEvent call to ensure safe execution across DOM and test runners",
+      "verified": true
+    },
+    {
+      "defect": "LOW: Cyrillic layout mismatch for '?' and Shift+? shortcuts",
+      "severity": "LOW",
+      "fix": "Extended keyboardShortcuts matcher to recognize Shift+Digit7, Slash, and Cyrillic comma keys",
+      "verified": true
+    }
+  ]
+}

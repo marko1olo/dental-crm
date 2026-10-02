@@ -11,7 +11,12 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import {
 	CLINICAL_QUEST_TRACKS,
 	DENTE_QUEST_PROGRESS_STORAGE_KEY,
@@ -22,8 +27,10 @@ import {
 	advanceQuestStep,
 	dismissQuestTourPermanently,
 	getDefaultQuestProgress,
+	getNextTrackId,
 	isActionTriggerSatisfied,
 	loadQuestProgress,
+	pauseQuestTour,
 	resetQuestProgress,
 	saveQuestProgress,
 	skipQuestStep,
@@ -283,4 +290,130 @@ test("ClinicalQuestTourEngine — Interactive Guided Game Tour Verification", as
 			}
 		}
 	});
+
+	await t.test("7. getNextTrackId provides sequential multi-track continuity", () => {
+		assert.strictEqual(getNextTrackId("solo_doctor"), "reception_admin");
+		assert.strictEqual(getNextTrackId("reception_admin"), "imaging_diagnostics");
+		assert.strictEqual(getNextTrackId("imaging_diagnostics"), null);
+	});
+
+	await t.test("8. resetQuestProgress(trackId) selectively resets track progress without wiping other tracks", () => {
+		const storageMap = new Map<string, string>();
+		const mockStorage: Storage = {
+			getItem: (key: string) => storageMap.get(key) ?? null,
+			setItem: (key: string, val: string) => storageMap.set(key, String(val)),
+			removeItem: (key: string) => { storageMap.delete(key); },
+			clear: () => storageMap.clear(),
+			key: (idx: number) => Array.from(storageMap.keys())[idx] ?? null,
+			length: storageMap.size,
+		};
+
+		const originalWindow = (globalThis as unknown as { window?: { localStorage?: Storage } }).window;
+		(globalThis as unknown as { window: { localStorage: Storage } }).window = {
+			localStorage: mockStorage,
+		};
+
+		try {
+			// Set up state where solo_doctor has progress
+			const initial = startQuestTrack("solo_doctor");
+			const step2 = advanceQuestStep(initial); // completed schedule_1click
+			const step3 = advanceQuestStep(step2); // completed odontogram_formula
+
+			assert.ok(step3.completedStepIds.includes("schedule_1click"));
+			assert.ok(step3.completedStepIds.includes("odontogram_formula"));
+
+			// Reset solo_doctor track specifically
+			const resetSolo = resetQuestProgress("solo_doctor");
+			assert.strictEqual(resetSolo.tracksProgress.solo_doctor.completed, false);
+			assert.strictEqual(resetSolo.tracksProgress.solo_doctor.completedStepIds.length, 0);
+			assert.strictEqual(resetSolo.currentStepIndex, 0);
+			assert.strictEqual(resetSolo.isTourActive, true);
+			// completedStepIds must no longer contain solo_doctor step IDs
+			assert.strictEqual(resetSolo.completedStepIds.includes("schedule_1click"), false);
+			assert.strictEqual(resetSolo.completedStepIds.includes("odontogram_formula"), false);
+		} finally {
+			if (originalWindow) {
+				(globalThis as unknown as { window?: { localStorage?: Storage } }).window = originalWindow;
+			} else {
+				delete (globalThis as unknown as { window?: unknown }).window;
+			}
+		}
+	});
+
+	await t.test("9. Selector wiring: PaymentCapture and FinanceToolbar have verified tour targets", () => {
+		const paymentCapturePath = path.resolve(__dirname, "../PaymentCapture.tsx");
+		const paymentContent = fs.readFileSync(paymentCapturePath, "utf8");
+		assert.ok(
+			paymentContent.includes('data-tour="cashier-pay"'),
+			"PaymentCapture submit button must have data-tour='cashier-pay'",
+		);
+
+		const financeToolbarPath = path.resolve(__dirname, "../components/finance/FinanceToolbar.tsx");
+		const financeContent = fs.readFileSync(financeToolbarPath, "utf8");
+		assert.ok(
+			financeContent.includes('data-tour="fast-cashier"'),
+			"FinanceToolbar cashbox button must have data-tour='fast-cashier'",
+		);
+		assert.ok(
+			financeContent.includes('data-tour="cashier-pay"'),
+			"FinanceToolbar pay debt button must have data-tour='cashier-pay'",
+		);
+	});
+
+	await t.test("10. Doctor Autonomy: Pause and Resume continuity preserves progress without restarting from step 0", () => {
+		const storageMap = new Map<string, string>();
+		const mockStorage: Storage = {
+			getItem: (key: string) => storageMap.get(key) ?? null,
+			setItem: (key: string, val: string) => storageMap.set(key, String(val)),
+			removeItem: (key: string) => { storageMap.delete(key); },
+			clear: () => storageMap.clear(),
+			key: (idx: number) => Array.from(storageMap.keys())[idx] ?? null,
+			length: storageMap.size,
+		};
+
+		const originalWindow = (globalThis as unknown as { window?: { localStorage?: Storage } }).window;
+		(globalThis as unknown as { window: { localStorage: Storage } }).window = {
+			localStorage: mockStorage,
+		};
+
+		try {
+			// Doctor starts quest track
+			const initial = startQuestTrack("solo_doctor");
+			assert.strictEqual(initial.isTourActive, true);
+			assert.strictEqual(initial.currentStepIndex, 0);
+
+			// Doctor finishes step 1
+			const step1Finished = advanceQuestStep(initial);
+			assert.strictEqual(step1Finished.currentStepIndex, 1);
+			assert.ok(step1Finished.completedStepIds.includes("schedule_1click"));
+
+			// Doctor finishes step 2
+			const step2Finished = advanceQuestStep(step1Finished);
+			assert.strictEqual(step2Finished.currentStepIndex, 2);
+			assert.ok(step2Finished.completedStepIds.includes("odontogram_formula"));
+
+			// Patient walks in! Doctor presses Esc or closes modal (pauseQuestTour)
+			const paused = pauseQuestTour();
+			assert.strictEqual(paused.isTourActive, false, "Tour must be inactive when paused");
+			assert.strictEqual(paused.currentStepIndex, 2, "Current step index must be preserved");
+			assert.ok(paused.completedStepIds.includes("odontogram_formula"), "Completed steps must be preserved");
+
+			// Doctor is free later, clicks 'Квест врача (3 мин)' in topbar to resume
+			const resumed = startQuestTrack("solo_doctor");
+			assert.strictEqual(resumed.isTourActive, true, "Tour becomes active again on resume");
+			assert.strictEqual(resumed.currentStepIndex, 2, "Tour must resume from step index 2, NOT 0!");
+			assert.ok(resumed.completedStepIds.includes("odontogram_formula"), "Completed step IDs must remain intact");
+
+			// Test explicit reset flag: if doctor explicitly clicks reset, it starts at 0
+			const explicitlyReset = startQuestTrack("solo_doctor", { reset: true });
+			assert.strictEqual(explicitlyReset.currentStepIndex, 0, "Explicit reset must start from step 0");
+		} finally {
+			if (originalWindow) {
+				(globalThis as unknown as { window?: { localStorage?: Storage } }).window = originalWindow;
+			} else {
+				delete (globalThis as unknown as { window?: unknown }).window;
+			}
+		}
+	});
 });
+

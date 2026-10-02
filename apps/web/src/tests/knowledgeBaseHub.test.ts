@@ -113,6 +113,34 @@ describe("Knowledge Base & Learning Hub — Metadata & Registry Audit", () => {
 
 		const meshResults = searchClinicalGuides("mesh");
 		assert.ok(meshResults.some((g) => g.id === "lan_mesh"));
+
+		// Clinical synonyms & inflection tests mandated by Red Team Inquisitor:
+		// 1. «счёт» and «счет» (handling 'ё' vs 'е' and billing concepts)
+		const invoiceResults = searchClinicalGuides("счёт");
+		assert.ok(invoiceResults.some((g) => g.id === "cashier"), "Search for 'счёт' must find Cashier");
+
+		const invoiceResultsE = searchClinicalGuides("счет");
+		assert.ok(invoiceResultsE.some((g) => g.id === "cashier"), "Search for 'счет' must find Cashier");
+
+		// 2. «оплата»
+		const paymentResults = searchClinicalGuides("оплата");
+		assert.ok(paymentResults.some((g) => g.id === "cashier"), "Search for 'оплата' must find Cashier");
+
+		// 3. «чек»
+		const receiptResults = searchClinicalGuides("чек");
+		assert.ok(receiptResults.some((g) => g.id === "cashier"), "Search for 'чек' must find Cashier");
+
+		// 4. «зубы» (plural inflection matching root)
+		const teethResults = searchClinicalGuides("зубы");
+		assert.ok(teethResults.some((g) => g.id === "odontogram"), "Search for 'зубы' must find Odontogram");
+
+		// 5. «детский» (pediatric dentition query)
+		const pediatricResults = searchClinicalGuides("детский");
+		assert.ok(pediatricResults.some((g) => g.id === "odontogram"), "Search for 'детский' must find Odontogram");
+
+		// 6. «снимок» (singular form matching plural 'снимки')
+		const xRayResults = searchClinicalGuides("снимок");
+		assert.ok(xRayResults.some((g) => g.id === "imaging"), "Search for 'снимок' must find Imaging");
 	});
 });
 
@@ -237,6 +265,28 @@ describe("Knowledge Base & Learning Hub — Component SSR Rendering & Human Russ
 		assert.ok(openHtml.includes("Интерактивный тренажёр"));
 		assert.ok(openHtml.includes("Клавиши"));
 		assert.ok(openHtml.includes("Расписание и приём пациентов"));
+	});
+
+	it("supports onLaunchTour callback across all guide components without errors", () => {
+		let launchedTrack: string | undefined;
+		const mockLaunch = (trackId?: string) => {
+			launchedTrack = trackId;
+		};
+
+		const htmlSchedule = renderToString(
+			React.createElement(ScheduleGuide, { onLaunchTour: mockLaunch }),
+		);
+		assert.ok(htmlSchedule.includes("Интерактивный тренажёр"));
+
+		const htmlCashier = renderToString(
+			React.createElement(CashierGuide, { onLaunchTour: mockLaunch }),
+		);
+		assert.ok(htmlCashier.includes("Интерактивный тренажёр"));
+
+		const htmlImaging = renderToString(
+			React.createElement(Imaging3DGuide, { onLaunchTour: mockLaunch }),
+		);
+		assert.ok(htmlImaging.includes("Интерактивный тренажёр"));
 	});
 });
 

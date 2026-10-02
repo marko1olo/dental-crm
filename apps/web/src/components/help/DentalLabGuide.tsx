@@ -11,12 +11,13 @@
  * - Hotkeys (Ctrl+L), FAQs, and interactive tour button
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
 	CheckCircle2,
 	Clock,
 	Gamepad2,
 	HelpCircle,
+	MousePointer,
 	Palette,
 	Send,
 	Sparkles,
@@ -24,12 +25,37 @@ import {
 	Wrench,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const DentalLabGuide: React.FC = () => {
+export const DentalLabGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [selectedShade, setSelectedShade] = useState("A2");
+	const [activeStage, setActiveStage] = useState(2); // 0-based: 2 is Milling/Sintering
+
 	const handleLaunchTour = () => {
-		startDoctorTour("solo_doctor");
+		if (onLaunchTour) {
+			onLaunchTour("solo_doctor");
+		} else {
+			startDoctorTour("solo_doctor");
+		}
 	};
+
+	const shades = [
+		{ code: "A1", hex: "#fef3c7", desc: "Светлый оттенок, молодой дентин" },
+		{ code: "A2", hex: "#fde68a", desc: "Универсальный стандарт СтАР" },
+		{ code: "A3", hex: "#fcd34d", desc: "Теплый естественный оттенок" },
+		{ code: "A3.5", hex: "#fbbf24", desc: "Насыщенный дентин шейки" },
+		{ code: "B1", hex: "#fef9c3", desc: "Ультрасветлый отбеленный" },
+		{ code: "B2", hex: "#fef08a", desc: "Желтоватый естественный" },
+	];
+
+	const stages = [
+		{ title: "Цифровой скан STL", status: "Выполнено" },
+		{ title: "CAD Моделирование", status: "Одобрено" },
+		{ title: "Фрезеровка и синтеризация", status: "В работе прямо сейчас" },
+		{ title: "Глазурование и окрашивание", status: "В плане" },
+		{ title: "Сдача пациенту", status: "Готовность: 3 дня" },
+	];
 
 	return (
 		<div className="space-y-4 text-xs text-[var(--ink)]">
@@ -48,6 +74,118 @@ export const DentalLabGuide: React.FC = () => {
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
 						Управление заказами на изготовление коронок, виниров, мостовидных и съёмных протезов.
 						Контроль этапов примерки, выбор цвета зубов по международным шкалам и учёт взаиморасчётов с техниками.
+					</div>
+				</div>
+			</div>
+
+			{/* НАГЛЯДНАЯ СХЕМА НАРЯДА ЗТЛ (Visual Dental Lab Proof) */}
+			<div className="p-3.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-3">
+				<div className="flex items-center justify-between gap-2">
+					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
+						<MousePointer size={14} className="text-amber-500" />
+						<span>Интерактивный заказ-наряд в зуботехническую лабораторию</span>
+					</div>
+					<span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+						Шкала VITA Classic
+					</span>
+				</div>
+
+				{/* Visual Mockup Card */}
+				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden shadow-xs space-y-0">
+					{/* Header Info */}
+					<div className="px-3.5 py-2.5 bg-[var(--paper)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
+							<span className="font-bold text-xs text-[var(--ink)]">
+								Наряд № 1042 · Зуб 2.6
+							</span>
+							<span className="text-[10px] px-2 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold">
+								Диоксид циркония Prettau
+							</span>
+							<span className="text-[10px] text-[var(--muted)]">Пациент: Барабаш С.В.</span>
+						</div>
+						<div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 font-bold">
+							<Clock size={13} />
+							<span>Срок сдачи: 15 мая (3 дня)</span>
+						</div>
+					</div>
+
+					{/* VITA Shade Selector Bar */}
+					<div className="p-3 bg-[var(--paper)] border-b border-[var(--line)] space-y-2">
+						<div className="flex items-center justify-between text-[11px]">
+							<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+								<Palette size={13} className="text-amber-500" />
+								<span>Выбор оттенка зуба по VITA Classic:</span>
+							</span>
+							<span className="text-[10px] text-[var(--muted)]">
+								Выбран цвет: <strong className="text-[var(--ink)]">{selectedShade}</strong>
+							</span>
+						</div>
+
+						<div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+							{shades.map((sh) => (
+								<button
+									key={sh.code}
+									type="button"
+									onClick={() => setSelectedShade(sh.code)}
+									className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
+										selectedShade === sh.code
+											? "border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/30 scale-102"
+											: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-amber-400/50"
+									}`}
+								>
+									{/* Color Swatch Dot */}
+									<div
+										className="w-full h-3 rounded-xs mb-1 border border-black/20"
+										style={{ backgroundColor: sh.hex }}
+									/>
+									<span className="font-bold text-xs text-[var(--ink)]">{sh.code}</span>
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Stepper Stages Timeline */}
+					<div className="p-3.5 space-y-2.5">
+						<span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider block">
+							Технологическая цепочка наряда:
+						</span>
+
+						<div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+							{stages.map((st, idx) => {
+								const isDone = idx < activeStage;
+								const isCurrent = idx === activeStage;
+								return (
+									<button
+										key={st.title}
+										type="button"
+										onClick={() => setActiveStage(idx)}
+										className={`p-2 rounded-md border text-left transition-all cursor-pointer space-y-1 ${
+											isCurrent
+												? "border-amber-500 bg-amber-500/15 ring-1 ring-amber-500/30"
+												: isDone
+													? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+													: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] opacity-70"
+										}`}
+									>
+										<div className="flex items-center justify-between text-[10px] font-bold">
+											<span>Шаг {idx + 1}</span>
+											{isDone && <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />}
+											{isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />}
+										</div>
+										<div className="text-[11px] font-semibold leading-tight text-[var(--ink)]">
+											{st.title}
+										</div>
+										<div className="text-[9px] font-medium opacity-80">{st.status}</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Bottom Autonomy Status */}
+					<div className="px-4 py-2 bg-[var(--paper)] border-t border-[var(--line)] flex items-center justify-between text-[10px] text-[var(--muted)]">
+						<span>Задержка наряда ЗТЛ не блокирует оказание терапевтических услуг пациенту (Мандат 8e)</span>
+						<span className="font-semibold text-emerald-600 dark:text-emerald-400">Техник: Лаборатория «ДенталАрт»</span>
 					</div>
 				</div>
 			</div>

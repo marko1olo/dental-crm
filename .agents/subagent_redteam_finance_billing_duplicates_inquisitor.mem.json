@@ -1,0 +1,18 @@
+{
+  "subagent": "RED_TEAM_FINANCE_BILLING_INQUISITOR",
+  "status": "INIT_AND_RECONNAISSANCE",
+  "completed_steps": [
+    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely",
+    "Verified all mandates and invariants"
+  ],
+  "pending_steps": [
+    "Reconnaissance of financial, billing, cashier, 54-FZ, payroll, discounts modules in shared, api, web",
+    "Deep audit for duplicates, float/double money, 0.00 rub receipt bug on 100% guarantee, INN requirements on physical persons, payment split inconsistencies",
+    "Consolidate duplicated logic to single source of truth in shared/api/web",
+    "Implement fixes on disk with zero mocks and verified integrity",
+    "Run targeted tests and encoding/css checks",
+    "Verify no KLKT/DICOM was touched",
+    "Submit verbatim inquisition report to parent"
+  ],
+  "findings": []
+}

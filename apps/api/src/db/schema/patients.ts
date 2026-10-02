@@ -68,6 +68,10 @@ export const patients = pgTable(
 				table.organizationId,
 				table.phone,
 			),
+			idxPatientsOrgStatus: index("idx_patients_org_status").on(
+				table.organizationId,
+				table.status,
+			),
 			idxPatientsFamilyGroup: index("idx_patients_family_group_id").on(
 				table.familyGroupId,
 			),

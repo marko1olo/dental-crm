@@ -172,20 +172,20 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 			const code = e.code || "";
 			const isInputFocused = isTypingInInputElement(e.target);
 
-			// 0. F1 / ?: Clinical keyboard shortcuts overlay / help
+			// 0. F1: Clinical keyboard shortcuts overlay / help / knowledge hub
 			if (e.key === "F1" || code === "F1") {
-				if (optionsRef.current.onShortcutsOverlay) {
-					e.preventDefault();
-					e.stopPropagation();
-					optionsRef.current.onShortcutsOverlay();
-					dispatchDesktopShortcut("shortcuts_overlay");
-					return;
-				}
 				if (optionsRef.current.onF1Help) {
 					e.preventDefault();
 					e.stopPropagation();
 					optionsRef.current.onF1Help();
 					dispatchDesktopShortcut("f1");
+					return;
+				}
+				if (optionsRef.current.onShortcutsOverlay) {
+					e.preventDefault();
+					e.stopPropagation();
+					optionsRef.current.onShortcutsOverlay();
+					dispatchDesktopShortcut("shortcuts_overlay");
 					return;
 				}
 			}

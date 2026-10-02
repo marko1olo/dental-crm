@@ -478,18 +478,18 @@ export const KnowledgeBaseHubModal: React.FC<KnowledgeBaseHubModalProps> = React
 
 						{/* Guide Scrollable Content Area */}
 						<div className="flex-1 overflow-y-auto p-5 space-y-6 min-h-0">
-							{activeTab === "schedule" && <ScheduleGuide />}
-							{activeTab === "odontogram" && <OdontogramGuide />}
-							{activeTab === "medical_record" && <MedicalRecordGuide />}
-							{activeTab === "cashier" && <CashierGuide />}
-							{activeTab === "imaging" && <Imaging3DGuide />}
-							{activeTab === "treatment_plans" && <TreatmentPlansGuide />}
-							{activeTab === "dental_lab" && <DentalLabGuide />}
-							{activeTab === "inventory" && <InventoryWarehouseGuide />}
-							{activeTab === "sanpin" && <SanPiNAutoclaveGuide />}
-							{activeTab === "leads" && <LeadsTelephonyGuide />}
-							{activeTab === "lan_mesh" && <LanMeshGuide />}
-							{activeTab === "analytics" && <AnalyticsReportsGuide />}
+							{activeTab === "schedule" && <ScheduleGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "odontogram" && <OdontogramGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "medical_record" && <MedicalRecordGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "cashier" && <CashierGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "imaging" && <Imaging3DGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "treatment_plans" && <TreatmentPlansGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "dental_lab" && <DentalLabGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "inventory" && <InventoryWarehouseGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "sanpin" && <SanPiNAutoclaveGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "leads" && <LeadsTelephonyGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "lan_mesh" && <LanMeshGuide onLaunchTour={handleLaunchTour} />}
+							{activeTab === "analytics" && <AnalyticsReportsGuide onLaunchTour={handleLaunchTour} />}
 
 							{/* Bottom Navigation Link to Next Guide */}
 							{nextGuide && (

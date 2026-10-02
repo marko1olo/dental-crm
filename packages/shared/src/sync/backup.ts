@@ -300,11 +300,19 @@ function base64ToBytes(base64: string): Uint8Array {
 
 function generateRandomHex(byteCount: number): string {
 	const bytes = new Uint8Array(byteCount);
-	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-		crypto.getRandomValues(bytes);
+	const c =
+		typeof crypto !== "undefined"
+			? crypto
+			: typeof globalThis !== "undefined"
+				? globalThis.crypto
+				: undefined;
+	if (c && typeof c.getRandomValues === "function") {
+		c.getRandomValues(bytes);
 	} else {
+		let seed = (Date.now() ^ (byteCount << 16)) >>> 0;
 		for (let i = 0; i < byteCount; i++) {
-			bytes[i] = Math.floor(Math.random() * 256);
+			seed = (seed * 1664525 + 1013904223) >>> 0;
+			bytes[i] = (seed >>> ((i % 4) * 8)) & 0xff;
 		}
 	}
 	return bytesToHex(bytes);

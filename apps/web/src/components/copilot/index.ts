@@ -21,6 +21,7 @@ export * from './CopilotSuggestions';
 export * from './CopilotComposer';
 export * from './CopilotMessage';
 export * from './CopilotDrawer';
+export * from './CopilotChatPanel';
 export * from './CopilotGlobalHost';
 export * from './CopilotContextSync';
 export * from './CopilotGenerativeCards';

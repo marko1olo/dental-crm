@@ -21,10 +21,6 @@ import {
 import {
 	type MilestoneStage,
 	type PatientDepositWallet,
-	type StagePaymentKind,
-	type StagePaymentStatus,
-	STAGE_PAYMENT_PRESETS,
-	STAGE_STATUS_UI_MAP,
 	allocatePatientDepositToStages,
 	calculateStagePaymentTotals,
 	calculateTerminationRefund,
@@ -32,10 +28,16 @@ import {
 	createDefaultMilestoneStages,
 	exportStageScheduleToCsv,
 	generate54FzStageFiscalReceipt,
+	validateStageStateTransition,
+} from "../components/treatment-plans/stagePayment/stagePaymentEngine.js";
+import {
+	type StagePaymentKind,
+	type StagePaymentStatus,
+	STAGE_PAYMENT_PRESETS,
+	STAGE_STATUS_UI_MAP,
 	getAllStagePaymentKinds,
 	getStagePresetByKind,
-	validateStageStateTransition,
-} from "../components/treatment-plans/stagePayment/index.js";
+} from "../components/treatment-plans/stagePayment/stagePaymentPresets.js";
 
 describe("Statutory Treatment Plan Stage Payment & Escrow Engine", () => {
 	// 1. ПРЕСЕТЫ И НОРМАТИВНАЯ БАЗА

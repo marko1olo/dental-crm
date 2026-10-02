@@ -113,7 +113,7 @@ interface CeremonyOutcome {
 	commissionRows: number;
 }
 
-describe("церемония подписания дневника одинакова у POST и /lock", () => {
+describe("церемония подписания дневника одинакова у POST и /lock", { concurrency: 1 }, () => {
 	let app: FastifyInstance;
 	/*
 	 * Идентификатор клиники известен ДО вставки, а не берётся из `returning`.

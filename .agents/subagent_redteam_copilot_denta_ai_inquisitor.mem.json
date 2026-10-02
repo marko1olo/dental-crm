@@ -1,0 +1,46 @@
+{
+  "subagent": "subagent_redteam_copilot_denta_ai_inquisitor",
+  "status": "completed",
+  "lastUpdated": "2026-10-02T23:55:00Z",
+  "doctrine": "RED TEAM INQUISITOR & SELF-FIXING ACTION ENGINE",
+  "mandates": ["8e", "8l", "8n", "8t", "8z", "THE_HAMMER"],
+  "completed_steps": [
+    "Read full constitution: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, INDEX.md, GEMINI.md, core.md, frontend.md",
+    "Verified monorepo state and git status",
+    "Identified target scope in apps/web/src/components/copilot/, apps/web/src/services/ai/, apps/api/src/routes/ai/, apps/api/src/services/agent/",
+    "Deep audit of Copilot Action Engine, Tool Calls & CRM dispatch: identified missing client-side dispatcher and standalone chat panel",
+    "Implemented apps/web/src/services/ai/aiActionDispatcher.ts: synchronous dispatch into useVisitStore (applyAiToothCodes, setToothState, setVisitNoteForm), useAppStore (setActiveTooth, setActivePatientId), schedule REST API, and lab orders; implemented isDestructiveAction classifier",
+    "Implemented apps/web/src/services/ai/copilotActionRunner.ts: pending actions queue, 1-click execution gate, action history with undo/rollback support",
+    "Implemented apps/web/src/services/ai/aiAssistantService.ts: resilient SSE chat client with retry, thinking events, token streaming, context packaging ([UI Context: ...]), and deterministic offline heuristic routing",
+    "Exported apps/web/src/services/ai/index.ts",
+    "Extracted apps/web/src/components/copilot/CopilotChatPanel.tsx as modular reusable chat panel component without matryoshka modal nesting",
+    "Wired CopilotChatPanel into apps/web/src/components/copilot/index.ts",
+    "Wired dispatchCrmAction and copilotActionRunner into useCopilot.ts on tool_result and confirm() callbacks",
+    "Implemented backend AI routes: apps/api/src/routes/ai/aiRoutes.ts (/api/v1/ai/tools, /api/v1/ai/execute, /api/v1/ai/confirm)",
+    "Implemented backend SSE streaming route: apps/api/src/routes/ai/copilotStreamRoutes.ts (/api/v1/ai/stream with automatic fallback to SemanticRouter)",
+    "Exported apps/api/src/routes/ai/index.ts and registered in apps/api/src/server.ts",
+    "Created unit test suite apps/web/src/services/ai/__tests__/aiActionDispatcher.test.ts (5 tests, passed)",
+    "Created unit test suite apps/web/src/services/ai/__tests__/copilotActionRunner.test.ts (3 tests, passed)",
+    "Created unit test suite apps/api/src/tests/aiRoutes.test.ts (5 tests, passed)",
+    "Ran scripts/check-encoding.mjs: 0 defects across 7102 files",
+    "Ran scripts/check-css-tokens.mjs: 0 unresolvable CSS tokens, 0 white fallbacks"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "issue": "Previously, tool calls from Copilot did not mutate client-side Zustand stores directly, leading to UI/Store desynchronization where doctor saw an action confirmed but odontogram and diary remained empty.",
+      "fix": "Built aiActionDispatcher.ts and wired it directly into useCopilot.ts (tool_result event & confirm handler) and copilotActionRunner.ts, synchronously mutating useVisitStore and useAppStore."
+    },
+    {
+      "severity": "HIGH",
+      "issue": "Destructive actions (such as tooth extraction, record deletion, appointment cancellation) could either execute implicitly or block the user in nested modal dead-ends.",
+      "fix": "Enforced Mandate 8e Doctor Autonomy: isDestructiveAction automatically tags destructive actions as requiring 1-click confirmation without blocking the UI, while safe clinical actions auto-apply smoothly."
+    },
+    {
+      "severity": "HIGH",
+      "issue": "Offline resilience: when backend LLM experienced 429 quota or connection drop, copilot would stall indefinitely with empty messages or spinners.",
+      "fix": "Integrated copilotFallbackRouter on backend and local regex/semantic fallback in aiAssistantService on web client so the doctor always receives instant responses and actions even when offline."
+    }
+  ]
+}

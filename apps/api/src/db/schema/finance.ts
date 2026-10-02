@@ -190,6 +190,15 @@ export const cashOperations = pgTable(
 		shiftIdx: index("cash_operations_shift_idx").on(t.shiftId),
 		patientIdx: index("cash_operations_patient_idx").on(t.patientId),
 		createdAtIdx: index("cash_operations_created_at_idx").on(t.createdAt),
+		orgCreatedAtIdx: index("cash_operations_org_created_at_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		orgBoxCreatedAtIdx: index("cash_operations_org_box_created_at_idx").on(
+			t.organizationId,
+			t.cashBoxId,
+			t.createdAt,
+		),
 	}),
 );
 

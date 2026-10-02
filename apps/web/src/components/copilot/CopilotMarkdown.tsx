@@ -1,4 +1,6 @@
 import React from 'react';
+import { Gamepad2 } from 'lucide-react';
+import { KnowledgeService } from '../../services/knowledge/knowledgeService';
 
 export interface CopilotMarkdownProps {
   text: string;
@@ -54,7 +56,51 @@ export const CopilotMarkdown: React.FC<CopilotMarkdownProps> = ({ text }) => {
         continue;
       }
 
-      const nextPos = remaining.search(/(\*\*|`|\*)/);
+      const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
+      if (linkMatch && linkMatch[0] && linkMatch[1] !== undefined && linkMatch[2] !== undefined) {
+        const linkText = linkMatch[1];
+        const linkUrl = linkMatch[2];
+
+        if (linkUrl.startsWith('action:launch-tour:')) {
+          const partsUrl = linkUrl.split(':');
+          const trackId = partsUrl[2] || '';
+          const componentId = partsUrl[3] || trackId;
+
+          parts.push(
+            <button
+              key={`tour-btn-${keyIdx++}`}
+              type="button"
+              data-testid="copilot-tour-launch-btn"
+              data-action={linkUrl}
+              onClick={() => {
+                KnowledgeService.launchInteractiveTour(componentId || trackId || 'solo_doctor');
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 my-1 rounded-md text-xs font-semibold bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-strong,#0f766e)] shadow-xs transition-colors cursor-pointer"
+              title="Запустить интерактивное обучение по разделу"
+            >
+              <Gamepad2 size={14} className="shrink-0 text-white" />
+              <span>{linkText}</span>
+            </button>
+          );
+        } else {
+          parts.push(
+            <a
+              key={`a-${keyIdx++}`}
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--teal)] underline hover:text-[var(--teal-strong,#0f766e)] inline-flex items-center gap-1"
+            >
+              {linkText}
+            </a>
+          );
+        }
+
+        remaining = remaining.slice(linkMatch[0].length);
+        continue;
+      }
+
+      const nextPos = remaining.search(/(\*\*|`|\*|\[)/);
       if (nextPos === -1) {
         parts.push(remaining);
         break;

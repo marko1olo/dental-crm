@@ -151,6 +151,49 @@ describe("Multi-Chair Clinical Schedule Collision & Emergency Reserve Engine (sh
 		assert.strictEqual(noCollision.hasConflict, false);
 	});
 
+	it("1.3b checkScheduleOverlap seamlessly accepts canonical Appointment with doctorUserId/chairId/startsAt/endsAt", () => {
+		const canonicalExisting = [
+			{
+				id: "b1111111-1111-1111-1111-111111111111",
+				organizationId: clinicId,
+				doctorUserId: doctor1,
+				chairId: cabinet1,
+				patientId: patient1,
+				startsAt: "2026-09-01T14:00:00Z",
+				endsAt: "2026-09-01T15:00:00Z",
+				status: "confirmed",
+			},
+		];
+
+		// Conflict with canonical target (doctorUserId overlap)
+		const doctorCollision = checkScheduleOverlap(
+			{
+				doctorUserId: doctor1,
+				chairId: "99999999-9999-9999-9999-999999999999",
+				patientId: patient2,
+				startsAt: "2026-09-01T14:30:00Z",
+				endsAt: "2026-09-01T15:30:00Z",
+			},
+			canonicalExisting,
+		);
+		assert.strictEqual(doctorCollision.hasConflict, true);
+		assert.strictEqual(doctorCollision.conflicts.some((c) => c.type === "doctor_overlap"), true);
+
+		// Conflict with canonical chair (chairId overlap)
+		const chairCollision = checkScheduleOverlap(
+			{
+				doctorUserId: doctor2,
+				chairId: cabinet1,
+				patientId: patient2,
+				startsAt: "2026-09-01T14:15:00Z",
+				endsAt: "2026-09-01T14:45:00Z",
+			},
+			canonicalExisting,
+		);
+		assert.strictEqual(chairCollision.hasConflict, true);
+		assert.strictEqual(chairCollision.conflicts.some((c) => c.type === "cabinet_overlap"), true);
+	});
+
 	it("1.4 calculateEmergencyReserveSlots creates acute toothache buffer in shift", () => {
 		const shift: DoctorShiftSchedule = {
 			id: "s1111111-1111-1111-1111-111111111111",

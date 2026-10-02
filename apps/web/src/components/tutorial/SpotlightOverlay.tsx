@@ -30,12 +30,16 @@ export const SpotlightOverlay: React.FC<SpotlightOverlayProps> = React.memo(({
 }) => {
 	const maskId = useId();
 
-	// Dynamic viewport tracking with clean unmount listener (Defect 6 fix)
+	// Dynamic viewport tracking with visualViewport support for pinch-zoom and Retina scaling
 	const [viewport, setViewport] = useState<ViewportDimensions>(() => {
 		if (typeof window === "undefined") {
 			return { width: 1920, height: 1080 };
 		}
-		return { width: window.innerWidth, height: window.innerHeight };
+		const vv = window.visualViewport;
+		return {
+			width: vv ? Math.round(vv.width) : window.innerWidth,
+			height: vv ? Math.round(vv.height) : window.innerHeight,
+		};
 	});
 
 	useEffect(() => {
@@ -45,14 +49,30 @@ export const SpotlightOverlay: React.FC<SpotlightOverlayProps> = React.memo(({
 		const handleResize = () => {
 			if (rafId !== null) cancelAnimationFrame(rafId);
 			rafId = requestAnimationFrame(() => {
-				setViewport({ width: window.innerWidth, height: window.innerHeight });
+				const vv = window.visualViewport;
+				setViewport({
+					width: vv ? Math.round(vv.width) : window.innerWidth,
+					height: vv ? Math.round(vv.height) : window.innerHeight,
+				});
 			});
 		};
 
 		window.addEventListener("resize", handleResize, { passive: true });
+		window.addEventListener("scroll", handleResize, { passive: true });
+		const vv = window.visualViewport;
+		if (vv) {
+			vv.addEventListener("resize", handleResize, { passive: true });
+			vv.addEventListener("scroll", handleResize, { passive: true });
+		}
+
 		return () => {
 			if (rafId !== null) cancelAnimationFrame(rafId);
 			window.removeEventListener("resize", handleResize);
+			window.removeEventListener("scroll", handleResize);
+			if (vv) {
+				vv.removeEventListener("resize", handleResize);
+				vv.removeEventListener("scroll", handleResize);
+			}
 		};
 	}, [isOpen]);
 

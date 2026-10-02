@@ -1,0 +1,155 @@
+/* AudioSpectrumWidget.css — Стили клинического спектроанализатора DENTE */
+
+.dente-spectrum-widget {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: var(--radius-md, 8px);
+	padding: 10px 14px;
+	box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+	position: relative;
+	user-select: none;
+}
+
+.dente-spectrum-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.dente-spectrum-title-area {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.dente-spectrum-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--muted, #94a3b8);
+	transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dente-spectrum-dot.active {
+	background: var(--teal, #0d9488);
+	box-shadow: 0 0 8px var(--teal-soft, rgba(13, 148, 136, 0.4));
+}
+
+.dente-spectrum-dot.speaking {
+	background: #10b981;
+	box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+.dente-spectrum-dot.clipping {
+	background: var(--bad-fg, #ef4444);
+	box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+	animation: dente-clip-pulse 0.4s infinite alternate;
+}
+
+@keyframes dente-clip-pulse {
+	from { opacity: 0.7; }
+	to { opacity: 1.0; transform: scale(1.2); }
+}
+
+.dente-spectrum-metrics {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 12px;
+	color: var(--muted, #64748b);
+}
+
+.dente-metric-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 4px;
+	padding: 2px 6px;
+	font-family: var(--font-mono, monospace);
+	font-size: 11px;
+}
+
+.dente-metric-value {
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.dente-metric-value.excellent {
+	color: #059669;
+}
+
+.dente-metric-value.good {
+	color: #0d9488;
+}
+
+.dente-metric-value.moderate {
+	color: #d97706;
+}
+
+.dente-metric-value.poor {
+	color: var(--bad-fg, #ef4444);
+}
+
+.dente-spectrum-canvas-wrapper {
+	position: relative;
+	width: 100%;
+	border-radius: 6px;
+	overflow: hidden;
+	background: var(--paper, #0f172a);
+	border: 1px solid var(--line, #334155);
+}
+
+.dente-spectrum-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.dente-spectrum-frequency-legend {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 10px;
+	color: var(--muted, #64748b);
+	padding: 0 2px;
+	font-family: var(--font-mono, monospace);
+}
+
+.dente-spectrum-legend-zone {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.dente-spectrum-legend-zone::before {
+	content: "";
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 2px;
+}
+
+.dente-zone-compressor::before {
+	background: #f59e0b;
+}
+
+.dente-zone-voice::before {
+	background: #10b981;
+}
+
+.dente-zone-turbine::before {
+	background: #ef4444;
+}
+
+.dente-zone-ultrasound::before {
+	background: #8b5cf6;
+}

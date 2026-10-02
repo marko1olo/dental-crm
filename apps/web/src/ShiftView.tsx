@@ -35,6 +35,7 @@ import {
 import { DoctorPayrollModal } from "./components/finance/payroll/DoctorPayrollModal";
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { staffTelemetryService } from "./services/logging/staffTelemetryService";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -626,6 +627,11 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			} catch (err: unknown) {
 				console.warn("[ShiftView] Error saving dente_doctor_shift_active:", err);
 			}
+			staffTelemetryService.logShiftOpen(
+				"SHIFT-ACTIVE",
+				dashboard?.activeAppointment?.doctorId,
+				dashboard?.activeAppointment?.doctorName,
+			);
 		}
 	};
 
@@ -637,6 +643,17 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		} catch (err: unknown) {
 			console.warn("[ShiftView] Error saving dente_doctor_shift_active:", err);
 		}
+		staffTelemetryService.logShiftClose(
+			"SHIFT-ACTIVE",
+			dashboard?.activeAppointment?.doctorId,
+			dashboard?.activeAppointment?.doctorName,
+			{
+				totalAppointments: shiftStats.totalAppointments,
+				completedCount: shiftStats.completedCount,
+				totalRevenueRub: shiftStats.totalRevenueRub,
+				estimatedDoctorPayoutRub: shiftStats.estimatedDoctorPayoutRub,
+			},
+		);
 	};
 
 	return (

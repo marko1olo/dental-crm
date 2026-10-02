@@ -11,12 +11,14 @@ import {
 	type UnifiedAudioMode,
 } from "./UnifiedAudioClient";
 import { showToast } from "../../components/GlobalToast";
+import type { DentalDspProfile } from "./audioFilters";
 
 export interface VoiceEngineListener {
 	onListeningChange?: (isListening: boolean) => void;
 	onTranscriptChange?: (interimTranscript: string, finalTranscript: string) => void;
 	onIntentParsed?: (intent: DentalVoiceIntent) => void;
 	onVolumeChange?: (volume: number) => void;
+	onDspProfileChange?: (profile: DentalDspProfile) => void;
 	onError?: (error: string) => void;
 }
 
@@ -24,6 +26,7 @@ export class VoiceDictationEngine {
 	private isListening = false;
 	private interimTranscript = "";
 	private finalTranscript = "";
+	private currentDspProfile: DentalDspProfile = "dental_balanced";
 	private client: UnifiedAudioClient | null = null;
 	private unsubscribeClient: (() => void) | null = null;
 	private listeners: Set<VoiceEngineListener> = new Set();
@@ -42,8 +45,32 @@ export class VoiceDictationEngine {
 		return { interim: this.interimTranscript, final: this.finalTranscript };
 	}
 
-	public async start(preferredMode: UnifiedAudioMode = "gemini_live"): Promise<boolean> {
+	public getDspProfile(): DentalDspProfile {
+		if (this.client) {
+			return this.client.getDspProfile();
+		}
+		return this.currentDspProfile;
+	}
+
+	public setDspProfile(profile: DentalDspProfile): void {
+		this.currentDspProfile = profile;
+		if (this.client) {
+			this.client.setDspProfile(profile);
+		}
+		for (const l of this.listeners) {
+			l.onDspProfileChange?.(profile);
+		}
+	}
+
+	public async start(
+		preferredMode: UnifiedAudioMode = "gemini_live",
+		dspProfile?: DentalDspProfile,
+	): Promise<boolean> {
 		if (this.isListening && this.client) return true;
+
+		if (dspProfile) {
+			this.currentDspProfile = dspProfile;
+		}
 
 		try {
 			this.stop();
@@ -52,6 +79,9 @@ export class VoiceDictationEngine {
 				preferredMode,
 				specialty: "therapy",
 				autoFallback: true,
+				filterOptions: {
+					dspProfile: this.currentDspProfile,
+				},
 			});
 			this.client = client;
 

@@ -23,3 +23,4 @@ export * from "./cbctRoutes.js";
 export * from "./pacsRoutes.js";
 export * from "./studiesRoutes.js";
 export * from "./sensorOfflineRoutes.js";
+export * from "./dicomRoutes.js";

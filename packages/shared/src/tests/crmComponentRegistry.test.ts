@@ -5,6 +5,7 @@ import {
 	crmComponentKnowledgeSchema,
 	exportKnowledgeRegistryAsJson,
 	findComponentKnowledge,
+	findTroubleshooting,
 	formatComponentForLLMContext,
 	formatKnowledgeBaseOverviewForLLM,
 	getComponentKnowledgeById,
@@ -65,8 +66,8 @@ describe("CRM Component Knowledge Registry (Mandate 8l)", () => {
 				assert.ok(action.id.length > 0, "Action id cannot be empty");
 				assert.ok(action.label.length > 0, "Action label cannot be empty");
 				assert.ok(
-					action.selector.includes("[") || action.selector.includes("."),
-					`Action selector '${action.selector}' must be a valid CSS/data-testid selector`,
+					action.selector.includes("[") || action.selector.includes(".") || action.selector.includes("#"),
+					`Action selector '${action.selector}' must be a valid CSS/data-testid/data-tour selector`,
 				);
 				assert.ok(action.effect.length > 0, "Action effect cannot be empty");
 			}
@@ -79,6 +80,35 @@ describe("CRM Component Knowledge Registry (Mandate 8l)", () => {
 			assert.ok(
 				c.troubleshooting.length > 0,
 				`Component ${c.id} must have at least one troubleshooting item`,
+			);
+
+			// Check that each troubleshooting item has valid fields
+			for (const tr of c.troubleshooting) {
+				assert.ok(tr.symptom.length > 0, "Troubleshooting symptom cannot be empty");
+				assert.ok(tr.cause.length > 0, "Troubleshooting cause cannot be empty");
+				assert.ok(tr.solution.length > 0, "Troubleshooting solution cannot be empty");
+			}
+		}
+	});
+
+	test("all components define hotkeys and navigationHint", () => {
+		for (const c of CRM_COMPONENT_REGISTRY) {
+			assert.ok(c.navigationHint, `Component ${c.id} must define navigationHint`);
+			assert.ok(
+				c.hotkeys && Object.keys(c.hotkeys).length > 0,
+				`Component ${c.id} must define hotkeys dictionary`,
+			);
+		}
+	});
+
+	test("all components provide recoverySelector for autonomous AI agent self-healing", () => {
+		for (const c of CRM_COMPONENT_REGISTRY) {
+			const hasRecovery = c.troubleshooting.some(
+				(tr) => tr.recoverySelector && tr.recoverySelector.length > 0,
+			);
+			assert.ok(
+				hasRecovery,
+				`Component ${c.id} must provide at least one troubleshooting item with recoverySelector`,
 			);
 		}
 	});
@@ -141,6 +171,44 @@ describe("Knowledge Search Engine (Mandate 8l)", () => {
 		assert.strictEqual(taxResults[0]?.component.id, "document_generator");
 	});
 
+	test("finds component by hotkey", () => {
+		// Shift+N -> odontogram or visit_diary
+		const autonormResults = findComponentKnowledge("Shift+N");
+		assert.ok(autonormResults.length > 0, "Should find component by Shift+N");
+		const ids = autonormResults.map((r) => r.component.id);
+		assert.ok(ids.includes("odontogram_arch") || ids.includes("visit_diary"));
+
+		// F9 -> cashier
+		const f9Results = findComponentKnowledge("F9");
+		assert.ok(f9Results.length > 0, "Should find component by F9");
+		assert.strictEqual(f9Results[0]?.component.id, "kkt_cashier");
+
+		// F7 -> CBCT/imaging
+		const f7Results = findComponentKnowledge("F7");
+		assert.ok(f7Results.length > 0, "Should find component by F7");
+		assert.strictEqual(f7Results[0]?.component.id, "cbct_mpr_studio");
+
+		// Ctrl+K -> patient search
+		const ctrlKResults = findComponentKnowledge("Ctrl+K");
+		assert.ok(ctrlKResults.length > 0, "Should find component by Ctrl+K");
+		assert.strictEqual(ctrlKResults[0]?.component.id, "patient_card_record");
+	});
+
+	test("finds component by CSS/data-tour selector", () => {
+		const tourAutonorm = findComponentKnowledge('[data-tour="autonorm-btn"]');
+		assert.ok(tourAutonorm.length > 0, "Should find component by [data-tour='autonorm-btn']");
+		const tourIds = tourAutonorm.map((r) => r.component.id);
+		assert.ok(tourIds.includes("odontogram_arch") || tourIds.includes("visit_diary"));
+
+		const bookingResult = findComponentKnowledge('[data-tour="schedule-booking"]');
+		assert.ok(bookingResult.length > 0);
+		assert.strictEqual(bookingResult[0]?.component.id, "schedule_grid");
+
+		const cashierResult = findComponentKnowledge('[data-tour="cashier-pay"]');
+		assert.ok(cashierResult.length > 0);
+		assert.strictEqual(cashierResult[0]?.component.id, "kkt_cashier");
+	});
+
 	test("filters results by user role", () => {
 		const nurseResults = findComponentKnowledge("склад анестетики", {
 			role: "nurse",
@@ -168,10 +236,31 @@ describe("Knowledge Search Engine (Mandate 8l)", () => {
 		const results = findComponentKnowledge("приём", { limit: 2 });
 		assert.ok(results.length <= 2, `Expected <= 2 results, got ${results.length}`);
 	});
+
+	test("findTroubleshooting finds solutions and recoverySelectors by symptom", () => {
+		// Symptom: касса / LAN timeout
+		const cashierIssues = findTroubleshooting("ошибка связи с кассой");
+		assert.ok(cashierIssues.length > 0);
+		assert.strictEqual(cashierIssues[0]?.componentId, "kkt_cashier");
+		assert.ok(cashierIssues[0]?.solution.includes("офлайн-очередь"));
+		assert.ok(cashierIssues[0]?.recoverySelector);
+
+		// Symptom: овердрафт склада
+		const overdraftIssues = findTroubleshooting("остаток ушёл в минус");
+		assert.ok(overdraftIssues.length > 0);
+		assert.strictEqual(overdraftIssues[0]?.componentId, "warehouse_fefo");
+		assert.ok(overdraftIssues[0]?.solution.includes("овердрафт"));
+
+		// Symptom: зуб не реагирует
+		const toothIssues = findTroubleshooting("зуб не реагирует на нажатие");
+		assert.ok(toothIssues.length > 0);
+		assert.strictEqual(toothIssues[0]?.componentId, "odontogram_arch");
+		assert.ok(toothIssues[0]?.recoverySelector);
+	});
 });
 
 describe("LLM Context Formatting for AI Agents (Mandate 8l)", () => {
-	test("formatComponentForLLMContext returns markdown with actions and selectors", () => {
+	test("formatComponentForLLMContext returns markdown with actions, hotkeys and recoverySelectors", () => {
 		const formatted = formatComponentForLLMContext("schedule_grid");
 		assert.ok(formatted.includes("### [КОМПОНЕНТ CRM: Сетка расписания приёмов"));
 		assert.ok(formatted.includes("Доступные действия и проверенные селекторы"));
@@ -179,6 +268,17 @@ describe("LLM Context Formatting for AI Agents (Mandate 8l)", () => {
 		assert.ok(formatted.includes("Диагностика и устранение проблем (Troubleshooting)"));
 		assert.ok(formatted.includes("Суверенитет масштаба (Мандат 8n)"));
 		assert.ok(formatted.includes('[data-testid="btn-create-appointment"]'));
+		assert.ok(formatted.includes('[data-tour="schedule-booking"]'));
+		assert.ok(formatted.includes("Горячие клавиши экрана (Hotkeys)"));
+		assert.ok(formatted.includes("Селектор восстановления"));
+	});
+
+	test("formatComponentForLLMContext includes clinical quick tips and navigation", () => {
+		const odontogramContext = formatComponentForLLMContext("odontogram_arch");
+		assert.ok(odontogramContext.includes("Навигация:"));
+		assert.ok(odontogramContext.includes("Shift+N"));
+		assert.ok(odontogramContext.includes("Быстрые советы и клинические инварианты"));
+		assert.ok(odontogramContext.includes('[data-tour="autonorm-btn"]'));
 	});
 
 	test("formatComponentForLLMContext handles natural language search fallback", () => {
@@ -192,7 +292,7 @@ describe("LLM Context Formatting for AI Agents (Mandate 8l)", () => {
 		assert.ok(formatted.includes("не найден в реестре"));
 	});
 
-	test("formatKnowledgeBaseOverviewForLLM includes all registered components", () => {
+	test("formatKnowledgeBaseOverviewForLLM includes all registered components with hotkeys and actions", () => {
 		const overview = formatKnowledgeBaseOverviewForLLM();
 		assert.ok(overview.includes("# КАРТА ЗНАНИЙ И КОМПОНЕНТОВ CRM DENTE"));
 		for (const comp of CRM_COMPONENT_REGISTRY) {

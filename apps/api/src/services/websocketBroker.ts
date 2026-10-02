@@ -114,14 +114,26 @@ export function isClinicalWsEvent(message: unknown): boolean {
 	return false;
 }
 
+export interface StaffPresenceInfo {
+	staffId: string;
+	staffName: string;
+	role: string;
+	visitId?: string | undefined;
+	patientId?: string | undefined;
+	action: "viewing" | "editing";
+	lastSeen: number;
+}
+
 type ClientConn = {
 	ws: WebSocket;
 	organizationId: string;
-	patientId?: string;
-	isClinical?: boolean;
+	patientId?: string | undefined;
+	isClinical?: boolean | undefined;
+	presence?: StaffPresenceInfo | undefined;
 };
 
 const clients = new Set<ClientConn>();
+const PRESENCE_TTL_MS = 45_000;
 
 export const wsBroker = {
 	addClient(
@@ -145,12 +157,107 @@ export const wsBroker = {
 		clients.add(conn);
 		if (typeof ws?.on === "function") {
 			ws.on("close", () => {
+				wsBroker.removePresence(ws);
 				clients.delete(conn);
 			});
 			ws.on("error", () => {
+				wsBroker.removePresence(ws);
 				clients.delete(conn);
 			});
 		}
+	},
+	updatePresence(
+		ws: WebSocket,
+		organizationId: string,
+		info: Omit<StaffPresenceInfo, "lastSeen">,
+	): StaffPresenceInfo | null {
+		let targetConn: ClientConn | null = null;
+		for (const client of clients) {
+			if (client.ws === ws) {
+				targetConn = client;
+				break;
+			}
+		}
+		if (!targetConn) return null;
+
+		const fullPresence: StaffPresenceInfo = {
+			...info,
+			lastSeen: Date.now(),
+		};
+		targetConn.presence = fullPresence;
+
+		// Рассылаем обновление коллегам в той же клинике/организации
+		const activePeers = this.getPresence(organizationId, {
+			visitId: info.visitId,
+			patientId: info.patientId,
+		});
+
+		this.broadcastToOrganization(organizationId, {
+			type: "STAFF_PRESENCE_UPDATE",
+			payload: {
+				presence: fullPresence,
+				activePeers,
+				visitId: info.visitId,
+				patientId: info.patientId,
+			},
+		});
+
+		return fullPresence;
+	},
+	removePresence(ws: WebSocket): boolean {
+		let targetConn: ClientConn | null = null;
+		for (const client of clients) {
+			if (client.ws === ws) {
+				targetConn = client;
+				break;
+			}
+		}
+		if (!targetConn || !targetConn.presence) return false;
+
+		const old = targetConn.presence;
+		targetConn.presence = undefined;
+
+		const activePeers = this.getPresence(targetConn.organizationId, {
+			visitId: old.visitId,
+			patientId: old.patientId,
+		});
+
+		this.broadcastToOrganization(targetConn.organizationId, {
+			type: "STAFF_PRESENCE_LEAVE",
+			payload: {
+				staffId: old.staffId,
+				visitId: old.visitId,
+				patientId: old.patientId,
+				activePeers,
+			},
+		});
+
+		return true;
+	},
+	getPresence(
+		organizationId: string,
+		filter?: { visitId?: string | undefined; patientId?: string | undefined } | undefined,
+	): StaffPresenceInfo[] {
+		const now = Date.now();
+		const result: StaffPresenceInfo[] = [];
+		const seenStaff = new Set<string>();
+
+		for (const client of clients) {
+			if (client.organizationId !== organizationId) continue;
+			if (!client.presence) continue;
+			if (now - client.presence.lastSeen > PRESENCE_TTL_MS) {
+				client.presence = undefined;
+				continue;
+			}
+			if (filter?.visitId && client.presence.visitId !== filter.visitId) continue;
+			if (filter?.patientId && client.presence.patientId !== filter.patientId) continue;
+
+			if (!seenStaff.has(client.presence.staffId)) {
+				seenStaff.add(client.presence.staffId);
+				result.push(client.presence);
+			}
+		}
+		return result;
 	},
 	broadcastToOrganization(organizationId: string, message: object) {
 		const rawData = JSON.stringify(message);
@@ -240,6 +347,7 @@ export const wsBroker = {
 		}
 	},
 	removeClient(ws: WebSocket): boolean {
+		wsBroker.removePresence(ws);
 		let removed = false;
 		for (const client of clients) {
 			if (client.ws === ws) {

@@ -13,12 +13,10 @@ import {
 	FlaskConical,
 	Mic,
 	MicOff,
-	X,
 	Zap,
 } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
 import type { ToothState } from "./ToothChart";
-import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
 import {
 	ODONTOGRAM_VIEW_MODES,
 	type OdontogramViewOption,
@@ -186,131 +184,6 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 						);
 					})}
 				</div>
-
-				<div className="w-px h-4.5 bg-[var(--odontogram-border)] dark:bg-zinc-700 shrink-0 mx-0.5" />
-
-				{/* 1-Click Quick State Triggers (Палитра статусов в едином тулбаре) */}
-				{onQuickStateChange && (
-					<div
-						className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] shrink-0 h-7 gap-0.5 shadow-2xs"
-						role="group"
-						aria-label="Быстрые статусы патологий"
-					>
-						<button
-							type="button"
-							onClick={() => handleQuickTriggerState("Healthy")}
-							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-								activeStampTool === "Healthy"
-									? "bg-emerald-600 text-white font-bold shadow-xs"
-									: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
-							}`}
-							title="Здоров: применить к выделенным зубам или включить штамп нормы"
-							data-testid="quick-trigger-healthy-btn"
-						>
-							<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Здоров</span><span className="2xl:hidden">Зд</span></span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickTriggerState("Caries")}
-							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-								activeStampTool === "Caries"
-									? "bg-amber-600 text-white font-bold shadow-xs"
-									: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
-							}`}
-							title="Кариес (К): применить к выделенным зубам или включить штамп кариеса"
-							data-testid="quick-trigger-caries-btn"
-						>
-							<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Кариес</span><span className="2xl:hidden">К</span></span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickTriggerState("Pulpitis")}
-							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-								activeStampTool === "Pulpitis"
-									? "bg-red-600 text-white font-bold shadow-xs"
-									: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
-							}`}
-							title="Пульпит (Ф): анатомический красный #ef4444, применить к выделенным зубам или включить штамп"
-							data-testid="quick-trigger-pulpitis-btn"
-						>
-							<span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Пульпит</span><span className="2xl:hidden">Пт</span></span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickTriggerState("Filled")}
-							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-								activeStampTool === "Filled"
-									? "bg-sky-600 text-white font-bold shadow-xs"
-									: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
-							}`}
-							title="Пломба (П): применить к выделенным зубам или включить штамп пломбы"
-							data-testid="quick-trigger-filling-btn"
-						>
-							<span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Пломба</span><span className="2xl:hidden">П</span></span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickTriggerState("Crown")}
-							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-								activeStampTool === "Crown"
-									? "bg-purple-600 text-white font-bold shadow-xs"
-									: "text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
-							}`}
-							title="Коронка (Кр): применить к выделенным зубам или включить штамп коронки"
-							data-testid="quick-trigger-crown-btn"
-						>
-							<span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Коронка</span><span className="2xl:hidden">Кр</span></span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleQuickTriggerState("Missing")}
-							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-								activeStampTool === "Missing"
-									? "bg-zinc-700 text-white font-bold shadow-xs"
-									: "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-500/20"
-							}`}
-							title="Удален (X): применить к выделенным зубам или включить штамп отсутствия"
-							data-testid="quick-trigger-extracted-btn"
-						>
-							<span className="w-1.5 h-1.5 rounded-full bg-zinc-500 dark:bg-zinc-300 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Удален</span><span className="2xl:hidden">X</span></span>
-						</button>
-					</div>
-				)}
-
-				{/* Индикатор активного штампа (Мандат 8l/8aa) */}
-				{activeStampTool && (
-					<div
-						className="inline-flex items-center gap-1.5 px-2 h-7 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold shrink-0 animate-in fade-in duration-150 whitespace-nowrap shadow-2xs"
-						data-testid="odontogram-active-stamp-indicator"
-					>
-						<span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-						<span>
-							Активен штамп:{" "}
-							<strong className="font-black text-amber-950 dark:text-amber-100">
-								{TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}
-							</strong>{" "}
-							<span className="hidden sm:inline font-normal text-amber-800 dark:text-amber-300">
-								(Клик по зубу красит зуб целиком)
-							</span>
-						</span>
-						<button
-							type="button"
-							onClick={() => setActiveStampTool(null)}
-							className="ml-1 p-0.5 rounded hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 hover:text-amber-950 dark:hover:text-white transition-all cursor-pointer"
-							title="Сбросить активный штамп"
-							aria-label="Сбросить штамп"
-							data-testid="clear-active-stamp-btn"
-						>
-							<X size={12} className="shrink-0" />
-						</button>
-					</div>
-				)}
 
 				<div className="w-px h-4.5 bg-[var(--odontogram-border)] dark:bg-zinc-700 shrink-0 mx-0.5" />
 

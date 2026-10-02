@@ -101,6 +101,7 @@ export function VisiographDropzone({
 						<span
 							role="button"
 							tabIndex={0}
+							data-tour="visiograph-open"
 							data-testid="btn-visiograph-connect-rvg"
 							onClick={(e) => {
 								e.stopPropagation();

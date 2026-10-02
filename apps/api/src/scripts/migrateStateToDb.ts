@@ -69,6 +69,9 @@ import * as schema from "../db/schema.js";
 import { inMemoryDomainState } from "../sampleData.js";
 import { loadPersistentState } from "../persistentState.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
+import { seedClinicalCore } from "../db/seeds/seed_clinical_core.js";
+import { seedCashAndReasons } from "../db/seeds/seed_cash_and_reasons.js";
+import { seedAll49DocumentTemplates } from "../db/seeds/seed_all_49_document_templates.js";
 
 /**
  * Идентификатор клиники по умолчанию. Значение статично НАМЕРЕННО: повторный
@@ -738,6 +741,29 @@ async function seed(): Promise<void> {
 			await tx.insert(schema.communicationTasks).values(chunk);
 		}
 	});
+
+	console.log("");
+	console.log("Засевание базовых клинических каталогов, касс и шаблонов документов...");
+	try {
+		const clinicalRes = await seedClinicalCore();
+		console.log(`  -> Клинический контур: ${clinicalRes.teethCount} зубов, ${clinicalRes.defectsCount} дефектов, ${clinicalRes.templatesCount} шаблонов 043/у.`);
+	} catch (e) {
+		console.warn("  -> Пропуск сидирования клинического контура:", (e as Error).message);
+	}
+
+	try {
+		await seedCashAndReasons(organizationId);
+		console.log(`  -> Кассовые счета и статьи расходов зафиксированы.`);
+	} catch (e) {
+		console.warn("  -> Пропуск сидирования касс:", (e as Error).message);
+	}
+
+	try {
+		const docRes = await seedAll49DocumentTemplates();
+		console.log(`  -> Шаблоны документов: ${docRes.templatesCount} бланков, ${docRes.categoriesCount} рубрик.`);
+	} catch (e) {
+		console.warn("  -> Пропуск сидирования шаблонов документов:", (e as Error).message);
+	}
 
 	console.log("");
 	console.log(

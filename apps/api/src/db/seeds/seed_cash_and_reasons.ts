@@ -12,10 +12,10 @@
  *    - expenses: Служебный счет подотчетных сумм
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { loadAdditionalServerEnv } from "../../env/loadServerEnv.js";
 import { db, pool } from "../client.js";
-import { organizations } from "../schema/auth.js";
+import { clinics, organizations } from "../schema/auth.js";
 import {
 	cashBoxes,
 	cashExpenseReasons,
@@ -99,27 +99,40 @@ export const CANONICAL_CASH_BOXES = [
 ] as const;
 
 /**
- * Обеспечивает наличие 6 счетов кассы для организации.
+ * Обеспечивает наличие 6 счетов кассы для организации и опционального филиала (Tier 1 Соло / Tier 2 Клиника / Tier 3 Сеть).
  */
 export async function ensureOrganizationCashBoxes(
 	client: DbExecutor,
 	organizationId: string,
+	branchId?: string | null,
+	branchNamePrefix?: string,
 ) {
+	const conditions = [eq(cashBoxes.organizationId, organizationId)];
+	if (branchId !== undefined) {
+		conditions.push(
+			branchId === null ? isNull(cashBoxes.branchId) : eq(cashBoxes.branchId, branchId),
+		);
+	}
+
 	const existingBoxes = await client
 		.select()
 		.from(cashBoxes)
-		.where(eq(cashBoxes.organizationId, organizationId));
+		.where(and(...conditions));
 
 	const existingTypes = new Set(existingBoxes.map((b: { type: string }) => b.type));
 	const created: (typeof cashBoxes.$inferSelect)[] = [];
 
 	for (const boxDef of CANONICAL_CASH_BOXES) {
 		if (!existingTypes.has(boxDef.type)) {
+			const boxName = branchNamePrefix
+				? `${boxDef.name} (${branchNamePrefix})`
+				: boxDef.name;
+
 			const [newBox] = await client
 				.insert(cashBoxes)
 				.values({
 					organizationId,
-					name: boxDef.name,
+					name: boxName,
 					type: boxDef.type,
 					balanceRub: 0,
 					isMain: boxDef.isMain,
@@ -127,6 +140,7 @@ export async function ensureOrganizationCashBoxes(
 					kkmModel: boxDef.kkmModel,
 					kkmActive: boxDef.kkmActive,
 					displayOrder: boxDef.displayOrder,
+					branchId: branchId ?? null,
 				})
 				.returning();
 			if (newBox) created.push(newBox);
@@ -197,7 +211,27 @@ export async function seedCashAndReasons(targetOrgId?: string) {
 		console.log(`[SEED] Seeding Organization: ${org.name} (${org.id})`);
 
 		const boxesResult = await ensureOrganizationCashBoxes(db, org.id);
-		console.log(`  -> Cash boxes: ${boxesResult.existingCount} existed, ${boxesResult.createdCount} created.`);
+		console.log(`  -> Main Cash boxes: ${boxesResult.existingCount} existed, ${boxesResult.createdCount} created.`);
+
+		// Tier 3 Multi-Clinic Network check: seed dedicated branch cash desks if multiple clinics exist
+		const orgClinics = await db
+			.select({ id: clinics.id, name: clinics.name })
+			.from(clinics)
+			.where(eq(clinics.organizationId, org.id));
+
+		if (orgClinics.length > 1) {
+			for (const branch of orgClinics) {
+				const branchBoxes = await ensureOrganizationCashBoxes(
+					db,
+					org.id,
+					branch.id,
+					branch.name,
+				);
+				console.log(
+					`  -> Branch cash boxes for "${branch.name}": ${branchBoxes.existingCount} existed, ${branchBoxes.createdCount} created.`,
+				);
+			}
+		}
 
 		const reasonsResult = await ensureOrganizationExpenseReasons(db, org.id);
 		console.log(`  -> Expense reasons: ${reasonsResult.existingCount} existed, ${reasonsResult.createdCount} created.`);

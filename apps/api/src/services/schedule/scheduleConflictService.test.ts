@@ -51,4 +51,22 @@ describe("Schedule Conflict Service & Slot Math Invariants", () => {
 		assert.equal(hasTimeOverlap(t10_00, t10_30, t12_00, t12_30), false);
 		assert.equal(hasTimeOverlap(t12_00, t12_30, t10_00, t10_30), false);
 	});
+
+	test("hasTimeOverlap supports native Date objects seamlessly", () => {
+		const d1 = new Date("2026-10-02T10:00:00Z");
+		const d2 = new Date("2026-10-02T10:45:00Z");
+		const d3 = new Date("2026-10-02T10:30:00Z");
+		const d4 = new Date("2026-10-02T11:15:00Z");
+
+		assert.equal(hasTimeOverlap(d1, d2, d3, d4), true);
+		assert.equal(hasTimeOverlap(d1, d3, d3, d4), false);
+	});
+
+	test("hasTimeOverlap safely handles NaN and invalid dates without throwing", () => {
+		const valid = new Date("2026-10-02T10:00:00Z");
+		const invalid = new Date("invalid-date");
+
+		assert.equal(hasTimeOverlap(valid, invalid, valid, valid), false);
+		assert.equal(hasTimeOverlap(NaN, 100, 50, 150), false);
+	});
 });

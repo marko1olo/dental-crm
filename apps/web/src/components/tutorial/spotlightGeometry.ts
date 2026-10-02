@@ -40,6 +40,7 @@ export interface TooltipPlacement {
 	readonly maxHeight: number;
 	readonly side: TooltipSide;
 	readonly arrowOffsetPx: number;
+	readonly arrowOffsetYPx: number;
 }
 
 /**
@@ -144,6 +145,7 @@ export function calculateTooltipPlacement(
 			maxHeight: Math.round(maxHeight),
 			side: "center",
 			arrowOffsetPx: Math.round(effectiveWidth / 2),
+			arrowOffsetYPx: Math.round(effectiveHeight / 2),
 		};
 	}
 
@@ -220,6 +222,12 @@ export function calculateTooltipPlacement(
 		Math.min(effectiveWidth - 18, Math.round(targetCenterX - left)),
 	);
 
+	// Calculate vertical arrow offset clamped within card padding (for left/right placement)
+	const arrowOffsetYPx = Math.max(
+		18,
+		Math.min(effectiveHeight - 18, Math.round(targetCenterY - top)),
+	);
+
 	return {
 		top: Math.round(top),
 		left: Math.round(left),
@@ -227,6 +235,7 @@ export function calculateTooltipPlacement(
 		maxHeight: Math.round(maxHeight),
 		side,
 		arrowOffsetPx,
+		arrowOffsetYPx,
 	};
 }
 

@@ -11,26 +11,104 @@
  * - Hotkeys (Alt+P, Ctrl+Alt+L), FAQs, and interactive tour button
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
+	ArrowRight,
 	CheckCircle2,
 	Clock,
 	Gamepad2,
 	HelpCircle,
 	Kanban,
+	Phone,
 	PhoneCall,
 	PhoneForwarded,
 	PhoneIncoming,
+	PhoneOff,
 	Sparkles,
+	User,
+	UserCheck,
 	UserPlus,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const LeadsTelephonyGuide: React.FC = () => {
+interface MockLead {
+	id: string;
+	patientName: string;
+	phone: string;
+	channel: "Звонок" | "Сайт" | "Мессенджер";
+	request: string;
+	stage: "new" | "qualified" | "consultation" | "arrived";
+	time: string;
+}
+
+const INITIAL_MOCK_LEADS: MockLead[] = [
+	{
+		id: "lead-1",
+		patientName: "Смирнова Елена Александровна",
+		phone: "+7 (912) 345-67-89",
+		channel: "Звонок",
+		request: "Острая боль, выпала пломба (зуб 2.6)",
+		stage: "new",
+		time: "10:14",
+	},
+	{
+		id: "lead-2",
+		patientName: "Петров Дмитрий Сергеевич",
+		phone: "+7 (921) 987-65-43",
+		channel: "Сайт",
+		request: "Имплантация All-on-4, расчёт сметы",
+		stage: "qualified",
+		time: "09:45",
+	},
+	{
+		id: "lead-3",
+		patientName: "Ковалева Мария Викторовна",
+		phone: "+7 (905) 555-12-34",
+		channel: "Звонок",
+		request: "Запись на консультацию: 15:30 к терапевту",
+		stage: "consultation",
+		time: "Вчера",
+	},
+	{
+		id: "lead-4",
+		patientName: "Васильев Алексей Николаевич",
+		phone: "+7 (916) 111-22-33",
+		channel: "Мессенджер",
+		request: "Осмотр ортопеда, примерка коронки",
+		stage: "arrived",
+		time: "В клинике",
+	},
+];
+
+export const LeadsTelephonyGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [leads, setLeads] = useState<MockLead[]>(INITIAL_MOCK_LEADS);
+	const [isCallSimulated, setIsCallSimulated] = useState<boolean>(true);
+	const [selectedLeadId, setSelectedLeadId] = useState<string>("lead-1");
+
 	const handleLaunchTour = () => {
-		startDoctorTour("reception_admin");
+		if (onLaunchTour) {
+			onLaunchTour("reception_admin");
+		} else {
+			startDoctorTour("reception_admin");
+		}
 	};
+
+	const handleAdvanceStage = (leadId: string) => {
+		setLeads((prev) =>
+			prev.map((lead) => {
+				if (lead.id !== leadId) return lead;
+				const stageOrder: readonly MockLead["stage"][] = ["new", "qualified", "consultation", "arrived"];
+				const currentIndex = stageOrder.indexOf(lead.stage);
+				const nextIndex = (currentIndex + 1) % stageOrder.length;
+				const nextStage: MockLead["stage"] = stageOrder[nextIndex] ?? "new";
+				return { ...lead, stage: nextStage };
+			}),
+		);
+	};
+
+	const selectedLead = leads.find((l) => l.id === selectedLeadId) ?? leads[0];
 
 	return (
 		<div className="space-y-4 text-xs text-[var(--ink)]">
@@ -51,6 +129,294 @@ export const LeadsTelephonyGuide: React.FC = () => {
 						автокарточка нового лида и 4-колоночный канбан для записи на консультацию без потери входящих заявок.
 					</div>
 				</div>
+			</div>
+
+			{/* Interactive Visual Preview: Top Ambient Call Capsule & 4-Column Kanban Mockup */}
+			<div className="rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs space-y-0">
+				{/* Mockup Toolbar Header */}
+				<div className="p-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<Kanban size={15} className="text-rose-600 dark:text-rose-400" />
+						<span className="font-bold text-xs text-[var(--ink)]">
+							Интерактивная воронка обращений и звонков
+						</span>
+						<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold">
+							Ресепшен / АТС
+						</span>
+					</div>
+
+					<div className="flex items-center gap-1.5">
+						<button
+							type="button"
+							onClick={() => setIsCallSimulated((v) => !v)}
+							className={`h-7 px-2.5 rounded border text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+								isCallSimulated
+									? "bg-rose-500/20 border-rose-500/40 text-rose-800 dark:text-rose-200"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							title="Включить или отключить имитацию входящего звонка"
+						>
+							<PhoneIncoming size={12} className={isCallSimulated ? "animate-bounce" : ""} />
+							<span>{isCallSimulated ? "Звонок активен" : "Симулировать звонок"}</span>
+						</button>
+					</div>
+				</div>
+
+				{/* 1. Quiet Top Ambient Call Banner (Section VI.3.2 Standard) */}
+				{isCallSimulated && (
+					<div className="p-2 bg-rose-500/10 border-b border-rose-500/20 flex flex-wrap items-center justify-between gap-2 animate-in fade-in duration-200">
+						<div className="flex items-center gap-2 min-w-0">
+							<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+							<div className="flex items-center gap-1.5 text-[11px] truncate">
+								<span className="font-bold text-[var(--ink)]">Входящий вызов:</span>
+								<span className="font-semibold text-rose-700 dark:text-rose-300">+7 (912) 345-67-89</span>
+								<span className="text-[10px] text-[var(--muted)] hidden sm:inline">• Смирнова Е.А. (Карта 043/у найдена)</span>
+							</div>
+						</div>
+
+						<div className="flex items-center gap-1.5 shrink-0">
+							<button
+								type="button"
+								onClick={() => {
+									setSelectedLeadId("lead-1");
+								}}
+								className="h-6 px-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+								title="Принять звонок и открыть карточку"
+							>
+								<Phone size={10} />
+								<span>Ответить</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsCallSimulated(false)}
+								className="h-6 px-2 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-rose-600 text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+								title="Отклонить или завершить звонок"
+							>
+								<PhoneOff size={10} />
+								<span>Сброс</span>
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* 2. 4-Column Kanban Mockup */}
+				<div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-[var(--paper)]">
+					{/* Stage 1: Новые */}
+					<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 flex flex-col justify-between">
+						<div>
+							<div className="flex items-center justify-between pb-1.5 border-b border-[var(--line)] text-[11px]">
+								<span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+									<span>1. Новые</span>
+								</span>
+								<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300">
+									{leads.filter((l) => l.stage === "new").length}
+								</span>
+							</div>
+
+							<div className="space-y-1.5 mt-2">
+								{leads
+									.filter((l) => l.stage === "new")
+									.map((lead) => (
+										<div
+											key={lead.id}
+											onClick={() => setSelectedLeadId(lead.id)}
+											className={`p-2 rounded border transition-all cursor-pointer space-y-1 text-[11px] ${
+												selectedLeadId === lead.id
+													? "border-blue-500 bg-blue-500/10 shadow-2xs"
+													: "border-[var(--line)] bg-[var(--paper)] hover:border-blue-500/50"
+											}`}
+										>
+											<div className="flex items-center justify-between font-bold text-[var(--ink)]">
+												<span className="truncate">{lead.patientName}</span>
+												<span className="text-[9px] text-[var(--muted)]">{lead.time}</span>
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">{lead.phone}</div>
+											<div className="text-[10px] text-blue-700 dark:text-blue-300 line-clamp-1">{lead.request}</div>
+										</div>
+									))}
+							</div>
+						</div>
+
+						<div className="pt-1.5 border-t border-[var(--line)] text-[10px] text-[var(--muted)] flex items-center justify-between">
+							<span>Первый контакт</span>
+							<button
+								type="button"
+								onClick={() => handleAdvanceStage(selectedLeadId)}
+								className="text-blue-600 dark:text-blue-400 hover:underline font-semibold inline-flex items-center gap-0.5 cursor-pointer"
+							>
+								<span>Перевести</span>
+								<ArrowRight size={10} />
+							</button>
+						</div>
+					</div>
+
+					{/* Stage 2: Квалификация */}
+					<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 flex flex-col justify-between">
+						<div>
+							<div className="flex items-center justify-between pb-1.5 border-b border-[var(--line)] text-[11px]">
+								<span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+									<span>2. Квалификация</span>
+								</span>
+								<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300">
+									{leads.filter((l) => l.stage === "qualified").length}
+								</span>
+							</div>
+
+							<div className="space-y-1.5 mt-2">
+								{leads
+									.filter((l) => l.stage === "qualified")
+									.map((lead) => (
+										<div
+											key={lead.id}
+											onClick={() => setSelectedLeadId(lead.id)}
+											className={`p-2 rounded border transition-all cursor-pointer space-y-1 text-[11px] ${
+												selectedLeadId === lead.id
+													? "border-amber-500 bg-amber-500/10 shadow-2xs"
+													: "border-[var(--line)] bg-[var(--paper)] hover:border-amber-500/50"
+											}`}
+										>
+											<div className="flex items-center justify-between font-bold text-[var(--ink)]">
+												<span className="truncate">{lead.patientName}</span>
+												<span className="text-[9px] text-[var(--muted)]">{lead.time}</span>
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">{lead.phone}</div>
+											<div className="text-[10px] text-amber-700 dark:text-amber-300 line-clamp-1">{lead.request}</div>
+										</div>
+									))}
+							</div>
+						</div>
+
+						<div className="pt-1.5 border-t border-[var(--line)] text-[10px] text-[var(--muted)] flex items-center justify-between">
+							<span>Уточнение жалоб</span>
+							<button
+								type="button"
+								onClick={() => handleAdvanceStage(selectedLeadId)}
+								className="text-amber-600 dark:text-amber-400 hover:underline font-semibold inline-flex items-center gap-0.5 cursor-pointer"
+							>
+								<span>Перевести</span>
+								<ArrowRight size={10} />
+							</button>
+						</div>
+					</div>
+
+					{/* Stage 3: Консультация */}
+					<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 flex flex-col justify-between">
+						<div>
+							<div className="flex items-center justify-between pb-1.5 border-b border-[var(--line)] text-[11px]">
+								<span className="font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+									<span>3. Консультация</span>
+								</span>
+								<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300">
+									{leads.filter((l) => l.stage === "consultation").length}
+								</span>
+							</div>
+
+							<div className="space-y-1.5 mt-2">
+								{leads
+									.filter((l) => l.stage === "consultation")
+									.map((lead) => (
+										<div
+											key={lead.id}
+											onClick={() => setSelectedLeadId(lead.id)}
+											className={`p-2 rounded border transition-all cursor-pointer space-y-1 text-[11px] ${
+												selectedLeadId === lead.id
+													? "border-purple-500 bg-purple-500/10 shadow-2xs"
+													: "border-[var(--line)] bg-[var(--paper)] hover:border-purple-500/50"
+											}`}
+										>
+											<div className="flex items-center justify-between font-bold text-[var(--ink)]">
+												<span className="truncate">{lead.patientName}</span>
+												<span className="text-[9px] text-[var(--muted)]">{lead.time}</span>
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">{lead.phone}</div>
+											<div className="text-[10px] text-purple-700 dark:text-purple-300 line-clamp-1">{lead.request}</div>
+										</div>
+									))}
+							</div>
+						</div>
+
+						<div className="pt-1.5 border-t border-[var(--line)] text-[10px] text-[var(--muted)] flex items-center justify-between">
+							<span>Записан в сетку</span>
+							<button
+								type="button"
+								onClick={() => handleAdvanceStage(selectedLeadId)}
+								className="text-purple-600 dark:text-purple-400 hover:underline font-semibold inline-flex items-center gap-0.5 cursor-pointer"
+							>
+								<span>Перевести</span>
+								<ArrowRight size={10} />
+							</button>
+						</div>
+					</div>
+
+					{/* Stage 4: Дошли */}
+					<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 flex flex-col justify-between">
+						<div>
+							<div className="flex items-center justify-between pb-1.5 border-b border-[var(--line)] text-[11px]">
+								<span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+									<span>4. Дошли (Приём)</span>
+								</span>
+								<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+									{leads.filter((l) => l.stage === "arrived").length}
+								</span>
+							</div>
+
+							<div className="space-y-1.5 mt-2">
+								{leads
+									.filter((l) => l.stage === "arrived")
+									.map((lead) => (
+										<div
+											key={lead.id}
+											onClick={() => setSelectedLeadId(lead.id)}
+											className={`p-2 rounded border transition-all cursor-pointer space-y-1 text-[11px] ${
+												selectedLeadId === lead.id
+													? "border-emerald-500 bg-emerald-500/10 shadow-2xs"
+													: "border-[var(--line)] bg-[var(--paper)] hover:border-emerald-500/50"
+											}`}
+										>
+											<div className="flex items-center justify-between font-bold text-[var(--ink)]">
+												<span className="truncate">{lead.patientName}</span>
+												<span className="text-[9px] text-emerald-600 font-semibold">{lead.time}</span>
+											</div>
+											<div className="text-[10px] text-[var(--muted)]">{lead.phone}</div>
+											<div className="text-[10px] text-emerald-700 dark:text-emerald-300 line-clamp-1">{lead.request}</div>
+										</div>
+									))}
+							</div>
+						</div>
+
+						<div className="pt-1.5 border-t border-[var(--line)] text-[10px] text-[var(--muted)] flex items-center justify-between">
+							<span>Сел в кресло</span>
+							<span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+								<CheckCircle2 size={11} />
+								<span>Успех</span>
+							</span>
+						</div>
+					</div>
+				</div>
+
+				{/* 3. Selected Lead Context Bar */}
+				{selectedLead && (
+					<div className="p-2.5 bg-[var(--paper-soft)] border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
+							<span className="text-[11px] font-bold text-[var(--ink)]">Выбранный лид:</span>
+							<span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300">{selectedLead.patientName}</span>
+							<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">
+								{selectedLead.channel}
+							</span>
+						</div>
+
+						<div className="flex items-center gap-1.5">
+							<button
+								type="button"
+								onClick={() => handleAdvanceStage(selectedLead.id)}
+								className="h-6 px-2.5 rounded bg-[var(--teal,#0d9488)] hover:opacity-90 text-white font-semibold text-[10px] inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+							>
+								<span>Продвинуть этап</span>
+								<ArrowRight size={10} />
+							</button>
+						</div>
+					</div>
+				)}
 			</div>
 
 			{/* 1. Зачем нужен этот раздел */}
@@ -106,31 +472,6 @@ export const LeadsTelephonyGuide: React.FC = () => {
 						<p className="text-[var(--muted)] text-[11px] leading-relaxed">
 							Нажмите «Записать на приём» прямо в карточке звонка — программа откроет расписание и подставит данные пациента.
 						</p>
-					</div>
-				</div>
-			</div>
-
-			{/* 4 Колонки воронки */}
-			<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-2.5">
-				<div className="font-semibold text-xs text-[var(--ink)]">
-					4 этапа воронки обращений (Канбан)
-				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="font-semibold text-blue-600 dark:text-blue-400 block mb-1">1. Новые</span>
-						<p className="text-[var(--muted)] text-[10px]">Входящие звонки и заявки с сайта, ожидающие первого ответа.</p>
-					</div>
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="font-semibold text-amber-600 dark:text-amber-400 block mb-1">2. Квалификация</span>
-						<p className="text-[var(--muted)] text-[10px]">Уточнены жалобы, бюджет и желаемый врач стоматолог.</p>
-					</div>
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="font-semibold text-purple-600 dark:text-purple-400 block mb-1">3. Консультация</span>
-						<p className="text-[var(--muted)] text-[10px]">Пациент записан на дату и время в расписании клиники.</p>
-					</div>
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="font-semibold text-emerald-600 dark:text-emerald-400 block mb-1">4. Дошли (Приём)</span>
-						<p className="text-[var(--muted)] text-[10px]">Пациент переступил порог клиники и сел в кресло врача.</p>
 					</div>
 				</div>
 			</div>

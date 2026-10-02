@@ -369,6 +369,7 @@ export function Omnibar() {
 										className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-[var(--ink)] placeholder-[var(--muted)]"
 										placeholder="Поиск по разделам или действиям..."
 										value={query}
+										id="omnibar-input"
 										data-tour="global-search-input"
 										onChange={(e) => {
 											setQuery(e.target.value);

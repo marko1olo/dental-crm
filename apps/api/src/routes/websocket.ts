@@ -29,6 +29,7 @@ import fastifyWebsocket from "@fastify/websocket";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { WebSocket } from "ws";
 import { getRequestIdentity } from "../security/identity.js";
+import { recordMedicalRecordAccessAudit } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -98,12 +99,17 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 
 	const handleSecureWsConnection = (socket: WebSocket, request: FastifyRequest) => {
 		let authorized = false;
+		let currentOrganizationId: string | undefined;
+		let currentIdentity: ReturnType<typeof identityFromTokens> | undefined;
 
 		const authTimer = setTimeout(() => {
 			if (!authorized) socket.close(CLOSE_AUTH_TIMEOUT, "auth timeout");
 		}, AUTH_TIMEOUT_MS);
 
-		const finish = () => clearTimeout(authTimer);
+		const finish = () => {
+			clearTimeout(authTimer);
+			wsBroker.removePresence(socket);
+		};
 		socket.on("close", finish);
 		socket.on("error", finish);
 
@@ -124,10 +130,6 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 				return;
 			}
 
-			// После авторизации входящие команды не предусмотрены: сокет
-			// односторонний, сервер только рассылает уведомления.
-			if (authorized) return;
-
 			let message: { type?: unknown; payload?: Record<string, unknown> };
 			try {
 				message = JSON.parse(text);
@@ -135,48 +137,226 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 				app.log.error(err, "Failed to parse incoming WebSocket JSON message");
 				return;
 			}
-			if (message?.type !== "AUTH") return;
 
-			const payload = message.payload ?? {};
-			const identity = identityFromTokens(
-				payload.clinicToken,
-				payload.staffToken,
-			);
-			if (!identity.organizationId) {
-				socket.close(CLOSE_UNAUTHORIZED, "unauthorized");
+			// 1. До авторизации разрешен только кадр AUTH
+			if (!authorized) {
+				if (message?.type !== "AUTH") return;
+
+				const payload = message.payload ?? {};
+				const identity = identityFromTokens(
+					payload.clinicToken,
+					payload.staffToken,
+				);
+				if (!identity.organizationId) {
+					socket.close(CLOSE_UNAUTHORIZED, "unauthorized");
+					return;
+				}
+
+				const patientId =
+					typeof payload.patientId === "string" && payload.patientId.trim()
+						? payload.patientId.trim()
+						: undefined;
+
+				const evalResult = evaluateClinicalAccess(identity.role);
+				const isClinical = evalResult.hasClinicalAccess;
+
+				currentOrganizationId = identity.organizationId;
+				currentIdentity = identity;
+
+				wsBroker.addClient(socket, identity.organizationId, patientId, isClinical);
+				authorized = true;
+				clearTimeout(authTimer);
+
+				// Подтверждение нужно клиенту, чтобы отличать «сокет открыт» от
+				// «сокет открыт и подписан»: до AUTH_OK обновления не придут.
+				if (socket.readyState === 1) {
+					try {
+						socket.send(
+							JSON.stringify({
+								type: "AUTH_OK",
+								payload: { organizationId: identity.organizationId },
+							}),
+						);
+					} catch (err) {
+						request.log.warn({ err }, "Failed to send AUTH_OK frame");
+					}
+				}
+				request.log.debug(
+					{ organizationId: identity.organizationId, patientId },
+					"websocket client subscribed",
+				);
 				return;
 			}
 
-			const patientId =
-				typeof payload.patientId === "string" && payload.patientId.trim()
-					? payload.patientId.trim()
-					: undefined;
+			// 2. Двусторонние команды после успешной авторизации
+			const payload = message.payload ?? {};
 
-			const evalResult = evaluateClinicalAccess(identity.role);
-			const isClinical = evalResult.hasClinicalAccess;
-
-			wsBroker.addClient(socket, identity.organizationId, patientId, isClinical);
-			authorized = true;
-			clearTimeout(authTimer);
-
-			// Подтверждение нужно клиенту, чтобы отличать «сокет открыт» от
-			// «сокет открыт и подписан»: до AUTH_OK обновления не придут.
-			if (socket.readyState === 1) {
-				try {
-					socket.send(
-						JSON.stringify({
-							type: "AUTH_OK",
-							payload: { organizationId: identity.organizationId },
-						}),
-					);
-				} catch (err) {
-					request.log.warn({ err }, "Failed to send AUTH_OK frame");
+			// А) Честное измерение сетевой задержки RTT (Zero Math.random)
+			if (message.type === "PING_LATENCY") {
+				if (socket.readyState === 1) {
+					try {
+						socket.send(
+							JSON.stringify({
+								type: "PONG_LATENCY",
+								payload: {
+									clientTime: payload.clientTime ?? 0,
+									serverTime: Date.now(),
+								},
+							}),
+						);
+					} catch (err) {
+						request.log.warn({ err }, "Failed to send PONG_LATENCY frame");
+					}
 				}
+				return;
 			}
-			request.log.debug(
-				{ organizationId: identity.organizationId, patientId },
-				"websocket client subscribed",
-			);
+
+			// Б) Мягкое присутствие (Soft Presence) персонала в карточке приема
+			if (
+				message.type === "STAFF_PRESENCE_HEARTBEAT" ||
+				message.type === "STAFF_PRESENCE"
+			) {
+				if (currentOrganizationId) {
+					const staffId =
+						typeof payload.staffId === "string" && payload.staffId.trim()
+							? payload.staffId.trim()
+							: (currentIdentity?.userId || "staff-user");
+					const staffName =
+						typeof payload.staffName === "string" && payload.staffName.trim()
+							? payload.staffName.trim()
+							: (currentIdentity?.fullName || "Сотрудник клиники");
+					const role =
+						typeof payload.role === "string" && payload.role.trim()
+							? payload.role.trim()
+							: (currentIdentity?.role || "staff");
+					const visitId =
+						typeof payload.visitId === "string" && payload.visitId.trim()
+							? payload.visitId.trim()
+							: undefined;
+					const patientId =
+						typeof payload.patientId === "string" && payload.patientId.trim()
+							? payload.patientId.trim()
+							: undefined;
+					const action = payload.action === "editing" ? "editing" : "viewing";
+
+					wsBroker.updatePresence(socket, currentOrganizationId, {
+						staffId,
+						staffName,
+						role,
+						visitId,
+						patientId,
+						action,
+					});
+				}
+				return;
+			}
+
+			if (message.type === "STAFF_PRESENCE_LEAVE") {
+				wsBroker.removePresence(socket);
+				return;
+			}
+
+			if (message.type === "STAFF_PRESENCE_QUERY") {
+				if (currentOrganizationId && socket.readyState === 1) {
+					const vId =
+						typeof payload.visitId === "string" && payload.visitId.trim()
+							? payload.visitId.trim()
+							: undefined;
+					const pId =
+						typeof payload.patientId === "string" && payload.patientId.trim()
+							? payload.patientId.trim()
+							: undefined;
+					const peers = wsBroker.getPresence(currentOrganizationId, {
+						visitId: vId,
+						patientId: pId,
+					});
+					try {
+						socket.send(
+							JSON.stringify({
+								type: "STAFF_PRESENCE_LIST",
+								payload: {
+									visitId: vId,
+									patientId: pId,
+									peers,
+								},
+							}),
+						);
+					} catch (err) {
+						request.log.warn({ err }, "Failed to send STAFF_PRESENCE_LIST");
+					}
+				}
+				return;
+			}
+
+			// В) Пакетная синхронизация буфера аудита действий персонала (152-ФЗ)
+			if (message.type === "CLIENT_AUDIT_BATCH") {
+				if (currentOrganizationId && Array.isArray(payload.events)) {
+					for (const evt of payload.events) {
+						if (evt && typeof evt === "object") {
+							const castEvt = evt as Record<string, unknown>;
+							void recordMedicalRecordAccessAudit({
+								organizationId: currentOrganizationId,
+								patientId:
+									typeof castEvt.patientId === "string"
+										? castEvt.patientId
+										: null,
+								actorUserId:
+									typeof castEvt.actorUserId === "string"
+										? castEvt.actorUserId
+										: (currentIdentity?.userId ?? null),
+								actorLogin:
+									typeof castEvt.actorName === "string"
+										? castEvt.actorName
+										: (currentIdentity?.fullName ?? null),
+								actorRole:
+									typeof castEvt.actorRole === "string"
+										? castEvt.actorRole
+										: (currentIdentity?.role ?? null),
+								action:
+									typeof castEvt.actionType === "string"
+										? castEvt.actionType
+										: typeof castEvt.action === "string"
+											? castEvt.action
+											: "CLIENT_ACTION",
+								eventType:
+									typeof castEvt.entityType === "string"
+										? castEvt.entityType
+										: "STAFF_ACTIVITY",
+								metadata: (castEvt.details ?? castEvt.metadata ?? {}) as Record<
+									string,
+									unknown
+								>,
+							}).catch((err) => {
+								request.log.warn(
+									{ err },
+									"Failed to persist client audit batch event over websocket",
+								);
+							});
+						}
+					}
+
+					if (socket.readyState === 1) {
+						try {
+							socket.send(
+								JSON.stringify({
+									type: "CLIENT_AUDIT_BATCH_ACK",
+									payload: {
+										count: payload.events.length,
+										status: "accepted",
+										syncedAt: new Date().toISOString(),
+									},
+								}),
+							);
+						} catch (err) {
+							request.log.warn(
+								{ err },
+								"Failed to send CLIENT_AUDIT_BATCH_ACK frame",
+							);
+						}
+					}
+				}
+				return;
+			}
 		});
 	};
 

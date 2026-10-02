@@ -11,7 +11,6 @@ import { PaymentModal } from "../finance/PaymentModal.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode.js";
 
-export * from "./visitBillingTypes.js";
 import {
 	type VisitBillingServiceItem,
 	type VisitBillingTotals,
@@ -19,6 +18,14 @@ import {
 	DEFAULT_CHAIRSIDE_SERVICES,
 	DOCTOR_DISCOUNT_PRESETS,
 } from "./visitBillingTypes.js";
+export {
+	type VisitBillingServiceItem,
+	type VisitBillingTotals,
+	type VisitServiceBillingWidgetProps,
+	DEFAULT_CHAIRSIDE_SERVICES,
+	DOCTOR_DISCOUNT_PRESETS,
+};
+import { staffTelemetryService } from "../../services/logging/staffTelemetryService.js";
 
 export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps> = ({
 	visitId, patientId = "pat-walkin", patientName = "Пациент", patientPhone = "",
@@ -287,24 +294,22 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	);
 
 	// Global Doctor Autonomy Discount Presets (Mandate 8e Item 7)
-	const applyGlobalDiscount = useCallback(
-		(percent: number, reason: string) => {
-			if (readOnly) return;
-			const clamped = Math.max(0, Math.min(100, percent));
-			const isWarranty = clamped === 100;
-			setGlobalDiscountPercent(clamped);
-			setIsGlobalWarranty100(isWarranty);
-			setGlobalDiscountReason(reason);
-			if (isWarranty) {
-				showToast("Применена 100% скидка врача: Гарантийная переделка (0 ₽)", "info", 2500);
-			} else if (clamped > 0) {
-				showToast(`Применена скидка врача ${clamped}% (${reason})`, "info", 2000);
-			} else {
-				showToast("Скидка врача сброшена (0%)", "info", 1500);
-			}
-		},
-		[readOnly]
-	);
+	const applyGlobalDiscount = useCallback((percent: number, reason: string) => {
+		if (readOnly) return;
+		const clamped = Math.max(0, Math.min(100, percent));
+		const isWarranty = clamped === 100;
+		setGlobalDiscountPercent(clamped);
+		setIsGlobalWarranty100(isWarranty);
+		setGlobalDiscountReason(reason);
+		staffTelemetryService.logDiscountApply(patientId, clamped, reason);
+		if (isWarranty) {
+			showToast("Применена 100% скидка врача: Гарантийная переделка (0 ₽)", "info", 2500);
+		} else if (clamped > 0) {
+			showToast(`Применена скидка врача ${clamped}% (${reason})`, "info", 2000);
+		} else {
+			showToast("Скидка врача сброшена (0%)", "info", 1500);
+		}
+	}, [readOnly, patientId]);
 
 	// Kopeck-Exact Totals Calculation (Mandate 8b)
 	const totals = useMemo<VisitBillingTotals>(() => {
@@ -772,19 +777,12 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			{/* Universal Payment Modal 54-FZ (Sber POS, Cash, SBP, Split) */}
 			{isPaymentModalOpen && (
 				<PaymentModal
-					isOpen={isPaymentModalOpen}
-					onClose={() => setIsPaymentModalOpen(false)}
-					patientId={patientId}
-					patientName={patientName}
-					patientPhone={patientPhone}
-					amountRub={totals.totalDueRub}
-					patientDepositRub={patientDepositRub}
-					patientFamilyBalanceRub={patientFamilyBalanceRub}
-					cashierName={cashierName || doctorName}
-					doctorName={doctorName}
-					clinicLegalName={clinicLegalName}
-					initialDiscountPercent={globalDiscountPercent}
-					initialWarranty100={totals.isWarranty100}
+					isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)}
+					patientId={patientId} patientName={patientName} patientPhone={patientPhone}
+					amountRub={totals.totalDueRub} patientDepositRub={patientDepositRub}
+					patientFamilyBalanceRub={patientFamilyBalanceRub} cashierName={cashierName || doctorName}
+					doctorName={doctorName} clinicLegalName={clinicLegalName}
+					initialDiscountPercent={globalDiscountPercent} initialWarranty100={totals.isWarranty100}
 					initialDiscountReason={globalDiscountReason}
 					onSuccess={() => {
 						setIsPaymentModalOpen(false);

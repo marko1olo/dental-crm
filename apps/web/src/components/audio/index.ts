@@ -5,3 +5,6 @@
 export * from "./AudioWorkletProcessor";
 export * from "./AudioStreamManager";
 export * from "./CanvasWaveform";
+export * from "./AudioSpectrumWidget";
+export * from "./NoiseSuppressionControl";
+export * from "./MicrophoneCalibrationModal";

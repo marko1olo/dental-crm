@@ -13,6 +13,11 @@
  * 8. Dental Lab: create_lab_order, get_lab_order_status
  */
 
+import {
+	findComponentKnowledge,
+	getTourTrackForComponentId,
+	type KnowledgeSearchResult,
+} from "@dental/shared";
 import { SemanticRouter } from "./semanticRouter.js";
 import type { LLMStreamEvent } from "./types.js";
 
@@ -21,6 +26,78 @@ export interface FallbackRouteContext {
 	readonly lower: string;
 	readonly contextTooth: number;
 	readonly contextPatientId: string;
+}
+
+/**
+ * Formats a rich, statutory clinical knowledge response for Copilot fallback streaming.
+ */
+function formatCopilotKnowledgeAnswer(
+	match: KnowledgeSearchResult,
+	userText: string,
+): string {
+	const comp = match.component;
+	const lower = userText.toLowerCase();
+	const tourTrack = getTourTrackForComponentId(comp.id);
+
+	// Check if any FAQ specifically answers this question
+	const relevantFaq = comp.faq.find((f) => {
+		const qLower = f.question.toLowerCase();
+		const words = lower.split(/\s+/).filter((w) => w.length > 3);
+		return words.some((w) => qLower.includes(w));
+	});
+
+	const lines: string[] = [];
+	lines.push(`### ${comp.name}`);
+	lines.push(`**Раздел:** \`${comp.route}\` (${comp.shortName})`);
+	if (comp.navigationHint) {
+		lines.push(`**Навигация:** ${comp.navigationHint}`);
+	}
+
+	if (relevantFaq) {
+		lines.push("", `**Ответ:** ${relevantFaq.answer}`);
+	} else {
+		lines.push("", `**Описание:** ${comp.description}`);
+	}
+
+	lines.push("", "**Пошаговый регламент:**");
+	if (comp.clinicalWorkflow) {
+		lines.push(comp.clinicalWorkflow);
+	}
+
+	if (comp.primaryActions.length > 0) {
+		lines.push("", "**Действия и селекторы интерфейса:**");
+		for (const act of comp.primaryActions.slice(0, 4)) {
+			const hk = act.hotkey ? ` (клавиша \`${act.hotkey}\`)` : "";
+			lines.push(`- **${act.label}**${hk}: селектор \`${act.selector}\``);
+		}
+	}
+
+	if (comp.hotkeys && Object.keys(comp.hotkeys).length > 0) {
+		lines.push("", "**Горячие клавиши:**");
+		for (const [key, desc] of Object.entries(comp.hotkeys)) {
+			lines.push(`- \`${key}\`: ${desc}`);
+		}
+	}
+
+	if (comp.troubleshooting.length > 0) {
+		const tr =
+			comp.troubleshooting.find((t) => {
+				const sLower = t.symptom.toLowerCase();
+				return lower
+					.split(/\s+/)
+					.some((w) => w.length > 3 && sLower.includes(w));
+			}) || comp.troubleshooting[0];
+		if (tr) {
+			lines.push("", `**Решение проблем:** ${tr.solution}`);
+		}
+	}
+
+	lines.push(
+		"",
+		`[Запустить обучение по этому разделу](action:launch-tour:${tourTrack}:${comp.id})`,
+	);
+
+	return lines.join("\n");
 }
 
 /**
@@ -75,6 +152,40 @@ export async function* routeCopilotFallback(
 		};
 		yield { type: "done", stopReason: "tool_use" };
 		return;
+	}
+
+	// 0.5. CRM Component Knowledge & Clinical Guidance (Mandates 8l, 8e, 8n)
+	// Answers natural language questions ("Как оформить возврат?", "Где смотреть снимок КТ?", "Как применить скидку по гарантии?")
+	const isQuestionOrInquiry =
+		/^(?:как|где|куда|почему|зачем|откуда|какой|какая|какие|подскажи|расскажи|инструкци[яиею]|справк[аеу]|помощь|мануал|руководств[оа]|что делать|обучени[ея])\b/i.test(
+			lower,
+		) ||
+		lower.includes("?") ||
+		lower.includes("инструкци") ||
+		lower.includes("как оформить") ||
+		lower.includes("как применить") ||
+		lower.includes("как сделать") ||
+		lower.includes("где смотреть") ||
+		lower.includes("где найти");
+
+	if (isQuestionOrInquiry) {
+		const knowledgeMatches = findComponentKnowledge(userText, { limit: 1 });
+		if (
+			knowledgeMatches.length > 0 &&
+			knowledgeMatches[0] &&
+			knowledgeMatches[0].score >= 35
+		) {
+			const formattedAnswer = formatCopilotKnowledgeAnswer(
+				knowledgeMatches[0],
+				userText,
+			);
+			yield {
+				type: "text_delta",
+				text: formattedAnswer,
+			};
+			yield { type: "done", stopReason: "stop" };
+			return;
+		}
 	}
 
 	// 1. Odontogram & Teeth Status Updates (crm.update_teeth_chart / crm.get_teeth_chart)
@@ -485,6 +596,25 @@ export async function* routeCopilotFallback(
 			input: { query: userText, category, threshold: 0.75 },
 		};
 		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 16.5 Direct Knowledge Lookup for high-confidence component queries (score >= 100)
+	const fallbackKnowledgeMatches = findComponentKnowledge(userText, { limit: 1 });
+	if (
+		fallbackKnowledgeMatches.length > 0 &&
+		fallbackKnowledgeMatches[0] &&
+		fallbackKnowledgeMatches[0].score >= 100
+	) {
+		const formattedAnswer = formatCopilotKnowledgeAnswer(
+			fallbackKnowledgeMatches[0],
+			userText,
+		);
+		yield {
+			type: "text_delta",
+			text: formattedAnswer,
+		};
+		yield { type: "done", stopReason: "stop" };
 		return;
 	}
 

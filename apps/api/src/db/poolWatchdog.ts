@@ -26,6 +26,7 @@ export interface PoolHealthReport {
 	lastError: string | null;
 	lastRecoveryAt: string | null;
 	totalDrainedSockets: number;
+	totalTerminatedHungTransactions: number;
 	metrics: {
 		totalCount: number;
 		idleCount: number;
@@ -38,6 +39,8 @@ export interface PoolWatchdogOptions {
 	intervalMs?: number;
 	/** Timeout for non-blocking health probe in milliseconds. Defaults to 3,000ms. */
 	probeTimeoutMs?: number;
+	/** Threshold in seconds to terminate hung transactions in 'idle in transaction' state. Defaults to 30s. Set 0 to disable. */
+	maxIdleTransactionSeconds?: number;
 	/** Target pg.Pool instance. Defaults to the singleton application pool. */
 	targetPool?: pg.Pool;
 	/** Optional structured logger. */
@@ -53,6 +56,7 @@ class ConnectionPoolWatchdog {
 	private targetPool: pg.Pool;
 	private intervalMs: number;
 	private probeTimeoutMs: number;
+	private maxIdleTransactionSeconds: number;
 	private logger?: PoolWatchdogOptions["logger"];
 
 	private status: PoolHealthStatus = "healthy";
@@ -62,12 +66,15 @@ class ConnectionPoolWatchdog {
 	private lastError: string | null = null;
 	private lastRecoveryAt: string | null = null;
 	private totalDrainedSockets = 0;
+	private totalTerminatedHungTransactions = 0;
 	private isProbing = false;
 
 	constructor(options: PoolWatchdogOptions = {}) {
 		this.targetPool = options.targetPool ?? pool;
 		this.intervalMs = options.intervalMs ?? 10_000;
 		this.probeTimeoutMs = options.probeTimeoutMs ?? 3_000;
+		this.maxIdleTransactionSeconds =
+			options.maxIdleTransactionSeconds ?? 30;
 		this.logger = options.logger;
 	}
 
@@ -124,6 +131,11 @@ class ConnectionPoolWatchdog {
 			}
 			this.consecutiveFailures = 0;
 			this.lastError = null;
+
+			// Proactively scan and terminate any hung 'idle in transaction' backends
+			if (this.maxIdleTransactionSeconds > 0) {
+				await this.terminateHungIdleTransactions();
+			}
 		} catch (err: unknown) {
 			this.consecutiveFailures++;
 			this.consecutiveSuccesses = 0;
@@ -266,6 +278,73 @@ class ConnectionPoolWatchdog {
 	}
 
 	/**
+	 * Scans pg_stat_activity for backends in 'idle in transaction' exceeding the threshold
+	 * and actively terminates them via pg_terminate_backend to prevent pool lockouts.
+	 */
+	public async terminateHungIdleTransactions(
+		maxIdleSeconds?: number,
+	): Promise<{ terminatedCount: number; pids: number[] }> {
+		const threshold = maxIdleSeconds ?? this.maxIdleTransactionSeconds;
+		if (threshold <= 0) return { terminatedCount: 0, pids: [] };
+
+		const terminatedPids: number[] = [];
+
+		try {
+			// Find hung backends in 'idle in transaction' older than threshold
+			const { rows } = await this.targetPool.query<{
+				pid: number;
+				idle_seconds: number;
+				query: string;
+			}>(
+				`SELECT pid,
+						EXTRACT(EPOCH FROM (clock_timestamp() - state_change))::int AS idle_seconds,
+						query
+				 FROM pg_stat_activity
+				 WHERE state = 'idle in transaction'
+				   AND datname = current_database()
+				   AND pid <> pg_backend_pid()
+				   AND state_change < clock_timestamp() - ($1 || ' seconds')::interval`,
+				[threshold],
+			);
+
+			for (const row of rows) {
+				try {
+					await this.targetPool.query(
+						"SELECT pg_terminate_backend($1)",
+						[row.pid],
+					);
+					terminatedPids.push(row.pid);
+					this.totalTerminatedHungTransactions++;
+					this.logger?.warn?.(
+						{
+							pid: row.pid,
+							idleSeconds: row.idle_seconds,
+							query: row.query,
+						},
+						`[PoolWatchdog] Terminated hung backend in 'idle in transaction' (pid=${row.pid}, idle=${row.idle_seconds}s).`,
+					);
+				} catch (termErr) {
+					this.logger?.error?.(
+						{ pid: row.pid, error: termErr },
+						`[PoolWatchdog] Failed to terminate hung backend pid=${row.pid}.`,
+					);
+				}
+			}
+		} catch (scanErr) {
+			// If pg_stat_activity is unqueryable or permissions are restricted, log and proceed non-destructively
+			this.logger?.error?.(
+				{ error: scanErr },
+				"[PoolWatchdog] Failed to scan pg_stat_activity for hung idle transactions.",
+			);
+		}
+
+		return {
+			terminatedCount: terminatedPids.length,
+			pids: terminatedPids,
+		};
+	}
+
+	/**
 	 * Returns current health telemetry snapshot.
 	 */
 	public getHealthReport(): PoolHealthReport {
@@ -279,6 +358,8 @@ class ConnectionPoolWatchdog {
 			lastError: this.lastError,
 			lastRecoveryAt: this.lastRecoveryAt,
 			totalDrainedSockets: this.totalDrainedSockets,
+			totalTerminatedHungTransactions:
+				this.totalTerminatedHungTransactions,
 			metrics: {
 				totalCount: typeof p.totalCount === "number" ? p.totalCount : 0,
 				idleCount: typeof p.idleCount === "number" ? p.idleCount : 0,
@@ -299,6 +380,7 @@ class ConnectionPoolWatchdog {
 		this.lastError = null;
 		this.lastRecoveryAt = null;
 		this.totalDrainedSockets = 0;
+		this.totalTerminatedHungTransactions = 0;
 	}
 }
 
@@ -346,4 +428,14 @@ export function drainPoolDeadSockets(
 		targetPool ? { targetPool } : undefined,
 	);
 	return watchdog.drainDeadSockets();
+}
+
+export async function terminateHungPoolTransactions(
+	maxIdleSeconds?: number,
+	targetPool?: pg.Pool,
+): Promise<{ terminatedCount: number; pids: number[] }> {
+	const watchdog = getPoolWatchdog(
+		targetPool ? { targetPool } : undefined,
+	);
+	return watchdog.terminateHungIdleTransactions(maxIdleSeconds);
 }

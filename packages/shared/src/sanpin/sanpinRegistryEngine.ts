@@ -25,6 +25,7 @@ import {
 } from "./sanpinJournalsPresets.js";
 import { renderDigitalSignatureStampHtml } from "../crypto/visualSignatureStamp.js";
 import { sha256Hex } from "../sync/hashing.js";
+import { generateDeterministicOrSecureInteger } from "../utils/idGenerators.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA TYPES & INTERFACES
@@ -447,10 +448,11 @@ export function evaluatePsoTrialResult(params: {
 
 export function generatePsoRecordId(
 	dateStr: string = new Date().toISOString().slice(0, 10),
-	seq: number = Math.floor(100 + Math.random() * 900),
+	seq?: number,
 ): string {
+	const effectiveSeq = seq ?? generateDeterministicOrSecureInteger(100, 999, dateStr);
 	const cleanDate = dateStr.replace(/[^0-9]/g, "").slice(0, 8);
-	return `PSO-${cleanDate}-${seq.toString().padStart(4, "0")}`;
+	return `PSO-${cleanDate}-${effectiveSeq.toString().padStart(4, "0")}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1838,11 +1840,12 @@ export function evaluateCabinetReadiness(
 export function generateCabinetReadinessId(
 	dateStr: string = new Date().toISOString().slice(0, 10),
 	cabinetNumber = "1",
-	seq: number = Math.floor(100 + Math.random() * 900),
+	seq?: number,
 ): string {
+	const effectiveSeq = seq ?? generateDeterministicOrSecureInteger(100, 999, `${dateStr}-${cabinetNumber}`);
 	const cleanDate = dateStr.replace(/[^0-9]/g, "").slice(0, 8);
 	const cleanCab = cabinetNumber.replace(/[^0-9a-zA-Zа-яА-Я]/g, "").toUpperCase();
-	return `CR-${cleanDate}-CAB${cleanCab}-${seq.toString().padStart(3, "0")}`;
+	return `CR-${cleanDate}-CAB${cleanCab}-${effectiveSeq.toString().padStart(3, "0")}`;
 }
 
 export function calculateCabinetStampHash(data: {

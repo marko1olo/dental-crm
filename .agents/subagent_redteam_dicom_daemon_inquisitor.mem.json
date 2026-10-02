@@ -1,0 +1,25 @@
+{
+  "role": "Red Team Inquisitor: DICOM / CT Autodetect Daemon & Stochastic Tomograph Matcher",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read all constitutional documents (core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md)",
+    "Surveyed scoped folders: apps/api/src/services/imaging, apps/api/src/routes/imaging, apps/web/src/components/imaging",
+    "Audited existing imaging routes & services (localFolderDiscovery, patientFioBindingEngine, localImagingOrganizer, DicomProcessorService)",
+    "Implemented robust dicomMetadataParser.ts (real binary tag parsing: PatientName 0010,0010; PatientID 0010,0020; PatientBirthDate 0010,0030; StudyDate 0008,0020; Modality 0008,0060; SeriesDescription 0008,103E, voxel dimensions & slice scanner)",
+    "Implemented stochastic dicomPatientMatcher.ts (Levenshtein + Dice N-gram + Cyrillic/Latin GOST 7.79 transliteration + multi-format dates YYYYMMDD/DDMMYYYY/YYYY-MM-DD + confidence score 0..100% with threshold brackets >85%, 60-85%, <60%)",
+    "Implemented background dicomFolderWatcherDaemon.ts (configurable scan paths: D:\\CT_Export, C:\\Ez3D-i\\Export, C:\\Romexis\\Studies, etc.; debounced fs watching, polling fallback, batch discovery, automatic parsing, patient matching and DB persistence)",
+    "Exposed API routes in apps/api/src/routes/imaging/dicomRoutes.ts and wired into apps/api/src/routes/imaging.ts and index.ts (GET /status, POST /start, POST /stop, POST /scan-now, POST /config, GET /pending, POST /bind-patient, POST /dismiss)",
+    "Implemented frontend UI: DicomAutoDetectStatusBadge.tsx, DicomImportManagerModal.tsx, CtStudyViewer.tsx (clinical density, 1-click binding, 0-clutter, WCAG AAA)",
+    "Wrote comprehensive unit tests in apps/api/src/services/imaging/__tests__/dicomPatientMatcher.test.ts (7 tests covering transliteration, dates, folder hints, FIO Dice matching, birthdate bonus/penalty, confidence brackets, candidate ambiguity)",
+    "Verified verification gates: node scripts/check-encoding.mjs (7102 files passed), node scripts/check-css-tokens.mjs (0 errors passed), unit tests (7 passed, 0 failed)",
+    "Submitted Red Team Inquisitor Report to Parent Agent via send_message"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Fixed underscore regex bug in parseTomographFolderHint where \\b was failing on _CT and _19851214_.",
+    "Fixed FIO token asymmetry by applying Sørensen-Dice coefficient over words, preventing false 100% matches when patronymic is missing.",
+    "Fixed ambiguity threshold in matchStudyToPatients to flag close candidate scores (<7% diff) regardless of base score.",
+    "Fixed exactOptionalPropertyTypes compliance in DicomWatcherConfigUpdate and scorePatientCandidate.",
+    "Fixed dismiss route status enum violation (using valid status 'failed' with bindingStatus 'unassigned')."
+  ]
+}

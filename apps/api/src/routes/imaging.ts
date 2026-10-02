@@ -4,6 +4,7 @@ import { registerCbctRoutes } from "./imaging/cbctRoutes.js";
 import { registerPacsRoutes } from "./imaging/pacsRoutes.js";
 import { registerStudiesRoutes } from "./imaging/studiesRoutes.js";
 import { registerSensorOfflineRoutes } from "./imaging/sensorOfflineRoutes.js";
+import { registerDicomRoutes } from "./imaging/dicomRoutes.js";
 
 /**
  * Root Imaging Router (Outpatient Dental Radiology & DICOM)
@@ -12,6 +13,7 @@ import { registerSensorOfflineRoutes } from "./imaging/sensorOfflineRoutes.js";
  * - Panoramic Radiography (OPG / ОПТГ) & Cephalometrics (TRG / ТРГ)
  * - Intraoral Radiovisiography (RVG / Визиография / Прицельные снимки)
  * - Clinical Photo Protocols & PACS / DICOMweb Integrations
+ * - Tomograph Autodetect Daemon & DICOM Watcher
  *
  * Error codes maintained for backwards compatibility:
  * - ImagingStudyNotFound
@@ -24,6 +26,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 	await registerPacsRoutes(app);
 	await registerStudiesRoutes(app);
 	await registerSensorOfflineRoutes(app);
+	await registerDicomRoutes(app);
 }
 
 // Re-exports for zero-downtime backwards compatibility

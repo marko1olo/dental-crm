@@ -290,4 +290,102 @@ test("Spotlight Geometry & Coach Mark Math Invariants", async (t) => {
 			"guided-tour.css must ensure high-contrast #f8fafc text in dark mode",
 		);
 	});
+
+	await t.test("17. calculateTooltipPlacement computes arrowOffsetYPx pointing accurately at targetCenterY for side placements", () => {
+		// Target centered vertically in a squeezed height window (height: 400, target Y: 150..250, center Y = 200)
+		const compactViewport: ViewportDimensions = { width: 1280, height: 400 };
+		const sideTarget: SimpleRect = {
+			top: 150,
+			left: 100,
+			width: 80,
+			height: 100,
+			bottom: 250,
+			right: 180,
+		};
+
+		const placement = calculateTooltipPlacement(sideTarget, 380, 260, compactViewport, 14);
+		assert.strictEqual(placement.side, "right", "Must choose right when vertical space is squeezed");
+		// TargetCenterY = 200. IdealTop = 200 - 130 = 70. Arrow offset Y = 200 - 70 = 130.
+		assert.strictEqual(placement.arrowOffsetYPx, 130, "Arrow offset Y must point directly to target center Y");
+	});
+
+	await t.test("18. calculateTooltipPlacement clamps arrowOffsetYPx safely when card top is constrained by viewport bounds", () => {
+		// Target placed high in a squeezed height window (height: 280, target Y: 70..130, center Y = 100)
+		const compactViewport: ViewportDimensions = { width: 1280, height: 280 };
+		const highSideTarget: SimpleRect = {
+			top: 70,
+			left: 100,
+			width: 80,
+			height: 60,
+			bottom: 130,
+			right: 180,
+		};
+
+		// preferredHeight 220. Space above: 70 - 14 = 56 (< 220). Space below: 280 - (130 + 14) = 136 (< 220).
+		const placement = calculateTooltipPlacement(highSideTarget, 380, 220, compactViewport, 14);
+		assert.strictEqual(placement.side, "right", "Must choose right side placement");
+		// idealTop = 100 - 110 = -10 -> clamped to 16.
+		assert.strictEqual(placement.top, 16, "Card top must clamp to screen margin 16");
+		// Target center Y is 100. Relative to card top: 100 - 16 = 84px.
+		assert.strictEqual(placement.arrowOffsetYPx, 84, "Arrow offset Y must adjust to clamped card top");
+		assert.ok(placement.arrowOffsetYPx >= 18, "Must not collapse below corner radius threshold");
+		assert.ok(placement.arrowOffsetYPx <= placement.maxHeight - 18, "Must not exceed bottom corner radius");
+	});
+
+	await t.test("19. guided-tour.css defines theme-aware halo variables for all themes and GPU-composited concentric rings", () => {
+		const cssPath = path.resolve(__dirname, "../styles/guided-tour.css");
+		const cssContent = fs.readFileSync(cssPath, "utf8");
+
+		// Theme tokens
+		assert.ok(cssContent.includes("--tour-halo-color"), "Must define --tour-halo-color");
+		assert.ok(cssContent.includes("--tour-halo-glow"), "Must define --tour-halo-glow");
+		assert.ok(cssContent.includes("--tour-spotlight-backdrop"), "Must define --tour-spotlight-backdrop");
+		assert.ok(cssContent.includes('[data-theme="sakura"]'), "Must provide Sakura theme tokens");
+		assert.ok(cssContent.includes('[data-theme="emerald"]'), "Must provide Emerald theme tokens");
+		assert.ok(cssContent.includes('[data-theme="ocean"]'), "Must provide Ocean theme tokens");
+		assert.ok(cssContent.includes('[data-theme="cyber_xray"]'), "Must provide Cyber X-Ray theme tokens");
+
+		// Stutter-free keyframe fade-in
+		assert.ok(
+			cssContent.includes("opacity: 0") && cssContent.includes("opacity: 0.75"),
+			"Keyframes must feature lead-in opacity ramp from 0 to eliminate repeat flashes",
+		);
+
+		// Hardware acceleration
+		assert.ok(
+			cssContent.includes("will-change: transform, opacity") &&
+				cssContent.includes("transform: translateZ(0)"),
+			"Must apply GPU layer promotion (will-change & translateZ(0)) for 60/120fps stutter-free rendering",
+		);
+
+		// Pointer bounce preservation of horizontal/vertical centering
+		assert.ok(
+			cssContent.includes("transform: translateX(-50%) translateY("),
+			"Vertical pointer bounce must preserve translateX(-50%) centering",
+		);
+		assert.ok(
+			cssContent.includes("transform: translateY(-50%) translateX("),
+			"Horizontal pointer bounce must preserve translateY(-50%) centering",
+		);
+	});
+
+	await t.test("20. SpotlightOverlay and CoachMarkTooltip support visualViewport for Retina zoom scaling", () => {
+		const spotlightPath = path.resolve(__dirname, "../components/tutorial/SpotlightOverlay.tsx");
+		const spotlightContent = fs.readFileSync(spotlightPath, "utf8");
+		assert.ok(
+			spotlightContent.includes("window.visualViewport"),
+			"SpotlightOverlay must inspect window.visualViewport for Retina and pinch-zoom resilience",
+		);
+
+		const tooltipPath = path.resolve(__dirname, "../components/tutorial/CoachMarkTooltip.tsx");
+		const tooltipContent = fs.readFileSync(tooltipPath, "utf8");
+		assert.ok(
+			tooltipContent.includes("window.visualViewport"),
+			"CoachMarkTooltip must inspect window.visualViewport for Retina and pinch-zoom resilience",
+		);
+		assert.ok(
+			tooltipContent.includes("arrowOffsetYPx"),
+			"CoachMarkTooltip must utilize arrowOffsetYPx for side placements",
+		);
+	});
 });

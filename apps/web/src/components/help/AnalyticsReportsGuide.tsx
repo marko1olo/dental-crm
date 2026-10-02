@@ -11,12 +11,13 @@
  * - Hotkeys, FAQs, and interactive tour button
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
 	BarChart3,
 	Calculator,
 	CheckCircle2,
 	DollarSign,
+	Download,
 	Gamepad2,
 	HelpCircle,
 	PieChart,
@@ -26,12 +27,33 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const AnalyticsReportsGuide: React.FC = () => {
+export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [selectedPeriod, setSelectedPeriod] = useState<"today" | "week" | "month">("today");
+	const [doctorRatePercent, setDoctorRatePercent] = useState<number>(30);
+	const [isExported, setIsExported] = useState<boolean>(false);
+
 	const handleLaunchTour = () => {
-		startDoctorTour("solo_doctor");
+		if (onLaunchTour) {
+			onLaunchTour("reception_admin");
+		} else {
+			startDoctorTour("reception_admin");
+		}
 	};
+
+	// Calculated mock figures
+	const revenue = selectedPeriod === "today" ? 185000 : selectedPeriod === "week" ? 940000 : 3820000;
+	const receiptsCount = selectedPeriod === "today" ? 13 : selectedPeriod === "week" ? 68 : 274;
+	const avgCheck = Math.round(revenue / receiptsCount);
+	const chairUtilization = selectedPeriod === "today" ? 82 : selectedPeriod === "week" ? 78 : 81;
+
+	// Doctor Barabash T-51 Net Payroll calculations
+	const doctorGrossRevenue = selectedPeriod === "today" ? 140000 : selectedPeriod === "week" ? 620000 : 2480000;
+	const labDeductionZtl = selectedPeriod === "today" ? 18000 : selectedPeriod === "week" ? 84000 : 320000;
+	const netCommissionBase = Math.max(0, doctorGrossRevenue - labDeductionZtl);
+	const calculatedPayroll = Math.round((netCommissionBase * doctorRatePercent) / 100);
 
 	return (
 		<div className="space-y-4 text-xs text-[var(--ink)]">
@@ -50,6 +72,177 @@ export const AnalyticsReportsGuide: React.FC = () => {
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
 						Управленческий и финансовый учёт клиники в реальном времени: выручка дня, средний чек, загрузка кресел,
 						конверсия первичных пациентов и автоматический расчёт сдельной заработной платы врачей.
+					</div>
+				</div>
+			</div>
+
+			{/* Interactive Visual Preview: KPI Dashboard & Doctor T-51 Payroll Calculator */}
+			<div className="rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs space-y-0">
+				{/* Mockup Toolbar Header */}
+				<div className="p-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<TrendingUp size={15} className="text-indigo-600 dark:text-indigo-400" />
+						<span className="font-bold text-xs text-[var(--ink)]">
+							Интерактивный дашборд руководителя
+						</span>
+						<span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
+							Касса 54-ФЗ Онлайн
+						</span>
+					</div>
+
+					<div className="flex items-center gap-1.5">
+						<div className="flex items-center rounded-md border border-[var(--line)] bg-[var(--paper)] p-0.5 text-[10px]">
+							<button
+								type="button"
+								onClick={() => setSelectedPeriod("today")}
+								className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+									selectedPeriod === "today"
+										? "bg-indigo-600 text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Сегодня
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelectedPeriod("week")}
+								className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+									selectedPeriod === "week"
+										? "bg-indigo-600 text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Неделя
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelectedPeriod("month")}
+								className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+									selectedPeriod === "month"
+										? "bg-indigo-600 text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								Месяц
+							</button>
+						</div>
+
+						<button
+							type="button"
+							onClick={() => {
+								setIsExported(true);
+								setTimeout(() => setIsExported(false), 2000);
+							}}
+							className="h-7 px-2 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-[10px] font-semibold inline-flex items-center gap-1 hover:bg-[var(--paper-soft)] cursor-pointer"
+							title="Экспорт проводок в 1С Бухгалтерию"
+						>
+							<Download size={11} />
+							<span>{isExported ? "Экспорт готов!" : "1С CommerceML"}</span>
+						</button>
+					</div>
+				</div>
+
+				{/* 4 Primary KPI Cards */}
+				<div className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-[var(--paper)]">
+					<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] space-y-1">
+						<span className="text-[10px] text-[var(--muted)] block font-medium">Выручка клиники</span>
+						<div className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+							{revenue.toLocaleString("ru-RU")} ₽
+						</div>
+						<div className="text-[9px] text-[var(--muted)]">{receiptsCount} закрытых чеков</div>
+					</div>
+
+					<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] space-y-1">
+						<span className="text-[10px] text-[var(--muted)] block font-medium">Средний чек</span>
+						<div className="text-base font-bold text-indigo-600 dark:text-indigo-400">
+							{avgCheck.toLocaleString("ru-RU")} ₽
+						</div>
+						<div className="text-[9px] text-emerald-600 font-semibold">+8% к прошлому периоду</div>
+					</div>
+
+					<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] space-y-1">
+						<span className="text-[10px] text-[var(--muted)] block font-medium">Загрузка кресел</span>
+						<div className="text-base font-bold text-teal-600 dark:text-teal-400">
+							{chairUtilization}%
+						</div>
+						<div className="text-[9px] text-[var(--muted)]">23.5 ч из 28 ч фонда</div>
+					</div>
+
+					<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] space-y-1">
+						<span className="text-[10px] text-[var(--muted)] block font-medium">Доходимость первичных</span>
+						<div className="text-base font-bold text-purple-600 dark:text-purple-400">
+							94%
+						</div>
+						<div className="text-[9px] text-[var(--muted)]">16 из 17 пациентов</div>
+					</div>
+				</div>
+
+				{/* Doctor T-51 Piece-Rate Net Payroll Calculator Mockup */}
+				<div className="p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] space-y-2.5">
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
+							<Calculator size={14} className="text-indigo-600 dark:text-indigo-400" />
+							<span>Ведомость Т-51: Расчёт сдельной зарплаты с вычетом ЗТЛ</span>
+						</div>
+
+						<div className="flex items-center gap-1 text-[11px]">
+							<span className="text-[var(--muted)]">Ставка врача:</span>
+							<div className="inline-flex rounded border border-[var(--line)] bg-[var(--paper)] p-0.5">
+								{[25, 30, 35].map((rate) => (
+									<button
+										key={rate}
+										type="button"
+										onClick={() => setDoctorRatePercent(rate)}
+										className={`px-1.5 py-0.2 rounded text-[10px] font-bold cursor-pointer transition-all ${
+											doctorRatePercent === rate
+												? "bg-indigo-600 text-white"
+												: "text-[var(--muted)] hover:text-[var(--ink)]"
+										}`}
+									>
+										{rate}%
+									</button>
+								))}
+							</div>
+						</div>
+					</div>
+
+					<div className="rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden">
+						<table className="w-full text-left text-[11px] border-collapse">
+							<thead>
+								<tr className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[10px] text-[var(--muted)]">
+									<th className="p-2 font-semibold">Сотрудник / Специализация</th>
+									<th className="p-2 font-semibold text-right">Грязная выручка</th>
+									<th className="p-2 font-semibold text-right">Вычет счетов ЗТЛ</th>
+									<th className="p-2 font-semibold text-right">База начисления</th>
+									<th className="p-2 font-semibold text-right">К выплате ({doctorRatePercent}%)</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr className="border-b border-[var(--line)]/50">
+									<td className="p-2 font-semibold text-[var(--ink)]">
+										<div>Барабаш С.В.</div>
+										<span className="text-[9px] text-[var(--muted)] font-normal">Врач стоматолог-терапевт</span>
+									</td>
+									<td className="p-2 text-right font-mono text-[var(--ink)]">
+										{doctorGrossRevenue.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="p-2 text-right font-mono text-rose-600 dark:text-rose-400">
+										-{labDeductionZtl.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="p-2 text-right font-mono text-[var(--muted)]">
+										{netCommissionBase.toLocaleString("ru-RU")} ₽
+									</td>
+									<td className="p-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+										{calculatedPayroll.toLocaleString("ru-RU")} ₽
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div className="text-[10px] text-[var(--muted)] flex items-center justify-between">
+						<span>Автоматическое исключение себестоимости коронок/вкладок зуботехнической лаборатории перед расчётом %</span>
+						<span className="font-semibold text-indigo-600 dark:text-indigo-400">Чистая выплата без разногласий</span>
 					</div>
 				</div>
 			</div>
@@ -107,31 +300,6 @@ export const AnalyticsReportsGuide: React.FC = () => {
 						<p className="text-[var(--muted)] text-[11px] leading-relaxed">
 							Откройте зарплатную ведомость: программа автоматически умножает выручку на персональный процент врача и вычитает счета лаборатории.
 						</p>
-					</div>
-				</div>
-			</div>
-
-			{/* Ключевые показатели */}
-			<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-2.5">
-				<div className="font-semibold text-xs text-[var(--ink)]">
-					Основные финансовые и клинические метрики
-				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="text-[var(--muted)] text-[10px] block">Выручка клиники</span>
-						<span className="font-semibold text-emerald-600 dark:text-emerald-400 text-xs">День / Месяц</span>
-					</div>
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="text-[var(--muted)] text-[10px] block">Средний чек</span>
-						<span className="font-semibold text-indigo-600 dark:text-indigo-400 text-xs">По отделениям</span>
-					</div>
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="text-[var(--muted)] text-[10px] block">Загрузка кресел</span>
-						<span className="font-semibold text-teal-600 dark:text-teal-400 text-xs">Часы / Смены</span>
-					</div>
-					<div className="p-2 rounded bg-[var(--paper-soft)]">
-						<span className="text-[var(--muted)] text-[10px] block">Зарплатная ведомость</span>
-						<span className="font-semibold text-purple-600 dark:text-purple-400 text-xs">Сделка Т-51</span>
 					</div>
 				</div>
 			</div>

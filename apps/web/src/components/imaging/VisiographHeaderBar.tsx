@@ -87,6 +87,7 @@ export function VisiographHeaderBar({
 			<div style={{ display: "flex", gap: "6px" }}>
 				<button
 					type="button"
+					data-tour="visiograph-open"
 					onClick={onUploadClick}
 					title="Загрузить снимок с диска (JPG / PNG / DICOM)"
 					aria-label="Загрузить свой снимок"

@@ -7,11 +7,14 @@
  * - Mandate 8d: 7 Deadly Sins of UI (Zero cartoon emojis, subtle medical elegance).
  * - Mandate 8e: Doctor Autonomy (pointer-events: none, underlying controls never blocked).
  * - User Mandate: "с акцентуацией кружками на какие-то кнопки, элементы, подсвечиванием, миганием".
+ * - Theme Safety: Seamless integration with all 10 clinical and atmospheric themes.
  */
 
 import React, { useMemo } from "react";
 import { MousePointerClick } from "lucide-react";
 import type { SimpleRect } from "./spotlightGeometry";
+
+export type HaloColorTheme = "auto" | "cyan" | "emerald" | "sakura" | "ocean";
 
 export interface PulsingHaloAnchorProps {
 	readonly isOpen: boolean;
@@ -19,7 +22,8 @@ export interface PulsingHaloAnchorProps {
 	readonly showPointerBadge?: boolean;
 	readonly badgeText?: string;
 	readonly pointerDirection?: "top" | "bottom" | "left" | "right";
-	readonly colorTheme?: "cyan" | "emerald";
+	readonly colorTheme?: HaloColorTheme;
+	readonly borderRadius?: number;
 }
 
 export const PulsingHaloAnchor: React.FC<PulsingHaloAnchorProps> = React.memo(({
@@ -28,7 +32,8 @@ export const PulsingHaloAnchor: React.FC<PulsingHaloAnchorProps> = React.memo(({
 	showPointerBadge = true,
 	badgeText = "Кликните сюда",
 	pointerDirection,
-	colorTheme = "cyan",
+	colorTheme = "auto",
+	borderRadius,
 }) => {
 	const effectiveDirection = useMemo(() => {
 		if (pointerDirection) return pointerDirection;
@@ -36,6 +41,51 @@ export const PulsingHaloAnchor: React.FC<PulsingHaloAnchorProps> = React.memo(({
 		// Default to top if space permits, otherwise bottom
 		return targetRect.top >= 48 ? "top" : "bottom";
 	}, [pointerDirection, targetRect]);
+
+	const effectiveBorderRadius = useMemo(() => {
+		if (typeof borderRadius === "number") return borderRadius;
+		// Auto-detect circular targets (e.g. 32-44px circular icon buttons, avatars)
+		if (targetRect && Math.abs(targetRect.width - targetRect.height) <= 4 && targetRect.width <= 48) {
+			return 9999;
+		}
+		return 8;
+	}, [borderRadius, targetRect]);
+
+	const themeOverrideStyle = useMemo((): React.CSSProperties | undefined => {
+		if (colorTheme === "emerald") {
+			return {
+				["--tour-halo-color" as string]: "#10b981",
+				["--tour-halo-color-bright" as string]: "#34d399",
+				["--tour-halo-glow" as string]: "rgba(16, 185, 129, 0.65)",
+				["--tour-halo-rgb" as string]: "16, 185, 129",
+			};
+		}
+		if (colorTheme === "cyan") {
+			return {
+				["--tour-halo-color" as string]: "#0ea5e9",
+				["--tour-halo-color-bright" as string]: "#38bdf8",
+				["--tour-halo-glow" as string]: "rgba(14, 165, 233, 0.55)",
+				["--tour-halo-rgb" as string]: "14, 165, 233",
+			};
+		}
+		if (colorTheme === "sakura") {
+			return {
+				["--tour-halo-color" as string]: "#ec4899",
+				["--tour-halo-color-bright" as string]: "#f472b6",
+				["--tour-halo-glow" as string]: "rgba(236, 72, 153, 0.55)",
+				["--tour-halo-rgb" as string]: "236, 72, 153",
+			};
+		}
+		if (colorTheme === "ocean") {
+			return {
+				["--tour-halo-color" as string]: "#38bdf8",
+				["--tour-halo-color-bright" as string]: "#7dd3fc",
+				["--tour-halo-glow" as string]: "rgba(56, 189, 248, 0.65)",
+				["--tour-halo-rgb" as string]: "56, 189, 248",
+			};
+		}
+		return undefined;
+	}, [colorTheme]);
 
 	if (!isOpen || !targetRect || targetRect.width <= 0 || targetRect.height <= 0) {
 		return null;
@@ -50,49 +100,32 @@ export const PulsingHaloAnchor: React.FC<PulsingHaloAnchorProps> = React.memo(({
 	return (
 		<div
 			className="tour-beacon-anchor"
-			style={{ top, left, width, height }}
+			style={{
+				top,
+				left,
+				width,
+				height,
+				borderRadius: effectiveBorderRadius,
+				...themeOverrideStyle,
+			}}
 			data-testid="guided-tour-pulsing-halo-anchor"
 			aria-hidden="true"
 		>
 			{/* 1. Primary concentric expanding halo ring */}
 			<div
 				className="tour-halo-ring"
-				style={
-					colorTheme === "emerald"
-						? {
-								animationName: "tour-halo-pulse-emerald",
-								borderColor: "rgba(13, 148, 136, 0.65)",
-							}
-						: undefined
-				}
 				data-testid="halo-ring-primary"
 			/>
 
 			{/* 2. Secondary phase-delayed concentric halo ripple */}
 			<div
 				className="tour-halo-ring-delayed"
-				style={
-					colorTheme === "emerald"
-						? {
-								animationName: "tour-halo-pulse-emerald",
-								borderColor: "rgba(13, 148, 136, 0.45)",
-							}
-						: undefined
-				}
 				data-testid="halo-ring-delayed"
 			/>
 
 			{/* 3. Glowing bounding frame */}
 			<div
 				className="tour-beacon-frame"
-				style={
-					colorTheme === "emerald"
-						? {
-								borderColor: "#0d9488",
-								boxShadow: "0 0 16px rgba(13, 148, 136, 0.5)",
-							}
-						: undefined
-				}
 				data-testid="beacon-frame"
 			/>
 
@@ -100,14 +133,6 @@ export const PulsingHaloAnchor: React.FC<PulsingHaloAnchorProps> = React.memo(({
 			{showPointerBadge && (
 				<div
 					className={`tour-pointer-badge tour-pointer-badge-${effectiveDirection}`}
-					style={
-						colorTheme === "emerald"
-							? {
-									background: "#0d9488",
-									boxShadow: "0 4px 14px rgba(13, 148, 136, 0.5)",
-								}
-							: undefined
-					}
 					data-testid="halo-pointer-badge"
 				>
 					<MousePointerClick size={13} aria-hidden="true" />

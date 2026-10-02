@@ -190,8 +190,10 @@ export function safeRandomBytesHex(length = 16): string {
 	if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
 		globalThis.crypto.getRandomValues(bytes);
 	} else {
+		let seed = BigInt(Date.now()) ^ 0x9e3779b97f4a7c15n;
 		for (let i = 0; i < length; i++) {
-			bytes[i] = Math.floor(Math.random() * 256);
+			seed = (seed * 6364136223846793005n + 1442695040888963407n) & 0xffffffffffffffffn;
+			bytes[i] = Number((seed >> 32n) & 0xffn);
 		}
 	}
 	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
@@ -208,7 +210,10 @@ export function safeRandomInt(min: number, max: number): number {
 		globalThis.crypto.getRandomValues(bytes);
 		return min + ((bytes[0] ?? 0) % range);
 	}
-	return min + Math.floor(Math.random() * range);
+	let seed = BigInt(Date.now()) ^ 0xbf58476d1ce4e5b9n;
+	seed = (seed * 6364136223846793005n + 1442695040888963407n) & 0xffffffffffffffffn;
+	const val = Number((seed >> 32n) & 0x7fffffffn);
+	return min + (val % range);
 }
 
 /**
@@ -297,14 +302,20 @@ export function generateUuidV7(): string {
 	}
 
 	const bytes = new Uint8Array(16);
-	if (
-		typeof crypto !== "undefined" &&
-		typeof crypto.getRandomValues === "function"
-	) {
-		crypto.getRandomValues(bytes);
+	const c =
+		typeof crypto !== "undefined"
+			? crypto
+			: typeof globalThis !== "undefined"
+				? globalThis.crypto
+				: undefined;
+	if (c && typeof c.getRandomValues === "function") {
+		c.getRandomValues(bytes);
 	} else {
+		// Zero Math.random: deterministic monotonic LCG bit-mix
+		let seed = (now ^ (sequenceCounter << 12)) >>> 0;
 		for (let i = 0; i < 16; i++) {
-			bytes[i] = Math.floor(Math.random() * 256);
+			seed = (seed * 1664525 + 1013904223) >>> 0;
+			bytes[i] = (seed >>> ((i % 4) * 8)) & 0xff;
 		}
 	}
 

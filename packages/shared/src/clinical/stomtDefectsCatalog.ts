@@ -65,6 +65,8 @@ export type CrmToothState =
 	| "Retained"
 	| "Root";
 
+export type ToothState = CrmToothState;
+
 export const CLINICAL_TOOTH_STATE_VALUES = [
 	"Healthy",
 	"Caries",

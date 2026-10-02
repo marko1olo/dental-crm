@@ -11,24 +11,67 @@
  * - Hotkeys (F9, Enter), FAQs, and interactive tour button
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
 	Banknote,
+	Check,
 	CheckCircle2,
 	CreditCard,
 	Gamepad2,
 	HelpCircle,
+	MousePointer,
+	Printer,
 	QrCode,
 	ShieldCheck,
 	Sparkles,
 	Users,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const CashierGuide: React.FC = () => {
+export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [cashAmount, setCashAmount] = useState(5000);
+	const [cardAmount, setCardAmount] = useState(5000);
+	const [sbpAmount, setSbpAmount] = useState(2500);
+	const [familyDepositAmount, setFamilyDepositAmount] = useState(0);
+	const [isReceiptPrinted, setIsReceiptPrinted] = useState(false);
+
+	const totalAmount = 12500;
+	const enteredTotal = cashAmount + cardAmount + sbpAmount + familyDepositAmount;
+	const difference = totalAmount - enteredTotal;
+
 	const handleLaunchTour = () => {
-		startDoctorTour("solo_doctor");
+		if (onLaunchTour) {
+			onLaunchTour("reception_admin");
+		} else {
+			startDoctorTour("reception_admin");
+		}
+	};
+
+	const handleQuickFill = (type: "cash" | "card" | "sbp" | "split") => {
+		setIsReceiptPrinted(false);
+		if (type === "card") {
+			setCashAmount(0);
+			setCardAmount(12500);
+			setSbpAmount(0);
+			setFamilyDepositAmount(0);
+		} else if (type === "cash") {
+			setCashAmount(12500);
+			setCardAmount(0);
+			setSbpAmount(0);
+			setFamilyDepositAmount(0);
+		} else if (type === "sbp") {
+			setCashAmount(0);
+			setCardAmount(0);
+			setSbpAmount(12500);
+			setFamilyDepositAmount(0);
+		} else {
+			setCashAmount(5000);
+			setCardAmount(5000);
+			setSbpAmount(2500);
+			setFamilyDepositAmount(0);
+		}
 	};
 
 	return (
@@ -49,6 +92,151 @@ export const CashierGuide: React.FC = () => {
 						Быстрый чекаут без очередей у ресепшена: комбинированная сплит-оплата (наличные, банковская карта, СБП по QR-коду, депозит семьи)
 						и автоматическая печать чека с точностью до копейки.
 					</div>
+				</div>
+			</div>
+
+			{/* НАГЛЯДНАЯ СХЕМА КАССЫ (Visual Cashier Split Proof) */}
+			<div className="p-3.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-3">
+				<div className="flex items-center justify-between gap-2">
+					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
+						<MousePointer size={14} className="text-emerald-500" />
+						<span>Интерактивный сплит-чекаут (Касса 54-ФЗ)</span>
+					</div>
+					<span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+						Комбинированная оплата в 1 клик
+					</span>
+				</div>
+
+				{/* Visual Mockup Card */}
+				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden shadow-xs space-y-0">
+					{/* Header Total Bar */}
+					<div className="px-4 py-3 bg-[var(--paper)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+						<div>
+							<span className="text-[10px] text-[var(--muted)] uppercase font-semibold">Итого к оплате по счёту:</span>
+							<div className="text-lg font-bold text-[var(--ink)]">
+								{totalAmount.toLocaleString("ru-RU")} ₽
+							</div>
+						</div>
+
+						<div className="flex items-center gap-1.5 flex-wrap">
+							<span className="text-[10px] text-[var(--muted)]">Быстрый пресет:</span>
+							<button
+								type="button"
+								onClick={() => handleQuickFill("card")}
+								className="px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] hover:border-emerald-500 text-[10px] font-semibold text-[var(--ink)] cursor-pointer"
+							>
+								100% Карта
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickFill("cash")}
+								className="px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] hover:border-emerald-500 text-[10px] font-semibold text-[var(--ink)] cursor-pointer"
+							>
+								100% Наличные
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickFill("split")}
+								className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold cursor-pointer"
+							>
+								Сплит (Нал+Карта+QR)
+							</button>
+						</div>
+					</div>
+
+					{/* 4 Split Channels */}
+					<div className="p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+						{/* Channel 1: Cash */}
+						<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1.5">
+							<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)] text-[11px]">
+								<Banknote size={14} className="text-emerald-500" />
+								<span>Наличные</span>
+							</div>
+							<div className="text-sm font-bold text-[var(--ink)]">
+								{cashAmount.toLocaleString("ru-RU")} ₽
+							</div>
+							<p className="text-[10px] text-[var(--muted)]">Сдача: 0 ₽ (купюры без пересчета)</p>
+						</div>
+
+						{/* Channel 2: Card POS */}
+						<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1.5">
+							<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)] text-[11px]">
+								<CreditCard size={14} className="text-blue-500" />
+								<span>Карта (POS)</span>
+							</div>
+							<div className="text-sm font-bold text-[var(--ink)]">
+								{cardAmount.toLocaleString("ru-RU")} ₽
+							</div>
+							<p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">✓ Терминал одобрен</p>
+						</div>
+
+						{/* Channel 3: SBP QR */}
+						<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1.5">
+							<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)] text-[11px]">
+								<QrCode size={14} className="text-teal-500" />
+								<span>СБП по QR</span>
+							</div>
+							<div className="text-sm font-bold text-[var(--ink)]">
+								{sbpAmount.toLocaleString("ru-RU")} ₽
+							</div>
+							<p className="text-[10px] text-[var(--muted)]">0% комиссия клиники</p>
+						</div>
+
+						{/* Channel 4: Family Deposit */}
+						<div className="p-2.5 rounded bg-[var(--paper)] border border-[var(--line)] space-y-1.5">
+							<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)] text-[11px]">
+								<Users size={14} className="text-purple-500" />
+								<span>Семейный баланс</span>
+							</div>
+							<div className="text-sm font-bold text-[var(--ink)]">
+								{familyDepositAmount.toLocaleString("ru-RU")} ₽
+							</div>
+							<p className="text-[10px] text-[var(--muted)]">Доступно: 4 200 ₽</p>
+						</div>
+					</div>
+
+					{/* Bottom Status & Receipt Action */}
+					<div className="px-4 py-2.5 bg-[var(--paper)] border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
+						<div className="flex items-center gap-2">
+							<span className="text-[11px] text-[var(--muted)]">
+								Введено: <strong>{enteredTotal.toLocaleString("ru-RU")} ₽</strong>
+							</span>
+							{difference === 0 ? (
+								<span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+									✓ Сумма сходится ровно
+								</span>
+							) : (
+								<span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold text-[10px]">
+									Остаток: {difference.toLocaleString("ru-RU")} ₽
+								</span>
+							)}
+						</div>
+
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setIsReceiptPrinted(true)}
+								className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+								title="Пробить фискальный чек (Enter / F9)"
+							>
+								<Printer size={14} />
+								<span>Пробить чек (Enter / F9)</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Printed Receipt Strip Simulation */}
+					{isReceiptPrinted && (
+						<div className="p-3 bg-emerald-500/10 border-t border-emerald-500/20 text-[11px] text-[var(--ink)] space-y-1 font-mono animate-in fade-in duration-200">
+							<div className="flex items-center justify-between font-bold text-emerald-800 dark:text-emerald-200">
+								<span>КАССОВЫЙ ЧЕК ККТ (54-ФЗ)</span>
+								<span>ИТОГ: 12 500.00 ₽</span>
+							</div>
+							<div className="text-[10px] text-[var(--muted)]">
+								Клиника: ООО «ДЕНТЕ» · Безналичными: 7 500.00 ₽ · Наличными: 5 000.00 ₽ · ФД: 10428 · ФП: 89412093 · ИНН физлица: НЕ ТРЕБУЕТСЯ
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 

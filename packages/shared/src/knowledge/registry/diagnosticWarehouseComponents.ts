@@ -2,7 +2,7 @@ import type { CrmComponentKnowledge } from "../schemas.js";
 
 /**
  * Diagnostic, Laboratory, Warehouse & SanPiN Modules
- * Mandates: 8e (Doctor Autonomy), 8b (Anti-Monolith <800 lines), 8v (No Nurse Bloat)
+ * Mandates: 8e (Doctor Autonomy), 8b (Anti-Monolith <800 lines), 8v (No Nurse Bloat), 8ab (Soft Negative Overdraft)
  */
 
 export const CBCT_MPR_STUDIO_COMPONENT: CrmComponentKnowledge = {
@@ -14,13 +14,34 @@ export const CBCT_MPR_STUDIO_COMPONENT: CrmComponentKnowledge = {
 	description:
 		"Аппаратный просмотр радиовизиографических снимков (RVG), панорамных томограмм (ОПТГ) и 3D КЛКТ с мультипланарной реконструкцией (MPR) на WebGL2.",
 	route: "imaging",
+	navigationHint: "F7 или роут imaging (вкладка #imaging)",
 	primaryRole: ["doctor"],
 	tier: 3,
+	hotkeys: {
+		"F7": "Молниеносный захват снимка с датчика визиографа / КТ (<50 мс)",
+		"M": "Линейка калибровки кости (имплантация)",
+		"Колесо мыши": "Прокрутка срезов томограммы MPR",
+		"Esc": "Закрыть просмотрщик снимков",
+	},
+	quickTips: [
+		"Мандат 8e: снимок открывается молниеносно без обязательного ожидания нейросети",
+		"WebGL2 аппаратный рендеринг GPU предотвращает зависание страницы даже на КТ 500 МБ",
+		"Фон slate-950 (WCAG AAA) защищает зрение врача при оценке костных структур",
+	],
 	primaryActions: [
+		{
+			id: "btn-capture-rvg",
+			label: "Захват с датчика",
+			selector: '[data-tour="visiograph-open"], [data-tour="imaging-nav"], [data-testid="btn-capture-rvg-sensor"]',
+			hotkey: "F7",
+			effect: "Ожидает входящий снимок с визиографа клиники через Hot Folder без зависания интерфейса (<50мс).",
+			requiresConfirmation: false,
+			role: ["doctor"],
+		},
 		{
 			id: "btn-mpr-axial-toggle",
 			label: "Аксиальный срез",
-			selector: '[data-testid="btn-mpr-axial"]',
+			selector: '[data-tour="mpr-presets"], [data-testid="btn-mpr-axial"]',
 			effect: "Переключает активный фокус на горизонтальный срез челюсти.",
 			requiresConfirmation: false,
 			role: ["doctor"],
@@ -34,19 +55,22 @@ export const CBCT_MPR_STUDIO_COMPONENT: CrmComponentKnowledge = {
 			role: ["doctor"],
 		},
 		{
-			id: "btn-capture-rvg",
-			label: "Захват с датчика",
-			selector: '[data-testid="btn-capture-rvg-sensor"]',
-			effect: "Ожидает входящий снимок с визиографа клиники через Hot Folder без зависания интерфейса.",
+			id: "btn-caliper-measure",
+			label: "Калиброванная линейка (замер гребня)",
+			selector: '[data-tour="dicom-ruler"], [data-tour="imaging-measure"], #dicom-ruler-btn, [data-testid="dicom-caliper-tool"]',
+			hotkey: "M",
+			effect: "Измерение высоты и ширины альвеолярного гребня в миллиметрах перед имплантацией с точностью до десятой доли мм.",
 			requiresConfirmation: false,
 			role: ["doctor"],
 		},
 	],
 	selectors: {
+		visiographTrigger: '[data-tour="visiograph-open"], [data-tour="imaging-nav"], [data-testid="btn-capture-rvg-sensor"]',
+		mprPresets: '[data-tour="mpr-presets"], #dicom-mpr-toolbar',
+		caliperTool: '[data-tour="dicom-ruler"], [data-tour="imaging-measure"], #dicom-ruler-btn, [data-testid="dicom-caliper-tool"]',
 		viewport3d: '[data-testid="cbct-viewport-3d"]',
 		mprSliceContainer: '[data-testid="mpr-slices-grid"]',
 		contrastSlider: '[data-testid="dicom-contrast-slider"]',
-		caliperTool: '[data-testid="dicom-caliper-tool"]',
 	},
 	visualGuides: [
 		{
@@ -55,25 +79,74 @@ export const CBCT_MPR_STUDIO_COMPONENT: CrmComponentKnowledge = {
 			description: "3 взаимно перпендикулярных среза: аксиальный, сагиттальный, корональный.",
 			highlightType: "outline",
 		},
+		{
+			element: "Линейка замера кости",
+			selector: '[data-tour="dicom-ruler"], [data-testid="dicom-caliper-tool"]',
+			description: "Высокоточное измерение костного объема перед установкой имплантатов.",
+			badgeText: "M",
+			highlightType: "pulse",
+		},
 	],
 	clinicalWorkflow:
-		"1. Загрузка КТ или захват RVG -> 2. Быстрый рендеринг <50мс на GPU -> 3. Замер кости калипером для имплантации -> 4. Привязка снимка к карточке зуба.",
+		"1. Загрузка КТ или захват RVG (F7) -> 2. Быстрый рендеринг <50мс на GPU -> 3. Замер кости калипером для имплантации (M) -> 4. Привязка снимка к карточке зуба.",
 	faq: [
+		{
+			question: "Где смотреть снимок КТ или рентген пациента?",
+			answer: "Нажмите клавишу F7 или перейдите во вкладку 'Снимки' (селектор [data-tour='imaging-nav']). Все 3D томограммы, панорамные снимки и визиография прикреплены к карточке пациента.",
+		},
 		{
 			question: "Зависает ли интерфейс при открытии КТ 500 МБ?",
 			answer: "Нет. По Мандату 8zc рендеринг выполняется аппаратно на GPU через шейдеры WebGL2 без блокировки UI потока.",
 		},
+		{
+			question: "Как измерить расстояние до нижнечелюстного канала?",
+			answer: "Нажмите клавишу M для выбора линейки и проведите отрезок от гребня до кортикальной пластинки канала.",
+		},
 	],
 	troubleshooting: [
+		{
+			symptom: "Где смотреть снимок КТ или рентген визиографа?",
+			cause: "Поиск галереи снимков или томограммы пациента.",
+			solution: "Нажмите клавишу F7 или откройте раздел 'Снимки' (#imaging, селектор [data-tour='imaging-nav']). В окне исследования доступны срезы MPR, панорамная кривая и 3D-реконструкция без ожидания нейросети.",
+			recoverySelector: '[data-tour="imaging-nav"], [data-tour="visiograph-open"], a[href="#imaging"]',
+		},
 		{
 			symptom: "Черный экран вместо 3D-черепа",
 			cause: "В браузере отключено аппаратное ускорение WebGL.",
 			solution: "Включите аппаратное ускорение в настройках браузера (chrome://settings/system).",
+			recoverySelector: '[data-tour="mpr-presets"], [data-testid="cbct-viewport-3d"]',
+		},
+		{
+			symptom: "Визиограф клиники не передает снимок в CRM",
+			cause: "Hot Folder клиники не синхронизирован со сторонней программой датчика.",
+			solution: "Нажмите 'Захват с датчика' (F7) или перетащите снимок DICOM/TIFF напрямую в дропзону [data-tour='visiograph-open'].",
+			recoverySelector: '[data-tour="visiograph-open"]',
+		},
+		{
+			symptom: "Линейка замера показывает неверный масштаб",
+			cause: "Отсутствует шаг калибровки пикселей сенсора в метаданных файла.",
+			solution: "Нажмите калибровку линейки 'M' по известному ориентиру (например, паспортной длине имплантата).",
+			recoverySelector: '[data-tour="dicom-ruler"]',
 		},
 	],
 	scaleAdaptability: "Для маленького кабинета — простой просмотр снимков визиографа. Для центра — полный MPR анализ.",
 	complianceNotes: "DICOM Part 10, поддержка 16-битных серых шкал и калибровки миллиметровых линеек.",
-	keywords: ["кт", "снимки", "диком", "dicom", "рентген", "визиограф", "оптг", "mpr", "томография", "кость"],
+	keywords: [
+		"кт",
+		"снимки",
+		"диком",
+		"dicom",
+		"рентген",
+		"визиограф",
+		"оптг",
+		"mpr",
+		"томография",
+		"где смотреть снимок кт",
+		"снимок",
+		"кость",
+		"F7",
+		"M",
+	],
 };
 
 export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
@@ -85,8 +158,17 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 	description:
 		"Учёт стоматологических материалов, партий, сроков годности (First Expired, First Out), списание анестетиков в 1 клик и мягкий овердрафт.",
 	route: "warehouse",
+	navigationHint: "Роут warehouse (вкладка #warehouse)",
 	primaryRole: ["nurse", "admin", "owner"],
 	tier: 2,
+	hotkeys: {
+		"Esc": "Закрыть окно оприходования или списания",
+	},
+	quickTips: [
+		"Мандат 8e / 8ab: система тихо списывает материалы в отрицательный овердрафт без алертов и прерываний врача",
+		"Списание карпул анестетиков выполняется в 1 клик без комиссий из 3 человек",
+		"Партии с истекающим сроком подсвечиваются автоматически по правилу FEFO",
+	],
 	primaryActions: [
 		{
 			id: "btn-quick-carpules-deduct",
@@ -117,6 +199,7 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 		fefoTable: '[data-testid="tab-inventory-fefo"]',
 		searchInventoryInput: '[data-testid="inventory-search-input"]',
 		overdraftBadge: '[data-testid^="fefo-overdraft-badge-"]',
+		carpulesButton: '[data-testid="nurse-quick-carpules-btn"]',
 	},
 	visualGuides: [
 		{
@@ -132,19 +215,30 @@ export const WAREHOUSE_FEFO_COMPONENT: CrmComponentKnowledge = {
 	faq: [
 		{
 			question: "Заблокирует ли система операцию, если материал на складе временно числится с нулевым остатком?",
-			answer: "Никогда! Действует принцип мягкого овердрафта (Мандат 8e): спасение зуба важнее задержки бумажки.",
+			answer: "Никогда! Действует принцип мягкого овердрафта (Мандат 8e / 8ab): спасение зуба важнее задержки бумажки.",
+		},
+		{
+			question: "Как списываются карпулы Ультракаина?",
+			answer: "Нажмите 'Списать анестетики' в 1 клик, либо они спишутся автоматически по протоколу услуги визита.",
 		},
 	],
 	troubleshooting: [
 		{
-			symptom: "Остаток ушёл в минус (красный бейдж)",
+			symptom: "Остаток ушёл в минус (красный бейдж овердрафта)",
 			cause: "Материал фактически израсходован раньше проведения приходной накладной.",
-			solution: "Проведите приходную накладную от поставщика — баланс партии автоматически выровняется.",
+			solution: "Мандат 8ab: отрицательный овердрафт разрешён; проведите приходную накладную, баланс партии выровняется автоматически.",
+			recoverySelector: '[data-testid="btn-acceptance-waybills"]',
+		},
+		{
+			symptom: "Операция или приём заблокированы из-за отсутствия материала на складе?",
+			cause: "Ошибочное предположение блокировки.",
+			solution: "Мандат 8ab: софт НИКОГДА не блокирует приём из-за склада; списание происходит тихо в фоновом режиме.",
+			recoverySelector: '[data-testid="nurse-quick-carpules-btn"]',
 		},
 	],
 	scaleAdaptability: "Для соло-врача склад максимально тих и ненавязчив. Для сети — глубокий партионный учёт.",
 	complianceNotes: "СанПиН 3.3686-21, правила хранения медикаментов и дезинфицирующих средств.",
-	keywords: ["склад", "материалы", "fefo", "срок годности", "анестетики", "карпулы", "накладная", "овердрафт"],
+	keywords: ["склад", "материалы", "fefo", "срок годности", "анестетики", "карпулы", "накладная", "овердрафт", "партия"],
 };
 
 export const DENTAL_LAB_ORDERS_COMPONENT: CrmComponentKnowledge = {
@@ -156,8 +250,16 @@ export const DENTAL_LAB_ORDERS_COMPONENT: CrmComponentKnowledge = {
 	description:
 		"Управление нарядами в зуботехническую лабораторию: ортопедические конструкции (коронки, мосты, виниры, элайнеры), расцветка VITA и сроки сдачи.",
 	route: "lab",
+	navigationHint: "Роут lab (вкладка #lab)",
 	primaryRole: ["doctor", "admin"],
 	tier: 2,
+	hotkeys: {
+		"Esc": "Закрыть окно наряда ЗТЛ",
+	},
+	quickTips: [
+		"Мандат 8e: истечение 30 дней не блокирует создание нарядов ЗТЛ",
+		"В карточке наряда доступна анатомическая карта расцветки VITA по трем зонам зуба",
+	],
 	primaryActions: [
 		{
 			id: "btn-create-lab-order",
@@ -179,6 +281,8 @@ export const DENTAL_LAB_ORDERS_COMPONENT: CrmComponentKnowledge = {
 	selectors: {
 		ordersGrid: '[data-testid="lab-orders-grid"]',
 		statusPill: '[data-testid^="lab-order-status-"]',
+		createOrderButton: '[data-testid="btn-create-lab-order"]',
+		overdueFilterButton: '[data-testid="btn-filter-lab-overdue"]',
 	},
 	visualGuides: [
 		{
@@ -195,17 +299,28 @@ export const DENTAL_LAB_ORDERS_COMPONENT: CrmComponentKnowledge = {
 			question: "Как указать сложную расцветку зуба (например, шейка A3, тело A2, режущий край B1)?",
 			answer: "В карточке наряда доступна анатомическая карта расцветки VITA по трем зонам зуба.",
 		},
+		{
+			question: "Можно ли создать наряд ЗТЛ, если план лечения составлен больше 30 дней назад?",
+			answer: "Да. По Мандату 8e истечение 30 дней не блокирует работу ортопеда и создание нарядов.",
+		},
 	],
 	troubleshooting: [
 		{
 			symptom: "Работа задерживается в лаборатории",
 			cause: "Техник запросил уточнение параметров культи.",
 			solution: "Проверьте комментарии в карточке наряда и скорректируйте дату визита пациента.",
+			recoverySelector: '[data-testid="btn-filter-lab-overdue"]',
+		},
+		{
+			symptom: "Нужно скорректировать дату примерки под визит пациента",
+			cause: "Изменилось расписание пациента.",
+			solution: "Откройте наряд и измените дату этапа примерки — график автоматически синхронизируется с расписанием врача.",
+			recoverySelector: '[data-testid="lab-orders-grid"]',
 		},
 	],
 	scaleAdaptability: "Врач-ортопед напрямую работает с внешним техником, либо сеть клиник загружает собственную лабораторию.",
 	complianceNotes: "Форма заказ-наряда ЗТЛ-1, сертификаты соответствия медицинских сплавов и циркония.",
-	keywords: ["лаборатория", "зтл", "коронки", "техник", "слепок", "винил", "мост", "vita", "наряд"],
+	keywords: ["лаборатория", "зтл", "коронки", "техник", "слепок", "винил", "мост", "vita", "наряд", "примерка"],
 };
 
 export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
@@ -217,8 +332,17 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 	description:
 		"Электронный журнал СанПиН 3.3686-21: циклы автоклавирования, азопирамовая проба (ПСО), химические индикаторы 5 класса и экспорт для проверок.",
 	route: "sanpin",
+	navigationHint: "Роут sanpin (вкладка #sanpin)",
 	primaryRole: ["nurse", "doctor", "admin"],
 	tier: 2,
+	hotkeys: {
+		"Esc": "Закрыть журнал СанПиН",
+	},
+	quickTips: [
+		"Мандат 8v: запрещен крафт-пакетный маразм у кресла; лоток стерилен по умолчанию",
+		"Журнал формы 257/у формируется автоматически в 1 клик для проверок Роспотребнадзора",
+		"Никаких обязательных сканирований штрихкодов пакетов на приёме у врача",
+	],
 	primaryActions: [
 		{
 			id: "btn-sanpin-autonorm",
@@ -240,6 +364,8 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 	selectors: {
 		autoclaveLogTable: '[data-testid="sanpin-autoclave-log-table"]',
 		azopiramBadge: '[data-testid="sanpin-azopiram-status-badge"]',
+		autonormButton: '[data-testid="btn-sanpin-autonorm"]',
+		exportPdfButton: '[data-testid="btn-export-sanpin-pdf"]',
 	},
 	visualGuides: [
 		{
@@ -257,17 +383,28 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 			question: "Нужно ли врачу сканировать штрихкоды крафт-пакетов перед каждым лечением кариеса?",
 			answer: "НЕТ! По Мандату 8v крафт-пакетный маразм у кресла запрещен. Лоток стерилен по умолчанию.",
 		},
+		{
+			question: "Какие формы журналов экспортируются?",
+			answer: "Форма 257/у (журнал работы автоклава) и форма 366/у (журнал учета азопирамовых проб ПСО).",
+		},
 	],
 	troubleshooting: [
 		{
 			symptom: "Не сформировался журнал за прошлый месяц",
 			cause: "Не были привязаны даты автоклавирования к смене.",
 			solution: "Нажмите 'Авто-норма' за выбранный период — журнал заполнится нормативными циклами.",
+			recoverySelector: '[data-testid="btn-sanpin-autonorm"]',
+		},
+		{
+			symptom: "Требуется ли врачу сканировать штрихкоды крафт-пакетов перед лечением?",
+			cause: "Ошибочная попытка навязать лишнюю бюрократию врачу у кресла.",
+			solution: "Мандат 8v: врач лечит пациентов, лоток стерилен по умолчанию, журналы ведутся фоново через Авто-норму СанПиН.",
+			recoverySelector: '[data-testid="btn-sanpin-autonorm"]',
 		},
 	],
 	scaleAdaptability: "Для кабинета — тихий фоновый режим. Для сети — централизованный СанПиН комплаенс.",
 	complianceNotes: "СанПиН 3.3686-21, журнал формы 257/у, контроль предстерилизационной очистки (ПСО).",
-	keywords: ["санпин", "стерилизация", "автоклав", "азопирам", "псо", "роспотребнадзор", "журнал", "крафт-пакет"],
+	keywords: ["санпин", "стерилизация", "автоклав", "азопирам", "псо", "роспотребнадзор", "журнал", "крафт-пакет", "257у"],
 };
 
 export const DIAGNOSTIC_WAREHOUSE_COMPONENTS: readonly CrmComponentKnowledge[] = [

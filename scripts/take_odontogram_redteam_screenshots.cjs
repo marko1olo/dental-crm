@@ -114,6 +114,7 @@ const mockDashboard = {
 const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
   "C:/Users/Admin/.gemini/antigravity/brain/c8b0a113-d724-454f-ada2-66f09061b986",
+  "C:/Users/Admin/.gemini/antigravity/brain/9ea21f87-962f-4962-8237-a01bee2ebf13",
 ];
 
 for (const d of targetDirs) {
@@ -124,11 +125,11 @@ async function saveProof(page, fileName, description = "") {
   for (const dir of targetDirs) {
     const fullPath = path.join(dir, fileName);
     try {
-      await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled", timeout: 10000 });
+      await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled", timeout: 25000 });
     } catch (err) {
-      console.warn(`[WARN] Standard screenshot timed out (${err.message}), retrying without waiting for fonts...`);
-      await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});
-      await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled", timeout: 10000 });
+      console.warn(`[WARN] Standard screenshot timed out (${err.message}), retrying...`);
+      await page.waitForTimeout(1000);
+      await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled", timeout: 25000 });
     }
     const stats = fs.statSync(fullPath);
     const md5 = crypto.createHash("md5").update(fs.readFileSync(fullPath)).digest("hex");
@@ -301,7 +302,23 @@ async function run() {
     }
     await dPage.waitForTimeout(600);
 
+    const ensureOdontogramSubtab = async () => {
+      const hash = await dPage.evaluate(() => window.location.hash);
+      if (hash !== "#visit") {
+        await dPage.evaluate(() => { window.location.hash = "#visit"; });
+        await dPage.waitForTimeout(600);
+      }
+      await dPage.evaluate(() => {
+        const btn = document.querySelector('[data-testid="visit-subtab-odontogram"]') ||
+                    Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Зубная формула'));
+        if (btn) btn.click();
+      });
+      await dPage.waitForSelector('.odontogram-toolbar', { timeout: 15000 }).catch(() => {});
+      await dPage.waitForTimeout(400);
+    };
+
     // 1A. Anatomical Odontogram Desktop Light & Dark
+    await ensureOdontogramSubtab();
     await setTheme(dPage, "light");
     await saveProof(dPage, "01_odontogram_desktop_light.png", "Desktop Light Anatomical 3D Formula");
 
@@ -310,6 +327,7 @@ async function run() {
 
     // 1B. Switch to Classic GOST 043/u Table
     console.log("[Desktop] Switching to Classic GOST mode via DOM click...");
+    await ensureOdontogramSubtab();
     await dPage.evaluate(() => {
       const btn = document.querySelector('[data-testid="odontogram-mode-btn-classic_gost"]');
       if (btn) btn.click();
@@ -317,27 +335,29 @@ async function run() {
     await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 10000 }).catch(() => {});
     await dPage.waitForTimeout(800);
 
-    await setTheme(dPage, "light");
-    await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 5000 }).catch(() => {});
-    await dPage.waitForTimeout(400);
-    await saveProof(dPage, "03_odontogram_gost_desktop_light.png", "Desktop Light Classic GOST 043/u Table Grid");
-
     await setTheme(dPage, "dark");
     await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 5000 }).catch(() => {});
     await dPage.waitForTimeout(400);
     await saveProof(dPage, "04_odontogram_gost_desktop_dark.png", "Desktop Dark Classic GOST 043/u Table Grid");
 
+    await setTheme(dPage, "light");
+    await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 5000 }).catch(() => {});
+    await dPage.waitForTimeout(400);
+    await saveProof(dPage, "03_odontogram_gost_desktop_light.png", "Desktop Light Classic GOST 043/u Table Grid");
+
     // Switch back to anatomical
     console.log("[Desktop] Switching back to anatomical 3D mode via DOM click...");
+    await ensureOdontogramSubtab();
     await dPage.evaluate(() => {
       const btn = document.querySelector('[data-testid="odontogram-mode-btn-anatomical_svg"]');
       if (btn) btn.click();
     });
-    await dPage.waitForSelector('.tooth-chart-svg', { timeout: 10000 }).catch(() => {});
-    await dPage.waitForTimeout(800);
+    await dPage.waitForSelector('.tooth-chart-container, .tooth-arch-quadrant, [data-testid="quick-trigger-caries-btn"]', { timeout: 10000 }).catch(() => {});
+    await dPage.waitForTimeout(600);
 
     // 1C. Active Stamp Tool (Caries Stamp 1-Click Mode)
     console.log("[Desktop] Activating Caries Stamp tool via DOM click...");
+    await ensureOdontogramSubtab();
     await dPage.evaluate(() => {
       const stampBtn = document.querySelector('[data-testid="quick-trigger-caries-btn"]');
       if (stampBtn) stampBtn.click();
@@ -367,6 +387,7 @@ async function run() {
 
     // 1D. Open ToothRadialMenu on Tooth 14 (when NO stamp is active)
     console.log("[Desktop] Opening ToothRadialMenu on Tooth 14 via DOM click...");
+    await ensureOdontogramSubtab();
     await dPage.evaluate(() => {
       const t = document.querySelector('[data-tooth-id="14"]') ||
                 document.querySelector('.tooth-svg-wrapper[data-tooth="14"]') ||
@@ -482,12 +503,24 @@ async function run() {
 
     // 2B. Mobile Tooth Radial Menu (Bottom Sheet)
     console.log("[Mobile] Opening Tooth Bottom Sheet on Tooth 16 via DOM click...");
-    await mPage.evaluate(() => {
-      const t = document.querySelector('[data-tooth-id="16"]') ||
-                document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
-                document.querySelector('[data-testid="tooth-cell-16"]');
-      if (t) t.click();
-    });
+    await mPage.waitForTimeout(1000);
+    try {
+      await mPage.evaluate(() => {
+        const t = document.querySelector('[data-tooth-id="16"]') ||
+                  document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
+                  document.querySelector('[data-testid="tooth-cell-16"]');
+        if (t) t.click();
+      });
+    } catch (err) {
+      console.warn("[WARN] Mobile tooth click error:", err.message);
+      await mPage.waitForTimeout(1200);
+      await mPage.evaluate(() => {
+        const t = document.querySelector('[data-tooth-id="16"]') ||
+                  document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
+                  document.querySelector('[data-testid="tooth-cell-16"]');
+        if (t) t.click();
+      }).catch(() => {});
+    }
     await mPage.waitForTimeout(800);
 
     await setTheme(mPage, "light");

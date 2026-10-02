@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { WebSocket } from "ws";
@@ -264,7 +265,7 @@ export class CloudRelayClient {
 
 		const initialMs = this.config.reconnectInitialMs ?? 1000;
 		const maxMs = this.config.reconnectMaxMs ?? 30000;
-		const delay = Math.min(initialMs * Math.pow(1.5, this.reconnectAttempts), maxMs) + Math.random() * 500;
+		const delay = Math.min(initialMs * Math.pow(1.5, this.reconnectAttempts), maxMs) + randomInt(0, 500);
 
 		this.reconnectAttempts++;
 

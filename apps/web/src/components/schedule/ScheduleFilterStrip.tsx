@@ -761,6 +761,7 @@ export function ScheduleFilterStrip({
 						onClick={onQuickBooking}
 						className="schedule-toolbar-primary-quick-booking-btn h-8 min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
 						data-testid="schedule-toolbar-primary-quick-booking-btn"
+						data-tour="schedule-booking"
 						title="Быстрая запись (N) / Новая запись пациента на прием"
 						aria-label="Быстрая запись (+ Запись)"
 					>

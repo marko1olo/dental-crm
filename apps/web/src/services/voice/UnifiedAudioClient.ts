@@ -30,6 +30,7 @@ import {
 	type PendingTranscriptionRecord,
 	VoiceOfflineQueue,
 } from "./VoiceOfflineQueue";
+import type { DentalDspProfile } from "./audioFilters";
 
 export type UnifiedAudioMode =
 	| "gemini_live"
@@ -193,6 +194,23 @@ export class UnifiedAudioClient {
 
 	public getStreamManager(): AudioStreamManager | null {
 		return this.streamManager;
+	}
+
+	public setDspProfile(profile: DentalDspProfile): void {
+		this.options.filterOptions = {
+			...this.options.filterOptions,
+			dspProfile: profile,
+		};
+		if (this.streamManager) {
+			this.streamManager.setDspProfile(profile);
+		}
+	}
+
+	public getDspProfile(): DentalDspProfile {
+		if (this.streamManager) {
+			return this.streamManager.getDspProfile();
+		}
+		return this.options.filterOptions.dspProfile ?? "dental_balanced";
 	}
 
 	public getOfflineQueue(): VoiceOfflineQueue {

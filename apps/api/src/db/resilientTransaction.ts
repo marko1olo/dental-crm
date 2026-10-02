@@ -18,6 +18,7 @@
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
+import { randomInt } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { dbRaw, transactionStorage } from "./client.js";
@@ -40,6 +41,11 @@ export const RETRYABLE_PG_CODES = new Set<string>([
  */
 export const currentTenantStorage = new AsyncLocalStorage<string | null>();
 
+/**
+ * AsyncLocalStorage holding the ambient clinic / branch ID across async call boundaries.
+ */
+export const currentClinicStorage = new AsyncLocalStorage<string | null>();
+
 export interface ResilientTransactionOptions {
 	/** Maximum number of retry attempts after initial failure. Defaults to 3. */
 	maxRetries?: number;
@@ -51,6 +57,8 @@ export interface ResilientTransactionOptions {
 	jitterMs?: number;
 	/** Explicit tenant ID for RLS isolation. Preserved across all retry attempts. */
 	tenantId?: string | null;
+	/** Explicit clinic / branch ID for branch-level isolation and auditing. Preserved across all retry attempts. */
+	clinicId?: string | null;
 	/** Transaction isolation level. */
 	isolationLevel?: "read committed" | "repeatable read" | "serializable";
 	/** Callback invoked prior to each retry sleep. */
@@ -121,7 +129,7 @@ function calculateDelay(
 	jitterMs: number,
 ): number {
 	const base = initialBackoffMs * Math.pow(backoffFactor, attempt);
-	const jitter = jitterMs > 0 ? Math.floor(Math.random() * jitterMs) : 0;
+	const jitter = jitterMs > 0 ? randomInt(0, jitterMs) : 0;
 	return base + jitter;
 }
 
@@ -163,6 +171,10 @@ export async function withResilientTransaction<T>(
 		options.tenantId !== undefined
 			? options.tenantId
 			: (currentTenantStorage.getStore() ?? null);
+	const effectiveClinicId =
+		options.clinicId !== undefined
+			? options.clinicId
+			: (currentClinicStorage.getStore() ?? null);
 
 	let lastError: unknown;
 
@@ -174,8 +186,16 @@ export async function withResilientTransaction<T>(
 					if (effectiveTenantId) {
 						// Guaranteed tenant context: set_config with is_local=true cleanly
 						// scopes the tenant to this transaction, preserving isolation.
+						// Sets both app.current_tenant and app.current_organization_id for unified RLS policy compatibility.
 						await tx.execute(
-							sql`SELECT set_config('app.current_tenant', ${effectiveTenantId}, true)`,
+							sql`SELECT set_config('app.current_tenant', ${effectiveTenantId}, true), set_config('app.current_organization_id', ${effectiveTenantId}, true)`,
+						);
+					}
+					if (effectiveClinicId) {
+						// Guaranteed branch / clinic context: set_config with is_local=true cleanly
+						// scopes the branch to this transaction, preserving branch-level isolation.
+						await tx.execute(
+							sql`SELECT set_config('app.current_clinic', ${effectiveClinicId}, true)`,
 						);
 					}
 
@@ -217,6 +237,7 @@ export async function withResilientTransaction<T>(
 					delayMs,
 					pgErrorCode: code,
 					tenantId: effectiveTenantId,
+					clinicId: effectiveClinicId,
 					error: error instanceof Error ? error.message : String(error),
 				},
 				`[ResilientTransaction] Transient PG error ${code}. Retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})...`,
@@ -239,4 +260,14 @@ export async function withResilientTenantContext<T>(
 	fn: () => Promise<T>,
 ): Promise<T> {
 	return currentTenantStorage.run(tenantId, fn);
+}
+
+/**
+ * Runs an asynchronous block with ambient clinic/branch context populated in currentClinicStorage.
+ */
+export async function withResilientClinicContext<T>(
+	clinicId: string | null,
+	fn: () => Promise<T>,
+): Promise<T> {
+	return currentClinicStorage.run(clinicId, fn);
 }

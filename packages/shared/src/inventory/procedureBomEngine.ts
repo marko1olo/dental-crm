@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+	generatePurchaseOrderId,
+	generatePurchaseOrderNumber,
+} from "../utils/idGenerators.js";
 
 /**
  * ============================================================================
@@ -1183,7 +1187,9 @@ export function generateSupplierPurchaseOrder(params: {
 	const clinicName = params.clinicNameRu || "Стоматологическая клиника DENTE";
 	const bufferMultiplier = params.reorderBufferMultiplier ?? 2;
 	const dateStr = new Date().toISOString().slice(0, 10);
-	const orderNumber = `ПО-${dateStr.replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const orderNumber = generatePurchaseOrderNumber(new Date().getFullYear(), {
+		seedKey: params.visitId ?? dateStr,
+	});
 
 	const itemsMap = new Map<string, SupplierPurchaseOrderItem>();
 
@@ -1305,7 +1311,7 @@ export function generateSupplierPurchaseOrder(params: {
 	const hasDeficit = items.some((i) => i.shortfallQuantity > 0 || i.currentStock === 0);
 
 	return {
-		id: `po-${Date.now()}`,
+		id: generatePurchaseOrderId(),
 		orderNumber,
 		orderDate: dateStr,
 		...(params.visitId ? { visitId: params.visitId } : {}),

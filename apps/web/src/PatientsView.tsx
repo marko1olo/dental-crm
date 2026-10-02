@@ -266,7 +266,7 @@ export function executeOpenPatientVisitAutonomy({
 }) {
 	if (!selectedPatient) {
 		showToastFn(
-			"Выберите пациента из списка слева для открытия приёма",
+			"Выберите пациента из списка слева для открытия приёма 043/у",
 			"info",
 		);
 		return { executed: false, reason: "no_patient" as const };

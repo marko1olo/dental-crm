@@ -64,12 +64,16 @@ export const CoachMarkTooltip: React.FC<CoachMarkTooltipProps> = React.memo(({
 }) => {
 	const cardRef = useRef<HTMLElement | null>(null);
 
-	// Dynamic viewport tracking with clean unmount listener (Defect 7 fix)
+	// Dynamic viewport tracking with visualViewport support for pinch-zoom and Retina scaling
 	const [viewport, setViewport] = useState<ViewportDimensions>(() => {
 		if (typeof window === "undefined") {
 			return { width: 1920, height: 1080 };
 		}
-		return { width: window.innerWidth, height: window.innerHeight };
+		const vv = window.visualViewport;
+		return {
+			width: vv ? Math.round(vv.width) : window.innerWidth,
+			height: vv ? Math.round(vv.height) : window.innerHeight,
+		};
 	});
 
 	useEffect(() => {
@@ -79,14 +83,30 @@ export const CoachMarkTooltip: React.FC<CoachMarkTooltipProps> = React.memo(({
 		const handleResize = () => {
 			if (rafId !== null) cancelAnimationFrame(rafId);
 			rafId = requestAnimationFrame(() => {
-				setViewport({ width: window.innerWidth, height: window.innerHeight });
+				const vv = window.visualViewport;
+				setViewport({
+					width: vv ? Math.round(vv.width) : window.innerWidth,
+					height: vv ? Math.round(vv.height) : window.innerHeight,
+				});
 			});
 		};
 
 		window.addEventListener("resize", handleResize, { passive: true });
+		window.addEventListener("scroll", handleResize, { passive: true });
+		const vv = window.visualViewport;
+		if (vv) {
+			vv.addEventListener("resize", handleResize, { passive: true });
+			vv.addEventListener("scroll", handleResize, { passive: true });
+		}
+
 		return () => {
 			if (rafId !== null) cancelAnimationFrame(rafId);
 			window.removeEventListener("resize", handleResize);
+			window.removeEventListener("scroll", handleResize);
+			if (vv) {
+				vv.removeEventListener("resize", handleResize);
+				vv.removeEventListener("scroll", handleResize);
+			}
 		};
 	}, [isOpen]);
 
@@ -127,7 +147,8 @@ export const CoachMarkTooltip: React.FC<CoachMarkTooltipProps> = React.memo(({
 	if (placement.side === "bottom" || placement.side === "top") {
 		arrowStyle = { left: placement.arrowOffsetPx - 6 };
 	} else if (placement.side === "left" || placement.side === "right") {
-		arrowStyle = { top: "50%", marginTop: -6 };
+		const verticalOffset = placement.arrowOffsetYPx ?? Math.round(placement.maxHeight / 2);
+		arrowStyle = { top: verticalOffset - 6 };
 	}
 
 	return (
@@ -154,7 +175,7 @@ export const CoachMarkTooltip: React.FC<CoachMarkTooltipProps> = React.memo(({
 			)}
 
 			{/* Card Header */}
-			<div className="px-3.5 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0">
+			<div className="px-3.5 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 rounded-t-xl">
 				<div className="flex items-center gap-2 min-w-0">
 					<div className="w-6 h-6 rounded-md bg-[var(--teal-soft,rgba(14,165,233,0.12))] text-[var(--teal,#0ea5e9)] flex items-center justify-center shrink-0">
 						<Sparkles size={14} aria-hidden="true" />
@@ -225,7 +246,7 @@ export const CoachMarkTooltip: React.FC<CoachMarkTooltipProps> = React.memo(({
 			</div>
 
 			{/* Card Footer */}
-			<div className="px-3.5 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0">
+			<div className="px-3.5 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 rounded-b-xl">
 				{onNeverShowAgain && (
 					<button
 						type="button"

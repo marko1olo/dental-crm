@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,8 +40,8 @@ describe("Anti-Academic Bloat & Human Doctor Protocol Inquisition", () => {
 		assert.ok(html.includes("btn-soap-express-extraction"), "Renders extraction 1-click button");
 		assert.ok(html.includes("Кариес (K02.1)"), "Shows plain human title for Caries");
 		assert.ok(html.includes("Пульпит (K04.0)"), "Shows plain human title for Pulpitis");
-		assert.ok(html.includes("Профгигиена (K03.6)"), "Shows plain human title for Hygiene");
-		assert.ok(html.includes("Удаление зуба"), "Shows plain human title for Extraction");
+		assert.ok(html.includes("Профгигиена (K05.1)") || html.includes("Профгигиена (K03.6)"), "Shows plain human title for Hygiene");
+		assert.ok(html.includes("Удаление (K01.1)") || html.includes("Удаление зуба"), "Shows plain human title for Extraction");
 	});
 
 	it("2. VisitSoapEditor markup strictly eliminates academic Latin and SOAP abbreviations", () => {

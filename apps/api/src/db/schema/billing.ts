@@ -36,7 +36,9 @@ export const payments = pgTable(
 		patientId: uuid("patient_id")
 			.notNull()
 			.references(() => patients.id),
-		visitId: uuid("visit_id").references(() => visits.id),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
 		documentId: uuid("document_id"),
 		clientMutationId: text("client_mutation_id"),
 		/*
@@ -83,6 +85,14 @@ export const payments = pgTable(
 			idxPaymentsOrgPaidAt: index("idx_payments_org_paid_at").on(
 				table.organizationId,
 				table.paidAt,
+			),
+			idxPaymentsOrgPatient: index("idx_payments_org_patient").on(
+				table.organizationId,
+				table.patientId,
+			),
+			idxPaymentsOrgStatus: index("idx_payments_org_status").on(
+				table.organizationId,
+				table.status,
 			),
 			paymentsOrgClientMutationUnique: unique(
 				"payments_org_client_mutation_unique",

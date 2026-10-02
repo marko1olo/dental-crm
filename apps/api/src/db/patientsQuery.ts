@@ -889,15 +889,6 @@ export async function recordPatientConsentInDb(
 
 	if (!patientRow) return null;
 
-	// 1. Insert into patientConsents table
-	await db.insert(schema.patientConsents).values({
-		organizationId,
-		patientId,
-		kind: consentKind,
-		grantedAt: now,
-	});
-
-	// 2. Update patient's administrativeProfile.consentSignatures
 	const currentProfile =
 		(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
 	const currentConsentAudit =
@@ -911,22 +902,33 @@ export async function recordPatientConsentInDb(
 		},
 	};
 
-	await db
-		.update(schema.patients)
-		.set({
-			administrativeProfile: {
-				...currentProfile,
-				consentSignatures: updatedAudit,
-				// biome-ignore lint/suspicious/noExplicitAny: jsonb update
-			} as any,
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(schema.patients.id, patientId),
-				eq(schema.patients.organizationId, organizationId),
-			),
-		);
+	await db.transaction(async (tx) => {
+		// 1. Insert into patientConsents table
+		await tx.insert(schema.patientConsents).values({
+			organizationId,
+			patientId,
+			kind: consentKind,
+			grantedAt: now,
+		});
+
+		// 2. Update patient's administrativeProfile.consentSignatures
+		await tx
+			.update(schema.patients)
+			.set({
+				administrativeProfile: {
+					...currentProfile,
+					consentSignatures: updatedAudit,
+					// biome-ignore lint/suspicious/noExplicitAny: jsonb update
+				} as any,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(schema.patients.id, patientId),
+					eq(schema.patients.organizationId, organizationId),
+				),
+			);
+	});
 
 	return {
 		success: true,

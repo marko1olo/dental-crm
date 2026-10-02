@@ -7,8 +7,97 @@
  * - Mandate 8d: 7 Deadly Sins of UI (Zero visual landfill, zero cartoon emojis, WCAG AAA contrast).
  * - Mandate 8e: Doctor Autonomy (Non-blocking overlays, smooth transitions, instant dismiss).
  * - Mandate 8n: Scale Sovereignty (Clean and professional medical density).
- * - Theme Safety: Flawless contrast across Light, Dark and secondary atmospheric themes.
+ * - Theme Safety: Flawless contrast across Light, Dark, and all 8 atmospheric themes.
+ * - Hardware Accelerated: 60/120fps GPU compositing via will-change and translateZ(0).
  */
+
+/* ==========================================================================
+   0. THEME TOKENS & MEDICAL NEON HALO COLOR PALETTE
+   ========================================================================== */
+
+:root,
+:root[data-theme="light"],
+html.light {
+	--tour-halo-color: #0ea5e9;
+	--tour-halo-color-bright: #38bdf8;
+	--tour-halo-rgb: 14, 165, 233;
+	--tour-halo-glow: rgba(14, 165, 233, 0.55);
+	--tour-spotlight-backdrop: rgba(15, 23, 42, 0.62);
+}
+
+:root[data-theme="dark"],
+html.dark:not([data-theme]) {
+	--tour-halo-color: #38bdf8;
+	--tour-halo-color-bright: #7dd3fc;
+	--tour-halo-rgb: 56, 189, 248;
+	--tour-halo-glow: rgba(56, 189, 248, 0.55);
+	--tour-spotlight-backdrop: rgba(2, 6, 23, 0.78);
+}
+
+:root[data-theme="night"],
+:root[data-theme="oled"] {
+	--tour-halo-color: #38bdf8;
+	--tour-halo-color-bright: #7dd3fc;
+	--tour-halo-rgb: 56, 189, 248;
+	--tour-halo-glow: rgba(56, 189, 248, 0.55);
+	--tour-spotlight-backdrop: rgba(0, 0, 0, 0.84);
+}
+
+:root[data-theme="ocean"] {
+	--tour-halo-color: #38bdf8;
+	--tour-halo-color-bright: #7dd3fc;
+	--tour-halo-rgb: 56, 189, 248;
+	--tour-halo-glow: rgba(56, 189, 248, 0.65);
+	--tour-spotlight-backdrop: rgba(6, 18, 42, 0.80);
+}
+
+:root[data-theme="emerald"] {
+	--tour-halo-color: #10b981;
+	--tour-halo-color-bright: #34d399;
+	--tour-halo-rgb: 16, 185, 129;
+	--tour-halo-glow: rgba(16, 185, 129, 0.65);
+	--tour-spotlight-backdrop: rgba(2, 24, 16, 0.82);
+}
+
+:root[data-theme="sakura"] {
+	--tour-halo-color: #ec4899;
+	--tour-halo-color-bright: #f472b6;
+	--tour-halo-rgb: 236, 72, 153;
+	--tour-halo-glow: rgba(236, 72, 153, 0.55);
+	--tour-spotlight-backdrop: rgba(45, 12, 28, 0.68);
+}
+
+:root[data-theme="cyber_xray"] {
+	--tour-halo-color: #00f0ff;
+	--tour-halo-color-bright: #67e8f9;
+	--tour-halo-rgb: 0, 240, 255;
+	--tour-halo-glow: rgba(0, 240, 255, 0.70);
+	--tour-spotlight-backdrop: rgba(3, 8, 22, 0.84);
+}
+
+:root[data-theme="warm_sand"] {
+	--tour-halo-color: #d97706;
+	--tour-halo-color-bright: #f59e0b;
+	--tour-halo-rgb: 217, 119, 6;
+	--tour-halo-glow: rgba(217, 119, 6, 0.55);
+	--tour-spotlight-backdrop: rgba(28, 20, 10, 0.68);
+}
+
+:root[data-theme="contrast"] {
+	--tour-halo-color: #ffffff;
+	--tour-halo-color-bright: #ffffff;
+	--tour-halo-rgb: 255, 255, 255;
+	--tour-halo-glow: rgba(255, 255, 255, 0.85);
+	--tour-spotlight-backdrop: rgba(0, 0, 0, 0.88);
+}
+
+:root[data-theme="calm_teal"] {
+	--tour-halo-color: #0d9488;
+	--tour-halo-color-bright: #2dd4bf;
+	--tour-halo-rgb: 13, 148, 136;
+	--tour-halo-glow: rgba(13, 148, 136, 0.60);
+	--tour-spotlight-backdrop: rgba(12, 26, 24, 0.72);
+}
 
 /* ==========================================================================
    1. KEYFRAMES & ANIMATIONS
@@ -16,37 +105,43 @@
 
 /**
  * Concentric expanding halo ripple rings.
- * Creates an authoritative yet gentle medical glow around interactive targets.
+ * Features smooth zero-pop fade-in (0% -> 15%) and non-linear decay to prevent stutter.
  */
 @keyframes tour-halo-pulse {
 	0% {
-		transform: scale(0.96);
-		opacity: 0.85;
-		box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.55);
+		transform: scale(0.98);
+		opacity: 0;
+		box-shadow: 0 0 0 0 var(--tour-halo-glow, rgba(14, 165, 233, 0.55));
 	}
-	50% {
-		opacity: 0.45;
+	15% {
+		opacity: 0.75;
+	}
+	60% {
+		opacity: 0.35;
 	}
 	100% {
-		transform: scale(1.35);
+		transform: scale(1.32);
 		opacity: 0;
-		box-shadow: 0 0 24px 16px rgba(14, 165, 233, 0);
+		box-shadow: 0 0 24px 14px transparent;
 	}
 }
 
 @keyframes tour-halo-pulse-emerald {
 	0% {
-		transform: scale(0.96);
-		opacity: 0.85;
-		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.55);
+		transform: scale(0.98);
+		opacity: 0;
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
 	}
-	50% {
-		opacity: 0.45;
+	15% {
+		opacity: 0.75;
+	}
+	60% {
+		opacity: 0.35;
 	}
 	100% {
-		transform: scale(1.35);
+		transform: scale(1.32);
 		opacity: 0;
-		box-shadow: 0 0 24px 16px rgba(13, 148, 136, 0);
+		box-shadow: 0 0 24px 14px transparent;
 	}
 }
 
@@ -55,36 +150,40 @@
  */
 @keyframes tour-beacon-glow {
 	0%, 100% {
-		box-shadow: 0 0 12px 2px rgba(14, 165, 233, 0.4), inset 0 0 8px 1px rgba(14, 165, 233, 0.25);
-		border-color: rgba(14, 165, 233, 0.9);
+		box-shadow:
+			0 0 10px 1px var(--tour-halo-glow, rgba(14, 165, 233, 0.35)),
+			inset 0 0 6px 1px var(--tour-halo-glow, rgba(14, 165, 233, 0.2));
+		border-color: var(--tour-halo-color, rgba(14, 165, 233, 0.85));
 	}
 	50% {
-		box-shadow: 0 0 22px 6px rgba(14, 165, 233, 0.65), inset 0 0 14px 2px rgba(14, 165, 233, 0.45);
-		border-color: #38bdf8;
+		box-shadow:
+			0 0 18px 4px var(--tour-halo-glow, rgba(14, 165, 233, 0.55)),
+			inset 0 0 10px 2px var(--tour-halo-glow, rgba(14, 165, 233, 0.35));
+		border-color: var(--tour-halo-color-bright, #38bdf8);
 	}
 }
 
 /**
- * Gentle vertical bounce for the "Click here" pin badge.
+ * Gentle vertical bounce for the "Click here" pin badge with preserved horizontal centering.
  */
 @keyframes tour-pointer-bounce-vertical {
 	0%, 100% {
-		transform: translateY(0);
+		transform: translateX(-50%) translateY(0);
 	}
 	50% {
-		transform: translateY(-6px);
+		transform: translateX(-50%) translateY(-5px);
 	}
 }
 
 /**
- * Gentle horizontal bounce for left/right pin badges.
+ * Gentle horizontal bounce for left/right pin badges with preserved vertical centering.
  */
 @keyframes tour-pointer-bounce-horizontal {
 	0%, 100% {
-		transform: translateX(0);
+		transform: translateY(-50%) translateX(0);
 	}
 	50% {
-		transform: translateX(-6px);
+		transform: translateY(-50%) translateX(-5px);
 	}
 }
 
@@ -113,12 +212,12 @@
 
 .tour-spotlight-backdrop {
 	transition: fill 0.3s ease;
-	fill: rgba(15, 23, 42, 0.62);
+	fill: var(--tour-spotlight-backdrop, rgba(15, 23, 42, 0.62));
 }
 
 :root[data-theme="dark"] .tour-spotlight-backdrop,
 .dark .tour-spotlight-backdrop {
-	fill: rgba(2, 6, 23, 0.76);
+	fill: var(--tour-spotlight-backdrop, rgba(2, 6, 23, 0.78));
 }
 
 /* Smooth interpolation when moving the spotlight cutout between elements */
@@ -154,25 +253,31 @@
 	border-radius: 8px;
 }
 
-/* Outer primary ripple */
+/* Outer primary ripple — true concentric origin with hardware GPU promotion */
 .tour-halo-ring {
 	position: absolute;
-	inset: -8px;
+	inset: -6px;
 	border-radius: inherit;
-	border: 2px solid rgba(14, 165, 233, 0.6);
+	border: 2px solid var(--tour-halo-glow, rgba(14, 165, 233, 0.6));
 	animation: tour-halo-pulse 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 	pointer-events: none;
+	will-change: transform, opacity;
+	backface-visibility: hidden;
+	transform: translateZ(0);
 }
 
-/* Secondary delayed ripple for richer cinematic wave effect */
+/* Secondary delayed ripple — true harmonic concentric wave */
 .tour-halo-ring-delayed {
 	position: absolute;
-	inset: -14px;
+	inset: -6px;
 	border-radius: inherit;
-	border: 2px solid rgba(14, 165, 233, 0.4);
+	border: 2px solid var(--tour-halo-glow, rgba(14, 165, 233, 0.4));
 	animation: tour-halo-pulse 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
-	animation-delay: 0.75s;
+	animation-delay: 0.85s;
 	pointer-events: none;
+	will-change: transform, opacity;
+	backface-visibility: hidden;
+	transform: translateZ(0);
 }
 
 /* Inner tight illuminated border */
@@ -180,9 +285,12 @@
 	position: absolute;
 	inset: 0;
 	border-radius: inherit;
-	border: 2px solid #0ea5e9;
+	border: 2px solid var(--tour-halo-color, #0ea5e9);
 	animation: tour-beacon-glow 2.5s ease-in-out infinite;
 	pointer-events: none;
+	will-change: border-color, box-shadow;
+	backface-visibility: hidden;
+	transform: translateZ(0);
 }
 
 /* Pointer badge indicator ("Кликните сюда") */
@@ -193,13 +301,15 @@
 	gap: 6px;
 	padding: 4px 10px;
 	border-radius: 9999px;
-	background: #0ea5e9;
+	background: var(--tour-halo-color, #0ea5e9);
 	color: #ffffff;
 	font-family: inherit;
 	font-size: 11px;
 	font-weight: 700;
 	letter-spacing: 0.02em;
-	box-shadow: 0 4px 14px rgba(14, 165, 233, 0.5), 0 2px 6px rgba(0, 0, 0, 0.15);
+	box-shadow:
+		0 4px 14px var(--tour-halo-glow, rgba(14, 165, 233, 0.5)),
+		0 2px 6px rgba(0, 0, 0, 0.15);
 	white-space: nowrap;
 	pointer-events: none;
 	user-select: none;
@@ -250,15 +360,15 @@
 	box-shadow:
 		0 20px 25px -5px rgba(0, 0, 0, 0.22),
 		0 10px 10px -5px rgba(0, 0, 0, 0.12),
-		0 0 0 1px rgba(14, 165, 233, 0.15);
+		0 0 0 1px rgba(var(--tour-halo-rgb, 14, 165, 233), 0.15);
 	font-family: inherit;
-	overflow: hidden;
+	overflow: visible; /* Allows pointer arrow to protrude without clipping */
 	display: flex;
 	flex-direction: column;
 	pointer-events: auto;
 	transition:
-		top 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-		left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+		top 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		left 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root[data-theme="dark"] .tour-coach-tooltip,
@@ -268,45 +378,67 @@
 	box-shadow:
 		0 25px 35px -5px rgba(0, 0, 0, 0.65),
 		0 15px 15px -5px rgba(0, 0, 0, 0.4),
-		0 0 0 1px rgba(56, 189, 248, 0.2);
+		0 0 0 1px rgba(var(--tour-halo-rgb, 56, 189, 248), 0.25);
 }
 
-/* Tooltip Arrow Pointer */
+/* Tooltip Arrow Pointer with seamless backgrounds */
 .tour-tooltip-arrow {
 	position: absolute;
 	width: 12px;
 	height: 12px;
-	background: inherit;
-	border: inherit;
 	transform: rotate(45deg);
 	pointer-events: none;
+	z-index: 10;
 }
 
 .tour-tooltip-arrow-top {
-	top: -7px;
-	border-right: none;
-	border-bottom: none;
+	top: -6px;
+	background: var(--paper-soft, #f8fafc);
+	border-left: 1px solid var(--line, #e2e8f0);
+	border-top: 1px solid var(--line, #e2e8f0);
 }
 
 .tour-tooltip-arrow-bottom {
-	bottom: -7px;
-	border-left: none;
-	border-top: none;
+	bottom: -6px;
+	background: var(--paper-soft, #f8fafc);
+	border-right: 1px solid var(--line, #e2e8f0);
+	border-bottom: 1px solid var(--line, #e2e8f0);
 }
 
 .tour-tooltip-arrow-left {
-	left: -7px;
-	border-top: none;
-	border-right: none;
+	left: -6px;
+	background: var(--paper, #ffffff);
+	border-left: 1px solid var(--line, #e2e8f0);
+	border-bottom: 1px solid var(--line, #e2e8f0);
 }
 
 .tour-tooltip-arrow-right {
-	right: -7px;
-	border-bottom: none;
-	border-left: none;
+	right: -6px;
+	background: var(--paper, #ffffff);
+	border-right: 1px solid var(--line, #e2e8f0);
+	border-top: 1px solid var(--line, #e2e8f0);
 }
 
-/* Typography & Contrast Safety across Light, Dark and Atmospheric themes */
+:root[data-theme="dark"] .tour-tooltip-arrow,
+.dark .tour-tooltip-arrow {
+	border-color: var(--line, #334155);
+}
+
+:root[data-theme="dark"] .tour-tooltip-arrow-top,
+:root[data-theme="dark"] .tour-tooltip-arrow-bottom,
+.dark .tour-tooltip-arrow-top,
+.dark .tour-tooltip-arrow-bottom {
+	background: var(--paper-soft, #1e293b);
+}
+
+:root[data-theme="dark"] .tour-tooltip-arrow-left,
+:root[data-theme="dark"] .tour-tooltip-arrow-right,
+.dark .tour-tooltip-arrow-left,
+.dark .tour-tooltip-arrow-right {
+	background: var(--paper, #0f172a);
+}
+
+/* Typography & Contrast Safety across Light, Dark, and Atmospheric themes */
 .tour-coach-tooltip h3 {
 	color: var(--ink, #0f172a);
 }

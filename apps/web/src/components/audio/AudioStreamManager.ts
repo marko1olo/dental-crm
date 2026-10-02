@@ -21,15 +21,27 @@ import {
 	registerDentalAudioWorklet,
 } from "./AudioWorkletProcessor";
 import { logger } from "../../utils/logger";
+import {
+	DENTAL_DSP_PRESETS,
+	type DentalDspProfile,
+} from "../../services/voice/audioFilters";
 
 export interface DentalNoiseFilterOptions {
 	enableHighpass?: boolean | undefined; // Default true: 120 Hz
 	highpassFrequency?: number | undefined;
 	enableLowpass?: boolean | undefined; // Default true: 7200 Hz
 	lowpassFrequency?: number | undefined;
-	enableNotch?: boolean | undefined; // Default true: 4000 Hz
+	enableNotch?: boolean | undefined; // Default true: 4500 Hz
 	notchFrequency?: number | undefined;
 	notchQ?: number | undefined;
+	enableTurbineNotch2?: boolean | undefined; // Default true: 6000 Hz
+	notch2Frequency?: number | undefined;
+	notch2Q?: number | undefined;
+	enableCompressor?: boolean | undefined; // Default true (Far-field auto-leveler)
+	compressorThreshold?: number | undefined;
+	compressorRatio?: number | undefined;
+	enableLimiter?: boolean | undefined;
+	dspProfile?: DentalDspProfile | undefined;
 }
 
 export interface VadOptions {
@@ -62,6 +74,14 @@ export interface ResolvedDentalNoiseFilterOptions {
 	enableNotch: boolean;
 	notchFrequency: number;
 	notchQ: number;
+	enableTurbineNotch2: boolean;
+	notch2Frequency: number;
+	notch2Q: number;
+	enableCompressor: boolean;
+	compressorThreshold: number;
+	compressorRatio: number;
+	enableLimiter: boolean;
+	dspProfile: DentalDspProfile;
 }
 
 export interface ResolvedVadOptions {
@@ -94,6 +114,9 @@ export class AudioStreamManager {
 	private highpassFilter: BiquadFilterNode | null = null;
 	private lowpassFilter: BiquadFilterNode | null = null;
 	private notchFilter: BiquadFilterNode | null = null;
+	private notch2Filter: BiquadFilterNode | null = null;
+	private compressorNode: DynamicsCompressorNode | null = null;
+	private limiterNode: DynamicsCompressorNode | null = null;
 	private gainNode: GainNode | null = null;
 	private analyserNode: AnalyserNode | null = null;
 	private workletNode: AudioWorkletNode | null = null;
@@ -117,17 +140,28 @@ export class AudioStreamManager {
 	private silenceTimeoutTriggered = false;
 
 	constructor(config: AudioStreamManagerConfig = {}) {
+		const profile = config.filterOptions?.dspProfile ?? "dental_balanced";
+		const preset = DENTAL_DSP_PRESETS[profile];
+
 		this.config = {
 			targetSampleRate: config.targetSampleRate ?? 16000,
 			chunkSize: config.chunkSize ?? 2048,
 			filterOptions: {
-				enableHighpass: config.filterOptions?.enableHighpass ?? true,
-				highpassFrequency: config.filterOptions?.highpassFrequency ?? 120,
-				enableLowpass: config.filterOptions?.enableLowpass ?? true,
-				lowpassFrequency: config.filterOptions?.lowpassFrequency ?? 7200,
-				enableNotch: config.filterOptions?.enableNotch ?? true,
-				notchFrequency: config.filterOptions?.notchFrequency ?? 4000,
-				notchQ: config.filterOptions?.notchQ ?? 4.0,
+				enableHighpass: config.filterOptions?.enableHighpass ?? preset.enableHighpass,
+				highpassFrequency: config.filterOptions?.highpassFrequency ?? preset.highpassFrequency,
+				enableLowpass: config.filterOptions?.enableLowpass ?? preset.enableLowpass,
+				lowpassFrequency: config.filterOptions?.lowpassFrequency ?? preset.lowpassFrequency,
+				enableNotch: config.filterOptions?.enableNotch ?? preset.enableTurbineNotch1,
+				notchFrequency: config.filterOptions?.notchFrequency ?? preset.notch1Frequency,
+				notchQ: config.filterOptions?.notchQ ?? preset.notch1Q,
+				enableTurbineNotch2: config.filterOptions?.enableTurbineNotch2 ?? preset.enableTurbineNotch2,
+				notch2Frequency: config.filterOptions?.notch2Frequency ?? preset.notch2Frequency,
+				notch2Q: config.filterOptions?.notch2Q ?? preset.notch2Q,
+				enableCompressor: config.filterOptions?.enableCompressor ?? preset.enableCompressor,
+				compressorThreshold: config.filterOptions?.compressorThreshold ?? preset.compressorThreshold,
+				compressorRatio: config.filterOptions?.compressorRatio ?? preset.compressorRatio,
+				enableLimiter: config.filterOptions?.enableLimiter ?? preset.enableLimiter,
+				dspProfile: profile,
 			},
 			vadOptions: {
 				enabled: config.vadOptions?.enabled ?? true,
@@ -204,7 +238,7 @@ export class AudioStreamManager {
 				this.lowpassFilter = lowpass;
 			}
 
-			// 4c. Notch фильтр: срезает турбинный резонанс 4000Hz
+			// 4c. Notch фильтр 1: срезает турбинный резонанс (4500Hz)
 			if (this.config.filterOptions.enableNotch) {
 				const notch = audioCtx.createBiquadFilter();
 				notch.type = "notch";
@@ -215,7 +249,44 @@ export class AudioStreamManager {
 				this.notchFilter = notch;
 			}
 
-			// 4d. Gain Node
+			// 4d. Notch фильтр 2: срезает 2-ю гармонику турбины / пьезо-скейлер (6000Hz)
+			if (this.config.filterOptions.enableTurbineNotch2) {
+				const notch2 = audioCtx.createBiquadFilter();
+				notch2.type = "notch";
+				notch2.frequency.value = this.config.filterOptions.notch2Frequency;
+				notch2.Q.value = this.config.filterOptions.notch2Q;
+				lastNode.connect(notch2);
+				lastNode = notch2;
+				this.notch2Filter = notch2;
+			}
+
+			// 4e. Dynamic Range Compressor (выравнивание тихого голоса врача с расстояния 2-4 м)
+			if (this.config.filterOptions.enableCompressor) {
+				const comp = audioCtx.createDynamicsCompressor();
+				comp.threshold.value = this.config.filterOptions.compressorThreshold;
+				comp.knee.value = 12;
+				comp.ratio.value = this.config.filterOptions.compressorRatio;
+				comp.attack.value = 0.003;
+				comp.release.value = 0.15;
+				lastNode.connect(comp);
+				lastNode = comp;
+				this.compressorNode = comp;
+			}
+
+			// 4f. Brickwall Limiter (защита от перегруза и клиппинга)
+			if (this.config.filterOptions.enableLimiter) {
+				const lim = audioCtx.createDynamicsCompressor();
+				lim.threshold.value = -2.0;
+				lim.knee.value = 2.0;
+				lim.ratio.value = 20.0;
+				lim.attack.value = 0.001;
+				lim.release.value = 0.05;
+				lastNode.connect(lim);
+				lastNode = lim;
+				this.limiterNode = lim;
+			}
+
+			// 4g. Gain Node
 			const gain = audioCtx.createGain();
 			gain.gain.value = 1.0;
 			lastNode.connect(gain);
@@ -632,6 +703,33 @@ export class AudioStreamManager {
 			this.notchFilter = null;
 		}
 
+		if (this.notch2Filter) {
+			try {
+				this.notch2Filter.disconnect();
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] notch2Filter disconnect error:", err);
+			}
+			this.notch2Filter = null;
+		}
+
+		if (this.compressorNode) {
+			try {
+				this.compressorNode.disconnect();
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] compressorNode disconnect error:", err);
+			}
+			this.compressorNode = null;
+		}
+
+		if (this.limiterNode) {
+			try {
+				this.limiterNode.disconnect();
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] limiterNode disconnect error:", err);
+			}
+			this.limiterNode = null;
+		}
+
 		if (this.gainNode) {
 			try {
 				this.gainNode.disconnect();
@@ -686,6 +784,69 @@ export class AudioStreamManager {
 			} catch (err: unknown) {
 				logger.warn("[AudioStreamManager] audioContext close error:", err);
 			}
+		}
+	}
+
+	public getDspProfile(): DentalDspProfile {
+		return this.config.filterOptions.dspProfile;
+	}
+
+	public setDspProfile(profile: DentalDspProfile): void {
+		const preset = DENTAL_DSP_PRESETS[profile];
+		this.config.filterOptions = {
+			...this.config.filterOptions,
+			enableHighpass: preset.enableHighpass,
+			highpassFrequency: preset.highpassFrequency,
+			enableLowpass: preset.enableLowpass,
+			lowpassFrequency: preset.lowpassFrequency,
+			enableNotch: preset.enableTurbineNotch1,
+			notchFrequency: preset.notch1Frequency,
+			notchQ: preset.notch1Q,
+			enableTurbineNotch2: preset.enableTurbineNotch2,
+			notch2Frequency: preset.notch2Frequency,
+			notch2Q: preset.notch2Q,
+			enableCompressor: preset.enableCompressor,
+			compressorThreshold: preset.compressorThreshold,
+			compressorRatio: preset.compressorRatio,
+			enableLimiter: preset.enableLimiter,
+			dspProfile: profile,
+		};
+
+		if (this.highpassFilter && this.audioContext) {
+			this.highpassFilter.frequency.setValueAtTime(
+				preset.highpassFrequency,
+				this.audioContext.currentTime,
+			);
+		}
+		if (this.notchFilter && this.audioContext) {
+			this.notchFilter.frequency.setValueAtTime(
+				preset.notch1Frequency,
+				this.audioContext.currentTime,
+			);
+			this.notchFilter.Q.setValueAtTime(
+				preset.notch1Q,
+				this.audioContext.currentTime,
+			);
+		}
+		if (this.notch2Filter && this.audioContext) {
+			this.notch2Filter.frequency.setValueAtTime(
+				preset.notch2Frequency,
+				this.audioContext.currentTime,
+			);
+			this.notch2Filter.Q.setValueAtTime(
+				preset.notch2Q,
+				this.audioContext.currentTime,
+			);
+		}
+		if (this.compressorNode && this.audioContext) {
+			this.compressorNode.threshold.setValueAtTime(
+				preset.compressorThreshold,
+				this.audioContext.currentTime,
+			);
+			this.compressorNode.ratio.setValueAtTime(
+				preset.compressorRatio,
+				this.audioContext.currentTime,
+			);
 		}
 	}
 }

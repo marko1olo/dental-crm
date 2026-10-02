@@ -55,7 +55,9 @@ export const visits = pgTable(
 		patientId: uuid("patient_id")
 			.notNull()
 			.references(() => patients.id),
-		appointmentId: uuid("appointment_id").references(() => appointments.id),
+		appointmentId: uuid("appointment_id").references(() => appointments.id, {
+			onDelete: "set null",
+		}),
 		status: visitStatus("status").notNull().default("draft"),
 		qualityControlStatus: text("quality_control_status").default("pending"),
 		revision: integer("revision").notNull().default(1),
@@ -82,6 +84,18 @@ export const visits = pgTable(
 			).on(table.id, table.patientId, table.organizationId),
 			organizationIdIdx: index("visits_organization_id_idx").on(
 				table.organizationId,
+			),
+			idxVisitsOrgPatient: index("idx_visits_org_patient").on(
+				table.organizationId,
+				table.patientId,
+			),
+			idxVisitsOrgCreatedAt: index("idx_visits_org_created_at").on(
+				table.organizationId,
+				table.createdAt,
+			),
+			idxVisitsOrgStatus: index("idx_visits_org_status").on(
+				table.organizationId,
+				table.status,
 			),
 			patientIdIdx: index("visits_patient_id_idx").on(table.patientId),
 			appointmentIdIdx: index("visits_appointment_id_idx").on(
@@ -154,8 +168,12 @@ export const treatmentItems = pgTable(
 		patientId: uuid("patient_id")
 			.notNull()
 			.references(() => patients.id),
-		visitId: uuid("visit_id").references(() => visits.id),
-		serviceId: uuid("service_id").references(() => serviceCatalogItems.id),
+		visitId: uuid("visit_id").references(() => visits.id, {
+			onDelete: "set null",
+		}),
+		serviceId: uuid("service_id").references(() => serviceCatalogItems.id, {
+			onDelete: "restrict",
+		}),
 		toothCode: text("tooth_code"),
 		title: text("title").notNull(),
 		quantity: numeric("quantity", { precision: 10, scale: 2 })
@@ -214,6 +232,14 @@ export const treatmentItems = pgTable(
 	(t) => ({
 		organizationIdIdx: index("treatment_items_organization_id_idx").on(
 			t.organizationId,
+		),
+		idxTreatmentItemsOrgPatient: index("idx_treatment_items_org_patient").on(
+			t.organizationId,
+			t.patientId,
+		),
+		idxTreatmentItemsOrgStatus: index("idx_treatment_items_org_status").on(
+			t.organizationId,
+			t.status,
 		),
 		patientIdIdx: index("treatment_items_patient_id_idx").on(t.patientId),
 		visitIdIdx: index("treatment_items_visit_id_idx").on(t.visitId),

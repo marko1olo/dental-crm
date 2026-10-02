@@ -1,0 +1,258 @@
+/* MicrophoneCalibrationModal.css — Стили модалки калибровки микрофона врача DENTE */
+
+.dente-calibration-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.6);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+}
+
+.dente-calibration-card {
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: var(--radius-lg, 12px);
+	box-shadow: var(--shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.1));
+	width: 100%;
+	max-width: 680px;
+	max-height: 90vh;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px 24px;
+}
+
+.dente-calibration-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	padding-bottom: 12px;
+}
+
+.dente-calibration-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dente-calibration-close-btn {
+	background: transparent;
+	border: none;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	padding: 6px;
+	border-radius: 6px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dente-calibration-close-btn:hover {
+	background: var(--paper, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+.dente-calibration-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dente-section-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dente-acoustic-assessment-box {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 10px;
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 12px;
+}
+
+.dente-assessment-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.dente-tile-label {
+	font-size: 11px;
+	color: var(--muted, #64748b);
+}
+
+.dente-tile-value {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	font-family: var(--font-mono, monospace);
+}
+
+.dente-verdict-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	line-height: 1.4;
+	border: 1px solid transparent;
+}
+
+.dente-verdict-banner.excellent {
+	background: rgba(16, 185, 129, 0.1);
+	border-color: rgba(16, 185, 129, 0.3);
+	color: #065f46;
+}
+
+.dente-verdict-banner.good {
+	background: rgba(13, 148, 136, 0.1);
+	border-color: rgba(13, 148, 136, 0.3);
+	color: #0f766e;
+}
+
+.dente-verdict-banner.moderate {
+	background: rgba(245, 158, 11, 0.1);
+	border-color: rgba(245, 158, 11, 0.3);
+	color: #92400e;
+}
+
+.dente-verdict-banner.critical {
+	background: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.3);
+	color: #991b1b;
+}
+
+.dente-sim-panel {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	background: var(--paper, #f1f5f9);
+	border: 1px dashed var(--line, #cbd5e1);
+	border-radius: 8px;
+	font-size: 12px;
+	gap: 12px;
+}
+
+.dente-sim-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dente-sim-btn {
+	padding: 6px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	border-radius: 6px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dente-sim-btn:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.dente-sim-btn.active {
+	background: #ef4444;
+	color: #ffffff;
+	border-color: #ef4444;
+}
+
+.dente-formula-test-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 8px;
+}
+
+.dente-formula-test-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 8px 12px;
+	background: var(--paper, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: left;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dente-formula-test-btn:hover {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
+	border-color: var(--teal, #0d9488);
+}
+
+.dente-formula-phrase {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.dente-formula-target {
+	font-size: 11px;
+	color: var(--muted, #64748b);
+}
+
+.dente-calibration-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	padding-top: 14px;
+	margin-top: 4px;
+}
+
+.dente-btn-secondary {
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--ink, #0f172a);
+	background: var(--paper, #f1f5f9);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.dente-btn-secondary:hover {
+	background: var(--paper-subtle, var(--paper-soft));
+}
+
+.dente-btn-primary {
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #ffffff;
+	background: var(--teal, #0d9488);
+	border: 1px solid var(--teal-dark, #0f766e);
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.dente-btn-primary:hover {
+	background: var(--teal-dark, #0f766e);
+}

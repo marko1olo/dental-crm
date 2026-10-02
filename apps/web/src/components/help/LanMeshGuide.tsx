@@ -12,25 +12,79 @@
  * - Hotkeys, FAQs, and interactive tour button
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
+	Activity,
+	CheckCircle2,
 	Gamepad2,
 	HelpCircle,
 	Laptop,
 	Network,
 	QrCode,
+	RefreshCw,
 	ShieldAlert,
+	ShieldCheck,
 	Smartphone,
 	Sparkles,
 	Wifi,
 	WifiOff,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const LanMeshGuide: React.FC = () => {
+interface MeshNode {
+	id: string;
+	name: string;
+	role: string;
+	ip: string;
+	syncStatus: "synced" | "syncing" | "standby";
+	lastTx: string;
+}
+
+const INITIAL_NODES: MeshNode[] = [
+	{
+		id: "node-reception",
+		name: "ПК Регистратуры",
+		role: "Ресепшен (Касса, Запись)",
+		ip: "192.168.1.101",
+		syncStatus: "synced",
+		lastTx: "10:14:02 (Чек 54-ФЗ №148)",
+	},
+	{
+		id: "node-surgery",
+		name: "Планшет Хирургии",
+		role: "У кресла (Одонтограмма, КТ)",
+		ip: "192.168.1.105",
+		syncStatus: "synced",
+		lastTx: "10:14:15 (Зуб 2.6 Пульпит)",
+	},
+	{
+		id: "node-doctor-laptop",
+		name: "Ноутбук Главврача",
+		role: "Кабинет (Планы, Аудит)",
+		ip: "192.168.1.108",
+		syncStatus: "synced",
+		lastTx: "10:13:50 (План лечения Оптимум)",
+	},
+];
+
+export const LanMeshGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [nodes] = useState<MeshNode[]>(INITIAL_NODES);
+	const [isInternetOnline, setIsInternetOnline] = useState<boolean>(true);
+	const [pairingMode, setPairingMode] = useState<"pin" | "qr">("pin");
+	const [simulatedTxCount, setSimulatedTxCount] = useState<number>(42);
+
 	const handleLaunchTour = () => {
-		startDoctorTour("solo_doctor");
+		if (onLaunchTour) {
+			onLaunchTour("solo_doctor");
+		} else {
+			startDoctorTour("solo_doctor");
+		}
+	};
+
+	const handleSimulateLocalTx = () => {
+		setSimulatedTxCount((c) => c + 1);
 	};
 
 	return (
@@ -51,6 +105,167 @@ export const LanMeshGuide: React.FC = () => {
 						Беспроводное сопряжение планшетов iPad и Android у кресла по 6-значному PIN или QR-коду за 5 секунд.
 						Гарантирует 100% работу клиники при отключении интернета у провайдера.
 					</div>
+				</div>
+			</div>
+
+			{/* Interactive Visual Preview: Topology Schematics & P2P Mesh Monitor */}
+			<div className="rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs space-y-0">
+				{/* Top Status Bar: Quiet Green LAN Beacon & WAN Toggle */}
+				<div className="p-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+						<span className="font-bold text-xs text-[var(--ink)]">
+							Локальная сеть клиники: P2P Mesh активен
+						</span>
+						<span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
+							3 узла • 0 коллизий
+						</span>
+					</div>
+
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsInternetOnline((v) => !v)}
+							className={`h-7 px-2.5 rounded border text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+								isInternetOnline
+									? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
+									: "bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-200"
+							}`}
+							title="Переключить состояние интернет-провайдера для проверки автономности"
+						>
+							{isInternetOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+							<span>{isInternetOnline ? "Интернет: Онлайн" : "Интернет: Отключен (Офлайн-режим)"}</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleSimulateLocalTx}
+							className="h-7 px-2 rounded bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+							title="Симулировать сохранение дневника по локальной сети"
+						>
+							<RefreshCw size={11} />
+							<span>Записать транзакцию ({simulatedTxCount})</span>
+						</button>
+					</div>
+				</div>
+
+				{/* Network Topology 3-Node Interactive Diagram */}
+				<div className="p-3 bg-[var(--paper)] space-y-3">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+						{nodes.map((node) => (
+							<div
+								key={node.id}
+								className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] space-y-2 hover:border-indigo-500/50 transition-all"
+							>
+								<div className="flex items-center justify-between pb-1.5 border-b border-[var(--line)]">
+									<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
+										{node.id === "node-surgery" ? (
+											<Smartphone size={14} className="text-indigo-600 dark:text-indigo-400" />
+										) : node.id === "node-doctor-laptop" ? (
+											<Laptop size={14} className="text-indigo-600 dark:text-indigo-400" />
+										) : (
+											<Network size={14} className="text-indigo-600 dark:text-indigo-400" />
+										)}
+										<span className="truncate">{node.name}</span>
+									</div>
+									<span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+										CRDT OK
+									</span>
+								</div>
+
+								<div className="space-y-1 text-[11px]">
+									<div className="text-[var(--muted)] text-[10px]">{node.role}</div>
+									<div className="font-mono text-[10px] text-[var(--ink)] flex items-center justify-between">
+										<span>IP адрес:</span>
+										<span className="font-semibold text-indigo-600 dark:text-indigo-400">{node.ip}</span>
+									</div>
+									<div className="text-[10px] text-[var(--muted)] flex items-center justify-between pt-0.5 border-t border-[var(--line)]/50">
+										<span>Посл. дельта:</span>
+										<span className="truncate max-w-[130px] font-medium text-[var(--ink)]">{node.lastTx}</span>
+									</div>
+								</div>
+							</div>
+						))}
+					</div>
+
+					{/* Survivability Banner during simulated outage */}
+					{!isInternetOnline && (
+						<div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-[11px] text-amber-900 dark:text-amber-200">
+							<ShieldAlert size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+							<div>
+								<span className="font-bold">Внешний интернет недоступен! Режим автономного Wi-Fi Mesh:</span>
+								<p className="text-[10px] text-amber-800/90 dark:text-amber-300/90 mt-0.5 leading-normal">
+									Все 3 рабочих места синхронизируются напрямую по протоколу UDP/TCP через локальный Wi-Fi роутер.
+									Одонтограмма, касса 54-ФЗ и снимки сохраняются в локальный IndexedDB без риска потери данных.
+								</p>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* 5-Second Pairing Simulator (PIN vs QR) */}
+				<div className="p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] space-y-2.5">
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
+							<ShieldCheck size={14} className="text-indigo-600 dark:text-indigo-400" />
+							<span>Быстрое сопряжение планшета у кресла за 5 секунд</span>
+						</div>
+
+						<div className="flex items-center rounded-md border border-[var(--line)] bg-[var(--paper)] p-0.5 text-[10px]">
+							<button
+								type="button"
+								onClick={() => setPairingMode("pin")}
+								className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+									pairingMode === "pin"
+										? "bg-indigo-600 text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								6-значный PIN
+							</button>
+							<button
+								type="button"
+								onClick={() => setPairingMode("qr")}
+								className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+									pairingMode === "qr"
+										? "bg-indigo-600 text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+							>
+								QR-код камеры
+							</button>
+						</div>
+					</div>
+
+					{pairingMode === "pin" ? (
+						<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
+							<div className="space-y-0.5">
+								<div className="text-[11px] font-semibold text-[var(--ink)]">
+									Код сопряжения для браузера планшета:
+								</div>
+								<div className="text-[10px] text-[var(--muted)]">
+									Введите на планшете по адресу <code className="text-indigo-600 font-bold">192.168.1.101:5173</code>
+								</div>
+							</div>
+							<div className="px-3 py-1.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 font-mono font-bold text-base text-indigo-700 dark:text-indigo-300 tracking-wider">
+								482 915
+							</div>
+						</div>
+					) : (
+						<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
+							<div className="space-y-0.5">
+								<div className="text-[11px] font-semibold text-[var(--ink)]">
+									Наведите камеру планшета на этот экран:
+								</div>
+								<div className="text-[10px] text-[var(--muted)]">
+									Быстрый переход по защищённой ссылке <code className="text-indigo-600 font-bold">dente://pair?key=crdt-78a</code>
+								</div>
+							</div>
+							<div className="p-2 rounded bg-white border border-[var(--line)] flex items-center justify-center shrink-0">
+								<QrCode size={40} className="text-slate-900" />
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 

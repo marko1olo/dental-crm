@@ -5,6 +5,10 @@ import {
 } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
+import {
+	dispatchCrmAction,
+	copilotActionRunner,
+} from "../../services/ai";
 import type {
 	ConfirmUiMessage,
 	CopilotNudge,
@@ -210,6 +214,19 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 
 				if (isOk && data.name) {
 					cacheNames(String(data.name), res);
+					const toolArgs =
+						(data.args as Record<string, unknown>) ||
+						(data.arguments as Record<string, unknown>) ||
+						{};
+					dispatchCrmAction(
+						{
+							callId,
+							name: String(data.name),
+							arguments: toolArgs,
+							confirmed: true,
+						},
+						apiBaseUrl,
+					).catch(() => {});
 				}
 			} else if (
 				event === "confirmation_required" ||
@@ -445,6 +462,31 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 			setBusy(true);
 			setPhase("working");
 
+			const targetMsg = messages.find(
+				(m) => m.kind === "confirmation" && m.callId === callId,
+			) as ConfirmUiMessage | undefined;
+			const actionName = targetMsg?.name || pending?.name || "action";
+			const actionArgs = {
+				...(targetMsg?.args || pending?.args || {}),
+				...(modifiedArgs || {}),
+			};
+
+			if (decision === "confirm") {
+				copilotActionRunner.confirmAction(callId, actionArgs, apiBaseUrl).catch(() => {
+					dispatchCrmAction(
+						{
+							callId,
+							name: actionName,
+							arguments: actionArgs,
+							confirmed: true,
+						},
+						apiBaseUrl,
+					).catch(() => {});
+				});
+			} else {
+				copilotActionRunner.rejectAction(callId, reason, apiBaseUrl).catch(() => {});
+			}
+
 			const sessId = conversationId || "default-session";
 			try {
 				await streamRequest("/api/v1/copilot/confirm", {
@@ -461,7 +503,7 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 				setPhase(null);
 			}
 		},
-		[busy, conversationId, streamRequest],
+		[busy, conversationId, streamRequest, messages, pending, apiBaseUrl],
 	);
 
 	const reset = useCallback(() => {

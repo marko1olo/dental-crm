@@ -1,0 +1,62 @@
+{
+  "role": "Red Team DB Query & Seed Inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-02T17:45:00Z",
+  "completed_at": "2026-10-02T18:49:00Z",
+  "constitution_read": {
+    "core_md": true,
+    "frontend_md": true,
+    "THE_HAMMER_MASTER_PROMPT_md": true,
+    "AGENTS_md": true,
+    "GEMINI_md": true,
+    "DATABASE_md": true
+  },
+  "completed_steps": [
+    "Read all mandatory constitutional and database authority rules completely",
+    "Initialized working memory checkpoint",
+    "Audited resilientTransaction.ts and poolWatchdog.ts line-by-line",
+    "Audited seeds (seed_clinical_core.ts, seed_cash_and_reasons.ts, seed_all_49_document_templates.ts)",
+    "Audited query layer (*Query.ts: patientsQuery, appointmentsQuery, visitsQuery, billingQuery, dashboardQuery)",
+    "Patched apps/api/src/db/patientsQuery.ts to wrap patient consent ledger insert and profile update in atomic transaction",
+    "Patched apps/api/src/db/resilientTransaction.ts to propagate app.current_clinic, app.current_organization_id, and currentClinicStorage",
+    "Patched apps/api/src/db/poolWatchdog.ts to implement terminateHungIdleTransactions and terminateHungPoolTransactions",
+    "Patched apps/api/src/db/seeds/seed_cash_and_reasons.ts to support branchId and multi-branch cashboxes",
+    "Patched apps/api/src/scripts/migrateStateToDb.ts to orchestrate unified seeding of clinical core, cashboxes, and document templates",
+    "Applied pending migrations 0206, 0207, and 0208 to PostgreSQL 18.4 cluster, fixing missing columns and 25P02 transaction aborts",
+    "Expanded test suite in resilientTransactionAndPool.test.ts (22/22 passing) and diarySigningCeremony.test.ts (12/12 passing)",
+    "Verified check:encoding across 7082 files (100% clean UTF-8)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "file": "apps/api/src/db/patientsQuery.ts",
+      "issue": "recordPatientConsentInDb executed insert into patientConsents and update of administrativeProfile outside of transaction, risking inconsistent state on failure.",
+      "resolution": "Wrapped in db.transaction(async (tx) => { ... }) for strict ACID compliance."
+    },
+    {
+      "file": "apps/api/src/db/resilientTransaction.ts",
+      "issue": "Failed to propagate ambient clinicId context (app.current_clinic) and app.current_organization_id, limiting multi-clinic isolation and new RLS policies.",
+      "resolution": "Added currentClinicStorage, clinicId option in ResilientTransactionOptions, and GUC configuration inside transaction."
+    },
+    {
+      "file": "apps/api/src/db/poolWatchdog.ts",
+      "issue": "Watchdog only checked SELECT 1 and destroyed streams; pooled backends stuck in 'idle in transaction' would starve connection pool in Tier 4 Master SaaS.",
+      "resolution": "Implemented terminateHungIdleTransactions scanning pg_stat_activity and executing pg_terminate_backend on hung connections older than threshold."
+    },
+    {
+      "file": "apps/api/src/db/seeds/seed_cash_and_reasons.ts",
+      "issue": "ensureOrganizationCashBoxes did not support branchId, preventing Tier 3 branch networks from provisioning separate cash registers for different clinics.",
+      "resolution": "Added branchId and branchNamePrefix parameters and automatic clinic iteration in seedCashAndReasons."
+    },
+    {
+      "file": "apps/api/src/scripts/migrateStateToDb.ts",
+      "issue": "Seeder did not invoke clinical core, cash boxes, or document template seeds, leaving fresh environments in a broken state.",
+      "resolution": "Added automated invocation of seedClinicalCore, seedCashAndReasons, and seedAll49DocumentTemplates upon completion of state migration."
+    },
+    {
+      "file": "PostgreSQL 18 Database Cluster",
+      "issue": "Migrations 0206, 0207, 0208 were pending, causing missing column errors on imaging_studies which aborted transactions with code 25P02 during visit completion.",
+      "resolution": "Executed tsx apps/api/src/scripts/migrate.ts, successfully applying all 187 migrations."
+    }
+  ]
+}

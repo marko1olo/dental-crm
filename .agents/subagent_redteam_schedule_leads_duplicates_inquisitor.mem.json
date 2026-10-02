@@ -1,0 +1,20 @@
+{
+  "role": "RED TEAM SCHEDULE, RECEPTION, LEADS & TELEPHONY DUPLICATE LOGIC INQUISITOR",
+  "status": "INITIALIZING_RECONNAISSANCE",
+  "invariants": {
+    "no_cbct_dicom_touch": true,
+    "no_global_typecheck": true,
+    "isolated_tests_only": true,
+    "verbatim_honest_criticism": true,
+    "doctor_autonomy_enforced": true
+  },
+  "phases": {
+    "reconnaissance": "IN_PROGRESS",
+    "identification_of_duplicates": "PENDING",
+    "deep_fix_and_consolidation": "PENDING",
+    "verification_and_tests": "PENDING",
+    "reporting": "PENDING"
+  },
+  "findings": [],
+  "completed_actions": []
+}

@@ -1044,7 +1044,8 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 
 	return (
 		<div
-			className={`tooth-chart-container classic-gost-mode flex flex-col gap-4 w-full text-[var(--odontogram-ink)] ${className}`.trim()}
+			className={`tooth-chart-container classic-gost-mode flex flex-col gap-4 w-full px-4 sm:px-6 py-4 bg-[var(--odontogram-paper,#ffffff)] rounded-2xl border border-[var(--odontogram-border-subtle,#e2e8f0)] shadow-xs text-[var(--odontogram-ink)] ${className}`.trim()}
+			data-testid="classic-gost-odontogram"
 		>
 			{!hideHeader && (
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--odontogram-border-subtle)]">

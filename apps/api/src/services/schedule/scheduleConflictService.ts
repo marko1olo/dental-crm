@@ -4,6 +4,7 @@
  */
 
 import { and, eq, gte, lte, lt, gt, ne, notInArray, or, type SQL } from "drizzle-orm";
+import { areIntervalsOverlapping } from "@dental/shared";
 import { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
 import { appointments } from "../../db/schema.js";
@@ -33,6 +34,7 @@ export interface AppointmentConflictResult {
 
 /**
  * Проверка пересечения временных интервалов [startA, endA) и [startB, endB).
+ * Делегирует в канонический SSOT areIntervalsOverlapping из @dental/shared.
  */
 export function hasTimeOverlap(
 	startA: Date | number,
@@ -40,11 +42,7 @@ export function hasTimeOverlap(
 	startB: Date | number,
 	endB: Date | number,
 ): boolean {
-	const sA = typeof startA === "number" ? startA : startA.getTime();
-	const eA = typeof endA === "number" ? endA : endA.getTime();
-	const sB = typeof startB === "number" ? startB : startB.getTime();
-	const eB = typeof endB === "number" ? endB : endB.getTime();
-	return sA < eB && eA > sB;
+	return areIntervalsOverlapping(startA, endA, startB, endB);
 }
 
 /**
@@ -193,19 +191,19 @@ export async function findSuggestedAvailableSlots(
 			if (candHour >= 21 || candHour < 8) continue;
 
 			const hasOverlap = activeAppts.some((a) => {
-				const aStart = new Date(a.startsAt).getTime();
-				const aEnd = new Date(a.endsAt).getTime();
-				const cStart = candStart.getTime();
-				const cEnd = candEnd.getTime();
-
-				const timeOverlaps = cStart < aEnd && cEnd > aStart;
+				const timeOverlaps = areIntervalsOverlapping(
+					candStart,
+					candEnd,
+					a.startsAt,
+					a.endsAt,
+				);
 				if (!timeOverlaps) return false;
 
 				const doctorMatches =
 					params.doctorUserId && a.doctorUserId === params.doctorUserId;
 				const chairMatches =
 					params.chairId && a.chairId === params.chairId;
-				return doctorMatches || chairMatches;
+				return Boolean(doctorMatches || chairMatches);
 			});
 
 			if (!hasOverlap) {
@@ -214,28 +212,9 @@ export async function findSuggestedAvailableSlots(
 			}
 		}
 
-		if (suggested.length === 0) {
-			const s1 = new Date(reqStart.getTime() + stepMs);
-			const s2 = new Date(reqStart.getTime() + 2 * stepMs);
-			if (s1.getUTCDate() === reqStart.getUTCDate() && s1.getUTCHours() < 21) {
-				suggested.push(formatTime(s1));
-			}
-			if (s2.getUTCDate() === reqStart.getUTCDate() && s2.getUTCHours() < 21) {
-				suggested.push(formatTime(s2));
-			}
-			if (suggested.length === 0) {
-				suggested.push("10:00", "11:00");
-			}
-			return suggested;
-		}
-
 		return suggested;
-	} catch {
-		const reqStart = new Date(params.startsAt);
-		const s1 = new Date(reqStart.getTime() + 30 * 60 * 1000);
-		const s2 = new Date(reqStart.getTime() + 60 * 60 * 1000);
-		const formatTime = (d: Date) =>
-			`${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
-		return [formatTime(s1), formatTime(s2)];
+	} catch (error) {
+		console.error("findSuggestedAvailableSlots error:", error);
+		return [];
 	}
 }

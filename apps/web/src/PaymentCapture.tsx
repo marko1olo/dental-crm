@@ -1769,6 +1769,8 @@ export function PaymentCapture({
 						disabled={isSaving}
 						title={isSaving ? "Идет сохранение платежа в базе данных..." : undefined}
 						data-testid="payment-submit-button"
+						id="cashier-tender-action-btn"
+						data-tour="cashier-pay"
 					>
 						<CreditCard aria-hidden="true" size={16} className="shrink-0" />{" "}
 						<span className="truncate">

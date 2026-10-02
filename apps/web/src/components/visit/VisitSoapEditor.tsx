@@ -1236,6 +1236,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 					{/* Индикатор сохранения (Мандат 8e: Debounced Autosave «СОХРАНЕНО» / «OK») */}
 					<span
+						id="diary-autosave-status"
+						data-tour="diary-autosave-status"
 						data-testid="soap-autosave-status"
 						className="text-[11px] font-semibold shrink-0 min-w-max text-right inline-flex items-center justify-end gap-1 whitespace-nowrap"
 					>

@@ -281,6 +281,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		<div
 			className="vde-043 no-print"
 			data-testid="visit-diary-editor"
+			data-tour="visit-diary"
 			data-form="043u"
 		>
 			<div className="vde-043__glow" aria-hidden="true" />

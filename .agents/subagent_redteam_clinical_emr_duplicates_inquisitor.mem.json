@@ -1,0 +1,25 @@
+{
+  "role": "RED TEAM CLINICAL & EMR DUPLICATE LOGIC INQUISITOR",
+  "status": "INITIALIZING",
+  "scope": "Clinical EMR: Odontogram, Tooth Formula, 043/u Diaries, Perio Maps, Treatment Plans, ICD-10 Protocols. STRICT BAN: NO CBCT/DICOM/RADIOLOGY.",
+  "invariants": [
+    "No touching CBCT/DICOM/Radiology/Tomography",
+    "Independent search with zero hints",
+    "Mandate 8za: Zero duplicate logic, consolidate to canonical SSOT",
+    "Mandate 8s: Anti-bloat, eliminate academic simulators (e.g. 192 pocket points manual typing, false canvas dioramas with Math.sin)",
+    "Mandate 8e: Doctor autonomy, 1-click defaults, zero disabled buttons without cause",
+    "Mandate 8t: Single-compiler gate, isolated test runner only, no global typecheck",
+    "Self-fixing inquisitor: write 100% production ready code, zero TODOs"
+  ],
+  "completed_steps": [
+    "Read all mandatory rules and constitutions: core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md"
+  ],
+  "pending_steps": [
+    "Reconnaissance: Locate clinical files across packages/shared, apps/web, apps/api via rg and fd",
+    "Identify competing duplicate logic, duplicate stores, *V2/*Copy components, academic bloat and false procedural simulators",
+    "Consolidate logic into canonical SSOT in packages/shared and master web components, removing or collapsing duplicates",
+    "Execute isolated targeted tests and encoding/token checks",
+    "Document findings and report back with verbatim findings"
+  ],
+  "findings": []
+}

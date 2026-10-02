@@ -35,6 +35,7 @@ export const chairs = pgTable(
 	(t) => ({
 		organizationIdIdx: index("chairs_organization_id_idx").on(t.organizationId),
 		clinicIdIdx: index("chairs_clinic_id_idx").on(t.clinicId),
+		orgActiveIdx: index("chairs_org_active_idx").on(t.organizationId, t.isActive),
 	}),
 );
 
@@ -45,10 +46,18 @@ export const appointments = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		patientId: uuid("patient_id").references(() => patients.id),
-		doctorUserId: uuid("doctor_user_id").references(() => users.id),
-		assistantUserId: uuid("assistant_user_id").references(() => users.id),
-		chairId: uuid("chair_id").references(() => chairs.id),
+		patientId: uuid("patient_id").references(() => patients.id, {
+			onDelete: "set null",
+		}),
+		doctorUserId: uuid("doctor_user_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		assistantUserId: uuid("assistant_user_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		chairId: uuid("chair_id").references(() => chairs.id, {
+			onDelete: "set null",
+		}),
 		status: appointmentStatus("status").notNull().default("planned"),
 		startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
 		endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
@@ -61,6 +70,14 @@ export const appointments = pgTable(
 				table.organizationId,
 				table.startsAt,
 				table.endsAt,
+			),
+			idxAppointmentsOrgStatus: index("idx_appointments_org_status").on(
+				table.organizationId,
+				table.status,
+			),
+			idxAppointmentsOrgPatient: index("idx_appointments_org_patient").on(
+				table.organizationId,
+				table.patientId,
 			),
 			patientIdIdx: index("appointments_patient_id_idx").on(table.patientId),
 			doctorUserIdIdx: index("appointments_doctor_user_id_idx").on(

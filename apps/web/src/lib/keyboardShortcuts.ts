@@ -53,6 +53,17 @@ export const CLINICAL_SHORTCUTS: readonly ClinicalShortcutItem[] = [
 		actionEvent: "dente:open-omnibar",
 	},
 	{
+		id: "help-knowledge-hub",
+		title: "База знаний и интерактивное обучение (Справка)",
+		keyCombination: "F1",
+		keys: ["F1"],
+		description: "Открыть Базу знаний DENTE, иллюстрированные руководства по 12 компонентам и квест врача.",
+		category: "global",
+		context: "Везде",
+		badge: "Справка",
+		actionEvent: "dente:open-knowledge-hub",
+	},
+	{
 		id: "shortcuts-overlay",
 		title: "Шпаргалка горячих клавиш",
 		keyCombination: "?",
@@ -288,7 +299,16 @@ export function matchesKeyboardShortcut(e: KeyboardEvent, shortcutSpec: string):
 		case "esc":
 			return e.key === "Escape" || code === "Escape";
 		case "?":
-			return e.key === "?" || (e.shiftKey && (e.key === "/" || e.key === ","));
+		case "shift+?":
+			return (
+				e.key === "?" ||
+				(e.shiftKey &&
+					(e.key === "/" ||
+						e.key === "," ||
+						e.key === "7" ||
+						code === "Slash" ||
+						code === "Digit7"))
+			);
 		case "space":
 			return e.key === " " || code === "Space";
 		case "enter":

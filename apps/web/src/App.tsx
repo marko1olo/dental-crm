@@ -277,6 +277,7 @@ export function App() {
 		},
 		onF1Help: () => {
 			window.dispatchEvent(new CustomEvent("dente:shortcut:f1"));
+			window.dispatchEvent(new CustomEvent("dente:open-knowledge-hub"));
 			window.dispatchEvent(new CustomEvent("dente:open-shortcuts-overlay"));
 			window.dispatchEvent(new CustomEvent("dente:open-804n-hints"));
 		},

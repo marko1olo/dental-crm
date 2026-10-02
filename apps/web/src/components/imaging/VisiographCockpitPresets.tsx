@@ -27,7 +27,7 @@ export function VisiographCockpitPresets({
 	onOpenApexRuler,
 }: VisiographCockpitPresetsProps) {
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+		<div data-tour="mpr-presets" style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
 			{(["standard", "invert", "endo", "bone", "enamel"] as const).map((p) => {
 				const isAct = quickPreset === p;
 				return (
@@ -57,6 +57,7 @@ export function VisiographCockpitPresets({
 
 			<button
 				type="button"
+				data-tour="dicom-ruler"
 				onClick={onOpenApexRuler}
 				style={{
 					height: "30px",

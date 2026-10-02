@@ -36,6 +36,7 @@ import {
 	areOdontogramViewContainerPropsEqual,
 } from "./OdontogramViewTypes";
 import { OdontogramToolbar } from "./OdontogramToolbar";
+import { OdontogramStampPalette } from "./OdontogramStampPalette";
 import {
 	OdontogramViewModals,
 	type RadialMenuAnchorData,
@@ -44,6 +45,7 @@ import {
 // Transparent re-exports for complete monorepo backward compatibility
 export * from "./OdontogramViewTypes";
 export * from "./OdontogramToolbar";
+export * from "./OdontogramStampPalette";
 export * from "./OdontogramToolbarQuickActions";
 export * from "./OdontogramToolbarMoreMenu";
 export * from "./OdontogramViewModals";
@@ -568,7 +570,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 
 			{/* Main Layout Area: Chart + Optional Live Invoice Sidebar */}
 			<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
-				<div className="odontogram-active-view-slot w-full flex-1 min-w-0">
+				<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 					{activeMode === "anatomical_svg" && (
 						<AnatomicalSvgOdontogram {...sharedViewProps} />
 					)}
@@ -577,6 +579,17 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					)}
 					{activeMode === "classic_gost" && (
 						<ClassicGostOdontogram {...sharedViewProps} />
+					)}
+
+					{/* Полноценная клиническая панель быстрой разметки (Штампы) под графикой одонтограммы */}
+					{onQuickStateChange && (
+						<OdontogramStampPalette
+							activeStampTool={activeStampTool}
+							setActiveStampTool={setActiveStampTool}
+							onQuickStateChange={onQuickStateChange}
+							handleQuickTriggerState={handleQuickTriggerState}
+							selectedTeeth={selectedTeeth}
+						/>
 					)}
 				</div>
 

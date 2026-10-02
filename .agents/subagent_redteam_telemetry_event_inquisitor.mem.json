@@ -1,23 +1,56 @@
 {
   "role": "RED TEAM STAFF TELEMETRY, PERFORMANCE & REALTIME EVENT BROKER INQUISITOR",
-  "status": "in_progress",
-  "phase": "reconnaissance",
+  "status": "completed",
+  "phase": "verified",
   "completed_steps": [
     "Read core.md (deep research, zero mocks, T.A.R.S. 100/80)",
     "Read frontend.md (clinical UX, quiet telemetry, soft presence)",
     "Read engineering.md (anti-monolith, single compiler gate, anti-ram-hog)",
     "Read AGENTS.md (Mandates 8b, 8e, 8n, 8za, 8ab)",
     "Read GEMINI.md (26 rules)",
-    "Read THE_HAMMER_MASTER_PROMPT.md (Supreme law)"
-  ],
-  "pending_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md (Supreme law)",
     "Codebase reconnaissance: telemetry, audit logs, staff activity, websocket, realtime broker, presence, network status",
     "Inspect production code for synthetic mocks, fake Math.random pings, simulated graphs, hardcoded fake socket events",
-    "Audit soft presence vs hard locks (ensure no blocking modal/screens for doctor)",
-    "Audit quiet telemetry (subtle 6px dot, no loud popups on micro-lags)",
-    "In-place deep fixes of defects found",
-    "Targeted unit tests and typecheck verification (Exit Code 0)",
-    "Verbatim reporting back to orchestrator"
+    "Fixed critical websocket route ingestion hole (apps/api/src/routes/websocket.ts): enabled duplex frames for PING_LATENCY, STAFF_PRESENCE, CLIENT_AUDIT_BATCH",
+    "Implemented Soft Presence in wsBroker (apps/api/src/services/websocketBroker.ts) with multi-tenant isolation and automatic disconnect cleanup",
+    "Created useSoftPresence hook (apps/web/src/hooks/useSoftPresence.ts) with 15s quiet heartbeat and passive colleague discovery",
+    "Implemented SoftPresenceIndicator (apps/web/src/components/presence/SoftPresenceIndicator.tsx) with zero-blocking doctor autonomy invariants (Mandate 8e)",
+    "Wired SoftPresenceIndicator into monolithic visit header (apps/web/src/components/visit/view/VisitHeaderMonolith.tsx)",
+    "Upgraded client structured logger (apps/web/src/services/logging/clientLogger.ts) with offline localStorage buffer, debounced auto-flush to /api/audit/events/batch, honest p50/p95 latency derivation, and render pacing monitor",
+    "Eliminated all Math.random pseudo-random mocks in sync modules (packages/shared/src/sync/mesh.ts, backup.ts, hashing.ts) replacing them with UUIDv7 and CSPRNG",
+    "Executed full compiler gates: apps/api (Exit Code 0), packages/shared (Exit Code 0), apps/web (Exit Code 0)",
+    "Executed targeted test suites: websocketPresenceAndDuplex.test.ts (3/3 passed), SoftPresenceIndicator.test.tsx + clientStaffActionAudit.test.ts (6/6 passed), NetworkStatusIndicator.test.tsx (4/4 passed), staffActionAuditJournal.test.ts (4/4 passed), staffActionAuditIngest.test.ts (6/6 passed)",
+    "Verified UTF-8 encoding across 7066 files with zero BOM via check:encoding"
   ],
-  "findings": []
+  "pending_steps": [],
+  "findings": [
+    {
+      "code": "WS_DUPLEX_INGEST_DROP",
+      "severity": "critical",
+      "file": "apps/api/src/routes/websocket.ts",
+      "summary": "WebSocket dropped all incoming frames after authentication ('if (authorized) return;'). Fixed with duplex command dispatcher.",
+      "status": "fixed"
+    },
+    {
+      "code": "MISSING_SOFT_PRESENCE",
+      "severity": "high",
+      "file": "apps/web/src/components/visit/view/VisitHeaderMonolith.tsx",
+      "summary": "Doctors and administrators had no visibility into who opened the same visit. Fixed with passive SoftPresenceIndicator without modal locks.",
+      "status": "fixed"
+    },
+    {
+      "code": "STAFF_AUDIT_DISCONNECT",
+      "severity": "high",
+      "file": "apps/web/src/services/logging/clientLogger.ts",
+      "summary": "Client audit logs were only kept in ephemeral memory and discarded on tab refresh. Fixed with persistent localStorage buffer and auto-flush.",
+      "status": "fixed"
+    },
+    {
+      "code": "SYNTHETIC_RANDOM_IDS",
+      "severity": "medium",
+      "file": "packages/shared/src/sync/mesh.ts",
+      "summary": "Math.random was used in clinical mesh identifiers (callId, transferId, p2p messageId). Fixed with cryptographic UUIDv7.",
+      "status": "fixed"
+    }
+  ]
 }

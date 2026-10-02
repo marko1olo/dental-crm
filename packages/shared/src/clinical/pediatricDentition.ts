@@ -1328,3 +1328,5 @@ export function generatePediatricParentRecommendations(
 	lines.push(`═══════════════════════════════════════════════════════════════`);
 	return lines.join("\n");
 }
+
+export * from "./pediatricPhysiologicalNorms.js";

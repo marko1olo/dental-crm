@@ -157,6 +157,11 @@ export const users = pgTable(
 	},
 	(t) => ({
 		organizationIdIdx: index("users_organization_id_idx").on(t.organizationId),
+		orgRoleActiveIdx: index("users_org_role_active_idx").on(
+			t.organizationId,
+			t.role,
+			t.isActive,
+		),
 	}),
 );
 
