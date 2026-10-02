@@ -25,7 +25,9 @@ import {
 	User,
 	Users,
 	Volume2,
+	X,
 } from "lucide-react";
+import { buildPatientShiftQueue, type Appointment } from "@dental/shared";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import "./QueueBillboardView.css";
@@ -54,9 +56,13 @@ export interface QueueBillboardViewProps {
 	readonly clinicName?: string | undefined;
 	readonly clinicSubtitle?: string | undefined;
 	readonly items?: readonly QueueBillboardItem[] | undefined;
+	/** Live appointments from Shift Queue SSOT (@dental/shared) */
+	readonly appointments?: Array<Partial<Appointment> & Record<string, any>> | undefined;
 	readonly className?: string | undefined;
 	readonly overlayAlpha?: number | undefined;
 	readonly announcementText?: string | undefined;
+	/** Optional callback to close fullscreen lobby billboard */
+	readonly onClose?: (() => void) | undefined;
 }
 
 export const DEFAULT_BILLBOARD_QUEUE_ITEMS: readonly QueueBillboardItem[] = [
@@ -119,9 +125,11 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
 	clinicSubtitle = "Электронная очередь холла ожидания",
 	items: initialItems,
+	appointments,
 	className = "",
 	overlayAlpha = 0.5,
 	announcementText = "Пожалуйста, сохраняйте тишину. При появлении вашего номера талона на табло пройдите в указанный кабинет.",
+	onClose,
 }) => {
 	const isDemo = isDemoShowcaseMode();
 	const [currentTime, setCurrentTime] = useState<string>("00:00:00");
@@ -154,9 +162,57 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 		return () => clearInterval(intervalId);
 	}, []);
 
+	// SSOT Shift Queue Mapping from appointments prop (when provided by TodayQueueBoard)
+	const appointmentsMappedItems = useMemo(() => {
+		if (!appointments || appointments.length === 0) return null;
+		const queueData = buildPatientShiftQueue(appointments);
+		const mapped: QueueBillboardItem[] = [];
+
+		// Helper to sanitize patient initials for 152-FZ privacy
+		const toInitials = (name?: string | null): string => {
+			if (!name || !name.trim()) return "Пациент";
+			const parts = name.trim().split(/\s+/).filter(Boolean);
+			if (parts.length >= 2 && parts[1]) {
+				return `${parts[0]} ${parts[1][0] || ""}.`;
+			}
+			return parts[0] || "Пациент";
+		};
+
+		// 1. In-chair / invited patients
+		queueData.itemsByTab.in_chair.forEach((item, idx) => {
+			mapped.push({
+				id: `billboard-chair-${item.id}`,
+				ticketNumber: `К-${String(idx + 1).padStart(2, "0")}`,
+				patientInitials: toInitials(item.patientName),
+				doctorName: item.doctorName,
+				doctorSpecialty: item.doctorSpecialty ?? undefined,
+				cabinetName: item.chairName,
+				status: "in_chair",
+				timeInfo: item.chairDurationFormatted || "Идет прием",
+			});
+		});
+
+		// 2. Waiting in lobby patients
+		queueData.itemsByTab.waiting.forEach((item, idx) => {
+			const isInvited = (item.operationalStatus as string) === "invited";
+			mapped.push({
+				id: `billboard-wait-${item.id}`,
+				ticketNumber: `А-${String(idx + 1).padStart(2, "0")}`,
+				patientInitials: toInitials(item.patientName),
+				doctorName: item.doctorName,
+				doctorSpecialty: item.doctorSpecialty ?? undefined,
+				cabinetName: item.chairName,
+				status: isInvited ? "invited" : "waiting",
+				timeInfo: isInvited ? "Приглашается" : item.waitFormatted ? `Ожидание: ${item.waitFormatted}` : "~10 мин",
+			});
+		});
+
+		return mapped;
+	}, [appointments]);
+
 	// Live queue polling from PostgreSQL 18 in production
 	useEffect(() => {
-		if (isDemo || (initialItems && initialItems.length > 0)) return;
+		if (isDemo || (initialItems && initialItems.length > 0) || (appointments && appointments.length > 0)) return;
 
 		let isMounted = true;
 		const fetchQueue = async () => {
@@ -166,7 +222,7 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 				const data = await res.json();
 				if (!isMounted) return;
 
-				const appointments: Array<{
+				const appointmentsList: Array<{
 					id?: string;
 					patientName?: string;
 					patientInitials?: string;
@@ -180,7 +236,7 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 					? data.queue
 					: [];
 
-				const mapped: QueueBillboardItem[] = appointments
+				const mapped: QueueBillboardItem[] = appointmentsList
 					.filter((apt) => ["in_treatment", "in_chair", "invited", "planned", "waiting"].includes(apt.status || ""))
 					.map((apt, idx) => {
 						const isInvited = apt.status === "invited";
@@ -228,13 +284,14 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 			isMounted = false;
 			clearInterval(interval);
 		};
-	}, [isDemo, initialItems]);
+	}, [isDemo, initialItems, appointments]);
 
 	const effectiveItems = useMemo(() => {
 		if (initialItems && initialItems.length > 0) return initialItems;
+		if (appointmentsMappedItems !== null) return appointmentsMappedItems;
 		if (isDemo) return DEFAULT_BILLBOARD_QUEUE_ITEMS;
 		return liveItems;
-	}, [initialItems, isDemo, liveItems]);
+	}, [initialItems, appointmentsMappedItems, isDemo, liveItems]);
 
 	// Partition items into Invited/In-chair and Waiting
 	const invitedOrInChairItems = useMemo(
@@ -279,6 +336,19 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 						</div>
 						<div className="queue-billboard-clock-date">{currentDate}</div>
 					</div>
+
+					{onClose && (
+						<button
+							type="button"
+							onClick={onClose}
+							className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shadow-xs select-none"
+							aria-label="Закрыть режим ТВ-табло"
+							data-testid="queue-billboard-close-btn"
+						>
+							<X size={15} />
+							<span>Закрыть табло</span>
+						</button>
+					)}
 				</div>
 			</header>
 

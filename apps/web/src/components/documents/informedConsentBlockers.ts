@@ -103,9 +103,9 @@ function erasedClauseHint(what: string): string {
 
 export function informedConsentBlockersReview(
 	input: InformedConsentBlockersInput,
-	options?: { allowBlankForPrint?: boolean },
+	options?: { allowBlankForPrint?: boolean; isCito?: boolean },
 ): InformedConsentBlockersReview {
-	if (options?.allowBlankForPrint) {
+	if (options?.allowBlankForPrint || options?.isCito) {
 		return {
 			requiredCount: 11,
 			blockers: [],

@@ -1,21 +1,24 @@
 {
   "task": "Pediatric 1-Click Parent & 1-Tap Bravery Diploma Inquisitor",
-  "status": "in_progress",
+  "status": "completed",
   "completed_steps": [
     "Read all mandatory rules: core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
     "Deep reading of all 5 in-scope files: PatientCreationModal.tsx, PatientGeneralInfoTab.tsx, PediatricBraveryDiplomaModal.tsx, PediatricSomaticAndLegalRep.tsx, VisitPediatricProtocolWidget.tsx",
-    "Analyzed patientStore, usePatientLogic, and API routes for representative mapping"
+    "Analyzed patientStore, usePatientLogic, and API routes for representative mapping",
+    "Step 1: PatientCreationModal.tsx — 1-click parent binding (chips [Мама] [Папа] [Опекун], inputs Name & Phone with 'Взять телефон ребёнка', minor toggle/detection, zero bureaucracy, initialBirthDate/initialIsChild props, effectivePhone/effectiveBirthDate SSR support)",
+    "Step 2: PatientGeneralInfoTab.tsx — simplified representative block with clean human language ('Законный представитель: Право подписи согласий на приём и лечение'), legalese moved to sr-only",
+    "Step 3: PediatricSomaticAndLegalRep.tsx — purged bird language, removed raw law articles from clinical text, replaced with clean Russian ('Родитель: Мама (Анна, +7 (999) 123-45-67). Согласие на лечение получено.'), exported formatPediatricRepresentativeText",
+    "Step 4: PediatricBraveryDiplomaModal.tsx & VisitPediatricProtocolWidget.tsx — instant 1-tap print with Enter key support, Hero: name auto-fill, clean gold medal/vector tooth, prominent toolbar placement in visit and patient card (Award icon, zero cartoon emojis)",
+    "Step 5: Written and executed targeted unit test suite apps/web/src/components/pediatric/__tests__/pediatricOneClickParentDiploma.test.tsx (7/7 passed)",
+    "Step 6: Executed regression test suites: VisitPediatricProtocolWidget.test.tsx (11/11 passed), pediatricClinicalAutonomyInquisition.test.ts (27/27 passed), stomxPatientAndCashierAutonomyWave111.test.tsx (5/5 passed)",
+    "Step 7: Typecheck verification (tsc --noEmit) completed with 0 errors (Exit Code 0), diff verified (0 CBCT/radiology files touched)"
   ],
-  "pending_steps": [
-    "Step 1: PatientCreationModal.tsx — 1-click parent binding (chips [Мама] [Папа] [Опекун], inputs Name & Phone with 'Взять телефон ребёнка', minor toggle/detection, zero bureaucracy)",
-    "Step 2: PatientGeneralInfoTab.tsx — simplify representative block with Mama/Papa/Guardian chips, Name and Phone upfront, clean human language without legalistic bloat",
-    "Step 3: PediatricSomaticAndLegalRep.tsx — purge bird language, remove raw law articles from clinical text, replace with clean Russian",
-    "Step 4: PediatricBraveryDiplomaModal.tsx & VisitPediatricProtocolWidget.tsx — instant 1-tap print with Enter key support, Hero: name auto-fill, clean gold medal/vector tooth, prominent toolbar placement",
-    "Step 5: Write and run targeted tests in pediatric and patient test directories",
-    "Step 6: Run typecheck verification and audit diff"
-  ],
+  "pending_steps": [],
   "findings": {
-    "representative_fields": "legalRepresentativeRelationship, legalRepresentativeFullName, legalRepresentativePhone in administrativeProfile",
-    "bird_language_found": "References to 'ст. 20 323-ФЗ, ст. 64 СК РФ' and complex legalese in medical UI"
+    "representative_fields": "legalRepresentativeRelationship, legalRepresentativeFullName, legalRepresentativePhone in administrativeProfile, mapped to 1-click chips and telephony routes",
+    "bird_language_found": "References to 'ст. 20 323-ФЗ, ст. 64 СК РФ' and complex legalese in medical UI purged and moved to sr-only",
+    "tests_passed": "pediatricOneClickParentDiploma.test.tsx (7/7), VisitPediatricProtocolWidget.test.tsx (11/11), pediatricClinicalAutonomyInquisition.test.ts (27/27), stomxPatientAndCashierAutonomyWave111.test.tsx (5/5)",
+    "typecheck": "tsc --noEmit: Exit Code 0, 0 errors",
+    "radiology_isolation": "Verified 100%: ZERO CT/CBCT/radiology files touched"
   }
 }

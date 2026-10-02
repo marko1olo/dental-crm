@@ -1,0 +1,44 @@
+{
+  "role": "DOCTOR & STAFF PAYROLL SSOT INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-02T12:20:00Z",
+  "completed_at": "2026-10-02T12:42:00Z",
+  "scope": [
+    "apps/web/src/components/payroll/",
+    "apps/web/src/components/finance/payroll/"
+  ],
+  "forbidden_scope": [
+    "apps/web/src/components/radiology/*"
+  ],
+  "completed_steps": [
+    "read_core_rules",
+    "read_frontend_rules",
+    "read_engineering_rules",
+    "read_agents_md",
+    "read_gemini_md",
+    "read_the_hammer_master_prompt",
+    "reconnaissance_payroll_files",
+    "analyze_staffPayrollEngine_vs_payrollEngine",
+    "analyze_doctorPayrollModal_vs_payroll_screens",
+    "unify_ssot_engine",
+    "implement_reexports_and_backward_compat",
+    "verify_clinical_rules_ztl_implants_categories",
+    "verify_print_form_a4",
+    "run_payroll_tests_and_typecheck"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Unified staffPayrollEngine.ts (747 lines <= 800 anti-monolith limit) as canonical Single Source of Truth (SSOT).",
+    "Turned finance/payroll/payrollEngine.ts, finance/payroll/payrollPresets.ts, and finance/payroll/DoctorPayrollModal.tsx into 100% transparent zero-downtime facades.",
+    "Eliminated duplicate calculations and synced general_dentist guarantees between solo doctor autonomy (60,000 RUB) and statutory staff payroll (70,000 RUB).",
+    "Enforced mandatory pre-commission deduction of ZTL lab costs (labCostKop) from orthopedics/orthodontics: Net Base = Gross - Lab - Materials.",
+    "Enforced pre-commission deduction of costly implants and bone materials from surgery piecework base.",
+    "Integrated statutory A4 printable payslip (generateDoctorPayslipHtml) compliant with Art. 136 Labor Code RF and Art. 225 p. 6 Tax Code RF (whole-ruble NDFL 13% rounding) without cartoon emojis.",
+    "All 56/56 payroll unit tests across 16 suites passing with 100% success (0 failures, 0 leaks)."
+  ],
+  "verification": {
+    "unit_tests": "56/56 passed (16 suites, 0 failures, 1731ms)",
+    "encoding_smoke": "mojibakeHits: 0 (checkedFiles: 2962)",
+    "radiology_isolation": "100% preserved, 0 radiology files touched"
+  }
+}

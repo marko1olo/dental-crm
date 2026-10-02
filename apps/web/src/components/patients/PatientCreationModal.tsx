@@ -33,8 +33,8 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { printPrimaryIntakePackage } from "../documents/primaryIntakePackagePrintEngine";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";

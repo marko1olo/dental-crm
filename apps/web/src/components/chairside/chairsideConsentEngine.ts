@@ -13,6 +13,11 @@
  * ============================================================================
  */
 
+import { formatKopecksToRubAndKop } from "../documents/paidContract/money";
+import {
+	maskRussianPhone as canonicalMaskRussianPhone,
+} from "../../utils/formatters";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA CONTRACTS & INTERFACES
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,18 +204,10 @@ export function calculateEstimateTotalKopecks(items: readonly ChairsideTreatment
 }
 
 /**
- * Форматирование копеек в рубли: 1250050 -> "12 500,50 ₽"
+ * Форматирование копеек в рубли: 1250050 -> "12 500,50 ₽" (Мандат 8b)
  */
 export function formatKopecksToRubles(kopecks: number): string {
-	const totalKop = Math.max(0, Math.round(kopecks || 0));
-	const rubles = Math.floor(totalKop / 100);
-	const remainderKop = totalKop % 100;
-
-	const rubFormatted = rubles
-		.toLocaleString("ru-RU", { maximumFractionDigits: 0 })
-		.replace(/[\u00A0\u202F]/g, " ");
-
-	return rubFormatted + "," + String(remainderKop).padStart(2, "0") + " ₽";
+	return formatKopecksToRubAndKop(kopecks).formatted.replace(/\u00a0/g, " ");
 }
 
 /**
@@ -486,12 +483,9 @@ export function generateSha256(asciiString: string): string {
  * Маскирование номера телефона в строгом юридическом формате: +7 (***) ***-**-12
  */
 export function maskRussianPhone(phone: string): string {
-	const clean = (phone || "").replace(/\D/g, "");
-	if (clean.length < 2) {
-		return "+7 (***) ***-**-00";
-	}
-	const last2 = clean.slice(-2);
-	return `+7 (***) ***-**-${last2}`;
+	const digits = (phone || "").replace(/\D/g, "");
+	const lastTwo = digits.length >= 2 ? digits.slice(-2) : digits.padStart(2, "0");
+	return `+7 (***) ***-**-${lastTwo}`;
 }
 
 /**

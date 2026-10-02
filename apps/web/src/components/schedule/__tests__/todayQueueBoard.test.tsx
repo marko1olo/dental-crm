@@ -203,4 +203,22 @@ describe("TodayQueueBoard — Operational Shift Queue UI & 0-Click Actions", () 
 			"Clean empty state rendered",
 		);
 	});
+
+	it("6. Renders Lobby TV Billboard button (queue-toggle-tv-billboard-btn) in toolbar", () => {
+		const html = renderToString(
+			<TodayQueueBoard
+				appointments={mockAppointments}
+				targetDateKey="2026-09-25"
+			/>,
+		);
+
+		assert.ok(
+			html.includes('data-testid="queue-toggle-tv-billboard-btn"'),
+			"TV Billboard button rendered in toolbar",
+		);
+		assert.ok(
+			html.includes("ТВ-табло холла"),
+			"TV Billboard button text rendered",
+		);
+	});
 });

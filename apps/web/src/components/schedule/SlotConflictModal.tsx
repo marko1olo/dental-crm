@@ -9,16 +9,54 @@ export interface AlternativeChairOption {
 	roomNumber?: string;
 }
 
+/**
+ * Canonical half-open interval overlap check [startA, endA) and [startB, endB).
+ * Strictly mirrors backend scheduleConflictService.ts SSOT:
+ * Adjacent back-to-back slots (endA === startB) do NOT collide (returns false).
+ */
+export function hasTimeOverlap(
+	startA: Date | string | number,
+	endA: Date | string | number,
+	startB: Date | string | number,
+	endB: Date | string | number,
+): boolean {
+	const sA = typeof startA === "number" ? startA : new Date(startA).getTime();
+	const eA = typeof endA === "number" ? endA : new Date(endA).getTime();
+	const sB = typeof startB === "number" ? startB : new Date(startB).getTime();
+	const eB = typeof endB === "number" ? endB : new Date(endB).getTime();
+
+	if (Number.isNaN(sA) || Number.isNaN(eA) || Number.isNaN(sB) || Number.isNaN(eB)) {
+		return false;
+	}
+	return sA < eB && eA > sB;
+}
+
+/**
+ * Checks if two slots are back-to-back adjacent without overlap.
+ */
+export function areSlotsAdjacent(
+	endA: Date | string | number,
+	startB: Date | string | number,
+): boolean {
+	const eA = typeof endA === "number" ? endA : new Date(endA).getTime();
+	const sB = typeof startB === "number" ? startB : new Date(startB).getTime();
+	return Math.abs(eA - sB) <= 60_000; // within 1 minute tolerance
+}
+
 export interface SlotConflictModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly conflictMessage?: string | null | undefined;
 	readonly conflictType?: "chair" | "doctor" | "patient" | "double_booking" | null | undefined;
-	readonly suggestedSlots: readonly string[];
-	readonly onSelectSlot: (slotTime: string) => void;
+	readonly suggestedSlots?: readonly string[] | undefined;
+	readonly onSelectSlot?: ((slotTime: string) => void) | undefined;
 	readonly onOverbook?: (() => void) | undefined;
+	readonly onForceSave?: (() => void) | undefined;
 	readonly patientName?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
+	readonly conflictingDoctorName?: string | null | undefined;
+	readonly conflictingPatientName?: string | null | undefined;
+	readonly conflictingTimeRange?: string | null | undefined;
 	readonly inline?: boolean | undefined;
 	readonly onShiftMinutes?: ((minutes: number) => void) | undefined;
 	readonly shiftMinutesList?: readonly number[] | undefined;
@@ -34,11 +72,15 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 	onClose,
 	conflictMessage,
 	conflictType,
-	suggestedSlots,
-	onSelectSlot,
-	onOverbook,
-	patientName,
-	doctorName,
+	suggestedSlots = [],
+	onSelectSlot = () => {},
+	onOverbook: propOnOverbook,
+	onForceSave,
+	patientName: propPatientName,
+	doctorName: propDoctorName,
+	conflictingDoctorName,
+	conflictingPatientName,
+	conflictingTimeRange: _conflictingTimeRange,
 	inline = false,
 	onShiftMinutes,
 	shiftMinutesList = DEFAULT_SHIFT_MINUTES,
@@ -46,6 +88,9 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 	onMoveToChair,
 	currentChairName,
 }) => {
+	const patientName = propPatientName || conflictingPatientName;
+	const doctorName = propDoctorName || conflictingDoctorName;
+	const onOverbook = propOnOverbook || onForceSave;
 	const { modalRef } = useModalA11y<HTMLDivElement>({
 		isOpen: isOpen && !inline,
 		onClose,
@@ -118,7 +163,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 									onShiftMinutes(mins);
 									onClose();
 								}}
-								className="min-h-[38px] px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600 hover:text-white text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+								className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600 hover:text-white text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs touch-manipulation select-none active:scale-[0.98]"
 								title={`Сдвинуть запись на +${mins} минут`}
 								aria-label={`Сдвинуть время на ${mins} минут`}
 							>
@@ -147,7 +192,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 									onMoveToChair(chair.id);
 									onClose();
 								}}
-								className="min-h-[38px] px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+								className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation select-none active:scale-[0.98]"
 								title={`Перенести приём на ${chair.name}`}
 								aria-label={`Перенести приём на кресло ${chair.name}`}
 							>
@@ -178,7 +223,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 									onSelectSlot(slot);
 									onClose();
 								}}
-								className="min-h-[40px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
+								className="min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group touch-manipulation select-none active:scale-[0.98]"
 								title={`Записать на ${slot}`}
 								aria-label={`Выбрать альтернативное время ${slot}`}
 							>

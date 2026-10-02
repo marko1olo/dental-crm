@@ -317,8 +317,9 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
           }
         }}
       />
+      {/* Canonical Waitlist Drawer (SSOT) handles targetSlot automatically; WaitlistQuickFillModal is reserved for standalone fallback */}
       <WaitlistQuickFillModal
-        isOpen={waitlistQuickFillSlot !== null}
+        isOpen={waitlistQuickFillSlot !== null && !waitlistOpen}
         onClose={() => setWaitlistQuickFillSlot(null)}
         targetSlot={waitlistQuickFillSlot}
         updateNewAppointmentDraft={updateNewAppointmentDraft}

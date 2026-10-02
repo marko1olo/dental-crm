@@ -32,6 +32,7 @@ import {
 	CreditCard,
 	DoorOpen,
 	Filter,
+	Monitor,
 	Phone,
 	RefreshCw,
 	RotateCcw,
@@ -41,6 +42,7 @@ import {
 	UserX,
 	XCircle,
 } from "lucide-react";
+import { QueueBillboardView } from "../queue/QueueBillboardView";
 import {
 	buildPatientShiftQueue,
 	OPERATIONAL_STATUS_META,
@@ -103,6 +105,7 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 	const [chairFilter, setChairFilter] = useState<string | null>(initialChairId);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [inFlightActionId, setInFlightActionId] = useState<string | null>(null);
+	const [showLobbyBillboard, setShowLobbyBillboard] = useState(false);
 
 	// Staff and chair lookup maps
 	const staffById = useMemo(() => {
@@ -348,6 +351,18 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 							<span>Сброс</span>
 						</button>
 					)}
+
+					{/* Lobby TV Billboard Button (32px, SSOT) */}
+					<button
+						type="button"
+						data-testid="queue-toggle-tv-billboard-btn"
+						onClick={() => setShowLobbyBillboard(true)}
+						className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--line)] bg-[var(--paper)] px-2.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer select-none transition-colors"
+						title="Открыть ТВ-табло холла для пациентов (полноэкранный режим 152-ФЗ)"
+					>
+						<Monitor size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+						<span>ТВ-табло холла</span>
+					</button>
 				</div>
 			</div>
 
@@ -586,6 +601,22 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 					})
 				)}
 			</div>
+ 
+			{/* Lobby TV Billboard Overlay Modal (152-FZ Compliant Live Queue) */}
+			{showLobbyBillboard && (
+				<div
+					className="fixed inset-0 z-50 overflow-y-auto bg-black animate-fade-in"
+					data-testid="queue-lobby-tv-modal"
+					role="dialog"
+					aria-modal="true"
+					aria-label="ТВ-табло холла"
+				>
+					<QueueBillboardView
+						appointments={appointments}
+						onClose={() => setShowLobbyBillboard(false)}
+					/>
+				</div>
+			)}
 		</section>
 	);
 };

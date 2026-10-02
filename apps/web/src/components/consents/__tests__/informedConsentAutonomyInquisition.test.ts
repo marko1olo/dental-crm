@@ -308,10 +308,9 @@ describe("Red Team Inquisition: Informed Voluntary Consents (1051n & 323-FZ)", (
 
 	describe("5. CSS Design Tokens & Theme Hygiene Audit", () => {
 		it("verifies informedConsent.css uses design tokens and no raw hardcoded hex in document title", () => {
-			const cssPath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/consents/informedConsent.css",
-			);
+			const cssPath = fs.existsSync(path.resolve(process.cwd(), "src/components/consents/informedConsent.css"))
+				? path.resolve(process.cwd(), "src/components/consents/informedConsent.css")
+				: path.resolve(process.cwd(), "apps/web/src/components/consents/informedConsent.css");
 			const cssContent = fs.readFileSync(cssPath, "utf8");
 
 			// Check that .consent-document-title uses var(--ink)

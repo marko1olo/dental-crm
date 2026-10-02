@@ -21,6 +21,7 @@ import {
 	sanitizeConsentContext,
 	type ConsentScopeMismatchResult,
 } from "../../consents/consentSummaryHelper";
+import { detectRequiredVisitConsents } from "../../consents/consentSsotEngine";
 import {
 	type VisitConsentsTabPatient,
 	type VisitConsentsTabDoctor,
@@ -184,45 +185,24 @@ export function useVisitConsentsLogic({
 	const requiredFlags = useMemo<Partial<Record<ConsentTemplateKey, boolean>>>(() => {
 		const textContext = `${visitNoteForm?.diagnosis || ""} ${visitNoteForm?.treatmentPlan || ""} ${visitNoteForm?.complaint || ""} ${visitNoteForm?.anamnesis || ""}`.toLowerCase();
 
+		const ssotFlags = detectRequiredVisitConsents({
+			textContext,
+			isVisitClosed,
+			hasInspectionSigned: Boolean(consentRecords.CONSENT_INSPECTION_1051N?.isSigned),
+		});
+
 		const flags: Partial<Record<ConsentTemplateKey, boolean>> = {
 			CONSENT_INSPECTION_1051N: false,
 			CONSENT_ANESTHESIA: false,
 			CONSENT_THERAPY: false,
 			CONSENT_SURGERY_IMPLANT: false,
 			CONSENT_ORTHOPEDICS: false,
-			CONSENT_PERSONAL_DATA: false,
+			CONSENT_PERSONAL_DATA: !consentRecords.CONSENT_PERSONAL_DATA?.isSigned,
 			CONSENT_ORTHODONTICS: false,
 			CONSENT_HYGIENE_BLEACHING: false,
 			CONSENT_PEDIATRIC: false,
+			...ssotFlags,
 		};
-
-		if (!consentRecords.CONSENT_PERSONAL_DATA?.isSigned) {
-			flags.CONSENT_PERSONAL_DATA = true;
-		}
-
-		if (!consentRecords.CONSENT_INSPECTION_1051N?.isSigned) {
-			flags.CONSENT_INSPECTION_1051N = true;
-		}
-
-		const anesthesiaKeywords = ["анестез", "замороз", "карпул", "артикаин", "мепивакаин", "удал", "кариес", "пульпит", "периодонт", "пломб", "препар", "коронк", "имплант"];
-		if (anesthesiaKeywords.some((kw) => textContext.includes(kw)) || (!textContext.trim() && !isVisitClosed)) {
-			flags.CONSENT_ANESTHESIA = true;
-		}
-
-		const therapyKeywords = ["кариес", "пульпит", "периодонтит", "пломб", "реставрац", "эндо", "депульп", "канал", "k02", "k04"];
-		if (therapyKeywords.some((kw) => textContext.includes(kw)) || (!textContext.trim() && !isVisitClosed)) {
-			flags.CONSENT_THERAPY = true;
-		}
-
-		const surgeryKeywords = ["удал", "экстракц", "хирург", "имплант", "синус", "лунк", "резекц", "дистоп", "ретинир", "k01"];
-		if (surgeryKeywords.some((kw) => textContext.includes(kw))) {
-			flags.CONSENT_SURGERY_IMPLANT = true;
-		}
-
-		const orthoKeywords = ["коронк", "протез", "слепок", "винир", "ортопед", "вкладк", "мост", "k08"];
-		if (orthoKeywords.some((kw) => textContext.includes(kw))) {
-			flags.CONSENT_ORTHOPEDICS = true;
-		}
 
 		return flags;
 	}, [visitNoteForm, consentRecords, isVisitClosed]);

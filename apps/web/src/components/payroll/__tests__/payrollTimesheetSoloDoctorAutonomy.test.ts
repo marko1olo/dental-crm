@@ -32,8 +32,13 @@ import {
 	generateStaffPayrollT51Csv,
 	generate1CZup31Xml,
 	DOCTOR_SPECIALTY_CONFIGS,
+	CLINICAL_CATEGORY_COMMISSION_PERCENT,
+	calculateDoctorPeriodPayroll,
 	type DoctorStaffPayrollInput,
 } from "../staffPayrollEngine";
+import {
+	generateDoctorPayslipHtml,
+} from "../staffPayrollExports";
 import {
 	staffToEmployeeInfo,
 	generateDefaultMonthSchedule,
@@ -312,3 +317,120 @@ describe("Red Team: Anti-Matryoshka, Anti-Cartoon Emojis & CSS Tokens (Mandates 
 		);
 	});
 });
+
+describe("Red Team: Clinical Category Commission Invariants & ZTL Pre-Commission Deductions", () => {
+	it("4.1 Verifies clinical statutory commission rates: Therapy 25%, Orthopedics 20%, Surgery 22%, Orthodontics 22%, Hygiene 30%, Retail 10%", () => {
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.therapy, 25);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.orthopedics, 20);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.surgery, 22);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.orthodontics, 22);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.hygiene, 30);
+		assert.equal(CLINICAL_CATEGORY_COMMISSION_PERCENT.retail_hygiene, 10);
+	});
+
+	it("4.2 Pre-commission deduction of ZTL lab costs from orthopedics/orthodontics base before piece-rate calculation", () => {
+		const input: DoctorStaffPayrollInput = {
+			employeeId: "doc-ortho-ztl",
+			employeeTabNumber: "00005",
+			employeeFullName: "Д-р Протезов И.С.",
+			specialtyId: "orthopedist",
+			periodStartIso: "2026-09-01",
+			periodEndIso: "2026-09-30",
+			useClinicalCategoryRates: true,
+			services: [
+				{
+					id: "srv-ztl-1",
+					dateIso: "2026-09-10",
+					patientName: "Пациент А",
+					medicalCardNumber: "005",
+					serviceNameRu: "Коронка E.max циркониевая",
+					category: "orthopedics",
+					grossRevenueKop: 5000000, // 50,000 RUB
+					labCostKop: 1500000, // 15,000 RUB ZTL lab invoice
+					materialCostKop: 0,
+				},
+			],
+		};
+
+		const res = calculateDoctorStaffPayroll(input);
+		// Net base = 50,000 - 15,000 = 35,000 RUB = 3,500,000 kop
+		assert.equal(res.totalGrossRevenueKop, 5000000);
+		assert.equal(res.totalLabDeductionsKop, 1500000);
+		assert.equal(res.totalNetBaseKop, 3500000);
+		// Clinical rate for orthopedics = 20%: 20% of 3,500,000 = 700,000 kop (7,000 RUB)
+		// NOT 20% of 50,000 (which would be 10,000 RUB)
+		assert.equal(res.earnedBaseCommissionKop, 700000);
+	});
+
+	it("4.3 Pre-commission deduction of costly implants and bone materials from surgery piecework base", () => {
+		const input: DoctorStaffPayrollInput = {
+			employeeId: "doc-surg-mat",
+			employeeTabNumber: "00006",
+			employeeFullName: "Д-р Хирургов М.А.",
+			specialtyId: "surgeon",
+			periodStartIso: "2026-09-01",
+			periodEndIso: "2026-09-30",
+			useClinicalCategoryRates: true,
+			services: [
+				{
+					id: "srv-surg-1",
+					dateIso: "2026-09-12",
+					patientName: "Пациент Б",
+					medicalCardNumber: "006",
+					serviceNameRu: "Установка дентального имплантата Osstem + костная пластика",
+					category: "surgery",
+					grossRevenueKop: 8000000, // 80,000 RUB
+					labCostKop: 0,
+					materialCostKop: 2500000, // 25,000 RUB (имплантат + мембрана + биоматериал)
+				},
+			],
+		};
+
+		const res = calculateDoctorStaffPayroll(input);
+		// Net base = 80,000 - 25,000 = 55,000 RUB = 5,500,000 kop
+		assert.equal(res.totalGrossRevenueKop, 8000000);
+		assert.equal(res.totalMaterialDeductionsKop, 2500000);
+		assert.equal(res.totalNetBaseKop, 5500000);
+		// Clinical rate for surgery = 22%: 22% of 5,500,000 = 1,210,000 kop (12,100 RUB)
+		assert.equal(res.earnedBaseCommissionKop, 1210000);
+	});
+
+	it("4.4 generateDoctorPayslipHtml generates statutory A4 payslip with NDFL 13% rounding per Art. 225 p. 6 Tax Code RF and zero cartoon emojis", () => {
+		const periodRes = calculateDoctorPeriodPayroll({
+			doctorId: "doc-payslip",
+			doctorName: "Д-р Власова Е.В.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-09-01",
+			periodEndIso: "2026-09-30",
+			services: [
+				{
+					id: "srv-p-1",
+					dateIso: "2026-09-15",
+					patientName: "Пациент В",
+					medicalCardNumber: "007",
+					serviceNameRu: "Эндодонтическое лечение 3-канального зуба",
+					category: "therapy",
+					grossRevenueKop: 4500000, // 45,000 RUB
+					labCostKop: 0,
+					materialCostKop: 500000, // 5,000 RUB
+				},
+			],
+		});
+
+		const html = generateDoctorPayslipHtml(periodRes, "Стоматология ДЕНТЕ");
+		assert.ok(html.includes("РАСЧЕТНЫЙ ЛИСТОК ЗА ПЕРИОД"), "Must include payslip title");
+		assert.ok(html.includes("Ст. 136 ТК РФ"), "Must include Art. 136 LC RF reference");
+		assert.ok(html.includes("Д-р Власова Е.В."), "Must display doctor name");
+		assert.ok(html.includes("Зуботехническая лаборатория (ЗТЛ)"), "Must display ZTL lab line item");
+		assert.ok(html.includes("Удержан НДФЛ 13%"), "Must display NDFL 13% line item");
+
+		// NDFL 13% rounding check: grossPayout is minGuarantee (60,000 RUB = 6,000,000 kop)
+		// 13% of 6,000,000 kop = 780,000 kop (7,800.00 RUB)
+		assert.equal(periodRes.ndfl13TaxKop % 100, 0, "NDFL must round strictly to whole rubles (Art. 225 p. 6 TC RF)");
+
+		// Zero cartoon emojis in generated payslip HTML
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(html), false, "Payslip HTML must contain zero cartoon emojis");
+	});
+});
+

@@ -69,7 +69,14 @@ export interface PhotoVideoConsentBlockersInput {
 
 export function photoVideoConsentBlockersReview(
 	input: PhotoVideoConsentBlockersInput,
+	options?: { allowBlankForPrint?: boolean; isCito?: boolean },
 ): PhotoVideoConsentBlockersReview {
+	if (options?.allowBlankForPrint || options?.isCito) {
+		return {
+			requiredCount: 4,
+			blockers: [],
+		};
+	}
 	const checks: Array<PhotoVideoConsentBlocker & { ok: boolean }> = [
 		{
 			field: "photoVideoMaterials",

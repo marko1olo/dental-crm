@@ -1,21 +1,30 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * DENTE Dental CRM — Multi-Role Staff Payroll & 1C:ZUP 3.1 Calculation Engine
+ * DENTE Dental CRM — Doctor & Staff Piece-Rate Payroll SSOT Calculation Engine
  *
- * Operational Russian Dental Practice Payroll Accounting:
- * 1. Multi-Role Accruals:
- *    - Doctors: Piecework % from net base (Gross - Dental Lab - Materials) + KPI for comprehensive plans + Retail hygiene % + Minimum guarantee floor.
- *    - Assistants: Shift/hourly rate + Qualification category bonus (10%/15%/20%) + Sterilization/CSO bonus + Radiography & Surgery assistance.
- *    - Administrators: Base salary/shifts + % of cash collection + Lead conversion bonus.
- * 2. 1C:ZUP 3.1 Clean Enterprise Integration:
- *    - CRM calculates operational accruals and timesheets (T-13 / T-51).
- *    - Statutory taxes (NDFL 13%/15%, SFR unified social contributions, standard deductions)
- *      are strictly handled by the accountant in 1C:ZUP 3.1.
- * 3. Statutory Forms & Export:
- *    - Form T-51 Consolidated Payroll Statement (Постановление Госкомстата № 1).
- *    - 1C:ZUP 3.1 (1С:Зарплата и управление персоналом 3.1) XML & CSV Enterprise Export.
+ * Single Source of Truth (SSOT) for Statutory & Piece-Rate Dental Payroll:
+ * 1. Piecework Accruals & Clinical Category Differentiation:
+ *    - Differentiated piece-rate commission by clinical category:
+ *      * Therapy: 25% (after direct composite & endo material deduction)
+ *      * Orthopedics: 20% (strictly after ZTL dental lab invoice deduction)
+ *      * Surgery / Implantology: 22% (strictly after implants, bone graft & membrane deduction)
+ *      * Orthodontics: 22% (strictly after aligner setup & appliance deduction)
+ *      * Hygiene: 30% pro-hygiene / 10% retail oral hygiene home-care
+ *      * Pediatric: 25%
+ * 2. ZTL Dental Lab & High-Cost Materials Deductions:
+ *    - Clinic must NEVER pay doctor commission on outsourced dental lab costs with a loss.
+ *    - Lab and materials are strictly deducted from Gross Revenue BEFORE calculating % (Net Base).
+ * 3. Refunds, Storno, Warranties & Multi-Doctor Splits:
+ *    - Reversal / Storno line items with kopeck-exact negative clawback.
+ *    - Warranty rework: 0 ₽ for doctor fault vs fixed rate for clinic/lab warranty.
+ *    - Multi-doctor visit splitting strictly by performerId/doctorId.
+ *    - Personal Income Tax (НДФЛ 13%) rounded to whole rubles per Art. 225 p. 6 Tax Code RF.
+ * 4. Multi-Role Staff & 1C:ZUP 3.1 Enterprise Integration:
+ *    - Doctors, Assistants (categories, sterilization CSO, x-rays, surgeries), Administrators.
+ *    - Form T-13, Form T-51, 1C:ZUP 3.1 XML and CSV exports.
  *
- * Invariant: All monetary calculations in integer kopecks (kopeck-exact arithmetic).
+ * Invariant: All calculations in integer kopecks (kopeck-exact arithmetic).
+ * Mandate 8b: File strictly <= 800 lines.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -25,16 +34,20 @@ export type DoctorSpecialtyId =
 	| "therapist"
 	| "orthopedist"
 	| "surgeon_implantologist"
+	| "surgeon"
 	| "orthodontist"
 	| "hygienist"
 	| "pediatric"
+	| "pediatric_dentist"
 	| "general_dentist"
-	| "solo_practitioner";
+	| "periodontist"
+	| "solo_practitioner"
+	| "solo-doctor";
 
 export type AssistantCategoryId = "none" | "second" | "first" | "highest";
 
-export interface DoctorSpecialtyConfig {
-	readonly specialtyId: DoctorSpecialtyId;
+export interface DoctorSpecialtyCommissionRule {
+	readonly specialtyId: string;
 	readonly titleRu: string;
 	readonly defaultPercentage: number;
 	readonly retailProductsPercentage: number;
@@ -44,87 +57,57 @@ export interface DoctorSpecialtyConfig {
 	readonly descriptionRu: string;
 }
 
-export const DOCTOR_SPECIALTY_CONFIGS: Record<DoctorSpecialtyId, DoctorSpecialtyConfig> = {
-	therapist: {
-		specialtyId: "therapist",
-		titleRu: "Врач-стоматолог терапевт / эндодонтист",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
-		descriptionRu: "25% от чистой базы (выручка минус материалы) + 10% за средства домашней гигиены.",
-	},
-	orthopedist: {
-		specialtyId: "orthopedist",
-		titleRu: "Врач-стоматолог ортопед (CAD/CAM)",
-		defaultPercentage: 25,
-		retailProductsPercentage: 5,
-		deductsLabCosts: true,
-		deductsMaterialCosts: false,
-		minGuaranteeMonthlyKop: 8000000, // 80,000 RUB
-		descriptionRu: "25% от выручки за вычетом счетов зуботехнической лаборатории (цирконий, E.max, виниры).",
-	},
-	surgeon_implantologist: {
-		specialtyId: "surgeon_implantologist",
-		titleRu: "Врач-стоматолог хирург-имплантолог",
-		defaultPercentage: 20,
-		retailProductsPercentage: 5,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 10000000, // 100,000 RUB
-		descriptionRu: "20% от имплантации (за вычетом стоимости имплантатов и мембран) + 30% от удалений.",
-	},
-	orthodontist: {
-		specialtyId: "orthodontist",
-		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
-		defaultPercentage: 25,
-		retailProductsPercentage: 5,
-		deductsLabCosts: true,
-		deductsMaterialCosts: false,
-		minGuaranteeMonthlyKop: 7500000, // 75,000 RUB
-		descriptionRu: "25% от регулярных приемов и активаций, за вычетом стоимости сетапа элайнеров.",
-	},
-	hygienist: {
-		specialtyId: "hygienist",
-		titleRu: "Гигиенист стоматологический",
-		defaultPercentage: 30,
-		retailProductsPercentage: 15,
-		deductsLabCosts: false,
-		deductsMaterialCosts: false,
-		minGuaranteeMonthlyKop: 4500000, // 45,000 RUB
-		descriptionRu: "30% от профессиональной гигиены и отбеливания + 15% за проданные средства гигиены.",
-	},
-	pediatric: {
-		specialtyId: "pediatric",
-		titleRu: "Детский врач-стоматолог",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: false,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
-		descriptionRu: "25% от детского терапевтического приема (минус материалы) + адаптационный прием.",
-	},
-	general_dentist: {
-		specialtyId: "general_dentist",
-		titleRu: "Врач-стоматолог общей практики",
-		defaultPercentage: 25,
-		retailProductsPercentage: 10,
-		deductsLabCosts: true,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 7000000, // 70,000 RUB
-		descriptionRu: "25% от чистой базы (выручка за вычетом лаборатории и материалов).",
-	},
-	solo_practitioner: {
-		specialtyId: "solo_practitioner",
-		titleRu: "Врач-стоматолог (Индивидуальная практика / Соло)",
-		defaultPercentage: 100,
-		retailProductsPercentage: 100,
-		deductsLabCosts: true,
-		deductsMaterialCosts: true,
-		minGuaranteeMonthlyKop: 0,
-		descriptionRu: "Индивидуальная практика: 100% операционной выручки за вычетом лаборатории и материалов.",
-	},
+export type DoctorSpecialtyConfig = DoctorSpecialtyCommissionRule;
+
+export interface AssistantShiftRateRule {
+	readonly baseShiftRateKop: number;
+	readonly radiographBonusKop: number;
+	readonly surgeryAssistanceBonusKop: number;
+	readonly overtimeHourlyRateKop: number;
+}
+
+export interface AssistantRatesConfig {
+	readonly baseShiftRate6hKop: number;
+	readonly baseShiftRate12hKop: number;
+	readonly hourlyOvertimeRateKop: number;
+	readonly hourlyNightRateKop: number;
+	readonly categoryBonusPercentMap: Record<AssistantCategoryId, number>;
+	readonly sterilizationShiftBonusKop: number;
+	readonly radiographBonusKop: number;
+	readonly surgeryAssistanceBonusKop: number;
+}
+
+export interface AdministratorRatesConfig {
+	readonly baseSalaryMonthlyKop: number;
+	readonly baseShiftRateKop: number;
+	readonly cashRevenueCommissionPercent: number;
+	readonly leadConversionThresholdPercent: number;
+	readonly leadConversionBonusKop: number;
+}
+
+export interface KpiBonusTier {
+	readonly minRevenueKop: number;
+	readonly bonusPercentage: number;
+	readonly badgeLabelRu: string;
+}
+
+export interface SoloDoctorSpecialtyPreset {
+	readonly specialtyId: string;
+	readonly titleRu: string;
+	readonly labelRu: string;
+}
+
+export const CLINICAL_CATEGORY_COMMISSION_PERCENT: Record<
+	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
+	number
+> = {
+	therapy: 25,
+	orthopedics: 20,
+	surgery: 22,
+	orthodontics: 22,
+	hygiene: 30,
+	retail_hygiene: 10,
+	pediatric: 25,
 };
 
 export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<
@@ -140,50 +123,246 @@ export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<
 	pediatric: 25,
 };
 
-export interface AssistantRatesConfig {
-	readonly baseShiftRate6hKop: number; // e.g. 3,500 RUB = 350,000 kop
-	readonly baseShiftRate12hKop: number; // e.g. 7,000 RUB = 700,000 kop
-	readonly hourlyOvertimeRateKop: number; // e.g. 600 RUB = 60,000 kop
-	readonly hourlyNightRateKop: number; // e.g. 700 RUB = 70,000 kop
-	readonly categoryBonusPercentMap: Record<AssistantCategoryId, number>;
-	readonly sterilizationShiftBonusKop: number; // e.g. 500 RUB = 50,000 kop
-	readonly radiographBonusKop: number; // e.g. 150 RUB = 15,000 kop
-	readonly surgeryAssistanceBonusKop: number; // e.g. 500 RUB = 50,000 kop
-}
+export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissionRule[] = [
+	{
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики (соло)",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от выручки за вычетом лаборатории и прямых материалов + 10% за средства домашней гигиены.",
+	},
+	{
+		specialtyId: "therapist",
+		titleRu: "Врач-стоматолог терапевт / эндодонтист",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от выручки за вычетом прямых материалов (пломбировочные, эндомоторы) + 10% за средства домашней гигиены.",
+	},
+	{
+		specialtyId: "orthopedist",
+		titleRu: "Врач-стоматолог ортопед (CAD/CAM)",
+		defaultPercentage: 25,
+		retailProductsPercentage: 5,
+		deductsLabCosts: true,
+		deductsMaterialCosts: false,
+		minGuaranteeMonthlyKop: 8000000,
+		descriptionRu: "25% от выручки за вычетом счетов зуботехнической лаборатории (цирконий, керамика, виниры, E.max).",
+	},
+	{
+		specialtyId: "surgeon_implantologist",
+		titleRu: "Врач-стоматолог хирург-имплантолог",
+		defaultPercentage: 20,
+		retailProductsPercentage: 5,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 10000000,
+		descriptionRu: "20% от имплантации (за вычетом стоимости имплантата и мембран) + 30% от амбулаторных удалений зубов.",
+	},
+	{
+		specialtyId: "surgeon",
+		titleRu: "Врач-стоматолог хирург",
+		defaultPercentage: 20,
+		retailProductsPercentage: 5,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 10000000,
+		descriptionRu: "20% от амбулаторных хирургических операций за вычетом стоимости расходных материалов.",
+	},
+	{
+		specialtyId: "orthodontist",
+		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
+		defaultPercentage: 25,
+		retailProductsPercentage: 5,
+		deductsLabCosts: true,
+		deductsMaterialCosts: false,
+		minGuaranteeMonthlyKop: 7500000,
+		descriptionRu: "25% от активаций брекет-систем и регулярных приемов, за вычетом стоимости сетапа элайнеров.",
+	},
+	{
+		specialtyId: "periodontist",
+		titleRu: "Врач-стоматолог пародонтолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от пародонтологического лечения (Vector, кюретаж, шинирование) за вычетом материалов.",
+	},
+	{
+		specialtyId: "pediatric_dentist",
+		titleRu: "Детский врач-стоматолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от детского терапевтического приема и адаптации за вычетом материалов.",
+	},
+	{
+		specialtyId: "pediatric",
+		titleRu: "Детский врач-стоматолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000,
+		descriptionRu: "25% от детского терапевтического приема (минус материалы) + адаптационный прием.",
+	},
+	{
+		specialtyId: "hygienist",
+		titleRu: "Гигиенист стоматологический",
+		defaultPercentage: 30,
+		retailProductsPercentage: 15,
+		deductsLabCosts: false,
+		deductsMaterialCosts: false,
+		minGuaranteeMonthlyKop: 4500000,
+		descriptionRu: "30% от профессиональной гигиены и отбеливания + 15% за проданные пасты/щетки Curaprox/Oral-B.",
+	},
+	{
+		specialtyId: "solo_practitioner",
+		titleRu: "Врач-стоматолог (Индивидуальная практика / Соло)",
+		defaultPercentage: 100,
+		retailProductsPercentage: 100,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 0,
+		descriptionRu: "Индивидуальная практика: 100% операционной выручки за вычетом лаборатории и материалов.",
+	},
+];
+
+export const DOCTOR_SPECIALTY_CONFIGS: Record<string, DoctorSpecialtyCommissionRule> = {
+	therapist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "therapist")!,
+	orthopedist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "orthopedist")!,
+	surgeon_implantologist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "surgeon_implantologist")!,
+	surgeon: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "surgeon")!,
+	orthodontist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "orthodontist")!,
+	hygienist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "hygienist")!,
+	pediatric: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "pediatric")!,
+	pediatric_dentist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "pediatric_dentist")!,
+	general_dentist: {
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 7000000, // 70,000 RUB
+		descriptionRu: "25% от чистой базы (выручка за вычетом лаборатории и материалов).",
+	},
+	periodontist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "periodontist")!,
+	solo_practitioner: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "solo_practitioner")!,
+};
+
+export const SOLO_DOCTOR_SPECIALTY_PRESETS: readonly SoloDoctorSpecialtyPreset[] = [
+	{
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики (соло)",
+		labelRu: "Лечащий врач (соло-практика) — Стоматолог общей практики",
+	},
+	{
+		specialtyId: "therapist",
+		titleRu: "Врач-стоматолог терапевт / эндодонтист",
+		labelRu: "Терапевт / эндодонтист",
+	},
+	{
+		specialtyId: "orthopedist",
+		titleRu: "Врач-стоматолог ортопед (CAD/CAM)",
+		labelRu: "Ортопед (CAD/CAM)",
+	},
+	{
+		specialtyId: "surgeon_implantologist",
+		titleRu: "Врач-стоматолог хирург-имплантолог",
+		labelRu: "Хирург-имплантолог",
+	},
+	{
+		specialtyId: "surgeon",
+		titleRu: "Врач-стоматолог хирург",
+		labelRu: "Хирург",
+	},
+	{
+		specialtyId: "orthodontist",
+		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
+		labelRu: "Ортодонт (брекеты / элайнеры)",
+	},
+	{
+		specialtyId: "periodontist",
+		titleRu: "Врач-стоматолог пародонтолог",
+		labelRu: "Пародонтолог",
+	},
+	{
+		specialtyId: "pediatric_dentist",
+		titleRu: "Детский врач-стоматолог",
+		labelRu: "Детский стоматолог",
+	},
+	{
+		specialtyId: "hygienist",
+		titleRu: "Гигиенист стоматологический",
+		labelRu: "Гигиенист",
+	},
+];
+
+export const DEFAULT_SOLO_DOCTOR = {
+	id: "solo-doctor",
+	name: "Лечащий врач (соло-практика)",
+	specialtyId: "general_dentist",
+} as const;
 
 export const DEFAULT_ASSISTANT_RATES: AssistantRatesConfig = {
-	baseShiftRate6hKop: 350000, // 3,500 RUB
-	baseShiftRate12hKop: 700000, // 7,000 RUB
-	hourlyOvertimeRateKop: 60000, // 600 RUB/h
-	hourlyNightRateKop: 70000, // 700 RUB/h
+	baseShiftRate6hKop: 350000,
+	baseShiftRate12hKop: 700000,
+	hourlyOvertimeRateKop: 60000,
+	hourlyNightRateKop: 70000,
 	categoryBonusPercentMap: {
 		none: 0,
-		second: 10, // +10%
-		first: 15, // +15%
-		highest: 20, // +20% (Высшая категория)
+		second: 10,
+		first: 15,
+		highest: 20,
 	},
-	sterilizationShiftBonusKop: 50000, // 500 RUB / смена в ЦСО
-	radiographBonusKop: 15000, // 150 RUB / снимок
-	surgeryAssistanceBonusKop: 50000, // 500 RUB / операция
+	sterilizationShiftBonusKop: 50000,
+	radiographBonusKop: 15000,
+	surgeryAssistanceBonusKop: 50000,
 };
 
-export interface AdministratorRatesConfig {
-	readonly baseSalaryMonthlyKop: number; // e.g. 45,000 RUB = 4,500,000 kop
-	readonly baseShiftRateKop: number; // e.g. 3,000 RUB = 300,000 kop
-	readonly cashRevenueCommissionPercent: number; // e.g. 1.0%
-	readonly leadConversionThresholdPercent: number; // e.g. 70%
-	readonly leadConversionBonusKop: number; // e.g. 10,000 RUB = 1,000,000 kop
-}
+export const ASSISTANT_SHIFT_RULE: AssistantShiftRateRule = {
+	baseShiftRateKop: 350000,
+	radiographBonusKop: 15000,
+	surgeryAssistanceBonusKop: 20000,
+	overtimeHourlyRateKop: 50000,
+};
 
 export const DEFAULT_ADMINISTRATOR_RATES: AdministratorRatesConfig = {
-	baseSalaryMonthlyKop: 4500000, // 45,000 RUB
-	baseShiftRateKop: 300000, // 3,000 RUB / смена
-	cashRevenueCommissionPercent: 1.0, // 1.0% от кассового сбора
-	leadConversionThresholdPercent: 70.0, // 70% конверсия
-	leadConversionBonusKop: 1000000, // 10,000 RUB премия за конверсию
+	baseSalaryMonthlyKop: 4500000,
+	baseShiftRateKop: 300000,
+	cashRevenueCommissionPercent: 1.0,
+	leadConversionThresholdPercent: 70.0,
+	leadConversionBonusKop: 1000000,
 };
 
-export interface StaffDoctorCompletedServiceItem {
+export const KPI_BONUS_TIERS: readonly KpiBonusTier[] = [
+	{
+		minRevenueKop: 100000000,
+		bonusPercentage: 5,
+		badgeLabelRu: "Топ-выручка (+5% премия)",
+	},
+	{
+		minRevenueKop: 50000000,
+		bonusPercentage: 2,
+		badgeLabelRu: "Личный план выполнен (+2% премия)",
+	},
+	{
+		minRevenueKop: 0,
+		bonusPercentage: 0,
+		badgeLabelRu: "Базовая ставка",
+	},
+];
+
+export interface DoctorCompletedServiceItem {
 	readonly id: string;
 	readonly dateIso: string;
 	readonly patientName: string;
@@ -196,20 +375,105 @@ export interface StaffDoctorCompletedServiceItem {
 	readonly labCostKop: number;
 	readonly materialCostKop: number;
 	readonly customCommissionPercent?: number | undefined;
+	readonly isRefunded?: boolean | undefined;
+	readonly refundedAmountKop?: number | undefined;
+	readonly performerId?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly receiptNumber?: string | undefined;
+	readonly refundReceiptNumber?: string | undefined;
+	readonly refundReasonRu?: string | undefined;
+	readonly refundDateIso?: string | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyType?: "doctor_fault" | "clinic_warranty" | "lab_warranty" | undefined;
+	readonly warrantyFixedCompensationKop?: number | undefined;
+	readonly deductMaterialFromDoctor?: boolean | undefined;
+	readonly paymentSource?: "cash" | "card" | "sbp" | "deposit" | "family_deposit" | "split" | undefined;
+	readonly isDepositAdvanceOnly?: boolean | undefined;
+}
+
+export type StaffDoctorCompletedServiceItem = DoctorCompletedServiceItem;
+
+export interface DoctorRefundDeductionItem {
+	readonly serviceId?: string | undefined;
+	readonly toothCode?: string | undefined;
+	readonly serviceNameRu?: string | undefined;
+	readonly refundedGrossKop: number;
+	readonly reasonRu?: string | undefined;
+	readonly receiptNumber?: string | undefined;
+	readonly dateIso?: string | undefined;
+	readonly customCommissionPercent?: number | undefined;
+	readonly performerId?: string | undefined;
+	readonly doctorId?: string | undefined;
+}
+
+export interface DoctorPayrollCalculationInput {
+	readonly doctorId: string;
+	readonly doctorName: string;
+	readonly specialtyId: string;
+	readonly periodStartIso: string;
+	readonly periodEndIso: string;
+	readonly services: readonly DoctorCompletedServiceItem[];
+	readonly customBasePercentage?: number | undefined;
+	readonly categoryRates?: Partial<Record<"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric", number>> | undefined;
+	readonly useClinicalCategoryRates?: boolean | undefined;
+	readonly manualAdjustmentKop?: number | undefined;
+	readonly manualAdjustmentNoteRu?: string | undefined;
+	readonly refundDeductions?: readonly DoctorRefundDeductionItem[] | undefined;
+}
+
+export interface DoctorPayrollStornoLineItem {
+	readonly id: string;
+	readonly serviceId?: string | undefined;
+	readonly dateIso: string;
+	readonly serviceNameRu: string;
+	readonly receiptNumber: string;
+	readonly reasonRu: string;
+	readonly refundedGrossKop: number;
+	readonly stornoCommissionKop: number;
+	readonly labelRu: string;
+}
+
+export interface DoctorPayrollResult {
+	readonly doctorId: string;
+	readonly doctorName: string;
+	readonly specialtyTitleRu: string;
+	readonly periodLabelRu: string;
+	readonly totalGrossRevenueKop: number;
+	readonly totalLabDeductionsKop: number;
+	readonly totalMaterialDeductionsKop: number;
+	readonly totalNetBaseKop: number;
+	readonly totalRefundDeductionsKop: number;
+	readonly totalRefundClawbackKop: number;
+	readonly refundedServicesCount: number;
+	readonly stornoItems: readonly DoctorPayrollStornoLineItem[];
+	readonly warrantyServicesCount: number;
+	readonly baseCommissionPercent: number;
+	readonly earnedBaseCommissionKop: number;
+	readonly kpiBonusPercent: number;
+	readonly kpiBonusEarnedKop: number;
+	readonly kpiTierBadgeRu: string;
+	readonly earnedRetailCommissionKop: number;
+	readonly grossPayoutBeforeTaxKop: number;
+	readonly ndfl13TaxKop: number;
+	readonly netPayoutToDoctorKop: number;
+	readonly minimumGuaranteeApplied: boolean;
+	readonly manualAdjustmentKop: number;
+	readonly serviceCount: number;
 }
 
 export interface DoctorStaffPayrollInput {
 	readonly employeeId: string;
 	readonly employeeTabNumber: string;
 	readonly employeeFullName: string;
-	readonly specialtyId: DoctorSpecialtyId;
+	readonly specialtyId: string;
 	readonly periodStartIso: string;
 	readonly periodEndIso: string;
-	readonly services: readonly StaffDoctorCompletedServiceItem[];
+	readonly services: readonly DoctorCompletedServiceItem[];
 	readonly comprehensivePlansCount?: number | undefined;
-	readonly comprehensivePlanBonusPerUnitKop?: number | undefined; // e.g. 5,000 RUB
+	readonly comprehensivePlanBonusPerUnitKop?: number | undefined;
 	readonly customBasePercentage?: number | undefined;
 	readonly categoryRates?: Partial<Record<"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric", number>> | undefined;
+	readonly useClinicalCategoryRates?: boolean | undefined;
 	readonly manualAdjustmentKop?: number | undefined;
 	readonly manualAdjustmentNoteRu?: string | undefined;
 	readonly daysWorked?: number | undefined;
@@ -221,7 +485,7 @@ export interface DoctorStaffPayrollResult {
 	readonly employeeTabNumber: string;
 	readonly employeeFullName: string;
 	readonly role: "doctor";
-	readonly specialtyId: DoctorSpecialtyId;
+	readonly specialtyId: string;
 	readonly positionRu: string;
 	readonly departmentRu: string;
 	readonly periodLabelRu: string;
@@ -257,6 +521,8 @@ export interface AssistantShiftItem {
 	readonly radiographsTakenCount?: number | undefined;
 	readonly surgeriesAssistedCount?: number | undefined;
 }
+
+export type AssistantShiftLogItem = AssistantShiftItem;
 
 export interface AssistantStaffPayrollInput {
 	readonly employeeId: string;
@@ -294,6 +560,21 @@ export interface AssistantStaffPayrollResult {
 	readonly manualAdjustmentKop: number;
 	readonly manualAdjustmentNoteRu: string;
 	readonly grossPayoutBeforeTaxKop: number;
+}
+
+export interface AssistantPayrollResult {
+	readonly assistantId: string;
+	readonly assistantName: string;
+	readonly periodLabelRu: string;
+	readonly totalShifts: number;
+	readonly totalRadiographs: number;
+	readonly totalSurgeries: number;
+	readonly baseShiftPayoutKop: number;
+	readonly radiographPayoutKop: number;
+	readonly surgeryPayoutKop: number;
+	readonly totalGrossPayoutKop: number;
+	readonly ndfl13TaxKop: number;
+	readonly netPayoutToAssistantKop: number;
 }
 
 export interface AdministratorStaffPayrollInput {
@@ -378,20 +659,290 @@ export interface ConsolidatedPayrollCalculationParams {
 	readonly administrators?: readonly AdministratorStaffPayrollInput[] | undefined;
 }
 
+export function splitVisitServicesByDoctor(
+	services: readonly DoctorCompletedServiceItem[],
+	fallbackDoctorId?: string
+): Map<string, DoctorCompletedServiceItem[]> {
+	const map = new Map<string, DoctorCompletedServiceItem[]>();
+	for (const service of services) {
+		const targetDoctorId = service.performerId ?? service.doctorId ?? fallbackDoctorId ?? "unassigned";
+		const list = map.get(targetDoctorId) ?? [];
+		list.push(service);
+		map.set(targetDoctorId, list);
+	}
+	return map;
+}
+
+export function filterServicesForDoctor(
+	services: readonly DoctorCompletedServiceItem[],
+	doctorId: string
+): DoctorCompletedServiceItem[] {
+	return services.filter((srv) => {
+		const assigned = srv.performerId ?? srv.doctorId;
+		return !assigned || assigned === doctorId;
+	});
+}
+
+function resolveDoctorPreset(specialtyId: string): DoctorSpecialtyCommissionRule {
+	const defaultPreset =
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "general_dentist") ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
+
+	return (
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === specialtyId) ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find(
+			(p) =>
+				(specialtyId === "solo-doctor" && p.specialtyId === "general_dentist") ||
+				(specialtyId === "surgeon" && p.specialtyId === "surgeon_implantologist") ||
+				(specialtyId === "pediatric" && p.specialtyId === "pediatric_dentist")
+		) ??
+		defaultPreset
+	);
+}
+
 /**
- * Calculates piecework doctor payroll with lab/material deductions and comprehensive plan KPI.
- *
- * Formula:
- * Net Base = Gross Revenue - Lab Costs - Material Costs
- * Base Accrual = Net Base * Specialty Rate %
- * Total Gross Accrual = Max(MinGuarantee, Base Accrual + Retail Bonus + Plan KPI + Revenue KPI + Adjustment)
+ * Calculates kopeck-exact doctor piece-rate payroll with ZTL and material deductions,
+ * differentiated clinical rates, KPI tiers, and Personal Income Tax (НДФЛ 13%).
+ */
+export function calculateDoctorPeriodPayroll(
+	input: DoctorPayrollCalculationInput
+): DoctorPayrollResult {
+	const preset = resolveDoctorPreset(input.specialtyId);
+	const basePercent = input.customBasePercentage ?? preset.defaultPercentage;
+
+	const doctorServices = filterServicesForDoctor(input.services, input.doctorId);
+
+	let totalGross = 0;
+	let totalLab = 0;
+	let totalMaterial = 0;
+	let earnedBase = 0;
+	let earnedRetail = 0;
+	let refundedServicesCount = 0;
+	let warrantyServicesCount = 0;
+	let totalItemRefundsKop = 0;
+	const stornoItems: DoctorPayrollStornoLineItem[] = [];
+
+	for (const item of doctorServices) {
+		if (item.isDepositAdvanceOnly) {
+			continue;
+		}
+
+		if (item.isWarrantyRework) {
+			warrantyServicesCount += 1;
+			if (item.warrantyType === "clinic_warranty" || item.warrantyType === "lab_warranty") {
+				const fixedComp = item.warrantyFixedCompensationKop ?? 0;
+				if (fixedComp > 0) {
+					earnedBase += fixedComp;
+				}
+			}
+			if (item.deductMaterialFromDoctor && item.materialCostKop > 0) {
+				totalMaterial += item.materialCostKop;
+			}
+			continue;
+		}
+
+		const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop !== undefined && item.refundedAmountKop >= item.grossRevenueKop);
+		const refundKop = Math.min(item.grossRevenueKop, item.refundedAmountKop ?? (item.isRefunded ? item.grossRevenueKop : 0));
+
+		// CLINICAL INVARIANT: Orthopedic & Orthodontic services ALWAYS deduct ZTL lab costs
+		const shouldDeductLab =
+			preset.deductsLabCosts ||
+			item.category === "orthopedics" ||
+			item.category === "orthodontics" ||
+			(item.labCostKop !== undefined && item.labCostKop > 0);
+		const itemLabCost = shouldDeductLab ? Math.max(0, item.labCostKop || 0) : 0;
+
+		// CLINICAL INVARIANT: Surgery/Implantation (implants, bone blocks) & Therapy deduct materials
+		const shouldDeductMaterial =
+			preset.deductsMaterialCosts ||
+			item.category === "surgery" ||
+			item.category === "therapy" ||
+			item.category === "pediatric" ||
+			(item.materialCostKop !== undefined && item.materialCostKop > 0 && preset.deductsMaterialCosts);
+		const itemMaterialCost = shouldDeductMaterial ? Math.max(0, item.materialCostKop || 0) : 0;
+
+		const clinicalRate = input.useClinicalCategoryRates ? CLINICAL_CATEGORY_COMMISSION_PERCENT[item.category] : undefined;
+
+		const itemCommissionPercent =
+			item.customCommissionPercent ??
+			input.categoryRates?.[item.category] ??
+			clinicalRate ??
+			(input.customBasePercentage !== undefined
+				? input.customBasePercentage
+				: (preset.specialtyId === "solo_practitioner" || preset.specialtyId === "solo-doctor" || preset.defaultPercentage === 100
+					? preset.defaultPercentage
+					: (DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] ?? (item.category === "retail_hygiene" ? preset.retailProductsPercentage : basePercent))));
+
+		if (isFullyRefunded) {
+			refundedServicesCount += 1;
+			totalItemRefundsKop += item.grossRevenueKop;
+
+			const receiptNum = item.refundReceiptNumber ?? item.receiptNumber ?? item.id;
+			const reason = item.refundReasonRu ?? "Полный возврат пациенту";
+			const netBaseIfPaid = Math.max(0, item.grossRevenueKop - itemLabCost - itemMaterialCost);
+			const stornoComm = Math.round((netBaseIfPaid * itemCommissionPercent) / 100);
+			const stornoRub = (stornoComm / 100).toLocaleString("ru-RU");
+
+			stornoItems.push({
+				id: `storno-srv-${item.id}`,
+				serviceId: item.id,
+				dateIso: item.refundDateIso ?? item.dateIso,
+				serviceNameRu: item.serviceNameRu,
+				receiptNumber: receiptNum,
+				reasonRu: reason,
+				refundedGrossKop: item.grossRevenueKop,
+				stornoCommissionKop: stornoComm,
+				labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
+			});
+			continue;
+		}
+
+		const effectiveGrossKop = Math.max(0, item.grossRevenueKop - refundKop);
+		if (refundKop > 0) {
+			refundedServicesCount += 1;
+			totalItemRefundsKop += refundKop;
+
+			const receiptNum = item.refundReceiptNumber ?? item.receiptNumber ?? item.id;
+			const reason = item.refundReasonRu ?? "Частичный возврат пациенту";
+			const partialStornoComm = Math.round((refundKop * itemCommissionPercent) / 100);
+			const stornoRub = (partialStornoComm / 100).toLocaleString("ru-RU");
+
+			stornoItems.push({
+				id: `storno-partial-${item.id}`,
+				serviceId: item.id,
+				dateIso: item.refundDateIso ?? item.dateIso,
+				serviceNameRu: `${item.serviceNameRu} (частично)`,
+				receiptNumber: receiptNum,
+				reasonRu: reason,
+				refundedGrossKop: refundKop,
+				stornoCommissionKop: partialStornoComm,
+				labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
+			});
+		}
+
+		totalGross += effectiveGrossKop;
+		totalLab += itemLabCost;
+		totalMaterial += itemMaterialCost;
+
+		if (item.category === "retail_hygiene") {
+			const itemRetailPercent =
+				item.customCommissionPercent ??
+				input.categoryRates?.retail_hygiene ??
+				preset.retailProductsPercentage;
+			const retailEarned = Math.round((effectiveGrossKop * itemRetailPercent) / 100);
+			earnedRetail += retailEarned;
+		} else {
+			const netItemBase = Math.max(0, effectiveGrossKop - itemLabCost - itemMaterialCost);
+			const itemEarned = Math.round((netItemBase * itemCommissionPercent) / 100);
+			earnedBase += itemEarned;
+		}
+	}
+
+	let explicitRefundKop = 0;
+	let explicitRefundClawbackKop = 0;
+
+	if (input.refundDeductions && input.refundDeductions.length > 0) {
+		for (const ref of input.refundDeductions) {
+			const assignedDoctorId = ref.performerId ?? ref.doctorId;
+			if (assignedDoctorId && assignedDoctorId !== input.doctorId) {
+				continue;
+			}
+
+			const refRate = ref.customCommissionPercent ?? basePercent;
+			const clawbackKop = Math.round((ref.refundedGrossKop * refRate) / 100);
+			explicitRefundKop += ref.refundedGrossKop;
+			explicitRefundClawbackKop += clawbackKop;
+			refundedServicesCount += 1;
+
+			const receiptNum = ref.receiptNumber ?? ref.serviceId ?? "б/н";
+			const stornoRub = (clawbackKop / 100).toLocaleString("ru-RU");
+			const labelRu = `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`;
+
+			stornoItems.push({
+				id: `storno-deduct-${ref.serviceId ?? Math.random().toString(36).slice(2)}`,
+				serviceId: ref.serviceId,
+				dateIso: ref.dateIso ?? input.periodEndIso,
+				serviceNameRu: ref.serviceNameRu ?? "Возврат за ранее оплаченную услугу",
+				receiptNumber: receiptNum,
+				reasonRu: ref.reasonRu ?? "Возврат пациенту",
+				refundedGrossKop: ref.refundedGrossKop,
+				stornoCommissionKop: clawbackKop,
+				labelRu,
+			});
+		}
+	}
+
+	const totalRefundDeductionsKop = totalItemRefundsKop + explicitRefundKop;
+	const totalRefundClawbackKop = explicitRefundClawbackKop;
+	const totalNetBase = Math.max(0, totalGross - totalLab - totalMaterial);
+
+	let kpiPercent = 0;
+	let kpiBadge = "Базовая ставка";
+	for (const tier of KPI_BONUS_TIERS) {
+		if (totalGross >= tier.minRevenueKop) {
+			kpiPercent = tier.bonusPercentage;
+			kpiBadge = tier.badgeLabelRu;
+			break;
+		}
+	}
+
+	const kpiBonusEarned = Math.round((totalNetBase * kpiPercent) / 100);
+	const manualAdj = input.manualAdjustmentKop ?? 0;
+
+	let preGuaranteePayout = earnedBase + earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop;
+	if (!Number.isFinite(preGuaranteePayout)) {
+		preGuaranteePayout = 0;
+	}
+
+	let guaranteeApplied = false;
+	if (preGuaranteePayout < preset.minGuaranteeMonthlyKop && doctorServices.length > 0) {
+		preGuaranteePayout = preset.minGuaranteeMonthlyKop;
+		guaranteeApplied = true;
+	}
+
+	const grossPayout = Math.max(0, preGuaranteePayout);
+	// Округление НДФЛ 13% строго до целых рублей (п. 6 ст. 225 НК РФ)
+	const ndfl13 = Math.round((grossPayout * 13) / 10000) * 100;
+	const netToDoctor = Math.max(0, grossPayout - ndfl13);
+
+	return {
+		doctorId: input.doctorId,
+		doctorName: input.doctorName,
+		specialtyTitleRu: preset.titleRu,
+		periodLabelRu: `${input.periodStartIso} — ${input.periodEndIso}`,
+		totalGrossRevenueKop: totalGross,
+		totalLabDeductionsKop: totalLab,
+		totalMaterialDeductionsKop: totalMaterial,
+		totalNetBaseKop: totalNetBase,
+		totalRefundDeductionsKop,
+		totalRefundClawbackKop,
+		refundedServicesCount,
+		stornoItems,
+		warrantyServicesCount,
+		baseCommissionPercent: basePercent,
+		earnedBaseCommissionKop: earnedBase,
+		kpiBonusPercent: kpiPercent,
+		kpiBonusEarnedKop: kpiBonusEarned,
+		kpiTierBadgeRu: kpiBadge,
+		earnedRetailCommissionKop: earnedRetail,
+		grossPayoutBeforeTaxKop: grossPayout,
+		ndfl13TaxKop: ndfl13,
+		netPayoutToDoctorKop: netToDoctor,
+		minimumGuaranteeApplied: guaranteeApplied,
+		manualAdjustmentKop: manualAdj,
+		serviceCount: doctorServices.length,
+	};
+}
+
+/**
+ * Calculates piecework doctor payroll with comprehensive plans and revenue KPI.
  */
 export function calculateDoctorStaffPayroll(
 	input: DoctorStaffPayrollInput
 ): DoctorStaffPayrollResult {
-	const preset: DoctorSpecialtyConfig =
-		DOCTOR_SPECIALTY_CONFIGS[input.specialtyId] ?? DOCTOR_SPECIALTY_CONFIGS.therapist;
-
+	const preset =
+		DOCTOR_SPECIALTY_CONFIGS[input.specialtyId] ??
+		resolveDoctorPreset(input.specialtyId);
 	const basePercent = input.customBasePercentage ?? preset.defaultPercentage;
 
 	let totalGross = 0;
@@ -407,8 +958,6 @@ export function calculateDoctorStaffPayroll(
 
 		totalGross += itemGrossKop;
 
-		// MANDATE 1: Orthopedic and Orthodontic services ALWAYS deduct ZTL dental lab costs,
-		// and ANY service with a direct lab invoice (labCostKop > 0) or specialty preset deducts lab.
 		const shouldDeductLab =
 			preset.deductsLabCosts ||
 			item.category === "orthopedics" ||
@@ -416,9 +965,6 @@ export function calculateDoctorStaffPayroll(
 			itemLabKop > 0;
 		const labCost = shouldDeductLab ? Math.max(0, itemLabKop) : 0;
 
-		// MANDATE 1: Surgery/Implantation (implants, bone blocks, titanium meshes, membranes)
-		// and Therapy (restorative composites) and ANY service with direct materials (materialCostKop > 0)
-		// deducts high-cost materials from the doctor's commission base when preset or category specifies.
 		const shouldDeductMaterial =
 			preset.deductsMaterialCosts ||
 			item.category === "surgery" ||
@@ -430,10 +976,13 @@ export function calculateDoctorStaffPayroll(
 		totalLab += labCost;
 		totalMaterial += materialCost;
 
+		const clinicalRate = input.useClinicalCategoryRates ? CLINICAL_CATEGORY_COMMISSION_PERCENT[item.category] : undefined;
+
 		if (item.category === "retail_hygiene") {
 			const retailPercent =
 				item.customCommissionPercent ??
 				input.categoryRates?.retail_hygiene ??
+				clinicalRate ??
 				preset.retailProductsPercentage;
 			const retailEarned = Math.round((itemGrossKop * retailPercent) / 100);
 			earnedRetail += retailEarned;
@@ -442,6 +991,7 @@ export function calculateDoctorStaffPayroll(
 			const itemCommissionPercent =
 				item.customCommissionPercent ??
 				input.categoryRates?.[item.category] ??
+				clinicalRate ??
 				(input.customBasePercentage !== undefined
 					? input.customBasePercentage
 					: (preset.specialtyId === "solo_practitioner" || preset.defaultPercentage === 100
@@ -454,24 +1004,20 @@ export function calculateDoctorStaffPayroll(
 
 	const totalNetBase = Math.max(0, totalGross - totalLab - totalMaterial);
 
-	// Revenue tier KPI
 	let revenueKpiPercent = 0;
 	let kpiBadge = "Базовая ставка";
-	if (totalGross >= 100000000) { // >= 1,000,000 RUB
+	if (totalGross >= 100000000) {
 		revenueKpiPercent = 5;
 		kpiBadge = "Топ-выручка (+5% премия)";
-	} else if (totalGross >= 50000000) { // >= 500,000 RUB
+	} else if (totalGross >= 50000000) {
 		revenueKpiPercent = 2;
 		kpiBadge = "План выполнен (+2% премия)";
 	}
 
 	const revenueKpiBonusKop = Math.round((totalNetBase * revenueKpiPercent) / 100);
-
-	// Comprehensive plans KPI (e.g. 5,000 RUB per plan)
 	const compPlansCount = Math.round(Number(input.comprehensivePlansCount) || 0);
-	const compPlanBonusPerUnit = Math.round(Number(input.comprehensivePlanBonusPerUnitKop) || 500000); // 5,000 RUB
+	const compPlanBonusPerUnit = Math.round(Number(input.comprehensivePlanBonusPerUnitKop) || 500000);
 	const comprehensivePlanBonusKop = Math.round(compPlansCount * compPlanBonusPerUnit);
-
 	const manualAdj = Math.round(Number(input.manualAdjustmentKop) || 0);
 	const noteRu = input.manualAdjustmentNoteRu ?? "";
 
@@ -480,12 +1026,8 @@ export function calculateDoctorStaffPayroll(
 	let guaranteeApplied = false;
 	let guaranteeTopUpKop = 0;
 
-	// Mandate 8s: Solo Doctor & Small Clinic Sovereignty
-	// Active production or shift attendance qualifies for minimum statutory guarantee floor
 	const daysWorked = input.daysWorked !== undefined ? Math.round(Number(input.daysWorked)) : (input.services.length > 0 ? 21 : 0);
-	// Art. 350 Labor Code RF: 33h week = 6.6h/day for dentists (outpatient reception)
 	const hoursWorked = input.hoursWorked !== undefined ? Number(input.hoursWorked) : Number((daysWorked * 6.6).toFixed(1));
-
 	const hasActiveProductionOrAttendance = input.services.length > 0 || daysWorked > 0;
 
 	if (preGuaranteeGross < preset.minGuaranteeMonthlyKop && hasActiveProductionOrAttendance && preset.minGuaranteeMonthlyKop > 0) {
@@ -529,9 +1071,54 @@ export function calculateDoctorStaffPayroll(
 	};
 }
 
-/**
- * Calculates assistant payroll with category, sterilization, radiography, and surgery bonuses.
- */
+export function calculateAssistantPeriodPayroll(
+	assistantId: string,
+	assistantName: string,
+	periodLabel: string,
+	shifts: readonly AssistantShiftLogItem[],
+	rules: AssistantShiftRateRule = ASSISTANT_SHIFT_RULE
+): AssistantPayrollResult {
+	let totalShifts = 0;
+	let totalRadiographs = 0;
+	let totalSurgeries = 0;
+	let baseShiftPayout = 0;
+
+	for (const shift of shifts) {
+		totalShifts += 1;
+		totalRadiographs += shift.radiographsTakenCount ?? 0;
+		totalSurgeries += shift.surgeriesAssistedCount ?? 0;
+
+		if (shift.shiftType === "standard_6h") {
+			baseShiftPayout += rules.baseShiftRateKop;
+		} else if (shift.shiftType === "full_12h") {
+			baseShiftPayout += rules.baseShiftRateKop * 2;
+		} else {
+			baseShiftPayout += Math.round((shift.hoursWorked / 6) * rules.baseShiftRateKop);
+		}
+	}
+
+	const radiographPayout = totalRadiographs * rules.radiographBonusKop;
+	const surgeryPayout = totalSurgeries * rules.surgeryAssistanceBonusKop;
+	const grossTotal = baseShiftPayout + radiographPayout + surgeryPayout;
+	const ndfl13 = Math.round((grossTotal * 13) / 10000) * 100;
+	const netToAssistant = Math.max(0, grossTotal - ndfl13);
+
+	return {
+		assistantId,
+		assistantName,
+		periodLabelRu: periodLabel,
+		totalShifts,
+		totalRadiographs,
+		totalSurgeries,
+		baseShiftPayoutKop: baseShiftPayout,
+		radiographPayoutKop: radiographPayout,
+		surgeryPayoutKop: surgeryPayout,
+		totalGrossPayoutKop: grossTotal,
+		ndfl13TaxKop: ndfl13,
+		netPayoutToAssistantKop: netToAssistant,
+	};
+}
+
 export function calculateAssistantStaffPayroll(
 	input: AssistantStaffPayrollInput
 ): AssistantStaffPayrollResult {
@@ -563,14 +1150,12 @@ export function calculateAssistantStaffPayroll(
 		} else if (shift.shiftType === "full_12h") {
 			baseShiftsPayout += Math.round(rates.baseShiftRate12hKop);
 		} else {
-			// Pro-rated hourly based on 6h base
 			baseShiftsPayout += Math.round((shiftHours / 6.0) * rates.baseShiftRate6hKop);
 		}
 	}
 
 	const categoryBonusPercent = rates.categoryBonusPercentMap[input.category] ?? 0;
 	const categoryBonusKop = Math.round((baseShiftsPayout * categoryBonusPercent) / 100);
-
 	const sterilizationBonusKop = Math.round(sterilizationShiftsCount * rates.sterilizationShiftBonusKop);
 	const radiographsPayoutKop = Math.round(totalRadiographs * rates.radiographBonusKop);
 	const surgeriesPayoutKop = Math.round(totalSurgeries * rates.surgeryAssistanceBonusKop);
@@ -579,12 +1164,7 @@ export function calculateAssistantStaffPayroll(
 
 	const grossPayoutBeforeTaxKop = Math.max(
 		0,
-		baseShiftsPayout +
-			categoryBonusKop +
-			sterilizationBonusKop +
-			radiographsPayoutKop +
-			surgeriesPayoutKop +
-			manualAdj
+		baseShiftsPayout + categoryBonusKop + sterilizationBonusKop + radiographsPayoutKop + surgeriesPayoutKop + manualAdj
 	);
 
 	return {
@@ -613,9 +1193,6 @@ export function calculateAssistantStaffPayroll(
 	};
 }
 
-/**
- * Calculates administrator payroll with base salary, cash revenue %, and lead conversion bonus.
- */
 export function calculateAdministratorStaffPayroll(
 	input: AdministratorStaffPayrollInput
 ): AdministratorStaffPayrollResult {
@@ -623,21 +1200,13 @@ export function calculateAdministratorStaffPayroll(
 	const shiftsWorked = Math.round(Number(input.shiftsWorked) || 0);
 	const hoursWorked = input.hoursWorked !== undefined ? Number(input.hoursWorked) : (shiftsWorked * 12.0);
 
-	// Salary calculated by shift count (e.g. 15 shifts * 3,000 RUB = 45,000 RUB)
 	const baseSalaryPayoutKop = Math.round(shiftsWorked * rates.baseShiftRateKop);
-
-	// Revenue commission
 	const cashRevKop = Math.round(Number(input.clinicCashRevenueKop) || 0);
-	const cashRevenueCommissionKop = Math.round(
-		(cashRevKop * rates.cashRevenueCommissionPercent) / 100
-	);
+	const cashRevenueCommissionKop = Math.round((cashRevKop * rates.cashRevenueCommissionPercent) / 100);
 
-	// Lead conversion calculation
 	const primLeads = Math.round(Number(input.primaryLeadsCount) || 0);
 	const convLeads = Math.round(Number(input.convertedLeadsCount) || 0);
-	const conversionRatePercent = primLeads > 0
-		? Number(((convLeads / primLeads) * 100).toFixed(1))
-		: 0;
+	const conversionRatePercent = primLeads > 0 ? Number(((convLeads / primLeads) * 100).toFixed(1)) : 0;
 
 	const leadConversionBonusKop =
 		conversionRatePercent >= rates.leadConversionThresholdPercent && convLeads > 0
@@ -677,9 +1246,6 @@ export function calculateAdministratorStaffPayroll(
 	};
 }
 
-/**
- * Calculates complete multi-role consolidated staff payroll summary.
- */
 export function calculateConsolidatedStaffPayroll(
 	params: ConsolidatedPayrollCalculationParams
 ): ConsolidatedStaffPayrollSummary {
@@ -688,7 +1254,6 @@ export function calculateConsolidatedStaffPayroll(
 	const organizationKpp = params.organizationKpp ?? "770101001";
 
 	const records: StaffPayrollRecord[] = [];
-
 	let doctorGrossRev = 0;
 	let doctorLab = 0;
 	let doctorMat = 0;
@@ -708,7 +1273,6 @@ export function calculateConsolidatedStaffPayroll(
 	}
 
 	let assistantGrossPayout = 0;
-
 	if (params.assistants) {
 		for (const asstInput of params.assistants) {
 			const res = calculateAssistantStaffPayroll(asstInput);
@@ -718,7 +1282,6 @@ export function calculateConsolidatedStaffPayroll(
 	}
 
 	let adminGrossPayout = 0;
-
 	if (params.administrators) {
 		for (const adminInput of params.administrators) {
 			const res = calculateAdministratorStaffPayroll(adminInput);
@@ -772,36 +1335,6 @@ export function calculateConsolidatedStaffPayroll(
 	};
 }
 
-// Re-export statutory Form T-51 and 1C:ZUP 3.1 exporters from modular staffPayrollExports (Mandate 8b <= 800 lines)
-import {
-	escapeXml,
-	generateStaffPayrollT51Csv,
-	generate1CZup31Xml,
-	generate1CZup31Csv,
-	generateFormT51Html,
-} from "./staffPayrollExports.js";
-
-export {
-	escapeXml,
-	generateStaffPayrollT51Csv,
-	generate1CZup31Xml,
-	generate1CZup31Csv,
-	generateFormT51Html,
-};
-
-
-
-
-// Canonical Aliases & Interop
-export type AnyStaffPayrollResult = StaffPayrollRecord;
-export type UnifiedStaffPayrollLedger = ConsolidatedStaffPayrollSummary;
-export const calculateUnifiedStaffPayrollLedger = calculateConsolidatedStaffPayroll;
-export const exportStaffPayrollTo1CZupXml = generate1CZup31Xml;
-export const exportStaffPayrollToCsv = generateStaffPayrollT51Csv;
-
-/**
- * Validates staff payroll input structure before calculation.
- */
 export function validateStaffPayrollInput(input: unknown): { valid: boolean; errors: string[] } {
 	const errors: string[] = [];
 	if (!input || typeof input !== "object") {
@@ -811,3 +1344,30 @@ export function validateStaffPayrollInput(input: unknown): { valid: boolean; err
 	return { valid: errors.length === 0, errors };
 }
 
+// Re-export statutory Form T-51, Doctor Payslip and 1C:ZUP 3.1 exporters
+import {
+	escapeXml,
+	generateStaffPayrollT51Csv,
+	generatePayrollT51Csv,
+	generateDoctorPayslipHtml,
+	generate1CZup31Xml,
+	generate1CZup31Csv,
+	generateFormT51Html,
+} from "./staffPayrollExports";
+
+export {
+	escapeXml,
+	generateStaffPayrollT51Csv,
+	generatePayrollT51Csv,
+	generateDoctorPayslipHtml,
+	generate1CZup31Xml,
+	generate1CZup31Csv,
+	generateFormT51Html,
+};
+
+// Canonical Aliases & Interop
+export type AnyStaffPayrollResult = StaffPayrollRecord;
+export type UnifiedStaffPayrollLedger = ConsolidatedStaffPayrollSummary;
+export const calculateUnifiedStaffPayrollLedger = calculateConsolidatedStaffPayroll;
+export const exportStaffPayrollTo1CZupXml = generate1CZup31Xml;
+export const exportStaffPayrollToCsv = generateStaffPayrollT51Csv;
