@@ -20,7 +20,7 @@ import type {
 	IncomingCallPayload,
 	PatientUpcomingAppointmentSummary,
 } from "../../store/telephonyTypes";
-import type { QuickSlotType } from "./IncomingCallQuickBooking";
+import type { QuickSlotOption, QuickSlotType } from "./IncomingCallQuickBooking";
 import type { CallAttribution } from "./telephonyAttribution";
 
 export interface IncomingCallBadgeMoreMenuProps {
@@ -30,6 +30,7 @@ export interface IncomingCallBadgeMoreMenuProps {
 	isCapturingLead: boolean;
 	onCaptureLead: () => void;
 	onQuickBook: (slot: QuickSlotType) => void;
+	quickSlots?: readonly QuickSlotOption[];
 	upcomingAppointment: PatientUpcomingAppointmentSummary | { doctorName: string | null; startsAt: string } | null;
 	onSendWhatsApp: () => void;
 	onCopySms: () => void;
@@ -55,6 +56,7 @@ export function IncomingCallBadgeMoreMenu({
 	isCapturingLead,
 	onCaptureLead,
 	onQuickBook,
+	quickSlots,
 	upcomingAppointment,
 	onSendWhatsApp,
 	onCopySms,
@@ -72,6 +74,11 @@ export function IncomingCallBadgeMoreMenu({
 	onClose,
 	onRecordOutcome,
 }: IncomingCallBadgeMoreMenuProps) {
+	const urgentTime =
+		quickSlots?.find((s) => s.type === "today_urgent")?.time || "10:00";
+	const tomorrowTime =
+		quickSlots?.find((s) => s.type === "tomorrow")?.time || "11:00";
+
 	return (
 		<div className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5">
 			{!isKnownPatient && callAttribution && (
@@ -106,7 +113,7 @@ export function IncomingCallBadgeMoreMenu({
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 			>
 				<Zap size={13} className="text-amber-500" />
-				<span>Запись: Острая боль (10:00)</span>
+				<span>Запись: Острая боль ({urgentTime})</span>
 			</button>
 
 			<button
@@ -118,7 +125,7 @@ export function IncomingCallBadgeMoreMenu({
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 			>
 				<Calendar size={13} className="text-[var(--teal)]" />
-				<span>Запись: Завтра (11:00)</span>
+				<span>Запись: Завтра ({tomorrowTime})</span>
 			</button>
 
 			{upcomingAppointment && (
