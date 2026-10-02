@@ -1,0 +1,22 @@
+{
+  "agent": "subagent_redteam_doctor_autonomy_shift_inquisitor",
+  "status": "in_progress",
+  "timestamp": "2026-10-02T13:20:00Z",
+  "doctrine": {
+    "doctor_autonomy": "Mandate 8e: full freedom to edit diaries, dental arch, services, quotes, up to 100% discounts on warranties, draft/final printing, zero locks, zero chief-doctor approval",
+    "scale_sovereignty": "Mandate 8n: Solo doctor (1 chair / rental) & Clinic shift (multi-chair, chair handover)",
+    "anti_bloat": "No academic bullshit, no obstacles, fast and convenient",
+    "klkt_forbidden": "Strict zero touch on KLKT / DICOM / Radiology / Tomography"
+  },
+  "completed_steps": [
+    "Read all constitutional and core rules: core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md"
+  ],
+  "pending_steps": [
+    "Reconnaissance: Locate doctor shift, solo doctor, clinic shift, chair assignment, doctor autonomy, diary editing, tooth formula editing, quotes & discount restrictions",
+    "Audit: Identify artificial locks (24h locks, chief-doctor passwords, disabled buttons, lack of versioned audit, chair conflicts, solo mode obstacles)",
+    "Harden & Fix: Remove obstacles, implement versioned audit 'corrected text is valid', ensure 100% discount autonomy, seamless solo vs clinic shift mode",
+    "Eliminate duplicates and mocks (Mandate 8za)",
+    "Targeted tests & typecheck verification (Exit Code 0)"
+  ],
+  "findings": []
+}

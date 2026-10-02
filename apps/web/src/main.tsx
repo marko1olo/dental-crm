@@ -73,6 +73,8 @@ import "./styles/low-spec-hardware.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";
+// Интерактивное обучение, Spotlight и пульсирующая акцентуация
+import "./styles/guided-tour.css";
 
 initHardwareCapabilities();
 

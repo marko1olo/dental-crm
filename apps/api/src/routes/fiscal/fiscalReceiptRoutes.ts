@@ -152,7 +152,10 @@ async function applyCashBoxFiscalReceipt(
 			amountRub,
 			balanceBeforeRub: balanceBefore,
 			balanceAfterRub: balanceAfter,
-			reasonText: `Фискальный чек 54-ФЗ №${printResult.fiscalDocumentNumber || "б/н"}`,
+			reasonText:
+				data.totalKopecks === 0
+					? "Акт гарантийного обслуживания / списания услуг (скидка 100%, 0.00 ₽)"
+					: `Фискальный чек 54-ФЗ №${printResult.fiscalDocumentNumber || "б/н"}`,
 			operatorName: data.cashierFullName || null,
 			patientId: validPatientId,
 			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
@@ -277,7 +280,10 @@ async function applyCashBoxFiscalReceipt(
 			amountRub,
 			balanceBeforeRub: balanceBefore,
 			balanceAfterRub: balanceAfter,
-			reasonText: `Фискальный чек 54-ФЗ (безналичные) №${printResult.fiscalDocumentNumber || "б/н"}`,
+			reasonText:
+				data.totalKopecks === 0
+					? "Акт гарантийного обслуживания / списания услуг (скидка 100%, 0.00 ₽)"
+					: `Фискальный чек 54-ФЗ (безналичные) №${printResult.fiscalDocumentNumber || "б/н"}`,
 			operatorName: data.cashierFullName || null,
 			patientId: validPatientId,
 			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
@@ -897,6 +903,108 @@ export async function registerFiscalReceiptRoutes(
 					});
 				}
 			}
+		}
+
+		// ─────────────────────────────────────────────────────────────────────────
+		// 54-FZ & FFD 1.2: 100% WARRANTY DISCOUNT / 0.00 ₽ INTERNAL ACT (MANDATE 8E)
+		// Zero-total receipts must NEVER be sent to physical KKT (causes hardware errors).
+		// An internal statutory warranty/write-off act is generated instead.
+		// ─────────────────────────────────────────────────────────────────────────
+		if (data.totalKopecks === 0) {
+			const now = new Date();
+			const actNumber = `АКТ-ГАР-${now.getFullYear()}-${Date.now().toString().slice(-4)}`;
+			const compiled = FiscalReceiptFactory.buildFfd12Receipt(data);
+			const payloadToStore: Record<string, unknown> = {
+				...compiled,
+				clientMutationId: data.clientMutationId ?? null,
+				isWarrantyZeroAct: true,
+				warrantyActNumber: actNumber,
+				receiptNumber: actNumber,
+				fnSerial: "0000000000000000",
+				fiscalDocumentNumber: "0",
+				fiscalSign: "0000000000",
+				ofdVerificationUrl: "",
+				qrString: null,
+				receiptIssuedAt: now.toISOString(),
+			};
+
+			return await withTenantCtx(orgId, async (tx) => {
+				if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
+					const mutationId = data.clientMutationId.trim();
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
+					);
+					const existingQueueRows = await tx
+						.select()
+						.from(fiscalReceiptQueue)
+						.where(
+							and(
+								eq(fiscalReceiptQueue.organizationId, orgId),
+								sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${mutationId}`,
+							),
+						)
+						.limit(1);
+
+					const existingRow = existingQueueRows[0];
+					if (existingRow) {
+						const storedPayload = (existingRow.payloadJson || {}) as Record<string, unknown>;
+						return reply.status(200).send({
+							success: true,
+							replayed: true,
+							isWarrantyZeroAct: true,
+							warrantyActNumber: (storedPayload["warrantyActNumber"] as string) || actNumber,
+							queueId: existingRow.id,
+							status: existingRow.status,
+							fnSerial: "0000000000000000",
+							fiscalDocumentNumber: "0",
+							fiscalSign: "0000000000",
+							receiptIssuedAt: existingRow.printedAt
+								? existingRow.printedAt.toISOString()
+								: existingRow.createdAt.toISOString(),
+							ofdVerificationUrl: "",
+							qrString: null,
+							compiledReceipt: storedPayload,
+							hardwareWarning: null,
+						});
+					}
+				}
+
+				const [queueRow] = await tx
+					.insert(fiscalReceiptQueue)
+					.values({
+						organizationId: orgId,
+						visitId: data.visitId || null,
+						receiptType: "warranty_act",
+						status: "printed",
+						payloadJson: payloadToStore,
+						lastError: null,
+						retryCount: 0,
+						printedAt: now,
+					})
+					.returning();
+
+				await applyCashBoxFiscalReceipt(tx, orgId, data, {
+					fiscalDocumentNumber: "0",
+					ofdVerificationUrl: "",
+				});
+
+				return reply.status(201).send({
+					success: true,
+					replayed: false,
+					isWarrantyZeroAct: true,
+					warrantyActNumber: actNumber,
+					queueId: queueRow?.id,
+					status: "printed",
+					fnSerial: "0000000000000000",
+					fiscalDocumentNumber: "0",
+					fiscalSign: "0000000000",
+					receiptIssuedAt: now.toISOString(),
+					ofdVerificationUrl: "",
+					qrString: null,
+					compiledReceipt: compiled,
+					hardwareWarning: null,
+				});
+			});
 		}
 
 		// ─────────────────────────────────────────────────────────────────────────

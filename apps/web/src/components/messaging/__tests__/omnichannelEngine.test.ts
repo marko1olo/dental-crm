@@ -9,6 +9,8 @@ import {
 	formatCurrencyRu,
 	formatKopecksRu,
 	formatRussianPhone,
+	formatTelegramUrl,
+	formatWhatsAppUrl,
 	maskRussianPhone,
 	generateAppointmentConfirmationText,
 	generateNpsSurveyText,
@@ -217,6 +219,25 @@ describe("omnichannelEngine — Pure Logic, NPS Math & Template Engines", () => 
 		it("formats currency in rubles and kopecks", () => {
 			assert.ok(formatCurrencyRu(14500).includes("14"));
 			assert.ok(formatKopecksRu(1450000).includes("14"));
+		});
+
+		it("generates direct WhatsApp and Telegram links with proper phone normalization", () => {
+			assert.equal(
+				formatWhatsAppUrl("+7 (916) 450-12-34"),
+				"https://wa.me/79164501234",
+			);
+			assert.equal(
+				formatWhatsAppUrl("8 (925) 780-99-11", "Здравствуйте!"),
+				`https://wa.me/79257809911?text=${encodeURIComponent("Здравствуйте!")}`,
+			);
+			assert.equal(
+				formatTelegramUrl("@doctor_smith"),
+				"https://t.me/doctor_smith",
+			);
+			assert.equal(
+				formatTelegramUrl("+79164501234"),
+				"https://t.me/+79164501234",
+			);
 		});
 	});
 

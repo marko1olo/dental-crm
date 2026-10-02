@@ -5,6 +5,7 @@ import {
   type EmergencyReserveSlot,
   type DoctorShiftSchedule,
   calculateEmergencyReserveSlots,
+  areIntervalsOverlapping,
 } from "@dental/shared";
 import { DEFAULT_SOLO_CHAIR } from "./gridConstants";
 import { calculateDailyChairDoctorTally } from "../doctorFreeSlotsEngine";
@@ -282,8 +283,8 @@ export function useScheduleGridData({
         const e2 = item2.eMs;
         if (!Number.isFinite(s2) || !Number.isFinite(e2)) continue;
 
-        const overlapMs = Math.min(e1, e2) - Math.max(s1, s2);
-        if (overlapMs > 0) {
+        const isOverlapping = areIntervalsOverlapping(s1, e1, s2, e2);
+        if (isOverlapping) {
           const sameDoctor = Boolean(
             a1.doctorUserId && a1.doctorUserId === a2.doctorUserId,
           );

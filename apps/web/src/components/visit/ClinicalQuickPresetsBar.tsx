@@ -128,6 +128,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 		<div
 			className={`clinical-quick-presets-bar p-3 sm:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-2.5 ${className}`.trim()}
 			data-testid="clinical-quick-presets-bar"
+			data-tour="diary-preset"
 		>
 			{/* Шапка бара пресетов с подсказкой и кнопками каталога */}
 			<div className="flex items-center justify-between flex-wrap gap-2">
@@ -307,6 +308,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 								className={`clinical-protocol-card min-h-[50px] sm:min-h-[42px] min-w-[190px] sm:min-w-[210px] shrink-0 flex-shrink-0 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-0.5 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left select-none whitespace-nowrap ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
+								data-tour="diary-preset"
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">

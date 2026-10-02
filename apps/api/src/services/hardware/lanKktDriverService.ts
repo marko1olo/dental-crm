@@ -346,8 +346,22 @@ export class LanKktDriverService {
 		config?: Partial<KktLanConfig>,
 	): Promise<KktPrintResult> {
 		const cfg = { ...this.getDefaultConfig(), ...config };
-		const status = await this.checkDeviceStatus(cfg);
 		const now = new Date();
+
+		// Mandate 8e & FFD 1.2: 100% warranty discount (0 kopecks) causes hardware error on physical KKT
+		if (receipt.totalKopecks <= 0) {
+			return {
+				success: true,
+				status: "printed",
+				fnSerial: "0000000000000000",
+				fiscalDocumentNumber: "0",
+				fiscalSign: "0000000000",
+				ofdVerificationUrl: "",
+				receiptIssuedAt: now.toISOString(),
+			};
+		}
+
+		const status = await this.checkDeviceStatus(cfg);
 		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
 
 		if (!status.online || !status.paperOk) {

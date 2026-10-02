@@ -876,9 +876,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		});
 		const autopilot = apply1ClickDoctorAutopilot("norm", { toothNumber: targetTooth });
 		const auditStamp = isLocked ? `\n\n[Исправленному верить: ${dateStr}]` : "";
+		// Мандат 8e: 1-клик соматическая норма врача (Doctor Autonomy)
+		// Эталонные формулировки: «Жалоб на момент осмотра не предъявляет», «Соматически здоров. Аллергологический анамнез не отягощен.»
+		const defaultNormComplaint = "Жалоб на момент осмотра не предъявляет. Обратился(лась) с целью профилактического осмотра / санации.";
+		const defaultNormAnamnesis = "Соматически здоров. Аллергологический анамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает.";
 		const normValues: VisitSoapNoteValues = {
-			complaint: autopilot.preset.complaint,
-			anamnesis: autopilot.preset.anamnesis,
+			complaint: autopilot.preset.complaint || defaultNormComplaint,
+			anamnesis: autopilot.preset.anamnesis || defaultNormAnamnesis,
 			objectiveStatus: `Прикус физиологический. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Зуб ${targetTooth}: интактен, зондирование и перкуссия безболезненны, реакция на термопробу адекватная, подвижность отсутствует. Зубные отложения умеренные.`,
 			diagnosis: "Z01.2 Стоматологическое обследование (Здоров)",
 			treatmentPlan: `${autopilot.diary.treatmentDescription}${auditStamp}`,
@@ -1109,6 +1113,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					<button
 						type="button"
 						onClick={handleApplyNorm}
+						disabled={false}
 						data-testid="btn-soap-physio-norm"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
 						title="Соматически здоров / норма: зафиксировать физиологическую норму в дневнике приёма"

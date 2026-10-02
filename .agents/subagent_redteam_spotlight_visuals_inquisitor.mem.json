@@ -1,0 +1,59 @@
+{
+  "role": "Red Team Spotlight Visuals, Animations & Guided Tour UX Inquisitor",
+  "status": "inquisition_completed",
+  "self_inquisition_defect_list": [
+    {
+      "defect_id": "DEFECT-1",
+      "severity": "Medium",
+      "description": "Visual flicker when spotlight cutout appeared/disappeared due to abrupt unmounting of SVG rect",
+      "fix": "Cutout rect remains mounted with smooth CSS opacity transition (0 -> 1) and coordinate interpolation"
+    },
+    {
+      "defect_id": "DEFECT-2",
+      "severity": "High",
+      "description": "Partially offscreen elements with negative left/top coordinates caused incorrect width/height expansion",
+      "fix": "calculateSpotlightCutout now clamps boundaries defensively: rawRight and rawBottom clamped to viewport"
+    },
+    {
+      "defect_id": "DEFECT-3",
+      "severity": "High",
+      "description": "Mobile screen overflow: 380px tooltip caused horizontal scroll on 375px screens and cut off buttons on short viewports",
+      "fix": "calculateTooltipPlacement clamps width to (viewport.width - 32px) and maxHeight to (viewport.height - 32px) with overflow-y: auto"
+    },
+    {
+      "defect_id": "DEFECT-4",
+      "severity": "High",
+      "description": "Target elements located outside initial viewport caused offscreen spotlight positioning without auto-scrolling",
+      "fix": "Integrated automatic targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) upon step change"
+    },
+    {
+      "defect_id": "DEFECT-5",
+      "severity": "High",
+      "description": "Layout thrashing: synchronous getBoundingClientRect in raw scroll listeners caused FPS drops during fast scrolling",
+      "fix": "Throttled all scroll and resize measurement passes via requestAnimationFrame with cancellation on unmount"
+    },
+    {
+      "defect_id": "DEFECT-6",
+      "severity": "Medium",
+      "description": "Static viewport dimensions in SpotlightOverlay and CoachMarkTooltip ignored browser resize/rotation",
+      "fix": "Added dynamic useState viewport tracking with clean window.addEventListener('resize') subscriptions"
+    },
+    {
+      "defect_id": "DEFECT-7",
+      "severity": "Low",
+      "description": "Ultra-narrow elements (e.g. 2px divider) with 8px borderRadius caused distorted elliptical cutouts",
+      "fix": "rx is clamped to Math.min(borderRadius, Math.floor(width / 2), Math.floor(height / 2))"
+    },
+    {
+      "defect_id": "DEFECT-8",
+      "severity": "Medium",
+      "description": "Risk of murky text contrast in Dark themes due to fallback token leakage",
+      "fix": "Explicit high-contrast CSS rules in guided-tour.css (.tour-coach-tooltip h3: #f8fafc, p: #cbd5e1)"
+    }
+  ],
+  "verification": {
+    "unit_tests": "24/24 passing (16 spotlight tests + 8 tour tests, 5.68ms)",
+    "encoding": "7048 files checked, 0 errors, UTF-8 strict",
+    "line_limits": "All files <= 800 lines (Mandate 8b)"
+  }
+}

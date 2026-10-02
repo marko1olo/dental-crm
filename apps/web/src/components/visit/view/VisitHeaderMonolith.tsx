@@ -180,6 +180,7 @@ export function VisitHeaderMonolith({
 						type="button"
 						onClick={handleApplySomaticNormQuick}
 						data-testid="btn-somatic-norm-one-click"
+						data-tour="autonorm-btn"
 						className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
 						title="Заполнить нормой"
 						aria-label="Заполнить нормой"

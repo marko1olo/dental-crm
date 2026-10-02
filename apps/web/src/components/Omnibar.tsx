@@ -320,6 +320,7 @@ export function Omnibar() {
 					aria-expanded={isOmnibarOpen}
 					className="dnt-actions__control"
 					title={workspaceActionsLabels.search.title}
+					data-tour="reception-search"
 				>
 					<Search className="dnt-actions__control-icon" aria-hidden="true" />
 					<span className="dnt-actions__control-text">
@@ -368,6 +369,7 @@ export function Omnibar() {
 										className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-[var(--ink)] placeholder-[var(--muted)]"
 										placeholder="Поиск по разделам или действиям..."
 										value={query}
+										data-tour="global-search-input"
 										onChange={(e) => {
 											setQuery(e.target.value);
 											setSelectedIndex(0);

@@ -1,112 +1,85 @@
 {
   "version": 1,
-  "savedAt": "2026-10-02T12:13:48.434Z",
+  "savedAt": "2026-10-02T12:49:42.043Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 38,
-      "lastUsedAt": 1790925131453,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "gemini:086400c4e22a": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943227938,
-      "lastStatusCode": 400,
-      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
-    },
-    "gemini:d2f7e7168b58": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943228433,
-      "lastStatusCode": 400,
-      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
-    },
-    "gemini:dc3b77f3539e": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943227477,
-      "lastStatusCode": 400,
-      "lastError": "[gemini] Gemini HTTP 400 (model: gemini-3.5-flash-lite): {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Invalid JSON payload received. Unknown name \\\"additionalProperties\\\" at 'tools[0].function_declarations[0].parameters': Cannot find fie"
-    },
-    "google_speech:26987e457b44": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 697,
-      "lastUsedAt": 1790943207053,
+      "successes": 1,
+      "lastUsedAt": 1790945382026,
       "lastStatusCode": null,
       "lastError": null
     },
     "google_speech:45dd3fb17bd3": {
-      "cooldownUntil": 0,
-      "failures": 38,
-      "consecutiveFailures": 38,
-      "successes": 1,
-      "lastUsedAt": 1790936134796,
+      "cooldownUntil": 1790945980767,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790945380767,
       "lastStatusCode": null,
       "lastError": "Gemini Live WS closed abnormally (code: 1008, reason: Policy violation or key invalid)"
     },
-    "google_speech:62d44fb06c9a": {
-      "cooldownUntil": 0,
-      "failures": 38,
-      "consecutiveFailures": 38,
-      "successes": 0,
-      "lastUsedAt": 1790936134877,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
-    },
-    "google_speech:95d78fd253c9": {
-      "cooldownUntil": 0,
-      "failures": 38,
-      "consecutiveFailures": 38,
-      "successes": 0,
-      "lastUsedAt": 1790936134930,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
-    },
-    "google_speech:a95912f4c7b2": {
-      "cooldownUntil": 0,
-      "failures": 38,
-      "consecutiveFailures": 38,
-      "successes": 0,
-      "lastUsedAt": 1790936135044,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
-    },
-    "google_speech:ee19a8772084": {
-      "cooldownUntil": 0,
+    "google_speech:542f1132ccf8": {
+      "cooldownUntil": 1790945440820,
       "failures": 1,
       "consecutiveFailures": 1,
-      "successes": 39,
-      "lastUsedAt": 1790936135134,
+      "successes": 0,
+      "lastUsedAt": 1790945380820,
       "lastStatusCode": null,
-      "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
     },
-    "google_speech:ff1bd86d98d3": {
+    "google_speech:6c77bd48f901": {
+      "cooldownUntil": 1790945440848,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790945380848,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:7256ee58f8c6": {
+      "cooldownUntil": 1790945440896,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790945380896,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
+    },
+    "google_speech:ce349ef84ee9": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 78,
-      "lastUsedAt": 1790936135263,
+      "successes": 1,
+      "lastUsedAt": 1790945380994,
       "lastStatusCode": null,
       "lastError": null
     },
-    "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1790925611462,
-      "failures": 34,
-      "consecutiveFailures": 34,
+    "google_speech:ee19a8772084": {
+      "cooldownUntil": 1790945440711,
+      "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 0,
-      "lastUsedAt": 1790925131462,
+      "lastUsedAt": 1790945380711,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live API Error [429]: Quota exceeded for project"
+    },
+    "google_speech:ff1bd86d98d3": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 2,
+      "lastUsedAt": 1790945380953,
+      "lastStatusCode": null,
+      "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
+    },
+    "groq_whisper:5510319c53a6": {
+      "cooldownUntil": 1790945412043,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790945382043,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -114,8 +87,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 39,
-      "lastUsedAt": 1790925131442,
+      "successes": 1,
+      "lastUsedAt": 1790945382015,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -123,98 +96,53 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 39,
-      "lastUsedAt": 1790925131296,
+      "successes": 1,
+      "lastUsedAt": 1790945381981,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1790925611434,
-      "failures": 35,
-      "consecutiveFailures": 35,
+      "cooldownUntil": 1790945412007,
+      "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 0,
-      "lastUsedAt": 1790925131434,
+      "lastUsedAt": 1790945382007,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1790925611449,
-      "failures": 34,
-      "consecutiveFailures": 34,
+      "cooldownUntil": 1790945412022,
+      "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 0,
-      "lastUsedAt": 1790925131449,
+      "lastUsedAt": 1790945382022,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
-    "groq:6058314b22ec": {
-      "cooldownUntil": 1790943286211,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943226211,
-      "lastStatusCode": 429,
-      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kvq0pcpje21bzaccwx8m7nzk` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 178825, Requested 22728. Please"
-    },
-    "groq:6ea9f119eff0": {
-      "cooldownUntil": 1790943286413,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943226413,
-      "lastStatusCode": 429,
-      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0pb1jbf59sfvanqbgxk3fd` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 188578, Requested 22728. Please"
-    },
-    "groq:6eed7e8c3252": {
-      "cooldownUntil": 1790943285947,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943225947,
-      "lastStatusCode": 429,
-      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw1wmwr7e3gawf9sjcrnjwe2` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 193449, Requested 22884. Please"
-    },
     "groq:83177d60e957": {
-      "cooldownUntil": 1790943285710,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
       "successes": 1,
-      "lastUsedAt": 1790943225710,
-      "lastStatusCode": 429,
-      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kx0p5e6zf9vb59msp25t3zgh` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 180414, Requested 22884. Please"
-    },
-    "groq:c50f385b1343": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "consecutiveFailures": 2,
-      "successes": 0,
-      "lastUsedAt": 1790943228235,
-      "lastStatusCode": 413,
-      "lastError": "[groq] Groq HTTP 413: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kx0pjm7bfzp8yzyhxwvenyw4` service tier `on_demand` on input tokens per minute (ITPM): Limit 7000, Requested 22640, please reduc"
-    },
-    "groq:c73b9c86b8c4": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1790943227718,
-      "lastStatusCode": 413,
-      "lastError": "[groq] Groq HTTP 413: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kx0ppgmxet9t6p0z1wppd9v9` service tier `on_demand` on input tokens per minute (ITPM): Limit 7000, Requested 22765, please reduc"
+      "lastUsedAt": 1790945374120,
+      "lastStatusCode": null,
+      "lastError": null
     },
     "groq:caf98f576295": {
-      "cooldownUntil": 1790943285108,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
       "successes": 1,
-      "lastUsedAt": 1790943225108,
-      "lastStatusCode": 429,
-      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01kw6zfm8cfaav523xyhct4bs9` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 187768, Requested 22728. Please"
+      "lastUsedAt": 1790945372705,
+      "lastStatusCode": null,
+      "lastError": null
     },
     "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1790926091451,
-      "failures": 34,
-      "consecutiveFailures": 34,
+      "cooldownUntil": 1790945442024,
+      "failures": 1,
+      "consecutiveFailures": 1,
       "successes": 0,
-      "lastUsedAt": 1790925131451,
+      "lastUsedAt": 1790945382024,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -222,8 +150,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 39,
-      "lastUsedAt": 1790925131437,
+      "successes": 1,
+      "lastUsedAt": 1790945382010,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -231,8 +159,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 39,
-      "lastUsedAt": 1790925131444,
+      "successes": 1,
+      "lastUsedAt": 1790945382017,
       "lastStatusCode": null,
       "lastError": null
     }

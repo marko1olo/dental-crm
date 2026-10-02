@@ -155,7 +155,7 @@ export function VisitOdontogramToothItem({
 	const isMissing = state === "missing" || state === "Missing";
 
 	return (
-		<div className="tooth-container flex flex-col items-center">
+		<div className="tooth-container flex flex-col items-center" data-tour="tooth-card">
 			<button
 				type="button"
 				className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
@@ -163,6 +163,7 @@ export function VisitOdontogramToothItem({
 				aria-label={`Зуб ${code}: ${anatomicalName}`}
 				title={anatomicalName}
 				data-tooth-state={state === "idle" ? undefined : state}
+				data-tour="tooth-card"
 			>
 				<div
 					className="tooth-svg-wrap"

@@ -81,10 +81,15 @@ const mockDashboard = {
   });
 
   const page = await context.newPage();
-  page.on("console", (msg) => {
+  page.on("console", async (msg) => {
     const text = msg.text();
-    if (msg.type() === "error" || text.includes("The above error occurred")) {
-      console.log("PAGE_ERR_FULL:", text, msg.location());
+    if (msg.type() === "error" || text.includes("The above error occurred") || text.includes("Maximum update depth")) {
+      try {
+        const args = await Promise.all(msg.args().map((a) => a.jsonValue().catch(() => a.toString())));
+        console.log("PAGE_ERR_ARGS:", args);
+      } catch {
+        console.log("PAGE_ERR_FULL:", text);
+      }
     }
   });
   page.on("pageerror", (err) => console.log("UNCAUGHT_ERR:", err.stack || err.message));

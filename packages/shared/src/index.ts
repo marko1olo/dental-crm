@@ -13523,14 +13523,4 @@ export * from "./utils/money.js";
 export * from "./anesthesia/index.js";
 export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
-
-
-
-
-
-
-
-
-
-
-
+export * from "./knowledge/index.js";

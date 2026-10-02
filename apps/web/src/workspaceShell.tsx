@@ -432,7 +432,11 @@ export function WorkspaceSidebar({
 										? "fast-cashier"
 										: view === "schedule"
 											? "schedule-nav"
-											: undefined
+											: view === "imaging"
+												? "imaging-nav"
+												: view === "documents"
+													? "documents-nav"
+													: undefined
 							}
 							key={view}
 							aria-current={currentView === view ? "page" : undefined}

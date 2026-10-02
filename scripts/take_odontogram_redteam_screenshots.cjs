@@ -311,24 +311,29 @@ async function run() {
     // 1B. Switch to Classic GOST 043/u Table
     console.log("[Desktop] Switching to Classic GOST mode via DOM click...");
     await dPage.evaluate(() => {
-      const btn = document.querySelector('[data-testid="odontogram-mode-btn-classic_gost"]') ||
-                  Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('ГОСТ'));
+      const btn = document.querySelector('[data-testid="odontogram-mode-btn-classic_gost"]');
       if (btn) btn.click();
     });
-    await dPage.waitForTimeout(1000);
+    await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 10000 }).catch(() => {});
+    await dPage.waitForTimeout(800);
 
     await setTheme(dPage, "light");
+    await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 5000 }).catch(() => {});
+    await dPage.waitForTimeout(400);
     await saveProof(dPage, "03_odontogram_gost_desktop_light.png", "Desktop Light Classic GOST 043/u Table Grid");
 
     await setTheme(dPage, "dark");
+    await dPage.waitForSelector('[data-testid="classic-gost-odontogram"]', { timeout: 5000 }).catch(() => {});
+    await dPage.waitForTimeout(400);
     await saveProof(dPage, "04_odontogram_gost_desktop_dark.png", "Desktop Dark Classic GOST 043/u Table Grid");
 
     // Switch back to anatomical
+    console.log("[Desktop] Switching back to anatomical 3D mode via DOM click...");
     await dPage.evaluate(() => {
-      const btn = document.querySelector('[data-testid="odontogram-mode-btn-anatomical_svg"]') ||
-                  Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Анатомический'));
+      const btn = document.querySelector('[data-testid="odontogram-mode-btn-anatomical_svg"]');
       if (btn) btn.click();
     });
+    await dPage.waitForSelector('.tooth-chart-svg', { timeout: 10000 }).catch(() => {});
     await dPage.waitForTimeout(800);
 
     // 1C. Active Stamp Tool (Caries Stamp 1-Click Mode)
@@ -337,6 +342,7 @@ async function run() {
       const stampBtn = document.querySelector('[data-testid="quick-trigger-caries-btn"]');
       if (stampBtn) stampBtn.click();
     });
+    await dPage.waitForSelector('[data-testid="odontogram-active-stamp-indicator"]', { timeout: 10000 }).catch(() => {});
     await dPage.waitForTimeout(600);
 
     await setTheme(dPage, "light");

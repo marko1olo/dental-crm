@@ -1,0 +1,340 @@
+/**
+ * guided-tour.css
+ *
+ * DENTE CRM — Interactive Guided Tour, Spotlight & Pulsing Halo Visual Effects
+ *
+ * Authorities:
+ * - Mandate 8d: 7 Deadly Sins of UI (Zero visual landfill, zero cartoon emojis, WCAG AAA contrast).
+ * - Mandate 8e: Doctor Autonomy (Non-blocking overlays, smooth transitions, instant dismiss).
+ * - Mandate 8n: Scale Sovereignty (Clean and professional medical density).
+ * - Theme Safety: Flawless contrast across Light, Dark and secondary atmospheric themes.
+ */
+
+/* ==========================================================================
+   1. KEYFRAMES & ANIMATIONS
+   ========================================================================== */
+
+/**
+ * Concentric expanding halo ripple rings.
+ * Creates an authoritative yet gentle medical glow around interactive targets.
+ */
+@keyframes tour-halo-pulse {
+	0% {
+		transform: scale(0.96);
+		opacity: 0.85;
+		box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.55);
+	}
+	50% {
+		opacity: 0.45;
+	}
+	100% {
+		transform: scale(1.35);
+		opacity: 0;
+		box-shadow: 0 0 24px 16px rgba(14, 165, 233, 0);
+	}
+}
+
+@keyframes tour-halo-pulse-emerald {
+	0% {
+		transform: scale(0.96);
+		opacity: 0.85;
+		box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.55);
+	}
+	50% {
+		opacity: 0.45;
+	}
+	100% {
+		transform: scale(1.35);
+		opacity: 0;
+		box-shadow: 0 0 24px 16px rgba(13, 148, 136, 0);
+	}
+}
+
+/**
+ * Subtle breathing glow for the inner target bounding frame.
+ */
+@keyframes tour-beacon-glow {
+	0%, 100% {
+		box-shadow: 0 0 12px 2px rgba(14, 165, 233, 0.4), inset 0 0 8px 1px rgba(14, 165, 233, 0.25);
+		border-color: rgba(14, 165, 233, 0.9);
+	}
+	50% {
+		box-shadow: 0 0 22px 6px rgba(14, 165, 233, 0.65), inset 0 0 14px 2px rgba(14, 165, 233, 0.45);
+		border-color: #38bdf8;
+	}
+}
+
+/**
+ * Gentle vertical bounce for the "Click here" pin badge.
+ */
+@keyframes tour-pointer-bounce-vertical {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-6px);
+	}
+}
+
+/**
+ * Gentle horizontal bounce for left/right pin badges.
+ */
+@keyframes tour-pointer-bounce-horizontal {
+	0%, 100% {
+		transform: translateX(0);
+	}
+	50% {
+		transform: translateX(-6px);
+	}
+}
+
+/* ==========================================================================
+   2. SPOTLIGHT OVERLAY & SVG MASK
+   ========================================================================== */
+
+.tour-spotlight-root {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	pointer-events: none;
+	z-index: 1040;
+	overflow: hidden;
+}
+
+.tour-spotlight-svg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.tour-spotlight-backdrop {
+	transition: fill 0.3s ease;
+	fill: rgba(15, 23, 42, 0.62);
+}
+
+:root[data-theme="dark"] .tour-spotlight-backdrop,
+.dark .tour-spotlight-backdrop {
+	fill: rgba(2, 6, 23, 0.76);
+}
+
+/* Smooth interpolation when moving the spotlight cutout between elements */
+.tour-spotlight-cutout-rect {
+	transition:
+		x 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		y 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		width 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		height 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		rx 0.25s ease;
+}
+
+/* Interactive click-shield layers around the cutout (allows dismiss or click blocking) */
+.tour-backdrop-clickable-zone {
+	position: absolute;
+	pointer-events: auto;
+	cursor: default;
+}
+
+/* ==========================================================================
+   3. PULSING HALO & BEACON ANCHOR
+   ========================================================================== */
+
+.tour-beacon-anchor {
+	position: fixed;
+	pointer-events: none;
+	z-index: 1045;
+	transition:
+		top 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		left 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		width 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+		height 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+	border-radius: 8px;
+}
+
+/* Outer primary ripple */
+.tour-halo-ring {
+	position: absolute;
+	inset: -8px;
+	border-radius: inherit;
+	border: 2px solid rgba(14, 165, 233, 0.6);
+	animation: tour-halo-pulse 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+	pointer-events: none;
+}
+
+/* Secondary delayed ripple for richer cinematic wave effect */
+.tour-halo-ring-delayed {
+	position: absolute;
+	inset: -14px;
+	border-radius: inherit;
+	border: 2px solid rgba(14, 165, 233, 0.4);
+	animation: tour-halo-pulse 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+	animation-delay: 0.75s;
+	pointer-events: none;
+}
+
+/* Inner tight illuminated border */
+.tour-beacon-frame {
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	border: 2px solid #0ea5e9;
+	animation: tour-beacon-glow 2.5s ease-in-out infinite;
+	pointer-events: none;
+}
+
+/* Pointer badge indicator ("Кликните сюда") */
+.tour-pointer-badge {
+	position: absolute;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	background: #0ea5e9;
+	color: #ffffff;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	box-shadow: 0 4px 14px rgba(14, 165, 233, 0.5), 0 2px 6px rgba(0, 0, 0, 0.15);
+	white-space: nowrap;
+	pointer-events: none;
+	user-select: none;
+	z-index: 1046;
+}
+
+.tour-pointer-badge-top {
+	bottom: calc(100% + 10px);
+	left: 50%;
+	transform: translateX(-50%);
+	animation: tour-pointer-bounce-vertical 1.8s ease-in-out infinite;
+}
+
+.tour-pointer-badge-bottom {
+	top: calc(100% + 10px);
+	left: 50%;
+	transform: translateX(-50%);
+	animation: tour-pointer-bounce-vertical 1.8s ease-in-out infinite;
+}
+
+.tour-pointer-badge-right {
+	left: calc(100% + 12px);
+	top: 50%;
+	transform: translateY(-50%);
+	animation: tour-pointer-bounce-horizontal 1.8s ease-in-out infinite;
+}
+
+.tour-pointer-badge-left {
+	right: calc(100% + 12px);
+	top: 50%;
+	transform: translateY(-50%);
+	animation: tour-pointer-bounce-horizontal 1.8s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   4. COACH MARK TOOLTIP POPUP
+   ========================================================================== */
+
+.tour-coach-tooltip {
+	position: fixed;
+	z-index: 1050;
+	width: calc(100vw - 32px);
+	max-width: 380px;
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	box-shadow:
+		0 20px 25px -5px rgba(0, 0, 0, 0.22),
+		0 10px 10px -5px rgba(0, 0, 0, 0.12),
+		0 0 0 1px rgba(14, 165, 233, 0.15);
+	font-family: inherit;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	pointer-events: auto;
+	transition:
+		top 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+		left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="dark"] .tour-coach-tooltip,
+.dark .tour-coach-tooltip {
+	background-color: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+	box-shadow:
+		0 25px 35px -5px rgba(0, 0, 0, 0.65),
+		0 15px 15px -5px rgba(0, 0, 0, 0.4),
+		0 0 0 1px rgba(56, 189, 248, 0.2);
+}
+
+/* Tooltip Arrow Pointer */
+.tour-tooltip-arrow {
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	background: inherit;
+	border: inherit;
+	transform: rotate(45deg);
+	pointer-events: none;
+}
+
+.tour-tooltip-arrow-top {
+	top: -7px;
+	border-right: none;
+	border-bottom: none;
+}
+
+.tour-tooltip-arrow-bottom {
+	bottom: -7px;
+	border-left: none;
+	border-top: none;
+}
+
+.tour-tooltip-arrow-left {
+	left: -7px;
+	border-top: none;
+	border-right: none;
+}
+
+.tour-tooltip-arrow-right {
+	right: -7px;
+	border-bottom: none;
+	border-left: none;
+}
+
+/* Typography & Contrast Safety across Light, Dark and Atmospheric themes */
+.tour-coach-tooltip h3 {
+	color: var(--ink, #0f172a);
+}
+
+:root[data-theme="dark"] .tour-coach-tooltip h3,
+.dark .tour-coach-tooltip h3 {
+	color: #f8fafc;
+}
+
+.tour-coach-tooltip p {
+	color: var(--ink, #1e293b);
+}
+
+:root[data-theme="dark"] .tour-coach-tooltip p,
+.dark .tour-coach-tooltip p {
+	color: #cbd5e1;
+}
+
+/* Mobile responsive constraints (Mandate 8d) */
+@media (max-width: 480px) {
+	.tour-coach-tooltip {
+		width: calc(100vw - 24px);
+		max-width: calc(100vw - 24px);
+		border-radius: 10px;
+	}
+
+	.tour-pointer-badge {
+		font-size: 10px;
+		padding: 3px 8px;
+	}
+}

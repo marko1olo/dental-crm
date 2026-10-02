@@ -15,6 +15,8 @@ import {
   UserCheck,
   CalendarPlus,
   Pill,
+  BookOpen,
+  HelpCircle,
 } from 'lucide-react';
 import type { SuggestionCategory } from './copilotTypes';
 
@@ -62,6 +64,15 @@ const DEFAULT_CATEGORIES: SuggestionCategory[] = [
       { label: 'Записать на приём', prompt: 'Запиши пациента на консультацию к хирургу', icon: 'Calendar' },
     ],
   },
+  {
+    category: 'База знаний и обучение',
+    items: [
+      { label: 'Как устроено расписание', prompt: 'Расскажи, как устроена сетка расписания и как быстро создать запись', icon: 'BookOpen' },
+      { label: 'Как работает касса 54-ФЗ', prompt: 'Как пробить чек по 54-ФЗ и принять оплату картой или по СБП?', icon: 'CreditCard' },
+      { label: 'Зубная формула и норма', prompt: 'Как пользоваться зубной формулой и поставить норму в 1 клик?', icon: 'Stethoscope' },
+      { label: 'Справка в налоговую 13%', prompt: 'Как сформировать справку для налогового вычета КНД 1151156?', icon: 'FileText' },
+    ],
+  },
 ];
 
 const renderChipIcon = (iconName?: string) => {
@@ -88,6 +99,10 @@ const renderChipIcon = (iconName?: string) => {
       return <Calendar size={14} />;
     case 'Pill':
       return <Pill size={14} />;
+    case 'BookOpen':
+      return <BookOpen size={14} />;
+    case 'HelpCircle':
+      return <HelpCircle size={14} />;
     default:
       return <Sparkles size={14} />;
   }

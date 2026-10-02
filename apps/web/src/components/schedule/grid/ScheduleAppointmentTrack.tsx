@@ -544,6 +544,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
         }}
         data-chair-id={chair.id}
         data-chair-palette={chairPalette.nameRu}
+        data-tour="schedule-slot"
         onDragOver={(e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = "move";
@@ -621,6 +622,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             title={`Записать на ${hour} (${chair.name})`}
             aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
             data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
+            data-tour="schedule-slot"
           >
             <Plus
               size={13}

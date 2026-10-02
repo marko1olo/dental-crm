@@ -1,0 +1,23 @@
+{
+  "role": "RED TEAM STAFF TELEMETRY, PERFORMANCE & REALTIME EVENT BROKER INQUISITOR",
+  "status": "in_progress",
+  "phase": "reconnaissance",
+  "completed_steps": [
+    "Read core.md (deep research, zero mocks, T.A.R.S. 100/80)",
+    "Read frontend.md (clinical UX, quiet telemetry, soft presence)",
+    "Read engineering.md (anti-monolith, single compiler gate, anti-ram-hog)",
+    "Read AGENTS.md (Mandates 8b, 8e, 8n, 8za, 8ab)",
+    "Read GEMINI.md (26 rules)",
+    "Read THE_HAMMER_MASTER_PROMPT.md (Supreme law)"
+  ],
+  "pending_steps": [
+    "Codebase reconnaissance: telemetry, audit logs, staff activity, websocket, realtime broker, presence, network status",
+    "Inspect production code for synthetic mocks, fake Math.random pings, simulated graphs, hardcoded fake socket events",
+    "Audit soft presence vs hard locks (ensure no blocking modal/screens for doctor)",
+    "Audit quiet telemetry (subtle 6px dot, no loud popups on micro-lags)",
+    "In-place deep fixes of defects found",
+    "Targeted unit tests and typecheck verification (Exit Code 0)",
+    "Verbatim reporting back to orchestrator"
+  ],
+  "findings": []
+}

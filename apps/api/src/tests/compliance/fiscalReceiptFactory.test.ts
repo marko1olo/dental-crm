@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
 	FiscalReceiptFactory,
 } from "../../services/kkt/FiscalReceiptFactory.js";
+import { LanKktDriverService } from "../../services/hardware/index.js";
 import {
 	type CreateFiscalReceiptPayloadInput,
 	createFiscalReceiptPayloadSchema,
@@ -458,5 +459,39 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 			assert.match(xmlResult.xml, /ПризнПац="1"/);
 		}
 	});
+
+	it("1.15 LanKktDriverService safely bypasses hardware print for 0 kopeck 100% warranty treatments", async () => {
+		const zeroReceipt = FiscalReceiptFactory.buildFfd12Receipt({
+			patientId: "00000000-0000-0000-0000-000000000001",
+			customerContact: "+79991112233",
+			operationType: "income",
+			taxationSystem: "usn_income",
+			totalKopecks: 0,
+			cashKopecks: 0,
+			electronicCardKopecks: 0,
+			sbpKopecks: 0,
+			prepaidKopecks: 0,
+			creditKopecks: 0,
+			items: [
+				{
+					name: "Гарантийная коррекция пломбы",
+					priceKopecks: 0,
+					quantity: 1,
+					amountKopecks: 0,
+					paymentSubject: "service",
+					paymentMethod: "full_payment",
+					vatRate: "vat_none",
+				},
+			],
+		});
+
+		const result = await LanKktDriverService.printFiscalReceipt(zeroReceipt);
+		assert.equal(result.success, true);
+		assert.equal(result.status, "printed");
+		assert.equal(result.fiscalDocumentNumber, "0");
+		assert.equal(result.fiscalSign, "0000000000");
+		assert.equal(result.ofdVerificationUrl, "");
+	});
 });
+
 

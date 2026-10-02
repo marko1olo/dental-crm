@@ -175,6 +175,11 @@
 			"types": "./dist/demo/index.d.ts",
 			"import": "./dist/demo/index.js",
 			"default": "./dist/demo/index.js"
+		},
+		"./knowledge": {
+			"types": "./dist/knowledge/index.d.ts",
+			"import": "./dist/knowledge/index.js",
+			"default": "./dist/knowledge/index.js"
 		}
 	},
 	"scripts": {

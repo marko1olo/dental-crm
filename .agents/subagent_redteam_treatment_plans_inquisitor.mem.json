@@ -1,0 +1,50 @@
+{
+  "role": "RED TEAM TREATMENT PLANS, PRICING & SERVICE CATALOG INQUISITOR",
+  "phase": "completed",
+  "completed_steps": [
+    "Read full core rules (core.md, frontend.md, engineering.md)",
+    "Read full project constitution (AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Reconnaissance of treatment plans, pricing, stage classification, service nomenclature across packages/shared, apps/web, apps/api",
+    "Unified SSOT 3-stage / 4-stage procedure classification in packages/shared/src/finance/treatmentPlanStages.ts (classifyProcedure4StageCategory, map3StageKindTo4StageCategory, map4StageCategoryTo3StageKind)",
+    "Eliminated 60 lines of duplicate ad-hoc stage regexes in apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx",
+    "Fixed missing priceId in service bundle plan items (apps/web/src/components/treatment-plans/treatmentPlanBundlesEngine.ts) preventing 400 validation reject on plan save",
+    "Decomposed TreatmentPlanPriceValidatorModal.tsx (1034 -> 400 lines) into PriceValidatorHeader, PriceValidatorMetricsGrid, PriceValidatorPricesTab, PriceValidatorStarTab, PriceValidatorSummaryTab, PriceValidatorFooter",
+    "Decomposed planPricing.ts (976 -> 395 lines) into planInsuranceCoverage, planPaymentSchedules, planDriftAudit, planDraftValidation with 100% backward-compatible re-exports",
+    "Decomposed TreatmentPlan3TierComparison.tsx (871 -> 265 lines) into TreatmentPlanTierCard, TreatmentPlan3TierToolbar, TreatmentPlanRoadmapGrid",
+    "Decomposed StagePaymentPlanModal.tsx (1418 -> 599 lines) into StagePaymentScheduleTab, StagePaymentEscrowTab, StagePaymentActTab, StagePaymentTerminationTab, StagePaymentFiscalTab, StagePaymentAddendumTab",
+    "Verified Doctor Autonomy (Mandate 8e): 30-day treatment plan expiration never blocks clinical care, lab work orders (ЗТЛ), or cashier payments",
+    "Verified integer kopeck precision (Mandates 8b, 8s, 8za): zero floating-point drift across installments, escrow, tax deductions, and stages",
+    "Strict CBCT / CT / DICOM / Radiology boundary enforced (zero files modified)",
+    "Executed full test suite (131 tests across 40 test suites passing, Exit Code 0)",
+    "Executed full typechecks (@dental/shared and @dental/web Exit Code 0)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "Stage Classification Discrepancy (Mandates 8b, 8za)",
+      "fix": "Created unified SSOT in packages/shared/src/finance/treatmentPlanStages.ts and refactored TreatmentPlanPhased4StageView.tsx to consume it",
+      "severity": "high",
+      "status": "resolved"
+    },
+    {
+      "defect": "Missing priceId in Bundle Items causing 400 API rejects",
+      "fix": "Enhanced createBundlePlanItems in treatmentPlanBundlesEngine.ts to resolve priceId against catalog or assign deterministic priceId",
+      "severity": "critical",
+      "status": "resolved"
+    },
+    {
+      "defect": "Monolith File Size Rule 2 Violations (>800 lines)",
+      "fix": "Decomposed TreatmentPlanPriceValidatorModal.tsx (1034 lines), planPricing.ts (976 lines), TreatmentPlan3TierComparison.tsx (871 lines), and StagePaymentPlanModal.tsx (1418 lines)",
+      "severity": "medium",
+      "status": "resolved"
+    }
+  ],
+  "verification": {
+    "shared_typecheck": "Exit Code 0",
+    "web_typecheck": "Exit Code 0",
+    "tests_passed": 131,
+    "tests_failed": 0,
+    "cbct_files_touched": 0
+  },
+  "status": "completed"
+}

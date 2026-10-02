@@ -111,6 +111,7 @@ export function FinanceToolbar({
 						title={`1-клик оплата остатка долга: ${money(billingSummary.totalDueRub)}`}
 						aria-label="Оплатить долг"
 						data-testid="btn-finance-pay-debt-quick"
+						data-tour="cashier-pay"
 					>
 						<CreditCard
 							size={13}

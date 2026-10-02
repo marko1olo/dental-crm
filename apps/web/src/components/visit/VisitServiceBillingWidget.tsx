@@ -751,6 +751,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 									: "bg-teal-600 hover:bg-teal-700"
 							}`}
 							data-testid="btn-open-payment-modal"
+							data-tour="cashier-pay"
 						>
 							{totals.isWarranty100 ? (
 								<>

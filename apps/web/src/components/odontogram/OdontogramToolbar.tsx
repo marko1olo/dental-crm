@@ -208,7 +208,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							data-testid="quick-trigger-healthy-btn"
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden md:inline">Здоров</span><span className="md:hidden">Зд</span></span>
+							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Здоров</span><span className="2xl:hidden">Зд</span></span>
 						</button>
 						<button
 							type="button"
@@ -222,7 +222,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							data-testid="quick-trigger-caries-btn"
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden md:inline">Кариес</span><span className="md:hidden">К</span></span>
+							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Кариес</span><span className="2xl:hidden">К</span></span>
 						</button>
 						<button
 							type="button"
@@ -236,7 +236,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							data-testid="quick-trigger-pulpitis-btn"
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden md:inline">Пульпит</span><span className="md:hidden">Пт</span></span>
+							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Пульпит</span><span className="2xl:hidden">Пт</span></span>
 						</button>
 						<button
 							type="button"
@@ -250,7 +250,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							data-testid="quick-trigger-filling-btn"
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden md:inline">Пломба</span><span className="md:hidden">П</span></span>
+							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Пломба</span><span className="2xl:hidden">П</span></span>
 						</button>
 						<button
 							type="button"
@@ -264,7 +264,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							data-testid="quick-trigger-crown-btn"
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden md:inline">Коронка</span><span className="md:hidden">Кр</span></span>
+							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Коронка</span><span className="2xl:hidden">Кр</span></span>
 						</button>
 						<button
 							type="button"
@@ -278,7 +278,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 							data-testid="quick-trigger-extracted-btn"
 						>
 							<span className="w-1.5 h-1.5 rounded-full bg-zinc-500 dark:bg-zinc-300 shrink-0" />
-							<span className="whitespace-nowrap"><span className="hidden md:inline">Удален</span><span className="md:hidden">X</span></span>
+							<span className="whitespace-nowrap"><span className="hidden 2xl:inline">Удален</span><span className="2xl:hidden">X</span></span>
 						</button>
 					</div>
 				)}
@@ -376,7 +376,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								"mixed"
 							}
 						>
-							<span><span className="hidden 2xl:inline">Сменный</span><span className="2xl:hidden">Смен.</span></span>
+							<span><span className="hidden md:inline">Сменный</span><span className="md:hidden">Смен.</span></span>
 						</button>
 					</div>
 				)}
