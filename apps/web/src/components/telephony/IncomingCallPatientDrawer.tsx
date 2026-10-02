@@ -25,6 +25,7 @@ import type {
 import { showToast } from "../GlobalToast";
 import {
 	IncomingCallQuickBooking,
+	type QuickSlotOption,
 	type QuickSlotType,
 } from "./IncomingCallQuickBooking";
 import { IncomingCallerCard } from "./IncomingCallerCard";
@@ -56,6 +57,7 @@ export interface IncomingCallPatientDrawerProps {
 	showQuickBooking: boolean;
 	onToggleQuickBooking: () => void;
 	onQuickBook: (slot: QuickSlotType) => void;
+	quickSlots?: readonly QuickSlotOption[];
 	onOpenFullPatientView: () => void;
 	isCallAnswered: boolean;
 	showTransferPanel: boolean;
@@ -96,6 +98,7 @@ export function IncomingCallPatientDrawer({
 	showQuickBooking,
 	onToggleQuickBooking,
 	onQuickBook,
+	quickSlots,
 	onOpenFullPatientView,
 	isCallAnswered,
 	showTransferPanel,
@@ -297,7 +300,10 @@ export function IncomingCallPatientDrawer({
 
 				{/* Collapsible 1-Click Quick Booking Slots */}
 				{showQuickBooking && (
-					<IncomingCallQuickBooking onSelectSlot={onQuickBook} />
+					<IncomingCallQuickBooking
+						onSelectSlot={onQuickBook}
+						slots={quickSlots}
+					/>
 				)}
 
 				{/* Caller Card: Detailed Information */}
