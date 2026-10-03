@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "npm run build -w @dental/shared && concurrently -n api,web -c blue,green \"npm run dev -w @dental/api\" \"npm run dev -w @dental/web\"",
+    "clean:memory": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/cleanup_memory.ps1",
     "build": "npm run build -w @dental/shared && npm run build -w @dental/api && npm run build -w @dental/web",
     "build:desktop": "node electron/scripts/package-desktop.mjs",
     "build:mobile": "node --max-old-space-size=2048 scripts/build-mobile-assets.mjs",

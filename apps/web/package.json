@@ -4,10 +4,10 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite --host 127.0.0.1 --port 5173",
-		"build": "tsc -b && vite build",
+		"dev": "node --max-old-space-size=2048 ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173",
+		"build": "tsc -b && node --max-old-space-size=2048 ../../node_modules/vite/bin/vite.js build",
 		"typecheck": "tsc -b --noEmit",
-		"test": "node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./testCssStub.mjs --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+		"test": "node --max-old-space-size=2048 --test-concurrency=2 --test-timeout=10000 --import tsx --import ./testCssStub.mjs --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
 		"preview": "vite preview --host 127.0.0.1 --port 4173",
 		"smoke:documents-lifecycle": "playwright test tests/e2e/documents-lifecycle.spec.ts"
 	},
