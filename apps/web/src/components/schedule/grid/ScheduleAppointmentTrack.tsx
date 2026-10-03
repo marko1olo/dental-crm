@@ -402,6 +402,9 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             gridColumn: colIndex,
             gridRow: `${rowIndex} / span ${clampedSpan}`,
             zIndex: 10,
+            ["--slot-position" as any]: hIndex,
+            ["--slot-size" as any]: clampedSpan,
+            ["--slot-step" as any]: gridStep,
           }}
           data-chair-id={chair.id}
           data-chair-palette={chairPalette.nameRu}
@@ -500,6 +503,9 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             gridColumn: colIndex,
             gridRow: `${rowIndex} / span ${clampedSpan}`,
             zIndex: 10,
+            ["--slot-position" as any]: hIndex,
+            ["--slot-size" as any]: clampedSpan,
+            ["--slot-step" as any]: gridStep,
           }}
           data-chair-id={chair.id}
           data-chair-palette={chairPalette.nameRu}
@@ -541,6 +547,9 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
         style={{
           gridColumn: colIndex,
           gridRow: rowIndex,
+          ["--slot-position" as any]: hIndex,
+          ["--slot-size" as any]: 1,
+          ["--slot-step" as any]: gridStep,
         }}
         data-chair-id={chair.id}
         data-chair-palette={chairPalette.nameRu}

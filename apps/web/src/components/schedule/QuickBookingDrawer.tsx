@@ -111,7 +111,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
   const drawerElement = (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-50 flex justify-end bg-black/20 backdrop-blur-[1px] transition-opacity"
       data-testid="quick-booking-drawer"
       onKeyDown={handleKeyDown}
       role="dialog"
@@ -209,6 +209,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
             isSoloClinic={isSoloClinic}
             selectedPatientName={selectedPatient?.fullName}
             chairDoctorAssignments={props.chairDoctorAssignments}
+            dashboard={dashboard}
           />
         </div>
 

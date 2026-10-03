@@ -5,11 +5,15 @@ import {
 } from "@dental/shared";
 import {
 	CalendarCheck,
+	CalendarPlus,
 	CheckCircle2,
+	ClipboardList,
 	Clock,
 	Copy,
 	CreditCard,
 	FastForward,
+	FileText,
+	HeartPulse,
 	MessageSquare,
 	Phone,
 	PhoneCall,
@@ -73,6 +77,70 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[260px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
 			onClick={(e) => e.stopPropagation()}
 		>
+			{/* DentalPRO expo26: Clinical Actions Section */}
+			<div className="space-y-0.5 pb-1 border-b border-[var(--line)]" data-testid={`menu-clinical-hud-${a.id}`}>
+				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+					Клинические действия (DentalPRO)
+				</div>
+				<button
+					type="button"
+					onClick={() => {
+						onCloseMenu();
+						if (patObj?.id) {
+							usePatientStore.getState().setSelectedPatientId(patObj.id);
+						}
+						useAppStore.getState().setCurrentView("visit");
+						showToast(`Амбулаторная карта: ${pName}`, "info");
+					}}
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-cyan-700 dark:text-cyan-300 font-bold transition-colors cursor-pointer"
+					title="Открыть амбулаторную карту 043/у"
+					data-testid={`menu-emr-btn-${a.id}`}
+				>
+					<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+					<span>Амбулаторная карта 043/у</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						onCloseMenu();
+						if (patObj?.id) {
+							usePatientStore.getState().setSelectedPatientId(patObj.id);
+						}
+						useAppStore.getState().setCurrentView("patients");
+						if (typeof window !== "undefined") {
+							window.location.hash = "#health-anamnesis";
+						}
+						showToast(`Анкета здоровья: ${pName}`, "info");
+					}}
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-rose-700 dark:text-rose-300 font-medium transition-colors cursor-pointer"
+					title="Заполнить анкету здоровья / соматический анамнез"
+					data-testid={`menu-anamnesis-btn-${a.id}`}
+				>
+					<HeartPulse size={14} className="text-rose-500 shrink-0" />
+					<span>Анкета здоровья</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						onCloseMenu();
+						if (patObj?.id) {
+							usePatientStore.getState().setSelectedPatientId(patObj.id);
+						}
+						useAppStore.getState().setCurrentView("patients");
+						if (typeof window !== "undefined") {
+							window.location.hash = "#treatment-plans";
+						}
+						showToast(`Планы лечения: ${pName}`, "info");
+					}}
+					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-indigo-700 dark:text-indigo-300 font-medium transition-colors cursor-pointer"
+					title="Открыть планы лечения"
+					data-testid={`menu-plans-btn-${a.id}`}
+				>
+					<ClipboardList size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+					<span>Планы лечения</span>
+				</button>
+			</div>
+
 			{/* Быстрые переходы: Карточка приема и Профиль пациента */}
 			<div className="space-y-0.5 pb-1 border-b border-[var(--line)]">
 				<button

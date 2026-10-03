@@ -36,6 +36,7 @@ import {
 	getPatientAllergyAlert,
 	getGridAppointmentCardContainerClasses,
 	extractTeethList,
+	resolveAppointmentClinicalBadges,
 } from "./appointmentCardHelpers";
 import { GridAppointmentHoverHud } from "./GridAppointmentHoverHud";
 import { GridAppointmentMenu } from "./GridAppointmentMenu";
@@ -153,6 +154,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 	const isCito = isAppointmentCito(a);
 	const pBalance = resolvePatientBalance(patObj);
 	const pAllergyAlert = getPatientAllergyAlert(patObj, a?.reason);
+	const clinicalBadges = resolveAppointmentClinicalBadges(a, patObj, pBalance, pAllergyAlert);
 
 	const diffMs = Date.parse(a.endsAt) - Date.parse(a.startsAt);
 	const durationMin =
@@ -231,6 +233,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 					onQuickStatusChange={onQuickStatusChange}
 					onAdjustDuration={onAdjustDuration}
 					onShiftLateness={onShiftLateness}
+					onFreeSlotToWaitlist={onFreeSlotToWaitlist}
 				/>
 			)}
 
@@ -321,6 +324,41 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									{aStart} – {aEnd} · {durationLabel}
 								</span>
 							</div>
+
+							{/* DentalPRO Clinical Status Strip (7-badge matrix with ⋯ overflow) */}
+							{clinicalBadges.length > 0 && (
+								<div
+									className="flex items-center gap-1 flex-wrap min-w-0 py-0.5"
+									data-testid={`appointment-clinical-badges-${a.id}`}
+								>
+									{(durationMin <= 30 && clinicalBadges.length > 2
+										? clinicalBadges.slice(0, 2)
+										: clinicalBadges
+									).map((badge) => (
+										<span
+											key={badge.id}
+											className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-bold border shrink-0 ${badge.badgeClass}`}
+											title={badge.title}
+											data-testid={`badge-${badge.id}-${a.id}`}
+										>
+											<span className="text-[11px] leading-none">{badge.icon}</span>
+											<span className="truncate max-w-[70px]">{badge.labelRu}</span>
+										</span>
+									))}
+									{durationMin <= 30 && clinicalBadges.length > 2 && (
+										<span
+											className="inline-flex items-center px-1 py-0.2 rounded text-[10px] font-extrabold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-help shrink-0"
+											title={clinicalBadges
+												.slice(2)
+												.map((b) => `${b.icon} ${b.labelRu}: ${b.title}`)
+												.join("\n")}
+											data-testid={`badge-overflow-${a.id}`}
+										>
+											⋯ +{clinicalBadges.length - 2}
+										</span>
+									)}
+								</div>
+							)}
 
 							{/* Row 4: Status Button (1-Click) */}
 							<div className="relative">

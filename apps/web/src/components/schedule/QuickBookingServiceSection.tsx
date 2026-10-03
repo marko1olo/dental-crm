@@ -1,16 +1,19 @@
-import type { DentalSpecialty } from "@dental/shared";
+import type { Dashboard, DentalSpecialty } from "@dental/shared";
 import {
   AlertTriangle,
   CalendarCheck,
+  CalendarDays,
   Check,
   CheckCircle2,
   Clock,
   Flame,
+  Search,
   Sparkles,
   UserCheck,
   UserX,
+  X,
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
   APPOINTMENT_TYPE_PRESETS,
@@ -26,6 +29,7 @@ import { specialtyLabels } from "../../workspaceUiLabels";
 import { resolveChairDutyDoctor } from "./chairRosterMath";
 import { SlotConflictModal } from "./SlotConflictModal";
 import { COMMON_REASONS } from "./QuickBookingDrawerTypes";
+import { findDoctorFreeSlots, type DayFreeSlots } from "./doctorFreeSlotsEngine";
 
 export interface QuickBookingServiceSectionProps {
   appointmentType: QuickBookingAppointmentType;
@@ -59,6 +63,7 @@ export interface QuickBookingServiceSectionProps {
   isSoloClinic: boolean;
   selectedPatientName?: string | undefined;
   chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
+  dashboard?: Dashboard | undefined;
 }
 
 export function QuickBookingServiceSection({
@@ -93,9 +98,105 @@ export function QuickBookingServiceSection({
   isSoloClinic,
   selectedPatientName,
   chairDoctorAssignments,
+  dashboard,
 }: QuickBookingServiceSectionProps) {
+  const [isSearchingSlots, setIsSearchingSlots] = useState(false);
+  const [freeSlotsList, setFreeSlotsList] = useState<DayFreeSlots[]>([]);
+
+  const handleFindFreeSlots = () => {
+    if (!dashboard) {
+      showToast("Данные расписания загружаются...", "info");
+      return;
+    }
+    const startDate = startsAtLocal ? startsAtLocal.slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const found = findDoctorFreeSlots({
+      doctorId: doctorUserId || undefined,
+      startDate,
+      horizonDays: 7,
+      durationMinutes: durationMinutes || 30,
+      appointments: dashboard.appointments || [],
+      chairs: chairs.map((c) => ({ id: c.id, name: c.name, active: true })),
+      clinicStartHour: 9,
+      clinicEndHour: 20,
+      stepMinutes: 15,
+    });
+    setFreeSlotsList(found);
+    setIsSearchingSlots(true);
+  };
+
   return (
     <>
+      {/* 0. DentalPRO Expo26 Segmented Status Header [Плановый | Внеплановый (CITO) | Утверждённый] */}
+      <div className="space-y-1.5" data-testid="expo26-segmented-status-container">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-[var(--teal)]" />
+            <span>Статус записи (DentalPRO expo26)</span>
+          </span>
+          {appointmentType === "emergency" && (
+            <span
+              className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
+              data-testid="cito-slot-priority-badge"
+            >
+              CITO Экстренно
+            </span>
+          )}
+        </div>
+        <div className="p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] grid grid-cols-3 gap-1" data-testid="expo26-segmented-status">
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("planned");
+              if (appointmentType === "emergency") {
+                handleSelectAppointmentType("treatment");
+              }
+            }}
+            className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              status === "planned" && appointmentType !== "emergency"
+                ? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs border border-[var(--line)]"
+                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            }`}
+            data-testid="expo26-status-planned"
+          >
+            <Clock size={13} className="shrink-0" />
+            <span>Плановый</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              handleSelectAppointmentType("emergency");
+              if (!reason.includes("CITO")) {
+                setReason(reason ? `CITO! Острая боль, ${reason}` : "CITO! Острая боль");
+              }
+            }}
+            className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              appointmentType === "emergency"
+                ? "bg-rose-600 text-white shadow-xs"
+                : "text-rose-700 dark:text-rose-300 hover:bg-rose-500/10"
+            }`}
+            data-testid="expo26-status-emergency"
+          >
+            <Flame size={13} className={appointmentType === "emergency" ? "text-white animate-pulse" : "text-rose-600"} />
+            <span>Внеплановый (CITO)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("confirmed");
+            }}
+            className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              status === "confirmed"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            }`}
+            data-testid="expo26-status-confirmed"
+          >
+            <CheckCircle2 size={13} className="shrink-0" />
+            <span>Утверждённый</span>
+          </button>
+        </div>
+      </div>
+
       {/* Quick Appointment Type Selector */}
       <div className="space-y-1.5" data-testid="quick-booking-type-selector">
         <div className="flex items-center justify-between">
@@ -106,7 +207,7 @@ export function QuickBookingServiceSection({
           {appointmentType === "emergency" && (
             <span
               className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
-              data-testid="cito-slot-priority-badge"
+              data-testid="cito-slot-priority-badge-secondary"
             >
               Приоритетный слот
             </span>
@@ -165,10 +266,94 @@ export function QuickBookingServiceSection({
 
       {/* 2. Date, Time & Duration Section */}
       <div className="space-y-3 pt-1">
-        <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-          <Clock size={14} className="text-[var(--teal)]" />
-          <span>Время и длительность *</span>
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+            <Clock size={14} className="text-[var(--teal)]" />
+            <span>Время и длительность *</span>
+          </label>
+          <button
+            type="button"
+            onClick={handleFindFreeSlots}
+            className="text-xs font-bold text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--teal)]/30 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 transition-all cursor-pointer"
+            data-testid="quick-booking-find-slots-btn"
+            title="Интеллектуальный поиск свободных окон (DentalPRO Smart Slot Match)"
+          >
+            <Search size={12} className="shrink-0" />
+            <span>Найти варианты</span>
+          </button>
+        </div>
+
+        {/* Инлайн-блок найденных свободных окон (DentalPRO Smart Match) */}
+        {isSearchingSlots && (
+          <div
+            className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/40 shadow-xs space-y-2 animate-in fade-in"
+            data-testid="quick-booking-free-slots-panel"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                <CalendarDays size={13} className="text-[var(--teal)]" />
+                <span>Свободные окна ({durationMinutes} мин, 7 дней)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsSearchingSlots(false)}
+                className="p-1 rounded-md text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+                title="Скрыть варианты"
+                aria-label="Скрыть свободные окна"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {freeSlotsList.length === 0 || freeSlotsList.every((d) => d.slots.length === 0) ? (
+              <p className="text-xs text-[var(--muted)] py-2">
+                Свободных окон на длительность {durationMinutes} мин не найдено. Попробуйте выбрать меньшую длительность или другого врача.
+              </p>
+            ) : (
+              <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 [scrollbar-width:thin]">
+                {freeSlotsList
+                  .filter((day) => day.slots.length > 0)
+                  .map((day) => (
+                    <div key={day.date} className="space-y-1">
+                      <div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+                        {day.dateFormatted}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {day.slots.map((slot) => (
+                          <button
+                            key={`${slot.date}-${slot.startTime}-${slot.chairId}`}
+                            type="button"
+                            onClick={() => {
+                              setStartsAtLocal(slot.startsAtIso.slice(0, 16));
+                              if (slot.chairId) {
+                                setChairId(slot.chairId);
+                              }
+                              if (slot.doctorId && !doctorUserId) {
+                                setDoctorUserId(slot.doctorId);
+                              }
+                              setIsSearchingSlots(false);
+                              showToast(
+                                `Выбрано окно: ${day.dateFormatted}, ${slot.startTime} (${slot.chairName})`,
+                                "success",
+                              );
+                            }}
+                            className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-[var(--ink)] text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                            title={`Выбрать окно ${slot.timeDisplay} (${slot.chairName})`}
+                            data-testid={`quick-slot-candidate-${slot.date}-${slot.startTime}`}
+                          >
+                            <span>{slot.startTime}</span>
+                            <span className="text-[10px] text-[var(--muted)] font-normal">
+                              ({slot.chairName})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
