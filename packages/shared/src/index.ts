@@ -212,7 +212,6 @@ export * from "./warehouse/index.js";
 export * as inventory from "./inventory/index.js";
 export * from "./curator/index.js";
 export * from "./outpatient/index.js";
-export * from "./documents/index.js";
 export * from "./compliance/decree659Engine.js";
 export {
 	calculateEmployeeTimesheetT13,
@@ -4723,6 +4722,8 @@ export const postVisitCareTopicSchema = z.enum([
 	"prosthetics",
 	"orthodontics",
 	"periodontology",
+	"whitening",
+	"retention",
 	"other",
 ]);
 export type PostVisitCareTopic = z.infer<typeof postVisitCareTopicSchema>;

@@ -15,8 +15,15 @@ import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertific
 import { EgiszRemdHubModal } from "../../egisz/EgiszRemdHubModal";
 import { SickLeaveElnModal } from "../sickLeave/SickLeaveElnModal";
 import type { Egisz043uPayload } from "../../egisz/egiszRemdEngine";
+import {
+	DocumentA4PrintPreviewModal,
+} from "../DocumentA4PrintPreviewModal";
+import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
 
 export interface DocumentModalsContainerProps {
+	isA4PrintPreviewOpen?: boolean;
+	setIsA4PrintPreviewOpen?: (open: boolean) => void;
+	a4InitialTab?: ProfessionalA4DocumentTab;
 	isPrimaryIntakeOpen: boolean;
 	setIsPrimaryIntakeOpen: (open: boolean) => void;
 	isSurgicalPackageOpen: boolean;
@@ -60,6 +67,9 @@ export interface DocumentModalsContainerProps {
 export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = React.memo(
 	function DocumentModalsContainer(props) {
 		const {
+			isA4PrintPreviewOpen,
+			setIsA4PrintPreviewOpen,
+			a4InitialTab,
 			isPrimaryIntakeOpen,
 			setIsPrimaryIntakeOpen,
 			isSurgicalPackageOpen,
@@ -212,6 +222,17 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						isOpen={isSickLeaveElnOpen}
 						onClose={() => setIsSickLeaveElnOpen(false)}
 						initialPatientName={activePatient?.fullName}
+					/>
+				)}
+
+				{isA4PrintPreviewOpen && setIsA4PrintPreviewOpen && (
+					<DocumentA4PrintPreviewModal
+						isOpen={isA4PrintPreviewOpen}
+						onClose={() => setIsA4PrintPreviewOpen(false)}
+						initialTab={a4InitialTab || "contract"}
+						patient={activePatient ?? null}
+						doctorFullName={activeDoctor?.fullName ?? null}
+						clinicProfileDraft={clinicProfileDraft}
 					/>
 				)}
 			</Suspense>

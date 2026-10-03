@@ -24,6 +24,7 @@ export interface DocumentHeaderSectionProps {
 	setIsClinicalVisitOpen: (open: boolean) => void;
 	setIsTaxAccountingOpen: (open: boolean) => void;
 	setIsSanpinRegistryOpen: (open: boolean) => void;
+	setIsA4PrintPreviewOpen?: (open: boolean) => void;
 	onSelectDocumentKind?: (kind: DocumentKind) => void;
 }
 
@@ -46,6 +47,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 			setIsClinicalVisitOpen,
 			setIsTaxAccountingOpen,
 			setIsSanpinRegistryOpen,
+			setIsA4PrintPreviewOpen,
 			onSelectDocumentKind,
 		} = props;
 
@@ -195,6 +197,18 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						>
 							<span>Состав пакета (4 док.)</span>
 						</button>
+						{setIsA4PrintPreviewOpen && (
+							<button
+								type="button"
+								className="secondary-button document-intake-a4-preview-btn flex items-center gap-1.5"
+								onClick={() => setIsA4PrintPreviewOpen(true)}
+								data-testid="btn-open-pro-a4-modal"
+								title="Открыть официальный печатный бланк А4 (Договор ПП РФ № 736, Акт 804н, План лечения, Медкарта)"
+							>
+								<Printer size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+								<span className="font-semibold">Бланки А4 (ГОСТ / Договор / Акт / План / Карта)</span>
+							</button>
+						)}
 					</div>
 				</div>
 

@@ -1,0 +1,403 @@
+/**
+ * professional-a4-print.css
+ *
+ * Канонические стили полиграфической печати A4 (210 × 297 мм)
+ * для официального документооборота стоматологической клиники DENTE.
+ *
+ * Принципы ГОСТ Р 7.0.97-2016 и Минздрава РФ:
+ * - Белый лист бумаги (#ffffff) с черным текстом (#000000).
+ * - Нулевая инверсия в тёмных темах CRM (изоляция листа от темного фона).
+ * - Поля: левое 20мм (подшив в архив), правое 15мм, верх/низ 15мм.
+ * - 1px/0.75pt рамки таблиц, строгая типографика PT Serif / Times New Roman (10-12pt).
+ * - Блоки подписей «Врач / Пациент» и место для круглой печати М.П.
+ * - Адаптивный предпросмотр на экранах и 100% идеальный вывод на принтер через @media print.
+ */
+
+/* ── Screen Viewport Wrapper ── */
+.pro-a4-viewport {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-height: 100%;
+	background-color: var(--slate-100, #f1f5f9);
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-viewport {
+	background-color: #0b1120;
+	color: #f8fafc;
+}
+
+/* ── Top Utility Toolbar (Hidden on Print) ── */
+.pro-a4-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 10px 16px;
+	background-color: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-toolbar {
+	background-color: #1e293b;
+	border-bottom-color: #334155;
+}
+
+.pro-a4-tab-selector {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.pro-a4-tab-btn {
+	min-height: 36px;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	display: inline-flex;
+	align-items: center;
+	text-decoration: none;
+	user-select: none;
+}
+
+.pro-a4-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background-color: rgba(15, 118, 110, 0.08);
+}
+
+.pro-a4-tab-btn.active {
+	color: #ffffff;
+	background-color: #0f766e;
+	border-color: #0f766e;
+	box-shadow: 0 1px 2px rgba(15, 118, 110, 0.2);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-tab-btn {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-tab-btn:hover {
+	color: #f8fafc;
+	background-color: rgba(255, 255, 255, 0.06);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-tab-btn.active {
+	color: #ffffff;
+	background-color: #0d9488;
+	border-color: #0d9488;
+}
+
+.pro-a4-toolbar-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.pro-a4-format-badge {
+	font-size: 11px;
+	font-weight: 600;
+	color: #0f766e;
+	background-color: #ccfbf1;
+	border: 1px solid #99f6e4;
+	padding: 4px 8px;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-format-badge {
+	color: #5eead4;
+	background-color: rgba(13, 148, 136, 0.2);
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+.pro-a4-print-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0 16px;
+	font-size: 13px;
+	font-weight: 700;
+	background-color: #0f766e;
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	box-shadow: 0 2px 4px rgba(15, 118, 110, 0.25);
+	transition: background-color 0.15s ease;
+}
+
+.pro-a4-print-btn:hover {
+	background-color: #115e59;
+}
+
+/* ── Paper Container (Desk Simulation) ── */
+.pro-a4-paper-container {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	padding: 24px 16px 48px;
+	overflow-x: auto;
+	box-sizing: border-box;
+}
+
+/* ── Physical A4 Paper Sheet ── */
+.pro-a4-physical-sheet {
+	width: 210mm;
+	min-height: 297mm;
+	max-width: 100%;
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #000000 !important;
+	color-scheme: light !important;
+	box-sizing: border-box;
+	margin: 0 auto;
+	padding: 15mm 15mm 15mm 20mm;
+	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
+	font-family: "PT Serif", "Times New Roman", "PT Astra Serif", Georgia, serif;
+	font-size: 9.5pt;
+	line-height: 1.35;
+	position: relative;
+}
+
+/* Absolute Theme Isolation: Paper remains white even in dark themes */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet * {
+	color-scheme: light !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-physical-sheet {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #000000 !important;
+}
+
+.pro-a4-doc-content {
+	color: #000000 !important;
+}
+
+/* ── Typography & Official Elements ── */
+.pro-a4-physical-sheet .a4-header {
+	border-bottom: 1.5pt solid #000000;
+	padding-bottom: 6px;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+.pro-a4-physical-sheet .a4-clinic-name {
+	font-size: 11.5pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #000000 !important;
+}
+
+.pro-a4-physical-sheet .a4-clinic-requisites {
+	font-size: 8pt;
+	color: #222222 !important;
+	margin-top: 3px;
+	line-height: 1.3;
+}
+
+.pro-a4-physical-sheet .a4-doc-title {
+	font-size: 13pt;
+	font-weight: 800;
+	text-align: center;
+	text-transform: uppercase;
+	margin: 10px 0 3px 0;
+	color: #000000 !important;
+	letter-spacing: 0.02em;
+}
+
+.pro-a4-physical-sheet .a4-doc-subtitle {
+	font-size: 9pt;
+	text-align: center;
+	color: #222222 !important;
+	margin-bottom: 10px;
+	line-height: 1.3;
+}
+
+.pro-a4-physical-sheet .a4-meta-row {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9pt;
+	font-weight: 700;
+	margin-bottom: 8px;
+	border-bottom: 0.5pt solid #cccccc;
+	padding-bottom: 3px;
+	color: #000000 !important;
+}
+
+.pro-a4-physical-sheet .a4-section-heading {
+	font-size: 10pt;
+	font-weight: 800;
+	margin: 10px 0 5px 0;
+	text-transform: uppercase;
+	border-bottom: 0.75pt solid #000000;
+	padding-bottom: 2px;
+	color: #000000 !important;
+	letter-spacing: 0.01em;
+}
+
+.pro-a4-physical-sheet .a4-p {
+	font-size: 8.5pt;
+	text-align: justify;
+	text-indent: 1.25cm;
+	margin: 4px 0;
+	line-height: 1.35;
+	color: #000000 !important;
+}
+
+.pro-a4-physical-sheet .a4-p-noindent {
+	font-size: 8.5pt;
+	text-align: justify;
+	margin: 4px 0;
+	line-height: 1.35;
+	color: #000000 !important;
+}
+
+/* ── Canonical Medical Tables ── */
+.pro-a4-physical-sheet .a4-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 6px 0;
+	font-size: 8pt;
+	border: 0.75pt solid #000000 !important;
+	background-color: #ffffff !important;
+	page-break-inside: auto;
+}
+
+.pro-a4-physical-sheet .a4-table th,
+.pro-a4-physical-sheet .a4-table td {
+	border: 0.75pt solid #000000 !important;
+	padding: 3px 5px !important;
+	color: #000000 !important;
+	vertical-align: middle;
+	background-color: #ffffff;
+}
+
+.pro-a4-physical-sheet .a4-table th {
+	background-color: #f0f0f0 !important;
+	font-weight: 700 !important;
+	text-align: center;
+}
+
+.pro-a4-physical-sheet .a4-table .total-row td {
+	font-weight: 800 !important;
+	background-color: #f7f7f7 !important;
+}
+
+/* ── Signatures & Stamp Blocks ── */
+.pro-a4-physical-sheet .a4-sign-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+	margin-top: 14px;
+	font-size: 8pt;
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+.pro-a4-physical-sheet .a4-sign-col {
+	line-height: 1.35;
+	color: #000000 !important;
+}
+
+.pro-a4-physical-sheet .a4-sign-line {
+	border-bottom: 0.75pt solid #000000;
+	height: 26px;
+	margin: 4px 0 2px 0;
+	width: 100%;
+}
+
+.pro-a4-physical-sheet .a4-sign-hint {
+	font-size: 7.5pt;
+	color: #333333 !important;
+}
+
+.pro-a4-physical-sheet .stamp-box {
+	display: inline-block;
+	border: 0.75pt dashed #555555;
+	padding: 0 4px;
+	font-size: 7pt;
+	font-weight: 700;
+	margin-left: 6px;
+	vertical-align: middle;
+	color: #333333 !important;
+}
+
+/* ── Print Media Optimization ── */
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 15mm 12mm 15mm 20mm;
+	}
+
+	html,
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		color-scheme: light !important;
+		height: auto !important;
+		overflow: visible !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	body > *:not(.print-layer):not(.pro-a4-viewport) {
+		display: none !important;
+	}
+
+	.no-print,
+	.pro-a4-toolbar {
+		display: none !important;
+	}
+
+	.pro-a4-viewport {
+		background: transparent !important;
+		padding: 0 !important;
+		margin: 0 !important;
+	}
+
+	.pro-a4-paper-container {
+		padding: 0 !important;
+		margin: 0 !important;
+		display: block !important;
+		overflow: visible !important;
+	}
+
+	.pro-a4-physical-sheet {
+		width: 100% !important;
+		min-height: auto !important;
+		max-width: none !important;
+		box-shadow: none !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		border: none !important;
+	}
+
+	.a4-sign-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	* {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+}

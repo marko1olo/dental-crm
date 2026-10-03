@@ -13,7 +13,7 @@ import type { ToothData } from "../odontogram/ToothChart";
 import "../../styles/premium-document-print.css";
 
 export interface PremiumDocumentPrintSheetProps {
-	documentType?: "043u" | "treatment_plan" | "informed_consent" | "prescription" | "contract" | undefined;
+	documentType?: "medical_card" | "043u" | "treatment_plan" | "informed_consent" | "prescription" | "contract" | undefined;
 	documentTitle?: string | undefined;
 	documentSubtitle?: string | undefined;
 	patient: {
@@ -53,9 +53,9 @@ export interface PremiumDocumentPrintSheetProps {
 }
 
 export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps> = ({
-	documentType = "043u",
+	documentType = "medical_card",
 	documentTitle = "МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА",
-	documentSubtitle = "Форма № 043/у (Утверждена Приказом Минздрава России № 834н)",
+	documentSubtitle = "Амбулаторная медицинская карта стоматологического пациента / Дневник приёма",
 	patient,
 	doctorName,
 	doctorSpecialty,
@@ -380,7 +380,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 									<strong>
 										{snap.toothCode
 											? `Зуб FDI № ${snap.toothCode}`
-											: snap.title || "Снимок 043/у"}
+											: snap.title || "Рентгенологический снимок"}
 									</strong>
 									{snap.boneDensity && (
 										<div>Плотность: {snap.boneDensity.classification} ({Math.round(snap.boneDensity.averageHU)} HU)</div>

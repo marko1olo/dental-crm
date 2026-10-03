@@ -43,6 +43,7 @@ import { DocumentAuditFactsModal } from "./components/documents/tabs/DocumentAud
 import { DocumentRegistryTab } from "./components/documents/tabs/DocumentRegistryTab";
 import { DocumentModalsContainer } from "./components/documents/tabs/DocumentModalsContainer";
 import "./styles/modules/documents.css";
+import "./components/documents/documentNavigation.css";
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export type DocumentsViewProps = Record<string, any>;
@@ -184,6 +185,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	const [isFnsNdflXmlOpen, setIsFnsNdflXmlOpen] = useState(false);
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
+	const [isA4PrintPreviewOpen, setIsA4PrintPreviewOpen] = useState(false);
 
 	const selectedDocumentCreateGuidanceId = "document-create-selected-guidance";
 	const latestDocumentOpenGuidanceId = "document-open-latest-guidance";
@@ -435,6 +437,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				setIsClinicalVisitOpen={setIsClinicalVisitOpen}
 				setIsTaxAccountingOpen={setIsTaxAccountingOpen}
 				setIsSanpinRegistryOpen={setIsSanpinRegistryOpen}
+				setIsA4PrintPreviewOpen={setIsA4PrintPreviewOpen}
 				onSelectDocumentKind={setSelectedDocumentKind}
 			/>
 
@@ -729,6 +732,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				setIsEgiszRemdOpen={setIsEgiszRemdOpen}
 				isSickLeaveElnOpen={isSickLeaveElnOpen}
 				setIsSickLeaveElnOpen={setIsSickLeaveElnOpen}
+				isA4PrintPreviewOpen={isA4PrintPreviewOpen}
+				setIsA4PrintPreviewOpen={setIsA4PrintPreviewOpen}
 				activePatient={activePatient}
 				activeDoctor={activeDoctor}
 				clinicProfileDraft={clinicProfileDraft}

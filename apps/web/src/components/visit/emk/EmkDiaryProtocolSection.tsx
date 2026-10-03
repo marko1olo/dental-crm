@@ -116,7 +116,7 @@ export function EmkDiaryProtocolSection({
 			useVisitStore.getState().setVisitToothRecord(String(activeTooth), {
 				toothNumber: activeTooth,
 				diagnosis: smart.diagnosis,
-				diagnosisIcd10: smart.code,
+				...(smart.icd10 ? { diagnosisIcd10: smart.icd10 } : {}),
 				state: "treatment",
 			});
 		} else {
