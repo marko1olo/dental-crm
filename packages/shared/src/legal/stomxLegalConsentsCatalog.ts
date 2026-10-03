@@ -433,11 +433,37 @@ export const STOMX_LEGAL_CONSENTS_CATALOG: readonly StomxLegalConsentTemplateMet
 		procedureType: "somatic_health_questionnaire",
 		category: "therapy",
 		categoryLabel: "Анамнез и соматика",
-		statutoryBasis: "ФЗ № 323-ФЗ (ст. 19-22), Приказ МЗ РФ № 834н / 043/у",
+		statutoryBasis: "ФЗ № 323-ФЗ (ст. 19-22), Приказ МЗ РФ № 834н / Карта приёма",
 		isEgisz: false,
 		esiaRequired: false,
 		isXrayIds: false,
 		keyVariables: ["Пациент.ФИО", "Клиника.Название", "Прием.Дата"],
+	},
+	{
+		id: 78,
+		systemAlias: "ids_bone_grafting",
+		name: "ИДС Костная пластика и остеопластика",
+		procedureType: "bone_grafting",
+		category: "surgery",
+		categoryLabel: "Хирургия и имплантация",
+		statutoryBasis: "ФЗ № 323-ФЗ (ст. 19-23), Приказ МЗ РФ № 1051н, ПП РФ № 736",
+		isEgisz: false,
+		esiaRequired: false,
+		isXrayIds: false,
+		keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зубы", "Прием.Дата"],
+	},
+	{
+		id: 79,
+		systemAlias: "ids_aligners",
+		name: "ИДС Элайнеры и ортодонтические каппы",
+		procedureType: "aligners",
+		category: "orthodontics",
+		categoryLabel: "Ортодонтия",
+		statutoryBasis: "ФЗ № 323-ФЗ (ст. 19-23), Приказ МЗ РФ № 1051н, ПП РФ № 736",
+		isEgisz: false,
+		esiaRequired: false,
+		isXrayIds: false,
+		keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 	},
 ] as const;
 
@@ -1128,14 +1154,28 @@ export function resolveStomxVariableToken(
 			return cl?.checkingAccount?.trim() || fallback;
 		case "Клиника.КС":
 			return cl?.corrAccount?.trim() || fallback;
+		case "Клиника.Реквизиты": {
+			const parts: string[] = [];
+			const name = cl?.legalName?.trim() || cl?.name?.trim();
+			if (name) parts.push(name);
+			if (cl?.inn?.trim()) parts.push(`ИНН: ${cl.inn.trim()}`);
+			if (cl?.kpp?.trim()) parts.push(`КПП: ${cl.kpp.trim()}`);
+			if (cl?.ogrn?.trim()) parts.push(`ОГРН: ${cl.ogrn.trim()}`);
+			const addr = cl?.address?.trim() || cl?.actualAddress?.trim();
+			if (addr) parts.push(`Адрес: ${addr}`);
+			if (cl?.phone?.trim()) parts.push(`Тел: ${cl.phone.trim()}`);
+			return parts.length > 0 ? parts.join(", ") : fallback;
+		}
 
 		// Врач
+		case "Врач":
 		case "Врач.ФИО":
 			return dr?.fullName?.trim() || fallback;
 		case "Врач.Специальность":
 			return dr?.specialty?.trim() || "врач-стоматолог";
 		case "Врач.Должность":
 			return dr?.position?.trim() || "врач-стоматолог";
+		case "Врач.ФамилияИнициалы":
 		case "Врач.ФамилияИО": {
 			if (!dr?.fullName) return fallback;
 			const parts = dr.fullName.trim().split(/\s+/);
@@ -1177,10 +1217,19 @@ export function resolveStomxVariableToken(
 			return ct?.number?.trim() || fallback;
 		case "Договор.Дата":
 			return ct?.date?.trim() || fallback;
+		case "Счет.Сумма":
 		case "Смета.Сумма":
 			return ct?.totalAmountRub !== undefined && ct?.totalAmountRub !== null ? `${ct.totalAmountRub} ₽` : fallback;
+		case "Счет.СуммаПрописью":
 		case "Смета.СуммаПрописью":
+		case "СуммаПрописью":
 			return ct?.totalAmountWords?.trim() || fallback;
+
+		// План лечения и зубная формула
+		case "ПланЛечения.Таблица":
+			return context.custom?.["ПланЛечения.Таблица"] ? String(context.custom["ПланЛечения.Таблица"]) : fallback;
+		case "ЗубнаяФормула.Прописью":
+			return context.custom?.["ЗубнаяФормула.Прописью"] ? String(context.custom["ЗубнаяФормула.Прописью"]) : fallback;
 
 		// Общие даты
 		case "ТекущаяДата":
@@ -1188,6 +1237,9 @@ export function resolveStomxVariableToken(
 			return new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) + " г.";
 
 		default:
+			if (context.custom && context.custom[token] !== undefined && context.custom[token] !== null) {
+				return String(context.custom[token]);
+			}
 			return fallback;
 	}
 }
@@ -1197,6 +1249,7 @@ export function resolveStomxVariableToken(
  * - [Пациент.ФИО] (канонический StomX)
  * - {{Пациент.ФИО}} (Mustache / handlebars)
  * - ${Пациент.ФИО} (ES6)
+ * - {Пациент.ФИО} (DentalPRO / TemplateEngine)
  */
 export function renderStomxTemplateText(
 	templateText: string,
@@ -1216,6 +1269,11 @@ export function renderStomxTemplateText(
 
 	// 3. ${Токен}
 	result = result.replace(/\$\{([А-Яа-яA-Za-z0-9_.]+)\}/g, (_, token) => {
+		return resolveStomxVariableToken(token, context);
+	});
+
+	// 4. {Токен}
+	result = result.replace(/\{([А-Яа-яA-Za-z0-9_.-]+)\}/g, (_, token) => {
 		return resolveStomxVariableToken(token, context);
 	});
 

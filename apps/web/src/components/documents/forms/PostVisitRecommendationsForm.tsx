@@ -83,6 +83,43 @@ export const PostVisitRecommendationsForm: React.FC<
 					Telegram-бота клиники.
 				</p>
 			</div>
+			<div
+				style={{
+					display: "flex",
+					flexWrap: "wrap",
+					gap: "6px",
+					marginTop: "8px",
+					marginBottom: "12px",
+				}}
+			>
+				{[
+					{ topic: "extraction" as PostVisitCareTopic, label: "Удаление" },
+					{ topic: "implantation" as PostVisitCareTopic, label: "Имплантация" },
+					{ topic: "surgery_aftercare" as PostVisitCareTopic, label: "Хирургия & остеопластика" },
+					{ topic: "fixation_aftercare" as PostVisitCareTopic, label: "Фиксация коронок/виниров" },
+					{ topic: "filling_restoration" as PostVisitCareTopic, label: "Пломба / реставрация" },
+					{ topic: "endo" as PostVisitCareTopic, label: "Эндодонтия" },
+					{ topic: "hygiene" as PostVisitCareTopic, label: "Гигиена" },
+					{ topic: "orthodontics" as PostVisitCareTopic, label: "Ортодонтия & элайнеры" },
+				].map((btn) => (
+					<button
+						key={btn.topic}
+						type="button"
+						className={`secondary-button ${postVisitCareTopic === btn.topic ? "active font-medium" : ""}`}
+						style={{
+							fontSize: "12px",
+							padding: "4px 8px",
+							height: "28px",
+						}}
+						onClick={() => {
+							changePostVisitCareTopic(btn.topic);
+							applyPostVisitCarePreset(btn.topic, { force: true });
+						}}
+					>
+						{btn.label}
+					</button>
+				))}
+			</div>
 			<details className="document-manual-override">
 				<summary
 					style={{

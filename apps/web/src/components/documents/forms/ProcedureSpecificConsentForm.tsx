@@ -160,6 +160,7 @@ const PRESET_CATEGORIES: PresetCategoryDef[] = [
 			{ type: "surgery_extraction", label: "Удаление зуба" },
 			{ type: "implantation", label: "Имплантация" },
 			{ type: "sinus_lifting", label: "Синус-лифтинг" },
+			{ type: "bone_grafting", label: "Костная пластика / НКР" },
 			{ type: "sedation", label: "Седация (ЗАКС / в/в)" },
 			{ type: "local_anesthesia", label: "Местная анестезия" },
 		],
@@ -180,7 +181,8 @@ const PRESET_CATEGORIES: PresetCategoryDef[] = [
 			{ type: "professional_hygiene", label: "Проф.гигиена" },
 			{ type: "teeth_whitening", label: "Отбеливание зубов" },
 			{ type: "periodontology", label: "Пародонтология" },
-			{ type: "orthodontics", label: "Ортодонтия (брекеты/элайнеры)" },
+			{ type: "orthodontics", label: "Брекет-система" },
+			{ type: "aligners", label: "Элайнеры (каппы)" },
 		],
 	},
 	{
@@ -229,42 +231,43 @@ const PRESET_CATEGORIES: PresetCategoryDef[] = [
 			<DocumentPayloadCard
 				title="Процедурное согласие"
 				description="Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения."
-			>
-				<div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-					<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block" }}>
-						Быстрое заполнение по клиническому профилю (1 клик):
-					</span>
-					{PRESET_CATEGORIES.map((cat) => (
-						<div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-							<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted, #64748b)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-								{cat.title}
-							</span>
-							<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-								{cat.buttons.map((btn) => {
-									const isActive = procedureConsentProcedureType === btn.type;
-									return (
-										<button
-											key={btn.type}
-											type="button"
-											className={isActive ? "primary-button" : "secondary-button"}
-											style={{
-												minHeight: "44px",
-												fontSize: "13px",
-												padding: "8px 14px",
-												borderRadius: "8px",
-												fontWeight: isActive ? 600 : 500,
-											}}
-											onClick={() => applyClinicalPreset(btn.type)}
-										>
-											{btn.label}
-										</button>
-									);
-								})}
+				notice={
+					<div style={{ margin: "16px 0", display: "flex", flexDirection: "column", gap: "12px" }}>
+						<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block" }}>
+							Быстрое заполнение по клиническому профилю (1 клик):
+						</span>
+						{PRESET_CATEGORIES.map((cat) => (
+							<div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+								<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted, #64748b)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+									{cat.title}
+								</span>
+								<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+									{cat.buttons.map((btn) => {
+										const isActive = procedureConsentProcedureType === btn.type;
+										return (
+											<button
+												key={btn.type}
+												type="button"
+												className={isActive ? "primary-button" : "secondary-button"}
+												style={{
+													minHeight: "36px",
+													fontSize: "13px",
+													padding: "6px 12px",
+													borderRadius: "8px",
+													fontWeight: isActive ? 600 : 500,
+												}}
+												onClick={() => applyClinicalPreset(btn.type)}
+											>
+												{btn.label}
+											</button>
+										);
+									})}
+								</div>
 							</div>
-						</div>
-					))}
-				</div>
-
+						))}
+					</div>
+				}
+			>
 				<div className="document-payload-row">
 					<label>
 						Блок процедуры

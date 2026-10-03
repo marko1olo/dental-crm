@@ -126,6 +126,8 @@ export const defaultTelegramPostVisitCheckupDelayHoursByTopic: DenteTelegramPost
 	{
 		extraction: 24,
 		implantation: 24,
+		surgery_aftercare: 24,
+		fixation_aftercare: 48,
 		filling_restoration: 48,
 		endo: 48,
 		surgery: 24,
@@ -144,6 +146,12 @@ export const defaultTelegramPostVisitCheckupDelayDrafts: TelegramPostVisitChecku
 		),
 		implantation: String(
 			defaultTelegramPostVisitCheckupDelayHoursByTopic.implantation,
+		),
+		surgery_aftercare: String(
+			defaultTelegramPostVisitCheckupDelayHoursByTopic.surgery_aftercare,
+		),
+		fixation_aftercare: String(
+			defaultTelegramPostVisitCheckupDelayHoursByTopic.fixation_aftercare,
 		),
 		filling_restoration: String(
 			defaultTelegramPostVisitCheckupDelayHoursByTopic.filling_restoration,
@@ -180,6 +188,16 @@ export const telegramPostVisitCheckupDelayFields: Array<{
 		key: "implantation",
 		label: "После имплантации",
 		help: "Контроль после имплантации и хирургического этапа.",
+	},
+	{
+		key: "surgery_aftercare",
+		label: "После хирургии и костной пластики",
+		help: "Контроль отека, швов и приема препаратов.",
+	},
+	{
+		key: "fixation_aftercare",
+		label: "После фиксации коронок/виниров",
+		help: "Контроль окклюзии, смыкания и фиксации конструкций.",
 	},
 	{
 		key: "filling_restoration",
@@ -229,14 +247,16 @@ export const postVisitCareTopicOptions: Array<{
 	label: string;
 }> = [
 	{ value: "extraction", label: "Удаление" },
-	{ value: "implantation", label: "Имплантация / костная пластика" },
+	{ value: "implantation", label: "Имплантация" },
+	{ value: "surgery_aftercare", label: "Хирургия и остеопластика (памятка)" },
+	{ value: "fixation_aftercare", label: "Фиксация коронок / виниров (памятка)" },
 	{ value: "filling_restoration", label: "Пломба / реставрация" },
 	{ value: "endo", label: "Эндодонтия" },
 	{ value: "surgery", label: "Хирургия" },
 	{ value: "local_anesthesia", label: "Местная анестезия" },
 	{ value: "hygiene", label: "Профессиональная гигиена" },
 	{ value: "prosthetics", label: "Ортопедия" },
-	{ value: "orthodontics", label: "Ортодонтия" },
+	{ value: "orthodontics", label: "Ортодонтия (брекеты/элайнеры)" },
 	{ value: "periodontology", label: "Пародонтология" },
 	{ value: "other", label: "Другое" },
 ];

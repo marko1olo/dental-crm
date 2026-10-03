@@ -6,6 +6,8 @@ export const procedureSpecificConsentProcedureSchema = z.enum([
 	"veneers",
 	"implantation",
 	"sinus_lifting",
+	"bone_grafting",
+	"aligners",
 	"fixed_prosthetics",
 	"removable_prosthetics",
 	"deep_caries",

@@ -166,4 +166,20 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!warrantyCode.includes(': "043/у")'), "Warranty card must not fallback to 043/у");
 		assert.ok(!warrantyCode.includes('|| "043/у"'), "Warranty card must not fallback to 043/у");
 	});
+
+	it("15. Orthodontics & Cephalometrics: purged '043/у' from interactive buttons & headers", () => {
+		const cephModalCode = readComponent("components/radiology/CephalometricAnalysisModal.tsx");
+		assert.ok(cephModalCode.includes("В медицинскую карту"), "CephalometricAnalysisModal must have clean 'В медицинскую карту'");
+		assert.ok(!cephModalCode.includes("В карту 043/у"), "CephalometricAnalysisModal must not have 'В карту 043/у'");
+
+		const cephReportCode = readComponent("components/radiology/CephalometricReportTab.tsx");
+		assert.ok(cephReportCode.includes("Вставить в ортодонтическую карту"), "CephalometricReportTab must have clean 'Вставить в ортодонтическую карту'");
+		assert.ok(!cephReportCode.includes("Формы 043/у"), "CephalometricReportTab must not cite 'Формы 043/у'");
+
+		const orthoWidgetCode = readComponent("components/orthodontics/OrthodonticVisitProtocolWidget.tsx");
+		assert.ok(!orthoWidgetCode.includes('"Печать 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Печать 043/у'");
+		assert.ok(!orthoWidgetCode.includes('"Внести в дневник 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Внести в дневник 043/у'");
+		assert.ok(!orthoWidgetCode.includes("Дневник приёма (Форма 043/у)"), "Preview header must not have '(Форма 043/у)'");
+		assert.ok(orthoWidgetCode.includes("Дневник приёма"), "Preview header must be clean 'Дневник приёма'");
+	});
 });
