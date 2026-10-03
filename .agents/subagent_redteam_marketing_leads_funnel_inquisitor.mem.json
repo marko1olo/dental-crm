@@ -1,0 +1,53 @@
+{
+  "agent": "subagent_redteam_marketing_leads_funnel_inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "read_constitution_and_mandates",
+    "deep_reconnaissance_leads_funnel",
+    "inspect_schema_and_backend_routes",
+    "inspect_stores_and_frontend_views",
+    "detect_orphans_duplicates_mocks",
+    "harden_code_and_fix_defects",
+    "verify_gates_and_tests",
+    "submit_final_report"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "defects": [
+      {
+        "id": "DEFECT-LEAD-BATCH-400-PAYLOAD",
+        "severity": "CRITICAL",
+        "description": "LeadsKanbanView.tsx sent body with { leadIds, stage: nextStatus } while backend POST /api/leads/batch-stage strictly required { leadIds, toStage }. Caused 400 Bad Request and degraded to N sequential un-audited requests.",
+        "status": "FIXED",
+        "fixed_in": ["apps/web/src/components/leads/LeadsKanbanView.tsx", "apps/web/src/store/leadsStore.ts"]
+      },
+      {
+        "id": "DEFECT-LEAD-STORE-BATCH-METHOD-MISSING",
+        "severity": "HIGH",
+        "description": "useLeadsStore lacked batchUpdateStage method, forcing UI components into manual ad-hoc un-encapsulated fetch calls without state rollback.",
+        "status": "FIXED",
+        "fixed_in": ["apps/web/src/store/leadsStore.ts"]
+      },
+      {
+        "id": "DEFECT-MARKETING-INTAKE-SPLIT-MOCK",
+        "severity": "HIGH",
+        "description": "MarketingDashboardView.tsx hardcoded 42% for online self-booking and 58% for reception telephony as static simulation mocks instead of computing live shares from /api/marketing/attribution and lead sources.",
+        "status": "FIXED",
+        "fixed_in": ["apps/web/src/pages/MarketingDashboardView.tsx"]
+      }
+    ]
+  },
+  "modifications": [
+    "apps/web/src/components/leads/LeadsKanbanView.tsx",
+    "apps/web/src/store/leadsStore.ts",
+    "apps/web/src/pages/MarketingDashboardView.tsx",
+    "apps/web/src/tests/leadsBatchStageAndMarketingIntakeSplit.test.ts"
+  ],
+  "verification": {
+    "encoding": "PASSED (7220 files)",
+    "css_tokens": "PASSED (165 CSS files, 0 unresolved tokens)",
+    "shared_tests": "19 passed, 0 failed (leadSlaEngine, marketingRomiEngine)",
+    "web_tests": "62 passed, 0 failed (leadsFunnelEngine, leadsKanbanDefaultDay, leadsBatchStageAndMarketingIntakeSplit)",
+    "api_tests": "10 passed, 0 failed (leadsBatchAndSlaMetrics, leadsConversionAutonomy on PostgreSQL 18.4)"
+  }
+}

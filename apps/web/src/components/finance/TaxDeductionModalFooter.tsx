@@ -88,7 +88,7 @@ export const TaxDeductionModalFooter: React.FC<TaxDeductionModalFooterProps> = (
 							className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 						>
 							<Download size={16} />
-							<span>Выгрузить XML</span>
+							<span>Выгрузить XML (ТКС)</span>
 						</button>
 						<button
 							type="button"
@@ -108,7 +108,7 @@ export const TaxDeductionModalFooter: React.FC<TaxDeductionModalFooterProps> = (
 							aria-label="Печать справки для налоговой (вычет 13%)"
 						>
 							<Printer size={16} />
-							<span>Печать справки (вычет 13%)</span>
+							<span>Печать справки КНД 1151156 (А4)</span>
 						</button>
 					</>
 				)}

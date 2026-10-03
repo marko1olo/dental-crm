@@ -145,12 +145,10 @@ export class NdflTaxService {
 			end = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
 		}
 
-		// 1. Проверка блокировки по долгу (Фича №5) (ст. 219 НК РФ)
+		// 1. Проверка задолженности и анонимности (ст. 219 НК РФ, ПП РФ №659)
 		const debtRub = patient.balanceRub < 0 ? Math.abs(patient.balanceRub) : 0;
-		let isBlocked = debtRub > 0;
-		let blockReason = isBlocked
-			? `Имеется непогашенная задолженность пациента в размере ${debtRub.toFixed(2)} ₽. Выдача справки для налогового вычета блокируется до полной оплаты оказанных услуг.`
-			: null;
+		let isBlocked = false;
+		let blockReason: string | null = null;
 
 		if (isPatientAnonymous) {
 			isBlocked = true;
@@ -287,9 +285,17 @@ export class NdflTaxService {
 
 		if (isBlocked && blockReason) {
 			validationIssues.push({
-				field: "patient.debt",
+				field: "patient.anonymous",
 				message: blockReason,
 				severity: "error",
+			});
+		}
+
+		if (debtRub > 0) {
+			validationIssues.push({
+				field: "patient.debt",
+				message: `У пациента имеется задолженность в размере ${debtRub.toFixed(2)} ₽. Справка для налогового вычета формируется исключительно на фактически оплаченные фискальные суммы за выбранный налоговый период.`,
+				severity: "warning",
 			});
 		}
 

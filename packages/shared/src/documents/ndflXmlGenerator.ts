@@ -47,6 +47,7 @@ export type { FnsTaxPayload, SupportedTaxYear };
 
 
 import {
+	extractTaxYearFromDate,
 	FNS_ORDER_824_NAME,
 	validateRussianInn,
 	validateRussianKpp,
@@ -157,6 +158,8 @@ export function formatFnsRuDate(dateStrOrObj?: string | Date | null): string {
 	const yyyy = date.getFullYear();
 	return `${dd}.${mm}.${yyyy}`;
 }
+
+export const formatFnsDate = formatFnsRuDate;
 
 /**
  * Классификация медицинской услуги для социального налогового вычета (Приказ № 804н / ПП РФ № 458):
@@ -404,7 +407,7 @@ export function validateFnsFiscalReceiptsChecksums(
 		}
 
 		if (r.receiptDate) {
-			const rYear = new Date(r.receiptDate).getFullYear();
+			const rYear = extractTaxYearFromDate(r.receiptDate);
 			if (!isNaN(rYear) && targetTaxYear && rYear !== targetTaxYear) {
 				errors.push(
 					`Чек #${itemIdx} (№ ${receiptNum}) от ${r.receiptDate}: дата чека (${rYear} год) не соответствует налоговому периоду справки (${targetTaxYear} год).`,
@@ -677,9 +680,16 @@ export function buildFnsKnd1151156Xml(
 	// 1. Блок медицинской организации / ИП (<СвОргМ>)
 	let orgBlockXml = "";
 	if (payload.clinic.isIndividualEntrepreneur || clinicInn.length === 12) {
-		const ipFio =
-			payload.clinic.ipFullName ||
-			parseFio(payload.clinic.directorName || "Смирнов Алексей Владимирович");
+		if (
+			!payload.clinic.ipFullName ||
+			!payload.clinic.ipFullName.family?.trim() ||
+			!payload.clinic.ipFullName.given?.trim()
+		) {
+			throw new Error(
+				"Не указано ФИО индивидуального предпринимателя в реквизитах клиники для справки ФНС",
+			);
+		}
+		const ipFio = payload.clinic.ipFullName;
 		const patronymicAttr = ipFio.patronymic
 			? ` Отчество="${escapeXmlAttr(ipFio.patronymic)}"`
 			: "";

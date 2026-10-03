@@ -45,6 +45,10 @@ import {
 	validateRussianOgrn,
 	validateRussianPassport,
 	validateRussianSnils,
+	extractTaxYearFromDate,
+	isTaxDeductionRefund,
+	getTaxDeductionAbsKopecks,
+	normalizePaymentsForTaxCertificate,
 } from "../fiscal/index.js";
 
 describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 1151156 / 1184043)", () => {
@@ -887,5 +891,132 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		assert.match(batchRes.fileId, /^NO_MEDOPL_7801_7841098765_\d{8}_[A-Z0-9]{6}$/);
 		assert.ok(!batchRes.xmlContent.includes("Осмотр 2024"));
 		assert.ok(!batchRes.xmlContent.includes("Гигиена 2026"));
+	});
+
+	it("strictly nets refunds (чеки возврата прихода) against Code 01 and Code 02 with exact kopeck arithmetic", () => {
+		const payments: TaxDeductionPaymentItem[] = [
+			// Code 01: Standard payment 100 000 ₽
+			{
+				id: "pay-c1-pos",
+				dateIso: "2024-03-15",
+				receiptNumber: "001",
+				fiscalDocumentNumber: "101",
+				fiscalSign: "111",
+				serviceName: "Терапевтическое лечение кариеса",
+				amountRub: 100000,
+				taxCode: "1",
+			},
+			// Code 01: Refund 20 000 ₽ via isRefund: true
+			{
+				id: "pay-c1-ref",
+				dateIso: "2024-03-20",
+				receiptNumber: "002",
+				fiscalDocumentNumber: "102",
+				fiscalSign: "112",
+				serviceName: "Возврат средств за пломбу",
+				amountRub: 20000,
+				isRefund: true,
+				taxCode: "1",
+			},
+			// Code 02: Expensive payment 200 000 ₽
+			{
+				id: "pay-c2-pos",
+				dateIso: "2024-05-10",
+				receiptNumber: "003",
+				fiscalDocumentNumber: "103",
+				fiscalSign: "113",
+				serviceName: "Дентальная имплантация Straumann",
+				amountRub: 200000,
+				code804n: "A16.07.054",
+				taxCode: "2",
+			},
+			// Code 02: Refund 50 000 ₽ via negative amount
+			{
+				id: "pay-c2-ref",
+				dateIso: "2024-05-25",
+				receiptNumber: "004",
+				fiscalDocumentNumber: "104",
+				fiscalSign: "114",
+				serviceName: "Возврат по имплантации",
+				amountRub: -50000,
+				code804n: "A16.07.054",
+				taxCode: "2",
+			},
+		];
+
+		// Verify refund identification helper
+		assert.equal(isTaxDeductionRefund(payments[0]!), false);
+		assert.equal(isTaxDeductionRefund(payments[1]!), true);
+		assert.equal(isTaxDeductionRefund(payments[2]!), false);
+		assert.equal(isTaxDeductionRefund(payments[3]!), true);
+
+		// Calculate summary
+		const result = calculateTaxDeductionSummary(payments);
+		assert.equal(result.yearsSummary.length, 1);
+		const y2024 = result.yearsSummary[0]!;
+
+		// Code 01 net: 100 000 - 20 000 = 80 000 ₽
+		assert.equal(y2024.code01Kopecks, 8000000);
+		assert.equal(y2024.code01Rub, 80000);
+
+		// Code 02 net: 200 000 - 50 000 = 150 000 ₽
+		assert.equal(y2024.code02Kopecks, 15000000);
+		assert.equal(y2024.code02Rub, 150000);
+
+		// Total Net: 230 000 ₽
+		assert.equal(y2024.totalKopecks, 23000000);
+		assert.equal(y2024.totalRub, 230000);
+
+		// Receipts count must strictly count positive payment receipts (2), not refunds
+		assert.equal(y2024.receiptsCount, 2);
+
+		// Eligible Code 01 capped at 150 000 ₽ (80 000 is fully eligible)
+		assert.equal(y2024.code01EligibleRub, 80000);
+
+		// Estimated 13% tax refund: 80 000 * 13% (10 400 ₽) + 150 000 * 13% (19 500 ₽) = 29 900 ₽
+		assert.equal(y2024.refund13EstimateRub, 29900);
+		assert.equal(y2024.refund13EstimateKopecks, 2990000);
+	});
+
+	it("order-independent refund netting in normalizePaymentsForTaxCertificate", () => {
+		// Put refund item BEFORE the positive payment item in the array
+		const payments: TaxDeductionPaymentItem[] = [
+			{
+				id: "pay-ref-first",
+				dateIso: "2024-02-01",
+				receiptNumber: "001",
+				fiscalDocumentNumber: "101",
+				fiscalSign: "111",
+				serviceName: "Возврат средств",
+				amountRub: 30000,
+				isRefund: true,
+				taxCode: "1",
+			},
+			{
+				id: "pay-pos-second",
+				dateIso: "2024-02-15",
+				receiptNumber: "002",
+				fiscalDocumentNumber: "102",
+				fiscalSign: "112",
+				serviceName: "Лечение пульпита",
+				amountRub: 70000,
+				taxCode: "1",
+			},
+		];
+
+		const normalized = normalizePaymentsForTaxCertificate(payments, 2024);
+		assert.equal(normalized.length, 1);
+		assert.equal(normalized[0]!.amountRub, 40000); // 70k - 30k = 40k net
+		assert.equal(normalized[0]!.amountKopecks, 4000000);
+	});
+
+	it("timezone shift boundary immunity across New Year midnight (extractTaxYearFromDate)", () => {
+		// Boundary date strings must parse to exact calendar year regardless of local PC timezone
+		assert.equal(extractTaxYearFromDate("2024-12-31T23:59:59.000Z"), 2024);
+		assert.equal(extractTaxYearFromDate("2025-01-01T00:00:00.000Z"), 2025);
+		assert.equal(extractTaxYearFromDate("2025-01-01T00:00:01.000Z"), 2025);
+		assert.equal(extractTaxYearFromDate("2024-12-31"), 2024);
+		assert.equal(extractTaxYearFromDate("2025-01-01"), 2025);
+		assert.equal(extractTaxYearFromDate("2025-06-15T12:30:00"), 2025);
 	});
 });

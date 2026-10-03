@@ -12,6 +12,7 @@ import {
 	downloadFnsTaxXmlFile,
 	downloadFnsBatchTaxXmlFile,
 	downloadFnsBatchNoMedoplXmlFile,
+	extractTaxYearFromDate,
 	generateFnsTaxDeductionXml,
 	generateFamilyTaxDeductionBatch,
 	generateTaxCertificateQrSvg,
@@ -106,7 +107,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		if (defaultTaxYear) return defaultTaxYear;
 		if (payments.length > 0) {
 			const paymentYears = payments
-				.map((p) => new Date(p.dateIso).getFullYear())
+				.map((p) => extractTaxYearFromDate(p.dateIso))
 				.filter((y) => !isNaN(y) && y > 2000);
 			if (paymentYears.length > 0) {
 				return Math.max(...paymentYears);
@@ -125,6 +126,43 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	const [certificateNumber, setCertificateNumber] = useState<string>("1");
 	const [taxOfficeCode, setTaxOfficeCode] = useState<string>("7701");
 	const [isCopiedXml, setIsCopiedXml] = useState<boolean>(false);
+	const [fetchedPayments, setFetchedPayments] = useState<readonly TaxDeductionPaymentItem[]>([]);
+	const [_isLoadingPayments, setIsLoadingPayments] = useState<boolean>(false);
+
+	React.useEffect(() => {
+		if (isOpen && patientId && payments.length === 0) {
+			setIsLoadingPayments(true);
+			fetch(`/api/documents/tax-deduction/preview/${encodeURIComponent(patientId)}?year=${selectedYear}`)
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					if (data?.receipts && Array.isArray(data.receipts)) {
+						const mapped: TaxDeductionPaymentItem[] = data.receipts
+							.filter((r: any) => !r.isExcluded)
+							.map((r: any) => ({
+								id: r.id,
+								receiptNumber: r.receiptNumber,
+								fiscalDocumentNumber: r.fiscalDocumentNumber || "",
+								fiscalSign: "",
+								serviceName: r.serviceName,
+								dateIso: r.receiptDate,
+								amountRub: r.amountRub,
+								taxCode: r.deductionCode === "2" ? "2" : "1",
+							}));
+						setFetchedPayments(mapped);
+					}
+				})
+				.catch((err) => {
+					console.warn("Failed to fetch tax deduction preview payments:", err);
+				})
+				.finally(() => {
+					setIsLoadingPayments(false);
+				});
+		}
+	}, [isOpen, patientId, payments.length, selectedYear]);
+
+	const effectivePayments = useMemo(() => {
+		return payments.length > 0 ? payments : fetchedPayments;
+	}, [payments, fetchedPayments]);
 
 	React.useEffect(() => {
 		if (isOpen) {
@@ -137,35 +175,35 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 				setSelectedYear(propSelectedYear);
 			} else if (defaultTaxYear) {
 				setSelectedYear(defaultTaxYear);
-			} else if (payments.length > 0) {
-				const paymentYears = payments
-					.map((p) => new Date(p.dateIso).getFullYear())
+			} else if (effectivePayments.length > 0) {
+				const paymentYears = effectivePayments
+					.map((p) => extractTaxYearFromDate(p.dateIso))
 					.filter((y) => !isNaN(y) && y > 2000);
 				if (paymentYears.length > 0 && !paymentYears.includes(selectedYear)) {
 					setSelectedYear(Math.max(...paymentYears));
 				}
 			}
 		}
-	}, [isOpen, patientName, patientBirthDate, patientInn, patientSnils, initialPayerSnils, propSelectedYear, defaultTaxYear, payments]);
+	}, [isOpen, patientName, patientBirthDate, patientInn, patientSnils, initialPayerSnils, propSelectedYear, defaultTaxYear, effectivePayments]);
 
 	const availableYears = useMemo(() => {
 		const baseYears = [currentYear - 2, currentYear - 1, currentYear];
-		const paymentYears = payments
-			.map((p) => new Date(p.dateIso).getFullYear())
+		const paymentYears = effectivePayments
+			.map((p) => extractTaxYearFromDate(p.dateIso))
 			.filter((y) => !isNaN(y) && y > 2000);
 		return Array.from(new Set([...baseYears, ...paymentYears])).sort((a, b) => a - b);
-	}, [currentYear, payments]);
+	}, [currentYear, effectivePayments]);
 
 	const paymentsCountByYear = useMemo(() => {
 		const counts: Record<number, number> = {};
-		for (const p of payments) {
-			const yr = new Date(p.dateIso).getFullYear();
+		for (const p of effectivePayments) {
+			const yr = extractTaxYearFromDate(p.dateIso);
 			if (!isNaN(yr)) {
 				counts[yr] = (counts[yr] || 0) + 1;
 			}
 		}
 		return counts;
-	}, [payments]);
+	}, [effectivePayments]);
 
 	const [familyMembers] = useState<FamilyMemberPayerConfig[]>([
 		{
@@ -227,8 +265,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 				totalAmountInWordsRu: "",
 			};
 		}
-		return calculateTaxDeductionSummary(payments);
-	}, [isOpen, payments]);
+		return calculateTaxDeductionSummary(effectivePayments);
+	}, [isOpen, effectivePayments]);
 
 	const targetYearSummary = useMemo(() => {
 		if (!isOpen) {
@@ -267,8 +305,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 
 	const yearPayments = useMemo(() => {
 		if (!isOpen) return [];
-		return payments.filter((p) => new Date(p.dateIso).getFullYear() === selectedYear);
-	}, [isOpen, payments, selectedYear]);
+		return effectivePayments.filter((p) => extractTaxYearFromDate(p.dateIso) === selectedYear);
+	}, [isOpen, effectivePayments, selectedYear]);
 
 	const getCertificateParams = (): TaxDeductionCertificateParams => ({
 		certificateNumber,
@@ -735,7 +773,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 							taxOfficeCode={taxOfficeCode}
 							setTaxOfficeCode={setTaxOfficeCode}
 							yearPayments={yearPayments}
-							payments={payments}
+							payments={effectivePayments}
 							targetYearSummary={targetYearSummary}
 							clinicLicenseNumber={clinicLicenseNumber}
 							clinicLicenseDate={clinicLicenseDate}
@@ -754,7 +792,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 					{activeTab === "family" && (
 						<TaxDeductionFamilyTab
 							selectedYear={selectedYear}
-							paymentsCount={payments.length}
+							paymentsCount={effectivePayments.length}
 							familyBatchResult={familyBatchResult}
 							onClose={onClose}
 							onDownloadBatchNoMedoplXml={handleDownloadBatchNoMedoplXml}

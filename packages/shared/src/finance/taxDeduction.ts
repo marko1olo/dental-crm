@@ -385,6 +385,10 @@ export interface TaxDeductionPaymentItem {
 	readonly amountKopecks?: number | undefined;
 	readonly taxCode?: "1" | "2" | undefined;
 	readonly payerRelationship?: TaxDeductionRelationship | undefined;
+	readonly isRefund?: boolean | undefined;
+	readonly isReturn?: boolean | undefined;
+	readonly operationType?: string | undefined;
+	readonly status?: string | undefined;
 }
 
 export interface TaxDeductionYearSummary {
@@ -440,66 +444,207 @@ export function extractTaxYearFromDate(dateIso: string): number {
 }
 
 /**
- * Расчет сумм по годам и категориям вычета (Код 01 / Код 02) с копеечной точностью.
+ * Checks whether a payment item represents a refund or returned funds.
+ */
+export function isTaxDeductionRefund(
+	p: Partial<TaxDeductionPaymentItem> & {
+		isRefund?: boolean | undefined;
+		operationType?: string | undefined;
+		isReturn?: boolean | undefined;
+		status?: string | undefined;
+	}
+): boolean {
+	if (p.isRefund === true) return true;
+	if (p.isReturn === true) return true;
+	if (p.operationType === "refund" || p.operationType === "return") return true;
+	if (p.status === "refunded" || p.status === "returned") return true;
+	if (typeof p.amountRub === "number" && p.amountRub < 0) return true;
+	if (typeof p.amountKopecks === "number" && p.amountKopecks < 0) return true;
+	const sName = (p.serviceName || "").toLowerCase();
+	if (sName.startsWith("возврат") || sName.includes("возврат средств")) return true;
+	return false;
+}
+
+/**
+ * Extracts absolute integer kopecks from a payment item.
+ */
+export function getTaxDeductionAbsKopecks(p: TaxDeductionPaymentItem): number {
+	if (typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)) {
+		return Math.abs(Math.round(p.amountKopecks));
+	}
+	if (typeof p.amountRub === "number" && Number.isFinite(p.amountRub)) {
+		return Math.abs(Math.round(p.amountRub * 100));
+	}
+	return 0;
+}
+
+/**
+ * Normalizes payment items for a specific tax year by subtracting refunds from
+ * corresponding Code 1 or Code 2 categories so that reported sums reflect strictly Net Paid amounts.
+ */
+export function normalizePaymentsForTaxCertificate(
+	payments: readonly TaxDeductionPaymentItem[],
+	targetYear: number
+): TaxDeductionPaymentItem[] {
+	// Filter strictly for the target calendar year (01.01 - 31.12) with timezone immunity
+	const yearPayments = payments.filter((p) => {
+		const year = extractTaxYearFromDate(p.dateIso);
+		return year === targetYear;
+	});
+
+	// Partition by relationship so family member refunds don't cross-contaminate
+	const partitionMap = new Map<string, TaxDeductionPaymentItem[]>();
+	for (const p of yearPayments) {
+		const rel = p.payerRelationship || "patient";
+		const list = partitionMap.get(rel) || [];
+		list.push(p);
+		partitionMap.set(rel, list);
+	}
+
+	const result: TaxDeductionPaymentItem[] = [];
+
+	for (const [, items] of partitionMap.entries()) {
+		let code01RefundKop = 0;
+		let code02RefundKop = 0;
+		const positiveItems: TaxDeductionPaymentItem[] = [];
+
+		for (const p of items) {
+			const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
+			const absKop = getTaxDeductionAbsKopecks(p);
+			if (isTaxDeductionRefund(p)) {
+				if (cat === "2") {
+					code02RefundKop += absKop;
+				} else {
+					code01RefundKop += absKop;
+				}
+			} else if (absKop > 0) {
+				positiveItems.push(p);
+			}
+		}
+
+		if (code01RefundKop === 0 && code02RefundKop === 0) {
+			result.push(...positiveItems);
+			continue;
+		}
+
+		let remainingRefund01 = code01RefundKop;
+		let remainingRefund02 = code02RefundKop;
+
+		for (const item of positiveItems) {
+			const cat = item.taxCode || resolveTaxDeductionCategoryShared(item.code804n, item.serviceName);
+			const itemKop = getTaxDeductionAbsKopecks(item);
+
+			if (cat === "2") {
+				if (remainingRefund02 >= itemKop) {
+					remainingRefund02 -= itemKop;
+					continue;
+				}
+				const netKop = itemKop - remainingRefund02;
+				remainingRefund02 = 0;
+				result.push({
+					...item,
+					amountKopecks: netKop,
+					amountRub: kopecksToRub(netKop),
+				});
+			} else {
+				if (remainingRefund01 >= itemKop) {
+					remainingRefund01 -= itemKop;
+					continue;
+				}
+				const netKop = itemKop - remainingRefund01;
+				remainingRefund01 = 0;
+				result.push({
+					...item,
+					amountKopecks: netKop,
+					amountRub: kopecksToRub(netKop),
+				});
+			}
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Расчет сумм по годам и категориям вычета (Код 01 / Код 02) с копеечной точностью и чистым учетом возвратов (Net Paid).
  */
 export function calculateTaxDeductionSummary(
 	payments: readonly TaxDeductionPaymentItem[]
 ): TaxDeductionCalculationResult {
 	const yearMap = new Map<
 		number,
-		{ code01Kop: number; code02Kop: number; count: number }
+		{
+			code01PosKop: number;
+			code01RefKop: number;
+			code02PosKop: number;
+			code02RefKop: number;
+			receiptsCount: number;
+		}
 	>();
 
 	for (const p of payments) {
 		const year = extractTaxYearFromDate(p.dateIso);
 		if (Number.isNaN(year)) continue;
 		const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
-		const amountKop =
-			typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)
-				? Math.max(0, Math.round(p.amountKopecks))
-				: Number.isFinite(p.amountRub)
-					? Math.max(0, Math.round(p.amountRub * 100))
-					: 0;
+		const absKop = getTaxDeductionAbsKopecks(p);
+		const isRefund = isTaxDeductionRefund(p);
 
-		const current = yearMap.get(year) || { code01Kop: 0, code02Kop: 0, count: 0 };
-		if (cat === "2") {
-			current.code02Kop += amountKop;
+		const current = yearMap.get(year) || {
+			code01PosKop: 0,
+			code01RefKop: 0,
+			code02PosKop: 0,
+			code02RefKop: 0,
+			receiptsCount: 0,
+		};
+
+		if (isRefund) {
+			if (cat === "2") {
+				current.code02RefKop += absKop;
+			} else {
+				current.code01RefKop += absKop;
+			}
 		} else {
-			current.code01Kop += amountKop;
+			if (cat === "2") {
+				current.code02PosKop += absKop;
+			} else {
+				current.code01PosKop += absKop;
+			}
+			current.receiptsCount += 1;
 		}
-		current.count += 1;
 		yearMap.set(year, current);
 	}
 
 	const yearsSummary: TaxDeductionYearSummary[] = Array.from(yearMap.entries())
 		.sort(([yA], [yB]) => yB - yA)
 		.map(([taxYear, data]) => {
-			const code01Rub = kopecksToRub(data.code01Kop);
-			const code02Rub = kopecksToRub(data.code02Kop);
-			const totalKopecks = data.code01Kop + data.code02Kop;
+			const netCode01Kop = Math.max(0, data.code01PosKop - data.code01RefKop);
+			const netCode02Kop = Math.max(0, data.code02PosKop - data.code02RefKop);
+			const code01Rub = kopecksToRub(netCode01Kop);
+			const code02Rub = kopecksToRub(netCode02Kop);
+			const totalKopecks = netCode01Kop + netCode02Kop;
 			const totalRub = kopecksToRub(totalKopecks);
 
 			// Лимит социального вычета: 150 000 ₽ с 2024 года, 120 000 ₽ до 2024 года
 			const statutoryLimitRub = taxYear >= 2024 ? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
 			const statutoryLimitKopecks = statutoryLimitRub * 100;
-			const code01EligibleKopecks = Math.min(data.code01Kop, statutoryLimitKopecks);
+			const code01EligibleKopecks = Math.min(netCode01Kop, statutoryLimitKopecks);
 			const code01EligibleRub = kopecksToRub(code01EligibleKopecks);
 
 			// Расчетный возврат 13% и 15% в целых копейках (по Коду 01 с лимитом, по Коду 02 без ограничений)
-			const refund13EstimateKopecks = Math.round((code01EligibleKopecks * 13) / 100) + Math.round((data.code02Kop * 13) / 100);
-			const refund15EstimateKopecks = Math.round((code01EligibleKopecks * 15) / 100) + Math.round((data.code02Kop * 15) / 100);
+			const refund13EstimateKopecks = Math.round((code01EligibleKopecks * 13) / 100) + Math.round((netCode02Kop * 13) / 100);
+			const refund15EstimateKopecks = Math.round((code01EligibleKopecks * 15) / 100) + Math.round((netCode02Kop * 15) / 100);
 			const refund13EstimateRub = kopecksToRub(refund13EstimateKopecks);
 			const refund15EstimateRub = kopecksToRub(refund15EstimateKopecks);
 
 			return {
 				taxYear,
 				code01Rub,
-				code01Kopecks: data.code01Kop,
+				code01Kopecks: netCode01Kop,
 				code02Rub,
-				code02Kopecks: data.code02Kop,
+				code02Kopecks: netCode02Kop,
 				totalRub,
 				totalKopecks,
-				receiptsCount: data.count,
+				receiptsCount: data.receiptsCount,
 				code01StatutoryLimitRub: statutoryLimitRub,
 				code01StatutoryLimitKopecks: statutoryLimitKopecks,
 				code01EligibleRub: code01EligibleRub,
@@ -792,9 +937,10 @@ export function generateFnsTaxDeductionXml(params: TaxDeductionCertificateParams
 	const signerType = params.signer?.signerType || "1";
 	const signerName = params.signer?.fullName || params.clinic.chiefDoctorName || "Главный врач";
 
-	// Чеки по 54-ФЗ за отчетный год
-	const yearPayments = params.payments.filter(
-		(p) => extractTaxYearFromDate(p.dateIso) === params.taxYear,
+	// Чеки по 54-ФЗ за отчетный год с учетом нетто-оплат (вычет возвратов)
+	const yearPayments = normalizePaymentsForTaxCertificate(
+		params.payments,
+		params.taxYear,
 	);
 
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -876,8 +1022,9 @@ export function generateFnsTaxDeductionBatchXml(batch: TaxDeductionBatchParams):
 			const payerBday = cert.payer.birthDate ? formatDateToRussian(cert.payer.birthDate) : "";
 			const patientBday = cert.patient.birthDate ? formatDateToRussian(cert.patient.birthDate) : "";
 
-			const yearPayments = cert.payments.filter(
-				(p) => extractTaxYearFromDate(p.dateIso) === batch.taxYear
+			const yearPayments = normalizePaymentsForTaxCertificate(
+				cert.payments,
+				batch.taxYear,
 			);
 
 			return `    <СведРасхУсл НомерСвед="${escapeXml(cert.certificateNumber)}" ДатаСвед="${escapeXml(issueDateFormatted)}" НомКорр="0" ПрПациент="${escapeXml(rel.samePatientFlag)}">
@@ -974,8 +1121,9 @@ export function generateFnsNoMedoplXml(params: TaxDeductionCertificateParams): {
 	const signerType = params.signer?.signerType || "1";
 	const signerName = params.signer?.fullName || params.clinic.chiefDoctorName || "Главный врач";
 
-	const yearPayments = params.payments.filter(
-		(p) => extractTaxYearFromDate(p.dateIso) === params.taxYear
+	const yearPayments = normalizePaymentsForTaxCertificate(
+		params.payments,
+		params.taxYear,
 	);
 
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>

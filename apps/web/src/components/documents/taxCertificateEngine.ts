@@ -28,6 +28,7 @@ import {
 	generateTaxCertificateQrSvg,
 	generateFnsFormKnd1151156BarcodeSvg,
 	amountToWordsRu,
+	extractTaxYearFromDate,
 	type TaxDeductionRelationship,
 } from "@dental/shared";
 import { escapeHtml, formatDateRu, formatRublesExactRu } from "./documentPrintFormatters";
@@ -46,6 +47,7 @@ export {
 	generateTaxCertificateQrSvg,
 	generateFnsFormKnd1151156BarcodeSvg,
 	amountToWordsRu,
+	extractTaxYearFromDate,
 	type TaxDeductionRelationship,
 };
 
@@ -139,16 +141,17 @@ export function aggregatePatientPaymentsForTaxYear(
 	payments: readonly TaxPaymentRecord[],
 	taxYear: number,
 ): TaxYearAggregation {
-	let code01Kopecks = 0;
-	let code02Kopecks = 0;
+	let code01PosKopecks = 0;
+	let code01RefKopecks = 0;
+	let code02PosKopecks = 0;
+	let code02RefKopecks = 0;
 	let totalGrossKopecks = 0;
 	let refundedKopecks = 0;
 	let receiptsCount = 0;
 	const yearPayments: TaxPaymentRecord[] = [];
 
 	for (const p of payments) {
-		const paymentDate = new Date(p.dateIso);
-		const year = paymentDate.getFullYear();
+		const year = extractTaxYearFromDate(p.dateIso);
 		if (isNaN(year) || year !== taxYear) {
 			continue;
 		}
@@ -170,22 +173,24 @@ export function aggregatePatientPaymentsForTaxYear(
 		if (isRefund) {
 			refundedKopecks += absKopecks;
 			if (category === "2") {
-				code02Kopecks = Math.max(0, code02Kopecks - absKopecks);
+				code02RefKopecks += absKopecks;
 			} else {
-				code01Kopecks = Math.max(0, code01Kopecks - absKopecks);
+				code01RefKopecks += absKopecks;
 			}
 		} else {
 			totalGrossKopecks += absKopecks;
 			receiptsCount += 1;
 			if (category === "2") {
-				code02Kopecks += absKopecks;
+				code02PosKopecks += absKopecks;
 			} else {
-				code01Kopecks += absKopecks;
+				code01PosKopecks += absKopecks;
 			}
 			yearPayments.push(p);
 		}
 	}
 
+	const code01Kopecks = Math.max(0, code01PosKopecks - code01RefKopecks);
+	const code02Kopecks = Math.max(0, code02PosKopecks - code02RefKopecks);
 	const totalNetKopecks = code01Kopecks + code02Kopecks;
 	const statutoryLimitRub =
 		taxYear >= 2024

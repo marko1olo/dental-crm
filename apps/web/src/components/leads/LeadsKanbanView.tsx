@@ -4,10 +4,6 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-} from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -51,6 +47,7 @@ export function LeadsKanbanView() {
 		leads,
 		fetchLeads,
 		updateLeadStatus,
+		batchUpdateStage,
 		updateLeadDetails,
 		addLead,
 		deleteLead,
@@ -119,27 +116,7 @@ export function LeadsKanbanView() {
 		nextStatus: Lead["status"],
 	) => {
 		try {
-			const res = await fetch("/api/leads/batch-stage", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-staff-token": readDenteStaffToken(),
-					"x-dente-clinic-token": readDenteClinicToken(),
-				},
-				body: JSON.stringify({ leadIds, stage: nextStatus }),
-			});
-
-			if (res.ok) {
-				showToast(`Переведено обращений: ${leadIds.length}`, "success");
-				await fetchLeads();
-				return;
-			}
-		} catch {
-			// Fallback to sequential updates
-		}
-
-		try {
-			await Promise.all(leadIds.map((id) => updateLeadStatus(id, nextStatus)));
+			await batchUpdateStage(leadIds, nextStatus);
 			showToast(`Переведено обращений: ${leadIds.length}`, "success");
 			await fetchLeads();
 		} catch (err: unknown) {

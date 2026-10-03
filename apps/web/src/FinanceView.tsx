@@ -29,6 +29,8 @@ import { FinanceInvoicesModal } from "./components/finance/FinanceInvoicesModal"
 import { FinanceCashboxModal } from "./components/finance/FinanceCashboxModal";
 import { PatientBillingModal } from "./components/finance/PatientBillingModal";
 import { QuickExpenseModal } from "./components/finance/QuickExpenseModal";
+import { TaxDeductionCertificateModal } from "./components/finance/TaxDeductionCertificateModal";
+import { resolveTaxDeductionCategoryShared } from "@dental/shared";
 
 const ManagerialPnlDashboardModal = lazy(() =>
 	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
@@ -332,6 +334,26 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isCashboxOpen, setIsCashboxOpen] = useState(false);
 	const [isBillingActOpen, setIsBillingActOpen] = useState(false);
 	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
+	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+
+	const activePatient = (props as any).activePatient ?? (props.dashboard as any)?.patient ?? documentPatient;
+
+	const taxDeductionPayments = useMemo(() => {
+		return (activePayments ?? []).map((p: any) => ({
+			id: p.id,
+			receiptNumber: p.fiscalReceiptNumber || (p.id ? String(p.id).slice(0, 8) : ""),
+			fiscalDocumentNumber: p.fiscalFd || p.fiscalReceiptNumber || "",
+			fiscalSign: p.fiscalFpd || "",
+			serviceName: p.serviceName || p.description || "Медицинские стоматологические услуги",
+			dateIso: p.paidAt || p.createdAt || new Date().toISOString(),
+			amountRub: Number(p.amountRub ?? (p.amountKopecks ? p.amountKopecks / 100 : 0)),
+			taxCode: (p.taxDeductionCode === "2" || p.taxCode === "2"
+				? "2"
+				: p.taxDeductionCode === "1" || p.taxCode === "1"
+					? "1"
+					: resolveTaxDeductionCategoryShared(p.serviceName || p.description || "")) as "1" | "2",
+		}));
+	}, [activePayments]);
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		const saved = safeLocalStorageGetItem("dente_cash_shift_open");
@@ -515,11 +537,15 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					setIsQuickExpenseOpen(false);
 					return;
 				}
+				if (isTaxModalOpen) {
+					setIsTaxModalOpen(false);
+					return;
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen, isQuickExpenseOpen]);
+	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen, isQuickExpenseOpen, isTaxModalOpen]);
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-32 max-sm:pb-48 max-w-full min-w-0 overflow-x-hidden" id="finance">
@@ -545,6 +571,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				onOpenCashbox={() => setIsCashboxOpen(true)}
 				onOpenBillingAct={() => setIsBillingActOpen(true)}
 				onOpenQuickExpense={() => setIsQuickExpenseOpen(true)}
+				onOpenTaxCertificate={() => setIsTaxModalOpen(true)}
 			/>
 
 			{isCashShiftOpen && (
@@ -575,6 +602,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				priorityLabels={scenarioPriorityLabels}
 				scenarios={activeTreatmentPlanScenarios ?? []}
 				strategyLabels={scenarioStrategyLabels}
+				onOpenTaxCertificateModal={() => setIsTaxModalOpen(true)}
 			/>
 
 			{/* Сворачиваемый блок клинических рекомендаций и правил (отображается только при наличии активных правил или замечаний) */}
@@ -812,6 +840,21 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					onSuccess={() => {
 						void loadDashboard?.();
 					}}
+				/>
+			)}
+
+			{isTaxModalOpen && (
+				<TaxDeductionCertificateModal
+					isOpen={isTaxModalOpen}
+					onClose={() => setIsTaxModalOpen(false)}
+					patientName={activePatient?.fullName || documentPatient?.fullName || ""}
+					patientBirthDate={activePatient?.birthDate || documentPatient?.birthDate || undefined}
+					patientInn={activePatient?.inn || documentPatient?.inn || ""}
+					patientSnils={activePatient?.snils || documentPatient?.snils || ""}
+					patientId={activePatient?.id || documentPatient?.id}
+					clinicName={dashboard?.clinicSettings?.name}
+					clinicInn={dashboard?.clinicSettings?.inn}
+					payments={taxDeductionPayments}
 				/>
 			)}
 		</div>

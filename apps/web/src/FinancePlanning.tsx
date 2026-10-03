@@ -51,6 +51,7 @@ type FinancePlanningOverviewProps = {
 	priorityLabels: Record<TreatmentPlanScenario["priority"], string>;
 	scenarios: TreatmentPlanScenario[];
 	strategyLabels: Record<TreatmentPlanScenario["strategy"], string>;
+	onOpenTaxCertificateModal?: () => void;
 };
 
 type ServiceCatalogStripProps = {
@@ -68,6 +69,7 @@ export function FinancePlanningOverview({
 	priorityLabels,
 	scenarios,
 	strategyLabels,
+	onOpenTaxCertificateModal,
 }: FinancePlanningOverviewProps) {
 	const [showScenarios, setShowScenarios] = useState(false);
 
@@ -172,6 +174,7 @@ export function FinancePlanningOverview({
 				<FinanceTaxDeductionCard
 					taxDeductionEligibleRub={billingSummary ? billingSummary.taxDeductionEligibleRub : null}
 					money={money}
+					onOpenCertificateModal={onOpenTaxCertificateModal}
 				/>
 			</section>
 

@@ -62,6 +62,11 @@ interface LeadsState {
 	error: string | null;
 	fetchLeads: () => Promise<void>;
 	updateLeadStatus: (id: string, status: LeadStatus) => Promise<void>;
+	batchUpdateStage: (
+		leadIds: string[],
+		toStage: LeadStatus,
+		options?: { reason?: string; assignedDoctorId?: string | null },
+	) => Promise<void>;
 	updateLeadDetails: (
 		id: string,
 		details: Partial<Omit<Lead, "id">>,
@@ -195,6 +200,63 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			// Rethrow so Kanban can toast the RU server message (gameplay).
 			if (e instanceof Error) throw e;
 			throw new Error("Статус обращения не изменён: нет связи с сервером.");
+		}
+	},
+	batchUpdateStage: async (leadIds, toStage, options) => {
+		if (leadIds.length === 0) return;
+		const previousLeads = get().leads;
+		const now = new Date();
+		set({
+			leads: previousLeads.map((l) =>
+				leadIds.includes(l.id)
+					? {
+							...l,
+							status: toStage,
+							stageEnteredAt: now,
+							...(options?.assignedDoctorId !== undefined
+								? { assignedDoctorId: options.assignedDoctorId }
+								: {}),
+					  }
+					: l,
+			),
+		});
+
+		try {
+			const res = await fetch(`${API_URL}/leads/batch-stage`, {
+				method: "POST",
+				headers: authHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					leadIds,
+					toStage,
+					reason: options?.reason,
+					assignedDoctorId: options?.assignedDoctorId,
+				}),
+			});
+
+			if (!res.ok) {
+				set({ leads: previousLeads });
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Не удалось выполнить пакетный перенос обращений.",
+					),
+				);
+			}
+
+			const data = (await res.json()) as { leads?: Lead[] };
+			if (data.leads && Array.isArray(data.leads)) {
+				const updatedMap = new Map(data.leads.map((l) => [l.id, l]));
+				set({
+					leads: get().leads.map((l) => updatedMap.get(l.id) ?? l),
+				});
+			}
+		} catch (e: unknown) {
+			set({ leads: previousLeads });
+			logger.error("batchUpdateStage Error:", e);
+			if (e instanceof Error) throw e;
+			throw new Error(
+				"Пакетный перенос обращений не удался: нет связи с сервером.",
+			);
 		}
 	},
 	addLead: async (leadData) => {

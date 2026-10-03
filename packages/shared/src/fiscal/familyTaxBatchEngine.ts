@@ -14,6 +14,7 @@ import { kopecksToRub } from "./kopecksArithmetic.js";
 import {
 	calculateTaxDeductionSummary,
 	extractTaxYearFromDate,
+	normalizePaymentsForTaxCertificate,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
 	type TaxDeductionBatchParams,
 	type TaxDeductionCertificateParams,
@@ -495,8 +496,9 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 			const payerBday = cert.payer.birthDate ? cert.payer.birthDate.slice(0, 10) : "";
 			const patientBday = cert.patient.birthDate ? cert.patient.birthDate.slice(0, 10) : "";
 
-			const yearPayments = cert.payments.filter(
-				(p) => extractTaxYearFromDate(p.dateIso) === batch.taxYear
+			const yearPayments = normalizePaymentsForTaxCertificate(
+				cert.payments,
+				batch.taxYear,
 			);
 
 			return `    <СведСправка НомСправ="${escapeXml(cert.certificateNumber)}" ДатаСправ="${escapeXml(issueDate)}" ПрПациент="${escapeXml(rel.samePatientFlag)}">

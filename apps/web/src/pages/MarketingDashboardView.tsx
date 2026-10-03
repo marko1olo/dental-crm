@@ -37,6 +37,7 @@ import {
 	calculateFunnelAnalysis,
 	exportFunnelReportCsv,
 	getDefaultChannelSpendMap,
+	normalizeMarketingChannel,
 } from "../components/leads/leadsFunnelEngine";
 import { DEFAULT_PATIENT_SEGMENTS } from "../components/marketing/marketingPresets";
 import { MarketingNewPromoModal } from "../components/marketing/MarketingNewPromoModal";
@@ -68,6 +69,10 @@ export function MarketingDashboardView({
 	const [customSpends, setCustomSpends] = useState<ChannelSpendMap>(() =>
 		getDefaultChannelSpendMap(),
 	);
+	const [attributionSummary, setAttributionSummary] = useState<{
+		onlineSharePercent: number;
+		adminSharePercent: number;
+	} | null>(null);
 
 	// Modals
 	const [isFullAnalyticsOpen, setIsFullAnalyticsOpen] = useState(false);
@@ -89,6 +94,16 @@ export function MarketingDashboardView({
 				if (!res.ok) return;
 				const data = await res.json();
 				if (cancelled || !data) return;
+
+				if (data.summary && typeof data.summary.onlineSharePercent === "number") {
+					setAttributionSummary({
+						onlineSharePercent: data.summary.onlineSharePercent,
+						adminSharePercent:
+							typeof data.summary.adminSharePercent === "number"
+								? data.summary.adminSharePercent
+								: Math.max(0, 100 - data.summary.onlineSharePercent),
+					});
+				}
 
 				const liveSpends: Partial<ChannelSpendMap> = {};
 				if (Array.isArray(data.selfBookingChannels)) {
@@ -129,6 +144,34 @@ export function MarketingDashboardView({
 	const analysis = useMemo(() => {
 		return calculateFunnelAnalysis(leads, period, customSpends);
 	}, [leads, period, customSpends]);
+
+	// Dynamic Intake Split: backend attribution summary or computed from leads
+	const intakeSplit = useMemo(() => {
+		if (attributionSummary) {
+			return {
+				onlinePercent: attributionSummary.onlineSharePercent,
+				adminPercent: attributionSummary.adminSharePercent,
+			};
+		}
+		if (leads.length === 0) {
+			return { onlinePercent: 0, adminPercent: 0 };
+		}
+		const onlineLeads = leads.filter((l) => {
+			const ch = normalizeMarketingChannel(l.source);
+			return (
+				ch === "site_seo" ||
+				ch === "gis_2" ||
+				ch === "prodoctorov" ||
+				ch === "napopravku" ||
+				ch === "social_media"
+			);
+		}).length;
+		const onlinePercent = Math.round((onlineLeads / leads.length) * 100);
+		return {
+			onlinePercent,
+			adminPercent: Math.max(0, 100 - onlinePercent),
+		};
+	}, [attributionSummary, leads]);
 
 	const { summary, channels, stages } = analysis;
 
@@ -404,11 +447,11 @@ export function MarketingDashboardView({
 						<div className="marketing-intake-split" data-testid="marketing-intake-split">
 							<div className="marketing-intake-col">
 								<Globe size={15} className="text-[var(--teal)]" />
-								<span>Самозапись (виджет/карты): <strong>42%</strong></span>
+								<span>Самозапись (виджет/карты): <strong>{intakeSplit.onlinePercent}%</strong></span>
 							</div>
 							<div className="marketing-intake-col">
 								<Users size={15} className="text-[var(--muted)]" />
-								<span>Ресепшен (АТС/звонки): <strong>58%</strong></span>
+								<span>Ресепшен (АТС/звонки): <strong>{intakeSplit.adminPercent}%</strong></span>
 							</div>
 						</div>
 					</div>

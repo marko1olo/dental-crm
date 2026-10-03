@@ -23,8 +23,10 @@ import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
 	calculateTaxDeductionSummary,
+	extractTaxYearFromDate,
 	formatDateToRussian,
 	generateTaxCertificateQrSvg,
+	normalizePaymentsForTaxCertificate,
 	resolveTaxDeductionCategoryShared,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
 	type TaxDeductionCertificateParams,
@@ -82,8 +84,9 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 		width: 175,
 	});
 
-	const yearPayments = params.payments.filter(
-		(p) => new Date(p.dateIso).getFullYear() === params.taxYear
+	const normalizedPayments = normalizePaymentsForTaxCertificate(params.payments, params.taxYear);
+	const yearPayments = normalizedPayments.filter(
+		(p) => extractTaxYearFromDate(p.dateIso) === params.taxYear
 	);
 
 	const issueDateFormatted = formatDateToRussian(params.issueDateIso);
