@@ -336,10 +336,10 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			const isShortHeight = windowHeight <= 768;
 			const heightScaleFactor = isShortHeight ? Math.max(0.68, Math.min(1.0, (windowHeight - 340) / 280)) : 1.0;
 
-			const minScale = isQuadrantView ? (available < 420 ? 0.65 : (isShortHeight ? 0.8 : 0.95)) : (isShortHeight ? 0.52 : 0.65);
+			const minScale = isQuadrantView ? (available < 420 ? 0.65 : (isShortHeight ? 0.8 : 0.95)) : (isShortHeight ? 0.35 : MIN_ARCH_SCALE);
 			const widthScale = (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96);
 			const rawTargetScale = Math.min(
-				1.8,
+				1.0,
 				Math.max(minScale, widthScale * heightScaleFactor),
 			);
 			// Quantize to avoid scrollbar toggle oscillation

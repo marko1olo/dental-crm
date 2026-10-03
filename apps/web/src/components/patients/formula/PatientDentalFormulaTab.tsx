@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { calculateAge } from "@dental/shared";
 import { ToothChart, type ToothData, type ToothState } from "../../odontogram/ToothChart";
+import { ToothRadialMenu } from "../../odontogram/ToothRadialMenu";
 import {
 	loadStoredTeethData,
 	saveStoredTeethData,
@@ -112,6 +113,11 @@ export const PatientDentalFormulaTab: React.FC<PatientDentalFormulaTabProps> = R
 		const [activeStamp, setActiveStamp] = useState<ToothState | null>(null);
 		const [lastSavedTime, setLastSavedTime] = useState<string>("");
 		const [isSyncing, setIsSyncing] = useState<boolean>(false);
+		const [radialMenuData, setRadialMenuData] = useState<{
+			toothNumber: number;
+			anchorRect: { x: number; y: number; width: number; height: number };
+			currentState?: ToothState;
+		} | null>(null);
 
 		// Synchronize from database on mount / patient change
 		useEffect(() => {
@@ -256,19 +262,49 @@ export const PatientDentalFormulaTab: React.FC<PatientDentalFormulaTabProps> = R
 			[commitToothChanges],
 		);
 
-		// Tooth click handler
+		// Tooth click handler: selects tooth and launches sleek radial menu
 		const handleToothClick = useCallback(
-			(e: React.MouseEvent, num: number, surface?: string) => {
+			(arg1: React.MouseEvent | number, arg2?: number | DOMRect, surface?: string) => {
+				const isMouseEvent = typeof arg1 === "object" && arg1 !== null;
+				const e = isMouseEvent ? (arg1 as React.MouseEvent) : undefined;
+				const num = typeof arg1 === "number" ? arg1 : (typeof arg2 === "number" ? arg2 : 0);
+				if (!num) return;
 				if (activeStamp) {
 					void commitToothChanges([num], activeStamp, surface ? [surface] : undefined);
 					return;
 				}
+
+				const isMultiSelect = Boolean(e && (e.shiftKey || e.ctrlKey || e.metaKey));
 				setSelectedTeeth((prev) => {
-					if (e.shiftKey || e.ctrlKey || e.metaKey) {
+					if (isMultiSelect) {
 						return prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num];
 					}
-					return prev.includes(num) && prev.length === 1 ? [] : [num];
+					return [num];
 				});
+
+				if (!isMultiSelect) {
+					const domRect = arg2 && typeof arg2 === "object" && "width" in arg2 ? (arg2 as DOMRect) : null;
+					const rectObj = domRect
+						? {
+								x: domRect.left ?? domRect.x ?? 0,
+								y: domRect.top ?? domRect.y ?? 0,
+								width: domRect.width || 48,
+								height: domRect.height || 90,
+							}
+						: {
+								x: typeof window !== "undefined" ? window.innerWidth / 2 : 400,
+								y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
+								width: 48,
+								height: 90,
+							};
+
+					const currentTooth = teethDataRef.current.find((t) => t.toothNumber === num);
+					setRadialMenuData({
+						toothNumber: num,
+						anchorRect: rectObj,
+						currentState: currentTooth?.state ?? "Healthy",
+					});
+				}
 			},
 			[activeStamp, commitToothChanges],
 		);
@@ -509,6 +545,24 @@ export const PatientDentalFormulaTab: React.FC<PatientDentalFormulaTabProps> = R
 						hideQuadrantSwitcher={false}
 					/>
 				</div>
+
+				{/* Sleek High-Tech Radial Menu Tool */}
+				{radialMenuData && (
+					<ToothRadialMenu
+						toothNumber={radialMenuData.toothNumber}
+						anchorRect={radialMenuData.anchorRect}
+						currentState={radialMenuData.currentState}
+						surfaces={teethDataRef.current.find((t) => t.toothNumber === radialMenuData.toothNumber)?.surfaces}
+						onSelectState={(state, surfs) => {
+							void commitToothChanges([radialMenuData.toothNumber], state, surfs);
+							setRadialMenuData(null);
+						}}
+						onSelectSurfaces={(surfs) => {
+							handleSurfacesChange([radialMenuData.toothNumber], surfs);
+						}}
+						onClose={() => setRadialMenuData(null)}
+					/>
+				)}
 			</div>
 		);
 	},

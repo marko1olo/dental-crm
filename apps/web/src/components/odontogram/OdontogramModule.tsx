@@ -30,6 +30,7 @@ import {
 	ToothActionMenuPortal,
 	type ToothActionMenuConfig,
 } from "./ToothActionMenuPortal";
+import { ToothRadialMenu } from "./ToothRadialMenu";
 import { OdontogramAiBanners } from "./OdontogramAiBanners";
 import { OdontogramPrintA4 } from "./OdontogramPrintA4";
 import { OdontogramModalsLayer } from "./OdontogramModalsLayer";
@@ -87,6 +88,12 @@ export const OdontogramModule = React.memo(({
 		useAppLogicContext();
 
 	const [menuConfig, setMenuConfig] = useState<ToothActionMenuConfig | null>(null);
+	const [radialMenuData, setRadialMenuData] = useState<{
+		toothNumber: number;
+		anchorRect: { x: number; y: number; width: number; height: number };
+		currentState: ToothState;
+		surfaces?: readonly string[] | undefined;
+	} | null>(null);
 	const [historyTooth, setHistoryTooth] = useState<number | null>(null);
 	const [endoTooth, setEndoTooth] = useState<number | null>(null);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
@@ -366,18 +373,69 @@ export const OdontogramModule = React.memo(({
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const handleToothClick = (
-		toothNumber: number,
-		rect: DOMRect,
+		arg1: number | React.MouseEvent,
+		arg2?: DOMRect | number,
 		surface?: string,
 	) => {
+		let toothNumber: number;
+		let rect: DOMRect;
+		if (typeof arg1 === "number") {
+			toothNumber = arg1;
+			rect =
+				(arg2 as DOMRect) ||
+				(typeof DOMRect !== "undefined"
+					? new DOMRect(0, 0, 0, 0)
+					: ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect));
+		} else {
+			toothNumber = typeof arg2 === "number" ? arg2 : 0;
+			const el =
+				(arg1?.currentTarget as HTMLElement) ??
+				(arg1?.target as HTMLElement);
+			rect =
+				el && typeof el.getBoundingClientRect === "function"
+					? el.getBoundingClientRect()
+					: typeof DOMRect !== "undefined"
+						? new DOMRect(0, 0, 0, 0)
+						: ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect);
+		}
+		if (!toothNumber) return;
 		useAppStore.getState().setActiveTooth(toothNumber);
 		if (isMultiSelectMode) {
-			setSelectedTeeth((prev) =>
-				prev.includes(toothNumber)
-					? prev.filter((t) => t !== toothNumber)
-					: [...prev, toothNumber],
-			);
-			setMenuConfig(null);
+			const next = selectedTeeth.includes(toothNumber)
+				? selectedTeeth.filter((t) => t !== toothNumber)
+				: [...selectedTeeth, toothNumber];
+			setSelectedTeeth(next);
+			if (next.length > 0) {
+				const isUpperJaw =
+					toothNumber < 30 || (toothNumber >= 51 && toothNumber <= 65);
+				const menuW = 270;
+				const menuH = 400;
+				const gap = 12;
+				const vw = typeof window !== "undefined" ? window.innerWidth : 1440;
+
+				let x = rect.left + rect.width / 2 - menuW / 2;
+				let y = isUpperJaw ? rect.bottom + gap + 10 : rect.top - menuH - gap - 10;
+				const clampedX = Math.max(8, Math.min(x, vw - menuW - 8));
+				let caretOffset = 50;
+				if (clampedX !== x) {
+					const toothCenter = rect.left + rect.width / 2;
+					caretOffset = ((toothCenter - clampedX) / menuW) * 100;
+				}
+				x = clampedX;
+				const vh = typeof window !== "undefined" ? window.innerHeight : 900;
+				y = Math.max(10, Math.min(vh - 400, y));
+
+				setMenuConfig({
+					toothNumber,
+					x,
+					y,
+					position: isUpperJaw ? "bottom" : "top",
+					caretOffset,
+					surfaces: activeSurfaces,
+				});
+			} else {
+				setMenuConfig(null);
+			}
 		} else {
 			let activeSelection = selectedTeeth;
 			let currentSurfaces: string[] = [];
@@ -444,6 +502,19 @@ export const OdontogramModule = React.memo(({
 				position: isUpperJaw ? "bottom" : "top",
 				caretOffset,
 				...(currentSurfaces.length > 0 ? { surfaces: currentSurfaces } : {}),
+			});
+
+			const currentTooth = teethDataRef.current.find((t) => t.toothNumber === toothNumber);
+			setRadialMenuData({
+				toothNumber,
+				anchorRect: {
+					x: rect.left,
+					y: rect.top,
+					width: rect.width || 48,
+					height: rect.height || 90,
+				},
+				currentState: currentTooth?.state ?? "Healthy",
+				surfaces: currentSurfaces.length > 0 ? currentSurfaces : undefined,
 			});
 		}
 	};
@@ -567,7 +638,7 @@ export const OdontogramModule = React.memo(({
 					dentitionMode={dentitionMode}
 					onDentitionModeChange={setDentitionMode}
 					selectedTeeth={selectedTeeth}
-					onToothClick={handleToothClick}
+					onToothClick={isMultiSelectMode ? handleToothClick : undefined}
 					onMarkIntactDentition={handleMarkAllHealthy}
 					onMarkWisdomTeethMissing={handleMarkWisdomMissing}
 					onQuickStateChange={handleQuickStateChange}
@@ -596,7 +667,7 @@ export const OdontogramModule = React.memo(({
 				/>
 
 				<ToothActionMenuPortal
-					menuConfig={menuConfig}
+					menuConfig={radialMenuData ? null : menuConfig}
 					onClose={clearMenu}
 					selectedTeeth={selectedTeeth}
 					activeSurfaces={activeSurfaces}
@@ -608,6 +679,95 @@ export const OdontogramModule = React.memo(({
 					onOneClickLabOrder={handleOneClickLabOrder}
 					teethData={teethData}
 				/>
+
+				{radialMenuData && (
+					<ToothRadialMenu
+						toothNumber={radialMenuData.toothNumber}
+						anchorRect={radialMenuData.anchorRect}
+						currentState={radialMenuData.currentState}
+						surfaces={radialMenuData.surfaces}
+						onSelectState={(state, surfs) => {
+							const num = radialMenuData.toothNumber;
+							const targets =
+								selectedTeeth.length > 0 && selectedTeeth.includes(num)
+									? selectedTeeth
+									: [num];
+							const toothSurfaces =
+								surfs && surfs.length > 0 ? [...surfs] : undefined;
+							void updateToothState(targets, state, toothSurfaces ?? []);
+							try {
+								const findingPayload =
+									toothSurfaces && toothSurfaces.length > 0
+										? {
+												toothNumber: num,
+												state,
+												surfaces: toothSurfaces,
+										  }
+										: { toothNumber: num, state };
+								const soap = generateSoapFromOdontogramFinding(findingPayload);
+								window.dispatchEvent(
+									new CustomEvent("dente-apply-soap-protocol", {
+										detail: {
+											finding: findingPayload,
+											soap,
+											mode: "smart_append",
+											immediate: true,
+										},
+									}),
+								);
+
+								const bundle = getClinicalBundleForToothState(state);
+								if (bundle) {
+									targets.forEach((tNum) => {
+										window.dispatchEvent(
+											new CustomEvent("dente-add-services-to-invoice", {
+												detail: {
+													bundleId: bundle.id,
+													bundleTitle: bundle.title,
+													toothNumber: tNum,
+													toothCode: String(tNum),
+													patientId,
+													source: "odontogram_bundle",
+													services: bundle.services.map((s, idx) => ({
+														id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
+														code: s.code804n,
+														code804n: s.code804n,
+														title: s.title,
+														price: s.priceRub,
+														priceRub: s.priceRub,
+														unitPriceRub: s.priceRub,
+														quantity: 1,
+														toothCode: String(tNum),
+														toothNumber: tNum,
+													})),
+												},
+											}),
+										);
+									});
+								}
+							} catch {
+								// Safe event dispatch fallback
+							}
+							setRadialMenuData(null);
+						}}
+						onSelectSurfaces={(surfs) => {
+							setActiveSurfaces([...surfs]);
+						}}
+						onOpenEndo={() => {
+							setEndoTooth(radialMenuData.toothNumber);
+							setRadialMenuData(null);
+						}}
+						onOpenTherapy={() => {
+							setContextDrawerTooth(radialMenuData.toothNumber);
+							setRadialMenuData(null);
+						}}
+						onAddToInvoice={() => {
+							setIsFastCheckoutOpen(true);
+							setRadialMenuData(null);
+						}}
+						onClose={() => setRadialMenuData(null)}
+					/>
+				)}
 
 				<OdontogramModalsLayer
 					patientId={patientId}

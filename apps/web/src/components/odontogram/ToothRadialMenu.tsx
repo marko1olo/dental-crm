@@ -399,10 +399,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	const subAnchorX = layoutMode === "right-wing" ? hubX + 215 : hubX - 215;
 
 	// Clamp menu center to prevent edge clipping while staying true to the tooth position
-	const radius = Math.min(170, Math.max(120, Math.floor((vw - 90) / 2)));
-	const minMarginX = Math.min(240, vw / 2);
-	const minMarginTop = 240;
-	const minMarginBottom = 250;
+	const radius = 120;
+	const minMarginX = Math.min(200, vw / 2);
+	const minMarginTop = 200;
+	const minMarginBottom = 200;
 	const centerX = Math.max(minMarginX, Math.min(rawCenterX, vw - minMarginX));
 	const centerY = Math.max(minMarginTop, Math.min(rawCenterY, vh - minMarginBottom));
 
@@ -1040,8 +1040,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						className="absolute flex flex-col items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-2xl border border-[var(--odontogram-border)] shadow-xl z-20"
 						style={{
 							left: "50%",
-							top: `calc(50% - ${radius + 64}px)`,
-							transform: "translate(-50%, 0)",
+							top: `calc(50% - ${radius + 70}px)`,
+							transform: "translate(-50%, -100%)",
 						}}
 					>
 						{isPrimaryTooth(toothNumber) ? (
@@ -1356,7 +1356,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							className="absolute flex items-center gap-2 pointer-events-auto bg-amber-500/20 text-amber-900 dark:text-amber-200 px-3 py-1 rounded-full border border-amber-500/40 shadow-xl z-20 text-xs font-bold whitespace-nowrap"
 							style={{
 								left: "50%",
-								top: `calc(50% + ${radius + 10}px)`,
+								top: `calc(50% + ${radius + 45}px)`,
 								transform: "translate(-50%, 0)",
 							}}
 						>
@@ -1371,7 +1371,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 							style={{
 								left: "50%",
-								top: `calc(50% + ${radius + 48}px)`,
+								top: `calc(50% + ${radius + ((Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") ? 85 : 45)}px)`,
 								transform: "translate(-50%, 0)",
 							}}
 						>

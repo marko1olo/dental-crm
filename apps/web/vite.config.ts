@@ -6,7 +6,17 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { cbctCasesPlugin } from "./vite-plugin-cbct-cases";
 
-declare const process: { env: Record<string, string | undefined> };
+declare const process: {
+	env: Record<string, string | undefined>;
+	on?: (event: string, handler: (err: any) => void) => void;
+};
+
+if (typeof process !== "undefined" && typeof (process as any).on === "function") {
+	(process as any).on("uncaughtException", (err: any) => {
+		if (err?.code === "ECONNRESET" || err?.code === "ECONNREFUSED") return;
+		console.error("[Vite Proxy Socket]", err);
+	});
+}
 
 const apiProxyTarget = process.env.DENTAL_API_PROXY_TARGET ?? "http://127.0.0.1:4100";
 
@@ -552,6 +562,14 @@ export default defineConfig({
 		},
 	},
 	server: {
+		watch: {
+			ignored: [
+				"**/playwright-report/**",
+				"**/test-results/**",
+				"**/docs/screenshots/**",
+				"**/.git/**",
+			],
+		},
 		...(process.env.VITE_DISABLE_HMR === "true" ? { hmr: false } : {}),
 		...(process.env.VITE_DISABLE_WATCH === "true" ? { watch: null } : {}),
 		headers: {
@@ -567,10 +585,33 @@ export default defineConfig({
 			"/api": {
 				target: apiProxyTarget,
 				changeOrigin: true,
-				ws: true,
+				ws: process.env.VITE_ENABLE_WS_PROXY === "true",
 				configure: (proxy, _options) => {
-					proxy.on("error", (err, _req, _res) => {
-						// Ignored to prevent dev server crash during E2E testing
+					proxy.on("error", (err, _req, res) => {
+						try {
+							if (res && typeof (res as any).writeHead === "function" && !(res as any).headersSent) {
+								(res as any).writeHead(503, { "Content-Type": "application/json" });
+								(res as any).end(JSON.stringify({ error: "Backend unavailable", code: (err as any).code }));
+							} else if (res && typeof (res as any).destroy === "function") {
+								(res as any).destroy();
+							}
+						} catch {}
+					});
+					proxy.on("proxyReq", (proxyReq, req) => {
+						proxyReq.on("error", () => {});
+						if (req && (req as any).socket && typeof (req as any).socket.on === "function") {
+							(req as any).socket.on("error", () => {});
+						}
+					});
+					(proxy as any).on("proxySocket", (socket: any) => {
+						if (socket && typeof socket.on === "function") {
+							socket.on("error", () => {});
+						}
+					});
+					(proxy as any).on("proxyReqWs", (_proxyReq: any, _req: any, socket: any) => {
+						if (socket && typeof socket.on === "function") {
+							socket.on("error", () => {});
+						}
 					});
 				}
 			},
