@@ -89,15 +89,27 @@ const RU_TO_EN_MAP: Record<string, string> = {
 
 const EN_MULTI_TO_RU: Array<[RegExp, string]> = [
 	[/shch/gi, "щ"],
+	[/sch/gi, "щ"],
+	[/shh/gi, "щ"],
 	[/yo/gi, "ё"],
+	[/jo/gi, "ё"],
 	[/zh/gi, "ж"],
 	[/kh/gi, "х"],
 	[/ts/gi, "ц"],
+	[/tz/gi, "ц"],
+	[/tc/gi, "ц"],
 	[/ch/gi, "ч"],
+	[/tch/gi, "ч"],
 	[/sh/gi, "ш"],
 	[/yu/gi, "ю"],
+	[/iu/gi, "ю"],
+	[/ju/gi, "ю"],
 	[/ya/gi, "я"],
+	[/ia/gi, "я"],
+	[/ja/gi, "я"],
 	[/ye/gi, "е"],
+	[/je/gi, "е"],
+	[/ks/gi, "кс"],
 	[/iy\b/gi, "ий"],
 	[/ij\b/gi, "ий"],
 	[/yy\b/gi, "ый"],
@@ -133,6 +145,28 @@ const EN_SINGLE_TO_RU: Record<string, string> = {
 };
 
 /**
+ * Каноническая фонетическая нормализация латиницы для устранения вариаций транслита (ГОСТ 7.79 / ISO 9 / ICAO)
+ */
+export function canonicalizeTranslit(word: string): string {
+	let s = word.toLowerCase().trim();
+	s = s.replace(/shch|sch|shh/g, "shch");
+	s = s.replace(/kh/g, "h");
+	s = s.replace(/ts|tz|tc/g, "c");
+	s = s.replace(/ch|tch/g, "ch");
+	s = s.replace(/ya|ia|ja/g, "ya");
+	s = s.replace(/yu|iu|ju/g, "yu");
+	s = s.replace(/ye|je/g, "e");
+	s = s.replace(/yo|jo/g, "yo");
+	s = s.replace(/w/g, "v");
+	s = s.replace(/ph/g, "f");
+	s = s.replace(/x/g, "ks");
+	s = s.replace(/y|j/g, "i");
+	// Схлопываем сдвоенные согласные (ff -> f, ll -> l, mm -> m, nn -> n, ss -> s)
+	s = s.replace(/([a-z])\1+/g, "$1");
+	return s;
+}
+
+/**
  * Транслитерация русского текста в латиницу (ГОСТ 7.79 / ICAO)
  */
 export function transliterateRuToEn(input: string): string {
@@ -164,21 +198,23 @@ export function transliterateEnToRu(input: string): string {
 
 /**
  * Очистка и нормализация имени из DICOM тега (0010,0010) PatientName
+ * Поддерживает нормализацию разделителей DICOM (^, ,, /, \, _, ;, |) и точек в инициалах
  */
 export function cleanDicomName(raw: string | null | undefined): string {
 	if (!raw || typeof raw !== "string") return "";
 
 	let name = raw
 		.replace(/\0+$/u, "")
-		.replace(/\^/g, " ")
+		.replace(/[\^,/\_\\;|]+/g, " ")
+		.replace(/\./g, " ")
 		.replace(/\s+/g, " ")
 		.trim();
 
-	// Удаляем префиксы званий/обращений (MR, MRS, MS, DR, DOCTOR)
-	name = name.replace(/^(mr|mrs|ms|dr|doctor|пациент)\b\.?\s+/iu, "");
+	// Удаляем префиксы званий/обращений (MR, MRS, MS, DR, DOCTOR, ПАЦИЕНТ, ПАЦИЕНТКА, РЕБЕНОК)
+	name = name.replace(/^(mr|mrs|ms|dr|doctor|пациент|пациентка|ребенок)\b\.?\s+/iu, "");
 
-	// Удаляем постфиксы исследований в скобках, например "(CT)", "(3D)"
-	name = name.replace(/\([^)]*\)/g, " ");
+	// Удаляем постфиксы исследований в скобках, например "(CT)", "(3D)", "[OPG]"
+	name = name.replace(/[\(\[][^()\[\]]*[\)\]]/g, " ");
 
 	// Очищаем от спецсимволов, оставляя только буквы, дефисы и пробелы
 	name = name.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\s-]/g, " ");
@@ -255,13 +291,20 @@ export function matchSingleWord(w1: string, w2: string): number {
 	const en1 = transliterateRuToEn(w1);
 	const en2 = transliterateRuToEn(w2);
 	const simEn = stringSimilarity(en1, en2);
+	if (simEn > 0.85) return simEn;
+
+	// Сравнение через каноническую фонетическую нормализацию
+	const can1 = canonicalizeTranslit(en1);
+	const can2 = canonicalizeTranslit(en2);
+	const simCan = stringSimilarity(can1, can2);
+	if (simCan > 0.85) return simCan;
 
 	// Сравнение через кириллицу
 	const ru1 = transliterateEnToRu(w1);
 	const ru2 = transliterateEnToRu(w2);
 	const simRu = stringSimilarity(ru1, ru2);
 
-	return Math.max(simDirect, simEn, simRu);
+	return Math.max(simDirect, simEn, simCan, simRu);
 }
 
 /**
@@ -281,6 +324,15 @@ export function compareFioTokens(dicomRaw: string, patientRaw: string): number {
 		transliterateRuToEn(patientTokens.join(" ")),
 	);
 	if (directSim >= 0.95) return 100;
+
+	// 1b. Сравнение с сортировкой токенов (независимость от порядка Фамилия Имя vs Имя Фамилия)
+	const sortedDicom = [...dicomTokens].sort().join(" ");
+	const sortedPatient = [...patientTokens].sort().join(" ");
+	const sortedSim = stringSimilarity(
+		canonicalizeTranslit(transliterateRuToEn(sortedDicom)),
+		canonicalizeTranslit(transliterateRuToEn(sortedPatient)),
+	);
+	if (sortedSim >= 0.95) return 100;
 
 	// 2. Если в DICOM только одно слово (например "Amirova" или "Захаров")
 	if (dicomTokens.length === 1) {
@@ -413,12 +465,12 @@ export function evaluateBirthDateScore(
 		};
 	}
 
-	// Совпадение только года рождения
+	// Совпадение года рождения (день/месяц отличаются или не указаны в одном из источников)
 	if (dNorm.year === pNorm.year) {
 		return {
 			bonus: 15,
 			conflict: false,
-			explanation: `Совпадение года рождения (${dNorm.year})`,
+			explanation: `Совпадение года рождения (${dNorm.year}), день/месяц отличаются или не указаны`,
 		};
 	}
 
@@ -440,6 +492,8 @@ export interface ScoredMatch {
 	patientId: string;
 	patientFullName: string;
 	confidence: number;
+	rawScore: number;
+	exactBirthDateMatch: boolean;
 	status: BindingStatus;
 	matchMethod: string;
 	matchDetails: string;
@@ -468,6 +522,8 @@ export function calculateMatchScore(
 				patientId: patient.id,
 				patientFullName: patient.fullName,
 				confidence: 100,
+				rawScore: 100,
+				exactBirthDateMatch: true,
 				status: "auto_bound",
 				matchMethod: "dicom_patient_id_exact",
 				matchDetails: "Точное совпадение PatientID с UUID карты пациента в CRM",
@@ -487,6 +543,7 @@ export function calculateMatchScore(
 		patient.birthDate,
 	);
 
+	const exactBirthDateMatch = birthDateEval.bonus === 30 && !birthDateEval.conflict;
 	let totalScore = fioScore + birthDateEval.bonus;
 
 	// При конфликте даты рождения блокируем автопривязку
@@ -518,6 +575,8 @@ export function calculateMatchScore(
 		patientId: patient.id,
 		patientFullName: patient.fullName,
 		confidence: totalScore,
+		rawScore: fioScore + birthDateEval.bonus,
+		exactBirthDateMatch,
 		status,
 		matchMethod,
 		matchDetails: details,
@@ -537,35 +596,71 @@ export async function matchPatientForDicom(
 		dicomBirthDate?: string | null;
 	},
 ): Promise<PatientFioBindingResult> {
-	// 1. Поиск по прямому PatientID
+	// 1. Поиск по прямому PatientID (только если значение является валидным UUID)
 	if (dicomData.dicomPatientId) {
 		const trimmedId = dicomData.dicomPatientId.trim();
-		const [patientById] = await db
-			.select({
-				id: schema.patients.id,
-				fullName: schema.patients.fullName,
-				birthDate: schema.patients.birthDate,
-				mergedIntoPatientId: schema.patients.mergedIntoPatientId,
-			})
-			.from(schema.patients)
-			.where(
-				and(
-					eq(schema.patients.organizationId, organizationId),
-					eq(schema.patients.id, trimmedId),
-				),
-			)
-			.limit(1);
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedId);
+		if (isUuid) {
+			const [patientById] = await db
+				.select({
+					id: schema.patients.id,
+					fullName: schema.patients.fullName,
+					birthDate: schema.patients.birthDate,
+					mergedIntoPatientId: schema.patients.mergedIntoPatientId,
+				})
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.organizationId, organizationId),
+						eq(schema.patients.id, trimmedId),
+					),
+				)
+				.limit(1);
 
-		if (patientById) {
-			const targetId = patientById.mergedIntoPatientId ?? patientById.id;
-			return {
-				patientId: targetId,
-				patientFullName: patientById.fullName,
-				confidence: 100,
-				status: "auto_bound",
-				matchMethod: "dicom_patient_id",
-				matchDetails: "Прямое совпадение по номеру/ID карты пациента",
-			};
+			if (patientById) {
+				const targetId = patientById.mergedIntoPatientId ?? patientById.id;
+				return {
+					patientId: targetId,
+					patientFullName: patientById.fullName,
+					confidence: 100,
+					status: "auto_bound",
+					matchMethod: "dicom_patient_id",
+					matchDetails: "Прямое совпадение по номеру/ID карты пациента",
+				};
+			}
+		}
+
+		// 1b. Поиск по номеру карты / ID аппарата (не-UUID безопасный поиск)
+		if (!isUuid && trimmedId.length > 0) {
+			const [patientByChart] = await db
+				.select({
+					id: schema.patients.id,
+					fullName: schema.patients.fullName,
+					birthDate: schema.patients.birthDate,
+					mergedIntoPatientId: schema.patients.mergedIntoPatientId,
+				})
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.organizationId, organizationId),
+						sql`(${schema.patients.administrativeProfile}->>'chartNumber' = ${trimmedId} 
+							OR ${schema.patients.administrativeProfile}->>'vatechPatId' = ${trimmedId}
+							OR ${schema.patients.administrativeProfile}->>'medicalCardNumber' = ${trimmedId})`,
+					),
+				)
+				.limit(1);
+
+			if (patientByChart) {
+				const targetId = patientByChart.mergedIntoPatientId ?? patientByChart.id;
+				return {
+					patientId: targetId,
+					patientFullName: patientByChart.fullName,
+					confidence: 100,
+					status: "auto_bound",
+					matchMethod: "dicom_chart_number",
+					matchDetails: `Точное совпадение по номеру карты/ID аппарата (${trimmedId}): ${patientByChart.fullName}`,
+				};
+			}
 		}
 	}
 
@@ -620,8 +715,14 @@ export async function matchPatientForDicom(
 		}
 	}
 
-	// Сортировка кандидатов по убыванию уверенности
-	candidates.sort((a, b) => b.confidence - a.confidence);
+	// Сортировка кандидатов по убыванию rawScore и точного соответствия даты рождения
+	candidates.sort((a, b) => {
+		if (b.rawScore !== a.rawScore) return b.rawScore - a.rawScore;
+		if (b.exactBirthDateMatch !== a.exactBirthDateMatch) {
+			return b.exactBirthDateMatch ? 1 : -1;
+		}
+		return b.confidence - a.confidence;
+	});
 
 	if (candidates.length === 0) {
 		return {
@@ -636,10 +737,17 @@ export async function matchPatientForDicom(
 
 	const bestCandidate = candidates[0]!;
 
-	// Если есть второй кандидат с близким скором (разница < 5%), переводим в pending_review для ручного контроля
+	// Разруливание полных тезок (гомонимов) по дате рождения:
+	// Если есть второй кандидат с близким скором (разница < 8%), проверяем, подтверждена ли дата рождения у лучшего
 	if (candidates.length > 1) {
 		const secondCandidate = candidates[1]!;
+		const isDisambiguatedByBirthDate =
+			bestCandidate.exactBirthDateMatch &&
+			!secondCandidate.exactBirthDateMatch &&
+			bestCandidate.confidence >= 90;
+
 		if (
+			!isDisambiguatedByBirthDate &&
 			bestCandidate.confidence >= 90 &&
 			bestCandidate.confidence - secondCandidate.confidence < 8
 		) {
@@ -648,7 +756,7 @@ export async function matchPatientForDicom(
 				patientFullName: bestCandidate.patientFullName,
 				confidence: bestCandidate.confidence,
 				status: "pending_review",
-				matchMethod: "ambiguous_multiple_candidates",
+				matchMethod: "homonym_collision_pending_review",
 				matchDetails: `Найдено несколько похожих пациентов (${bestCandidate.patientFullName} и ${secondCandidate.patientFullName}). Требуется подтверждение врача.`,
 				candidates: candidates.slice(0, 5),
 			};

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Activity,
 	AlertCircle,
+	Archive,
 	Box,
 	Camera,
 	Check,
@@ -11,6 +12,7 @@ import {
 	Eye,
 	FileText,
 	Filter,
+	HardDrive,
 	Layers,
 	Link2,
 	Plus,
@@ -29,10 +31,26 @@ import type { ImagingStudy } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { StudyPatientBindControlModal } from "./StudyPatientBindControlModal";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import {
+	RadiologyPatientSearchModal,
+	matchesDatePreset,
+	matchesTactileModality,
+	DEFAULT_TACTILE_FILTERS,
+	type RadiologyTactileFilterState,
+	type TactileDatePreset,
+} from "../RadiologyPatientSearchModal";
+
+export const ARCHIVE_FDI_TEETH = [
+	"18", "17", "16", "15", "14", "13", "12", "11",
+	"21", "22", "23", "24", "25", "26", "27", "28",
+	"48", "47", "46", "45", "44", "43", "42", "41",
+	"31", "32", "33", "34", "35", "36", "37", "38",
+];
 
 export interface RadiologyStudiesArchiveProps {
 	readonly onOpenStudio?: ((study: ImagingStudy) => void) | undefined;
 	readonly onOpenViewer?: ((study: ImagingStudy) => void) | undefined;
+	readonly onOpenSensorViewer?: ((study: ImagingStudy) => void) | undefined;
 	readonly onUploadNew?: (() => void) | undefined;
 }
 
@@ -175,15 +193,23 @@ export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = ({
 	onOpenStudio,
 	onOpenViewer,
+	onOpenSensorViewer,
 	onUploadNew,
 }) => {
 	const [studies, setStudies] = useState<ImagingStudy[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isAutoBinding, setIsAutoBinding] = useState<boolean>(false);
+	const [isDiskScanning, setIsDiskScanning] = useState<boolean>(false);
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [modalityFilter, setModalityFilter] = useState<ArchiveModalityFilter>("all");
 	const [bindingFilter, setBindingFilter] = useState<ArchiveBindingFilter>("all");
+	const [datePresetFilter, setDatePresetFilter] = useState<TactileDatePreset>("all");
+	const [toothFilter, setToothFilter] = useState<string>("all");
 	const [activeControlStudy, setActiveControlStudy] = useState<ImagingStudy | null>(null);
+
+	// Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)
+	const [showTactileModal, setShowTactileModal] = useState<boolean>(false);
+	const [tactileFilters, setTactileFilters] = useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
 
 	// Загрузка всех исследований клиники
 	const fetchAllStudies = useCallback(async () => {
@@ -198,10 +224,10 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 					setStudies(isDemoShowcaseMode() ? DEMO_ARCHIVE_STUDIES : []);
 				}
 			} else {
-				setStudies(DEMO_ARCHIVE_STUDIES);
+				setStudies(isDemoShowcaseMode() ? DEMO_ARCHIVE_STUDIES : []);
 			}
 		} catch {
-			setStudies(DEMO_ARCHIVE_STUDIES);
+			setStudies(isDemoShowcaseMode() ? DEMO_ARCHIVE_STUDIES : []);
 		} finally {
 			setIsLoading(false);
 		}
@@ -209,6 +235,43 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 
 	useEffect(() => {
 		fetchAllStudies();
+	}, [fetchAllStudies]);
+
+	// Запуск мгновенного сканирования локальных дисков на КТ-папки и архивы
+	const handleScanDiskForDicom = useCallback(async () => {
+		setIsDiskScanning(true);
+		try {
+			const res = await fetch("/api/radiology/crawler/scan-now", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ autoUnpack: true }),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				const report = data.report;
+				const discovered = report?.newStudiesDiscovered ?? report?.discoveredStudies ?? 0;
+				const unpacked = report?.archivesUnpacked ?? 0;
+				const duplicates = report?.duplicatesAvoided ?? 0;
+				const junkSkipped = report?.junkFilesSkipped ?? 0;
+				const junkMsg = junkSkipped > 0 ? ` (сторонних просмотрщиков отсечено: ${junkSkipped})` : "";
+				showToast(
+					`Поиск на диске: КТ обнаружено ${discovered}, архивов распаковано ${unpacked}, дубликатов исключено ${duplicates}${junkMsg}.`,
+					"success",
+					5000,
+				);
+			} else {
+				showToast("Сканирование дисков на наличие КТ выполнено.", "info", 3000);
+			}
+			await fetchAllStudies();
+		} catch {
+			if (isDemoShowcaseMode()) {
+				showToast("Демо-режим: сканирование дисков завершено (дубликатов 0).", "success", 4000);
+			} else {
+				showToast("Ошибка связи с сервером при сканировании дисков на КТ.", "error", 4000);
+			}
+		} finally {
+			setIsDiskScanning(false);
+		}
 	}, [fetchAllStudies]);
 
 	// Запуск автоматического сопоставления по ФИО
@@ -230,21 +293,25 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 			}
 			await fetchAllStudies();
 		} catch {
-			// Демо-эмуляция автопривязки
-			setStudies((prev) =>
-				prev.map((s) => {
-					if (s.bindingStatus === "pending_review") {
-						return {
-							...s,
-							bindingStatus: "auto_bound",
-							bindingConfidence: 95,
-							patientFullName: s.patientFullName || "Кузнецов Дмитрий Павлович",
-						};
-					}
-					return s;
-				}),
-			);
-			showToast("Автопривязка по ФИО завершена: сопоставлено 1 исследование", "success", 4000);
+			if (isDemoShowcaseMode()) {
+				// Демо-эмуляция автопривязки
+				setStudies((prev) =>
+					prev.map((s) => {
+						if (s.bindingStatus === "pending_review") {
+							return {
+								...s,
+								bindingStatus: "auto_bound",
+								bindingConfidence: 95,
+								patientFullName: s.patientFullName || "Кузнецов Дмитрий Павлович",
+							};
+						}
+						return s;
+					}),
+				);
+				showToast("Автопривязка по ФИО завершена: сопоставлено 1 исследование", "success", 4000);
+			} else {
+				showToast("Ошибка связи с сервером при автопривязке", "error", 4000);
+			}
 		} finally {
 			setIsAutoBinding(false);
 		}
@@ -258,6 +325,32 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 	// Фильтрация списка
 	const filteredStudies = useMemo(() => {
 		return studies.filter((study) => {
+			// Тактильная матрица (EzDent-i Снимок 19)
+			if (!matchesTactileModality(study.kind || study.modality, tactileFilters.mode)) {
+				return false;
+			}
+			if (
+				!matchesDatePreset(
+					study.capturedAt || study.studyDate,
+					tactileFilters.datePreset,
+					tactileFilters.customDateFrom,
+					tactileFilters.customDateTo,
+				)
+			) {
+				return false;
+			}
+			if (tactileFilters.query) {
+				const q = tactileFilters.query.toLowerCase().trim();
+				const matchName = study.patientFullName?.toLowerCase().includes(q);
+				const matchDicom = study.dicomPatientName?.toLowerCase().includes(q);
+				const matchTitle = study.title?.toLowerCase().includes(q);
+				const matchSeries = study.seriesDescription?.toLowerCase().includes(q);
+				const matchTooth = study.toothCode?.includes(q);
+				if (!matchName && !matchDicom && !matchTitle && !matchSeries && !matchTooth) {
+					return false;
+				}
+			}
+
 			// Текстовый поиск
 			if (searchQuery.trim()) {
 				const q = searchQuery.toLowerCase().trim();
@@ -280,6 +373,20 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 				if (modalityFilter === "photo" && study.kind !== "photo") return false;
 			}
 
+			// 1-клик быстрый фильтр по пресету даты
+			if (datePresetFilter !== "all") {
+				if (!matchesDatePreset(study.capturedAt || study.studyDate, datePresetFilter)) {
+					return false;
+				}
+			}
+
+			// 1-клик быстрый фильтр по зубу FDI
+			if (toothFilter !== "all") {
+				if (String(study.toothCode || "") !== toothFilter) {
+					return false;
+				}
+			}
+
 			// Фильтр по статусу контроля
 			if (bindingFilter !== "all") {
 				if (bindingFilter === "pending_review" && study.bindingStatus !== "pending_review") return false;
@@ -289,7 +396,16 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 
 			return true;
 		});
-	}, [studies, searchQuery, modalityFilter, bindingFilter]);
+	}, [studies, searchQuery, modalityFilter, bindingFilter, tactileFilters, datePresetFilter, toothFilter]);
+
+	// Зубы с исследованиями
+	const availableTeeth = useMemo(() => {
+		const set = new Set<string>();
+		for (const s of studies) {
+			if (s.toothCode) set.add(String(s.toothCode));
+		}
+		return Array.from(set).sort();
+	}, [studies]);
 
 	// Счетчики
 	const counts = useMemo(() => {
@@ -325,6 +441,19 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 					</div>
 
 					<div className="flex items-center gap-2 flex-wrap">
+						{/* Кнопка мгновенного поиска КТ на диске */}
+						<button
+							type="button"
+							onClick={handleScanDiskForDicom}
+							disabled={isDiskScanning}
+							className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+							data-testid="btn-scan-disk-for-dicom"
+							title="Автономный поиск папок и архивов КТ на диске с фильтрацией мусора сторонних просмотрщиков и исключением дубликатов"
+						>
+							<HardDrive className={`w-3.5 h-3.5 ${isDiskScanning ? "animate-spin" : ""}`} />
+							<span>{isDiskScanning ? "Поиск КТ..." : "Найти КТ на диске"}</span>
+						</button>
+
 						{/* Кнопка автопривязки по ФИО */}
 						<button
 							type="button"
@@ -386,6 +515,128 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 								✕
 							</button>
 						)}
+					</div>
+
+					{/* Кнопка вызова тактильной матрицы поиска (EzDent-i Снимок 19) */}
+					<button
+						type="button"
+						onClick={() => setShowTactileModal(true)}
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+						data-testid="btn-open-tactile-matrix"
+						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+					>
+						<Filter className="w-3.5 h-3.5" />
+						<span>Матрица поиска (Снимок 19)</span>
+					</button>
+
+					{/* Индикатор активных фильтров тактильной матрицы */}
+					{(tactileFilters.mode !== "all" || tactileFilters.datePreset !== "all" || Boolean(tactileFilters.query)) && (
+						<button
+							type="button"
+							onClick={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
+							className="inline-flex items-center gap-1 h-8 px-2.5 text-xs font-bold rounded-lg bg-[#2E8B57]/15 text-[#2E8B57] border border-[#2E8B57]/30 hover:bg-[#2E8B57]/25 transition-colors cursor-pointer shrink-0"
+							title="Сбросить тактильные фильтры"
+							data-testid="btn-reset-tactile-matrix"
+						>
+							<span>Матрица: {tactileFilters.mode} / {tactileFilters.datePreset}</span>
+							<span className="text-xs ml-0.5">✕</span>
+						</button>
+					)}
+
+					{/* 1-клик быстрый фильтр по датам (Сегодня / Вчера / 3 дня / Неделя / Месяц / Все) */}
+					<div className="flex items-center gap-0.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg p-0.5 overflow-x-auto scrollbar-none" data-testid="archive-date-presets-bar">
+						<button
+							type="button"
+							onClick={() => setDatePresetFilter("all")}
+							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
+								datePresetFilter === "all"
+									? "bg-teal-600 text-white shadow-2xs font-bold"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="archive-date-all"
+						>
+							Все даты
+						</button>
+						<button
+							type="button"
+							onClick={() => setDatePresetFilter("today")}
+							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
+								datePresetFilter === "today"
+									? "bg-teal-600 text-white shadow-2xs font-bold"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="archive-date-today"
+						>
+							Сегодня
+						</button>
+						<button
+							type="button"
+							onClick={() => setDatePresetFilter("yesterday")}
+							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
+								datePresetFilter === "yesterday"
+									? "bg-teal-600 text-white shadow-2xs font-bold"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="archive-date-yesterday"
+						>
+							Вчера
+						</button>
+						<button
+							type="button"
+							onClick={() => setDatePresetFilter("3days")}
+							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
+								datePresetFilter === "3days"
+									? "bg-teal-600 text-white shadow-2xs font-bold"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="archive-date-3days"
+						>
+							3 дня
+						</button>
+						<button
+							type="button"
+							onClick={() => setDatePresetFilter("last_week")}
+							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
+								datePresetFilter === "last_week"
+									? "bg-teal-600 text-white shadow-2xs font-bold"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="archive-date-week"
+						>
+							Неделя
+						</button>
+						<button
+							type="button"
+							onClick={() => setDatePresetFilter("last_month")}
+							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
+								datePresetFilter === "last_month"
+									? "bg-teal-600 text-white shadow-2xs font-bold"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="archive-date-month"
+						>
+							Месяц
+						</button>
+					</div>
+
+					{/* Зуб FDI */}
+					<div className="flex items-center gap-1">
+						<select
+							value={toothFilter}
+							onChange={(e) => setToothFilter(e.target.value)}
+							className="h-7 px-2 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-xs outline-none cursor-pointer hover:border-teal-500"
+							data-testid="archive-tooth-filter"
+						>
+							<option value="all">Все зубы (FDI)</option>
+							{ARCHIVE_FDI_TEETH.map((tooth) => {
+								const hasStudy = availableTeeth.includes(tooth);
+								return (
+									<option key={tooth} value={tooth}>
+										#{tooth} {hasStudy ? "● (есть)" : ""}
+									</option>
+								);
+							})}
+						</select>
 					</div>
 
 					{/* Сегментный фильтр по модальности */}
@@ -624,6 +875,17 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 													<span>Не привязано</span>
 												</span>
 											)}
+
+											{study.archivePath && (
+												<span
+													className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30"
+													title={`Архив-источник КТ: ${study.archivePath}`}
+													data-testid={`badge-archive-${study.id}`}
+												>
+													<Archive className="w-2.5 h-2.5" />
+													<span>Архив КТ</span>
+												</span>
+											)}
 										</div>
 									</div>
 								</div>
@@ -656,6 +918,20 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 										</button>
 									)}
 
+									{/* 1-клик запуск в 2D Сенсоре EzDent-i */}
+									{onOpenSensorViewer && !isCbct && (
+										<button
+											type="button"
+											onClick={() => onOpenSensorViewer(study)}
+											className="h-8 px-2.5 text-xs font-bold rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+											data-testid={`btn-open-sensor-${study.id}`}
+											title="Открыть снимок в 2D Сенсоре EzDent-i с калибровкой и фильтрами"
+										>
+											<Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+											<span>2D Сенсор</span>
+										</button>
+									)}
+
 									{/* Просмотр снимка */}
 									{onOpenViewer && (
 										<button
@@ -685,6 +961,17 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 					onStudyUpdated={handleStudyUpdated}
 				/>
 			)}
+
+			{/* Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19) */}
+			<RadiologyPatientSearchModal
+				isOpen={showTactileModal}
+				onClose={() => setShowTactileModal(false)}
+				initialFilters={tactileFilters}
+				onApply={(newFilters) => setTactileFilters(newFilters)}
+				onReset={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
+				totalStudiesCount={studies.length}
+				matchedCount={filteredStudies.length}
+			/>
 		</div>
 	);
 };
