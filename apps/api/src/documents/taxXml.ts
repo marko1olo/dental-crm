@@ -154,9 +154,12 @@ export function buildKnd1151156Xml(
 		legalName?: string | null;
 		clinicName?: string | null;
 		signatoryName?: string | null;
+		directorName?: string | null;
 		signatorySnils?: string | null;
 		licenseNumber?: string | null;
+		medicalLicenseNumber?: string | null;
 		licenseDate?: string | null;
+		medicalLicenseIssuedAt?: string | null;
 	};
 
 	const clinicInn = cleanDigits(clinicProfileAny.inn);
@@ -289,7 +292,35 @@ export function buildKnd1151156Xml(
 	);
 
 	const clinicKpp = cleanDigits(clinicProfileAny.kpp) || undefined;
-	const clinicOgrn = cleanDigits(clinicProfileAny.ogrn) || "1027700132195";
+	const clinicOgrn = cleanDigits(clinicProfileAny.ogrn);
+	if (!clinicOgrn || (clinicOgrn.length !== 13 && clinicOgrn.length !== 15)) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Для XML КНД 1151156 укажите корректный ОГРН клиники (13 знаков для юрлица или 15 знаков для ИП) в настройках организации.",
+		};
+	}
+
+	const clinicLegalName = cleanString(clinicProfileAny.legalName) || cleanString(clinicProfileAny.clinicName);
+	if (!clinicLegalName) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Для XML КНД 1151156 укажите наименование клиники в настройках организации.",
+		};
+	}
+
+	const clinicDirector = cleanString(clinicProfileAny.signatoryName) || cleanString(clinicProfileAny.directorName);
+	if (!clinicDirector) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error: "Для XML КНД 1151156 укажите ФИО руководителя / подписанта клиники в настройках организации.",
+		};
+	}
+
+	const clinicLicenseNumber = cleanString(clinicProfileAny.licenseNumber) || cleanString(clinicProfileAny.medicalLicenseNumber);
+	const clinicLicenseDate = cleanString(clinicProfileAny.licenseDate) || cleanString(clinicProfileAny.medicalLicenseIssuedAt);
 
 	const firstPaymentAny = firstPayment as unknown as { payerSnils?: string | null };
 
@@ -304,14 +335,14 @@ export function buildKnd1151156Xml(
 			inn: clinicInn,
 			kpp: clinicKpp,
 			ogrn: clinicOgrn,
-			name: cleanString(clinicProfileAny.legalName) || cleanString(clinicProfileAny.clinicName) || "ООО СТОМАТОЛОГИЯ ДЕНТЕ",
+			name: clinicLegalName,
 			isIndividualEntrepreneur: clinicInn.length === 12,
-			directorName: cleanString(clinicProfileAny.signatoryName) || "Смирнов Алексей Владимирович",
+			directorName: clinicDirector,
 			directorSnils: cleanString(clinicProfileAny.signatorySnils),
-			license: clinicProfileAny.licenseNumber
+			license: clinicLicenseNumber
 				? {
-						number: cleanString(clinicProfileAny.licenseNumber) || "ЛО-77-01-019842",
-						date: cleanString(clinicProfileAny.licenseDate) || "2021-04-12",
+						number: clinicLicenseNumber,
+						date: clinicLicenseDate || "",
 					}
 				: undefined,
 		},
@@ -335,7 +366,7 @@ export function buildKnd1151156Xml(
 		},
 		signatory: {
 			signatoryRole: "1",
-			fullName: parseFio(cleanString(clinicProfileAny.signatoryName) || "Смирнов Алексей Владимирович"),
+			fullName: parseFio(clinicDirector),
 			snils: cleanString(clinicProfileAny.signatorySnils),
 		},
 	};

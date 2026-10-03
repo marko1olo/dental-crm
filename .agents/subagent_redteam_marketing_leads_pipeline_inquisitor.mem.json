@@ -4,7 +4,7 @@
   "status": "completed",
   "phase": "verified",
   "created_at": "2026-10-03T01:06:00Z",
-  "updated_at": "2026-10-03T05:20:00Z",
+  "updated_at": "2026-10-03T07:35:00Z",
   "completed_steps": [
     "mandatory_rules_reading",
     "deep_codebase_census_leads_and_inbound",
@@ -12,6 +12,9 @@
     "audit_backend_routes_and_schema",
     "audit_frontend_views_and_stores",
     "implement_fixes_and_consolidation",
+    "wave_2_strict_speed_to_lead_15m_sla",
+    "wave_2_lead_form_audio_player_and_existing_patient_action",
+    "wave_2_utm_attribution_retention_engine",
     "verify_with_targeted_tests_and_encoding",
     "prepare_verbatim_report"
   ],
@@ -33,13 +36,43 @@
       {
         "id": "DEFECT-DUPLICATE-PATIENT-DETECTION-UI-BLINDNESS",
         "severity": "CRITICAL",
-        "description": "Backend returned existingPatient when phone matched patients table, but LeadCard.tsx, LeadConvertModal.tsx and ExpandedColumnFocusModal.tsx ignored it or failed to provide 1-click navigation to patient profile, repeatedly rendering 'Create Patient' button and risking duplicate cards.",
+        "description": "Backend returned existingPatient when phone matched patients table, but LeadCard.tsx, LeadConvertModal.tsx, LeadFormModal.tsx and ExpandedColumnFocusModal.tsx ignored it or failed to provide 1-click navigation to patient profile, repeatedly rendering 'Create Patient' button and risking duplicate cards.",
         "status": "FIXED",
         "fixed_in": [
           "apps/web/src/components/leads/LeadCard.tsx",
           "apps/web/src/components/leads/LeadConvertModal.tsx",
+          "apps/web/src/components/leads/LeadFormModal.tsx",
           "apps/web/src/components/leads/LeadsKanbanView.tsx",
           "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx"
+        ]
+      },
+      {
+        "id": "DEFECT-SPEED-TO-LEAD-SLA-15M-BREACH-ABSENT",
+        "severity": "HIGH",
+        "description": "Speed-to-lead SLA used a blanket 60m threshold across all stages; hot incoming leads in status 'new' did not breach at 15m, violating Mandate 8n clinical SLA standards.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/web/src/components/leads/leadsKanbanTypes.ts",
+          "apps/web/src/components/leads/__tests__/leadsExpandedFocusAndSla.test.ts"
+        ]
+      },
+      {
+        "id": "DEFECT-LEAD-FORM-MODAL-AUDIO-BLINDSPOT",
+        "severity": "HIGH",
+        "description": "LeadFormModal lacked inline audio playback for telephony call recordings, forcing operators to switch out of modal context to listen to caller inquiry.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/web/src/components/leads/LeadFormModal.tsx"
+        ]
+      },
+      {
+        "id": "DEFECT-UTM-ATTRIBUTION-LOSS-ON-CONVERSION",
+        "severity": "HIGH",
+        "description": "Advertising campaign parameters (utm_source, utm_medium, utm_campaign, utm_content, utm_term) present in lead source or notes were not structured and lost upon conversion to patient cards and appointment comments.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/api/src/routes/leadsConversion.ts",
+          "apps/api/src/tests/leadsUtmAttribution.test.ts"
         ]
       },
       {
@@ -84,10 +117,12 @@
     "packages/shared/src/leads/leadSchemas.ts",
     "apps/api/src/routes/leads.ts",
     "apps/api/src/routes/leadsConversion.ts",
+    "apps/api/src/tests/leadsUtmAttribution.test.ts",
     "apps/api/src/routes/integrations/prodoctorov.ts",
     "apps/api/src/routes/publicBooking.ts",
     "apps/api/src/services/telephony/telephonySecurity.ts",
     "apps/web/src/store/leadsStore.ts",
+    "apps/web/src/components/leads/leadsKanbanTypes.ts",
     "apps/web/src/components/leads/leadsFunnelTypes.ts",
     "apps/web/src/components/telephony/telephonyAttribution.ts",
     "apps/web/src/components/leads/LeadCard.tsx",
@@ -95,15 +130,16 @@
     "apps/web/src/components/leads/LeadFormModal.tsx",
     "apps/web/src/components/leads/LeadsKanbanView.tsx",
     "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx",
+    "apps/web/src/components/leads/__tests__/leadsExpandedFocusAndSla.test.ts",
     "apps/web/src/tests/leadsExistingPatientDeduplicationAndConversion.test.ts"
   ],
   "verification": {
-    "encoding": "PASSED (7234 files, 0 issues)",
+    "encoding": "PASSED (7240 files, 0 issues)",
     "css_tokens": "PASSED (165 CSS files, 0 unresolved tokens)",
     "targeted_unit_tests": [
+      "leadsExpandedFocusAndSla.test.ts: 19 passed, 0 failed",
       "leadsExistingPatientDeduplicationAndConversion.test.ts: 8 passed, 0 failed",
-      "leadsBatchStageAndMarketingIntakeSplit.test.ts: 5 passed, 0 failed",
-      "leadsKanbanDefaultDay.test.ts: 7 passed, 0 failed"
+      "leadsUtmAttribution.test.ts: 4 passed, 0 failed"
     ]
   }
 }

@@ -207,12 +207,21 @@ export interface LeadSlaInfo {
 
 /**
  * Рассчитывает статус регламента ответа (Speed-to-Lead SLA).
- * - < 15 мин: Зеленый ("Свежий")
- * - 15–60 мин: Янтарный ("Внимание")
- * - > 60 мин: Коралловый пульсирующий ("SLA просрочен")
+ * - Для горячих обращений («Новые», status === "new"):
+ *   * < 5 мин: Зеленый ("Свежий")
+ *   * 5–15 мин: Янтарный ("Внимание")
+ *   * >= 15 мин: Коралловый пульсирующий ("SLA просрочен (> 15м)") — Mandate 8n!
+ * - Для остальных этапов:
+ *   * < 15 мин: Зеленый ("Свежий")
+ *   * 15–60 мин: Янтарный ("Внимание")
+ *   * >= 60 мин: Коралловый пульсирующий ("SLA просрочен")
  */
 export function getLeadSlaStatus(
-	lead: { createdAt?: string | Date | null; stageEnteredAt?: string | Date | null },
+	lead: {
+		status?: LeadStatus | string | null;
+		createdAt?: string | Date | null;
+		stageEnteredAt?: string | Date | null;
+	},
 	now?: Date,
 ): LeadSlaInfo {
 	const rawDate = lead.stageEnteredAt || lead.createdAt;
@@ -235,6 +244,58 @@ export function getLeadSlaStatus(
 	const diffMs = Math.max(0, currentTime - refTime);
 	const minutesElapsed = Math.floor(diffMs / 60000);
 
+	// Режим горячего входящего лида (статус «Новые»)
+	if (lead.status === "new") {
+		if (minutesElapsed < 5) {
+			const dur = minutesElapsed > 0 ? `${minutesElapsed}м` : "< 1м";
+			return {
+				urgency: "fresh",
+				minutesElapsed,
+				label: `Свежий (${dur})`,
+				badgeColor: "var(--ok-fg)",
+				badgeBg: "var(--ok-bg)",
+				badgeBorder: "var(--line)",
+				isBreached: false,
+				formattedDuration: dur,
+			};
+		}
+
+		if (minutesElapsed < 15) {
+			const dur = `${minutesElapsed}м`;
+			return {
+				urgency: "warning",
+				minutesElapsed,
+				label: `Внимание (${dur})`,
+				badgeColor: "var(--amber-dark, var(--amber))",
+				badgeBg: "var(--amber-soft)",
+				badgeBorder: "var(--amber)",
+				isBreached: false,
+				formattedDuration: dur,
+			};
+		}
+
+		const hours = Math.floor(minutesElapsed / 60);
+		const remMins = minutesElapsed % 60;
+		const timeStr =
+			hours > 0
+				? remMins > 0
+					? `${hours}ч ${remMins}м`
+					: `${hours}ч`
+				: `${minutesElapsed}м`;
+
+		return {
+			urgency: "breached",
+			minutesElapsed,
+			label: `SLA просрочен (> 15м: +${timeStr})`,
+			badgeColor: "var(--rust)",
+			badgeBg: "var(--rust-soft)",
+			badgeBorder: "var(--rust)",
+			isBreached: true,
+			formattedDuration: `+${timeStr}`,
+		};
+	}
+
+	// Общий расчет (для этапов в работе или при опущенном статусе)
 	if (minutesElapsed < 15) {
 		const dur = minutesElapsed > 0 ? `${minutesElapsed}м` : "< 1м";
 		return {

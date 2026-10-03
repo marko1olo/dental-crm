@@ -152,15 +152,21 @@ export function calculateFiscalPeriodStatementTotals(
 
 	for (const s of shifts) {
 		totalReceiptsCount += s.receiptsCount || 0;
-		totalCashKop += s.cashIncomeKopecks !== undefined ? s.cashIncomeKopecks : rubToKopecks(s.cashIncomeRub || 0);
-		totalCardKop += s.cardIncomeKopecks !== undefined ? s.cardIncomeKopecks : rubToKopecks(s.cardIncomeRub || 0);
-		totalSbpKop += s.sbpIncomeKopecks !== undefined ? s.sbpIncomeKopecks : rubToKopecks(s.sbpIncomeRub || 0);
-		totalAdvanceKop += s.advanceOffsetIncomeKopecks !== undefined ? s.advanceOffsetIncomeKopecks : rubToKopecks(s.advanceOffsetIncomeRub || 0);
-		totalReturnsKop += s.returnsTotalKopecks !== undefined ? s.returnsTotalKopecks : rubToKopecks(s.returnsTotalRub || 0);
+		const sCash = s.cashIncomeKopecks !== undefined ? s.cashIncomeKopecks : rubToKopecks(s.cashIncomeRub || 0);
+		const sCard = s.cardIncomeKopecks !== undefined ? s.cardIncomeKopecks : rubToKopecks(s.cardIncomeRub || 0);
+		const sSbp = s.sbpIncomeKopecks !== undefined ? s.sbpIncomeKopecks : rubToKopecks(s.sbpIncomeRub || 0);
+		const sAdvance = s.advanceOffsetIncomeKopecks !== undefined ? s.advanceOffsetIncomeKopecks : rubToKopecks(s.advanceOffsetIncomeRub || 0);
+		const sReturns = s.returnsTotalKopecks !== undefined ? s.returnsTotalKopecks : rubToKopecks(s.returnsTotalRub || 0);
+
+		totalCashKop += sCash;
+		totalCardKop += sCard;
+		totalSbpKop += sSbp;
+		totalAdvanceKop += sAdvance;
+		totalReturnsKop += sReturns;
 
 		const shiftRevKop = s.shiftRevenueTotalKopecks !== undefined
 			? s.shiftRevenueTotalKopecks
-			: (s.cashIncomeKopecks + s.cardIncomeKopecks + s.sbpIncomeKopecks + s.advanceOffsetIncomeKopecks - s.returnsTotalKopecks);
+			: (sCash + sCard + sSbp + sAdvance - sReturns);
 		totalRevenueKop += shiftRevKop;
 	}
 

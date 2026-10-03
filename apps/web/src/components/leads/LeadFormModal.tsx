@@ -11,6 +11,9 @@ import type React from "react";
 import { motion } from "framer-motion";
 import { Edit2, Trash2, UserCheck, UserPlus, X } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
+import { LeadAudioPlayerWidget } from "./LeadAudioPlayerWidget";
 
 export interface LeadFormModalProps {
 	isOpen: boolean;
@@ -51,6 +54,19 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 	const currentLead = !isNew && editingLeadId
 		? leads.find((l) => l.id === editingLeadId)
 		: null;
+
+	const handleOpenPatient = (patientId: string) => {
+		try {
+			usePatientStore.getState().setSelectedPatientId(patientId);
+			useAppStore.getState().setCurrentView("patients");
+			if (typeof window !== "undefined") {
+				window.location.hash = "patients";
+			}
+			onClose();
+		} catch {
+			// store fallback
+		}
+	};
 
 	return (
 		<div
@@ -129,11 +145,58 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 							fontSize: 12,
 							fontWeight: 600,
 							marginBottom: 14,
+							cursor: "pointer",
 						}}
+						onClick={() => handleOpenPatient(currentLead.existingPatient!.id)}
+						title={`Открыть карту постоянного пациента: ${currentLead.existingPatient.fullName}`}
 						data-testid="modal-existing-patient-badge"
 					>
 						<UserCheck size={13} className="shrink-0" />
 						<span>Постоянный пациент клиники: {currentLead.existingPatient.fullName}</span>
+					</div>
+				)}
+
+				{/* Встроенный аудиоплеер звонка телефонии (Мандат 8n & 8l) */}
+				{currentLead?.audioRecordUrl && (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							background: "var(--paper-soft)",
+							border: `1px solid ${borderColor}`,
+							borderRadius: 8,
+							padding: "8px 12px",
+							marginBottom: 14,
+							gap: 10,
+						}}
+						data-testid="modal-audio-player-section"
+					>
+						<div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+							<span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--ink)" }}>
+								Запись входящего звонка АТС
+							</span>
+							{currentLead.transcriptionSnippet && (
+								<span
+									style={{
+										fontSize: 10.5,
+										color: "var(--muted)",
+										fontStyle: "italic",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+									title={currentLead.transcriptionSnippet}
+								>
+									«{currentLead.transcriptionSnippet}»
+								</span>
+							)}
+						</div>
+						<LeadAudioPlayerWidget
+							audioUrl={currentLead.audioRecordUrl}
+							transcriptionSnippet={currentLead.transcriptionSnippet}
+							durationSeconds={currentLead.audioDurationSeconds}
+						/>
 					</div>
 				)}
 
@@ -364,32 +427,58 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 							Сохранить
 						</button>
 
-						{/* 1-клик действие «Создать пациента из лида» в модалке */}
+						{/* 1-клик действие «Карточка пациента» или «Создать пациента из лида» в модалке */}
 						{!isNew && currentLead ? (
-							<button
-								type="button"
-								className="secondary-button"
-								data-testid="lead-create-patient-modal-btn"
-								disabled={isDeleting || creatingPatientLeadId === editingLeadId}
-								onClick={() => {
-									onCreatePatient(currentLead);
-								}}
-								title="Создать карту пациента из обращения в 1 клик"
-								style={{
-									justifyContent: "center",
-									color: "var(--ok-fg)",
-									borderColor: "var(--line)",
-									minHeight: 44,
-									display: "flex",
-									alignItems: "center",
-									gap: 6,
-								}}
-							>
-								<UserPlus size={16} />
-								{creatingPatientLeadId === editingLeadId
-									? "Создаём…"
-									: "Создать пациента"}
-							</button>
+							currentLead.existingPatient ? (
+								<button
+									type="button"
+									className="secondary-button"
+									data-testid="open-patient-modal-btn"
+									disabled={isDeleting}
+									onClick={() => {
+										handleOpenPatient(currentLead.existingPatient!.id);
+									}}
+									title={`Открыть карту постоянного пациента ${currentLead.existingPatient.fullName}`}
+									style={{
+										justifyContent: "center",
+										color: "var(--accent)",
+										borderColor: "var(--accent)",
+										minHeight: 44,
+										display: "flex",
+										alignItems: "center",
+										gap: 6,
+										fontWeight: 600,
+									}}
+								>
+									<UserCheck size={16} />
+									Карточка пациента
+								</button>
+							) : (
+								<button
+									type="button"
+									className="secondary-button"
+									data-testid="lead-create-patient-modal-btn"
+									disabled={isDeleting || creatingPatientLeadId === editingLeadId}
+									onClick={() => {
+										onCreatePatient(currentLead);
+									}}
+									title="Создать карту пациента из обращения в 1 клик"
+									style={{
+										justifyContent: "center",
+										color: "var(--ok-fg)",
+										borderColor: "var(--line)",
+										minHeight: 44,
+										display: "flex",
+										alignItems: "center",
+										gap: 6,
+									}}
+								>
+									<UserPlus size={16} />
+									{creatingPatientLeadId === editingLeadId
+										? "Создаём…"
+										: "Создать пациента"}
+								</button>
+							)
 						) : null}
 
 						{/* Permanent DELETE action */}

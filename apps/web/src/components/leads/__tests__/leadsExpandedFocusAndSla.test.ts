@@ -106,6 +106,54 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 			assert.equal(status.label, "Свежий (10м)");
 		});
 
+		it("enforces strict 15-minute speed-to-lead SLA breach for inbound leads in status 'new'", () => {
+			// At 3m: fresh (< 5m for new leads)
+			const leadFresh: Pick<Lead, "createdAt" | "status"> = {
+				createdAt: new Date("2026-09-28T11:57:00.000Z").toISOString(),
+				status: "new",
+			};
+			const statusFresh = getLeadSlaStatus(leadFresh, fixedNow);
+			assert.equal(statusFresh.urgency, "fresh");
+			assert.equal(statusFresh.isBreached, false);
+			assert.equal(statusFresh.minutesElapsed, 3);
+			assert.equal(statusFresh.label, "Свежий (3м)");
+
+			// At 10m: warning (5-15m for new leads)
+			const leadWarning: Pick<Lead, "createdAt" | "status"> = {
+				createdAt: new Date("2026-09-28T11:50:00.000Z").toISOString(),
+				status: "new",
+			};
+			const statusWarning = getLeadSlaStatus(leadWarning, fixedNow);
+			assert.equal(statusWarning.urgency, "warning");
+			assert.equal(statusWarning.isBreached, false);
+			assert.equal(statusWarning.minutesElapsed, 10);
+			assert.equal(statusWarning.label, "Внимание (10м)");
+
+			// At 16m: breached because status === "new" strictly breaches at >= 15m
+			const leadBreached: Pick<Lead, "createdAt" | "status"> = {
+				createdAt: new Date("2026-09-28T11:44:00.000Z").toISOString(),
+				status: "new",
+			};
+			const statusBreached = getLeadSlaStatus(leadBreached, fixedNow);
+			assert.equal(statusBreached.urgency, "breached");
+			assert.equal(statusBreached.isBreached, true);
+			assert.equal(statusBreached.minutesElapsed, 16);
+			assert.equal(statusBreached.label, "SLA просрочен (> 15м: +16м)");
+			assert.equal(statusBreached.badgeBg, "var(--rust-soft)");
+			assert.equal(statusBreached.badgeColor, "var(--rust)");
+
+			// At 75m: breached with hours
+			const leadHoursBreached: Pick<Lead, "createdAt" | "status"> = {
+				createdAt: new Date("2026-09-28T10:45:00.000Z").toISOString(),
+				status: "new",
+			};
+			const statusHoursBreached = getLeadSlaStatus(leadHoursBreached, fixedNow);
+			assert.equal(statusHoursBreached.urgency, "breached");
+			assert.equal(statusHoursBreached.isBreached, true);
+			assert.equal(statusHoursBreached.minutesElapsed, 75);
+			assert.equal(statusHoursBreached.label, "SLA просрочен (> 15м: +1ч 15м)");
+		});
+
 		it("handles missing or invalid dates gracefully without throwing", () => {
 			const emptyLead: Pick<Lead, "createdAt"> = {};
 			const status = getLeadSlaStatus(emptyLead, fixedNow);

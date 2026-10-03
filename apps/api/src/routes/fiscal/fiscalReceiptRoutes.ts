@@ -1298,6 +1298,12 @@ export async function registerFiscalReceiptRoutes(
 								.update(payments)
 								.set({ status: "refunded" })
 								.where(eq(payments.id, validPaymentId));
+						} else {
+							const remainingKop = Math.max(0, origKop - data.totalRefundKopecks);
+							await tx
+								.update(payments)
+								.set({ amountRub: kopecksToRub(remainingKop) })
+								.where(eq(payments.id, validPaymentId));
 						}
 					}
 				}
@@ -1395,6 +1401,12 @@ export async function registerFiscalReceiptRoutes(
 						await tx
 							.update(payments)
 							.set({ status: "refunded" })
+							.where(eq(payments.id, validPaymentId));
+					} else {
+						const remainingKop = Math.max(0, origKop - data.totalRefundKopecks);
+						await tx
+							.update(payments)
+							.set({ amountRub: kopecksToRub(remainingKop) })
 							.where(eq(payments.id, validPaymentId));
 					}
 				}

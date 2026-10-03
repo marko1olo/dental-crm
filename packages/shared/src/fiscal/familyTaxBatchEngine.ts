@@ -142,6 +142,7 @@ export function generateFamilyTaxDeductionBatch(
 					};
 
 		const certNum = String(certCounter++);
+		const normalizedPayments = normalizePaymentsForTaxCertificate(relPayments, options.taxYear);
 		const certParams: TaxDeductionCertificateParams = {
 			certificateNumber: certNum,
 			issueDateIso,
@@ -153,13 +154,13 @@ export function generateFamilyTaxDeductionBatch(
 				relationship: rel,
 			},
 			patient: options.patient,
-			payments: relPayments,
+			payments: normalizedPayments,
 			signer: options.signer,
 		};
 
 		certificates.push(certParams);
 
-		const summary = calculateTaxDeductionSummary(relPayments);
+		const summary = calculateTaxDeductionSummary(normalizedPayments);
 		const targetYearSummary = summary.yearsSummary.find((y) => y.taxYear === options.taxYear) || {
 			code01Kopecks: 0,
 			code01Rub: 0,
@@ -463,8 +464,11 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 	readonly certificatesCount: number;
 } {
 	const clinicInn = batch.clinic.inn.replace(/\D/g, "");
-	const clinicKpp = batch.clinic.kpp ? `_${batch.clinic.kpp.replace(/[^A-Za-z0-9]/g, "")}` : "";
-	const clinicId = `${clinicInn}${clinicKpp}`;
+	const isIp = batch.clinic.isSoleProprietor === true || clinicInn.length === 12;
+	const clinicKppClean = isIp ? "" : (batch.clinic.kpp ? batch.clinic.kpp.replace(/[^A-Za-z0-9]/g, "") : "770101001");
+	const clinicOgrnClean = batch.clinic.ogrn ? batch.clinic.ogrn.replace(/\D/g, "") : "";
+	const safeKpp = !isIp && batch.clinic.kpp ? `_${batch.clinic.kpp.replace(/[^A-Za-z0-9]/g, "")}` : "";
+	const clinicId = `${clinicInn}${safeKpp}`;
 	const taxOfficeCode = (batch.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
@@ -501,16 +505,29 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 				batch.taxYear,
 			);
 
+			const docSeriesNum = ((cert.payer.identityDocumentSeries || "") + " " + (cert.payer.identityDocumentNumber || "")).trim();
+			const docTag = docSeriesNum ? `\n        <УдЛичнФЛ КодВидДок="21" СерНомДок="${escapeXml(docSeriesNum)}" />` : "";
+
+			const patientDocSeriesNum = ((cert.patient.identityDocumentSeries || "") + " " + (cert.patient.identityDocumentNumber || "")).trim();
+			const patientDocTag = patientDocSeriesNum ? `\n        <УдЛичнФЛ КодВидДок="21" СерНомДок="${escapeXml(patientDocSeriesNum)}" />` : "";
+
+			const sumAttrs = [
+				targetYearSummary.code01Kopecks > 0 || targetYearSummary.code02Kopecks === 0 ? `СуммаКод1="${code01Str}"` : "",
+				targetYearSummary.code02Kopecks > 0 ? `СуммаКод2="${code02Str}"` : "",
+				`СуммаВсего="${totalStr}"`,
+			].filter(Boolean).join(" ");
+
 			return `    <СведСправка НомСправ="${escapeXml(cert.certificateNumber)}" ДатаСправ="${escapeXml(issueDate)}" ПрПациент="${escapeXml(rel.samePatientFlag)}">
-      <НППлатМедУсл ФИО="${escapeXml(cert.payer.fullName)}"${cert.payer.inn ? ` ИННФЛ="${escapeXml(cert.payer.inn)}"` : ""}${payerBday ? ` ДатаРожд="${escapeXml(payerBday)}"` : ""}>
-        <УдЛичнФЛ КодВидДок="21" СерНомДок="${escapeXml(((cert.payer.identityDocumentSeries || "") + " " + (cert.payer.identityDocumentNumber || "")).trim())}" />
+      <НППлатМедУсл ФИО="${escapeXml(cert.payer.fullName)}"${cert.payer.inn ? ` ИННФЛ="${escapeXml(cert.payer.inn)}"` : ""}${payerBday ? ` ДатаРожд="${escapeXml(payerBday)}"` : ""}>${docTag}
       </НППлатМедУсл>
       ${
 				rel.samePatientFlag === "0"
-					? `<Пациент ФИО="${escapeXml(cert.patient.fullName)}"${patientBday ? ` ДатаРожд="${escapeXml(patientBday)}"` : ""}${cert.patient.inn ? ` ИННФЛ="${escapeXml(cert.patient.inn)}"` : ""} КодРодств="${escapeXml(rel.code)}" />`
+					? (patientDocTag
+						? `<Пациент ФИО="${escapeXml(cert.patient.fullName)}"${patientBday ? ` ДатаРожд="${escapeXml(patientBday)}"` : ""}${cert.patient.inn ? ` ИННФЛ="${escapeXml(cert.patient.inn)}"` : ""} КодРодств="${escapeXml(rel.code)}"${cert.patient.snils ? ` СНИЛС="${escapeXml(cert.patient.snils.replace(/\D/g, ""))}"` : ""}>${patientDocTag}\n      </Пациент>`
+						: `<Пациент ФИО="${escapeXml(cert.patient.fullName)}"${patientBday ? ` ДатаРожд="${escapeXml(patientBday)}"` : ""}${cert.patient.inn ? ` ИННФЛ="${escapeXml(cert.patient.inn)}"` : ""} КодРодств="${escapeXml(rel.code)}"${cert.patient.snils ? ` СНИЛС="${escapeXml(cert.patient.snils.replace(/\D/g, ""))}"` : ""} />`)
 					: ""
 			}
-      <СуммаРасх ${targetYearSummary.code01Kopecks > 0 ? `СуммаКод1="${code01Str}"` : ""} ${targetYearSummary.code02Kopecks > 0 ? `СуммаКод2="${code02Str}"` : ""} СуммаВсего="${totalStr}">
+      <СуммаРасх ${sumAttrs}>
         ${yearPayments
 					.map(
 						(pay, idx) =>
@@ -522,12 +539,18 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 		})
 		.join("\n");
 
+	const licenseXml = batch.clinic.licenseNumber
+		? `\n      <Лицензия Номер="${escapeXml(batch.clinic.licenseNumber)}"${batch.clinic.licenseDate ? ` Дата="${escapeXml(batch.clinic.licenseDate)}"` : ""} />`
+		: "";
+
+	const orgBlockXml = isIp
+		? `    <СвНП ИННФЛ="${escapeXml(clinicInn)}" ОГРНИП="${escapeXml(clinicOgrnClean)}" НаимОрг="${escapeXml(batch.clinic.legalName)}">${licenseXml}\n    </СвНП>`
+		: `    <СвНП ИННЮЛ="${escapeXml(clinicInn)}" КПП="${escapeXml(clinicKppClean)}" НаимОрг="${escapeXml(batch.clinic.legalName)}" ОГРН="${escapeXml(clinicOgrnClean)}">${licenseXml}\n    </СвНП>`;
+
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <Файл ИдФайл="${escapeXml(fileId)}" ВерсПрог="DENTE Dental CRM 2.0" ВерсФорм="5.01">
   <Документ КНД="1184043" КодНО="${escapeXml(taxOfficeCode)}" ОтчГод="${escapeXml(String(batch.taxYear))}" НомКорр="0">
-    <СвНП ИННЮЛ="${escapeXml(batch.clinic.inn)}" КПП="${escapeXml(batch.clinic.kpp || "770101001")}" НаимОрг="${escapeXml(batch.clinic.legalName)}" ОГРН="${escapeXml(batch.clinic.ogrn || "")}">
-      <Лицензия Номер="${escapeXml(batch.clinic.licenseNumber || "")}" Дата="${escapeXml(batch.clinic.licenseDate || "")}" />
-    </СвНП>
+${orgBlockXml}
     <Подписант ПрПодп="${escapeXml(signerType)}" ФИО="${escapeXml(signerName)}"${batch.signer?.authorityDoc ? ` ДокумПодтв="${escapeXml(batch.signer.authorityDoc)}"` : ""} />
 ${spravkiXml}
   </Документ>

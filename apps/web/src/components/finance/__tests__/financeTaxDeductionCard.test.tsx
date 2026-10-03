@@ -28,4 +28,25 @@ describe("FinanceTaxDeductionCard Component", () => {
 
 		assert.ok(html.includes("—"), "Should render fallback dash");
 	});
+
+	it("renders action button when onOpenCertificateModal is provided", () => {
+		const htmlWithAction = renderToString(
+			<FinanceTaxDeductionCard
+				taxDeductionEligibleRub={85000}
+				onOpenCertificateModal={() => {}}
+			/>
+		);
+		assert.ok(
+			htmlWithAction.includes("Сформировать справку для ФНС →"),
+			"Should render action button to open certificate modal"
+		);
+
+		const htmlWithoutAction = renderToString(
+			<FinanceTaxDeductionCard taxDeductionEligibleRub={85000} />
+		);
+		assert.ok(
+			!htmlWithoutAction.includes("Сформировать справку для ФНС →"),
+			"Should not render action button when callback is omitted"
+		);
+	});
 });

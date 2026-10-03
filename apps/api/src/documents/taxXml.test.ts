@@ -314,4 +314,30 @@ describe("buildKnd1151156Xml", () => {
 			);
 		}
 	});
+
+	test("error: missing clinic OGRN rejects with clean error without fallback to mock", () => {
+		const clinicWithoutOgrn = { ...baseClinic, ogrn: "" } as ClinicProfile;
+		const result = buildKnd1151156Xml(
+			baseDocument as GeneratedDocument,
+			basePatient as Patient,
+			{ ...baseContext, clinicProfile: clinicWithoutOgrn },
+		);
+		assert.strictEqual(result.ok, false);
+		if (!result.ok) {
+			assert.match(result.error, /ОГРН клиники/);
+		}
+	});
+
+	test("error: missing clinic signatory/director rejects with clean error without fallback to mock", () => {
+		const clinicWithoutDirector = { ...baseClinic, signatoryName: "" } as ClinicProfile;
+		const result = buildKnd1151156Xml(
+			baseDocument as GeneratedDocument,
+			basePatient as Patient,
+			{ ...baseContext, clinicProfile: clinicWithoutDirector },
+		);
+		assert.strictEqual(result.ok, false);
+		if (!result.ok) {
+			assert.match(result.error, /руководителя \/ подписанта/);
+		}
+	});
 });

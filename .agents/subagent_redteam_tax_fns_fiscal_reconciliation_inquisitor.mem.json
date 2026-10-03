@@ -1,0 +1,48 @@
+{
+  "role": "Red Team Inquisitor: FNS Tax Deduction Registry, Fiscal Reconciliation & 54-FZ",
+  "status": "completed",
+  "completed_steps": [
+    "Read all constitutional documents and rules (core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Reconnaissance of FNS Tax Registry, Fiscal Reconciliation 54-FZ, Family Wallet tax allocation, and INN checksums",
+    "Identify bugs, mocks, simulations, formula errors, orphan routes/components, and broken XML export",
+    "Fix defects in packages/shared, apps/api, apps/web",
+    "Eliminate empty XML tags (<Лицензия Номер=\"\" />, <УдЛичнФЛ СерНомДок=\"\" />), support Sole Proprietors (ИП: ИННФЛ 12 digits, ОГРНИП 15 digits, zero fake KPP), enforce strict safeKpp logic",
+    "Harden validateFnsTaxXmlStructure against undefined, NaN, Infinity, [object Object], empty attributes",
+    "Verify with targeted unit tests (node --import tsx --test <path>), check:encoding, check:css-tokens",
+    "Compile adversarial report and send to caller via send_message"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "defect_1": "taxXml.ts had hardcoded fallback mock data (OGRN 1027700132195, Smirnov A.V., license LO-77-01-019842) masking unconfigured clinic profile. Fixed by enforcing real clinic credentials and failing with clear statutory error if missing.",
+    "defect_2": "patientPortal.ts had hardcoded mock FPD '319841209' and hardcoded relationship 'patient', ignoring payer parameter and netting of refunds. Fixed by extracting real fiscalSign, honoring payer relationship, and normalizing refunds via normalizePaymentsForTaxCertificate.",
+    "defect_3": "familyFnsTaxService.ts violated Art. 219 Tax Code of RF by multiplying grand total by 0.13 without the 150k/120k Code 1 ceiling, and had broken age heuristic (<24) tagging parents as spouses. Fixed by querying patientRelationships graph and implementing strict Art. 219 ceiling (150k Code 1 cap, Code 2 uncapped).",
+    "defect_4": "familyTaxBatchEngine.ts emitted empty identity doc tags (<УдЛичнФЛ СерНомДок=\"\" />) and passed un-netted raw payments into certParams. Fixed by omitting empty tag when passport is missing and applying normalizePaymentsForTaxCertificate.",
+    "defect_5": "fiscalReconciliationStatement.ts suffered from NaN evaluation when shiftRevenueTotalKopecks was undefined. Fixed by summing parsed kopeck values.",
+    "defect_6": "fiscalReceiptRoutes.ts did not adjust original payment amountRub on partial refund (data.totalRefundKopecks < origKop). Fixed by updating payment amountRub to net remaining balance.",
+    "defect_7": "TaxDeductionCertificateModal.tsx hardcoded Sberbank INN 7707083893, KPP 770101001, OGRN 1027700132195 and Smirnov mock. Fixed by defaulting to empty strings and normalizing yearPayments.",
+    "defect_8": "taxDeduction.ts generated empty <Лицензия Номер=\"\" /> when licenseNumber was undefined/empty. Also generated <УдЛичнФЛ КодВидДок=\"21\" СерНомДок=\"\" /> when series/number were empty strings. Fixed by conditional tag inclusion.",
+    "defect_9": "taxDeduction.ts and familyTaxBatchEngine.ts lacked proper Sole Proprietor (ИП) support: 12-digit INN clinics were forced into <СвМО>/<СвНП> with fake KPP and missing ОГРНИП. Fixed by splitting into ЮЛ (<СвМО ИННЮЛ=... КПП=... ОГРН=...>) and ИП (<СвМО ИННФЛ=... ОГРНИП=...>) without fake KPP.",
+    "defect_10": "familyTaxBatchEngine.ts generateFnsBatchNoMedoplXml injected hardcoded default KPP 770101001 into clinicId even when clinic.kpp was omitted, causing fileId schema mismatch. Fixed with safeKpp strictly respecting clinic.kpp presence."
+  },
+  "modified_files": [
+    "packages/shared/src/fiscal/fiscalReconciliationStatement.ts",
+    "packages/shared/src/fiscal/familyTaxBatchEngine.ts",
+    "packages/shared/src/finance/taxDeduction.ts",
+    "apps/api/src/documents/taxXml.ts",
+    "apps/api/src/documents/taxXml.test.ts",
+    "apps/api/src/routes/patientPortal.ts",
+    "apps/api/src/services/familyWallet/familyFnsTaxService.ts",
+    "apps/api/src/services/familyWallet/__tests__/familyWalletService.test.ts",
+    "apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts",
+    "apps/web/src/components/finance/TaxDeductionCertificateModal.tsx"
+  ],
+  "verification_results": {
+    "taxDeduction_test": "19/19 PASS (403ms)",
+    "ndflXmlGenerator_test": "14/14 PASS (280ms)",
+    "taxXml_test": "14/14 PASS (812ms)",
+    "ndflTaxService_test": "1/1 PASS (1408ms)",
+    "patientCardTaxDeductionAutonomy_test": "4/4 PASS (3040ms)",
+    "check_encoding": "7241 files checked, 0 errors",
+    "check_css_tokens": "13995 var() usages checked, 0 unresolved"
+  }
+}

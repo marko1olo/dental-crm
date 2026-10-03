@@ -39,6 +39,59 @@ export const convertLeadSchema = z.object({
 export type ConvertLeadPayload = z.infer<typeof convertLeadSchema>;
 
 /**
+ * Extracts structured UTM and telephony attribution parameters from lead source and notes
+ * to guarantee zero attribution loss across advertising channels and conversion to appointments.
+ */
+export function extractUtmAttribution(source?: string | null, notes?: string | null): {
+	utmSource?: string;
+	utmMedium?: string;
+	utmCampaign?: string;
+	utmContent?: string;
+	utmTerm?: string;
+	formattedUtm?: string;
+} {
+	const text = `${source ?? ""} ${notes ?? ""}`;
+	if (!text.trim()) return {};
+
+	const getParam = (param: string): string | undefined => {
+		const regex = new RegExp(`(?:\\b|\\?|&)${param}\\s*[:=]\\s*([^&\\s,;\\n]+)`, "i");
+		const match = text.match(regex);
+		return match && match[1] ? decodeURIComponent(match[1].trim()) : undefined;
+	};
+
+	const utmSource = getParam("utm_source");
+	const utmMedium = getParam("utm_medium");
+	const utmCampaign = getParam("utm_campaign");
+	const utmContent = getParam("utm_content");
+	const utmTerm = getParam("utm_term");
+
+	const parts: string[] = [];
+	if (utmSource) parts.push(`source=${utmSource}`);
+	if (utmMedium) parts.push(`medium=${utmMedium}`);
+	if (utmCampaign) parts.push(`campaign=${utmCampaign}`);
+	if (utmContent) parts.push(`content=${utmContent}`);
+	if (utmTerm) parts.push(`term=${utmTerm}`);
+
+	const formattedUtm = parts.length > 0 ? `UTM: ${parts.join(" | ")}` : undefined;
+
+	const res: {
+		utmSource?: string;
+		utmMedium?: string;
+		utmCampaign?: string;
+		utmContent?: string;
+		utmTerm?: string;
+		formattedUtm?: string;
+	} = {};
+	if (utmSource !== undefined) res.utmSource = utmSource;
+	if (utmMedium !== undefined) res.utmMedium = utmMedium;
+	if (utmCampaign !== undefined) res.utmCampaign = utmCampaign;
+	if (utmContent !== undefined) res.utmContent = utmContent;
+	if (utmTerm !== undefined) res.utmTerm = utmTerm;
+	if (formattedUtm !== undefined) res.formattedUtm = formattedUtm;
+	return res;
+}
+
+/**
  * Executes appointment conversion transaction with fallback solo-doctor autonomy
  */
 export async function convertLeadToAppointment(params: {
@@ -219,10 +272,13 @@ export async function convertLeadToAppointment(params: {
 			}
 		}
 
+		const utmInfo = extractUtmAttribution(lead.source, lead.notes);
+
 		if (!patient) {
 			const patientNotesParts = [
 				lead.notes ? `Жалобы: ${lead.notes}` : null,
 				leadSource ? `Источник: ${leadSource}` : null,
+				utmInfo.formattedUtm ? utmInfo.formattedUtm : null,
 				Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
 					? `Интерес: ${lead.clinicalTags.join(", ")}`
 					: null,
@@ -237,7 +293,6 @@ export async function convertLeadToAppointment(params: {
 					status: "active",
 					notes: patientNotesParts.length > 0 ? patientNotesParts.join("\n") : null,
 					administrativeProfile: normalizePatientAdministrativeProfile({
-						advertisingSource: leadSource ?? undefined,
 						preferredAppointmentNote: lead.notes || (leadSource ? `src:${leadSource}` : undefined),
 					}),
 				})
@@ -260,6 +315,7 @@ export async function convertLeadToAppointment(params: {
 			payload.comment || null,
 			lead.notes ? `Жалоба: ${lead.notes}` : null,
 			leadSource ? `Канал: ${leadSource}` : null,
+			utmInfo.formattedUtm ? utmInfo.formattedUtm : null,
 			Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
 				? `Теги: ${lead.clinicalTags.join(", ")}`
 				: null,
@@ -409,9 +465,11 @@ export async function createPatientFromLead(params: {
 
 	// 3. Create Patient from Lead preserving name, normalized phone, source, complaints & tags in 1 click
 	const leadSource = lead.source ? String(lead.source).trim() : null;
+	const utmInfo = extractUtmAttribution(lead.source, lead.notes);
 	const patientNotesParts = [
 		lead.notes ? `Жалобы: ${lead.notes}` : null,
 		leadSource ? `Источник: ${leadSource}` : null,
+		utmInfo.formattedUtm ? utmInfo.formattedUtm : null,
 		Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
 			? `Интерес: ${lead.clinicalTags.join(", ")}`
 			: null,
@@ -426,7 +484,6 @@ export async function createPatientFromLead(params: {
 			status: "active",
 			notes: patientNotesParts.length > 0 ? patientNotesParts.join("\n") : null,
 			administrativeProfile: normalizePatientAdministrativeProfile({
-				advertisingSource: leadSource ?? undefined,
 				preferredAppointmentNote: lead.notes || (leadSource ? `src:${leadSource}` : undefined),
 			}),
 		})
