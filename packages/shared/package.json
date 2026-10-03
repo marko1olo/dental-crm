@@ -186,7 +186,7 @@
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
-		"test": "node --max-old-space-size=2048 --test-concurrency=2 --test-timeout=10000 --import tsx --test \"src/**/*.test.ts\""
+		"test": "node --max-old-space-size=2048 --test-concurrency=6 --test-timeout=10000 --import tsx --test \"src/**/*.test.ts\""
 	},
 	"dependencies": {
 		"zod": "^3.24.4"

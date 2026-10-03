@@ -3,7 +3,7 @@
  *
  * Centralized, leak-proof Playwright browser launcher.
  * - Hardware Protection (Mandate 8x): strict RAM ceiling (1024MB on Chrome V8).
- * - Single-Instance Concurrency Gate: prevents multiple scripts from spawning 10+ Chromes in parallel.
+ * - Concurrency Pool: allows up to 6 concurrent browsers (strictly capped at 6).
  * - Anti-Zombie Invariant: guaranteed browser.close() on process exit, crash, SIGINT, or SIGTERM.
  * - Ephemeral Profile Cleanup: deletes temp profiles so Windows Defender doesn't thrash disk/RAM.
  */
@@ -11,32 +11,71 @@
 const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
-const os = require("node:os");
 
-const LOCK_FILE = path.resolve(__dirname, ".playwright_concurrency.lock");
-const LOCK_TIMEOUT_MS = 45000; // max wait for lock
-const HARD_WATCHDOG_MS = 60000; // hard ceiling per script execution
+const LOCK_DIR = path.resolve(__dirname, ".playwright_locks");
+const MAX_CONCURRENT_BROWSERS = 6;
+const LOCK_TIMEOUT_MS = 45000;
+const HARD_WATCHDOG_MS = 60000;
 
 let activeBrowser = null;
-let lockAcquired = false;
+let currentLockFile = null;
+
+function ensureLockDir() {
+  if (!fs.existsSync(LOCK_DIR)) {
+    fs.mkdirSync(LOCK_DIR, { recursive: true });
+  }
+}
+
+function cleanStaleLocks() {
+  ensureLockDir();
+  try {
+    const files = fs.readdirSync(LOCK_DIR);
+    for (const f of files) {
+      if (!f.endsWith(".lock")) continue;
+      const fullPath = path.join(LOCK_DIR, f);
+      try {
+        const stats = fs.statSync(fullPath);
+        // Stale if older than 2.5 minutes
+        if (Date.now() - stats.mtimeMs > 150000) {
+          fs.unlinkSync(fullPath);
+          continue;
+        }
+        // Check if PID is still alive
+        const pidMatch = f.match(/proc_(\d+)\.lock/);
+        if (pidMatch) {
+          const pid = Number.parseInt(pidMatch[1], 10);
+          try {
+            process.kill(pid, 0); // test if alive
+          } catch (e) {
+            if (e.code === "ESRCH") {
+              // Process dead, remove stale lock
+              fs.unlinkSync(fullPath);
+            }
+          }
+        }
+      } catch {}
+    }
+  } catch {}
+}
+
+function getActiveLockCount() {
+  cleanStaleLocks();
+  try {
+    const files = fs.readdirSync(LOCK_DIR).filter((f) => f.endsWith(".lock"));
+    return files.length;
+  } catch {
+    return 0;
+  }
+}
 
 function acquireLock() {
+  ensureLockDir();
   const startTime = Date.now();
-  while (fs.existsSync(LOCK_FILE)) {
-    try {
-      const stats = fs.statSync(LOCK_FILE);
-      // Stale lock check (older than 2 minutes)
-      if (Date.now() - stats.mtimeMs > 120000) {
-        console.warn("[SAFE-PLAYWRIGHT] Removing stale lock file:", LOCK_FILE);
-        fs.unlinkSync(LOCK_FILE);
-        break;
-      }
-    } catch {
-      break;
-    }
+  currentLockFile = path.join(LOCK_DIR, `proc_${process.pid}.lock`);
 
+  while (getActiveLockCount() >= MAX_CONCURRENT_BROWSERS) {
     if (Date.now() - startTime > LOCK_TIMEOUT_MS) {
-      throw new Error(`[SAFE-PLAYWRIGHT] Concurrency Lock Timeout (${LOCK_TIMEOUT_MS}ms). Another Playwright run is active.`);
+      throw new Error(`[SAFE-PLAYWRIGHT] Concurrency Pool Full (Max ${MAX_CONCURRENT_BROWSERS}). Timeout waiting for slot.`);
     }
     // Synchronous sleep 500ms
     const end = Date.now() + 500;
@@ -44,26 +83,22 @@ function acquireLock() {
   }
 
   try {
-    fs.writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, time: new Date().toISOString() }), { flag: "wx" });
-    lockAcquired = true;
+    fs.writeFileSync(currentLockFile, JSON.stringify({ pid: process.pid, time: new Date().toISOString() }), { flag: "w" });
   } catch (err) {
-    if (err.code === "EEXIST") {
-      return acquireLock();
-    }
-    throw err;
+    console.warn("[SAFE-PLAYWRIGHT] Error writing lock file:", err.message);
   }
 }
 
 function releaseLock() {
-  if (lockAcquired && fs.existsSync(LOCK_FILE)) {
+  if (currentLockFile && fs.existsSync(currentLockFile)) {
     try {
-      fs.unlinkSync(LOCK_FILE);
-      lockAcquired = false;
+      fs.unlinkSync(currentLockFile);
     } catch {}
+    currentLockFile = null;
   }
 }
 
-// Global cleanup handler
+// Global emergency cleanup handler
 async function emergencyCleanup() {
   if (activeBrowser) {
     try {
@@ -126,7 +161,7 @@ async function launchSafeBrowser(options = {}) {
   // Merge args without duplicates
   const finalArgs = Array.from(new Set([...mandatoryArgs, ...userArgs]));
 
-  console.log(`[SAFE-PLAYWRIGHT] Launching Chromium (PID ${process.pid}, max V8 heap 1024MB)...`);
+  console.log(`[SAFE-PLAYWRIGHT] Launching Chromium (PID ${process.pid}, Slot active, max V8 heap 1024MB)...`);
 
   const browser = await chromium.launch({
     headless: options.headless !== false,
@@ -155,7 +190,7 @@ async function launchSafeBrowser(options = {}) {
     } finally {
       activeBrowser = null;
       releaseLock();
-      console.log("[SAFE-PLAYWRIGHT] Browser closed cleanly. Lock released.");
+      console.log("[SAFE-PLAYWRIGHT] Browser closed cleanly. Lock slot released.");
     }
   };
 
@@ -166,4 +201,5 @@ module.exports = {
   launchSafeBrowser,
   releaseLock,
   emergencyCleanup,
+  MAX_CONCURRENT_BROWSERS,
 };

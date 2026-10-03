@@ -8,8 +8,8 @@ export default defineConfig({
 	// Look for test files in the "tests/e2e" directory, relative to this configuration file.
 	testDir: "./tests/e2e",
 
-	// Run tests serially to prevent memory spikes and port conflicts.
-	fullyParallel: false,
+	// Run tests in parallel up to the safe ceiling of 6 workers
+	fullyParallel: true,
 
 	// Fail the build on CI if you accidentally left test.only in the source code.
 	forbidOnly: !!process.env.CI,
@@ -17,8 +17,8 @@ export default defineConfig({
 	// Retry on CI only.
 	retries: process.env.CI ? 2 : 0,
 
-	// HARD CEILING: Strictly 1 worker to protect RAM and avoid spawning 16 Chromes in parallel
-	workers: 1,
+	// HARD CEILING: Strictly up to 6 workers max (safe budget for 32GB RAM)
+	workers: process.env.CI ? 1 : 6,
 
 	// Reporter to use
 	reporter: "html",
