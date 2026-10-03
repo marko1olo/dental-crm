@@ -25,8 +25,9 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
-import { VisitProtocolView } from "../VisitProtocolView";
 import { DentalForm043 } from "../../icons/DentalIcons";
+import { PatientHistoryTab, type ClinicalVisitItem, DEFAULT_CLINICAL_VISITS } from "../PatientHistoryTab";
+import { VisitProtocolView } from "../VisitProtocolView";
 import {
 	STOMX_MARKETING_SOURCES_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
@@ -388,6 +389,85 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 				},
 			];
 		}, [patient?.id, patient?.visitsHistory]);
+
+		const clinicalTimelineVisits = useMemo<ClinicalVisitItem[]>(() => {
+			if (patient?.visitsHistory && patient.visitsHistory.length > 0) {
+				return patient.visitsHistory.map((v) => {
+					const parts = v.date.split(".");
+					const d = parts.length === 3 ? new Date(`${parts[2]}-${parts[1]}-${parts[0]}`) : new Date(v.date);
+					const year = !Number.isNaN(d.getFullYear()) ? d.getFullYear() : 2026;
+					const monthNumber = !Number.isNaN(d.getMonth()) ? d.getMonth() + 1 : 10;
+					const monthNames = [
+						"Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+						"Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+					];
+					const monthNameRu = `${monthNames[monthNumber - 1] || "Октябрь"} ${year}`;
+
+					const sLower = (v.services || "").toLowerCase();
+					let specialty: "therapy" | "surgery" | "orthopedics" | "hygiene" = "therapy";
+					let specialtyLabelRu = "Терапия";
+					if (sLower.includes("хирург") || sLower.includes("имплант") || sLower.includes("удален") || (v.specialty || "").toLowerCase().includes("хирург")) {
+						specialty = "surgery";
+						specialtyLabelRu = "Хирургия & Имплантация";
+					} else if (sLower.includes("ортопед") || sLower.includes("коронк") || (v.specialty || "").toLowerCase().includes("ортопед")) {
+						specialty = "orthopedics";
+						specialtyLabelRu = "Ортопедия";
+					} else if (sLower.includes("гигиен") || sLower.includes("air-flow") || (v.specialty || "").toLowerCase().includes("гигиен")) {
+						specialty = "hygiene";
+						specialtyLabelRu = "Профгигиена";
+					}
+
+					let diagnosisCode = "K02.1";
+					let diagnosisTitle = "Кариес дентина (средний)";
+					if (specialty === "surgery") {
+						diagnosisCode = "K08.1";
+						diagnosisTitle = "Потеря зуба (адентия)";
+					} else if (specialty === "hygiene") {
+						diagnosisCode = "K03.6";
+						diagnosisTitle = "Зубные отложения";
+					} else if (specialty === "orthopedics") {
+						diagnosisCode = "K07.2";
+						diagnosisTitle = "Дефект твердых тканей";
+					}
+
+					return {
+						id: v.id,
+						date: v.date,
+						time: v.time || "12:00",
+						year,
+						monthNumber,
+						monthNameRu,
+						toothNumber: v.toothNumber || null,
+						diagnosisCode,
+						diagnosisTitle,
+						doctorName: v.doctorName,
+						specialty,
+						specialtyLabelRu,
+						amountRub: v.amountRub,
+						isPaid: v.status === "completed",
+						paymentStatus: v.status === "completed" ? "paid" : "scheduled",
+						warrantyUntil: specialty === "hygiene" ? null : `10.${year + 1}`,
+						warrantyStatus: specialty === "hygiene" ? "not_applicable" : "active",
+						complaints: `Плановое лечение: ${v.services}`,
+						statusLocalis: v.toothNumber ? `Зуб ${v.toothNumber}: кариозная полость.` : "Полость рта санирована.",
+						treatmentProtocol: v.services,
+						recommendations: "Контрольный осмотр через 6 месяцев.",
+						materialsDeducted: [
+							{ name: "Смотровой набор", quantity: 1, unit: "компл." },
+							{ name: "Анестетик Ультракаин Д-С", quantity: 1, unit: "карп." },
+						],
+						attachedScan: v.toothNumber ? {
+							title: `RVG снимок зуба ${v.toothNumber}`,
+							previewUrl: "/radiology/sample_rvg_tooth16.jpg",
+							kind: "RVG",
+							tooth: v.toothNumber,
+						} : null,
+						isSigned: v.status === "completed",
+					};
+				});
+			}
+			return DEFAULT_CLINICAL_VISITS;
+		}, [patient?.visitsHistory]);
 
 		const showGeneral = activeSection === "all" || activeSection === "general";
 		const showSomatic = activeSection === "all" || activeSection === "somatic";
@@ -1686,103 +1766,15 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							</div>
 						</div>
 
-						{/* Лента визитов */}
+						{/* Лента визитов — Компактный клинический таймлайн с аккордеонами и фильтрами */}
 						<div className="flex flex-col gap-2.5">
-							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-									<Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
-									<span>Хронология приёмов пациента ({visitsList.length})</span>
-								</span>
-								{visitsList.length > 0 && visitsList[0] && (
-									<button
-										type="button"
-										onClick={() => {
-											const firstVisit = visitsList[0];
-											if (firstVisit) onNavigateToVisit?.(firstVisit.id);
-										}}
-										className="text-[11px] text-[var(--teal,var(--brand-primary))] hover:underline font-bold inline-flex items-center gap-1 cursor-pointer"
-										data-testid="btn-quick-open-visit"
-									>
-										<span>В текущий приём</span>
-										<ExternalLink className="w-3 h-3" />
-									</button>
-								)}
-							</div>
-
-							{visitsList.length === 0 ? (
-								<div className="p-6 text-center bg-[var(--paper-soft)] rounded-xl border border-dashed border-[var(--glass-border)] text-xs text-[var(--muted)]">
-									У пациента пока нет зафиксированных приёмов. Нажмите «Записать на прием», чтобы назначить первое посещение.
-								</div>
-							) : (
-								<div className="flex flex-col gap-2">
-									{visitsList.map((visit) => (
-										<div
-											key={visit.id}
-											className="p-3 bg-[var(--paper-soft)] hover:bg-[var(--paper-soft)]/80 rounded-xl border border-[var(--glass-border)] flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap transition-colors"
-										>
-											<div className="flex items-start gap-2.5 min-w-0 flex-1">
-												<div
-													className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${
-														visit.status === "completed"
-															? "bg-emerald-500"
-															: visit.status === "scheduled"
-																? "bg-blue-500"
-																: "bg-[var(--muted)]"
-													}`}
-												/>
-												<div className="min-w-0 flex-1">
-													<div className="flex items-center gap-2 flex-wrap">
-														<span className="text-xs font-black text-[var(--ink)]">
-															{visit.date} {visit.time ? `• ${visit.time}` : ""}
-														</span>
-														<span className="text-[11px] font-bold text-[var(--muted)]">
-															{visit.doctorName} ({visit.specialty})
-														</span>
-														{visit.toothNumber && (
-															<span className="text-[10px] px-1.5 py-0.2 rounded font-black bg-[var(--paper)] text-[var(--ink)] border border-[var(--glass-border)]">
-																Зуб {visit.toothNumber}
-															</span>
-														)}
-													</div>
-													<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate">
-														{visit.services}
-													</p>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-3 shrink-0">
-												<div className="text-right">
-													<div className="text-xs font-black text-[var(--ink)]">
-														{visit.amountRub.toLocaleString("ru-RU")} ₽
-													</div>
-													<div className="text-[10px] font-bold text-emerald-600">
-														{visit.status === "completed" ? "Оплачено 100%" : "Запланировано"}
-													</div>
-												</div>
-
-												<button
-													type="button"
-													data-testid={`btn-open-visit-protocol-${visit.id}`}
-													onClick={() => setViewingProtocolVisit(visit)}
-													className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--glass-hover)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1 shrink-0 transition-all shadow-2xs"
-													title="Протокол приёма"
-												>
-													<DentalForm043 className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-													<span>Протокол</span>
-												</button>
-
-												<button
-													type="button"
-													onClick={() => onNavigateToVisit?.(visit.id)}
-													className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs font-semibold rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1 shrink-0 transition-all shadow-2xs"
-												>
-													<span>Открыть</span>
-												</button>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
+							<PatientHistoryTab
+								patientId={patient?.id}
+								patientName={patient?.fullName}
+								visits={clinicalTimelineVisits}
+								onNavigateToVisit={onNavigateToVisit}
+								onNewAppointment={onNewAppointment}
+							/>
 						</div>
 					</div>
 				)}
