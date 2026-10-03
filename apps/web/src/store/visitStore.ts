@@ -30,7 +30,46 @@ export type VisitToothUiState =
 
 export type ToothState = VisitToothUiState;
 
+/**
+ * Структурированная клиническая запись по конкретному зубу в рамках приёма.
+ * Обеспечивает независимое сохранение диагноза, полости (MO/OD/MOD),
+ * формулы препарирования, материала и анестезии для каждого зуба.
+ */
+export interface VisitToothTreatmentRecord {
+	toothNumber: number;
+	state: ToothState;
+	diagnosis?: string;
+	diagnosisIcd10?: string;
+	cavity?: string; // "MOD", "MO", "OD", "O", "V", "B", "L", "P"
+	surfaces?: string[]; // ["M", "O", "D"]
+	preparationFormula?: string;
+	material?: string;
+	anesthesia?: string;
+	treatmentPlan?: string;
+	services?: Array<{ code: string; title: string; price?: number }>;
+	updatedAt?: string;
+}
+
+/**
+ * Полный снимок состояния приёма для 1-клик отката (Undo / Redo).
+ * Сохраняет дневник, одонтограмму, диагнозы и мультизубные записи.
+ */
+export interface VisitStateSnapshot {
+	timestamp: number;
+	description?: string;
+	visitNoteForm: VisitNoteForm;
+	visitToothStateByCode: Record<string, ToothState>;
+	visitToothRecordsByCode: Record<string, VisitToothTreatmentRecord>;
+	visitAiDiagnosesByCode: Record<string, string>;
+	activeToothNumber?: number | null;
+}
+
 export interface VisitStore {
+	activeToothNumber: number | null;
+	setActiveToothNumber: (
+		val: number | null | ((prev: number | null) => number | null),
+	) => void;
+
 	selectedSpecialty: DentalSpecialty;
 	setSelectedSpecialty: (
 		val: DentalSpecialty | ((prev: DentalSpecialty) => DentalSpecialty),
@@ -74,6 +113,31 @@ export interface VisitStore {
 	) => void;
 
 	visitAiDiagnosesByCode: Record<string, string>;
+
+	/** Структурированные клинические данные по зубам (диагноз, полость MOD, материал, анестезия) */
+	visitToothRecordsByCode: Record<string, VisitToothTreatmentRecord>;
+	setVisitToothRecordsByCode: (
+		val:
+			| Record<string, VisitToothTreatmentRecord>
+			| ((
+					prev: Record<string, VisitToothTreatmentRecord>,
+			  ) => Record<string, VisitToothTreatmentRecord>),
+	) => void;
+	setVisitToothRecord: (
+		code: string,
+		record: Partial<VisitToothTreatmentRecord>,
+	) => void;
+	clearVisitToothRecord: (code: string) => void;
+
+	/** Стек отката и повтора (Undo / Redo) */
+	undoStack: VisitStateSnapshot[];
+	redoStack: VisitStateSnapshot[];
+	pushVisitSnapshot: (description?: string) => void;
+	undoVisit: () => boolean;
+	redoVisit: () => boolean;
+	canUndo: boolean;
+	canRedo: boolean;
+	clearVisitHistory: () => void;
 
 	setToothState: (code: string, state: ToothState) => void;
 	/**
@@ -192,6 +256,13 @@ export interface VisitStore {
 }
 
 export const useVisitStore = create<VisitStore>((set) => ({
+	activeToothNumber: 16,
+	setActiveToothNumber: (val) =>
+		set((state) => ({
+			activeToothNumber:
+				typeof val === "function" ? val(state.activeToothNumber) : val,
+		})),
+
 	selectedSpecialty: initialUiPreferences.selectedSpecialty,
 	setSelectedSpecialty: (val) =>
 		set((state) => ({
@@ -247,12 +318,191 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
 	visitAiDiagnosesByCode: {},
 
-	setToothState: (code, state) =>
-		set((prev) => ({
-			visitToothStateByCode: { ...prev.visitToothStateByCode, [code]: state },
+	visitToothRecordsByCode: {},
+	setVisitToothRecordsByCode: (val) =>
+		set((state) => ({
+			visitToothRecordsByCode:
+				typeof val === "function" ? val(state.visitToothRecordsByCode) : val,
 		})),
+
+	setVisitToothRecord: (code, record) =>
+		set((prev) => {
+			const toothNumber = Number.parseInt(code, 10) || 16;
+			const existing = prev.visitToothRecordsByCode[code] || {
+				toothNumber,
+				state: record.state || prev.visitToothStateByCode[code] || "treatment",
+			};
+			const merged: VisitToothTreatmentRecord = {
+				...existing,
+				...record,
+				toothNumber,
+				state: record.state || existing.state || "treatment",
+				updatedAt: new Date().toISOString(),
+			};
+			const nextStateMap = record.state
+				? { ...prev.visitToothStateByCode, [code]: record.state }
+				: prev.visitToothStateByCode;
+			const nextAiMap = record.diagnosis
+				? { ...prev.visitAiDiagnosesByCode, [code]: record.diagnosis }
+				: prev.visitAiDiagnosesByCode;
+			return {
+				visitToothRecordsByCode: { ...prev.visitToothRecordsByCode, [code]: merged },
+				visitToothStateByCode: nextStateMap,
+				visitAiDiagnosesByCode: nextAiMap,
+			};
+		}),
+
+	clearVisitToothRecord: (code) =>
+		set((prev) => {
+			const nextRecords = { ...prev.visitToothRecordsByCode };
+			delete nextRecords[code];
+			const nextStates = { ...prev.visitToothStateByCode };
+			delete nextStates[code];
+			const nextDiags = { ...prev.visitAiDiagnosesByCode };
+			delete nextDiags[code];
+			return {
+				visitToothRecordsByCode: nextRecords,
+				visitToothStateByCode: nextStates,
+				visitAiDiagnosesByCode: nextDiags,
+			};
+		}),
+
+	undoStack: [],
+	redoStack: [],
+	canUndo: false,
+	canRedo: false,
+
+	pushVisitSnapshot: (description) =>
+		set((state) => {
+			const snapshot: VisitStateSnapshot = {
+				timestamp: Date.now(),
+				description: description || "Правка приёма",
+				visitNoteForm: JSON.parse(JSON.stringify(state.visitNoteForm)),
+				visitToothStateByCode: { ...state.visitToothStateByCode },
+				visitToothRecordsByCode: JSON.parse(
+					JSON.stringify(state.visitToothRecordsByCode),
+				),
+				visitAiDiagnosesByCode: { ...state.visitAiDiagnosesByCode },
+				activeToothNumber: state.activeToothNumber,
+			};
+			const nextUndo = [...state.undoStack, snapshot];
+			if (nextUndo.length > 50) nextUndo.shift();
+			return {
+				undoStack: nextUndo,
+				redoStack: [],
+				canUndo: true,
+				canRedo: false,
+			};
+		}),
+
+	undoVisit: () => {
+		let restored = false;
+		set((state) => {
+			if (state.undoStack.length === 0) return state;
+			const nextUndo = [...state.undoStack];
+			const targetSnapshot = nextUndo.pop()!;
+			const currentSnapshot: VisitStateSnapshot = {
+				timestamp: Date.now(),
+				description: "Перед отменой",
+				visitNoteForm: JSON.parse(JSON.stringify(state.visitNoteForm)),
+				visitToothStateByCode: { ...state.visitToothStateByCode },
+				visitToothRecordsByCode: JSON.parse(
+					JSON.stringify(state.visitToothRecordsByCode),
+				),
+				visitAiDiagnosesByCode: { ...state.visitAiDiagnosesByCode },
+				activeToothNumber: state.activeToothNumber,
+			};
+			const nextRedo = [...state.redoStack, currentSnapshot];
+			restored = true;
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-visit-undo-restored", {
+						detail: { snapshot: targetSnapshot, type: "undo" },
+					}),
+				);
+			}
+			return {
+				undoStack: nextUndo,
+				redoStack: nextRedo,
+				canUndo: nextUndo.length > 0,
+				canRedo: true,
+				visitNoteForm: targetSnapshot.visitNoteForm,
+				visitToothStateByCode: targetSnapshot.visitToothStateByCode,
+				visitToothRecordsByCode: targetSnapshot.visitToothRecordsByCode,
+				visitAiDiagnosesByCode: targetSnapshot.visitAiDiagnosesByCode,
+				activeToothNumber: targetSnapshot.activeToothNumber ?? state.activeToothNumber,
+			};
+		});
+		return restored;
+	},
+
+	redoVisit: () => {
+		let restored = false;
+		set((state) => {
+			if (state.redoStack.length === 0) return state;
+			const nextRedo = [...state.redoStack];
+			const targetSnapshot = nextRedo.pop()!;
+			const currentSnapshot: VisitStateSnapshot = {
+				timestamp: Date.now(),
+				description: "Перед повтором",
+				visitNoteForm: JSON.parse(JSON.stringify(state.visitNoteForm)),
+				visitToothStateByCode: { ...state.visitToothStateByCode },
+				visitToothRecordsByCode: JSON.parse(
+					JSON.stringify(state.visitToothRecordsByCode),
+				),
+				visitAiDiagnosesByCode: { ...state.visitAiDiagnosesByCode },
+				activeToothNumber: state.activeToothNumber,
+			};
+			const nextUndo = [...state.undoStack, currentSnapshot];
+			restored = true;
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-visit-undo-restored", {
+						detail: { snapshot: targetSnapshot, type: "redo" },
+					}),
+				);
+			}
+			return {
+				undoStack: nextUndo,
+				redoStack: nextRedo,
+				canUndo: true,
+				canRedo: nextRedo.length > 0,
+				visitNoteForm: targetSnapshot.visitNoteForm,
+				visitToothStateByCode: targetSnapshot.visitToothStateByCode,
+				visitToothRecordsByCode: targetSnapshot.visitToothRecordsByCode,
+				visitAiDiagnosesByCode: targetSnapshot.visitAiDiagnosesByCode,
+				activeToothNumber: targetSnapshot.activeToothNumber ?? state.activeToothNumber,
+			};
+		});
+		return restored;
+	},
+
+	clearVisitHistory: () =>
+		set({ undoStack: [], redoStack: [], canUndo: false, canRedo: false }),
+
+	setToothState: (code, state) =>
+		set((prev) => {
+			const toothNumber = Number.parseInt(code, 10) || 16;
+			const existing = prev.visitToothRecordsByCode[code] || { toothNumber, state };
+			return {
+				visitToothStateByCode: { ...prev.visitToothStateByCode, [code]: state },
+				visitToothRecordsByCode: {
+					...prev.visitToothRecordsByCode,
+					[code]: {
+						...existing,
+						state,
+						toothNumber,
+						updatedAt: new Date().toISOString(),
+					},
+				},
+			};
+		}),
 	resetVisitToothState: () =>
-		set({ visitToothStateByCode: {}, visitAiDiagnosesByCode: {} }),
+		set({
+			visitToothStateByCode: {},
+			visitAiDiagnosesByCode: {},
+			visitToothRecordsByCode: {},
+		}),
 	applyAiToothCodes: (
 		detectedCodes,
 		primaryState = "planned",
@@ -395,6 +645,12 @@ export const useVisitStore = create<VisitStore>((set) => ({
 	speechLiveRms: 0,
 	setSpeechLiveRms: (val) =>
 		set((state) => ({
-			speechLiveRms: typeof val === "function" ? val(state.speechLiveRms) : val,
+			speechLiveRms:
+				typeof val === "function" ? val(state.speechLiveRms) : val,
 		})),
 }));
+
+if (typeof window !== "undefined") {
+	(window as any).__useVisitStore = useVisitStore;
+}
+

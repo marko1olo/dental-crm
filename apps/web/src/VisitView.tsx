@@ -6,6 +6,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	FlaskConical,
 	Lock,
 	MoreHorizontal,
 	Printer,
@@ -25,6 +26,11 @@ import { SoftPresenceIndicator } from "./components/presence/SoftPresenceIndicat
 import { useSoftPresence } from "./hooks/useSoftPresence";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
+import { useVisitStore } from "./store/visitStore";
+import {
+	mergeMultiToothDiagnoses,
+	mergeMultiToothTreatmentPlan,
+} from "./utils/clinicalTextSanitizer";
 import "./styles/VisitView.css";
 
 import {
@@ -101,6 +107,23 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false); const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = useState(false);
 	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false); const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false); const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
+
+	const handleOpenLabOrder = useCallback(() => {
+		if (typeof props.onOpenLabOrderModal === "function") {
+			props.onOpenLabOrderModal();
+		}
+		setIsLabOrderModalOpen(true);
+	}, [props.onOpenLabOrderModal]);
+
+	useEffect(() => {
+		const handleLabOrderEvent = () => {
+			handleOpenLabOrder();
+		};
+		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
+		return () => {
+			window.removeEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
+		};
+	}, [handleOpenLabOrder]);
 
 	const headerMoreMenuRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -205,8 +228,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			updateVisitNoteField,
 			visitNoteForm,
 			showToastFn: showToast,
+			activePatient,
 		});
-	}, [updateVisitNoteField, visitNoteForm]);
+	}, [updateVisitNoteField, visitNoteForm, activePatient]);
 
 	const handlePrintForm043uFast = useCallback(() => {
 		const isClosed =
@@ -417,6 +441,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 							</button>
 
+							{/* Наряд ЗТЛ (1 клик для ортопеда у кресла) */}
+							<button
+								type="button"
+								onClick={handleOpenLabOrder}
+								data-testid="btn-visit-lab-order-fast"
+								className="secondary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 py-0 text-xs font-bold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+								title="Наряд в зуботехническую лабораторию (ЗТЛ)"
+								aria-label="Наряд в лабораторию ЗТЛ"
+							>
+								<FlaskConical className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+								<span className="hidden sm:inline">Наряд ЗТЛ</span>
+								<span className="sm:hidden">ЗТЛ</span>
+							</button>
+
 							{/* Экстренная аптечка (тихий служебный доступ) */}
 							<button
 								type="button"
@@ -461,6 +499,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-xl z-50 p-1.5 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
 										role="menu"
 									>
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												handleOpenLabOrder();
+											}}
+											data-testid="visit-more-action-lab-order"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
+											role="menuitem"
+										>
+											<FlaskConical size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Наряд в зуботехническую лабораторию (ЗТЛ)</span>
+												<span className="text-[10px] text-[var(--muted)]">Заказ коронок, мостов, вкладок, All-on-4</span>
+											</div>
+										</button>
 										<button
 											type="button"
 											onClick={() => {
@@ -764,17 +818,55 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			{/* ═══ CLINICAL TOOTH CONTEXT MODAL ═══ */}
 			<VisitClinicalToothModal
 				selectedToothForMenu={selectedToothForMenu}
-				closeClinicalModal={() => setSelectedToothForMenu(null)}
+				closeClinicalModal={() => {
+					setSelectedSurfaces([]);
+					setSelectedToothForMenu(null);
+				}}
 				toothStateByCode={toothStateByCode}
 				materialCategory={materialCategory} setMaterialCategory={setMaterialCategory}
 				handleSelectDiagnosis={(state, text, field) => {
 					if (selectedToothForMenu?.code) {
-						setToothState(selectedToothForMenu.code, state);
-						if (text && field) appendToEMKField(field, `Зуб ${selectedToothForMenu.code}: ${text}`);
+						const toothNum = Number.parseInt(selectedToothForMenu.code, 10);
+						const cavityStr = selectedSurfaces.length > 0 ? selectedSurfaces.join("") : undefined;
+						useVisitStore.getState().pushVisitSnapshot(`Зуб ${selectedToothForMenu.code}: ${state}`);
+						setToothState(selectedToothForMenu.code, state as any);
+
+						useVisitStore.getState().setVisitToothRecord(selectedToothForMenu.code, {
+							toothNumber: toothNum,
+							state: state as any,
+							cavity: cavityStr,
+							surfaces: selectedSurfaces,
+							diagnosis: field === "diagnosis" ? text : undefined,
+						});
+
+						if (text && field) {
+							if (field === "diagnosis") {
+								const nextDiag = mergeMultiToothDiagnoses(visitNoteForm?.diagnosis || "", {
+									toothNumber: toothNum,
+									diagnosis: text,
+									cavity: cavityStr,
+								});
+								updateVisitNoteField("diagnosis", nextDiag);
+							} else if (field === "treatmentPlan") {
+								const planText = cavityStr ? `${text} (полость ${cavityStr})` : text;
+								const nextPlan = mergeMultiToothTreatmentPlan(visitNoteForm?.treatmentPlan || "", {
+									toothNumber: toothNum,
+									content: planText,
+								});
+								updateVisitNoteField("treatmentPlan", nextPlan);
+							} else {
+								appendToEMKField(field, `Зуб ${selectedToothForMenu.code}: ${text}`);
+							}
+						}
 					}
+					setSelectedSurfaces([]);
 					setSelectedToothForMenu(null);
 				}}
-				handleSelectSurface={() => {}}
+				handleSelectSurface={(surf) => {
+					setSelectedSurfaces((prev) =>
+						prev.includes(surf) ? prev.filter((s) => s !== surf) : [...prev, surf],
+					);
+				}}
 				selectedSurfaces={selectedSurfaces}
 				isSurfaceMode={isSurfaceMode} setIsSurfaceMode={setIsSurfaceMode}
 				setEndoModalToothNumber={setEndoModalToothNumber} setEndoModalToothState={setEndoModalToothState}

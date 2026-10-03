@@ -4,9 +4,11 @@ import {
 	Calendar,
 	Check,
 	ChevronDown,
+	Redo2,
 	ShieldCheck,
 	Sparkles,
 	Tag,
+	Undo2,
 } from "lucide-react";
 import {
 	UltrasonicScaler,
@@ -16,6 +18,8 @@ import {
 	ToothExtractForceps,
 } from "../../icons/DentalIcons";
 import { CLINICAL_SOAP_PRESETS, type ClinicalSoapPreset } from "../clinicalSoapPresets";
+import { useVisitStore } from "../../../store/visitStore";
+import { showToast } from "../../GlobalToast";
 
 export interface EmkToolbarProps {
 	activeEmkTab?: string | undefined;
@@ -37,6 +41,8 @@ export interface EmkToolbarProps {
 	hasUnsavedChanges?: boolean | undefined;
 	voicePilotNode?: React.ReactNode | undefined;
 	noteForm?: Record<string, any> | undefined;
+	onUndo?: (() => boolean) | undefined;
+	onRedo?: (() => boolean) | undefined;
 }
 
 export function EmkToolbar({
@@ -59,13 +65,66 @@ export function EmkToolbar({
 	hasUnsavedChanges = false,
 	voicePilotNode,
 	noteForm = {},
+	onUndo,
+	onRedo,
 }: EmkToolbarProps) {
+	const storeUndoVisit = useVisitStore((s) => s.undoVisit);
+	const storeRedoVisit = useVisitStore((s) => s.redoVisit);
+	const storeCanUndo = useVisitStore((s) => s.canUndo);
+	const storeCanRedo = useVisitStore((s) => s.canRedo);
+
+	const handleUndo = onUndo ?? storeUndoVisit;
+	const handleRedo = onRedo ?? storeRedoVisit;
+	const canUndo = storeCanUndo;
+	const canRedo = storeCanRedo;
+
 	const [localActiveTab, setLocalActiveTab] = React.useState<string>("all");
 	const activeEmkTab = propActiveEmkTab ?? localActiveTab;
 	const setActiveEmkTab = propSetActiveEmkTab ?? setLocalActiveTab;
 	const handleSchedule = onScheduleNext || (() => onScheduleNextVisit(5));
 	const [isExtraMenuOpen, setIsExtraMenuOpen] = React.useState<boolean>(false);
 	const menuRef = React.useRef<HTMLDivElement | null>(null);
+
+	React.useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const isTextInput =
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable);
+
+			if (
+				(e.ctrlKey || e.metaKey) &&
+				(e.key === "z" || e.key === "Z" || e.key === "я" || e.key === "Я")
+			) {
+				if (e.shiftKey) {
+					if (!isTextInput && canRedo) {
+						e.preventDefault();
+						const ok = handleRedo();
+						if (ok) showToast("Действие возвращено (Redo)", "info", 2000);
+					}
+				} else {
+					if (!isTextInput && canUndo) {
+						e.preventDefault();
+						const ok = handleUndo();
+						if (ok) showToast("Действие отменено (Undo)", "info", 2000);
+					}
+				}
+			} else if (
+				(e.ctrlKey || e.metaKey) &&
+				(e.key === "y" || e.key === "Y" || e.key === "н" || e.key === "Н")
+			) {
+				if (!isTextInput && canRedo) {
+					e.preventDefault();
+					const ok = handleRedo();
+					if (ok) showToast("Действие возвращено (Redo)", "info", 2000);
+				}
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [canUndo, canRedo, handleUndo, handleRedo]);
 
 	React.useEffect(() => {
 		if (!isExtraMenuOpen) return;
@@ -366,8 +425,48 @@ export function EmkToolbar({
 				</button>
 			</div>
 
-			{/* ПРАВАЯ ЧАСТЬ: Запись на этап + Статус */}
+			{/* ПРАВАЯ ЧАСТЬ: 1-Клик Undo/Redo + Запись на этап + Статус */}
 			<div className="flex items-center gap-1.5 shrink-0 ml-auto pr-1">
+				{/* 1-Клик откат и повтор (Undo / Redo, Ctrl+Z) */}
+				<div className="flex items-center gap-0.5 shrink-0" data-testid="emk-undo-redo-group">
+					<button
+						type="button"
+						data-testid="btn-visit-undo"
+						onClick={() => {
+							const ok = handleUndo();
+							if (ok) showToast("Действие отменено (Undo)", "info", 2000);
+						}}
+						disabled={!canUndo}
+						className={`min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 rounded-lg text-xs font-semibold border transition-all inline-flex items-center gap-1 shrink-0 whitespace-nowrap min-w-max touch-manipulation ${
+							canUndo
+								? "border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] cursor-pointer shadow-2xs active:scale-95"
+								: "border-transparent bg-transparent text-[var(--muted)] opacity-30 cursor-not-allowed"
+						}`}
+						title="Отменить последнее действие (Ctrl+Z)"
+						aria-label="Отменить последнее действие в приёме"
+					>
+						<Undo2 size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+						<span className="hidden xl:inline">Отменить</span>
+					</button>
+
+					{canRedo && (
+						<button
+							type="button"
+							data-testid="btn-visit-redo"
+							onClick={() => {
+								const ok = handleRedo();
+								if (ok) showToast("Действие возвращено (Redo)", "info", 2000);
+							}}
+							className="min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-1.5 py-0 rounded-lg text-xs font-semibold border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-all inline-flex items-center gap-1 shrink-0 whitespace-nowrap min-w-max shadow-2xs cursor-pointer active:scale-95 touch-manipulation"
+							title="Повторить отмененное действие (Ctrl+Y)"
+							aria-label="Повторить отмененное действие"
+						>
+							<Redo2 size={13} className="shrink-0 text-blue-500" />
+							<span className="hidden xl:inline">Вернуть</span>
+						</button>
+					)}
+				</div>
+
 				<button
 					type="button"
 					onClick={() => handleSchedule()}

@@ -71,8 +71,15 @@ import { VisitServiceBillingWidget } from "./VisitServiceBillingWidget";
 import {
 	CLINICAL_SOAP_PRESETS,
 	type ClinicalSoapPreset,
+	formatSoapFromPreset,
 	getPresetById,
 } from "./clinicalSoapPresets";
+import {
+	mergeMultiToothDiagnoses,
+	mergeMultiToothObjective,
+	mergeMultiToothTreatmentPlan,
+	sanitizeClinicalNormContradictions,
+} from "../../utils/clinicalTextSanitizer";
 import {
 	type ClinicalVisitCompletionResult,
 	completeClinicalVisitAndAssembleEstimate,
@@ -263,6 +270,10 @@ export function VisitEmkTab() {
 	}, [visitNoteForm, updateVisitNoteField]);
 
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
+		useVisitStore
+			.getState()
+			.pushVisitSnapshot("Заполнение физиологической нормой (Z01.2)");
+
 		updateVisitNoteField(
 			"complaints",
 			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
@@ -312,6 +323,87 @@ export function VisitEmkTab() {
 		);
 		showToast("ЭМК заполнена физиологической нормой (Z01.2)", "success", 3000);
 	}, [updateVisitNoteField]);
+
+	const handleApplySoapPreset = React.useCallback(
+		(preset: ClinicalSoapPreset) => {
+			useVisitStore
+				.getState()
+				.pushVisitSnapshot(`Применение пресета «${preset.title}»`);
+
+			const activeToothNum =
+				useVisitStore.getState().activeToothNumber ||
+				Number(dashboard?.activeVisit?.diagnosisTooth) ||
+				preset.defaultTooth ||
+				16;
+
+			const formatted = formatSoapFromPreset(preset, activeToothNum);
+
+			// Мультизубная интеграция диагноза через clinicalTextSanitizer
+			const currentDiag = (visitNoteForm as any)?.diagnosis || "";
+			const newDiag = mergeMultiToothDiagnoses(currentDiag, {
+				toothNumber: activeToothNum,
+				diagnosis: formatted.diagnosis,
+			});
+			updateVisitNoteField("diagnosis", newDiag);
+
+			// Мультизубный объективный статус с устранением противоречий («Зубной ряд интактен»)
+			const currentObj = (visitNoteForm as any)?.objectiveStatus || "";
+			const newObj = mergeMultiToothObjective(
+				currentObj,
+				formatted.objectiveStatus,
+				activeToothNum,
+			);
+			updateVisitNoteField("objectiveStatus", newObj);
+
+			// Мультизубный план лечения
+			const currentPlan = (visitNoteForm as any)?.treatmentPlan || "";
+			const newPlan = mergeMultiToothTreatmentPlan(
+				currentPlan,
+				formatted.treatmentPlan,
+				activeToothNum,
+			);
+			updateVisitNoteField("treatmentPlan", newPlan);
+
+			// Жалобы: если пустые или стояла норма («активно не предъявляет») — подставляем жалобу
+			if (formatted.complaint) {
+				const currentComplaint =
+					(visitNoteForm as any)?.complaint ||
+					(visitNoteForm as any)?.complaints ||
+					"";
+				if (
+					!currentComplaint.trim() ||
+					currentComplaint.includes("активно не предъявляет")
+				) {
+					updateVisitNoteField("complaint", formatted.complaint);
+				}
+			}
+
+			// Фиксация структурированной записи зуба в visitStore
+			useVisitStore.getState().setVisitToothRecord(String(activeToothNum), {
+				toothNumber: activeToothNum,
+				state: preset.category === "surgery" ? "missing" : "treatment",
+				diagnosis: formatted.diagnosis,
+				diagnosisIcd10: preset.icd10,
+				treatmentPlan: formatted.treatmentPlan,
+				services: preset.service804n
+					? [
+							{
+								code: preset.service804n.code804n,
+								title: preset.service804n.title,
+								price: preset.service804n.basePriceRub,
+							},
+						]
+					: undefined,
+			});
+
+			showToast(
+				`Протокол «${preset.title}» применён для зуба ${activeToothNum}`,
+				"success",
+				3000,
+			);
+		},
+		[visitNoteForm, updateVisitNoteField, dashboard],
+	);
 
 	const handleSaveVisitNote = React.useCallback(async () => {
 		const foreignNoteText = peekNoteFormForeignVisit(openVisitId, Boolean(isVisitNoteDirty));
@@ -444,6 +536,10 @@ export function VisitEmkTab() {
 
 	const handleApplyCatalogPatch = React.useCallback(
 		(patch: VisitNoteFieldsPatch, successMessage: string) => {
+			useVisitStore
+				.getState()
+				.pushVisitSnapshot("Применение шаблона клинического протокола");
+
 			if (patch.complaint) {
 				updateVisitNoteField("complaint", patch.complaint);
 			}
@@ -451,20 +547,32 @@ export function VisitEmkTab() {
 				updateVisitNoteField("anamnesis", patch.anamnesis);
 			}
 			if (patch.objectiveStatus) {
-				updateVisitNoteField("objectiveStatus", patch.objectiveStatus);
+				const currentObj = (visitNoteForm as any)?.objectiveStatus || "";
+				updateVisitNoteField(
+					"objectiveStatus",
+					mergeMultiToothObjective(currentObj, patch.objectiveStatus),
+				);
 			}
 			if (patch.treatmentPlan) {
-				updateVisitNoteField("treatmentPlan", patch.treatmentPlan);
+				const currentPlan = (visitNoteForm as any)?.treatmentPlan || "";
+				updateVisitNoteField(
+					"treatmentPlan",
+					mergeMultiToothTreatmentPlan(currentPlan, patch.treatmentPlan),
+				);
 			}
 			if (patch.recommendations) {
 				updateVisitNoteField("recommendations", patch.recommendations);
 			}
 			if (patch.diagnosis) {
-				updateVisitNoteField("diagnosis", patch.diagnosis);
+				const currentDiag = (visitNoteForm as any)?.diagnosis || "";
+				updateVisitNoteField(
+					"diagnosis",
+					mergeMultiToothDiagnoses(currentDiag, patch.diagnosis),
+				);
 			}
 			showToast(successMessage, "success", 3000);
 		},
-		[updateVisitNoteField],
+		[updateVisitNoteField, visitNoteForm],
 	);
 
 	return (
@@ -494,6 +602,7 @@ export function VisitEmkTab() {
 						/>
 					}
 					onApplyNorm={handleApplyPhysiologicalNorm}
+					onApplySoapPreset={handleApplySoapPreset}
 					onToggleStarProtocols={() => setIsStarProtocolsOpen((v) => !v)}
 					isStarProtocolsOpen={isStarProtocolsOpen}
 					onOpenProtocolsCatalog={() => setIsSoapTemplatesModalOpen(true)}

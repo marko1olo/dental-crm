@@ -9,6 +9,20 @@
 
 ---
 
+## 2026-10-03 — Multi-Tooth Visit Integrity, 1-Click Undo / Redo History Engine & Clinical Text Sanitizer
+
+- **Gap:** In multi-tooth visits (2–4 teeth), applying protocols sequentially caused subsequent tooth protocols to overwrite prior tooth diagnoses and objective status descriptions. Standard physical norm Z01.2 remained alongside pathologies («Зуб интактен» contradicted «Кариес дентина (MOD)»). No 1-click visit-level Undo existed for doctors to instantly revert accidental protocol overwrites without reloading the page.
+- **Ship:**
+  - `apps/web/src/utils/clinicalTextSanitizer.ts`: `mergeMultiToothDiagnoses`, `parseMultiToothDiagnoses`, `formatToothDiagnosis`, `mergeMultiToothObjective`, `mergeMultiToothTreatmentPlan`, `sanitizeClinicalNormContradictions`, `sanitizeVisitNoteFormFields`.
+  - `apps/web/src/store/visitStore.ts`: `VisitToothTreatmentRecord` structured storage (`visitToothRecordsByCode`), `undoStack`/`redoStack` with 50-snapshot ceiling, `pushVisitSnapshot`, `undoVisit`, `redoVisit`, `canUndo`/`canRedo`.
+  - `apps/web/src/components/visit/emk/EmkToolbar.tsx`: `Undo2` / `Redo2` 1-click buttons (`btn-visit-undo`, `btn-visit-redo`), global shortcuts `Ctrl+Z` / `Cmd+Z` and `Ctrl+Shift+Z` / `Ctrl+Y` with input isolation.
+  - `apps/web/src/components/visit/emk/EmkDiaryProtocolSection.tsx`: express protocols and ICD-10 chips preserve multi-tooth diagnoses and push undo snapshots.
+  - `apps/web/src/components/visit/view/VisitClinicalToothModal.tsx`: Black cavity classification pills (`O`, `MO`, `OD`, `MOD`, `V`) in center panel, cavity passed to diagnosis and filling plans.
+  - `apps/web/src/lib/clinicalProtocols043.ts`: `mergeIcd10` concatenates distinct tooth ICD-10 codes with `; ` and replaces Z01.2 norm upon pathology.
+  - Unit tests: `apps/web/src/components/visit/__tests__/multiToothIntegrityAndUndo.test.ts` (10/10 passing).
+  - Screenshots: `docs/screenshots/inquisition_live/proof_multi_tooth_visit_undo_light.png`, `proof_multi_tooth_visit_undo_dark.png`, `proof_emk_toolbar_undo_buttons_light.png`, `proof_emk_toolbar_undo_buttons_dark.png`, `proof_clinical_modal_cavity_buttons_dark.png`.
+- **Verify:** `npx tsx --test apps/web/src/components/visit/__tests__/multiToothIntegrityAndUndo.test.ts` exit 0 (10/10 passing); `npm run check:encoding` exit 0 (7376 files clean).
+
 ## 2026-09-28 — In-App Clinical Guidance, Keyboard Shortcuts Overlay & Contextual Help Drawers (? / F1, Tier 2 Ergonomics)
 
 - **Gap:** Doctors and receptionists faced a learning curve on complex keyboard workflows (FDI tooth chart navigation, fast 2-click status marking, 3-click cashier splits, autoclave batch tagging, secondary tablet LAN pairing). Existing documentation was in external markdown files; in-app guidance lacked a unified keyboard shortcuts overlay and 0-click contextual cheat sheets, risking doctor cognitive overload or reliance on blocking manuals.

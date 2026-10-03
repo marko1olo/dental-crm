@@ -8,6 +8,13 @@ import {
 	type ChairsideSmartProtocolKey,
 } from "../clinicalVisitWorkflow";
 import { showToast } from "../../GlobalToast";
+import { useVisitStore } from "../../../store/visitStore";
+import {
+	mergeMultiToothDiagnoses,
+	mergeMultiToothObjective,
+	mergeMultiToothTreatmentPlan,
+	sanitizeClinicalNormContradictions,
+} from "../../../utils/clinicalTextSanitizer";
 
 export interface EmkDiaryProtocolSectionProps extends EmkSectionProps {
 	onOpenTemplatesModal?: () => void;
@@ -59,20 +66,93 @@ export function EmkDiaryProtocolSection({
 	];
 
 	const handleApplyExpressProtocol = (key: ChairsideSmartProtocolKey) => {
+		useVisitStore.getState().pushVisitSnapshot(`Экспресс-протокол: ${key}`);
 		const smart = buildChairsideSmartProtocol(key, activeTooth ?? undefined, { isLocked });
-		updateVisitNoteField("diagnosis", smart.diagnosis);
-		updateVisitNoteField("complaint", smart.complaint);
-		updateVisitNoteField("anamnesis", smart.anamnesis);
-		updateVisitNoteField("objectiveStatus", smart.objectiveStatus);
-		updateVisitNoteField("treatmentPlan", smart.treatmentPlan);
-		if (smart.recommendations) {
-			updateVisitNoteField("recommendations", smart.recommendations);
+
+		if (activeTooth) {
+			const nextDiagnosis = mergeMultiToothDiagnoses(visitNoteForm?.diagnosis || "", {
+				toothNumber: activeTooth,
+				icd10: smart.code,
+				diagnosis: smart.diagnosis,
+			});
+			const nextObjective = mergeMultiToothObjective(visitNoteForm?.objectiveStatus || "", {
+				toothNumber: activeTooth,
+				content: smart.objectiveStatus,
+			});
+			const nextPlan = mergeMultiToothTreatmentPlan(visitNoteForm?.treatmentPlan || "", {
+				toothNumber: activeTooth,
+				content: smart.treatmentPlan,
+			});
+
+			updateVisitNoteField("diagnosis", nextDiagnosis);
+			updateVisitNoteField("objectiveStatus", nextObjective);
+			updateVisitNoteField("treatmentPlan", nextPlan);
+
+			// Жалобы: объединяем и убираем артефакты нормы
+			const curComplaint = visitNoteForm?.complaint || "";
+			if (!curComplaint.trim()) {
+				updateVisitNoteField("complaint", smart.complaint);
+			} else if (!curComplaint.includes(`Зуб ${activeTooth}`)) {
+				const sanitizedComplaint = sanitizeClinicalNormContradictions(`${curComplaint};\n${smart.complaint}`);
+				updateVisitNoteField("complaint", sanitizedComplaint);
+			}
+
+			// Анамнез
+			const curAnamnesis = visitNoteForm?.anamnesis || "";
+			if (!curAnamnesis.trim()) {
+				updateVisitNoteField("anamnesis", smart.anamnesis);
+			}
+
+			if (smart.recommendations) {
+				const curRec = visitNoteForm?.recommendations || "";
+				if (!curRec.trim()) {
+					updateVisitNoteField("recommendations", smart.recommendations);
+				} else if (!curRec.includes(smart.recommendations.slice(0, 20))) {
+					updateVisitNoteField("recommendations", `${curRec}\n${smart.recommendations}`);
+				}
+			}
+
+			// Сохраняем структурированную запись зуба в visitStore
+			useVisitStore.getState().setVisitToothRecord(String(activeTooth), {
+				toothNumber: activeTooth,
+				diagnosis: smart.diagnosis,
+				diagnosisIcd10: smart.code,
+				state: "treatment",
+			});
+		} else {
+			updateVisitNoteField("diagnosis", smart.diagnosis);
+			updateVisitNoteField("complaint", smart.complaint);
+			updateVisitNoteField("anamnesis", smart.anamnesis);
+			updateVisitNoteField("objectiveStatus", smart.objectiveStatus);
+			updateVisitNoteField("treatmentPlan", smart.treatmentPlan);
+			if (smart.recommendations) {
+				updateVisitNoteField("recommendations", smart.recommendations);
+			}
 		}
+
 		showToast(`Умный протокол: ${smart.title} применён к дневнику`, "success", 2500);
 	};
 
 	const handleSelectIcd10 = (chip: { code: string; label: string }, autoSoap: boolean = false) => {
-		updateVisitNoteField("diagnosis", chip.label);
+		useVisitStore.getState().pushVisitSnapshot(`МКБ-10: ${chip.code}`);
+
+		if (activeTooth) {
+			const nextDiagnosis = mergeMultiToothDiagnoses(visitNoteForm?.diagnosis || "", {
+				toothNumber: activeTooth,
+				icd10: chip.code,
+				diagnosis: chip.label,
+			});
+			updateVisitNoteField("diagnosis", nextDiagnosis);
+
+			useVisitStore.getState().setVisitToothRecord(String(activeTooth), {
+				toothNumber: activeTooth,
+				diagnosis: chip.label,
+				diagnosisIcd10: chip.code,
+				state: "treatment",
+			});
+		} else {
+			updateVisitNoteField("diagnosis", chip.label);
+		}
 
 		let complaint = "";
 		let anamnesis = "";
@@ -112,7 +192,12 @@ export function EmkDiaryProtocolSection({
 
 		// При явном запросе на autoSoap или если поля еще пустые — заполняем разделы дневника
 		if (complaint && (autoSoap || !visitNoteForm?.complaint?.trim())) {
-			updateVisitNoteField("complaint", complaint);
+			if (activeTooth && visitNoteForm?.complaint?.trim()) {
+				const merged = sanitizeClinicalNormContradictions(`${visitNoteForm.complaint};\n${complaint}`);
+				updateVisitNoteField("complaint", merged);
+			} else {
+				updateVisitNoteField("complaint", complaint);
+			}
 			fieldsUpdatedCount++;
 		}
 		if (anamnesis && (autoSoap || !visitNoteForm?.anamnesis?.trim())) {
@@ -120,11 +205,27 @@ export function EmkDiaryProtocolSection({
 			fieldsUpdatedCount++;
 		}
 		if (objectiveStatus && (autoSoap || !visitNoteForm?.objectiveStatus?.trim())) {
-			updateVisitNoteField("objectiveStatus", objectiveStatus);
+			if (activeTooth) {
+				const nextObj = mergeMultiToothObjective(visitNoteForm?.objectiveStatus || "", {
+					toothNumber: activeTooth,
+					content: objectiveStatus,
+				});
+				updateVisitNoteField("objectiveStatus", nextObj);
+			} else {
+				updateVisitNoteField("objectiveStatus", objectiveStatus);
+			}
 			fieldsUpdatedCount++;
 		}
 		if (treatmentPlan && (autoSoap || !visitNoteForm?.treatmentPlan?.trim())) {
-			updateVisitNoteField("treatmentPlan", treatmentPlan);
+			if (activeTooth) {
+				const nextPlan = mergeMultiToothTreatmentPlan(visitNoteForm?.treatmentPlan || "", {
+					toothNumber: activeTooth,
+					content: treatmentPlan,
+				});
+				updateVisitNoteField("treatmentPlan", nextPlan);
+			} else {
+				updateVisitNoteField("treatmentPlan", treatmentPlan);
+			}
 			fieldsUpdatedCount++;
 		}
 		if (recommendations && (autoSoap || !visitNoteForm?.recommendations?.trim())) {

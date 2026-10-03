@@ -866,8 +866,17 @@ export function mergeSoapDiaryState(
 		const curTrim = (currentIcd ?? "").trim();
 		const nextTrim = (nextIcd ?? "").trim();
 		if (!curTrim) return nextTrim;
+		if (!nextTrim) return curTrim;
 		if (strategy === "fill_blanks_only") return curTrim;
-		return curTrim; // Код МКБ оставляем основным первым кодом
+		// Если текущий код был нормой Z01, а пришла патология — вытесняем норму патологией
+		if (curTrim.toUpperCase().startsWith("Z01") && !nextTrim.toUpperCase().startsWith("Z01")) {
+			return nextTrim;
+		}
+		// Объединяем уникальные коды МКБ через точку с запятой
+		const existingCodes = curTrim.split(/[;,]/).map((c) => c.trim()).filter(Boolean);
+		const newCodes = nextTrim.split(/[;,]/).map((c) => c.trim()).filter(Boolean);
+		const allCodes = Array.from(new Set([...existingCodes, ...newCodes]));
+		return allCodes.join("; ");
 	};
 
 	return {
