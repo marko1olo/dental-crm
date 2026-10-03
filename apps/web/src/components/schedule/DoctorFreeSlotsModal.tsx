@@ -6,6 +6,8 @@ import {
 	X,
 	Sparkles,
 	Sun,
+	Armchair,
+	User,
 } from "lucide-react";
 import type { Dashboard, DentalSpecialty } from "@dental/shared";
 import {
@@ -36,13 +38,19 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 		);
 	}, [dashboard?.clinicSettings?.staff]);
 
+	const clinicChairs = useMemo(() => {
+		return (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active !== false);
+	}, [dashboard?.clinicSettings?.chairs]);
+
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(
-		initialDoctorId || staffDoctors[0]?.id || "",
+		initialDoctorId || "",
 	);
-	const [horizonDays, setHorizonDays] = useState<7 | 14>(7);
+	const [selectedChairId, setSelectedChairId] = useState<string>("");
+	const [horizonDays, setHorizonDays] = useState<number>(7);
 	const [durationMinutes, setDurationMinutes] = useState<number>(60);
 	const [timeOfDayFilter, setTimeOfDayFilter] = useState<TimeOfDayFilter>("all");
 	const [startDateOffsetDays, setStartDateOffsetDays] = useState<number>(0);
+	const [activeRangeLabel, setActiveRangeLabel] = useState<string>("На этой неделе");
 
 	const activeStartDateIso = useMemo(() => {
 		const now = new Date();
@@ -55,6 +63,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 	const freeSlotsByDay = useMemo(() => {
 		return findDoctorFreeSlots({
 			doctorId: selectedDoctorId || undefined,
+			chairId: selectedChairId || undefined,
 			startDate: activeStartDateIso,
 			horizonDays,
 			durationMinutes,
@@ -63,10 +72,11 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 			chairs: dashboard?.clinicSettings?.chairs ?? [],
 			clinicStartHour: 9,
 			clinicEndHour: 20,
-			stepMinutes: 30,
+			stepMinutes: durationMinutes <= 30 ? 15 : 30,
 		});
 	}, [
 		selectedDoctorId,
+		selectedChairId,
 		activeStartDateIso,
 		horizonDays,
 		durationMinutes,
@@ -82,57 +92,121 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 	if (!isOpen) return null;
 
 	const selectedDoctor = staffDoctors.find((d) => d.id === selectedDoctorId);
+	const selectedChair = clinicChairs.find((c) => c.id === selectedChairId);
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-			<div className="w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)]">
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs select-none"
+			data-testid="doctor-free-slots-modal"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Подбор свободных окон расписания"
+		>
+			<div className="w-full max-w-4xl max-h-[92vh] rounded-3xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)]">
 				{/* Header */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between">
+				<div className="px-4 sm:px-6 py-4 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] flex items-center justify-center border border-[var(--teal,var(--brand-primary))]/30">
-							<Search className="w-5 h-5" />
+						<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] flex items-center justify-center border border-[var(--teal,var(--brand-primary))]/30 shrink-0">
+							<Search className="w-4 h-4" />
 						</div>
 						<div>
-							<h2 className="text-base sm:text-lg font-bold m-0 flex items-center gap-2">
-								Поиск свободных окон у врача
+							<h2 className="text-base font-bold m-0 flex items-center gap-2">
+								Умный подбор времени и свободных окон
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Сканирование расписания на {horizonDays} дней вперед • Найдено окон: {totalSlotsCount}
+								{activeRangeLabel} ({horizonDays} дн.) • Найдено вариантов: <strong>{totalSlotsCount}</strong>
 							</p>
 						</div>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
-						aria-label="Закрыть окно поиска свободных окон"
+						className="h-8 w-8 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
+						aria-label="Закрыть окно подбора окон"
+						data-testid="btn-close-free-slots-modal"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</div>
 
 				{/* Filters Section */}
-				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3">
-					{/* Doctor chips */}
+				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3.5">
+					{/* 1. Quick Range Bar: [ Сегодня ] [ Завтра ] [ Ближайшие 3 дня ] [ На этой неделе ] [ +14 дней ] [ +1 месяц ] */}
 					<div className="space-y-1.5">
-						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
-							Выберите врача:
+						<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+							<Calendar size={13} className="text-[var(--teal,var(--brand-primary))]" />
+							Диапазон поиска:
 						</span>
-						<div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+						<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+							{[
+								{ label: "Сегодня", offset: 0, horizon: 1 },
+								{ label: "Завтра", offset: 1, horizon: 1 },
+								{ label: "Ближайшие 3 дня", offset: 0, horizon: 3 },
+								{ label: "На этой неделе", offset: 0, horizon: 7 },
+								{ label: "+ Через 14 дней", offset: 14, horizon: 7 },
+								{ label: "+ Через 1 месяц (30 дн.)", offset: 30, horizon: 7 },
+							].map((r) => {
+								const isSelected = activeRangeLabel === r.label;
+								return (
+									<button
+										key={r.label}
+										type="button"
+										onClick={() => {
+											setActiveRangeLabel(r.label);
+											setStartDateOffsetDays(r.offset);
+											setHorizonDays(r.horizon);
+										}}
+										className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1 whitespace-nowrap shadow-2xs ${
+											isSelected
+												? "border border-transparent font-bold"
+												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
+										}`}
+										style={isSelected ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										data-testid={`quick-range-btn-${r.offset}-${r.horizon}`}
+									>
+										<span>{r.label}</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* 2. Doctor selection: [ Любой врач ] [ Д-р ... ] */}
+					<div className="space-y-1.5">
+						<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+							<User size={13} className="text-[var(--teal,var(--brand-primary))]" />
+							Врач:
+						</span>
+						<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+							<button
+								type="button"
+								onClick={() => setSelectedDoctorId("")}
+								className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
+									selectedDoctorId === ""
+										? "border border-transparent font-bold"
+										: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
+								}`}
+								style={selectedDoctorId === "" ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+								data-testid="filter-doc-any"
+							>
+								Любой врач клиники
+							</button>
 							{staffDoctors.map((doc) => (
 								<button
 									key={doc.id}
 									type="button"
 									onClick={() => setSelectedDoctorId(doc.id)}
-									className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+									className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
 										selectedDoctorId === doc.id
-											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
+											? "border border-transparent font-bold"
 											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
 									}`}
+									style={selectedDoctorId === doc.id ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+									data-testid={`filter-doc-${doc.id}`}
 								>
 									{doc.fullName}
 									{doc.specialties?.[0] && (
-										<span className="ml-1 opacity-75 font-normal">
+										<span className={`ml-1 font-normal ${selectedDoctorId === doc.id ? "opacity-85" : "opacity-75"}`}>
 											({specialtyLabels[doc.specialties[0] as DentalSpecialty] || doc.specialties[0]})
 										</span>
 									)}
@@ -141,78 +215,69 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 						</div>
 					</div>
 
-					{/* Quick Repeat Jump Presets: [+ Через 7 дней], [+ Через 14 дней], [+ Через 1 месяц] */}
-					<div className="space-y-1.5">
-						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
-							Быстрый переход на повторный прием:
-						</span>
-						<div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-							{[
-								{ offset: 0, label: "С сегодня" },
-								{ offset: 7, label: "+ Через 7 дней" },
-								{ offset: 14, label: "+ Через 14 дней" },
-								{ offset: 30, label: "+ Через 1 месяц (30 дн.)" },
-							].map((p) => (
-								<button
-									key={p.offset}
-									type="button"
-									onClick={() => setStartDateOffsetDays(p.offset)}
-									className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-										startDateOffsetDays === p.offset
-											? "bg-[var(--teal-dark,var(--teal))] text-white shadow-sm border border-[var(--teal,var(--brand-primary))]"
-											: "border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))]"
-									}`}
-								>
-									<Calendar size={13} />
-									<span>{p.label}</span>
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Horizon & Duration & Time of Day */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-						{/* Horizon */}
-						<div className="space-y-1">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Calendar size={13} className="text-[var(--teal,var(--brand-primary))]" /> Горизонт поиска:
+					{/* 3. Chair selection: [ Любое кресло ] [ Кресло 1 ] ... */}
+					{clinicChairs.length > 1 && (
+						<div className="space-y-1.5">
+							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+								<Armchair size={13} className="text-[var(--teal,var(--brand-primary))]" />
+								Установка / Кресло:
 							</span>
-							<div className="flex gap-1.5">
-								{[7, 14].map((h) => (
+							<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+								<button
+									type="button"
+									onClick={() => setSelectedChairId("")}
+									className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
+										selectedChairId === ""
+											? "border border-transparent font-bold"
+											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
+									}`}
+									style={selectedChairId === "" ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+									data-testid="filter-chair-any"
+								>
+									Любое свободное кресло
+								</button>
+								{clinicChairs.map((chair) => (
 									<button
-										key={h}
+										key={chair.id}
 										type="button"
-										onClick={() => setHorizonDays(h as 7 | 14)}
-										className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-											horizonDays === h
-												? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+										onClick={() => setSelectedChairId(chair.id)}
+										className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
+											selectedChairId === chair.id
+												? "border border-transparent font-bold"
+												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
 										}`}
+										style={selectedChairId === chair.id ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										data-testid={`filter-chair-${chair.id}`}
 									>
-										{h} дней
+										{chair.name}
 									</button>
 								))}
 							</div>
 						</div>
+					)}
 
-						{/* Duration */}
+					{/* 4. Duration chips & Time of Day */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+						{/* Duration Chips: [ 15 мин ] [ 30 мин ] [ 45 мин ] [ 60 мин ] [ 90 мин ] [ 120 мин ] */}
 						<div className="space-y-1">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Clock size={13} className="text-[var(--teal,var(--brand-primary))]" /> Длительность приема:
+							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
+								<Clock size={13} className="text-[var(--teal,var(--brand-primary))]" /> Длительность приёма:
 							</span>
 							<div className="flex gap-1">
-								{[30, 45, 60, 90, 120].map((dur) => (
+								{[15, 30, 45, 60, 90, 120].map((dur) => (
 									<button
 										key={dur}
 										type="button"
 										onClick={() => setDurationMinutes(dur)}
-										className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+										className={`h-7 flex-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
 											durationMinutes === dur
-												? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+												? "border border-transparent font-bold"
+												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
 										}`}
+										style={durationMinutes === dur ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										data-testid={`duration-chip-${dur}`}
 									>
-										{dur}&apos;
+										{dur}м
 									</button>
 								))}
 							</div>
@@ -220,7 +285,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 
 						{/* Time of Day */}
 						<div className="space-y-1">
-							<span className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
+							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
 								<Sun size={13} className="text-[var(--teal,var(--brand-primary))]" /> Время суток:
 							</span>
 							<div className="flex gap-1">
@@ -236,11 +301,13 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 										key={t.id}
 										type="button"
 										onClick={() => setTimeOfDayFilter(t.id)}
-										className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+										className={`h-7 flex-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
 											timeOfDayFilter === t.id
-												? "bg-[var(--teal,var(--brand-primary))] text-white shadow-sm"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+												? "border border-transparent font-bold"
+												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
 										}`}
+										style={timeOfDayFilter === t.id ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										data-testid={`tod-filter-${t.id}`}
 									>
 										{t.label}
 									</button>
@@ -251,68 +318,77 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 				</div>
 
 				{/* Results Body */}
-				<div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+				<div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3.5 [scrollbar-width:thin]">
 					{totalSlotsCount === 0 ? (
 						<div className="py-12 text-center text-[var(--muted,#64748b)] space-y-2">
 							<Sparkles className="w-8 h-8 mx-auto text-slate-400 opacity-60" />
 							<p className="text-sm font-medium">Нет свободных окон по заданным критериям.</p>
-							<p className="text-xs">Попробуйте уменьшить длительность приема или сменить фильтр времени.</p>
+							<p className="text-xs">Попробуйте уменьшить длительность приёма или выбрать другой диапазон дат.</p>
 						</div>
 					) : (
 						freeSlotsByDay.map((day) => (
 							<div
 								key={day.date}
-								className={`p-4 rounded-2xl border space-y-2.5 ${
+								className={`p-3.5 rounded-2xl border space-y-2.5 ${
 									day.isDayOff
-										? "bg-[var(--paper-soft,#f8fafc)]/60 border-[var(--line,#e2e8f0)] opacity-80"
+										? "bg-[var(--paper-soft,#f8fafc)]/60 border-[var(--line,#e2e8f0)] opacity-75"
 										: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)]"
 								}`}
 							>
-								<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2">
+								<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-1.5">
 									<div className="flex items-center gap-2">
-										<span className="text-sm font-bold text-[var(--ink,#0f172a)]">
+										<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 											{day.dateFormatted}
 										</span>
 										{day.isDayOff && (
-											<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+											<span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
 												{day.dayOffReason || "Выходной"}
 											</span>
 										)}
 									</div>
-									<span className="text-xs font-semibold text-[var(--teal-dark,var(--teal))]">
-										{day.isDayOff ? "—" : `Свободно слотов: ${day.slots.length}`}
+									<span className="text-[11px] font-semibold text-[var(--teal-dark,var(--teal))]">
+										{day.isDayOff ? "—" : `Свободно окон: ${day.slots.length}`}
 									</span>
 								</div>
 
 								{day.isDayOff ? (
-									<div className="py-2 text-xs text-[var(--muted,#64748b)] italic">
-										Прием не ведется в этот день (выходной)
+									<div className="py-1.5 text-xs text-[var(--muted,#64748b)] italic">
+										Приём не ведётся в этот день
 									</div>
 								) : day.slots.length === 0 ? (
-									<div className="py-2 text-xs text-[var(--muted,#64748b)] italic">
+									<div className="py-1.5 text-xs text-[var(--muted,#64748b)] italic">
 										Все окна на этот день заняты
 									</div>
 								) : (
 									<div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
-										{day.slots.map((slot, sIdx) => (
-											<button
-												key={`${slot.date}-${slot.startTime}-${sIdx}`}
-												type="button"
-												onClick={() => {
-													onSelectSlot(slot);
-													onClose();
-												}}
-												className="min-h-[44px] p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:border-[var(--teal,var(--brand-primary))] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer shadow-xs group"
-												title={`Записать на ${slot.timeDisplay} (${slot.chairName})`}
-											>
-												<span className="font-mono text-xs group-hover:scale-105 transition-transform">
-													{slot.timeDisplay}
-												</span>
-												<span className="text-[10px] text-[var(--muted,#64748b)] font-normal truncate max-w-full">
-													{slot.chairName}
-												</span>
-											</button>
-										))}
+										{day.slots.map((slot, sIdx) => {
+											const slotDoc = staffDoctors.find((d) => d.id === slot.doctorId);
+											return (
+												<button
+													key={`${slot.date}-${slot.startTime}-${slot.chairId}-${sIdx}`}
+													type="button"
+													onClick={() => {
+														onSelectSlot(slot);
+														onClose();
+													}}
+													className="p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--paper,#ffffff)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:border-[var(--teal,var(--brand-primary))] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer shadow-2xs group"
+													title={`Записать на ${slot.timeDisplay} • ${slotDoc?.fullName || "Врач клиники"} (${slot.chairName})`}
+													data-testid={`free-slot-card-${slot.date}-${slot.startTime}`}
+												>
+													<span className="font-mono text-xs group-hover:scale-105 transition-transform text-[var(--ink)]">
+														{slot.timeDisplay}
+													</span>
+													<span className="text-[10px] text-[var(--muted,#64748b)] font-normal truncate max-w-full mt-0.5">
+														{slot.chairName}
+													</span>
+													{(!selectedDoctorId || !selectedDoctor) && slotDoc && (
+														<span className="text-[9px] text-[var(--teal)] font-medium truncate max-w-full">
+															{slotDoc.fullName.split(" ")[0]}
+														</span>
+													)}
+												</button>
+											);
+										})}
 									</div>
 								)}
 							</div>
@@ -321,14 +397,14 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 				</div>
 
 				{/* Footer */}
-				<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between">
-					<div className="text-xs text-[var(--muted,#64748b)]">
-						Врач: <strong>{selectedDoctor?.fullName || "Все врачи"}</strong> • Длительность: <strong>{durationMinutes} мин</strong>
+				<div className="px-5 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs">
+					<div className="text-[var(--muted,#64748b)]">
+						Врач: <strong>{selectedDoctor?.fullName || "Любой врач"}</strong> • Кресло: <strong>{selectedChair?.name || "Любое кресло"}</strong> • Длительность: <strong>{durationMinutes} мин</strong>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] text-xs font-bold cursor-pointer"
+						className="h-8 px-4 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)] text-xs font-semibold cursor-pointer"
 					>
 						Закрыть
 					</button>
@@ -337,4 +413,3 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 		</div>
 	);
 };
-

@@ -11,6 +11,7 @@ import {
 	Phone,
 	Printer,
 	Scan,
+	Sparkles,
 	UserX,
 	XCircle,
 } from "lucide-react";
@@ -351,7 +352,7 @@ export function AppointmentCardContextMenu({
 							data-testid="appointment-card-refusal-reasons-dropdown"
 						>
 							<div className="text-[10px] font-bold text-rose-800 dark:text-rose-200 uppercase tracking-wider px-1">
-								Причины отмены (StomX):
+								Причины отмены:
 							</div>
 							{STOMX_REFUSE_REASONS_CATALOG.map((refuse) => (
 								<button
@@ -383,6 +384,24 @@ export function AppointmentCardContextMenu({
 							))}
 						</div>
 					)}
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating}
+						className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors flex items-center justify-between cursor-pointer disabled:opacity-40"
+						role="menuitem"
+						data-testid="appointment-card-free-to-waitlist-btn"
+						onClick={() => {
+							setIsCardMenuOpen(false);
+							void handleQuickStatusChange("cancelled", "Освобождено под лист ожидания");
+						}}
+						title="Отменить приём и сразу подобрать пациента из листа ожидания (DentalPRO & StomX parity)"
+					>
+						<div className="flex items-center gap-2">
+							<Sparkles size={14} className="text-[var(--teal)] shrink-0" />
+							<span>В лист ожидания (отмена)</span>
+						</div>
+						<span className="text-[10px] font-bold text-[var(--teal)]">Авто</span>
+					</button>
 					<button
 						type="button"
 						disabled={isQuickStatusUpdating}

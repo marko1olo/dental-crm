@@ -1,4 +1,5 @@
-import type { Appointment } from "@dental/shared";
+import type { Appointment, AppointmentLabStatusInfo, AppointmentLabBadgeState } from "@dental/shared";
+import { evaluateAppointmentLabStatus } from "@dental/shared";
 import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 
 export interface DoctorSpecialtyTheme {
@@ -461,6 +462,68 @@ export interface ClinicalBadgeItem {
 }
 
 /**
+ * Вычисляет клинический статус наряда ЗТЛ для расписания и визита:
+ * - «Поступил в клинику» (ready_in_clinic: зеленый/emerald)
+ * - «Просрочен» (overdue: красный/rose с числом дней задержки)
+ * - «В лаборатории» (in_lab: желтый/amber)
+ */
+export function resolveAppointmentLabStatus(
+	appointment?: Appointment | null,
+	explicitLabOrder?: any,
+	referenceDate: Date | string = new Date(),
+): AppointmentLabStatusInfo | null {
+	if (!appointment && !explicitLabOrder) return null;
+
+	if (
+		explicitLabOrder &&
+		typeof explicitLabOrder === "object" &&
+		"state" in explicitLabOrder &&
+		"badgeClass" in explicitLabOrder
+	) {
+		return explicitLabOrder as AppointmentLabStatusInfo;
+	}
+
+	const candidate =
+		explicitLabOrder ||
+		(appointment as any)?.labOrder ||
+		((appointment as any)?.labOrderId ||
+		(appointment as any)?.labWorkTitle ||
+		(appointment as any)?.labDueDate ||
+		(appointment as any)?.labStatus
+			? {
+					id: (appointment as any)?.labOrderId,
+					orderNumber: (appointment as any)?.labOrderNumber,
+					patientId: appointment?.patientId,
+					toothFdi: (appointment as any)?.toothNumber || (appointment as any)?.tooth,
+					workType: (appointment as any)?.labWorkTitle || (appointment as any)?.labWorkType,
+					material: (appointment as any)?.labMaterial,
+					colorVita: (appointment as any)?.colorVita || (appointment as any)?.vitaShade,
+					dueDate: (appointment as any)?.labDueDate || (appointment as any)?.expectedLabDeliveryDate,
+					status: (appointment as any)?.labStatus,
+					stage: (appointment as any)?.labStage,
+					receivedDate: (appointment as any)?.labReceivedDate,
+				}
+			: null);
+
+	if (candidate) {
+		return evaluateAppointmentLabStatus(candidate, referenceDate);
+	}
+
+	const reason = (appointment?.reason || "").toLowerCase();
+	if (/лаборат|наряд|слепок|коронк|протез|вкладк|примерк/i.test(reason)) {
+		return evaluateAppointmentLabStatus(
+			{
+				status: /готов|сдач|поступ/i.test(reason) ? "ready_in_clinic" : "in_progress",
+				workType: appointment?.reason ?? null,
+			},
+			referenceDate,
+		);
+	}
+
+	return null;
+}
+
+/**
  * Resolves the 17 canonical clinical badges from DentalPRO expo26 (schi-1 .. schi-17):
  * 1.  schi-1:  ❄️ Somatic/Allergy alert
  * 2.  schi-2:  ⭐ Primary patient / first consultation
@@ -485,6 +548,7 @@ export function resolveAppointmentClinicalBadges(
 	patient?: any,
 	balance?: number | null,
 	allergyAlert?: string | null,
+	explicitLabOrder?: any,
 ): ClinicalBadgeItem[] {
 	if (!appointment) return [];
 	const badges: ClinicalBadgeItem[] = [];
@@ -544,8 +608,8 @@ export function resolveAppointmentClinicalBadges(
 			id: "consent",
 			schiCode: "schi-4",
 			icon: "📝",
-			labelRu: "ИДС 1051н",
-			title: "Информированное добровольное согласие (ИДС 1051н) подписано",
+			labelRu: "ИДС",
+			title: "Информированное добровольное согласие (ИДС) подписано",
 			badgeClass: "bg-cyan-500/15 text-cyan-800 dark:text-cyan-200 border-cyan-500/30",
 		});
 	}
@@ -590,19 +654,20 @@ export function resolveAppointmentClinicalBadges(
 		});
 	}
 
-	// 8. schi-8: 🦷 Lab work order
-	const hasLabOrder =
-		Boolean((appointment as any)?.labOrderId) ||
-		Boolean((appointment as any)?.labWorkTitle) ||
-		/лаборат|наряд|слепок|коронк|протез|вкладк/i.test(reason);
-	if (hasLabOrder) {
+	// 8. schi-8: 🦷 Lab work order & clinical status (В лаборатории / Поступил в клинику / Просрочен)
+	const labStatus = resolveAppointmentLabStatus(appointment, explicitLabOrder);
+	if (labStatus) {
 		badges.push({
 			id: "lab_order",
 			schiCode: "schi-8",
-			icon: "🦷",
-			labelRu: "Лаборатория",
-			title: "К визиту прикреплен наряд зуботехнической лаборатории",
-			badgeClass: "bg-teal-500/15 text-teal-800 dark:text-teal-200 border-teal-500/30",
+			icon: labStatus.isOverdue ? "⚠️" : labStatus.state === "ready_in_clinic" ? "🦷" : "⏳",
+			labelRu: labStatus.isOverdue ? `ЗТЛ: +${labStatus.daysOverdue}д!` : labStatus.shortLabelRu,
+			title: `ЗТЛ: ${labStatus.labelRu} (${labStatus.orderNumber || "Наряд"}). ${
+				labStatus.workTypeRu ? `Изделие: ${labStatus.workTypeRu}. ` : ""
+			}${labStatus.colorVita ? `Цвет VITA: ${labStatus.colorVita}. ` : ""}${
+				labStatus.dueDateIso ? `Срок: ${labStatus.dueDateIso.slice(0, 10)}` : ""
+			}`.trim(),
+			badgeClass: labStatus.badgeClass,
 		});
 	}
 

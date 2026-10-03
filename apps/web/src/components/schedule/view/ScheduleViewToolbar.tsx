@@ -32,6 +32,8 @@ export interface ScheduleViewToolbarProps {
   isSmartAiOpen: boolean;
   setIsSmartAiOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setDoctorFreeSlotsOpen: (open: boolean) => void;
+  onOpenPreventiveInspection?: () => void;
+  preventiveInspectionCount?: number;
   setIsPatientSearchOpen: (open: boolean) => void;
   handleEmergencyCitoBooking: () => void;
   showShiftAnalytics: boolean;
@@ -83,6 +85,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
     isSmartAiOpen,
     setIsSmartAiOpen,
     setDoctorFreeSlotsOpen,
+    onOpenPreventiveInspection,
+    preventiveInspectionCount,
     setIsPatientSearchOpen,
     handleEmergencyCitoBooking,
     showShiftAnalytics,
@@ -156,6 +160,8 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
         isSmartAiOpen={isSmartAiOpen}
         onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
         onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
+        onOpenPreventiveInspection={onOpenPreventiveInspection}
+        preventiveInspectionCount={preventiveInspectionCount}
         onOpenPatientSearch={() => setIsPatientSearchOpen(true)}
         onEmergencyCitoBooking={handleEmergencyCitoBooking}
         onToggleShiftAnalytics={() => setShowShiftAnalytics((prev) => !prev)}

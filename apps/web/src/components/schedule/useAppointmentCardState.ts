@@ -33,6 +33,7 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 		toDateTimeLocalValue,
 		activeVisitLockedAppointmentStatuses,
 		onOpenVisit,
+		onOpenWaitlistForSlot,
 	} = props;
 
 	const appointmentDoctor = (dashboard?.clinicSettings?.staff ?? []).find(
@@ -334,6 +335,35 @@ export function useAppointmentCardState(props: AppointmentCardProps) {
 						"success",
 						3000,
 					);
+					if (normalized === "cancelled") {
+						const slotInfo = {
+							appointmentId: appointment.id,
+							startsAt: appointment.startsAt,
+							endsAt: appointment.endsAt,
+							doctorUserId: appointment.doctorUserId,
+							doctorName: appointmentDoctor?.fullName || null,
+							chairId: appointment.chairId,
+							chairName: appointmentChair?.name || null,
+							patientId: appointment.patientId,
+							patientName: appointmentPatientName,
+							freedBecause: noteAppend || "Отмена приёма",
+							reason: appointment.reason,
+						};
+						if (onOpenWaitlistForSlot) {
+							onOpenWaitlistForSlot(slotInfo);
+							showToast(
+								"В листе ожидания есть пациенты на освободившееся время",
+								"info",
+								5000,
+							);
+						} else {
+							showToast(
+								`Приём отменён. Время ${appointment.startsAt ? appointment.startsAt.slice(11, 16) : ""} освобождено для записи`,
+								"info",
+								3000,
+							);
+						}
+					}
 					try {
 						broadcastVisitStatusChange({
 							visitId: appointment.id,

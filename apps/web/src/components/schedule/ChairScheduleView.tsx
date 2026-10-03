@@ -10,6 +10,9 @@ import {
 import { ChairDateRangeModal } from "./ChairDateRangeModal";
 import { ChairScheduleToolbar } from "./ChairScheduleToolbar";
 import { useChairScheduleState } from "./useChairScheduleState";
+import { DoctorFreeSlotsModal } from "./DoctorFreeSlotsModal";
+import { PreventiveInspectionModal } from "./PreventiveInspectionModal";
+import { findPreventiveInspectionCandidates } from "./doctorFreeSlotsEngine";
 
 // Transparent re-exports per Mandates 8b, 8e
 export * from "./ChairScheduleTypes";
@@ -18,6 +21,8 @@ export * from "./ChairShiftPopover";
 export * from "./useChairShiftOperations";
 export * from "./useChairScheduleState";
 export * from "./ChairScheduleToolbar";
+export * from "./DoctorFreeSlotsModal";
+export * from "./PreventiveInspectionModal";
 export { resolveChairDutyDoctor, useSchedule };
 
 export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
@@ -42,6 +47,17 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
   } = props;
 
   const state = useChairScheduleState(props);
+  const [isDoctorFreeSlotsOpen, setIsDoctorFreeSlotsOpen] = React.useState(false);
+  const [isPreventiveInspectionOpen, setIsPreventiveInspectionOpen] = React.useState(false);
+
+  const preventiveCandidatesCount = React.useMemo(() => {
+    return findPreventiveInspectionCandidates({
+      patients: dashboard?.patients ?? [],
+      appointments: appointments ?? dashboard?.appointments ?? [],
+      minDaysSinceVisit: 150,
+      referenceDate: dateKey || undefined,
+    }).length;
+  }, [dashboard?.patients, dashboard?.appointments, appointments, dateKey]);
 
   return (
     <div className="flex flex-col h-full w-full bg-[var(--paper)]">
@@ -85,6 +101,9 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
           handleClearAllDayShifts={state.handleClearAllDayShifts}
           onOpenRosterModal={onOpenRosterModal}
           setIsAddDoctorOpen={state.setIsAddDoctorOpen}
+          onOpenDoctorFreeSlots={() => setIsDoctorFreeSlotsOpen(true)}
+          onOpenPreventiveInspection={() => setIsPreventiveInspectionOpen(true)}
+          preventiveInspectionCount={preventiveCandidatesCount}
         />
       )}
 
@@ -202,6 +221,46 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
         rangePreset={state.rangePreset}
         setRangePreset={state.setRangePreset}
         onApply={state.handleApplyDateRange}
+      />
+
+      {/* 1-Click Free Windows Slot Finder (DentalPRO / IDENT parity) */}
+      <DoctorFreeSlotsModal
+        isOpen={isDoctorFreeSlotsOpen}
+        onClose={() => setIsDoctorFreeSlotsOpen(false)}
+        dashboard={dashboard as any}
+        initialDoctorId={selectedDoctorId}
+        onSelectSlot={(slot) => {
+          setIsDoctorFreeSlotsOpen(false);
+          const doc = state.doctors.find((d) => d.id === slot.doctorId);
+          state.handleSlotClick({
+            startsAt: slot.startsAtIso,
+            dateKey: slot.date,
+            startTime: slot.startTime,
+            doctorUserId: slot.doctorId || null,
+            doctorName: doc?.fullName,
+            chairId: slot.chairId,
+            durationMinutes: slot.durationMinutes,
+          });
+        }}
+      />
+
+      {/* Preventive Inspection & Warranty Control Modal (Mandate 8x & Mandate 8y) */}
+      <PreventiveInspectionModal
+        isOpen={isPreventiveInspectionOpen}
+        onClose={() => setIsPreventiveInspectionOpen(false)}
+        dashboard={dashboard as any}
+        onBookPatient={(candidate) => {
+          setIsPreventiveInspectionOpen(false);
+          state.handleSlotClick({
+            patientId: candidate.patientId,
+            patientName: candidate.patientFullName,
+            doctorUserId: candidate.lastDoctorId || null,
+            doctorName: candidate.lastDoctorName,
+            reason: candidate.recommendedProcedureName || candidate.categoryTitle,
+            dateKey: dateKey || new Date().toISOString().slice(0, 10),
+            durationMinutes: 45,
+          });
+        }}
       />
     </div>
   );

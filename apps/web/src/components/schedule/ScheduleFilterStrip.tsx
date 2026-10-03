@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair, UserCheck, CalendarCheck, CheckCircle2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair, UserCheck, CalendarCheck, CheckCircle2, ShieldCheck } from "lucide-react";
 import React, { type ReactElement, useState, useRef, useEffect, useMemo } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -63,7 +63,9 @@ export interface ScheduleFilterStripProps {
 	onQuickBooking?: () => void;
 	onToggleSmartAi?: () => void;
 	isSmartAiOpen?: boolean;
-	onOpenDoctorFreeSlots?: () => void;
+	onOpenDoctorFreeSlots?: (() => void) | undefined;
+	onOpenPreventiveInspection?: (() => void) | undefined;
+	preventiveInspectionCount?: number | undefined;
 	onOpenPatientSearch?: () => void;
 	onSelectWholeWeek?: () => void;
 	onEmergencyCitoBooking?: () => void;
@@ -147,6 +149,8 @@ export function ScheduleFilterStrip({
 	onToggleSmartAi,
 	isSmartAiOpen = false,
 	onOpenDoctorFreeSlots,
+	onOpenPreventiveInspection,
+	preventiveInspectionCount = 0,
 	onOpenPatientSearch,
 	onSelectWholeWeek,
 	onEmergencyCitoBooking,
@@ -417,7 +421,7 @@ export function ScheduleFilterStrip({
 					data-testid="schedule-day-queue-tabs"
 					data-queue-group="stomx-3-stage"
 					role="group"
-					aria-label="Оперативная очередь смены StomX"
+					aria-label="Оперативная очередь смены"
 				>
 					<button
 						type="button"
@@ -742,7 +746,7 @@ export function ScheduleFilterStrip({
 							className={`schedule-view-mode-btn ${
 								scheduleViewMode === "chairs" ? "active" : ""
 							}`}
-							title="Режим расписания по креслам (StomX паритет)"
+							title="Режим расписания по креслам"
 							aria-label="По креслам"
 							aria-pressed={scheduleViewMode === "chairs"}
 							data-testid="schedule-view-mode-chairs"
@@ -1004,17 +1008,17 @@ export function ScheduleFilterStrip({
 								}}
 								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 								role="menuitem"
-								title="Перейти на сводку смены и оперативные очереди (StomX Главная)"
+								title="Перейти на сводку смены и оперативные очереди"
 							>
 								<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
-								<span>Сводка смены (StomX Главная)</span>
+								<span>Оперативная сводка смены</span>
 							</button>
 
-							{/* StomX Shift Queue Statuses in Options Menu */}
+							{/* Shift Queue Statuses in Options Menu */}
 							{setScheduleStatusFilter && (
 								<div className="px-2 py-1.5 border-t border-[var(--line)] mt-1 pt-1.5">
 									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">
-										Очередь смены (StomX)
+										Очередь смены
 									</div>
 									<div className="grid grid-cols-2 gap-1">
 										<button
@@ -1253,7 +1257,7 @@ export function ScheduleFilterStrip({
 									) : scheduleViewMode === "grid" ? (
 										<>
 											<Armchair size={14} className="text-[var(--teal,var(--brand-primary))]" />
-											<span>По креслам (StomX)</span>
+											<span>По креслам</span>
 										</>
 									) : (
 										<>
@@ -1276,6 +1280,29 @@ export function ScheduleFilterStrip({
 								>
 									<Search size={14} className="text-[var(--teal,var(--brand-primary))]" />
 									<span>Свободные окна</span>
+								</button>
+							)}
+
+							{onOpenPreventiveInspection && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenPreventiveInspection();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+									role="menuitem"
+									data-testid="schedule-strip-preventive-inspection-btn"
+								>
+									<div className="flex items-center gap-2">
+										<ShieldCheck size={14} className="text-amber-600 dark:text-amber-400" />
+										<span>Осмотры по гарантии (6 мес.)</span>
+									</div>
+									{preventiveInspectionCount !== undefined && preventiveInspectionCount > 0 && (
+										<span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300">
+											{preventiveInspectionCount}
+										</span>
+									)}
 								</button>
 							)}
 

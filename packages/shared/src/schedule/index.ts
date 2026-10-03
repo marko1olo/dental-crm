@@ -8,5 +8,6 @@ export * from "./calDavTypes.js";
 export * from "./iCalGenerator.js";
 export * from "./patientShiftQueueTypes.js";
 export * from "./patientShiftQueueEngine.js";
+export * from "./freeIntervalsEngine.js";
+export * from "./preventiveInspectionEngine.js";
 export * from "../types/schedule.js";
-

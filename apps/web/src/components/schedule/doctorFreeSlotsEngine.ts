@@ -2,7 +2,25 @@
  * doctorFreeSlotsEngine.ts — Алгоритм быстрого поиска свободных окон у врача на 7–14 дней вперед.
  */
 
-import { type Appointment, areIntervalsOverlapping } from "@dental/shared";
+import {
+	type Appointment,
+	areIntervalsOverlapping,
+	findFreeScheduleIntervals,
+	type FreeScheduleInterval,
+	type FindFreeScheduleIntervalsParams,
+	findPreventiveInspectionCandidates,
+	type PreventiveInspectionCandidate,
+	type PreventiveInspectionCategory,
+} from "@dental/shared";
+
+export {
+	findFreeScheduleIntervals,
+	type FreeScheduleInterval,
+	type FindFreeScheduleIntervalsParams,
+	findPreventiveInspectionCandidates,
+	type PreventiveInspectionCandidate,
+	type PreventiveInspectionCategory,
+};
 
 export type TimeOfDayFilter = "all" | "morning" | "day" | "evening";
 
@@ -36,6 +54,7 @@ export interface DayFreeSlots {
 
 export interface FindDoctorFreeSlotsParams {
 	doctorId?: string | null | undefined;
+	chairId?: string | null | undefined;
 	startDate: string; // YYYY-MM-DD
 	horizonDays?: number | undefined; // 7 or 14
 	durationMinutes?: number | undefined; // 30, 45, 60, 90, 120
@@ -75,6 +94,7 @@ export function formatRussianDayHeader(dateStr: string): { dateFormatted: string
 export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeSlots[] {
 	const {
 		doctorId,
+		chairId,
 		startDate,
 		horizonDays = 7,
 		durationMinutes = 60,
@@ -89,7 +109,8 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 	} = params;
 
 	const activeChairs = chairs.filter((c) => c.active !== false);
-	const defaultChair = activeChairs[0] || { id: "chair-1", name: "Кабинет 1" };
+	const targetChairs = chairId ? activeChairs.filter((c) => c.id === chairId) : activeChairs;
+	const defaultChair = targetChairs[0] || activeChairs[0] || { id: "chair-1", name: "Кабинет 1" };
 
 	const activeAppointments = appointments.filter(
 		(a) => a.status !== "cancelled" && a.status !== "no_show",
@@ -196,7 +217,7 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 			}
 
 			// Find available chair using pre-parsed timestamps via SSOT engine
-			const availableChair = activeChairs.find((chair) => {
+			const availableChair = targetChairs.find((chair) => {
 				const hasChairConflict = parsedDayAppts.some(
 					(a) => a.chairId === chair.id && areIntervalsOverlapping(startMs, endMs, a.startMs, a.endMs),
 				);

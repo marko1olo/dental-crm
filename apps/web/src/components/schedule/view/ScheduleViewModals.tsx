@@ -3,6 +3,7 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import { QuickBookingDrawer, type QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import { AppointmentModal } from "../AppointmentModal";
 import { DoctorFreeSlotsModal } from "../DoctorFreeSlotsModal";
+import { PreventiveInspectionModal } from "../PreventiveInspectionModal";
 import { SlotConflictModal } from "../SlotConflictModal";
 import { UrgentScheduleRequestsWidget } from "../UrgentScheduleRequestsWidget";
 import { WaitlistDrawer, type TargetSlotInfo } from "../WaitlistDrawer";
@@ -28,6 +29,8 @@ export interface ScheduleViewModalsProps {
   setModalAppointment: (app: Appointment | null) => void;
   doctorFreeSlotsOpen: boolean;
   setDoctorFreeSlotsOpen: (open: boolean) => void;
+  preventiveInspectionOpen?: boolean | undefined;
+  setPreventiveInspectionOpen?: ((open: boolean) => void) | undefined;
   isRosterModalOpen: boolean;
   setIsRosterModalOpen: (open: boolean) => void;
   isQuickAddChairOpen: boolean;
@@ -90,6 +93,8 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
     setModalAppointment,
     doctorFreeSlotsOpen,
     setDoctorFreeSlotsOpen,
+    preventiveInspectionOpen,
+    setPreventiveInspectionOpen,
     isRosterModalOpen,
     setIsRosterModalOpen,
     isQuickAddChairOpen,
@@ -196,6 +201,27 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
           setQuickBookingOpen(true);
         }}
       />
+
+      {preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
+        <PreventiveInspectionModal
+          isOpen={preventiveInspectionOpen}
+          onClose={() => setPreventiveInspectionOpen(false)}
+          dashboard={dashboard as any}
+          onBookPatient={(candidate) => {
+            setPreventiveInspectionOpen(false);
+            setQuickBookingSlot({
+              patientId: candidate.patientId,
+              patientName: candidate.patientFullName,
+              doctorUserId: candidate.lastDoctorId || scheduleDoctorFilterId || null,
+              doctorName: candidate.lastDoctorName,
+              reason: candidate.recommendedProcedureName || candidate.categoryTitle,
+              dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+              durationMinutes: 45,
+            });
+            setQuickBookingOpen(true);
+          }}
+        />
+      )}
 
       <SlotConflictModal
         isOpen={Boolean((logicContext as any)?.slotConflict)}

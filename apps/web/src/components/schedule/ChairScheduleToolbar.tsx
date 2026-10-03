@@ -6,7 +6,9 @@ import {
   Layers,
   Pin,
   Plus,
+  Search,
   Settings2,
+  ShieldCheck,
   SlidersHorizontal,
   UserCheck,
   UserPlus,
@@ -62,6 +64,9 @@ export interface ChairScheduleToolbarProps {
   handleClearAllDayShifts: () => void;
   onOpenRosterModal?: (() => void) | undefined;
   setIsAddDoctorOpen: (open: boolean) => void;
+  onOpenDoctorFreeSlots?: (() => void) | undefined;
+  onOpenPreventiveInspection?: (() => void) | undefined;
+  preventiveInspectionCount?: number | undefined;
 }
 
 export function ChairScheduleToolbar({
@@ -103,6 +108,9 @@ export function ChairScheduleToolbar({
   handleClearAllDayShifts,
   onOpenRosterModal,
   setIsAddDoctorOpen,
+  onOpenDoctorFreeSlots,
+  onOpenPreventiveInspection,
+  preventiveInspectionCount,
 }: ChairScheduleToolbarProps) {
   return (
     <div
@@ -290,7 +298,7 @@ export function ChairScheduleToolbar({
                   setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
                 }}
                 className="h-6 w-6 inline-flex items-center justify-center rounded text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
-                title="Назначить врача и смену в 1 клик (StomX / IDENT)"
+                title="Назначить врача и смену в 1 клик"
                 data-testid={`chair-view-assign-doctor-${chair.id}`}
                 aria-label={`Назначить врача на кресло ${chair.name}`}
               >
@@ -393,7 +401,7 @@ export function ChairScheduleToolbar({
               }}
               className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
               style={{ minHeight: "44px" }}
-              title="Скопировать график смен кресел на текущую неделю (Пн–Вс, 7 дней) в 1 клик (StomX Parity)"
+              title="Скопировать график смен кресел на текущую неделю (Пн–Вс, 7 дней) в 1 клик"
               data-testid="btn-copy-chair-week-current"
               role="menuitem"
             >
@@ -409,7 +417,7 @@ export function ChairScheduleToolbar({
               }}
               className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
               style={{ minHeight: "44px" }}
-              title="Скопировать график смен кресел на будни (Пн–Пт, 5 дней) в 1 клик (StomX Parity)"
+              title="Скопировать график смен кресел на будни (Пн–Пт, 5 дней) в 1 клик"
               data-testid="btn-copy-chair-week-workdays"
               role="menuitem"
             >
@@ -425,7 +433,7 @@ export function ChairScheduleToolbar({
               }}
               className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
               style={{ minHeight: "44px" }}
-              title="Скопировать график смен кресел на весь текущий месяц в 1 клик (StomX Parity)"
+              title="Скопировать график смен кресел на весь текущий месяц в 1 клик"
               data-testid="btn-copy-chair-month"
               role="menuitem"
             >
@@ -457,7 +465,7 @@ export function ChairScheduleToolbar({
               }}
               className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
               style={{ minHeight: "44px" }}
-              title="Назначить закрепленных врачей на все кресла дня в 1 клик (StomX Parity)"
+              title="Назначить закреплённых врачей на все кресла дня в 1 клик"
               data-testid="btn-apply-preferred-chairs"
               role="menuitem"
             >
@@ -473,7 +481,7 @@ export function ChairScheduleToolbar({
               }}
               className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
               style={{ minHeight: "44px" }}
-              title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
+              title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик"
               data-testid="btn-copy-chair-week-next"
               role="menuitem"
             >
@@ -489,13 +497,54 @@ export function ChairScheduleToolbar({
               }}
               className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
               style={{ minHeight: "44px" }}
-              title="Назначить смену на диапазон дат в 1 клик (StomX / DentalPRO parity)"
+              title="Назначить смену на диапазон дат в 1 клик"
               data-testid="btn-assign-date-range"
               role="menuitem"
             >
               <CalendarRange size={14} className="text-[var(--teal)] shrink-0" />
               <span>На диапазон дат...</span>
             </button>
+
+            {onOpenDoctorFreeSlots && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenDoctorFreeSlots();
+                  setIsShiftsMenuOpen(false);
+                }}
+                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+                style={{ minHeight: "44px" }}
+                title="Умный подбор свободного времени и окон (DentalPRO / IDENT parity)"
+                data-testid="btn-chair-menu-find-slots"
+                role="menuitem"
+              >
+                <Search size={14} className="text-[var(--teal)] shrink-0" />
+                <span>Умный подбор времени...</span>
+              </button>
+            )}
+
+            {onOpenPreventiveInspection && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenPreventiveInspection();
+                  setIsShiftsMenuOpen(false);
+                }}
+                className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer text-left min-h-[44px]"
+                style={{ minHeight: "44px" }}
+                title="Сервисный контроль: осмотры по гарантии (имплантация/протезирование) и профгигиена раз в 6 месяцев"
+                data-testid="btn-chair-preventive-inspection"
+                role="menuitem"
+              >
+                <ShieldCheck size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Осмотры по гарантии (6 мес.)</span>
+                {preventiveInspectionCount !== undefined && preventiveInspectionCount > 0 && (
+                  <span className="ml-auto px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                    {preventiveInspectionCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             <div className="border-t border-[var(--line)] my-1" />
 
@@ -517,13 +566,27 @@ export function ChairScheduleToolbar({
           </div>
         </div>
 
+        {/* 1-Click Slot Finder Direct Button */}
+        {onOpenDoctorFreeSlots && (
+          <button
+            type="button"
+            onClick={onOpenDoctorFreeSlots}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer min-h-[44px] sm:min-h-0 h-auto sm:h-8 shrink-0 select-none"
+            title="Интеллектуальный подбор свободных окон у врачей клиники (DentalPRO / IDENT)"
+            data-testid="chair-toolbar-find-slots-btn"
+          >
+            <Search size={12} className="text-[var(--teal)] shrink-0" />
+            <span className="hidden md:inline">Подобрать окно</span>
+          </button>
+        )}
+
         {/* 3 Dominant Primary Actions Visible Directly in Toolbar */}
         {onOpenRosterModal && (
           <button
             type="button"
             onClick={onOpenRosterModal}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer min-h-[44px] sm:min-h-0 h-auto sm:h-8 shrink-0 select-none"
-            title="График работы врачей по сменам и креслам (StomX / IDENT)"
+            title="График работы врачей по сменам и креслам"
             data-testid="btn-open-chair-roster"
           >
             <Users size={12} className="text-[var(--teal)]" />
