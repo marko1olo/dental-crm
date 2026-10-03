@@ -44,37 +44,25 @@ export class DigitalSignatureService {
 	}
 
 	private async init() {
-		// CryptoPro Initialization
+		// CryptoPro Initialization — тихое фоновое автоопределение без всплывающих красных тостов
 		try {
 			this.isCryptoProAvailable = await checkCryptoProPlugin();
 			if (!this.isCryptoProAvailable) {
-				logger.warn("[CryptoPro] Plugin not found or not working.");
+				logger.info("[CryptoPro] Плагин не обнаружен (штатный режим работы без СКЗИ).");
 			}
-		} catch (_e) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(_e as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
+		} catch (e) {
+			logger.info("[CryptoPro] Плагин недоступен:", e);
 			this.isCryptoProAvailable = false;
 		}
 
-		// Rutoken Initialization
+		// Rutoken Initialization — тихое фоновое автоопределение
 		try {
 			this.isRutokenAvailable = await checkRutokenPlugin();
 			if (!this.isRutokenAvailable) {
-				logger.warn("[Rutoken] Plugin not found or not working.");
+				logger.info("[Rutoken] Плагин не обнаружен (штатный режим работы без носителя).");
 			}
-		} catch (_e) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(_e as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
+		} catch (e) {
+			logger.info("[Rutoken] Плагин недоступен:", e);
 			this.isRutokenAvailable = false;
 		}
 	}
@@ -169,10 +157,16 @@ export class DigitalSignatureService {
 			if (!this.isCryptoProAvailable)
 				throw new Error("CryptoPro plugin is not available.");
 
-			const base64Data = btoa(unescape(encodeURIComponent(data)));
+			const utf8Bytes = new TextEncoder().encode(data);
+			let binary = "";
+			for (let i = 0; i < utf8Bytes.byteLength; i++) {
+				binary += String.fromCharCode(utf8Bytes[i]!);
+			}
+			const base64Data = btoa(binary);
 			const signatureBase64 = await signBase64WithCertificate(
 				base64Data,
 				thumbprint,
+				pin,
 			);
 			return { signatureBase64, provider: "cryptopro" };
 		}

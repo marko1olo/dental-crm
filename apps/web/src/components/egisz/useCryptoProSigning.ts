@@ -41,7 +41,7 @@ export function useCryptoProSigning({
 	const [isSigning, setIsSigning] = useState<boolean>(false);
 	const [isCheckingCerts, setIsCheckingCerts] = useState<boolean>(false);
 
-	const refreshCerts = useCallback(async () => {
+	const refreshCerts = useCallback(async (isManual: boolean = false) => {
 		setIsCheckingCerts(true);
 		try {
 			const certs = await signatureService.getCertificates();
@@ -52,14 +52,16 @@ export function useCryptoProSigning({
 		} catch (e) {
 			setAvailableCerts([]);
 			const parsed = parseCryptoProError(e);
-			showToast(`КриптоПро CSP: ${parsed.userMessage}`, "warning");
+			if (isManual) {
+				showToast(`КриптоПро CSP: ${parsed.userMessage}`, "warning");
+			}
 		} finally {
 			setIsCheckingCerts(false);
 		}
 	}, [selectedCert]);
 
 	useEffect(() => {
-		refreshCerts();
+		refreshCerts(false);
 	}, [refreshCerts]);
 
 	const handleUploadDetachedSig = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,6 +71,15 @@ export function useCryptoProSigning({
 		reader.onload = () => {
 			const buf = reader.result as ArrayBuffer;
 			const bytes = new Uint8Array(buf);
+			// Проверка ASN.1 DER CMS PKCS#7 структуры: тег SEQUENCE (0x30) и минимальный размер крипто-контейнера
+			if (bytes.byteLength < 64 || bytes[0] !== 0x30) {
+				showToast(
+					`Файл «${file.name}» не является корректной бинарной подписью CMS/PKCS#7 (ASN.1 SEQUENCE). Загрузите файл .sig или .p7s по стандарту ГОСТ Р 34.10-2012.`,
+					"error",
+					7000,
+				);
+				return;
+			}
 			let binary = "";
 			for (let i = 0; i < bytes.byteLength; i++) {
 				binary += String.fromCharCode(bytes[i]!);
@@ -97,6 +108,15 @@ export function useCryptoProSigning({
 		reader.onload = () => {
 			const buf = reader.result as ArrayBuffer;
 			const bytes = new Uint8Array(buf);
+			// Проверка ASN.1 DER CMS PKCS#7 структуры: тег SEQUENCE (0x30) и минимальный размер крипто-контейнера
+			if (bytes.byteLength < 64 || bytes[0] !== 0x30) {
+				showToast(
+					`Файл «${file.name}» не является корректной бинарной подписью CMS/PKCS#7 МО (ASN.1 SEQUENCE). Загрузите файл .sig или .p7s по стандарту ГОСТ Р 34.10-2012.`,
+					"error",
+					7000,
+				);
+				return;
+			}
 			let binary = "";
 			for (let i = 0; i < bytes.byteLength; i++) {
 				binary += String.fromCharCode(bytes[i]!);

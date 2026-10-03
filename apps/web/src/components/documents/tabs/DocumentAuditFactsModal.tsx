@@ -1,4 +1,5 @@
 import React from "react";
+import { ShieldCheck } from "lucide-react";
 import type {
 	DocumentKind,
 	DocumentSourceStatus,
@@ -188,8 +189,42 @@ export const DocumentAuditFactsModal: React.FC<DocumentAuditFactsModalProps> = R
 								? `${documentAuditFacts.signatureAttestation.recipientFullName} · ${documentAuditFacts.signatureAttestation.staffFullName}`
 								: "PDF и файл ФНС заблокированы до фиксации получения"}
 						</small>
-						{documentAuditFacts.status === "issued" &&
-						documentAuditFacts.canExportPdf ? (
+						{documentAuditFacts.cryptoSignaturePkcs7 || documentAuditFacts.doctorSignedAt ? (
+							<div
+								style={{
+									marginTop: "8px",
+									padding: "10px 12px",
+									borderRadius: "8px",
+									border: "1.5px solid #003399",
+									background: "rgba(0, 51, 153, 0.05)",
+									color: "#003399",
+									display: "flex",
+									flexDirection: "column",
+									gap: "4px",
+								}}
+							>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "12px" }}>
+									<ShieldCheck size={16} style={{ color: "#003399", flexShrink: 0 }} />
+									<span>Документ подписан УКЭП (ГОСТ Р 34.10-2012)</span>
+								</div>
+								<div style={{ fontSize: "11.5px", color: "var(--ink, #0f172a)" }}>
+									<strong>Владелец:</strong> {documentAuditFacts.doctorCertSubject || documentAuditFacts.signatureAttestation?.staffFullName || "Врач клиники"}
+								</div>
+								{documentAuditFacts.doctorCertSerial ? (
+									<div style={{ fontSize: "10.5px", color: "var(--muted, #64748b)", wordBreak: "break-all" }}>
+										<strong>Сертификат:</strong> {documentAuditFacts.doctorCertSerial}
+									</div>
+								) : null}
+								{documentAuditFacts.doctorSignedAt ? (
+									<div style={{ fontSize: "10.5px", color: "var(--muted, #64748b)" }}>
+										<strong>Дата подписания:</strong>{" "}
+										{typeof formatShortDate === "function"
+											? formatShortDate(documentAuditFacts.doctorSignedAt)
+											: String(documentAuditFacts.doctorSignedAt)}
+									</div>
+								) : null}
+							</div>
+						) : documentAuditFacts.status === "issued" && documentAuditFacts.canExportPdf ? (
 							<DocumentUkepSignButton
 								documentId={documentAuditFacts.documentId}
 								onSuccess={() =>

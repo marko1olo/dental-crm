@@ -43,6 +43,17 @@ export interface PrescriptionSheetPreviewProps {
 	readonly ukepSignature?: PrescriptionDoctorUkep | null | undefined;
 }
 
+function formatStampDateRu(isoString?: string | null): string {
+	if (!isoString) return "";
+	try {
+		const d = new Date(isoString);
+		if (Number.isNaN(d.getTime())) return isoString;
+		return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+	} catch {
+		return isoString;
+	}
+}
+
 export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> = ({
 	customSeriesNumber,
 	penicillinConflict,
@@ -305,19 +316,55 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 					</div>
 				</div>
 
-				{/* UKEP Stamp Box */}
+				{/* Official GOST R 7.0.97-2016 Visual Digital Signature Stamp (УКЭП по ГОСТ Р 34.10-2012) */}
 				{isUkepSigned && ukepSignature && (
-					<div className="border border-sky-500/40 bg-sky-500/10 p-2 rounded text-[8.5px] font-sans text-[var(--ink)] flex justify-between items-center mt-1">
-						<div>
-							<div className="font-bold text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
-								<ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 inline" />
-								<span>ДОКУМЕНТ ПОДПИСАН УКЭП ВРАЧА</span>
+					<div
+						className="gost-prescription-stamp border-2 border-[#003399] rounded p-2 text-[8px] leading-tight text-[#003399] bg-[#f4f8ff] mt-2 page-break-inside-avoid"
+						style={{
+							fontFamily: "'PT Astra Sans', Arial, Helvetica, sans-serif",
+							boxShadow: "0 1px 3px rgba(0, 51, 153, 0.08)",
+						}}
+					>
+						<div className="flex items-center justify-between border-b border-[#003399] pb-1 mb-1">
+							<div className="flex items-center gap-1.5">
+								<ShieldCheck className="w-4 h-4 text-[#003399] shrink-0 inline" />
+								<div>
+									<div className="font-extrabold uppercase tracking-wide text-[8.5px]">
+										ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ
+									</div>
+									<div className="text-[6.5px] font-semibold tracking-wider text-[#003399]/80 uppercase">
+										СВЕДЕНИЯ О СЕРТИФИКАТЕ ЭП &bull; ГОСТ Р 34.10-2012
+									</div>
+								</div>
 							</div>
-							<div>Сертификат: <strong>{ukepSignature.certificateSerialNumber}</strong></div>
-							<div>Владелец: {ukepSignature.doctorFullName}</div>
-							<div className="text-[10px] text-[var(--muted)]">УЦ: {ukepSignature.certificateIssuer}</div>
+							<QrCode className="w-8 h-8 text-[#003399] shrink-0 ml-2" />
 						</div>
-						<QrCode className="w-9 h-9 text-sky-600 dark:text-sky-400 shrink-0" />
+						<div className="flex flex-col gap-0.5 text-[7.5px] text-[#003399]">
+							<div>
+								<span className="font-bold">Сертификат:</span>{" "}
+								<span className="font-mono">{ukepSignature.certificateSerialNumber}</span>
+							</div>
+							<div>
+								<span className="font-bold">Владелец:</span>{" "}
+								<span>{ukepSignature.doctorFullName}</span>
+							</div>
+							{ukepSignature.validFrom && ukepSignature.validTo ? (
+								<div>
+									<span className="font-bold">Действителен:</span> с{" "}
+									{formatStampDateRu(ukepSignature.validFrom)} по{" "}
+									{formatStampDateRu(ukepSignature.validTo)}
+								</div>
+							) : null}
+							{ukepSignature.signedAt ? (
+								<div>
+									<span className="font-bold">Подписан:</span>{" "}
+									{formatStampDateRu(ukepSignature.signedAt)}
+								</div>
+							) : null}
+							<div className="text-[6.5px] text-[#003399]/70 truncate mt-0.5">
+								УЦ: {ukepSignature.certificateIssuer || "Головной УЦ Минцифры России (Квалифицированный)"}
+							</div>
+						</div>
 					</div>
 				)}
 			</div>

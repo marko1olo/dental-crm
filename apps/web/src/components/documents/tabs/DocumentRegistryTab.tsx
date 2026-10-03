@@ -10,6 +10,7 @@ import {
 	CheckCircle2,
 	FileCheck,
 	FileCode2,
+	FileSignature,
 	FileText,
 	MoreHorizontal,
 	Printer,
@@ -182,6 +183,20 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 												"Ручной ввод"}
 										</span>
 										{document.taxYear ? ` · ${document.taxYear}` : ""}
+										{document.doctorSignedAt || document.cryptoSignaturePkcs7 ? (
+											<span
+												className="document-source-badge official-form"
+												style={{
+													borderColor: "#003399",
+													color: "#003399",
+													backgroundColor: "rgba(0, 51, 153, 0.08)",
+													fontWeight: 600,
+												}}
+												title={`Подписан УКЭП: ${document.doctorCertSubject || ""}${document.doctorCertSerial ? ` (${document.doctorCertSerial})` : ""}`}
+											>
+												УКЭП (ГОСТ)
+											</span>
+										) : null}
 										{document.issuedAt
 											? ` ${typeof formatShortDate === "function" ? formatShortDate(document.issuedAt) : String(document.issuedAt)}`
 											: ""}{" "}
@@ -335,6 +350,43 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 															: "Паспорт выдачи"}
 													</span>
 												</button>
+
+												{document.status === "issued" &&
+												!document.cryptoSignaturePkcs7 &&
+												!document.doctorSignedAt ? (
+													<button
+														className="doc-dropdown-item"
+														type="button"
+														onClick={() => {
+															setOpenDocActionMenuId(null);
+															void loadDocumentAuditFacts(document.id);
+														}}
+														aria-label={`Подписать УКЭП (КриптоПро): ${documentActionContext}`}
+														title={`Подписать усиленной квалифицированной подписью врача (КриптоПро): ${documentActionContext}`}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: "8px",
+															width: "100%",
+															padding: "6px 10px",
+															fontSize: "12.5px",
+															fontWeight: 600,
+															border: "none",
+															background: "transparent",
+															color: "var(--teal, #0d9488)",
+															borderRadius: "4px",
+															cursor: "pointer",
+															textAlign: "left",
+														}}
+													>
+														<FileSignature
+															size={14}
+															className="text-teal-600 dark:text-teal-400 shrink-0"
+															aria-hidden="true"
+														/>
+														<span>Подписать УКЭП (КриптоПро)</span>
+													</button>
+												) : null}
 
 												{documentArchiveAvailable ? (
 													<button

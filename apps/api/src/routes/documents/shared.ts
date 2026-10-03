@@ -1290,6 +1290,14 @@ export async function buildDocumentAuditFacts(
 		sourceUrls: [...metadata.sourceUrls],
 		blockers,
 		warnings,
+		cryptoSignaturePkcs7: document.cryptoSignaturePkcs7 ?? null,
+		doctorCertSerial: document.doctorCertSerial ?? null,
+		doctorCertSubject: document.doctorCertSubject ?? null,
+		doctorSignedAt: document.doctorSignedAt
+			? (document.doctorSignedAt instanceof Date
+				? document.doctorSignedAt.toISOString()
+				: String(document.doctorSignedAt))
+			: null,
 	});
 }
 

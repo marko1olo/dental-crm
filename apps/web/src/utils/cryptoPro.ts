@@ -326,6 +326,7 @@ export async function getPersonalCertificates(): Promise<
 export async function signBase64WithCertificate(
 	base64Content: string,
 	thumbprint: string,
+	pin?: string,
 ): Promise<string> {
 	const hasPlugin = await checkCryptoProPlugin();
 	if (!hasPlugin) {
@@ -368,6 +369,13 @@ export async function signBase64WithCertificate(
 				await oSigner.propset_Certificate(cert);
 				// Detached signature (separated from content)
 				await oSigner.propset_CheckCertificate(true);
+				if (pin) {
+					try {
+						await oSigner.propset_KeyPin(pin);
+					} catch (pinErr) {
+						logger.info("Programmatic KeyPin not accepted by token driver, falling back to system PIN dialog:", pinErr);
+					}
+				}
 
 				// Prepare signed data structure
 				const oSignedData = await cades.CreateObjectAsync(

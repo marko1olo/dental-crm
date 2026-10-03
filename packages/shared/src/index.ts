@@ -4285,22 +4285,43 @@ export const ALL_VALID_VITA_SHADES: ReadonlySet<string> = new Set<string>([
 
 /**
  * Авто-нормализация кириллических гомоглифов при выборе оттенка зубов (Мандат 8e, Мандат 8k).
- * Врачи и техники в РФ часто вводят оттенки на русской раскладке («А2», «В1», «С1», «Д3», «1М1», «2R1.5», «3Л2.5»).
- * Преобразует русские буквы А, В, С, Д, М, Р, Л в соответствующие латинские A, B, C, D, M, R, L,
+ * Врачи и техники в РФ часто вводят оттенки на русской раскладке («А2», «В1», «С1», «Д3», «1М1», «2R1.5», «3Л2.5», «ОМ1», «БЛ1»).
+ * Преобразует русские буквы А, В, Б, С, Д, М, Р, Л, О в соответствующие латинские A, B, B, C, D, M, R, L, O,
+ * нормализует разделитель десятичных дробей («А3,5» -> «A3.5», «2L1,5» -> «2L1.5»),
+ * убирает лишние дефисы и пробелы («A-2» -> «A2», «BL-1» -> «BL1», «0M-1» -> «0M1»),
+ * нормализует псевдоним буквы 'О' в отбеливающих оттенках («ОМ1» -> «0M1»),
  * обрезает пробелы и переводит в верхний регистр.
  */
 export function normalizeVitaShade(shade: string): string {
 	if (!shade) return "";
-	return shade
-		.trim()
-		.toUpperCase()
-		.replace(/А/g, "A")
-		.replace(/В/g, "B")
-		.replace(/С/g, "C")
-		.replace(/Д/g, "D")
-		.replace(/М/g, "M")
-		.replace(/Р/g, "R")
-		.replace(/Л/g, "L");
+	let s = shade.trim().toUpperCase();
+
+	// Transliterate Cyrillic homoglyphs using explicit Unicode code points:
+	// \u0410: А -> A, \u0412: В -> B, \u0411: Б -> B, \u0421: С -> C, \u0414: Д -> D,
+	// \u041C: М -> M, \u0420: Р -> R, \u041B: Л -> L, \u041E: О -> O
+	s = s
+		.replace(/\u0410/g, "A")
+		.replace(/\u0412/g, "B")
+		.replace(/\u0411/g, "B")
+		.replace(/\u0421/g, "C")
+		.replace(/\u0414/g, "D")
+		.replace(/\u041C/g, "M")
+		.replace(/\u0420/g, "R")
+		.replace(/\u041B/g, "L")
+		.replace(/\u041E/g, "O");
+
+	// Strip extraneous punctuation, hyphens, and whitespace
+	s = s.replace(/[\s\-_]+/g, "");
+
+	// Normalize decimal comma to dot
+	s = s.replace(/,/g, ".");
+
+	// Canonicalize OM1-OM3 (letter O) to 0M1-0M3 (digit 0)
+	if (/^OM[1-3]$/.test(s)) {
+		s = "0" + s.slice(1);
+	}
+
+	return s;
 }
 
 export function isValidVitaShade(shade: string): boolean {
@@ -5448,6 +5469,10 @@ export const documentAuditFactsSchema = z.object({
 	sourceUrls: z.array(z.string().url()),
 	blockers: z.array(z.string()),
 	warnings: z.array(z.string()),
+	cryptoSignaturePkcs7: z.string().nullable().optional(),
+	doctorCertSerial: z.string().nullable().optional(),
+	doctorCertSubject: z.string().nullable().optional(),
+	doctorSignedAt: z.string().nullable().optional(),
 });
 export type DocumentAuditFacts = z.infer<typeof documentAuditFactsSchema>;
 

@@ -1,0 +1,39 @@
+{
+  "agent": "subagent_redteam_crypto_signatures_cda_inquisitor",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read supreme constitution: THE_HAMMER_MASTER_PROMPT.md (1-1104)",
+    "Read project constitution: AGENTS.md (1-637)",
+    "Read project shim: GEMINI.md (1-99)",
+    "Read core route: core.md (1-284)",
+    "Read frontend route: frontend.md (1-166)",
+    "Reconnaissance of all crypto signatures, cadesplugin, visual stamps, and routes across apps/web, apps/api, packages/shared",
+    "Mount 1-click UKEP signing into DocumentRegistryTab and document action menu",
+    "Mount verified UKEP seal and block duplicate signing in DocumentAuditFactsModal",
+    "Expose crypto signature fields in documentAuditFactsSchema and buildDocumentAuditFacts",
+    "Align prescription electronic signature stamp with GOST R 7.0.97-2016 in PrescriptionSheetPreview.tsx",
+    "Support programmatic KeyPin pass-through and quiet background detection in utils/cryptoPro.ts & lib/cryptopro.ts",
+    "Enforce strict ASN.1 DER CMS PKCS#7 SEQUENCE validation for uploaded detached signatures in useCryptoProSigning.ts",
+    "Pass UTF-8 encoding verification (node scripts/check-encoding.mjs: 7215 files clean)",
+    "Pass CSS token verification (node scripts/check-css-tokens.mjs: 0 unresolved var, 0 light fallbacks)",
+    "Pass targeted crypto unit tests: cadespluginFacade.test.ts (13/13), documentsUkepSigning.test.ts (14/14), cryptoProCliEngine.test.ts (31/31)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Orphan/unreachable UKEP signing in registry: Doctors had no direct UKEP sign trigger in DocumentRegistryTab rows or action menu; now resolved with direct menu item and row indicator badge 'УКЭП (ГОСТ)'.",
+    "Duplicate sign conflict: DocumentAuditFactsModal previously continued displaying sign button even when document was already cryptographically signed (causing 409 conflict); now resolved with verified official blue seal.",
+    "Prescription stamp divergence: PrescriptionSheetPreview previously used an ad-hoc custom blue box instead of GOST R 7.0.97-2016 standard stamp; now aligned with double border, shield, standard wording and PT Astra Sans font.",
+    "Doctor autonomy & PIN friction: cryptoPro.ts did not forward programmatic PIN to CAdESCOM.CPSigner; now supports propset_KeyPin for quiet single-unlock smartcard sessions.",
+    "Zero-mock detached upload: useCryptoProSigning previously accepted any arbitrary string or file; now strictly validates ASN.1 SEQUENCE (0x30) and 64+ byte minimum container length."
+  ],
+  "modified_files": [
+    "packages/shared/src/index.ts",
+    "apps/api/src/routes/documents/shared.ts",
+    "apps/web/src/components/documents/tabs/DocumentAuditFactsModal.tsx",
+    "apps/web/src/components/documents/tabs/DocumentRegistryTab.tsx",
+    "apps/web/src/components/prescriptions/PrescriptionSheetPreview.tsx",
+    "apps/web/src/utils/cryptoPro.ts",
+    "apps/web/src/lib/cryptopro.ts",
+    "apps/web/src/components/egisz/useCryptoProSigning.ts"
+  ]
+}
