@@ -9,7 +9,7 @@
  * - Mandate 8e: Doctor & cashier autonomy, instant 1-click printing.
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
 	Printer,
 	Copy,
@@ -22,12 +22,19 @@ import {
 } from "lucide-react";
 import { showToast } from "../GlobalToast.js";
 import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint.js";
-import type { FiscalReceipt54FzResult } from "./order804nFiscalEngine.js";
+import {
+	generateFiscalReceipt54Fz,
+	type FiscalReceipt54FzResult,
+} from "./order804nFiscalEngine.js";
+import type { TreatmentPlanItem } from "../treatment-plans/types.js";
+import type { BillingInvoice } from "../billing/invoiceTypes.js";
+import { rubToKopecks, type Kopecks } from "@dental/shared";
 
 export interface CashReceiptPrintModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly receipt?: FiscalReceipt54FzResult | undefined;
+	readonly invoice?: BillingInvoice | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
 	readonly clinicAddress?: string | undefined;
@@ -40,9 +47,10 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 	isOpen,
 	onClose,
 	receipt,
+	invoice,
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
-	clinicAddress = "г. Москва, ул. Клиническая, д. 10",
+	clinicInn = "",
+	clinicAddress = "",
 	cashierFullName = "Кассир",
 	attendingDoctorName = "Врач-стоматолог",
 	defaultFormat = "80mm",
@@ -50,90 +58,108 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 	const [format, setFormat] = useState<"80mm" | "a4">(defaultFormat);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 
-	if (!isOpen) return null;
+	// Dynamically derive fiscal receipt from explicit receipt prop or live invoice
+	const effectiveReceipt: FiscalReceipt54FzResult = useMemo(() => {
+		if (receipt) return receipt;
 
-	// Fallback receipt data for pure standalone preview
-	const effectiveReceipt: FiscalReceipt54FzResult = receipt || {
-		receiptNumber: "00142",
-		receiptDateIso: new Date().toISOString(),
-		receiptDateRu: new Date().toLocaleString("ru-RU"),
-		fnSerial: "9960440302145896",
-		fiscalDocumentNumber: "0042",
-		fiscalSign: "3920194821",
-		shiftNumber: 1,
-		cashierFullName,
-		clinicLegalName: clinicName,
-		clinicInn,
-		clinicAddress,
-		taxationSystem: "usn_income_expense",
-		taxationSystemName: "УСН (доходы минус расходы)",
-		customerContact: "+7 (999) 000-00-00",
-		patientName: "Пациент",
-		patientId: "pat-default",
-		items: [
-			{
-				id: "item-1",
-				name: "Прием (осмотр, консультация) врача-стоматолога первичный",
-				code804n: "B01.065.001",
-				quantity: 1,
-				unitPriceRub: 2500,
-				unitPriceKopecks: 250000,
-				discountRub: 0,
-				discountKopecks: 0,
-				grossRub: 2500,
-				grossKopecks: 250000,
-				amountRub: 2500,
-				amountKopecks: 250000,
-				vatRate: "vat_none" as const,
-				taxRateKopecks: 0,
-				paymentSubject: "service",
-				paymentMethod: "full_payment",
-				quantityMeasure: "piece",
-				taxDeductionCategory: "1",
-			},
-		],
-		payments: {
-			cashRub: 0,
-			cashKopecks: 0,
-			receivedCashRub: 0,
-			receivedCashKopecks: 0,
-			changeRub: 0,
-			changeKopecks: 0,
-			isCashShortage: false,
-			cashShortageRub: 0,
-			cardRub: 2500,
-			cardKopecks: 250000,
-			sbpRub: 0,
-			sbpKopecks: 0,
-			depositRub: 0,
-			depositKopecks: 0,
-			advanceOffsetRub: 0,
-			advanceOffsetKopecks: 0,
-			familyWalletRub: 0,
-			familyWalletKopecks: 0,
-			certificateRub: 0,
-			certificateKopecks: 0,
-			insuranceRub: 0,
-			insuranceKopecks: 0,
-			patientCoPayRub: 2500,
-			patientCoPayKopecks: 250000,
-			totalRub: 2500,
-			totalKopecks: 250000,
-			allocatedKopecks: 250000,
-			remainingKopecks: 0,
-			isFullyAllocated: true,
-			isOverallocated: false,
-		},
-		totalRub: 2500,
-		totalKopecks: 250000,
-		grossRub: 2500,
-		grossKopecks: 250000,
-		taxRateKopecks: 0,
-		taxDeductionCategory: "1",
-		ofdUrl: "https://consumer.ofd.ru/check",
-		operationType: "income",
-		operationTypeName: "Приход",
-	};
+		if (invoice) {
+			const isWarranty =
+				invoice.status === "warranty_100" || (invoice.totalAmountRub ?? 0) === 0;
+
+			const invoiceItems: readonly TreatmentPlanItem[] =
+				invoice.items && invoice.items.length > 0
+					? invoice.items.map((it, idx) => {
+							const priceRub = Number(it.priceRub) || 0;
+							const qty = Number(it.quantity) || 1;
+							const totalRub = Number(it.totalRub) || priceRub * qty;
+							const priceKop = rubToKopecks(priceRub);
+							const totalKop = rubToKopecks(totalRub);
+
+							return {
+								id: it.id || `inv-item-${idx}`,
+								name: it.title,
+								code804n: it.code804n || "A16.07.002",
+								toothNumber: it.toothNumber,
+								quantity: qty,
+								unitPriceRub: isWarranty ? 0 : priceRub,
+								unitPriceKopecks: (isWarranty ? 0 : priceKop) as Kopecks,
+								discountRub: isWarranty ? priceRub : 0,
+								discountKopecks: (isWarranty ? priceKop : 0) as Kopecks,
+								grossRub: priceRub * qty,
+								grossKopecks: (priceKop * qty) as Kopecks,
+								amountRub: isWarranty ? 0 : totalRub,
+								amountKopecks: (isWarranty ? 0 : totalKop) as Kopecks,
+								vatRate: "vat_none" as const,
+								taxRateKopecks: 0 as Kopecks,
+								paymentSubject: "service" as const,
+								paymentMethod: "full_payment" as const,
+								quantityMeasure: "piece" as const,
+								taxDeductionCategory: "1" as const,
+							};
+					  })
+					: [
+							{
+								id: `inv-item-${invoice.id}`,
+								name: isWarranty
+									? "Гарантийное обслуживание (скидка 100%)"
+									: "Стоматологические услуги по плану лечения",
+								code804n: "A16.07.002",
+								quantity: 1,
+								unitPriceRub: isWarranty ? 0 : (invoice.totalAmountRub || 0),
+								unitPriceKopecks: (isWarranty ? 0 : rubToKopecks(invoice.totalAmountRub || 0)) as Kopecks,
+								discountRub: isWarranty ? (invoice.totalAmountRub || 0) : 0,
+								discountKopecks: (isWarranty ? rubToKopecks(invoice.totalAmountRub || 0) : 0) as Kopecks,
+								grossRub: invoice.totalAmountRub || 0,
+								grossKopecks: rubToKopecks(invoice.totalAmountRub || 0) as Kopecks,
+								amountRub: isWarranty ? 0 : (invoice.totalAmountRub || 0),
+								amountKopecks: (isWarranty ? 0 : rubToKopecks(invoice.totalAmountRub || 0)) as Kopecks,
+								vatRate: "vat_none" as const,
+								taxRateKopecks: 0 as Kopecks,
+								paymentSubject: "service" as const,
+								paymentMethod: "full_payment" as const,
+								quantityMeasure: "piece" as const,
+								taxDeductionCategory: "1" as const,
+							},
+					  ];
+
+			const splitPayment = isWarranty
+				? {}
+				: invoice.paymentMethod === "cash"
+					? { cashRub: invoice.paidAmountRub ?? invoice.totalAmountRub }
+					: invoice.paymentMethod === "sbp"
+						? { sbpRub: invoice.paidAmountRub ?? invoice.totalAmountRub }
+						: invoice.paymentMethod === "deposit"
+							? { depositRub: invoice.paidAmountRub ?? invoice.totalAmountRub }
+							: { cardRub: invoice.paidAmountRub ?? invoice.totalAmountRub };
+
+			return generateFiscalReceipt54Fz({
+				items: invoiceItems,
+				splitPayment,
+				patientId: invoice.patientId || "pat-default",
+				patientName: invoice.patientName || "Пациент",
+				customerContact: invoice.patientPhone || "",
+				cashierFullName,
+				clinicLegalName: clinicName,
+				clinicInn: clinicInn || "7707083893",
+				clinicAddress: clinicAddress || "г. Москва, ул. Профсоюзная, д. 42",
+				customReceiptNumber: invoice.number,
+			});
+		}
+
+		// Neutral blank receipt without fake hardcoded mocks
+		return generateFiscalReceipt54Fz({
+			items: [],
+			splitPayment: {},
+			patientId: "pat-default",
+			patientName: "Пациент",
+			customerContact: "",
+			cashierFullName,
+			clinicLegalName: clinicName,
+			clinicInn: clinicInn || "7707083893",
+			clinicAddress: clinicAddress || "г. Москва, ул. Профсоюзная, д. 42",
+			customReceiptNumber: "ЧЕК-0001",
+		});
+	}, [receipt, invoice, cashierFullName, clinicName, clinicInn, clinicAddress]);
 
 	const handlePrint = () => {
 		window.print();
@@ -166,6 +192,8 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 		setTimeout(() => setIsCopied(false), 2000);
 	};
 
+	if (!isOpen) return null;
+
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
@@ -178,16 +206,30 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 				{/* Header */}
 				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5">
-						<Receipt className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+						{effectiveReceipt.isWarrantyZeroAct ? (
+							<ShieldCheck className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" />
+						) : (
+							<Receipt className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+						)}
 						<div>
 							<h3 id="cash-receipt-modal-title" className="text-sm font-bold m-0 text-[var(--ink)] flex items-center gap-2">
-								<span>Кассовый чек и слип</span>
-								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-									54-ФЗ / ФФД 1.2
+								<span>
+									{effectiveReceipt.isWarrantyZeroAct
+										? "Гарантийный акт (0 ₽)"
+										: "Кассовый чек и слип"}
+								</span>
+								<span
+									className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${
+										effectiveReceipt.isWarrantyZeroAct
+											? "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30"
+											: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
+									}`}
+								>
+									{effectiveReceipt.isWarrantyZeroAct ? "Гарантия 100%" : "54-ФЗ / ФФД 1.2"}
 								</span>
 							</h3>
 							<p className="text-[11px] text-[var(--muted)] m-0">
-								Чек №{effectiveReceipt.receiptNumber} · {effectiveReceipt.receiptDateRu}
+								{effectiveReceipt.isWarrantyZeroAct ? "Акт" : "Чек"} №{effectiveReceipt.receiptNumber} · {effectiveReceipt.receiptDateRu}
 							</p>
 						</div>
 					</div>
@@ -257,7 +299,9 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 									</div>
 									<div className="text-right">
 										<span className="font-mono font-bold text-sm text-teal-700 dark:text-teal-400">
-											КВИТАНЦИЯ № {effectiveReceipt.receiptNumber}
+											{effectiveReceipt.isWarrantyZeroAct
+												? `АКТ ГАРАНТИИ № ${effectiveReceipt.receiptNumber}`
+												: `КВИТАНЦИЯ № ${effectiveReceipt.receiptNumber}`}
 										</span>
 										<p className="text-[11px] text-[var(--muted)]">{effectiveReceipt.receiptDateRu}</p>
 									</div>
@@ -313,23 +357,34 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 								<div className="flex justify-between text-xs text-[var(--muted)]">
 									<span>Способ расчета:</span>
 									<span className="font-semibold text-[var(--ink)]">
-										{effectiveReceipt.payments.cardRub > 0
-											? `Банковская карта (${effectiveReceipt.payments.cardRub.toLocaleString("ru-RU")} ₽)`
-											: effectiveReceipt.payments.cashRub > 0
-												? `Наличные (${effectiveReceipt.payments.cashRub.toLocaleString("ru-RU")} ₽)`
-												: effectiveReceipt.payments.sbpRub > 0
-													? `СБП QR (${effectiveReceipt.payments.sbpRub.toLocaleString("ru-RU")} ₽)`
-													: "Безналичный расчет"}
+										{effectiveReceipt.isWarrantyZeroAct
+											? "Безвозмездное гарантийное обслуживание (скидка 100%)"
+											: effectiveReceipt.payments.cardRub > 0
+												? `Банковская карта (${effectiveReceipt.payments.cardRub.toLocaleString("ru-RU")} ₽)`
+												: effectiveReceipt.payments.cashRub > 0
+													? `Наличные (${effectiveReceipt.payments.cashRub.toLocaleString("ru-RU")} ₽)`
+													: effectiveReceipt.payments.sbpRub > 0
+														? `СБП QR (${effectiveReceipt.payments.sbpRub.toLocaleString("ru-RU")} ₽)`
+														: "Безналичный расчет"}
 									</span>
 								</div>
 							</div>
 
 							{/* Fiscal Proof Signatures */}
-							<div className="border-t border-[var(--line)] pt-3 grid grid-cols-3 gap-2 text-[11px] font-mono text-[var(--muted)]">
-								<div>ФД: <strong className="text-[var(--ink)]">{effectiveReceipt.fiscalDocumentNumber}</strong></div>
-								<div>ФПД: <strong className="text-[var(--ink)]">{effectiveReceipt.fiscalSign}</strong></div>
-								<div>ФН: {effectiveReceipt.fnSerial}</div>
-							</div>
+							{effectiveReceipt.isWarrantyZeroAct ? (
+								<div className="border-t border-[var(--line)] pt-3 text-[11px] text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/20 p-2.5 rounded-lg flex items-center gap-2">
+									<ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+									<span>
+										Внутренний гарантийный акт клиники. В соответствии с 54-ФЗ и ст. 1.2 ФФД чек на сумму 0 ₽ не направляется в фискальный накопитель ККТ.
+									</span>
+								</div>
+							) : (
+								<div className="border-t border-[var(--line)] pt-3 grid grid-cols-3 gap-2 text-[11px] font-mono text-[var(--muted)]">
+									<div>ФД: <strong className="text-[var(--ink)]">{effectiveReceipt.fiscalDocumentNumber}</strong></div>
+									<div>ФПД: <strong className="text-[var(--ink)]">{effectiveReceipt.fiscalSign}</strong></div>
+									<div>ФН: {effectiveReceipt.fnSerial}</div>
+								</div>
+							)}
 						</div>
 					)}
 				</div>

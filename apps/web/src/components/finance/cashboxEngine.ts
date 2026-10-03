@@ -184,14 +184,14 @@ export function generate54FzXReportTapeText(params: {
 	const line = "-".repeat(w);
 	const dline = "=".repeat(w);
 	const clinic = (params.clinicLegalName || "ООО «ДЕНТЕ»").slice(0, w);
-	const inn = params.clinicInn || "7701234567";
+	const innLine = params.clinicInn ? centerText(`ИНН: ${params.clinicInn}`, w) : null;
 	const cashier = params.cashierFullName || "Кассир";
 	const s = params.summary;
 
 	return [
 		dline,
 		centerText(clinic, w),
-		centerText(`ИНН: ${inn}`, w),
+		...(innLine ? [innLine] : []),
 		line,
 		centerText("Х-ОТЧЕТ БЕЗ ГАШЕНИЯ", w),
 		centerText(`СМЕНА № ${s.shiftNumber}`, w),

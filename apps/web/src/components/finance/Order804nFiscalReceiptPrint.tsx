@@ -15,13 +15,15 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 	receipt,
 	className = "",
 }) => {
-	const receiptTitle = receipt.isCorrection
-		? receipt.operationType === "income_return"
-			? "КАССОВЫЙ ЧЕК КОРРЕКЦИИ / ВОЗВРАТ ПРИХОДА"
-			: "КАССОВЫЙ ЧЕК КОРРЕКЦИИ / ПРИХОД"
-		: receipt.operationType === "income_return"
-			? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА"
-			: "КАССОВЫЙ ЧЕК / ПРИХОД";
+	const receiptTitle = receipt.isWarrantyZeroAct
+		? "АКТ ГАРАНТИЙНОГО ОБСЛУЖИВАНИЯ (0 ₽)"
+		: receipt.isCorrection
+			? receipt.operationType === "income_return"
+				? "КАССОВЫЙ ЧЕК КОРРЕКЦИИ / ВОЗВРАТ ПРИХОДА"
+				: "КАССОВЫЙ ЧЕК КОРРЕКЦИИ / ПРИХОД"
+			: receipt.operationType === "income_return"
+				? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА"
+				: "КАССОВЫЙ ЧЕК / ПРИХОД";
 
 	return (
 		<div
@@ -286,21 +288,30 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 
 			{/* OFD QR and Verification Footer */}
 			<div className="pt-3 text-center space-y-2">
-				<div className="flex items-center justify-center p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
-					<div className="space-y-1">
-						<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
-							Проверка чека в ФНС / ОФД:
-						</div>
-						<a
-							href={receipt.ofdUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="text-xs text-[var(--teal,#0d9488)] hover:underline break-all block font-semibold"
-						>
-							{receipt.ofdUrl}
-						</a>
+				{receipt.isWarrantyZeroAct ? (
+					<div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-200">
+						<span className="font-bold block">Гарантия 100% · Внутренний акт клиники</span>
+						<span className="text-[11px] text-purple-700 dark:text-purple-300">
+							В соответствии с 54-ФЗ и Мандатом 8e чек на 0 ₽ не направляется в ОФД.
+						</span>
 					</div>
-				</div>
+				) : (
+					<div className="flex items-center justify-center p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
+						<div className="space-y-1">
+							<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+								Проверка чека в ФНС / ОФД:
+							</div>
+							<a
+								href={receipt.ofdUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-xs text-[var(--teal,#0d9488)] hover:underline break-all block font-semibold"
+							>
+								{receipt.ofdUrl}
+							</a>
+						</div>
+					</div>
+				)}
 
 				<p className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider pt-1">
 					СПАСИБО ЗА ДОВЕРИЕ КЛИНИКЕ ДЕНТЕ!

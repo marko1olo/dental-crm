@@ -38,6 +38,8 @@ import { CashboxShiftModal } from "../finance/CashboxShiftModal.js";
 import { CashReceiptPrintModal } from "../finance/CashReceiptPrintModal.js";
 import { PaymentSplitModal } from "../finance/PaymentSplitModal.js";
 import { PatientInstallmentsModal } from "./PatientInstallmentsModal.js";
+import { RefundServiceModal } from "../finance/refunds/RefundServiceModal.js";
+import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal.js";
 import { showToast } from "../GlobalToast.js";
 import {
 	safeLocalStorageGetJson,
@@ -108,6 +110,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	const [activeSplitInvoice, setActiveSplitInvoice] =
 		useState<BillingInvoice | null>(null);
 	const [receiptToPrint, setReceiptToPrint] =
+		useState<BillingInvoice | null>(null);
+	const [refundInvoice, setRefundInvoice] =
+		useState<BillingInvoice | null>(null);
+	const [bankInstallmentInvoice, setBankInstallmentInvoice] =
 		useState<BillingInvoice | null>(null);
 
 	// Memory leak protection & DOM virtualization (Wave 252-Perf2 / Low-RAM Laptop Protection)
@@ -710,6 +716,22 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 									);
 									setActiveMenuInvoiceId(null);
 								}}
+								onPrintReceipt={() => {
+									setReceiptToPrint(inv);
+									setActiveMenuInvoiceId(null);
+								}}
+								onSplitPay={() => {
+									setActiveSplitInvoice(inv);
+									setActiveMenuInvoiceId(null);
+								}}
+								onBankInstallment={() => {
+									setBankInstallmentInvoice(inv);
+									setActiveMenuInvoiceId(null);
+								}}
+								onRefund={() => {
+									setRefundInvoice(inv);
+									setActiveMenuInvoiceId(null);
+								}}
 							/>
 						))}
 
@@ -811,6 +833,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					patientId={patientId}
 					patientName={patientName}
 					clinicName={clinicLegalName}
+					onOpenBankInstallment={() => {
+						setIsInstallmentsModalOpen(false);
+						setBankInstallmentInvoice(invoices[0] || null);
+					}}
 				/>
 			)}
 
@@ -848,9 +874,60 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 				<CashReceiptPrintModal
 					isOpen={Boolean(receiptToPrint)}
 					onClose={() => setReceiptToPrint(null)}
+					invoice={receiptToPrint}
 					clinicName={clinicLegalName}
 					attendingDoctorName={receiptToPrint.doctorName}
 					cashierFullName={currentDoctorName}
+				/>
+			)}
+
+			{refundInvoice && (
+				<RefundServiceModal
+					isOpen={Boolean(refundInvoice)}
+					onClose={() => setRefundInvoice(null)}
+					invoiceId={refundInvoice.id}
+					invoiceNumber={refundInvoice.number}
+					patientId={refundInvoice.patientId}
+					patientName={refundInvoice.patientName}
+					patientPhone={refundInvoice.patientPhone}
+					doctorName={refundInvoice.doctorName}
+					services={(refundInvoice.items || []).map((it) => ({
+						id: it.id,
+						name: it.title,
+						code804n: it.code804n,
+						toothNumber: it.toothNumber,
+						priceRub: it.priceRub,
+						quantity: it.quantity,
+						doctorName: refundInvoice.doctorName,
+						commissionPct: 30,
+					}))}
+					onRefundSuccess={(res) => {
+						setRefundInvoice(null);
+						showToast(
+							`Возврат по счету ${refundInvoice.number} на сумму ${res.totalRefundRub} ₽ успешно проведен по 54-ФЗ`,
+							"success",
+						);
+					}}
+				/>
+			)}
+
+			{bankInstallmentInvoice && (
+				<BankInstallmentQrModal
+					isOpen={Boolean(bankInstallmentInvoice)}
+					onClose={() => setBankInstallmentInvoice(null)}
+					stageTitle={`Оплата по счету ${bankInstallmentInvoice.number}`}
+					stageAmountKopecks={rubToKopecks(bankInstallmentInvoice.totalAmountRub)}
+					patientId={bankInstallmentInvoice.patientId}
+					patientName={bankInstallmentInvoice.patientName}
+					patientPhone={bankInstallmentInvoice.patientPhone}
+					clinicName={clinicLegalName}
+					onInstallmentApproved={(appr) => {
+						setBankInstallmentInvoice(null);
+						showToast(
+							`Рассрочка одобрена! Сумма: ${(appr.approvedAmountKopecks / 100).toLocaleString("ru-RU")} ₽ (${appr.monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес)`,
+							"success",
+						);
+					}}
 				/>
 			)}
 		</div>

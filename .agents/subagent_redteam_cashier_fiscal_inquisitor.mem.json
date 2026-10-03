@@ -1,0 +1,49 @@
+{
+  "role": "Red Team Inquisitor — Cashier, Fiscal 54-FZ, Split Payments & Installments",
+  "status": "completed",
+  "completed_steps": [
+    "Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md in full",
+    "Deep reconnaissance of fiscal, cashier, payment, installment, Z-report files across apps/web, apps/api, packages/shared",
+    "Identified orphan components: RefundServiceModal was disconnected from InvoicesView; BankInstallmentQrModal was missing from InvoicesView; CashReceiptPrintModal was rendered without invoice prop falling back to hardcoded mocks",
+    "Identified hardcoded fake mock violations in CashReceiptPrintModal: fake INN '7701234567', fake receipt number '00142', fake hardcoded items",
+    "Purged hardcoded mocks from CashReceiptPrintModal.tsx: added dynamic calculation from live invoice via generateFiscalReceipt54Fz, neutral blank fallback without fake INN/receipt",
+    "Enforced Mandate 8e: 0 ₽ warranty invoices generate internal warranty act (АКТ-ГАР) and bypass physical KKT/OFD dispatch to prevent fiscal registrar crash; physical persons do not require mandatory INN (Tag 1228 optional)",
+    "Added 54-FZ receipt, split payment, bank installment QR, and partial refund context menu options to InvoiceCardItem.tsx",
+    "Mounted RefundServiceModal and BankInstallmentQrModal at root layer in InvoicesView.tsx with modal depth strictly 1 (Mandate 8c)",
+    "Connected PatientInstallmentsModal to BankInstallmentQrModal via onOpenBankInstallment with clean sequential transition",
+    "Added comprehensive test suite zeroMockCashierInquisition.test.ts (7 tests passing 100%)",
+    "Verified installmentsEngine.test.ts (4 tests passing 100%)",
+    "Verified scripts/check-encoding.mjs (7193 files verified clean, 0 errors)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "issue": "Hardcoded fake INN '7701234567' and receipt '00142' in CashReceiptPrintModal.tsx",
+      "resolution": "Purged fake mocks, added dynamic derive from live BillingInvoice with generateFiscalReceipt54Fz"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "RefundServiceModal and BankInstallmentQrModal were completely disconnected from InvoicesView.tsx ledger",
+      "resolution": "Mounted modals in InvoicesView root layer and wired context menu callbacks in InvoiceCardItem"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "0 ₽ warranty invoices lacked dedicated act rendering and risked KKT registrar hardware errors",
+      "resolution": "Enforced Mandate 8e: internal warranty act (АКТ-ГАР) bypasses KKT hardware and OFD link with clear guarantee badges"
+    }
+  ],
+  "modified_files": [
+    "apps/web/src/components/finance/CashReceiptPrintModal.tsx",
+    "apps/web/src/components/finance/Order804nFiscalReceiptPrint.tsx",
+    "apps/web/src/components/billing/InvoiceCardItem.tsx",
+    "apps/web/src/components/billing/InvoicesView.tsx",
+    "apps/web/src/components/billing/PatientInstallmentsModal.tsx",
+    "apps/web/src/components/finance/__tests__/zeroMockCashierInquisition.test.ts"
+  ],
+  "verification": {
+    "encoding": "node scripts/check-encoding.mjs -> 0 errors across 7193 files",
+    "zeroMockCashierInquisition": "node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/finance/__tests__/zeroMockCashierInquisition.test.ts -> 7/7 passed",
+    "installmentsEngine": "node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/billing/__tests__/installmentsEngine.test.ts -> 4/4 passed"
+  }
+}

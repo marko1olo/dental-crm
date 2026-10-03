@@ -7,6 +7,9 @@ import {
 	FileText,
 	MoreVertical,
 	Printer,
+	QrCode,
+	Receipt,
+	RotateCcw,
 	ShieldCheck,
 } from "lucide-react";
 import { FiscalReceiptStatusBadge } from "../finance/FiscalReceiptStatusBadge.js";
@@ -21,6 +24,10 @@ export interface InvoiceCardItemProps {
 	onPrintAct: () => void;
 	onApplyWarranty: () => void;
 	onPrepareFnsTaxDeduction: () => void;
+	readonly onPrintReceipt?: () => void;
+	readonly onRefund?: () => void;
+	readonly onBankInstallment?: () => void;
+	readonly onSplitPay?: () => void;
 }
 
 export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
@@ -32,6 +39,10 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 	onPrintAct,
 	onApplyWarranty,
 	onPrepareFnsTaxDeduction,
+	onPrintReceipt,
+	onRefund,
+	onBankInstallment,
+	onSplitPay,
 }) => {
 	const isPaid = inv.status === "paid";
 	const isWarranty = inv.status === "warranty_100";
@@ -187,7 +198,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 
 					{isMenuOpen && (
 						<div
-							className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-20 py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
+							className="absolute right-0 top-full mt-1 w-56 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-xl z-20 py-1 text-xs text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-100"
 							role="menu"
 						>
 							<button
@@ -195,10 +206,50 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 								onClick={onPrintAct}
 								className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 								role="menuitem"
+								data-testid={`menu-print-act-${inv.id}`}
 							>
-								<FileText size={14} className="text-teal-600" />
-								<span>Печать акта выполненных услуг</span>
+								<FileText size={14} className="text-teal-600 shrink-0" />
+								<span>Акт выполненных услуг</span>
 							</button>
+
+							{onPrintReceipt && (
+								<button
+									type="button"
+									onClick={onPrintReceipt}
+									className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid={`menu-print-receipt-${inv.id}`}
+								>
+									<Receipt size={14} className="text-teal-600 shrink-0" />
+									<span>Чек 54-ФЗ / Квитанция</span>
+								</button>
+							)}
+
+							{isPending && onSplitPay && (
+								<button
+									type="button"
+									onClick={onSplitPay}
+									className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
+									role="menuitem"
+									data-testid={`menu-split-pay-${inv.id}`}
+								>
+									<CreditCard size={14} className="text-purple-600 shrink-0" />
+									<span>Сплит-оплата (нал + карта)</span>
+								</button>
+							)}
+
+							{isPending && onBankInstallment && (
+								<button
+									type="button"
+									onClick={onBankInstallment}
+									className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-teal-50 dark:hover:bg-teal-950/30 text-teal-700 dark:text-teal-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
+									role="menuitem"
+									data-testid={`menu-bank-installment-${inv.id}`}
+								>
+									<QrCode size={14} className="text-teal-600 shrink-0" />
+									<span>Банковская рассрочка (QR)</span>
+								</button>
+							)}
 
 							{isPending && (
 								<button
@@ -206,12 +257,26 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 									onClick={onApplyWarranty}
 									className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
 									role="menuitem"
+									data-testid={`menu-apply-warranty-${inv.id}`}
 								>
 									<ShieldCheck
 										size={14}
-										className="text-purple-600"
+										className="text-purple-600 shrink-0"
 									/>
 									<span>Гарантия 100% (0 ₽)</span>
+								</button>
+							)}
+
+							{(isPaid || inv.status === "partially_paid") && onRefund && (
+								<button
+									type="button"
+									onClick={onRefund}
+									className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-300 flex items-center gap-2 cursor-pointer transition-colors font-medium"
+									role="menuitem"
+									data-testid={`menu-refund-${inv.id}`}
+								>
+									<RotateCcw size={14} className="text-rose-600 shrink-0" />
+									<span>Оформить возврат (54-ФЗ)</span>
 								</button>
 							)}
 
@@ -220,8 +285,9 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 								onClick={onPrepareFnsTaxDeduction}
 								className="w-full min-h-[32px] [@media(pointer:coarse)]:min-h-[44px] px-3 py-1.5 [@media(pointer:coarse)]:py-2 text-left hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 								role="menuitem"
+								data-testid={`menu-fns-deduction-${inv.id}`}
 							>
-								<FileCheck size={14} className="text-blue-600" />
+								<FileCheck size={14} className="text-blue-600 shrink-0" />
 								<span>Справка на налоговый вычет</span>
 							</button>
 						</div>
