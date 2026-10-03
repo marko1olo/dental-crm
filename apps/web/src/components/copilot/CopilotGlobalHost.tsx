@@ -4,6 +4,9 @@ import { CopilotDrawer } from './CopilotDrawer';
 import { ChairsideCopilotHUD } from './ChairsideCopilotHUD';
 import { useCopilotContextSync } from './CopilotContextSync';
 import type { CopilotUiMessage, PendingConfirmation } from './copilotTypes';
+import { ClinicalProtocolsCatalogModal } from '../visit/clinicalCatalog/ClinicalProtocolsCatalogModal';
+import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../visit/clinicalCatalog/clinicalProtocolsCatalog';
+import { useVisitStore } from '../../store/visitStore';
 
 declare global {
   interface Window {
@@ -46,10 +49,29 @@ export const CopilotGlobalHost: React.FC = () => {
   const [customMessages, setCustomMessages] = useState<CopilotUiMessage[] | null>(null);
   const [customPending, setCustomPending] = useState<PendingConfirmation | null>(null);
   const [isHudOpen, setIsHudOpen] = useState(false);
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
+  const [catalogSpecialty, setCatalogSpecialty] = useState<SpecialtyCategoryKey>('all');
 
   const openHud = useCallback(() => setIsHudOpen(true), []);
   const closeHud = useCallback(() => setIsHudOpen(false), []);
   const toggleHud = useCallback(() => setIsHudOpen((prev) => !prev), []);
+
+  const handleApplyCatalogPatch = useCallback((patch: VisitNoteFieldsPatch, _successMessage: string) => {
+    useVisitStore.getState().setVisitNoteForm((prev) => ({
+      ...prev,
+      complaint: patch.complaint || prev.complaint || '',
+      anamnesis: patch.anamnesis || prev.anamnesis || '',
+      objectiveStatus: patch.objectiveStatus || prev.objectiveStatus || '',
+      treatmentPlan: patch.treatmentPlan || prev.treatmentPlan || '',
+      recommendations: patch.recommendations || prev.recommendations || '',
+      diagnosis: patch.diagnosis || prev.diagnosis || '',
+    }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('dente-apply-soap-protocol', { detail: patch }));
+    }
+    setIsCatalogModalOpen(false);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -77,6 +99,15 @@ export const CopilotGlobalHost: React.FC = () => {
     const handleOpenHud = () => setIsHudOpen(true);
     const handleCloseHud = () => setIsHudOpen(false);
 
+    const handleOpenCatalog = (e: Event) => {
+      const customEvent = e as CustomEvent<{ tooth?: number; query?: string; category?: SpecialtyCategoryKey }>;
+      if (customEvent.detail) {
+        if (customEvent.detail.tooth) setCatalogTooth(customEvent.detail.tooth);
+        if (customEvent.detail.category) setCatalogSpecialty(customEvent.detail.category);
+      }
+      setIsCatalogModalOpen(true);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") || (e.altKey && e.key.toLowerCase() === "c")) {
         e.preventDefault();
@@ -88,6 +119,7 @@ export const CopilotGlobalHost: React.FC = () => {
     window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
     window.addEventListener('dente:open-chairside-hud', handleOpenHud);
     window.addEventListener('dente:close-chairside-hud', handleCloseHud);
+    window.addEventListener('dente:open-protocols-catalog', handleOpenCatalog);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
@@ -95,6 +127,7 @@ export const CopilotGlobalHost: React.FC = () => {
       window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
       window.removeEventListener('dente:open-chairside-hud', handleOpenHud);
       window.removeEventListener('dente:close-chairside-hud', handleCloseHud);
+      window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);
       window.removeEventListener('keydown', handleKeyDown);
       delete window.__denteCopilot;
     };
@@ -138,6 +171,18 @@ export const CopilotGlobalHost: React.FC = () => {
           patientAllergies={uiContext.allergies}
           activeTooth={numericActiveTooth}
           onClose={closeHud}
+        />
+      )}
+
+      {/* 1 142 Clinical Protocols Catalog Modal (Doctor Autonomy Mandate 8e) */}
+      {isCatalogModalOpen && (
+        <ClinicalProtocolsCatalogModal
+          isOpen={isCatalogModalOpen}
+          onClose={() => setIsCatalogModalOpen(false)}
+          activeTooth={catalogTooth ?? numericActiveTooth ?? 16}
+          currentNoteForm={useVisitStore.getState().visitNoteForm}
+          onApplyPatch={handleApplyCatalogPatch}
+          initialSpecialty={catalogSpecialty}
         />
       )}
     </>

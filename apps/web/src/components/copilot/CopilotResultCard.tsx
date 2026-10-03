@@ -23,6 +23,7 @@ import {
   EstimateTierCard,
   CopilotReactTracker,
   CopilotProtocol043ConfirmCard,
+  CopilotClinicalProtocolCard,
   CopilotDdiSafetyCard,
   type PatientProfileCardData,
   type ScheduleSlotPickerData,
@@ -31,6 +32,7 @@ import {
   type EstimateTierData,
   type EstimateTierOption,
   type EstimateStageBreakdown,
+  type ClinicalProtocolCardData,
 } from './CopilotGenerativeCards';
 import type { Protocol043Data, DdiSafetyAlertData, ReactStepItem } from './copilotTypes';
 import { formatMoney } from './useCopilotFormat';
@@ -236,11 +238,37 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
     );
   }
 
+  // 3.55. Generative UI: Clinical Protocols Catalog 1 142 Card
+  if (
+    tool.includes('clinical_protocol') ||
+    tool.includes('apply_clinical_protocol') ||
+    tool.includes('select_clinical_protocol') ||
+    tool.includes('search_clinical_protocols') ||
+    tool.includes('suggest_clinical_protocol') ||
+    (typeof obj.procedureName === 'string' && (obj.patch !== undefined || obj.matchedIcd10 !== undefined)) ||
+    obj.totalCatalogProtocols === 1142
+  ) {
+    const cardData: ClinicalProtocolCardData = {
+      procedureId: typeof obj.procedureId === 'string' ? obj.procedureId : undefined,
+      procedureName: String(obj.procedureName || obj.name || 'Клинический протокол'),
+      categoryKey: typeof obj.categoryKey === 'string' ? obj.categoryKey : undefined,
+      categoryName: typeof obj.categoryName === 'string' ? obj.categoryName : undefined,
+      matchedIcd10: typeof obj.matchedIcd10 === 'string' ? obj.matchedIcd10 : undefined,
+      tooth: (obj.tooth as string | number) ?? (obj.toothNumber as string | number),
+      toothNumber: (obj.toothNumber as string | number) ?? (obj.tooth as string | number),
+      patch: obj.patch && typeof obj.patch === 'object' ? (obj.patch as ClinicalProtocolCardData['patch']) : undefined,
+      toothState: typeof obj.toothState === 'string' ? (obj.toothState as any) : undefined,
+      applied: typeof obj.applied === 'boolean' ? obj.applied : true,
+      totalCatalogProtocols: 1142,
+      alternatives: Array.isArray(obj.alternatives) ? (obj.alternatives as any) : undefined,
+    };
+    return <CopilotClinicalProtocolCard data={cardData} />;
+  }
+
   // 3.6. Generative UI: Outpatient Diary 043/u Card
   if (
     tool.includes('043') ||
     tool.includes('diary') ||
-    tool.includes('protocol') ||
     (obj.complaints !== undefined && obj.treatment !== undefined) ||
     obj.protocol_043 !== undefined
   ) {

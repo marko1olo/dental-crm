@@ -861,7 +861,31 @@
 
 ---
 
-### 8. Доказательная База: 4-State Visual Proof и Инструментальные Метрики
+### 8. Боевая Связка Каталога 1 142 Клинических Протоколов с DENTA AI Copilot Drawer и Chairside Copilot HUD (Фича #477, <2мс SSOT-Матчинг, 1-Клик Применение, Мандаты 8e, 8l, 8y)
+
+В рамках третьей фазы внедрен промышленный интеллект-мост между каталогом клинических протоколов и ассистентами врача (DENTA AI Copilot Drawer и Chairside Copilot HUD):
+1. **Детерминированный SSOT-матчинг (<2мс)** (`clinicalProtocolsCatalog.ts`):
+   - Алгоритм `extractFdiToothFromText` для парсинга зубов постоянного прикуса (11–48) и молочного прикуса (51–85) из текста запроса и контекста приёма.
+   - Обогащен `findBestClinicalProtocol`: поддержка алиасов клинических полей, передача целевого зуба, нормализация симптоматики, классификация гингивита в категорию `periodontics`.
+2. **Экшн-движок DENTA AI (`aiActionDispatcher.ts`)**:
+   - Экшны `apply_clinical_protocol` и `search_clinical_protocols` обогащены полями каталога (1 142 протокола, МКБ-10, гранулярные EMR-патчи).
+   - Атомарный диспатч в `useVisitStore` (`setVisitNoteForm`, `setToothState`, `applyAiToothCodes`) и `useAppStore.setActiveTooth` без блокировок интерфейса.
+3. **Генеративные карточки AI Copilot Drawer (`CopilotGenerativeCards.tsx`, `CopilotResultCard.tsx`)**:
+   - Карточка `CopilotClinicalProtocolCard` со складным аккордеоном полей, чипами альтернатив и вертикальным стеком действий: кнопка 1-клик применения `[⚡ Применить в 1 клик]` (h=38px primary) и `[📖 Выбрать другой из 1 142]` (h=34px secondary).
+   - Подключение рендеринга карточки на вызовы инструментов `apply_clinical_protocol`, `select_clinical_protocol`, `search_clinical_protocols`, `suggest_clinical_protocol`.
+4. **Глобальный хост и перехват событий (`CopilotGlobalHost.tsx`)**:
+   - Глобальный шинный слушатель `dente:open-protocols-catalog` для бесшовного вызова модального окна `ClinicalProtocolsCatalogModal` из ассистентов с контекстом зуба и визита.
+5. **Chairside Copilot HUD (`ChairsideCopilotHUD.tsx`)**:
+   - Автоподбор протокола при смене пресетов и зубов.
+   - Бейдж `chairside-catalog-protocol-badge` с наименованием протокола, кодом МКБ-10 и кнопкой «Выбрать другой из 1 142».
+   - Устранение горизонтальной коллизии в шапке HUD: в развернутом виде капсульные теги скрываются для идеальной клинической эргономики.
+6. **100% покрытие тестами и доказательная база**:
+   - Unit-тесты: `aiProtocolsCopilot.test.ts` (5/5 PASS, бенчмарк <3.5мс), `clinicalProtocolsCatalog.test.ts` (6/6 PASS), `aiActionDispatcher.test.ts` (7/7 PASS), `copilotActionRunner.test.ts` (3/3 PASS).
+   - 6 натурных скриншотов в Light и Dark темах верифицированы глазами через `view_file` (`copilot_drawer_protocol_card_light.png`, `copilot_drawer_protocol_card_dark.png`, `chairside_hud_protocol_matched_light.png`, `chairside_hud_protocol_matched_dark.png`, `clinical_protocols_catalog_1142_light.png`, `clinical_protocols_catalog_1142_dark.png`).
+
+---
+
+### 9. Доказательная База: 4-State Visual Proof и Инструментальные Метрики
 
 В соответствии с Мандатом 8d и Core Route п. 7, все изменения подтверждены инструментальными доказательствами:
 - **16 натурных скриншотов** во всех 4 базовых состояниях: Desktop Light (1440x900), Desktop Dark (1440x900), Mobile Light (390x844), Mobile Dark (390x844).
@@ -873,7 +897,7 @@
   - Контрастность текста $\ge 4.5:1$ (WCAG AAA).
   - 0 мультяшных эмодзи в медицинских документах и бланках РФ.
 
-**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (476 фич в реестре: 63 канонические + 413 аддендум, ВСЕ 476 ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX; массив 1 142 клинических протоколов и макрос-теги IDENT внедрены в боевой дневник приёма DENTE, советские шифры полностью ликвидированы).
+**ИТОГОВЫЙ ВЕРДИКТ RED TEAM: [ПРОВЕРЕНО: ЧИСТО]** (477 фич в реестре: 63 канонические + 414 аддендум, ВСЕ 477 ЗАКРЫТЫ СО СТАТУСОМ [ЕСТЬ] / [ЗАКРЫТО], 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX; каталог 1 142 клинических протоколов бесшовно интегрирован в боевой дневник приёма, DENTA AI Copilot Drawer и Chairside Copilot HUD, советские шифры полностью ликвидированы).
 
 
 

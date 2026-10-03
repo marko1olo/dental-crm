@@ -51,13 +51,13 @@ export interface GroupedClinicalProcedure {
 	readonly procedureName: string;
 	readonly categoryKey: SpecialtyCategoryKey;
 	readonly categoryName: string;
-	readonly complaints?: ClinicalChunk1142;
-	readonly anamnesis?: ClinicalChunk1142;
-	readonly objective?: ClinicalChunk1142;
-	readonly treatment?: ClinicalChunk1142;
-	readonly recommendations?: ClinicalChunk1142;
-	readonly fullTemplate?: ClinicalChunk1142;
-	readonly matchedIcd10?: string;
+	readonly complaints?: ClinicalChunk1142 | undefined;
+	readonly anamnesis?: ClinicalChunk1142 | undefined;
+	readonly objective?: ClinicalChunk1142 | undefined;
+	readonly treatment?: ClinicalChunk1142 | undefined;
+	readonly recommendations?: ClinicalChunk1142 | undefined;
+	readonly fullTemplate?: ClinicalChunk1142 | undefined;
+	readonly matchedIcd10?: string | undefined;
 	readonly totalChunks: number;
 }
 
@@ -145,20 +145,21 @@ function buildGroupedProcedures(): GroupedClinicalProcedure[] {
 		else if (nameLower.includes("гигиен")) matchedIcd = "K05.0 Острый гингивит";
 		else if (nameLower.includes("отбеливание")) matchedIcd = "K03.6 Отложения [наросты] на зубах";
 
-		result.push({
+		const itemObj: GroupedClinicalProcedure = {
 			id: `proc-${idCounter++}`,
 			procedureName: val.procedureName,
 			categoryKey: val.categoryKey,
 			categoryName: val.categoryName,
-			complaints: val.complaints,
-			anamnesis: val.anamnesis,
-			objective: val.objective,
-			treatment: val.treatment,
-			recommendations: val.recommendations,
-			fullTemplate: val.fullTemplate,
-			matchedIcd10: matchedIcd,
 			totalChunks: val.chunks.length,
-		});
+			...(val.complaints ? { complaints: val.complaints } : {}),
+			...(val.anamnesis ? { anamnesis: val.anamnesis } : {}),
+			...(val.objective ? { objective: val.objective } : {}),
+			...(val.treatment ? { treatment: val.treatment } : {}),
+			...(val.recommendations ? { recommendations: val.recommendations } : {}),
+			...(val.fullTemplate ? { fullTemplate: val.fullTemplate } : {}),
+			...(matchedIcd ? { matchedIcd10: matchedIcd } : {}),
+		};
+		result.push(itemObj);
 	}
 
 	return result;
@@ -376,4 +377,228 @@ export function buildChunkVisitNotePatch(
 	}
 
 	return patch;
+}
+
+export interface ClinicalProtocolMatchResult {
+	readonly procedure: GroupedClinicalProcedure;
+	readonly procedureId: string;
+	readonly procedureName: string;
+	readonly categoryKey: SpecialtyCategoryKey;
+	readonly categoryName: string;
+	readonly score: number;
+	readonly targetTooth: number | null;
+	readonly tooth: number | null;
+	readonly specialtyKey: SpecialtyCategoryKey;
+	readonly matchedIcd10?: string | undefined;
+	readonly patch: VisitNoteFieldsPatch;
+	readonly recommendedToothState: "treatment" | "done" | "missing" | "idle";
+	readonly alternatives: readonly GroupedClinicalProcedure[];
+}
+
+/**
+ * Извлекает валидный номер зуба по FDI (11..48, 51..85) из текста запроса врача
+ */
+export function extractFdiToothFromText(text: string): number | null {
+	// Паттерны вида: зуб 16, зуба 24, на 36, для 46, #16, 16 зуб, 16-й зуб
+	const patterns = [
+		/(?:зуб[аеы]?\s*#?\s*)(\d{2})\b/i,
+		/(?:на|для|област[иь]|в)\s*#?(\d{2})\b/i,
+		/\b(\d{2})\s*(?:зуб[аеы]?|-?[йяе] зуб[аеы]?)\b/i,
+		/#(\d{2})\b/,
+		/\b([1-8][1-8])\b/,
+	];
+
+	for (const pattern of patterns) {
+		const match = text.match(pattern);
+		if (match && match[1]) {
+			const num = Number(match[1]);
+			if (
+				(num >= 11 && num <= 18) ||
+				(num >= 21 && num <= 28) ||
+				(num >= 31 && num <= 38) ||
+				(num >= 41 && num <= 48) ||
+				(num >= 51 && num <= 55) ||
+				(num >= 61 && num <= 65) ||
+				(num >= 71 && num <= 75) ||
+				(num >= 81 && num <= 85)
+			) {
+				return num;
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * Интеллектуальный поиск наиболее релевантного клинического протокола из каталога 1 142.
+ * Исключает переполнение контекста LLM: поиск выполняется за <2мс по индексированным SSOT чанкам.
+ */
+export function findBestClinicalProtocol(
+	rawQuery: string,
+	optionsOrTooth?: number | null | {
+		specialty?: SpecialtyCategoryKey;
+		toothNumber?: number | null;
+		currentForm?: Record<string, any>;
+	},
+): ClinicalProtocolMatchResult | null {
+	const text = rawQuery.trim();
+	if (!text) return null;
+
+	const options = typeof optionsOrTooth === "number"
+		? { toothNumber: optionsOrTooth }
+		: (optionsOrTooth ?? {});
+
+	const targetTooth = options.toothNumber ?? extractFdiToothFromText(text);
+	const lower = text.toLowerCase();
+
+	// Очистка от стоп-слов команд врача
+	const cleanPrompt = lower
+		.replace(/\b(дента|пожалуйста|заполни|поставь|примени|выбери|протокол|протокола|протоколы|шаблон|шаблона|дневник|дневника|карту|карты|приёма|приема|соап|soap|зуб|зуба|зубе|зубов|на|для|в|по|с|со|области)\b/gi, " ")
+		.replace(/\b\d{2}\b/g, " ")
+		.replace(/[.,:;!?"'(){}[\]-]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+
+	// Определение целевой категории по ключевым словам
+	let inferredCategory: SpecialtyCategoryKey = options.specialty ?? "all";
+	if (inferredCategory === "all") {
+		if (lower.includes("детск") || lower.includes("молочн") || lower.includes("ребен") || (targetTooth && targetTooth >= 51 && targetTooth <= 85)) {
+			inferredCategory = "pediatric";
+		} else if (lower.includes("удал") || lower.includes("имплант") || lower.includes("синус") || lower.includes("альвеолит") || lower.includes("резекци") || lower.includes("экзостоз") || lower.includes("пластик")) {
+			inferredCategory = "surgery";
+		} else if (lower.includes("коронк") || lower.includes("винир") || lower.includes("протез") || lower.includes("оттиск") || lower.includes("слепк") || lower.includes("вкладк")) {
+			inferredCategory = "orthopedics";
+		} else if (lower.includes("гигиен") || lower.includes("чистк") || lower.includes("air flow") || lower.includes("air-flow") || lower.includes("скейлинг") || lower.includes("фторирован")) {
+			inferredCategory = "hygiene";
+		} else if (lower.includes("отбеливан") || lower.includes("zoom") || lower.includes("opalescence")) {
+			inferredCategory = "bleaching";
+		} else if (lower.includes("пародонт") || lower.includes("гингивит") || lower.includes("десн") || lower.includes("кюретаж") || lower.includes("вектор")) {
+			inferredCategory = "periodontics";
+		} else if (lower.includes("кариес") || lower.includes("пульпит") || lower.includes("периодонтит") || lower.includes("эндодонт") || lower.includes("канал")) {
+			inferredCategory = "therapy";
+		}
+	}
+
+	// Клинические маркеры предпочтения
+	const isCaries = lower.includes("кариес");
+	const isDeepCaries = isCaries && (lower.includes("глубок") || lower.includes("дентин"));
+	const isEnamelCaries = isCaries && (lower.includes("эмал") || lower.includes("пятн") || lower.includes("поверхност"));
+	const isPulpitis = lower.includes("пульпит") || lower.includes("эндодонт") || lower.includes("депульп") || lower.includes("канал");
+	const isPeriodontitis = lower.includes("периодонтит") || lower.includes("гранулем");
+	const isExtraction = lower.includes("удал") || lower.includes("экстракц");
+	const isRetained = isExtraction && (lower.includes("ретинир") || lower.includes("дистопир") || lower.includes("восьмер") || lower.includes("мудрост"));
+	const isImplant = lower.includes("имплант") || lower.includes("имплантац");
+	const isSinusLift = lower.includes("синус") || lower.includes("лифтинг");
+	const isCrown = lower.includes("коронк") || lower.includes("препарирован") || lower.includes("циркон") || lower.includes("металлокерам");
+	const isVeneer = lower.includes("винир");
+	const isHygiene = lower.includes("гигиен") || lower.includes("чистк") || lower.includes("air flow") || lower.includes("air-flow") || lower.includes("скейлинг");
+	const isBleaching = lower.includes("отбеливан");
+	const isPediatric = inferredCategory === "pediatric";
+
+	const scored: Array<{ proc: GroupedClinicalProcedure; score: number }> = [];
+
+	for (const proc of GROUPED_CLINICAL_PROCEDURES) {
+		let score = 0;
+		const nameLower = proc.procedureName.toLowerCase();
+		const catKey = proc.categoryKey;
+
+		// 1. Совпадение категории
+		if (inferredCategory !== "all" && catKey === inferredCategory) {
+			score += 30;
+		}
+
+		// 2. Специфические клинические правила высшего приоритета
+		if (isRetained && nameLower.includes("ретинированного")) score += 150;
+		if (isExtraction && !isRetained && nameLower === "удаление зуба") score += 120;
+		if (isSinusLift && nameLower.includes("синус-лифтинг")) score += 150;
+		if (isImplant && !nameLower.includes("удаление") && (nameLower === "имплантация" || nameLower.includes("имплантация"))) score += 120;
+		if (isDeepCaries && nameLower === "кариес дентина") score += 140;
+		if (isEnamelCaries && nameLower === "кариес эмали") score += 140;
+		if (isCaries && !isDeepCaries && !isEnamelCaries && nameLower === "кариес дентина") score += 100;
+		if (isPulpitis && (nameLower === "пульпит" || nameLower === "пульпит мол.зуба" || nameLower.startsWith("пульпит"))) score += 130;
+		if (isPeriodontitis && (nameLower === "периодонтит" || nameLower === "периодонтит мол.зуба" || nameLower.startsWith("периодонтит"))) score += 130;
+		if (isCrown && nameLower.includes("коронку на своих зубах")) score += 130;
+		if (isCrown && nameLower.includes("коронки на имплантах") && isImplant) score += 140;
+		if (isVeneer && nameLower.includes("виниры")) score += 140;
+		if (isHygiene && (nameLower === "профессиональная гигиена" || nameLower === "проф.гигиена")) score += 140;
+		if (isBleaching && nameLower.includes("отбеливание")) score += 130;
+
+		if (isPediatric && catKey === "pediatric") {
+			score += 50;
+			if (isCaries && nameLower.includes("кариес")) score += 60;
+			if (isPulpitis && nameLower.includes("пульпит")) score += 60;
+		}
+
+		// 3. Совпадение ключевых слов очищенного запроса
+		const promptTokens = cleanPrompt.split(/\s+/).filter((t) => t.length >= 3);
+		for (const token of promptTokens) {
+			if (nameLower.includes(token)) score += 25;
+			if (proc.matchedIcd10 && proc.matchedIcd10.toLowerCase().includes(token)) score += 20;
+			if (proc.treatment?.text.toLowerCase().includes(token)) score += 10;
+			if (proc.complaints?.text.toLowerCase().includes(token)) score += 5;
+		}
+
+		if (score > 0) {
+			scored.push({ proc, score });
+		}
+	}
+
+	scored.sort((a, b) => b.score - a.score);
+
+	const best = scored[0];
+	if (!best || best.score <= 0) {
+		// Фоллбек на базовый кариес дентина
+		const fallback = GROUPED_CLINICAL_PROCEDURES.find((p) => p.procedureName.toLowerCase().includes("кариес дентина")) || GROUPED_CLINICAL_PROCEDURES[0];
+		if (!fallback) return null;
+		const patch = buildProcedureVisitNotePatch(fallback, options.currentForm, targetTooth);
+		return {
+			procedure: fallback,
+			procedureId: fallback.id,
+			procedureName: fallback.procedureName,
+			categoryKey: fallback.categoryKey,
+			categoryName: fallback.categoryName,
+			score: 10,
+			targetTooth,
+			tooth: targetTooth,
+			specialtyKey: fallback.categoryKey,
+			...(fallback.matchedIcd10 ? { matchedIcd10: fallback.matchedIcd10 } : {}),
+			patch,
+			recommendedToothState: "treatment",
+			alternatives: GROUPED_CLINICAL_PROCEDURES.slice(1, 4),
+		};
+	}
+
+	const alternatives = scored.slice(1, 4).map((s) => s.proc);
+	const patch = buildProcedureVisitNotePatch(best.proc, options.currentForm, targetTooth);
+
+	// Определение рекомендованного статуса одонтограммы
+	let recommendedToothState: "treatment" | "done" | "missing" | "idle" = "treatment";
+	const bestName = best.proc.procedureName.toLowerCase();
+	const bestCat = best.proc.categoryKey;
+
+	if (bestCat === "surgery" && (bestName.includes("удаление") || bestName.includes("ретинир"))) {
+		recommendedToothState = "missing";
+	} else if (bestCat === "orthopedics" || bestName.includes("имплант") || bestName.includes("коронк") || bestName.includes("винир") || bestName.includes("пломб")) {
+		recommendedToothState = "done";
+	} else if (bestCat === "hygiene" || bestCat === "bleaching" || bestName.includes("осмотр") || bestName.includes("норма")) {
+		recommendedToothState = "idle";
+	} else {
+		recommendedToothState = "treatment";
+	}
+
+	return {
+		procedure: best.proc,
+		procedureId: best.proc.id,
+		procedureName: best.proc.procedureName,
+		categoryKey: best.proc.categoryKey,
+		categoryName: best.proc.categoryName,
+		score: best.score,
+		targetTooth,
+		tooth: targetTooth,
+		specialtyKey: best.proc.categoryKey,
+		...(best.proc.matchedIcd10 ? { matchedIcd10: best.proc.matchedIcd10 } : {}),
+		patch,
+		recommendedToothState,
+		alternatives,
+	};
 }

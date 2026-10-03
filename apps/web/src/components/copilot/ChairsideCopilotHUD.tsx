@@ -36,11 +36,14 @@ import {
   Syringe,
   Printer,
   MessageSquare,
+  BookOpen,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { globalDentalVoiceEngine, parseDentalVoiceSpeech, type DentalVoiceIntent } from "../../services/voice";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { voiceMeterHeights } from "../workspaceActions/voiceMeter";
+import { findBestClinicalProtocol } from "../visit/clinicalCatalog/clinicalProtocolsCatalog";
+import { useVisitStore } from "../../store/visitStore";
 import "./ChairsideCopilotHUD.css";
 
 export interface ChairsideThoughtStep {
@@ -689,6 +692,23 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     ...activePreset.safetyAlert,
     acknowledged: false,
   });
+  const [matchedProtocol, setMatchedProtocol] = useState<{
+    procedureName: string;
+    matchedIcd10?: string;
+    categoryKey: string;
+    tooth?: number | null;
+  } | null>(() => {
+    const match = findBestClinicalProtocol(activePreset.prompt, activePreset.toothNumber || activeTooth || undefined);
+    if (match) {
+      return {
+        procedureName: match.procedureName,
+        categoryKey: match.categoryKey,
+        tooth: match.tooth ?? activePreset.toothNumber,
+        ...(match.matchedIcd10 ? { matchedIcd10: match.matchedIcd10 } : {}),
+      };
+    }
+    return null;
+  });
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -729,8 +749,19 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
       setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
       setVerdict((preset as any).verdict || "");
+      const match = findBestClinicalProtocol(preset.prompt, preset.toothNumber || activeTooth || undefined);
+      if (match) {
+        setMatchedProtocol({
+          procedureName: match.procedureName,
+          categoryKey: match.categoryKey,
+          tooth: match.tooth ?? preset.toothNumber,
+          ...(match.matchedIcd10 ? { matchedIcd10: match.matchedIcd10 } : {}),
+        });
+      } else {
+        setMatchedProtocol(null);
+      }
     },
-    []
+    [activeTooth]
   );
 
   // Real POST request to /api/v1/copilot/agent/execute
@@ -738,6 +769,16 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     async (promptText: string) => {
       setIsThinking(true);
       const text = promptText.trim();
+      const catalogMatch = findBestClinicalProtocol(text, activeTooth ?? undefined);
+      if (catalogMatch) {
+        setMatchedProtocol({
+          procedureName: catalogMatch.procedureName,
+          categoryKey: catalogMatch.categoryKey,
+          tooth: catalogMatch.tooth,
+          ...(catalogMatch.matchedIcd10 ? { matchedIcd10: catalogMatch.matchedIcd10 } : {}),
+        });
+      }
+
       const staffToken = readDenteStaffToken();
       const clinicToken = readDenteClinicToken();
       const authToken = staffToken || clinicToken;
@@ -921,7 +962,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               carpulesCount: ad.recommendedCarpules || 1,
               patientWeightKg: ad.patientWeightKg || 70,
               maxCarpules: ad.maxCarpulesAllowed || 7,
-              epinephrineMcg: ad.epinephrineContentMcg || 8.5,
+              epinephrineMcg: ad.epinephrineContentMcg || ad.epinephrineMcg || 8.5,
               isCardiovascularRisk: Boolean(ad.isCardiovascularRisk),
               notes: ad.clinicalWarning || ad.clinicalAdvice,
               applied: false,
@@ -945,24 +986,30 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           return;
         }
       } catch (err) {
-        console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser:", err);
+        console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);
         const voiceIntent = parseDentalVoiceSpeech(text);
         const hasIntentEntities =
           voiceIntent.teethUpdates.length > 0 ||
           Boolean(voiceIntent.anesthesia) ||
           voiceIntent.procedures804n.length > 0 ||
-          Boolean(voiceIntent.soapNotes?.assessment);
+          Boolean(voiceIntent.soapNotes?.assessment) ||
+          Boolean(catalogMatch);
 
         if (hasIntentEntities) {
           const firstToothUpdate = voiceIntent.teethUpdates[0];
           const targetTooth =
+            catalogMatch?.tooth ||
             firstToothUpdate?.toothNumber ||
             voiceIntent.detectedTeeth[0] ||
             Number(text.match(/\b([1-4][1-8])\b/)?.[1]) ||
             activeTooth ||
             16;
-          const toothState = firstToothUpdate?.state || "Caries";
-          const toothStateLabel = `${firstToothUpdate?.icd10Title || "Кариес"} (${targetTooth})`;
+          const toothState = catalogMatch
+            ? catalogMatch.recommendedToothState
+            : (firstToothUpdate?.state || "Caries");
+          const toothStateLabel = catalogMatch
+            ? `${catalogMatch.procedureName} (${catalogMatch.matchedIcd10 || "Каталог 1 142"})`
+            : `${firstToothUpdate?.icd10Title || "Кариес"} (${targetTooth})`;
           const toothSurfaces = firstToothUpdate?.surfaces || ["O"];
 
           setToothProposal({
@@ -997,7 +1044,17 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
             );
           }
 
-          if (voiceIntent.soapNotes) {
+          if (catalogMatch) {
+            setSoapProposal({
+              complaint: catalogMatch.patch.complaint || `Жалобы в области зуба ${targetTooth}`,
+              anamnesis: catalogMatch.patch.anamnesis || "Ранее зуб не лечен, симптомы возникли недавно.",
+              objectiveStatus: catalogMatch.patch.objectiveStatus || `При осмотре: кариозное поражение зуба ${targetTooth}.`,
+              diagnosis: catalogMatch.patch.diagnosis || `${catalogMatch.matchedIcd10 || "K02.1"} ${catalogMatch.procedureName}`,
+              treatmentPlan: catalogMatch.patch.treatmentPlan || "Проведено препарирование и пломбирование.",
+              recommendations: catalogMatch.patch.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
+              applied: false,
+            });
+          } else if (voiceIntent.soapNotes) {
             const sn = voiceIntent.soapNotes;
             setSoapProposal({
               complaint: sn.subjective || `Жалобы в области зуба ${targetTooth}`,
@@ -1030,10 +1087,14 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
             {
               id: "step-voice-1",
               stepNumber: 1,
-              title: "Голосовой парсер речи за креслом (MANDATE 8l)",
+              title: catalogMatch
+                ? "Клинический протокол из каталога 1 142 (<2мс)"
+                : "Голосовой парсер речи за креслом (MANDATE 8l)",
               status: "done",
-              detail: `Распознан зуб ${targetTooth}, статус: ${toothStateLabel}`,
-              durationMs: 45,
+              detail: catalogMatch
+                ? `Найдена процедура: ${catalogMatch.procedureName} [МКБ-10: ${catalogMatch.matchedIcd10 || "н/д"}], зуб ${targetTooth}`
+                : `Распознан зуб ${targetTooth}, статус: ${toothStateLabel}`,
+              durationMs: 2,
             },
             {
               id: "step-voice-2",
@@ -1041,11 +1102,20 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               title: "Формирование дневника приёма и плана лечения",
               status: "done",
               detail: `Услуг: ${voiceIntent.procedures804n.length}, Анестезия: ${voiceIntent.anesthesia ? voiceIntent.anesthesia.displayName : "не требовалась"}`,
-              durationMs: 30,
+              durationMs: 15,
             },
           ]);
 
-          showToast(`Голосом распознано: зуб ${targetTooth} (${toothStateLabel})`, "success");
+          if (catalogMatch) {
+            setVerdict(`Подобран стандартный клинический протокол: ${catalogMatch.procedureName} (${catalogMatch.matchedIcd10 || "МКБ-10"}) для зуба ${targetTooth}.`);
+          }
+
+          showToast(
+            catalogMatch
+              ? `Протокол 1 142: ${catalogMatch.procedureName} (зуб ${targetTooth})`
+              : `Голосом распознано: зуб ${targetTooth} (${toothStateLabel})`,
+            "success"
+          );
         } else {
           const presetIdx =
             /пульпит|26|канал/i.test(text) ? 1 :
@@ -1193,20 +1263,25 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           },
         })
       );
-      window.dispatchEvent(
-        new CustomEvent("dente-quick-tooth-apply", {
-          detail: {
-            toothNumber: toothProposal.toothNumber,
-            state: canonicalState,
-            surfaces: toothProposal.surfaces,
-            patientId,
-          },
-        })
-      );
-    } catch {
-      // safe fallback
-    }
-    setToothProposal((prev) => ({ ...prev, applied: true }));
+        window.dispatchEvent(
+          new CustomEvent("dente-quick-tooth-apply", {
+            detail: {
+              toothNumber: toothProposal.toothNumber,
+              state: canonicalState,
+              surfaces: toothProposal.surfaces,
+              patientId,
+            },
+          })
+        );
+      } catch {
+        // safe fallback
+      }
+      try {
+        useVisitStore.getState().setToothState(String(toothProposal.toothNumber), canonicalState as any);
+      } catch {
+        // safe fallback
+      }
+      setToothProposal((prev) => ({ ...prev, applied: true }));
     showToast(`Зуб ${toothProposal.toothNumber} обновлен: ${toothProposal.stateLabel || canonicalState}`, "success");
   }, [toothProposal, onUpdateToothStatus, onApplyToothState, patientId]);
 
@@ -1310,6 +1385,19 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           },
         })
       );
+    } catch {
+      // safe fallback
+    }
+    try {
+      useVisitStore.getState().setVisitNoteForm((prev) => ({
+        ...prev,
+        complaint: soapProposal.complaint || prev.complaint || "",
+        anamnesis: soapProposal.anamnesis || prev.anamnesis || "",
+        objectiveStatus: soapProposal.objectiveStatus || prev.objectiveStatus || "",
+        treatmentPlan: soapProposal.treatmentPlan || prev.treatmentPlan || "",
+        recommendations: soapProposal.recommendations || prev.recommendations || "",
+        diagnosis: soapProposal.diagnosis || prev.diagnosis || "",
+      }));
     } catch {
       // safe fallback
     }
@@ -1716,126 +1804,130 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
             })()}
           </div>
 
-          {/* Interactive Live Entity Pills (Mandate 8l: 1-click remove cross if doctor mispoke) */}
-          <div className="chairside-hud-live-pills" data-testid="chairside-live-pills" role="toolbar" aria-label="Распознанные сущности">
-            {toothProposal.toothNumber && toothProposal.state ? (
-              <div
-                className={`chairside-live-pill chairside-live-pill--tooth ${toothProposal.applied ? "chairside-live-pill--applied" : ""}`}
-                data-testid="live-pill-tooth"
-                title={`Зуб ${toothProposal.toothNumber}: ${toothProposal.stateLabel}`}
-              >
-                <Activity size={12} className="shrink-0 text-[var(--teal)]" />
-                <span className="chairside-live-pill-text">
-                  Зуб {toothProposal.toothNumber}
-                  {toothProposal.surfaces.length > 0 ? ` (${toothProposal.surfaces.join("-")})` : ""}: {toothProposal.stateLabel}
-                </span>
+          {/* In compact capsule mode (!isDrawerOpen), show live entity pills & quick apply in the capsule bar */}
+          {!isDrawerOpen && (
+            <>
+              <div className="chairside-hud-live-pills" data-testid="chairside-live-pills" role="toolbar" aria-label="Распознанные сущности">
+                {toothProposal.toothNumber && toothProposal.state ? (
+                  <div
+                    className={`chairside-live-pill chairside-live-pill--tooth ${toothProposal.applied ? "chairside-live-pill--applied" : ""}`}
+                    data-testid="live-pill-tooth"
+                    title={`Зуб ${toothProposal.toothNumber}: ${toothProposal.stateLabel}`}
+                  >
+                    <Activity size={12} className="shrink-0 text-[var(--teal)]" />
+                    <span className="chairside-live-pill-text">
+                      Зуб {toothProposal.toothNumber}
+                      {toothProposal.surfaces.length > 0 ? ` (${toothProposal.surfaces.join("-")})` : ""}: {toothProposal.stateLabel}
+                    </span>
+                    <button
+                      type="button"
+                      className="chairside-live-pill-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveToothPill();
+                      }}
+                      title="Удалить зуб из предложений (если оговорились)"
+                      aria-label="Удалить зуб"
+                      data-testid="btn-remove-pill-tooth"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : null}
+
+                {soapProposal.diagnosis ? (
+                  <div
+                    className={`chairside-live-pill chairside-live-pill--diagnosis ${soapProposal.applied ? "chairside-live-pill--applied" : ""}`}
+                    data-testid="live-pill-diagnosis"
+                    title={`Диагноз: ${soapProposal.diagnosis}`}
+                  >
+                    <FileText size={12} className="shrink-0 text-[var(--teal-dark)]" />
+                    <span className="chairside-live-pill-text">{soapProposal.diagnosis}</span>
+                    <button
+                      type="button"
+                      className="chairside-live-pill-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveDiagnosisPill();
+                      }}
+                      title="Удалить диагноз из предложений"
+                      aria-label="Удалить диагноз"
+                      data-testid="btn-remove-pill-diagnosis"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : null}
+
+                {anestheticProposal ? (
+                  <div
+                    className={`chairside-live-pill chairside-live-pill--anesthetic ${anestheticProposal.applied ? "chairside-live-pill--applied" : ""}`}
+                    data-testid="live-pill-anesthetic"
+                    title={`Анестезия: ${anestheticProposal.drugName}`}
+                  >
+                    <Syringe size={12} className="shrink-0 text-[var(--teal)]" />
+                    <span className="chairside-live-pill-text">
+                      {anestheticProposal.drugName} ({anestheticProposal.carpulesCount}к)
+                    </span>
+                    <button
+                      type="button"
+                      className="chairside-live-pill-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveAnestheticPill();
+                      }}
+                      title="Удалить анестетик из предложений"
+                      aria-label="Удалить анестетик"
+                      data-testid="btn-remove-pill-anesthetic"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : null}
+
+                {servicesProposal.length > 0 ? (
+                  <div
+                    className={`chairside-live-pill chairside-live-pill--services ${servicesProposal.every((s) => s.applied) ? "chairside-live-pill--applied" : ""}`}
+                    data-testid="live-pill-services"
+                    title={`Смета: ${servicesProposal.length} услуг`}
+                  >
+                    <Receipt size={12} className="shrink-0 text-[var(--teal-dark)]" />
+                    <span className="chairside-live-pill-text">
+                      {servicesProposal.length} усл. • {servicesTotalPrice.toLocaleString("ru-RU")} ₽
+                    </span>
+                    <button
+                      type="button"
+                      className="chairside-live-pill-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveServicesPill();
+                      }}
+                      title="Удалить услуги из сметы"
+                      aria-label="Удалить услуги"
+                      data-testid="btn-remove-pill-services"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */}
+              {toothProposal.toothNumber && toothProposal.state ? (
                 <button
                   type="button"
-                  className="chairside-live-pill-remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveToothPill();
-                  }}
-                  title="Удалить зуб из предложений (если оговорились)"
-                  aria-label="Удалить зуб"
-                  data-testid="btn-remove-pill-tooth"
+                  className={`chairside-capsule-btn-apply ${toothProposal.applied ? "chairside-capsule-btn-apply--applied" : ""}`}
+                  onClick={handleApplyTooth}
+                  data-testid="btn-capsule-apply-scheme"
+                  title="Мгновенно обновить зуб на схеме (Enter)"
                 >
-                  <X size={11} />
+                  <Check size={13} />
+                  <span>{toothProposal.applied ? "На схеме" : "Применить к схеме"}</span>
+                  <kbd className="chairside-capsule-kbd">↵</kbd>
                 </button>
-              </div>
-            ) : null}
-
-            {soapProposal.diagnosis ? (
-              <div
-                className={`chairside-live-pill chairside-live-pill--diagnosis ${soapProposal.applied ? "chairside-live-pill--applied" : ""}`}
-                data-testid="live-pill-diagnosis"
-                title={`Диагноз: ${soapProposal.diagnosis}`}
-              >
-                <FileText size={12} className="shrink-0 text-[var(--teal-dark)]" />
-                <span className="chairside-live-pill-text">{soapProposal.diagnosis}</span>
-                <button
-                  type="button"
-                  className="chairside-live-pill-remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveDiagnosisPill();
-                  }}
-                  title="Удалить диагноз из предложений"
-                  aria-label="Удалить диагноз"
-                  data-testid="btn-remove-pill-diagnosis"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            ) : null}
-
-            {anestheticProposal ? (
-              <div
-                className={`chairside-live-pill chairside-live-pill--anesthetic ${anestheticProposal.applied ? "chairside-live-pill--applied" : ""}`}
-                data-testid="live-pill-anesthetic"
-                title={`Анестезия: ${anestheticProposal.drugName}`}
-              >
-                <Syringe size={12} className="shrink-0 text-[var(--teal)]" />
-                <span className="chairside-live-pill-text">
-                  {anestheticProposal.drugName} ({anestheticProposal.carpulesCount}к)
-                </span>
-                <button
-                  type="button"
-                  className="chairside-live-pill-remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveAnestheticPill();
-                  }}
-                  title="Удалить анестетик из предложений"
-                  aria-label="Удалить анестетик"
-                  data-testid="btn-remove-pill-anesthetic"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            ) : null}
-
-            {servicesProposal.length > 0 ? (
-              <div
-                className={`chairside-live-pill chairside-live-pill--services ${servicesProposal.every((s) => s.applied) ? "chairside-live-pill--applied" : ""}`}
-                data-testid="live-pill-services"
-                title={`Смета: ${servicesProposal.length} услуг`}
-              >
-                <Receipt size={12} className="shrink-0 text-[var(--teal-dark)]" />
-                <span className="chairside-live-pill-text">
-                  {servicesProposal.length} усл. • {servicesTotalPrice.toLocaleString("ru-RU")} ₽
-                </span>
-                <button
-                  type="button"
-                  className="chairside-live-pill-remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveServicesPill();
-                  }}
-                  title="Удалить услуги из сметы"
-                  aria-label="Удалить услуги"
-                  data-testid="btn-remove-pill-services"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */}
-          {toothProposal.toothNumber && toothProposal.state ? (
-            <button
-              type="button"
-              className={`chairside-capsule-btn-apply ${toothProposal.applied ? "chairside-capsule-btn-apply--applied" : ""}`}
-              onClick={handleApplyTooth}
-              data-testid="btn-capsule-apply-scheme"
-              title="Мгновенно обновить зуб на схеме (Enter)"
-            >
-              <Check size={13} />
-              <span>{toothProposal.applied ? "На схеме" : "Применить к схеме"}</span>
-              <kbd className="chairside-capsule-kbd">↵</kbd>
-            </button>
-          ) : null}
+              ) : null}
+            </>
+          )}
 
           <div className="chairside-hud-header-actions">
             <button
@@ -2136,6 +2228,38 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                 </span>
               </div>
               <div className="chairside-hud-card-body">
+                {matchedProtocol && (
+                  <div
+                    className="chairside-hud-catalog-banner flex items-center justify-between gap-2 px-2.5 py-1.5 mb-2.5 rounded-lg bg-[var(--paper-subtle)] border border-[var(--glass-border)] text-xs"
+                    data-testid="chairside-catalog-protocol-badge"
+                  >
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <BookOpen size={13} className="text-[var(--teal)] shrink-0" />
+                      <span className="truncate">
+                        Каталог 1 142: <strong className="text-[var(--ink-strong)]">{matchedProtocol.procedureName}</strong>
+                        {matchedProtocol.matchedIcd10 && <span className="opacity-70 ml-1">({matchedProtocol.matchedIcd10})</span>}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-[var(--primary)] hover:underline shrink-0 text-[11px] font-medium transition-colors"
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new CustomEvent("dente:open-protocols-catalog", {
+                            detail: {
+                              tooth: matchedProtocol.tooth || activeTooth || 16,
+                              query: matchedProtocol.procedureName,
+                              category: matchedProtocol.categoryKey,
+                            },
+                          })
+                        );
+                      }}
+                      data-testid="btn-chairside-choose-another-protocol"
+                    >
+                      Выбрать другой из 1 142
+                    </button>
+                  </div>
+                )}
                 {isEditingSoap ? (
                   <div className="chairside-hud-soap-grid" data-testid="chairside-soap-edit-mode">
                     <div className="chairside-hud-soap-field">
