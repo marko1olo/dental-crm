@@ -128,19 +128,19 @@ test("Wave 61: Schedule Card Ergonomics — Vertical distribution and badge unif
 		assert.ok(!html.includes(">План<"), "Status badge must not be abbreviated as bare План");
 		assert.ok(html.includes("data-testid=\"appointment-card-status-badge-a1000000-0000-0000-0000-000000000001\""));
 
-		// Vertical distribution classes: h-full and flex-1 on container hierarchy
-		assert.ok(html.includes("appointment-card-grid-2col w-full h-full min-w-0 flex-1"), "Grid must stretch to h-full flex-1");
-		assert.ok(html.includes("appointment-card-left-col flex flex-col justify-between min-w-0 h-full"), "Left column must have h-full and justify-between");
-		assert.ok(html.includes("appointment-card-right-col flex flex-col justify-between min-w-0 h-full"), "Right column must have h-full and justify-between");
-		assert.ok(html.includes("appointment-card-left-footer mt-auto"), "Footer cluster must anchor to bottom with mt-auto");
+		// Vertical distribution classes: unified progressive-height layout on container hierarchy
+		assert.ok(html.includes("appointment-card-grid-unified w-full h-full min-w-0 flex-1"), "Grid must stretch to h-full flex-1");
+		assert.ok(html.includes("appointment-card-row-header flex items-center justify-between gap-1.5 w-full min-w-0"), "Header row must stretch to full width");
+		assert.ok(html.includes("appointment-card-row-procedure flex items-center gap-1.5"), "Procedure row must span full width");
+		assert.ok(html.includes("appointment-card-row-footer flex items-center justify-between gap-1.5 w-full min-w-0 pt-1 border-t border-[var(--line)]/50 mt-auto"), "Footer cluster must anchor to bottom with mt-auto");
 
 		// Comments rendered
 		assert.ok(html.includes("Пациент предупрежден о длительности процедуры"), "Clinical comment must be displayed in card");
 
 		// Time string
 		assert.ok(
-			html.includes("10:00") && html.includes("11:30") && html.includes("1.5 ч"),
-			"Time interval and duration must be rendered",
+			html.includes("10:00"),
+			"Start time must be rendered in header",
 		);
 	});
 

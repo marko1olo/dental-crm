@@ -285,25 +285,28 @@ export function getPatientSomaticAlert(patient?: any): string | null {
 export function getAppointmentStatusBadgeClasses(status: string | undefined | null): string {
 	const s = String(status || "").toLowerCase();
 	if (s === "in_treatment" || s === "in_progress") {
-		return "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs";
+		return "bg-teal-600 text-white font-bold shadow-xs";
 	}
 	if (s === "arrived") {
-		return "bg-amber-500 text-white shadow-xs";
+		return "bg-amber-500 text-white font-bold shadow-xs";
 	}
 	if (s === "confirmed") {
-		return "bg-emerald-600 text-white shadow-xs";
+		return "bg-emerald-600 text-white font-bold shadow-xs";
 	}
 	if (s === "completed") {
-		return "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300";
+		return "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 font-semibold";
 	}
 	if (s === "cancelled" || s === "no_show") {
-		return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40";
+		return "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-bold";
 	}
-	return "bg-[var(--paper)]/80 text-[var(--ink)]";
+	return "bg-indigo-500/15 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-bold";
 }
 
 /**
  * Resolves container classes for Grid appointment card based on status, theme, collision, and CITO.
+ * Unified Studio Clinical HIG architecture:
+ * Every card has a solid background var(--paper), 1px border var(--line),
+ * and a 3px accent bar on the left corresponding to the status/specialty.
  */
 export function getGridAppointmentCardContainerClasses(
 	status: string | undefined | null,
@@ -315,32 +318,31 @@ export function getGridAppointmentCardContainerClasses(
 ): string {
 	const { collision, isCito, docTheme } = options;
 	if (collision) {
-		return "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/50";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-amber-500 text-[var(--ink)] ring-1 ring-amber-500/40";
 	}
 	if (isCito) {
-		return "bg-rose-500/20 border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/60 font-bold";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-rose-600 text-[var(--ink)] ring-1 ring-rose-500/50";
 	}
 	if (isAppointmentInChair(status)) {
-		return "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-[var(--teal,var(--brand-primary))] text-[var(--ink)]";
 	}
 	const s = String(status || "").toLowerCase();
 	if (s === "arrived") {
-		return "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-amber-500 text-[var(--ink)]";
 	}
 	if (s === "completed") {
-		return "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-slate-400 text-[var(--muted-strong,var(--ink))]";
 	}
 	if (s === "cancelled" || s === "no_show") {
-		return "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-rose-400 text-[var(--muted)] opacity-75";
 	}
 	if (s === "confirmed") {
-		return docTheme
-			? `${docTheme.cardBgClass} ${docTheme.borderClass} ${docTheme.textClass}`
-			: "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-emerald-500 text-[var(--ink)]";
 	}
+	// "planned" and any other status:
 	return docTheme
-		? `${docTheme.cardBgClass} ${docTheme.borderClass} ${docTheme.textClass}`
-		: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]";
+		? "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-indigo-400 dark:border-l-indigo-500 text-[var(--ink)]"
+		: "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-indigo-400 dark:border-l-indigo-500 text-[var(--ink)]";
 }
 
 /**

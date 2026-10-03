@@ -261,7 +261,8 @@ const mockDashboard = {
       startsAt: makeIso(11, 0),
       endsAt: makeIso(12, 0),
       status: "confirmed",
-      reason: "Лечение пульпита 1.6",
+      reason: "Лечение пульпита 16",
+      teeth: ["16"],
       patientName: "Козлова Ольга Николаевна",
       patientPhone: "+7 (999) 444-55-66",
     },
@@ -289,7 +290,14 @@ const mockDashboard = {
       startsAt: makeIso(10, 0),
       endsAt: makeIso(10, 45),
       status: "confirmed",
-      reason: "Препарирование под коронку 2.4",
+      reason: "Препарирование под коронку 24",
+      teeth: ["24"],
+      labOrder: {
+        orderNumber: "ЗТЛ-771",
+        status: "in_progress",
+        workType: "Коронка e.MAX",
+        colorVita: "A2",
+      },
       patientName: "Михайлов Артем Юрьевич",
       patientPhone: "+7 (999) 666-77-88",
     },
@@ -435,6 +443,15 @@ async function configureTheme(page, mode = "light") {
 }
 
 async function takeProof(page, filename, description) {
+  await page.waitForFunction(
+    () => !document.body.innerText.includes("Загрузка системы") && !document.body.innerText.includes("Подготовка модулей"),
+    { timeout: 30000 }
+  ).catch(() => {});
+  await unlockPinPadIfVisible(page);
+  await suppressOverlays(page);
+  await page.waitForSelector('[data-testid^="appointment-card-"]', { state: "visible", timeout: 20000 });
+  await page.waitForTimeout(600);
+
   const targetDirs = [
     path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live"),
     path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c6cfecb5-4269-4362-8242-8db61cae5d24"),
