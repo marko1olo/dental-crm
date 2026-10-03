@@ -1,0 +1,367 @@
+/**
+ * DENTE CRM — CBCT 3D Volume Raymarching Overlay Renderer (Nerve & Implant Vector Layer)
+ * Standards: DICOM Part 3 PS 3.3, Planmeca Romexis 6.x, Vatech Ez3D-i
+ *
+ * Implements:
+ * 1. Synchronized 3D-to-2D orthographic screen projection matching WebGL2 raymarching shaders.
+ * 2. Mandibular nerve canal (IAN) 3D anatomical tube rendering (radius 1.0..1.25 mm = diameter 2.0..2.5 mm, #FF9100).
+ * 3. Seed point markers: Foramen mentale (Seed 1) and Foramen mandibulae (Seed 2) with clinical badges.
+ * 4. 3D Virtual implant fixture projection (platform, tapered body, apex, safety corridor +2.0 mm).
+ * 5. Dynamic 3D apical clearance distance line and Vatech safety status telemetry badge.
+ *
+ * Mandate 8b: Декомпозиция монолитов (строго <= 500 строк).
+ */
+
+import type { CbctVoxelVolume, Point3D } from "../cbctMprMath";
+import type { Implant3DWorldProjection } from "../implantSafetyEngine";
+import { computeVolume3DRotationMatrix } from "./cbctVolume3DMath";
+
+export interface Volume3DOverlayParams {
+	readonly volume: CbctVoxelVolume;
+	readonly yaw: number;
+	readonly pitch: number;
+	readonly zoom: number;
+	readonly pan: { readonly x: number; readonly y: number };
+	readonly width: number;
+	readonly height: number;
+	readonly nervePoints?: readonly Point3D[] | undefined;
+	readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
+	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined;
+	readonly nerveAuditResult?: {
+		readonly isDangerous: boolean;
+		readonly isWarning: boolean;
+		readonly netClearanceToCanalWallMm: number;
+	} | null | undefined;
+}
+
+export interface ProjectedScreenPoint {
+	readonly screenX: number;
+	readonly screenY: number;
+	readonly depth: number;
+	readonly isVisible: boolean;
+}
+
+/**
+ * Projects a physical millimeter coordinate (in CBCT volume space) onto the 3D volume canvas.
+ * Exactly matches the coordinate space of cbctVolume3DShaders.ts.
+ */
+export function project3DWorldToVolumeScreen(
+	worldMm: Point3D,
+	volume: CbctVoxelVolume,
+	rotMat: [number, number, number][],
+	scale: number,
+	center: { readonly x: number; readonly y: number },
+): ProjectedScreenPoint {
+	const dim = volume.dimensions;
+	const sp = volume.spacingMm;
+	const origin = volume.originMm ?? { x: 0, y: 0, z: 0 };
+
+	const spX = sp?.x && sp.x > 0 ? sp.x : 0.4;
+	const spY = sp?.y && sp.y > 0 ? sp.y : 0.4;
+	const spZ = sp?.z && sp.z > 0 ? sp.z : 0.4;
+
+	// Continuous voxel coordinates
+	const vx = (worldMm.x - origin.x) / spX;
+	const vy = (worldMm.y - origin.y) / spY;
+	const vz = (worldMm.z - origin.z) / spZ;
+
+	// Centered voxel coordinates relative to volume midpoint
+	const cx = vx - dim.width * 0.5;
+	const cy = vy - dim.height * 0.5;
+	const cz = vz - dim.depth * 0.5;
+
+	// Camera coordinate space:
+	// rotMat[0] = Camera Right (Screen X)
+	// rotMat[1] = Camera Up (Screen Y, inverted)
+	// rotMat[2] = Camera Ray Direction (Depth)
+	const viewX = cx * rotMat[0]![0]! + cy * rotMat[0]![1]! + cz * rotMat[0]![2]!;
+	const viewY = cx * rotMat[1]![0]! + cy * rotMat[1]![1]! + cz * rotMat[1]![2]!;
+	const depth = cx * rotMat[2]![0]! + cy * rotMat[2]![1]! + cz * rotMat[2]![2]!;
+
+	const screenX = center.x + viewX * scale;
+	const screenY = center.y - viewY * scale;
+
+	return {
+		screenX,
+		screenY,
+		depth,
+		isVisible: Number.isFinite(screenX) && Number.isFinite(screenY),
+	};
+}
+
+/**
+ * Draws the complete vector overlay layer (nerve canal, implant fixture, safety telemetry)
+ * directly over the 3D skull raymarching viewport.
+ */
+export function drawVolume3DOverlay(
+	ctx: CanvasRenderingContext2D,
+	params: Volume3DOverlayParams,
+): void {
+	const {
+		volume,
+		yaw,
+		pitch,
+		zoom,
+		pan,
+		width,
+		height,
+		nervePoints = [],
+		interpolatedNerve3D = [],
+		implant3DWorld = null,
+		nerveAuditResult = null,
+	} = params;
+
+	if (!volume || width <= 0 || height <= 0) return;
+
+	const dim = volume.dimensions;
+	const maxDim = Math.max(1.0, Math.max(dim.width, Math.max(dim.height, dim.depth)));
+	const safeZoom = Math.max(0.01, zoom);
+	const scale = Math.max(1e-5, (Math.min(width, height) / maxDim) * safeZoom * 0.95);
+	const center = { x: width * 0.5 + pan.x, y: height * 0.5 + pan.y };
+	const rotMat = computeVolume3DRotationMatrix(yaw, pitch);
+
+	const spX = volume.spacingMm?.x && volume.spacingMm.x > 0 ? volume.spacingMm.x : 0.4;
+	const canalRadiusMm = 1.25; // 2.5 mm anatomical diameter
+	const canalRadiusPx = Math.max(2.0, (canalRadiusMm / spX) * scale);
+
+	// ─── 1. MANDIBULAR NERVE CANAL (IAN) 3D TUBE ─────────────────────────────
+	const nerveCurve = interpolatedNerve3D.length >= 2 ? interpolatedNerve3D : nervePoints;
+	let projectedNerve: ProjectedScreenPoint[] = [];
+
+	if (nerveCurve.length >= 2) {
+		projectedNerve = nerveCurve.map((pt) =>
+			project3DWorldToVolumeScreen(pt, volume, rotMat, scale, center),
+		);
+
+		ctx.save();
+		ctx.lineCap = "round";
+		ctx.lineJoin = "round";
+
+		// Pass 1: Outer glowing aura (#ff9100 at 50% opacity)
+		ctx.shadowBlur = Math.max(4, canalRadiusPx * 1.5);
+		ctx.shadowColor = "#ff9100";
+		ctx.strokeStyle = "rgba(255, 145, 0, 0.45)";
+		ctx.lineWidth = canalRadiusPx * 2.4;
+		ctx.beginPath();
+		for (let i = 0; i < projectedNerve.length; i++) {
+			const p = projectedNerve[i]!;
+			if (i === 0) ctx.moveTo(p.screenX, p.screenY);
+			else ctx.lineTo(p.screenX, p.screenY);
+		}
+		ctx.stroke();
+
+		// Pass 2: Main anatomical canal tube (Vivid Vatech Orange #ff6d00)
+		ctx.shadowBlur = 0;
+		ctx.strokeStyle = "#ff6d00";
+		ctx.lineWidth = canalRadiusPx * 2.0;
+		ctx.beginPath();
+		for (let i = 0; i < projectedNerve.length; i++) {
+			const p = projectedNerve[i]!;
+			if (i === 0) ctx.moveTo(p.screenX, p.screenY);
+			else ctx.lineTo(p.screenX, p.screenY);
+		}
+		ctx.stroke();
+
+		// Pass 3: Specular cylindrical highlight for realistic 3D tube depth
+		ctx.strokeStyle = "rgba(255, 236, 179, 0.75)";
+		ctx.lineWidth = Math.max(1.0, canalRadiusPx * 0.6);
+		ctx.beginPath();
+		for (let i = 0; i < projectedNerve.length; i++) {
+			const p = projectedNerve[i]!;
+			if (i === 0) ctx.moveTo(p.screenX, p.screenY);
+			else ctx.lineTo(p.screenX, p.screenY);
+		}
+		ctx.stroke();
+
+		ctx.restore();
+	}
+
+	// ─── 2. SEED POINTS & CONTROL NODES (MENTAL & MANDIBULAR FORAMINA) ──────
+	if (nervePoints.length > 0) {
+		for (let i = 0; i < nervePoints.length; i++) {
+			const seed = nervePoints[i]!;
+			const p = project3DWorldToVolumeScreen(seed, volume, rotMat, scale, center);
+			const isMental = i === 0;
+			const isMandibular = i === 1;
+
+			const nodeRadius = Math.max(3.5, canalRadiusPx * 1.2);
+
+			ctx.save();
+			ctx.shadowBlur = 8;
+			ctx.shadowColor = isMental ? "#38bdf8" : isMandibular ? "#a855f7" : "#f59e0b";
+			ctx.fillStyle = isMental ? "#0284c7" : isMandibular ? "#9333ea" : "#d97706";
+			ctx.strokeStyle = "#ffffff";
+			ctx.lineWidth = 1.5;
+
+			ctx.beginPath();
+			ctx.arc(p.screenX, p.screenY, nodeRadius, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+
+			// Seed Label Tag
+			const label = isMental
+				? "Seed 1 (F. mentale)"
+				: isMandibular
+					? "Seed 2 (F. mandibulae)"
+					: `Узел ${i + 1}`;
+
+			ctx.font = "bold 9px monospace";
+			const textW = ctx.measureText(label).width;
+			const tagX = p.screenX - textW / 2 - 4;
+			const tagY = p.screenY - nodeRadius - 14;
+
+			ctx.fillStyle = "rgba(9, 9, 11, 0.85)";
+			ctx.strokeStyle = isMental ? "#38bdf8" : isMandibular ? "#a855f7" : "#f59e0b";
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(tagX, tagY, textW + 8, 13, 3);
+			} else {
+				ctx.rect(tagX, tagY, textW + 8, 13);
+			}
+			ctx.fill();
+			ctx.stroke();
+
+			ctx.fillStyle = "#ffffff";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(label, p.screenX, tagY + 6.5);
+
+			ctx.restore();
+		}
+	}
+
+	// ─── 3. VIRTUAL IMPLANT FIXTURE IN 3D VOLUME VIEWPORT ───────────────────
+	if (implant3DWorld) {
+		const pEntry = project3DWorldToVolumeScreen(implant3DWorld.entry3D, volume, rotMat, scale, center);
+		const pApex = project3DWorldToVolumeScreen(implant3DWorld.apex3D, volume, rotMat, scale, center);
+
+		const platRadiusMm = implant3DWorld.platformDiameterMm / 2.0;
+		const apexRadiusMm = implant3DWorld.apexDiameterMm / 2.0;
+		const platRPx = Math.max(2.5, (platRadiusMm / spX) * scale);
+		const apexRPx = Math.max(1.8, (apexRadiusMm / spX) * scale);
+
+		const dx = pApex.screenX - pEntry.screenX;
+		const dy = pApex.screenY - pEntry.screenY;
+		const len = Math.hypot(dx, dy) || 1.0;
+		const perpX = -dy / len;
+		const perpY = dx / len;
+
+		const isDangerous = Boolean(nerveAuditResult?.isDangerous);
+		const isWarning = Boolean(nerveAuditResult?.isWarning);
+
+		const statusStroke = isDangerous ? "#ef4444" : isWarning ? "#f59e0b" : "#10b981";
+		const statusFill = isDangerous
+			? "rgba(239, 68, 68, 0.55)"
+			: isWarning
+				? "rgba(245, 158, 11, 0.45)"
+				: "rgba(16, 185, 129, 0.45)";
+
+		// 3.1 Safety corridor halo (+2.0 mm)
+		const haloPlatRPx = platRPx + (2.0 / spX) * scale;
+		const haloApexRPx = apexRPx + (2.0 / spX) * scale;
+
+		ctx.save();
+		ctx.strokeStyle = statusStroke;
+		ctx.lineWidth = 1.2;
+		ctx.setLineDash([3, 2]);
+		ctx.beginPath();
+		ctx.moveTo(pEntry.screenX - perpX * haloPlatRPx, pEntry.screenY - perpY * haloPlatRPx);
+		ctx.lineTo(pEntry.screenX + perpX * haloPlatRPx, pEntry.screenY + perpY * haloPlatRPx);
+		ctx.lineTo(pApex.screenX + perpX * haloApexRPx, pApex.screenY + perpY * haloApexRPx);
+		ctx.lineTo(pApex.screenX - perpX * haloApexRPx, pApex.screenY - perpY * haloApexRPx);
+		ctx.closePath();
+		ctx.stroke();
+		ctx.setLineDash([]);
+
+		// 3.2 Tapered implant fixture body
+		ctx.fillStyle = statusFill;
+		ctx.strokeStyle = statusStroke;
+		ctx.lineWidth = 1.8;
+		ctx.beginPath();
+		ctx.moveTo(pEntry.screenX - perpX * platRPx, pEntry.screenY - perpY * platRPx);
+		ctx.lineTo(pEntry.screenX + perpX * platRPx, pEntry.screenY + perpY * platRPx);
+		ctx.lineTo(pApex.screenX + perpX * apexRPx, pApex.screenY + perpY * apexRPx);
+		ctx.lineTo(pApex.screenX - perpX * apexRPx, pApex.screenY - perpY * apexRPx);
+		ctx.closePath();
+		ctx.fill();
+		ctx.stroke();
+
+		// 3.3 Centerline axis
+		ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+		ctx.lineWidth = 1.0;
+		ctx.beginPath();
+		ctx.moveTo(pEntry.screenX, pEntry.screenY);
+		ctx.lineTo(pApex.screenX, pApex.screenY);
+		ctx.stroke();
+
+		// 3.4 Platform coronal entry node
+		ctx.fillStyle = "#22d3ee";
+		ctx.beginPath();
+		ctx.arc(pEntry.screenX, pEntry.screenY, 3.5, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 3.5 Apex apical node
+		ctx.fillStyle = statusStroke;
+		ctx.beginPath();
+		ctx.arc(pApex.screenX, pApex.screenY, 3.5, 0, Math.PI * 2);
+		ctx.fill();
+
+		// ─── 4. DYNAMIC 3D APEX-TO-NERVE CLEARANCE VECTOR & MEASUREMENT ───────
+		if (nerveCurve.length >= 2) {
+			let closestNervePt: Point3D = nerveCurve[0]!;
+			let minNerveDist = Infinity;
+
+			for (const np of nerveCurve) {
+				const d = Math.hypot(
+					implant3DWorld.apex3D.x - np.x,
+					implant3DWorld.apex3D.y - np.y,
+					implant3DWorld.apex3D.z - np.z,
+				);
+				if (d < minNerveDist) {
+					minNerveDist = d;
+					closestNervePt = np;
+				}
+			}
+
+			const netClearance = Math.max(0, minNerveDist - canalRadiusMm);
+			const pClosestNerve = project3DWorldToVolumeScreen(closestNervePt, volume, rotMat, scale, center);
+
+			// Dashed clearance vector line
+			ctx.strokeStyle = statusStroke;
+			ctx.lineWidth = 1.6;
+			ctx.setLineDash([3, 3]);
+			ctx.beginPath();
+			ctx.moveTo(pApex.screenX, pApex.screenY);
+			ctx.lineTo(pClosestNerve.screenX, pClosestNerve.screenY);
+			ctx.stroke();
+			ctx.setLineDash([]);
+
+			// Midpoint measurement badge
+			const midX = (pApex.screenX + pClosestNerve.screenX) / 2.0;
+			const midY = (pApex.screenY + pClosestNerve.screenY) / 2.0;
+			const badgeText = `${netClearance.toFixed(1)} мм`;
+
+			ctx.font = "bold 9.5px monospace";
+			const bw = ctx.measureText(badgeText).width + 8;
+			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+			ctx.strokeStyle = statusStroke;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(midX - bw / 2, midY - 7, bw, 14, 3);
+			} else {
+				ctx.rect(midX - bw / 2, midY - 7, bw, 14);
+			}
+			ctx.fill();
+			ctx.stroke();
+
+			ctx.fillStyle = statusStroke;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(badgeText, midX, midY);
+		}
+
+		ctx.restore();
+	}
+}

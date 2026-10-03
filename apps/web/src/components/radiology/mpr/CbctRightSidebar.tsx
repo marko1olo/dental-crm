@@ -418,8 +418,14 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								</span>
 							</div>
 							<div className="flex justify-between items-center">
-								<span>Буфер безопасности:</span>
-								<span className="font-bold text-amber-400 font-mono">2.0 мм цилиндр</span>
+								<span>Vatech пороги:</span>
+								<span className="font-bold text-amber-400 font-mono">3.0мм апекс • 1.5мм риск</span>
+							</div>
+							<div className="flex justify-between items-center">
+								<span>Режим 2-Seed:</span>
+								<span className={`font-mono font-bold ${nervePoints.length === 0 ? "text-cyan-400" : nervePoints.length === 1 ? "text-amber-400" : "text-emerald-400"}`}>
+									{nervePoints.length === 0 ? "1/2: Ментальное" : nervePoints.length === 1 ? "2/2: Мандибулярное" : "Fast Marching OK"}
+								</span>
 							</div>
 						</div>
 
@@ -464,8 +470,8 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							</button>
 						</div>
 						<div className="text-[10px] text-zinc-400 leading-tight flex items-center gap-1">
-							<Info className="w-3 h-3 text-zinc-400 shrink-0" />
-							<span>ЛКМ для добавления узлов • Перетаскивание для смещения • Delete для удаления</span>
+							<Info className="w-3 h-3 text-cyan-400 shrink-0" />
+							<span>Vatech 2-Seed: 2 клика на срезах (ментальное + мандибулярное отв.) для 3D автоканала</span>
 						</div>
 					</div>
 

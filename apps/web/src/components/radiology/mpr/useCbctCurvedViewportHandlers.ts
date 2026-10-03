@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useRef, useState } from "react";
-import type { Point3D, ViewportTransform, CbctViewportType, CbctMeasurementRuler, CbctAngleMeasurement } from "../cbctMprMath";
+import type { CbctVoxelVolume, Point3D, ViewportTransform, CbctViewportType, CbctMeasurementRuler, CbctAngleMeasurement } from "../cbctMprMath";
 import {
 	DEFAULT_VIEWPORT_TRANSFORM,
 	getCanvasPointerPos,
@@ -24,12 +24,16 @@ import {
 import type { DentalArchCurve, PanoramicReconstructionResult, CrossSectionSliceData } from "../dentalCurveEngine";
 import { hitTestPanoramicToothMarker, mapPanoPointerToCrosshairAndSlice } from "../dentalCurveEngine";
 import { type VirtualImplantSpec, pointToSegmentDistance2D } from "../implantSafetyEngine";
+import { traceMandibularNerveFastMarching } from "../fastMarchingNerve";
 import { showToast } from "../../GlobalToast";
 import type { CbctToolMode } from "../CbctLeftToolDock";
 import type { StudioMode } from "./cbctStudioTypes";
 import { getImplantCrossSectionGeometry } from "./cbctInteractionHelpers";
 
 export interface UseCbctCurvedViewportHandlersParams {
+	volume?: CbctVoxelVolume | null;
+	nervePoints: Point3D[];
+	setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
 	activeTool: CbctToolMode;
 	studioMode: StudioMode;
 	windowWidth: number;
@@ -85,6 +89,7 @@ export interface UseCbctCurvedViewportHandlersParams {
 
 export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandlersParams) {
 	const {
+		volume, nervePoints, setNervePoints,
 		activeTool, studioMode, windowWidth, setWindowWidth, windowLevel, setWindowLevel,
 		transforms, setTransforms, crosshairMm, setCrosshairMm, archCurve, panoramicData,
 		crossSections, activeCrossSection, setActiveCrossSectionIdx, currentImplantSpec,
@@ -174,6 +179,49 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			return;
 		}
 
+		if (activeTool === "nerve") {
+			if (panoCanvasRef.current) {
+				const canvas = panoCanvasRef.current;
+				const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const syncRes = mapPanoPointerToCrosshairAndSlice(
+					pointerPx,
+					{ width: canvas.width, height: canvas.height },
+					archCurve,
+					crossSections,
+					crosshairMm,
+					transforms.panoramic,
+				);
+				const pointMm = syncRes.worldMm;
+
+				if (nervePoints.length === 0) {
+					setNervePoints([pointMm]);
+					showToast("Точка 1/2 (ОПТГ): Ментальное отверстие зафиксировано. Кликните Foramen mandibulae для автотрассировки Fast Marching", "info");
+					return;
+				}
+
+				if (nervePoints.length === 1 && volume) {
+					const startSeed = nervePoints[0]!;
+					const endSeed = pointMm;
+					try {
+						const marchResult = traceMandibularNerveFastMarching(volume, startSeed, endSeed);
+						setNervePoints(marchResult.controlPoints as Point3D[]);
+						showToast(
+							`Канал IAN успешно сегментирован (Fast Marching 2-Seed Vatech): 3D-длина ${marchResult.totalLengthMm} мм (${marchResult.controlPoints.length} узлов за ${marchResult.executionTimeMs} мс)`,
+							"success",
+						);
+					} catch {
+						setNervePoints([startSeed, endSeed]);
+						showToast("Зафиксированы 2 точки канала IAN", "info");
+					}
+					return;
+				}
+
+				setNervePoints((prev) => [...prev, pointMm]);
+				showToast(`Добавлен дополнительный узел нижнечелюстного канала #${nervePoints.length + 1}`, "info");
+			}
+			return;
+		}
+
 		if (panoramicData && panoCanvasRef.current) {
 			const canvas = panoCanvasRef.current;
 			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -216,7 +264,7 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 		const syncRes = mapPanoPointerToCrosshairAndSlice({ x, y }, { width: canvas.width, height: canvas.height }, archCurve, crossSections, crosshairMm, transforms.panoramic);
 		setActiveCrossSectionIdx(syncRes.crossSectionIdx);
 		setCrosshairMm(syncRes.worldMm);
-	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setTransforms, setActiveCrossSectionIdx, setCrosshairMm, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef, rulers, setRulers, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle, setDraggingMeasurementHandle, setSelectedMeasurement, getPanoPointerMm]);
+	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setTransforms, setActiveCrossSectionIdx, setCrosshairMm, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef, rulers, setRulers, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle, setDraggingMeasurementHandle, setSelectedMeasurement, getPanoPointerMm, nervePoints, setNervePoints, volume]);
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (isDraggingWL) {
@@ -408,6 +456,47 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			return;
 		}
 
+		if (activeTool === "nerve") {
+			if (activeCrossSection && crossSectionCanvasRef.current) {
+				const canvas = crossSectionCanvasRef.current;
+				const pointerPx = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+				const localMm = getCrossPointerMm(pointerPx, canvas.width);
+				const crestZ = activeCrossSection.centerPointMm.z + (activeCrossSection.heightMm / 2.0 - 4.0);
+				const pointMm: Point3D = {
+					x: Number((activeCrossSection.centerPointMm.x + activeCrossSection.normalVector2D.x * localMm.x).toFixed(2)),
+					y: Number((activeCrossSection.centerPointMm.y + activeCrossSection.normalVector2D.y * localMm.x).toFixed(2)),
+					z: Number((crestZ - localMm.z).toFixed(2)),
+				};
+
+				if (nervePoints.length === 0) {
+					setNervePoints([pointMm]);
+					showToast("Точка 1/2 (Кросс-секция): Ментальное отверстие зафиксировано. Кликните Foramen mandibulae для автотрассировки Fast Marching", "info");
+					return;
+				}
+
+				if (nervePoints.length === 1 && volume) {
+					const startSeed = nervePoints[0]!;
+					const endSeed = pointMm;
+					try {
+						const marchResult = traceMandibularNerveFastMarching(volume, startSeed, endSeed);
+						setNervePoints(marchResult.controlPoints as Point3D[]);
+						showToast(
+							`Канал IAN успешно сегментирован (Fast Marching 2-Seed Vatech): 3D-длина ${marchResult.totalLengthMm} мм (${marchResult.controlPoints.length} узлов за ${marchResult.executionTimeMs} мс)`,
+							"success",
+						);
+					} catch {
+						setNervePoints([startSeed, endSeed]);
+						showToast("Зафиксированы 2 точки канала IAN", "info");
+					}
+					return;
+				}
+
+				setNervePoints((prev) => [...prev, pointMm]);
+				showToast(`Добавлен дополнительный узел нижнечелюстного канала #${nervePoints.length + 1}`, "info");
+			}
+			return;
+		}
+
 		if (activeCrossSection && crossSectionCanvasRef.current) {
 			const canvas = crossSectionCanvasRef.current;
 			const currentTransform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -460,7 +549,7 @@ export function useCbctCurvedViewportHandlers(params: UseCbctCurvedViewportHandl
 			setSelectedMeasurement({ type: "implant" as unknown as "ruler", id: "active" } as unknown as CbctMeasurementRuler);
 			setCrossSectionDragStart({ clientX: e.clientX, clientY: e.clientY, startX: implantEntryXOffsetMm, startY: implantEntryDepthMm, startAng: implantAngulationDeg });
 		}
-	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel, transforms.cross_section, crossSectionCanvasRef, setTransforms, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, setSelectedMeasurement, setDragImplantPart, setCrossSectionDragStart, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef, rulers, setRulers, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle, setDraggingMeasurementHandle, getCrossPointerMm]);
+	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel, transforms.cross_section, crossSectionCanvasRef, setTransforms, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, setSelectedMeasurement, setDragImplantPart, setCrossSectionDragStart, setIsDraggingWL, setIsPanning, setIsDraggingZoom, hasDraggedZoomRef, rulers, setRulers, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle, setDraggingMeasurementHandle, getCrossPointerMm, nervePoints, setNervePoints, volume]);
 
 	const handleCrossSectionMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (isDraggingWL) {

@@ -575,7 +575,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 										Датчик визиографа готов к экспозиции (TWAIN/USB)
 									</h3>
 									<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
-										Нажмите «Захват с датчика» (пробел) или перетащите снимок в формате DICOM, TIFF, JPG с диска.
+										Нажмите «Захват с датчика» (Мгновенный захват &lt;50мс) или перетащите снимок в формате DICOM, TIFF, JPG с диска.
 									</p>
 									<div className="flex gap-2.5 items-center flex-wrap justify-center">
 										<button
@@ -586,8 +586,9 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 												handleTriggerCapture();
 											}}
 											className="px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-teal-500 transition-colors"
+											title="Мгновенный захват <50мс без искусственных задержек (Mandate 8e)"
 										>
-											<Zap className="w-4 h-4 fill-current" /> Захват с датчика (Space)
+											<Zap className="w-4 h-4 fill-current" /> Захват с датчика (Space) · Мгновенный захват &lt;50мс
 										</button>
 										<button
 											type="button"

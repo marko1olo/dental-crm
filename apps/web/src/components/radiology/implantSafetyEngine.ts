@@ -24,6 +24,9 @@ export {
 
 export * from './implantNerveSafetyAudit.js';
 export * from './implantBoneDensityMath.js';
+export * from './fastMarchingNerve.js';
+export * from './implantCatalog.js';
+export * from './implantCorticalAndSleeveEngine.js';
 
 import type { Point3D, CbctVoxelVolume } from './cbctMprMath.js';
 import {
@@ -32,8 +35,22 @@ import {
   type ImplantBrandKey,
   calculateApexCoordinates,
 } from './implantNerveSafetyAudit.js';
+import { CANONICAL_IMPLANT_CATALOG } from './implantCatalog.js';
 
 // ─── STANDARD VIRTUAL IMPLANT FIXTURE CATALOG ────────────────────────────────
+
+const MAPPED_CANONICAL_CATALOG: readonly VirtualImplantSpec[] = CANONICAL_IMPLANT_CATALOG.map((f) => ({
+	id: f.id,
+	brand: f.brandKey as ImplantBrandKey,
+	brandName: f.brandName,
+	lineName: f.lineName,
+	diameterMm: f.diameterMm,
+	lengthMm: f.lengthMm,
+	platformDiameterMm: f.platformDiameterMm,
+	apexDiameterMm: f.apexDiameterMm,
+	priceKopecks: f.priceKopecks,
+	articleNumber: f.articleNumber,
+}));
 
 export const STANDARD_IMPLANT_CATALOG: readonly VirtualImplantSpec[] = [
 	// STRAUMANN (BLX & Bone Level)
@@ -71,6 +88,7 @@ export const STANDARD_IMPLANT_CATALOG: readonly VirtualImplantSpec[] = [
 	{ id: "mis-50-10", brand: "mis", brandName: "MIS Implants", lineName: "SEVEN", diameterMm: 5.0, lengthMm: 10.0, platformDiameterMm: 5.0, apexDiameterMm: 3.2, priceKopecks: 1950000, articleNumber: "MF7-10500" },
 	{ id: "mis-c1-375-10", brand: "mis", brandName: "MIS Implants", lineName: "C1", diameterMm: 3.75, lengthMm: 10.0, platformDiameterMm: 3.75, apexDiameterMm: 2.4, priceKopecks: 2150000, articleNumber: "C1-10375" },
 	{ id: "mis-v3-39-10", brand: "mis", brandName: "MIS Implants", lineName: "V3", diameterMm: 3.9, lengthMm: 10.0, platformDiameterMm: 3.9, apexDiameterMm: 2.5, priceKopecks: 2450000, articleNumber: "V3-10390" },
+	...MAPPED_CANONICAL_CATALOG,
 ];
 
 export interface SurgeonImplantPreset {
@@ -147,7 +165,7 @@ export const SURGEON_IMPLANT_PRESETS: readonly SurgeonImplantPreset[] = [
  * Finds implant specification by brand, diameter, and length.
  */
 export function findImplantSpec(
-	brand: ImplantBrandKey,
+	brand: ImplantBrandKey | string,
 	diameterMm: number,
 	lengthMm: number,
 ): VirtualImplantSpec {

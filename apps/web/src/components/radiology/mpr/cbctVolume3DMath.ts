@@ -68,7 +68,9 @@ export type Volume3DPresetId =
 	| "airway"
 	| "cortical_bone"
 	| "cancellous_bone"
-	| "enamel_metal";
+	| "enamel_metal"
+	| "ez3d_bone"
+	| "ez3d_soft_tissue";
 
 export interface Volume3DPresetSpec {
 	id: Volume3DPresetId;
@@ -195,6 +197,24 @@ export const CBCT_CLINICAL_VOLUME_PRESETS: readonly Volume3DPresetSpec[] = [
 		huMin: 1500,
 		huMax: 3000,
 		colorRgb: [255, 255, 255],
+	},
+	{
+		id: "ez3d_bone",
+		label: "Vatech Ez3D Кость (+350..+2200 HU)",
+		shortLabel: "Ez3D Кость",
+		description: "Канонический пресет кости Vatech Ez3D с двухсторонним диффузным освещением (+350..+2200 HU)",
+		huMin: 350,
+		huMax: 2200,
+		colorRgb: [242, 235, 222], // Vatech Ez3D warm bone ivory
+	},
+	{
+		id: "ez3d_soft_tissue",
+		label: "Vatech Ez3D Мягкие ткани (-150..+350 HU)",
+		shortLabel: "Ez3D Ткани",
+		description: "Пресет мягких тканей лица и слизистой Vatech Ez3D (-150..+350 HU)",
+		huMin: -150,
+		huMax: 350,
+		colorRgb: [228, 188, 172], // Vatech Ez3D anatomical mucosa
 	},
 ] as const;
 
@@ -436,7 +456,8 @@ export function renderCanvas2DPreviewSlice(
 				const isHit = isAirway ? (hu >= huMin && hu <= huMax) : (hu >= huMin);
 				if (isHit) {
 					const norm = Math.min(1.0, Math.max(0.0, (hu - huMin) / (huMax - huMin || 1)));
-					const shade = isAirway ? 0.85 : 0.40 + 0.60 * norm;
+					// Vatech Ez3D two-sided diffuse weighting: 0.25 ambient floor + 0.75 diffuse amplitude
+					const shade = isAirway ? 0.85 : 0.25 + 0.75 * norm;
 					const r = Math.min(255, (baseR * shade) | 0);
 					const g = Math.min(255, (baseG * shade) | 0);
 					const b = Math.min(255, (baseB * shade) | 0);

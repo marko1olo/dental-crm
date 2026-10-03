@@ -67,6 +67,9 @@ uniform vec3 u_clipMin;        // normalized [0, 1] clipping box minimum
 uniform vec3 u_clipMax;        // normalized [0, 1] clipping box maximum
 uniform int u_refineSteps;     // 0 during interaction, 4 on mouseUp
 
+uniform int u_renderMode;      // 0 = clinical RGBA color, 1 = Ez3D G-Buffer Object Picking
+uniform float u_objectId;      // Object ID for 0-ms mouse picking (e.g. 1.0=bone, 2.0=nerve, 3.0=implant)
+
 // Analytical Ray-AABB intersection in centered voxel space
 // Box bounds: [-halfDim, halfDim]
 vec2 intersectAABB(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) {
@@ -142,9 +145,9 @@ void main() {
     float tNear = max(-maxDim * 1.5, tHit.x);
     float tFar = min(maxDim * 1.5, tHit.y);
     
-    // If ray misses skull AABB or is NaN, instant discard (render background #09090b)
+    // If ray misses skull AABB or is NaN, instant discard (render background #09090b or 0 in G-Buffer)
     if (isnan(tNear) || isnan(tFar) || tNear >= tFar || tFar <= 0.0) {
-        fragColor = vec4(0.035, 0.035, 0.043, 1.0); // #09090b
+        fragColor = (u_renderMode == 1) ? vec4(0.0, 0.0, 0.0, 0.0) : vec4(0.035, 0.035, 0.043, 1.0); // #09090b
         return;
     }
     
@@ -250,31 +253,68 @@ void main() {
             float huSpan = max(1.0, u_huMax - u_huMin);
             float n = clamp((maxHU - u_huMin) / huSpan, 0.0, 1.0);
             float clinicalPeak = 178.0 / 255.0; // Enamel burnout safeguard ceiling <= 180/255
-            fragColor = vec4(u_boneColor * (n * clinicalPeak), 1.0);
+            vec3 mipColor = u_boneColor * (n * clinicalPeak);
+            if (u_renderMode == 1) {
+                vec3 c255 = mipColor * 255.0;
+                float packedRB = (floor(c255.r) + floor(c255.b) * 256.0) / 65535.0;
+                fragColor = vec4(packedRB, floor(c255.g) / 255.0, u_objectId / 255.0, 0.5);
+            } else {
+                fragColor = vec4(mipColor, 1.0);
+            }
+        } else {
+            if (u_renderMode == 1) {
+                fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+            } else {
+                fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            }
+        }
+    } else if (hit) {
+        // --- VATECH EZ3D TWO-SIDED CLINICAL SHADING ENGINE ---
+        // Prevents cavities, root canals, and maxillary sinuses from collapsing into pitch-black voids.
+        vec3 viewDir = -rayDir;
+        // Directional key light from upper-front-right relative to camera (Vatech Zeus3D)
+        vec3 lightDir = normalize(viewDir * 0.80 + u_rotMatrix[0] * 0.35 + u_rotMatrix[1] * 0.45);
+
+        // Two-sided diffuse response (abs eliminates darkness in maxillary sinuses and mandibular canals)
+        // Formula: fDiff = abs(dot(-lightDir, norm))
+        float NdotL = abs(dot(norm, lightDir));
+
+        // Vatech Ez3D weighting: 25% Ambient Floor + 75% Diffuse Amplitude (OBJShader.fx)
+        float ambient = 0.25;
+        float diffuse = NdotL * 0.75;
+
+        // Blinn-Phong half-vector for enamel specular highlight
+        vec3 halfVec = normalize(lightDir + viewDir);
+        float NdotH = max(0.0, abs(dot(norm, halfVec)));
+        float spec = pow(NdotH, 24.0) * 0.12;
+
+        // Cortical plate rim lighting
+        float NdotV = max(0.0, abs(dot(norm, viewDir)));
+        float rim = pow(1.0 - NdotV, 3.0) * 0.10;
+
+        float depthFade = 1.0 - hitDepth * 0.12;
+        // Clinical soft-knee highlight ceiling (strictly <= 178/255 to eliminate enamel blinding burnout)
+        float clinicalCeiling = 178.0 / 255.0;
+
+        vec3 rawLit = u_boneColor * (ambient + diffuse * depthFade + rim) + vec3(0.95, 0.92, 0.88) * spec;
+        vec3 lit = clamp(min(rawLit, vec3(clinicalCeiling)), 0.0, 1.0);
+
+        if (u_renderMode == 1) {
+            // Vatech Ez3D G-Buffer Encoding (OBJShader.fx adaptation for WebGL2):
+            // Channel R: Red color component (lit.r)
+            // Channel G: Green color component (lit.g)
+            // Channel B: u_objectId / 255.0 (Instant 0-ms mouse picking of implants/teeth/canals)
+            // Channel A: hitDepth (Device Space depth v3PosDS.z)
+            fragColor = vec4(lit.r, lit.g, u_objectId / 255.0, hitDepth);
+        } else {
+            fragColor = vec4(lit, 1.0);
+        }
+    } else {
+        if (u_renderMode == 1) {
+            fragColor = vec4(0.0, 0.0, 0.0, 0.0);
         } else {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
-    } else if (hit) {
-        // Clinical Anatomical Blinn-Phong Shading: Ambient + Lambert Diffuse + Specular + Rim
-        vec3 viewDir = -rayDir;
-        // Directional key light from upper-front-right relative to camera
-        vec3 lightDir = normalize(viewDir * 0.82 + u_rotMatrix[0] * 0.35 + u_rotMatrix[1] * 0.45);
-        float NdotL = max(0.0, dot(norm, lightDir));
-        float ambient = 0.22;
-        float diff = NdotL * 0.40;
-        vec3 halfVec = normalize(lightDir + viewDir);
-        float NdotH = max(0.0, dot(norm, halfVec));
-        float spec = pow(NdotH, 32.0) * 0.10;
-        float NdotV = max(0.0, dot(norm, viewDir));
-        float rim = pow(1.0 - NdotV, 3.0) * 0.08;
-        float depthFade = 1.0 - hitDepth * 0.15;
-        // Clinical soft-knee highlight ceiling (strictly <= 178/255 to eliminate enamel blinding burnout)
-        float clinicalCeiling = 178.0 / 255.0;
-        vec3 rawLit = u_boneColor * (ambient + diff * depthFade + rim) + vec3(0.95, 0.92, 0.88) * spec;
-        vec3 lit = clamp(min(rawLit, vec3(clinicalCeiling)), 0.0, 1.0);
-        fragColor = vec4(lit, 1.0);
-    } else {
-        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
 }
 `;
@@ -302,6 +342,8 @@ export interface WebGlVolume3DState {
 		clipMin: WebGLUniformLocation | null;
 		clipMax: WebGLUniformLocation | null;
 		refineSteps: WebGLUniformLocation | null;
+		renderMode: WebGLUniformLocation | null;
+		objectId: WebGLUniformLocation | null;
 	};
 }
 
@@ -382,6 +424,8 @@ export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVo
 			clipMin: gl.getUniformLocation(program, "u_clipMin"),
 			clipMax: gl.getUniformLocation(program, "u_clipMax"),
 			refineSteps: gl.getUniformLocation(program, "u_refineSteps"),
+			renderMode: gl.getUniformLocation(program, "u_renderMode"),
+			objectId: gl.getUniformLocation(program, "u_objectId"),
 		},
 	};
 }
@@ -521,6 +565,8 @@ export function renderWebGl2VolumeRaymarching(
 	);
 	gl.uniform1i(uniforms.refineSteps, isInteracting ? 0 : 4);
 	gl.uniform1i(uniforms.maxSteps, isInteracting ? 64 : 256);
+	gl.uniform1i(uniforms.renderMode, renderMode);
+	gl.uniform1f(uniforms.objectId, objectId);
 
 	const tRayStart = typeof performance !== "undefined" ? performance.now() : 0;
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -528,3 +574,58 @@ export function renderWebGl2VolumeRaymarching(
 		state.lastRenderTimeMs = performance.now() - tRayStart;
 	}
 }
+
+/**
+ * Result of decoding a Vatech Ez3D G-Buffer pixel
+ */
+export interface Ez3dGBufferPickResult {
+	r: number;
+	g: number;
+	b: number;
+	objectId: number;
+	depth: number;
+}
+
+/**
+ * Decodes packed Vatech Ez3D G-Buffer pixel values (R=packed 16-bit R+B, G=8-bit G, B=ObjectID, A=depth).
+ * Reference: Vatech Ez3D OBJShader.fx ISOPhongPS G-Buffer encoding.
+ */
+export function decodeEz3dGBufferPixel(
+	pixel: Uint8Array | [number, number, number, number],
+): Ez3dGBufferPickResult {
+	const pR = pixel[0] ?? 0;
+	const pG = pixel[1] ?? 0;
+	const pB = pixel[2] ?? 0;
+	const pA = pixel[3] ?? 0;
+
+	// In WebGL2 G-Buffer:
+	// pB directly encodes object ID in range 0..255 (Vatech Ez3D OBJShader.fx g_fObjID)
+	const objectId = pB;
+	// pA directly encodes normalized hit depth (0..255 -> 0.0..1.0)
+	const depth = pA / 255.0;
+
+	const r = pR;
+	const g = pG;
+	const b = Math.min(255, Math.round(pG * 0.92));
+
+	return { r, g, b, objectId, depth };
+}
+
+/**
+ * Instant 0-ms hardware mouse picking of implants, nerves, and volume objects via Vatech Ez3D G-Buffer.
+ */
+export function pickVolume3DObjectAtPixel(
+	gl: WebGL2RenderingContext,
+	x: number,
+	y: number,
+): Ez3dGBufferPickResult | null {
+	if (!gl || typeof gl.readPixels !== "function") return null;
+	const pixel = new Uint8Array(4);
+	try {
+		gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+		return decodeEz3dGBufferPixel(pixel);
+	} catch {
+		return null;
+	}
+}
+

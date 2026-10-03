@@ -9,3 +9,4 @@ export * from "./cbctPanoramicReconstructionMath";
 export * from "./cbctCrossSectionResliceMath";
 export * from "./cbctPanoramicNavigationMath";
 export * from "./cbctAutoArchEngine";
+export * from "./fastMarchingNerve";

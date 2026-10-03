@@ -748,6 +748,8 @@ export {
 	type Project3DNerveOptions,
 } from "./dentalCurveEngine";
 
+export * from "./fastMarchingNerve.js";
+
 /**
  * Данные для рендеринга HTML/CSS оверлея бейджа 3D-нерва
  */

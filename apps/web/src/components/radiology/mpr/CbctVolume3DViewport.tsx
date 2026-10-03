@@ -31,11 +31,15 @@ import {
 import { CbctSkullProjectionsToolbar } from "./CbctSkullProjectionsToolbar";
 import { CbctVolume3DClippingPanel } from "./CbctVolume3DClippingPanel";
 import { analyzeAirwayVolume, type AirwayAnalysisResult } from "../cbctAirwayAnalysisMath";
+import type { Point3D } from "../cbctMprMath";
+import type { Implant3DWorldProjection } from "../implantSafetyEngine";
+import { drawVolume3DOverlay } from "./cbctVolume3DOverlayRenderer";
 
 // 100% Transparent Re-exports for zero regression across tests and components
 export * from "./cbctVolume3DMath";
 export * from "./cbctVolume3DShaders";
 export * from "./CbctSkullProjectionsToolbar";
+export * from "./cbctVolume3DOverlayRenderer";
 
 export interface CbctVolume3DViewportProps {
 	readonly volume: CbctVoxelVolume | null;
@@ -50,6 +54,14 @@ export interface CbctVolume3DViewportProps {
 	readonly onToggleMaximize?: () => void;
 	readonly initialClipping?: Partial<Volume3DClippingBox>;
 	readonly onClippingChange?: (clipping: Volume3DClippingBox) => void;
+	readonly nervePoints?: readonly Point3D[] | undefined;
+	readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
+	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined;
+	readonly nerveAuditResult?: {
+		readonly isDangerous: boolean;
+		readonly isWarning: boolean;
+		readonly netClearanceToCanalWallMm: number;
+	} | null | undefined;
 }
 
 export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
@@ -65,8 +77,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	onToggleMaximize,
 	initialClipping,
 	onClippingChange,
+	nervePoints = [],
+	interpolatedNerve3D = [],
+	implant3DWorld = null,
+	nerveAuditResult = null,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glStateRef = useRef<WebGlVolume3DState | null>(null);
 	const [activePreset, setActivePreset] = useState<Volume3DPresetId>("skull");
 	const [yaw, setYaw] = useState<number>(30); // 30° canonical dental 3/4 view
@@ -451,6 +468,35 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		);
 	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping]);
 
+	// Render 3D Vector Overlay (Mandibular nerve canal, virtual implant, clearance telemetry)
+	useEffect(() => {
+		const canvas = overlayCanvasRef.current;
+		if (!canvas) return;
+		const width = canvasDims.width || canvas.clientWidth || 320;
+		const height = canvasDims.height || canvas.clientHeight || 280;
+		if (canvas.width !== width || canvas.height !== height) {
+			canvas.width = width;
+			canvas.height = height;
+		}
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+		ctx.clearRect(0, 0, width, height);
+		if (!volume) return;
+		drawVolume3DOverlay(ctx, {
+			volume,
+			yaw,
+			pitch,
+			zoom,
+			pan,
+			width,
+			height,
+			nervePoints,
+			interpolatedNerve3D,
+			implant3DWorld,
+			nerveAuditResult,
+		});
+	}, [volume, yaw, pitch, zoom, pan, canvasDims, nervePoints, interpolatedNerve3D, implant3DWorld, nerveAuditResult]);
+
 	const activePresetSpec = getVolume3DPreset(activePreset);
 
 	return (
@@ -659,6 +705,12 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain cursor-grab active:cursor-grabbing z-0"
 					data-testid="cbct-volume-3d-canvas"
+				/>
+				<canvas
+					ref={overlayCanvasRef}
+					style={{ backgroundColor: "transparent" }}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"
+					data-testid="cbct-volume-3d-overlay-canvas"
 				/>
 			</div>
 

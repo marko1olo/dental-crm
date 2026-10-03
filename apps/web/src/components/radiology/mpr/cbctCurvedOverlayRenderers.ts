@@ -495,18 +495,24 @@ export function drawCrossSectionOverlay(
 	let crossSectionClearanceMidPoint: { x: number; y: number } | null = null;
 	let crossSectionStatusStroke = "#10b981";
 
-	if (studioMode === "implant") {
-		const canalCenterX = centerX + currentCanal.center.x / pxSpacing;
-		const canalCenterY = topY + currentCanal.center.y / pxSpacing;
+	let canalCenterX = 0;
+	let canalCenterY = 0;
+
+	if (currentCanal) {
+		canalCenterX = centerX + currentCanal.center.x / pxSpacing;
+		canalCenterY = topY + currentCanal.center.y / pxSpacing;
 		const canalRadiusPx = currentCanal.radiusMm / pxSpacing;
 		const safetyRadiusPx =
 			(currentCanal.radiusMm + currentCanal.safetyMarginMm) / pxSpacing;
 
-		ctx.strokeStyle = nerveAuditResult.isDangerous
+		const isDangerous = studioMode === "implant" && Boolean(nerveAuditResult?.isDangerous);
+		const isWarning = studioMode === "implant" && Boolean(nerveAuditResult?.isWarning);
+
+		ctx.strokeStyle = isDangerous
 			? "rgba(239, 68, 68, 0.9)"
-			: nerveAuditResult.isWarning
+			: isWarning
 				? "rgba(245, 158, 11, 0.85)"
-				: "rgba(34, 197, 94, 0.65)";
+				: "rgba(245, 158, 11, 0.65)";
 		ctx.lineWidth = 1.5;
 		ctx.setLineDash([4, 3]);
 		ctx.beginPath();
@@ -514,14 +520,28 @@ export function drawCrossSectionOverlay(
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		ctx.fillStyle = "rgba(239, 68, 68, 0.35)";
-		ctx.strokeStyle = "#ef4444";
+		ctx.fillStyle = isDangerous ? "rgba(239, 68, 68, 0.45)" : "rgba(255, 145, 0, 0.35)";
+		ctx.strokeStyle = isDangerous ? "#ef4444" : "#ff9100";
 		ctx.lineWidth = 2.0;
 		ctx.beginPath();
 		ctx.arc(canalCenterX, canalCenterY, canalRadiusPx, 0, Math.PI * 2);
 		ctx.fill();
 		ctx.stroke();
 
+		// Center marker
+		ctx.fillStyle = "#ffffff";
+		ctx.beginPath();
+		ctx.arc(canalCenterX, canalCenterY, 1.5, 0, Math.PI * 2);
+		ctx.fill();
+
+		// Canal badge/label
+		ctx.font = "bold 9px monospace";
+		ctx.fillStyle = isDangerous ? "#ef4444" : "#ff9100";
+		ctx.textAlign = "center";
+		ctx.fillText("IAN", canalCenterX, canalCenterY + canalRadiusPx + 10);
+	}
+
+	if (studioMode === "implant") {
 		const entryPxX = centerX + currentImplantPose.entryPoint.x / pxSpacing;
 		const entryPxY = topY + currentImplantPose.entryPoint.y / pxSpacing;
 		const radiusPx = currentImplantSpec.diameterMm / 2.0 / pxSpacing;
@@ -640,21 +660,23 @@ export function drawCrossSectionOverlay(
 			lengthPx *
 				Math.cos((currentImplantPose.angulationDeg * Math.PI) / 180);
 
-		ctx.save();
-		ctx.strokeStyle = statusStroke;
-		ctx.lineWidth = 1.2;
-		ctx.setLineDash([2, 2]);
-		ctx.beginPath();
-		ctx.moveTo(apexPxX, apexPxY);
-		ctx.lineTo(canalCenterX, canalCenterY);
-		ctx.stroke();
-		ctx.setLineDash([]);
-		ctx.restore();
+		if (currentCanal) {
+			ctx.save();
+			ctx.strokeStyle = statusStroke;
+			ctx.lineWidth = 1.2;
+			ctx.setLineDash([2, 2]);
+			ctx.beginPath();
+			ctx.moveTo(apexPxX, apexPxY);
+			ctx.lineTo(canalCenterX, canalCenterY);
+			ctx.stroke();
+			ctx.setLineDash([]);
+			ctx.restore();
 
-		crossSectionClearanceMidPoint = {
-			x: (apexPxX + canalCenterX) / 2,
-			y: (apexPxY + canalCenterY) / 2,
-		};
+			crossSectionClearanceMidPoint = {
+				x: (apexPxX + canalCenterX) / 2,
+				y: (apexPxY + canalCenterY) / 2,
+			};
+		}
 	}
 
 	ctx.restore();

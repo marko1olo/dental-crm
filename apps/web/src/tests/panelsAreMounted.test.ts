@@ -337,12 +337,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Специализированная векторная SVG-пиктограмма рецессии десны и маргинального пародонтита для пародонтологической карты пациента. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons.",
 	},
 	{
-		file: "components/radiology/mpr/CbctViewportsRuler.tsx",
-		name: "CbctViewportsRulerOverlay",
-		reason:
-			"Вспомогательный оверлей-тулбар линейки и угломера мультипланарной реконструкции (MPR КЛКТ). Входит в модуль CbctViewportsRuler.tsx и используется как специализированный оверлей для измерений каналов и кости.",
-	},
-	{
 		file: "components/settings/doctor/DoctorAnesthesiaToxicityCalculator.tsx",
 		name: "DoctorAnesthesiaToxicityCalculator",
 		reason:

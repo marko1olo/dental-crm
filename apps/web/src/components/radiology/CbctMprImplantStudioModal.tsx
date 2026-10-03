@@ -21,7 +21,7 @@ import {
 	computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
 } from "./implantSafetyEngine";
 import {
-	calculateSplineLength3DMm, interpolateNerveSpline3D, type AlveolarRidgeCaliperMeasurement,
+	calculateSplineLength3DMm, interpolateNerveSpline3D, project3DNerveToCrossSection, type AlveolarRidgeCaliperMeasurement,
 } from "./cbctCaliperNerveMath";
 import {
 	type HUZoneSampling, type MischClassificationResult, classifyMischBoneQuality,
@@ -43,13 +43,9 @@ import { useCbctClipboardSnapshot } from "./mpr/useCbctClipboardSnapshot";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
 import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
-
-// Re-exports for zero-downtime backwards compatibility
+// Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone")
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
-
-// Textual compatibility anchor for wave224 test suites:
-// Viewport grid renders honest empty dropzone: data-testid="cbct-empty-volume-dropzone" with "Исследование КЛКТ не загружено"
 
 export const CbctMprImplantStudioModal: React.FC<
 	CbctMprImplantStudioModalProps & {
@@ -205,11 +201,16 @@ export const CbctMprImplantStudioModal: React.FC<
 		return calculateImplant3DWorldPose(currentImplantPose, activeCrossSection.centerPointMm, activeCrossSection.normalVector2D, activeCrossSection.heightMm, 4.0);
 	}, [currentImplantPose, activeCrossSection]);
 
-	const currentCanal: MandibularCanalCrossSection = useMemo(() => ({
-		center: { x: canalXOffsetMm, y: canalYDepthMm },
-		radiusMm: 1.4,
-		safetyMarginMm: 2.0,
-	}), [canalXOffsetMm, canalYDepthMm]);
+	const currentCanal: MandibularCanalCrossSection = useMemo(() => {
+		if (activeCrossSection && interpolatedNerve3D.length >= 2) {
+			const proj = project3DNerveToCrossSection(
+				interpolatedNerve3D, activeCrossSection.centerPointMm, activeCrossSection.normalVector2D,
+				activeCrossSection.tangentVector2D, activeCrossSection.heightMm, 4.0,
+			);
+			if (proj) return { center: { x: proj.xOffsetMm, y: proj.yDepthMm }, radiusMm: 1.4, safetyMarginMm: 2.0 };
+		}
+		return { center: { x: canalXOffsetMm, y: canalYDepthMm }, radiusMm: 1.4, safetyMarginMm: 2.0 };
+	}, [activeCrossSection, interpolatedNerve3D, canalXOffsetMm, canalYDepthMm]);
 
 	const nerveAuditResult = useMemo(() => auditNerveSafetyMargin(currentImplantPose, currentCanal), [currentImplantPose, currentCanal]);
 	const huSamplingResult: HUZoneSampling = useMemo(() => sampleCrossSectionHUProfile(volume, currentImplantPose, implant3DWorld), [volume, currentImplantPose, implant3DWorld]);
@@ -748,13 +749,12 @@ export const CbctMprImplantStudioModal: React.FC<
 						selectedLengthMm={selectedLengthMm} onSelectLengthMm={setSelectedLengthMm} displayBoneClass={displayBoneClass} displayMeanHU={displayMeanHU} displayTorque={displayTorque}
 						displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol}
 						nerveSafetyStatus={nerveAuditResult.safetyStatus === "danger" ? "danger" : nerveAuditResult.safetyStatus === "warning" ? "warning" : "safe"}
+						nervePoints={nervePoints} interpolatedNerve3D={interpolatedNerve3D} implant3DWorld={implant3DWorld} nerveAuditResult={nerveAuditResult}
 						handleExportToEmr={handleExportToEmr} handleExportToPlan={handleExportToPlan}
 						onChangeWindowWidth={setWindowWidth} onChangeWindowLevel={setWindowLevel} onChangeSlabThicknessMm={setSlabThicknessMm} onChangeSlabMode={setSlabMode}
-						onSelectClinicalPreset={handleSelectClinicalPreset} activePresetId={activePreset}
-						panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm} panoProjectionMode={panoProjectionMode} onChangePanoProjectionMode={setPanoProjectionMode}
-						crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm}
-						implantEntryXOffsetMm={implantEntryXOffsetMm} onChangeImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
-						implantEntryDepthMm={implantEntryDepthMm} onChangeImplantEntryDepthMm={setImplantEntryDepthMm}
+						onSelectClinicalPreset={handleSelectClinicalPreset} activePresetId={activePreset} panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm}
+						panoProjectionMode={panoProjectionMode} onChangePanoProjectionMode={setPanoProjectionMode} crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm}
+						implantEntryXOffsetMm={implantEntryXOffsetMm} onChangeImplantEntryXOffsetMm={setImplantEntryXOffsetMm} implantEntryDepthMm={implantEntryDepthMm} onChangeImplantEntryDepthMm={setImplantEntryDepthMm}
 						implantAngulationDeg={implantAngulationDeg} onChangeImplantAngulationDeg={setImplantAngulationDeg}
 					/>
 

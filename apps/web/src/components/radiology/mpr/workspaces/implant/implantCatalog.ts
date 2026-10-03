@@ -347,3 +347,7 @@ export function evaluateImplantObstacleClearance(
 		badgeColorClass: "bg-emerald-950/80 text-emerald-300 border-emerald-500/80",
 	};
 }
+
+export * from "../../../implantCatalog.js";
+export * from "../../../implantCorticalAndSleeveEngine.js";
+

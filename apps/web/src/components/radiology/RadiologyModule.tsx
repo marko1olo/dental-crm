@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { DicomViewerModal } from "../imaging/DicomViewerModal.js";
+import { SensorStudyViewer } from "./SensorStudyViewer.js";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal.js";
 import { CbctImplantModal } from "./CbctImplantModal.js";
 import { DirectRvgCaptureModal } from "./DirectRvgCaptureModal.js";
@@ -58,6 +59,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const [showReferralModal, setShowReferralModal] = useState<boolean>(false);
 	const [show3dStudioModal, setShow3dStudioModal] = useState<boolean>(false);
 	const [showDicomViewerModal, setShowDicomViewerModal] = useState<boolean>(false);
+	const [showSensorViewerModal, setShowSensorViewerModal] = useState<boolean>(false);
 	const [showRvgCaptureModal, setShowRvgCaptureModal] = useState<boolean>(false);
 	const [showDoseSheetModal, setShowDoseSheetModal] = useState<boolean>(false);
 	const [showHotFolderModal, setShowHotFolderModal] = useState<boolean>(false);
@@ -381,6 +383,16 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 								<Layers className="w-3.5 h-3.5 text-emerald-600" />
 								<span>Открыть визиограммы</span>
 							</button>
+
+							<button
+								type="button"
+								onClick={() => setShowSensorViewerModal(true)}
+								className="w-full h-8 inline-flex items-center justify-center gap-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors"
+								data-testid="btn-open-sensor-study-viewer"
+							>
+								<Sparkles className="w-3.5 h-3.5 text-teal-600" />
+								<span>2D Сенсор EzDent-i</span>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -431,6 +443,17 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					patientId={selectedStudyForViewer?.patientId || patient?.id || undefined}
 					toothFdiCode={selectedStudyForViewer?.toothCode || undefined}
 				/>
+			)}
+
+			{showSensorViewerModal && (
+				<div className="fixed inset-0 z-50 bg-black flex flex-col">
+					<SensorStudyViewer
+						onClose={() => setShowSensorViewerModal(false)}
+						patientName={patientName}
+						medicalCardNumber={cardNum}
+						toothFdiCode={activeToothFdi ? String(activeToothFdi) : undefined}
+					/>
+				</div>
 			)}
 
 			{showRvgCaptureModal && (

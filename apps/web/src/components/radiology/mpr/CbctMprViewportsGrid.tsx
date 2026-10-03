@@ -16,9 +16,9 @@ import { resetPlaneObliqueAngle } from "../cbctMprMath";
 import type { CrossSectionSliceData, DentalArchCurve } from "../dentalCurveEngine";
 import { CbctViewportHud } from "../CbctViewportHud";
 import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
-import type { ImplantBrandKey } from "../implantSafetyEngine";
+import type { ImplantBrandKey, Implant3DWorldProjection, NerveSafetyAuditResult } from "../implantSafetyEngine";
 import { CbctVolume3DViewport } from "./CbctVolume3DViewport";
-import { CbctViewportRulerToolbar, CbctQuickWlBar } from "./CbctViewportsRuler";
+import { CbctViewportsRulerOverlay } from "./CbctViewportsRuler";
 import { CbctEmptyVolumeDropzone } from "./CbctEmptyVolumeDropzone";
 import {
 	MprQuadWorkspace,
@@ -110,6 +110,8 @@ export interface CbctMprViewportsGridProps {
 	readonly implantEntryXOffsetMm?: number | undefined; readonly onChangeImplantEntryXOffsetMm?: ((val: number) => void) | undefined;
 	readonly implantEntryDepthMm?: number | undefined; readonly onChangeImplantEntryDepthMm?: ((val: number) => void) | undefined;
 	readonly implantAngulationDeg?: number | undefined; readonly onChangeImplantAngulationDeg?: ((val: number) => void) | undefined;
+	readonly nervePoints?: readonly Point3D[] | undefined; readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
+	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined; readonly nerveAuditResult?: NerveSafetyAuditResult | undefined;
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
@@ -140,6 +142,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	implantEntryXOffsetMm, onChangeImplantEntryXOffsetMm,
 	implantEntryDepthMm, onChangeImplantEntryDepthMm,
 	implantAngulationDeg, onChangeImplantAngulationDeg,
+	nervePoints = [], interpolatedNerve3D = [], implant3DWorld = null, nerveAuditResult,
 }) => {
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
 
@@ -231,18 +234,18 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 
 	const renderViewportOverlaysWithRuler = (viewport: CbctViewportType) => (
 		<>
-			{/* Top-Right Viewport Caliper Ruler Toolbar (Strict 28-32px density, Mandate 8k) */}
-			<div className="absolute top-1.5 right-28 pointer-events-auto flex items-center gap-1 z-30">
-				<CbctViewportRulerToolbar
-					viewportType={viewport}
-					activeTool={activeTool}
-					onSelectTool={onSelectTool}
-					rulers={rulers}
-					onClearRulers={onClearRulers}
-					angles={angles}
-					onClearAngles={onClearAngles}
-				/>
-			</div>
+			<CbctViewportsRulerOverlay
+				viewportType={viewport}
+				activeTool={activeTool}
+				onSelectTool={onSelectTool}
+				rulers={rulers}
+				onClearRulers={onClearRulers}
+				angles={angles}
+				onClearAngles={onClearAngles}
+				windowWidth={windowWidth}
+				windowLevel={windowLevel}
+				onSelectQuickWlPreset={onSelectQuickWlPreset}
+			/>
 
 			{renderViewportOverlays(viewport)}
 		</>
@@ -584,6 +587,10 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					switcherSlot={renderFourthQuadrantSwitcher()}
 					isMaximized={maximizedViewport === "panoramic"}
 					onToggleMaximize={() => handleToggleMaximize("panoramic")}
+					nervePoints={nervePoints}
+					interpolatedNerve3D={interpolatedNerve3D}
+					implant3DWorld={implant3DWorld}
+					nerveAuditResult={nerveAuditResult}
 				/>
 			);
 		}

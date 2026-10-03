@@ -34,6 +34,7 @@ export interface SkullProjectionDefinition {
 	tooltip: string;
 	yaw: number;
 	pitch: number;
+	ez3dCode: "A" | "P" | "L" | "R" | "F" | "H" | "3/4R" | "3/4L";
 }
 
 export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
@@ -41,65 +42,73 @@ export const SKULL_PROJECTIONS: readonly SkullProjectionDefinition[] = [
 		key: "anterior",
 		label: "Фас",
 		shortLabel: "Фас",
-		tooltip: "Фас / Anterior: фронтальный вид черепа и резцов (0°, 0°)",
+		tooltip: "A (Anterior) / Фас: фронтальный вид черепа и резцов (Yaw 0°, Pitch 0°)",
 		yaw: 0,
 		pitch: 0,
-	},
-	{
-		key: "right_lateral",
-		label: "Пр. профиль",
-		shortLabel: "Пр.",
-		tooltip: "Правый профиль: латеральный вид правой челюсти и ВНЧС (90°, 0°)",
-		yaw: 90,
-		pitch: 0,
-	},
-	{
-		key: "left_lateral",
-		label: "Лев. профиль",
-		shortLabel: "Лев.",
-		tooltip: "Левый профиль: латеральный вид левой челюсти и ВНЧС (-90°, 0°)",
-		yaw: -90,
-		pitch: 0,
+		ez3dCode: "A",
 	},
 	{
 		key: "posterior",
 		label: "Затылок",
 		shortLabel: "Зат.",
-		tooltip: "Затылок / Posterior: вид сзади, основание черепа и позвонки (180°, 0°)",
+		tooltip: "P (Posterior) / Затылок: вид сзади, основание черепа и шейный отдел (Yaw 180°, Pitch 0°)",
 		yaw: 180,
 		pitch: 0,
+		ez3dCode: "P",
 	},
 	{
-		key: "superior",
-		label: "Сверху",
-		shortLabel: "Верх",
-		tooltip: "Сверху / Окклюзия: вид сверху на зубной ряд (0°, +85°)",
-		yaw: 0,
-		pitch: 85,
+		key: "left_lateral",
+		label: "Лев. профиль",
+		shortLabel: "Лев.",
+		tooltip: "L (Left) / Левый профиль: латеральный вид левой челюсти и ВНЧС (Yaw -90°, Pitch 0°)",
+		yaw: -90,
+		pitch: 0,
+		ez3dCode: "L",
+	},
+	{
+		key: "right_lateral",
+		label: "Пр. профиль",
+		shortLabel: "Пр.",
+		tooltip: "R (Right) / Правый профиль: латеральный вид правой челюсти и ВНЧС (Yaw 90°, Pitch 0°)",
+		yaw: 90,
+		pitch: 0,
+		ez3dCode: "R",
 	},
 	{
 		key: "inferior",
 		label: "Снизу",
 		shortLabel: "Низ",
-		tooltip: "Снизу / Базис: вид снизу на край нижней челюсти (0°, -85°)",
+		tooltip: "F (Foot/Inferior) / Снизу: вид снизу на базис нижней челюсти (Yaw 0°, Pitch -85°)",
 		yaw: 0,
 		pitch: -85,
+		ez3dCode: "F",
+	},
+	{
+		key: "superior",
+		label: "Сверху",
+		shortLabel: "Верх",
+		tooltip: "H (Head/Superior) / Сверху: аксиальный вид сверху на зубной ряд (Yaw 0°, Pitch +85°)",
+		yaw: 0,
+		pitch: 85,
+		ez3dCode: "H",
 	},
 	{
 		key: "right_oblique",
 		label: "3/4 Пр.",
 		shortLabel: "3/4П",
-		tooltip: "3/4 Правый: изометрический правый ракурс челюсти (45°, 15°)",
+		tooltip: "3/4R (Right Oblique): изометрический правый ракурс челюсти (Yaw 45°, Pitch 15°)",
 		yaw: 45,
 		pitch: 15,
+		ez3dCode: "3/4R",
 	},
 	{
 		key: "left_oblique",
 		label: "3/4 Лев.",
 		shortLabel: "3/4Л",
-		tooltip: "3/4 Левый: изометрический левый ракурс челюсти (-45°, 15°)",
+		tooltip: "3/4L (Left Oblique): изометрический левый ракурс челюсти (Yaw -45°, Pitch 15°)",
 		yaw: -45,
 		pitch: 15,
+		ez3dCode: "3/4L",
 	},
 ];
 
@@ -221,13 +230,18 @@ export const CbctSkullProjectionsToolbar: React.FC<CbctSkullProjectionsToolbarPr
 						onClick={() => onSelectProjection(proj.yaw, proj.pitch)}
 						title={proj.tooltip}
 						data-testid={`cbct-skull-proj-${proj.key}`}
-						className={`px-1.5 py-0.5 min-w-[28px] h-7 rounded flex flex-col items-center justify-center gap-0.5 text-[9px] font-semibold transition-all cursor-pointer ${
+						className={`px-1.5 py-0.5 min-w-[30px] h-7 rounded flex flex-col items-center justify-center gap-0.5 text-[9px] font-semibold transition-all cursor-pointer ${
 							active
-								? "bg-cyan-500/25 text-cyan-300 border border-cyan-500/60 shadow-xs font-bold"
-								: "bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800/80"
+								? "bg-[#054A6E]/50 text-cyan-300 border border-cyan-400 shadow-xs font-bold ring-1 ring-cyan-500/40"
+								: "bg-zinc-900/80 text-zinc-400 hover:text-cyan-200 hover:bg-[#054A6E]/20 border border-zinc-800/80"
 						}`}
 					>
-						<SkullSvgIcon projection={proj.key} className={active ? "text-cyan-300" : "text-zinc-400"} />
+						<div className="flex items-center gap-1">
+							<SkullSvgIcon projection={proj.key} className={active ? "text-cyan-300" : "text-zinc-400"} />
+							<span className={`text-[8.5px] font-mono font-bold leading-none ${active ? "text-cyan-200" : "text-cyan-600"}`}>
+								{proj.ez3dCode}
+							</span>
+						</div>
 						<span className="leading-none">{proj.shortLabel}</span>
 					</button>
 				);

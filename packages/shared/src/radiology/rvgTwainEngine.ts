@@ -563,12 +563,21 @@ export class RvgTwainCaptureEngine {
 	private activeSensorKey: string | null = null;
 	private activeProtocol: RvgCaptureProtocol = "TWAIN_2_4";
 	private calibrationProfile: RvgHardwareCalibrationProfile | null = null;
+	private allowSyntheticAcquisition: boolean = true;
 	private stateChangeListeners: ((newState: RvgCaptureState, previousState: RvgCaptureState) => void)[] = [];
 	private frameReadyListeners: ((frame: RvgRawFrame) => void)[] = [];
 	private errorListeners: ((error: Error) => void)[] = [];
 
-	constructor(protocol: RvgCaptureProtocol = "TWAIN_2_4") {
+	constructor(
+		protocol: RvgCaptureProtocol = "TWAIN_2_4",
+		options?: { allowSyntheticAcquisition?: boolean },
+	) {
 		this.activeProtocol = protocol;
+		this.allowSyntheticAcquisition = options?.allowSyntheticAcquisition ?? true;
+	}
+
+	public setAllowSyntheticAcquisition(allow: boolean): void {
+		this.allowSyntheticAcquisition = allow;
 	}
 
 	public getState(): RvgCaptureState {
@@ -660,6 +669,15 @@ export class RvgTwainCaptureEngine {
 	public async triggerAcquisition(mockFrame?: RvgRawFrame): Promise<RvgRawFrame> {
 		if (this.state !== "ARMED_WAITING_FOR_XRAY") {
 			throw new Error(`Датчик не взведён для экспозиции. Текущее состояние: ${this.state}`);
+		}
+
+		if (!mockFrame && !this.allowSyntheticAcquisition) {
+			const err = new Error(
+				"Снимок с физического датчика визиографа не получен: аппаратный таймаут экспозиции TWAIN DSM",
+			);
+			this.setState("ERROR");
+			this.notifyError(err);
+			throw err;
 		}
 
 		this.setState("EXPOSURE_DETECTED");

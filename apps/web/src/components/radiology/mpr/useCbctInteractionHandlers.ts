@@ -46,6 +46,7 @@ import {
 	updateDentalArchAnchorPosition,
 } from "../dentalCurveEngine";
 import type { VirtualImplantSpec } from "../implantSafetyEngine";
+import { traceMandibularNerveFastMarching } from "../fastMarchingNerve";
 import { showToast } from "../../GlobalToast";
 import type { CbctToolMode } from "../CbctLeftToolDock";
 import { ROTATE_CURSOR, type StudioMode } from "./cbctStudioTypes";
@@ -151,6 +152,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 
 	// Curved viewports (panoramic & cross-section) interaction handlers
 	const curvedHandlers = useCbctCurvedViewportHandlers({
+		volume, nervePoints, setNervePoints,
 		activeTool, studioMode, windowWidth, setWindowWidth, windowLevel, setWindowLevel,
 		transforms, setTransforms, crosshairMm, setCrosshairMm, archCurve, panoramicData,
 		crossSections, activeCrossSection, setActiveCrossSectionIdx, currentImplantSpec,
@@ -272,9 +274,44 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 
 		if (activeTool === "nerve") {
 			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
-			const pointMm = mapCanvasPointerToWorldMmWithTransform(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume);
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(
+				pointerPx,
+				{ width: canvas.width, height: canvas.height },
+				plane,
+				crosshairMm,
+				obliqueAngles,
+				currentTransform,
+				volume,
+			);
+
+			if (nervePoints.length === 0) {
+				// Seed 1: Ментальное отверстие (Foramen mentale)
+				setNervePoints([pointMm]);
+				showToast("Точка 1/2: Ментальное отверстие зафиксировано. Кликните Foramen mandibulae (на ветви челюсти) для автотрассировки Fast Marching", "info");
+				return;
+			}
+
+			if (nervePoints.length === 1 && volume) {
+				// Seed 2: Нижнечелюстное отверстие (Foramen mandibulae)
+				const startSeed = nervePoints[0]!;
+				const endSeed = pointMm;
+				try {
+					const marchResult = traceMandibularNerveFastMarching(volume, startSeed, endSeed);
+					setNervePoints(marchResult.controlPoints as Point3D[]);
+					showToast(
+						`Канал IAN успешно сегментирован (Fast Marching 2-Seed Vatech): 3D-длина ${marchResult.totalLengthMm} мм (${marchResult.controlPoints.length} узлов за ${marchResult.executionTimeMs} мс)`,
+						"success",
+					);
+				} catch {
+					setNervePoints([startSeed, endSeed]);
+					showToast("Зафиксированы 2 точки канала IAN", "info");
+				}
+				return;
+			}
+
+			// Если уже 2+ узла: добавляем дополнительный узел для тонкой ручной подгонки
 			setNervePoints((prev) => [...prev, pointMm]);
-			showToast(`Добавлена точка нижнечелюстного канала #${nervePoints.length + 1}`, "info");
+			showToast(`Добавлен дополнительный узел нижнечелюстного канала #${nervePoints.length + 1}`, "info");
 			return;
 		}
 

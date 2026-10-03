@@ -18,6 +18,9 @@ export interface RvgGlRenderParams {
 	clahe?: number; // 0..100 optional local contrast enhancement
 	enamelHighPass?: number; // 0..100 Enamel High-Pass contrast
 	pdlSharpening?: number; // 0..100 Periodontal Ligament Sharpening
+	maxSharpness?: boolean; // High-Boost edge amplification
+	pseudoRelief?: boolean; // 45° Emboss pseudo-relief (CChBumpMap)
+	cutCornerChamfer?: boolean; // Sensor ergonomic chamfer bevel cut (VACAL.dll VCA_CutImage)
 }
 
 export interface RvgGlRendererInstance {
@@ -55,28 +58,58 @@ uniform float u_clahe;
 uniform float u_enamelHighPass;
 uniform float u_pdlSharpening;
 uniform int u_invert;
+uniform int u_maxSharpness;
+uniform int u_pseudoRelief;
+uniform int u_cutCornerChamfer;
 
 void main() {
     vec2 step = 1.0 / max(vec2(1.0, 1.0), u_textureSize);
+
+    // 0. Hardware Sensor Chamfer Corner Cut (EzSensor bevel corner)
+    if (u_cutCornerChamfer == 1) {
+        vec2 pixelCoord = v_texCoord * u_textureSize;
+        if (pixelCoord.x + (u_textureSize.y - pixelCoord.y) < 65.0) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            return;
+        }
+    }
+
     vec4 centerColor = texture2D(u_image, v_texCoord);
     vec3 color = centerColor.rgb;
 
-    // Sample 4 orthogonal neighbors for 3x3 convolution
-    vec3 n = texture2D(u_image, v_texCoord + vec2(0.0, -step.y)).rgb;
-    vec3 s = texture2D(u_image, v_texCoord + vec2(0.0, step.y)).rgb;
-    vec3 w = texture2D(u_image, v_texCoord + vec2(-step.x, 0.0)).rgb;
-    vec3 e = texture2D(u_image, v_texCoord + vec2(step.x, 0.0)).rgb;
-    vec3 laplacian = (n + s + w + e) - 4.0 * color;
+    // Sample 8 neighbors for 3x3 convolution
+    vec3 tl = texture2D(u_image, v_texCoord + vec2(-step.x, -step.y)).rgb;
+    vec3 tc = texture2D(u_image, v_texCoord + vec2( 0.0,    -step.y)).rgb;
+    vec3 tr = texture2D(u_image, v_texCoord + vec2( step.x, -step.y)).rgb;
+    vec3 ml = texture2D(u_image, v_texCoord + vec2(-step.x,  0.0   )).rgb;
+    vec3 mr = texture2D(u_image, v_texCoord + vec2( step.x,  0.0   )).rgb;
+    vec3 bl = texture2D(u_image, v_texCoord + vec2(-step.x,  step.y)).rgb;
+    vec3 bc = texture2D(u_image, v_texCoord + vec2( 0.0,     step.y)).rgb;
+    vec3 br = texture2D(u_image, v_texCoord + vec2( step.x,  step.y)).rgb;
 
-    // 1. Hardware 3x3 Unsharp Mask Convolution on GPU (< 0.05ms)
-    if (u_sharpness > 0.0) {
+    // 1. Emboss 45° Pseudo-Relief / Pseudo-3D (CChBumpMap in MyDib.dll)
+    if (u_pseudoRelief == 1) {
+        vec3 gradient = -2.0*tl - 1.0*tc - 1.0*ml + 1.0*mr + 1.0*bc + 2.0*br;
+        color = clamp(0.5 + gradient * 0.4, 0.0, 1.0);
+    }
+    // 2. High-Boost Max Sharpness (CHECKBOX_MAXSHARPEN)
+    else if (u_maxSharpness == 1) {
+        vec3 highBoost = 13.0*color - 2.0*(tc + ml + mr + bc) - 1.0*(tl + tr + bl + br);
+        color = clamp(highBoost, 0.0, 1.0);
+    }
+    // 3. Hardware 8-neighbor Unsharp Masking with Noise Coring (CHECKBOX_SHARPEN)
+    else if (u_sharpness > 0.0) {
+        vec3 neighbors = (tl + tc + tr + ml + mr + bl + bc + br) * 0.125;
+        vec3 detail = color - neighbors;
+        float noiseThreshold = 0.02;
+        vec3 coredDetail = sign(detail) * max(vec3(0.0), abs(detail) - noiseThreshold);
         float weight = (u_sharpness / 100.0) * 1.6;
-        color = clamp(color - weight * laplacian, 0.0, 1.0);
+        color = clamp(color + weight * coredDetail, 0.0, 1.0);
     }
 
-    // 2. Enamel High-Pass Filter (< 0.05ms): Accentuates high mineral density transitions & caries fissures
-    if (u_enamelHighPass > 0.0) {
-        vec3 blur = (n + s + w + e) * 0.25;
+    // 4. Enamel High-Pass Filter (< 0.05ms)
+    if (u_enamelHighPass > 0.0 && u_pseudoRelief == 0) {
+        vec3 blur = (tc + bc + ml + mr) * 0.25;
         vec3 highPass = color - blur;
         float ehpWeight = (u_enamelHighPass / 100.0) * 1.8;
         float luma = (color.r + color.g + color.b) * 0.3333;
@@ -84,24 +117,27 @@ void main() {
         color = clamp(color + highPass * ehpWeight * (0.5 + enamelMask * 1.0), 0.0, 1.0);
     }
 
-    // 3. Periodontal Ligament (PDL) Sharpening (< 0.05ms): Accentuates narrow radiolucent space between root & bone
-    if (u_pdlSharpening > 0.0) {
+    // 5. Periodontal Ligament (PDL) Sharpening (< 0.05ms)
+    if (u_pdlSharpening > 0.0 && u_pseudoRelief == 0) {
+        vec3 lap = (tc + bc + ml + mr) - 4.0 * color;
         float pdlWeight = (u_pdlSharpening / 100.0) * 2.0;
         float luma = (color.r + color.g + color.b) * 0.3333;
         float pdlValley = 1.0 - smoothstep(0.15, 0.70, luma);
-        color = clamp(color - laplacian * pdlWeight * (0.8 + pdlValley * 0.8), 0.0, 1.0);
+        color = clamp(color - lap * pdlWeight * (0.8 + pdlValley * 0.8), 0.0, 1.0);
     }
 
-    // 4. Contrast & CLAHE windowing on GPU
+    // 6. Tangent Contrast Curve & CLAHE windowing on GPU
     float effectiveContrast = u_contrast + (u_clahe > 0.0 ? u_clahe * 0.4 : 0.0);
-    float contrastFactor = effectiveContrast / 100.0;
+    float contrastVal = effectiveContrast - 100.0;
+    float rad = (clamp(contrastVal, -95.0, 200.0) + 100.0) * 0.00785398;
+    float contrastFactor = tan(rad);
     color = clamp((color - 0.5) * contrastFactor + 0.5, 0.0, 1.0);
 
-    // 5. Brightness level on GPU
+    // 7. Brightness level on GPU
     float brightnessFactor = u_brightness / 100.0;
     color = clamp(color * brightnessFactor, 0.0, 1.0);
 
-    // 6. Instant Invert / Negative on GPU (0-click negative)
+    // 8. Instant Invert / Negative on GPU
     if (u_invert == 1) {
         color = vec3(1.0) - color;
     }
@@ -201,6 +237,9 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 	const uEnamelHighPassLoc = gl.getUniformLocation(program, "u_enamelHighPass");
 	const uPdlSharpeningLoc = gl.getUniformLocation(program, "u_pdlSharpening");
 	const uInvertLoc = gl.getUniformLocation(program, "u_invert");
+	const uMaxSharpnessLoc = gl.getUniformLocation(program, "u_maxSharpness");
+	const uPseudoReliefLoc = gl.getUniformLocation(program, "u_pseudoRelief");
+	const uCutCornerChamferLoc = gl.getUniformLocation(program, "u_cutCornerChamfer");
 
 	const aPositionLoc = gl.getAttribLocation(program, "a_position");
 	const aTexCoordLoc = gl.getAttribLocation(program, "a_texCoord");
@@ -297,6 +336,9 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 		gl.uniform1f(uEnamelHighPassLoc, params.enamelHighPass ?? 0);
 		gl.uniform1f(uPdlSharpeningLoc, params.pdlSharpening ?? 0);
 		gl.uniform1i(uInvertLoc, params.invert ? 1 : 0);
+		gl.uniform1i(uMaxSharpnessLoc, params.maxSharpness ? 1 : 0);
+		gl.uniform1i(uPseudoReliefLoc, params.pseudoRelief ? 1 : 0);
+		gl.uniform1i(uCutCornerChamferLoc, params.cutCornerChamfer ? 1 : 0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 		return true;

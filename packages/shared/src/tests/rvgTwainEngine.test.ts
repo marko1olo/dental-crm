@@ -146,6 +146,14 @@ describe("Wave 17: RVG TWAIN & Clinical Dental Radiology Hardware Suite", () => 
 			await assert.rejects(async () => {
 				await engine.triggerAcquisition();
 			}, /Датчик не взведён/);
+
+			// In production non-synthetic mode: triggerAcquisition without hardware frame must reject honestly (Zero-Mocks Mandate 11)
+			const prodEngine = new RvgTwainCaptureEngine("TWAIN_2_4", { allowSyntheticAcquisition: false });
+			await prodEngine.connectSensor("vatech_ezsensor_hd_size1");
+			prodEngine.armSensorForXRay();
+			await assert.rejects(async () => {
+				await prodEngine.triggerAcquisition();
+			}, /аппаратный таймаут экспозиции/);
 		});
 
 		it("1.4 Hardware calibration: Dark frame subtraction, flat field gain & bad pixel map correction", () => {
