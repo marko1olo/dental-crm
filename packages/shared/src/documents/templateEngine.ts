@@ -10,12 +10,31 @@ import {
 	parseKopecks,
 	rublesToKopecks,
 } from "../money.js";
+import {
+	integerToWordsRu,
+	kopecksToWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	legalMoneyInWordsRu,
+	rublesToWordsRu,
+} from "../moneyWordsRu.js";
+import {
+	generateDentalFormulaBreakdownText,
+	renderGraphicalDentalFormulaHtml,
+	resolveAllTeethTokens,
+	type ClinicalToothRowInput,
+	type DentalFormulaRecordInput,
+	type ToothStateData,
+} from "./dentalFormulaRenderer.js";
 
 export {
 	formatKopecksRu,
 	kopecksToNumericString,
 	parseKopecks,
 	rublesToKopecks,
+	kopecksToWordsRu,
+	rublesToWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	legalMoneyInWordsRu,
 };
 
 export type RepresentativeRelationType =
@@ -64,6 +83,18 @@ export interface PatientContextData {
 	dmsPolicy?: string | null | undefined;
 	advance?: string | number | null | undefined;
 	passport?: PassportData | null | undefined;
+	birthPlace?: string | null | undefined;
+	firstVisitDate?: string | Date | null | undefined;
+	registrationDate?: string | Date | null | undefined;
+	homePhone?: string | null | undefined;
+	mobilePhone?: string | null | undefined;
+	workplace?: string | null | undefined;
+	parentName?: string | null | undefined;
+	somaticStatus?: string | null | undefined;
+	allergyStatus?: string | null | undefined;
+	drugIntolerance?: string | null | undefined;
+	iin?: string | null | undefined;
+	comment?: string | null | undefined;
 }
 
 export interface RepresentativeContextData {
@@ -76,6 +107,15 @@ export interface RepresentativeContextData {
 	basis?: string | null | undefined; // "Паспорт", "Свидетельство о рождении" и т.д.
 	relationType?: RepresentativeRelationType | null | undefined;
 	passport?: PassportData | null | undefined;
+	birthPlace?: string | null | undefined;
+	registrationDate?: string | Date | null | undefined;
+	homePhone?: string | null | undefined;
+	mobilePhone?: string | null | undefined;
+	email?: string | null | undefined;
+	gender?: "male" | "female" | "муж" | "жен" | string | null | undefined;
+	age?: string | number | null | undefined;
+	inn?: string | null | undefined;
+	iin?: string | null | undefined;
 }
 
 export interface AuthorizedPersonContextData {
@@ -106,6 +146,11 @@ export interface ClinicContextData {
 	licenseIssuedDate?: string | Date | null | undefined;
 	licenseValidity?: string | null | undefined;
 	licenseIssuer?: string | null | undefined;
+	logoUrl?: string | null | undefined;
+	bankName?: string | null | undefined;
+	bik?: string | null | undefined;
+	checkingAccount?: string | null | undefined;
+	corrAccount?: string | null | undefined;
 }
 
 export interface AppointmentContextData {
@@ -130,6 +175,37 @@ export interface DocumentMetaContextData {
 	createdAt?: string | Date | null | undefined;
 }
 
+export interface FinancialContextData {
+	amountKopecks?: number | null | undefined;
+	amountRubles?: number | null | undefined;
+	invoiceNumber?: string | null | undefined;
+	invoiceDate?: string | Date | null | undefined;
+	contractNumber?: string | null | undefined;
+	contractDate?: string | Date | null | undefined;
+	actNumber?: string | null | undefined;
+	actDate?: string | Date | null | undefined;
+	comment?: string | null | undefined;
+}
+
+export interface ClinicalExaminationContextData {
+	examinationDate?: string | Date | null | undefined;
+	doctorFullName?: string | null | undefined;
+	doctorInitials?: string | null | undefined;
+	complaints?: string | null | undefined;
+	anamnesis?: string | null | undefined;
+	pastDiseases?: string | null | undefined;
+	diseaseHistory?: string | null | undefined;
+	externalExam?: string | null | undefined;
+	bite?: string | null | undefined;
+	mucousCondition?: string | null | undefined;
+	xray?: string | null | undefined;
+	objective?: string | null | undefined;
+	diagnosis?: string | null | undefined;
+	treatment?: string | null | undefined;
+	recommendations?: string | null | undefined;
+	treatmentDateTime?: string | Date | null | undefined;
+}
+
 /**
  * Полный типобезопасный контекст выполнения шаблонизатора
  */
@@ -140,11 +216,22 @@ export interface TemplateExecutionContext {
 	doctor?: DoctorStaffContextData | null | undefined;
 	lastDoctor?: DoctorStaffContextData | null | undefined;
 	administrator?: DoctorStaffContextData | null | undefined;
+	currentUser?: DoctorStaffContextData | null | undefined;
 	clinic?: ClinicContextData | null | undefined;
 	appointment?: AppointmentContextData | null | undefined;
 	warehouse?: WarehouseContextData | null | undefined;
 	document?: DocumentMetaContextData | null | undefined;
 	currentDate?: string | Date | null | undefined;
+	financial?: FinancialContextData | null | undefined;
+	clinicalExamination?: ClinicalExaminationContextData | null | undefined;
+	treatmentPlanTableHtml?: string | null | undefined;
+	dentalFormula?:
+		| Record<string | number, ToothStateData | string | Record<string, unknown>>
+		| Array<ClinicalToothRowInput>
+		| readonly Record<string, unknown>[]
+		| DentalFormulaRecordInput
+		| null
+		| undefined;
 }
 
 const RU_MONTHS_GENITIVE = [
@@ -221,8 +308,8 @@ export function formatInitials(fullName: string | null | undefined): string {
 	return [parts[0], firstInitial, secondInitial].filter(Boolean).join(" ");
 }
 
-export function calculatePatientAgeString(birthDateVal: unknown): string {
-	if (!birthDateVal) return "";
+export function calculatePatientAgeNumber(birthDateVal: unknown): number | null {
+	if (!birthDateVal) return null;
 	let bDate: Date;
 	if (birthDateVal instanceof Date) {
 		bDate = birthDateVal;
@@ -238,18 +325,28 @@ export function calculatePatientAgeString(birthDateVal: unknown): string {
 			bDate = new Date(trimmed);
 		}
 	} else {
-		return "";
+		return null;
 	}
 
-	if (Number.isNaN(bDate.getTime())) return "";
+	if (Number.isNaN(bDate.getTime())) return null;
 	const now = new Date();
 	let age = now.getFullYear() - bDate.getFullYear();
 	const mDiff = now.getMonth() - bDate.getMonth();
 	if (mDiff < 0 || (mDiff === 0 && now.getDate() < bDate.getDate())) {
 		age--;
 	}
-	if (age < 0) age = 0;
+	return age < 0 ? 0 : age;
+}
 
+export function calculatePatientAgeString(birthDateVal: unknown): string {
+	const age = calculatePatientAgeNumber(birthDateVal);
+	if (age === null) return "";
+	return String(age);
+}
+
+export function calculatePatientAgeWithUnit(birthDateVal: unknown): string {
+	const age = calculatePatientAgeNumber(birthDateVal);
+	if (age === null) return "";
 	const rem10 = age % 10;
 	const rem100 = age % 100;
 	let unit = "лет";
@@ -261,6 +358,68 @@ export function calculatePatientAgeString(birthDateVal: unknown): string {
 	return `${age} ${unit}`;
 }
 
+export function formatDateRussianDayMonthYear(val: unknown): string {
+	if (!val) return "";
+	let d: Date;
+	if (val instanceof Date) {
+		d = val;
+	} else if (typeof val === "string") {
+		const trimmed = val.trim();
+		const dotMatch = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+		if (dotMatch) {
+			const day = Number.parseInt(dotMatch[1] ?? "1", 10);
+			const month = Number.parseInt(dotMatch[2] ?? "1", 10) - 1;
+			const year = Number.parseInt(dotMatch[3] ?? "2026", 10);
+			d = new Date(year, month, day);
+		} else {
+			d = new Date(trimmed);
+		}
+	} else {
+		return String(val);
+	}
+
+	if (Number.isNaN(d.getTime())) return typeof val === "string" ? val : "";
+	const day = d.getDate();
+	const monthName = RU_MONTHS_GENITIVE[d.getMonth()] ?? "";
+	const year = d.getFullYear();
+	return `${day} ${monthName} ${year}`;
+}
+
+export function extractYearFromDate(val: unknown): string {
+	if (!val) return "";
+	if (typeof val === "string") {
+		const match = val.match(/\b(\d{4})\b/);
+		if (match) return match[1] ?? "";
+	}
+	if (val instanceof Date && !Number.isNaN(val.getTime())) {
+		return String(val.getFullYear());
+	}
+	return "";
+}
+
+export function formatPassportFullString(passport?: PassportData | null | undefined): string {
+	if (!passport) return "";
+	const parts: string[] = [];
+	const seriesNumber = [passport.series, passport.number].filter(Boolean).join(" ");
+	if (seriesNumber) {
+		parts.push(`Паспорт РФ: ${seriesNumber}`);
+	}
+	if (passport.issuedDate) {
+		parts.push(`Выдан: ${formatDateDdMmYyyy(passport.issuedDate)}`);
+	}
+	if (passport.issuedBy) {
+		parts.push(passport.issuedBy);
+	}
+	if (passport.divisionCode) {
+		parts.push(`Код подразделения: ${passport.divisionCode}`);
+	}
+	return parts.join(", ");
+}
+
+function escapeRegExp(str: string): string {
+	return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Полный реестр 74+ стандартизированных токенов подстановки
  */
@@ -268,7 +427,7 @@ export * from "./templateVariablesRegistry.js";
 
 
 /**
- * Строит карту значений всех 74+ токенов на основе контекста
+ * Строит карту значений всех токенов на основе контекста
  */
 export function buildTemplateVariablesMap(
 	ctx: TemplateExecutionContext,
@@ -277,8 +436,11 @@ export function buildTemplateVariablesMap(
 
 	// Текущая дата
 	const curDate = ctx.currentDate ? new Date(ctx.currentDate) : new Date();
-	map["ТекущаяДата"] = formatDateDdMmYyyy(curDate);
-	map["ТекущаяПолнаяДата"] = formatDateFullRussian(curDate);
+	const curDateDdMmYyyy = formatDateDdMmYyyy(curDate);
+	const curDateFull = formatDateFullRussian(curDate);
+	map["ТекущаяДата"] = curDateDdMmYyyy;
+	map["ТекущаяПолнаяДата"] = curDateFull;
+	map["ТекущаяДатаПолная"] = curDateFull;
 
 	// Пациент
 	const p = ctx.patient ?? {};
@@ -287,27 +449,50 @@ export function buildTemplateVariablesMap(
 	const pLastName = p.lastName ?? (pParts[0] ?? "");
 	const pFirstName = p.firstName ?? (pParts[1] ?? "");
 	const pMiddleName = p.middleName ?? (pParts[2] ?? "");
-	const pGenderStr = p.gender === "male" || p.gender === "муж" ? "муж" : p.gender === "female" || p.gender === "жен" ? "жен" : (p.gender ?? "");
+	const pLastNameUpper = pLastName.toUpperCase();
+	const pLastNameUpperFullName = pLastNameUpper
+		? [pLastNameUpper, pFirstName, pMiddleName].filter(Boolean).join(" ")
+		: pFullName;
+	const pInitials = formatInitials(pFullName);
+
+	const pGenderStr =
+		p.gender === "male" || p.gender === "муж" || p.gender === "мужской" || p.gender === "Мужской"
+			? "Мужской"
+			: p.gender === "female" || p.gender === "жен" || p.gender === "женский" || p.gender === "Женский"
+				? "Женский"
+				: (p.gender ?? "");
+
 	const pBirthDateStr = formatDateDdMmYyyy(p.birthDate);
-	const pAgeStr = p.age !== undefined && p.age !== null ? String(p.age) : calculatePatientAgeString(p.birthDate);
+	const pBirthDateFull = formatDateRussianDayMonthYear(p.birthDate);
+	const pBirthYear = extractYearFromDate(p.birthDate);
+	const pAgeStr =
+		p.age !== undefined && p.age !== null
+			? String(p.age)
+			: calculatePatientAgeString(p.birthDate);
 	const pPassport = p.passport ?? {};
+	const pPassportFull = formatPassportFullString(pPassport);
+
+	const pAddress = p.address || p.actualAddress || "";
+	const pActualAddress = p.actualAddress || p.address || "";
+	const pPhone = p.phone || p.mobilePhone || "";
+	const pPhones = [p.mobilePhone || p.phone, p.homePhone].filter(Boolean).join("; ");
 
 	map["Пациент.ФИО"] = pFullName || "";
 	map["Пациент.ID"] = p.id !== undefined && p.id !== null ? String(p.id) : "";
 	map["Пациент.НомерКарты"] = p.cardNumber !== undefined && p.cardNumber !== null ? String(p.cardNumber) : "";
-	map["Пациент.НомерМедкарты"] = p.cardNumber !== undefined && p.cardNumber !== null ? String(p.cardNumber) : "";
+	map["Пациент.НомерМедкарты"] = map["Пациент.НомерКарты"];
 	map["Пациент.Фамилия"] = pLastName || "";
 	map["Пациент.Имя"] = pFirstName || "";
 	map["Пациент.Отчество"] = pMiddleName || "";
 	map["Пациент.Пол"] = pGenderStr || "";
-	map["Пациент.Адрес"] = p.address || "";
-	map["Пациент.Телефон"] = p.phone || "";
+	map["Пациент.Адрес"] = pAddress;
+	map["Пациент.Телефон"] = pPhone;
 	map["Пациент.ИНН"] = p.inn || "";
-	map["Пациент.ФамилияИО"] = formatInitials(pFullName);
-	map["Пациент.ФИО.Инициалы"] = formatInitials(pFullName);
+	map["Пациент.ФамилияИО"] = pInitials;
+	map["Пациент.ФИО.Инициалы"] = pInitials;
 	map["Пациент.ДеньРождения"] = pBirthDateStr || "";
 	map["Пациент.Возраст"] = pAgeStr || "";
-	map["Пациент.ФактическийАдрес"] = p.actualAddress || p.address || "";
+	map["Пациент.ФактическийАдрес"] = pActualAddress;
 	map["Пациент.Email"] = p.email || "";
 	map["Пациент.СНИЛС"] = p.snils || "";
 	map["Пациент.Инвалидность"] = p.disability !== undefined && p.disability !== null ? String(p.disability) : "нет";
@@ -318,6 +503,8 @@ export function buildTemplateVariablesMap(
 	map["Пациент.ПолисОМС"] = p.omsPolicy || "";
 	map["Пациент.ПолисДМС"] = p.dmsPolicy || "";
 	map["Пациент.Аванс"] = p.advance !== undefined && p.advance !== null ? String(p.advance) : "0";
+	map["Пациент.Паспорт"] = pPassportFull || [pPassport.series, pPassport.number].filter(Boolean).join(" ");
+	map["Пациент.ПаспортДанные"] = pPassportFull || "";
 	map["Пациент.Паспорт.Номер"] = pPassport.number || "";
 	map["Пациент.Паспорт.Серия"] = pPassport.series || "";
 	map["Пациент.Паспорт.СерияНомер"] = [pPassport.series, pPassport.number].filter(Boolean).join(" ");
@@ -325,25 +512,134 @@ export function buildTemplateVariablesMap(
 	map["Пациент.Паспорт.КемВыдан"] = pPassport.issuedBy || "";
 	map["Пациент.Паспорт.КодПодразделения"] = pPassport.divisionCode || "";
 
+	// Плоские теги пациента (IDENT / DentalPRO)
+	map["ФАМИЛИЯИмяОтчество"] = pLastNameUpperFullName || "";
+	map["ФамилияИмяОтчество"] = pFullName || "";
+	map["ФамилияИО"] = pInitials || "";
+	map["Фамилия"] = pLastName || "";
+	map["Имя"] = pFirstName || "";
+	map["Отчество"] = pMiddleName || "";
+	map["ДатаРождения"] = pBirthDateFull || pBirthDateStr || "";
+	map["ГодРождения"] = pBirthYear || "";
+	map["Возраст"] = pAgeStr || "";
+	map["Пол"] = pGenderStr || "";
+	map["Телефоны"] = pPhone || pPhones || "";
+	map["МобТелефон"] = p.mobilePhone || pPhone || "";
+	map["ДомТелефон"] = p.homePhone || "";
+	map["Email"] = p.email || "";
+	map["Адрес"] = pActualAddress || pAddress;
+	map["АдресРегистрации"] = p.address || pAddress;
+	map["ДатаРегистрации"] = formatDateDdMmYyyy(p.registrationDate);
+	map["ИНН"] = p.inn || "";
+	map["СНИЛС"] = p.snils || "";
+	map["ИИН"] = p.iin || "";
+	map["МестоРаботы"] = p.workplace || "";
+	map["Профессия"] = p.profession || "";
+	map["Полисы"] = map["Пациент.Полисы"];
+	map["Комментарий"] = p.comment || p.specialNotes || "";
+	map["НомерКарты"] = map["Пациент.НомерКарты"];
+	map["НомерМедкарты"] = map["Пациент.НомерМедкарты"];
+	map["ДатаПервогоПриема"] = formatDateFullRussian(p.firstVisitDate);
+	map["ДатаПервогоПриемаЧислом"] = formatDateDdMmYyyy(p.firstVisitDate);
+	map["Родитель"] = p.parentName || (ctx.representative?.fullName ?? "");
+	map["МестоРождения"] = p.birthPlace || "";
+	map["Документ"] = pPassportFull;
+	map["Документ.ТипДокумента"] = pPassport.number ? "Паспорт РФ" : "";
+	map["Документ.СерияНомер"] = map["Пациент.Паспорт.СерияНомер"];
+	map["Документ.СерияНомер.Серия"] = pPassport.series || "";
+	map["Документ.СерияНомер.Номер"] = pPassport.number || "";
+	map["Документ.Выдан"] = pPassport.number
+		? `Выдан: ${formatDateDdMmYyyy(pPassport.issuedDate)}, ${pPassport.issuedBy || ""}, Код подразделения: ${pPassport.divisionCode || ""}`.trim()
+		: "";
+	map["Документ.Выдан.ДатаВыдачи"] = formatDateDdMmYyyy(pPassport.issuedDate);
+	map["Документ.Выдан.КодПодразделения"] = pPassport.divisionCode || "";
+	map["Документ.Выдан.КемВыдан"] = pPassport.issuedBy || "";
+
+	// Соматический и аллергологический статус
+	const somaticStatusStr = p.somaticStatus || "Соматически здоров, хронических заболеваний не выявлено";
+	const allergyStatusStr = p.allergyStatus || p.specialNotes || "Аллергологический анамнез не отягощен";
+	const drugIntoleranceStr = p.drugIntolerance || "Непереносимость лекарственных препаратов отрицает";
+	map["Пациент.СоматическийСтатус"] = somaticStatusStr;
+	map["СоматическийСтатус"] = somaticStatusStr;
+	map["Аллергостатус"] = allergyStatusStr;
+	map["Аллергии"] = allergyStatusStr;
+	map["НепереносимостьПрепаратов"] = drugIntoleranceStr;
+
 	// Законный представитель
 	const rep = ctx.representative ?? {};
 	const repFullName = rep.fullName || "";
+	const repParts = repFullName ? repFullName.trim().split(/\s+/).filter(Boolean) : [];
+	const repLastName = repParts[0] ?? "";
+	const repFirstName = repParts[1] ?? "";
+	const repMiddleName = repParts[2] ?? "";
+	const repLastNameUpper = repLastName.toUpperCase();
+	const repLastNameUpperFullName = repLastNameUpper
+		? [repLastNameUpper, repFirstName, repMiddleName].filter(Boolean).join(" ")
+		: repFullName;
+	const repInitials = rep.initials || formatInitials(repFullName);
 	const repPassport = rep.passport ?? {};
+	const repPassportFull = formatPassportFullString(repPassport);
+	const repGenderStr =
+		rep.gender === "male" || rep.gender === "муж" || rep.gender === "мужской"
+			? "мужской"
+			: rep.gender === "female" || rep.gender === "жен" || rep.gender === "женский"
+				? "женский"
+				: (rep.gender ?? "");
+	const repBirthDateStr = formatDateDdMmYyyy(rep.birthDate);
+	const repBirthDateFull = formatDateRussianDayMonthYear(rep.birthDate);
+	const repBirthYear = extractYearFromDate(rep.birthDate);
+	const repAgeStr =
+		rep.age !== undefined && rep.age !== null
+			? String(rep.age)
+			: calculatePatientAgeString(rep.birthDate);
+
 	map["Представитель.ФИО"] = repFullName;
-	map["Представитель.ФамилияИнициалы"] = rep.initials || formatInitials(repFullName);
-	map["Представитель.Телефон"] = rep.phone || "";
+	map["Представитель.ФамилияИнициалы"] = repInitials;
+	map["Представитель.Телефон"] = rep.phone || rep.mobilePhone || "";
 	map["Представитель.Паспорт.Номер"] = repPassport.number || "";
 	map["Представитель.Паспорт.Серия"] = repPassport.series || "";
 	map["Представитель.Паспорт.ДатаВыдачи"] = formatDateDdMmYyyy(repPassport.issuedDate);
 	map["Представитель.Паспорт.КемВыдан"] = repPassport.issuedBy || "";
 	map["Представитель.Паспорт.КодПодразделения"] = repPassport.divisionCode || "";
-	map["Представитель.ДеньРождения"] = formatDateDdMmYyyy(rep.birthDate);
+	map["Представитель.ДеньРождения"] = repBirthDateStr;
 	map["Представитель.Адрес"] = rep.address || "";
 	map["Представитель.СНИЛС"] = rep.snils || "";
 	map["Представитель.НаОсновании"] = rep.basis || (repPassport.number ? "Паспорт" : "");
 	map["Представитель.Основание"] = map["Представитель.НаОсновании"];
 	map["Представитель.Тип"] = rep.relationType || "";
 	map["Представитель.Родство"] = rep.relationType || "";
+
+	// ИДЕНТ-алиасы представителя
+	map["Представитель.ФАМИЛИЯИмяОтчество"] = repLastNameUpperFullName;
+	map["Представитель.ФамилияИмяОтчество"] = repFullName;
+	map["Представитель.ФамилияИО"] = repInitials;
+	map["Представитель.Фамилия"] = repLastName;
+	map["Представитель.Имя"] = repFirstName;
+	map["Представитель.Отчество"] = repMiddleName;
+	map["Представитель.ДатаРождения"] = repBirthDateFull || repBirthDateStr;
+	map["Представитель.ГодРождения"] = repBirthYear;
+	map["Представитель.Возраст"] = repAgeStr;
+	map["Представитель.Пол"] = repGenderStr;
+	map["Представитель.Телефоны"] = [rep.mobilePhone || rep.phone, rep.homePhone].filter(Boolean).join("; ") || rep.phone || "";
+	map["Представитель.МобТелефон"] = rep.mobilePhone || rep.phone || "";
+	map["Представитель.ДомТелефон"] = rep.homePhone || "";
+	map["Представитель.Email"] = rep.email || "";
+	map["Представитель.АдресРегистрации"] = rep.address || "";
+	map["Представитель.ДатаРегистрации"] = formatDateDdMmYyyy(rep.registrationDate);
+	map["Представитель.ИНН"] = rep.inn || "";
+	map["Представитель.ИИН"] = rep.iin || "";
+	map["Представитель.МестоРождения"] = rep.birthPlace || "";
+	map["Представитель.Документ"] = repPassportFull;
+	map["Представитель.Документ.ТипДокумента"] = repPassport.number ? "Паспорт РФ" : "";
+	map["Представитель.Документ.СерияНомер"] = [repPassport.series, repPassport.number].filter(Boolean).join(" ");
+	map["Представитель.Документ.СерияНомер.Серия"] = repPassport.series || "";
+	map["Представитель.Документ.СерияНомер.Номер"] = repPassport.number || "";
+	map["Представитель.Документ.Выдан"] = repPassport.number
+		? `Выдан: ${formatDateDdMmYyyy(repPassport.issuedDate)}, ${repPassport.issuedBy || ""}, Код подразделения: ${repPassport.divisionCode || ""}`.trim()
+		: "";
+	map["Представитель.Документ.Выдан.ДатаВыдачи"] = formatDateDdMmYyyy(repPassport.issuedDate);
+	map["Представитель.Документ.Выдан.КодПодразделения"] = repPassport.divisionCode || "";
+	map["Представитель.Документ.Выдан.КемВыдан"] = repPassport.issuedBy || "";
 
 	// Полномочный представитель (по доверенности)
 	const auth = ctx.authorizedPerson ?? {};
@@ -385,17 +681,64 @@ export function buildTemplateVariablesMap(
 	map["АктивныйВрач.Должность"] = doc.position || "Врач-стоматолог";
 	map["АктивныйВрач.Специальность"] = doc.specialty || "Стоматология";
 
+	map["Врач.ФИО"] = docFullName;
+	map["Врач.ФамилияИнициалы"] = map["АктивныйВрач.ФамилияИнициалы"];
+	map["Врач.Должность"] = map["АктивныйВрач.Должность"];
+	map["Врач.Специальность"] = map["АктивныйВрач.Специальность"];
+	map["Врач"] = docFullName;
+
+	// Текущий пользователь (сотрудник, печатающий документ)
+	const cu = ctx.currentUser ?? ctx.administrator ?? ctx.doctor ?? {};
+	const cuFullName = cu.fullName || admFullName || docFullName || "";
+	const cuParts = cuFullName ? cuFullName.trim().split(/\s+/).filter(Boolean) : [];
+	const cuLastName = cuParts[0] ?? "";
+	const cuFirstName = cuParts[1] ?? "";
+	const cuMiddleName = cuParts[2] ?? "";
+	const cuLastNameUpper = cuLastName.toUpperCase();
+	const cuLastNameUpperFullName = cuLastNameUpper
+		? [cuLastNameUpper, cuFirstName, cuMiddleName].filter(Boolean).join(" ")
+		: cuFullName;
+	const cuInitials = cu.initials || formatInitials(cuFullName);
+
+	map["ТекущийПользователь.Должность"] = cu.position || "Администратор";
+	map["ТекущийПользователь.ФАМИЛИЯИмяОтчество"] = cuLastNameUpperFullName;
+	map["ТекущийПользователь.ФамилияИмяОтчество"] = cuFullName;
+	map["ТекущийПользователь.ФамилияИО"] = cuInitials;
+	map["ТекущийПользователь.Фамилия"] = cuLastName;
+	map["ТекущийПользователь.Имя"] = cuFirstName;
+	map["ТекущийПользователь.Отчество"] = cuMiddleName;
+
 	// Клиника
 	const cl = ctx.clinic ?? {};
-	map["Клиника.Название"] = cl.name || "";
+	const clinicName = cl.name || "";
+	const clinicPhone = cl.phone || "";
+	const clinicAddress = cl.address || "";
+	map["Клиника.Название"] = clinicName;
 	map["Клиника.ИНН"] = cl.inn || "";
 	map["Клиника.КПП"] = cl.kpp || "";
-	map["Клиника.Адрес"] = cl.address || "";
-	map["Клиника.Телефон"] = cl.phone || "";
+	map["Клиника.ОГРН"] = cl.ogrn || "";
+	map["Клиника.Адрес"] = clinicAddress;
+	map["Клиника.Телефон"] = clinicPhone;
 	map["Клиника.Лицензия.Номер"] = cl.licenseNumber || "";
 	map["Клиника.Лицензия.ДатаВыдачи"] = formatDateDdMmYyyy(cl.licenseIssuedDate);
 	map["Клиника.Лицензия.СрокДействия"] = cl.licenseValidity || "Бессрочно";
 	map["Клиника.Лицензия.КемВыдана"] = cl.licenseIssuer || "";
+
+	const clinicReqParts = [
+		cl.inn ? `ИНН ${cl.inn}` : "",
+		cl.kpp ? `КПП ${cl.kpp}` : "",
+		cl.ogrn ? `ОГРН ${cl.ogrn}` : "",
+		cl.bankName ? `Банк: ${cl.bankName}` : "",
+		cl.bik ? `БИК ${cl.bik}` : "",
+		cl.checkingAccount ? `Р/с ${cl.checkingAccount}` : "",
+		cl.corrAccount ? `К/с ${cl.corrAccount}` : "",
+	].filter(Boolean);
+	map["Клиника.Реквизиты"] = clinicReqParts.join(", ") || "";
+
+	map["КомпанияНазвание"] = clinicName;
+	map["КомпанияТелефон"] = clinicPhone;
+	map["КомпанияАдрес"] = clinicAddress;
+	map["Логотип"] = cl.logoUrl ? `<img src="${cl.logoUrl}" alt="Логотип" class="clinic-logo" />` : "";
 
 	// Прием
 	const app = ctx.appointment ?? {};
@@ -419,6 +762,100 @@ export function buildTemplateVariablesMap(
 	map["Документ.ДатаОкончания"] = formatDateDdMmYyyy(docMeta.endDate);
 	map["Документ.ДатаСоздания"] = formatDateDdMmYyyy(docMeta.createdAt || curDate);
 
+	// ─── ФИНАНСОВЫЕ ТОКЕНЫ И ДЕНЬГИ ПРОПИСЬЮ ───
+	const fin = ctx.financial ?? {};
+	let finKopecks = 0;
+	if (fin.amountKopecks !== undefined && fin.amountKopecks !== null) {
+		finKopecks = Math.round(Number(fin.amountKopecks));
+	} else if (fin.amountRubles !== undefined && fin.amountRubles !== null) {
+		finKopecks = rublesToKopecks(fin.amountRubles);
+	} else if (p.advance !== undefined && p.advance !== null && String(p.advance).trim() !== "") {
+		finKopecks = parseKopecks(p.advance);
+	}
+
+	const amountWords = kopecksToWordsRu(finKopecks);
+	const amountNumeric = kopecksToNumericString(finKopecks);
+	const rublesOnly = Math.floor(Math.abs(finKopecks) / 100);
+	const rublesWords = integerToWordsRu(rublesOnly);
+
+	const absolute = Math.abs(finKopecks);
+	const whole = Math.trunc(absolute / 100);
+	const fraction = absolute % 100;
+	const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+	const formattedRubles = `${finKopecks < 0 ? "-" : ""}${grouped},${String(fraction).padStart(2, "0")} руб.`;
+	const formattedFullSumma = `${formatKopecksRu(finKopecks)} (${amountWords})`;
+
+	map["Сумма"] = formattedRubles;
+	map["СуммаЧислом"] = amountNumeric;
+	map["СуммаПрописью"] = amountWords;
+	map["СуммаПрописьюРублей"] = rublesWords;
+	map["СуммаПолная"] = formattedFullSumma;
+
+	map["Счет.Сумма"] = formattedRubles;
+	map["Счет.СуммаЧислом"] = amountNumeric;
+	map["Счет.СуммаПрописью"] = amountWords;
+	map["Счет.Номер"] = fin.invoiceNumber || "";
+	map["Счет.Дата"] = formatDateDdMmYyyy(fin.invoiceDate || curDate);
+
+	map["Договор.Сумма"] = formatKopecksRu(finKopecks);
+	map["Договор.СуммаЧислом"] = amountNumeric;
+	map["Договор.СуммаПрописью"] = amountWords;
+
+	map["Акт.Сумма"] = formatKopecksRu(finKopecks);
+	map["Акт.СуммаЧислом"] = amountNumeric;
+	map["Акт.СуммаПрописью"] = amountWords;
+
+	// ─── КЛИНИЧЕСКИЙ ОСМОТР, ДНЕВНИК И ИСТОРИЯ БОЛЕЗНИ ───
+	const ce = ctx.clinicalExamination ?? {};
+	const examDate = ce.examinationDate || curDate;
+	map["ДатаОсмотра"] = formatDateDdMmYyyy(examDate);
+	map["ДатаЛечения"] = formatDateDdMmYyyy(examDate);
+	map["ДатаИВремяЛечения"] = ce.treatmentDateTime
+		? `${formatDateDdMmYyyy(ce.treatmentDateTime)} ${formatDateDdMmYyyy(ce.treatmentDateTime) ? new Date(ce.treatmentDateTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""}`.trim()
+		: curDateDdMmYyyy;
+	map["ФамилияИОВрача"] =
+		ce.doctorInitials ||
+		formatInitials(ce.doctorFullName) ||
+		map["АктивныйВрач.ФамилияИнициалы"] ||
+		"";
+	map["Диагноз"] = ce.diagnosis || "";
+	map["Жалобы"] = ce.complaints || "";
+	map["Анамнез"] = ce.anamnesis || "";
+	map["ПеренесенныеЗаболевания"] = ce.pastDiseases || "";
+	map["РазвитиеЗаболевания"] = ce.diseaseHistory || "";
+	map["ВнешнийОсмотр"] = ce.externalExam || "";
+	map["Прикус"] = ce.bite || "Ортогнатический";
+	map["СостояниеСлизистой"] =
+		ce.mucousCondition ||
+		"Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена, десневые сосочки без признаков воспаления";
+	map["Рентген"] = ce.xray || "";
+	map["Объективно"] = ce.objective || "";
+	map["Лечение"] = ce.treatment || "";
+	map["Рекомендации"] = ce.recommendations || "";
+
+	// ─── ЗУБНАЯ ФОРМУЛА И ОДОНТОГРАММА ───
+	const formulaBreakdown = generateDentalFormulaBreakdownText(ctx.dentalFormula);
+	map["ЗубнаяФормула.Расшифровка"] = formulaBreakdown;
+	map["ЗубнаяФормула.Текст"] = formulaBreakdown;
+	map["ЗубнаяФормула.Прописью"] = formulaBreakdown;
+
+	const formulaHtml = renderGraphicalDentalFormulaHtml({
+		dentalFormula: ctx.dentalFormula as DentalFormulaRecordInput,
+	});
+	map["ПервичныйОсмотр.ЗубнаяФормула"] = formulaHtml;
+	map["ЗубнаяФормула"] = formulaHtml;
+
+	// Токены отдельных зубов: {18}, {18т}, ...
+	const teethTokens = resolveAllTeethTokens(ctx.dentalFormula);
+	for (const [tKey, tVal] of Object.entries(teethTokens)) {
+		map[tKey] = tVal;
+	}
+
+	// ─── ПЛАН ЛЕЧЕНИЯ (ТАБЛИЦА) ───
+	map["ПланЛечения.Таблица"] =
+		ctx.treatmentPlanTableHtml ||
+		'<table class="treatment-plan-table"><thead><tr><th>№</th><th>Код</th><th>Наименование услуги</th><th>Зуб</th><th>Кол-во</th><th>Сумма, руб.</th></tr></thead><tbody><tr><td colspan="6" style="text-align: center; color: #666;">Комплексный план лечения согласован с пациентом</td></tr></tbody></table>';
+
 	return map;
 }
 
@@ -437,7 +874,10 @@ export interface RenderTemplateOptions {
 
 /**
  * Рендерит HTML-шаблон документа, подставляя реальные данные из контекста.
- * Поддерживает синтаксис {{Токен}} и [Токен].
+ * Поддерживает:
+ * 1. Синтаксис {{ Токен }}, { Токен }, [ Токен ]
+ * 2. Префикс восклицательного знака {!Токен} / {{!Токен}}: при пустом значении
+ *    строка / элемент / абзац с токеном полностью скрывается.
  */
 export function renderDocumentTemplate(
 	templateHtml: string,
@@ -450,8 +890,87 @@ export function renderDocumentTemplate(
 	const preserveUnknown = options.preserveUnknownTokens ?? false;
 	const varsMap = buildTemplateVariablesMap(ctx);
 
-	// 1. Замена синтаксиса mustache: {{ Токен }}
-	let result = templateHtml.replace(
+	let result = templateHtml;
+
+	// ── 1. ОБРАБОТКА ТОКЕНОВ С ВОСКЛИЦАТЕЛЬНЫМ ЗНАКОМ: {!Токен}, {{!Токен}}, [!Токен] ──
+	// Если значение пустое — скрывается вся строка или охватывающий тег (<p>, <tr>, <li>, <div>, <br>)
+	const exclamationTokenRegex = /(?:\{\{|\{|\[)!\s*([А-Яа-яA-Za-z0-9_.-]+)\s*(?:\}\}|\}|\])/g;
+	const exclamationTokens = new Set<string>();
+	let exMatch: RegExpExecArray | null;
+	while ((exMatch = exclamationTokenRegex.exec(result)) !== null) {
+		if (exMatch[1]) {
+			exclamationTokens.add(exMatch[1].trim());
+		}
+	}
+
+	for (const tokenName of exclamationTokens) {
+		const val = varsMap[tokenName];
+		const isFilled = val !== undefined && val !== null && val.trim() !== "";
+		const trimmedVal = isFilled ? val.trim() : "";
+
+		const tokenPatterns = [
+			`\\{!\\s*${escapeRegExp(tokenName)}\\s*\\}`,
+			`\\{\\{!\\s*${escapeRegExp(tokenName)}\\s*\\}\\}`,
+			`\\[!\\s*${escapeRegExp(tokenName)}\\s*\\]`,
+		];
+
+		for (const patternStr of tokenPatterns) {
+			if (isFilled) {
+				// Заменяем токен на значение
+				result = result.replace(new RegExp(patternStr, "g"), trimmedVal);
+			} else {
+				// Удаляем родительский блок при пустом значении
+
+				// а) Строка таблицы: <tr...>...{!Token}...</tr>
+				const trRegex = new RegExp(
+					`<tr[^>]*>(?:(?!<\\/tr>)[\\s\\S])*?${patternStr}(?:(?!<\\/tr>)[\\s\\S])*?<\\/tr>\\s*`,
+					"gi",
+				);
+				result = result.replace(trRegex, "");
+
+				// б) Параграф: <p...>...{!Token}...</p>
+				const pRegex = new RegExp(
+					`<p[^>]*>(?:(?!<\\/p>)[\\s\\S])*?${patternStr}(?:(?!<\\/p>)[\\s\\S])*?<\\/p>\\s*`,
+					"gi",
+				);
+				result = result.replace(pRegex, "");
+
+				// в) Элемент списка: <li...>...{!Token}...</li>
+				const liRegex = new RegExp(
+					`<li[^>]*>(?:(?!<\\/li>)[\\s\\S])*?${patternStr}(?:(?!<\\/li>)[\\s\\S])*?<\\/li>\\s*`,
+					"gi",
+				);
+				result = result.replace(liRegex, "");
+
+				// г) Блок div: <div...>...{!Token}...</div>
+				const divRegex = new RegExp(
+					`<div[^>]*>(?:(?!<\\/div>)[\\s\\S])*?${patternStr}(?:(?!<\\/div>)[\\s\\S])*?<\\/div>\\s*`,
+					"gi",
+				);
+				result = result.replace(divRegex, "");
+
+				// д) Строка с тегом <br>: ... {!Token} ... <br />
+				const brRegex = new RegExp(
+					`(?:^|>)[^<\\n]*?${patternStr}[^<\\n]*?<br\\s*\\/?>\\s*`,
+					"gim",
+				);
+				result = result.replace(brRegex, (m) => (m.startsWith(">") ? ">" : ""));
+
+				// е) Текстовая строка: вся строка целиком
+				const lineRegex = new RegExp(
+					`^[^\r\n]*?${patternStr}[^\r\n]*(?:\r?\n|$)`,
+					"gm",
+				);
+				result = result.replace(lineRegex, "");
+
+				// ж) Оставшийся токен (если остался в тексте)
+				result = result.replace(new RegExp(patternStr, "g"), "");
+			}
+		}
+	}
+
+	// ── 2. ЗАМЕНА СИНТАКСИСА MUSTACHE: {{ Токен }} ──
+	result = result.replace(
 		/\{\{\s*([^{}]+?)\s*\}\}/g,
 		(match, tokenName: string) => {
 			const cleanToken = tokenName.trim();
@@ -463,9 +982,9 @@ export function renderDocumentTemplate(
 		},
 	);
 
-	// 2. Замена синтаксиса квадратных скобок: [Токен] (используется в некоторых формах StomX)
+	// ── 3. ЗАМЕНА СИНТАКСИСА КВАДРАТНЫХ СКОБОК: [Токен] ──
 	result = result.replace(
-		/\[([А-Яа-яA-Za-z0-9_.-]+(?:\.[А-Яа-яA-Za-z0-9_.-]+)+)\]/g,
+		/\[([А-Яа-яA-Za-z0-9_.-]+)\]/g,
 		(match, tokenName: string) => {
 			const cleanToken = tokenName.trim();
 			if (Object.prototype.hasOwnProperty.call(varsMap, cleanToken)) {
@@ -473,6 +992,20 @@ export function renderDocumentTemplate(
 				return val && val.trim() !== "" ? val : emptyPlaceholder;
 			}
 			return preserveUnknown ? match : emptyPlaceholder;
+		},
+	);
+
+	// ── 4. ЗАМЕНА СИНТАКСИСА ОДИНОЧНЫХ СКОБОК ИДЕНТ: { Токен } ──
+	// Проверяем наличие токена в varsMap для исключения CSS-правил
+	result = result.replace(
+		/\{([А-Яа-яA-Za-z0-9_.-]+)\}/g,
+		(match, tokenName: string) => {
+			const cleanToken = tokenName.trim();
+			if (Object.prototype.hasOwnProperty.call(varsMap, cleanToken)) {
+				const val = varsMap[cleanToken];
+				return val && val.trim() !== "" ? val : emptyPlaceholder;
+			}
+			return preserveUnknown ? match : match;
 		},
 	);
 

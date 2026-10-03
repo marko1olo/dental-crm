@@ -22,6 +22,7 @@ import {
 	documentTemplateVariables,
 	organizations,
 	patients,
+	payments,
 	users,
 	visits,
 } from "../db/schema.js";
@@ -113,6 +114,48 @@ const renderDocumentBodySchema = z.object({
 			birthDate: z.string().trim().optional(),
 			address: z.string().trim().optional(),
 			snils: z.string().trim().optional(),
+		})
+		.optional(),
+	financial: z
+		.object({
+			amountKopecks: z.number().int().optional(),
+			amountRubles: z.number().optional(),
+			invoiceNumber: z.string().optional(),
+			invoiceDate: z.union([z.string(), z.date()]).optional(),
+			contractNumber: z.string().optional(),
+			contractDate: z.union([z.string(), z.date()]).optional(),
+			actNumber: z.string().optional(),
+			actDate: z.union([z.string(), z.date()]).optional(),
+			comment: z.string().optional(),
+		})
+		.optional(),
+	clinicalExamination: z
+		.object({
+			examinationDate: z.union([z.string(), z.date()]).optional(),
+			doctorFullName: z.string().optional(),
+			doctorInitials: z.string().optional(),
+			complaints: z.string().optional(),
+			anamnesis: z.string().optional(),
+			pastDiseases: z.string().optional(),
+			diseaseHistory: z.string().optional(),
+			externalExam: z.string().optional(),
+			bite: z.string().optional(),
+			mucousCondition: z.string().optional(),
+			xray: z.string().optional(),
+			objective: z.string().optional(),
+			diagnosis: z.string().optional(),
+			treatment: z.string().optional(),
+			recommendations: z.string().optional(),
+			treatmentDateTime: z.union([z.string(), z.date()]).optional(),
+		})
+		.optional(),
+	dentalFormula: z.union([z.record(z.unknown()), z.array(z.unknown())]).optional(),
+	currentUser: z
+		.object({
+			fullName: z.string().optional(),
+			initials: z.string().optional(),
+			position: z.string().optional(),
+			specialty: z.string().optional(),
 		})
 		.optional(),
 	overrides: z.record(z.unknown()).optional(),
@@ -493,6 +536,11 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 						snils: adminProfile?.snils ?? "",
 						omsPolicy: adminProfile?.insurancePolicyNumber ?? "",
 						specialNotes: patientRecord.notes ?? "",
+						comment: patientRecord.notes ?? "",
+						somaticStatus: (adminProfile as any)?.somaticStatus ?? patientRecord.notes ?? "",
+						allergyStatus: (adminProfile as any)?.allergyStatus ?? "",
+						drugIntolerance: (adminProfile as any)?.drugIntolerance ?? "",
+						gender: adminProfile?.gender,
 						passport: {
 							series: parsedPassport.series,
 							number: parsedPassport.number,
@@ -530,8 +578,33 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				}
 			}
 
-			// Данные приема/визита
+			// Данные приема/визита и клинического протокола
 			let appointmentContextData: TemplateExecutionContext["appointment"] = undefined;
+			let clinicalExamContextData: TemplateExecutionContext["clinicalExamination"] =
+				body.clinicalExamination
+					? {
+							examinationDate: body.clinicalExamination.examinationDate,
+							doctorFullName: body.clinicalExamination.doctorFullName,
+							doctorInitials: body.clinicalExamination.doctorInitials,
+							complaints: body.clinicalExamination.complaints,
+							anamnesis: body.clinicalExamination.anamnesis,
+							pastDiseases: body.clinicalExamination.pastDiseases,
+							diseaseHistory: body.clinicalExamination.diseaseHistory,
+							externalExam: body.clinicalExamination.externalExam,
+							bite: body.clinicalExamination.bite,
+							mucousCondition: body.clinicalExamination.mucousCondition,
+							xray: body.clinicalExamination.xray,
+							objective: body.clinicalExamination.objective,
+							diagnosis: body.clinicalExamination.diagnosis,
+							treatment: body.clinicalExamination.treatment,
+							recommendations: body.clinicalExamination.recommendations,
+							treatmentDateTime: body.clinicalExamination.treatmentDateTime,
+						}
+					: undefined;
+
+			let dentalFormulaContextData: TemplateExecutionContext["dentalFormula"] =
+				body.dentalFormula as any;
+
 			if (body.visitId && UUID_REGEX.test(body.visitId)) {
 				const [visitRecord] = await db
 					.select()
@@ -544,6 +617,32 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 						id: visitRecord.id,
 						date: visitRecord.signedAt ?? visitRecord.createdAt,
 					};
+
+					// Извлечение протокола клинического осмотра из визита
+					if (!clinicalExamContextData) {
+						clinicalExamContextData = {
+							examinationDate: visitRecord.signedAt ?? visitRecord.createdAt,
+							complaints: visitRecord.complaint ?? undefined,
+							anamnesis: visitRecord.anamnesis ?? undefined,
+							objective: visitRecord.objectiveStatus ?? undefined,
+							diagnosis: visitRecord.diagnosis ?? undefined,
+							treatment: visitRecord.treatmentPlan ?? undefined,
+							recommendations: visitRecord.doctorSummary ?? undefined,
+							treatmentDateTime: visitRecord.signedAt ?? visitRecord.createdAt,
+						};
+					}
+
+					// Извлечение зубной формулы из черновика визита при наличии
+					if (!dentalFormulaContextData && visitRecord.draftAutosave) {
+						const autosave = visitRecord.draftAutosave as Record<string, any>;
+						if (autosave.draft?.quality?.detectedToothStates) {
+							dentalFormulaContextData = autosave.draft.quality.detectedToothStates;
+						} else if (autosave.teeth) {
+							dentalFormulaContextData = autosave.teeth;
+						} else if (autosave.dentalFormula) {
+							dentalFormulaContextData = autosave.dentalFormula;
+						}
+					}
 				}
 			} else if (body.appointmentId && UUID_REGEX.test(body.appointmentId)) {
 				const [appRecord] = await db
@@ -560,6 +659,29 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 						time: appDate
 							? `${String(appDate.getHours()).padStart(2, "0")}:${String(appDate.getMinutes()).padStart(2, "0")}`
 							: undefined,
+					};
+				}
+			}
+
+			// Финансовый контекст (сумма, договор, акт, счет)
+			let financialContextData: TemplateExecutionContext["financial"] =
+				body.financial;
+			if (!financialContextData && body.visitId && UUID_REGEX.test(body.visitId)) {
+				const visitPayments = await db
+					.select()
+					.from(payments)
+					.where(eq(payments.visitId, body.visitId));
+
+				if (visitPayments.length > 0) {
+					const totalRub = visitPayments.reduce(
+						(sum, p) => sum + (Number(p.amountRub) || 0),
+						0,
+					);
+					financialContextData = {
+						amountRubles: totalRub,
+						amountKopecks: Math.round(totalRub * 100),
+						actNumber: visitPayments[0]?.documentId ?? undefined,
+						actDate: visitPayments[0]?.createdAt ?? undefined,
 					};
 				}
 			}
@@ -587,6 +709,46 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				}
 			}
 
+			// Данные администратора клиники
+			let administratorContextData: TemplateExecutionContext["administrator"] =
+				undefined;
+			if (body.administratorId && UUID_REGEX.test(body.administratorId)) {
+				const [adminUser] = await db
+					.select()
+					.from(users)
+					.where(eq(users.id, body.administratorId))
+					.limit(1);
+
+				if (adminUser) {
+					administratorContextData = {
+						fullName: adminUser.fullName,
+						position: adminUser.role ?? "Администратор",
+						specialty: "Администрация",
+					};
+				}
+			}
+
+			// Текущий пользователь системы (врач, администратор или сессия)
+			let currentUserContextData: TemplateExecutionContext["currentUser"] =
+				body.currentUser;
+			if (!currentUserContextData) {
+				const sessionUser = (request as any).user;
+				if (sessionUser?.fullName) {
+					currentUserContextData = {
+						fullName: sessionUser.fullName,
+						position: sessionUser.role ?? "Сотрудник клиники",
+						specialty: "Стоматология",
+					};
+				} else if (
+					doctorContextData &&
+					doctorContextData.fullName !== "___________________"
+				) {
+					currentUserContextData = doctorContextData;
+				} else if (administratorContextData) {
+					currentUserContextData = administratorContextData;
+				}
+			}
+
 			const authorizedPersonContextData: TemplateExecutionContext["authorizedPerson"] =
 				body.authorizedPerson
 					? {
@@ -606,7 +768,12 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				representative: representativeContextData,
 				authorizedPerson: authorizedPersonContextData,
 				doctor: doctorContextData,
+				administrator: administratorContextData,
+				currentUser: currentUserContextData,
 				appointment: appointmentContextData,
+				financial: financialContextData,
+				clinicalExamination: clinicalExamContextData,
+				dentalFormula: dentalFormulaContextData,
 				currentDate: new Date(),
 				document: {
 					number: `БЛ-${randomInt(1000, 10000)}`,
@@ -647,7 +814,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 /**
  * Единая консолидированная точка монтирования шаблонов клиники:
  * 1. Бланки официальных документов (ИДС, договоры, справки) -> /api/document-templates
- * 2. Клинические протоколы приёма (дневник 043/у) -> /api/templates
+ * 2. Клинические протоколы приёма (Дневник приёма / протокол осмотра) -> /api/templates
  */
 export async function registerAllTemplateRoutes(app: FastifyInstance) {
 	await registerDocumentTemplateRoutes(app);

@@ -226,3 +226,269 @@ test("formatInitials correctly handles single name, two parts (no patronymic), a
 	assert.equal(formatInitials("  Смирнов   Петр   "), "Смирнов П.");
 	assert.ok(!formatInitials("Иванов Иван").includes("undefined"));
 });
+
+test("IDENT parity: flat patient tokens resolve correctly and format dates/names accurately", () => {
+	const ctx: TemplateExecutionContext = {
+		patient: {
+			fullName: "Кузнецов Алексей Владимирович",
+			lastName: "Кузнецов",
+			firstName: "Алексей",
+			middleName: "Владимирович",
+			birthDate: "1988-06-24",
+			gender: "male",
+			phone: "+7 (916) 123-45-67",
+			mobilePhone: "+7 (916) 123-45-67",
+			homePhone: "+7 (495) 765-43-21",
+			email: "kuznetsov@example.com",
+			address: "г. Москва, ул. Арбат, д. 10, кв. 25",
+			actualAddress: "г. Москва, ул. Тверская, д. 4",
+			registrationDate: "2022-03-22",
+			firstVisitDate: "2022-03-22",
+			inn: "770412345678",
+			snils: "123-456-789 00",
+			iin: "880624350123",
+			workplace: "ПАО Сбербанк",
+			profession: "Аналитик",
+			policies: "ОМС 1234567890123456, ДМС СОГАЗ 998877",
+			comment: "Пациент просит звонить после 18:00",
+			cardNumber: "МК-2026/042",
+			parentName: "Кузнецова Марина Сергеевна",
+		},
+	};
+
+	const map = buildTemplateVariablesMap(ctx);
+
+	assert.equal(map["ФАМИЛИЯИмяОтчество"], "КУЗНЕЦОВ Алексей Владимирович");
+	assert.equal(map["ФамилияИмяОтчество"], "Кузнецов Алексей Владимирович");
+	assert.equal(map["ФамилияИО"], "Кузнецов А. В.");
+	assert.equal(map["Фамилия"], "Кузнецов");
+	assert.equal(map["Имя"], "Алексей");
+	assert.equal(map["Отчество"], "Владимирович");
+	assert.equal(map["ДатаРождения"], "24 июня 1988");
+	assert.equal(map["ГодРождения"], "1988");
+	assert.ok(Number.parseInt(map["Возраст"], 10) >= 35, "Age must be calculated from birthDate");
+	assert.equal(map["Пол"], "Мужской");
+	assert.equal(map["Телефоны"], "+7 (916) 123-45-67");
+	assert.equal(map["МобТелефон"], "+7 (916) 123-45-67");
+	assert.equal(map["ДомТелефон"], "+7 (495) 765-43-21");
+	assert.equal(map["Email"], "kuznetsov@example.com");
+	assert.equal(map["Адрес"], "г. Москва, ул. Тверская, д. 4");
+	assert.equal(map["АдресРегистрации"], "г. Москва, ул. Арбат, д. 10, кв. 25");
+	assert.equal(map["ИНН"], "770412345678");
+	assert.equal(map["СНИЛС"], "123-456-789 00");
+	assert.equal(map["ИИН"], "880624350123");
+	assert.equal(map["МестоРаботы"], "ПАО Сбербанк");
+	assert.equal(map["Профессия"], "Аналитик");
+	assert.equal(map["Полисы"], "ОМС 1234567890123456, ДМС СОГАЗ 998877");
+	assert.equal(map["Комментарий"], "Пациент просит звонить после 18:00");
+	assert.equal(map["НомерКарты"], "МК-2026/042");
+	assert.equal(map["НомерМедкарты"], "МК-2026/042");
+	assert.equal(map["Родитель"], "Кузнецова Марина Сергеевна");
+	assert.ok(map["ДатаПервогоПриема"].includes("2022"));
+	assert.equal(map["ДатаПервогоПриемаЧислом"], "22.03.2022");
+});
+
+test("IDENT parity: money amounts in Russian words and numeric formatting", () => {
+	const ctx: TemplateExecutionContext = {
+		financial: {
+			amountRubles: 15450.5,
+			invoiceNumber: "СЧ-401",
+			actNumber: "АКТ-802",
+			contractNumber: "ДОГ-103",
+		},
+	};
+
+	const map = buildTemplateVariablesMap(ctx);
+
+	assert.equal(map["СуммаЧислом"], "15450.50");
+	assert.ok(
+		map["Сумма"].includes("15") && map["Сумма"].includes("450,50"),
+		`Expected formatted sum, got: ${map["Сумма"]}`,
+	);
+	assert.ok(
+		map["СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч четыреста пятьдесят рублей"),
+		`Expected full money words, got: ${map["СуммаПрописью"]}`,
+	);
+	assert.ok(
+		map["СуммаПрописью"].includes("50 копеек"),
+		`Expected 50 kopecks, got: ${map["СуммаПрописью"]}`,
+	);
+	assert.equal(
+		map["СуммаПрописьюРублей"],
+		"пятнадцать тысяч четыреста пятьдесят",
+	);
+	assert.ok(
+		map["Счет.Сумма"].includes("15") && map["Счет.Сумма"].includes("450,50"),
+		`Expected formatted account sum, got: ${map["Счет.Сумма"]}`,
+	);
+	assert.equal(map["Счет.СуммаЧислом"], "15450.50");
+	assert.ok(map["Счет.СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч"));
+	assert.ok(map["Договор.СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч"));
+	assert.ok(map["Акт.СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч"));
+});
+
+test("IDENT parity: dental formula transcription and individual tooth tokens", () => {
+	const ctx: TemplateExecutionContext = {
+		dentalFormula: {
+			16: "C", // кариес
+			21: "Pt", // пломбирован
+			36: "R", // корень
+			48: "A", // отсутствует
+		},
+	};
+
+	const map = buildTemplateVariablesMap(ctx);
+
+	assert.equal(map["16"], "C");
+	assert.equal(map["16т"], "кариес");
+	assert.equal(map["21"], "Pt");
+	assert.equal(map["21т"], "пломбирован");
+	assert.equal(map["36"], "R");
+	assert.equal(map["36т"], "корень");
+	assert.equal(map["48"], "A");
+	assert.equal(map["48т"], "отсутствует");
+
+	// Проверка расшифровки формулы
+	const breakdown = map["ЗубнаяФормула.Расшифровка"];
+	assert.ok(breakdown.includes("16: кариес"), `Must include 16: кариес in ${breakdown}`);
+	assert.ok(breakdown.includes("21: пломбирован"), `Must include 21: пломбирован in ${breakdown}`);
+	assert.ok(breakdown.includes("36: корень"), `Must include 36: корень in ${breakdown}`);
+	assert.ok(breakdown.includes("48: отсутствует"), `Must include 48: отсутствует in ${breakdown}`);
+});
+
+test("IDENT parity: somatic and allergy status tokens", () => {
+	const ctx: TemplateExecutionContext = {
+		patient: {
+			somaticStatus: "Гипертоническая болезнь II ст., риск 3",
+			allergyStatus: "Аллергия на пенициллины, новокаин",
+			drugIntolerance: "Лидокаин (тахикардия)",
+		},
+	};
+
+	const map = buildTemplateVariablesMap(ctx);
+
+	assert.equal(map["Пациент.СоматическийСтатус"], "Гипертоническая болезнь II ст., риск 3");
+	assert.equal(map["СоматическийСтатус"], "Гипертоническая болезнь II ст., риск 3");
+	assert.equal(map["Аллергостатус"], "Аллергия на пенициллины, новокаин");
+	assert.equal(map["Аллергии"], "Аллергия на пенициллины, новокаин");
+	assert.equal(map["НепереносимостьПрепаратов"], "Лидокаин (тахикардия)");
+});
+
+test("IDENT parity: clinical examination and diary tokens", () => {
+	const ctx: TemplateExecutionContext = {
+		clinicalExamination: {
+			examinationDate: "2026-10-03",
+			doctorFullName: "Иванов Иван Иванович",
+			diagnosis: "К02.1 Кариес дентина зуба 16",
+			complaints: "Кратковременные боли от холодного и сладкого",
+			anamnesis: "Боли появились около 2 недель назад",
+			pastDiseases: "ОРВИ, детские инфекции",
+			diseaseHistory: "Ранее зуб 16 не лечен",
+			externalExam: "Лицо симметрично, лимфоузлы не увеличены",
+			bite: "Ортогнатический прикус",
+			mucousCondition: "Слизистая бледно-розовая, умеренно увлажнена",
+			xray: "На прицельной рентгенограмме 16 дефект в пределах дентина",
+			objective: "Зондирование дна полости болезненно, перкуссия безболезненна",
+			treatment: "Препарирование, медобработка, пломба Filtek Z250",
+			recommendations: "Гигиена полости рта, осмотр через 6 месяцев",
+		},
+	};
+
+	const map = buildTemplateVariablesMap(ctx);
+
+	assert.equal(map["ФамилияИОВрача"], "Иванов И. И.");
+	assert.equal(map["Диагноз"], "К02.1 Кариес дентина зуба 16");
+	assert.equal(map["Жалобы"], "Кратковременные боли от холодного и сладкого");
+	assert.equal(map["Анамнез"], "Боли появились около 2 недель назад");
+	assert.equal(map["ПеренесенныеЗаболевания"], "ОРВИ, детские инфекции");
+	assert.equal(map["РазвитиеЗаболевания"], "Ранее зуб 16 не лечен");
+	assert.equal(map["ВнешнийОсмотр"], "Лицо симметрично, лимфоузлы не увеличены");
+	assert.equal(map["Прикус"], "Ортогнатический прикус");
+	assert.equal(map["СостояниеСлизистой"], "Слизистая бледно-розовая, умеренно увлажнена");
+	assert.equal(map["Рентген"], "На прицельной рентгенограмме 16 дефект в пределах дентина");
+	assert.equal(map["Объективно"], "Зондирование дна полости болезненно, перкуссия безболезненна");
+	assert.equal(map["Лечение"], "Препарирование, медобработка, пломба Filtek Z250");
+	assert.equal(map["Рекомендации"], "Гигиена полости рта, осмотр через 6 месяцев");
+});
+
+test("IDENT parity: conditional exclamation mark ! line/block stripping", () => {
+	const templateWithEmptyFields = `
+		<table>
+			<tr><td>Пациент:</td><td>{ФамилияИмяОтчество}</td></tr>
+			<tr><td>Диагноз:</td><td>{!Диагноз}</td></tr>
+			<tr><td>Жалобы:</td><td>{!Жалобы}</td></tr>
+		</table>
+		<p>Лечение: {!Лечение}</p>
+		<p>Рекомендации: {Рекомендации}</p>
+	`;
+
+	const emptyCtx: TemplateExecutionContext = {
+		patient: { fullName: "Сидоров Сидор Сидорович" },
+		clinicalExamination: {
+			diagnosis: "", // empty -> should strip tr
+			complaints: undefined, // empty -> should strip tr
+			treatment: "Проведена анестезия", // filled -> should keep p
+			recommendations: "", // no exclamation mark -> keep empty
+		},
+	};
+
+	const rendered = renderDocumentTemplate(templateWithEmptyFields, emptyCtx);
+
+	// Table row with {!Диагноз} should be completely stripped
+	assert.ok(!rendered.includes("Диагноз:"), "Empty {!Диагноз} row must be stripped");
+	assert.ok(!rendered.includes("Жалобы:"), "Empty {!Жалобы} row must be stripped");
+
+	// Filled {!Лечение} should render without !
+	assert.ok(rendered.includes("Лечение: Проведена анестезия"), "Filled {!Лечение} must render");
+	assert.ok(!rendered.includes("!Лечение"), "Exclamation mark must be stripped");
+
+	// Field without ! remains in template
+	assert.ok(rendered.includes("Рекомендации:"), "Field without ! must not strip container");
+	assert.ok(rendered.includes("Сидоров Сидор Сидорович"));
+});
+
+test("Single braces {Token} syntax works seamlessly and does NOT corrupt CSS styles", () => {
+	const htmlWithCss = `
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial; font-size: 11pt; color: #222; }
+				.patient-card { padding: 10px; border: 1px solid #ccc; }
+				table { width: 100%; border-collapse: collapse; }
+				td { padding: 4px; }
+			</style>
+		</head>
+		<body>
+			<div class="patient-card">
+				<h2>{Клиника.Название}</h2>
+				<p>Пациент: {ФамилияИмяОтчество} ({ДатаРождения})</p>
+				<p>Итого к оплате: {СуммаПрописью}</p>
+			</div>
+		</body>
+		</html>
+	`;
+
+	const ctx: TemplateExecutionContext = {
+		clinic: { name: 'Клиника "Мастердент"' },
+		patient: {
+			fullName: "Васильев Василий Васильевич",
+			birthDate: "1995-04-12",
+		},
+		financial: {
+			amountRubles: 7500,
+		},
+	};
+
+	const rendered = renderDocumentTemplate(htmlWithCss, ctx);
+
+	// CSS rules must be 100% intact
+	assert.ok(rendered.includes("body { font-family: Arial; font-size: 11pt; color: #222; }"));
+	assert.ok(rendered.includes(".patient-card { padding: 10px; border: 1px solid #ccc; }"));
+	assert.ok(rendered.includes("table { width: 100%; border-collapse: collapse; }"));
+
+	// Tokens must be replaced
+	assert.ok(rendered.includes('<h2>Клиника "Мастердент"</h2>'));
+	assert.ok(rendered.includes("Пациент: Васильев Василий Васильевич (12 апреля 1995)"));
+	assert.ok(rendered.includes("Итого к оплате: Семь тысяч пятьсот рублей 00 копеек"));
+});

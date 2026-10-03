@@ -21,6 +21,8 @@ export interface EmkToolbarProps {
 	setActiveEmkTab?: ((tabId: string) => void) | undefined;
 	onApplyPhysiologicalNorm?: (() => void) | undefined;
 	onApplyNorm?: (() => void) | undefined;
+	onApplyOrthoNorm?: (() => void) | undefined;
+	onApplySurgeryNorm?: (() => void) | undefined;
 	onApplySoapPreset?: ((preset: ClinicalSoapPreset) => void) | undefined;
 	onToggleStarProtocols?: (() => void) | undefined;
 	isStarProtocolsOpen?: boolean | undefined;
@@ -40,6 +42,8 @@ export function EmkToolbar({
 	setActiveEmkTab: propSetActiveEmkTab,
 	onApplyPhysiologicalNorm,
 	onApplyNorm,
+	onApplyOrthoNorm,
+	onApplySurgeryNorm,
 	onApplySoapPreset = () => {},
 	onToggleStarProtocols = () => {},
 	isStarProtocolsOpen = false,
@@ -86,6 +90,24 @@ export function EmkToolbar({
 	const pulpitisPreset = React.useMemo(() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "pulpitis_acute"), []);
 	const periodontitisPreset = React.useMemo(() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "periodontitis_chronic"), []);
 	const surgeryPreset = React.useMemo(() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "surgery_extraction_simple"), []);
+	const orthoNormPreset = React.useMemo(() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "orthopedics_norm_checkup"), []);
+	const surgeryNormPreset = React.useMemo(() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "surgery_norm_checkup"), []);
+
+	const handleApplyOrthoNorm = React.useCallback(() => {
+		if (onApplyOrthoNorm) {
+			onApplyOrthoNorm();
+		} else if (orthoNormPreset) {
+			onApplySoapPreset(orthoNormPreset);
+		}
+	}, [onApplyOrthoNorm, onApplySoapPreset, orthoNormPreset]);
+
+	const handleApplySurgeryNorm = React.useCallback(() => {
+		if (onApplySurgeryNorm) {
+			onApplySurgeryNorm();
+		} else if (surgeryNormPreset) {
+			onApplySoapPreset(surgeryNormPreset);
+		}
+	}, [onApplySurgeryNorm, onApplySoapPreset, surgeryNormPreset]);
 
 	return (
 		<div className="emk-unified-toolbar flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[44px] sm:min-h-[32px] px-1 touch-pan-x">
@@ -140,10 +162,36 @@ export function EmkToolbar({
 						data-testid="btn-quick-soap-norm"
 						onClick={onApplyNorm ?? onApplyPhysiologicalNorm}
 						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:border-emerald-500 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="1-клик физиологическая норма (Мандат 8e)"
+						title="1-клик физиологическая норма (Мандат 8e / Терапия Z01.2)"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">Норма</span>
+						<span className="whitespace-nowrap shrink-0 min-w-max">Норма Терапия (Z01.2)</span>
+					</button>
+				)}
+
+				{(Boolean(onApplyOrthoNorm) || Boolean(orthoNormPreset)) && (
+					<button
+						type="button"
+						data-testid="btn-quick-soap-ortho-norm"
+						onClick={handleApplyOrthoNorm}
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:border-cyan-500 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						title="1-клик контрольный осмотр ортопеда (Норма Z46.3 / Окклюзия стабильна)"
+					>
+						<ShieldCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+						<span className="whitespace-nowrap shrink-0 min-w-max">Норма Ортопедия (Z46.3)</span>
+					</button>
+				)}
+
+				{(Boolean(onApplySurgeryNorm) || Boolean(surgeryNormPreset)) && (
+					<button
+						type="button"
+						data-testid="btn-quick-soap-surgery-norm"
+						onClick={handleApplySurgeryNorm}
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-indigo-500/30 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:border-indigo-500 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						title="1-клик послеоперационный контрольный осмотр (Норма Z09.0 / Заживление без осложнений)"
+					>
+						<ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+						<span className="whitespace-nowrap shrink-0 min-w-max">Норма Хирургия (Z09.0)</span>
 					</button>
 				)}
 

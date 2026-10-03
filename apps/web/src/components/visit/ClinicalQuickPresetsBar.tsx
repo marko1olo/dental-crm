@@ -169,6 +169,42 @@ export const ClinicalQuickPresetsBar: React.FC<
 						<span>Соматически здоров / Норма Z01.2</span>
 					</button>
 
+					<button
+						type="button"
+						onClick={() => {
+							const orthoPreset = CLINICAL_SOAP_PRESETS.find(
+								(p) => p.id === "orthopedics_norm_checkup",
+							);
+							if (orthoPreset) {
+								handlePresetClick(orthoPreset);
+							}
+						}}
+						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-cyan-700 hover:bg-cyan-600 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
+						title="1-клик норма ортопедии (Z46.3): контрольный осмотр конструкций, окклюзия стабильна (Мандат 8e / 8n)"
+						data-testid="btn-quick-apply-ortho-norm"
+					>
+						<ShieldCheck size={15} className="shrink-0" />
+						<span>Норма Ортопедия Z46.3</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const surgeryPreset = CLINICAL_SOAP_PRESETS.find(
+								(p) => p.id === "surgery_norm_checkup",
+							);
+							if (surgeryPreset) {
+								handlePresetClick(surgeryPreset);
+							}
+						}}
+						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-indigo-700 hover:bg-indigo-600 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
+						title="1-клик норма хирургии (Z09.0): послеоперационный осмотр, заживление без осложнений (Мандат 8e / 8n)"
+						data-testid="btn-quick-apply-surgery-norm"
+					>
+						<ShieldCheck size={15} className="shrink-0" />
+						<span>Норма Хирургия Z09.0</span>
+					</button>
+
 					{onOpenTemplatesModal && (
 						<button
 							type="button"

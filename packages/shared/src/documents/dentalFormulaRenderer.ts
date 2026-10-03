@@ -79,7 +79,7 @@ export function normalizeToothStatus(rawStatus?: string, rawStatusCode?: string)
 	svgStroke: string;
 } {
 	const s = (rawStatus || "").toLowerCase();
-	const c = (rawStatusCode || "").toUpperCase();
+	const c = (rawStatusCode || rawStatus || "").toUpperCase();
 
 	// 1. Кариес (Caries)
 	if (s.includes("caries") || s.includes("кариес") || c === "C" || c === "С") {
@@ -110,7 +110,7 @@ export function normalizeToothStatus(rawStatus?: string, rawStatusCode?: string)
 	}
 
 	// 3. Периодонтит (Periodontitis)
-	if (s.includes("periodont") || s.includes("периодонтит") || c === "PT") {
+	if (s.includes("periodont") || s.includes("периодонтит") || c === "PERIO") {
 		return {
 			category: "periodontitis",
 			code: "Pt",
@@ -124,11 +124,11 @@ export function normalizeToothStatus(rawStatus?: string, rawStatusCode?: string)
 	}
 
 	// 4. Пломба / Реставрация (Filled / Restoration)
-	if (s.includes("fill") || s.includes("пломб") || s.includes("completed") || s.includes("реставрация") || c === "F" || c === "П") {
+	if (s.includes("fill") || s.includes("пломб") || s.includes("completed") || s.includes("реставрация") || c === "F" || c === "П" || c === "PT" || c === "PL") {
 		return {
 			category: "filled",
-			code: "П",
-			label: "Пломба",
+			code: c === "PT" ? "Pt" : c === "PL" ? "Pl" : "П",
+			label: "Пломбирован",
 			color: "#059669",
 			badgeBg: "#d1fae5",
 			badgeFg: "#065f46",
@@ -166,10 +166,10 @@ export function normalizeToothStatus(rawStatus?: string, rawStatusCode?: string)
 	}
 
 	// 7. Отсутствует / Удален (Missing / Extracted)
-	if (s.includes("miss") || s.includes("удален") || s.includes("отсутств") || c === "0" || c === "X" || c === "О") {
+	if (s.includes("miss") || s.includes("удален") || s.includes("отсутств") || c === "0" || c === "X" || c === "О" || c === "A" || s === "a") {
 		return {
 			category: "missing",
-			code: "0",
+			code: c === "A" ? "A" : "0",
 			label: "Отсутствует",
 			color: "#94a3b8",
 			badgeBg: "#f1f5f9",
@@ -321,14 +321,22 @@ function buildConsolidatedTeethMap(options: GraphicalDentalFormulaOptions): Map<
 		} else if (typeof df === "object") {
 			for (const [key, val] of Object.entries(df)) {
 				const n = Number(key);
-				if (n && typeof val === "object" && val !== null) {
-					const tVal = val as Record<string, unknown>;
-					map.set(n, {
-						toothNumber: n,
-						status: typeof tVal.status === "string" ? tVal.status : (typeof tVal.condition === "string" ? tVal.condition : "sound"),
-						statusCode: typeof tVal.statusCode === "string" ? tVal.statusCode : (typeof tVal.code === "string" ? tVal.code : "H"),
-						diagnosisText: typeof tVal.diagnosisText === "string" ? tVal.diagnosisText : (typeof tVal.diagnosis === "string" ? tVal.diagnosis : undefined),
-					});
+				if (n) {
+					if (typeof val === "string") {
+						map.set(n, {
+							toothNumber: n,
+							status: val,
+							statusCode: val,
+						});
+					} else if (typeof val === "object" && val !== null) {
+						const tVal = val as Record<string, unknown>;
+						map.set(n, {
+							toothNumber: n,
+							status: typeof tVal.status === "string" ? tVal.status : (typeof tVal.condition === "string" ? tVal.condition : "sound"),
+							statusCode: typeof tVal.statusCode === "string" ? tVal.statusCode : (typeof tVal.code === "string" ? tVal.code : "H"),
+							diagnosisText: typeof tVal.diagnosisText === "string" ? tVal.diagnosisText : (typeof tVal.diagnosis === "string" ? tVal.diagnosis : undefined),
+						});
+					}
 				}
 			}
 		}
@@ -656,6 +664,7 @@ export function extractTeethMapFromInput(
 					map.set(toothNum, {
 						toothNumber: toothNum,
 						status: val,
+						statusCode: val,
 					});
 				} else if (typeof val === "object" && val !== null) {
 					const tObj = val as Record<string, unknown>;
@@ -732,6 +741,17 @@ export function generateDentalFormulaBreakdownText(
 	};
 
 	const parts: string[] = [];
+	const perToothList: string[] = [];
+
+	for (const toothNum of [...ALL_FDI_PERMANENT_TEETH, ...ALL_FDI_DECIDUOUS_TEETH]) {
+		const toothData = teethMap.get(toothNum);
+		if (!toothData) continue;
+		const norm = normalizeToothStatus(toothData.status, toothData.statusCode);
+		if (norm.category !== "sound") {
+			perToothList.push(`${toothNum}: ${norm.label.toLowerCase()}`);
+		}
+	}
+
 	for (const [catKey, teeth] of Object.entries(groups)) {
 		if (teeth.length > 0) {
 			const label = categoryLabels[catKey] ?? catKey;
@@ -742,12 +762,16 @@ export function generateDentalFormulaBreakdownText(
 	}
 
 	parts.push("Интактные: остальные зубы");
+
+	if (perToothList.length > 0) {
+		return `${perToothList.join(", ")}; ${parts.join("; ")}`;
+	}
 	return parts.join("; ");
 }
 
 /**
  * Возвращает карту токенов всех зубов 11..48 (и 51..85 если есть):
- * { "18": "0", "18т": "Отсутствует", "16": "C", "16т": "Кариес", ... }
+ * { "18": "0", "18т": "отсутствует", "16": "C", "16т": "кариес", ... }
  */
 export function resolveAllTeethTokens(
 	input?:
@@ -766,10 +790,10 @@ export function resolveAllTeethTokens(
 		if (toothData) {
 			const norm = normalizeToothStatus(toothData.status, toothData.statusCode);
 			map[String(toothNum)] = norm.code;
-			map[`${toothNum}т`] = norm.label;
+			map[`${toothNum}т`] = norm.label.toLowerCase();
 		} else {
 			map[String(toothNum)] = "H";
-			map[`${toothNum}т`] = "Здоровый";
+			map[`${toothNum}т`] = "здоровый";
 		}
 	}
 
@@ -778,7 +802,7 @@ export function resolveAllTeethTokens(
 		if (toothData) {
 			const norm = normalizeToothStatus(toothData.status, toothData.statusCode);
 			map[String(toothNum)] = norm.code;
-			map[`${toothNum}т`] = norm.label;
+			map[`${toothNum}т`] = norm.label.toLowerCase();
 		}
 	}
 
