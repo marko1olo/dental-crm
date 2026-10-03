@@ -804,11 +804,11 @@ export function LabOrdersPage() {
 														type="button"
 														onClick={() => handleOpenPrintOrder(order)}
 														className="h-7 min-h-[28px] px-2 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
-														title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+														title="Распечатать наряд в зуботехническую лабораторию"
 														data-testid={`lab-order-table-print-btn-${order.id}`}
 													>
 														<Printer className="w-3 h-3" />
-														<span>ЗТЛ-1</span>
+														<span>Печать наряда</span>
 													</button>
 												)}
 
@@ -816,7 +816,7 @@ export function LabOrdersPage() {
 													type="button"
 													onClick={() => handleOpenTracking(order)}
 													className="h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
-													title="Клинический трекер этапов ЗТЛ"
+													title="Этапы изготовления в лаборатории"
 													data-testid={`lab-order-table-track-btn-${order.id}`}
 												>
 													<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
@@ -868,7 +868,7 @@ export function LabOrdersPage() {
 																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
 															>
 																<Printer className="w-3.5 h-3.5 text-teal-600" />
-																<span>Печать наряда ЗТЛ-1</span>
+																<span>Печать наряда в лабораторию</span>
 															</button>
 															<button
 																type="button"

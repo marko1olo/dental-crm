@@ -74,7 +74,7 @@ export function DoctorPrescriptions107Section() {
 					</div>
 					<div>
 						<h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0">
-							Шаблоны рецептов Формы 107-1/у и защита от передозировки
+							Шаблоны рецептурных бланков и защита от передозировки
 						</h4>
 						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
 							Латинские прописи (Rp.), суточные лимиты, длительность курса и противопоказания
@@ -162,7 +162,7 @@ export function DoctorPrescriptions107Section() {
 					<div className="flex items-center gap-2">
 						<FileText size={16} className="text-teal-600" />
 						<span className="text-xs font-bold text-[var(--ink)]">
-							Рецептурный бланк 107-1/у: {currentMed.tradeName} ({currentMed.mnn})
+							Рецептурный бланк: {currentMed.tradeName} ({currentMed.mnn})
 						</span>
 					</div>
 

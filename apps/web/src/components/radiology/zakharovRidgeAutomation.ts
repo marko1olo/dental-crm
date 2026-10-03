@@ -392,7 +392,7 @@ export function exportZakharovRidgeTo043Emr(
 	}
 
 	showToast(
-		`Протокол 043/у и замеры гребня (W2/W6/H) для зуба #${measurement.toothFdi} внесены в медкарту`,
+		`Протокол обследования и замеры гребня (W2/W6/H) для зуба #${measurement.toothFdi} внесены в медкарту`,
 		"success",
 		4500,
 	);

@@ -17,6 +17,7 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { getPatientsFromDb } from "../db/patientsQuery.js";
+import { getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
 import { crmLeads } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
@@ -156,7 +157,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 					"Content-Disposition",
 					`attachment; filename="leads-export-${orgId}.csv"`,
 				);
-				return reply.send(headers + rows);
+				return reply.send("\uFEFF" + headers + rows);
 			}
 
 			// JSON format
@@ -177,6 +178,61 @@ export async function registerExportRoutes(app: FastifyInstance) {
 			return reply.code(500).send({
 				error: "InternalServerError",
 				message: "Не удалось сформировать экспорт лидов",
+			});
+		}
+	});
+
+	/**
+	 * GET /api/export/pricelist
+	 * Экспорт прейскуранта услуг клиники в CSV (с UTF-8 BOM \uFEFF и точкой с запятой для Excel) или JSON.
+	 */
+	app.get("/api/export/pricelist", async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "export pricelist");
+		if (!orgId) return;
+
+		try {
+			const catalog = await getServiceCatalogForOrganization(orgId);
+			const format = ((request.query as { format?: string })?.format || "csv").toLowerCase();
+			const todayStr = new Date().toISOString().slice(0, 10);
+
+			if (format === "json") {
+				return reply.code(200).send({
+					success: true,
+					organizationId: orgId,
+					totalCount: catalog.length,
+					items: catalog,
+				});
+			}
+
+			// CSV format with UTF-8 BOM and ';' delimiter
+			const delimiter = ";";
+			const headers = "Код 804н;Коммерческое наименование;Раздел;Специальность;Цена (руб);Длительность (мин);НДС;Налоговый вычет;Статус\r\n";
+			const rows = catalog
+				.map((s) => [
+					escapeCsvField(s.code),
+					escapeCsvField(s.title),
+					escapeCsvField(s.category),
+					escapeCsvField(s.specialty),
+					escapeCsvField(s.basePriceRub),
+					escapeCsvField(s.durationMinutes),
+					"НДС не облагается (ст. 149 НК РФ)",
+					s.taxDeductible ? "Да" : "Нет",
+					s.active ? "Активна" : "В архиве",
+				].join(delimiter))
+				.join("\r\n");
+
+			const UTF8_BOM = "\uFEFF";
+			reply.header("Content-Type", "text/csv; charset=utf-8");
+			reply.header(
+				"Content-Disposition",
+				`attachment; filename="pricelist-export-${orgId}-${todayStr}.csv"`,
+			);
+			return reply.send(UTF8_BOM + headers + rows);
+		} catch (err) {
+			request.log.error({ err }, "[Export] Error exporting pricelist");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось сформировать экспорт прейскуранта",
 			});
 		}
 	});

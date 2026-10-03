@@ -228,10 +228,10 @@ export const CashShiftCompactBar: React.FC<CashShiftCompactBarProps> = ({
 							}}
 							data-testid="btn-open-cash-register-modal"
 							className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
-							title="Открыть АРМ кассового аппарата 54-ФЗ (сверка наличности, X/Z-лента)"
+							title="Открыть кассу клиники (сверка наличности, X/Z-лента)"
 						>
 							<Zap size={13} className="shrink-0 text-[var(--warning-fg,#b45309)]" />
-							<span>АРМ кассы 54-ФЗ</span>
+							<span>Касса клиники</span>
 						</button>
 					</div>
 				</div>

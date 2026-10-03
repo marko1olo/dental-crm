@@ -61,7 +61,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
 						<h3 className="text-base font-bold text-[var(--ink)] truncate">
-							Пародонтологический осмотр (Скрининг PSR / CPITN & Статус 043/у)
+							Пародонтологический осмотр (Скрининг PSR / CPITN)
 						</h3>
 						<span
 							className={`px-2.5 py-0.5 rounded-full text-xs font-bold border truncate max-w-xs shrink-0 ${
@@ -92,7 +92,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
 						className="h-9 sm:h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
-						title="1-клик: Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
+						title="1-клик: Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<ShieldCheck size={16} className="shrink-0" />
@@ -183,12 +183,12 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						type="button"
 						onClick={onInsertToProtocol}
 						className="h-9 sm:h-8 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
-						title="Сформировать и вставить протокол пародонтограммы в дневник 043/у"
+						title="Сформировать и вставить протокол пародонтограммы в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
 						{insertStatus ? <Check size={14} /> : <DentalForm043 size={14} />}
 						<span>
-							{insertStatus ? "Внесено в 043/у!" : "Внести в дневник 043/у"}
+							{insertStatus ? "Внесено в медкарту!" : "Внести в дневник"}
 						</span>
 					</button>
 

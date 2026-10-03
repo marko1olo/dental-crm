@@ -13,7 +13,7 @@ import type { QuickAddChairData } from "./components/schedule/QuickAddChairModal
 import {
   type DayGroupingAppointment, formatDayTitle, groupAppointmentsByClinicDay, shiftDayKey,
 } from "./components/schedule/scheduleDayGrouping";
-import type { TargetSlotInfo } from "./components/schedule/WaitlistQuickFillModal";
+import type { TargetSlotInfo } from "./components/schedule/WaitlistDrawer";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { useAppLogicContext } from "./contexts/AppLogicContext";

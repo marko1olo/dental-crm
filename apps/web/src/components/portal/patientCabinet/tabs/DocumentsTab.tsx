@@ -410,7 +410,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 												}}
 											>
 												<Printer size={14} />
-												<span>Печать выписки 043/у</span>
+												<span>Печать выписки из медкарты</span>
 											</button>
 										)}
 
@@ -449,7 +449,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 						<Pill size={32} className="pc-icon-muted" />
 						<p className="pc-empty-title">Назначений лекарственных препаратов нет</p>
 						<p className="pc-empty-desc">
-							Лечащий врач не назначал рецептурных медикаментов. При появлении показаний выписанные рецепты по форме 107-1/у отобразятся здесь.
+							Лечащий врач не назначал рецептурных медикаментов. При необходимости назначенные врачом электронные рецепты отобразятся здесь.
 						</p>
 					</div>
 				) : (

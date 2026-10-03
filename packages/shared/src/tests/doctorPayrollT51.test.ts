@@ -269,4 +269,124 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		// Zero drift invariant: gross = ndfl + net
 		assert.equal(res.grossPayoutBeforeTaxKop, res.ndfl13TaxKop + res.netPayoutToDoctorKop);
 	});
+
+	it("1.8 Progressive NDFL (13% up to 5M RUB, 15% above) per Art. 224 & Art. 225 p. 6 Tax Code RF", () => {
+		// Scenario A: Payout straddles the 5,000,000 RUB (500,000,000 kop) threshold in a single period
+		// Gross payout before tax: 6,000,000 RUB (600,000,000 kop)
+		// First 5,000,000 RUB @ 13% = 650,000 RUB (65,000,000 kop)
+		// Remaining 1,000,000 RUB @ 15% = 150,000 RUB (15,000,000 kop)
+		// Total tax = 800,000 RUB (80,000,000 kop)
+		// Net to doctor = 5,200,000 RUB (520,000,000 kop)
+		const servicesStraddle: DoctorCompletedServiceItem[] = [
+			{
+				id: "srv-top-1",
+				dateIso: "2026-08-20",
+				patientName: "Пациент Премиум",
+				medicalCardNumber: "043/у-999",
+				serviceNameRu: "Тотальная реконструкция челюстей (All-on-6 Nobel)",
+				category: "surgery",
+				grossRevenueKop: 3000000000, // 30,000,000 RUB
+				labCostKop: 0,
+				materialCostKop: 0,
+			},
+		];
+
+		const resStraddle = calculateDoctorPeriodPayroll({
+			doctorId: "doc-straddle",
+			doctorName: "Д-р Прогрессивный П. П.",
+			specialtyId: "surgeon_implantologist", // 20%
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services: servicesStraddle,
+		});
+
+		// Net base: 30,000,000 RUB
+		// 20% base = 6,000,000 RUB (600,000,000 kop)
+		// KPI bonus: Tier 1 (+5%) on 30M -> 5% of 30M = 1,500,000 RUB -> Gross = 7,500,000 RUB (750,000,000 kop)
+		assert.equal(resStraddle.grossPayoutBeforeTaxKop, 750000000);
+		assert.equal(resStraddle.isProgressiveTaxApplied, true);
+		// 5M @ 13% = 650,000 RUB (65,000,000 kop)
+		assert.equal(resStraddle.ndfl13TaxKop, 65000000);
+		// 2.5M @ 15% = 375,000 RUB (37,500,000 kop)
+		assert.equal(resStraddle.ndfl15TaxKop, 37500000);
+		// Total tax: 650,000 + 375,000 = 1,025,000 RUB (102,500,000 kop)
+		assert.equal(resStraddle.ndflTaxKop, 102500000);
+		// Net to doctor: 7,500,000 - 1,025,000 = 6,475,000 RUB (647,500,000 kop)
+		assert.equal(resStraddle.netPayoutToDoctorKop, 647500000);
+
+		// Scenario B: Doctor already had 5,000,000 RUB YTD cumulative gross income
+		// Every ruble in this new period is taxed strictly at 15%
+		const resAlreadyAbove = calculateDoctorPeriodPayroll({
+			doctorId: "doc-already-above",
+			doctorName: "Д-р Высокодоходный В. Д.",
+			specialtyId: "therapist", // 25%
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services: [
+				{
+					id: "srv-norm-1",
+					dateIso: "2026-08-10",
+					patientName: "Пациент",
+					medicalCardNumber: "043/у-01",
+					serviceNameRu: "Реставрация зуба",
+					category: "therapy",
+					grossRevenueKop: 40000000, // 400,000 RUB
+					labCostKop: 0,
+					materialCostKop: 0,
+				},
+			],
+			cumulativeYtdGrossKop: 500000000, // Exactly 5,000,000 RUB already accumulated
+		});
+
+		// 25% of 400,000 = 100,000 RUB (10,000,000 kop)
+		assert.equal(resAlreadyAbove.grossPayoutBeforeTaxKop, 10000000);
+		assert.equal(resAlreadyAbove.isProgressiveTaxApplied, true);
+		assert.equal(resAlreadyAbove.ndfl13TaxKop, 0);
+		// 15% of 100,000 = 15,000 RUB (1,500,000 kop)
+		assert.equal(resAlreadyAbove.ndfl15TaxKop, 1500000);
+		assert.equal(resAlreadyAbove.ndflTaxKop, 1500000);
+		assert.equal(resAlreadyAbove.netPayoutToDoctorKop, 8500000); // 85,000 RUB
+	});
+
+	it("1.9 Protects general clinic overhead consumables (gloves, napkins, saliva ejectors) from doctor salary deduction", () => {
+		const servicesWithOverhead: DoctorCompletedServiceItem[] = [
+			{
+				id: "srv-overhead-1",
+				dateIso: "2026-08-15",
+				patientName: "Пациент Терапии",
+				medicalCardNumber: "043/у-701",
+				serviceNameRu: "Лечение периодонтита зуба 4.6",
+				category: "therapy",
+				grossRevenueKop: 2000000, // 20,000 RUB
+				labCostKop: 0,
+				materialCostKop: 350000, // Total material cost 3,500 RUB
+				materialItems: [
+					{ name: "Салфетка нагрудная стоматологическая", costKop: 5000 }, // 50 RUB overhead
+					{ name: "Ватные валики стоматологические 10 мм", costKop: 4000 }, // 40 RUB overhead
+					{ name: "Слюноотсос одноразовый с наконечником", costKop: 6000 }, // 60 RUB overhead
+					{ name: "Перчатки нитриловые неопудренные", costKop: 15000 },     // 150 RUB overhead
+					{ name: "Маска медицинская трехслойная", costKop: 5000 },          // 50 RUB overhead
+					{ name: "Композит Filtek Ultimate шприц A2", costKop: 265000 },    // 2,650 RUB direct clinical material
+				],
+			},
+		];
+
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-clean-overhead",
+			doctorName: "Д-р Защищенный З. П.",
+			specialtyId: "therapist", // 25%
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services: servicesWithOverhead,
+		});
+
+		// Overhead total: 50 + 40 + 60 + 150 + 50 = 350 RUB = 35,000 kop
+		assert.equal(res.overheadConsumablesCoveredKop, 35000);
+		// Direct material deducted from doctor: ONLY 2,650 RUB (265,000 kop)
+		assert.equal(res.totalMaterialDeductionsKop, 265000);
+		// Net base: 20,000 - 2,650 = 17,350 RUB (1,735,000 kop) (NOT 20,000 - 3,500 = 16,500)
+		assert.equal(res.totalNetBaseKop, 1735000);
+		// 25% of 17,350 = 4,337.50 RUB -> 433,750 kop
+		assert.equal(res.earnedBaseCommissionKop, 433750);
+	});
 });

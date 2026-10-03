@@ -69,7 +69,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const [referralNumber, setReferralNumber] = useState<string>("");
 	const [activeTab, setActiveTab] = useState<"form" | "preview">("form");
 
-	// Medical safety checklist (ALARA)
+	// Medical safety checklist
 	const [isPregnancyExcluded, setIsPregnancyExcluded] = useState<boolean>(true);
 	const [hasMetallicArtifacts, setHasMetallicArtifacts] = useState<boolean>(false);
 	const [isTmjOpenClosedProtocol, setIsTmjOpenClosedProtocol] = useState<boolean>(true);
@@ -118,7 +118,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const patientFullName = patient?.fullName || "Пациент";
 	const patientBirth = patient?.birthDate || "1985-05-15";
 	const patientPhoneStr = patient?.phone || "+7 (___) ___-__-__";
-	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "МК-043/у";
+	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || `МК-${patient?.id ? patient.id.slice(0, 8).toUpperCase() : "2026"}`;
 	const docName = doctorName || "Лечащий врач";
 	const docSpec = doctorSpecialty || "Врач-стоматолог";
 	const clinic = clinicName || 'Стоматологическая клиника "Денте"';
@@ -624,7 +624,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 								<FileText className="w-4 h-4 text-[var(--teal)]" />
-								<span>Официальный бланк (КЛКТ / ALARA):</span>
+								<span>Официальный бланк направления:</span>
 							</span>
 							<div className="flex items-center gap-2">
 								<button
@@ -695,7 +695,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				<footer className="flex items-center justify-between px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
 						<ShieldCheck className="w-4 h-4 text-[var(--teal)]" />
-						<span>0 тупиков: готово к моментальной печати и интеграции с ЭМК 043/у.</span>
+						<span>Готово к моментальной печати и прикреплению к карте.</span>
 					</div>
 
 					<div className="flex items-center gap-2.5">
@@ -711,10 +711,10 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							onClick={handleInsertToDiary}
 							className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all"
 							data-testid="btn-insert-referral-to-043"
-							title="Внести текст направления в дневник формы 043/у"
+							title="Внести текст направления в дневник приёма"
 						>
 							<FileText className="w-4 h-4" />
-							<span>Внести в 043/у</span>
+							<span>Внести в дневник</span>
 						</button>
 						<button
 							type="button"

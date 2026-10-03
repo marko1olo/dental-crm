@@ -1,7 +1,77 @@
 /**
  * DENTE Dental CRM — Statutory Doctor & Staff Piece-Rate Payroll Engine (Form T-51)
- * Kopeck-Exact Math, Lab & Material Deductions, KPI Tier Bonuses, Personal Income Tax (НДФЛ 13%)
+ * Kopeck-Exact Math, Lab & Material Deductions, KPI Tier Bonuses, Personal Income Tax (НДФЛ 13% / 15%)
  */
+
+import { isGeneralClinicOverheadConsumable } from "./doctorNetSalaryEngine.js";
+
+export { isGeneralClinicOverheadConsumable };
+
+/**
+ * Порог дохода для перехода на прогрессивную ставку НДФЛ 15% (ст. 224 НК РФ):
+ * 5 000 000 рублей = 500 000 000 копеек.
+ */
+export const NDFL_PROGRESSIVE_THRESHOLD_KOP = 500_000_000;
+
+export interface NdflTaxCalculationResult {
+	readonly ndflTaxKop: number;
+	readonly ndfl13TaxKop: number;
+	readonly ndfl15TaxKop: number;
+	readonly effectiveRatePercent: number;
+	readonly isProgressiveApplied: boolean;
+}
+
+/**
+ * Рассчитывает НДФЛ с учетом прогрессивной шкалы 13% / 15% (ст. 224 НК РФ)
+ * со строгим округлением каждого налога до целых рублей (п. 6 ст. 225 НК РФ).
+ */
+export function calculateProgressiveNdflTax(
+	grossPayoutKop: number,
+	cumulativeYtdGrossKop: number = 0,
+	thresholdKop: number = NDFL_PROGRESSIVE_THRESHOLD_KOP,
+): NdflTaxCalculationResult {
+	if (grossPayoutKop <= 0) {
+		return {
+			ndflTaxKop: 0,
+			ndfl13TaxKop: 0,
+			ndfl15TaxKop: 0,
+			effectiveRatePercent: 13,
+			isProgressiveApplied: false,
+		};
+	}
+
+	const prevGross = Math.max(0, cumulativeYtdGrossKop);
+	const newGross = prevGross + grossPayoutKop;
+
+	let tax13Kop = 0;
+	let tax15Kop = 0;
+
+	if (newGross <= thresholdKop) {
+		// Полностью в базовой ставке 13%, округление до целого рубля (п. 6 ст. 225 НК РФ)
+		tax13Kop = Math.round((grossPayoutKop * 13) / 10000) * 100;
+	} else if (prevGross >= thresholdKop) {
+		// Полностью в прогрессивной ставке 15%, округление до целого рубля
+		tax15Kop = Math.round((grossPayoutKop * 15) / 10000) * 100;
+	} else {
+		// Переход через порог 5 000 000 руб: часть по 13%, остаток по 15%
+		const portionIn13 = thresholdKop - prevGross;
+		const portionIn15 = grossPayoutKop - portionIn13;
+		tax13Kop = Math.round((portionIn13 * 13) / 10000) * 100;
+		tax15Kop = Math.round((portionIn15 * 15) / 10000) * 100;
+	}
+
+	const totalTaxKop = tax13Kop + tax15Kop;
+	const isProgressiveApplied = tax15Kop > 0;
+	const effectiveRatePercent = Number(((totalTaxKop / grossPayoutKop) * 100).toFixed(2));
+
+	return {
+		ndflTaxKop: totalTaxKop,
+		ndfl13TaxKop: tax13Kop,
+		ndfl15TaxKop: tax15Kop,
+		effectiveRatePercent,
+		isProgressiveApplied,
+	};
+}
 
 export interface DoctorSpecialtyCommissionRule {
 	readonly specialtyId: string;
@@ -216,6 +286,8 @@ export interface DoctorCompletedServiceItem {
 	readonly warrantyType?: "doctor_fault" | "clinic_warranty" | "lab_warranty" | undefined;
 	readonly warrantyFixedCompensationKop?: number | undefined;
 	readonly deductMaterialFromDoctor?: boolean | undefined;
+	readonly materialName?: string | undefined;
+	readonly materialItems?: readonly { readonly name: string; readonly costKop: number }[] | undefined;
 	readonly paymentSource?: "cash" | "card" | "sbp" | "deposit" | "family_deposit" | "split" | undefined;
 	readonly isDepositAdvanceOnly?: boolean | undefined;
 }
@@ -258,6 +330,7 @@ export interface DoctorPayrollCalculationInput {
 	readonly manualAdjustmentKop?: number | undefined; // e.g. advance payment deduction or bonus
 	readonly manualAdjustmentNoteRu?: string | undefined;
 	readonly refundDeductions?: readonly DoctorRefundDeductionItem[] | undefined;
+	readonly cumulativeYtdGrossKop?: number | undefined;
 }
 
 export interface DoctorPayrollResult {
@@ -282,6 +355,10 @@ export interface DoctorPayrollResult {
 	readonly earnedRetailCommissionKop: number;
 	readonly grossPayoutBeforeTaxKop: number;
 	readonly ndfl13TaxKop: number;
+	readonly ndfl15TaxKop?: number;
+	readonly ndflTaxKop?: number;
+	readonly isProgressiveTaxApplied?: boolean;
+	readonly overheadConsumablesCoveredKop?: number;
 	readonly netPayoutToDoctorKop: number; // "На руки"
 	readonly minimumGuaranteeApplied: boolean;
 	readonly manualAdjustmentKop: number;
@@ -368,6 +445,7 @@ export function calculateDoctorPeriodPayroll(
 	let totalGross = 0;
 	let totalLab = 0;
 	let totalMaterial = 0;
+	let totalOverheadCovered = 0;
 	let earnedBase = 0;
 	let earnedRetail = 0;
 	let refundedServicesCount = 0;
@@ -405,14 +483,35 @@ export function calculateDoctorPeriodPayroll(
 			(item.labCostKop !== undefined && item.labCostKop > 0);
 		const itemLabCost = shouldDeductLab ? Math.max(0, item.labCostKop || 0) : 0;
 
-		// CLINICAL INVARIANT: Surgery/Implantation (implants, bone blocks) & Therapy deduct materials
-		const shouldDeductMaterial =
-			preset.deductsMaterialCosts ||
-			item.category === "surgery" ||
-			item.category === "therapy" ||
-			item.category === "pediatric" ||
-			(item.materialCostKop !== undefined && item.materialCostKop > 0 && preset.deductsMaterialCosts);
-		const itemMaterialCost = shouldDeductMaterial ? Math.max(0, item.materialCostKop || 0) : 0;
+		// CLINICAL INVARIANT: Overhead consumables (napkins, cotton rolls, saliva ejectors, gloves, masks)
+		// are 100% covered by the clinic and MUST NOT be deducted from doctors!
+		let itemMaterialCost = 0;
+		let itemOverheadCovered = 0;
+
+		if (item.deductMaterialFromDoctor === false) {
+			itemMaterialCost = 0;
+			itemOverheadCovered = Math.max(0, item.materialCostKop || 0);
+		} else if (item.materialItems && item.materialItems.length > 0) {
+			for (const m of item.materialItems) {
+				if (isGeneralClinicOverheadConsumable(m.name)) {
+					itemOverheadCovered += Math.max(0, m.costKop);
+				} else {
+					itemMaterialCost += Math.max(0, m.costKop);
+				}
+			}
+		} else if (item.materialName && isGeneralClinicOverheadConsumable(item.materialName)) {
+			itemOverheadCovered = Math.max(0, item.materialCostKop || 0);
+			itemMaterialCost = 0;
+		} else {
+			const shouldDeductMaterial =
+				preset.deductsMaterialCosts ||
+				item.category === "surgery" ||
+				item.category === "therapy" ||
+				item.category === "pediatric" ||
+				(item.materialCostKop !== undefined && item.materialCostKop > 0 && preset.deductsMaterialCosts);
+			itemMaterialCost = shouldDeductMaterial ? Math.max(0, item.materialCostKop || 0) : 0;
+		}
+		totalOverheadCovered += itemOverheadCovered;
 
 		const clinicalRate = input.useClinicalCategoryRates ? CLINICAL_CATEGORY_COMMISSION_PERCENT[item.category] : undefined;
 
@@ -554,9 +653,8 @@ export function calculateDoctorPeriodPayroll(
 	}
 
 	const grossPayout = Math.max(0, preGuaranteePayout);
-	// Округление НДФЛ 13% строго до целых рублей (п. 6 ст. 225 НК РФ)
-	const ndfl13 = Math.round((grossPayout * 13) / 10000) * 100;
-	const netToDoctor = Math.max(0, grossPayout - ndfl13);
+	const ndflCalculation = calculateProgressiveNdflTax(grossPayout, input.cumulativeYtdGrossKop ?? 0);
+	const netToDoctor = Math.max(0, grossPayout - ndflCalculation.ndflTaxKop);
 
 	return {
 		doctorId: input.doctorId,
@@ -579,7 +677,11 @@ export function calculateDoctorPeriodPayroll(
 		kpiTierBadgeRu: kpiBadge,
 		earnedRetailCommissionKop: earnedRetail,
 		grossPayoutBeforeTaxKop: grossPayout,
-		ndfl13TaxKop: ndfl13,
+		ndfl13TaxKop: ndflCalculation.ndfl13TaxKop,
+		ndfl15TaxKop: ndflCalculation.ndfl15TaxKop,
+		ndflTaxKop: ndflCalculation.ndflTaxKop,
+		isProgressiveTaxApplied: ndflCalculation.isProgressiveApplied,
+		overheadConsumablesCoveredKop: totalOverheadCovered,
 		netPayoutToDoctorKop: netToDoctor,
 		minimumGuaranteeApplied: guaranteeApplied,
 		manualAdjustmentKop: manualAdj,

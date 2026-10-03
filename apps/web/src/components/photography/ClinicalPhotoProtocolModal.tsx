@@ -26,11 +26,11 @@ import { decodeHeicImage } from '../../services/imaging/heicDecoder';
 export interface ClinicalPhotoProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	patientName?: string;
-	patientCardNumber?: string;
-	doctorName?: string;
-	clinicName?: string;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientCardNumber?: string | undefined;
+	doctorName?: string | undefined;
+	clinicName?: string | undefined;
 	initialSlots?: Record<string, PhotoSlotRecord>;
 	initialPresetId?: string;
 	initialStage?: 'before' | 'during' | 'after' | 'followup';

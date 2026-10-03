@@ -35,6 +35,20 @@
 	user-select: none;
 	height: 36px;
 	max-height: 36px;
+	max-width: 100%;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+@media (max-width: 640px) {
+	.settings-segmented-strip {
+		-webkit-overflow-scrolling: touch;
+	}
+	.settings-segment-btn {
+		padding: 0 10px;
+		font-size: 12px;
+		flex-shrink: 0;
+	}
 }
 
 .settings-segment-btn {

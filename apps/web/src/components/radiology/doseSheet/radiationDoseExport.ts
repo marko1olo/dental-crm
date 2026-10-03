@@ -35,6 +35,7 @@ export interface CsvExportOptions {
 	clinicName?: string | null | undefined;
 	patientFullName?: string | null | undefined;
 	medicalCardNumber?: string | null | undefined;
+	reportingYear?: number | undefined;
 	delimiter?: ";" | "," | undefined;
 }
 

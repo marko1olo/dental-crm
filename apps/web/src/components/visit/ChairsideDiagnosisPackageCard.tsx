@@ -207,7 +207,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 		}
 
 		showToast(
-			`Чек 54-ФЗ «${activeBundle.title}» (${money(customized.totalRub)} / ${customized.totalKopecks.toLocaleString("ru-RU")} коп.) передан в кассу`,
+			`Счёт «${activeBundle.title}» (${money(customized.totalRub)} / ${customized.totalKopecks.toLocaleString("ru-RU")} коп.) передан в кассу`,
 			"success",
 			3500,
 		);
@@ -227,7 +227,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 					<div>
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-								Готовый чек-лист услуг по Номенклатуре 804н
+								Готовый чек-лист клинических услуг
 							</span>
 							<span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700">
 								{activeBundle.diagnosisIcd10}
@@ -329,10 +329,10 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 						onClick={handleExportToCashier}
 						data-testid="export-diagnosis-bundle-cashier-btn"
 						className="flex-1 sm:flex-initial min-h-[44px] px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0"
-						title="Передать пакет услуг в кассу 54-ФЗ с точным расчётом в копейках"
+						title="Передать пакет услуг в кассу с точным расчётом в копейках"
 					>
 						<Receipt className="w-4 h-4" />
-						В кассу 54-ФЗ (1 клик)
+						В кассу (1 клик)
 					</button>
 				</div>
 			</div>

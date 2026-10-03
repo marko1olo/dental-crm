@@ -28,12 +28,16 @@ export const cockpitToolbarStyle: CSSProperties = {
 	alignItems: "center",
 	justifyContent: "space-between",
 	gap: "6px",
-	flexWrap: "wrap",
-	padding: "4px 8px",
+	flexWrap: "nowrap",
+	overflowX: "auto",
+	scrollbarWidth: "none",
+	padding: "3px 8px",
 	background: "var(--paper-soft)",
 	border: "1px solid var(--line)",
 	borderRadius: "8px",
+	height: "36px",
 	minHeight: "34px",
+	maxHeight: "38px",
 };
 
 export const sanPinBadgeStyle: CSSProperties = {
@@ -50,16 +54,17 @@ export function getNormaButtonStyle(isNormaApplied: boolean): CSSProperties {
 		height: "30px",
 		minHeight: "30px",
 		padding: "0 10px",
-		background: isNormaApplied ? "rgba(16, 185, 129, 0.2)" : "var(--paper)",
-		color: isNormaApplied ? "#059669" : "var(--ink)",
-		border: `1px solid ${isNormaApplied ? "#10b981" : "var(--line)"}`,
+		background: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)",
+		color: isNormaApplied ? "#059669" : "#10b981",
+		border: "1px solid #10b981",
 		borderRadius: "6px",
 		fontSize: "0.78rem",
-		fontWeight: 600,
+		fontWeight: 700,
 		cursor: "pointer",
 		display: "inline-flex",
 		alignItems: "center",
 		gap: "5px",
+		whiteSpace: "nowrap",
 	};
 }
 

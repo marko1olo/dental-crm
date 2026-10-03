@@ -358,7 +358,7 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 						data-testid="queue-toggle-tv-billboard-btn"
 						onClick={() => setShowLobbyBillboard(true)}
 						className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--line)] bg-[var(--paper)] px-2.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer select-none transition-colors"
-						title="Открыть ТВ-табло холла для пациентов (полноэкранный режим 152-ФЗ)"
+						title="Открыть ТВ-табло холла для пациентов (полноэкранный режим без разглашения диагнозов)"
 					>
 						<Monitor size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span>ТВ-табло холла</span>

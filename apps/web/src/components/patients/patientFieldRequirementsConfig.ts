@@ -246,7 +246,7 @@ export function validatePatientDraftWithRequirements(
 		!draft.isEmergencyOrPrimary
 	) {
 		if (!snilsRaw) {
-			errors.snils = "СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)";
+			errors.snils = "СНИЛС обязателен для электронной медкарты и Госуслуг";
 			missingRequiredLabels.push("СНИЛС");
 		} else {
 			const snilsVal = validateStaffSnils(snilsRaw);

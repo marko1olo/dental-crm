@@ -22,7 +22,7 @@ export const WarehouseInventoryAuditTable: React.FC<WarehouseInventoryAuditTable
 						<th>Наименование ТМЦ / Артикул</th>
 						<th>Категория</th>
 						<th style={{ textAlign: "center" }}>Серия (LOT)</th>
-						<th style={{ textAlign: "center" }}>Срок годности (FEFO)</th>
+						<th style={{ textAlign: "center" }}>Срок годности</th>
 						<th style={{ textAlign: "center" }}>Ед.</th>
 						<th style={{ textAlign: "right" }}>Учет (книжн.)</th>
 						<th style={{ textAlign: "center", width: 140 }}>Факт (наличие)</th>

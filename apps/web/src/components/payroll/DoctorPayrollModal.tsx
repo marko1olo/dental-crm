@@ -23,6 +23,17 @@ import "./doctorPayroll.css";
 
 export { DEFAULT_SOLO_DOCTOR, SOLO_DOCTOR_SPECIALTY_PRESETS, type SoloDoctorSpecialtyPreset };
 
+export function getDefaultPayrollPeriod(): { start: string; end: string } {
+	const now = new Date();
+	const year = now.getFullYear();
+	const month = String(now.getMonth() + 1).padStart(2, "0");
+	const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+	return {
+		start: `${year}-${month}-01`,
+		end: `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
+	};
+}
+
 export interface DoctorPayrollModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -43,11 +54,15 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	doctorsList = [],
 	initialDoctorId,
 	initialServices,
-	initialPeriodStart = "2026-08-01",
-	initialPeriodEnd = "2026-08-31",
+	initialPeriodStart,
+	initialPeriodEnd,
 	initialBasePercentage,
 	useClinicalCategoryRates,
 }) => {
+	const defaultPeriod = useMemo(() => getDefaultPayrollPeriod(), []);
+	const effectivePeriodStart = initialPeriodStart || defaultPeriod.start;
+	const effectivePeriodEnd = initialPeriodEnd || defaultPeriod.end;
+
 	const [selectedDoctorId, setSelectedDoctorId] = useState(initialDoctorId || doctorsList[0]?.id || "");
 	const [soloSpecialtyId, setSoloSpecialtyId] = useState<string>(() => {
 		if (initialDoctorId && initialDoctorId !== "solo-doctor") {
@@ -56,8 +71,8 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		}
 		return DEFAULT_SOLO_DOCTOR.specialtyId;
 	});
-	const [periodStart, setPeriodStart] = useState(initialPeriodStart);
-	const [periodEnd, setPeriodEnd] = useState(initialPeriodEnd);
+	const [periodStart, setPeriodStart] = useState(effectivePeriodStart);
+	const [periodEnd, setPeriodEnd] = useState(effectivePeriodEnd);
 	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
 	const [manualAdjustmentRub, setManualAdjustmentRub] = useState<number>(0);
 
@@ -184,7 +199,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] flex items-center gap-2">
 								Сдельная зарплата и расчетный листок
 								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
-									Расчет зарплаты / НДФЛ 13%
+									{payrollResult.isProgressiveTaxApplied ? "Расчет зарплаты / Прогрессивный НДФЛ 13-15%" : "Расчет зарплаты / НДФЛ 13%"}
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)]">
@@ -309,10 +324,21 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 								{(payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU")} ₽
 							</span>
 							<span className="text-[10px] text-[var(--muted,#64748b)]">
-								НДФЛ 13%: {(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽
+								{payrollResult.isProgressiveTaxApplied
+									? `НДФЛ 13-15%: ${(((payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop)) / 100).toLocaleString("ru-RU")} ₽`
+									: `НДФЛ 13%: ${(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽`}
 							</span>
 						</div>
 					</div>
+
+					{/* Clinical Standard Overhead Notice */}
+					{payrollResult.overheadConsumablesCoveredKop !== undefined && payrollResult.overheadConsumablesCoveredKop > 0 && (
+						<div className="px-3.5 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-blue-900 dark:text-blue-200 text-xs flex items-center justify-between">
+							<span>
+								<strong>Клинический стандарт DENTE:</strong> Общеклинические расходники (салфетки, валики, слюноотсосы, перчатки, маски) на сумму <strong>{(payrollResult.overheadConsumablesCoveredKop / 100).toLocaleString("ru-RU")} ₽</strong> покрыты клиникой и не удерживаются из зарплаты врача.
+							</span>
+						</div>
+					)}
 
 					{/* Service Breakdown Table */}
 					<div className="flex flex-col gap-2">

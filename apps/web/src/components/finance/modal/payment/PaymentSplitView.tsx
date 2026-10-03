@@ -14,6 +14,7 @@ import {
 	CreditCard,
 	QrCode,
 	RefreshCw,
+	ShieldCheck,
 	Sparkles,
 	Wallet,
 	Zap,
@@ -35,6 +36,11 @@ export interface PaymentSplitViewProps {
 	readonly setSplitCertificateRub: (v: number) => void;
 	readonly splitBonusRub: number;
 	readonly setSplitBonusRub: (v: number) => void;
+	readonly splitDmsRub?: number | undefined;
+	readonly setSplitDmsRub?: ((v: number) => void) | undefined;
+	readonly availableDmsCoverageRub?: number | undefined;
+	readonly dmsGuaranteeLetterNumber?: string | undefined;
+	readonly dmsInsurerName?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly applySplitRemainder: (target: TenderAllocationTarget) => void;
@@ -62,6 +68,11 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 	setSplitCertificateRub,
 	splitBonusRub,
 	setSplitBonusRub,
+	splitDmsRub = 0,
+	setSplitDmsRub,
+	availableDmsCoverageRub,
+	dmsGuaranteeLetterNumber,
+	dmsInsurerName,
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
 	applySplitRemainder,
@@ -187,11 +198,87 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
 					/>
 				</div>
+
+				{/* Страховая компания ДМС (Тег 1217 «Встречное предоставление») */}
+				<div className="space-y-1 sm:col-span-2 p-2.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-950/20">
+					<div className="flex items-center justify-between flex-wrap gap-1">
+						<label className="text-xs font-semibold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+							<ShieldCheck size={14} className="text-teal-600" />
+							<span>Страховая компания (ДМС, Тег 1217), ₽:</span>
+						</label>
+						{dmsInsurerName && (
+							<span className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">
+								{dmsInsurerName} {dmsGuaranteeLetterNumber ? `(ГП №${dmsGuaranteeLetterNumber})` : ""}
+							</span>
+						)}
+					</div>
+					<div className="flex items-center gap-2">
+						<input
+							type="number"
+							min={0}
+							step="1"
+							value={splitDmsRub || ""}
+							onChange={(e) => setSplitDmsRub?.(Math.max(0, parseFloat(e.target.value) || 0))}
+							placeholder="0 ₽"
+							data-testid="input-split-dms"
+							className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-teal-300 dark:border-teal-700 rounded-xl text-[var(--ink)] outline-none"
+						/>
+						{availableDmsCoverageRub !== undefined && (
+							<span className="text-[11px] font-mono text-[var(--muted,#64748b)] whitespace-nowrap">
+								Лимит ГП: <strong>{availableDmsCoverageRub.toLocaleString("ru-RU")} ₽</strong>
+							</span>
+						)}
+					</div>
+				</div>
 			</div>
 
 			{/* 1-Click Fast Auto-Balance Chips */}
 			<div className="flex items-center gap-1.5 flex-wrap pt-1">
 				<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">1-клик:</span>
+				{availableDmsCoverageRub !== undefined && availableDmsCoverageRub > 0 && (
+					<>
+						<button
+							type="button"
+							onClick={() => {
+								const totalKop = rubToKopecks(totalDueRub);
+								const dmsKop = Math.min(totalKop, rubToKopecks(availableDmsCoverageRub));
+								const remKop = Math.max(0, totalKop - dmsKop);
+								setSplitDmsRub?.(kopecksToRub(dmsKop));
+								setSplitCardRub(kopecksToRub(remKop));
+								setSplitCashRub(0);
+								setSplitDepositRub(0);
+								setSplitSbpRub(0);
+								setSplitCertificateRub(0);
+								setSplitBonusRub(0);
+							}}
+							className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+							data-testid="btn-payment-combo-dms-card"
+						>
+							<ShieldCheck size={12} />
+							<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Карта</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								const totalKop = rubToKopecks(totalDueRub);
+								const dmsKop = Math.min(totalKop, rubToKopecks(availableDmsCoverageRub));
+								const remKop = Math.max(0, totalKop - dmsKop);
+								setSplitDmsRub?.(kopecksToRub(dmsKop));
+								setSplitCashRub(kopecksToRub(remKop));
+								setSplitCardRub(0);
+								setSplitDepositRub(0);
+								setSplitSbpRub(0);
+								setSplitCertificateRub(0);
+								setSplitBonusRub(0);
+							}}
+							className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+							data-testid="btn-payment-combo-dms-cash"
+						>
+							<ShieldCheck size={12} />
+							<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Нал</span>
+						</button>
+					</>
+				)}
 				{patientDepositRub > 0 && (
 					<button
 						type="button"
@@ -205,6 +292,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 							setSplitSbpRub(0);
 							setSplitCertificateRub(0);
 							setSplitBonusRub(0);
+							setSplitDmsRub?.(0);
 						}}
 						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					>
@@ -225,6 +313,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 							setSplitSbpRub(0);
 							setSplitCertificateRub(0);
 							setSplitBonusRub(0);
+							setSplitDmsRub?.(0);
 						}}
 						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					>
@@ -241,6 +330,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						setSplitSbpRub(0);
 						setSplitCertificateRub(0);
 						setSplitBonusRub(0);
+						setSplitDmsRub?.(0);
 					}}
 					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 				>
@@ -255,6 +345,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						setSplitSbpRub(0);
 						setSplitCertificateRub(0);
 						setSplitBonusRub(0);
+						setSplitDmsRub?.(0);
 					}}
 					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 				>
@@ -297,6 +388,15 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 					data-testid="btn-payment-remainder-bonus"
 				>
 					Остаток бонусами
+				</button>
+				<button
+					type="button"
+					onClick={() => applySplitRemainder("dms")}
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					data-testid="btn-payment-remainder-dms"
+				>
+					<ShieldCheck size={12} />
+					<span>Остаток на ДМС</span>
 				</button>
 				{patientDepositRub > 0 && (
 					<button

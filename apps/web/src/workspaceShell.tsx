@@ -928,7 +928,7 @@ export function WorkspaceTopbar({
 
 				{/* 3D КЛКТ ЗАХАРОВ (312 срезов DICOM) — прямой доступ к реальному томографическому исследованию */}
 				<button
-					className="secondary-button hidden md:inline-flex items-center gap-1.5"
+					className="secondary-button hidden 2xl:inline-flex items-center gap-1.5"
 					type="button"
 					data-testid="topbar-open-cbct-demo-btn"
 					title="Открыть 3D КЛКТ студию: реальное исследование Захарова (312 срезов DICOM)"

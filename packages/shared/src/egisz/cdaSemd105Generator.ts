@@ -150,6 +150,34 @@ ${diagEntries}
 			</component>`;
 	}
 
+	// Лечение и оказанные услуги
+	let treatmentSection = "";
+	const hasTreatment = Boolean(params.treatmentDescription || (params.services && params.services.length > 0));
+	if (hasTreatment) {
+		const treatmentDescParagraph = params.treatmentDescription
+			? `<paragraph>${escapeXml(params.treatmentDescription)}</paragraph>`
+			: "";
+		const serviceRows = params.services && params.services.length > 0
+			? params.services.map((s) => `<tr><td>${escapeXml(s.code)}</td><td>${escapeXml(s.name)}</td><td>${s.tooth ? escapeXml(String(s.tooth)) : "-"}</td><td>${s.quantity || 1}</td></tr>`).join("")
+			: "";
+		const serviceTable = serviceRows
+			? `<table border="1"><thead><tr><th>Код 804н</th><th>Услуга</th><th>Зуб</th><th>Кол-во</th></tr></thead><tbody>${serviceRows}</tbody></table>`
+			: "";
+
+		treatmentSection = `
+			<!-- Секция 4: Оказанные услуги и лечение -->
+			<component>
+				<section>
+					<code code="${EGISZ_OIDS.LOINC_SERVICES_RENDERED}" codeSystem="${EGISZ_OIDS.LOINC}" displayName="Оказанные услуги и лечение"/>
+					<title>Проведенное лечение и медицинские вмешательства</title>
+					<text>
+						${treatmentDescParagraph}
+						${serviceTable}
+					</text>
+				</section>
+			</component>`;
+	}
+
 	// Рекомендации
 	let recsText = "";
 	if (Array.isArray(params.recommendations)) {
@@ -159,7 +187,7 @@ ${diagEntries}
 	}
 
 	const recsSection = recsText ? `
-			<!-- Секция 4: Рекомендации -->
+			<!-- Секция 5: Рекомендации -->
 			<component>
 				<section>
 					<code code="${EGISZ_OIDS.LOINC_RECOMMENDATIONS}" codeSystem="${EGISZ_OIDS.LOINC}" displayName="Рекомендации"/>
@@ -175,6 +203,7 @@ ${diagEntries}
 			${diagSection}
 			${anamnesisSection}
 			${statusSection}
+			${treatmentSection}
 			${recsSection}
 		</structuredBody>
 	</component>

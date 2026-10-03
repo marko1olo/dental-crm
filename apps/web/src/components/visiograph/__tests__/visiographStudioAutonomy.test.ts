@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 
 describe("Visiograph Studio 1-Click Clinical Sensor Presets (Mandates 8e, 8k)", () => {
 	test("defines standard RVG Size 1, RVG Size 2, and OPG sensor presets with exact physical pitch", () => {
-		assert.strictEqual(STANDARD_SENSOR_PRESETS.length, 3);
+		assert.strictEqual(STANDARD_SENSOR_PRESETS.length, 11);
 
 		const rvg1 = STANDARD_SENSOR_PRESETS.find((p) => p.id === "rvg_size_1");
 		assert.ok(rvg1, "RVG Size 1 preset must exist");
@@ -37,6 +37,10 @@ describe("Visiograph Studio 1-Click Clinical Sensor Presets (Mandates 8e, 8k)", 
 		assert.ok(opg, "OPG standard preset must exist");
 		assert.strictEqual(opg.pixelSizeMm, 0.05);
 		assert.match(opg.label, /50 мкм/);
+
+		const ezSensor = STANDARD_SENSOR_PRESETS.find((p) => p.id === "vatech_ezsensor_1_5");
+		assert.ok(ezSensor, "Vatech EzSensor 1.5 must exist");
+		assert.strictEqual(ezSensor.pixelSizeMm, 0.035);
 	});
 
 	test("DENTAL_SENSOR_PRESETS in math engine matches STANDARD_SENSOR_PRESETS in canvas", () => {

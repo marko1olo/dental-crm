@@ -252,7 +252,7 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
 						>
 							<FileText className="w-3 h-3 text-teal-600" />
-							<span>В карту 043/у</span>
+							<span>В медицинскую карту</span>
 						</button>
 					)}
 				</div>

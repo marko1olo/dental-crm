@@ -10,8 +10,10 @@ import {
 	classifyPeriapicalLesionData,
 	computeCalibration,
 	DEFAULT_PIXEL_SCALE_MM,
+	DENTAL_SENSOR_PRESETS,
 	distance2D,
 	type Point2D,
+	resolveVisiographPixelScaleMm,
 } from "../VisiographMeasurementMath";
 
 describe("Visiograph Radiographic Measurement & Calibration Math", () => {
@@ -151,3 +153,65 @@ describe("Visiograph Radiographic Measurement & Calibration Math", () => {
 		assert.strictEqual(lesion.fdiToothCode, "36");
 	});
 });
+
+describe("Vatech Hardware Sensor Calibrations & Physical Scale Invariants", () => {
+	test("DEFAULT_PIXEL_SCALE_MM matches Vatech EzSensor 1.5 standard (35.0 µm)", () => {
+		assert.strictEqual(DEFAULT_PIXEL_SCALE_MM, 0.035);
+	});
+
+	test("DENTAL_SENSOR_PRESETS contains authentic Vatech sensor hardware calibrations", () => {
+		const ez15 = DENTAL_SENSOR_PRESETS.find((p) => p.id === "vatech_ezsensor_1_5");
+		assert.ok(ez15);
+		assert.strictEqual(ez15.pixelSizeMm, 0.035);
+		assert.strictEqual(ez15.pixelPitchMicrons, 35.0);
+
+		const softHr = DENTAL_SENSOR_PRESETS.find((p) => p.id === "vatech_ezsensor_soft_hr");
+		assert.ok(softHr);
+		assert.strictEqual(softHr.pixelSizeMm, 0.0148);
+		assert.strictEqual(softHr.pixelPitchMicrons, 14.8);
+
+		const classic = DENTAL_SENSOR_PRESETS.find((p) => p.id === "vatech_ezsensor_classic");
+		assert.ok(classic);
+		assert.strictEqual(classic.pixelSizeMm, 0.0296);
+		assert.strictEqual(classic.pixelPitchMicrons, 29.6);
+
+		const sensorP = DENTAL_SENSOR_PRESETS.find((p) => p.id === "vatech_ezsensor_p");
+		assert.ok(sensorP);
+		assert.strictEqual(sensorP.pixelSizeMm, 0.02);
+		assert.strictEqual(sensorP.pixelPitchMicrons, 20.0);
+
+		const paxI = DENTAL_SENSOR_PRESETS.find((p) => p.id === "opg_vatech_pax_i");
+		assert.ok(paxI);
+		assert.strictEqual(paxI.pixelSizeMm, 0.0761);
+
+		const paxIUhd = DENTAL_SENSOR_PRESETS.find((p) => p.id === "opg_vatech_pax_i_uhd");
+		assert.ok(paxIUhd);
+		assert.strictEqual(paxIUhd.pixelSizeMm, 0.0380);
+	});
+
+	test("resolveVisiographPixelScaleMm resolves hardware model strings accurately", () => {
+		assert.strictEqual(resolveVisiographPixelScaleMm(null), 0.035);
+		assert.strictEqual(resolveVisiographPixelScaleMm(""), 0.035);
+		assert.strictEqual(resolveVisiographPixelScaleMm("vatech_ezsensor_1_5"), 0.035);
+		assert.strictEqual(resolveVisiographPixelScaleMm("EzSensor Soft HR"), 0.0148);
+		assert.strictEqual(resolveVisiographPixelScaleMm("EzSensor Classic"), 0.0296);
+		assert.strictEqual(resolveVisiographPixelScaleMm("Vatech Sensor P"), 0.02);
+		assert.strictEqual(resolveVisiographPixelScaleMm("AnySensor 1.0"), 0.02381);
+		assert.strictEqual(resolveVisiographPixelScaleMm("AnySensor 1.5"), 0.033333);
+		assert.strictEqual(resolveVisiographPixelScaleMm("PaX-i UHD Pano"), 0.0380);
+		assert.strictEqual(resolveVisiographPixelScaleMm("PaX-i Panoramic"), 0.0761);
+	});
+
+	test("5.0 mm reference object spans expected physical pixels across sensors", () => {
+		// Formula: H_px = 5.0 / scaleMmPerPixel
+		const pxEz15 = 5.0 / resolveVisiographPixelScaleMm("vatech_ezsensor_1_5");
+		assert.ok(Math.abs(pxEz15 - 142.86) < 0.1, `Expected ~142.86 px, got ${pxEz15}`);
+
+		const pxClassic = 5.0 / resolveVisiographPixelScaleMm("vatech_ezsensor_classic");
+		assert.ok(Math.abs(pxClassic - 168.92) < 0.1, `Expected ~168.92 px, got ${pxClassic}`);
+
+		const pxSoftHr = 5.0 / resolveVisiographPixelScaleMm("vatech_ezsensor_soft_hr");
+		assert.ok(Math.abs(pxSoftHr - 337.84) < 0.1, `Expected ~337.84 px, got ${pxSoftHr}`);
+	});
+});
+

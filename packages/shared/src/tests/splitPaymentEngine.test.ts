@@ -259,5 +259,39 @@ describe("Wave 23: Domain 1 — Split Payment Engine (Святость дене�
 		assert.equal(val.ffd12Tags.tag1081_electronicKopecks, 675033);
 		assert.equal(val.discrepancyKopecks, 0);
 	});
+
+	it("10. Multi-tender split with DMS Insurance allocates dmsKopecks accurately across line items", () => {
+		const positions: SplitPaymentPositionItem[] = [
+			{ id: "pos-1", name: "Лечение пульпита зуба 1.6", code804n: "A16.07.030.001", quantity: 1, priceRub: 6000 },
+			{ id: "pos-2", name: "Анестезия инфильтрационная", code804n: "A11.07.010", quantity: 1, priceRub: 1000 },
+			{ id: "pos-3", name: "Компьютерная томография", code804n: "A06.07.012", quantity: 1, priceRub: 3000 },
+		];
+
+		// Act total: 10,000 ₽. DMS letter covers 7,000 ₽, patient pays 3,000 ₽ by card.
+		const validation = validateAndBalanceSplitPayment({
+			actTotalRub: 10000,
+			tenders: {
+				dmsInsuranceRub: 7000,
+				cardRub: 3000,
+			},
+		});
+
+		assert.equal(validation.isBalanced, true);
+		assert.equal(validation.ffd12Tags.tag1217_counterProvisionKopecks, 700000);
+		assert.equal(validation.ffd12Tags.tag1081_electronicKopecks, 300000);
+
+		const allocated = allocateSplitPaymentAcrossItems(positions, validation);
+		assert.equal(allocated.length, 3);
+
+		const totalDmsAllocated = allocated.reduce((sum, a) => sum + a.dmsKopecks, 0);
+		const totalCardAllocated = allocated.reduce((sum, a) => sum + a.cardKopecks, 0);
+		const totalCertAllocated = allocated.reduce((sum, a) => sum + a.certificateKopecks, 0);
+
+		assert.equal(totalDmsAllocated, 700000);
+		assert.equal(totalCardAllocated, 300000);
+		assert.equal(totalCertAllocated, 0);
+		assert.equal(totalDmsAllocated + totalCardAllocated, 1000000);
+	});
 });
+
 

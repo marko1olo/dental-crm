@@ -41,6 +41,11 @@ export interface VisitServiceBillingWidgetProps {
 	readonly onSave?: ((services: VisitBillingServiceItem[], totals: VisitBillingTotals) => void) | undefined;
 	readonly onOpenPayment?: ((totals: VisitBillingTotals) => void) | undefined;
 	readonly onAddBillingItem?: ((item: { code804n?: string; title: string; priceRub: number; toothNumber?: number; quantity?: number }) => void) | undefined;
+	readonly dmsGuaranteeLetterId?: string | undefined;
+	readonly dmsGuaranteeLetterNumber?: string | undefined;
+	readonly dmsInsurerName?: string | undefined;
+	readonly availableDmsCoverageRub?: number | undefined;
+	readonly initialSplitDmsRub?: number | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly className?: string | undefined;
 }

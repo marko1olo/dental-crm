@@ -5948,6 +5948,15 @@ export function updateAppointment(
 		throw new Error("Запись не найдена");
 	}
 	if (
+		input.expectedCurrentStatus &&
+		input.expectedCurrentStatus.length > 0 &&
+		!input.expectedCurrentStatus.includes(appointment.status)
+	) {
+		throw new Error(
+			`Слот уже занят другим администратором или приём больше не свободен (текущий статус: ${appointment.status}).`,
+		);
+	}
+	if (
 		input.patientId !== undefined &&
 		input.patientId !== appointment.patientId &&
 		activeVisit.appointmentId === appointment.id

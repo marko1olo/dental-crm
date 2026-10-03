@@ -2,23 +2,26 @@
  * financialPnl.ts — Fastify Routes for Dental Managerial P&L Report.
  *
  * Grounded on 6 isolated cash accounts (`cash_boxes`), 12 canonical expense reasons (`cash_expense_reasons`),
- * revenue breakdown by medical departments, and exact EBITDA / Net Profit calculations.
+ * bounded query execution by period visits, proportional multi-service department attribution,
+ * chair unit economics integration, and Break-Even CVP analysis.
  */
 
 import {
 	type CalculateManagerialPnlInput,
 	calculateManagerialPnl,
 } from "@dental/shared";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
+	appointments,
 	cashBoxes,
 	cashExpenseReasons,
 	cashOperations,
+	chairs,
 	clinics,
 	payments,
 	services,
@@ -66,6 +69,9 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			toDate.setUTCHours(23, 59, 59, 999);
 		}
 
+		const fromDateStr = fromDate.toISOString().slice(0, 10);
+		const toDateStr = toDate.toISOString().slice(0, 10);
+
 		return withTenantCtx(orgId, async (tx) => {
 			const [clinic] = await tx
 				.select({ name: clinics.name })
@@ -92,43 +98,103 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					),
 				);
 
-			// Для каждого визита определяем категорию лечения (направление)
-			const visitCategories = await tx
-				.select({
-					visitId: treatmentItems.visitId,
-					category: services.category,
-				})
-				.from(treatmentItems)
-				.innerJoin(services, eq(services.id, treatmentItems.serviceId))
-				.where(eq(treatmentItems.organizationId, orgId));
+			// 2. Извлекаем визиты для периода и строго ограничиваем выборку treatmentItems
+			const periodVisitIds = Array.from(
+				new Set(
+					periodPayments
+						.map((p) => p.visitId)
+						.filter((id): id is string => typeof id === "string" && id.length > 0),
+				),
+			);
 
-			const visitCategoryMap = new Map<string, string>();
-			for (const vc of visitCategories) {
-				if (vc.visitId && vc.category) {
-					visitCategoryMap.set(vc.visitId, vc.category);
+			let visitItems: Array<{
+				visitId: string | null;
+				category: string | null;
+				priceRub: number;
+			}> = [];
+
+			if (periodVisitIds.length > 0) {
+				visitItems = await tx
+					.select({
+						visitId: treatmentItems.visitId,
+						category: services.category,
+						priceRub: treatmentItems.priceRub,
+					})
+					.from(treatmentItems)
+					.innerJoin(services, eq(services.id, treatmentItems.serviceId))
+					.where(
+						and(
+							eq(treatmentItems.organizationId, orgId),
+							inArray(treatmentItems.visitId, periodVisitIds),
+						),
+					);
+			}
+
+			// Группируем услуги по визитам для предотвращения category clobbering
+			const visitItemsMap = new Map<string, Array<{ category: string; priceRub: number }>>();
+			for (const vi of visitItems) {
+				if (vi.visitId && vi.category) {
+					let cat = vi.category;
+					if (cat === "pediatric_dentistry") cat = "pediatric";
+					if (cat === "preventive") cat = "hygiene";
+
+					const list = visitItemsMap.get(vi.visitId) || [];
+					list.push({ category: cat, priceRub: Number(vi.priceRub || 0) });
+					visitItemsMap.set(vi.visitId, list);
 				}
 			}
 
-			// Определяем тип кассового счета по методу оплаты
-			const paymentRows = periodPayments.map((p) => {
-				let dept = p.visitId ? visitCategoryMap.get(p.visitId) || "therapy" : "therapy";
-				// Нормализация категории
-				if (dept === "pediatric_dentistry") dept = "pediatric";
-				if (dept === "preventive") dept = "hygiene";
+			// Определяем тип кассового счета и пропорционально атрибутируем платеж по направлениям
+			const paymentRows: Array<{
+				amountRub: number;
+				department: string;
+				cashBoxType: "main" | "extra" | "cashless" | "dms" | "account" | "expenses";
+			}> = [];
 
+			for (const p of periodPayments) {
 				let boxType: "main" | "extra" | "cashless" | "dms" | "account" | "expenses" = "cashless";
 				if (p.method === "cash") boxType = "main";
 				else if (p.method === "insurance") boxType = "dms";
 				else if (p.method === "bank_transfer") boxType = "account";
 
-				return {
-					amountRub: p.amountRub,
-					department: dept,
-					cashBoxType: boxType,
-				};
-			});
+				const items = p.visitId ? visitItemsMap.get(p.visitId) : undefined;
+				if (items && items.length > 0) {
+					const catTotals = new Map<string, number>();
+					let sumPrices = 0;
+					for (const it of items) {
+						catTotals.set(it.category, (catTotals.get(it.category) || 0) + it.priceRub);
+						sumPrices += it.priceRub;
+					}
 
-			// 2. Получаем расходы по кассовым операциям
+					if (sumPrices > 0) {
+						for (const [cat, catPrice] of catTotals.entries()) {
+							const share = catPrice / sumPrices;
+							paymentRows.push({
+								amountRub: Number((p.amountRub * share).toFixed(2)),
+								department: cat,
+								cashBoxType: boxType,
+							});
+						}
+					} else {
+						const equalShare = p.amountRub / catTotals.size;
+						for (const cat of catTotals.keys()) {
+							paymentRows.push({
+								amountRub: Number(equalShare.toFixed(2)),
+								department: cat,
+								cashBoxType: boxType,
+							});
+						}
+					}
+				} else {
+					paymentRows.push({
+						amountRub: p.amountRub,
+						department: "therapy",
+						cashBoxType: boxType,
+					});
+				}
+			}
+
+			// 3. Получаем расходы по кассовым операциям с фильтрацией по expenseDate
 			const expenseOps = await tx
 				.select({
 					amountRub: cashOperations.amountRub,
@@ -139,24 +205,77 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 					and(
 						eq(cashOperations.organizationId, orgId),
 						eq(cashOperations.operationType, "expense"),
-						gte(cashOperations.createdAt, fromDate),
-						lte(cashOperations.createdAt, toDate),
+						sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) >= ${fromDateStr}`,
+						sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) <= ${toDateStr}`,
 					),
 				);
 
 			const expenseRows = expenseOps.map((e) => ({
-				reasonId: e.reasonCode || 10, // по умолчанию хознужды, если не указано
+				reasonId: e.reasonCode || 10,
 				amountRub: e.amountRub,
 			}));
 
+			// 4. Юнит-экономика кресел: запрашиваем активные кресла и приемы за период
+			const activeChairs = await tx
+				.select({
+					id: chairs.id,
+					name: chairs.name,
+				})
+				.from(chairs)
+				.where(
+					and(
+						eq(chairs.organizationId, orgId),
+						eq(chairs.isActive, true),
+					),
+				);
+
+			const periodAppointments = await tx
+				.select({
+					chairId: appointments.chairId,
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					status: appointments.status,
+				})
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						gte(appointments.startsAt, fromDate),
+						lte(appointments.startsAt, toDate),
+					),
+				);
+
+			const chairHoursMap = new Map<string, number>();
+			let totalOccupiedHours = 0;
+			for (const app of periodAppointments) {
+				if (app.status === "completed" || app.status === "in_treatment" || app.status === "planned") {
+					const durHours = Math.max(0.25, (app.endsAt.getTime() - app.startsAt.getTime()) / (1000 * 60 * 60));
+					if (app.chairId) {
+						chairHoursMap.set(app.chairId, (chairHoursMap.get(app.chairId) || 0) + durHours);
+					}
+					totalOccupiedHours += durHours;
+				}
+			}
+
+			const chairEconomicsConfig = {
+				activeChairsCount: Math.max(1, activeChairs.length),
+				occupiedHours: Math.round(totalOccupiedHours),
+				chairs: activeChairs.map((c) => ({
+					chairId: c.id,
+					chairName: c.name,
+					occupiedHours: Number((chairHoursMap.get(c.id) || 0).toFixed(1)),
+				})),
+			};
+
 			const pnlInput: CalculateManagerialPnlInput = {
 				period: {
-					from: fromDate.toISOString().split("T")[0]!,
-					to: toDate.toISOString().split("T")[0]!,
+					from: fromDateStr,
+					to: toDateStr,
 				},
 				clinicName: clinic?.name || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 				payments: paymentRows,
 				expenses: expenseRows,
+				chairEconomics: chairEconomicsConfig,
 			};
 
 			const pnlReport = calculateManagerialPnl(pnlInput);

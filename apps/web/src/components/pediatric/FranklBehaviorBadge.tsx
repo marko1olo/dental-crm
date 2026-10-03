@@ -17,6 +17,12 @@ import {
 	FRANKL_SCALE_DEFINITIONS,
 	getFranklDefinition,
 } from "../odontogram/pediatricDentitionEngine";
+export {
+	type FranklRating,
+	type FranklRatingDefinition,
+	FRANKL_SCALE_DEFINITIONS,
+	getFranklDefinition,
+};
 
 export interface FranklBehaviorBadgeProps {
 	readonly rating?: FranklRating | undefined;

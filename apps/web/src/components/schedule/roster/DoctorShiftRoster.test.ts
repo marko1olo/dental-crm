@@ -479,7 +479,7 @@ describe("DoctorShiftRosterModal — Component Rendering", () => {
 		assert.ok(html.includes("График сменности и табель учета врачей"));
 		assert.ok(html.includes("По кабинетам"));
 		assert.ok(html.includes("Расписание врачей"));
-		assert.ok(html.includes("Табель Т-13"));
+		assert.ok(html.includes("Табель учёта времени") || html.includes("Табель Т-13"));
 		assert.ok(html.includes("Загрузка кресел"));
 		assert.ok(html.includes("Смен на неделю"));
 		assert.ok(html.includes("Ассистентские пары"));

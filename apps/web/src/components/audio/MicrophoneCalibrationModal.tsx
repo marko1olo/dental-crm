@@ -30,7 +30,9 @@ import {
 } from "../../services/voice/audioFilters";
 import { parseDentalVoiceSpeech } from "../../services/voice/dentalGrammarParser";
 import { globalVoiceAudioProcessor } from "../../services/voice/voiceProcessor";
-import "./MicrophoneCalibrationModal.css";
+if (typeof window !== "undefined") {
+	void import("./MicrophoneCalibrationModal.css");
+}
 
 export interface MicrophoneCalibrationModalProps {
 	isOpen: boolean;

@@ -25,6 +25,7 @@ import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint.js";
 import {
 	generateFiscalReceipt54Fz,
 	type FiscalReceipt54FzResult,
+	type Order804nFiscalReceiptItem,
 } from "./order804nFiscalEngine.js";
 import type { TreatmentPlanItem } from "../treatment-plans/types.js";
 import type { BillingInvoice } from "../billing/invoiceTypes.js";
@@ -66,21 +67,24 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 			const isWarranty =
 				invoice.status === "warranty_100" || (invoice.totalAmountRub ?? 0) === 0;
 
-			const invoiceItems: readonly TreatmentPlanItem[] =
+			const invoiceItems: readonly Order804nFiscalReceiptItem[] =
 				invoice.items && invoice.items.length > 0
 					? invoice.items.map((it, idx) => {
 							const priceRub = Number(it.priceRub) || 0;
 							const qty = Number(it.quantity) || 1;
-							const totalRub = Number(it.totalRub) || priceRub * qty;
+							const totalRub = priceRub * qty;
 							const priceKop = rubToKopecks(priceRub);
 							const totalKop = rubToKopecks(totalRub);
 
 							return {
 								id: it.id || `inv-item-${idx}`,
-								name: it.title,
-								code804n: it.code804n || "A16.07.002",
-								toothNumber: it.toothNumber,
+								name: it.name || "Стоматологическая услуга",
+								category: "Стоматология",
+								code804n: it.code || "A16.07.002",
+								toothNumber: undefined,
+								stageKind: "stage_1_therapy" as const,
 								quantity: qty,
+								priceRub: isWarranty ? 0 : priceRub,
 								unitPriceRub: isWarranty ? 0 : priceRub,
 								unitPriceKopecks: (isWarranty ? 0 : priceKop) as Kopecks,
 								discountRub: isWarranty ? priceRub : 0,
@@ -103,8 +107,11 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 								name: isWarranty
 									? "Гарантийное обслуживание (скидка 100%)"
 									: "Стоматологические услуги по плану лечения",
+								category: "Стоматология",
 								code804n: "A16.07.002",
+								stageKind: "stage_1_therapy" as const,
 								quantity: 1,
+								priceRub: isWarranty ? 0 : (invoice.totalAmountRub || 0),
 								unitPriceRub: isWarranty ? 0 : (invoice.totalAmountRub || 0),
 								unitPriceKopecks: (isWarranty ? 0 : rubToKopecks(invoice.totalAmountRub || 0)) as Kopecks,
 								discountRub: isWarranty ? (invoice.totalAmountRub || 0) : 0,

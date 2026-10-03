@@ -259,7 +259,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 						<Scale size={14} className="text-amber-600" />
-						Масштаб клиники (Суверенитет масштаба — Мандат 8s):
+						Масштаб клиники и формат работы:
 					</span>
 					<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
 						Интерфейс мгновенно адаптирует сложность под формат клиники

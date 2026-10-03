@@ -1,13 +1,15 @@
 import type { DentalSpecialty, ServiceCatalogItem, ServiceCategory } from "@dental/shared";
 import {
 	Bot, CheckCircle2, ChevronDown, Database, Download, Edit3,
-	FolderTree, Plus, ReceiptText, Search, ShieldCheck, Sparkles,
+	FileSpreadsheet, FolderTree, Plus, ReceiptText, Search, ShieldCheck, Sparkles,
 	Tag, Trash2, Upload, X,
 } from "lucide-react";
 import "./SettingsPricesTab.css";
 import {
+	detectCategoryFrom804nCode,
 	exportPricelistToCsv,
 	importPricelistFromCsv,
+	rublesToKopecks,
 } from "../catalog/pricelist/servicePricelistEngine";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,6 +21,10 @@ import { type SettingsAccessHeaders, staffMutationHeaders } from "./staffMutatio
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
 import {
 	BASELINE_804N_PRICELIST_SERVICES,
+	STATUTORY_ORDER_804N_PRESETS,
+	STATUTORY_VAT_EXEMPTION_NOTE,
+	type DoctorSpecialty,
+	type Order804nCategory,
 	type ServicePricelistItem,
 } from "../catalog/pricelist/servicePricelistPresets";
 import { showToast } from "../GlobalToast";
@@ -189,6 +195,43 @@ export function SettingsPricesTab() {
 		}
 	};
 
+	const modalInitialItems: readonly ServicePricelistItem[] = useMemo(() => {
+		if (!typedServiceCatalog || typedServiceCatalog.length === 0) {
+			return STATUTORY_ORDER_804N_PRESETS;
+		}
+		return typedServiceCatalog.map((s: ServiceCatalogItem) => {
+			const rawPrice =
+				s.basePriceRub ??
+				(s as unknown as { priceRub?: number }).priceRub ??
+				((s as unknown as { priceKopecks?: number }).priceKopecks
+					? (s as unknown as { priceKopecks: number }).priceKopecks / 100
+					: 0);
+			const basePriceRub = Number.isFinite(rawPrice) ? Math.round(rawPrice * 100) / 100 : 0;
+			const code804n = (s.code || "").trim() || "A16.07.000";
+			const category = (s.category as Order804nCategory) || detectCategoryFrom804nCode(code804n, s.title);
+			const specialty = (s.specialty as DoctorSpecialty) || "therapist";
+			return {
+				id: s.id,
+				code804n,
+				commercialTitle: s.title,
+				statutoryTitle804n: s.title,
+				category,
+				specialty,
+				basePriceRub,
+				basePriceKopecks: rublesToKopecks(basePriceRub),
+				materialCostRub: 0,
+				labCostRub: 0,
+				estimatedDurationMin: s.durationMinutes || 30,
+				vatRate: 0 as const,
+				vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
+				icd10Indications: [],
+				isActive: s.active !== false,
+				isArchived: s.active === false,
+				tags: s.aliases || [],
+			};
+		});
+	}, [typedServiceCatalog]);
+
 	const handleSaveCatalog = async (items: readonly ServicePricelistItem[]) => {
 		await syncPricelistItemsToCatalog({
 			items,
@@ -196,6 +239,11 @@ export function SettingsPricesTab() {
 			createServiceCatalogItem,
 			updateServiceCatalogItem,
 		});
+		if (typeof mergedProps.refreshDashboard === "function") {
+			await mergedProps.refreshDashboard();
+		} else if (typeof appLogic?.refreshDashboard === "function") {
+			await appLogic.refreshDashboard();
+		}
 	};
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -207,10 +255,19 @@ export function SettingsPricesTab() {
 				// biome-ignore lint/suspicious/noExplicitAny: category cast
 				category: (s.category || "therapy") as any,
 				// biome-ignore lint/suspicious/noExplicitAny: specialty cast
-				specialty: (s.specialty || "therapist") as any,
-				basePriceRub: Math.round(((s as any).priceRub ?? ((s as any).priceKopecks ? (s as any).priceKopecks / 100 : 0))), unitCostRub: 0, labCostRub: 0,
-				durationMinutes: s.durationMinutes || 30, isActive: s.active !== false,
-				vatRate: "exempt", icd10Codes: [], tags: [],
+				basePriceRub: (() => {
+					// biome-ignore lint/suspicious/noExplicitAny: fallback field extraction
+					const raw = s.basePriceRub ?? (s as any).priceRub ?? ((s as any).priceKopecks ? (s as any).priceKopecks / 100 : 0);
+					return Number.isFinite(raw) ? Math.round(raw * 100) / 100 : 0;
+				})(),
+				unitCostRub: 0,
+				labCostRub: 0,
+				durationMinutes: s.durationMinutes || 30,
+				estimatedDurationMin: s.durationMinutes || 30,
+				isActive: s.active !== false,
+				vatRate: "exempt",
+				icd10Codes: [],
+				tags: [],
 			}),
 		);
 		const blob = new Blob([exportPricelistToCsv(items)], { type: "text/csv;charset=utf-8;" });
@@ -321,8 +378,8 @@ export function SettingsPricesTab() {
 					className={`pricelist-tab-btn ${activeTab === "ai_import" ? "active" : ""}`}
 					onClick={() => setActiveTab("ai_import")}
 				>
-					<Bot size={18} />
-					<span>ИИ-Распознавание (Импорт)</span>
+					<FileSpreadsheet size={18} />
+					<span>Импорт прайса (Excel / CSV / ИИ)</span>
 				</button>
 			</div>
 
@@ -575,7 +632,7 @@ export function SettingsPricesTab() {
 											Каталог услуг пуст
 										</h4>
 										<p className="text-xs text-[var(--muted)] leading-relaxed max-w-sm">
-											Быстро наполните прейскурант клиники 30 основными стоматологическими услугами с рекомендованными ценами для соло-врача и небольших клиник (Мандаты 8e, 8n).
+											Быстро наполните прейскурант клиники 30 основными стоматологическими услугами с рекомендованными ценами.
 										</p>
 									</div>
 									<div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full justify-center">
@@ -590,7 +647,7 @@ export function SettingsPricesTab() {
 											<span>
 												{isSeedingBaseline
 													? "Наполнение каталога..."
-													: "Заполнить рекомендованный прейскурант (30 базовых услуг)"}
+													: "Заполнить базовый прейскурант (30 услуг)"}
 											</span>
 										</button>
 									</div>
@@ -647,6 +704,15 @@ export function SettingsPricesTab() {
 					serviceCategoryLabels={serviceCategoryLabels}
 					specialtyLabels={specialtyLabels}
 					accessHeaders={accessHeaders}
+					onImportSuccess={async () => {
+						if (typeof mergedProps.refreshDashboard === "function") {
+							await mergedProps.refreshDashboard();
+						} else if (typeof appLogic?.refreshDashboard === "function") {
+							await appLogic.refreshDashboard();
+						} else if (typeof appLogic?.loadClinicSettings === "function") {
+							await appLogic.loadClinicSettings();
+						}
+					}}
 				/>
 			)}
 
@@ -780,6 +846,7 @@ export function SettingsPricesTab() {
 			<ServicePricelistManagerModal
 				isOpen={isServicePricelistModalOpen}
 				onClose={() => setIsServicePricelistModalOpen(false)}
+				initialItems={modalInitialItems}
 				onSaveCatalog={handleSaveCatalog}
 				clinicName={dashboard?.clinicSettings?.name}
 				clinicAddress={dashboard?.clinicSettings?.address}

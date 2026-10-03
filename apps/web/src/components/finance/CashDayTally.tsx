@@ -475,7 +475,7 @@ ${zReportData.clinicLegalName}
 									type="button"
 									onClick={() => setCountedCashInput(summary.cashRub.toString())}
 									className="min-h-[44px] px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-									title="Подставить расчетную сумму кассы 54-ФЗ"
+									title="Подставить расчетную сумму кассы"
 									data-testid="btn-cash-matches"
 								>
 									<Check size={15} className="text-emerald-600" />
@@ -489,7 +489,7 @@ ${zReportData.clinicLegalName}
 									title="Очередь фискализации и сверка с эквайрингом"
 								>
 									<Layers size={15} />
-									<span>Очередь 54-ФЗ {pendingQueueCount > 0 ? `(${pendingQueueCount})` : ""}</span>
+									<span>Очередь чеков {pendingQueueCount > 0 ? `(${pendingQueueCount})` : ""}</span>
 								</button>
 
 								<button
@@ -518,7 +518,7 @@ ${zReportData.clinicLegalName}
 									className="min-h-[44px] px-4 rounded-xl bg-[var(--ink,#0f172a)] hover:opacity-90 text-[var(--paper,#ffffff)] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm ml-auto whitespace-nowrap"
 								>
 									<FileText size={16} />
-									<span>Сформировать Z-отчет 54-ФЗ</span>
+									<span>Сформировать Z-отчет</span>
 								</button>
 							</div>
 

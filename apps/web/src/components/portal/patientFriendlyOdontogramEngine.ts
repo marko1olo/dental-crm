@@ -280,16 +280,16 @@ export function calculateDentalHealthIndex(
 	const sanitationPercent = Math.min(100, Math.max(0, Math.round((sanitatedTeeth / totalTeeth) * 100)));
 
 	let badgeStatus: "excellent" | "good" | "needs_attention" = "good";
-	let statusLabelRu = "Хороший уровень санации";
+	let statusLabelRu = "Хорошее состояние зубов и десен";
 	let encouragingNoteRu = "Лечение идет по плану! После завершения текущего плана индекс достигнет 100%.";
 
 	if (sanitationPercent >= 90) {
 		badgeStatus = "excellent";
-		statusLabelRu = "Отличный уровень санации";
-		encouragingNoteRu = "Полость рта практически полностью санирована! Соблюдайте профгигиену 1 раз в 6 месяцев для сохранения гарантии.";
+		statusLabelRu = "Отличное здоровье зубов";
+		encouragingNoteRu = "Зубы полностью здоровы и вылечены! Соблюдайте профгигиену 1 раз в 6 месяцев для сохранения здоровья и гарантии.";
 	} else if (sanitationPercent < 70) {
 		badgeStatus = "needs_attention";
-		statusLabelRu = "Требуется плановая санация";
+		statusLabelRu = "Рекомендуется плановое лечение";
 		encouragingNoteRu = "Не переживайте! Все процедуры проводятся 100% безболезненно под контролем дентального микроскопа.";
 	}
 
@@ -300,7 +300,7 @@ export function calculateDentalHealthIndex(
 		needsTreatmentCount,
 		missingOrImplantCount,
 		sanitationPercent,
-		formattedIndexRu: `Индекс санации: ${sanitationPercent}% • Вылечено ${healthyCount} зубов • Требуют внимания ${needsTreatmentCount} зубов`,
+		formattedIndexRu: `Индекс здоровья зубов: ${sanitationPercent}% • Вылечено ${healthyCount} зубов • Требуют внимания ${needsTreatmentCount} зубов`,
 		badgeStatus,
 		statusLabelRu,
 		encouragingNoteRu,

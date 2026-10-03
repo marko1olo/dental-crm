@@ -721,7 +721,7 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
 			{/* DDI Safety Badge */}
 			<div className="copilot-rx-safety-badge">
 				<ShieldCheck size={14} />
-				<span>Клинический контроль: DDI Safe • Регламент СтАР соблюден</span>
+				<span>Клинический контроль: Совместимость препаратов проверена (DDI Safe)</span>
 			</div>
 
 			{/* UKEP Stamp Box */}
@@ -1197,7 +1197,7 @@ export const DEFAULT_DENTE_REACT_STEPS: ReactStepItem[] = [
 		stepNumber: 3,
 		title: "Проверка лекарственной безопасности DDI...",
 		status: "done",
-		detail: "DDI Safe • Противопоказания исключены",
+		detail: "Совместимо • Противопоказания исключены (DDI Safe)",
 		icon: "shield",
 	},
 	{
@@ -1690,18 +1690,25 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
 					<div className="flex items-center justify-between gap-2 flex-wrap">
 						<h4 className="copilot-ddi-title">
 							{replacedStatus
-								? "Лекарственная безопасность восстановлена"
-								: data.title || "Блокировка DDI / Аллергии"}
+								? (data.title && data.title.includes("DDI") ? data.title : "Лекарственная безопасность восстановлена (DDI Safe)")
+								: data.title ||
+									(data.severity === "critical"
+										? "Критическое предупреждение: Противопоказание DDI"
+										: "⚠️ Предупреждение об аллергии / анамнезе")}
 						</h4>
 						<span
 							className={`copilot-ddi-severity-pill ${replacedStatus ? "safe" : "danger"}`}
 						>
-							{replacedStatus ? "DDI Safe" : "Критический риск"}
+							{replacedStatus
+								? "DDI Safe"
+								: data.severity === "critical" || data.severity === "contraindicated"
+									? "Критический риск"
+									: "Внимание (анамнез)"}
 						</span>
 					</div>
 					<p className="copilot-ddi-desc">
 						{data.description ||
-							"Обнаружена аллергия на пенициллины в анамнезе пациента (K02.1 / K04.0). Доступны безопасные аналоги. Окончательное решение принимает лечащий врач (Мандат 8e: без блокировок)."}
+							"В карте зафиксирована аллергическая реакция в анамнезе. Проверьте совместимость или утвердите назначение в 1 клик (автономия врача гарантирована, приём не блокируется)."}
 					</p>
 				</div>
 			</div>

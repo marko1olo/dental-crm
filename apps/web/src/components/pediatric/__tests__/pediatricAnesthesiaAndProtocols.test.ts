@@ -9,7 +9,38 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+function expect<T>(actual: T) {
+	return {
+		toBe: (expected: T) => assert.strictEqual(actual, expected),
+		toEqual: (expected: unknown) => assert.deepStrictEqual(actual, expected),
+		toBeTruthy: () => assert.ok(actual),
+		toBeFalsy: () => assert.ok(!actual),
+		toBeGreaterThan: (expected: number) => assert.ok((actual as number) > expected, `Expected ${actual} > ${expected}`),
+		toBeLessThan: (expected: number) => assert.ok((actual as number) < expected, `Expected ${actual} < ${expected}`),
+		toContain: (expected: unknown) => {
+			if (typeof actual === "string") {
+				assert.ok(actual.includes(expected as string), `Expected string to contain "${expected}"`);
+			} else if (Array.isArray(actual)) {
+				assert.ok((actual as unknown[]).includes(expected), `Expected array to contain ${expected}`);
+			} else {
+				assert.ok((actual as any)?.includes?.(expected));
+			}
+		},
+		toMatch: (pattern: RegExp) => assert.ok(pattern.test(actual as string), `Expected "${actual}" to match ${pattern}`),
+		not: {
+			toContain: (expected: unknown) => {
+				if (typeof actual === "string") {
+					assert.ok(!actual.includes(expected as string), `Expected string NOT to contain "${expected}"`);
+				} else if (Array.isArray(actual)) {
+					assert.ok(!(actual as unknown[]).includes(expected), `Expected array NOT to contain ${expected}`);
+				}
+			},
+		},
+	};
+}
 import {
 	PEDIATRIC_ANESTHETIC_SPECS,
 	type PediatricAnesthesiaCalculationResult,

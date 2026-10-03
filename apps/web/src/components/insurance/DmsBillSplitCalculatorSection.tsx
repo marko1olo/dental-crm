@@ -34,6 +34,17 @@ import { isDemoShowcaseMode } from "../../lib/demoMode";
 export interface DmsBillSplitCalculatorSectionProps {
 	readonly letter: DmsGuaranteeLetter;
 	readonly billItems?: readonly BillItemToSplit[] | undefined;
+	readonly onApplySplitToPayment?: ((split: {
+		totalDueRub: number;
+		dmsRub: number;
+		patientRub: number;
+		patientMethod: PatientPaymentMethod;
+		patientCashRub?: number | undefined;
+		patientCardRub?: number | undefined;
+		letterId?: string | undefined;
+		letterNumber?: string | undefined;
+		insurerName?: string | undefined;
+	}) => void) | undefined;
 }
 
 export const DEMO_VISIT_BILL_ITEMS: readonly BillItemToSplit[] = [
@@ -66,6 +77,7 @@ export const DEMO_VISIT_BILL_ITEMS: readonly BillItemToSplit[] = [
 export function DmsBillSplitCalculatorSection({
 	letter,
 	billItems,
+	onApplySplitToPayment,
 }: DmsBillSplitCalculatorSectionProps) {
 	const cashInputId = useId();
 	const [paymentMethod, setPaymentMethod] = useState<PatientPaymentMethod>("card");
@@ -400,6 +412,45 @@ export function DmsBillSplitCalculatorSection({
 					</tfoot>
 				</table>
 			</div>
+
+			{onApplySplitToPayment && mappedItems.length > 0 && (
+				<div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
+					<button
+						type="button"
+						onClick={() => {
+							const totalDueRub = kopecksToRubles(splitCalculation.totalBillKopecks);
+							const dmsRub = kopecksToRubles(splitCalculation.dmsCoveredKopecks);
+							const patientRub = kopecksToRubles(splitCalculation.patientTotalKopecks);
+							const patientCashRub = paymentSplit ? kopecksToRubles(paymentSplit.cashKopecks) : undefined;
+							const patientCardRub = paymentSplit ? kopecksToRubles(paymentSplit.cardKopecks) : undefined;
+
+							onApplySplitToPayment({
+								totalDueRub,
+								dmsRub,
+								patientRub,
+								patientMethod: paymentMethod,
+								patientCashRub,
+								patientCardRub,
+								letterId: letter.id,
+								letterNumber: letter.letterNumber,
+								insurerName: letter.insurerName,
+							});
+						}}
+						className="dms-btn dms-btn-primary"
+						style={{
+							minHeight: "44px",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "8px",
+							fontWeight: 700,
+						}}
+						data-testid="btn-apply-dms-split-to-checkout"
+					>
+						<Split size={16} />
+						<span>Перенести расчет в кассу (ДМС {kopecksToRubles(splitCalculation.dmsCoveredKopecks)} ₽ + Пациент {kopecksToRubles(splitCalculation.patientTotalKopecks)} ₽)</span>
+					</button>
+				</div>
+			)}
 				</>
 			)}
 		</div>

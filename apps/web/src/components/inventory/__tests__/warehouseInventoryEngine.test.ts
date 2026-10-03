@@ -536,13 +536,13 @@ describe("WarehouseInventoryAuditModal React Component Rendering", () => {
 			}),
 		);
 
-		assert.ok(markup.includes("Складская инвентаризация и FEFO"));
+		assert.ok(markup.includes("Складская инвентаризация и контроль сроков"));
 		assert.ok(markup.includes("Книжный остаток"));
 		assert.ok(markup.includes("Фактический остаток"));
-		assert.ok(markup.includes("Сальдо сверки (ИНВ-19)"));
-		assert.ok(markup.includes("Контроль FEFO"));
-		assert.ok(markup.includes("ИНВ-3"));
-		assert.ok(markup.includes("ИНВ-19"));
+		assert.ok(markup.includes("Сальдо сличительной сверки"));
+		assert.ok(markup.includes("Контроль сроков годности"));
+		assert.ok(markup.includes("Опись"));
+		assert.ok(markup.includes("Сличительная"));
 		assert.ok(markup.includes("Провести инвентаризацию"));
 	});
 

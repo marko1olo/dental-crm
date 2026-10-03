@@ -151,31 +151,31 @@ export function EmkDiaryProtocolSection({
 
 	return (
 		<div className="flex flex-col gap-4">
-			{/* 1-клик протоколы у кресла (Мандаты 8e, 8i, 8k, Touch ergonomics >= 44px) */}
-			<div className="flex flex-col gap-2 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,var(--paper))]">
-				<div className="flex items-center justify-between gap-2">
-					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<Sparkles size={14} className="text-amber-500" />
-						<span>1-клик клинические протоколы у кресла</span>
+			{/* 1-клик протоколы у кресла: глубоко спрятаны в свернутый спойлер (Мандаты 8c, 8e, 8x: чистый экран по умолчанию) */}
+			<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
+				<summary className="flex items-center justify-between p-2 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
+					<span className="font-bold flex items-center gap-1.5">
+						<Sparkles size={12} className="text-amber-500" />
+						<span>Экспресс-протоколы у кресла ({EXPRESS_PROTOCOLS.length})</span>
 					</span>
-					<span className="text-[11px] text-[var(--muted)]">Клинические стандарты лечения</span>
-				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+					<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+				</summary>
+				<div className="p-2 pt-1 border-t border-[var(--line)]/40 grid grid-cols-2 sm:grid-cols-5 gap-1.5">
 					{EXPRESS_PROTOCOLS.map((proto) => (
 						<button
 							key={proto.key}
 							type="button"
 							data-testid={`btn-emk-express-${proto.key}`}
 							onClick={() => handleApplyExpressProtocol(proto.key)}
-							className={`min-h-[44px] sm:min-h-[38px] px-2.5 py-1.5 rounded-md border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
+							className={`min-h-[36px] px-2 py-1 rounded-md border text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
 							title={`Заполнить полный SOAP: ${proto.label}`}
 						>
-							<span className="font-mono text-[11px] font-bold">{proto.code}</span>
-							<span className="truncate">{proto.shortName}</span>
+							<span className="font-mono text-[10px] font-bold">{proto.code}</span>
+							<span className="truncate text-[11px]">{proto.shortName}</span>
 						</button>
 					))}
 				</div>
-			</div>
+			</details>
 
 			{/* Диагноз */}
 			<div className="flex flex-col gap-2">
@@ -196,35 +196,44 @@ export function EmkDiaryProtocolSection({
 					className="w-full min-h-[60px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
-				{/* Быстрые чипы МКБ-10 с 1-клик SOAP генерацией (Мандаты 8e, 8i) */}
-				<div className="flex items-center gap-1.5 flex-wrap">
-					{icd10Chips.map((chip, idx) => (
-						<div
-							key={idx}
-							className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs hover:border-[var(--teal)] transition-all"
-						>
-							<button
-								type="button"
-								onClick={() => handleSelectIcd10(chip, false)}
-								className="px-2 py-0.5 text-[11px] font-medium text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer inline-flex items-center gap-1"
-								title={`${chip.label} (клик: диагноз + умное заполнение пустых разделов)`}
+				{/* Быстрые чипы МКБ-10: глубоко спрятаны в свернутый спойлер */}
+				<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
+					<summary className="flex items-center justify-between px-2 py-1 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
+						<span className="flex items-center gap-1">
+							<Sparkles size={11} className="text-[var(--teal,var(--brand-primary))]" />
+							<span>Шаблоны диагнозов МКБ-10 ({icd10Chips.length})</span>
+						</span>
+						<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+					</summary>
+					<div className="p-2 pt-1 border-t border-[var(--line)]/40 flex items-center gap-1.5 flex-wrap">
+						{icd10Chips.map((chip, idx) => (
+							<div
+								key={idx}
+								className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs hover:border-[var(--teal)] transition-all"
 							>
-								<span className="font-mono font-bold text-[var(--teal)]">{chip.code}</span>
-								<span className="max-w-[150px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
-							</button>
-							<button
-								type="button"
-								data-testid={`btn-auto-soap-${chip.code.replace(".", "_")}`}
-								onClick={() => handleSelectIcd10(chip, true)}
-								className="px-1.5 py-0.5 text-[10px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--muted)] border-l border-[var(--line)] cursor-pointer inline-flex items-center gap-0.5 transition-colors"
-								title={`Заполнить полный клинический SOAP-дневник для ${chip.code} в 1 клик`}
-							>
-								<Sparkles size={10} className="text-[var(--teal)]" />
-								<span>SOAP</span>
-							</button>
-						</div>
-					))}
-				</div>
+								<button
+									type="button"
+									onClick={() => handleSelectIcd10(chip, false)}
+									className="px-2 py-0.5 text-[11px] font-medium text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer inline-flex items-center gap-1"
+									title={`${chip.label} (клик: диагноз + умное заполнение пустых разделов)`}
+								>
+									<span className="font-mono font-bold text-[var(--teal)]">{chip.code}</span>
+									<span className="max-w-[150px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
+								</button>
+								<button
+									type="button"
+									data-testid={`btn-auto-soap-${chip.code.replace(".", "_")}`}
+									onClick={() => handleSelectIcd10(chip, true)}
+									className="px-1.5 py-0.5 text-[10px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--muted)] border-l border-[var(--line)] cursor-pointer inline-flex items-center gap-0.5 transition-colors"
+									title={`Заполнить полный клинический SOAP-дневник для ${chip.code} в 1 клик`}
+								>
+									<Sparkles size={10} className="text-[var(--teal)]" />
+									<span>SOAP</span>
+								</button>
+							</div>
+						))}
+					</div>
+				</details>
 			</div>
 
 			{/* Протокол лечения / Дневник */}
@@ -301,21 +310,30 @@ export function EmkDiaryProtocolSection({
 					className="w-full min-h-[80px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
-				{/* Быстрые чипы рекомендаций */}
-				<div className="flex items-center gap-1.5 flex-wrap">
-					{recommendationChips.map((chip, idx) => (
-						<button
-							key={idx}
-							type="button"
-							onClick={() => handleAddChip("recommendations", chip)}
-							className="px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1"
-							title={chip}
-						>
-							<PlusCircle size={10} className="text-[var(--muted)]" />
-							<span className="max-w-[220px] truncate">{chip}</span>
-						</button>
-					))}
-				</div>
+				{/* Быстрые шаблоны рекомендаций: глубоко спрятаны в свернутый спойлер */}
+				<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
+					<summary className="flex items-center justify-between px-2 py-1 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
+						<span className="flex items-center gap-1">
+							<Sparkles size={11} className="text-[var(--teal,var(--brand-primary))]" />
+							<span>Шаблоны рекомендаций ({recommendationChips.length})</span>
+						</span>
+						<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+					</summary>
+					<div className="p-2 pt-1 border-t border-[var(--line)]/40 flex items-center gap-1.5 flex-wrap">
+						{recommendationChips.map((chip, idx) => (
+							<button
+								key={idx}
+								type="button"
+								onClick={() => handleAddChip("recommendations", chip)}
+								className="px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1"
+								title={chip}
+							>
+								<PlusCircle size={10} className="text-[var(--muted)]" />
+								<span className="max-w-[220px] truncate">{chip}</span>
+							</button>
+						))}
+					</div>
+				</details>
 			</div>
 		</div>
 	);

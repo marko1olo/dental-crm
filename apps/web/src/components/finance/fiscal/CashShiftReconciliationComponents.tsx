@@ -58,7 +58,7 @@ export const CashShiftKpiCards: React.FC<CashShiftKpiCardsProps> = ({
 						<ShieldCheck className="w-4 h-4 text-teal-600" />
 						Чистая выручка
 					</span>
-					<span className="font-mono text-[10px]">Касса 54-ФЗ</span>
+					<span className="font-mono text-[10px]">Касса клиники</span>
 				</div>
 				<div
 					className="text-2xl font-black font-mono text-teal-700 dark:text-teal-300"
@@ -220,7 +220,7 @@ export const CashDrawerReconciliationPanel: React.FC<CashDrawerReconciliationPan
 							Расчетный остаток наличных в кассовом ящике
 						</h4>
 						<p className="text-xs text-[var(--muted)] m-0">
-							По данным фискальных операций 54-ФЗ за смену №{shiftNumber}
+							По данным кассовых операций за смену №{shiftNumber}
 						</p>
 					</div>
 				</div>
@@ -253,7 +253,7 @@ export const CashDrawerReconciliationPanel: React.FC<CashDrawerReconciliationPan
 							type="button"
 							onClick={onMatchClick}
 							className="min-h-[44px] px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-							title="Подставить расчетную сумму кассы 54-ФЗ"
+							title="Подставить расчетную сумму кассы"
 							data-testid="btn-match-drawer-cash"
 						>
 							<Check size={14} className="text-emerald-600" />
@@ -275,7 +275,7 @@ export const CashDrawerReconciliationPanel: React.FC<CashDrawerReconciliationPan
 						>
 							<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
 							<span>
-								Сверка успешна: фактическая сумма в ящике сходится копейка в копейку с данными 54-ФЗ ({expectedCashRub.toLocaleString("ru-RU")} ₽)
+								Сверка успешна: фактическая сумма в ящике сходится копейка в копейку с данными кассы ({expectedCashRub.toLocaleString("ru-RU")} ₽)
 							</span>
 						</div>
 					) : differenceRub > 0 ? (

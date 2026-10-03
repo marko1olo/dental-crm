@@ -324,4 +324,20 @@ describe("Domain 3: Family Wallet ACID Engine & FNS Tax Deduction (КНД 115115
 		assert.ok(fileName.endsWith(".xml"));
 		assert.ok(fileId.startsWith("UT_SVOPLMEDUSL_"));
 	});
+
+	it("1.4 Statutory Art. 219 Tax Code Deduction Limit (Code 1 max 150 000 руб. ceiling vs Code 2 uncapped)", () => {
+		// Code 1: 300 000 руб. (exceeds 150k limit)
+		// Code 2: 200 000 руб. (expensive, no limit)
+		const targetYear = 2024;
+		const code1Rub = 300000;
+		const code2Rub = 200000;
+		const limitRub = targetYear >= 2024 ? 150000 : 120000;
+		const code1Eligible = Math.min(code1Rub, limitRub);
+		const refund = Math.round((code1Eligible + code2Rub) * 0.13);
+
+		// Must be (150,000 + 200,000) * 0.13 = 350,000 * 0.13 = 45,500 ₽
+		// NOT (300,000 + 200,000) * 0.13 = 65,000 ₽!
+		assert.equal(code1Eligible, 150000);
+		assert.equal(refund, 45500);
+	});
 });

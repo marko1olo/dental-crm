@@ -67,16 +67,16 @@ export function EmkComplaintsSection({
 					className="w-full min-h-[80px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
-				{/* Быстрые шаблоны жалоб: упорядоченная 2-колоночная сетка */}
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]/50 p-2">
-					<div className="flex items-center justify-between gap-1 mb-1.5 px-0.5">
-						<span className="text-[11px] font-bold text-[var(--ink)] flex items-center gap-1">
+				{/* Быстрые шаблоны жалоб: глубоко спрятаны в свернутый спойлер (Мандаты 8c, 8e, 8x: чистый холст по умолчанию) */}
+				<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
+					<summary className="flex items-center justify-between px-2 py-1 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
+						<span className="flex items-center gap-1">
 							<Sparkles size={11} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>Шаблоны жалоб ({complaintChips.length})</span>
 						</span>
-						<span className="text-[10px] text-[var(--muted)] hidden sm:inline">1-клик вставка</span>
-					</div>
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+						<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+					</summary>
+					<div className="p-2 pt-1 border-t border-[var(--line)]/40 grid grid-cols-1 sm:grid-cols-2 gap-1">
 						{complaintChips.map((chip, idx) => (
 							<button
 								key={idx}
@@ -91,7 +91,7 @@ export function EmkComplaintsSection({
 							</button>
 						))}
 					</div>
-				</div>
+				</details>
 			</div>
 
 			{/* Анамнез */}
@@ -126,16 +126,16 @@ export function EmkComplaintsSection({
 					className="w-full min-h-[80px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
-				{/* Быстрые шаблоны анамнеза: упорядоченная 2-колоночная сетка */}
-				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]/50 p-2">
-					<div className="flex items-center justify-between gap-1 mb-1.5 px-0.5">
-						<span className="text-[11px] font-bold text-[var(--ink)] flex items-center gap-1">
+				{/* Быстрые шаблоны анамнеза: глубоко спрятаны в свернутый спойлер (Мандаты 8c, 8e, 8x: чистый холст по умолчанию) */}
+				<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
+					<summary className="flex items-center justify-between px-2 py-1 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
+						<span className="flex items-center gap-1">
 							<Sparkles size={11} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>Шаблоны анамнеза ({anamnesisChips.length})</span>
 						</span>
-						<span className="text-[10px] text-[var(--muted)] hidden sm:inline">1-клик вставка</span>
-					</div>
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+						<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+					</summary>
+					<div className="p-2 pt-1 border-t border-[var(--line)]/40 grid grid-cols-1 sm:grid-cols-2 gap-1">
 						{anamnesisChips.map((chip, idx) => (
 							<button
 								key={idx}
@@ -150,7 +150,7 @@ export function EmkComplaintsSection({
 							</button>
 						))}
 					</div>
-				</div>
+				</details>
 			</div>
 		</div>
 	);

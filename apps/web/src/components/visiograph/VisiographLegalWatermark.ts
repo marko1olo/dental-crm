@@ -379,7 +379,7 @@ export function renderLegalWatermarkBanners(
 	ctx.textAlign = "right";
 	ctx.fillStyle = "#4fd1c5";
 	ctx.fillText(
-		"Медицинская карта 043/у · Юридически заверенная цифровая копия",
+		"Медицинская карта пациента · Юридически заверенная цифровая копия",
 		width - 12,
 		footerY + footerHeight * 0.52,
 	);

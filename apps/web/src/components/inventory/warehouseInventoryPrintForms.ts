@@ -11,6 +11,7 @@ import {
 	kopecksToRubles,
 	calculateInventoryAuditTotals,
 } from "./warehouseInventoryEngine.js";
+import { generateCanonicalTorg16Html } from "@dental/shared";
 
 export function exportInventoryToCsv(doc: WarehouseInventoryAuditDocument): string {
 	const header = [
@@ -397,102 +398,37 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 }
 
 export function generateTorg16Html(act: WarehouseTorg16WriteoffAct): string {
-	const rows = act.items.map((it, idx) => `
-    <tr>
-      <td style="text-align: center;">${idx + 1}</td>
-      <td>${it.nameRu}</td>
-      <td style="text-align: center;">${it.sku}</td>
-      <td style="text-align: center;">${it.batchNumber}</td>
-      <td style="text-align: center;">${it.expiryDate}</td>
-      <td style="text-align: center;">${it.unitRu}</td>
-      <td style="text-align: right;">${it.quantity}</td>
-      <td style="text-align: right;">${kopecksToRubles(it.unitCostKopecks).toFixed(2)}</td>
-      <td style="text-align: right; font-weight: bold;">${it.totalCostRubles.toFixed(2)}</td>
-      <td>${it.defectDescriptionRu}</td>
-    </tr>`).join("");
-
-	const commissionSigns = act.commission.map((c) => `
-    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-      <span>${c.position}:</span>
-      <span style="border-bottom: 1px solid #000; width: 200px; display: inline-block;">&nbsp;</span>
-      <span style="font-weight: bold;">/ ${c.fullName} /</span>
-    </div>`).join("");
-
-	return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>ТОРГ-16: ${act.actNumber}</title>
-  <style>
-    body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.2; color: #000; padding: 20px; }
-    h2, h3 { text-align: center; margin: 4px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 12px; font-size: 10pt; }
-    th, td { border: 1px solid #000; padding: 4px; }
-    th { background: #f0f0f0; text-align: center; }
-    .header-box { display: flex; justify-content: space-between; margin-bottom: 12px; }
-  </style>
-</head>
-<body>
-  <div style="text-align: right; font-size: 9pt;">
-    Унифицированная форма № ТОРГ-16<br>
-    Утверждена постановлением Госкомстата РФ от 25.12.1998 № 132<br>
-    Код по ОКУД <b>0330216</b>
-  </div>
-  <div class="header-box">
-    <div>
-      <b>Организация:</b> ${act.organizationNameRu} (ОКПО: ${act.organizationOkpo}, ИНН: ${act.organizationInn})<br>
-      <b>Склад:</b> ${act.warehouseNameRu}<br>
-      <b>МОЛ:</b> ${act.molPosition} ${act.molFullName}
-    </div>
-    <div>
-      <b>Акт №:</b> ${act.actNumber}<br>
-      <b>Дата:</b> ${act.actDate}<br>
-      <b>Основание:</b> Опись ${act.inventoryDocNumber}
-    </div>
-  </div>
-
-  <h2>АКТ О СПИСАНИИ ТОВАРОВ</h2>
-  <h3>№ ${act.actNumber} от ${act.actDate}</h3>
-
-  <p><b>Причина списания:</b> ${act.reasonRu}</p>
-
-  <table>
-    <thead>
-      <tr>
-        <th>№</th>
-        <th>Наименование ТМЦ</th>
-        <th>Артикул</th>
-        <th>Партия (LOT)</th>
-        <th>Срок годности</th>
-        <th>Ед.</th>
-        <th>Кол-во</th>
-        <th>Цена (руб.)</th>
-        <th>Сумма (руб.)</th>
-        <th>Причина списания</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows}
-      <tr style="font-weight: bold; background: #fafafa;">
-        <td colspan="6" style="text-align: right;">ВСЕГО ПО АКТУ:</td>
-        <td style="text-align: right;">${act.totalQuantity}</td>
-        <td>&nbsp;</td>
-        <td style="text-align: right;">${act.totalCostRubles.toFixed(2)}</td>
-        <td>&nbsp;</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div style="margin-top: 10px; font-size: 10.5pt;">
-    <b>Итого сумма списания прописью:</b> ${numberToRussianWordsKopecks(act.totalCostKopecks)}
-  </div>
-
-  <div style="margin-top: 16px;">
-    <h4>Члены комиссии:</h4>
-    ${commissionSigns}
-  </div>
-</body>
-</html>`;
+	return generateCanonicalTorg16Html({
+		actNumber: act.actNumber,
+		actDate: act.actDate,
+		inventoryDocNumber: act.inventoryDocNumber,
+		organizationNameRu: act.organizationNameRu,
+		organizationOkpo: act.organizationOkpo,
+		organizationInn: act.organizationInn,
+		warehouseNameRu: act.warehouseNameRu,
+		molFullName: act.molFullName,
+		molPosition: act.molPosition,
+		reasonRu: act.reasonRu,
+		commission: act.commission,
+		items: act.items.map((it, idx) => ({
+			itemIndex: idx + 1,
+			sku: it.sku,
+			nameRu: it.nameRu,
+			unitRu: it.unitRu,
+			okeiCode: it.okeiCode,
+			batchNumber: it.batchNumber,
+			expiryDate: it.expiryDate,
+			quantity: it.quantity,
+			unitCostKopecks: it.unitCostKopecks,
+			totalCostKopecks: it.totalCostKopecks,
+			totalCostRubles: it.totalCostRubles,
+			defectDescriptionRu: it.defectDescriptionRu,
+		})),
+		totalQuantity: act.totalQuantity,
+		totalCostKopecks: act.totalCostKopecks,
+		totalCostRubles: act.totalCostRubles,
+		totalCostWordsRu: numberToRussianWordsKopecks(act.totalCostKopecks),
+	});
 }
 
 // ---------------------------------------------------------------------------

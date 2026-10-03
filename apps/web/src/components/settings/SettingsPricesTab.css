@@ -645,3 +645,148 @@
 		min-width: 44px !important;
 	}
 }
+
+/* Tabular Excel & CSV Import Studio */
+.pricelist-dropzone-active {
+	border-color: var(--teal) !important;
+	background: rgba(13, 148, 136, 0.05) !important;
+}
+
+.pricelist-vendor-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	color: var(--teal);
+	border: 1px solid var(--teal);
+}
+
+.pricelist-collision-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 12px 0;
+	padding: 10px 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+.pricelist-collision-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.pricelist-collision-option input[type="radio"] {
+	accent-color: var(--teal);
+}
+
+.pricelist-preview-container {
+	margin-top: 16px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	overflow: hidden;
+	background: var(--paper);
+}
+
+.pricelist-preview-table-wrapper {
+	max-height: 420px;
+	overflow-x: auto;
+	overflow-y: auto;
+}
+
+.pricelist-preview-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12.5px;
+	text-align: left;
+}
+
+.pricelist-preview-table th {
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-weight: 600;
+	padding: 8px 10px;
+	border-bottom: 2px solid var(--line);
+	border-right: 1px solid var(--line);
+	white-space: nowrap;
+}
+
+.pricelist-preview-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--line);
+	border-right: 1px solid var(--line);
+	color: var(--ink);
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pricelist-preview-table tr:hover td {
+	background: rgba(13, 148, 136, 0.04);
+}
+
+.pricelist-mapping-select {
+	width: 100%;
+	padding: 4px 6px;
+	font-size: 12px;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	background: var(--paper);
+	color: var(--ink);
+	margin-top: 4px;
+}
+
+.pricelist-error-box {
+	margin-top: 12px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.3);
+	color: var(--ink);
+}
+
+.pricelist-error-box h4 {
+	margin: 0 0 6px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #ef4444;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pricelist-error-list {
+	margin: 0;
+	padding-left: 20px;
+	font-size: 12px;
+	max-height: 120px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pricelist-progress-bar-container {
+	width: 100%;
+	height: 6px;
+	background: var(--line);
+	border-radius: 3px;
+	overflow: hidden;
+	margin: 12px 0;
+}
+
+.pricelist-progress-bar-fill {
+	height: 100%;
+	background: var(--teal);
+	transition: width 0.3s ease;
+}

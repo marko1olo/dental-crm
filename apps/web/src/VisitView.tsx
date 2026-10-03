@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 import {
 	AlertOctagon,
+	AlertTriangle,
 	Check,
 	CheckCircle2,
 	Clock,
@@ -232,7 +233,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const handleFinishVisitAction = useCallback(async () => {
 		if (typeof updateVisitNoteField === "function") {
 			if (!visitNoteForm?.diagnosis) updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
-			if (!visitNoteForm?.treatmentPlan) updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Санация.");
+			if (!visitNoteForm?.treatmentPlan) updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Полость рта здорова, гигиена удовлетворительная.");
 			if (!visitNoteForm?.complaint) updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");
 			if (!visitNoteForm?.anamnesis) updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
 			if (!visitNoteForm?.objectiveStatus) updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
@@ -416,16 +417,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 							</button>
 
-							{/* Экстренная аптечка */}
+							{/* Экстренная аптечка (тихий служебный доступ) */}
 							<button
 								type="button"
 								onClick={() => setIsEmergencyModalOpen(true)}
 								data-testid="btn-visit-emergency-rescue"
-								className="!hidden sm:!inline-flex secondary-button min-h-[32px] h-8 px-2 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 cursor-pointer shrink-0 rounded-lg items-center gap-1"
-								title="Экстренная помощь"
+								className="hidden 2xl:inline-flex secondary-button min-h-[32px] h-8 px-2 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line)] hover:border-rose-300 cursor-pointer shrink-0 rounded-lg items-center gap-1"
+								title="Экстренная аптечка анти-шок"
 							>
-								<AlertOctagon size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-								<span className="hidden xl:inline">Аптечка</span>
+								<AlertTriangle size={13} className="text-amber-500 shrink-0" />
+								<span>Аптечка</span>
 							</button>
 
 							{/* Кнопка «Завершить приём» — ВТОРИЧНОЕ ДЕЙСТВИЕ В ШАПКЕ (ОСНОВНОЕ В ЛИПКОМ ФУТЕРЕ) */}

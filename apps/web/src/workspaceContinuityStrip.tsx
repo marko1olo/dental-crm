@@ -50,6 +50,7 @@ export function WorkspaceContinuityStrip({
 	const effectiveConnected = networkState
 		? (networkState.isOnline || networkState.isLan)
 		: isOnline;
+	const effectiveOnline = networkState ? networkState.isOnline : isOnline;
 	const isPureOffline = !effectiveConnected;
 	const isLanOnly = isLan && !networkState?.isOnline;
 	const totalPending =

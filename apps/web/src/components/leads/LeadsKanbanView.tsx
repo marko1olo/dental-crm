@@ -12,7 +12,7 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { ExpandedColumnFocusModal } from "./ExpandedColumnFocusModal";
 import { LeadCard } from "./LeadCard";
-import { LeadConvertModal } from "./LeadConvertModal";
+import { LeadConvertModal, type LeadConvertSubmitOptions } from "./LeadConvertModal";
 import { LeadFormModal } from "./LeadFormModal";
 import { LeadsKanbanHeader } from "./LeadsKanbanHeader";
 import {
@@ -344,12 +344,7 @@ export function LeadsKanbanView() {
 
 	const handleConvertSubmit = async (
 		e: React.FormEvent,
-		options?: {
-			consentMedical: boolean;
-			consentMarketing: boolean;
-			reason?: string;
-			comment?: string;
-		},
+		options?: LeadConvertSubmitOptions,
 	) => {
 		e.preventDefault();
 		if (!convertingLeadId || isBooking) return;
@@ -386,7 +381,7 @@ export function LeadsKanbanView() {
 			const sourceLabel = activeLead?.source ? ` (источник: ${activeLead.source})` : "";
 			const consentLabel = options?.consentMarketing
 				? " [рассылки: разрешены]"
-				: " [152-ФЗ: без рекламы]";
+				: " [рассылки: отключены]";
 
 			const successMsg = activeLead?.existingPatient
 				? `Обращение записано на прием к постоянному пациенту (${activeLead.existingPatient.fullName})${sourceLabel}${consentLabel}`

@@ -168,4 +168,120 @@ describe("EzDent-i 2D X-Ray & VisioGraphy Workstation — Clean Architecture & E
 			assert.equal(formatRadiationDap(0), "0,000 dGy*Cm^2[DAP]");
 		});
 	});
+
+	describe("Red Team Inquisitor Verification: Window 1 (2D Image View & Fullscreen HUD)", () => {
+		const resolveSrcFile = async (relPath: string) => {
+			const fs = await import("node:fs");
+			const path = await import("node:path");
+			const cwdPath = path.resolve(process.cwd(), relPath);
+			if (fs.existsSync(cwdPath)) return cwdPath;
+			return path.resolve(process.cwd(), relPath.replace(/^apps\/web\//, ""));
+		};
+
+		it("proves kV, mA, exposure time and radiation alerts are strictly purged from Clinical HUD", async () => {
+			const fs = await import("node:fs");
+			const hudCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/radiology/RadiologyClinicalHud.tsx"),
+				"utf8",
+			);
+
+			// Doctor is NOT a physicist! Zero kV, mA, exposureSec props or render labels
+			assert.ok(!hudCode.includes("voltageKv"), "voltageKv must not exist in RadiologyClinicalHud");
+			assert.ok(!hudCode.includes("currentMa"), "currentMa must not exist in RadiologyClinicalHud");
+			assert.ok(!hudCode.includes("exposureSec"), "exposureSec must not exist in RadiologyClinicalHud");
+			assert.ok(!hudCode.includes("dapDoseDgyCm2"), "dapDoseDgyCm2 must not exist in RadiologyClinicalHud");
+			assert.ok(!hudCode.includes("effectiveDoseMicrosv"), "effectiveDoseMicrosv must not exist in RadiologyClinicalHud");
+			assert.ok(!hudCode.includes("ShieldCheck"), "ShieldCheck radiation alerts must not exist in RadiologyClinicalHud");
+		});
+
+		it("proves SensorStudyViewer hides toolbars in fullscreen giving 100% viewport to radiograph", async () => {
+			const fs = await import("node:fs");
+			const viewerCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/radiology/SensorStudyViewer.tsx"),
+				"utf8",
+			);
+
+			// Check that top toolbar and filmstrip dock are conditionally hidden when isFullscreen is true
+			assert.ok(
+				viewerCode.includes("!isFullscreen && (") && viewerCode.includes("sensor-viewer-top-toolbar"),
+				"sensor-viewer-top-toolbar must be hidden in fullscreen mode",
+			);
+			assert.ok(
+				viewerCode.includes("!isFullscreen && (") && viewerCode.includes("<RadiologyFilmstripDock"),
+				"RadiologyFilmstripDock must be hidden in fullscreen mode",
+			);
+		});
+
+		it("proves convolution filter limit is expanded to >= 2600px for full RVG sensor resolution", async () => {
+			const fs = await import("node:fs");
+			const viewerCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/radiology/SensorStudyViewer.tsx"),
+				"utf8",
+			);
+
+			assert.ok(
+				viewerCode.includes("2600"),
+				"Convolution filter limit must support high-res RVG sensors up to 2600px",
+			);
+			assert.ok(
+				!viewerCode.includes("img.width <= 1500"),
+				"Obsolete 1500px filter cutoff must be removed",
+			);
+		});
+
+		it("proves RadiologyFilmstripDock is integrated in VisiographAnalyzer for 1-click chairside switching", async () => {
+			const fs = await import("node:fs");
+			const visioCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/imaging/VisiographAnalyzer.tsx"),
+				"utf8",
+			);
+
+			assert.ok(
+				visioCode.includes("RadiologyFilmstripDock"),
+				"RadiologyFilmstripDock must be imported and rendered in VisiographAnalyzer",
+			);
+			assert.ok(
+				visioCode.includes("filmstripItems"),
+				"filmstripItems must be mapped from scanHistory in VisiographAnalyzer",
+			);
+		});
+
+		it("proves RadiologyCalibratedScaleRuler is mounted on VisiographViewport dominant canvas", async () => {
+			const fs = await import("node:fs");
+			const viewportCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/imaging/VisiographViewport.tsx"),
+				"utf8",
+			);
+
+			assert.ok(
+				viewportCode.includes("RadiologyCalibratedScaleRuler"),
+				"RadiologyCalibratedScaleRuler must be mounted in VisiographViewport",
+			);
+			assert.ok(
+				viewportCode.includes("targetLengthMm={5.0}"),
+				"5 mm calibrated target length must be specified",
+			);
+		});
+
+		it("proves VisiographAnalyzer integrates EzDent-i 2D HUD button and SensorStudyViewer modal", async () => {
+			const fs = await import("node:fs");
+			const visioCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/imaging/VisiographAnalyzer.tsx"),
+				"utf8",
+			);
+
+			assert.ok(
+				visioCode.includes("btn-open-ezdent-sensor-viewer"),
+				"btn-open-ezdent-sensor-viewer must be present in VisiographAnalyzer",
+			);
+			assert.ok(
+				visioCode.includes("SensorStudyViewer"),
+				"SensorStudyViewer modal must be integrated in VisiographAnalyzer",
+			);
+			assert.ok(
+				visioCode.includes("isSensorViewerOpen"),
+				"isSensorViewerOpen state must be controlled in VisiographAnalyzer",
+			);
+		});
+	});
 });

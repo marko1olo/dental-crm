@@ -2,6 +2,7 @@ import {
 	calculateAapEfpStagingAndGrading,
 	calculateClinicalAttachmentLevel,
 	calculateOlearyFromPerioTeeth,
+	calculatePerioDynamics,
 	calculatePerioIndices,
 	calculatePsrSextants,
 	createDefaultPerioTeeth,
@@ -10,6 +11,7 @@ import {
 	isFurcationEligibleTooth,
 	PERIO_SITE_KEYS,
 	type PerioChartSummary,
+	type PerioDynamicsSummary,
 	type PerioSiteKey,
 	type PerioToothRecord,
 	type ProbingStep,
@@ -36,11 +38,14 @@ import {
 	dispatchPresetSideEffects,
 	generatePerioProtocolText,
 } from "./perioPresets";
+import { usePerioDynamics } from "./usePerioDynamics";
 import { usePerioKeyboardProbing } from "./usePerioKeyboardProbing";
 
 export interface UsePerioChartLogicOptions {
 	readonly initialTeeth?: readonly PerioToothRecord[] | undefined;
 	readonly patientId?: string | undefined;
+	readonly previousSummary?: PerioChartSummary | null | undefined;
+	readonly previousRecordedAt?: string | null | undefined;
 	readonly onChange?:
 		| ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void)
 		| undefined;
@@ -54,6 +59,8 @@ export interface UsePerioChartLogicOptions {
 export function usePerioChartLogic({
 	initialTeeth,
 	patientId,
+	previousSummary,
+	previousRecordedAt,
 	onChange,
 	onInsertToProtocol,
 	readOnly = false,
@@ -162,6 +169,14 @@ export function usePerioChartLogic({
 	const probingSequence = useMemo<ProbingStep[]>(() => {
 		return generateFullMouthProbingSequence(teeth);
 	}, [teeth]);
+
+	// ─── Historical Snapshots & Visit Dynamics ("Было / Стало") ──────────────
+	const { dynamics, historicalSnapshots } = usePerioDynamics({
+		patientId,
+		summary,
+		previousSummary,
+		previousRecordedAt,
+	});
 
 	// Broadcast change upward
 	useEffect(() => {
@@ -562,8 +577,16 @@ export function usePerioChartLogic({
 
 	// ─── Protocol Generation & Clipboard Export ──────────────────────────────
 	const generateProtocolText = useCallback((): string => {
-		return generatePerioProtocolText(teeth, summary, doctorName ?? undefined);
-	}, [teeth, summary, doctorName]);
+		const customNotes = dynamics.hasComparison
+			? dynamics.form043DynamicsTextRu
+			: undefined;
+		return generatePerioProtocolText(
+			teeth,
+			summary,
+			doctorName ?? undefined,
+			customNotes,
+		);
+	}, [teeth, summary, doctorName, dynamics]);
 
 	const handleInsertToProtocol = useCallback(() => {
 		const text = generateProtocolText();
@@ -601,7 +624,7 @@ export function usePerioChartLogic({
 		setInsertStatus(true);
 		setTimeout(() => setInsertStatus(false), 2500);
 		showToast(
-			"Протокол пародонтограммы успешно добавлен в дневник 043/у",
+			"Протокол пародонтограммы успешно добавлен в дневник приёма",
 			"success",
 			4000,
 		);
@@ -614,7 +637,7 @@ export function usePerioChartLogic({
 			setCopyStatus(true);
 			setTimeout(() => setCopyStatus(false), 2000);
 			showToast(
-				"Полный текст пародонтограммы 043/у скопирован",
+				"Полный текст пародонтограммы скопирован",
 				"success",
 				3000,
 			);
@@ -679,5 +702,7 @@ export function usePerioChartLogic({
 		generateProtocolText,
 		handleInsertToProtocol,
 		handleCopyProtocol,
+		dynamics,
+		historicalSnapshots,
 	};
 }

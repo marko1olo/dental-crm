@@ -14,6 +14,7 @@ import {
 	ChevronRight,
 	Clock,
 	FileText,
+	Filter,
 	Gift,
 	MoreHorizontal,
 	Phone,
@@ -46,6 +47,11 @@ import { PatientAdministrativeForm } from "./components/patients/PatientAdminist
 import { PatientSearchAutocomplete } from "./components/patients/PatientSearchAutocomplete";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
+import {
+	RadiologyPatientSearchModal,
+	DEFAULT_TACTILE_FILTERS,
+	type RadiologyTactileFilterState,
+} from "./components/radiology/RadiologyPatientSearchModal";
 
 const LoyaltyProgramModal = lazy(() =>
 	import("./components/loyalty/program/LoyaltyProgramModal").then((module) => ({
@@ -267,7 +273,7 @@ export function executeOpenPatientVisitAutonomy({
 }) {
 	if (!selectedPatient) {
 		showToastFn(
-			"Выберите пациента из списка слева для открытия приёма 043/у",
+			"Выберите пациента из списка слева для начала приёма",
 			"info",
 		);
 		return { executed: false, reason: "no_patient" as const };
@@ -391,6 +397,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
+	const [showTactileSearch, setShowTactileSearch] = useState(false);
+	const [tactileFilters, setTactileFilters] = useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
 	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] =
 		useState(false);
 	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">(
@@ -830,6 +838,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				</div>
 
 				<div className="patients-header-actions shrink-0">
+					<button
+						type="button"
+						className="secondary-button shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[#2E8B57]/40 text-[#2E8B57] bg-[#2E8B57]/10 hover:bg-[#2E8B57]/20"
+						onClick={() => setShowTactileSearch(true)}
+						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+						data-testid="btn-patients-tactile-search"
+					>
+						<Filter size={14} aria-hidden="true" className="shrink-0" />
+						<span className="whitespace-nowrap truncate">Матрица поиска (Снимок 19)</span>
+					</button>
+
 					<button
 						type="button"
 						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-medium inline-flex items-center justify-center cursor-pointer transition-all select-none`}
@@ -2247,7 +2266,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								? { patientName: patientCoreDraft.fullName }
 								: {})}
 						{...(selectedPatient?.id
-							? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
+							? { medicalCardNumber: `МК-${selectedPatient.id.slice(0, 8).toUpperCase()}` }
 							: {})}
 					/>
 				</Suspense>
@@ -2270,6 +2289,27 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					/>
 				</Suspense>
 			)}
+
+			{/* Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19) */}
+			{showTactileSearch && (
+				<RadiologyPatientSearchModal
+					isOpen={showTactileSearch}
+					onClose={() => setShowTactileSearch(false)}
+					initialFilters={tactileFilters}
+					onApply={(filters) => {
+						setTactileFilters(filters);
+						if (filters.query !== undefined) {
+							handleSearchChange(filters.query);
+						}
+					}}
+					onReset={() => {
+						setTactileFilters(DEFAULT_TACTILE_FILTERS);
+						handleSearchChange("");
+					}}
+				/>
+			)}
 		</div>
 	);
 }
+
+export default PatientsView;

@@ -1,6 +1,9 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import {
+	applyChamferCornerCutToImageData,
+	applyEmboss45ToImageData,
+	applyHighBoostToImageData,
 	applyUnsharpMaskToImageData,
 	buildVisiographLUT,
 	DEFAULT_VISIOGRAPH_IMAGE_PARAMS,
@@ -141,7 +144,84 @@ describe("Visiograph Image Processing & Real-Time Filters", () => {
 		assert.strictEqual(buffer[idxBefore + 3], 255, "Alpha must stay 255");
 	});
 
-	test("processVisiographImageData processes complete buffer", () => {
+	test("applyUnsharpMaskToImageData applies Noise Coring to suppress subtle sensor noise", () => {
+		const width = 3;
+		const height = 3;
+		const buffer = new Uint8ClampedArray(width * height * 4);
+
+		// Sub-threshold noise: all neighbors 100, center 102 (difference 2 <= 5)
+		buffer.fill(100);
+		const centerIdx = (1 * width + 1) * 4;
+		buffer[centerIdx] = 102;
+		buffer[centerIdx + 1] = 102;
+		buffer[centerIdx + 2] = 102;
+		buffer[centerIdx + 3] = 255;
+
+		const fakeImg = { width, height, data: buffer, colorSpace: "srgb" as PredefinedColorSpace };
+		applyUnsharpMaskToImageData(fakeImg as unknown as ImageData, 80);
+
+		// Under coring threshold (5), center pixel should be preserved without noise boosting
+		assert.strictEqual(buffer[centerIdx], 102, "Noise below threshold should be cored out");
+	});
+
+	test("applyEmboss45ToImageData generates 128 baseline on flat areas and highlights relief edges", () => {
+		const width = 5;
+		const height = 5;
+		const buffer = new Uint8ClampedArray(width * height * 4);
+		buffer.fill(150); // Uniform gray
+		for (let i = 3; i < buffer.length; i += 4) buffer[i] = 255;
+
+		const fakeImg = { width, height, data: buffer, colorSpace: "srgb" as PredefinedColorSpace };
+		applyEmboss45ToImageData(fakeImg as unknown as ImageData);
+
+		// Center pixel in flat area must evaluate to 128
+		const centerIdx = (2 * width + 2) * 4;
+		assert.strictEqual(buffer[centerIdx], 128, "Flat regions must produce neutral 128 relief");
+		assert.strictEqual(buffer[centerIdx + 3], 255, "Alpha channel preserved");
+	});
+
+	test("applyHighBoostToImageData sharply amplifies high frequency dental structures", () => {
+		const width = 3;
+		const height = 3;
+		const buffer = new Uint8ClampedArray(width * height * 4);
+		buffer.fill(100); // Background trabeculae 100
+		for (let i = 3; i < buffer.length; i += 4) buffer[i] = 255;
+
+		// Apex/canal high frequency impulse: center = 150
+		const centerIdx = (1 * width + 1) * 4;
+		buffer[centerIdx] = 150;
+		buffer[centerIdx + 1] = 150;
+		buffer[centerIdx + 2] = 150;
+
+		const fakeImg = { width, height, data: buffer, colorSpace: "srgb" as PredefinedColorSpace };
+		applyHighBoostToImageData(fakeImg as unknown as ImageData);
+
+		// High-Boost 13.0 kernel pushes 150 with neighbors 100 to 255
+		assert.strictEqual(buffer[centerIdx], 255, "Apical detail must be boosted to maximum brightness");
+	});
+
+	test("applyChamferCornerCutToImageData masks beveled sensor corners", () => {
+		const width = 10;
+		const height = 10;
+		const buffer = new Uint8ClampedArray(width * height * 4);
+		buffer.fill(200); // White sensor background
+		for (let i = 3; i < buffer.length; i += 4) buffer[i] = 255;
+
+		const fakeImg = { width, height, data: buffer, colorSpace: "srgb" as PredefinedColorSpace };
+		// Chamfer cut with 4px cut distance
+		applyChamferCornerCutToImageData(fakeImg as unknown as ImageData, 4);
+
+		// Bottom-left pixel (x=0, y=9): x + (height - 1 - y) = 0 + (9 - 9) = 0 < 4 -> should be black 0
+		const blIdx = (9 * width + 0) * 4;
+		assert.strictEqual(buffer[blIdx], 0, "Beveled corner pixel must be cut to black");
+		assert.strictEqual(buffer[blIdx + 3], 255);
+
+		// Center pixel (x=5, y=5): 5 + 4 = 9 >= 4 -> should remain untouched 200
+		const centerIdx = (5 * width + 5) * 4;
+		assert.strictEqual(buffer[centerIdx], 200, "Central sensor active area must remain intact");
+	});
+
+	test("processVisiographImageData processes complete buffer with filters and negative LUT", () => {
 		const width = 2;
 		const height = 2;
 		const buffer = new Uint8ClampedArray([

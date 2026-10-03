@@ -31,6 +31,15 @@ import { HotFolderIntakeModal } from "../../radiology/HotFolderIntakeModal";
 import { StudyPatientBindControlModal } from "../../radiology/archive/StudyPatientBindControlModal";
 import { convertImagingStudyToRadiologyStudy } from "../../radiology/archive/radiologyStudyAdapter";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
+import { PatientTimeline } from "../PatientTimeline";
+import {
+	RadiologyPatientSearchModal,
+	matchesDatePreset,
+	matchesTactileModality,
+	DEFAULT_TACTILE_FILTERS,
+	type RadiologyTactileFilterState,
+} from "../../radiology/RadiologyPatientSearchModal";
+import { Filter } from "lucide-react";
 
 export interface PatientRadiologyTabProps {
 	readonly patientId?: string | null | undefined;
@@ -163,6 +172,11 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 	const [showHotFolder, setShowHotFolder] = useState<boolean>(false);
 	const [activeControlStudy, setActiveControlStudy] = useState<ImagingStudy | null>(null);
 
+	// Тактильный матричный поиск и хронологический таймлайн (EzDent-i Снимки 15, 16, 19)
+	const [showTactileSearch, setShowTactileSearch] = useState<boolean>(false);
+	const [tactileFilters, setTactileFilters] = useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
+	const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
+
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName);
 
 	// Загрузка исследований пациента
@@ -243,6 +257,33 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 		});
 	}, [studies]);
 
+	// Фильтрация тактильной матрицей (Снимок 19)
+	const filteredStudies = useMemo(() => {
+		return sortedStudies.filter((study) => {
+			if (!matchesTactileModality(study.kind || study.modality, tactileFilters.mode)) {
+				return false;
+			}
+			if (
+				!matchesDatePreset(
+					study.capturedAt || study.studyDate,
+					tactileFilters.datePreset,
+					tactileFilters.customDateFrom,
+					tactileFilters.customDateTo,
+				)
+			) {
+				return false;
+			}
+			if (tactileFilters.query) {
+				const q = tactileFilters.query.toLowerCase().trim();
+				const matchTitle = (study.title || "").toLowerCase().includes(q);
+				const matchTooth = (study.toothCode || "").includes(q);
+				const matchSeries = (study.seriesDescription || "").toLowerCase().includes(q);
+				if (!matchTitle && !matchTooth && !matchSeries) return false;
+			}
+			return true;
+		});
+	}, [sortedStudies, tactileFilters]);
+
 	return (
 		<div className="flex flex-col gap-4 text-[var(--ink)]" data-testid="patient-radiology-tab">
 			{/* Верхний командный тулбар */}
@@ -264,6 +305,18 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				<div className="flex items-center gap-2 flex-wrap">
 					{/* Фоновый статус автообнаружения DICOM/PACS */}
 					<DicomAutoDetectStatusBadge onStudyBound={loadPatientStudies} />
+
+					{/* Кнопка вызова тактильной матрицы поиска (EzDent-i Снимок 19) */}
+					<button
+						type="button"
+						onClick={() => setShowTactileSearch(true)}
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+						data-testid="btn-patient-tactile-search"
+						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+					>
+						<Filter className="w-3.5 h-3.5" />
+						<span>Матрица поиска (Снимок 19)</span>
+					</button>
 
 					{/* Кнопка загрузки КТ для пациента */}
 					<button
@@ -337,167 +390,17 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 					</button>
 				</div>
 			) : (
-				/* Список исследований пациента */
-				<div className="flex flex-col gap-2.5" data-testid="patient-radiology-list">
-					{sortedStudies.map((study) => {
-						const isCbct = study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1);
-
-						if (isCbct) {
-							return (
-								<CtStudyViewer
-									key={study.id}
-									studyId={study.id}
-									title={study.title}
-									patientId={patientId || study.patientId}
-									patientName={patientName || study.patientFullName}
-									modality={study.modality || "КЛКТ"}
-									manufacturer={study.seriesDescription || study.sourceName}
-									sliceCount={study.sliceCount}
-									dimensions={study.dimensions}
-									voxelSpacing={study.voxelSpacing}
-									capturedAt={study.capturedAt || study.studyDate}
-									bindingStatus={study.bindingStatus}
-									bindingConfidence={study.bindingConfidence}
-									onOpenStudio={() => handleOpen3d(study)}
-									onOpenControl={() => setActiveControlStudy(study)}
-								/>
-							);
-						}
-
-						return (
-							<div
-								key={study.id}
-								className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] hover:border-teal-500/50 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs"
-								data-testid={`patient-study-card-${study.id}`}
-							>
-								{/* Левый блок: инфо об исследовании */}
-								<div className="flex items-start gap-3 min-w-0 flex-1">
-									<div
-										className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-											isCbct
-												? "bg-blue-500/15 text-blue-500 border-blue-500/30"
-												: study.kind === "opg"
-													? "bg-purple-500/15 text-purple-500 border-purple-500/30"
-													: "bg-teal-500/15 text-teal-500 border-teal-500/30"
-										}`}
-									>
-										{isCbct ? (
-											<Box className="w-5 h-5" />
-										) : study.kind === "opg" ? (
-											<Scan className="w-5 h-5" />
-										) : (
-											<Layers className="w-5 h-5" />
-										)}
-									</div>
-
-									<div className="min-w-0 flex-1">
-										<div className="flex items-center gap-2 flex-wrap">
-											<h4 className="text-xs font-bold text-[var(--ink)] truncate">
-												{study.title}
-											</h4>
-											{study.toothCode && (
-												<span className="px-1.5 py-0.2 rounded text-[11px] font-mono font-bold bg-teal-500/20 text-teal-600 dark:text-teal-300 border border-teal-500/30">
-													Зуб #{study.toothCode}
-												</span>
-											)}
-										</div>
-
-										<div className="flex items-center gap-3 text-[11px] text-[var(--muted)] mt-1 flex-wrap">
-											<span>
-												Дата:{" "}
-												<strong className="text-[var(--ink)]">
-													{study.capturedAt
-														? new Date(study.capturedAt).toLocaleDateString("ru-RU", {
-																day: "2-digit",
-																month: "2-digit",
-																year: "numeric",
-																hour: "2-digit",
-																minute: "2-digit",
-															})
-														: study.studyDate || "—"}
-												</strong>
-											</span>
-											<span>Серия: {study.seriesDescription || study.sourceName}</span>
-											{study.sliceCount && (
-												<span className="font-semibold text-blue-600 dark:text-blue-400">
-													{study.sliceCount} срез. ({study.voxelSpacing || "0.2mm"})
-												</span>
-											)}
-										</div>
-
-										{/* Бейдж статуса привязки */}
-										<div className="flex items-center gap-2 mt-1.5 flex-wrap">
-											{study.bindingStatus === "manual_bound" ? (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-													<Check className="w-2.5 h-2.5" />
-													<span>Подтверждено врачом</span>
-												</span>
-											) : study.bindingStatus === "auto_bound" ? (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-													<Sparkles className="w-2.5 h-2.5" />
-													<span>Привязано по ФИО ({study.bindingConfidence || 98}%)</span>
-												</span>
-											) : (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40">
-													<AlertCircle className="w-2.5 h-2.5" />
-													<span>Требует контроля врача</span>
-												</span>
-											)}
-
-											{study.dicomPatientName && (
-												<span className="text-[10px] text-[var(--muted)] font-mono">
-													DICOM: {study.dicomPatientName}
-												</span>
-											)}
-										</div>
-									</div>
-								</div>
-
-								{/* Правый блок: 1-клик кнопки запуска */}
-								<div className="flex items-center gap-2 shrink-0 self-end sm:self-center flex-wrap">
-									{/* Контроль сопоставления */}
-									<button
-										type="button"
-										onClick={() => setActiveControlStudy(study)}
-										className="h-8 px-2.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 transition-colors inline-flex items-center gap-1 cursor-pointer shadow-2xs"
-										title="Проверить сопоставление с DICOM"
-										data-testid={`btn-patient-study-control-${study.id}`}
-									>
-										<Settings className="w-3.5 h-3.5 text-[var(--muted)]" />
-										<span>Контроль</span>
-									</button>
-
-									{/* 1-клик запуск 3D Студии */}
-									{isCbct ? (
-										<button
-											type="button"
-											onClick={() => handleOpen3d(study)}
-											className="h-8 px-3 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-500 text-white inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
-											data-testid={`btn-launch-3d-studio-${study.id}`}
-											title="1-клик запуск 3D КЛКТ Студии планирования имплантации"
-										>
-											<Box className="w-3.5 h-3.5" />
-											<span>3D КЛКТ Студия</span>
-										</button>
-									) : (
-										/* 1-клик запуск 2D вьюера для панорамы или RVG */
-										<button
-											type="button"
-											onClick={() => handleOpen2d(study)}
-											className="h-8 px-3 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-											data-testid={`btn-launch-viewer-${study.id}`}
-											title="Открыть снимок в просмотрщике"
-										>
-											<Eye className="w-3.5 h-3.5 text-teal-500" />
-											<span>
-												{study.kind === "opg" ? "Панорама ОПТГ" : "Визиограф & DICOM"}
-											</span>
-										</button>
-									)}
-								</div>
-							</div>
-						);
-					})}
+				/* Хронологический таймлайн исследований (EzDent-i Снимки 15, 16) */
+				<div className="flex flex-col gap-2.5 min-h-[460px]" data-testid="patient-radiology-list">
+					<PatientTimeline
+						studies={filteredStudies}
+						activeStudyId={activeStudyId || filteredStudies[0]?.id || null}
+						onSelectStudy={(study) => setActiveStudyId(study.id)}
+						onOpenStudio={handleOpen3d}
+						onOpenViewer={handleOpen2d}
+						onOpenControl={(study) => setActiveControlStudy(study)}
+						onOpenTactileSearch={() => setShowTactileSearch(true)}
+					/>
 				</div>
 			)}
 
@@ -550,6 +453,17 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 					onStudyUpdated={handleStudyUpdated}
 				/>
 			)}
+
+			{/* Тактильная матрица поиска EzDent-i (Снимок 19) */}
+			<RadiologyPatientSearchModal
+				isOpen={showTactileSearch}
+				onClose={() => setShowTactileSearch(false)}
+				initialFilters={tactileFilters}
+				onApply={(newFilters) => setTactileFilters(newFilters)}
+				onReset={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
+				totalStudiesCount={sortedStudies.length}
+				matchedCount={filteredStudies.length}
+			/>
 		</div>
 	);
 };

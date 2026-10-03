@@ -1,5 +1,5 @@
 import type React from "react";
-import { Camera, HardDrive, ShieldCheck, UploadCloud, X, Zap } from "lucide-react";
+import { Activity, Camera, CheckCircle2, HardDrive, Scan, ShieldCheck, UploadCloud, X, Zap } from "lucide-react";
 import type { SensorCaptureStatus } from "./directRvgTypes";
 
 export interface DirectRvgSensorItem {
@@ -7,6 +7,7 @@ export interface DirectRvgSensorItem {
 	name: string;
 	resolution: string;
 	pixelSpacing: number;
+	brandName?: string | undefined;
 }
 
 export interface DirectRvgSensorTelemetryHeaderProps {
@@ -20,11 +21,16 @@ export interface DirectRvgSensorTelemetryHeaderProps {
 	readonly selectedSensorModel: string;
 	readonly onSelectSensorModel: (modelId: string) => void;
 	readonly availableSensors: DirectRvgSensorItem[];
-	readonly radiationDoseText: string;
+	readonly radiationDoseText?: string;
 	readonly onTriggerCapture: () => void;
 	readonly uploadAction?: React.ReactNode;
 	readonly onUploadClick?: () => void;
+	readonly onAutoDetectSensor?: (() => void) | undefined;
+	readonly onTestSensorConnection?: (() => void) | undefined;
+	readonly isDetectingSensor?: boolean | undefined;
+	readonly sensorStatusMessage?: string | undefined;
 }
+
 
 /**
  * DirectRvgSensorTelemetryHeader
@@ -50,6 +56,10 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 	onTriggerCapture,
 	uploadAction,
 	onUploadClick,
+	onAutoDetectSensor,
+	onTestSensorConnection,
+	isDetectingSensor,
+	sensorStatusMessage,
 }) => {
 	return (
 		<>
@@ -111,21 +121,62 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 						<select
 							value={selectedSensorModel}
 							onChange={(e) => onSelectSensorModel(e.target.value)}
-							className="bg-transparent text-slate-200 border-none outline-none font-sans text-xs cursor-pointer max-w-[180px] truncate"
+							className="bg-transparent text-slate-200 border-none outline-none font-sans text-xs cursor-pointer max-w-[210px] truncate"
 							data-testid="rvg-sensor-device-select"
+							title="Выбор модели внутриротового визиографа"
 						>
 							{availableSensors.map((sensor) => (
 								<option key={sensor.id} value={sensor.id} className="bg-slate-900 text-slate-100">
-									{sensor.name} ({sensor.resolution})
+									{sensor.name} ({sensor.resolution} · {sensor.pixelSpacing} мм)
 								</option>
 							))}
 						</select>
 					</div>
 
-					<div className="rvg-telemetry-chip" title="Эффективная безопасная лучевая нагрузка">
-						<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-						<span>{radiationDoseText}</span>
-					</div>
+					{/* Auto-detect connected sensor button */}
+					{onAutoDetectSensor && (
+						<button
+							type="button"
+							onClick={onAutoDetectSensor}
+							disabled={isDetectingSensor}
+							className="rvg-trigger-btn rvg-trigger-btn-secondary"
+							data-testid="btn-rvg-auto-detect-sensor"
+							title="Автоматическое определение подключенного USB / TWAIN датчика визиографа"
+						>
+							<Scan className={`w-3.5 h-3.5 text-teal-300 ${isDetectingSensor ? "animate-spin" : ""}`} />
+							<span>{isDetectingSensor ? "Поиск..." : "Авто-детект сенсора"}</span>
+						</button>
+					)}
+
+					{/* Connection diagnostic test button */}
+					{onTestSensorConnection && (
+						<button
+							type="button"
+							onClick={onTestSensorConnection}
+							className="rvg-trigger-btn rvg-trigger-btn-secondary"
+							data-testid="btn-rvg-test-connection"
+							title="Проверить связь с датчиком и статус готовности (<20 мс)"
+						>
+							<Activity className="w-3.5 h-3.5 text-emerald-400" />
+							<span>Проверить связь</span>
+						</button>
+					)}
+
+					{/* Live Sensor Readiness Status Pill */}
+					{sensorStatusMessage ? (
+						<div className="rvg-telemetry-chip" title={sensorStatusMessage} data-testid="rvg-sensor-health-chip">
+							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+							<span className="truncate max-w-[230px]">{sensorStatusMessage}</span>
+						</div>
+					) : null}
+
+					{radiationDoseText ? (
+						<div className="rvg-telemetry-chip" title="Эффективная лучевая нагрузка">
+							<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+							<span>{radiationDoseText}</span>
+						</div>
+					) : null}
+
 
 					{/* Hardware RVG Exposure & Frame Capture Trigger */}
 					<button

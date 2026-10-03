@@ -464,14 +464,30 @@ export function allocateSplitPaymentAcrossItems(
 	const electronicShares = distributeTender(tenders.tag1081_electronicKopecks);
 	const advanceShares = distributeTender(tenders.tag1215_advanceOffsetKopecks);
 	const creditShares = distributeTender(tenders.tag1216_creditKopecks);
-	const counterShares = distributeTender(tenders.tag1217_counterProvisionKopecks);
+	const certTenderKop = validationResult.tenders.find((t) => t.kind === "certificate_or_bonus")?.amountKopecks ?? 0;
+	const dmsTenderKop = validationResult.tenders.find((t) => t.kind === "dms_insurance")?.amountKopecks ?? 0;
+
+	let certShares: number[];
+	let dmsShares: number[];
+
+	if (dmsTenderKop > 0 && certTenderKop === 0) {
+		dmsShares = distributeTender(tenders.tag1217_counterProvisionKopecks);
+		certShares = itemTotals.map(() => 0);
+	} else if (certTenderKop > 0 && dmsTenderKop === 0) {
+		certShares = distributeTender(tenders.tag1217_counterProvisionKopecks);
+		dmsShares = itemTotals.map(() => 0);
+	} else {
+		certShares = distributeTender(certTenderKop);
+		dmsShares = distributeTender(dmsTenderKop);
+	}
 
 	return itemTotals.map((entry, idx) => {
 		const cashK = cashShares[idx]!;
 		const elK = electronicShares[idx]!;
 		const advK = advanceShares[idx]!;
 		const credK = creditShares[idx]!;
-		const countK = counterShares[idx]!;
+		const certK = certShares[idx] ?? 0;
+		const dmsK = dmsShares[idx] ?? 0;
 
 		return {
 			itemId: entry.item.id,
@@ -484,8 +500,8 @@ export function allocateSplitPaymentAcrossItems(
 			advanceDepositKopecks: advK,
 			familyDepositKopecks: 0,
 			creditKopecks: credK,
-			certificateKopecks: countK,
-			dmsKopecks: 0,
+			certificateKopecks: certK,
+			dmsKopecks: dmsK,
 		};
 	});
 }

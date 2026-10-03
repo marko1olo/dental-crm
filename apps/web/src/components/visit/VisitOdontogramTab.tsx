@@ -126,9 +126,16 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 		};
 	}, [patientAge]);
 
-	const isPediatric = useMemo(() => {
-		return patientAge !== null ? patientAge < 12 : false;
+	const smartDentitionMode = useMemo<"adult" | "pediatric" | "mixed">(() => {
+		if (patientAge === null) return "adult";
+		if (patientAge < 6) return "pediatric";
+		if (patientAge < 12) return "mixed";
+		return "adult";
 	}, [patientAge]);
+
+	const isPediatric = useMemo(() => {
+		return smartDentitionMode !== "adult";
+	}, [smartDentitionMode]);
 
 	if (!activePatient?.id) {
 		return (
@@ -171,6 +178,7 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 				<OdontogramModule
 					patientId={activePatient.id}
 					pediatricMode={isPediatric}
+					dentitionMode={smartDentitionMode}
 				/>
 			</div>
 

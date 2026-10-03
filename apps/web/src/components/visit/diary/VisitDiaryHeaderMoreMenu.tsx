@@ -98,7 +98,7 @@ export function VisitDiaryHeaderMoreMenu({
 				className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
 			>
 				<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
-				<span>СЭМД ЕГИСЗ</span>
+				<span>Электронная медкарта (Госуслуги)</span>
 			</button>
 			<button
 				type="button"

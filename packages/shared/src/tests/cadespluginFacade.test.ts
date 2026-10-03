@@ -489,4 +489,45 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		assert.ok(stamped.includes("<strong>Лаборатория</strong>"));
 		assert.ok(stamped.includes("stamp-seal-circle"));
 	});
+
+	it("renders official 'ЧЕРНОВИК' draft stamp and simple electronic signature 'ПОДПИСАНО ВРАЧОМ' (Mandate 8e)", () => {
+		// 1. Проверка штампа черновика
+		const draftStamp = renderDigitalSignatureStampHtml({
+			signatureType: "draft",
+			certificateSubject: "Д-р Иванов И.И.",
+			signedAt: "2026-10-03T10:30:00.000Z",
+		});
+
+		assert.ok(draftStamp.includes("gost-stamp-draft"));
+		assert.ok(draftStamp.includes("ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР / ЧЕРНОВИК"));
+		assert.ok(draftStamp.includes("ПРИЁМ НЕ ЗАКРЫТ"));
+		assert.ok(draftStamp.includes("Д-р Иванов И.И."));
+
+		// 2. Проверка штампа простой электронной подписи врача (ПЭП)
+		const simpleStamp = renderDigitalSignatureStampHtml({
+			signatureType: "simple",
+			certificateSubject: "Врач-терапевт Кузнецова Е.А.",
+			certificateSerialNumber: "PEP-LOGIN-DOC-102",
+			signedAt: "2026-10-03T11:45:00.000Z",
+		});
+
+		assert.ok(simpleStamp.includes("gost-stamp-simple"));
+		assert.ok(simpleStamp.includes("ДОКУМЕНТ ПОДПИСАН ВРАЧОМ"));
+		assert.ok(simpleStamp.includes("ПРОСТАЯ ЭЛЕКТРОННАЯ ПОДПИСЬ"));
+		assert.ok(simpleStamp.includes("PEP-LOGIN-DOC-102"));
+		assert.ok(simpleStamp.includes("Кузнецова Е.А."));
+
+		// 3. Проверка инъекции в HTML форму
+		const sampleFormHtml = `
+			<div class="signature-row">
+				<div class="sig-box">
+					<p>Лечащий врач: ____________________ / Кузнецова Е.А. /</p>
+					<div class="sig-line"></div>
+				</div>
+			</div>
+		`;
+		const injected = injectVisualSignatureStampIntoHtml(sampleFormHtml, simpleStamp);
+		assert.ok(injected.includes("gost-stamp-simple"));
+		assert.ok(injected.includes("ДОКУМЕНТ ПОДПИСАН ВРАЧОМ"));
+	});
 });

@@ -1294,9 +1294,7 @@ export async function buildDocumentAuditFacts(
 		doctorCertSerial: document.doctorCertSerial ?? null,
 		doctorCertSubject: document.doctorCertSubject ?? null,
 		doctorSignedAt: document.doctorSignedAt
-			? (document.doctorSignedAt instanceof Date
-				? document.doctorSignedAt.toISOString()
-				: String(document.doctorSignedAt))
+			? String(document.doctorSignedAt)
 			: null,
 	});
 }

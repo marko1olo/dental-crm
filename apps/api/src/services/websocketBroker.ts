@@ -127,6 +127,7 @@ export interface StaffPresenceInfo {
 type ClientConn = {
 	ws: WebSocket;
 	organizationId: string;
+	branchId?: string | undefined;
 	patientId?: string | undefined;
 	isClinical?: boolean | undefined;
 	presence?: StaffPresenceInfo | undefined;
@@ -141,6 +142,7 @@ export const wsBroker = {
 		organizationId: string,
 		patientId?: string,
 		roleOrClinical?: boolean | string | null,
+		branchId?: string,
 	) {
 		let isClinical = false;
 		if (typeof roleOrClinical === "boolean") {
@@ -151,6 +153,7 @@ export const wsBroker = {
 		const conn: ClientConn = {
 			ws,
 			organizationId,
+			branchId,
 			isClinical,
 		};
 		if (patientId !== undefined) conn.patientId = patientId;
@@ -259,7 +262,11 @@ export const wsBroker = {
 		}
 		return result;
 	},
-	broadcastToOrganization(organizationId: string, message: object) {
+	broadcastToOrganization(
+		organizationId: string,
+		message: object,
+		branchId?: string,
+	) {
 		const rawData = JSON.stringify(message);
 		const isClinical = isClinicalWsEvent(message);
 		let sanitizedData: string | null = null;
@@ -271,6 +278,10 @@ export const wsBroker = {
 				continue;
 			}
 			if (client.organizationId === organizationId) {
+				// Branch-level isolation: if branchId is specified, only send to matching branch (or un-scoped client)
+				if (branchId && client.branchId && client.branchId !== branchId) {
+					continue;
+				}
 				if (client.isClinical) {
 					try {
 						client.ws.send(rawData, (err) => {
@@ -298,6 +309,9 @@ export const wsBroker = {
 				}
 			}
 		}
+	},
+	broadcastToBranch(organizationId: string, branchId: string, message: object) {
+		this.broadcastToOrganization(organizationId, message, branchId);
 	},
 	broadcastToPatient(
 		organizationId: string,

@@ -45,7 +45,7 @@ export function generateConsentPrintHtml(params: ConsentPrintParams): string {
   <style>
     @page {
       size: A4;
-      margin: 10mm 14mm 12mm 14mm;
+      margin: 12mm 10mm 12mm 20mm;
     }
     *, *::before, *::after {
       box-sizing: border-box;
@@ -270,6 +270,9 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 
 	const childName = isBlank ? "__________________________________________________" : (params.childName?.trim() || "__________________________________________________");
 	const childBirth = isBlank ? "«___» _________ _____ г." : (params.childBirthDate?.trim() || "«___» _________ _____ г.");
+	const childDoc = isBlank ? "свидетельство о рождении / паспорт: серия _______ № _________" : (params.childDocument?.trim() || "свидетельство о рождении / паспорт гражданина РФ");
+	const repBasis = isBlank ? "свидетельство о рождении / акт органа опеки / доверенность: ____________________" : (params.representativeBasis?.trim() || "свидетельство о рождении ребенка");
+	const accompanying = params.accompanyingPerson?.trim();
 	const docName = isBlank ? "__________________________________________________" : (params.doctorName?.trim() || "Детский врач-стоматолог клиники");
 
 	const scope = isBlank ? "____________________________________________________________________________________" : (params.interventionScope?.trim() || "Первичный детский осмотр, диагностика, адаптация, лечение временных/постоянных зубов");
@@ -289,7 +292,7 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
   <style>
     @page {
       size: A4;
-      margin: 10mm 14mm 12mm 14mm;
+      margin: 12mm 10mm 12mm 20mm;
     }
     *, *::before, *::after {
       box-sizing: border-box;
@@ -454,7 +457,8 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 
       <div class="parties-block">
         Я, <strong>${repName}</strong>, статус / родство: <strong>${repRel}</strong>, документ, удостоверяющий личность: ${repDoc}, телефон: ${repPhone},<br>
-        являясь законным представителем несовершеннолетнего: <strong>${childName}</strong>, дата рождения: ${childBirth},<br>
+        являясь законным представителем несовершеннолетнего: <strong>${childName}</strong>, дата рождения: ${childBirth}, документ ребенка: ${childDoc}, основание полномочий: ${repBasis},<br>
+        ${accompanying ? `сопровождающее лицо (по доверенности ст. 185 ГК РФ): <strong>${accompanying}</strong>,<br>` : ""}
         настоящим даю информированное добровольное согласие лечащему врачу <strong>${docName}</strong> на проведение стоматологического лечения в соответствии со статьей 20 Федерального закона от 21.11.2011 № 323-ФЗ.
       </div>
 

@@ -182,7 +182,7 @@ export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTo
 					<div className="flex flex-wrap items-center justify-between gap-2">
 						<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
 							<Calculator size={14} className="text-indigo-600 dark:text-indigo-400" />
-							<span>Ведомость Т-51: Расчёт сдельной зарплаты с вычетом ЗТЛ</span>
+							<span>Расчетная ведомость: Расчёт сдельной зарплаты с вычетом ЗТЛ</span>
 						</div>
 
 						<div className="flex items-center gap-1 text-[11px]">

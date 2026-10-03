@@ -1,6 +1,6 @@
 /**
  * DENTE CRM — CBCT Clinical Referral Print Template & Preset Library
- * Standards: Russian MoH Orders № 560n & 804n, SanPiN 2.6.1.1192-03, ALARA principle
+ * Standards: Clinical CBCT Referral Standards & Radiation Safety Protocols
  */
 
 import React from "react";
@@ -51,6 +51,7 @@ export interface RadiologyReferralModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly patient?: {
+		readonly id?: string | null | undefined;
 		readonly fullName?: string | null | undefined;
 		readonly birthDate?: string | null | undefined;
 		readonly phone?: string | null | undefined;
@@ -279,7 +280,7 @@ export function generateRadiologyReferralHtml(data: RadiologyReferralPrintData):
         ${fov.isHighResolution ? '<span class="fov-badge" style="background:#0284c7;">Ultra-High Res 75µm</span>' : ""}
         ${fov.isDualPhase ? '<span class="fov-badge" style="background:#7c3aed;">Двухфазный (Закрыт/Открыт)</span>' : ""}
       </div>
-      <div style="font-size:8.5pt; font-weight:bold; color:#0f766e;">Доза ~${fov.typicalDoseMicrosv} мкЗв (ALARA)</div>
+      <div style="font-size:8.5pt; font-weight:bold; color:#0f766e;">Доза ~${fov.typicalDoseMicrosv} мкЗв</div>
     </div>
     <div style="font-size:9pt; margin-bottom:4px;"><strong>Зона:</strong> ${fov.titleRu}</div>
     <div style="font-size:8.5pt; color:#334155;"><strong>Описание:</strong> ${fov.description}</div>
@@ -316,8 +317,8 @@ export function generateRadiologyReferralHtml(data: RadiologyReferralPrintData):
   </div>
 
   <div class="safety-box">
-    <strong>Радиационная безопасность (СанПиН 2.6.1.1192-03 / Приказ №560н):</strong><br>
-    [${isPregnancyExcluded ? "X" : " "}] Беременность исключена | [${hasMetallicArtifacts ? "X" : " "}] Металлоконструкции / коронки | Принцип ALARA соблюдён.
+    <strong>Параметры безопасности и лучевой защиты:</strong><br>
+    [${isPregnancyExcluded ? "X" : " "}] Беременность исключена | [${hasMetallicArtifacts ? "X" : " "}] Металлоконструкции / коронки | Лучевая защита пациента соблюдена.
     ${fov.isDualPhase ? ` | [${isTmjOpenClosedProtocol ? "X" : " "}] Исследование ВНЧС в 2 положениях (привычная окклюзия + открытый рот).` : ""}
   </div>
 
@@ -446,7 +447,7 @@ export const RadiologyReferralPreviewDetails: React.FC<RadiologyReferralPreviewD
 
 		{/* Safety Notice */}
 		<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] text-[var(--muted)] leading-snug">
-			<strong>Безопасность (СанПиН 2.6.1.1192-03):</strong> Исследование обосновано.
+			<strong>Лучевая безопасность:</strong> Исследование клинически обосновано.
 			Беременность {isPregnancyExcluded ? "исключена" : "требует согласования"}. Металлоконструкции: {hasMetallicArtifacts ? "есть" : "нет"}.
 		</div>
 

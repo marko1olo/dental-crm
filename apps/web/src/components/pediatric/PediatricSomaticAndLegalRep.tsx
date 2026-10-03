@@ -53,11 +53,24 @@ export const DEFAULT_LEGAL_REPRESENTATIVE: LegalRepresentativeData = {
 /**
  * Человеческий медицинский формат представителя ребенка без птичьего языка
  */
-export function formatPediatricRepresentativeText(rep: LegalRepresentativeData): string {
+export function formatPediatricRepresentativeText(
+	rep: LegalRepresentativeData,
+	patientAge?: number | null | undefined,
+): string {
 	const repRole = rep.role === "Мать" ? "Мама" : rep.role === "Отец" ? "Папа" : rep.role;
 	const namePart = rep.fullName.trim();
 	const phonePart = rep.phone.trim();
 	const details = [namePart, phonePart].filter(Boolean).join(", ");
+
+	if (patientAge !== null && patientAge !== undefined && patientAge >= 15) {
+		const consentPart = rep.consentSigned
+			? "Согласие на лечение получено (пациент 15+ лет / представитель, ст. 54 323-ФЗ)"
+			: "Согласие может быть подписано пациентом самостоятельно (15+ лет, ст. 54 323-ФЗ) или представителем";
+		return details
+			? `Родитель/представитель: ${repRole} (${details}). ${consentPart}.`
+			: `Родитель/представитель: ${repRole}. ${consentPart}.`;
+	}
+
 	const consentPart = rep.consentSigned
 		? "Согласие на лечение получено"
 		: "ВНИМАНИЕ: требуется подписание согласия родителем";
@@ -82,6 +95,8 @@ export interface PediatricSomaticAndLegalRepProps {
 	readonly defaultRepresentativeRole?: string | undefined;
 	/** Обработчик изменения представителя */
 	readonly onRepresentativeChange?: ((rep: LegalRepresentativeData, formattedText: string) => void) | undefined;
+	/** Возраст пациента (для валидации ст. 54 323-ФЗ: с 15 лет пациент вправе подписывать ИДС сам) */
+	readonly patientAge?: number | null | undefined;
 	/** Дополнительный CSS класс */
 	readonly className?: string | undefined;
 }
@@ -94,6 +109,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 	defaultRepresentativePhone = "",
 	defaultRepresentativeRole,
 	onRepresentativeChange,
+	patientAge,
 	className = "",
 }) => {
 	// ─────────────────────────────────────────────────────────────────────────
@@ -153,8 +169,8 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 	});
 
 	const formatRepresentativeText = useCallback((rep: LegalRepresentativeData): string => {
-		return formatPediatricRepresentativeText(rep);
-	}, []);
+		return formatPediatricRepresentativeText(rep, patientAge);
+	}, [patientAge]);
 
 	const handleUpdateRepresentative = useCallback((updates: Partial<LegalRepresentativeData>) => {
 		setRepresentative((prev) => {
@@ -166,14 +182,18 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 	}, [formatRepresentativeText, onRepresentativeChange]);
 
 	const handle1ClickParentPresent = useCallback(() => {
+		const statutoryDoc =
+			patientAge !== null && patientAge !== undefined && patientAge >= 15
+				? "ст. 54 323-ФЗ (пациент 15+ лет), ст. 64 СК РФ"
+				: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)";
 		const updated: LegalRepresentativeData = {
 			...representative,
 			consentSigned: true,
-			statutoryDocument: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)",
+			statutoryDocument: statutoryDoc,
 		};
 		setRepresentative(updated);
 		onRepresentativeChange?.(updated, formatRepresentativeText(updated));
-	}, [representative, onRepresentativeChange, formatRepresentativeText]);
+	}, [representative, onRepresentativeChange, formatRepresentativeText, patientAge]);
 
 	return (
 		<div
@@ -312,7 +332,9 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 							Статус:
 						</span>
 						<span className="font-semibold text-[var(--ink,#0f172a)]">
-							Законный представитель ребёнка
+							{patientAge !== null && patientAge !== undefined && patientAge >= 15
+								? "Пациент 15+ лет (ст. 54 323-ФЗ) / Законный представитель"
+								: "Законный представитель ребёнка"}
 						</span>
 						<span className="sr-only font-mono text-[10px]">
 							{representative.statutoryDocument}
@@ -328,7 +350,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 							data-testid="checkbox-rep-consent"
 						/>
 						<span>Согласие на приём оформлено</span>
-						<span className="sr-only">(ст. 20 323-ФЗ)</span>
+						<span className="sr-only">(ст. 20, 54 323-ФЗ)</span>
 					</label>
 				</div>
 
@@ -337,7 +359,9 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 						<div className="flex items-center gap-1.5 min-w-0">
 							<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
 							<span className="truncate">
-								323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством
+								{patientAge !== null && patientAge !== undefined && patientAge >= 15
+									? "323-ФЗ ст. 54: пациент старше 15 лет вправе подписать ИДС лично либо через законного представителя"
+									: "323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством"}
 							</span>
 						</div>
 						<button

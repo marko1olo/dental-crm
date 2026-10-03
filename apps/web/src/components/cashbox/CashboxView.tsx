@@ -330,7 +330,7 @@ export function CashboxView({
 					<div className="flex items-center gap-2 shrink-0">
 						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))] whitespace-nowrap">
 							<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-							<span>54-ФЗ: без барьеров</span>
+							<span>Касса: без барьеров</span>
 						</span>
 					</div>
 				</div>
@@ -535,7 +535,7 @@ export function CashboxView({
 								className="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
 							>
 								<CheckCircle2 className="w-4 h-4" />
-								<span>{isSubmittingZeroReceipt ? "Оформление..." : "Оформить чек 0 ₽ (54-ФЗ)"}</span>
+								<span>{isSubmittingZeroReceipt ? "Оформление..." : "Оформить чек 0 ₽"}</span>
 							</button>
 						</div>
 					) : (

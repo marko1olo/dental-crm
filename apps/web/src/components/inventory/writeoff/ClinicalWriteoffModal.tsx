@@ -408,14 +408,13 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						<div className="min-w-0">
 							<div
 								className="font-bold text-lg leading-tight truncate"
-								title="Клиническое автосписание материалов (Приказ № 804н)"
+								title="Клиническое списание материалов по выполненным процедурам"
 							>
 								Клиническое списание материалов
 							</div>
 							<div className="text-xs font-normal text-muted flex items-center gap-2 mt-0.5 truncate">
-								<span>Клинические нормы</span> • <span>Партии FEFO</span> •{" "}
+								<span>Клинические нормы</span> • <span>Партии по срокам</span> •{" "}
 								<span>Акты списания материалов</span>
-								<span className="text-[10px] opacity-60 ml-0.5 font-mono">(М-11 / ТОРГ-16)</span>
 							</div>
 						</div>
 					</div>
@@ -507,7 +506,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 							<div>
 								<strong>Внимание! Партии, истекающие в течение 30 дней ({totals.expiringBatchesCount} поз.):</strong>
 								<div className="mt-0.5">
-									Материалы подлежат первоочередному списанию по регламенту FEFO.
+									Материалы подлежат первоочередному списанию по сроку годности (FEFO).
 								</div>
 							</div>
 						</div>
@@ -561,7 +560,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 									В текущем приёме нет выполненных клинических услуг
 								</p>
 								<p className="text-xs text-muted max-w-md">
-									Автосписание материалов по Приказу № 804н активируется при добавлении процедур в наряд или при применении клинического протокола
+									Автосписание материалов активируется при добавлении процедур в наряд или при применении клинического протокола
 								</p>
 							</div>
 						) : (
@@ -665,18 +664,18 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 									>
 										<FileText size={14} className="text-teal-600" />
 										<span>Накладная на списание</span>
-										<span className="text-[10px] opacity-60 ml-auto font-mono">М-11</span>
+										<span className="text-[10px] opacity-60 ml-auto font-mono">Накладная</span>
 									</button>
 
 									<button
 										type="button"
 										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
 										onClick={() => handlePrintAct("TORG16")}
-										title="Печать Акта о списании материалов (форма ТОРГ-16)"
+										title="Печать акта о списании материалов"
 									>
 										<FileText size={14} className="text-teal-600" />
 										<span>Акт списания материалов</span>
-										<span className="text-[10px] opacity-60 ml-auto font-mono">ТОРГ-16</span>
+										<span className="text-[10px] opacity-60 ml-auto font-mono">Акт списания</span>
 									</button>
 
 									<button

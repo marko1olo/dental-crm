@@ -703,6 +703,34 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		}
 	};
 
+	// 1-Click Print Official Stand Pricelist («Уголок потребителя», Закон РФ № 2300-1, ст. 149 НК РФ)
+	const handlePrintConsumerStand = () => {
+		const printHtml = generatePrintablePricelistHtml(
+			{
+				clinicName,
+				clinicAddress,
+				clinicPhone,
+				clinicLicense,
+				chiefDoctorName,
+				effectiveDateRu: new Date().toLocaleDateString('ru-RU'),
+				isConsumerCornerStand: true,
+			},
+			items,
+			'standard',
+		);
+
+		const printWindow = window.open('', '_blank', 'width=900,height=1000');
+		if (printWindow) {
+			printWindow.document.open();
+			printWindow.document.write(printHtml);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 300);
+		}
+	};
+
 	// Save & Apply
 	const handleSaveAndClose = () => {
 		if (onSaveCatalog) {
@@ -759,6 +787,16 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 						>
 							<Printer size={16} />
 							<span>Печать A4</span>
+						</button>
+
+						<button
+							type="button"
+							className="pricelist-btn"
+							onClick={handlePrintConsumerStand}
+							title="Печать официального прейскуранта для информационного стенда «Уголок потребителя» (Без НДС - медицинские услуги)"
+						>
+							<ShieldCheck size={16} />
+							<span>Уголок потребителя</span>
 						</button>
 
 						<button
@@ -893,6 +931,15 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							onClick={() => setActiveTier('promo')}
 						>
 							Промо
+						</button>
+						<button
+							type="button"
+							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+							className={`tier-segment-btn ${activeTier === 'night_weekend' ? 'active' : ''}`}
+							onClick={() => setActiveTier('night_weekend')}
+							title="Тариф в ночные часы и праздничные/выходные дни (+30%)"
+						>
+							Ночной (+30%)
 						</button>
 					</div>
 

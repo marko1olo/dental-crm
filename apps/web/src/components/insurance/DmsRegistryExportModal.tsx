@@ -33,9 +33,9 @@ import {
 export interface DmsRegistryExportModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly records?: readonly DmsRegistryServiceRecord[];
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly records?: readonly DmsRegistryServiceRecord[] | undefined;
 	readonly clinicInfo?: {
 		readonly name: string;
 		readonly inn: string;
@@ -252,12 +252,12 @@ export function DmsRegistryExportModal({
 				phone: "+7 (495) 123-45-67",
 				medicalLicenseNumber: "ЛО-77-01-019842",
 				chiefDoctorNameRu: activeClinic.chiefDoctor,
-				chiefAccountantNameRu: "Иванова Е.В.",
+				chiefAccountantNameRu: activeClinic.chiefDoctor || "Руководитель организации",
 			},
 			insuranceCompany: {
 				companyId: selectedInsurer,
 				nameRu: selectedInsurer === "all" ? "Все страховые компании (Сводный отчет)" : selectedInsurer,
-				inn: "7736035485",
+				inn: RUSSIAN_DMS_INSURERS.find((i) => i.key === selectedInsurer || i.shortName === selectedInsurer || i.fullName === selectedInsurer)?.inn || "7736035485",
 				contractNumber,
 				contractDate,
 			},
@@ -440,7 +440,7 @@ export function DmsRegistryExportModal({
 									<input
 										id={searchRecordInputId}
 										type="text"
-										placeholder="ФИО, полис, код 804н..."
+										placeholder="ФИО, полис, код услуги..."
 										value={searchFilter}
 										onChange={(e) => setSearchFilter(e.target.value)}
 										className="dms-input"
@@ -514,8 +514,8 @@ export function DmsRegistryExportModal({
 									<th>Дата</th>
 									<th>Пациент</th>
 									<th>Полис / ГП</th>
-									<th>Страховщик</th>
-									<th>Код 804н</th>
+									<th>Страховая компания</th>
+									<th>Код услуги</th>
 									<th>Услуга / Зуб</th>
 									<th style={{ textAlign: "right" }}>Сумма всего</th>
 									<th style={{ textAlign: "right" }}>Покрыто ДМС</th>

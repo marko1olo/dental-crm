@@ -349,7 +349,7 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 				<div className="staff-profile-section-title">
 					<div className="staff-profile-section-title-left">
 						<Shield className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-						<span>Смена пароля и оценка энтропии (Шеннон / ФСТЭК)</span>
+						<span>Смена пароля и оценка стойкости</span>
 					</div>
 					{staffMember.hasPassword ? (
 						<span className="staff-profile-badge-status active">

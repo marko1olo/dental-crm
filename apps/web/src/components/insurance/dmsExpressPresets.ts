@@ -160,7 +160,7 @@ export const EXPRESS_GUARANTEE_LETTER_PRESETS: readonly ExpressDmsGuaranteePrese
 			"B01.003.004.001",// Первичный осмотр
 		],
 		approvedDiagnosisMkb10: ["K02.1", "K05.1"],
-		noteRu: "Экспресс-прикрепление: Терапевтический осмотр, санация кариеса и гигиена полости рта.",
+		noteRu: "Экспресс-прикрепление: Терапевтический осмотр, лечение кариеса и гигиена полости рта.",
 	},
 	{
 		id: "express_reso_emergency",

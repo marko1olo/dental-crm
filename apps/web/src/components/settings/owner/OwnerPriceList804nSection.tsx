@@ -199,7 +199,7 @@ export function OwnerPriceList804nSection() {
 					)}
 					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
 						<ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400" />
-						НДС 0% (ст. 149 НК РФ)
+						Без НДС (Медицинские услуги)
 					</span>
 				</div>
 			</div>

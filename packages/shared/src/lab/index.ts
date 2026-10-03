@@ -41,3 +41,4 @@ export {
 	type ProstheticWarrantyPassport,
 	generateProstheticWarrantyPassport,
 } from "./labOrders.js";
+export * from "./vitaPalette.js";

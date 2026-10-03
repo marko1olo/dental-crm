@@ -385,6 +385,22 @@ async function setupPageRoutes(page) {
         body: JSON.stringify(mockDashboard.appointments),
       });
     }
+    if (url.includes("/tooth-states")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          states: [
+            { toothNumber: 16, state: "Filled", surfaces: ["O"] },
+            { toothNumber: 17, state: "Healthy", surfaces: [] },
+            { toothNumber: 46, state: "Pulpitis", surfaces: ["MOD"] },
+            { toothNumber: 47, state: "Healthy", surfaces: [] },
+            { toothNumber: 36, state: "Root_Canal_Treated", surfaces: [] }
+          ],
+        }),
+      });
+    }
     if (url.includes("/api/patients")) {
       return route.fulfill({
         status: 200,
@@ -562,8 +578,12 @@ async function main() {
     // -------------------------------------------------------------------------
     // 2. Дневник приёма / ЭМК 043/у (VisitView.tsx, subtab 'emk')
     // -------------------------------------------------------------------------
-    await dPage.evaluate(() => { window.location.hash = "#visit"; });
-    await dPage.waitForSelector('[data-testid="visit-subtab-emk"], .visit-monolithic-header, [data-testid="visit-view"]', { timeout: 35000 });
+    await dPage.evaluate(() => {
+      const link = document.querySelector('a[href="#visit"]');
+      if (link) link.click();
+      else window.location.hash = "#visit";
+    });
+    await dPage.waitForSelector('[data-testid="visit-subtab-emk"], .visit-monolithic-header, [data-testid="visit-view"]', { timeout: 35000 }).catch(() => {});
     await dPage.evaluate(() => {
       const btn = document.querySelector('[data-testid="visit-subtab-emk"]');
       if (btn) btn.click();
@@ -596,8 +616,8 @@ async function main() {
     await dPage.evaluate(() => {
       window.dispatchEvent(new CustomEvent("dente:open-cbct-demo"));
     });
-    await dPage.waitForSelector('[data-testid="cbct-studio-modal"], .cbct-dark-cockpit, canvas', { timeout: 15000 }).catch(() => {});
-    await dPage.waitForTimeout(2000);
+    await dPage.waitForSelector('[data-testid="cbct-studio-modal"], .cbct-dark-cockpit, canvas', { timeout: 25000 }).catch(() => {});
+    await dPage.waitForTimeout(4000);
 
     await applyTheme(dPage, "light");
     await takeScreen(dPage, "04_dicom_viewer_desktop_light.png", "DICOM / КТ Модалка (Desktop Light)");
@@ -611,7 +631,7 @@ async function main() {
       if (closeBtn) closeBtn.click();
     });
     await dPage.keyboard.press("Escape");
-    await dPage.waitForTimeout(600);
+    await dPage.waitForTimeout(800);
 
     // -------------------------------------------------------------------------
     // 5. Касса и чек 54-ФЗ (PaymentModal.tsx / FastCheckout)
@@ -621,16 +641,20 @@ async function main() {
       if (finLink) finLink.click();
       else window.location.hash = "#finance";
     });
-    await dPage.waitForSelector(".finance-panel, #finance, [data-testid='finance-view']", { timeout: 25000 }).catch(() => {});
-    await dPage.waitForTimeout(1000);
+    await dPage.waitForFunction(() => {
+      const fin = document.querySelector("#finance");
+      return fin && !fin.getAttribute("aria-busy");
+    }, { timeout: 35000 }).catch(() => {});
+    await dPage.waitForSelector('[data-testid="payment-split-modal-button"], [data-testid="finance-view"], button:has-text("Счета и акты"), button:has-text("Картой")', { timeout: 25000 }).catch(() => {});
+    await dPage.waitForTimeout(600);
 
     await dPage.evaluate(() => {
       const splitBtn = document.querySelector('[data-testid="payment-split-modal-button"]') ||
-                       Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Сплит") || b.textContent?.includes("Принять оплату"));
+                       Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Сплит") || b.textContent?.includes("Принять оплату") || b.textContent?.includes("Комбо Сплит"));
       if (splitBtn) splitBtn.click();
     });
     await dPage.waitForSelector('.payment-modal, [aria-labelledby="payment-modal-title"], [role="dialog"]', { timeout: 15000 }).catch(() => {});
-    await dPage.waitForTimeout(1000);
+    await dPage.waitForTimeout(800);
 
     await applyTheme(dPage, "light");
     await takeScreen(dPage, "05_cash_54fz_desktop_light.png", "Касса и чек 54-ФЗ (Desktop Light)");
@@ -643,24 +667,36 @@ async function main() {
     await dPage.waitForTimeout(800);
 
     // -------------------------------------------------------------------------
-    // 6. Настройки оборудования (SettingsView.tsx -> HardwareSettingsTab.tsx -> Audio DSP)
+    // 6. Настройки оборудования (SettingsView.tsx -> Doctor -> HardwareSettingsTab.tsx -> Audio DSP)
     // -------------------------------------------------------------------------
     await dPage.evaluate(() => {
       const setLink = document.querySelector('a[href="#settings"]');
       if (setLink) setLink.click();
-      else window.location.hash = "#settings/hardware";
+      else window.location.hash = "#settings";
     });
-    await dPage.waitForSelector('[data-testid="settings-view"], .settings-zone', { timeout: 25000 }).catch(() => {});
-    await dPage.waitForTimeout(1000);
+    await dPage.waitForFunction(() => {
+      const st = document.querySelector("#settings");
+      return st && !st.getAttribute("aria-busy");
+    }, { timeout: 35000 }).catch(() => {});
+    await dPage.waitForSelector('[data-testid="btn-settings-role-doctor"], [data-testid="settings-view"], .settings-zone', { timeout: 25000 }).catch(() => {});
+    await dPage.waitForTimeout(800);
 
+    // Switch role to Doctor mode
     await dPage.evaluate(() => {
-      const hwTab = document.getElementById("settings-tab-hardware") ||
-                    Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Оборудование"));
+      const docBtn = document.querySelector('[data-testid="btn-settings-role-doctor"]');
+      if (docBtn) docBtn.click();
+    });
+    await dPage.waitForTimeout(600);
+
+    // Select Hardware sub-tab
+    await dPage.evaluate(() => {
+      const hwTab = document.querySelector('[data-testid="doctor-tab-hardware"]');
       if (hwTab) hwTab.click();
     });
     await dPage.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { timeout: 15000 }).catch(() => {});
     await dPage.waitForTimeout(800);
 
+    // Select Audio DSP domain tab
     await dPage.evaluate(() => {
       const audioTab = document.querySelector('[data-testid="domain-tab-audio"]');
       if (audioTab) audioTab.click();
@@ -691,9 +727,9 @@ async function main() {
     await setupPageRoutes(mPage);
 
     await mPage.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 45000 });
-    await mPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
-    await mPage.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
-    await mPage.waitForTimeout(1500);
+    await mPage.waitForFunction(() => !document.querySelector(".boot-state") && document.querySelector(".app-shell"), { timeout: 45000 }).catch(() => {});
+    await mPage.waitForSelector(".app-shell", { state: "visible", timeout: 30000 }).catch(() => {});
+    await mPage.waitForTimeout(2000);
 
     // Mobile 1: Schedule
     await mPage.evaluate(() => { window.location.hash = "#schedule"; });
@@ -730,8 +766,8 @@ async function main() {
     await mPage.evaluate(() => {
       window.dispatchEvent(new CustomEvent("dente:open-cbct-demo"));
     });
-    await mPage.waitForSelector('[data-testid="cbct-studio-modal"], .cbct-dark-cockpit, canvas', { timeout: 15000 }).catch(() => {});
-    await mPage.waitForTimeout(2000);
+    await mPage.waitForSelector('[data-testid="cbct-studio-modal"], .cbct-dark-cockpit, canvas', { timeout: 25000 }).catch(() => {});
+    await mPage.waitForTimeout(4000);
     await applyTheme(mPage, "light");
     await takeScreen(mPage, "04_dicom_viewer_mobile_light.png", "DICOM / КТ Модалка (Mobile Light)");
     await applyTheme(mPage, "dark");
@@ -742,7 +778,7 @@ async function main() {
       if (closeBtn) closeBtn.click();
     });
     await mPage.keyboard.press("Escape");
-    await mPage.waitForTimeout(600);
+    await mPage.waitForTimeout(800);
 
     // Mobile 5: Cash 54-FZ
     await mPage.evaluate(() => {
@@ -771,13 +807,17 @@ async function main() {
     await mPage.evaluate(() => {
       const setLink = document.querySelector('a[href="#settings"]');
       if (setLink) setLink.click();
-      else window.location.hash = "#settings/hardware";
+      else window.location.hash = "#settings";
     });
     await mPage.waitForSelector('[data-testid="settings-view"], .settings-zone', { timeout: 25000 }).catch(() => {});
-    await mPage.waitForTimeout(1000);
+    await mPage.waitForTimeout(800);
     await mPage.evaluate(() => {
-      const hwTab = document.getElementById("settings-tab-hardware") ||
-                    Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Оборудование"));
+      const docBtn = document.querySelector('[data-testid="btn-settings-role-doctor"]');
+      if (docBtn) docBtn.click();
+    });
+    await mPage.waitForTimeout(600);
+    await mPage.evaluate(() => {
+      const hwTab = document.querySelector('[data-testid="doctor-tab-hardware"]');
       if (hwTab) hwTab.click();
     });
     await mPage.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { timeout: 15000 }).catch(() => {});

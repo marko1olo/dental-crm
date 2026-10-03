@@ -449,7 +449,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	// Полноценный объект гарантийного сертификата
 	const certificateData: WarrantyCertificateData = useMemo(() => {
 		const pName = patient?.fullName || "Пациент стоматологической клиники";
-		const pCard = patient?.cardNumber || (patient?.id ? `043-${patient.id.slice(0, 6).toUpperCase()}` : "043/у");
+		const pCard = patient?.cardNumber || (patient?.id ? `МК-${patient.id.slice(0, 6).toUpperCase()}` : "МК-2026");
 		const dName = doctorName || "Лечащий врач";
 		const vUrl = clinicWebsite
 			? `${clinicWebsite}/portal/warranty?cert=${certificateId}&card=${encodeURIComponent(pCard)}`
@@ -523,7 +523,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	const handleCreateRemediation = () => {
 		const tooth = selectedRemediationTooth || (items[0]?.toothNumber ?? "1.6");
 		const pName = patient?.fullName || "Пациент стоматологической клиники";
-		const pCard = patient?.cardNumber || "043/у";
+		const pCard = patient?.cardNumber || "МК-2026";
 
 		const matchedItem = items.find((it) => it.toothNumber === tooth);
 		const originalTitle = matchedItem?.clinicalWorkTitle || "Ранее выполненная работа";

@@ -172,7 +172,7 @@ export function generateAnesthesiaPkuRecordId(prefix = "pku_an"): string {
  * Format: TX-{DEP|DEB|REF}-{timestamp}-{seq4}.
  */
 export function generateFamilyDepositTransactionId(
-	type: "DEP" | "DEB" | "REF",
+	type: "DEP" | "DEB" | "REF" | "WTH",
 	options?: {
 		readonly timestampMs?: number | undefined;
 		readonly seedKey?: string | undefined;

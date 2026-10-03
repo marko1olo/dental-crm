@@ -3,113 +3,69 @@
  *
  * Implements ironclad financial invariants for pooled family deposit accounts:
  * 1. ACID Transactions & Row-Level Locking (`SELECT ... FOR UPDATE` on `family_groups`).
- * 2. Idempotency guarantees via `clientMutationId` against double-topup and double-debit.
+ * 2. Idempotency guarantees via `clientMutationId` against double-topup, double-debit, and double-refund.
  * 3. Kopeck-exact arithmetic without floating-point drift.
- * 4. Primary Payer (Главный плательщик) ID association for FNS Tax Deduction (КНД 1151156).
- * 5. Multi-tenant isolation by `organizationId`.
+ * 4. Authorization via RF Legal Guardianship & patient relationships (`validateFamilyWalletSpend`).
+ * 5. Advance deposit refund workflow with cash box expense tracking.
+ * 6. Primary Payer (Главный плательщик) ID association for FNS Tax Deduction (КНД 1151156).
+ * 7. Multi-tenant isolation by `organizationId`.
  */
 
 import {
+	invertRelationshipKind,
 	kopecksToNumericString,
 	kopecksToRub,
 	parseKopecks,
 	rubToKopecks,
+	validateFamilyWalletSpend,
+	type PatientRelationshipKind,
 } from "@dental/shared";
 import { Decimal } from "decimal.js";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
+	cashBoxes,
+	cashOperations,
 	familyGroups,
+	patientRelationships,
 	patients,
 	payments,
 	serviceCatalogItems,
 } from "../../db/schema.js";
-import {
-	buildFnsKnd1151156Xml,
-	type FnsClinicInfo,
-	type FnsPatientInfo,
-	type FnsPersonInfo,
-	type FnsTaxPayload,
+import type {
+	FnsClinicInfo,
+	FnsTaxPayload,
 } from "../fns/fnsKnd1151156Builder.js";
 import { wsBroker } from "../websocketBroker.js";
+import { generateFnsTaxCertificatesForFamilyLogic } from "./familyFnsTaxService.js";
+import {
+	FamilyWalletError,
+	type FamilyDebitParams,
+	type FamilyDebitResult,
+	type FamilyGroupRow,
+	type FamilyRefundParams,
+	type FamilyRefundResult,
+	type FamilyTopupParams,
+	type FamilyTopupResult,
+	type FnsTaxCertificateSummary,
+	type PatientRow,
+	type PaymentRow,
+} from "./familyWalletTypes.js";
 
-export type PatientRow = typeof patients.$inferSelect;
-export type FamilyGroupRow = typeof familyGroups.$inferSelect;
-export type PaymentRow = typeof payments.$inferSelect;
-
-export class FamilyWalletError extends Error {
-	constructor(
-		message: string,
-		public readonly statusCode: number = 400,
-		public readonly code: string = "FAMILY_WALLET_ERROR",
-	) {
-		super(message);
-		this.name = "FamilyWalletError";
-	}
-}
-
-export interface FamilyTopupParams {
-	readonly organizationId: string;
-	readonly familyGroupId: string;
-	readonly patientId?: string | undefined; // Payer / Head of family
-	readonly payerPatientId?: string | undefined; // Payer / Head of family
-	readonly amountRub: number;
-	readonly method?: "cash" | "card" | "bank_transfer" | "online" | "other" | undefined;
-	readonly clientMutationId: string;
-	readonly notes?: string | undefined;
-}
-
-export interface FamilyTopupResult {
-	readonly success: boolean;
-	readonly payment: PaymentRow;
-	readonly previousBalanceRub: number;
-	readonly newBalanceRub: number;
-	readonly creditedRub: number;
-	readonly duplicate: boolean;
-}
-
-export interface FamilyDebitParams {
-	readonly organizationId: string;
-	readonly familyGroupId: string;
-	readonly patientId: string; // Patient receiving care (child, spouse, etc.)
-	readonly amountRub: number;
-	readonly serviceId?: string | undefined;
-	readonly catalogItemId?: string | undefined;
-	readonly discountRub?: number | undefined;
-	readonly discountPercent?: number | undefined;
-	readonly clientMutationId: string;
-	readonly documentId?: string | undefined;
-	readonly visitId?: string | undefined;
-	readonly taxCategory?: "1" | "2" | undefined; // 1 = Standard, 2 = Expensive
-	readonly notes?: string | undefined;
-}
-
-export interface FamilyDebitResult {
-	readonly success: boolean;
-	readonly payment: PaymentRow;
-	readonly previousBalanceRub: number;
-	readonly newBalanceRub: number;
-	readonly debitedRub: number;
-	readonly duplicate: boolean;
-}
-
-export interface FnsTaxCertificateSummary {
-	readonly certificateNumber: string;
-	readonly taxYear: string;
-	readonly payerPatientId: string;
-	readonly payerFullName: string;
-	readonly payerInn?: string | undefined;
-	readonly patientId: string;
-	readonly patientFullName: string;
-	readonly kinshipCode: "1" | "2" | "3" | "4" | "5";
-	readonly kinshipNameRu: string;
-	readonly code01AmountRub: number;
-	readonly code02AmountRub: number;
-	readonly grandTotalRub: number;
-	readonly estimated13PercentRefundRub: number;
-	readonly xmlPayload: string;
-	readonly xmlFileName: string;
-}
+// Re-export all domain types and errors for seamless backwards compatibility
+export {
+	FamilyWalletError,
+	type FamilyDebitParams,
+	type FamilyDebitResult,
+	type FamilyGroupRow,
+	type FamilyRefundParams,
+	type FamilyRefundResult,
+	type FamilyTopupParams,
+	type FamilyTopupResult,
+	type FnsTaxCertificateSummary,
+	type PatientRow,
+	type PaymentRow,
+};
 
 export class FamilyWalletService {
 	/**
@@ -193,7 +149,7 @@ export class FamilyWalletService {
 				throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
 			}
 
-			// 3. Idempotency verification
+			// 3. Idempotency check: verify if payment with same mutationId was already committed
 			const [existingPayment] = await tx
 				.select()
 				.from(payments)
@@ -301,7 +257,8 @@ export class FamilyWalletService {
 	}
 
 	/**
-	 * Debit medical treatment costs from shared family deposit with ACID row-lock and idempotency check.
+	 * Debit medical treatment costs from shared family deposit with ACID row-lock,
+	 * statutory RF legal relationship spend authorization, and idempotency check.
 	 */
 	public async debit(params: FamilyDebitParams): Promise<FamilyDebitResult> {
 		const {
@@ -425,6 +382,60 @@ export class FamilyWalletService {
 				throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
 			}
 
+			// 2a. Проверка полномочий на списание семейных средств (ст. 64 СК РФ, ст. 185 ГК РФ)
+			const walletOwnerId = family.headPatientId || family.primaryPatientId;
+			const isAuthorizerPayer = params.payerPatientId && walletOwnerId && params.payerPatientId === walletOwnerId;
+
+			if (walletOwnerId && patientId !== walletOwnerId && !isAuthorizerPayer) {
+				const [rel] = await tx
+					.select()
+					.from(patientRelationships)
+					.where(
+						and(
+							eq(patientRelationships.organizationId, organizationId),
+							or(
+								and(
+									eq(patientRelationships.patientId, walletOwnerId),
+									eq(patientRelationships.relatedPatientId, patientId),
+								),
+								and(
+									eq(patientRelationships.patientId, patientId),
+									eq(patientRelationships.relatedPatientId, walletOwnerId),
+								),
+							),
+						),
+					)
+					.limit(1);
+
+				const effectiveRel = rel
+					? {
+							canSpendFamilyWallet: rel.canSpendFamilyWallet || rel.isPrimaryPayer,
+							isLegalRepresentative: rel.isLegalRepresentative,
+							relationshipType: (rel.patientId === patientId
+								? rel.relationshipType
+								: invertRelationshipKind(rel.relationshipType as PatientRelationshipKind)) as PatientRelationshipKind,
+						}
+					: null;
+
+				const currentBalKop = parseKopecks(family.balance);
+				const spendValidation = validateFamilyWalletSpend({
+					spenderPatientId: patientId,
+					walletOwnerPatientId: walletOwnerId,
+					requiredAmountKopecks: debitKopecks,
+					currentBalanceKopecks: currentBalKop,
+					relationship: effectiveRel,
+				});
+
+				if (!spendValidation.isAuthorized) {
+					throw new FamilyWalletError(
+						spendValidation.failureReason ||
+							"Пациент не имеет полномочий на списание средств с семейного кошелька",
+						403,
+						"UNAUTHORIZED_FAMILY_SPEND",
+					);
+				}
+			}
+
 			// 3. Idempotency verification
 			const [existingPayment] = await tx
 				.select()
@@ -544,8 +555,220 @@ export class FamilyWalletService {
 	}
 
 	/**
-	 * Resolves the primary payer (head of household / father) and generates
-	 * statutory FNS Form KND 1151156 tax deduction certificates for all treated family members.
+	 * Refund unspent family deposit funds back to the patient and cash box with ACID safety.
+	 */
+	public async refund(params: FamilyRefundParams): Promise<FamilyRefundResult> {
+		const {
+			organizationId,
+			familyGroupId,
+			amountRub,
+			cashBoxId,
+			operatorId,
+			method = "cash",
+			clientMutationId,
+			reasonText,
+		} = params;
+
+		if (!organizationId) {
+			throw new FamilyWalletError("Не указан ID организации клиники", 400, "MISSING_ORG_ID");
+		}
+		if (!familyGroupId) {
+			throw new FamilyWalletError("Не указан ID семейной группы", 400, "MISSING_FAMILY_ID");
+		}
+		if (!clientMutationId || !clientMutationId.trim()) {
+			throw new FamilyWalletError(
+				"Ключ операции (clientMutationId) обязателен для защиты от повторных возвратов",
+				400,
+				"MISSING_IDEMPOTENCY_KEY",
+			);
+		}
+
+		if (typeof amountRub !== "number" || !Number.isFinite(amountRub) || Number.isNaN(amountRub)) {
+			throw new FamilyWalletError("Сумма возврата должна быть числом", 400, "INVALID_AMOUNT");
+		}
+
+		const refundKopecks = parseKopecks(amountRub);
+		if (refundKopecks <= 0) {
+			throw new FamilyWalletError("Сумма возврата должна быть больше 0 ₽", 400, "INVALID_AMOUNT");
+		}
+
+		return await db.transaction(async (tx) => {
+			// 1. Lock Family Group row with SELECT ... FOR UPDATE
+			const [family] = await tx
+				.select()
+				.from(familyGroups)
+				.where(
+					and(
+						eq(familyGroups.id, familyGroupId),
+						eq(familyGroups.organizationId, organizationId),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (!family) {
+				throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
+			}
+
+			const targetPatientId = params.patientId || family.headPatientId || family.primaryPatientId;
+			if (!targetPatientId) {
+				throw new FamilyWalletError("Не указан пациент-получатель возврата депозита", 400, "MISSING_PATIENT_ID");
+			}
+
+			// 2. Idempotency check
+			const [existingPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, organizationId),
+						eq(payments.clientMutationId, clientMutationId.trim()),
+					),
+				)
+				.limit(1);
+
+			if (existingPayment) {
+				if (
+					parseKopecks(existingPayment.amountRub) !== refundKopecks ||
+					existingPayment.status !== "refunded"
+				) {
+					throw new FamilyWalletError(
+						"Клиентская операция уже записала другой возврат.",
+						409,
+						"IDEMPOTENCY_CONFLICT",
+					);
+				}
+				const currentBalKop = parseKopecks(family.balance);
+				return {
+					success: true,
+					payment: existingPayment,
+					previousBalanceRub: kopecksToRub(currentBalKop),
+					newBalanceRub: kopecksToRub(currentBalKop),
+					refundedRub: kopecksToRub(parseKopecks(existingPayment.amountRub)),
+					duplicate: true,
+				};
+			}
+
+			// 3. Verify sufficient deposit balance
+			const currentBalanceKop = parseKopecks(family.balance);
+			if (currentBalanceKop < refundKopecks) {
+				throw new FamilyWalletError(
+					`Недостаточно средств на семейном балансе для возврата. Доступно: ${kopecksToRub(currentBalanceKop)} ₽, требуется вернуть: ${kopecksToRub(refundKopecks)} ₽`,
+					400,
+					"INSUFFICIENT_FUNDS",
+				);
+			}
+
+			// 4. Update family group balance
+			const newBalanceKop = new Decimal(currentBalanceKop)
+				.minus(refundKopecks)
+				.toNumber();
+			const newBalanceStr = kopecksToNumericString(newBalanceKop);
+
+			const [updatedFamily] = await tx
+				.update(familyGroups)
+				.set({
+					balance: newBalanceStr,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(familyGroups.id, familyGroupId),
+						eq(familyGroups.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (!updatedFamily) {
+				throw new FamilyWalletError("Не удалось обновить баланс семейной группы", 500, "UPDATE_FAILED");
+			}
+
+			// 5. Update cash box if provided
+			let cashOp: typeof cashOperations.$inferSelect | undefined;
+			if (cashBoxId) {
+				const [targetBox] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, organizationId)))
+					.for("update")
+					.limit(1);
+
+				if (targetBox) {
+					const boxBalKop = parseKopecks(targetBox.balanceRub);
+					const refundRub = kopecksToRub(refundKopecks);
+					const newBoxBalKop = Math.max(0, boxBalKop - refundKopecks);
+
+					await tx
+						.update(cashBoxes)
+						.set({
+							balanceRub: kopecksToRub(newBoxBalKop),
+							updatedAt: new Date(),
+						})
+						.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
+
+					const [createdOp] = await tx
+						.insert(cashOperations)
+						.values({
+							organizationId,
+							cashBoxId: targetBox.id,
+							operationType: "expense",
+							amountRub: refundRub,
+							balanceBeforeRub: targetBox.balanceRub,
+							balanceAfterRub: kopecksToRub(newBoxBalKop),
+							reasonText: reasonText || `Возврат неиспользованного семейного депозита: ${family.name || "Семья"}`,
+							patientId: targetPatientId,
+							operatorId: operatorId ?? null,
+						})
+						.returning();
+					cashOp = createdOp;
+				}
+			}
+
+			// 6. Record payment record with status "refund"
+			const [payment] = await tx
+				.insert(payments)
+				.values({
+					organizationId,
+					patientId: targetPatientId,
+					amountRub: kopecksToRub(refundKopecks),
+					method,
+					status: "refunded",
+					clientMutationId: clientMutationId.trim(),
+				})
+				.returning();
+
+			if (!payment) {
+				throw new FamilyWalletError("Не удалось создать запись возврата", 500, "REFUND_PAYMENT_CREATION_FAILED");
+			}
+
+			// 7. Broadcast WebSocket events
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "FAMILY_BALANCE_UPDATED",
+				payload: {
+					organizationId,
+					familyGroupId,
+					balance: newBalanceStr,
+				},
+			});
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "PAYMENT_CREATED",
+				payload: payment,
+			});
+
+			return {
+				success: true,
+				payment,
+				previousBalanceRub: kopecksToRub(currentBalanceKop),
+				newBalanceRub: kopecksToRub(newBalanceKop),
+				refundedRub: kopecksToRub(refundKopecks),
+				duplicate: false,
+				cashOperation: cashOp,
+			};
+		});
+	}
+
+	/**
+	 * Generate official FNS Tax Certificates (КНД 1151156) for all family members.
 	 */
 	public async generateFnsTaxCertificatesForFamily(params: {
 		readonly organizationId: string;
@@ -555,224 +778,7 @@ export class FamilyWalletService {
 		readonly signatory: FnsTaxPayload["signatory"];
 		readonly customPayerPatientId?: string | undefined;
 	}): Promise<readonly FnsTaxCertificateSummary[]> {
-		const { organizationId, familyGroupId, taxYear, clinic, signatory, customPayerPatientId } = params;
-
-		// 1. Fetch family group
-		const [family] = await db
-			.select()
-			.from(familyGroups)
-			.where(
-				and(
-					eq(familyGroups.id, familyGroupId),
-					eq(familyGroups.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-
-		if (!family) {
-			throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
-		}
-
-		// 2. Identify Primary Payer (Father / Head of Household)
-		const payerId = customPayerPatientId || family.headPatientId;
-		if (!payerId) {
-			throw new FamilyWalletError(
-				"В семейной группе не назначен главный плательщик (глава семьи)",
-				400,
-				"NO_PRIMARY_PAYER",
-			);
-		}
-
-		const [payerPatient] = await db
-			.select()
-			.from(patients)
-			.where(
-				and(
-					eq(patients.id, payerId),
-					eq(patients.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-
-		if (!payerPatient) {
-			throw new FamilyWalletError("Главный плательщик не найден в базе пациентов", 404, "PAYER_NOT_FOUND");
-		}
-
-		// 3. Fetch all family members
-		const members = await db
-			.select()
-			.from(patients)
-			.where(
-				and(
-					eq(patients.familyGroupId, familyGroupId),
-					eq(patients.organizationId, organizationId),
-				),
-			);
-
-		// 4. Fetch all family_wallet payments in the given tax year
-		const startOfYear = new Date(`${taxYear}-01-01T00:00:00.000Z`);
-		const endOfYear = new Date(`${taxYear}-12-31T23:59:59.999Z`);
-
-		const familyPayments = await db
-			.select()
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, organizationId),
-					eq(payments.method, "family_wallet"),
-					eq(payments.status, "paid"),
-					sql`${payments.createdAt} >= ${startOfYear} AND ${payments.createdAt} <= ${endOfYear}`,
-				),
-			);
-
-		// Format Payer Info for FNS
-		const payerFioParts = payerPatient.fullName.trim().split(/\s+/);
-		const payerFio: { family: string; given: string; patronymic?: string } = {
-			family: payerFioParts[0] || "Иванов",
-			given: payerFioParts[1] || "Иван",
-		};
-		if (payerFioParts.length > 2) {
-			payerFio.patronymic = payerFioParts.slice(2).join(" ");
-		}
-
-		const payerPerson: FnsPersonInfo = {
-			fullName: payerFio,
-		};
-		if (payerPatient.administrativeProfile?.taxpayerInn) {
-			payerPerson.inn = payerPatient.administrativeProfile.taxpayerInn;
-		}
-		if (payerPatient.administrativeProfile?.snils) {
-			payerPerson.snils = payerPatient.administrativeProfile.snils;
-		}
-		if (payerPatient.birthDate) {
-			payerPerson.birthDate = payerPatient.birthDate;
-		}
-		if (payerPatient.administrativeProfile?.identityDocument) {
-			payerPerson.identityDocument = {
-				docTypeCode: "21",
-				seriesAndNumber: payerPatient.administrativeProfile.identityDocument,
-			};
-		}
-
-		const certificates: FnsTaxCertificateSummary[] = [];
-
-		// 5. Generate certificates per treated family member
-		for (const member of members) {
-			const memberPayments = familyPayments.filter((p) => p.patientId === member.id);
-			if (memberPayments.length === 0) continue;
-
-			let code1Kopecks = new Decimal(0);
-			let code2Kopecks = new Decimal(0);
-			for (const p of memberPayments) {
-				const kopecks = parseKopecks(p.amountRub);
-				if (p.taxDeductionCode === "2") {
-					code2Kopecks = code2Kopecks.plus(kopecks);
-				} else {
-					code1Kopecks = code1Kopecks.plus(kopecks);
-				}
-			}
-			const totalKopecks = code1Kopecks.plus(code2Kopecks).toNumber();
-			const code1KopecksNum = code1Kopecks.toNumber();
-			const code2KopecksNum = code2Kopecks.toNumber();
-			if (totalKopecks <= 0) continue;
-
-			// Kinship code: 1 = Self, 2 = Spouse, 3 = Parent, 4 = Child
-			let kinshipCode: "1" | "2" | "3" | "4" | "5" = "1";
-			let kinshipNameRu = "Лично";
-
-			if (member.id === payerId) {
-				kinshipCode = "1";
-				kinshipNameRu = "Лично (налогоплательщик)";
-			} else {
-				const memberBirthYear = member.birthDate ? new Date(member.birthDate).getFullYear() : null;
-				const isChild =
-					memberBirthYear !== null &&
-					!Number.isNaN(memberBirthYear) &&
-					new Date().getFullYear() - memberBirthYear < 24;
-
-				if (isChild) {
-					kinshipCode = "4";
-					kinshipNameRu = "Ребенок";
-				} else {
-					kinshipCode = "2";
-					kinshipNameRu = "Супруг(а)";
-				}
-			}
-
-			const memberFioParts = member.fullName.trim().split(/\s+/);
-			const patientFio: { family: string; given: string; patronymic?: string } = {
-				family: memberFioParts[0] || "Иванова",
-				given: memberFioParts[1] || "Ольга",
-			};
-			if (memberFioParts.length > 2) {
-				patientFio.patronymic = memberFioParts.slice(2).join(" ");
-			}
-
-			const patientInfo: FnsPatientInfo = {
-				patientKinshipCode: kinshipCode,
-				fullName: patientFio,
-			};
-			if (member.administrativeProfile?.taxpayerInn) {
-				patientInfo.inn = member.administrativeProfile.taxpayerInn;
-			}
-			if (member.administrativeProfile?.snils) {
-				patientInfo.snils = member.administrativeProfile.snils;
-			}
-			if (member.birthDate) {
-				patientInfo.birthDate = member.birthDate;
-			}
-			if (member.administrativeProfile?.identityDocument) {
-				patientInfo.identityDocument = {
-					docTypeCode: "21",
-					seriesAndNumber: member.administrativeProfile.identityDocument,
-				};
-			}
-
-			const certNumber = `FNS-${taxYear}-${member.id.slice(0, 8).toUpperCase()}`;
-
-			const fnsPayload: FnsTaxPayload = {
-				documentNumber: certNumber,
-				documentDate: new Date(),
-				taxYear,
-				certificateKind: "1", // Первичная справка
-				clinic,
-				payer: payerPerson,
-				patient: patientInfo,
-				expenses: {
-					code1AmountKopecks: code1KopecksNum,
-					code2AmountKopecks: code2KopecksNum,
-				},
-				signatory,
-			};
-
-			const { xmlContent, fileName } = buildFnsKnd1151156Xml(fnsPayload);
-			const code01AmountRub = kopecksToRub(code1KopecksNum);
-			const code02AmountRub = kopecksToRub(code2KopecksNum);
-			const grandTotalRub = kopecksToRub(totalKopecks);
-
-			certificates.push({
-				certificateNumber: certNumber,
-				taxYear,
-				payerPatientId: payerId,
-				payerFullName: payerPatient.fullName,
-				payerInn: payerPatient.administrativeProfile?.taxpayerInn || undefined,
-				patientId: member.id,
-				patientFullName: member.fullName,
-				kinshipCode,
-				kinshipNameRu,
-				code01AmountRub,
-				code02AmountRub,
-				grandTotalRub,
-				estimated13PercentRefundRub: new Decimal(grandTotalRub)
-					.times("0.13")
-					.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
-					.toNumber(),
-				xmlPayload: xmlContent,
-				xmlFileName: fileName,
-			});
-		}
-
-		return certificates;
+		return generateFnsTaxCertificatesForFamilyLogic(params);
 	}
 }
 

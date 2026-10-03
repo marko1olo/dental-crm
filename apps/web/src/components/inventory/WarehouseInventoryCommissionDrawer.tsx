@@ -78,7 +78,7 @@ export const WarehouseInventoryCommissionDrawer: React.FC<
 			</div>
 
 			<div className="warehouse-meta-field">
-				<label className="warehouse-meta-label">Приказ о ревизии (ИНВ-22)</label>
+				<label className="warehouse-meta-label">Приказ о проведении инвентаризации</label>
 				<div style={{ display: "flex", gap: 6 }}>
 					<input
 						className="warehouse-meta-input"
@@ -151,7 +151,7 @@ export const WarehouseInventoryCommissionDrawer: React.FC<
 					<div>
 						<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 							<label className="warehouse-meta-label" style={{ fontSize: "0.8125rem", margin: 0 }}>
-								Состав инвентаризационной комиссии (ИНВ-3 / ИНВ-19)
+								Состав инвентаризационной комиссии
 							</label>
 							<span
 								style={{
@@ -170,7 +170,7 @@ export const WarehouseInventoryCommissionDrawer: React.FC<
 						<p style={{ fontSize: "0.75rem", color: "var(--muted)", margin: "2px 0 0 0" }}>
 							{commission.length === 1
 								? "Режим соло-врача / небольшой клиники (Клинический регламент): подпись описи формируется за одного ответственного сотрудника без навязывания 4 фиктивных должностей."
-								: "Стандартный многоместный состав комиссии для крупных стоматологических клиник (ИНВ-22)."}
+								: "Стандартный многоместный состав комиссии для стоматологической клиники."}
 						</p>
 					</div>
 

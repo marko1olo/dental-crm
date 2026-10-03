@@ -164,9 +164,15 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 			assert.equal(calculateTierPrice(6500, 'promo'), 5850);
 		});
 
+		it('calculates Night/Weekend rate (+30% with rounding to nearest 50 ₽)', () => {
+			assert.equal(calculateTierPrice(10000, 'night_weekend'), 13000);
+			assert.equal(calculateTierPrice(5500, 'night_weekend'), 7150);
+		});
+
 		it('respects custom override tier prices when explicitly defined', () => {
 			assert.equal(calculateTierPrice(10000, 'vip', 15000), 15000);
 			assert.equal(calculateTierPrice(10000, 'dms', 7500), 7500);
+			assert.equal(calculateTierPrice(10000, 'night_weekend', 14500), 14500);
 		});
 	});
 
@@ -382,6 +388,7 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 
 			assert.ok(csv.startsWith(UTF8_BOM));
 			assert.ok(csv.includes('Код 804н;Коммерческое наименование;'));
+			assert.ok(csv.includes('Цена Ночной/Выходной (руб)'));
 			assert.ok(csv.includes('НДС не облагается'));
 		});
 
@@ -420,6 +427,18 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 			assert.equal(item2.labCostRub, 8000);
 		});
 
+		it('imports CSV string with night/weekend tier and returns validated service items', () => {
+			const csvText = `${UTF8_BOM}Код 804н;Коммерческое наименование;Категория;Специальность;Цена стандарт (руб);Цена Ночной/Выходной (руб);Себестоимость материалов (руб);Зуботехническая лаборатория (руб);МКБ-10\r\n` +
+				`A16.07.002.001;Пломба световая Filtek;Терапия;Стоматолог-терапевт;5500;7150;1000;0;K02.1\r\n` +
+				`A16.07.006.002;Коронка цирконий;Ортопедия;Стоматолог-ортопед;25000;32500;2000;8000;K08.1`;
+
+			const res = importPricelistFromCsv(csvText);
+			assert.equal(res.totalRows, 2);
+			assert.equal(res.validItems.length, 2);
+			assert.equal(res.validItems[0]?.tierPrices?.night_weekend, 7150);
+			assert.equal(res.validItems[1]?.tierPrices?.night_weekend, 32500);
+		});
+
 		it('gracefully handles corrupt CSV rows with error reporting', () => {
 			const corruptCsv = `Код;Название;Цена\r\n` +
 				`;;1000\r\n` + // Missing title
@@ -455,6 +474,31 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 			assert.ok(html.includes('Стоматологическая клиника «DENTE»'));
 			assert.ok(html.includes('Иванов И. И.'));
 			assert.ok(html.includes('A16.07.002.001'));
+		});
+
+		it('generates Consumer Corner Stand compliant HTML with regulatory body info and Russian law citations', () => {
+			const html = generatePrintablePricelistHtml(
+				{
+					clinicName: 'Стоматологическая клиника «DENTE»',
+					clinicAddress: 'г. Москва, ул. Арбат, 10',
+					clinicPhone: '+7 (495) 999-88-77',
+					clinicLicense: 'ЛО-77-01-098765',
+					chiefDoctorName: 'Иванов И. И.',
+					effectiveDateRu: '01.09.2026',
+					inn: '7701234567',
+					ogrn: '1217700123456',
+					isConsumerCornerStand: true,
+				},
+				STATUTORY_ORDER_804N_PRESETS,
+				'standard',
+			);
+
+			assert.ok(html.includes('Информационный стенд «Уголок потребителя»'));
+			assert.ok(html.includes('Законом РФ № 2300-1'));
+			assert.ok(html.includes('Постановление Правительства РФ № 736'));
+			assert.ok(html.includes('ИНН: 7701234567'));
+			assert.ok(html.includes('ОГРН: 1217700123456'));
+			assert.ok(html.includes('Росздравнадзора'));
 		});
 	});
 

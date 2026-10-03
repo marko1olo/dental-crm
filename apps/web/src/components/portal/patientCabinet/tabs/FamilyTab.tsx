@@ -435,13 +435,13 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 
 						<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
 							<label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--pc-text-muted, #64748b)" }}>
-								Номер медкарты 043/у (если уже оформлена)
+								Номер медицинской карты (если уже оформлена)
 							</label>
 							<input
 								type="text"
 								value={newCardNumber}
 								onChange={(e) => setNewCardNumber(e.target.value)}
-								placeholder={data.cardNumber ? `Напр. ${data.cardNumber}-${members.length + 1}` : "043-..."}
+								placeholder={data.cardNumber ? `Напр. ${data.cardNumber}-${members.length + 1}` : "Напр. 2026/891"}
 								style={{
 									padding: "7px 10px",
 									fontSize: "0.8125rem",

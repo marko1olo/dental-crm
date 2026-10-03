@@ -32,8 +32,8 @@ interface TreatmentPlanSignatureModalProps {
 	readonly onSignedSuccess: (agreement: DigitalSignatureAgreementData) => void;
 }
 
-const PAPER_SIGNATURE_DATA_URL =
-	"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='50'><text x='10' y='30' font-family='sans-serif' font-size='12' fill='%230f172a'>Подписано на бумаге</text></svg>";
+export const PAPER_SIGNATURE_DATA_URL =
+	"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 54' width='220' height='54'><rect x='1' y='1' width='218' height='52' rx='6' fill='%23f0fdf4' stroke='%2316a34a' stroke-width='1.5' stroke-dasharray='4 2'/><path d='M16 27l5 5 10-10' fill='none' stroke='%2316a34a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/><text x='38' y='24' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>Подписано на бумаге</text><text x='38' y='40' font-family='sans-serif' font-size='9' fill='%23166534'>Оригинал подписан пациентом очно</text></svg>";
 
 export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalProps> = ({
 	isOpen,

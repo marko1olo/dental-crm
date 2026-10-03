@@ -670,7 +670,7 @@ describe("PatientCabinetAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", 
 		);
 
 		assert.ok(docsTabHtml.includes('data-testid="print-extract-043-btn"'), "1-click 043 print button rendered");
-		assert.ok(docsTabHtml.includes("Печать выписки 043/у"), "Button label states Form 043/u print");
+		assert.ok(docsTabHtml.includes("Печать выписки из медкарты") || docsTabHtml.includes("Печать выписки 043/у"), "Button label states medical card extract print");
 		assert.equal(docsTabHtml.includes("<button disabled") || docsTabHtml.includes('disabled=""'), false, "Zero disabled buttons across Documents tab");
 	});
 

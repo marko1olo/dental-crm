@@ -108,7 +108,7 @@ export const TaxDeductionModalFooter: React.FC<TaxDeductionModalFooterProps> = (
 							aria-label="Печать справки для налоговой (вычет 13%)"
 						>
 							<Printer size={16} />
-							<span>Печать справки КНД 1151156 (А4)</span>
+							<span>Печать справки для налогового вычета (А4)</span>
 						</button>
 					</>
 				)}

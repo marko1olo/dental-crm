@@ -195,11 +195,11 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 								fontSize: "13px",
 							}}
 						>
-							Санация: {healthIndex.sanitationPercent}%
+							Здоровье зубов: {healthIndex.sanitationPercent}%
 						</span>
 					</div>
 
-					{/* Exact Metric String: «Индекс санации: X% • Вылечено Y зубов • Требуют внимания Z зубов» */}
+					{/* Exact Metric String: «Индекс здоровья зубов: X% • Вылечено Y зубов • Требуют внимания Z зубов» */}
 					<div
 						data-testid="dental-health-summary-banner"
 						style={{
@@ -222,7 +222,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 						</span>
 
 						<span style={{ fontSize: "12px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
-							Цель: 100% санация
+							Цель: 100% здоровые зубы
 						</span>
 					</div>
 

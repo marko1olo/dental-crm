@@ -414,9 +414,9 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 						<div className="min-w-0">
 							<div
 								className="font-bold text-lg leading-tight truncate"
-								title="Межфилиальное Перемещение ТМЦ (ТОРГ-13)"
+								title="Межфилиальное перемещение материалов"
 							>
-								Перемещение материалов <span className="text-xs font-normal opacity-60 ml-1 font-mono">ТОРГ-13</span>
+								Перемещение материалов
 							</div>
 							<div className="text-xs font-normal text-muted truncate">
 								Складская логистика • Партионный учет • Сверка расхождений

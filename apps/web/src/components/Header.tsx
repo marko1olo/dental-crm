@@ -27,6 +27,7 @@ import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useTelephonyStore } from "../store/telephonyStore";
 import { useThemeStore } from "../store/themeStore";
+import { useOfflineStore } from "../store/offlineStore";
 import { showToast } from "./GlobalToast";
 import "./Header.css";
 import "../styles/modules/header.css";
@@ -108,7 +109,7 @@ export function ClinicControlPill({
 	onOpenShiftModal,
 }: ClinicControlPillProps) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [isSyncing, setIsSyncing] = useState(false);
+	const [isLocalSyncing, setIsLocalSyncing] = useState(false);
 	const [isOnline, setIsOnline] = useState(
 		typeof navigator !== "undefined" ? navigator.onLine : true,
 	);
@@ -117,6 +118,19 @@ export function ClinicControlPill({
 	const [shiftDurationSeconds, setShiftDurationSeconds] = useState(15420); // 4h 17m
 
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+	// Offline store integration
+	const isStoreSyncing = useOfflineStore((s) => s.isSyncing);
+	const pendingMutationCount = useOfflineStore((s) => s.pendingMutationCount);
+	const storeLastSyncAt = useOfflineStore((s) => s.lastSyncAt);
+	const syncOutbox = useOfflineStore((s) => s.syncOutbox);
+	const refreshQueue = useOfflineStore((s) => s.refreshQueue);
+
+	const isSyncing = isLocalSyncing || isStoreSyncing;
+
+	useEffect(() => {
+		void refreshQueue();
+	}, [refreshQueue]);
 
 	// Store states
 	const activeCall = useTelephonyStore((s) => s.activeCall);
@@ -238,27 +252,43 @@ export function ClinicControlPill({
 	}, [shiftDurationSeconds]);
 
 	const formattedLastSync = useMemo(() => {
-		return lastSyncTime.toLocaleTimeString("ru-RU", {
+		const targetDate = storeLastSyncAt ? new Date(storeLastSyncAt) : lastSyncTime;
+		return targetDate.toLocaleTimeString("ru-RU", {
 			hour: "2-digit",
 			minute: "2-digit",
 			second: "2-digit",
 		});
-	}, [lastSyncTime]);
+	}, [storeLastSyncAt, lastSyncTime]);
 
 	// Manual sync trigger
 	const handleManualSync = async () => {
-		setIsSyncing(true);
+		setIsLocalSyncing(true);
 		const start = performance.now();
 		try {
 			const res = await fetch("/api/health");
 			const latency = Math.round(performance.now() - start);
 			setSyncLatencyMs(latency);
+
+			const syncResult = await syncOutbox();
 			setLastSyncTime(new Date());
+
 			if (res.ok) {
-				showToast(
-					`Синхронизация с PostgreSQL 18.4 выполнена (${latency} мс)`,
-					"success",
-				);
+				if (syncResult.syncedCount > 0) {
+					showToast(
+						`Синхронизировано ${syncResult.syncedCount} мутаций с PostgreSQL 18.4 (${latency} мс)`,
+						"success",
+					);
+				} else if (syncResult.failedCount > 0) {
+					showToast(
+						`Ошибок синхронизации очереди: ${syncResult.failedCount} (${latency} мс)`,
+						"warning",
+					);
+				} else {
+					showToast(
+						`Очередь синхронизирована. Связь с сервером активна (${latency} мс)`,
+						"success",
+					);
+				}
 			} else {
 				showToast(`Синхронизация: сервер вернул статус ${res.status}`, "info");
 			}
@@ -267,7 +297,7 @@ export function ClinicControlPill({
 			setSyncLatencyMs(latency);
 			showToast("Ошибка связи с сервером при синхронизации", "error");
 		} finally {
-			setIsSyncing(false);
+			setIsLocalSyncing(false);
 		}
 	};
 
@@ -348,7 +378,7 @@ export function ClinicControlPill({
 				{/* 3. Database Sync / Offline Queue indicator */}
 				<span
 					className="dnt-pill-segment hidden sm:flex"
-					title={`Синхронизация БД: PostgreSQL 18.4 (${syncLatencyMs} ms, 0 в очереди)`}
+					title={`Синхронизация БД: PostgreSQL 18.4 (${syncLatencyMs} ms, ${pendingMutationCount} в очереди)`}
 				>
 					<Zap
 						size={12}
@@ -358,11 +388,16 @@ export function ClinicControlPill({
 						{isOnline ? "БД" : "Офлайн"}
 					</span>
 					<span
-						className={`dnt-pill-dot ${isOnline ? "dnt-pill-dot--online" : "dnt-pill-dot--offline"}`}
+						className={`dnt-pill-dot ${isOnline ? (pendingMutationCount > 0 ? "dnt-pill-dot--busy" : "dnt-pill-dot--online") : "dnt-pill-dot--offline"}`}
 					/>
 					{isOnline && (
 						<span className="font-mono text-[10px] opacity-80 hidden 2xl:inline">
 							{syncLatencyMs}ms
+						</span>
+					)}
+					{pendingMutationCount > 0 && (
+						<span className="font-mono text-[9px] font-bold text-amber-500 bg-amber-500/10 px-1 py-0.5 rounded ml-0.5">
+							{pendingMutationCount}
 						</span>
 					)}
 				</span>
@@ -607,8 +642,16 @@ export function ClinicControlPill({
 							</div>
 							<div className="flex items-center justify-between">
 								<span>IndexedDB Offline Outbox:</span>
-								<strong className="text-emerald-600 dark:text-emerald-400">
-									0 в очереди
+								<strong
+									className={
+										pendingMutationCount > 0
+											? "text-amber-500 font-mono"
+											: "text-emerald-600 dark:text-emerald-400"
+									}
+								>
+									{pendingMutationCount > 0
+										? `${pendingMutationCount} в очереди`
+										: "0 в очереди"}
 								</strong>
 							</div>
 							<div className="flex items-center justify-between">

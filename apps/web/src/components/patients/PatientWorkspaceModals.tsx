@@ -41,6 +41,18 @@ const CbctMprImplantStudioModal = React.lazy(() =>
 	})),
 );
 
+const ClinicalPhotoProtocolModal = React.lazy(() =>
+	import("../photography/ClinicalPhotoProtocolModal").then((m) => ({
+		default: m.ClinicalPhotoProtocolModal,
+	})),
+);
+
+const OrthodonticPhotoProtocolModal = React.lazy(() =>
+	import("../diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({
+		default: m.OrthodonticPhotoProtocolModal,
+	})),
+);
+
 export interface PatientDuplicateMergeModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -343,6 +355,14 @@ export interface PatientWorkspaceModalsProps {
 	readonly setIsLoyaltyModalOpen: (open: boolean) => void;
 	readonly isCbctModalOpen: boolean;
 	readonly setIsCbctModalOpen: (open: boolean) => void;
+	// Clinical Dental Photo Protocol & Before/After Studio Modal
+	readonly isPhotoProtocolOpen?: boolean;
+	readonly setIsPhotoProtocolOpen?: (open: boolean) => void;
+	// Orthodontic 8-Angle Photo Protocol Modal
+	readonly isOrthoPhotoModalOpen?: boolean;
+	readonly setIsOrthoPhotoModalOpen?: (open: boolean) => void;
+	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
 	// 1-Click Duplicate Merge Modal (backwards-compatible optional props)
 	readonly isMergeModalOpen?: boolean;
 	readonly setIsMergeModalOpen?: (open: boolean) => void;
@@ -363,6 +383,12 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 		setIsLoyaltyModalOpen,
 		isCbctModalOpen,
 		setIsCbctModalOpen,
+		isPhotoProtocolOpen: propPhotoProtocolOpen,
+		setIsPhotoProtocolOpen: propSetIsPhotoProtocolOpen,
+		isOrthoPhotoModalOpen: propOrthoPhotoModalOpen,
+		setIsOrthoPhotoModalOpen: propSetIsOrthoPhotoModalOpen,
+		doctorName,
+		clinicName,
 		isMergeModalOpen,
 		setIsMergeModalOpen,
 		duplicatePatient,
@@ -370,6 +396,8 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 	}) {
 		const [internalMergeOpen, setInternalMergeOpen] = useState(false);
 		const [eventDuplicateData, setEventDuplicateData] = useState<any>(null);
+		const [internalPhotoProtocolOpen, setInternalPhotoProtocolOpen] = useState(false);
+		const [internalOrthoPhotoModalOpen, setInternalOrthoPhotoModalOpen] = useState(false);
 
 		useEffect(() => {
 			const handleOpen = (e: Event) => {
@@ -382,17 +410,41 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 					if (setIsMergeModalOpen) setIsMergeModalOpen(true);
 				}
 			};
+
+			const handleOpenPhotoProtocol = (e: Event) => {
+				const custom = e as CustomEvent<{ patientId?: string }>;
+				if (!custom.detail?.patientId || custom.detail.patientId === patientId) {
+					setInternalPhotoProtocolOpen(true);
+					propSetIsPhotoProtocolOpen?.(true);
+				}
+			};
+
+			const handleOpenOrthoPhoto = (e: Event) => {
+				const custom = e as CustomEvent<{ patientId?: string }>;
+				if (!custom.detail?.patientId || custom.detail.patientId === patientId) {
+					setInternalOrthoPhotoModalOpen(true);
+					propSetIsOrthoPhotoModalOpen?.(true);
+				}
+			};
+
 			window.addEventListener("dente-open-duplicate-merge-modal", handleOpen);
+			window.addEventListener("dente-open-photo-protocol-modal", handleOpenPhotoProtocol);
+			window.addEventListener("dente-open-orthodontic-photo-modal", handleOpenOrthoPhoto);
 			return () => {
 				window.removeEventListener("dente-open-duplicate-merge-modal", handleOpen);
+				window.removeEventListener("dente-open-photo-protocol-modal", handleOpenPhotoProtocol);
+				window.removeEventListener("dente-open-orthodontic-photo-modal", handleOpenOrthoPhoto);
 			};
-		}, [patientId, setIsMergeModalOpen]);
+		}, [patientId, setIsMergeModalOpen, propSetIsPhotoProtocolOpen, propSetIsOrthoPhotoModalOpen]);
 
 		const isMergeOpen = isMergeModalOpen ?? internalMergeOpen;
 		const closeMergeModal = useCallback(() => {
 			setInternalMergeOpen(false);
 			if (setIsMergeModalOpen) setIsMergeModalOpen(false);
 		}, [setIsMergeModalOpen]);
+
+		const isEffectivePhotoProtocolOpen = propPhotoProtocolOpen ?? internalPhotoProtocolOpen;
+		const isEffectiveOrthoPhotoModalOpen = propOrthoPhotoModalOpen ?? internalOrthoPhotoModalOpen;
 
 		return (
 			<>
@@ -470,6 +522,40 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 						duplicatePatient={duplicatePatient ?? eventDuplicateData}
 						onMergeSuccess={onMergeSuccess}
 					/>
+				)}
+
+				{/* Clinical Dental Photo Protocol & Before/After Studio Modal */}
+				{isEffectivePhotoProtocolOpen && (
+					<Suspense fallback={null}>
+						<ClinicalPhotoProtocolModal
+							isOpen={isEffectivePhotoProtocolOpen}
+							onClose={() => {
+								setInternalPhotoProtocolOpen(false);
+								propSetIsPhotoProtocolOpen?.(false);
+							}}
+							patientId={patientId}
+							patientName={patientName || undefined}
+							doctorName={doctorName}
+							clinicName={clinicName}
+						/>
+					</Suspense>
+				)}
+
+				{/* Orthodontic 8-Angle Photo Protocol Modal */}
+				{isEffectiveOrthoPhotoModalOpen && (
+					<Suspense fallback={null}>
+						<OrthodonticPhotoProtocolModal
+							isOpen={isEffectiveOrthoPhotoModalOpen}
+							onClose={() => {
+								setInternalOrthoPhotoModalOpen(false);
+								propSetIsOrthoPhotoModalOpen?.(false);
+							}}
+							patientId={patientId}
+							patientName={patientName || undefined}
+							doctorName={doctorName}
+							clinicName={clinicName}
+						/>
+					</Suspense>
 				)}
 			</>
 		);

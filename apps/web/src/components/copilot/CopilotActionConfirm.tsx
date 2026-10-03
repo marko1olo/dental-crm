@@ -61,7 +61,7 @@ const ACTION_TITLES: Record<string, string> = {
   sign_consent: 'Подписание ИДС',
   'documents.sign_consent': 'Регистрация информированного согласия',
   check_drug_interactions: 'Проверка взаимодействия лекарств (DDI)',
-  'clinical.check_drug_interactions': 'Проверка лекарственной безопасности DDI',
+  'clinical.check_drug_interactions': 'Проверка взаимодействия лекарств (DDI)',
   replace_unsafe_drug: 'Замена противопоказанного препарата',
 };
 

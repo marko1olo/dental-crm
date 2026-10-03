@@ -128,11 +128,11 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						onClick={handleQuickPrintAct}
 						className="hidden sm:flex min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						title="Быстрая печать акта сдачи-приемки"
-						aria-label="Печать акта 804н"
+						aria-label="Печать акта оказанных услуг"
 						data-testid="btn-payment-modal-print-act"
 					>
 						<FileText size={14} className="text-slate-500 shrink-0" />
-						<span className="hidden sm:inline whitespace-nowrap shrink-0">Акт 804н</span>
+						<span className="hidden sm:inline whitespace-nowrap shrink-0">Акт оказанных услуг</span>
 					</button>
 					<button
 						type="button"

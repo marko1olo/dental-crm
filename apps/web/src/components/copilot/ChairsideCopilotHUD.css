@@ -247,57 +247,15 @@
   height: 5px;
   border-radius: 1.5px;
   background-color: var(--muted);
-  transition: height 0.1s ease, background-color 0.15s ease;
+  transition: height 0.08s ease, background-color 0.15s ease;
 }
 
 .chairside-vu-meter--active .chairside-vu-bar {
   background-color: var(--teal-dark);
 }
 
-.chairside-vu-meter--active .chairside-vu-bar--1 {
-  animation: chairside-vu-wave-1 0.75s ease-in-out infinite alternate;
-}
-
-.chairside-vu-meter--active .chairside-vu-bar--2 {
-  animation: chairside-vu-wave-2 0.55s ease-in-out infinite alternate;
-}
-
-.chairside-vu-meter--active .chairside-vu-bar--3 {
-  animation: chairside-vu-wave-3 0.85s ease-in-out infinite alternate;
-}
-
-.chairside-vu-meter--active .chairside-vu-bar--4 {
-  animation: chairside-vu-wave-4 0.65s ease-in-out infinite alternate;
-}
-
-.chairside-vu-meter--active .chairside-vu-bar--5 {
-  animation: chairside-vu-wave-5 0.95s ease-in-out infinite alternate;
-}
-
-@keyframes chairside-vu-wave-1 {
-  0% { height: 4px; }
-  100% { height: 14px; }
-}
-
-@keyframes chairside-vu-wave-2 {
-  0% { height: 6px; }
-  100% { height: 18px; }
-}
-
-@keyframes chairside-vu-wave-3 {
-  0% { height: 5px; }
-  100% { height: 16px; }
-}
-
-@keyframes chairside-vu-wave-4 {
-  0% { height: 7px; }
-  100% { height: 15px; }
-}
-
-@keyframes chairside-vu-wave-5 {
-  0% { height: 3px; }
-  100% { height: 12px; }
-}
+/* Mandate 8l & 8s: Deterministic VU meter. Heights are driven strictly by voiceMeterHeights via inline styles.
+   Zero pseudo-oscillator keyframes or fake waves when sound is not present. */
 
 /* Interactive Live Entity Pills (Mandate 8l: 1-click removal) */
 .chairside-hud-live-pills {
@@ -1048,3 +1006,37 @@
 .chairside-hud-btn-apply-all--undo:hover {
   background-color: var(--bad-bg);
 }
+
+/* ============================================================================
+   TOUCH ERGONOMICS (Mandates 8d, 8e, 8p):
+   Preserve 32-36px desktop density, expand to 44-48px touch targets on tablet/touch.
+   ============================================================================ */
+@media (pointer: coarse) {
+  .chairside-hud-btn-icon,
+  .chairside-hud-btn-mic,
+  .chairside-hud-btn-mic-capsule,
+  .chairside-hud-btn-send {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  .chairside-live-pill-remove {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .chairside-hud-preset-chip {
+    min-height: 36px;
+    padding: 0 12px;
+  }
+
+  .chairside-hud-btn-primary,
+  .chairside-hud-btn-undo,
+  .chairside-capsule-btn-apply,
+  .chairside-hud-btn-apply-all,
+  .chairside-hud-btn-dismiss {
+    min-height: 44px;
+  }
+}
+

@@ -309,7 +309,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								type="button"
 								onClick={onOpenFastCheckout}
 								className="ml-0.5 px-2 h-6 rounded bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs flex items-center gap-0.5 transition-all cursor-pointer shadow-2xs shrink-0"
-								title="Открыть быструю кассу приема (54-ФЗ)"
+								title="Открыть быструю кассу приема"
 								data-testid="btn-open-fast-checkout"
 							>
 								<span>Оплатить</span>

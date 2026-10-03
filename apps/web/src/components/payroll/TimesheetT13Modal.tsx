@@ -483,11 +483,11 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							type="button"
 							data-testid="btn-fill-6-6"
 							onClick={() => handleBatchFillHours(6.6)}
-							title="Заполнить рабочие дни по норме ТК РФ ст. 350 (33 ч/нед = 6.6 ч/день)"
+							title="Заполнить рабочие дни по норме для врачей-стоматологов (33 ч/нед, 6.6 ч/день)"
 							className="h-7 px-2.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--on-teal)] text-xs font-bold text-[var(--teal)] transition-colors cursor-pointer flex items-center gap-1"
 						>
 							<Clock className="w-3 h-3" />
-							Я/6.6 (ТК РФ)
+							6.6 ч (норма)
 						</button>
 						<button
 							type="button"
@@ -496,7 +496,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							title="Заполнить рабочие дни по стандартной норме 40 ч/нед (8 ч/день)"
 							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer flex items-center gap-1"
 						>
-							Я/8
+							8 ч (стандарт)
 						</button>
 					</div>
 

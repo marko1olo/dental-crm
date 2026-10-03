@@ -94,7 +94,7 @@ export function MaterialBomsQuickCatalogModal({
 								Каталог клинических материалов РФ/СНГ (90% рынка)
 							</h3>
 							<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--muted)" }}>
-								Выберите эталонный материал по убыванию популярности (Мандат 8e: Doctor Autonomy)
+								Выберите эталонный материал по частоте клинического применения
 							</p>
 						</div>
 					</div>

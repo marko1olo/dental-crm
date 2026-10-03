@@ -276,7 +276,7 @@ async function run() {
 
 			// SHOT 3: Maximized Axial Viewport
 			console.log(`[Shot 3] Maximized Axial Viewport (${vp.name})...`);
-			const maxAxialBtn = page.locator('[data-testid="cbct-maximize-axial-btn"]');
+			const maxAxialBtn = page.locator('[data-testid="btn-viewport-expand-axial"], [data-testid="cbct-maximize-axial-btn"]');
 			if (await maxAxialBtn.isVisible()) {
 				await maxAxialBtn.click();
 			} else {
@@ -289,7 +289,7 @@ async function run() {
 
 			await saveScreenshotProof(page, `03_cbct_maximized_axial_viewport_${vp.name}_v4.png`);
 
-			const restoreBtn = page.locator('[data-testid="cbct-restore-grid-btn"]');
+			const restoreBtn = page.locator('[data-testid="btn-viewport-collapse-axial"], [data-testid="cbct-restore-grid-btn"]');
 			if (await restoreBtn.isVisible()) {
 				await restoreBtn.click();
 				await flushCanvasRender(page, 600);

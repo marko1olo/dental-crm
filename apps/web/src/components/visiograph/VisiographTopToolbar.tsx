@@ -33,13 +33,9 @@ import {
 } from "./VisiographWindowPresets";
 import type { ActiveVisiographToolType } from "./VisiographInteractiveOverlay";
 import type { VisiographImageParams } from "./VisiographImageProcessor";
+import type { DentalSensorPreset } from "./VisiographMeasurementMath";
 
-export interface SensorPresetItem {
-	readonly id: string;
-	readonly label: string;
-	readonly pixelSizeMm: number;
-	readonly description: string;
-}
+export type SensorPresetItem = DentalSensorPreset;
 
 export interface VisiographTopToolbarProps {
 	activeTool: ActiveVisiographToolType;
@@ -621,7 +617,7 @@ export function VisiographTopToolbar({
 						justifyContent: "center",
 						gap: "5px",
 					}}
-					title="Юридический экспорт (JPEG, PNG, DICOM Part 10)"
+					title="Экспорт снимка (JPEG, PNG, DICOM)"
 				>
 					<FileDown size={13} /> <span>Экспорт</span>
 				</button>

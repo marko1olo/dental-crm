@@ -334,12 +334,24 @@
 	font-weight: 600 !important;
 	padding: 0 10px !important;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-	display: inline-flex !important;
+	display: inline-flex;
 	align-items: center !important;
 	gap: 6px !important;
 	flex-shrink: 0 !important;
 	box-sizing: border-box !important;
 	transition: all 0.15s ease !important;
+}
+
+.topbar .top-actions .hidden,
+.topbar .hidden {
+	display: none !important;
+}
+
+@media (min-width: 1536px) {
+	.topbar .top-actions .\32xl\:inline-flex,
+	.topbar .\32xl\:inline-flex {
+		display: inline-flex !important;
+	}
 }
 
 .topbar .top-actions .secondary-button:hover:not(:disabled),
@@ -350,3 +362,4 @@
 	border-color: var(--line-strong) !important;
 	color: var(--teal) !important;
 }
+

@@ -3474,9 +3474,9 @@ export function useAppLogic(): any {
 
 		lanP2PDispatcher.configure({
 			nodeRole: lanRole,
-			organizationId: dashboard?.clinic?.id || undefined,
+			organizationId: (dashboard as any)?.clinic?.id || dashboard?.activeVisit?.organizationId || clinicProfileDraft?.organizationId || undefined,
 		});
-	}, [selectedWorkspaceRole, dashboard?.clinic?.id]);
+	}, [selectedWorkspaceRole, dashboard?.activeVisit?.organizationId, clinicProfileDraft?.organizationId]);
 
 	useEffect(() => {
 		if (!dashboard) return;

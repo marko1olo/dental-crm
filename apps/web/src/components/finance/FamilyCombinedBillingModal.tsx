@@ -163,7 +163,7 @@ export function FamilyCombinedBillingModal({
 		try {
 			onCheckoutComplete?.(billingResult);
 			showToast(
-				`Семейный чек на ${billingResult.totalAmountFormattedRu} успешно фискализирован по 54-ФЗ (ФФД 1.2)!`,
+				`Семейная оплата на ${billingResult.totalAmountFormattedRu} успешно принята, чек выдан!`,
 				"success",
 				5000,
 			);
@@ -195,7 +195,7 @@ export function FamilyCombinedBillingModal({
 						<div>
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 id="family-billing-title" className="text-base sm:text-lg font-black m-0 text-[var(--ink,#0f172a)]">
-									Семейный расчет и объединенный чек 54-ФЗ
+									Семейный расчет и объединенная оплата
 								</h2>
 								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 									{familyGroupName}
@@ -210,7 +210,7 @@ export function FamilyCombinedBillingModal({
 								<span>· <strong className="text-emerald-600">{formatAvailableForDebitLabel(availableFamilyWalletRub)}</strong></span>
 								<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
 									<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-									<span>54-ФЗ: ИНН с физлиц НЕ требуется</span>
+									<span>ИНН с пациентов-физлиц не требуется</span>
 								</span>
 							</p>
 						</div>
@@ -509,13 +509,13 @@ export function FamilyCombinedBillingModal({
 									? "Выберите хотя бы одну позицию для формирования чека"
 									: isFiscalizing
 									? "Выполняется фискализация..."
-									: `Пробить единый фискальный чек 54-ФЗ на сумму ${billingResult.totalAmountFormattedRu}`
+									: `Принять оплату на сумму ${billingResult.totalAmountFormattedRu} и выдать чек`
 							}
 							className="min-h-[48px] px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs sm:text-sm font-extrabold flex items-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 							data-testid="btn-execute-family-fiscal-checkout"
 						>
 							<Sparkles size={18} className="animate-pulse" />
-							<span>Пробить чек 54-ФЗ в 1 клик</span>
+							<span>Принять оплату и выдать чек</span>
 						</button>
 					</div>
 				</div>

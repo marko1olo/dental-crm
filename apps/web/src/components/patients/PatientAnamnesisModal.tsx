@@ -593,7 +593,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 									className={`anamnesis-toggle-item ${profile.hasHepatitis ? "anamnesis-toggle-item--active-high" : ""}`}
 								>
 									<span className="anamnesis-toggle-item__label">
-										Вирусный гепатит B / C (СанПиН 3.3686-21)
+										Вирусный гепатит B / C
 									</span>
 									<div className="anamnesis-toggle-item__icon">
 										{profile.hasHepatitis ? <Check className="w-3.5 h-3.5" /> : null}
@@ -606,7 +606,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 									className={`anamnesis-toggle-item ${profile.hasHiv ? "anamnesis-toggle-item--active-high" : ""}`}
 								>
 									<span className="anamnesis-toggle-item__label">
-										ВИЧ-инфекция (СанПиН 3.3686-21)
+										ВИЧ-инфекция
 									</span>
 									<div className="anamnesis-toggle-item__icon">
 										{profile.hasHiv ? <Check className="w-3.5 h-3.5" /> : null}

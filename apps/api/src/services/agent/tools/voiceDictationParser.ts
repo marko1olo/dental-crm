@@ -555,7 +555,74 @@ export function extractClinicalFindings(
 	};
 }
 
-// ─── 6. MASTER PARSER ─────────────────────────────────────────────────────
+// ─── 6. PROCEDURES & CLINICAL INTERVENTIONS ──────────────────────────────
+
+const CLINICAL_PROCEDURE_PATTERNS: { name: string; regex: RegExp }[] = [
+	{
+		name: "Препарирование и формирование кариозной полости",
+		regex: /(препарирован|формирован[иея] полост|иссечен[иея] некротизирован|некрэктоми)/i,
+	},
+	{
+		name: "Изоляция рабочего поля (коффердам / раббердам)",
+		regex: /(коффердам|раббердам|изоляци[яи]|optragate|оптрагейт)/i,
+	},
+	{
+		name: "Восстановление зуба светоотверждаемым композитом (пломба / реставрация)",
+		regex: /(светов[а-я]+ пломб|светоотверждаем|пломбирован|постановк[а-я]* пломб|пломб[а-я]+|реставраци|фотополимер)/i,
+	},
+	{
+		name: "Механическая и медикаментозная обработка корневых каналов",
+		regex: /(мехобработк|обработк[аеу]? канал|машинн[ые|ыми] файл|протейпер|расширени[ея] канал|промывани[ея] гипохлорит)/i,
+	},
+	{
+		name: "Обтурация корневых каналов гуттаперчей с силером",
+		regex: /(обтураци|пломбирован[иея] канал|пломбировк[аеу] канал|латеральн[ая|ой] конденсаци|вертикальн[ая|ой] конденсаци)/i,
+	},
+	{
+		name: "Проведение местной анестезии (инфильтрационная / проводниковая)",
+		regex: /(анестези|инфильтраци|проводников|мандибулярн|торусальн|интралигаментарн|убистезин|септонест|артикаин)/i,
+	},
+	{
+		name: "Удаление зуба (простое / сложное)",
+		regex: /(удалени[ея] зуб|экстракци|люксаци|элеватор|щипц)/i,
+	},
+	{
+		name: "Профессиональная гигиена полости рта (Air-Flow / ультразвуковой скейлинг)",
+		regex: /(профгигиен|гигиен|чистк|air-flow|эйр[- ]?флоу|скейлинг|ультразвук|сняти[ея] отложени)/i,
+	},
+	{
+		name: "Снятие анатомических оттисков / интраоральное сканирование",
+		regex: /(оттиск|слеп[ока]|сканирован|интраоральн)/i,
+	},
+	{
+		name: "Фиксация несъемной ортопедической конструкции (коронка / винир / вкладка)",
+		regex: /(фиксаци[яи] коронк|фиксаци[яи] вкладк|фиксаци[яи] винир|цементировк)/i,
+	},
+	{
+		name: "Установка дентального имплантата",
+		regex: /(имплантаци|установк[аеи]? имплант)/i,
+	},
+	{
+		name: "Наложение швов",
+		regex: /(наложени[ея] шв|ушивани|шовный материал|викрил)/i,
+	},
+	{
+		name: "Шлифовка и полировка реставрации",
+		regex: /(полировк|шлифовк|окклюзионн[ое|ая] припасовк)/i,
+	},
+];
+
+export function extractProcedures(text: string, _primaryTooth?: number): string[] {
+	const found = new Set<string>();
+	for (const pattern of CLINICAL_PROCEDURE_PATTERNS) {
+		if (pattern.regex.test(text)) {
+			found.add(pattern.name);
+		}
+	}
+	return Array.from(found);
+}
+
+// ─── 7. MASTER PARSER ─────────────────────────────────────────────────────
 
 /**
  * Parses raw doctor voice transcript into fully structured clinical entities.
@@ -568,6 +635,7 @@ export function parseDoctorVoiceDictation(transcript: string): ParsedClinicalEnt
 	const diagnoses = extractDiagnoses(text, primaryTooth);
 	const anesthesia = extractAnesthesia(text);
 	const materials = extractMaterials(text);
+	const procedures = extractProcedures(text, primaryTooth);
 	const findings = extractClinicalFindings(text);
 
 	// Recommendations extraction
@@ -593,7 +661,7 @@ export function parseDoctorVoiceDictation(transcript: string): ParsedClinicalEnt
 		diagnoses,
 		...(anesthesia !== undefined ? { anesthesia } : {}),
 		materials,
-		procedures: [],
+		procedures,
 		clinicalFindings: findings,
 		recommendations,
 	};

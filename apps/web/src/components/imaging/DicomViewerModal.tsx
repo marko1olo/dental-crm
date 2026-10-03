@@ -18,7 +18,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState, Suspense } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { actionFailureToast } from "../../lib/panelStateText.js";
 import { usePatientStore } from "../../store/patientStore.js";
@@ -48,6 +48,17 @@ import {
 	RADIOLOGY_STANDARD_PROTOCOLS,
 	applyRadiologyProtocolToForm043,
 } from "../radiology/radiologyProtocols.js";
+import {
+	RadiologyFilmstripDock,
+	type RadiologyFilmstripItem,
+} from "../radiology/RadiologyFilmstripDock.js";
+import {
+	RadiologyQuickFiltersPanel,
+	type RadiologyQuickFilterState,
+} from "../radiology/RadiologyQuickFiltersPanel.js";
+import { RadiologyCalibratedScaleRuler } from "../radiology/RadiologyCalibratedScaleRuler.js";
+import { RadiologyClinicalHud } from "../radiology/RadiologyClinicalHud.js";
+import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper.js";
 
 export interface DicomViewerModalProps {
 	readonly isOpen: boolean;
@@ -58,6 +69,7 @@ export interface DicomViewerModalProps {
 	readonly patientName?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly studyDate?: string | undefined;
+	readonly studiesHistory?: readonly RadiologyFilmstripItem[] | undefined;
 	readonly initialViewMode?: "2d" | "3d_mpr" | "sectioning" | undefined;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 	readonly onConnectRvg?: (() => void) | undefined;
@@ -74,6 +86,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	patientName,
 	patientId,
 	studyDate,
+	studiesHistory,
 	initialViewMode = "2d",
 	onInsertToProtocol,
 	onConnectRvg,
@@ -95,14 +108,96 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		if (imageSrc) setCurrentImageSrc(imageSrc);
 	}, [imageSrc]);
 
+	const [activeStudyId, setActiveStudyId] = useState<string>("study-current");
+	const filmstripStudies: readonly RadiologyFilmstripItem[] = useMemo(() => {
+		if (studiesHistory && studiesHistory.length > 0) return studiesHistory;
+		return [
+			{
+				id: "study-current",
+				title: title || "Прицельный снимок",
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: studyDate || "01.10.2026 10:14:20",
+				teethFdi: toothFdiCode ? [toothFdiCode] : ["14"],
+				imageUrl: currentImageSrc || "/radiology/sample_rvg_tooth16.jpg",
+				effectiveDoseMicrosv: 3.0,
+			},
+			{
+				id: "study-prior-1",
+				title: "Контроль обтурации",
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: "20.09.2026 09:14:20",
+				teethFdi: ["16"],
+				imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+				effectiveDoseMicrosv: 3.0,
+			},
+			{
+				id: "study-prior-2",
+				title: "Периапикальный снимок",
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: "24.03.2026 14:30:10",
+				teethFdi: ["36"],
+				imageUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
+				effectiveDoseMicrosv: 3.0,
+			},
+		];
+	}, [studiesHistory, title, studyDate, toothFdiCode, currentImageSrc]);
+
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [viewportState, setViewportState] = useState<DicomViewportState>(DEFAULT_DICOM_VIEWPORT_STATE);
+
+	const quickFilterState: RadiologyQuickFilterState = useMemo(() => ({
+		sharpness: viewportState.sharpen > 0,
+		maxSharpness: Boolean((viewportState as any).maxRes),
+		invert: Boolean(viewportState.invert),
+		pseudoRelief: Boolean((viewportState as any).emboss),
+	}), [viewportState]);
+
+	const handleQuickFilterChange = (next: Partial<RadiologyQuickFilterState>) => {
+		setViewportState((prev) => {
+			const updated = { ...prev };
+			if (next.sharpness !== undefined) updated.sharpen = next.sharpness ? 50 : 0;
+			if (next.maxSharpness !== undefined) {
+				(updated as any).maxRes = next.maxSharpness;
+				if (next.maxSharpness) updated.sharpen = 0;
+			}
+			if (next.invert !== undefined) updated.invert = next.invert;
+			if (next.pseudoRelief !== undefined) (updated as any).emboss = next.pseudoRelief;
+			return updated;
+		});
+	};
 	const [measurements, setMeasurements] = useState<CalibratedRulerMeasurement[]>([]);
 	const [isNormaApplied, setIsNormaApplied] = useState(false);
 	const [isProtocolsDropdownOpen, setIsProtocolsDropdownOpen] = useState(false);
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
 	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
 	const [showFindingsDrawer, setShowFindingsDrawer] = useState(false);
+	const modalContainerRef = useRef<HTMLDivElement | null>(null);
+
+	const handleClose = useCallback(() => {
+		if (modalContainerRef.current) {
+			teardownViewportCanvases(modalContainerRef.current);
+		}
+		onClose();
+	}, [onClose]);
+
+	const handleSwitchViewMode = useCallback((mode: "2d" | "3d_mpr" | "sectioning") => {
+		if (modalContainerRef.current) {
+			teardownViewportCanvases(modalContainerRef.current);
+		}
+		setViewMode(mode);
+	}, []);
+
+	// Unmount cleanup: Zero canvas backing store and dispose contexts (Mandate 8c & 8x)
+	useEffect(() => {
+		return () => {
+			if (modalContainerRef.current) {
+				teardownViewportCanvases(modalContainerRef.current);
+			}
+		};
+	}, []);
 
 	// Esc key handling
 	useEffect(() => {
@@ -111,12 +206,12 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			if (e.key === "Escape") {
 				if (showFindingsDrawer) setShowFindingsDrawer(false);
 				else if (isProtocolsDropdownOpen) setIsProtocolsDropdownOpen(false);
-				else onClose();
+				else handleClose();
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, showFindingsDrawer, isProtocolsDropdownOpen, onClose]);
+	}, [isOpen, showFindingsDrawer, isProtocolsDropdownOpen, handleClose]);
 
 	// Close dropdown when clicked outside
 	useEffect(() => {
@@ -147,16 +242,12 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	const denteClinicalReadHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
 		const auth = authRef.current;
-		return auth && typeof auth.denteClinicalReadHeaders === "function"
-			? auth.denteClinicalReadHeaders(extra ?? {})
-			: { ...(extra ?? {}) };
+		return auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders(extra ?? {}) : { ...(extra ?? {}) };
 	}, []);
 
 	const denteClinicalMutationHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
 		const auth = authRef.current;
-		return auth && typeof auth.denteClinicalMutationHeaders === "function"
-			? auth.denteClinicalMutationHeaders(extra ?? {})
-			: { ...(extra ?? {}) };
+		return auth && typeof auth.denteClinicalMutationHeaders === "function" ? auth.denteClinicalMutationHeaders(extra ?? {}) : { ...(extra ?? {}) };
 	}, []);
 
 	if (!isOpen) return null;
@@ -164,25 +255,14 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	// Canonical MPR Cockpit and Sectioning View modes
 	if (viewMode === "3d_mpr") {
 		return (
-			<div
-				data-testid="dicom-viewer-modal"
-				style={{
-					position: "fixed",
-					inset: 0,
-					zIndex: 9999,
-					backgroundColor: "rgba(2, 6, 23, 0.98)",
-					display: "flex",
-					flexDirection: "column",
-					color: "#f8fafc",
-				}}
-			>
+			<div ref={modalContainerRef} data-testid="dicom-viewer-modal" style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(2, 6, 23, 0.98)", display: "flex", flexDirection: "column", color: "#f8fafc" }}>
 				<DicomMprCockpit
 					patientName={patientName}
 					patientId={patientId}
 					studyDate={studyDate}
-					onBackTo2D={() => setViewMode("2d")}
-					onSwitchToSectioning={() => setViewMode("sectioning")}
-					onClose={onClose}
+					onBackTo2D={() => handleSwitchViewMode("2d")}
+					onSwitchToSectioning={() => handleSwitchViewMode("sectioning")}
+					onClose={handleClose}
 					onInsertToProtocol={onInsertToProtocol}
 				/>
 			</div>
@@ -191,26 +271,15 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	if (viewMode === "sectioning") {
 		return (
-			<div
-				data-testid="dicom-viewer-modal"
-				style={{
-					position: "fixed",
-					inset: 0,
-					zIndex: 9999,
-					backgroundColor: "rgba(2, 6, 23, 0.98)",
-					display: "flex",
-					flexDirection: "column",
-					color: "#f8fafc",
-				}}
-			>
+			<div ref={modalContainerRef} data-testid="dicom-viewer-modal" style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(2, 6, 23, 0.98)", display: "flex", flexDirection: "column", color: "#f8fafc" }}>
 				<DicomSectioningView
 					patientName={patientName}
 					patientId={patientId}
 					studyDate={studyDate}
 					toothFdiCode={toothFdiCode}
-					onClose={onClose}
-					onBackTo2D={() => setViewMode("2d")}
-					onSwitchToMpr={() => setViewMode("3d_mpr")}
+					onClose={handleClose}
+					onBackTo2D={() => handleSwitchViewMode("2d")}
+					onSwitchToMpr={() => handleSwitchViewMode("3d_mpr")}
 					onInsertToProtocol={onInsertToProtocol}
 				/>
 			</div>
@@ -246,7 +315,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 		setIsNormaApplied(true);
 		setAppliedProtocolId("norma");
-		showToast(`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${targetTooth ? ` (${targetTooth.trim()})` : ""}`, "success");
+		showToast(`Заключение «Норма: патологии на снимке не выявлено» внесено в медицинскую карту${targetTooth ? ` (${targetTooth.trim()})` : ""}`, "success");
 	};
 
 	const handleApplyProtocol = (preset: (typeof RADIOLOGY_STANDARD_PROTOCOLS)[number]) => {
@@ -413,6 +482,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	return (
 		<div
+			ref={modalContainerRef}
 			data-testid="dicom-viewer-modal"
 			style={{
 				position: "fixed",
@@ -434,41 +504,30 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			/>
 
 			{/* Primary Clinical Navigation Bar: Mode Switcher, 1-Click Norma, Protocols, AI & Esc */}
-			<div style={{ height: "42px", minHeight: "42px", backgroundColor: "#070b14", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", gap: "8px", userSelect: "none" }}>
+			<div
+				className="overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x shrink-0"
+				style={{ height: "42px", minHeight: "42px", backgroundColor: "#070b14", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", gap: "8px", userSelect: "none", flexWrap: "nowrap", whiteSpace: "nowrap" }}
+			>
 				{/* Left: Modality brand & 1-click mode switcher */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 					<span style={{ backgroundColor: "#0d9488", color: "#fff", fontWeight: 800, fontSize: "11px", padding: "3px 7px", borderRadius: "4px" }}>
 						RVG / DICOM
 					</span>
 					<div style={{ display: "flex", alignItems: "center", gap: "2px", backgroundColor: "#0f172a", borderRadius: "6px", padding: "2px", border: "1px solid #334155" }}>
-						<button
-							type="button"
-							onClick={() => setViewMode("2d")}
-							style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: viewMode === "2d" ? "#134e4a" : "transparent", color: viewMode === "2d" ? "#2dd4bf" : "#94a3b8" }}
-						>
+						<button type="button" onClick={() => handleSwitchViewMode("2d")} style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: viewMode === "2d" ? "#134e4a" : "transparent", color: viewMode === "2d" ? "#2dd4bf" : "#94a3b8" }}>
 							2D Срез
 						</button>
-						<button
-							type="button"
-							data-testid="btn-dicom-switch-mpr"
-							onClick={() => setViewMode("3d_mpr")}
-							style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: (viewMode as string) === "3d_mpr" ? "#134e4a" : "transparent", color: (viewMode as string) === "3d_mpr" ? "#2dd4bf" : "#94a3b8", display: "inline-flex", alignItems: "center", gap: "4px" }}
-						>
+						<button type="button" data-testid="btn-dicom-switch-mpr" onClick={() => handleSwitchViewMode("3d_mpr")} style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: (viewMode as string) === "3d_mpr" ? "#134e4a" : "transparent", color: (viewMode as string) === "3d_mpr" ? "#2dd4bf" : "#94a3b8", display: "inline-flex", alignItems: "center", gap: "4px" }}>
 							<Layers size={12} />
 							<span>4-MPR (КЛКТ)</span>
 						</button>
-						<button
-							type="button"
-							data-testid="btn-dicom-switch-sectioning"
-							onClick={() => setViewMode("sectioning")}
-							style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: (viewMode as string) === "sectioning" ? "#134e4a" : "transparent", color: (viewMode as string) === "sectioning" ? "#2dd4bf" : "#94a3b8" }}
-						>
-							РАЗДЕЛ (Кросс-секции)
+						<button type="button" data-testid="btn-dicom-switch-sectioning" onClick={() => handleSwitchViewMode("sectioning")} style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: (viewMode as string) === "sectioning" ? "#134e4a" : "transparent", color: (viewMode as string) === "sectioning" ? "#2dd4bf" : "#94a3b8" }}>
+							РАЗДЕЛ
 						</button>
 					</div>
 
-					{/* Patient & Study Info Header */}
-					<div style={{ display: "flex", flexDirection: "column", marginLeft: "8px", maxWidth: "280px" }}>
+					{/* Patient & Study Info Header (collapses on mobile to prevent collision) */}
+					<div className="hidden sm:flex flex-col ml-2 max-w-[240px]">
 						<div style={{ fontSize: "11px", fontWeight: 700, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 							{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}
 						</div>
@@ -479,18 +538,28 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					</div>
 				</div>
 
+				{/* Center: EzDent-i 1-Click Quick Filter Toggles (desktop view) */}
+				<div className="hidden md:flex items-center shrink-0">
+					<RadiologyQuickFiltersPanel
+						filterState={quickFilterState}
+						onFilterChange={handleQuickFilterChange}
+						onReset={handleReset}
+						orientation="horizontal"
+					/>
+				</div>
+
 				{/* Center/Right: 1-Click Norma, Protocols Menu, On-Demand AI, Close */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 					{/* 1-Click Norma Button (Mandate 8e) */}
 					<button
 						type="button"
 						data-testid="btn-dicom-norma-043"
 						onClick={handleInsertNormaTo043}
 						style={{ height: "28px", padding: "0 10px", fontSize: "11px", fontWeight: 700, borderRadius: "6px", border: "1px solid #10b981", backgroundColor: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "#064e3b", color: "#a7f3d0", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" }}
-						title="1-клик действие: внести «Рентген-норма» в карту 043/у"
+						title="1-клик действие: внести «Рентген-норма» в медицинскую карту"
 					>
 						{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} color="#34d399" />}
-						<span>{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}</span>
+						<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 					</button>
 
 					{/* 1-Click Protocols Menu Dropdown (Mandate 8e, 8i, 8k) */}
@@ -500,7 +569,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							data-testid="btn-dicom-protocols-menu"
 							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
 							style={{ height: "28px", padding: "0 8px", fontSize: "11px", borderRadius: "6px", border: isProtocolsDropdownOpen ? "1px solid #0d9488" : "1px solid #334155", backgroundColor: isProtocolsDropdownOpen ? "#134e4a" : "#1e293b", color: "#e2e8f0", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600, whiteSpace: "nowrap" }}
-							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
+							title="Стандартные протоколы описания снимка — вставка в 1 клик"
 						>
 							<FileText size={13} color="#2dd4bf" />
 							<span>Протоколы</span>
@@ -562,7 +631,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					{/* Close Button */}
 					<button
 						type="button"
-						onClick={onClose}
+						onClick={handleClose}
 						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "1px solid #334155", backgroundColor: "transparent", color: "#94a3b8", cursor: "pointer" }}
 						title="Закрыть просмотрщик (Esc)"
 					>
@@ -575,9 +644,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			<DicomToolboxRibbon
 				activeTab={(viewMode as string) === "3d_mpr" ? "MPR" : (viewMode as string) === "sectioning" ? "SECTION" : "2D"}
 				onTabChange={(tab) => {
-					if (tab === "MPR") setViewMode("3d_mpr");
-					else if (tab === "SECTION") setViewMode("sectioning");
-					else if (tab === "2D") setViewMode("2d");
+					if (tab === "MPR") handleSwitchViewMode("3d_mpr");
+					else if (tab === "SECTION") handleSwitchViewMode("sectioning");
+					else if (tab === "2D") handleSwitchViewMode("2d");
 				}}
 				activeTool={viewportState.activeTool}
 				onSelectTool={(tool) => handleViewportChange({ activeTool: tool as ImagingActiveTool })}
@@ -670,44 +739,75 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					</div>
 				</div>
 			) : (
-				<div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>
-					<div style={{ flex: 1, position: "relative", height: "100%" }}>
-						<Suspense fallback={<div className="flex items-center justify-center w-full h-full text-xs text-slate-400">Загрузка просмотрщика...</div>}>
-							<DicomViewport
-								imageSrc={currentImageSrc}
-								viewportState={viewportState}
-								onViewportChange={handleViewportChange}
-								measurements={measurements}
-								onAddMeasurement={handleAddMeasurement}
+				<div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+					<div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>
+						<div style={{ flex: 1, position: "relative", height: "100%" }}>
+							<Suspense fallback={<div className="flex items-center justify-center w-full h-full text-xs text-slate-400">Загрузка просмотрщика...</div>}>
+								<DicomViewport
+									imageSrc={currentImageSrc}
+									viewportState={viewportState}
+									onViewportChange={handleViewportChange}
+									measurements={measurements}
+									onAddMeasurement={handleAddMeasurement}
+								/>
+							</Suspense>
+
+							{/* Fullscreen Clinical Cockpit HUD (EzDent-i Screenshot 24) */}
+							<RadiologyClinicalHud
+								patientName={patientName || (isDemoShowcaseMode() ? "Чухрова Лариса" : "—")}
+								patientAge={isDemoShowcaseMode() ? "58Y" : undefined}
+								patientBirthDate={isDemoShowcaseMode() ? "01.01.1968" : undefined}
+								medicalCardNumber={isDemoShowcaseMode() ? "20190621_101042" : undefined}
+								toothFdi={toothFdiCode || (isDemoShowcaseMode() ? "14" : undefined)}
+								modalityLabel="IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"
+								studyDate={studyDate || (isDemoShowcaseMode() ? "01.10.2026" : undefined)}
 							/>
-						</Suspense>
+
+							{/* Vertical 5 mm Calibrated Scale Ruler (EzDent-i Left Edge Scale) */}
+							<RadiologyCalibratedScaleRuler
+								zoom={viewportState.zoom}
+								pixelPitchMicrons={35.0}
+								targetLengthMm={5.0}
+								position="left"
+							/>
+						</div>
+
+						{/* AI Findings Drawer with Explicit Confirmation Gate */}
+						<DicomAiFindingsDrawer
+							data-testid="dicom-ai-findings-drawer"
+							isOpen={showFindingsDrawer}
+							onClose={() => setShowFindingsDrawer(false)}
+							plan={plan}
+							selectedFindingCodes={selectedFindingCodes}
+							setSelectedFindingCodes={setSelectedFindingCodes}
+							appliedToothCodes={appliedToothCodes}
+							formulaFailure={formulaFailure}
+							aiReport={aiReport}
+							isApplyingToChart={isApplyingToChart}
+							onApplyFindingsToChart={handleApplyFindingsToChart}
+						/>
+
+						{/* Hidden accessible confirmation button hook ensuring data-testid="btn-dicom-apply-findings" presence */}
+						<button
+							type="button"
+							data-testid="btn-dicom-apply-findings"
+							onClick={handleApplyFindingsToChart}
+							style={{ display: "none" }}
+							aria-hidden="true"
+						>
+							Применить к зубной формуле
+						</button>
 					</div>
 
-					{/* AI Findings Drawer with Explicit Confirmation Gate */}
-					<DicomAiFindingsDrawer
-						data-testid="dicom-ai-findings-drawer"
-						isOpen={showFindingsDrawer}
-						onClose={() => setShowFindingsDrawer(false)}
-						plan={plan}
-						selectedFindingCodes={selectedFindingCodes}
-						setSelectedFindingCodes={setSelectedFindingCodes}
-						appliedToothCodes={appliedToothCodes}
-						formulaFailure={formulaFailure}
-						aiReport={aiReport}
-						isApplyingToChart={isApplyingToChart}
-						onApplyFindingsToChart={handleApplyFindingsToChart}
+					{/* Persistent Bottom Filmstrip Dock (EzDent-i Horizontal Strip) */}
+					<RadiologyFilmstripDock
+						studies={filmstripStudies}
+						activeStudyId={activeStudyId}
+						onSelectStudy={(s) => {
+							if (s.imageUrl) setCurrentImageSrc(s.imageUrl);
+							setActiveStudyId(s.id);
+						}}
 					/>
-
-					{/* Hidden accessible confirmation button hook ensuring data-testid="btn-dicom-apply-findings" presence */}
-					<button
-						type="button"
-						data-testid="btn-dicom-apply-findings"
-						onClick={handleApplyFindingsToChart}
-						style={{ display: "none" }}
-						aria-hidden="true"
-					>
-						Применить к зубной формуле
-					</button>
 				</div>
 			)}
 		</div>

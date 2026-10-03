@@ -157,13 +157,24 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 						? payload.patientId.trim()
 						: undefined;
 
+				const branchId =
+					typeof payload.branchId === "string" && payload.branchId.trim()
+						? payload.branchId.trim()
+						: undefined;
+
 				const evalResult = evaluateClinicalAccess(identity.role);
 				const isClinical = evalResult.hasClinicalAccess;
 
 				currentOrganizationId = identity.organizationId;
 				currentIdentity = identity;
 
-				wsBroker.addClient(socket, identity.organizationId, patientId, isClinical);
+				wsBroker.addClient(
+					socket,
+					identity.organizationId,
+					patientId,
+					isClinical,
+					branchId,
+				);
 				authorized = true;
 				clearTimeout(authTimer);
 
@@ -174,7 +185,10 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 						socket.send(
 							JSON.stringify({
 								type: "AUTH_OK",
-								payload: { organizationId: identity.organizationId },
+								payload: {
+									organizationId: identity.organizationId,
+									...(branchId ? { branchId } : {}),
+								},
 							}),
 						);
 					} catch (err) {

@@ -53,6 +53,7 @@ export function PsoRegisterTab() {
 	const [formSampleCount, setFormSampleCount] = useState<number>(3);
 	const [formAzopyramNeg, setFormAzopyramNeg] = useState(true);
 	const [formPhenolNeg, setFormPhenolNeg] = useState(true);
+	const [formSudanNeg, setFormSudanNeg] = useState(true);
 	const [formDetergent, setFormDetergent] = useState("Биолот 0.5% + Аламинол 1%");
 	const [formNurseName, setFormNurseName] = useState("Сотрудник клиники");
 	const [formReagentLot, setFormReagentLot] = useState<string>(STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber);
@@ -96,11 +97,12 @@ export function PsoRegisterTab() {
 			testedSampleCount: formSampleCount,
 			isAzopyramNegative: formAzopyramNeg,
 			isPhenolphthaleinNegative: formPhenolNeg,
+			isSudanNegative: formSudanNeg,
 			azopyramSolutionPreparedAt: formSolutionPreparedAt,
 			azopyramReagentLot: formReagentLot,
 			detergentBrand: formDetergent,
 		});
-	}, [formBatchCount, formSampleCount, formAzopyramNeg, formPhenolNeg, formSolutionPreparedAt, formReagentLot, formDetergent]);
+	}, [formBatchCount, formSampleCount, formAzopyramNeg, formPhenolNeg, formSudanNeg, formSolutionPreparedAt, formReagentLot, formDetergent]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -124,6 +126,7 @@ export function PsoRegisterTab() {
 				testedSampleCount: Number(formSampleCount),
 				isAzopyramNegative: formAzopyramNeg,
 				isPhenolphthaleinNegative: formPhenolNeg,
+				isSudanNegative: formSudanNeg,
 				detergentBrand: formDetergent || undefined,
 				notes: formNotes
 					? `${formNotes} | [Серия: ${formReagentLot}, Раствор: ${solutionTime}] [ЭЦП: ${formNurseName}]`
@@ -141,11 +144,12 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
+				const isAllPassed = formAzopyramNeg && formPhenolNeg && formSudanNeg;
 				showToast(
-					formAzopyramNeg && formPhenolNeg
+					isAllPassed
 						? "Запись контроля ПСО внесена (норма, партия допущена)"
 						: "ВНИМАНИЕ: Зафиксирован БРАК ПСО! Партия направлена на повторную очистку.",
-					formAzopyramNeg && formPhenolNeg ? "success" : "warning",
+					isAllPassed ? "success" : "warning",
 				);
 				setIsModalOpen(false);
 				fetchLogs();
@@ -542,6 +546,19 @@ export function PsoRegisterTab() {
 													<XCircle size={12} className="shrink-0" /> Положит. (ЩЕЛОЧЬ)
 												</span>
 											)}
+											{(log.testType === "sudan_iii" || log.testType === "all") && (
+												<div style={{ marginTop: "3px" }}>
+													{log.isSudanNegative ? (
+														<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.7rem", padding: "0.15rem 0.4rem" }}>
+															<CheckCircle2 size={11} className="shrink-0" /> Судан III: норма
+														</span>
+													) : (
+														<span className="sanpin-tag sanpin-tag-danger shrink-0 whitespace-nowrap" style={{ fontSize: "0.7rem", padding: "0.15rem 0.4rem" }}>
+															<XCircle size={11} className="shrink-0" /> Судан III: МАСЛО
+														</span>
+													)}
+												</div>
+											)}
 										</td>
 
 										<td style={{ width: "150px", minWidth: "140px", fontSize: "0.8rem", color: "var(--muted)" }} className="min-w-0 break-words">
@@ -831,45 +848,68 @@ export function PsoRegisterTab() {
 										style={{ minHeight: "44px", fontSize: "0.9rem" }}
 									>
 										<option value="both">Азопирамовая + Фенолфталеиновая (Рекомендуется)</option>
+										<option value="sudan_iii">Проба с Суданом III (наконечники: остаточные масла и жиры)</option>
+										<option value="all">Полный комплекс СанПиН 3.3686-21 (Азопирам + Фенолфталеин + Судан III)</option>
 										<option value="azopyram">Только азопирамовая (на скрытую кровь / гемоглобин)</option>
 										<option value="phenolphthalein">Только фенолфталеиновая (на остатки щелочных моющих средств)</option>
 									</select>
 								</div>
 
 								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-											Азопирамовая проба (кровь)
-										</label>
-										<select
-											value={formAzopyramNeg ? "negative" : "positive"}
-											onChange={(e) => setFormAzopyramNeg(e.target.value === "negative")}
-											className="sanpin-select"
-											style={{ minHeight: "44px", fontSize: "0.9rem" }}
-										>
-											<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
-											<option value="positive">Положительная (Фиолетовое окрашивание — КРОВЬ)</option>
-										</select>
-									</div>
+									{(formTestType === "both" || formTestType === "all" || formTestType === "azopyram") && (
+										<div className="sanpin-form-group">
+											<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+												Азопирамовая проба (кровь)
+											</label>
+											<select
+												value={formAzopyramNeg ? "negative" : "positive"}
+												onChange={(e) => setFormAzopyramNeg(e.target.value === "negative")}
+												className="sanpin-select"
+												style={{ minHeight: "44px", fontSize: "0.9rem" }}
+											>
+												<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
+												<option value="positive">Положительная (Фиолетовое окрашивание — КРОВЬ)</option>
+											</select>
+										</div>
+									)}
 
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-											Фенолфталеиновая проба (щелочь)
-										</label>
-										<select
-											value={formPhenolNeg ? "negative" : "positive"}
-											onChange={(e) => setFormPhenolNeg(e.target.value === "negative")}
-											className="sanpin-select"
-											style={{ minHeight: "44px", fontSize: "0.9rem" }}
-										>
-											<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
-											<option value="positive">Положительная (Розовое окрашивание — ЩЕЛОЧЬ)</option>
-										</select>
-									</div>
+									{(formTestType === "both" || formTestType === "all" || formTestType === "phenolphthalein") && (
+										<div className="sanpin-form-group">
+											<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+												Фенолфталеиновая проба (щелочь)
+											</label>
+											<select
+												value={formPhenolNeg ? "negative" : "positive"}
+												onChange={(e) => setFormPhenolNeg(e.target.value === "negative")}
+												className="sanpin-select"
+												style={{ minHeight: "44px", fontSize: "0.9rem" }}
+											>
+												<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
+												<option value="positive">Положительная (Розовое окрашивание — ЩЕЛОЧЬ)</option>
+											</select>
+										</div>
+									)}
+
+									{(formTestType === "sudan_iii" || formTestType === "all") && (
+										<div className="sanpin-form-group">
+											<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+												Проба с Суданом III (масла / смазки)
+											</label>
+											<select
+												value={formSudanNeg ? "negative" : "positive"}
+												onChange={(e) => setFormSudanNeg(e.target.value === "negative")}
+												className="sanpin-select"
+												style={{ minHeight: "44px", fontSize: "0.9rem" }}
+											>
+												<option value="negative">Отрицательная (Окрашивания нет — НОРМА)</option>
+												<option value="positive">Положительная (Желто-розовые капли — МАСЛО)</option>
+											</select>
+										</div>
+									)}
 								</div>
 
 								{/* Clinical Protocol on Positive Test */}
-								{(!formAzopyramNeg || !formPhenolNeg) && (
+								{(!formAzopyramNeg || !formPhenolNeg || !formSudanNeg) && (
 									<div
 										style={{
 											padding: "0.85rem",
@@ -891,8 +931,13 @@ export function PsoRegisterTab() {
 											</div>
 										)}
 										{!formPhenolNeg && (
-											<div>
+											<div style={{ marginBottom: "0.35rem" }}>
 												• <strong>Щелочные остатки моющих средств (розовое окрашивание):</strong> Вся партия изделий ({formBatchCount} шт.) бракуется на 100% и направляется на повторное ополаскивание проточной и дистиллированной водой до нейтральной реакции.
+											</div>
+										)}
+										{!formSudanNeg && (
+											<div>
+												• <strong>Масляные смазки и жировые пленки (желто-розовые пятна Судана III):</strong> Вся партия наконечников ({formBatchCount} шт.) бракуется и направляется на обезжиривание 70% спиртом, продувку и повторную ПСО.
 											</div>
 										)}
 									</div>

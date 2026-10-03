@@ -127,12 +127,12 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 			);
 
 			assert.ok(html.includes("fiscal-receipt-modal"), "Must render fiscal receipt modal");
-			assert.ok(html.includes("Кассовый чек 54-ФЗ"), "Must render 54-FZ title");
+			assert.ok(html.includes("Касса"), "Must render cashier title");
 			assert.ok(html.includes("preset-exact-cash"), "Must render exact cash preset");
 			assert.ok(html.includes("preset-full-card"), "Must render full card preset");
 			assert.ok(html.includes("preset-50-50-cash-card"), "Must render 50/50 preset");
 			assert.ok(html.includes("preset-warranty-100"), "Must render warranty preset");
-			assert.ok(html.includes("Не требуется для физлиц (54-ФЗ)"), "Must explicitly state INN not required for physical persons");
+			assert.ok(html.includes("Для физлиц ИНН не требуется"), "Must explicitly state INN not required for physical persons");
 			assert.ok(html.includes("btn-fiscalize-receipt"), "Must render fiscalize receipt button");
 			assert.ok(!html.includes("btn-fiscalize-receipt\" disabled"), "Fiscalize button must not be disabled by default");
 		});
@@ -150,7 +150,7 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 			);
 
 			assert.ok(html.includes("debt-autonomy-banner"), "Must render debt banner");
-			assert.ok(html.includes("Долг не блокирует фискализацию чека на фактически вносимую сумму"), "Banner must explain debt non-blocking");
+			assert.ok(html.includes("Долг не блокирует печать чека на фактически вносимую сумму"), "Banner must explain debt non-blocking");
 		});
 	});
 

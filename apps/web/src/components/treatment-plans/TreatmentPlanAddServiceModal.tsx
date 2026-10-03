@@ -141,7 +141,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										Добавить услугу из каталога
 									</h3>
 									<p className="text-[11px] text-[var(--muted,#64748b)]">
-										Прейскурант клиники & Номенклатура Минздрава 804н (Мандат 8e)
+										Прейскурант услуг и каталог клиники
 									</p>
 								</div>
 							</div>
@@ -171,7 +171,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 										type="text"
 										value={serviceSearchQuery}
 										onChange={(e) => setServiceSearchQuery(e.target.value)}
-										placeholder="Поиск по названию или коду 804н (кариес, коронка, имплант, A16.07...)"
+										placeholder="Поиск по названию или коду услуги (кариес, коронка, имплант, A16.07...)"
 										className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 										data-testid="catalog-service-search-input"
 									/>

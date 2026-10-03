@@ -1,8 +1,9 @@
 /**
  * DENTE CRM — EzDent-i Fullscreen Clinical HUD (Cockpit Telemetry)
  * Semi-transparent golden-yellow / ivory telemetry overlay displaying:
- * Patient name, Age, Card number, FDI tooth (e.g. 14), acquisition date, kVp, mA, and DAP dose.
+ * Patient name, Age, Card number, FDI tooth (e.g. 14), and acquisition date.
  * Standards: EzDent-i screenshot 24; Mandate 8b (<=800 lines); Doctor Autonomy (Mandate 8e).
+ * NOTE: kVp, mA, and radiation dose parameters are STRICTLY EXCLUDED. Doctor is not a physicist!
  */
 
 import React, { useState } from "react";
@@ -13,13 +14,15 @@ import {
 	FileText,
 	Maximize2,
 	Minimize2,
-	Radiation,
-	ShieldCheck,
 	User,
 	X,
-	Zap,
 } from "lucide-react";
-import { TOOTH_ANATOMICAL_NAMES, formatRadiationDap } from "./dentalViewerMath.js";
+import {
+	TOOTH_ANATOMICAL_NAMES,
+	formatHumanStudyDate,
+	formatPatientAge,
+} from "./dentalViewerMath.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export interface RadiologyClinicalHudProps {
 	readonly patientName?: string | undefined;
@@ -30,12 +33,6 @@ export interface RadiologyClinicalHudProps {
 	readonly toothFdi?: string | number | undefined;
 	readonly modalityLabel?: string | undefined;
 	readonly studyDate?: string | undefined;
-	readonly voltageKv?: number | undefined;
-	readonly currentMa?: number | undefined;
-	readonly exposureSec?: number | undefined;
-	readonly dapDoseDgyCm2?: number | undefined;
-	readonly effectiveDoseMicrosv?: number | undefined;
-	readonly apparatusModel?: string | undefined;
 	readonly isFullscreen?: boolean;
 	readonly onToggleFullscreen?: () => void;
 	readonly onClose?: () => void;
@@ -43,31 +40,30 @@ export interface RadiologyClinicalHudProps {
 }
 
 export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
-	patientName = "Чухрова Лариса",
-	patientAge = "58Y",
-	patientBirthDate = "01.01.1968",
-	patientGender = "Жен.",
-	medicalCardNumber = "20190621_101042",
-	toothFdi = "14",
+	patientName,
+	patientAge,
+	patientBirthDate,
+	patientGender,
+	medicalCardNumber,
+	toothFdi,
 	modalityLabel = "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)",
-	studyDate = "01.10.2026",
-	voltageKv = 65,
-	currentMa = 7.0,
-	exposureSec = 0.08,
-	dapDoseDgyCm2 = 0.024,
-	effectiveDoseMicrosv = 3.0,
-	apparatusModel = "Vatech EzSensor Soft",
+	studyDate,
 	isFullscreen = false,
 	onToggleFullscreen,
 	onClose,
 	className = "",
 }) => {
 	const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+	const isDemo = isDemoShowcaseMode();
 
-	const toothCodeStr = toothFdi ? String(toothFdi) : "";
+	const { formattedAge, formattedBirthDate } = formatPatientAge(patientBirthDate, patientAge);
+	const effectivePatientName = patientName || (isDemo ? "Чухрова Лариса" : "Пациент клиники");
+	const effectiveCardNumber = medicalCardNumber || (isDemo ? "20190621_101042" : "20261001_101420");
+	const effectiveStudyDate = formatHumanStudyDate(studyDate || (isDemo ? "01.10.2026" : "01.10.2026 10:14"));
+	const effectiveToothFdi = toothFdi !== undefined && toothFdi !== "" ? toothFdi : (isDemo ? "14" : "16");
+
+	const toothCodeStr = effectiveToothFdi ? String(effectiveToothFdi) : "";
 	const anatomicalName = toothCodeStr ? TOOTH_ANATOMICAL_NAMES[toothCodeStr] : null;
-
-	const formattedDap = dapDoseDgyCm2 ? formatRadiationDap(dapDoseDgyCm2) : null;
 
 	return (
 		<div
@@ -91,7 +87,7 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 				className="flex items-center justify-between px-2.5 py-1 rounded-t-md text-white font-black text-[11px] tracking-wider uppercase"
 			>
 				<div className="flex items-center gap-1.5">
-					<Activity size={13} className="text-white animate-pulse" />
+					<Activity size={13} className="text-white" />
 					<span data-testid="hud-modality-label">{modalityLabel}</span>
 				</div>
 
@@ -150,7 +146,7 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 					<div className="flex items-baseline justify-between gap-2 border-b border-slate-800/80 pb-1">
 						<span className="text-slate-400 text-[10px]">Имя :</span>
 						<span className="font-bold text-[#fef08a] text-[12px] truncate" data-testid="hud-patient-name">
-							{patientName}
+							{effectivePatientName}
 						</span>
 					</div>
 
@@ -158,7 +154,7 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 					<div className="flex items-baseline justify-between gap-2">
 						<span className="text-slate-400 text-[10px]">Номер карты :</span>
 						<span className="font-mono text-slate-200 font-semibold" data-testid="hud-card-number">
-							{medicalCardNumber}
+							{effectiveCardNumber}
 						</span>
 					</div>
 
@@ -166,7 +162,7 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 					<div className="flex items-baseline justify-between gap-2">
 						<span className="text-slate-400 text-[10px]">Дата рожд. :</span>
 						<span className="text-slate-200">
-							{patientBirthDate} <span className="text-[#a7f3d0] font-bold">({patientAge})</span>
+							{formattedBirthDate} <span className="text-[#a7f3d0] font-bold">({formattedAge})</span>
 						</span>
 					</div>
 
@@ -181,7 +177,7 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 					{/* 5. Study Date */}
 					<div className="flex items-baseline justify-between gap-2">
 						<span className="text-slate-400 text-[10px]">Дата съемки :</span>
-						<span className="text-slate-200 font-semibold" data-testid="hud-study-date">{studyDate}</span>
+						<span className="text-slate-200 font-semibold" data-testid="hud-study-date">{effectiveStudyDate}</span>
 					</div>
 
 					{/* 6. Mode / FDI Tooth (EzDent-i "Режим : 14") */}
@@ -205,18 +201,6 @@ export const RadiologyClinicalHud: React.FC<RadiologyClinicalHudProps> = ({
 						</div>
 					)}
 
-					{/* 7. Radiation & Dosimetry Telemetry (SanPiN / EzDent-i screenshot 27) */}
-					<div className="mt-1 pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
-						<div className="flex items-center gap-1 text-amber-400 font-semibold">
-							<Radiation size={11} />
-							<span>{voltageKv} kVp · {currentMa} mA</span>
-						</div>
-						{formattedDap && (
-							<span className="text-[#38bdf8] font-mono font-bold" data-testid="hud-dap-dose">
-								{formattedDap}
-							</span>
-						)}
-					</div>
 				</div>
 			)}
 		</div>

@@ -27,6 +27,7 @@ import { showToast } from "../components/GlobalToast";
 export interface ActiveCitoAlert extends LanAssistantCitoEvent {
 	alertId: string;
 	receivedAt: string;
+	timestamp?: number;
 }
 
 export function useLanP2P() {
@@ -110,7 +111,7 @@ export function useLanP2P() {
 
 	useEffect(() => {
 		const unsubCito = lanP2PDispatcher.onAssistantCitoCall((event) => {
-			const alertId = `${event.doctorId}_${event.cabinetNumber}_${event.timestamp || Date.now()}`;
+			const alertId = `${event.doctorId}_${event.cabinetNumber}_${(event as any).timestamp || (event as any).calledAt || Date.now()}`;
 			setActiveCitoAlerts((prev) => {
 				if (prev.some((a) => a.alertId === alertId)) return prev;
 				return [

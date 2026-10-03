@@ -22,6 +22,7 @@ export const generateSemd103Xml = generateSemd101Xml;
 export const generateSemd108Xml = generateSemd101Xml;
 export const generateSemd109Xml = generateSemd043_1uXml;
 export { generateSemd043_1uXml };
+export { generateSemd105Xml, type CdaSemd105Params } from "../egisz/cdaSemd105Generator.js";
 import type {
 	CdaDocumentParams,
 	CdaGenerationResult,

@@ -353,7 +353,7 @@ export function SterilizerEquipmentModal({
 								{isEditing ? `Редактирование стерилизатора: ${editingEquipment?.name}` : "Постановка на учет стерилизатора / автоклава"}
 							</h3>
 							<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-								Паспорт оборудования, метрологическая поверка и график ТО (СанПиН 3.3686-21)
+								Паспорт оборудования, метрологическая поверка и график ТО
 							</p>
 						</div>
 					</div>
@@ -523,7 +523,7 @@ export function SterilizerEquipmentModal({
 						{/* Device Class */}
 						<div>
 							<label style={{ display: "block", fontSize: "0.775rem", fontWeight: 600, marginBottom: "0.25rem", color: "var(--ink, #0f172a)" }}>
-								Класс аппарата (EN 13060 / СанПиН)
+								Класс аппарата (стандарт EN 13060)
 							</label>
 							<select
 								value={deviceClass}

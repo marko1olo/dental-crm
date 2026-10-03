@@ -118,7 +118,10 @@ describe("LAN P2P Mesh & Emergency CITO Subsystem Test Suite", () => {
 		it("renders emergency banner with cabinet, doctor, urgency and action controls", () => {
 			const alerts: ActiveCitoAlert[] = [
 				{
+					callId: "call-001",
 					alertId: "alert-001",
+					status: "pending",
+					calledAt: new Date().toISOString(),
 					receivedAt: new Date().toISOString(),
 					cabinetNumber: "Кабинет 2",
 					doctorId: "doc-petrov",

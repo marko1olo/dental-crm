@@ -99,13 +99,13 @@ export interface QuickKraftPreset {
 export const POPULAR_KRAFT_PRESETS: readonly QuickKraftPreset[] = [
 	{
 		id: "sanpin_sealed_30d",
-		brandNameRu: "Крафт-пакет запечатанный (СанПиН)",
+		brandNameRu: "Крафт-пакет запечатанный",
 		dimensionsMm: "100×200 мм",
 		materialId: "paper_self_seal_single",
 		sizeId: "size_100x200",
 		shelfLifeDays: 30,
-		descriptionRu: "Запечатанный самоклеящийся крафт-пакет (срок сохранения стерильности 30 суток по СанПиН 3.3686-21)",
-		badgeTextRu: "30 суток (СанПиН)",
+		descriptionRu: "Запечатанный самоклеящийся крафт-пакет (срок сохранения стерильности 30 суток)",
+		badgeTextRu: "30 суток (стерильность)",
 	},
 	{
 		id: "azov_100x200_50d",
@@ -658,7 +658,7 @@ export function KraftPackageBarcodeModal({
 						<div>
 							<h2>Студия маркировки и учета крафт-пакетов ЦСО</h2>
 							<div className="kraft-studio-subtitle">
-								СанПиН 3.3686-21 (Таблица 3.14) • ГОСТ Р ИСО 11607-1 • 2D DataMatrix штрихкодирование
+								Контроль стерильности • Стандарты упаковки • 2D DataMatrix маркировка
 							</div>
 						</div>
 					</div>
@@ -722,7 +722,7 @@ export function KraftPackageBarcodeModal({
 						onClick={() => setActiveTab("standards")}
 						className={`kraft-tab-btn ${activeTab === "standards" ? "active" : ""}`}
 					>
-						<FileBadge size={16} /> 6. Нормативы СанПиН
+						<FileBadge size={16} /> 6. Нормативы стерильности
 					</button>
 				</div>
 
@@ -740,7 +740,7 @@ export function KraftPackageBarcodeModal({
 											Быстрые пресеты упаковок (1 клик):
 										</span>
 										<span style={{ fontSize: "0.725rem", color: "var(--muted)" }}>
-											СанПиН 3.3686-21
+											Стандарты стерилизации
 										</span>
 									</div>
 									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
@@ -1023,7 +1023,7 @@ export function KraftPackageBarcodeModal({
 									/>
 
 									<div style={{ fontSize: "0.75rem", color: "var(--muted)", textAlign: "center" }}>
-										Сгенерирован векторный 2D DataMatrix штрихкод со структурированным пейлоадом СанПиН
+										Сгенерирован векторный 2D DataMatrix штрихкод маркировки упаковки
 									</div>
 								</div>
 
@@ -1086,7 +1086,7 @@ export function KraftPackageBarcodeModal({
 											gap: "0.5rem",
 											cursor: "pointer",
 										}}
-										title="1-Клик формирование и печать пачки из 10 наклеек (срок годности 30 дней для запечатанных пакетов по СанПиН 3.3686-21) без блокирующих окон"
+										title="1-Клик формирование и печать пачки из 10 наклеек (срок годности 30 дней для запечатанных пакетов) без блокирующих окон"
 										data-testid="kraft-quick-batch-and-print-btn"
 									>
 										<Printer size={20} />
@@ -1110,7 +1110,7 @@ export function KraftPackageBarcodeModal({
 					{/* ─── TAB 2: QUICK SCANNER & 043/U LINK ─────────────────────────── */}
 					{activeTab === "scan" && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", maxWidth: "760px", margin: "0 auto", width: "100%" }}>
-							{/* 1-Клик фиксация стерилизации (СанПиН 3.3686-21) без видеокамер */}
+							{/* 1-Клик фиксация стерилизации без видеокамер */}
 							<div
 								style={{
 									borderRadius: "10px",
@@ -1126,7 +1126,7 @@ export function KraftPackageBarcodeModal({
 									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
 										<CheckCircle2 size={20} color="var(--ok-fg, #059669)" />
 										<span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--ink)" }}>
-											Фиксация стерилизации (СанПиН 3.3686-21)
+											Фиксация стерилизации лотка
 										</span>
 									</div>
 									<span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}>
@@ -1135,7 +1135,7 @@ export function KraftPackageBarcodeModal({
 								</div>
 
 								<div style={{ fontSize: "0.85rem", color: "var(--muted)", lineHeight: 1.4 }}>
-									Мгновенная фиксация стерильности смотрового или процедурного лотка без необходимости сканирования камерой. Соответствует нормативам СанПиН 3.3686-21.
+									Мгновенная фиксация стерильности смотрового или процедурного лотка без необходимости сканирования камерой. Соответствует нормативам стерилизации.
 								</div>
 
 								<button
@@ -1368,7 +1368,7 @@ export function KraftPackageBarcodeModal({
 										onClick={handleExportCsv}
 										className="kraft-btn kraft-btn-secondary"
 									>
-										<Download size={16} /> Экспорт CSV (3.3686-21)
+										<Download size={16} /> Экспорт CSV
 									</button>
 								</div>
 							</div>
@@ -1712,7 +1712,7 @@ export function KraftPackageBarcodeModal({
 						<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 							<div className="kraft-panel-card">
 								<div className="kraft-panel-title">
-									<span>Нормативные сроки сохранения стерильности (СанПиН 3.3686-21 Таблица 3.14)</span>
+									<span>Нормативные сроки сохранения стерильности</span>
 								</div>
 								<div className="kraft-table-container">
 									<table className="kraft-table">
@@ -1721,7 +1721,7 @@ export function KraftPackageBarcodeModal({
 												<th>Материал упаковки</th>
 												<th>Способ запечатывания</th>
 												<th>Срок стерильности</th>
-												<th>Нормативный пункт СанПиН</th>
+												<th>Нормативный пункт</th>
 											</tr>
 										</thead>
 										<tbody>

@@ -131,9 +131,12 @@ export interface MinorConsentPrintParams {
 	representativeName?: string;
 	representativeRelation?: string;
 	representativeDocument?: string;
+	representativeBasis?: string;
 	representativePhone?: string;
 	childName?: string;
 	childBirthDate?: string;
+	childDocument?: string;
+	accompanyingPerson?: string;
 	doctorName?: string;
 	interventionScope?: string;
 	diagnosisOrIndication?: string;

@@ -60,6 +60,14 @@ import {
 	type CheckWarehouseSuppliesResult,
 	type CriticalSupplyItem,
 } from "./tools/warehouseSuppliesTool.js";
+import {
+	getDailyScheduleIntelligenceTool,
+	getDoctorShiftsAndChairsTool,
+} from "./tools/crmOperationalScheduleTools.js";
+import {
+	getClinicOrDoctorRevenueTool,
+	getPatientFamilyDepositAndDebtTool,
+} from "./tools/crmFinancialIntelligenceTools.js";
 
 export {
 	calculateAnestheticDosageTool,
@@ -75,6 +83,10 @@ export {
 	type CheckWarehouseSuppliesInput,
 	type CheckWarehouseSuppliesResult,
 	type CriticalSupplyItem,
+	getDailyScheduleIntelligenceTool,
+	getDoctorShiftsAndChairsTool,
+	getClinicOrDoctorRevenueTool,
+	getPatientFamilyDepositAndDebtTool,
 };
 
 // ============================================================================
@@ -1111,6 +1123,10 @@ export const DENTE_AGENT_TOOLS = {
 	calculate_anesthetic_dosage: calculateAnestheticDosageTool,
 	generate_informed_consent_ids: generateInformedConsentIdsTool,
 	check_warehouse_supplies: checkWarehouseSuppliesTool,
+	get_daily_schedule_intelligence: getDailyScheduleIntelligenceTool,
+	get_doctor_shifts_and_chairs: getDoctorShiftsAndChairsTool,
+	get_clinic_or_doctor_revenue: getClinicOrDoctorRevenueTool,
+	get_patient_family_deposit_and_debt: getPatientFamilyDepositAndDebtTool,
 };
 
 export function registerDenteAgentTools(

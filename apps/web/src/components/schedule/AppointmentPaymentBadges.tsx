@@ -24,7 +24,7 @@ export function AppointmentStatusBadgeSelector({
 		<div
 			className={`appointment-status-badge-selector relative inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors shrink-0 ${
 				displayStatus === "in_treatment"
-					? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/40"
+					? "bg-teal-500/20 text-teal-900 dark:text-teal-200 border border-teal-500/60 font-black"
 					: displayStatus === "confirmed"
 						? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500"
 						: displayStatus === "arrived"

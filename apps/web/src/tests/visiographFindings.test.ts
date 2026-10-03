@@ -37,13 +37,22 @@ test("состояния, которые пишутся в карту, суще�
 	 * сервере решает, примет он запись или ответит отказом проверки. Прежний код
 	 * писал `Filling` — значения, которого нет ни там, ни там (на сервере `Filled`).
 	 */
-	const chart = readSource("components/odontogram/ToothChart.tsx");
+	const chart =
+		readSource("components/odontogram/chart/toothChartTypes.ts") +
+		"\n" +
+		readFileSync(
+			path.join(
+				webSrcRoot,
+				"../../../packages/shared/src/clinical/stomtDefectsCatalog.ts",
+			),
+			"utf8",
+		);
 	const declaredInChart = [...chart.matchAll(/\n\t\| "([A-Za-z_]+)"/g)].map(
 		(m) => m[1] as string,
 	);
 	assert.ok(
 		declaredInChart.length >= 8,
-		`из ToothChart.tsx разобрано ${declaredInChart.length} состояний зуба — разбор типа сломался, ` +
+		`из toothChartTypes.ts разобрано ${declaredInChart.length} состояний зуба — разбор типа сломался, ` +
 			"и проверка ниже пройдёт, ничего не проверив",
 	);
 

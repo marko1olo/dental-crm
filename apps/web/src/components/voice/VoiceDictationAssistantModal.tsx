@@ -39,6 +39,7 @@ export type { ParsedClinicalVoiceCommand, ClinicalVoiceParseResult, SoapAggregat
 import { UnifiedAudioClient } from "../../services/voice/UnifiedAudioClient";
 import { CanvasWaveform } from "../audio/CanvasWaveform";
 import { MicrophoneCalibrationModal } from "../audio/MicrophoneCalibrationModal";
+import { voiceMeterHeights } from "../workspaceActions/voiceMeter";
 import "./voiceAssistant.css";
 
 export interface VoiceDictationAssistantModalProps {
@@ -251,16 +252,11 @@ export function VoiceDictationAssistantModal({
 
 	if (!isOpen) return null;
 
-	// Расчет высот для полосок индикатора громкости
-	const meterBars = Array.from({ length: VU_BARS_COUNT }, (_, index) => {
-		const center = (VU_BARS_COUNT - 1) / 2;
-		const distance = Math.abs(index - center) / (center || 1);
-		const factor = 1 - distance * 0.5;
-		const heightPercent = isListening
-			? Math.min(100, Math.max(15, (audioVolume / 128) * 100 * factor))
-			: 10;
-		return heightPercent;
-	});
+	// Детерминированный расчет высот полосок индикатора уровня звука (Мандат 8s)
+	const meterBars = voiceMeterHeights(
+		isListening ? audioVolume : 0,
+		VU_BARS_COUNT,
+	);
 
 	return (
 		<div

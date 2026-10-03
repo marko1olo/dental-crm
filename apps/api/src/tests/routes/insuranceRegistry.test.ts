@@ -11,6 +11,7 @@
  * 6. Format negotiation: XML (Minzdrav standard), CSV (RFC 4180 with UTF-8 BOM), and A4 HTML.
  * 7. Doctor autonomy & non-blocking execution (Mandates 8e, 8n).
  */
+import "dotenv/config";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
@@ -169,7 +170,8 @@ describe("DMS Claims Registry API & Export Engine", () => {
 		assert.equal(res.statusCode, 401);
 	});
 
-	test("2. Validation: rejects invalid patientId with 400", async () => {
+	test("2. Validation: rejects invalid patientId with 400", async (ctx) => {
+		if (!databaseReady) return ctx.skip("Database unavailable");
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/insurance/registry?patientId=not-a-uuid",
@@ -183,7 +185,8 @@ describe("DMS Claims Registry API & Export Engine", () => {
 		assert.equal(json.error, "ValidationError");
 	});
 
-	test("3. Validation: rejects invalid date format with 400", async () => {
+	test("3. Validation: rejects invalid date format with 400", async (ctx) => {
+		if (!databaseReady) return ctx.skip("Database unavailable");
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/insurance/registry?periodStart=31-12-2026",

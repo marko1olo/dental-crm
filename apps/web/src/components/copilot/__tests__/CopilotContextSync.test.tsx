@@ -8,9 +8,9 @@ import {
   enrichMessageWithUiContext,
   getCurrentCopilotUiContext,
   getCanonicalViewName,
-  CopilotDrawer,
-  CopilotMessage,
-} from '../index';
+} from '../CopilotContextSync';
+import { CopilotDrawer } from '../CopilotDrawer';
+import { CopilotMessage } from '../CopilotMessage';
 import { useAppStore } from '../../../store/appStore';
 import { usePatientStore } from '../../../store/patientStore';
 

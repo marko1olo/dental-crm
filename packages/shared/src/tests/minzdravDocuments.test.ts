@@ -21,10 +21,14 @@ import {
 	DENTAL_DRUG_DOSAGE_LIMITS,
 	evaluatePrescriptionPharmacologicalSafety,
 
-	// 3. ИДС 1051н
+	// 3. ИДС и Отказ 1051н
 	informedConsent1051nPayloadSchema,
 	generateStatutoryConsent1051nPayload,
 	renderInformedConsent1051nHtml,
+	generateStatutoryRefusal1051nPayload,
+	generateMedicalInterventionRefusal1051nHtml,
+	generateMedicalInterventionRefusal1051nText,
+	renderMedicalInterventionRefusal1051nHtml,
 
 	// 4. Договор 736 и Акт 804н
 	paidServiceContract736PayloadSchema,
@@ -239,6 +243,70 @@ describe("Унифицированные медицинские бланки М�
 				assert.ok(html.includes("М.П."), "Содержит место печати М.П.");
 			});
 		}
+
+		test("генерирует и рендерит официальный бланк Отказа от медицинского вмешательства (1051н, Приложение № 2)", () => {
+			const refusalPayload = generateStatutoryRefusal1051nPayload({
+				presetKey: "caries_endo_refusal",
+				patient: MOCK_PATIENT,
+				doctor: MOCK_DOCTOR,
+				clinic: MOCK_CLINIC,
+				toothNumbers: "2.6, 2.7",
+				patientReason: "Страх перед процедурой",
+			});
+
+			assert.strictEqual(refusalPayload.patientUnderstandsConsequences, true);
+			assert.strictEqual(refusalPayload.secondOpinionOffered, true);
+			assert.strictEqual(refusalPayload.emergencyCareExplained, true);
+			assert.ok(refusalPayload.explainedRisks.length >= 3, "Содержит риски осложнений");
+			assert.ok(refusalPayload.alternativesOffered.length >= 2, "Содержит альтернативы");
+			assert.ok(refusalPayload.urgentWarningSigns.length >= 2, "Содержит тревожные признаки");
+
+			const text = generateMedicalInterventionRefusal1051nText({
+				...refusalPayload,
+				clinicName: MOCK_CLINIC.legalName,
+				clinicLicense: DEFAULT_CLINIC_LICENSE_NUMBER,
+			});
+			assert.ok(text.includes("ОТКАЗ ОТ МЕДИЦИНСКОГО ВМЕШАТЕЛЬСТВА"), "Заголовок отказа");
+			assert.ok(text.includes("1051н, Приложение № 2"), "Нормативное основание Приказ 1051н");
+			assert.ok(text.includes("ч. 3 ст. 20"), "Ссылка на ч. 3 ст. 20 323-ФЗ");
+			assert.ok(text.includes(MOCK_PATIENT.fullName), "ФИО пациента в тексте");
+
+			const html = generateMedicalInterventionRefusal1051nHtml({
+				...refusalPayload,
+				clinicName: MOCK_CLINIC.legalName,
+				clinicLicense: DEFAULT_CLINIC_LICENSE_NUMBER,
+				status: "completed",
+			});
+			assert.ok(html.includes("Отказ от медицинского вмешательства"), "Заголовок в HTML");
+			assert.ok(html.includes("Приложение № 2"), "Приложение № 2 в HTML");
+			assert.ok(html.includes("ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ"), "Штамп статуса");
+			assert.ok(html.includes("М.П."), "Круглая печать клиники");
+			assert.ok(html.includes("Страх перед процедурой"), "Причина пациента");
+			assert.ok(!html.includes("🦷"), "Ноль эмодзи в официальном документе");
+		});
+
+		test("генерирует отказ по всем 5 клиническим стоматологическим специальностям", () => {
+			const specialties = [
+				"caries_endo_refusal",
+				"surgery_extraction_refusal",
+				"prosthetics_implant_refusal",
+				"anesthesia_refusal",
+				"orthodontics_refusal",
+			] as const;
+
+			for (const spec of specialties) {
+				const payload = generateStatutoryRefusal1051nPayload({
+					presetKey: spec,
+					patient: MOCK_PATIENT,
+					doctor: MOCK_DOCTOR,
+					clinic: MOCK_CLINIC,
+				});
+				assert.ok(payload.refusedIntervention.length > 5, `Спецификация вмешательства для ${spec}`);
+				assert.ok(payload.explainedRisks.length >= 3, `Риски осложнений для ${spec}`);
+				assert.ok(payload.alternativesOffered.length >= 2, `Альтернативы для ${spec}`);
+				assert.ok(payload.urgentWarningSigns.length >= 1, `Тревожные признаки для ${spec}`);
+			}
+		});
 	});
 
 	// ─── 4. ДОГОВОР НА ПЛАТНЫЕ УСЛУГИ (ПП РФ № 736) И АКТ (804н) ──────────────

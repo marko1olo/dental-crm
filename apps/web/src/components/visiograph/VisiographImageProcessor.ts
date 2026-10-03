@@ -24,6 +24,12 @@ export interface VisiographImageParams {
 	windowWidth?: number | undefined;
 	/** Optional Window Center in HU or intensity units */
 	windowCenter?: number | undefined;
+	/** High-Boost extreme edge amplification (13.0 center) for apical foramen & bone trabeculae */
+	maxSharpness?: boolean | undefined;
+	/** 45° Emboss pseudo-relief filter for root microfractures & enamel cracks (CChBumpMap) */
+	pseudoRelief?: boolean | undefined;
+	/** Sensor ergonomic chamfer bevel cut (VACAL.dll VCA_CutImage) */
+	cutCornerChamfer?: boolean | undefined;
 }
 
 export const DEFAULT_VISIOGRAPH_IMAGE_PARAMS: VisiographImageParams = {
@@ -32,6 +38,9 @@ export const DEFAULT_VISIOGRAPH_IMAGE_PARAMS: VisiographImageParams = {
 	gamma: 1.0,
 	sharpness: 0,
 	invert: false,
+	maxSharpness: false,
+	pseudoRelief: false,
+	cutCornerChamfer: false,
 };
 
 /**
@@ -77,29 +86,14 @@ export function buildVisiographLUT(params: VisiographImageParams): Uint8Array {
 }
 
 /**
- * Applies a 3x3 Unsharp Mask convolution kernel directly to RGBA pixel buffer.
- * Kernel:
- * [  0,   -k,    0 ]
- * [ -k, 1+4k,   -k ]
- * [  0,   -k,    0 ]
- * where k = sharpness / 50.
+ * Applies 45° Emboss pseudo-relief filter (CChBumpMap from EzDent-i MyDib.dll)
+ * revealing microcracks, vertical root fractures, and bone crest margins.
  */
-export function applyUnsharpMaskToImageData(
-	imageData: ImageData,
-	sharpness: number,
-): void {
-	if (sharpness <= 0) return;
-
+export function applyEmboss45ToImageData(imageData: ImageData): void {
 	const width = imageData.width;
 	const height = imageData.height;
 	const data = imageData.data;
-
-	// Copy original buffer for clean neighbor sampling
 	const copy = new Uint8ClampedArray(data);
-
-	// Weight multiplier for high-pass boost (sharpness 100 -> k = 2.0)
-	const k = Math.max(0, Math.min(100, sharpness)) / 50.0;
-	const centerWeight = 1.0 + 4.0 * k;
 
 	for (let y = 0; y < height; y++) {
 		const yOffset = y * width;
@@ -111,40 +105,198 @@ export function applyUnsharpMaskToImageData(
 			const xNext = Math.min(width - 1, x + 1);
 
 			const idx = (yOffset + x) << 2;
-			const idxTop = (yPrev + x) << 2;
-			const idxBottom = (yNext + x) << 2;
-			const idxLeft = (yOffset + xPrev) << 2;
-			const idxRight = (yOffset + xNext) << 2;
+			const idxTL = (yPrev + xPrev) << 2;
+			const idxTC = (yPrev + x) << 2;
+			const idxML = (yOffset + xPrev) << 2;
+			const idxMR = (yOffset + xNext) << 2;
+			const idxBC = (yNext + x) << 2;
+			const idxBR = (yNext + xNext) << 2;
 
-			// Apply to R, G, B channels
 			for (let c = 0; c < 3; c++) {
-				const center = copy[idx + c] ?? 0;
-				const top = copy[idxTop + c] ?? 0;
-				const bottom = copy[idxBottom + c] ?? 0;
-				const left = copy[idxLeft + c] ?? 0;
-				const right = copy[idxRight + c] ?? 0;
+				const tl = copy[idxTL + c] ?? 0;
+				const tc = copy[idxTC + c] ?? 0;
+				const ml = copy[idxML + c] ?? 0;
+				const mr = copy[idxMR + c] ?? 0;
+				const bc = copy[idxBC + c] ?? 0;
+				const br = copy[idxBR + c] ?? 0;
 
-				const val =
-					center * centerWeight - (top + bottom + left + right) * k;
-				data[idx + c] = Math.max(0, Math.min(255, Math.round(val)));
+				// Gradient calculation: -2*TL - TC - ML + MR + BC + 2*BR
+				const gradient = -2 * tl - tc - ml + mr + bc + 2 * br;
+				const embossed = 128 + gradient * 0.4;
+				data[idx + c] = Math.max(0, Math.min(255, Math.round(embossed)));
 			}
-			// Alpha channel (data[idx+3]) remains untouched
 		}
 	}
 }
 
 /**
- * Executes full image adjustment pipeline (LUT + Unsharp Mask) on an ImageData buffer.
+ * Applies High-Boost 13.0 convolution kernel (EzDent-i MaxSharpenFlag)
+ * for extreme root apex definition and narrow calcified canal tracking.
+ */
+export function applyHighBoostToImageData(imageData: ImageData): void {
+	const width = imageData.width;
+	const height = imageData.height;
+	const data = imageData.data;
+	const copy = new Uint8ClampedArray(data);
+
+	for (let y = 0; y < height; y++) {
+		const yOffset = y * width;
+		const yPrev = Math.max(0, y - 1) * width;
+		const yNext = Math.min(height - 1, y + 1) * width;
+
+		for (let x = 0; x < width; x++) {
+			const xPrev = Math.max(0, x - 1);
+			const xNext = Math.min(width - 1, x + 1);
+
+			const idx = (yOffset + x) << 2;
+			const idxTL = (yPrev + xPrev) << 2;
+			const idxTC = (yPrev + x) << 2;
+			const idxTR = (yPrev + xNext) << 2;
+			const idxML = (yOffset + xPrev) << 2;
+			const idxMR = (yOffset + xNext) << 2;
+			const idxBL = (yNext + xPrev) << 2;
+			const idxBC = (yNext + x) << 2;
+			const idxBR = (yNext + xNext) << 2;
+
+			for (let c = 0; c < 3; c++) {
+				const center = copy[idx + c] ?? 0;
+				const tc = copy[idxTC + c] ?? 0;
+				const bc = copy[idxBC + c] ?? 0;
+				const ml = copy[idxML + c] ?? 0;
+				const mr = copy[idxMR + c] ?? 0;
+				const tl = copy[idxTL + c] ?? 0;
+				const tr = copy[idxTR + c] ?? 0;
+				const bl = copy[idxBL + c] ?? 0;
+				const br = copy[idxBR + c] ?? 0;
+
+				// High-Boost 3x3: 13*center - 2*(TC+BC+ML+MR) - 1*(TL+TR+BL+BR)
+				const val =
+					13.0 * center -
+					2.0 * (tc + bc + ml + mr) -
+					1.0 * (tl + tr + bl + br);
+				data[idx + c] = Math.max(0, Math.min(255, Math.round(val)));
+			}
+		}
+	}
+}
+
+/**
+ * Applies an adaptive Unsharp Mask convolution kernel with Noise Coring (from EzSensor.ini HistEquThreshold=80).
+ * Prevents noise amplification in uniform dark (soft tissue) and bright (background) areas.
+ */
+export function applyUnsharpMaskToImageData(
+	imageData: ImageData,
+	sharpness: number,
+	coringThreshold = 5, // ~0.02 in normalized units
+): void {
+	if (sharpness <= 0) return;
+
+	const width = imageData.width;
+	const height = imageData.height;
+	const data = imageData.data;
+
+	// Copy original buffer for clean neighbor sampling
+	const copy = new Uint8ClampedArray(data);
+
+	// Weight multiplier for high-pass boost
+	const weight = (Math.max(0, Math.min(100, sharpness)) / 100.0) * 1.6;
+
+	for (let y = 0; y < height; y++) {
+		const yOffset = y * width;
+		const yPrev = Math.max(0, y - 1) * width;
+		const yNext = Math.min(height - 1, y + 1) * width;
+
+		for (let x = 0; x < width; x++) {
+			const xPrev = Math.max(0, x - 1);
+			const xNext = Math.min(width - 1, x + 1);
+
+			const idx = (yOffset + x) << 2;
+			const idxTL = (yPrev + xPrev) << 2;
+			const idxTC = (yPrev + x) << 2;
+			const idxTR = (yPrev + xNext) << 2;
+			const idxML = (yOffset + xPrev) << 2;
+			const idxMR = (yOffset + xNext) << 2;
+			const idxBL = (yNext + xPrev) << 2;
+			const idxBC = (yNext + x) << 2;
+			const idxBR = (yNext + xNext) << 2;
+
+			// Apply 8-neighbor average with Noise Coring
+			for (let c = 0; c < 3; c++) {
+				const center = copy[idx + c] ?? 0;
+				const avgNeighbors =
+					((copy[idxTL + c] ?? 0) +
+						(copy[idxTC + c] ?? 0) +
+						(copy[idxTR + c] ?? 0) +
+						(copy[idxML + c] ?? 0) +
+						(copy[idxMR + c] ?? 0) +
+						(copy[idxBL + c] ?? 0) +
+						(copy[idxBC + c] ?? 0) +
+						(copy[idxBR + c] ?? 0)) *
+					0.125;
+
+				const diff = center - avgNeighbors;
+				if (Math.abs(diff) > coringThreshold) {
+					const coredDiff = Math.sign(diff) * (Math.abs(diff) - coringThreshold);
+					const val = center + weight * coredDiff;
+					data[idx + c] = Math.max(0, Math.min(255, Math.round(val)));
+				} else {
+					data[idx + c] = center;
+				}
+			}
+		}
+	}
+}
+
+/**
+ * Clips the ergonomic chamfered sensor corner (matching VACAL.dll VCA_CutImage).
+ */
+export function applyChamferCornerCutToImageData(
+	imageData: ImageData,
+	chamferPx = 65,
+): void {
+	const width = imageData.width;
+	const height = imageData.height;
+	const data = imageData.data;
+
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x++) {
+			if (x + (height - 1 - y) < chamferPx) {
+				const idx = (y * width + x) << 2;
+				data[idx] = 0;
+				data[idx + 1] = 0;
+				data[idx + 2] = 0;
+				data[idx + 3] = 255;
+			}
+		}
+	}
+}
+
+/**
+ * Executes full image adjustment pipeline (Filters + LUT + Sensor Geometry) on an ImageData buffer.
  */
 export function processVisiographImageData(
 	imageData: ImageData,
 	params: VisiographImageParams,
 ): void {
+	// 1. Hardware sensor chamfer cut
+	if (params.cutCornerChamfer) {
+		applyChamferCornerCutToImageData(imageData);
+	}
+
+	// 2. Convolution spatial filters
+	if (params.pseudoRelief) {
+		applyEmboss45ToImageData(imageData);
+	} else if (params.maxSharpness) {
+		applyHighBoostToImageData(imageData);
+	} else if (params.sharpness > 0) {
+		applyUnsharpMaskToImageData(imageData, params.sharpness);
+	}
+
+	// 3. Tonal LUT application on R, G, B
 	const lut = buildVisiographLUT(params);
 	const data = imageData.data;
 	const len = data.length;
 
-	// 1. LUT application on R, G, B
 	for (let i = 0; i < len; i += 4) {
 		const r = data[i] ?? 0;
 		const g = data[i + 1] ?? 0;
@@ -153,11 +305,6 @@ export function processVisiographImageData(
 		data[i] = lut[r] ?? r;
 		data[i + 1] = lut[g] ?? g;
 		data[i + 2] = lut[b] ?? b;
-	}
-
-	// 2. Unsharp mask sharpening if requested
-	if (params.sharpness > 0) {
-		applyUnsharpMaskToImageData(imageData, params.sharpness);
 	}
 }
 
@@ -201,7 +348,10 @@ export class VisiographImageProcessor {
 			params.contrast === 0 &&
 			params.gamma === 1.0 &&
 			params.sharpness === 0 &&
-			!params.invert;
+			!params.invert &&
+			!params.maxSharpness &&
+			!params.pseudoRelief &&
+			!params.cutCornerChamfer;
 
 		if (isNeutral) {
 			return;

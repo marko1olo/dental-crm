@@ -1,6 +1,7 @@
 import React from "react";
 import {
 	AlertOctagon,
+	AlertTriangle,
 	CalendarCheck,
 	Check,
 	CheckCircle2,
@@ -229,19 +230,19 @@ export function VisitHeaderMonolith({
 						<span className="hidden lg:inline">Печать дневника</span>
 					</button>
 
-					{/* Экстренная помощь / Аптечка анти-шок */}
+					{/* Экстренная помощь / Аптечка анти-шок (тихий служебный доступ) */}
 					<button
 						type="button"
 						onClick={() => setIsEmergencyModalOpen(true)}
 						data-testid="btn-visit-emergency-rescue"
-						className="!hidden sm:!inline-flex secondary-button h-7 min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+						className="hidden 2xl:inline-flex secondary-button h-7 min-h-0 px-2 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line)] hover:border-rose-300 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
 						title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
 					>
-						<AlertOctagon
-							className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0"
+						<AlertTriangle
+							className="w-3.5 h-3.5 text-amber-500 shrink-0"
 							aria-hidden="true"
 						/>
-						<span className="hidden xl:inline">Аптечка</span>
+						<span>Аптечка</span>
 					</button>
 
 					{/* 3-Стадийная оперативная очередь смены StomX */}

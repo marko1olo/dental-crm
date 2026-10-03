@@ -110,7 +110,7 @@ export function DmsQuickActionBanners({
 						Экспресс-прикрепление гарантийного письма в 1 клик:
 					</span>
 					<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-						(моментальное заполнение страховщика, лимитов и услуг 804н)
+						(моментальное заполнение страховой компании, лимитов и согласованных услуг)
 					</span>
 				</div>
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

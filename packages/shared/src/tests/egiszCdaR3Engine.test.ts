@@ -25,6 +25,7 @@ import {
 	generateSemd101Xml,
 	generateSemd104Xml,
 	generateSemd130Xml,
+	generateSemd105Xml,
 	isValidSnils,
 	normalizeSnils,
 	prepareUkepSigningPayload,
@@ -406,6 +407,37 @@ describe("EGISZ CDA R3 / REMD Statutory Formatter & UKEP GOST 34.10 Engine", () 
 			const invalidVal = validateCdaParams(invalid130);
 			assert.equal(invalidVal.valid, false);
 			assert.ok(invalidVal.errors.some((e) => e.includes("Не сходится сумма в копейках")));
+		});
+
+		it("генерирует амбулаторный протокол консультации СЭМД 105 по стандарту HL7 CDA R2", () => {
+			const semd105Xml = generateSemd105Xml({
+				documentId: "DOC-SEMD105-001",
+				documentVersion: 1,
+				visitDate: "2026-10-03T10:00:00.000Z",
+				patient: SAMPLE_PATIENT_RU,
+				doctor: SAMPLE_DOCTOR,
+				clinic: SAMPLE_CLINIC,
+				complaints: "Жалобы на кратковременные боли от сладкого в зубе 16",
+				anamnesis: "Боли появились неделю назад, ранее зуб не лечен",
+				diagnoses: [
+					{
+						icd10Code: "K02.1",
+						diagnosisText: "Кариес дентина",
+						isPrimary: true,
+						tooth: "16",
+					},
+				],
+				treatmentDescription: "Препарирование полости, наложение фотокомпозита Estelite",
+				recommendations: ["Наблюдение", "Гигиеническая чистка раз в полгода"],
+			});
+
+			assert.ok(semd105Xml.includes("<templateId root=\"1.2.643.5.1.13.13.11.1527\"/>"));
+			assert.ok(semd105Xml.includes("Протокол консультации (амбулаторный)"));
+			assert.ok(semd105Xml.includes("K02.1"));
+			assert.ok(semd105Xml.includes("Кариес дентина"));
+			assert.ok(semd105Xml.includes("Зуб 16"));
+			assert.ok(semd105Xml.includes("Препарирование полости"));
+			assert.ok(semd105Xml.includes("DOC-SEMD105-001"));
 		});
 	});
 

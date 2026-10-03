@@ -865,7 +865,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 															fontSize: "0.875rem",
 														}}
 													>
-														Нет данных для формирования табеля Т-13 (сотрудники не добавлены).
+														Нет данных для формирования табеля учёта времени (сотрудники не добавлены).
 													</div>
 													<a
 														href="/settings?tab=staff"

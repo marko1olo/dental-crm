@@ -227,7 +227,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 					className="dente-primary-action-btn"
 				>
 					<ShieldCheck size={16} />
-					<span>Применить сплит к чеку 54-ФЗ</span>
+					<span>Применить сплит к чеку</span>
 				</button>
 
 				<button
@@ -236,7 +236,7 @@ export const ToothFamilyLoyaltyAccordion: React.FC<ToothFamilyLoyaltyAccordionPr
 					className="dente-secondary-btn"
 				>
 					<Sparkles size={14} />
-					<span>Семейный расчет 54-ФЗ...</span>
+					<span>Семейный расчет оплаты...</span>
 				</button>
 			</div>
 		</div>

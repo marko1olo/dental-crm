@@ -197,7 +197,7 @@ export function DentalLabPrintBlank({
 			<div className="flex items-center justify-between flex-wrap gap-3 print:hidden">
 				<div>
 					<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
-						Форма № ЗТЛ-1: Наряд-заказ в зуботехническую лабораторию (СтАР / ГОСТ)
+						Наряд-заказ в зуботехническую лабораторию
 					</h3>
 					<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
 						Официальный наряд-заказ с уникальным 2D-штрихкодом партии и ссылкой для трекинга техником.
@@ -227,7 +227,7 @@ export function DentalLabPrintBlank({
 							{clinicName}
 						</div>
 						<h1 className="text-lg sm:text-xl font-black tracking-wide uppercase m-0 mt-0.5">
-							Наряд-заказ в зуботехническую лабораторию (Форма № ЗТЛ-1) № {gostOrderNumber}
+							Наряд-заказ в зуботехническую лабораторию № {gostOrderNumber}
 						</h1>
 						<p className="text-xs text-slate-600 mt-0.5 m-0 font-medium">
 							Стоматологическая медицинская организация · Отделение ортопедии и цифрового зубопротезирования CAD/CAM
@@ -281,7 +281,7 @@ export function DentalLabPrintBlank({
 						<div>
 							<strong>Пациент:</strong> <span className="font-bold">{patientFio.fullName}</span>{" "}
 							<span className="text-[11px] text-slate-500 font-normal">
-								(152-ФЗ курьерский: <strong>{patientFio.courierMaskedName}</strong>)
+								(Курьерский код: <strong>{patientFio.courierMaskedName}</strong>)
 							</span>
 						</div>
 						<div>
@@ -396,7 +396,7 @@ export function DentalLabPrintBlank({
 					data-testid="lab-blank-5stage-tracker"
 				>
 					<div className="font-bold border-b border-slate-200 pb-1.5 uppercase tracking-wider text-[11px] text-slate-700 flex justify-between items-center print:border-black print:text-black">
-						<span>Маршрутный лист и клинические этапы ЗТЛ (ГОСТ Р 51087-97):</span>
+						<span>Маршрутный лист и этапы изготовления в лаборатории:</span>
 						<span className="font-mono text-[10px] text-slate-500 print:text-black font-semibold">5 ЭТАПОВ ТРЕКИНГА</span>
 					</div>
 					<div className="grid grid-cols-5 gap-2 pt-1 text-center">

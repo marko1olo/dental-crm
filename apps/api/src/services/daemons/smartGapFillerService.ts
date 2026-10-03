@@ -17,6 +17,11 @@ import {
 	treatmentPlans,
 	users,
 } from "../../db/schema.js";
+import {
+	parsePreferredRanges,
+	parsePreferredWeekday,
+	slotFitsRanges,
+} from "../schedule/waitlistMatching.js";
 
 export interface GapFillerCandidate {
 	readonly patientId: string;
@@ -111,9 +116,66 @@ export async function triggerSmartGapFiller(
 			)
 			.limit(10);
 
+		const slotStartMinute =
+			appt.startsAt.getHours() * 60 + appt.startsAt.getMinutes();
+		const slotWeekday = appt.startsAt.getDay();
+
 		for (const entry of waitlistEntries) {
 			if (!entry.patientId) continue;
 			const name = entry.patientFullName || "Пациент";
+
+			const preferredRanges = parsePreferredRanges(entry.preferredTimeRanges);
+			const timeFits = slotFitsRanges(slotStartMinute, preferredRanges);
+
+			let dayFits = true;
+			if (Array.isArray(entry.preferredTimeRanges)) {
+				const dayEntries = entry.preferredTimeRanges
+					.map((item) =>
+						item && typeof item === "object"
+							? parsePreferredWeekday((item as Record<string, unknown>).day)
+							: null,
+					)
+					.filter((d): d is number => d !== null);
+				if (dayEntries.length > 0) {
+					dayFits = dayEntries.includes(slotWeekday);
+				}
+			}
+
+			let basePriority = 50;
+			const prio = (entry.priorityLevel || "").toLowerCase();
+			if (prio === "urgent" || prio === "acute_pain") {
+				basePriority = 100;
+			} else if (prio === "high") {
+				basePriority = 80;
+			} else if (prio === "treatment_plan") {
+				basePriority = 75;
+			} else if (prio === "medium") {
+				basePriority = 50;
+			} else if (prio === "low") {
+				basePriority = 25;
+			}
+
+			let score = basePriority;
+			if (timeFits) score += 20;
+			if (dayFits) score += 10;
+			if (
+				entry.preferredDoctorId &&
+				appt.doctorUserId &&
+				entry.preferredDoctorId === appt.doctorUserId
+			) {
+				score += 30;
+			}
+
+			const reasonParts: string[] = ["В листе ожидания"];
+			if (timeFits) reasonParts.push("время подходит");
+			if (dayFits) reasonParts.push("день подходит");
+			if (
+				entry.preferredDoctorId &&
+				appt.doctorUserId &&
+				entry.preferredDoctorId === appt.doctorUserId
+			) {
+				reasonParts.push("к этому же врачу");
+			}
 
 			const draftMessage = `Здравствуйте, ${name}! В клинике DENTE освободилось окно на прием к доктору (${doctorName}) на ${timeFormatted}. Сможете подойти?`;
 
@@ -122,9 +184,11 @@ export async function triggerSmartGapFiller(
 				patientFullName: name,
 				patientPhone: entry.patientPhone,
 				source: "waitlist",
-				reasonRu: "В листе ожидания к врачу",
-				preferredTimeRu: entry.preferredTimeRanges ? JSON.stringify(entry.preferredTimeRanges) : undefined,
-				priorityScore: entry.priorityLevel === "urgent" ? 100 : entry.priorityLevel === "high" ? 80 : 50,
+				reasonRu: reasonParts.join(", "),
+				preferredTimeRu: entry.preferredTimeRanges
+					? JSON.stringify(entry.preferredTimeRanges)
+					: undefined,
+				priorityScore: score,
 				draftMessage,
 			});
 		}
@@ -186,7 +250,11 @@ export async function triggerSmartGapFiller(
 			candidates: topCandidates,
 			createdAt: new Date().toISOString(),
 		};
-	} catch {
+	} catch (error) {
+		console.error(
+			"[smartGapFillerService:ERROR] Failed to run gap filler analysis:",
+			error,
+		);
 		return null;
 	}
 }

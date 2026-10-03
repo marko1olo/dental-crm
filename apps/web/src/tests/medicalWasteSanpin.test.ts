@@ -170,10 +170,10 @@ describe("SANPIN 2.1.3684-21 MEDICAL WASTE & AUTOCLAVE JOURNAL", () => {
 			assert.equal(check.status, "warning_approaching_limit");
 		});
 
-		it("Позволяет хранение в холодильнике до 7 суток (168 часов)", () => {
+		it("Позволяет хранение в холодильнике до 3 суток (72 часов) per СанПиН 2.1.3684-21 п. 174", () => {
 			const location = getWasteStorageLocation("waste_refrigerator_2_8");
-			assert.equal(location.maxAllowedStorageHours, 168);
-			assert.equal(location.maxAllowedStorageDays, 7);
+			assert.equal(location.maxAllowedStorageHours, 72);
+			assert.equal(location.maxAllowedStorageDays, 3);
 		});
 
 		it("Позволяет хранение в морозильнике до 30 суток (720 часов)", () => {

@@ -63,6 +63,12 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 		const setMinorRepresentativeDocument = useDocumentStore(
 			(state) => state.setMinorRepresentativeIdentityDocument,
 		);
+		const minorRepresentativeAuthority = useDocumentStore(
+			(state) => state.minorRepresentativeAuthorityDocument,
+		);
+		const setMinorRepresentativeAuthority = useDocumentStore(
+			(state) => state.setMinorRepresentativeAuthorityDocument,
+		);
 		const minorRepresentativePhone = useDocumentStore(
 			(state) => state.minorRepresentativePhone,
 		);
@@ -191,6 +197,14 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 				resolveValue(minorConsentPatientBirthDateValue) ||
 				patientCoreDraft.birthDate ||
 				"«___» _________ _____ г.";
+			const childDoc =
+				patientAdministrativeProfileDraft.identityDocument ||
+				(patientCoreDraft as { passport?: string }).passport ||
+				"свидетельство о рождении ребенка / паспорт";
+			const repBasis =
+				minorRepresentativeAuthority ||
+				patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument ||
+				"ст. 64 СК РФ (родитель) / свидетельство о рождении ребенка";
 
 			const html = generateMinorConsentPrintHtml({
 				representativeName: repName,
@@ -199,6 +213,8 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 				representativePhone: repPhone,
 				childName: childName,
 				childBirthDate: childBirth,
+				childDocument: childDoc,
+				representativeBasis: repBasis,
 				doctorName:
 					minorConsentDoctorFullName ||
 					activeDoctorFullName ||
@@ -358,16 +374,28 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 						/>
 					</label>
 				</div>
-				<label>
-					Документ представителя
-					<input
-						value={minorRepresentativeDocument}
-						onChange={(event) =>
-							setMinorRepresentativeDocument(event.target.value)
-						}
-						placeholder="свидетельство о рождении ребенка, паспорт родителя, акт опеки, доверенность"
-					/>
-				</label>
+				<div className="document-payload-row">
+					<label>
+						Паспорт представителя
+						<input
+							value={minorRepresentativeDocument}
+							onChange={(event) =>
+								setMinorRepresentativeDocument(event.target.value)
+							}
+							placeholder="паспорт серия ______ № ________ выдан кем и когда"
+						/>
+					</label>
+					<label>
+						Основание полномочий (ст. 64 СК РФ / ст. 185 ГК РФ)
+						<input
+							value={minorRepresentativeAuthority}
+							onChange={(event) =>
+								setMinorRepresentativeAuthority(event.target.value)
+							}
+							placeholder="свидетельство о рождении, ст. 64 СК РФ, акт опеки, доверенность"
+						/>
+					</label>
+				</div>
 				<div className="document-payload-row">
 					<label>
 						Пациент (ребенок)

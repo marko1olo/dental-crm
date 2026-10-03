@@ -766,7 +766,7 @@ export function ScheduleFilterStrip({
 						aria-label="Быстрая запись (+ Запись)"
 					>
 						<Plus size={14} className="shrink-0" aria-hidden="true" />
-						<span className="whitespace-nowrap font-bold">+ Запись</span>
+						<span className="whitespace-nowrap font-bold">Запись</span>
 					</button>
 				)}
 

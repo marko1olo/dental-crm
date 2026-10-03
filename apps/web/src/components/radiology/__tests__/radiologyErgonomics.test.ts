@@ -118,7 +118,7 @@ describe("Radiology Ergonomics & Math Suite", () => {
 	});
 
 	it("verifies zero vector SVG mock teeth remain in radiology exports", () => {
-		const source = readFileSync(path.join(import.meta.dirname, "../index.ts"), "utf8");
+		const source = readFileSync(path.join(import.meta.dirname, "../RadiologyModule.tsx"), "utf8");
 		assert.strictEqual(
 			source.includes("TOOTH_16_DIAGNOSTIC_RADIOGRAPH_DATA_URI"),
 			false,

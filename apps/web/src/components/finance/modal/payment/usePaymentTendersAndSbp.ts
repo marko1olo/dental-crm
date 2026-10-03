@@ -41,6 +41,8 @@ export interface UsePaymentTendersAndSbpParams {
 	readonly setDiscountReason: (val: string) => void;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly availableDmsCoverageRub?: number | undefined;
+	readonly initialSplitDmsRub?: number | undefined;
 	readonly invoiceId?: string | undefined;
 	readonly documentId?: string | undefined;
 	readonly visitId?: string | undefined;
@@ -61,6 +63,8 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 		setDiscountReason,
 		patientDepositRub = 0,
 		patientFamilyBalanceRub = 0,
+		availableDmsCoverageRub,
+		initialSplitDmsRub = 0,
 		invoiceId,
 		documentId,
 		visitId,
@@ -86,6 +90,7 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
 	const [splitCertificateRub, setSplitCertificateRub] = useState<number>(0);
 	const [splitBonusRub, setSplitBonusRub] = useState<number>(0);
+	const [splitDmsRub, setSplitDmsRub] = useState<number>(initialSplitDmsRub);
 
 	// 54-FZ Buyer requisites
 	const [payerType, setPayerType] = useState<PayerType>("physical");
@@ -125,6 +130,7 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 			sbp: number;
 			certificate: number;
 			bonus: number;
+			dms: number;
 		}> = {},
 	) => {
 		setSplitCardRub(overrides.card ?? 0);
@@ -133,6 +139,7 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 		setSplitSbpRub(overrides.sbp ?? 0);
 		setSplitCertificateRub(overrides.certificate ?? 0);
 		setSplitBonusRub(overrides.bonus ?? 0);
+		setSplitDmsRub(overrides.dms ?? 0);
 	};
 
 	const syncSplitAndCashToTotal = (newTotalRub: number) => {
@@ -144,14 +151,15 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 			setSplitSbpRub(0);
 			setSplitCertificateRub(0);
 			setSplitBonusRub(0);
+			setSplitDmsRub(0);
 			return;
 		}
 		if (splitCashRub > 0 && splitCardRub === 0) {
-			const other = splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub;
+			const other = splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub + splitDmsRub;
 			const cashRemainder = Math.max(0, Number((newTotalRub - other).toFixed(2)));
 			setSplitCashRub(cashRemainder);
 		} else {
-			const other = splitCashRub + splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub;
+			const other = splitCashRub + splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub + splitDmsRub;
 			const cardRemainder = Math.max(0, Number((newTotalRub - other).toFixed(2)));
 			setSplitCardRub(cardRemainder);
 		}
@@ -176,7 +184,8 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 			splitDepositRub === 0 &&
 			splitSbpRub === 0 &&
 			splitCertificateRub === 0 &&
-			splitBonusRub === 0
+			splitBonusRub === 0 &&
+			splitDmsRub === 0
 		) {
 			setSplitCardRub(totalDueRub);
 		}
@@ -233,10 +242,12 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 				familyRub: 0,
 				certificateRub: splitCertificateRub,
 				bonusRub: splitBonusRub,
+				dmsRub: splitDmsRub,
 			},
 			targetTender,
 			patientDepositRub,
 			patientFamilyBalanceRub,
+			availableDmsCoverageRub,
 		});
 		resetSplitTenders({
 			card: next.cardRub,
@@ -245,6 +256,7 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 			sbp: next.sbpRub,
 			certificate: next.certificateRub || 0,
 			bonus: next.bonusRub || 0,
+			dms: next.dmsRub || 0,
 		});
 	};
 
@@ -405,7 +417,8 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 			splitDepositRub +
 			splitSbpRub +
 			splitCertificateRub +
-			splitBonusRub
+			splitBonusRub +
+			splitDmsRub
 		).toFixed(2),
 	);
 	const isBalanced = Math.abs(totalAllocatedRub - totalDueRub) < 0.009;
@@ -429,6 +442,8 @@ export function usePaymentTendersAndSbp(params: UsePaymentTendersAndSbpParams) {
 		setSplitCertificateRub,
 		splitBonusRub,
 		setSplitBonusRub,
+		splitDmsRub,
+		setSplitDmsRub,
 		payerType,
 		setPayerType,
 		buyerInn,

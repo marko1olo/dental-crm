@@ -336,11 +336,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		URL.revokeObjectURL(url);
 	}, []);
 
-	// Списание просроченных позиций по ТОРГ-16
+	// Списание просроченных позиций по акту списания
 	const handleCreateTorg16 = useCallback(() => {
 		const act = generateTorg16ActFromInventory(currentDocument);
 		if (act.items.length === 0) {
-			showToast("В описи нет просроченных позиций для формирования ТОРГ-16.");
+			showToast("В описи нет просроченных позиций для формирования акта списания.");
 			return;
 		}
 		if (onTorg16Generated) {
@@ -348,7 +348,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		}
 		const html = generateTorg16Html(act);
 		handlePrintDocument(html);
-		showToast(`Сформирован акт ТОРГ-16 на списание ${act.items.length} позиций.`);
+		showToast(`Сформирован акт списания на ${act.items.length} позиций.`);
 	}, [currentDocument, onTorg16Generated, handlePrintDocument, showToast]);
 
 	// Экспорт в CSV
@@ -365,11 +365,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		showToast("Документ инвентаризации выгружен в формате 1C CommerceML.");
 	}, [currentDocument, docNumber, handleDownloadFile, showToast]);
 
-	// Экспорт сличительной ведомости ИНВ-19 в CSV
+	// Экспорт сличительной ведомости в CSV
 	const handleExportInv19Csv = useCallback(() => {
 		const csv = exportInv19DiscrepanciesToCsv(currentDocument);
-		handleDownloadFile(csv, `Сличительная_ведомость_ИНВ-19_${docNumber}.csv`, "text/csv");
-		showToast("Сличительная ведомость ИНВ-19 выгружена в CSV.");
+		handleDownloadFile(csv, `Сличительная_ведомость_${docNumber}.csv`, "text/csv");
+		showToast("Сличительная ведомость остатков выгружена в CSV.");
 	}, [currentDocument, docNumber, handleDownloadFile, showToast]);
 
 	// Сохранение описи
@@ -458,7 +458,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 						</div>
 						<div className="min-w-0">
 							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-								<h2 className="warehouse-inventory-title truncate">Складская инвентаризация и FEFO</h2>
+								<h2 className="warehouse-inventory-title truncate">Складская инвентаризация и контроль сроков</h2>
 								<span
 									style={{
 										fontSize: "0.75rem",
@@ -501,22 +501,22 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={() => handlePrintDocument(generateInv3Html(currentDocument))}
-							title="Печать инвентаризационной описи (ИНВ-3)"
+							title="Печать инвентаризационной описи"
 						>
 							<Printer size={14} />
 							<span>Инвентаризационная опись</span>
-							<span className="text-[10px] opacity-60 ml-1 font-mono">ИНВ-3</span>
+							<span className="text-[10px] opacity-60 ml-1 font-mono">Опись</span>
 						</button>
 
 						<button
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={() => handlePrintDocument(generateInv19Html(currentDocument))}
-							title="Печать сличительной ведомости (ИНВ-19)"
+							title="Печать сличительной ведомости остатков"
 						>
 							<FileSpreadsheet size={14} />
 							<span>Сличительная ведомость</span>
-							<span className="text-[10px] opacity-60 ml-1 font-mono">ИНВ-19</span>
+							<span className="text-[10px] opacity-60 ml-1 font-mono">Сличительная</span>
 						</button>
 
 						<button
@@ -628,7 +628,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 								}}
 							>
 								<option value="default">По умолчанию</option>
-								<option value="fefo">FEFO (Сначала истекающие)</option>
+								<option value="fefo">Сначала истекающие (FEFO)</option>
 								<option value="discrepancy">По сумме расхождения</option>
 								<option value="name">По наименованию</option>
 							</select>
@@ -651,11 +651,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 								type="button"
 								className="warehouse-btn warehouse-btn-danger"
 								onClick={handleCreateTorg16}
-								title="Сформировать акт списания просроченных материалов (ТОРГ-16)"
+								title="Сформировать акт списания просроченных материалов"
 							>
 								<PackageX size={14} />
 								<span>Акт списания просрочки ({totals.expiredItemsCount})</span>
-								<span className="text-[10px] opacity-60 ml-1 font-mono">ТОРГ-16</span>
+								<span className="text-[10px] opacity-60 ml-1 font-mono">Акт списания</span>
 							</button>
 						)}
 					</div>
@@ -698,7 +698,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={handleExportInv19Csv}
-							title="Выгрузить ведомость расхождений (ИНВ-19) в CSV"
+							title="Выгрузить сличительную ведомость расхождений в CSV"
 						>
 							<FileSpreadsheet size={14} />
 							<span>CSV (Расхождения)</span>

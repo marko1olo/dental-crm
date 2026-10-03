@@ -1035,11 +1035,11 @@ export function matchOrder804nNomenclature(
 		};
 	}
 
-	// 3. Fallback to general therapy / consultation
+	// 3. Fallback to general therapy / consultation (statutory code A16.07.002 per Minzdrav Order 804n)
 	return {
-		code804n: "A16.07.000",
-		statutoryTitle804n: "Стоматологическая услуга (прочее)",
-		category: "other",
+		code804n: "A16.07.002",
+		statutoryTitle804n: "Восстановление зуба пломбой (терапевтическая стоматология)",
+		category: "therapy",
 		specialty: "therapist",
 		confidence: 0.40,
 		confidenceKind: "fallback",
@@ -1078,7 +1078,7 @@ export function crossReferenceWithExistingCatalog(
 
 	// 1. Exact title or code match
 	const exactMatch = existingItems.find(
-		(it) => it.title.toLowerCase().trim() === normTitle || (it.code && it.code === proposalCode && proposalCode !== "A16.07.000"),
+		(it) => it.title.toLowerCase().trim() === normTitle || (Boolean(it.code) && it.code === proposalCode),
 	);
 
 	if (exactMatch) {

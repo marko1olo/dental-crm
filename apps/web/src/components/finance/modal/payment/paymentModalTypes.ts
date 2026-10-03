@@ -40,6 +40,11 @@ export interface PaymentModalProps {
 	readonly initialDiscountReason?: string | undefined;
 	readonly initialWarranty100?: boolean | undefined;
 	readonly initialSplit5050?: boolean | undefined;
+	readonly dmsGuaranteeLetterId?: string | undefined;
+	readonly dmsGuaranteeLetterNumber?: string | undefined;
+	readonly dmsInsurerName?: string | undefined;
+	readonly availableDmsCoverageRub?: number | undefined;
+	readonly initialSplitDmsRub?: number | undefined;
 	readonly onPrintInvoice?: (() => void) | undefined;
 	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;

@@ -68,7 +68,7 @@ const TAXATION_SYSTEMS: TaxationSystemConfig[] = [
 		name: "Общая система налогообложения (ОСНО)",
 		shortName: "ОСНО",
 		rateDescription: "Налог на прибыль 20% / НДФЛ + сопутствующий НДС",
-		vatRule: "Медуслуги: Без НДС (пп. 2 п. 2 ст. 149 НК РФ); Сопутствующие товары: НДС 20%",
+		vatRule: "Медуслуги: Без НДС; Сопутствующие товары: НДС 20%",
 		recommendedFor: "Крупные медицинские центры и сетевые клиники с выручкой свыше 450 млн ₽",
 	},
 ];
@@ -100,11 +100,11 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 								Налогообложение (СНО) и касса
 							</h4>
 							<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-								ФФД {ffdVersion}
+								Протокол кассы {ffdVersion}
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted)] mt-0.5">
-							Конфигурация кассового аппарата (ККТ), системы налогообложения и льгот ст. 149 НК РФ
+							Конфигурация кассового аппарата (ККТ), системы налогообложения и льгот по НДС
 						</p>
 					</div>
 				</div>
@@ -252,15 +252,15 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 
 				<div className="space-y-1.5">
 					<label className="text-[11px] font-semibold text-[var(--muted)] block">
-						Версия протокола ФФД:
+						Версия кассового протокола:
 					</label>
 					<select
 						value={ffdVersion}
 						onChange={(e) => setFfdVersion(e.target.value)}
 						className="w-full text-xs p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none"
 					>
-						<option value="1.2">ФФД 1.2 (Обязателен, поддержка Честный ЗНАК)</option>
-						<option value="1.05">ФФД 1.05 (Устаревший)</option>
+						<option value="1.2">Стандартный протокол 1.2 (Поддержка Честный ЗНАК)</option>
+						<option value="1.05">Протокол 1.05 (Устаревший)</option>
 					</select>
 				</div>
 

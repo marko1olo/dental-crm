@@ -275,11 +275,11 @@ export class AutonomousDenteAgent {
 		let currentIteration = 1;
 		{
 			const thought1 = [
-				`[ИТЕРАЦИЯ 1/5: ПЕРВИЧНЫЙ КЛИНИЧЕСКИЙ АНАЛИЗ И ФАРМАКОЛОГИЧЕСКИЙ ФАЕРВОЛ]`,
+				`[ИТЕРАЦИЯ 1/5: ПЕРВИЧНЫЙ КЛИНИЧЕСКИЙ АНАЛИЗ И ЛЕКАРСТВЕННАЯ СОВМЕСТИМОСТЬ]`,
 				`Пациент ID: ${input.patientId}. Зуб FDI: ${fdiToothFormatted}.`,
 				`Жалобы: "${extractedComplaints || "Не указаны (физиологическая норма)"}".`,
 				`Анамнез: аллергии [${extractedAllergies.join(", ") || "отрицает"}], соматика [${extractedSomatic.join(", ") || "здоров"}].`,
-				`ДЕЙСТВИЕ: Вызов check_drug_interactions для исключения DDI и get_patient_emk_043u для поднятия карты.`,
+				`ДЕЙСТВИЕ: Вызов check_drug_interactions для проверки лекарственной совместимости и get_patient_emk_043u для открытия электронной карты.`,
 			].join("\n");
 			fullThoughtTraces.push(thought1);
 
@@ -538,13 +538,13 @@ export class AutonomousDenteAgent {
 				id: `card_ids_${crypto.randomUUID().slice(0, 8)}`,
 				type: "print_informed_consent",
 				title: `Печать ИДС: ${consentObservation.consentCode}`,
-				description: `${consentObservation.consentTitle}. Форма 043/у, ст. 20 323-ФЗ. Готово к печати в 1 клик.`,
+				description: `${consentObservation.consentTitle}. Официальный бланк ИДС. Готово к печати в 1 клик.`,
 				payload: consentObservation as any,
 				readyForOneClickApply: true,
 				doctorAutonomyGuaranteed: true,
 			});
 
-			// Tool: check_warehouse_supplies (Soft overdraft Mandate 8e)
+			// Tool: check_warehouse_supplies (Soft overdraft Mandate 8e / Background automatic script Mandate 8ab)
 			const warehouseObservation = await checkWarehouseSuppliesTool.handler(ctx, {
 				organizationId: orgId,
 				itemName: anestheticResult?.drugName || "Артикаин 4% (карпулы 1.7 мл)",
@@ -556,10 +556,10 @@ export class AutonomousDenteAgent {
 			actions.push({
 				id: `card_warehouse_${crypto.randomUUID().slice(0, 8)}`,
 				type: "check_warehouse_supplies",
-				title: `Склад: ${warehouseObservation.itemName}`,
+				title: `Расходные материалы (автосписание): ${warehouseObservation.itemName}`,
 				description: warehouseObservation.isSoftOverdraft
-					? `Мягкий овердрафт: остаток ${warehouseObservation.currentStock} шт. (дефицит: ${warehouseObservation.deficitCount} шт., накладная не внесена). Приём не заблокирован.`
-					: `В наличии на складе: ${warehouseObservation.currentStock} шт. Списание готово.`,
+					? `Фоновое автосписание: мягкий овердрафт ${warehouseObservation.currentStock} шт. (дефицит: ${warehouseObservation.deficitCount} шт.). Приём врача не блокируется (Мандат 8v/8ab).`
+					: `Фоновое автосписание: остаток ${warehouseObservation.currentStock} шт. Списание выполняется бэкендом без участия врача.`,
 				payload: warehouseObservation as any,
 				readyForOneClickApply: true,
 				doctorAutonomyGuaranteed: true,

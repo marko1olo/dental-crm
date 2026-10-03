@@ -552,7 +552,7 @@ export const CbctEndoCanalHud: React.FC<CbctEndoCanalHudProps> = ({
 						? "bg-emerald-950/70 text-emerald-200 font-medium border border-emerald-500/50 shadow-xs"
 						: "bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 hover:text-teal-200 border border-teal-500/50 shadow-xs"
 				}`}
-				title="Скопировать замер в протокол эндодонтии (Форма 043/у)"
+				title="Скопировать замер в протокол эндодонтии"
 				aria-label="В дневник"
 				data-testid="cbct-endo-copy-protocol-btn"
 			>

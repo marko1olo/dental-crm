@@ -192,6 +192,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 	});
 
 	test("POST пустое {} → 400 CompanyNameRequired, не 500", async () => {
+		if (!databaseReady) return;
 		const refused = await postContract({ body: {} });
 		assert.equal(
 			refused.statusCode,
@@ -205,6 +206,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 	});
 
 	test("POST JSON null → 400 CompanyNameRequired, не 500", async () => {
+		if (!databaseReady) return;
 		const refused = await postContract({ rawPayload: "null" });
 		assert.equal(
 			refused.statusCode,
@@ -217,6 +219,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 	});
 
 	test("POST пробел в companyName → 400 CompanyNameRequired", async () => {
+		if (!databaseReady) return;
 		const refused = await postContract({ body: { companyName: "   " } });
 		assert.equal(
 			refused.statusCode,

@@ -428,3 +428,63 @@ export function calculateFamilyDepositRefund(params: {
 		transaction,
 	};
 }
+
+/**
+ * Refunds unspent family deposit funds back to the sponsor/patient in cash or bank transfer (depletes deposit).
+ */
+export function calculateFamilyDepositWithdrawalRefund(params: {
+	account: FamilyDepositAccount;
+	patientId: string;
+	refundAmountKopecks: number;
+	notes?: string | undefined;
+}): {
+	updatedAccount: FamilyDepositAccount;
+	transaction: FamilyDepositTransaction;
+} {
+	const refundKop = Math.max(0, Math.round(params.refundAmountKopecks));
+	if (refundKop <= 0) {
+		throw new Error("Сумма возврата семейного депозита должна быть больше 0.");
+	}
+	if (params.account.balanceKopecks < refundKop) {
+		throw new Error(
+			`Недостаточно средств на семейном балансе для возврата. Доступно: ${kopecksToRub(params.account.balanceKopecks)} ₽, требуется: ${kopecksToRub(refundKop)} ₽`,
+		);
+	}
+
+	const balanceBeforeKopecks = params.account.balanceKopecks;
+	const newBalanceKopecks = balanceBeforeKopecks - refundKop;
+	const nowIso = new Date().toISOString();
+
+	const member = params.account.members.find((m) => m.patientId === params.patientId);
+	const patientFullName = member?.fullName ?? `Пациент ID ${params.patientId}`;
+
+	const transaction: FamilyDepositTransaction = {
+		id: generateFamilyDepositTransactionId("REF", {
+			seedKey: `${params.account.familyGroupId}:${params.patientId}`,
+		}),
+		familyGroupId: params.account.familyGroupId,
+		transactionType: "refund",
+		patientId: params.patientId,
+		patientFullName,
+		payerPatientId: params.account.sponsorPatientId,
+		amountKopecks: refundKop,
+		amountRub: kopecksToRub(refundKop),
+		balanceBeforeKopecks,
+		balanceAfterKopecks: newBalanceKopecks,
+		timestampIso: nowIso,
+		notes: params.notes ?? `Выплата остатка семейного депозита: ${patientFullName}`,
+	};
+
+	const updatedAccount: FamilyDepositAccount = {
+		...params.account,
+		balanceKopecks: newBalanceKopecks,
+		totalDepositedKopecks: Math.max(0, params.account.totalDepositedKopecks - refundKop),
+		updatedAtIso: nowIso,
+	};
+
+	return {
+		updatedAccount,
+		transaction,
+	};
+}
+

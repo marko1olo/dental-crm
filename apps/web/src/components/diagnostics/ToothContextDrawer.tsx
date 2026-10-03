@@ -602,7 +602,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						>
 							<div className="trigger-left">
 								<Wallet size={16} color="var(--brand-primary, var(--teal))" />
-								<span className="trigger-title">4. Семейный депозит & Кешбэк (Сплит 54-ФЗ)</span>
+								<span className="trigger-title">4. Семейный депозит & Кешбэк (Сплит оплаты)</span>
 							</div>
 							<div className="trigger-right">
 								<span className="trigger-summary">Единый счет семьи</span>

@@ -221,7 +221,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 									data-testid={`menu-print-receipt-${inv.id}`}
 								>
 									<Receipt size={14} className="text-teal-600 shrink-0" />
-									<span>Чек 54-ФЗ / Квитанция</span>
+									<span>Кассовый чек / Квитанция</span>
 								</button>
 							)}
 
@@ -276,7 +276,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 									data-testid={`menu-refund-${inv.id}`}
 								>
 									<RotateCcw size={14} className="text-rose-600 shrink-0" />
-									<span>Оформить возврат (54-ФЗ)</span>
+									<span>Оформить возврат</span>
 								</button>
 							)}
 

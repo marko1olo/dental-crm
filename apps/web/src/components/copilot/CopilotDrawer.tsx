@@ -2,6 +2,7 @@ import {
 	Activity,
 	CheckSquare,
 	Flame,
+	Layers,
 	Loader2,
 	MessageSquare,
 	RotateCcw,
@@ -231,6 +232,19 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 				</div>
 
 				<div className="copilot-header-actions">
+					<button
+						type="button"
+						onClick={() => {
+							onClose();
+							window.dispatchEvent(new CustomEvent("dente:open-chairside-hud"));
+						}}
+						className="copilot-icon-btn"
+						title="Переключить в кресельный HUD (Alt+C)"
+						aria-label="Кресельный HUD"
+						data-testid="btn-switch-to-hud"
+					>
+						<Layers size={16} />
+					</button>
 					<button
 						type="button"
 						onClick={handleReset}

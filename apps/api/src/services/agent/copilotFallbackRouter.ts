@@ -155,20 +155,39 @@ export async function* routeCopilotFallback(
 	}
 
 	// 0.5. CRM Component Knowledge & Clinical Guidance (Mandates 8l, 8e, 8n)
-	// Answers natural language questions ("Как оформить возврат?", "Где смотреть снимок КТ?", "Как применить скидку по гарантии?")
-	const isQuestionOrInquiry =
-		/^(?:как|где|куда|почему|зачем|откуда|какой|какая|какие|подскажи|расскажи|инструкци[яиею]|справк[аеу]|помощь|мануал|руководств[оа]|что делать|обучени[ея])\b/i.test(
+	// Answers how-to documentation questions ("Как оформить возврат?", "Где смотреть снимок КТ?", "Как применить скидку по гарантии?")
+	const isHowToQuestion =
+		/^(?:как(?:\s|$)|где(?:\s|$)|куда(?:\s|$)|инструкци|мануал|руководств|помощь|обучени)/i.test(
 			lower,
-		) ||
-		lower.includes("?") ||
-		lower.includes("инструкци") ||
-		lower.includes("как оформить") ||
-		lower.includes("как применить") ||
-		lower.includes("как сделать") ||
-		lower.includes("где смотреть") ||
-		lower.includes("где найти");
+		);
 
-	if (isQuestionOrInquiry) {
+	const isLiveOperationalQuery =
+		!isHowToQuestion &&
+		(lower.includes("кто следующий") ||
+			lower.includes("кто записан") ||
+			lower.includes("что делали") ||
+			lower.includes("прошлый прием") ||
+			lower.includes("прошлом приеме") ||
+			lower.includes("баланс") ||
+			lower.includes("депозит") ||
+			lower.includes("долг") ||
+			lower.includes("выручк") ||
+			lower.includes("заработ") ||
+			lower.includes("пациенты сегодня") ||
+			lower.includes("пациентов сегодня") ||
+			lower.includes("сколько пациентов") ||
+			lower.includes("расписание") ||
+			lower.includes("график") ||
+			lower.includes("скидк") ||
+			lower.includes("кариес") ||
+			lower.includes("пульпит") ||
+			lower.includes("периодонтит"));
+
+	const isQuestionOrInquiry =
+		isHowToQuestion ||
+		/^(?:подскажи|расскажи|справк[аеу]|что делать)(?:\s|$)/i.test(lower);
+
+	if (isQuestionOrInquiry && !isLiveOperationalQuery) {
 		const knowledgeMatches = findComponentKnowledge(userText, { limit: 1 });
 		if (
 			knowledgeMatches.length > 0 &&
@@ -291,7 +310,65 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 5. Patient Summary & Passport Brief (crm.get_patient_summary)
+	// 5. Patient Timeline & Visit History (clinical.get_patient_timeline)
+	if (
+		lower.includes("что делали") ||
+		lower.includes("прошлый прием") ||
+		lower.includes("прошлом приеме") ||
+		lower.includes("история визитов") ||
+		lower.includes("когда ставили") ||
+		lower.includes("хронологи") ||
+		lower.includes("прошлые жалобы")
+	) {
+		yield {
+			type: "tool_use",
+			id: `call_timeline_${Date.now()}`,
+			name: "clinical.get_patient_timeline",
+			input: { patientId: contextPatientId, limit: 10 },
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 5.4. Patient Family Deposit & Debt (Mandate 8ab: crm.get_patient_family_deposit_and_debt)
+	if (
+		lower.includes("долг по счету") ||
+		lower.includes("есть ли долг") ||
+		lower.includes("семейном депозите") ||
+		lower.includes("семейный депозит") ||
+		lower.includes("задолженность по счетам")
+	) {
+		yield {
+			type: "tool_use",
+			id: `call_family_deposit_debt_${Date.now()}`,
+			name: "crm.get_patient_family_deposit_and_debt",
+			input: {
+				patientId: contextPatientId,
+			},
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 5.5. Patient Balance & Family Accounts (clinical.get_family_balance)
+	if (
+		lower.includes("баланс") ||
+		lower.includes("депозит") ||
+		lower.includes("долг") ||
+		lower.includes("задолженност") ||
+		lower.includes("остаток на счете")
+	) {
+		yield {
+			type: "tool_use",
+			id: `call_balance_${Date.now()}`,
+			name: "clinical.get_family_balance",
+			input: { patientId: contextPatientId },
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 5.6. Patient Summary & Passport Brief (crm.get_patient_summary)
 	if (
 		lower.includes("сводка") ||
 		lower.includes("анамнез") ||
@@ -329,7 +406,7 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 7. Patient Search (crm.search_patients / clinical.find_patient)
+	// 7. Patient Search (clinical.find_patient)
 	if (
 		lower.includes("пациент") ||
 		lower.includes("найди") ||
@@ -342,7 +419,7 @@ export async function* routeCopilotFallback(
 		yield {
 			type: "tool_use",
 			id: `call_patient_${Date.now()}`,
-			name: "crm.search_patients",
+			name: "clinical.find_patient",
 			input: { query },
 		};
 		yield { type: "done", stopReason: "tool_use" };
@@ -385,13 +462,150 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 9. Billing, Invoices & Discounts (crm.create_invoice / crm.apply_discount / crm.check_cashier_shift)
-	if (lower.includes("касс") || lower.includes("смена") || lower.includes("54-фз")) {
+	// 9. Doctor Piece-Rate & Revenue Intelligence (Mandate 8ab: crm.get_clinic_or_doctor_revenue)
+	if (
+		lower.includes("выручк") ||
+		lower.includes("заработ") ||
+		lower.includes("сколько начислено") ||
+		lower.includes("сдельщин") ||
+		lower.includes("средний чек") ||
+		lower.includes("выставлено счетов") ||
+		lower.includes("сколько счетов")
+	) {
+		const period = lower.includes("вчера")
+			? "yesterday"
+			: lower.includes("недел")
+				? "this_week"
+				: lower.includes("месяц")
+					? "this_month"
+					: "today";
+
+		yield {
+			type: "tool_use",
+			id: `call_revenue_${Date.now()}`,
+			name: "crm.get_clinic_or_doctor_revenue",
+			input: {
+				period,
+			},
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 9.1. Cashier Shift & 54-FZ (crm.check_cashier_shift)
+	if (
+		lower.includes("54-фз") ||
+		lower.includes("ккт") ||
+		(lower.includes("касс") &&
+			(lower.includes("смен") ||
+				lower.includes("открыт") ||
+				lower.includes("закрыт") ||
+				lower.includes("z-отчет") ||
+				lower.includes("24")))
+	) {
 		yield {
 			type: "tool_use",
 			id: `call_shift_${Date.now()}`,
 			name: "crm.check_cashier_shift",
 			input: {},
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 9.2. Patient Family Deposit & Debt (Mandate 8ab: crm.get_patient_family_deposit_and_debt)
+	if (
+		lower.includes("семейном депозите") ||
+		lower.includes("семейный депозит") ||
+		lower.includes("долг по счету") ||
+		lower.includes("есть ли долг") ||
+		lower.includes("задолженность по счетам")
+	) {
+		yield {
+			type: "tool_use",
+			id: `call_family_deposit_debt_${Date.now()}`,
+			name: "crm.get_patient_family_deposit_and_debt",
+			input: {
+				patientId: contextPatientId,
+			},
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 9.3. Doctor Shifts & Chair Occupancy (Mandate 8ab: crm.get_doctor_shifts_and_chairs)
+	if (
+		lower.includes("какая смена") ||
+		lower.includes("какая у меня смена") ||
+		lower.includes("в каком я кресле") ||
+		lower.includes("каком кресле") ||
+		lower.includes("часов отработано") ||
+		lower.includes("отработанных часов") ||
+		lower.includes("график смен") ||
+		(lower.includes("смен") &&
+			(lower.includes("четверг") ||
+				lower.includes("пятниц") ||
+				lower.includes("понедельник") ||
+				lower.includes("вторник") ||
+				lower.includes("сред") ||
+				lower.includes("суббот") ||
+				lower.includes("недел")))
+	) {
+		const targetDay = lower.includes("четверг")
+			? "четверг"
+			: lower.includes("пятниц")
+				? "пятница"
+				: lower.includes("понедельник")
+					? "понедельник"
+					: lower.includes("вторник")
+						? "вторник"
+						: lower.includes("сред")
+							? "среда"
+							: lower.includes("суббот")
+								? "суббота"
+								: lower.includes("недел")
+									? "this_week"
+									: "сегодня";
+
+		yield {
+			type: "tool_use",
+			id: `call_shifts_chairs_${Date.now()}`,
+			name: "crm.get_doctor_shifts_and_chairs",
+			input: {
+				targetDateOrDay: targetDay,
+			},
+		};
+		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 9.4. Operational Schedule Intelligence (Mandate 8ab: crm.get_daily_schedule_intelligence)
+	if (
+		lower.includes("после обеда") ||
+		lower.includes("свободные окна") ||
+		lower.includes("окна на") ||
+		(lower.includes("свободн") && lower.includes("окн")) ||
+		lower.includes("расписание на завтра")
+	) {
+		const isTomorrow = lower.includes("завтра");
+		const targetDate = isTomorrow
+			? new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+			: new Date().toISOString().slice(0, 10);
+		const timeWindowFilter = lower.includes("после обеда")
+			? "afternoon"
+			: "all";
+		const minGap =
+			lower.includes("1.5") || lower.includes("полтора") ? 90 : 60;
+
+		yield {
+			type: "tool_use",
+			id: `call_schedule_intel_${Date.now()}`,
+			name: "crm.get_daily_schedule_intelligence",
+			input: {
+				dateIso: targetDate,
+				timeWindowFilter,
+				minGapMinutes: minGap,
+			},
 		};
 		yield { type: "done", stopReason: "tool_use" };
 		return;
@@ -431,30 +645,49 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 10. Warehouse Inventory & Material Deduction (crm.check_stock_availability / crm.log_material_usage)
-	if (lower.includes("склад") || lower.includes("материал") || lower.includes("остат") || lower.includes("списани")) {
-		if (lower.includes("списать") || lower.includes("расход")) {
-			yield {
-				type: "tool_use",
-				id: `call_stock_log_${Date.now()}`,
-				name: "crm.log_material_usage",
-				input: {
-					itemName: "Артикаин 4% 1.7 мл",
-					quantity: 2,
-					patientId: contextPatientId,
-				},
-			};
-		} else {
-			yield {
-				type: "tool_use",
-				id: `call_stock_check_${Date.now()}`,
-				name: "crm.check_stock_availability",
-				input: {
-					itemNames: ["Артикаин", "Коффердам", "Filtek Ultimate"],
-				},
-			};
-		}
+	// 10. Doctor Schedule & Today's Patients (clinical.get_doctor_schedule)
+	if (
+		lower.includes("расписание") ||
+		lower.includes("график") ||
+		lower.includes("окна") ||
+		lower.includes("слот") ||
+		lower.includes("прием") ||
+		lower.includes("пациенты сегодня") ||
+		lower.includes("пациентов сегодня") ||
+		lower.includes("кто следующий") ||
+		lower.includes("кто записан")
+	) {
+		const now = new Date();
+		const isTomorrow = lower.includes("завтра");
+		const targetDate = isTomorrow ? new Date(now.getTime() + 86400000) : now;
+		const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0).toISOString();
+		const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59).toISOString();
+		yield {
+			type: "tool_use",
+			id: `call_schedule_${Date.now()}`,
+			name: "clinical.get_doctor_schedule",
+			input: {
+				doctorUserId: "00000000-0000-7000-8000-000000000002",
+				dateFrom: startOfDay,
+				dateTo: endOfDay,
+			},
+		};
 		yield { type: "done", stopReason: "tool_use" };
+		return;
+	}
+
+	// 10.5. Warehouse Inventory Invariant (Mandate 8aa)
+	// Inventory deductions are executed as silent background scripts and must NOT pollute the doctor's chat
+	if (
+		lower.includes("склад") ||
+		lower.includes("остатки материалов") ||
+		/(?:^|\s)(?:списание|списать)\b/i.test(lower)
+	) {
+		yield {
+			type: "text_delta",
+			text: "Списание расходных материалов (Мандат 8aa) выполняется автоматически в фоновом режиме на основе протоколов лечения без отвлечения внимания врача от приёма.",
+		};
+		yield { type: "done", stopReason: "stop" };
 		return;
 	}
 
@@ -532,36 +765,14 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 14. Doctor Schedule & Free Slots
+	// 14. Clinical Diary (SOAP)
 	if (
-		lower.includes("расписание") ||
-		lower.includes("прием") ||
-		lower.includes("окна") ||
-		lower.includes("слот")
-	) {
-		const today = new Date().toISOString().slice(0, 10);
-		yield {
-			type: "tool_use",
-			id: `call_schedule_${Date.now()}`,
-			name: "crm.get_doctor_schedule",
-			input: {
-				doctorUserId: "00000000-0000-7000-8000-000000000002",
-				date: today,
-				days: 3,
-			},
-		};
-		yield { type: "done", stopReason: "tool_use" };
-		return;
-	}
-
-	// 15. Form 043/u Clinical Diary
-	if (
-		lower.includes("043") ||
-		lower.includes("осмотр") ||
 		lower.includes("дневник") ||
+		lower.includes("осмотр") ||
 		lower.includes("диктовка") ||
 		lower.includes("жалоб") ||
-		lower.includes("статус")
+		lower.includes("статус") ||
+		lower.includes("043")
 	) {
 		yield {
 			type: "tool_use",
@@ -573,7 +784,7 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 16. Price List / RAG Knowledge Search
+	// 15. Price List / RAG Knowledge Search
 	if (
 		lower.includes("цена") ||
 		lower.includes("стоимост") ||
@@ -599,7 +810,7 @@ export async function* routeCopilotFallback(
 		return;
 	}
 
-	// 16.5 Direct Knowledge Lookup for high-confidence component queries (score >= 100)
+	// 15.5 Direct Knowledge Lookup for high-confidence component queries (score >= 100)
 	const fallbackKnowledgeMatches = findComponentKnowledge(userText, { limit: 1 });
 	if (
 		fallbackKnowledgeMatches.length > 0 &&
@@ -620,13 +831,13 @@ export async function* routeCopilotFallback(
 
 	// Default Welcome Greeting
 	const defaultResponse =
-		"Готов к работе у кресла:\n" +
+		"DENTE Ассистент готов помочь врачу у кресла:\n" +
 		"• Поиск пациентов и просмотр медицинских карт\n" +
-		"• Расчет планов лечения (Эконом / Оптимум / Премиум) и выставление счетов\n" +
-		"• Назначение рецептов и проверка совместимости лекарств (DDI)\n" +
-		"• Заполнение зубной формулы и расписание приёма\n" +
-		"• Списание материалов и наряды в зуботехническую лабораторию.\n\n" +
-		"Назовите зуб, жалобы или действие.";
+		"• Подбор услуг, сметы и формирование планов лечения\n" +
+		"• Совместимость препаратов и лекарственная безопасность\n" +
+		"• Заполнение зубной формулы и расписание приёмов\n" +
+		"• Наряды в зуботехническую лабораторию и дневник приёма.\n\n" +
+		"Назовите зуб, клиническую жалобу или действие.";
 
 	for (const char of defaultResponse) {
 		yield { type: "text_delta", text: char };

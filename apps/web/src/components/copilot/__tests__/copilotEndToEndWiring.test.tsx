@@ -380,7 +380,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(cssContent).toContain("var(--ok-fg)");
   });
 
-  it("10. verifies 1-click action acceptance cards: 'Применить в визит', 'Списать карпулу', 'Печать ИДС' (Mandate 8e)", () => {
+  it("10. verifies 1-click action acceptance cards: 'Применить в визит', 'Применить анестезию', 'Печать ИДС' (Mandate 8e)", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
@@ -396,11 +396,11 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(html).toContain("btn-apply-soap");
     expect(html).toContain("Применить в визит");
 
-    // 2. Anesthetic carpule card
+    // 2. Anesthetic clinical protocol card (Mandates 8e, 8v, 8ab)
     expect(html).toContain("chairside-card-anesthetic");
-    expect(html).toContain("Анестезия и списание карпулы");
+    expect(html).toContain("Местная анестезия (клинический протокол)");
     expect(html).toContain("btn-apply-carpule");
-    expect(html).toContain("Списать карпулу");
+    expect(html).toContain("Применить анестезию");
     expect(html).toContain("btn-edit-anesthetic");
 
     // 3. Informed consent card

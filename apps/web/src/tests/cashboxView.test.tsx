@@ -27,7 +27,7 @@ describe("CashboxView (54-FZ & Patient Debt Autonomy)", () => {
 			/>,
 		);
 
-		assert.ok(html.includes("54-ФЗ: без барьеров"), "Must display 54-FZ barrier-free badge");
+		assert.ok(html.includes("Касса: без барьеров"), "Must display barrier-free badge");
 		assert.ok(html.includes("Скидки врача:"), "Must display doctor discount toolbar");
 		assert.ok(html.includes("100% Гарантия"), "Must display 100% warranty button");
 		assert.ok(html.includes("100% Персонал"), "Must display 100% staff colleague button");
@@ -65,7 +65,7 @@ describe("CashboxView (54-FZ & Patient Debt Autonomy)", () => {
 
 		assert.ok(html.includes("0"), "Must display 0 total");
 		assert.ok(
-			html.includes("Оформить чек 0 ₽ (54-ФЗ)"),
+			html.includes("Оформить чек 0 ₽"),
 			"Must render button to execute 0 ₽ receipt to backend",
 		);
 	});

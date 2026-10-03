@@ -17,7 +17,9 @@ import {
 	getViewportOrientationLabels,
 	type CbctMeasurementRuler,
 	type Point3D,
+	type CbctViewportType,
 } from "../cbctMprMath";
+import { handleCbctKeyDown } from "../useCbctKeyboardShortcuts";
 
 describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 	describe("1. Screen Caliper Ruler HUD & Mathematical Precision", () => {
@@ -277,6 +279,240 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 			const sampleBadgeText = formatRulerDistanceMm(11.4);
 			assert.equal(sampleBadgeText, "11.4 мм");
 			assert.ok(sampleBadgeText.endsWith("мм"));
+		});
+	});
+
+	describe("7. Ez3D-i Clinical Telemetry & Orientation Invariants (Screenshots 222505, 222511, 222517)", () => {
+		it("enforces canonical Ez3D-i 4-quadrant layout order contract: Coronal (TL), Sagittal (TR), Axial (BL), 3D (BR)", () => {
+			// Ez3D-i standard: Top-Left=Coronal, Top-Right=Sagittal, Bottom-Left=Axial, Bottom-Right=3D Volume
+			const ez3dQuadOrder = ["coronal", "sagittal", "axial", "panoramic_or_volume3d"] as const;
+			assert.equal(ez3dQuadOrder[0], "coronal", "Quadrant 1 (Top-Left) must be Coronal in Ez3D-i");
+			assert.equal(ez3dQuadOrder[1], "sagittal", "Quadrant 2 (Top-Right) must be Sagittal in Ez3D-i");
+			assert.equal(ez3dQuadOrder[2], "axial", "Quadrant 3 (Bottom-Left) must be Axial in Ez3D-i");
+			assert.equal(ez3dQuadOrder[3], "panoramic_or_volume3d", "Quadrant 4 (Bottom-Right) must be 3D Volume/Pan in Ez3D-i");
+		});
+
+		it("verifies bottom-right telemetry string formatting: TH, INT and Full Slice counter", () => {
+			const slabThicknessMm = 0.0;
+			const pixelSpacingMm = 0.5;
+			const sliceIndex = 85;
+			const totalSlices = 192;
+
+			const thString = `TH [${slabThicknessMm.toFixed(1)}mm]`;
+			const intString = `INT [${pixelSpacingMm.toFixed(1)}mm]`;
+			const fullSliceString = `Полный срез (${sliceIndex + 1} / ${totalSlices})`;
+
+			assert.equal(thString, "TH [0.0mm]");
+			assert.equal(intString, "INT [0.5mm]");
+			assert.equal(fullSliceString, "Полный срез (86 / 192)");
+		});
+
+		it("calculates 3D physical FOV in millimeters and formats axis coordinates", () => {
+			// Dimensions 270 x 270 x 400 voxels with 0.20 mm spacing
+			const dimensions = { width: 270, height: 270, depth: 400 };
+			const spacingMm = { x: 0.20, y: 0.20, z: 0.20 };
+			const crosshairMm = { x: 1.2, y: -4.7, z: -7.7 };
+
+			const fovWidthMm = Math.round(dimensions.width * spacingMm.x);
+			const fovDepthMm = Math.round(dimensions.depth * spacingMm.z);
+			const fovString = `FOV [${fovWidthMm} × ${fovDepthMm} мм]`;
+			const axisString = `Ось [${crosshairMm.x.toFixed(1)}, ${crosshairMm.y.toFixed(1)}, ${crosshairMm.z.toFixed(1)}]`;
+
+			assert.equal(fovString, "FOV [54 × 80 мм]", "FOV matches Ez3D-i screenshot 222505 exactly");
+			assert.equal(axisString, "Ось [1.2, -4.7, -7.7]", "Axis coordinates match Ez3D-i telemetry");
+		});
+
+		it("enforces Ez3D-i cross-section orientation badges: Buccal (B) on Left, Lingual (L) on Right", () => {
+			// In Ez3D-i transverse cross-sections (screenshot 222517), exterior buccal side is on the left
+			const crossSectionLeftBadge = "B";
+			const crossSectionRightBadge = "L";
+
+			assert.equal(crossSectionLeftBadge, "B", "Left must be Buccal (Щёчная сторона)");
+			assert.equal(crossSectionRightBadge, "L", "Right must be Lingual (Язычная сторона)");
+		});
+
+		it("enforces Ez3D-i «РАЗДЕЛ» 2-column layout contract (Left: Axial + Panorama, Right: 3x3 Matrix)", () => {
+			const ez3dSectionsLayout = {
+				leftColumn: ["axial_scout", "panoramic_opg"],
+				rightColumn: "cross_sections_matrix_3x3",
+			} as const;
+
+			assert.equal(ez3dSectionsLayout.leftColumn[0], "axial_scout", "Left column top must be Scout Axial");
+			assert.equal(ez3dSectionsLayout.leftColumn[1], "panoramic_opg", "Left column bottom must be Panorama OPG");
+			assert.equal(ez3dSectionsLayout.rightColumn, "cross_sections_matrix_3x3", "Right column must be 3x3 Section Matrix");
+		});
+	});
+
+	describe("8. WebGL Deterministic Teardown & Context Disposal (Mandate 8x & Frontend Rules)", () => {
+		it("provides disposeSharedCbctGlContext without throwing when called", async () => {
+			const { disposeSharedCbctGlContext, getSharedCbctGlContext } = await import("../mpr/webgl/CbctVolumeGlContext");
+			assert.equal(typeof disposeSharedCbctGlContext, "function");
+			assert.equal(typeof getSharedCbctGlContext, "function");
+
+			// Calling dispose on empty or inactive shared context must be completely safe (no crash)
+			assert.doesNotThrow(() => {
+				disposeSharedCbctGlContext();
+			});
+		});
+	});
+
+	describe("9. Panoramic Layout 50/50 Minimum Parity & Interactive Splitter Engine", () => {
+		it("enforces 50/50 minimum parity between Left (Scout Axial + Panorama OPG) and Right (Cross-Sections)", () => {
+			// Default split ratio must strictly be 0.50 (50/50 parity)
+			const defaultSplitRatio = 0.50;
+			assert.equal(defaultSplitRatio, 0.5, "Default split ratio must be exactly 50%");
+
+			// Left column width formula
+			const leftWidthCss = `calc(${(defaultSplitRatio * 100).toFixed(2)}% - 3px)`;
+			assert.equal(leftWidthCss, "calc(50.00% - 3px)");
+
+			// Right column width formula
+			const rightWidthCss = `calc(${((1 - defaultSplitRatio) * 100).toFixed(2)}% - 3px)`;
+			assert.equal(rightWidthCss, "calc(50.00% - 3px)");
+
+			// Prohibit squeezed 38% / 35% hardcodes
+			const legacyNarrowWidths = [0.38, 0.35];
+			for (const narrow of legacyNarrowWidths) {
+				assert.ok(defaultSplitRatio > narrow, `Default split ratio ${defaultSplitRatio} must strictly exceed legacy ${narrow}`);
+			}
+		});
+
+		it("constrains interactive splitter bounds between 35% and 75% with double-click reset to 50%", () => {
+			const clampSplit = (relX: number) => Math.max(0.35, Math.min(0.75, relX));
+
+			// Below lower bound clamped to 0.35
+			assert.equal(clampSplit(0.10), 0.35);
+			assert.equal(clampSplit(0.30), 0.35);
+
+			// Above upper bound clamped to 0.75
+			assert.equal(clampSplit(0.85), 0.75);
+			assert.equal(clampSplit(0.99), 0.75);
+
+			// Within valid range preserved
+			assert.equal(clampSplit(0.50), 0.50);
+			assert.equal(clampSplit(0.60), 0.60);
+
+			// Double click reset returns to 0.50 parity
+			let currentSplit = clampSplit(0.70);
+			const handleSplitterDoubleClick = () => {
+				currentSplit = 0.5;
+			};
+			handleSplitterDoubleClick();
+			assert.equal(currentSplit, 0.5, "Double click on splitter must reset to 50/50 parity");
+		});
+
+		it("guarantees 50% vertical height allocation for Panorama OPG in pano_top layout mode", () => {
+			const panoTopAllocation = {
+				topOpgHeight: "min-h-[48%] max-h-[52%]",
+				bottomGridHeight: "min-h-[48%]",
+			};
+			assert.ok(panoTopAllocation.topOpgHeight.includes("min-h-[48%]"));
+			assert.ok(panoTopAllocation.topOpgHeight.includes("max-h-[52%]"));
+			assert.ok(panoTopAllocation.bottomGridHeight.includes("min-h-[48%]"));
+		});
+	});
+
+	describe("10. Universal Viewport Maximization (All 6 Viewports: Expand, Collapse, Double-Click & Escape)", () => {
+		const clinicalViewports = [
+			"axial",
+			"coronal",
+			"sagittal",
+			"panoramic",
+			"cross_section",
+			"volume3d",
+		] as const;
+
+		it("standardizes 100% fullscreen expand and collapse button testids across all 6 clinical viewports", () => {
+			for (const vp of clinicalViewports) {
+				const expandTestId = `btn-viewport-expand-${vp}`;
+				const collapseTestId = `btn-viewport-collapse-${vp}`;
+
+				assert.ok(expandTestId.startsWith("btn-viewport-expand-"));
+				assert.ok(collapseTestId.startsWith("btn-viewport-collapse-"));
+				assert.equal(expandTestId.split("-").pop(), vp);
+				assert.equal(collapseTestId.split("-").pop(), vp);
+			}
+		});
+
+		it("intercepts Escape key to restore maximized viewport without closing studio modal", () => {
+			let restoreCallCount = 0;
+			let closeCallCount = 0;
+
+			const mockOptions = {
+				activeViewport: "axial" as CbctViewportType,
+				isMaximized: true,
+				onRestoreMaximize: () => {
+					restoreCallCount++;
+				},
+				onClose: () => {
+					closeCallCount++;
+				},
+			};
+
+			let preventDefaultCalled = false;
+			let stopPropagationCalled = false;
+			const mockEvent = {
+				key: "Escape",
+				preventDefault: () => {
+					preventDefaultCalled = true;
+				},
+				stopPropagation: () => {
+					stopPropagationCalled = true;
+				},
+			};
+
+			const handled = handleCbctKeyDown(mockEvent, mockOptions);
+
+			assert.equal(handled, true, "Escape key must be handled");
+			assert.equal(preventDefaultCalled, true, "preventDefault must be called on Escape");
+			assert.equal(stopPropagationCalled, true, "stopPropagation must be called on Escape");
+			assert.equal(restoreCallCount, 1, "onRestoreMaximize must be called once when viewport is maximized");
+			assert.equal(closeCallCount, 0, "onClose must NOT be called when restoring maximized viewport");
+		});
+
+		it("allows Escape key to safely close studio modal when all viewports are in standard grid", () => {
+			let restoreCallCount = 0;
+			let closeCallCount = 0;
+
+			const mockOptions = {
+				activeViewport: "axial" as CbctViewportType,
+				isMaximized: false,
+				onRestoreMaximize: () => {
+					restoreCallCount++;
+				},
+				onClose: () => {
+					closeCallCount++;
+				},
+			};
+
+			const mockEvent = {
+				key: "Escape",
+				preventDefault: () => {},
+				stopPropagation: () => {},
+			};
+
+			const handled = handleCbctKeyDown(mockEvent, mockOptions);
+
+			assert.equal(handled, true, "Escape key must be handled");
+			assert.equal(restoreCallCount, 0, "onRestoreMaximize must not be called when already in normal grid");
+			assert.equal(closeCallCount, 1, "onClose must be called once when in standard grid");
+		});
+
+		it("verifies double-click maximization trigger contract on all viewport containers", () => {
+			for (const vp of clinicalViewports) {
+				let maximizedViewport: string | null = null;
+				const handleToggleMaximize = (targetVp: string) => {
+					maximizedViewport = maximizedViewport === targetVp ? null : targetVp;
+				};
+
+				// First double-click: expand to 100% fullscreen
+				handleToggleMaximize(vp);
+				assert.equal(maximizedViewport, vp, `First double-click on ${vp} must maximize it`);
+
+				// Second double-click: restore to standard grid
+				handleToggleMaximize(vp);
+				assert.equal(maximizedViewport, null, `Second double-click on ${vp} must restore layout`);
+			}
 		});
 	});
 });

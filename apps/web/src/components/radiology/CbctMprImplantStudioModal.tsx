@@ -1,38 +1,30 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	type CbctVoxelVolume, type Point3D, type SlabProjectionMode, type ObliqueRotationAngles,
-	type ViewportTransform, type CbctMeasurementRuler, type CbctAngleMeasurement, type CbctProbeMarker, type CbctViewportType,
-	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM, ROMEXIS_COLORS, disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
+	type CbctVoxelVolume, type Point3D, type SlabProjectionMode, type ObliqueRotationAngles, type ViewportTransform,
+	type CbctMeasurementRuler, type CbctAngleMeasurement, type CbctProbeMarker, type CbctViewportType,
+	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM, ROMEXIS_COLORS,
+	disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
 } from "./cbctMprMath";
 import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
 import {
-	DEFAULT_MANDIBULAR_ARCH_ANCHORS, DEFAULT_MAXILLARY_ARCH_ANCHORS,
-	type CrossSectionSliceData, type DentalArchCurve, type PanoramicReconstructionResult,
-	autoDetectDentalArch, buildDentalArchCurve, findOcclusalZPlane, generateCrossSectionSlices, reconstructPanoramicView,
+	DEFAULT_MANDIBULAR_ARCH_ANCHORS, DEFAULT_MAXILLARY_ARCH_ANCHORS, type CrossSectionSliceData, type DentalArchCurve,
+	type PanoramicReconstructionResult, autoDetectDentalArch, buildDentalArchCurve, findOcclusalZPlane, generateCrossSectionSlices, reconstructPanoramicView,
 } from "./dentalCurveEngine";
 import { getSharedCbctWorkerBridge } from "./mpr/cbctWorkerBridge";
-import { getSharedCbctGlContext } from "./mpr/webgl/CbctVolumeGlContext";
+import { getSharedCbctGlContext, disposeSharedCbctGlContext } from "./mpr/webgl/CbctVolumeGlContext";
 import {
-	type ImplantBrandKey, type VirtualImplantSpec, type CrossSectionImplantPose,
-	type MandibularCanalCrossSection, type Implant3DWorldProjection, type LiveImplantTelemetry, type Vec3,
-	STANDARD_IMPLANT_CATALOG, auditNerveSafetyMargin, calculateApexCoordinates, calculateImplant3DWorldPose,
-	computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
+	type ImplantBrandKey, type VirtualImplantSpec, type CrossSectionImplantPose, type MandibularCanalCrossSection,
+	type Implant3DWorldProjection, type LiveImplantTelemetry, type Vec3, STANDARD_IMPLANT_CATALOG, auditNerveSafetyMargin,
+	calculateApexCoordinates, calculateImplant3DWorldPose, computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
 } from "./implantSafetyEngine";
-import {
-	calculateSplineLength3DMm, interpolateNerveSpline3D, project3DNerveToCrossSection, type AlveolarRidgeCaliperMeasurement,
-} from "./cbctCaliperNerveMath";
-import {
-	type HUZoneSampling, type MischClassificationResult, classifyMischBoneQuality,
-} from "./boneDensityMischMath";
+import { calculateSplineLength3DMm, interpolateNerveSpline3D, project3DNerveToCrossSection, type AlveolarRidgeCaliperMeasurement } from "./cbctCaliperNerveMath";
+import { type HUZoneSampling, type MischClassificationResult, classifyMischBoneQuality } from "./boneDensityMischMath";
 import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
 import { showToast } from "../GlobalToast";
 import { useCbctStudioExports } from "./mpr/useCbctStudioExports";
-import {
-	type StudioMode, type ViewLayoutMode, type CbctMprImplantStudioModalProps,
-	DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getDefaultViewportTransforms,
-} from "./mpr/cbctStudioTypes";
+import { type StudioMode, type ViewLayoutMode, type CbctMprImplantStudioModalProps, DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getDefaultViewportTransforms } from "./mpr/cbctStudioTypes";
 import { CbctHeaderBar } from "./mpr/CbctHeaderBar";
 import { CbctRightSidebar } from "./mpr/CbctRightSidebar";
 import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
@@ -43,6 +35,7 @@ import { useCbctClipboardSnapshot } from "./mpr/useCbctClipboardSnapshot";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
 import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
+import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
 // Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone")
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
@@ -53,20 +46,8 @@ export const CbctMprImplantStudioModal: React.FC<
 		readonly initialVolume?: CbctVoxelVolume | null | undefined;
 	}
 > = ({
-	isOpen,
-	onClose,
-	study,
-	patientName,
-	patientId,
-	onApplyToDiary043,
-	onApplyToPlan,
-	initialStudioMode,
-	initialSidebarOpen,
-	initialCaliper,
-	initialViewLayout,
-	initialVolume,
-	initialImageIds,
-	autoLoadDemo,
+	isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
+	initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume, initialImageIds, autoLoadDemo,
 }) => {
 	const modalId = "cbct-studio-modal";
 
@@ -76,7 +57,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(initialCaliper ?? null);
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>(initialViewLayout ?? "quad_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null), [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false), studioMenuRef = useRef<HTMLDivElement | null>(null), [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false);
+	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false), studioMenuRef = useRef<HTMLDivElement | null>(null), [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false), [isComparisonSplitOpen, setIsComparisonSplitOpen] = useState<boolean>(false);
 
 	const handleToggleUnsharp = useCallback(() => {
 		setIsUnsharpActive((prev) => {
@@ -581,6 +562,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		if (modalContainerRef.current) {
 			teardownViewportCanvases(modalContainerRef.current);
 		}
+		disposeSharedCbctGlContext();
 		if (volume) {
 			if (!isExternalVolume(volume)) {
 				disposeCbctVolume(volume);
@@ -590,10 +572,11 @@ export const CbctMprImplantStudioModal: React.FC<
 		onClose();
 	}, [volume, onClose, isExternalVolume]);
 
-	// Deterministic teardown of WebGL & 2D canvas backing stores and volume memory (Mandate 8c & Frontend Rules)
+	// Deterministic teardown of WebGL & 2D canvas backing stores, GPU textures, and volume memory (Mandate 8c & Frontend Rules)
 	useEffect(() => {
 		if (!isOpen) {
 			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
+			disposeSharedCbctGlContext();
 			if (volume) {
 				if (!isExternalVolume(volume)) disposeCbctVolume(volume);
 				setVolume(null);
@@ -601,6 +584,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		}
 		return () => {
 			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
+			disposeSharedCbctGlContext();
 			if (volume && !isExternalVolume(volume)) disposeCbctVolume(volume);
 		};
 	}, [isOpen, volume, isExternalVolume]);
@@ -610,6 +594,8 @@ export const CbctMprImplantStudioModal: React.FC<
 		enabled: isOpen,
 		activeViewport,
 		setActiveViewport,
+		isMaximized: maximizedViewport !== null,
+		onRestoreMaximize: () => setMaximizedViewport(null),
 		onToggleMaximize: () => handleToggleMaximize(activeViewport),
 		onScrollSlice: (direction, step) => {
 			if (!volume) return;
@@ -702,6 +688,7 @@ export const CbctMprImplantStudioModal: React.FC<
 					panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm}
 					onSelectClinicalPreset={handleSelectClinicalPreset}
 					onCopySnapshotToClipboard={clipboardSnapshot.copySnapshotToClipboard}
+					onOpenComparisonSplit={() => setIsComparisonSplitOpen(true)}
 				/>
 
 				<main className="flex-1 flex min-h-0 w-full overflow-hidden relative">
@@ -780,13 +767,22 @@ export const CbctMprImplantStudioModal: React.FC<
 				</main>
 
 				<CbctHotkeysStatusBar
-					activeViewport={activeViewport}
-					onToggleHelp={() => {}}
-					isPanelOpen={isSidebarOpen}
-					onTogglePanel={() => setIsSidebarOpen((prev) => !prev)}
-					isMaximized={maximizedViewport !== null}
-					onToggleMaximize={() => handleToggleMaximize(activeViewport)}
+					activeViewport={activeViewport} onToggleHelp={() => {}}
+					isPanelOpen={isSidebarOpen} onTogglePanel={() => setIsSidebarOpen((prev) => !prev)}
+					isMaximized={maximizedViewport !== null} onToggleMaximize={() => handleToggleMaximize(activeViewport)}
 				/>
+
+				{isComparisonSplitOpen && (
+					<div style={{ position: "fixed", inset: 0, zIndex: 999999 }} data-testid="cbct-comparison-split-overlay">
+						<RadiologyConsultationSplit
+							patientName={patientName || patientDisplayName}
+							initialLeftStudy={study ?? undefined}
+							initialSplitMode="dynamics"
+							onClose={() => setIsComparisonSplitOpen(false)}
+							onInsertProtocol={(note) => { onApplyToDiary043?.(note); }}
+						/>
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, Loader2, Maximize2, Sparkles } from "lucide-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { countLabel } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -31,12 +31,16 @@ import { VisiographViewport } from "./VisiographViewport";
 import { VisiographFindingsSection } from "./VisiographFindingsSection";
 import { VisiographBottomActions } from "./VisiographBottomActions";
 import {
+	RadiologyFilmstripDock,
+	type RadiologyFilmstripItem,
+} from "../radiology/RadiologyFilmstripDock";
+import { SensorStudyViewer } from "../radiology/SensorStudyViewer";
+import {
 	cockpitToolbarStyle,
 	demoScanButtonStyle,
 	getAiButtonStyle,
 	getApplyChartButtonStyle,
 	getNormaButtonStyle,
-	sanPinBadgeStyle,
 	visiographContainerStyle,
 } from "./VisiographAnalyzerStyles";
 
@@ -65,8 +69,10 @@ export function VisiographAnalyzer({
 	const dropRef = useRef<HTMLButtonElement>(null);
 	const analysisInFlightRef = useRef(false);
 
-	const { selectedPatientId } = usePatientStore();
+	const { selectedPatientId, patientCoreDraft } = usePatientStore();
 	const effectivePatientId = patientId ?? selectedPatientId;
+	const patientFullName = patientCoreDraft?.fullName || (isDemoShowcaseMode() ? "Чухрова Лариса" : "Пациент клиники");
+	const [isSensorViewerOpen, setIsSensorViewerOpen] = useState(false);
 
 	const defaultInitialScan = useMemo(() => {
 		if (initialScan) return initialScan;
@@ -222,6 +228,37 @@ export function VisiographAnalyzer({
 		onScanDeleted: handleScanDeletedFromArchive,
 		onEmptyFallback: handleArchiveEmptyFallback,
 	});
+
+	// Transform patient scanHistory into EzDent-i filmstrip dock items
+	const filmstripItems: RadiologyFilmstripItem[] = useMemo(() => {
+		if (scanHistory && scanHistory.length > 0) {
+			return scanHistory.map((s) => ({
+				id: s.id,
+				title: s.originalFilename || `Зуб #${s.toothCode || toothCode || "16"}`,
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: s.capturedAt || s.createdAt || "01.10.2026",
+				teethFdi: s.toothCode ? [s.toothCode] : toothCode ? [toothCode] : ["16"],
+				imageUrl: s.imageDataUri || "",
+				thumbnailUrl: s.imageDataUri || "",
+			}));
+		}
+		if (currentScan) {
+			return [
+				{
+					id: currentScan.id,
+					title: currentScan.originalFilename || `Зуб #${currentScan.toothCode || toothCode || "16"}`,
+					modality: "intraoral_rvg",
+					modalityLabel: "IO-СЕНСОР",
+					studyDate: currentScan.capturedAt || currentScan.createdAt || "01.10.2026",
+					teethFdi: currentScan.toothCode ? [currentScan.toothCode] : toothCode ? [toothCode] : ["16"],
+					imageUrl: currentScan.imageDataUri || currentImageUrl || "",
+					thumbnailUrl: currentScan.imageDataUri || currentImageUrl || "",
+				},
+			];
+		}
+		return [];
+	}, [scanHistory, toothCode, currentScan, currentImageUrl]);
 
 	// Write tooth states to live chart
 	const writeToothStatesToChart = useCallback(
@@ -499,7 +536,7 @@ export function VisiographAnalyzer({
 
 		setIsNormaApplied(true);
 		showToast(
-			`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${toothPrefix ? ` (${toothPrefix.trim()})` : ""}`,
+			`Заключение «Норма: патологии на снимке не выявлено» внесено в медицинскую карту${toothPrefix ? ` (${toothPrefix.trim()})` : ""}`,
 			"success",
 		);
 
@@ -554,7 +591,7 @@ export function VisiographAnalyzer({
 	});
 
 	return (
-		<div className="visiograph-analyzer-container" style={visiographContainerStyle}>
+		<div className="visiograph-analyzer-container" data-testid="visiograph-analyzer-container" style={visiographContainerStyle}>
 			<VisiographHeaderBar
 				scanHistoryCount={scanHistory.length}
 				isLoadingHistory={isLoadingHistory}
@@ -646,7 +683,7 @@ export function VisiographAnalyzer({
 									/>
 
 									{/* Actions */}
-									<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
 										<button
 											type="button"
 											data-testid="btn-visiograph-norma-043"
@@ -654,7 +691,7 @@ export function VisiographAnalyzer({
 											style={getNormaButtonStyle(isNormaApplied)}
 										>
 											<CheckCircle2 size={13} style={{ color: "#10b981" }} />
-											<span>{isNormaApplied ? "Норма внесена ✓" : "Норма в 043/у ✓"}</span>
+											<span>{isNormaApplied ? "Норма внесена ✓" : "Норма: патологии нет ✓"}</span>
 										</button>
 
 										<button
@@ -677,10 +714,31 @@ export function VisiographAnalyzer({
 											)}
 										</button>
 
-										<span style={sanPinBadgeStyle}>
-											<span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-											<span>&lt;50мс · СанПиН 2.6.1</span>
-										</span>
+										{/* EzDent-i 2D Fullscreen Sensor Viewer Button (Screenshot 24) */}
+										<button
+											type="button"
+											data-testid="btn-open-ezdent-sensor-viewer"
+											onClick={() => setIsSensorViewerOpen(true)}
+											style={{
+												height: "30px",
+												minHeight: "30px",
+												padding: "0 10px",
+												borderRadius: "6px",
+												fontSize: "0.78rem",
+												fontWeight: 700,
+												background: "rgba(0, 200, 83, 0.15)",
+												color: "#00C853",
+												border: "1px solid rgba(0, 200, 83, 0.4)",
+												cursor: "pointer",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+											title="Открыть полноэкранный 2D HUD EzDent-i (Снимок 24) со шкалой 5 мм и фильтрами"
+										>
+											<Maximize2 size={13} />
+											<span>EzDent-i 2D HUD</span>
+										</button>
 									</div>
 								</div>
 
@@ -694,6 +752,25 @@ export function VisiographAnalyzer({
 									quickPreset={quickPreset}
 									onCloseStudio={() => setIsStudioMode(false)}
 								/>
+
+								{/* Persistent EzDent-i Bottom Filmstrip Dock for 1-Click Patient X-Ray Switching */}
+								{filmstripItems.length > 0 && !isStudioMode && (
+									<div className="rounded-xl overflow-hidden border border-[var(--line)] shadow-xs">
+										<RadiologyFilmstripDock
+											studies={filmstripItems}
+											activeStudyId={currentScan?.id || null}
+											onSelectStudy={(item) => {
+												const targetScan = scanHistory.find((s) => s.id === item.id);
+												if (targetScan) handleScanSelectedFromArchive(targetScan as XrayScan);
+											}}
+											onDoubleClickStudy={(item) => {
+												const targetScan = scanHistory.find((s) => s.id === item.id);
+												if (targetScan) handleScanSelectedFromArchive(targetScan as XrayScan);
+												setIsSensorViewerOpen(true);
+											}}
+										/>
+									</div>
+								)}
 							</div>
 						)}
 
@@ -777,6 +854,22 @@ export function VisiographAnalyzer({
 					onRetry={() => effectivePatientId && loadHistory(effectivePatientId)}
 				/>
 			</div>
+
+			{/* EzDent-i 2D Fullscreen Sensor Modal Viewer (Screenshot 24) */}
+			{isSensorViewerOpen && (
+				<div className="fixed inset-0 z-[99999] bg-[#020617] flex flex-col">
+					<SensorStudyViewer
+						initialImageUrl={currentImageUrl || undefined}
+						studiesHistory={filmstripItems}
+						study={filmstripItems.find((s) => s.id === currentScan?.id) || filmstripItems[0]}
+						patientName={patientFullName}
+						medicalCardNumber={effectivePatientId || undefined}
+						toothFdiCode={currentScan?.toothCode || toothCode || "16"}
+						onInsertToProtocol={onInsertToProtocol}
+						onClose={() => setIsSensorViewerOpen(false)}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

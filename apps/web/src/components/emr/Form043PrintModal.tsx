@@ -464,7 +464,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									type="button"
 									className="emr043-btn emr043-btn-secondary emr043-btn-icon-only"
 									onClick={() => setIsMoreMenuOpen((v) => !v)}
-									title="Дополнительные форматы (ЕГИСЗ XML, JSON, буфер)"
+									title="Дополнительные форматы (электронная медкарта, JSON, буфер)"
 									aria-label="Дополнительные форматы экспорта"
 									data-testid="btn-043-more-actions"
 								>
@@ -510,10 +510,10 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												handleExportXml();
 												setIsMoreMenuOpen(false);
 											}}
-											title="Экспорт в HL7 CDA R2 XML для ЕГИСЗ (СЭМД 834н)"
+											title="Экспорт в XML для электронной медкарты (Госуслуги)"
 										>
 											<Download className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-											<span>ЕГИСЗ СЭМД (XML)</span>
+											<span>Электронная медкарта (XML)</span>
 										</button>
 										<button
 											type="button"

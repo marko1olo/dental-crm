@@ -372,7 +372,7 @@ export function dispatchPresetSideEffects(
 	}
 
 	showToast(
-		`Статус зафиксирован: «${result.title}». Протокол перенесён в дневник 043/у.`,
+		`Статус зафиксирован: «${result.title}». Протокол перенесён в дневник приёма.`,
 		"success",
 		4500,
 	);
@@ -385,9 +385,11 @@ export function generatePerioProtocolText(
 	teeth: PerioToothRecord[],
 	summary: PerioChartSummary,
 	doctorName?: string,
+	customNotes?: string,
 ): string {
 	return generateComprehensivePerio043Text(teeth, summary, {
 		doctorName: doctorName ?? undefined,
 		patientAgeYears: 45,
+		customNotes: customNotes ?? undefined,
 	});
 }

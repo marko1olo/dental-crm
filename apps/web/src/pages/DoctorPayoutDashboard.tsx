@@ -57,6 +57,7 @@ import { actionFailureToast } from "../lib/panelStateText";
 
 import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
+import { isGeneralClinicOverheadConsumable } from "@dental/shared";
 import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
 import type { DoctorCompletedServiceItem } from "../components/finance/payroll/payrollEngine";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
@@ -87,6 +88,8 @@ export type DoctorPayoutVisitMaterial = {
 	readonly unit: string;
 	readonly unitCostRub: number;
 	readonly totalCostRub: number;
+	readonly isOverheadConsumable?: boolean;
+	readonly coveredByClinic?: boolean;
 };
 
 export type DoctorPayoutVisit = {
@@ -1418,6 +1421,8 @@ export function DoctorPayoutDashboard() {
 					initialDoctorId={payrollModalDoctor.doctorUserId}
 					initialServices={doctorServicesForPayrollModal(payrollModalDoctor)}
 					initialBasePercentage={payrollModalDoctor.commissionPct ?? undefined}
+					initialPeriodStart={report?.period ? report.period.from.slice(0, 10) : undefined}
+					initialPeriodEnd={report?.period ? report.period.to.slice(0, 10) : undefined}
 					doctorsList={[
 						{
 							id: payrollModalDoctor.doctorUserId,
@@ -1555,6 +1560,14 @@ function doctorServicesForPayrollModal(
 			0,
 		);
 
+		const deductibleMaterials = v.materials.filter(
+			(m) => !m.coveredByClinic && !m.isOverheadConsumable && !isGeneralClinicOverheadConsumable(m.name),
+		);
+		const visitMaterialTotalRub = deductibleMaterials.reduce(
+			(s, m) => s + m.totalCostRub,
+			0,
+		);
+
 		if (v.services.length === 0) {
 			const cat = inferServiceCategory("Оказанные стоматологические услуги", specialtyId);
 			items.push({
@@ -1566,15 +1579,9 @@ function doctorServicesForPayrollModal(
 				category: cat,
 				grossRevenueKop: Math.round(v.revenueRub * 100),
 				labCostKop: Math.round(visitLabCostRub * 100),
-				materialCostKop: Math.round(
-					v.materials.reduce((s, m) => s + m.totalCostRub, 0) * 100,
-				),
+				materialCostKop: Math.round(visitMaterialTotalRub * 100),
 			});
 		} else {
-			const visitMaterialTotalRub = v.materials.reduce(
-				(s, m) => s + m.totalCostRub,
-				0,
-			);
 			const perServiceMatRub =
 				v.services.length > 0
 					? visitMaterialTotalRub / v.services.length

@@ -134,7 +134,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 						type="button"
 						onClick={handleCopyRecord}
 						className="h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-300 border border-zinc-800 transition-colors cursor-pointer"
-						title="Скопировать данные срезов эндодонтии выбранного зуба в медицинскую карту пациента (Форма 043/у)"
+						title="Скопировать данные срезов эндодонтии выбранного зуба в медицинскую карту пациента"
 						data-testid="cbct-endo-copy-emr-btn"
 					>
 						<Copy className="w-3.5 h-3.5 text-zinc-400" />

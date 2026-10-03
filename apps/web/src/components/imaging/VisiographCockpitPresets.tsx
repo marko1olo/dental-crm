@@ -27,33 +27,48 @@ export function VisiographCockpitPresets({
 	onOpenApexRuler,
 }: VisiographCockpitPresetsProps) {
 	return (
-		<div data-tour="mpr-presets" style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
-			{(["standard", "invert", "endo", "bone", "enamel"] as const).map((p) => {
-				const isAct = quickPreset === p;
-				return (
-					<button
-						key={p}
-						type="button"
-						onClick={() => setQuickPreset(p)}
-						style={{
-							height: "30px",
-							minHeight: "30px",
-							padding: "0 10px",
-							borderRadius: "6px",
-							fontSize: "0.78rem",
-							fontWeight: isAct ? 700 : 500,
-							background: isAct ? "var(--teal)" : "transparent",
-							color: isAct ? "var(--on-teal, white)" : "var(--ink)",
-							border: `1px solid ${isAct ? "var(--teal)" : "var(--line)"}`,
-							cursor: "pointer",
-						}}
-					>
-						{PRESET_LABELS[p]}
-					</button>
-				);
-			})}
+		<div data-tour="mpr-presets" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+			{/* Segmented Control for 5 quick presets */}
+			<div
+				style={{
+					display: "inline-flex",
+					alignItems: "center",
+					background: "var(--paper)",
+					padding: "2px",
+					borderRadius: "6px",
+					border: "1px solid var(--line)",
+					gap: "2px",
+				}}
+			>
+				{(["standard", "invert", "endo", "bone", "enamel"] as const).map((p) => {
+					const isAct = quickPreset === p;
+					return (
+						<button
+							key={p}
+							type="button"
+							onClick={() => setQuickPreset(p)}
+							style={{
+								height: "26px",
+								minHeight: "26px",
+								padding: "0 8px",
+								borderRadius: "4px",
+								fontSize: "0.75rem",
+								fontWeight: isAct ? 700 : 500,
+								background: isAct ? "var(--teal)" : "transparent",
+								color: isAct ? "var(--on-teal, white)" : "var(--ink)",
+								border: "none",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								transition: "all 0.15s ease",
+							}}
+						>
+							{PRESET_LABELS[p]}
+						</button>
+					);
+				})}
+			</div>
 
-			<div style={{ width: 1, height: 18, background: "var(--line)", margin: "0 2px" }} />
+			<div style={{ width: 1, height: 18, background: "var(--line)", margin: "0 1px" }} />
 
 			<button
 				type="button"

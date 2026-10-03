@@ -1,11 +1,27 @@
-import { MEDICAL_REFUSAL_COMPLICATIONS_PRESET } from "@dental/shared";
-import React from "react";
-import { Activity, FileEdit, Zap } from "lucide-react";
+import {
+	MEDICAL_REFUSAL_COMPLICATIONS_PRESET,
+	generateMedicalInterventionRefusal1051nHtml,
+} from "@dental/shared";
+import React, { useEffect, useState } from "react";
+import {
+	Activity,
+	Copy,
+	FileEdit,
+	FileText,
+	Printer,
+	ShieldCheck,
+	Tablet,
+	Zap,
+} from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { usePatientStore } from "../../../store/patientStore";
+import { showToast } from "../../GlobalToast";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 import { appendChipToText } from "../documentChipText";
 import { QuickChipsRow } from "../QuickChipsRow";
 import type { DocumentVisitHints } from "./documentFormTypes";
+import { printHtmlViaWindowOrIframe } from "../../consents/consentTemplates.js";
+import { InformedConsentModal } from "../../consents/InformedConsentModal.js";
 
 /** Готовые формулировки для отказа: причина, риски, альтернативы, тревожные признаки. */
 const REFUSAL_REASON_CHIPS = [
@@ -116,6 +132,102 @@ export const MedicalInterventionRefusalForm = React.memo(
 			(state) => state.setRefusalUrgentWarningSigns,
 		);
 
+		const patientCoreDraft = usePatientStore((state) => state.patientCoreDraft);
+		const patientAdministrativeProfileDraft = usePatientStore(
+			(state) => state.patientAdministrativeProfileDraft,
+		);
+		const [isConsentModalOpen, setIsConsentModalOpen] = useState<boolean>(false);
+
+		useEffect(() => {
+			if (!refusalDoctorFullName && activeDoctorFullName) {
+				setRefusalDoctorFullName(activeDoctorFullName);
+			}
+			if (!refusalConfirmedAt) {
+				setRefusalConfirmedAt(new Date().toLocaleDateString("ru-RU"));
+			}
+		}, [activeDoctorFullName, refusalDoctorFullName, refusalConfirmedAt, setRefusalDoctorFullName, setRefusalConfirmedAt]);
+
+		const handlePrintRefusal = () => {
+			const html = generateMedicalInterventionRefusal1051nHtml({
+				patientFullName:
+					patientCoreDraft.fullName?.trim() || "________________________________________",
+				patientBirthDate:
+					patientCoreDraft.birthDate?.trim() || "____.____.________",
+				patientPassport:
+					patientAdministrativeProfileDraft.identityDocument?.trim() ||
+					"Паспорт гражданина РФ: _________________________",
+				patientAddress:
+					patientAdministrativeProfileDraft.registrationAddress?.trim() ||
+					"__________________________________________________",
+				patientPhone: patientCoreDraft.phone?.trim() || "+7 (___) ___-__-__",
+				patientSnils: patientAdministrativeProfileDraft.snils?.trim() || null,
+				doctorFullName:
+					refusalDoctorFullName?.trim() ||
+					activeDoctorFullName?.trim() ||
+					"Врач-стоматолог",
+				refusedIntervention:
+					refusalIntervention?.trim() ||
+					"Стоматологическое медицинское вмешательство",
+				clinicalIndication:
+					refusalClinicalIndication?.trim() ||
+					activeVisitComplaint?.trim() ||
+					"Клинические показания",
+				patientReason: refusalPatientReason?.trim() || "Не указана",
+				explainedRisks: refusalExplainedRisks
+					? refusalExplainedRisks.split("\n").filter(Boolean)
+					: undefined,
+				alternativesOffered: refusalAlternatives
+					? refusalAlternatives.split("\n").filter(Boolean)
+					: undefined,
+				urgentWarningSigns: refusalUrgentWarningSigns
+					? refusalUrgentWarningSigns.split("\n").filter(Boolean)
+					: undefined,
+				refusalDate:
+					refusalConfirmedAt?.trim() ||
+					new Date().toLocaleDateString("ru-RU"),
+				toothNumbers: inferredTreatmentArea || undefined,
+				isSigned: Boolean(refusalConsequencesUnderstood),
+				watermarkText: refusalConsequencesUnderstood
+					? "ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ"
+					: "ЧЕРНОВИК",
+			});
+			printHtmlViaWindowOrIframe(html);
+			showToast(
+				"Официальный бланк Отказа от вмешательства (1051н, А4) отправлен на печать",
+				"info",
+				3000,
+			);
+		};
+
+		const handlePrintBlankRefusal = () => {
+			const html = generateMedicalInterventionRefusal1051nHtml({
+				refusalDate: "«___» _________ 20___ г.",
+				watermarkText: "ЧЕРНОВИК",
+			});
+			printHtmlViaWindowOrIframe(html);
+			showToast(
+				"Чистый бланк Отказа со строками «________» отправлен на печать",
+				"info",
+				3000,
+			);
+		};
+
+		const handleCopySummary = () => {
+			const summary = [
+				"Отказ от медицинского вмешательства (Приказ МЗ РФ № 1051н, ст. 20 323-ФЗ):",
+				`Пациент: ${patientCoreDraft.fullName?.trim() || "Пациент"}`,
+				`Вмешательство: ${refusalIntervention?.trim() || "Стоматологическое лечение"}`,
+				`Показания: ${refusalClinicalIndication?.trim() || "По клиническим показаниям"}`,
+				`Врач: ${refusalDoctorFullName?.trim() || activeDoctorFullName?.trim() || "Лечащий врач"}`,
+				`Причина отказа: ${refusalPatientReason?.trim() || "Не указана"}`,
+				"Последствия: пациенту разъяснен риск прогрессирования процесса, одонтогенных осложнений и потери зуба.",
+			].join("\n");
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				navigator.clipboard.writeText(summary).catch(() => {});
+			}
+			showToast("Выжимка отказа скопирована в буфер обмена", "success", 3000);
+		};
+
 		return (
 			<article className="document-payload-card">
 				<div>
@@ -125,7 +237,61 @@ export const MedicalInterventionRefusalForm = React.memo(
 						обращаться.
 					</p>
 				</div>
-				<details className="document-manual-override bg-[var(--surface-100,#f8fafc)] p-3 rounded-lg border border-[var(--line,#e2e8f0)] mt-4">
+
+				{/* ═══ ОФИЦИАЛЬНЫЙ СТАТУТНЫЙ БАННЕР 1051н И 1-КЛИК ПЕЧАТЬ ═══ */}
+				<div className="flex flex-wrap items-center justify-between gap-3 my-3 p-3 bg-[var(--surface-subtle,#f1f5f9)] border border-[var(--border,#cbd5e1)] rounded-lg">
+					<div className="flex items-center gap-2">
+						<ShieldCheck size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+						<div>
+							<div className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+								Приказ Минздрава РФ № 1051н (Приложение № 2) • ч. 3 ст. 20 323-ФЗ
+							</div>
+							<div className="text-xs text-[var(--muted,#64748b)]">
+								Официальный бланк отказа от вмешательства • Защита врача и клиники
+							</div>
+						</div>
+					</div>
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							className="secondary-button inline-flex items-center gap-1.5"
+							onClick={handlePrintRefusal}
+							title="Быстрая печать официального бланка Отказа А4"
+						>
+							<Printer size={13} />
+							<span>Печать А4 (Отказ)</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button inline-flex items-center gap-1.5"
+							onClick={handlePrintBlankRefusal}
+							title="Печать чистого бланка для заполнения шариковой ручкой"
+						>
+							<FileText size={13} />
+							<span>Чистый бланк</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button inline-flex items-center gap-1.5 text-teal-700 dark:text-teal-400 font-medium"
+							onClick={() => setIsConsentModalOpen(true)}
+							title="Открыть в планшете для подписания стилусом / пальцем"
+						>
+							<Tablet size={13} />
+							<span>Планшет / стилус</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button inline-flex items-center gap-1.5"
+							onClick={handleCopySummary}
+							title="Копировать выжимку для медкарты или передачи пациенту"
+						>
+							<Copy size={13} />
+							<span>Выжимка</span>
+						</button>
+					</div>
+				</div>
+
+				<details className="document-manual-override bg-[var(--surface-100,#f8fafc)] p-3 rounded-lg border border-[var(--line,#e2e8f0)] mt-2">
 					<summary className="cursor-pointer font-semibold text-[var(--brand-700,#0f766e)] select-none hover:opacity-80 transition-opacity inline-flex items-center gap-1.5">
 						<FileEdit size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
 						<span>Ручная корректировка полей (развернуть)</span>
@@ -197,6 +363,21 @@ export const MedicalInterventionRefusalForm = React.memo(
 									}}
 								>
 									Отказ от анестезии
+								</button>
+								<button
+									type="button"
+									className="secondary-button"
+									style={{ fontSize: "11.5px", padding: "3px 8px" }}
+									onClick={() => {
+										const p = MEDICAL_REFUSAL_COMPLICATIONS_PRESET.orthodontics_refusal;
+										setRefusalIntervention(p.refusedIntervention);
+										setRefusalClinicalIndication(p.clinicalIndication);
+										setRefusalExplainedRisks(p.explainedRisks.join("\n"));
+										setRefusalAlternatives(p.alternativesOffered.join("\n"));
+										setRefusalUrgentWarningSigns(p.urgentWarningSigns.join("\n"));
+									}}
+								>
+									Отказ от ортодонтии
 								</button>
 							</div>
 						</div>
@@ -407,6 +588,32 @@ export const MedicalInterventionRefusalForm = React.memo(
 						</label>
 					</div>
 				</details>
+
+				{isConsentModalOpen && (
+					<InformedConsentModal
+						isOpen={isConsentModalOpen}
+						onClose={() => setIsConsentModalOpen(false)}
+						initialMode="single"
+						initialTemplateKey="CONSENT_TREATMENT_REFUSAL"
+						initialVerificationMethod="tablet_stylus"
+						patient={{
+							fullName: patientCoreDraft.fullName || null,
+							birthDate: patientCoreDraft.birthDate || null,
+							passport: patientAdministrativeProfileDraft.identityDocument || null,
+							phone: patientCoreDraft.phone || null,
+							snils: patientAdministrativeProfileDraft.snils || null,
+							address: patientAdministrativeProfileDraft.registrationAddress || null,
+						}}
+						doctorName={refusalDoctorFullName || activeDoctorFullName || "Врач-стоматолог"}
+						toothNumbers={inferredTreatmentArea || null}
+						diagnosisIcd={refusalClinicalIndication || activeVisitComplaint || null}
+						onConsentSigned={() => {
+							setRefusalConsequencesUnderstood(true);
+							setRefusalConfirmedAt(new Date().toLocaleDateString("ru-RU"));
+							showToast("Отказ от вмешательства успешно подписан пациентом на планшете", "success", 3000);
+						}}
+					/>
+				)}
 			</article>
 		);
 	},

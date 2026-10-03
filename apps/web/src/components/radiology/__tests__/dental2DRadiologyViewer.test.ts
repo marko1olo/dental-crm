@@ -318,7 +318,7 @@ describe("Dental 2D Radiology Engine — Clean Outpatient Tests", () => {
 
 			// UHD mode is exactly 38.0 microns
 			const uhd = VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano_uhd;
-			assert.equal(uhd.calMmPerPx, 0.0380);
+			assert.equal(uhd?.calMmPerPx, 0.0380);
 		});
 
 		it("correctly resolves calibrated pixel spacing from device name string", () => {

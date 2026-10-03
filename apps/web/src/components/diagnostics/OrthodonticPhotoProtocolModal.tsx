@@ -44,10 +44,10 @@ export * from "./OrthoPhotoSlotCard";
 export interface OrthodonticPhotoProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	patientName?: string;
-	doctorName?: string;
-	clinicName?: string;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	doctorName?: string | undefined;
+	clinicName?: string | undefined;
 	initialSession?: OrthodonticPhotoSession;
 	treatmentPlanId?: string;
 	treatmentPlanStageId?: string;

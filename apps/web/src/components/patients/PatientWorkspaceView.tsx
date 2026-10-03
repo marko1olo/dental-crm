@@ -337,6 +337,8 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
 			const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 			const [isCbctModalOpen, setIsCbctModalOpen] = useState(false);
+			const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState(false);
+			const [isOrthoPhotoModalOpen, setIsOrthoPhotoModalOpen] = useState(false);
 			const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
 			const docsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -626,6 +628,36 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 										>
 											<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 											<span>Рентген и КТ снимки</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												setIsPhotoProtocolOpen(true);
+											}}
+											title="Открыть клинический фотопротокол (12/8/6/3 слота, сравнение До/После и VITA шкала)"
+											data-testid="patient-workspace-open-photo-protocol-btn"
+										>
+											<Camera className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<span>Фотопротокол & До/После</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												setIsOrthoPhotoModalOpen(true);
+											}}
+											title="Открыть ортодонтический фотопротокол (8 стандартных клинических проекций)"
+											data-testid="patient-workspace-open-ortho-photo-btn"
+										>
+											<Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+											<span>Орто-фотопротокол (8 проекций)</span>
 										</button>
 
 										<button
@@ -932,6 +964,16 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 										<Activity size={14} className="text-cyan-500" />
 										<span>3D КЛКТ Студия</span>
 									</button>
+									<button
+										type="button"
+										onClick={() => setIsPhotoProtocolOpen(true)}
+										className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+										title="Клинический фотопротокол (12/8/6/3 слота) и сравнение До/После со шкалой VITA"
+										data-testid="btn-patient-open-photo-protocol"
+									>
+										<Camera size={14} className="text-emerald-500" />
+										<span>Фотопротокол & До/После</span>
+									</button>
 								</div>
 							</div>
 
@@ -1043,7 +1085,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						</React.Suspense>
 					)}
 
-					{/* Patient Workspace Modals: 3D CBCT Studio, DMS Letters, Registry & Loyalty */}
+					{/* Patient Workspace Modals: 3D CBCT Studio, DMS Letters, Registry & Loyalty, Photo Protocols */}
 					<PatientWorkspaceModals
 						patientId={patientId}
 						patientName={patientName || undefined}
@@ -1056,6 +1098,12 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						setIsLoyaltyModalOpen={setIsLoyaltyModalOpen}
 						isCbctModalOpen={isCbctModalOpen}
 						setIsCbctModalOpen={setIsCbctModalOpen}
+						isPhotoProtocolOpen={isPhotoProtocolOpen}
+						setIsPhotoProtocolOpen={setIsPhotoProtocolOpen}
+						isOrthoPhotoModalOpen={isOrthoPhotoModalOpen}
+						setIsOrthoPhotoModalOpen={setIsOrthoPhotoModalOpen}
+						doctorName={dashboard?.activeDoctor?.fullName || undefined}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || undefined}
 					/>
 
 					{/* FAB clearance bottom spacer */}

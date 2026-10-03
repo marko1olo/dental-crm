@@ -591,6 +591,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					interpolatedNerve3D={interpolatedNerve3D}
 					implant3DWorld={implant3DWorld}
 					nerveAuditResult={nerveAuditResult}
+					crosshairMm={crosshairMm}
 				/>
 			);
 		}

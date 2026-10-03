@@ -107,8 +107,8 @@ export const CALIBRATION_PRESETS: Record<
 	},
 };
 
-/** Default uncalibrated scale (assumes standard 0.05 mm per pixel visiograph sensor) */
-export const DEFAULT_PIXEL_SCALE_MM = 0.05;
+/** Default calibrated scale: Vatech EzSensor 1.5 standard (35.0 µm / 0.035 mm per pixel) */
+export const DEFAULT_PIXEL_SCALE_MM = 0.035;
 
 /**
  * Calculates Euclidean distance between two 2D points.
@@ -348,6 +348,54 @@ export interface DentalSensorPreset {
 
 export const DENTAL_SENSOR_PRESETS: readonly DentalSensorPreset[] = [
 	{
+		id: "vatech_ezsensor_1_5",
+		label: "Vatech EzSensor 1.5 (35.0 мкм / 0.0350 мм/пикс)",
+		shortLabel: "EzSensor 1.5 (35 мкм)",
+		pixelSizeMm: 0.0350,
+		pixelPitchMicrons: 35.0,
+		description: "Стандартный визиограф Vatech EzSensor 1.5 / 2.0 (CalX = 0.0350 мм/пикс)",
+	},
+	{
+		id: "vatech_ezsensor_soft_hr",
+		label: "Vatech EzSensor Soft HR (14.8 мкм / 0.0148 мм/пикс)",
+		shortLabel: "EzSensor Soft HR (14.8 мкм)",
+		pixelSizeMm: 0.0148,
+		pixelPitchMicrons: 14.8,
+		description: "Высокое разрешение Vatech EzSensor Soft (33.7 пар линий/мм, CalX = 0.0148 мм/пикс)",
+	},
+	{
+		id: "vatech_ezsensor_classic",
+		label: "Vatech EzSensor Classic / Soft (29.6 мкм / 0.0296 мм/пикс)",
+		shortLabel: "EzSensor Classic (29.6 мкм)",
+		pixelSizeMm: 0.0296,
+		pixelPitchMicrons: 29.6,
+		description: "Базовое разрешение (биннинг 2x2) EzSensor Classic / Soft (CalX = 0.0296 мм/пикс)",
+	},
+	{
+		id: "vatech_ezsensor_p",
+		label: "Vatech EzSensor P / HDI2000 (20.0 мкм / 0.0200 мм/пикс)",
+		shortLabel: "EzSensor P (20 мкм)",
+		pixelSizeMm: 0.0200,
+		pixelPitchMicrons: 20.0,
+		description: "Субпиксельный датчик EzSensor P / HDI2000 (CalX = 0.0200 мм/пикс)",
+	},
+	{
+		id: "vatech_anysensor_1_0",
+		label: "Vatech AnySensor 1.0 (23.8 мкм / 0.0238 мм/пикс)",
+		shortLabel: "AnySensor 1.0 (23.8 мкм)",
+		pixelSizeMm: 0.02381,
+		pixelPitchMicrons: 23.8,
+		description: "Vatech AnySensor 1.0 (CalX = 0.023810 мм/пикс)",
+	},
+	{
+		id: "vatech_anysensor_1_5",
+		label: "Vatech AnySensor 1.5 (33.3 мкм / 0.0333 мм/пикс)",
+		shortLabel: "AnySensor 1.5 (33.3 мкм)",
+		pixelSizeMm: 0.033333,
+		pixelPitchMicrons: 33.3,
+		description: "Vatech AnySensor 1.5 (CalX = 0.033333 мм/пикс)",
+	},
+	{
 		id: "rvg_size_1",
 		label: "Датчик RVG Размер 1 (20 мкм / 0.020 мм/пикс)",
 		shortLabel: "RVG Р1 (20 мкм)",
@@ -371,7 +419,60 @@ export const DENTAL_SENSOR_PRESETS: readonly DentalSensorPreset[] = [
 		pixelPitchMicrons: 50,
 		description: "Панорамная ортопантомография стандарт 0.050 мм/пикс",
 	},
+	{
+		id: "opg_vatech_pax_i",
+		label: "Vatech PaX-i ОПТГ (76.1 мкм / 0.0761 мм/пикс)",
+		shortLabel: "PaX-i ОПТГ (76.1 мкм)",
+		pixelSizeMm: 0.0761,
+		pixelPitchMicrons: 76.1,
+		description: "Панорамный датчик Vatech PaX-i (CalX = 0.07607583 мм/пикс)",
+	},
+	{
+		id: "opg_vatech_pax_i_uhd",
+		label: "Vatech PaX-i UHD ОПТГ (38.0 мкм / 0.0380 мм/пикс)",
+		shortLabel: "PaX-i UHD (38.0 мкм)",
+		pixelSizeMm: 0.0380,
+		pixelPitchMicrons: 38.0,
+		description: "Сверхвысокое разрешение UHD Vatech PaX-i (CalX = 0.038037915 мм/пикс)",
+	},
 ];
+
+/**
+ * Resolves exact physical pixel scale in mm for a given sensor preset ID or device name.
+ */
+export function resolveVisiographPixelScaleMm(deviceOrPresetId?: string | null): number {
+	if (!deviceOrPresetId) return DEFAULT_PIXEL_SCALE_MM;
+	const norm = deviceOrPresetId.toLowerCase().trim();
+
+	const found = DENTAL_SENSOR_PRESETS.find(
+		(p) => p.id === norm || norm.includes(p.id) || p.label.toLowerCase().includes(norm),
+	);
+	if (found) return found.pixelSizeMm;
+
+	if (norm.includes("soft") && (norm.includes("hr") || norm.includes("high") || norm.includes("14.8"))) {
+		return 0.0148;
+	}
+	if (norm.includes("soft") || norm.includes("classic") || norm.includes("hdi-s") || norm.includes("29.6")) {
+		return 0.0296;
+	}
+	if (norm.includes("sensor p") || norm.includes("hdi2000") || norm.includes("20.0") || norm.includes("0.02")) {
+		return 0.0200;
+	}
+	if (norm.includes("anysensor") && norm.includes("1.0")) {
+		return 0.02381;
+	}
+	if (norm.includes("anysensor") && norm.includes("1.5")) {
+		return 0.033333;
+	}
+	if (norm.includes("ezsensor") || norm.includes("35.0") || norm.includes("0.035")) {
+		return 0.0350;
+	}
+	if (norm.includes("pano") || norm.includes("opg") || norm.includes("optg")) {
+		return norm.includes("uhd") ? 0.0380 : 0.0761;
+	}
+
+	return DEFAULT_PIXEL_SCALE_MM;
+}
 
 /**
  * Recalculates ruler lengths and endodontic working lengths (WL) when scale changes.

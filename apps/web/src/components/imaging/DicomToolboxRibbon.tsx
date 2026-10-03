@@ -209,7 +209,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			navigator.clipboard.writeText(text).catch(() => {});
 		}
-		showToast("Протокол плотности кости (HU) внесён в карту 043/у", "success");
+		showToast("Протокол плотности кости (HU) внесён в медицинскую карту", "success");
 		setIsHuModalOpen(false);
 	};
 
@@ -229,6 +229,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 			<div
 				id="dicom-mpr-toolbar"
 				data-tour="imaging-filter"
+				className="overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x shrink-0"
 				style={{
 					height: "38px",
 					minHeight: "38px",
@@ -242,10 +243,12 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 					userSelect: "none",
 					color: "#f8fafc",
 					fontSize: "12px",
+					flexWrap: "nowrap",
+					whiteSpace: "nowrap",
 				}}
 			>
 				{/* Tabs */}
-				<div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
 					<span style={{ backgroundColor: "#0d9488", color: "#fff", fontWeight: 800, fontSize: "11px", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginRight: "4px" }}>
 						DENTE КТ
 					</span>
@@ -271,7 +274,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 				</div>
 
 				{/* Center: Tools */}
-				<div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
@@ -402,7 +405,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 				</div>
 
 				{/* Right: Patient Metadata, AI, 1-Click Norma, Fullscreen, Close */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 					{onAiAnalyze && (
 						<button
 							type="button"
@@ -482,10 +485,10 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 								gap: "4px",
 								fontWeight: 700,
 							}}
-							title="1-клик действие: внести «Рентген-норма» в дневник 043/у"
+							title="1-клик действие: внести «Рентген-норма» в дневник приёма"
 						>
 							<Zap size={12} color="#34d399" />
-							<span>{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}</span>
+							<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 						</button>
 					)}
 					<div style={{ fontSize: "11px", color: "#2dd4bf", fontWeight: 700, fontFamily: "monospace" }}>
@@ -746,7 +749,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 								Закрыть
 							</button>
 							<button type="button" onClick={handleInsertHuToProtocol} style={{ padding: "8px 16px", borderRadius: "6px", backgroundColor: "#0d9488", border: "none", color: "#ffffff", fontSize: "12px", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-								<FileText size={14} /><span>Внести в карту 043/у</span>
+								<FileText size={14} /><span>Внести в медицинскую карту</span>
 							</button>
 						</div>
 					</div>

@@ -753,7 +753,7 @@ function SanpinRegistersInner() {
 			setSigningShift(true);
 			const signerName = bypassNurse ? "Персонал клиники" : (nurseSignName.trim() || "Персонал клиники");
 			showToast(
-				`Смена успешно заверена цифровым штампом (${signerName}). Журналы СанПиН в норме.`,
+				`Смена успешно заверена цифровым штампом (${signerName}). Журналы стерилизации в норме.`,
 				"success",
 			);
 			setIsNurseSignModalOpen(false);
@@ -809,7 +809,7 @@ function SanpinRegistersInner() {
 					temperature: { totalChecksToday: 4, deviationsToday: 0 },
 				}));
 
-				showToast(`Журналы СанПиН за неделю заполнены: 7 смен, ${totalCycles} циклов, 100% норма (0 отклонений)`, "success");
+				showToast(`Журналы за неделю заполнены: 7 смен, ${totalCycles} циклов, 100% норма (0 отклонений)`, "success");
 			} else {
 				const monthBatch = executeMonthSanpinBatchGenerator({
 					year: now.getFullYear(),
@@ -827,7 +827,7 @@ function SanpinRegistersInner() {
 					temperature: { totalChecksToday: 4, deviationsToday: 0 },
 				}));
 
-				showToast(`Журналы СанПиН за ${monthBatch.monthLabelRu} заполнены: ${monthBatch.workingDaysCount} смен, ${monthBatch.aggregateStats.totalAutoclaveCycles} циклов, 100% норма (0 отклонений)`, "success");
+				showToast(`Журналы за ${monthBatch.monthLabelRu} заполнены: ${monthBatch.workingDaysCount} смен, ${monthBatch.aggregateStats.totalAutoclaveCycles} циклов, 100% норма (0 отклонений)`, "success");
 			}
 
 			setRefreshCounter((prev) => prev + 1);
@@ -885,7 +885,7 @@ function SanpinRegistersInner() {
 				});
 				if (res.ok) {
 					isApiSuccess = true;
-					showToast(`Смена СанПиН заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
+					showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
 					fetchSummary();
 					return;
 				}
@@ -904,7 +904,7 @@ function SanpinRegistersInner() {
 					temperature: { totalChecksToday: 4, deviationsToday: 0 },
 				}));
 
-				showToast(`Смена СанПиН заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
+				showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
 			}
 		} catch (err) {
 			showToast("Ошибка при авто-заполнении смены", "error");
@@ -1146,7 +1146,7 @@ function SanpinRegistersInner() {
 
 	const handlePrintConsolidatedBinder = async () => {
 		try {
-			showToast("Формирование сводного сшива СанПиН...", "info");
+			showToast("Формирование сводного протокола стерилизации...", "info");
 			const consolidatedData = await fetchLiveConsolidatedSanpinData();
 			const html = generateSanpinConsolidatedInspectionHtml(consolidatedData);
 
@@ -1187,7 +1187,7 @@ function SanpinRegistersInner() {
 
 	const handleExportConsolidatedCsv = async () => {
 		try {
-			showToast("Формирование сводного архива СанПиН (CSV)...", "info");
+			showToast("Формирование сводного архива журналов (CSV)...", "info");
 			const consolidatedData = await fetchLiveConsolidatedSanpinData();
 			const csv = exportSanpinConsolidatedArchiveToCsv(consolidatedData);
 
@@ -1200,10 +1200,10 @@ function SanpinRegistersInner() {
 			link.click();
 			document.body.removeChild(link);
 			URL.revokeObjectURL(url);
-			showToast("Сводный архив СанПиН (CSV) успешно экспортирован", "success");
+			showToast("Сводный архив журналов (CSV) успешно экспортирован", "success");
 		} catch (err) {
 			console.error("Failed to export consolidated CSV", err);
-			showToast("Ошибка при экспорте сводного архива СанПиН", "error");
+			showToast("Ошибка при экспорте сводного архива журналов", "error");
 		}
 	};
 
@@ -1637,7 +1637,7 @@ function SanpinRegistersInner() {
 				}}
 			>
 				{/* 1. Category Switcher (3 Segments) */}
-				<div className="sanpin-category-nav flex items-center gap-1 shrink-0" role="tablist" aria-label="Категории журналов СанПиН">
+				<div className="sanpin-category-nav flex items-center gap-1 shrink-0" role="tablist" aria-label="Категории журналов контроля стерильности">
 					{SANPIN_CATEGORIES.map((cat) => {
 						const Icon = cat.icon;
 						const isActive = activeCategory === cat.id;
@@ -1859,7 +1859,7 @@ function SanpinRegistersInner() {
 										fontSize: "0.85rem",
 										lineHeight: 1.4,
 									}}
-									title="Соответствует СанПиН 3.3686-21"
+									title="Соответствует нормам стерильности"
 								>
 									<span style={{ fontWeight: 700, color: "#059669" }}>Контроль смены:</span> Настоящим подтверждается проверка целостности упаковок, срабатывания химических индикаторов класса 5 во всех точках закладки, отрицательные азопирамовые пробы и наработка ламп за текущую смену.
 								</div>

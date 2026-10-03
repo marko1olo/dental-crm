@@ -218,9 +218,9 @@ export interface LeadSlaInfo {
  */
 export function getLeadSlaStatus(
 	lead: {
-		status?: LeadStatus | string | null;
-		createdAt?: string | Date | null;
-		stageEnteredAt?: string | Date | null;
+		status?: LeadStatus | string | null | undefined;
+		createdAt?: string | Date | null | undefined;
+		stageEnteredAt?: string | Date | null | undefined;
 	},
 	now?: Date,
 ): LeadSlaInfo {

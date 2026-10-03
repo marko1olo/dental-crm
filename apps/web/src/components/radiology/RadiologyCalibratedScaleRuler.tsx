@@ -83,7 +83,7 @@ export const RadiologyCalibratedScaleRuler: React.FC<RadiologyCalibratedScaleRul
 				pointerEvents: "none",
 				userSelect: "none",
 			}}
-			className={`radiology-calibrated-scale-ruler flex flex-col items-end gap-1 ${className}`}
+			className={`radiology-calibrated-scale-ruler flex flex-col ${position === "left" ? "items-start" : "items-end"} gap-1 ${className}`}
 		>
 			{/* Sensor Calibration Pill Badge */}
 			{showSensorBadge && (
@@ -106,7 +106,7 @@ export const RadiologyCalibratedScaleRuler: React.FC<RadiologyCalibratedScaleRul
 				<div
 					style={{
 						position: "absolute",
-						right: "20px",
+						[position === "left" ? "left" : "right"]: "24px",
 						top: "50%",
 						transform: "translateY(-50%)",
 						backgroundColor: "rgba(2, 6, 23, 0.9)",
@@ -131,7 +131,7 @@ export const RadiologyCalibratedScaleRuler: React.FC<RadiologyCalibratedScaleRul
 					<div
 						style={{
 							position: "absolute",
-							right: "2px",
+							[position === "left" ? "left" : "right"]: "2px",
 							top: 0,
 							bottom: 0,
 							width: "2.5px",
@@ -147,7 +147,7 @@ export const RadiologyCalibratedScaleRuler: React.FC<RadiologyCalibratedScaleRul
 							key={t.mm}
 							style={{
 								position: "absolute",
-								right: "2px",
+								[position === "left" ? "left" : "right"]: "2px",
 								top: `${t.topPct}%`,
 								transform: "translateY(-50%)",
 								height: t.isMajor ? "2.5px" : "1.5px",

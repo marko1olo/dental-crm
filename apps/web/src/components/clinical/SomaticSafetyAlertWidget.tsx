@@ -219,14 +219,14 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 					ref={triggerRef}
 					onClick={() => setIsPopoverOpen((prev) => !prev)}
 					data-testid="somatic-safety-alert-badge"
-					className="inline-flex items-center gap-1 sm:gap-1.5 h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-100 font-semibold text-xs shadow-xs hover:bg-rose-100/90 dark:hover:bg-rose-900/60 transition-all cursor-pointer select-none shrink-0"
+					className="inline-flex items-center gap-1 sm:gap-1.5 h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 font-medium text-xs shadow-xs hover:bg-amber-500/20 transition-all cursor-pointer select-none shrink-0"
 					aria-expanded={isPopoverOpen}
 					aria-haspopup="dialog"
 					title={evaluation.primaryAlertBadge.title}
 				>
-					<AlertOctagon
-						size={14}
-						className="text-rose-600 dark:text-rose-400 shrink-0"
+					<AlertTriangle
+						size={13}
+						className="text-amber-600 dark:text-amber-400 shrink-0"
 						aria-hidden="true"
 					/>
 
@@ -286,19 +286,23 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 						</span>
 					)}
 
-					{/* Текст бейджа */}
-					<span className="sm:hidden font-bold text-[11px] whitespace-nowrap">
-						{evaluation.primaryAlertBadge.shortLabel}
+					{/* Спокойный клинический текст без капса и паники (Мандаты 8e, 8y) */}
+					<span className="sm:hidden font-semibold text-[11px] whitespace-nowrap">
+						{evaluation.stopFactors.length > 0
+							? `Особенности: ${evaluation.stopFactors[0]?.shortBadge ?? ""}`
+							: evaluation.primaryAlertBadge.shortLabel}
 					</span>
-					<span className="hidden sm:inline font-bold whitespace-nowrap truncate max-w-[280px] xl:max-w-[420px]">
-						{evaluation.primaryAlertBadge.fullLabel}
+					<span className="hidden sm:inline font-semibold whitespace-nowrap truncate max-w-[280px] xl:max-w-[420px]">
+						{evaluation.stopFactors.length > 0
+							? `Особенности анамнеза: ${evaluation.stopFactors.map((s) => s.shortBadge).join(", ")}`
+							: evaluation.primaryAlertBadge.fullLabel}
 					</span>
 
 					{/* Индикатор раскрытия */}
 					{isPopoverOpen ? (
-						<ChevronUp size={13} className="text-rose-700 dark:text-rose-300 shrink-0" />
+						<ChevronUp size={13} className="text-amber-700 dark:text-amber-300 shrink-0" />
 					) : (
-						<ChevronDown size={13} className="text-rose-700 dark:text-rose-300 shrink-0" />
+						<ChevronDown size={13} className="text-amber-700 dark:text-amber-300 shrink-0" />
 					)}
 				</button>
 

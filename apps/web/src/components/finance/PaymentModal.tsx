@@ -194,6 +194,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 							setSplitCertificateRub={tendersHook.setSplitCertificateRub}
 							splitBonusRub={tendersHook.splitBonusRub}
 							setSplitBonusRub={tendersHook.setSplitBonusRub}
+							splitDmsRub={tendersHook.splitDmsRub}
+							setSplitDmsRub={tendersHook.setSplitDmsRub}
+							availableDmsCoverageRub={props.availableDmsCoverageRub}
+							dmsGuaranteeLetterNumber={props.dmsGuaranteeLetterNumber}
+							dmsInsurerName={props.dmsInsurerName}
 							patientDepositRub={patientDepositRub}
 							patientFamilyBalanceRub={patientFamilyBalanceRub}
 							applySplitRemainder={tendersHook.applySplitRemainder}

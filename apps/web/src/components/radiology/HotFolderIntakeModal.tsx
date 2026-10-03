@@ -108,6 +108,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const [zoom, setZoom] = useState<number>(100);
 	const [rotation, setRotation] = useState<number>(0);
 	const [flipH, setFlipH] = useState<boolean>(false);
+	const [flipV, setFlipV] = useState<boolean>(false);
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 	const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -395,7 +396,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const handleMouseDownCanvas = (e: React.MouseEvent) => { setIsDraggingCanvas(true); dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }; };
 	const handleMouseMoveCanvas = (e: React.MouseEvent) => { if (isDraggingCanvas) setPan({ x: e.clientX - dragStartRef.current.x, y: e.clientY - dragStartRef.current.y }); };
 	const handleMouseUpCanvas = () => setIsDraggingCanvas(false);
-	const handleResetView = () => { setZoom(100); setRotation(0); setFlipH(false); setPan({ x: 0, y: 0 }); setSharpness(0); setEnamelHighPass(0); setPdlSharpening(0); handleApplyPreset("standard"); };
+	const handleResetView = () => { setZoom(100); setRotation(0); setFlipH(false); setFlipV(false); setPan({ x: 0, y: 0 }); setSharpness(0); setEnamelHighPass(0); setPdlSharpening(0); handleApplyPreset("standard"); };
 
 	if (!isOpen) return null;
 
@@ -634,6 +635,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 						zoom={zoom}
 						rotation={rotation}
 						flipH={flipH}
+						flipV={flipV}
 						brightness={brightness}
 						contrast={contrast}
 						invert={invert}
@@ -652,6 +654,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 						setPdlSharpening={setPdlSharpening}
 						setRotation={setRotation}
 						setFlipH={setFlipH}
+						setFlipV={setFlipV}
 						setZoom={setZoom}
 						onResetView={handleResetView}
 						onDragOverViewport={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); }}

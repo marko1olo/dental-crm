@@ -206,6 +206,14 @@ export const stumpNaturalDieShadeSchema = z.enum([
 ]);
 export type StumpNaturalDieShade = z.infer<typeof stumpNaturalDieShadeSchema>;
 
+export const anyVitaShadeSchema = z.union([
+	vitaClassicalShadeSchema,
+	vitaBleachShadeSchema,
+	vita3dMasterShadeSchema,
+	z.string(),
+]);
+export type AnyVitaShade = z.infer<typeof anyVitaShadeSchema>;
+
 // ─── MAIN LAB ORDER SCHEMA ───────────────────────────────────────────────────
 
 export const labOrderSchema = z.object({
@@ -220,7 +228,7 @@ export const labOrderSchema = z.object({
 	toothReference: z.string().max(50).optional().nullable(),
 	impressionType: impressionTypeSchema.optional().nullable(),
 	antagonistInfo: z.string().max(500).optional().nullable(),
-	shade: vitaClassicalShadeSchema.optional().nullable(),
+	shade: anyVitaShadeSchema.optional().nullable(),
 	status: labOrderStatusSchema.default("sent"),
 	sentDate: z.string(), // YYYY-MM-DD
 	expectedDate: z.string().optional().nullable(), // YYYY-MM-DD

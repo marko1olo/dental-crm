@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export interface StudyPatientBindControlModalProps {
 	readonly isOpen: boolean;
@@ -120,22 +121,36 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 					: Array.isArray(data?.items)
 						? data.items
 						: [];
-				setSearchResults(items.length > 0 ? items : DEMO_FALLBACK_PATIENTS.filter(p =>
-					p.fullName.toLowerCase().includes(trimmed) || (p.phone && p.phone.includes(trimmed))
-				));
+				if (items.length > 0 || !isDemoShowcaseMode()) {
+					setSearchResults(items);
+				} else {
+					setSearchResults(
+						DEMO_FALLBACK_PATIENTS.filter(p =>
+							p.fullName.toLowerCase().includes(trimmed) || (p.phone && p.phone.includes(trimmed))
+						)
+					);
+				}
 			} else {
+				if (isDemoShowcaseMode()) {
+					setSearchResults(
+						DEMO_FALLBACK_PATIENTS.filter(p =>
+							p.fullName.toLowerCase().includes(trimmed) || (p.phone && p.phone.includes(trimmed))
+						)
+					);
+				} else {
+					setSearchResults([]);
+				}
+			}
+		} catch {
+			if (isDemoShowcaseMode()) {
 				setSearchResults(
 					DEMO_FALLBACK_PATIENTS.filter(p =>
 						p.fullName.toLowerCase().includes(trimmed) || (p.phone && p.phone.includes(trimmed))
 					)
 				);
+			} else {
+				setSearchResults([]);
 			}
-		} catch {
-			setSearchResults(
-				DEMO_FALLBACK_PATIENTS.filter(p =>
-					p.fullName.toLowerCase().includes(trimmed) || (p.phone && p.phone.includes(trimmed))
-				)
-			);
 		} finally {
 			setIsSearching(false);
 		}
@@ -167,16 +182,20 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 				showToast(errData.message || "Ошибка при привязке исследования", "error");
 			}
 		} catch {
-			// Fallback для офлайн/демо-режима
-			const mockUpdated: ImagingStudy = {
+			if (!isDemoShowcaseMode()) {
+				showToast("Ошибка сети при сохранении привязки исследования", "error");
+				return;
+			}
+			// Fallback для демонстрационного режима
+			const fallbackUpdated: ImagingStudy = {
 				...study,
 				patientId: targetPatientId,
 				patientFullName: selectedPatient?.fullName || currentPatientName,
 				bindingStatus: "manual_bound",
 				bindingConfidence: 100,
 			};
-			showToast(`Исследование подтверждено врачом: ${mockUpdated.patientFullName}`, "success");
-			if (onStudyUpdated) onStudyUpdated(mockUpdated);
+			showToast(`[Демо] Исследование подтверждено врачом: ${fallbackUpdated.patientFullName}`, "success");
+			if (onStudyUpdated) onStudyUpdated(fallbackUpdated);
 			onClose();
 		} finally {
 			setIsSubmitting(false);
@@ -201,15 +220,19 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 				showToast(errData.message || "Ошибка при отвязке исследования", "error");
 			}
 		} catch {
-			const mockUpdated: ImagingStudy = {
+			if (!isDemoShowcaseMode()) {
+				showToast("Ошибка сети при отвязке исследования", "error");
+				return;
+			}
+			const fallbackUpdated: ImagingStudy = {
 				...study,
 				patientId: null,
 				patientFullName: null,
 				bindingStatus: "unassigned",
 				bindingConfidence: 0,
 			};
-			showToast("Исследование отвязано от пациента", "info");
-			if (onStudyUpdated) onStudyUpdated(mockUpdated);
+			showToast("[Демо] Исследование отвязано от пациента", "info");
+			if (onStudyUpdated) onStudyUpdated(fallbackUpdated);
 			onClose();
 		} finally {
 			setIsSubmitting(false);

@@ -181,6 +181,19 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 					<TaxDeductionCertificateModal
 						isOpen={isFnsNdflXmlOpen}
 						onClose={() => setIsFnsNdflXmlOpen(false)}
+						patientName={activePatient?.fullName ?? undefined}
+						patientBirthDate={activePatient?.birthDate ?? undefined}
+						patientInn={(activePatient as { inn?: string | null } | undefined)?.inn ?? undefined}
+						patientSnils={(activePatient as { snils?: string | null } | undefined)?.snils ?? undefined}
+						patientId={activePatient?.id}
+						clinicName={clinicProfileDraft?.legalName || clinicProfileDraft?.clinicName}
+						clinicInn={clinicProfileDraft?.inn}
+						clinicKpp={clinicProfileDraft?.kpp}
+						clinicOgrn={clinicProfileDraft?.ogrn}
+						clinicLicenseNumber={clinicProfileDraft?.medicalLicenseNumber}
+						clinicLicenseDate={clinicProfileDraft?.medicalLicenseIssuedAt}
+						clinicAddress={clinicProfileDraft?.address}
+						chiefDoctorName={activeDoctor?.fullName}
 						selectedYear={taxDocumentYear}
 					/>
 				)}

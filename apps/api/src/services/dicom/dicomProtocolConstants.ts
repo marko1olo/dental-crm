@@ -1,0 +1,95 @@
+/**
+ * dicomProtocolConstants.ts — DICOM PS 3.4 / 3.7 / 3.8 сетевые константы,
+ * поддерживаемые SOP-классы Vatech (CT, IO X-Ray, Panoramic, SC), Transfer Syntaxes и теги.
+ */
+
+// ─── 1. PDU (PROTOCOL DATA UNIT) TYPES ──────────────────────────────────────
+
+export const PDU_A_ASSOCIATE_RQ = 0x01;
+export const PDU_A_ASSOCIATE_AC = 0x02;
+export const PDU_A_ASSOCIATE_RJ = 0x03;
+export const PDU_P_DATA_TF = 0x04;
+export const PDU_A_RELEASE_RQ = 0x05;
+export const PDU_A_RELEASE_RP = 0x06;
+export const PDU_A_ABORT = 0x07;
+
+// ─── 2. DIMSE COMMAND FIELDS ────────────────────────────────────────────────
+
+export const COMMAND_C_STORE_RQ = 0x0001;
+export const COMMAND_C_STORE_RSP = 0x8001;
+export const COMMAND_C_ECHO_RQ = 0x0030;
+export const COMMAND_C_ECHO_RSP = 0x8030;
+export const COMMAND_C_FIND_RQ = 0x0020;
+export const COMMAND_C_FIND_RSP = 0x8020;
+export const COMMAND_C_MOVE_RQ = 0x0021;
+export const COMMAND_C_MOVE_RSP = 0x8021;
+export const COMMAND_C_CANCEL_RQ = 0x0fff;
+
+// ─── 3. DIMSE STATUS CODES ──────────────────────────────────────────────────
+
+export const STATUS_SUCCESS = 0x0000;
+export const STATUS_PENDING = 0xff00;
+export const STATUS_OUT_OF_RESOURCES = 0xa700;
+export const STATUS_DATA_SET_DOES_NOT_MATCH_SOP_CLASS = 0xa900;
+export const STATUS_CANNOT_UNDERSTAND = 0xc000;
+export const STATUS_PROCESSING_FAILURE = 0x0110;
+
+// ─── 4. STORAGE & VERIFICATION SOP CLASSES ──────────────────────────────────
+
+export const SOP_CLASS_VERIFICATION = "1.2.840.10008.1.1"; // C-ECHO
+export const SOP_CLASS_CT_IMAGE_STORAGE = "1.2.840.10008.5.1.4.1.1.2"; // Vatech PaX-i 3D, Picasso Trio, Smart Plus
+export const SOP_CLASS_ENHANCED_CT_IMAGE_STORAGE = "1.2.840.10008.5.1.4.1.1.2.1";
+export const SOP_CLASS_SECONDARY_CAPTURE_IMAGE_STORAGE = "1.2.840.10008.5.1.4.1.1.7"; // Secondary Capture (SC)
+export const SOP_CLASS_DIGITAL_XRAY_PRESENTATION = "1.2.840.10008.5.1.4.1.1.1.1"; // DX Presentation
+export const SOP_CLASS_DIGITAL_XRAY_PROCESSING = "1.2.840.10008.5.1.4.1.1.1.1.1"; // DX Processing
+export const SOP_CLASS_DIGITAL_INTRAORAL_XRAY_PRESENTATION = "1.2.840.10008.5.1.4.1.1.1.3"; // Vatech EzSensor 1.5, IO-XRay
+export const SOP_CLASS_DIGITAL_INTRAORAL_XRAY_PROCESSING = "1.2.840.10008.5.1.4.1.1.1.3.1";
+export const SOP_CLASS_DIGITAL_PANORAMIC_XRAY_PRESENTATION = "1.2.840.10008.5.1.4.1.1.1.4"; // PaX-i Panoramic
+export const SOP_CLASS_CR_IMAGE_STORAGE = "1.2.840.10008.5.1.4.1.1.1";
+export const SOP_CLASS_VL_ENDOSCOPIC_IMAGE_STORAGE = "1.2.840.10008.5.1.4.1.1.77.1.1"; // Intraoral video camera
+
+/**
+ * Набор всех поддерживаемых нашим C-STORE SCP классов хранения.
+ */
+export const SUPPORTED_STORAGE_SOP_CLASSES: ReadonlySet<string> = new Set([
+	SOP_CLASS_VERIFICATION,
+	SOP_CLASS_CT_IMAGE_STORAGE,
+	SOP_CLASS_ENHANCED_CT_IMAGE_STORAGE,
+	SOP_CLASS_SECONDARY_CAPTURE_IMAGE_STORAGE,
+	SOP_CLASS_DIGITAL_XRAY_PRESENTATION,
+	SOP_CLASS_DIGITAL_XRAY_PROCESSING,
+	SOP_CLASS_DIGITAL_INTRAORAL_XRAY_PRESENTATION,
+	SOP_CLASS_DIGITAL_INTRAORAL_XRAY_PROCESSING,
+	SOP_CLASS_DIGITAL_PANORAMIC_XRAY_PRESENTATION,
+	SOP_CLASS_CR_IMAGE_STORAGE,
+	SOP_CLASS_VL_ENDOSCOPIC_IMAGE_STORAGE,
+]);
+
+// ─── 5. TRANSFER SYNTAXES ───────────────────────────────────────────────────
+
+export const TRANSFER_SYNTAX_IMPLICIT_VR_LITTLE_ENDIAN = "1.2.840.10008.1.2";
+export const TRANSFER_SYNTAX_EXPLICIT_VR_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
+export const TRANSFER_SYNTAX_EXPLICIT_VR_BIG_ENDIAN = "1.2.840.10008.1.2.2";
+export const TRANSFER_SYNTAX_JPEG_BASELINE_PROCESS_1 = "1.2.840.10008.1.2.4.50";
+export const TRANSFER_SYNTAX_JPEG_EXTENDED_PROCESS_2_4 = "1.2.840.10008.1.2.4.51";
+export const TRANSFER_SYNTAX_JPEG_LOSSLESS_PROCESS_14 = "1.2.840.10008.1.2.4.70";
+export const TRANSFER_SYNTAX_JPEG_2000_LOSSLESS = "1.2.840.10008.1.2.4.90";
+export const TRANSFER_SYNTAX_JPEG_2000 = "1.2.840.10008.1.2.4.91";
+export const TRANSFER_SYNTAX_RLE_LOSSLESS = "1.2.840.10008.1.2.5";
+
+export const SUPPORTED_TRANSFER_SYNTAXES: ReadonlySet<string> = new Set([
+	TRANSFER_SYNTAX_EXPLICIT_VR_LITTLE_ENDIAN,
+	TRANSFER_SYNTAX_IMPLICIT_VR_LITTLE_ENDIAN,
+	TRANSFER_SYNTAX_EXPLICIT_VR_BIG_ENDIAN,
+	TRANSFER_SYNTAX_JPEG_BASELINE_PROCESS_1,
+	TRANSFER_SYNTAX_JPEG_LOSSLESS_PROCESS_14,
+	TRANSFER_SYNTAX_JPEG_2000_LOSSLESS,
+	TRANSFER_SYNTAX_JPEG_2000,
+	TRANSFER_SYNTAX_RLE_LOSSLESS,
+]);
+
+// ─── 6. DEFAULT AE TITLES & PORTS ───────────────────────────────────────────
+
+export const DEFAULT_DICOM_SCP_PORT = 11112; // Порт по умолчанию (104 требует root/admin в Linux/macOS, 11112 стандартный PACS порт)
+export const DEFAULT_DICOM_CALLED_AE = "DENTE_PACS";
+export const DEFAULT_DICOM_CALLING_AE = "EVSTORE"; // Vatech ezdcmstorescu.dll Calling AE Title

@@ -225,9 +225,16 @@ export function validateAndResolvePacsLocalFilePath(organizationId: string, cand
 			"/dev",
 		];
 
-		for (const prefix of forbiddenPrefixes) {
-			if (lower.startsWith(prefix)) {
-				throw new PathTraversalError(`Запрещен доступ к системным директориям операционной системы: ${candidatePath}`);
+		// Разрешаем авторизованное системное хранилище клиники DenteDental
+		const isDenteSystemStorage =
+			lower.startsWith("c:\\programdata\\dentedental") ||
+			lower.startsWith("/library/application support/dentedental");
+
+		if (!isDenteSystemStorage) {
+			for (const prefix of forbiddenPrefixes) {
+				if (lower.startsWith(prefix)) {
+					throw new PathTraversalError(`Запрещен доступ к системным директориям операционной системы: ${candidatePath}`);
+				}
 			}
 		}
 

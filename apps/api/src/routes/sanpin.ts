@@ -254,6 +254,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			data.testedSampleCount,
 			data.isAzopyramNegative,
 			data.isPhenolphthaleinNegative,
+			data.isSudanNegative ?? true,
 		);
 
 		const [log] = await db
@@ -1747,11 +1748,27 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		const now = new Date();
 
 		// Нормативные записи по СанПиН 2.1.3684-21 для стоматологической смены:
-		// 1) Желтый пакет (мягкие отходы: перчатки, маски, салфетки, валики, слюноотсосы), 1 шт., брутто 2.55 кг, нетто 2.50 кг
-		// 2) Желтый непрокалываемый контейнер (острые отходы: карпулы, иглы, скальпели), 1 шт., брутто 0.95 кг, нетто 0.80 кг
+		// 1) Белый пакет (Класс А, безопасные: упаковка материалов, картон, бумага, чистые бахилы), 1 шт., брутто 3.25 кг, нетто 3.20 кг
+		// 2) Желтый пакет (Класс Б, мягкие отходы: перчатки, маски, салфетки, валики, слюноотсосы), 1 шт., брутто 2.55 кг, нетто 2.50 кг
+		// 3) Желтый непрокалываемый контейнер (Класс Б, острые отходы: карпулы, иглы, скальпели), 1 шт., брутто 0.95 кг, нетто 0.80 кг
 		const newLogs = await db
 			.insert(medicalWasteLogs)
 			.values([
+				{
+					organizationId,
+					operationType: "accumulation",
+					logDate: now,
+					wasteClass: "class_A",
+					wasteDescription: "Эпидемиологически безопасные отходы смены (упаковка стоматологических материалов, картон, бумага, чистые бахилы)",
+					packageType: "white_bag",
+					packageCount: 1,
+					weightKg: "3.200",
+					volumeLiters: "40.00",
+					disinfectionMethod: "none_centralized",
+					disinfectantUsed: null,
+					responsibleStaffId: req.user?.id ?? null,
+					notes: "1-клик фиксация отходов смены Класса А (СанПиН 2.1.3684-21: брутто 3.25 кг, тара 0.05 кг, нетто 3.20 кг)",
+				},
 				{
 					organizationId,
 					operationType: "accumulation",
@@ -1793,7 +1810,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		}
 
 		return reply.code(201).send({
-			message: "Отходы смены (Класс Б) успешно зафиксированы по СанПиН 2.1.3684-21",
+			message: "Отходы смены (Класс А и Класс Б) успешно зафиксированы по СанПиН 2.1.3684-21",
 			records: newLogs,
 		});
 	});

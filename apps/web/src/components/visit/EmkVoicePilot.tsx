@@ -257,15 +257,16 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 				<button
 					type="button"
 					onClick={handleApplyAll}
-					disabled={isApplied}
+					title={isApplied ? "Повторно применить/обновить в карте" : "Применить распознанные данные в карту"}
+					aria-label={isApplied ? "Повторно обновить в карте" : "Применить в карту"}
 					className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs shrink-0 ${
 						isApplied
-							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25"
 							: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
 					}`}
 				>
 					{isApplied ? <CheckCheck size={13} /> : <Zap size={13} />}
-					<span className="hidden sm:inline">{isApplied ? "Применено" : "В карту"}</span>
+					<span className="hidden sm:inline">{isApplied ? "Обновить" : "В карту"}</span>
 				</button>
 			)}
 

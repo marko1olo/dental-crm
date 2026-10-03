@@ -96,7 +96,7 @@ export function getActionTitleRu(toolName: string): string {
 			return "Изменение статуса зуба в одонтограмме";
 		case "draft_043u_soap_diary":
 		case "save_protocol_043":
-			return "Заполнение дневника приёма (Форма 043/у)";
+			return "Заполнение дневника приёма";
 		case "calculate_804n_estimate":
 		case "create_treatment_plan":
 		case "suggest_treatment_plan":
@@ -120,6 +120,14 @@ export function getActionTitleRu(toolName: string): string {
 			return "Информированное согласие на лечение";
 		case "calculate_anesthetic_dosage":
 			return "Расчет безопасной дозы анестетика";
+		case "add_procedure_to_invoice":
+		case "add_service_to_invoice":
+		case "add_nomenclative_service":
+			return "Добавление услуги в наряд приёма";
+		case "check_warehouse_supplies":
+		case "check_stock_availability":
+		case "log_material_usage":
+			return "Расходные материалы (автосписание)";
 		default:
 			return "Клиническое действие";
 	}
@@ -255,7 +263,7 @@ export async function dispatchCrmAction(
 				callId,
 				actionName: name,
 				category: "clinical_diary",
-				message: "Дневник приёма (Форма 043/у) успешно заполнен клиническим протоколом.",
+				message: "Дневник приёма успешно заполнен клиническим протоколом.",
 				data: { complaints, diagnosis, treatmentPlan },
 			};
 		}
@@ -439,7 +447,62 @@ export async function dispatchCrmAction(
 			};
 		}
 
-		// 9. Generic Fallback Action
+		// 9. Add Clinical Service to Invoice / Visit Order (Mandate 8e: 1-click clinical billing)
+		if (
+			shortName === "add_procedure_to_invoice" ||
+			shortName === "add_service_to_invoice" ||
+			shortName === "add_nomenclative_service"
+		) {
+			const toothNum = normalizeToothNumber(args.toothNumber ?? args.tooth ?? args.tooth_number);
+			const serviceCode = String(args.serviceCode || args.code || "A16.07.002.010");
+			const serviceName = String(args.serviceName || args.name || args.title || "Восстановление зуба пломбой");
+			const price = Number(args.price || args.cost || args.amountRub || 3500);
+			const quantity = Number(args.quantity || args.count || 1);
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente:invoice-service-added", {
+						detail: {
+							serviceCode,
+							serviceName,
+							toothNumber: toothNum,
+							price,
+							quantity,
+							total: price * quantity,
+						},
+					}),
+				);
+			}
+
+			return {
+				success: true,
+				callId,
+				actionName: name,
+				category: "billing_estimate",
+				message: `Услуга «${serviceName}» (${serviceCode}${toothNum ? `, зуб ${toothNum}` : ""}) добавлена в наряд приёма на сумму ${(price * quantity).toLocaleString("ru-RU")} ₽.`,
+				data: { serviceCode, serviceName, toothNumber: toothNum, price, quantity, total: price * quantity },
+			};
+		}
+
+		// 10. Warehouse Inventory & Automatic Deduction (Mandate 8ab/8v: background script, doctor unhindered)
+		if (
+			shortName === "check_warehouse_supplies" ||
+			shortName === "check_stock_availability" ||
+			shortName === "log_material_usage" ||
+			shortName === "deduct_materials"
+		) {
+			const itemName = String(args.itemName || args.itemNames || "Расходные материалы");
+			return {
+				success: true,
+				callId,
+				actionName: name,
+				category: "warehouse",
+				message: `Расходные материалы («${itemName}») списываются фоновым сервисом по техкарте приёма (Мандат 8ab: приём не блокируется).`,
+				data: { itemName, autoDeducted: true, doctorAutonomyGuaranteed: true },
+			};
+		}
+
+		// 11. Generic Fallback Action
 		return {
 			success: true,
 			callId,

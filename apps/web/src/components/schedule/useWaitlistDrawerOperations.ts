@@ -234,7 +234,7 @@ export function useWaitlistDrawerOperations({
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			void navigator.clipboard.writeText(msg).then(() => {
 				setContactedPatients((prev) => new Set(prev).add(item.id));
-				showToast("Текст 152-ФЗ скопирован в буфер обмена", "success");
+				showToast("Текст сообщения пациенту скопирован в буфер", "success");
 			});
 		}
 	};

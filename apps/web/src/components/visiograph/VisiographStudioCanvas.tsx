@@ -24,6 +24,8 @@ import {
 	type CalibrationReference,
 	type CalibrationReferenceType,
 	DEFAULT_PIXEL_SCALE_MM,
+	DENTAL_SENSOR_PRESETS,
+	type DentalSensorPreset,
 	recalculateLesionsWithScale,
 	recalculateRulersWithScale,
 	type AngleMeasurement,
@@ -45,33 +47,9 @@ import { VisiographTopToolbar } from "./VisiographTopToolbar";
 import { VisiographLesionsHud } from "./VisiographLesionsHud";
 import { VisiographImageSliders } from "./VisiographImageSliders";
 
-export interface SensorCalibrationPreset {
-	readonly id: string;
-	readonly label: string;
-	readonly pixelSizeMm: number;
-	readonly description: string;
-}
+export type SensorCalibrationPreset = DentalSensorPreset;
 
-export const STANDARD_SENSOR_PRESETS: readonly SensorCalibrationPreset[] = [
-	{
-		id: "rvg_size_1",
-		label: "Датчик RVG Размер 1 (20 мкм)",
-		pixelSizeMm: 0.020,
-		description: "Прицельный датчик 0.020 мм/пикс",
-	},
-	{
-		id: "rvg_size_2",
-		label: "Датчик RVG Размер 2 (25 мкм)",
-		pixelSizeMm: 0.025,
-		description: "Прицельный датчик 0.025 мм/пикс",
-	},
-	{
-		id: "opg_standard",
-		label: "ОПТГ стандарт (50 мкм)",
-		pixelSizeMm: 0.050,
-		description: "Панорамный снимок 0.050 мм/пикс",
-	},
-];
+export const STANDARD_SENSOR_PRESETS: readonly SensorCalibrationPreset[] = DENTAL_SENSOR_PRESETS;
 
 export { recalculateRulersWithScale, recalculateLesionsWithScale };
 

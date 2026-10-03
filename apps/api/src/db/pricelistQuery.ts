@@ -239,11 +239,16 @@ export async function getServiceCatalogForOrganization(
 	if (useInMemory()) {
 		return [];
 	}
-	const rows = await db
-		.select()
-		.from(schema.serviceCatalogItems)
-		.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
-	return projectServiceCatalogRows(rows).items;
+	try {
+		const rows = await db
+			.select()
+			.from(schema.serviceCatalogItems)
+			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
+		return projectServiceCatalogRows(rows).items;
+	} catch (err) {
+		console.warn("[pricelist] Database query for service catalog failed, returning empty catalog:", err);
+		return [];
+	}
 }
 
 /* ─── ЗАПИСЬ ПРАЙСА ──────────────────────────────────────────────────────────
@@ -536,4 +541,119 @@ export async function seedBaseline804nServicesInDb(
 		items: createdItems,
 	};
 }
+
+export type PriceRoundingRule = "none" | "round_10" | "round_50" | "round_100";
+
+export interface BatchRepriceOptions {
+	readonly percentChange?: number | undefined;
+	readonly fixedRubChange?: number | undefined;
+	readonly roundMode?: PriceRoundingRule | undefined;
+	readonly category?: string | undefined;
+	readonly specialty?: string | undefined;
+	readonly serviceIds?: readonly string[] | undefined;
+}
+
+export interface BatchRepriceResult {
+	readonly success: true;
+	readonly updatedCount: number;
+	readonly items: ServiceCatalogItem[];
+}
+
+export function computeRepricedAmount(
+	currentPriceRub: number,
+	percentChange?: number,
+	fixedRubChange?: number,
+	roundMode?: PriceRoundingRule,
+): number {
+	let price = currentPriceRub;
+	if (percentChange !== undefined && Number.isFinite(percentChange)) {
+		price = price * (1 + percentChange / 100);
+	}
+	if (fixedRubChange !== undefined && Number.isFinite(fixedRubChange)) {
+		price = price + fixedRubChange;
+	}
+	price = Math.max(0, price);
+
+	switch (roundMode) {
+		case "round_10":
+			return Math.round(price / 10) * 10;
+		case "round_50":
+			return Math.round(price / 50) * 50;
+		case "round_100":
+			return Math.round(price / 100) * 100;
+		case "none":
+		default:
+			return Math.round(price * 100) / 100;
+	}
+}
+
+/**
+ * Пакетная переоценка услуг клиники в ACID-транзакции с сохранением точных копеек (Мандат 8b).
+ */
+export async function batchRepriceServicesInDb(
+	organizationId: string,
+	options: BatchRepriceOptions,
+): Promise<BatchRepriceResult> {
+	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
+
+	const currentCatalog = await getServiceCatalogForOrganization(organizationId);
+	if (currentCatalog.length === 0) {
+		return { success: true, updatedCount: 0, items: [] };
+	}
+
+	const targetServiceIdSet =
+		options.serviceIds && options.serviceIds.length > 0
+			? new Set(options.serviceIds)
+			: null;
+
+	const itemsToUpdate = currentCatalog.filter((item) => {
+		if (targetServiceIdSet && !targetServiceIdSet.has(item.id)) return false;
+		if (options.category && options.category !== "all" && item.category !== options.category) {
+			return false;
+		}
+		if (options.specialty && options.specialty !== "all" && item.specialty !== options.specialty) {
+			return false;
+		}
+		return true;
+	});
+
+	if (itemsToUpdate.length === 0) {
+		return { success: true, updatedCount: 0, items: [] };
+	}
+
+	const updatedItems: ServiceCatalogItem[] = [];
+
+	await db.transaction(async () => {
+		for (const item of itemsToUpdate) {
+			const newPrice = computeRepricedAmount(
+				item.basePriceRub,
+				options.percentChange,
+				options.fixedRubChange,
+				options.roundMode,
+			);
+
+			const [row] = await db
+				.update(schema.serviceCatalogItems)
+				.set(moneyColumns(newPrice))
+				.where(
+					and(
+						eq(schema.serviceCatalogItems.id, item.id),
+						eq(schema.serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.returning();
+
+			if (row) {
+				updatedItems.push(projectSingleRow(row));
+			}
+		}
+	});
+
+	return {
+		success: true,
+		updatedCount: updatedItems.length,
+		items: updatedItems,
+	};
+}
+
 

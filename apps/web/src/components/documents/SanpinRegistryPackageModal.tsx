@@ -106,10 +106,10 @@ export function SanpinRegistryPackageModal({
 							<ShieldCheck size={22} color={sterilityVerified ? "#059669" : "var(--teal, #0d9488)"} />
 							<div>
 								<div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
-									{sterilityVerified ? "Стерильность инструментов приёма подтверждена (СанПиН 3.3686-21)" : "Комплексный допуск стерильности инструментов приёма"}
+									{sterilityVerified ? "Стерильность инструментов приёма подтверждена" : "Комплексный допуск стерильности инструментов приёма"}
 								</div>
 								<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "0.15rem" }}>
-									{patient ? `Пациент: ${patient.fullName} • ` : ""}ПСО (ф. 366/у, азопирам/фенолфталеин отр.) и Автоклав (ф. 257/у, 134°C, 5 кл. норма)
+									{patient ? `Пациент: ${patient.fullName} • ` : ""}Контроль очистки (азопирам/фенолфталеин отр.) и автоклавирование (134°C, 5 класс норма)
 								</div>
 							</div>
 						</div>
@@ -118,7 +118,7 @@ export function SanpinRegistryPackageModal({
 							className={sterilityVerified ? "secondary-button" : "primary-button"}
 							onClick={() => {
 								setSterilityVerified(true);
-								showToast("Стерильность приёма заверена по СанПиН 3.3686-21", "success");
+								showToast("Стерильность инструментов приёма подтверждена", "success");
 							}}
 							style={{ minHeight: "36px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 						>
@@ -138,7 +138,7 @@ export function SanpinRegistryPackageModal({
 									</span>
 								</div>
 								<span className="document-package-item-sub">
-									<strong>Приказ Минздрава России от 23.11.2021 № 1089н</strong> — Оформление временной нетрудоспособности при острых одонтогенных воспалениях, операциях и травмах ЧЛО.
+									Оформление временной нетрудоспособности при острых одонтогенных воспалениях, операциях и травмах ЧЛО.
 								</span>
 							</div>
 							<div className="document-package-item-actions">
@@ -165,7 +165,7 @@ export function SanpinRegistryPackageModal({
 									</span>
 								</div>
 								<span className="document-package-item-sub">
-									<strong>СанПиН 3.3686-21 п. 3584 / Приказ Минздрава СССР № 366/у</strong> — Контроль качества очистки от крови и остатков щелочных моющих средств (азопирамовая и фенолфталеиновая пробы).
+									Контроль качества очистки от крови и остатков щелочных моющих средств (азопирамовая и фенолфталеиновая пробы).
 								</span>
 							</div>
 							<div className="document-package-item-actions">
@@ -197,7 +197,7 @@ export function SanpinRegistryPackageModal({
 									</span>
 								</div>
 								<span className="document-package-item-sub">
-									<strong>СанПиН 2.6.1.1192-03 / МУ 2.6.1.2944-11</strong> — Обязательный лист вкладыш в медицинскую карту для суммарного радиационного контроля (мЗв).
+									Учёт суммарной лучевой нагрузки пациента (мЗв) для медицинской карты и проверок.
 								</span>
 							</div>
 							<div className="document-package-item-actions">
@@ -238,7 +238,7 @@ export function SanpinRegistryPackageModal({
 									</span>
 								</div>
 								<span className="document-package-item-sub">
-									<strong>СанПиН 3.3686-21, Приказ Минздрава СССР № 257/у</strong> — Реестр циклов автоклавирования, термохимических индикаторов (1-5 класс), вакуум-тестов и биотестов.
+									Реестр циклов автоклавирования, термохимических индикаторов (1-5 класс), вакуум-тестов и биотестов.
 								</span>
 							</div>
 							<div className="document-package-item-actions">
@@ -261,11 +261,11 @@ export function SanpinRegistryPackageModal({
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<Layers size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 									<span className="document-package-item-title">
-										Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
+										Выгрузка документов в ЕГИСЗ (РЭМД)
 									</span>
 								</div>
 								<span className="document-package-item-sub">
-									<strong>Постановление Правительства РФ № 140 / № 852</strong> — Государственный реестр электронных медицинских документов для Госуслуг (ЕПГУ).
+									Государственный реестр электронных медицинских документов для Госуслуг.
 								</span>
 							</div>
 							<div className="document-package-item-actions">
@@ -286,7 +286,7 @@ export function SanpinRegistryPackageModal({
 
 				<div className="document-package-modal-footer">
 					<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-						Стандарты Росздравнадзора, Минздрава РФ и Роспотребнадзора (СанПиН)
+						Соответствует санитарным и клиническим стандартам
 					</div>
 					<button
 						type="button"

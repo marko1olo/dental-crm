@@ -878,7 +878,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		const auditStamp = isLocked ? `\n\n[Исправленному верить: ${dateStr}]` : "";
 		// Мандат 8e: 1-клик соматическая норма врача (Doctor Autonomy)
 		// Эталонные формулировки: «Жалоб на момент осмотра не предъявляет», «Соматически здоров. Аллергологический анамнез не отягощен.»
-		const defaultNormComplaint = "Жалоб на момент осмотра не предъявляет. Обратился(лась) с целью профилактического осмотра / санации.";
+		const defaultNormComplaint = "Жалоб на момент осмотра не предъявляет. Обратился(лась) с целью профилактического осмотра и гигиены.";
 		const defaultNormAnamnesis = "Соматически здоров. Аллергологический анамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает.";
 		const normValues: VisitSoapNoteValues = {
 			complaint: autopilot.preset.complaint || defaultNormComplaint,
@@ -994,7 +994,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			`[Анамнез]: ${values.anamnesis || "Соматически здоров"}`,
 			`[Объективный статус]: ${values.objectiveStatus || "Без патологии"}`,
 			`[Диагноз]: ${values.icd10 ? `[${values.icd10}] ` : ""}${values.diagnosis || "Не установлен"}`,
-			`[Протокол лечения]: ${values.treatmentPlan || "Санация"}`,
+			`[Протокол лечения]: ${values.treatmentPlan || "Лечение и гигиена"}`,
 			`[Рекомендации]: ${values.recommendations || "Стандартная гигиена"}`,
 		].join("\n\n");
 

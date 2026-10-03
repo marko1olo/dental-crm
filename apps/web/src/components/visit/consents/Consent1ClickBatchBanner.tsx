@@ -55,7 +55,7 @@ export function Consent1ClickBatchBanner({
 						type="button"
 						onClick={onOpenInformedConsentModal}
 						className="vct-btn vct-btn-secondary"
-						title="Открыть каталог бланков ИДС (печать бланков или подпись на экране при наличии планшета)"
+						title="Открыть каталог согласий на лечение (печать бланков или подпись на экране при наличии планшета)"
 					>
 						<FileText size={14} />
 						<span>Бланки / Экран</span>

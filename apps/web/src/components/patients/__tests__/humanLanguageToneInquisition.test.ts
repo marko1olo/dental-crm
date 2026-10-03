@@ -22,7 +22,8 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 			"PatientsView must not mention 'Открыт приём 043/у:' in success toast",
 		);
 		assert.ok(
-			content.includes("Выберите пациента из списка слева для открытия приёма"),
+			content.includes("Выберите пациента из списка слева для открытия приёма") ||
+				content.includes("Выберите пациента из списка слева для начала приёма"),
 			"PatientsView must use natural guidance toast without bureaucratic codes",
 		);
 		assert.ok(
@@ -272,5 +273,79 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
 		assert.ok(!modalContent.includes("1-Click Синтез дневника по МКБ-10 и формуле"), "Must not use bird language in synthesis modal");
 		assert.ok(modalContent.includes("1-Click Заполнение дневника по диагнозу и формуле"));
+	});
+
+	it("15. VisitDiaryHeaderMoreMenu.tsx: export menu uses human title instead of raw 'СЭМД ЕГИСЗ'", () => {
+		const filePath = path.join(webSrcRoot, "components/visit/diary/VisitDiaryHeaderMoreMenu.tsx");
+		const content = fs.readFileSync(filePath, "utf-8");
+		assert.ok(!content.includes("<span>СЭМД ЕГИСЗ</span>"), "Must not use 'СЭМД ЕГИСЗ' in action button");
+		assert.ok(content.includes("<span>Электронная медкарта (Госуслуги)</span>"));
+	});
+
+	it("16. Form043PrintModal.tsx: export options use human language instead of 'ЕГИСЗ СЭМД'", () => {
+		const filePath = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
+		const content = fs.readFileSync(filePath, "utf-8");
+		assert.ok(!content.includes("<span>ЕГИСЗ СЭМД (XML)</span>"), "Must not use raw 'ЕГИСЗ СЭМД'");
+		assert.ok(!content.includes("HL7 CDA R2 XML для ЕГИСЗ (СЭМД 834н)"), "Must not expose Order 834n in tooltip");
+		assert.ok(content.includes("<span>Электронная медкарта (XML)</span>"));
+		assert.ok(content.includes("Экспорт в XML для электронной медкарты (Госуслуги)"));
+	});
+
+	it("17. PatientCreationModal.tsx & patientFieldRequirementsConfig.ts: SNILS hints free of raw ЕГИСЗ/РЭМД", () => {
+		const modalPath = path.join(webSrcRoot, "components/patients/PatientCreationModal.tsx");
+		const modalContent = fs.readFileSync(modalPath, "utf-8");
+		assert.ok(!modalContent.includes("* (ЕГИСЗ)"), "Must not use raw '* (ЕГИСЗ)' badge");
+		assert.ok(!modalContent.includes("в ЕГИСЗ (РЭМД)"), "Must not use 'в ЕГИСЗ (РЭМД)' hint");
+		assert.ok(modalContent.includes("* (для Госуслуг)"));
+		assert.ok(modalContent.includes("медкарты и Госуслуг"));
+
+		const configPath = path.join(webSrcRoot, "components/patients/patientFieldRequirementsConfig.ts");
+		const configContent = fs.readFileSync(configPath, "utf-8");
+		assert.ok(!configContent.includes("СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)"), "Error must be human-oriented");
+		assert.ok(configContent.includes("СНИЛС обязателен для электронной медкарты и Госуслуг"));
+	});
+
+	it("18. VisitView.tsx, VisitEmkTab.tsx, VisitSoapEditor.tsx: treatment plan defaults free of bare 'Санация'", () => {
+		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
+		const visitViewContent = fs.readFileSync(visitViewPath, "utf-8");
+		assert.ok(!visitViewContent.includes("патологий не выявлено. Санация."), "Must not use bare 'Санация' in default plan");
+		assert.ok(visitViewContent.includes("Полость рта здорова, гигиена удовлетворительная."));
+
+		const emkPath = path.join(webSrcRoot, "components/visit/VisitEmkTab.tsx");
+		const emkContent = fs.readFileSync(emkPath, "utf-8");
+		assert.ok(!emkContent.includes("санация полости рта. Обучение гигиене."), "Must not use raw 'санация полости рта' in norm plan");
+		assert.ok(!emkContent.includes('treatmentPlan || "Санация полости рта"'), "Must not use bare 'Санация полости рта' fallback");
+		assert.ok(emkContent.includes("Проведена профессиональная гигиена и профилактика."));
+
+		const soapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
+		const soapContent = fs.readFileSync(soapPath, "utf-8");
+		assert.ok(!soapContent.includes('values.treatmentPlan || "Санация"'), "Must not use bare 'Санация' in clipboard protocol");
+		assert.ok(soapContent.includes('values.treatmentPlan || "Лечение и гигиена"'));
+	});
+
+	it("19. clinicalProtocols043.ts: memo badges and presets use clinical protocol language instead of 043/у", () => {
+		const filePath = path.join(webSrcRoot, "lib/clinicalProtocols043.ts");
+		const content = fs.readFileSync(filePath, "utf-8");
+		assert.ok(!content.includes('badge: "Хирургия 043/у"'), "Must not use 'Хирургия 043/у'");
+		assert.ok(!content.includes('badge: "Терапия 043/у"'), "Must not use 'Терапия 043/у'");
+		assert.ok(!content.includes('badge: "Эндодонтия 043/у"'), "Must not use 'Эндодонтия 043/у'");
+		assert.ok(content.includes('badge: "Хирургический протокол"'));
+		assert.ok(content.includes('badge: "Терапевтический протокол"'));
+		assert.ok(content.includes('badge: "Эндодонтический протокол"'));
+		assert.ok(content.includes("Полное лечение и гигиена. Плановый профосмотр через 6 месяцев."));
+	});
+
+	it("20. Consent1ClickBatchBanner.tsx & useVisitConsentsLogic.ts: user-facing strings use 'согласия на лечение'", () => {
+		const bannerPath = path.join(webSrcRoot, "components/visit/consents/Consent1ClickBatchBanner.tsx");
+		const bannerContent = fs.readFileSync(bannerPath, "utf-8");
+		assert.ok(!bannerContent.includes("каталог бланков ИДС"), "Must not use 'каталог бланков ИДС'");
+		assert.ok(bannerContent.includes("каталог согласий на лечение"));
+
+		const logicPath = path.join(webSrcRoot, "components/visit/consents/useVisitConsentsLogic.ts");
+		const logicContent = fs.readFileSync(logicPath, "utf-8");
+		assert.ok(!logicContent.includes('"Бланк ИДС отправлен на печать"'), "Toast must not use raw 'ИДС'");
+		assert.ok(!logicContent.includes('"Чистый бланк ИДС отправлен на печать"'), "Toast must not use raw 'ИДС'");
+		assert.ok(logicContent.includes('"Бланк согласия на лечение отправлен на печать"'));
+		assert.ok(logicContent.includes('"Чистый бланк согласия на лечение отправлен на печать"'));
 	});
 });

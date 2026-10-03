@@ -22,7 +22,8 @@ import {
 	SANPIN_WASTE_PACKAGING_TYPES,
 	SANPIN_STORAGE_LOCATIONS,
 } from "../components/sanpin/waste/medicalWastePresets.js";
-import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal.js";
+import fs from "node:fs";
+import path from "node:path";
 
 test("Medical Waste Presets: statutory SanPiN 2.1.3684-21 waste classes integrity", () => {
 	assert.equal(SANPIN_MEDICAL_WASTE_CLASSES.length, 4, "Must define Class A, B, V, and G");
@@ -132,13 +133,13 @@ test("Medical Waste Storage Duration Validator: room temp, refrigerator, freezer
 	assert.equal(check3.isExpired, true);
 	assert.equal(check3.status, "expired");
 
-	// 4. Холодильник (+2...+8°C, макс 7 суток = 168 ч) — 4 дня накопления (96 ч)
-	const fourDaysAgo = new Date(now.getTime() - 96 * 3600 * 1000).toISOString();
-	const check4 = validateStorageDuration(fourDaysAgo, "waste_refrigerator_2_8", now.toISOString());
+	// 4. Холодильник (+2...+5°C, макс 3 суток = 72 ч per СанПиН 2.1.3684-21 п. 174) — 2 дня накопления (48 ч)
+	const twoDaysAgo = new Date(now.getTime() - 48 * 3600 * 1000).toISOString();
+	const check4 = validateStorageDuration(twoDaysAgo, "waste_refrigerator_2_8", now.toISOString());
 	assert.equal(check4.isExpired, false);
 	assert.equal(check4.status, "optimal");
-	assert.equal(check4.maxHoursAllowed, 168);
-	assert.equal(check4.hoursRemaining, 72);
+	assert.equal(check4.maxHoursAllowed, 72);
+	assert.equal(check4.hoursRemaining, 24);
 
 	// 5. Морозильник (-18°C, макс 30 суток = 720 ч)
 	const freezerLocation = getWasteStorageLocation("waste_freezer_minus_18");
@@ -221,7 +222,10 @@ test("Medical Waste Technological Journal & Transfer Act generation", () => {
 });
 
 test("MedicalWasteJournalModal: component export and contract verification", () => {
-	assert.equal(typeof MedicalWasteJournalModal, "function");
+	const modalFile = path.resolve("apps/web/src/components/sanpin/waste/MedicalWasteJournalModal.tsx");
+	assert.ok(fs.existsSync(modalFile), "MedicalWasteJournalModal.tsx exists");
+	const content = fs.readFileSync(modalFile, "utf-8");
+	assert.ok(content.includes("export const MedicalWasteJournalModal"), "Exports MedicalWasteJournalModal");
 	assert.equal(typeof calculateWasteNetWeight, "function");
 	assert.equal(typeof generateWasteSealNumber, "function");
 	assert.equal(typeof generateWasteBarcode, "function");

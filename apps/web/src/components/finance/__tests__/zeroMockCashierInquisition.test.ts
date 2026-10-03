@@ -129,6 +129,7 @@ describe("Cashier & 54-FZ Fiscal Inquisition: Zero-Mocks & Mandate 8e Compliance
 			id: "inv-test-real-1",
 			number: "СЧ-2026-999",
 			date: "2026-10-03",
+			createdAt: "2026-10-03T10:00:00Z",
 			patientId: "pat-real-1",
 			patientName: "Васильев Олег Игоревич",
 			patientPhone: "+7 (916) 123-45-67",
@@ -140,6 +141,7 @@ describe("Cashier & 54-FZ Fiscal Inquisition: Zero-Mocks & Mandate 8e Compliance
 			items: [
 				{
 					id: "li-1",
+					name: "Лечение глубокого кариеса",
 					code804n: "A16.07.002",
 					title: "Лечение глубокого кариеса",
 					priceRub: 8500,
@@ -179,14 +181,17 @@ describe("Cashier & 54-FZ Fiscal Inquisition: Zero-Mocks & Mandate 8e Compliance
 			id: "inv-w-1",
 			number: "ГАР-2026-001",
 			date: "2026-10-03",
+			createdAt: "2026-10-03T10:00:00Z",
 			patientId: "pat-w-1",
 			patientName: "Соколова Анна",
 			doctorName: "Д-р Смирнова",
 			totalAmountRub: 0,
+			paidAmountRub: 0,
 			status: "warranty_100",
 			items: [
 				{
 					id: "w-item-1",
+					name: "Коррекция окклюзии по гарантии",
 					code804n: "A16.07.002",
 					title: "Коррекция окклюзии по гарантии",
 					priceRub: 0,
@@ -222,6 +227,8 @@ describe("Cashier & 54-FZ Fiscal Inquisition: Zero-Mocks & Mandate 8e Compliance
 			patientName: "Ковалев Андрей",
 			doctorName: "Д-р Петров",
 			totalAmountRub: 5000,
+			paidAmountRub: 5000,
+			createdAt: "2026-10-03",
 			status: "paid",
 			items: [],
 		};

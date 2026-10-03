@@ -1244,10 +1244,10 @@ const suggestTreatmentPlanSchema = z.object({
 	discountPercent: z
 		.number()
 		.min(0)
-		.max(50)
+		.max(100)
 		.optional()
 		.default(0)
-		.describe("Процент скидки клиники (0–50%)"),
+		.describe("Процент скидки врача (0–100%, Мандат 8e: свобода скидок на переделки и персонал)"),
 	installmentMonths: z
 		.enum(["3", "6", "12", "24"])
 		.optional()
@@ -1281,6 +1281,7 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 			const toothNum = typeof c.toothNumber === "string" ? parseInt(c.toothNumber, 10) : c.toothNumber;
 			const validTooth = !Number.isNaN(toothNum) ? toothNum : 16;
 			const icd = (c.icd10Code || "K02.1").trim().toUpperCase();
+			const customNotes = c.notes ? ` (${c.notes})` : "";
 
 			// 1. Stage 1: Therapy & Endodontics
 			if (icd.startsWith("K04")) {
@@ -1288,36 +1289,36 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 				rawItemsEconomy.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.008.001",
-					nameRu: `Эндодонтическое лечение зуба ${validTooth} (базовый протокол)`,
+					nameRu: `Эндодонтическое лечение зуба ${validTooth} (гуттаперча + силер)`,
 					categoryRu: "Терапевтическая стоматология",
 					stageKind: "stage_1_therapy",
 					tierKey: "economy",
 					unitPriceKopecks: 650000,
-					materialNameRu: "Гуттаперча + эпоксидный силер AH Plus",
+					materialNameRu: "Гуттаперчевые штифты + эпоксидный силер",
 				});
 
 				// Optimum: ultrasonic irrigation + nanohybrid
 				rawItemsOptimum.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.008.003",
-					nameRu: `Эндодонтическое лечение зуба ${validTooth} с УЗ-ирригацией и адгезивной реставрацией`,
+					nameRu: `Эндодонтическое лечение зуба ${validTooth} с УЗ-активацией и нанореставрацией`,
 					categoryRu: "Терапевтическая стоматология",
 					stageKind: "stage_1_therapy",
 					tierKey: "optimum",
 					unitPriceKopecks: 1250000,
-					materialNameRu: "WaveOne Gold + биокерамический силер BioRoot RCS + Filtek Ultimate",
+					materialNameRu: "Ротационные Ni-Ti инструменты + биокерамический силер + нанокомпозит",
 				});
 
 				// Premium: microscopic stratigraphy + 3D obturation
 				rawItemsPremium.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.008.004",
-					nameRu: `Микроскопное эндодонтическое лечение зуба ${validTooth} под увеличением Carl Zeiss`,
+					nameRu: `Микроскопное эндодонтическое лечение зуба ${validTooth} с 3D-обтурацией${customNotes}`,
 					categoryRu: "Терапевтическая стоматология",
 					stageKind: "stage_1_therapy",
 					tierKey: "premium",
 					unitPriceKopecks: 2150000,
-					materialNameRu: "Дентальный микроскоп Carl Zeiss, горячая гуттаперча Calamus, Estelite Asteria",
+					materialNameRu: "Операционный микроскоп, 3D термопластифицированная гуттаперча, высокоэстетичный композит",
 				});
 			} else if (icd === "K08.1") {
 				// Stage 2: Surgery & Implantology
@@ -1330,12 +1331,12 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 					stageKind: "stage_2_surgery",
 					tierKey: "economy",
 					unitPriceKopecks: 350000,
-					materialNameRu: "Альвостаз, шовный материал",
+					materialNameRu: "Антисептический гемостатический материал, шовный материал",
 				});
 				rawItemsEconomy.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.054",
-					nameRu: `Установка дентального имплантата (стандартный ряд)`,
+					nameRu: `Установка дентального имплантата (стандартный титановый ряд)`,
 					categoryRu: "Хирургическая стоматология",
 					stageKind: "stage_2_surgery",
 					tierKey: "economy",
@@ -1348,25 +1349,25 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 				rawItemsOptimum.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.054",
-					nameRu: `Установка дентального имплантата Hiossen / Osstem с ускоренной остеоинтеграцией`,
+					nameRu: `Установка дентального имплантата с микротекстурированной SLA-поверхностью`,
 					categoryRu: "Хирургическая стоматология",
 					stageKind: "stage_2_surgery",
 					tierKey: "optimum",
 					unitPriceKopecks: 4200000,
-					materialNameRu: "Имплантат Osstem/Hiossen SLA, формирователь десны",
+					materialNameRu: "Имплантат с микропористой поверхностью ускоренной остеоинтеграции, формирователь десны",
 					isHighCostCode02: true,
 				});
 
-				// Premium: Straumann / Nobel Biocare + PRF membrane
+				// Premium: Hydrophilic implant + bone augmentation
 				rawItemsPremium.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.054",
-					nameRu: `Установка премиального гидрофильного имплантата Straumann BLX / Nobel Active`,
+					nameRu: `Установка премиального гидрофильного имплантата с остеопластикой${customNotes}`,
 					categoryRu: "Хирургическая стоматология",
 					stageKind: "stage_2_surgery",
 					tierKey: "premium",
 					unitPriceKopecks: 7800000,
-					materialNameRu: "Швейцарский имплантат Straumann SLActive, костный матрикс Bio-Oss, мембрана Bio-Gide",
+					materialNameRu: "Гидрофильный имплантат высшей категории, костнопластический остеоиндуктивный биоматериал, коллагеновая мембрана",
 					isHighCostCode02: true,
 				});
 
@@ -1374,39 +1375,39 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 				rawItemsEconomy.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.004",
-					nameRu: `Восстановление зуба металлокерамической коронкой Co-Cr на импланте`,
+					nameRu: `Восстановление зуба металлокерамической коронкой на импланте`,
 					categoryRu: "Ортопедическая стоматология",
 					stageKind: "stage_3_orthopedics",
 					tierKey: "economy",
 					unitPriceKopecks: 1800000,
-					materialNameRu: "Металлокерамика Co-Cr Duceram",
+					materialNameRu: "Металлокерамика Co-Cr биосовместимая",
 				});
 				rawItemsOptimum.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.005",
-					nameRu: `Восстановление зуба коронкой из диоксида циркония / IPS e.max CAD на импланте`,
+					nameRu: `Восстановление зуба цельноанатомической коронкой из диоксида циркония на импланте`,
 					categoryRu: "Ортопедическая стоматология",
 					stageKind: "stage_3_orthopedics",
 					tierKey: "optimum",
 					unitPriceKopecks: 3200000,
-					materialNameRu: "Диоксид циркония Prettau / IPS e.max CAD",
+					materialNameRu: "Транслюцентный диоксид циркония / прессованная стеклокерамика",
 				});
 				rawItemsPremium.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.005",
-					nameRu: `Цельнокерамическая коронка премиум на индивидуальном циркониевом абатменте CAD/CAM`,
+					nameRu: `Цельнокерамическая высокоэстетичная коронка на индивидуальном циркониевом абатменте CAD/CAM${customNotes}`,
 					categoryRu: "Ортопедическая стоматология",
 					stageKind: "stage_3_orthopedics",
 					tierKey: "premium",
 					unitPriceKopecks: 5400000,
-					materialNameRu: "Мультилеер цирконий Katana HTML Plus, индивидуальный абатмент CAD/CAM",
+					materialNameRu: "Многослойный высокопрозрачный диоксид циркония, индивидуальный CAD/CAM абатмент",
 				});
 			} else {
 				// Caries / General therapy
 				rawItemsEconomy.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.002.001",
-					nameRu: `Восстановление зуба ${validTooth} микрогибридным композитом`,
+					nameRu: `Восстановление зуба ${validTooth} светоотверждаемым композитом`,
 					categoryRu: "Терапевтическая стоматология",
 					stageKind: "stage_1_therapy",
 					tierKey: "economy",
@@ -1416,25 +1417,26 @@ export const suggestTreatmentPlanTool: ToolDefinition<
 				rawItemsOptimum.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.002.002",
-					nameRu: `Анатомическая реставрация зуба ${validTooth} нанокомпозитом Estelite / Filtek`,
+					nameRu: `Анатомическая эстетическая реставрация зуба ${validTooth} нанокомпозитом`,
 					categoryRu: "Терапевтическая стоматология",
 					stageKind: "stage_1_therapy",
 					tierKey: "optimum",
 					unitPriceKopecks: 650000,
-					materialNameRu: "Нанокомпозит Filtek Ultimate / Estelite Asteria",
+					materialNameRu: "Наногибридный реставрационный композит высокой полируемости",
 				});
 				rawItemsPremium.push({
 					toothNumber: validTooth,
 					code804n: "A16.07.003",
-					nameRu: `Керамическая вкладка / накладка (Inlay/Onlay) IPS e.max CAD зуба ${validTooth}`,
+					nameRu: `Керамическая вкладка / накладка (Inlay/Onlay) зуба ${validTooth}${customNotes}`,
 					categoryRu: "Ортопедическая стоматология",
 					stageKind: "stage_3_orthopedics",
 					tierKey: "premium",
 					unitPriceKopecks: 1850000,
-					materialNameRu: "Прессованная керамика IPS e.max Press / CAD",
+					materialNameRu: "Прессованная керамика высокой точности краевого прилегания",
 				});
 			}
 		}
+
 
 		const discount = args.discountPercent || 0;
 		const installmentMonthsNum = (parseInt(args.installmentMonths || "6", 10) || 6) as 3 | 6 | 12 | 24;

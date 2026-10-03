@@ -337,7 +337,7 @@ export function MedicalWasteAccumulateTab({
 				<div className="flex items-center gap-3">
 					<Barcode size={28} className="text-[var(--teal,#0d9488)]" />
 					<div>
-						<div className="text-xs text-muted">Сгенерированный штрихкод СанПиН</div>
+						<div className="text-xs text-muted">Сгенерированный штрихкод маркировки</div>
 						<div className="font-mono font-bold text-ink text-sm">{barcode}</div>
 					</div>
 				</div>

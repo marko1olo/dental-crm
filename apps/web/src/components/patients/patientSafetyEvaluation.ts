@@ -190,7 +190,7 @@ export function evaluatePatientSafetyFlags(
 			description: `У пациента зарегистрирована аллергия: ${rawNotes}`,
 			forbiddenProcedures: [`Применение препаратов, содержащих ${rawNotes}`],
 			mandatoryPrecautions: [
-				"Яркая маркировка титульного листа амбулаторной карты 043/у",
+				"Яркая маркировка титульного листа медицинской карты",
 				"Уточнение анамнеза и выбор безопасных альтернативных препаратов",
 			],
 			source: "structured_profile",
@@ -278,7 +278,7 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	if (profile.pregnancyTrimester && profile.pregnancyTrimester !== "none") {
 		const trimLabel =
 			profile.pregnancyTrimester === "trimester_1" ? "1-й триместр (неотложная помощь)" :
-			profile.pregnancyTrimester === "trimester_2" ? "2-й триместр (плановая санация разрешена)" :
+			profile.pregnancyTrimester === "trimester_2" ? "2-й триместр (плановое лечение разрешено)" :
 			profile.pregnancyTrimester === "trimester_3" ? "3-й триместр (риск сдавления НПВ)" : "Период лактации";
 		criticals.push(`Беременность/Лактация: ${trimLabel}`);
 	}
@@ -293,8 +293,8 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	if (profile.hasDiabetesMellitus) chronic.push(`Сахарный диабет${profile.diabetesType ? ` ${profile.diabetesType} типа` : ""}`);
 	if (profile.hasBronchialAsthma) chronic.push("Бронхиальная астма (ингалятор готов к применению)");
 	if (profile.hasEpilepsy) chronic.push("Эпилепсия (защита от фотостимуляции)");
-	if (profile.hasHepatitis) chronic.push("Вирусный гепатит (СанПиН 3.3686-21)");
-	if (profile.hasHiv) chronic.push("ВИЧ-инфекция (СанПиН 3.3686-21)");
+	if (profile.hasHepatitis) chronic.push("Вирусный гепатит");
+	if (profile.hasHiv) chronic.push("ВИЧ-инфекция");
 	if (profile.customChronicNotes) chronic.push(profile.customChronicNotes);
 
 	if (chronic.length > 0) {

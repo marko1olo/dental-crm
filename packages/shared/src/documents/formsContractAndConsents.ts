@@ -94,8 +94,9 @@ export const paidServiceContract736PayloadSchema = z.object({
 	medicalLicenseIssuer: z.string().trim().max(160).default(DEFAULT_CLINIC_LICENSE_ISSUER),
 	clinicPhone: z.string().trim().max(64).default(""),
 	clinicWebsite: z.string().trim().max(120).default("https://dente-clinic.ru"),
-	patientFullName: z.string().trim().min(1).max(160),
-	patientBirthDate: z.string().trim().min(10).max(32),
+	clinicCity: z.string().trim().max(120).optional().default(""),
+	patientFullName: z.string().trim().max(160).default(""),
+	patientBirthDate: z.string().trim().max(32).default(""),
 	patientPassport: z.string().trim().max(120).default(""),
 	patientAddress: z.string().trim().max(240).default(""),
 	patientPhone: z.string().trim().max(64).default(""),
@@ -104,6 +105,7 @@ export const paidServiceContract736PayloadSchema = z.object({
 	customerPassport: z.string().trim().max(120).nullable().optional(),
 	customerAddress: z.string().trim().max(240).nullable().optional(),
 	customerPhone: z.string().trim().max(64).nullable().optional(),
+	representativeBasis: z.string().trim().max(200).optional(),
 	serviceScope: z.string().trim().min(1).max(500).default("Комплексное стоматологическое лечение в соответствии с утвержденным Планом лечения и сметой"),
 	estimatedTotalRub: z.number().nonnegative().default(0),
 	serviceStart: z.string().trim().max(32).nullable().optional(),
@@ -128,17 +130,23 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const medLicIssuer = payload.medicalLicenseIssuer || DEFAULT_CLINIC_LICENSE_ISSUER;
 	const clinicPhone = payload.clinicPhone || "";
 	const clinicWebsite = payload.clinicWebsite || "https://dente-clinic.ru";
+	const clinicCity =
+		payload.clinicCity?.trim() ||
+		(payload.clinicAddress?.includes("г. ")
+			? payload.clinicAddress.match(/г\.\s*[^,]+/)?.[0]
+			: "") ||
+		"г. ____________________";
 
-	const patientName = payload.patientFullName || "";
-	const patientBirth = payload.patientBirthDate || "__.__.____";
-	const patientPassport = payload.patientPassport || "_________________________________";
-	const patientAddress = payload.patientAddress || "_________________________________";
-	const patientPhone = payload.patientPhone || "_______________";
+	const patientName = payload.patientFullName?.trim() || "_________________________________";
+	const patientBirth = payload.patientBirthDate?.trim() || "__.__.____";
+	const patientPassport = payload.patientPassport?.trim() || "_________________________________";
+	const patientAddress = payload.patientAddress?.trim() || "_________________________________";
+	const patientPhone = payload.patientPhone?.trim() || "_______________";
 
-	const customerName = payload.customerFullName || patientName;
-	const customerPassport = payload.customerPassport || patientPassport;
-	const customerAddress = payload.customerAddress || patientAddress;
-	const customerPhone = payload.customerPhone || patientPhone;
+	const customerName = payload.customerFullName?.trim() || patientName;
+	const customerPassport = payload.customerPassport?.trim() || patientPassport;
+	const customerAddress = payload.customerAddress?.trim() || patientAddress;
+	const customerPhone = payload.customerPhone?.trim() || patientPhone;
 
 	const scope = payload.serviceScope || "Оказание специализированной стоматологической помощи в соответствии с согласованным Планом лечения";
 	const totalRub = Number(payload.estimatedTotalRub ?? payload.estimatedTotalAmountRub) || 0;
@@ -188,11 +196,11 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 
   <div class="doc-title-block" style="margin: 6px 0;">
     <h1 class="doc-main-title">ДОГОВОР № ${escapeHtml(contractNum)}<br>НА ОКАЗАНИЕ ПЛАТНЫХ МЕДИЦИНСКИХ УСЛУГ</h1>
-    <p class="doc-sub-title">г. Москва &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; «${escapeHtml(contractDate)}» г.</p>
+    <p class="doc-sub-title">${escapeHtml(clinicCity)} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; «${escapeHtml(contractDate)}» г.</p>
   </div>
 
   <p class="contract-p">
-    <strong>${escapeHtml(clinicName)}</strong>, именуемое в дальнейшем «Исполнитель», в лице генерального директора / уполномоченного лица, действующего на основании Устава и лицензии на осуществление медицинской деятельности № ${escapeHtml(medLic)} от ${escapeHtml(medLicDate)} г., с одной стороны, и гражданин(ка) <strong>${escapeHtml(customerName)}</strong>, паспорт: ${escapeHtml(customerPassport)}, адрес: ${escapeHtml(customerAddress)}, именуемый(ая) в дальнейшем «Заказчик» (он же «Пациент»${customerName !== patientName ? `, действующий в пользу Пациента: ${escapeHtml(patientName)}` : ""}), с другой стороны, совместно именуемые «Стороны», заключили настоящий Договор о нижеследующем:
+    <strong>${escapeHtml(clinicName)}</strong>, именуемое в дальнейшем «Исполнитель», в лице генерального директора / уполномоченного лица, действующего на основании Устава и лицензии на осуществление медицинской деятельности № ${escapeHtml(medLic)} от ${escapeHtml(medLicDate)} г., с одной стороны, и гражданин(ка) <strong>${escapeHtml(customerName)}</strong>, дата рождения: ${escapeHtml(patientBirth)}, паспорт: ${escapeHtml(customerPassport)}, адрес: ${escapeHtml(customerAddress)}, именуемый(ая) в дальнейшем «Заказчик» (он же «Пациент»${customerName !== patientName ? `, действующий в пользу Пациента: ${escapeHtml(patientName)}` : ""}), с другой стороны, совместно именуемые «Стороны», заключили настоящий Договор о нижеследующем:
   </p>
 
   <div class="contract-section-title">1. Предмет договора и уведомление о государственных гарантиях</div>
@@ -232,7 +240,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 
   <div class="contract-section-title">5. Контролирующие органы и порядок разрешения споров</div>
   <p class="contract-p">
-    5.1. Сведения о надзорных органах: Территориальный орган Росздравнадзора по г. Москве и Московской области, Управление Роспотребнадзора по г. Москве, Департамент здравоохранения г. Москвы (тел. единой справочной службы: +7 (495) 777-77-77).
+    5.1. Государственный контроль качества и безопасности медицинской деятельности осуществляют: Территориальный орган Росздравнадзора (официальный сайт органа лицензирования: <strong>roszdravnadzor.gov.ru</strong>), территориальное Управление Роспотребнадзора и региональный орган исполнительной власти субъекта РФ в сфере охраны здоровья граждан.
   </p>
 
   <div class="contract-section-title">6. Адреса, реквизиты и подписи сторон</div>
@@ -251,11 +259,12 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <td style="width:50%; vertical-align:top;">
         <strong>ЗАКАЗЧИК (ПАЦИЕНТ):</strong><br>
         ФИО: <strong>${escapeHtml(customerName)}</strong><br>
+        Дата рождения: ${escapeHtml(patientBirth)}<br>
         Паспорт: ${escapeHtml(customerPassport)}<br>
         Адрес: ${escapeHtml(customerAddress)}<br>
         Телефон: ${escapeHtml(customerPhone)}<br><br><br>
         Подпись Заказчика:<br><br>
-        ___________________ / ${escapeHtml(customerName)} /
+        ___________________ / ${escapeHtml(customerName === "_________________________________" ? "____________________" : customerName)} /
       </td>
     </tr>
   </table>
@@ -289,9 +298,9 @@ export const actOfCompletedWorksPayloadSchema = z.object({
 	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
 	clinicInn: z.string().trim().max(16).default(""),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
-	customerFullName: z.string().trim().min(1).max(160),
+	customerFullName: z.string().trim().max(160).default(""),
 	customerPassport: z.string().trim().max(120).default("Паспорт гражданина РФ"),
-	patientFullName: z.string().trim().min(1).max(160),
+	patientFullName: z.string().trim().max(160).default(""),
 	attendingDoctorFullName: z.string().trim().max(160).default(""),
 	attendingDoctorSpecialty: z.string().trim().max(120).default("Врач-стоматолог"),
 	items: z.array(actOfCompletedWorksItemSchema).min(1),
@@ -315,9 +324,9 @@ export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayloa
 	const clinicInn = payload.clinicInn || "_______________";
 	const medLic = payload.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER;
 
-	const customerName = payload.customerFullName || payload.patientFullName || "";
-	const patientName = payload.patientFullName || customerName;
-	const doctorName = payload.attendingDoctorFullName || "";
+	const customerName = payload.customerFullName?.trim() || payload.patientFullName?.trim() || "_________________________________";
+	const patientName = payload.patientFullName?.trim() || customerName;
+	const doctorName = payload.attendingDoctorFullName?.trim() || "_________________________";
 	const doctorSpecialty = payload.attendingDoctorSpecialty || "Врач-стоматолог";
 
 	const items: ActOfCompletedWorksItem[] = payload.items || [];
@@ -423,12 +432,12 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <td style="width:50%; vertical-align:top;">
         <strong>УСЛУГИ СДАЛ (ИСПОЛНИТЕЛЬ):</strong><br><br>
         Врач-стоматолог:<br><br>
-        ___________________ / ${escapeHtml(doctorName)} / <span class="stamp-seal">М.П.</span>
+        ___________________ / ${escapeHtml(doctorName === "_________________________" ? "____________________" : doctorName)} / <span class="stamp-seal">М.П.</span>
       </td>
       <td style="width:50%; vertical-align:top;">
         <strong>УСЛУГИ ПРИНЯЛ (ЗАКАЗЧИК):</strong><br><br>
         Пациент / Заказчик:<br><br>
-        ___________________ / ${escapeHtml(customerName)} /
+        ___________________ / ${escapeHtml(customerName === "_________________________________" ? "____________________" : customerName)} /
       </td>
     </tr>
   </table>

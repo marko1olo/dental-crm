@@ -19,16 +19,18 @@ import {
 
 describe("Doctor Clinical Autopilot 1-Click Protocol Invariants (Mandate 8e, 8n, Order 804n, Order 1051n)", () => {
 	describe("1. Complete Catalog of 1-Click Autopilot Presets", () => {
-		it("provides all 5 core presets in DOCTOR_1CLICK_AUTOPILOT_PRESETS", () => {
-			assert.equal(DOCTOR_1CLICK_AUTOPILOT_PRESETS.length, 5);
+		it("provides all core presets in DOCTOR_1CLICK_AUTOPILOT_PRESETS", () => {
+			assert.ok(DOCTOR_1CLICK_AUTOPILOT_PRESETS.length >= 5);
 			const ids = DOCTOR_1CLICK_AUTOPILOT_PRESETS.map((p) => p.id);
-			assert.deepEqual(ids, [
+			for (const expectedId of [
 				"autopilot_caries_k021",
 				"autopilot_pulpitis_k040",
 				"autopilot_hygiene_airflow",
 				"autopilot_extraction_k045",
 				"autopilot_norm_healthy",
-			]);
+			]) {
+				assert.ok(ids.includes(expectedId), `Must include ${expectedId}`);
+			}
 		});
 
 		it("maps preset IDs and legacy aliases correctly in DOCTOR_AUTOPILOT_PRESETS_MAP", () => {

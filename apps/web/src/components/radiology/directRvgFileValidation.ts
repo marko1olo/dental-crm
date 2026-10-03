@@ -20,7 +20,7 @@ import type { RadiologyStudy } from "./types";
 export interface SensorModelSpec {
 	id: string;
 	name: string;
-	brand: "vatech" | "carestream" | "kavo" | "fona" | "woodpecker" | "planmeca" | "sirona" | "generic";
+	brand: "vatech" | "carestream" | "kavo" | "fona" | "woodpecker" | "planmeca" | "sirona" | "dexis" | "acteon" | "handy" | "myray" | "owandy" | "eighteeth" | "xpect_vision" | "generic";
 	resolution: string;
 	pixelSpacing: number;
 }
@@ -75,6 +75,55 @@ export const POPULAR_RVG_SENSORS: readonly SensorModelSpec[] = [
 		resolution: "33.3 lp/mm (WiFi / USB)",
 		pixelSpacing: 0.04,
 	},
+	{
+		id: "dexis_titanium",
+		name: "Dexis Titanium / Platinum",
+		brand: "dexis",
+		resolution: "25.0 lp/mm (TrueCapture)",
+		pixelSpacing: 0.02,
+	},
+	{
+		id: "acteon_sopix2",
+		name: "Acteon / Sopro Sopix2 / PSPIX",
+		brand: "acteon",
+		resolution: "25.0 lp/mm (ACE)",
+		pixelSpacing: 0.022,
+	},
+	{
+		id: "handy_hdr_600",
+		name: "Handy HDR-500 / HDR-600",
+		brand: "handy",
+		resolution: "26.3 lp/mm (Direct USB)",
+		pixelSpacing: 0.019,
+	},
+	{
+		id: "myray_zen_x",
+		name: "MyRay Zen-X",
+		brand: "myray",
+		resolution: "25.0 lp/mm (HD CMOS)",
+		pixelSpacing: 0.02,
+	},
+	{
+		id: "owandy_opteo",
+		name: "Owandy Opteo / One",
+		brand: "owandy",
+		resolution: "25.0 lp/mm (Direct USB)",
+		pixelSpacing: 0.02,
+	},
+	{
+		id: "eighteeth_nanopix",
+		name: "Eighteeth NanoPix 1 / 2",
+		brand: "eighteeth",
+		resolution: "25.0 lp/mm (Ultra-Slim)",
+		pixelSpacing: 0.02,
+	},
+	{
+		id: "xpect_vision_photon",
+		name: "Xpect Vision Photon-Counting",
+		brand: "xpect_vision",
+		resolution: "33.0 lp/mm (Direct Conversion)",
+		pixelSpacing: 0.015,
+	},
 ];
 
 export function validateRadiologyUploadFile(file: { name: string; type?: string }): {
@@ -112,7 +161,7 @@ export function detectRadiologySensorBrand(input: string): string {
 	if (lower.includes("kavo") || lower.includes("gendex") || lower.includes("gxs") || lower.includes("vixwin")) {
 		return "KaVo Gendex GXS-700";
 	}
-	if (lower.includes("fona") || lower.includes("cdrelite") || lower.includes("schick")) {
+	if (lower.includes("fona") || lower.includes("cdrelite") || lower.includes("stellaris")) {
 		return "FONA CDRelite / Schick";
 	}
 	if (lower.includes("woodpecker") || lower.includes("i-sensor") || lower.includes("isensor")) {
@@ -121,8 +170,29 @@ export function detectRadiologySensorBrand(input: string): string {
 	if (lower.includes("romexis") || lower.includes("planmeca") || lower.includes("prosensor")) {
 		return "Planmeca ProSensor HD";
 	}
-	if (lower.includes("sidexis") || lower.includes("sirona") || lower.includes("xios")) {
+	if (lower.includes("sidexis") || lower.includes("sirona") || lower.includes("xios") || lower.includes("schick")) {
 		return "Dentsply Sirona XIOS XG Supreme";
+	}
+	if (lower.includes("dexis") || lower.includes("dexdata")) {
+		return "Dexis Titanium / Platinum";
+	}
+	if (lower.includes("acteon") || lower.includes("sopro") || lower.includes("sopix") || lower.includes("pspix")) {
+		return "Acteon / Sopro Sopix2 / PSPIX";
+	}
+	if (lower.includes("handy") || lower.includes("hdr-500") || lower.includes("hdr-600")) {
+		return "Handy HDR-500 / HDR-600";
+	}
+	if (lower.includes("myray") || lower.includes("zen-x") || lower.includes("zenx")) {
+		return "MyRay Zen-X";
+	}
+	if (lower.includes("owandy") || lower.includes("opteo") || lower.includes("quickvision")) {
+		return "Owandy Opteo / One";
+	}
+	if (lower.includes("eighteeth") || lower.includes("nanopix")) {
+		return "Eighteeth NanoPix 1 / 2";
+	}
+	if (lower.includes("xpect") || lower.includes("photon")) {
+		return "Xpect Vision Photon-Counting";
 	}
 	return "Vatech EzSensor HD";
 }

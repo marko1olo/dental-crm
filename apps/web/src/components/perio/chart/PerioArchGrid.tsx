@@ -82,7 +82,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 					</div>
 					<div className="flex flex-col gap-0.5">
 						<span className="text-sm font-black text-[var(--ink)]">
-							6 точек зондирования для Формы 043/у (Tier 3, по требованию)
+							6 точек зондирования (углублённый осмотр по требованию)
 						</span>
 						<span className="text-xs text-[var(--muted)]">
 							Изолированы в Tier 3 для углублённого пародонтологического приёма.

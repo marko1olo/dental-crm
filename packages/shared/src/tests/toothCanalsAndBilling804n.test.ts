@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
+	detectOrder804nCategory,
 	getAnatomicalRootCanalCount,
 	getEndodonticOrder804nPair,
 	getOrder804nEndoProcedureForTooth,
+	isValidOrder804nCode,
+	ORDER_804N_CODE_REGEX,
 	ORDER_804N_ENDODONTIC_PACKAGES,
 	ORDER_804N_INSTRUMENTATION,
 	ORDER_804N_OBTURATIONS,
@@ -129,5 +132,30 @@ describe("toothCanalsAndBilling804n — Root Canals & Minzdrav Order 804n Billin
 		const p46_4c = getOrder804nEndoProcedureForTooth(46, 4);
 		assert.equal(p46_4c.canalCount, 4);
 		assert.equal(p46_4c.code, "A16.07.008.004");
+	});
+
+	test("isValidOrder804nCode validates statutory codes and rejects non-standard strings", () => {
+		assert.equal(isValidOrder804nCode("A16.07.002"), true);
+		assert.equal(isValidOrder804nCode("A16.07.002.001"), true);
+		assert.equal(isValidOrder804nCode("B01.065.001"), true);
+		assert.equal(isValidOrder804nCode("A06.07.003"), true);
+		assert.equal(isValidOrder804nCode("A11.07.012"), true);
+
+		assert.equal(isValidOrder804nCode(""), false);
+		assert.equal(isValidOrder804nCode("INVALID"), false);
+		assert.equal(isValidOrder804nCode("123.456"), false);
+		assert.equal(isValidOrder804nCode("C16.07.002"), false);
+	});
+
+	test("detectOrder804nCategory accurately maps 804n codes and titles to clinical categories", () => {
+		assert.equal(detectOrder804nCategory("A16.07.002"), "therapy");
+		assert.equal(detectOrder804nCategory("A16.07.001"), "surgery");
+		assert.equal(detectOrder804nCategory("A16.07.006"), "orthopedics");
+		assert.equal(detectOrder804nCategory("A16.07.048"), "orthodontics");
+		assert.equal(detectOrder804nCategory("A16.07.051"), "hygiene");
+		assert.equal(detectOrder804nCategory("A06.07.003"), "radiology");
+		assert.equal(detectOrder804nCategory("B01.065.001"), "consultation");
+		assert.equal(detectOrder804nCategory("B01.003.004"), "anesthesia");
+		assert.equal(detectOrder804nCategory("PKG.CHECKUP", "Пакет чекап"), "package");
 	});
 });

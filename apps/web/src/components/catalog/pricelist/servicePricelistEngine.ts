@@ -102,6 +102,9 @@ export function calculateTierPrice(
 		case 'promo':
 			// Promo discount is -10% of standard price
 			return roundPrice(basePriceRub * 0.9, 'round_50');
+		case 'night_weekend':
+			// Night & weekend rate is +30% rounded to nearest 50 rubles
+			return roundPrice(basePriceRub * 1.3, 'round_50');
 		default:
 			return Math.round(basePriceRub * 100) / 100;
 	}
@@ -214,7 +217,7 @@ export function applyBatchPriceMarkup(
 ): ServicePricelistItem[] {
 	const roundMode = options.roundMode ?? 'none';
 	const targetIdsSet = options.targetItemIds ? new Set(options.targetItemIds) : null;
-	const applyTiers = options.applyToTiers ?? ['standard', 'vip', 'dms', 'promo'];
+	const applyTiers = options.applyToTiers ?? ['standard', 'vip', 'dms', 'promo', 'night_weekend'];
 
 	return items.map((item) => {
 		if (targetIdsSet && !targetIdsSet.has(item.id)) {
@@ -240,7 +243,7 @@ export function applyBatchPriceMarkup(
 
 		const updatedTierPrices: Partial<Record<PriceTierKind, number>> = { ...(item.tierPrices ?? {}) };
 
-		for (const tier of ['vip', 'dms', 'promo'] as const) {
+		for (const tier of ['vip', 'dms', 'promo', 'night_weekend'] as const) {
 			if (applyTiers.includes(tier)) {
 				const currentPrice = item.tierPrices?.[tier] ?? calculateTierPrice(item.basePriceRub, tier);
 				let newTierPrice = currentPrice;
@@ -622,7 +625,7 @@ export function exportPricelistToCsv(
 ): string {
 	const delimiter = options?.delimiter ?? ';';
 	const headers = [
-		'Код услуги',
+		'Код 804н',
 		'Коммерческое наименование',
 		'Официальное наименование',
 		'Категория',
@@ -631,6 +634,7 @@ export function exportPricelistToCsv(
 		'Цена VIP (руб)',
 		'Цена ДМС (руб)',
 		'Цена Промо (руб)',
+		'Цена Ночной/Выходной (руб)',
 		'Себестоимость материалов (руб)',
 		'Зуботехническая лаборатория (руб)',
 		'НДС',
@@ -652,6 +656,7 @@ export function exportPricelistToCsv(
 			item.tierPrices?.vip ?? calculateTierPrice(item.basePriceRub, 'vip'),
 			item.tierPrices?.dms ?? calculateTierPrice(item.basePriceRub, 'dms'),
 			item.tierPrices?.promo ?? calculateTierPrice(item.basePriceRub, 'promo'),
+			item.tierPrices?.night_weekend ?? calculateTierPrice(item.basePriceRub, 'night_weekend'),
 			item.materialCostRub ?? 0,
 			item.labCostRub ?? 0,
 			STATUTORY_VAT_EXEMPTION_NOTE,
@@ -793,23 +798,25 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		return { validItems: [], invalidRows: [{ rowIndex: 0, error: 'Файл пуст' }], totalRows: 0 };
 	}
 
-	const headers = rawRows[0]!.map((h) => h.toLowerCase());
+	const headers = rawRows[0]!.map((h) => h.toLowerCase().trim());
 	const findCol = (keys: string[]) =>
 		headers.findIndex((h) => keys.some((k) => h.includes(k)));
 
-	const colCode = findCol(['код 804', '804н', 'код', 'code']);
-	const colCommTitle = findCol(['коммерческое', 'наименование', 'услуга', 'название', 'title']);
+	// Enhanced multi-vendor column recognition (IDENT, DentalPRO, iStom, 1C:Медицина, StomX, Order 804n)
+	const colCode = findCol(['код 804', '804н', 'номенклатур', 'артикул', 'кодноменклатуры', 'код услуги', 'код', 'code', 'id', 'арт']);
+	const colCommTitle = findCol(['коммерческое', 'наименование', 'услуга', 'номенклатура', 'название', 'процедура', 'title']);
 	const colStatTitle = findCol(['официальное', 'номенклатур']);
-	const colCat = findCol(['категория', 'раздел', 'category']);
-	const colSpec = findCol(['специальность', 'врач', 'specialty']);
-	const colPrice = findCol(['цена стандарт', 'цена', 'стоимость', 'price', 'руб']);
+	const colCat = findCol(['категория', 'раздел', 'группаноменклатуры', 'группа', 'папка', 'направление', 'отделение', 'category']);
+	const colSpec = findCol(['специальность', 'специализация', 'врач', 'specialty']);
+	const colPrice = findCol(['цена стандарт', 'базовая цена', 'стоимость', 'тариф', 'прайс', 'цена', 'price', 'руб']);
 	const colVip = findCol(['vip', 'вип']);
 	const colDms = findCol(['дмс', 'dms', 'страхов']);
 	const colPromo = findCol(['промо', 'акци', 'promo']);
-	const colMatCost = findCol(['материал', 'расход']);
+	const colNight = findCol(['ночной', 'выходной', 'night']);
+	const colMatCost = findCol(['себестоимость', 'материал', 'расход']);
 	const colLabCost = findCol(['лаборатор', 'зуботехническ', 'техник']);
 	const colIcd = findCol(['мкб', 'icd']);
-	const colDur = findCol(['длительность', 'минут', 'время']);
+	const colDur = findCol(['длительность', 'минут', 'время', 'хронометраж']);
 
 	const validItems: ServicePricelistItem[] = [];
 	const invalidRows: CsvRowError[] = [];
@@ -818,14 +825,14 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		const row = rawRows[rowIndex]!;
 		if (row.length === 0 || row.every((c) => c === '')) continue;
 
-		const code804n = (colCode >= 0 ? row[colCode] : '')?.trim() || `A16.07.999.${String(rowIndex).padStart(3, '0')}`;
+		const rawCode = (colCode >= 0 ? row[colCode] : '')?.trim() || '';
 		const commercialTitle = (colCommTitle >= 0 ? row[colCommTitle] : '')?.trim() || '';
 		const statutoryTitle804n = (colStatTitle >= 0 ? row[colStatTitle] : '')?.trim() || commercialTitle;
 
 		if (!commercialTitle) {
 			invalidRows.push({
 				rowIndex,
-				code804n,
+				code804n: rawCode,
 				error: 'Отсутствует наименование услуги',
 			});
 			continue;
@@ -837,19 +844,42 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		if (Number.isNaN(basePriceRub) || basePriceRub < 0) {
 			invalidRows.push({
 				rowIndex,
-				code804n,
+				code804n: rawCode,
 				title: commercialTitle,
 				error: `Некорректная цена: "${rawPriceStr}"`,
 			});
 			continue;
 		}
 
-		const category = colCat >= 0 && row[colCat] ? parseCategoryFromLabel(row[colCat]!) : detectCategoryFrom804nCode(code804n);
+		const category = colCat >= 0 && row[colCat] ? parseCategoryFromLabel(row[colCat]!) : detectCategoryFrom804nCode(rawCode);
 		const specialty = colSpec >= 0 && row[colSpec] ? parseSpecialtyFromLabel(row[colSpec]!) : 'general';
+
+		// ZERO MOCKS: never generate fake A16.07.999.xxx!
+		// Use real Order 804n statutory nomenclature code:
+		let code804n = rawCode;
+		if (!code804n || !/^[ABАВ]\d{2}\.\d{2}\.\d{3}/i.test(code804n)) {
+			// Canonical Minzdrav Order 804n category fallbacks:
+			const categoryCodeMap: Record<string, string> = {
+				therapy: 'A16.07.002',
+				surgery: 'A16.07.001',
+				orthopedics: 'A16.07.004',
+				orthodontics: 'A16.07.048',
+				hygiene: 'A16.07.051',
+				periodontics: 'A16.07.018',
+				radiology: 'A06.07.007',
+				consultation: 'B01.065.001',
+				pediatric: 'A16.07.002.009',
+				anesthesia: 'B01.003.004.005',
+			};
+			code804n = categoryCodeMap[category] || 'A16.07.002';
+		} else {
+			code804n = code804n.toUpperCase().replace(/^А/, 'A').replace(/^В/, 'B');
+		}
 
 		const rawVip = colVip >= 0 ? parseFloat(row[colVip]?.replace(/\s+/g, '').replace(',', '.') || 'NaN') : NaN;
 		const rawDms = colDms >= 0 ? parseFloat(row[colDms]?.replace(/\s+/g, '').replace(',', '.') || 'NaN') : NaN;
 		const rawPromo = colPromo >= 0 ? parseFloat(row[colPromo]?.replace(/\s+/g, '').replace(',', '.') || 'NaN') : NaN;
+		const rawNight = colNight >= 0 ? parseFloat(row[colNight]?.replace(/\s+/g, '').replace(',', '.') || 'NaN') : NaN;
 
 		const rawMat = colMatCost >= 0 ? parseFloat(row[colMatCost]?.replace(/\s+/g, '').replace(',', '.') || '0') : 0;
 		const rawLab = colLabCost >= 0 ? parseFloat(row[colLabCost]?.replace(/\s+/g, '').replace(',', '.') || '0') : 0;
@@ -858,9 +888,14 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 		const icdRaw = colIcd >= 0 && row[colIcd] ? row[colIcd]!.split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [];
 
 		const tierPrices: Partial<Record<PriceTierKind, number>> = {};
-		if (!Number.isNaN(rawVip)) tierPrices.vip = Math.round(rawVip);
-		if (!Number.isNaN(rawDms)) tierPrices.dms = Math.round(rawDms);
-		if (!Number.isNaN(rawPromo)) tierPrices.promo = Math.round(rawPromo);
+		if (!Number.isNaN(rawVip)) tierPrices.vip = Math.round(rawVip * 100) / 100;
+		if (!Number.isNaN(rawDms)) tierPrices.dms = Math.round(rawDms * 100) / 100;
+		if (!Number.isNaN(rawPromo)) tierPrices.promo = Math.round(rawPromo * 100) / 100;
+		if (!Number.isNaN(rawNight)) tierPrices.night_weekend = Math.round(rawNight * 100) / 100;
+
+		const exactBasePriceRub = Math.round(basePriceRub * 100) / 100;
+		const exactMatCostRub = !Number.isNaN(rawMat) && rawMat >= 0 ? Math.round(rawMat * 100) / 100 : 0;
+		const exactLabCostRub = !Number.isNaN(rawLab) && rawLab >= 0 ? Math.round(rawLab * 100) / 100 : 0;
 
 		const item: ServicePricelistItem = {
 			id: `import-${Date.now()}-${rowIndex}`,
@@ -869,10 +904,10 @@ export function importPricelistFromCsv(csvText: string): CsvImportResult {
 			statutoryTitle804n,
 			category,
 			specialty,
-			basePriceRub: Math.round(basePriceRub),
-			basePriceKopecks: rublesToKopecks(basePriceRub),
-			materialCostRub: !Number.isNaN(rawMat) && rawMat >= 0 ? Math.round(rawMat) : 0,
-			labCostRub: !Number.isNaN(rawLab) && rawLab >= 0 ? Math.round(rawLab) : 0,
+			basePriceRub: exactBasePriceRub,
+			basePriceKopecks: rublesToKopecks(exactBasePriceRub),
+			materialCostRub: exactMatCostRub,
+			labCostRub: exactLabCostRub,
 			tierPrices,
 			vatRate: 0,
 			vatExemptionArticle: STATUTORY_VAT_EXEMPTION_NOTE,
@@ -904,6 +939,9 @@ export interface ClinicPricelistPrintInfo {
 	readonly clinicLicense: string;
 	readonly chiefDoctorName: string;
 	readonly effectiveDateRu: string;
+	readonly inn?: string | undefined;
+	readonly ogrn?: string | undefined;
+	readonly isConsumerCornerStand?: boolean | undefined;
 }
 
 /**
@@ -1109,6 +1147,7 @@ export function generatePrintablePricelistHtml(
 			<div class="clinic-details">
 				<div>${clinicInfo.clinicAddress}${clinicInfo.clinicPhone ? ` · Тел: ${clinicInfo.clinicPhone}` : ''}</div>
 				<div>Лицензия на осуществление медицинской деятельности: ${clinicInfo.clinicLicense}</div>
+				${clinicInfo.inn || clinicInfo.ogrn ? `<div>${clinicInfo.inn ? `ИНН: ${clinicInfo.inn}` : ''}${clinicInfo.inn && clinicInfo.ogrn ? ' · ' : ''}${clinicInfo.ogrn ? `ОГРН: ${clinicInfo.ogrn}` : ''}</div>` : ''}
 			</div>
 		</div>
 		<div class="approval-block">
@@ -1120,6 +1159,7 @@ export function generatePrintablePricelistHtml(
 	</div>
 
 	<div class="pricelist-title-banner">
+		${clinicInfo.isConsumerCornerStand ? '<div style="font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #0284c7; margin-bottom: 2px;">Информационный стенд «Уголок потребителя»</div>' : ''}
 		<h2>ПРЕЙСКУРАНТ ЦЕН НА МЕДИЦИНСКИЕ СТОМАТОЛОГИЧЕСКИЕ УСЛУГИ</h2>
 		<div class="sub">
 			Введен в действие с ${clinicInfo.effectiveDateRu} г. (${PRICE_TIER_LABELS[tier]})
@@ -1130,11 +1170,13 @@ export function generatePrintablePricelistHtml(
 	${categorySectionsHtml}
 
 	<div class="footer-legal">
-		<strong>Правовое основание:</strong>
+		<strong>Правовое основание и информация для потребителей:</strong>
 		Все медицинские стоматологические услуги оказываются в соответствии с законодательством Российской Федерации,
-		лицензионными требованиями и клиническими рекомендациями Стоматологической Ассоциации России (СтАР).
+		Правилами предоставления платных медицинских услуг (Постановление Правительства РФ № 736),
+		Законом РФ № 2300-1 «О защите прав потребителей» и клиническими рекомендациями Стоматологической Ассоциации России (СтАР).
 		На основании подпункта 2 пункта 2 статьи 149 Налогового кодекса Российской Федерации медицинские услуги
 		НДС не облагаются (0%).
+		${clinicInfo.isConsumerCornerStand ? '<div style="margin-top: 4px;">Сведения о надзорных органах: Территориальный орган Росздравнадзора, Управление Роспотребнадзора, орган исполнительной власти субъекта РФ в сфере охраны здоровья. Прейскурант доступен для ознакомления каждому пациенту по первому требованию.</div>' : ''}
 	</div>
 
 	<div class="signatures">

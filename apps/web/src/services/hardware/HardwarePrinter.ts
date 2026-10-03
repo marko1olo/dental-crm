@@ -179,7 +179,7 @@ export class HardwarePrinter {
 		if (payload.operationType === "income_return") {
 			appendLine("КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА");
 		} else {
-			appendLine("КАССОВЫЙ ЧЕК / ПРИХОД (54-ФЗ)");
+			appendLine("КАССОВЫЙ ЧЕК / ПРИХОД");
 		}
 		appendBytes([0x1b, 0x45, 0x00]); // Bold OFF
 
@@ -476,7 +476,7 @@ export class HardwarePrinter {
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Кассовый чек 54-ФЗ - ${payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</title>
+	<title>Кассовый чек - ${payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</title>
 	<style>
 		@page { size: ${this.config.paperWidthMm === 80 ? "80mm auto" : "58mm auto"}; margin: 0; }
 		* { box-sizing: border-box; }
@@ -508,7 +508,7 @@ export class HardwarePrinter {
 	<div class="center" style="font-size: 10px;">Лицензия: № ЛО41-01137-77/00368421</div>
 	<div class="divider"></div>
 	<div class="center bold" style="font-size: 12px;">
-		${isReturn ? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА" : "КАССОВЫЙ ЧЕК / ПРИХОД (54-ФЗ)"}
+		${isReturn ? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА" : "КАССОВЫЙ ЧЕК / ПРИХОД"}
 	</div>
 	<div class="divider"></div>
 	<div>Дата: ${dateFormatted}</div>

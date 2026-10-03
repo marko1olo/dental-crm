@@ -70,7 +70,7 @@ function mapRawToAuditEntryParams(raw: Record<string, unknown>): CreateAuditEntr
 	} else if (action.includes('refund')) {
 		eventType = 'delete_bill';
 		eventCategory = 'financial';
-		actionDesc = 'Возврат средств (54-ФЗ)';
+		actionDesc = 'Возврат средств из кассы';
 	} else if (action.includes('cancel') || action.includes('delete_appointment')) {
 		eventType = 'delete_appointment';
 		eventCategory = 'clinical';

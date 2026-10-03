@@ -201,7 +201,7 @@ export function AppointmentModalHeader({
               className="text-emerald-600 dark:text-emerald-400 shrink-0"
             />
             <span className="hidden sm:inline whitespace-nowrap">
-              Оплата 54-ФЗ
+              Принять оплату
             </span>
             <span className="sm:hidden">Оплата</span>
           </button>

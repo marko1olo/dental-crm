@@ -36,19 +36,19 @@ export interface StaffAuditRow {
 }
 
 const ACTION_LABELS: Record<string, { label: string; badgeClass: string }> = {
-	emr_open: { label: "Открытие ЭМК (043/у)", badgeClass: "text-sky-700 bg-sky-50 dark:bg-sky-950/40 border-sky-300" },
+	emr_open: { label: "Открытие карты пациента", badgeClass: "text-sky-700 bg-sky-50 dark:bg-sky-950/40 border-sky-300" },
 	diagnosis_change: { label: "Изменение диагноза", badgeClass: "text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300" },
 	service_add: { label: "Добавление услуги", badgeClass: "text-teal-700 bg-teal-50 dark:bg-teal-950/40 border-teal-300" },
 	service_remove: { label: "Удаление услуги", badgeClass: "text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-300" },
 	discount_apply: { label: "Ручная скидка", badgeClass: "text-purple-700 bg-purple-50 dark:bg-purple-950/40 border-purple-300" },
-	payment_receive: { label: "Приём оплаты (54-ФЗ)", badgeClass: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300" },
-	payment_refund: { label: "Возврат средств (54-ФЗ)", badgeClass: "text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-300" },
+	payment_receive: { label: "Приём оплаты", badgeClass: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300" },
+	payment_refund: { label: "Возврат средств", badgeClass: "text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-300" },
 	appointment_cancel: { label: "Отмена приёма", badgeClass: "text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-300" },
 	appointment_create: { label: "Запись на приём", badgeClass: "text-teal-700 bg-teal-50 dark:bg-teal-950/40 border-teal-300" },
 	appointment_reschedule: { label: "Перенос приёма", badgeClass: "text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-300" },
 	appointment_delete: { label: "Удаление приёма", badgeClass: "text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-300" },
 	document_print: { label: "Печать документа", badgeClass: "text-slate-700 bg-slate-50 dark:bg-slate-800 border-slate-300" },
-	document_export: { label: "Экспорт данных (152-ФЗ)", badgeClass: "text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-300" },
+	document_export: { label: "Экспорт данных", badgeClass: "text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-300" },
 	price_edit: { label: "Правка прейскуранта", badgeClass: "text-purple-700 bg-purple-50 dark:bg-purple-950/40 border-purple-300" },
 	auth_login: { label: "Вход сотрудника", badgeClass: "text-blue-700 bg-blue-50 dark:bg-blue-950/40 border-blue-300" },
 	auth_logout: { label: "Выход сотрудника", badgeClass: "text-slate-700 bg-slate-50 dark:bg-slate-800 border-slate-300" },
@@ -201,7 +201,7 @@ export function StaffActionJournalSection(): React.JSX.Element {
 						</span>
 					</div>
 					<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--muted, #64748b)" }}>
-						Слепки изменений: правки прайса, ручные скидки, отмены записей, возвраты 54-ФЗ и экспорт ПДн с diff до/после.
+						Слепки изменений: правки прайса, ручные скидки, отмены записей, возвраты оплаты и экспорт данных с diff до/после.
 					</p>
 				</div>
 
@@ -253,7 +253,7 @@ export function StaffActionJournalSection(): React.JSX.Element {
 					{[
 						{ key: "all", label: "Все действия" },
 						{ key: "clinical", label: "Клинические" },
-						{ key: "financial", label: "Финансы (54-ФЗ)" },
+						{ key: "financial", label: "Финансы и оплата" },
 						{ key: "schedule", label: "Расписание" },
 						{ key: "security", label: "Безопасность" },
 					].map((cat) => (

@@ -564,7 +564,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 						</div>
 					</div>
 					<span className="pc-status-badge paid pc-sanitation-badge">
-						Санация: {healthIndex.sanitationPercent}%
+						Здоровье зубов: {healthIndex.sanitationPercent}%
 					</span>
 				</div>
 

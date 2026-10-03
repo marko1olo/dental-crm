@@ -5,7 +5,7 @@ import { ScheduleGrid } from "../ScheduleGrid";
 import { ScheduleTimeline } from "../ScheduleTimeline";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
-import type { TargetSlotInfo } from "../WaitlistQuickFillModal";
+import type { TargetSlotInfo } from "../WaitlistDrawer";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { AppointmentScheduleDraft } from "./scheduleViewTypes";
 

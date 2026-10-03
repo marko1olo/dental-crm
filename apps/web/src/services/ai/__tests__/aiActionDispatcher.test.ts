@@ -31,7 +31,7 @@ describe("aiActionDispatcher", () => {
 
 	it("returns readable Russian titles without bureaucratic ciphers", () => {
 		assert.equal(getActionTitleRu("update_tooth_status"), "Изменение статуса зуба в одонтограмме");
-		assert.equal(getActionTitleRu("draft_043u_soap_diary"), "Заполнение дневника приёма (Форма 043/у)");
+		assert.equal(getActionTitleRu("draft_043u_soap_diary"), "Заполнение дневника приёма");
 		assert.equal(getActionTitleRu("calculate_804n_estimate"), "Формирование клинической сметы");
 		assert.equal(getActionTitleRu("book_appointment"), "Запись пациента на приём");
 		assert.equal(getActionTitleRu("cancel_appointment"), "Отмена приёма");
@@ -94,5 +94,42 @@ describe("aiActionDispatcher", () => {
 		const visitState = useVisitStore.getState();
 		assert.equal(visitState.visitNoteForm.complaint, "Ноющие боли от холодного");
 		assert.equal(visitState.visitNoteForm.diagnosis, "K02.1 Кариес дентина");
+	});
+
+	it("dispatches add_procedure_to_invoice to active visit invoice (Mandate 8e)", async () => {
+		const result = await dispatchCrmAction({
+			callId: "call_add_proc_1",
+			name: "add_procedure_to_invoice",
+			arguments: {
+				toothNumber: 36,
+				serviceCode: "A16.07.002.010",
+				serviceName: "Восстановление зуба светоотверждаемым композитом",
+				price: 4500,
+				quantity: 1,
+			},
+			confirmed: true,
+		});
+
+		assert.equal(result.success, true);
+		assert.equal(result.category, "billing_estimate");
+		assert.ok(result.message.includes("Восстановление зуба светоотверждаемым композитом"));
+		assert.ok(/4[\s\u00a0\u202f]?500/.test(result.message));
+		assert.equal((result.data as any)?.total, 4500);
+	});
+
+	it("handles warehouse supplies tool via background auto-deduction without doctor interruption (Mandate 8ab)", async () => {
+		const result = await dispatchCrmAction({
+			callId: "call_stock_1",
+			name: "check_warehouse_supplies",
+			arguments: {
+				itemName: "Артикаин 4% 1.7 мл",
+			},
+			confirmed: true,
+		});
+
+		assert.equal(result.success, true);
+		assert.equal(result.category, "warehouse");
+		assert.ok(result.message.includes("фоновым сервисом по техкарте"));
+		assert.equal((result.data as any)?.doctorAutonomyGuaranteed, true);
 	});
 });

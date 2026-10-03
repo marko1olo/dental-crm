@@ -33,7 +33,7 @@ export type DoctorSpecialty =
 	| 'anesthesiologist'
 	| 'general';
 
-export type PriceTierKind = 'standard' | 'vip' | 'dms' | 'promo';
+export type PriceTierKind = 'standard' | 'vip' | 'dms' | 'promo' | 'night_weekend';
 
 export interface ServicePricelistItem {
 	readonly id: string;
@@ -90,6 +90,7 @@ export const PRICE_TIER_LABELS: Record<PriceTierKind, string> = {
 	vip: 'VIP прейскурант (+20%)',
 	dms: 'Тариф ДМС (СОГАЗ/Ингосстрах)',
 	promo: 'Акционный / Спеццена (-10%)',
+	night_weekend: 'Ночной / Выходного дня (+30%)',
 };
 
 export const STATUTORY_VAT_EXEMPTION_NOTE = 'НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ)';

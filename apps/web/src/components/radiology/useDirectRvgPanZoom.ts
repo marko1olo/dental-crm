@@ -5,6 +5,7 @@ export function useDirectRvgPanZoom() {
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [rotation, setRotation] = useState<number>(0);
 	const [flipH, setFlipH] = useState<boolean>(false);
+	const [flipV, setFlipV] = useState<boolean>(false);
 	const [isDragging, setIsDragging] = useState<boolean>(false);
 	const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -13,6 +14,7 @@ export function useDirectRvgPanZoom() {
 		setPan({ x: 0, y: 0 });
 		setRotation(0);
 		setFlipH(false);
+		setFlipV(false);
 	};
 
 	const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -45,7 +47,10 @@ export function useDirectRvgPanZoom() {
 	const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 4.0));
 	const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
 	const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
+	const handleRotateCw = () => setRotation((prev) => (prev + 90) % 360);
+	const handleRotateCcw = () => setRotation((prev) => (prev - 90 + 360) % 360);
 	const handleToggleFlipH = () => setFlipH((prev) => !prev);
+	const handleToggleFlipV = () => setFlipV((prev) => !prev);
 
 	return {
 		zoom,
@@ -56,6 +61,8 @@ export function useDirectRvgPanZoom() {
 		setRotation,
 		flipH,
 		setFlipH,
+		flipV,
+		setFlipV,
 		isDragging,
 		handleResetTransform,
 		handleMouseDown,
@@ -65,6 +72,10 @@ export function useDirectRvgPanZoom() {
 		handleZoomIn,
 		handleZoomOut,
 		handleRotate,
+		handleRotateCw,
+		handleRotateCcw,
 		handleToggleFlipH,
+		handleToggleFlipV,
 	};
 }
+

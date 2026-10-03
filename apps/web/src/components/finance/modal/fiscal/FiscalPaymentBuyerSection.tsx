@@ -284,11 +284,11 @@ export const FiscalPaymentSummaryColumn: React.FC<FiscalPaymentSummaryColumnProp
 					{fiscalData.hasMixedItems && (
 						<div className="pt-2 border-t border-[var(--border,#cbd5e1)] text-[11px] space-y-0.5" data-testid="mixed-fiscal-summary-card">
 							<div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold">
-								<span>Медуслуги (Без НДС, ст. 149):</span>
+								<span>Без НДС (Медицинские услуги):</span>
 								<span className="font-mono">{formatMoneyRu(kopecksToRub(fiscalData.vatNoneKopecks))}</span>
 							</div>
 							<div className="flex justify-between text-blue-700 dark:text-blue-400 font-bold">
-								<span>Товары витрины (НДС 20%, ст. 164):</span>
+								<span>Товары витрины (НДС 20%):</span>
 								<span className="font-mono">{formatMoneyRu(kopecksToRub(fiscalData.retailTotalKopecks || 0))}</span>
 							</div>
 							<div className="flex justify-between text-[var(--muted,#64748b)]">

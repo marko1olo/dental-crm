@@ -25,6 +25,7 @@ const familyPaymentSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 	patientId: z.string().uuid(),
 	familyGroupId: z.string().uuid(),
+	payerPatientId: z.string().uuid().optional(),
 	serviceId: z.string().uuid().optional(),
 	catalogItemId: z.string().uuid().optional(),
 	discountRub: nonNegativeMoneyRubSchema.optional(),
@@ -57,6 +58,22 @@ const familyPaymentSchema = z.object({
 	// баланс, вычитал и вставлял платёж, не проверяя, не сделал ли он это уже.
 	// Блокировка .for("update") защищает только от одновременных запросов,
 	// но не от повторной отправки.
+	clientMutationId: z.string().min(1).max(128).optional(),
+});
+
+/**
+ * Возврат остатка семейного депозита пациенту / из кассы клиники.
+ */
+const familyRefundSchema = z.object({
+	familyGroupId: z.string().uuid(),
+	amountRub: positiveMoneyRubSchema,
+	patientId: z.string().uuid().optional(),
+	cashBoxId: z.string().uuid().optional(),
+	operatorId: z.string().uuid().optional(),
+	method: z
+		.enum(["cash", "card", "bank_transfer", "other"])
+		.default("cash"),
+	reason: z.string().trim().max(500).optional(),
 	clientMutationId: z.string().min(1).max(128).optional(),
 });
 
@@ -604,6 +621,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				organizationId,
 				familyGroupId: payload.familyGroupId,
 				patientId: payload.patientId,
+				payerPatientId: payload.payerPatientId,
 				amountRub: payload.amountRub,
 				serviceId: payload.serviceId,
 				catalogItemId: payload.catalogItemId,
@@ -623,7 +641,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
 			const message = err.message || "Internal Server Error";
 			return reply.code(statusCode).send({
-				error: statusCode === 402 ? "InsufficientFunds" : statusCode === 409 ? "IdempotencyConflict" : statusCode === 404 ? "NotFound" : "PaymentFailed",
+				error: statusCode === 402 ? "InsufficientFunds" : statusCode === 403 ? "Forbidden" : statusCode === 409 ? "IdempotencyConflict" : statusCode === 404 ? "NotFound" : "PaymentFailed",
 				message,
 			});
 		}
@@ -688,6 +706,79 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			return reply.code(statusCode).send({
 				error: statusCode === 404 ? "NotFound" : statusCode === 409 ? "IdempotencyConflict" : "TopupFailed",
 				message: err.message || "Не удалось пополнить семейный счёт",
+			});
+		}
+	});
+
+	// POST /api/finance/family/refund — возврат неизрасходованного остатка семейного депозита пациенту
+	app.post("/api/finance/family/refund", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"family wallet refund",
+		);
+		if (!organizationId) return;
+		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
+
+		const parsed = familyRefundSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Проверьте параметры возврата: нужны familyGroupId и сумма больше нуля с точностью до копейки.",
+				details: parsed.error.issues,
+			});
+		}
+		const headerIdempotencyKey =
+			(req.headers["idempotency-key"] as string | undefined) ||
+			(req.headers["x-idempotency-key"] as string | undefined);
+		const effectiveMutationId =
+			parsed.data.clientMutationId?.trim() || headerIdempotencyKey?.trim();
+
+		if (!effectiveMutationId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Ключ операции (clientMutationId или заголовок Idempotency-Key) обязателен для предотвращения повторного возврата.",
+			});
+		}
+		const payload = {
+			...parsed.data,
+			clientMutationId: effectiveMutationId,
+		};
+
+		try {
+			const result = await familyWalletService.refund({
+				organizationId,
+				familyGroupId: payload.familyGroupId,
+				patientId: payload.patientId,
+				amountRub: payload.amountRub,
+				cashBoxId: payload.cashBoxId,
+				operatorId: payload.operatorId,
+				method: payload.method,
+				reasonText: payload.reason,
+				clientMutationId: payload.clientMutationId,
+			});
+
+			return {
+				payment: result.payment,
+				newBalance: kopecksToNumericString(rubToKopecks(result.newBalanceRub)),
+				refundedRub: result.refundedRub,
+				duplicate: result.duplicate,
+				cashOperation: result.cashOperation,
+			};
+		} catch (err: any) {
+			const statusCode = err.statusCode || (err instanceof FamilyWalletError ? err.statusCode : 500);
+			return reply.code(statusCode).send({
+				error:
+					statusCode === 404
+						? "NotFound"
+						: statusCode === 409
+							? "IdempotencyConflict"
+							: statusCode === 400
+								? "InvalidAmount"
+								: "RefundFailed",
+				message: err.message || "Не удалось оформить возврат семейного депозита",
 			});
 		}
 	});

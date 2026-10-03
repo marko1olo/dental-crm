@@ -554,7 +554,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 						/>
 						<ShieldCheck size={15} className="text-teal shrink-0" aria-hidden="true" />
 						<span className="marketing-compliance-text">
-							Только пациенты с подтвержденным согласием на уведомления (152-ФЗ и ст. 18 ФЗ «О рекламе»)
+							Только пациенты с подтвержденным согласием на сервисные и рекламные сообщения
 						</span>
 					</label>
 

@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Grid2X2, ChevronLeft, ChevronRight, Layers } from "lucide-react";
+import { Grid2X2, ChevronLeft, ChevronRight, Layers, Maximize2, Minimize2 } from "lucide-react";
 import type { CbctVoxelVolume, Point2D } from "../../cbctMprMath";
 import type { CrossSectionSliceData, DentalArchCurve } from "../../dentalCurveEngine";
 import { calculateArchTangentsAndNormals } from "../../cbctArchSplineMath";
@@ -179,6 +179,8 @@ export interface PanoramicCrossSectionGridProps {
 	readonly jawType?: "mandible" | "maxilla" | undefined;
 	readonly onSwitchJaw?: ((jaw: "mandible" | "maxilla") => void) | undefined;
 	readonly className?: string | undefined;
+	readonly isMaximized?: boolean | undefined;
+	readonly onToggleMaximize?: (() => void) | undefined;
 }
 
 const COUNT_OPTIONS = [
@@ -207,6 +209,8 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 	jawType = "mandible",
 	onSwitchJaw,
 	className = "",
+	isMaximized = false,
+	onToggleMaximize,
 }) => {
 	// Default to Ez3D-i canonical 3x3 (9 slices) grid
 	const [sliceCount, setSliceCount] = useState<9 | 8 | 6>(9);
@@ -340,6 +344,10 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 
 	return (
 		<div
+			onDoubleClick={(e) => {
+				if ((e.target as HTMLElement).closest("button, input, select, a")) return;
+				onToggleMaximize?.();
+			}}
 			className={`flex flex-col min-h-0 min-w-0 w-full h-full bg-black text-zinc-100 rounded-md overflow-hidden select-none ${className}`}
 			data-testid="cbct-panoramic-cross-section-grid"
 		>
@@ -442,28 +450,64 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 					</div>
 				</div>
 
-				{/* Right: Step Navigation (< / >) */}
-				<div className="flex items-center gap-0.5 shrink-0">
-					<button
-						type="button"
-						onClick={() => handleNavigateCenter(-1)}
-						disabled={activeCrossSectionIdx <= 0}
-						className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-						title="Сдвиг центра назад"
-						data-testid="cbct-grid-nav-prev"
-					>
-						<ChevronLeft className="w-3.5 h-3.5" />
-					</button>
-					<button
-						type="button"
-						onClick={() => handleNavigateCenter(1)}
-						disabled={totalSectionsCount === 0 || activeCrossSectionIdx >= totalSectionsCount - 1}
-						className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-						title="Сдвиг центра вперед"
-						data-testid="cbct-grid-nav-next"
-					>
-						<ChevronRight className="w-3.5 h-3.5" />
-					</button>
+				{/* Right: Step Navigation (< / >) & Maximize Toggle */}
+				<div className="flex items-center gap-1.5 shrink-0">
+					<div className="flex items-center gap-0.5">
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleNavigateCenter(-1);
+							}}
+							disabled={activeCrossSectionIdx <= 0}
+							className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+							title="Сдвиг центра назад"
+							data-testid="cbct-grid-nav-prev"
+						>
+							<ChevronLeft className="w-3.5 h-3.5" />
+						</button>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleNavigateCenter(1);
+							}}
+							disabled={totalSectionsCount === 0 || activeCrossSectionIdx >= totalSectionsCount - 1}
+							className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+							title="Сдвиг центра вперед"
+							data-testid="cbct-grid-nav-next"
+						>
+							<ChevronRight className="w-3.5 h-3.5" />
+						</button>
+					</div>
+
+					{onToggleMaximize && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onToggleMaximize();
+							}}
+							className="h-5.5 px-1.5 rounded bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700/80 transition-colors flex items-center gap-1 cursor-pointer"
+							title={isMaximized ? "Свернуть в сетку (двойной клик / Esc)" : "Развернуть на 100% (двойной клик)"}
+							data-testid={isMaximized ? "btn-viewport-collapse-cross_section" : "btn-viewport-expand-cross_section"}
+							data-expand-testid="btn-viewport-expand-cross_section"
+							data-collapse-testid="btn-viewport-collapse-cross_section"
+							aria-label={isMaximized ? "Свернуть срезы" : "Развернуть срезы"}
+						>
+							{isMaximized ? (
+								<>
+									<Minimize2 className="w-3 h-3 text-amber-400" />
+									<span className="text-[10px] font-medium hidden sm:inline">Свернуть</span>
+								</>
+							) : (
+								<>
+									<Maximize2 className="w-3 h-3 text-amber-400" />
+									<span className="text-[10px] font-medium hidden sm:inline">100%</span>
+								</>
+							)}
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -612,9 +656,9 @@ const MultiCrossSectionCard: React.FC<MultiCrossSectionCardProps> = ({
 					Section {sliceNumber}
 				</span>
 				<div className="flex items-center gap-1.5 text-[9px] font-bold">
-					<span className="text-zinc-300" title="Lingual (Язычная сторона)">L</span>
+					<span className="text-zinc-300" title="Buccal (Вестибулярная / Щёчная сторона)">B</span>
 					<span className="text-zinc-500">•</span>
-					<span className="text-zinc-300" title="Buccal (Щёчная сторона)">B</span>
+					<span className="text-zinc-300" title="Lingual (Оральная / Язычная сторона)">L</span>
 				</div>
 			</div>
 
@@ -626,12 +670,12 @@ const MultiCrossSectionCard: React.FC<MultiCrossSectionCardProps> = ({
 					data-testid={`cbct-multi-cross-canvas-${indexInGrid}`}
 				/>
 
-				{/* Anatomical Orientation Watermark on Slice Corners */}
-				<span className="absolute top-1 left-1.5 text-[9px] font-mono font-bold text-zinc-400 bg-black/60 px-1 rounded pointer-events-none select-none">
-					L
-				</span>
-				<span className="absolute top-1 right-1.5 text-[9px] font-mono font-bold text-zinc-400 bg-black/60 px-1 rounded pointer-events-none select-none">
+				{/* Anatomical Orientation Watermark on Slice Corners (Ez3D-i: Buccal on Left, Lingual on Right) */}
+				<span className="absolute top-1 left-1.5 text-[9px] font-mono font-bold text-zinc-300 bg-black/60 px-1 rounded pointer-events-none select-none">
 					B
+				</span>
+				<span className="absolute top-1 right-1.5 text-[9px] font-mono font-bold text-zinc-300 bg-black/60 px-1 rounded pointer-events-none select-none">
+					L
 				</span>
 			</div>
 

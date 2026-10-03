@@ -1,9 +1,13 @@
 export interface InvoiceLineItem {
 	id: string;
 	code?: string | undefined;
+	code804n?: string | undefined;
 	name: string;
+	title?: string | undefined;
 	quantity: number;
 	priceRub: number;
+	totalRub?: number | undefined;
+	toothNumber?: number | undefined;
 }
 
 export interface BillingInvoice {

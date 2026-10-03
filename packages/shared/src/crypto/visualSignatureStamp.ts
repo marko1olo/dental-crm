@@ -24,13 +24,13 @@ const optionalDateLikeSchema = z
 	);
 
 export const visualSignatureStampParamsSchema = z.object({
-	certificateSerialNumber: z.string().trim().min(1, "Серийный номер обязателен"),
+	certificateSerialNumber: z.string().trim().optional(),
 	certificateSubject: z.string().trim().min(1, "Владелец сертификата обязателен"),
 	certificateIssuer: z.string().trim().optional(),
-	validFrom: dateLikeSchema,
-	validTo: dateLikeSchema,
+	validFrom: optionalDateLikeSchema,
+	validTo: optionalDateLikeSchema,
 	signedAt: optionalDateLikeSchema,
-	signatureType: z.enum(["ukep", "unep"]).default("ukep"),
+	signatureType: z.enum(["ukep", "unep", "simple", "draft"]).default("ukep"),
 	organizationName: z.string().trim().optional(),
 	documentId: z.string().trim().optional(),
 });
@@ -84,15 +84,145 @@ function formatDateTimeRu(isoString: string): string {
 
 /**
  * Генерирует HTML официального визуального синего штампа электронной подписи
- * строго по ГОСТ Р 7.0.97-2016 (раздел 5.23 "Отметка об электронной подписи")
- * и методическим рекомендациям Минкомсвязи/Минцифры России.
+ * строго по ГОСТ Р 7.0.97-2016 (раздел 5.23 "Отметка об электронной подписи"),
+ * методическим рекомендациям Минцифры России, а также штампов ПЭП врача и ЧЕРНОВИК (Мандат 8e).
  */
 export function renderDigitalSignatureStampHtml(params: VisualSignatureStampParams): string {
 	const parsed = visualSignatureStampParamsSchema.parse(params);
 
-	const validFromRu = formatDateRu(parsed.validFrom);
-	const validToRu = formatDateRu(parsed.validTo);
+	const validFromRu = parsed.validFrom ? formatDateRu(parsed.validFrom) : null;
+	const validToRu = parsed.validTo ? formatDateRu(parsed.validTo) : null;
 	const signedAtRu = parsed.signedAt ? formatDateTimeRu(parsed.signedAt) : null;
+
+	if (parsed.signatureType === "draft") {
+		return `<!-- BEGIN_GOST_SIGNATURE_STAMP -->
+<div class="gost-digital-stamp gost-stamp-draft" style="
+  box-sizing: border-box;
+  display: inline-block;
+  border: 2px dashed #64748b;
+  border-radius: 4px;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  color: #334155;
+  font-family: 'PT Astra Sans', Arial, Helvetica, sans-serif;
+  font-size: 8pt;
+  line-height: 1.3;
+  width: 100%;
+  max-width: 380px;
+  margin: 10px 0;
+  text-align: left;
+  page-break-inside: avoid;
+">
+  <div style="
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px dashed #64748b;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  ">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;" aria-label="Черновик">
+      <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#475569" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M14 2V8H20" stroke="#475569" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M16 13H8" stroke="#475569" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M16 17H8" stroke="#475569" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M10 9H8" stroke="#475569" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <div style="flex: 1;">
+      <div style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.15; color: #334155;">
+        ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР / ЧЕРНОВИК
+      </div>
+      <div style="font-size: 6.5pt; font-weight: 600; color: #64748b; text-transform: uppercase; margin-top: 1px;">
+        ПРИЁМ НЕ ЗАКРЫТ &bull; ДОКУМЕНТ НЕ ИМЕЕТ ЮРИДИЧЕСКОЙ СИЛЫ
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size: 7.5pt; color: #475569;">
+    <div style="margin-bottom: 2px;">
+      <strong>Врач:</strong> ${escapeXml(parsed.certificateSubject)}
+    </div>
+    ${
+			signedAtRu
+				? `<div style="margin-bottom: 2px;">
+      <strong>Сформирован:</strong> ${escapeXml(signedAtRu)}
+    </div>`
+				: ""
+		}
+    <div style="margin-top: 3px; padding-top: 2px; border-top: 1px dotted rgba(100,116,139,0.3); font-size: 7pt; color: #64748b;">
+      Для придания юридической силы приём должен быть закрыт и подписан врачом.
+    </div>
+  </div>
+</div>
+<!-- END_GOST_SIGNATURE_STAMP -->`;
+	}
+
+	if (parsed.signatureType === "simple") {
+		return `<!-- BEGIN_GOST_SIGNATURE_STAMP -->
+<div class="gost-digital-stamp gost-stamp-simple" style="
+  box-sizing: border-box;
+  display: inline-block;
+  border: 2px solid #0d9488;
+  border-radius: 4px;
+  padding: 8px 12px;
+  background-color: #f0fdfa;
+  color: #0f766e;
+  font-family: 'PT Astra Sans', Arial, Helvetica, sans-serif;
+  font-size: 8pt;
+  line-height: 1.3;
+  width: 100%;
+  max-width: 380px;
+  margin: 10px 0;
+  text-align: left;
+  page-break-inside: avoid;
+">
+  <div style="
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #0d9488;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  ">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;" aria-label="ПЭП врача">
+      <path d="M12 2L4 5V11C4 16.52 7.41 21.61 12 22.88C16.59 21.61 20 16.52 20 11V5L12 2Z" fill="#0d9488" fill-opacity="0.12" stroke="#0d9488" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M9 12L11 14L15 10" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div style="flex: 1;">
+      <div style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.15; color: #0f766e;">
+        ДОКУМЕНТ ПОДПИСАН ВРАЧОМ
+      </div>
+      <div style="font-size: 6.5pt; font-weight: 600; color: #115e59; text-transform: uppercase; margin-top: 1px;">
+        ПРОСТАЯ ЭЛЕКТРОННАЯ ПОДПИСЬ (ПЭП) &bull; СТ. 5 ФЗ № 63-ФЗ
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size: 7.5pt; color: #134e4a;">
+    <div style="margin-bottom: 2px;">
+      <strong>Лечащий врач:</strong> ${escapeXml(parsed.certificateSubject)}
+    </div>
+    ${
+			parsed.certificateSerialNumber
+				? `<div style="margin-bottom: 2px; word-break: break-all;">
+      <strong>Идентификатор:</strong> ${escapeXml(parsed.certificateSerialNumber)}
+    </div>`
+				: ""
+		}
+    ${
+			signedAtRu
+				? `<div style="margin-top: 3px; padding-top: 2px; border-top: 1px dashed rgba(13,148,136,0.3); font-size: 7pt;">
+      <strong>Подписано:</strong> ${escapeXml(signedAtRu)}
+    </div>`
+				: ""
+		}
+    <div style="margin-top: 2px; font-size: 6.5pt; color: #115e59;">
+      Подтверждено учетной записью врача в медицинской информационной системе
+    </div>
+  </div>
+</div>
+<!-- END_GOST_SIGNATURE_STAMP -->`;
+	}
 
 	const signatureTypeLabel =
 		parsed.signatureType === "ukep"
@@ -142,14 +272,25 @@ export function renderDigitalSignatureStampHtml(params: VisualSignatureStampPara
 
   <div style="font-size: 7.5pt; color: #002266;">
     <div style="margin-bottom: 2px; word-break: break-all;">
-      <strong>Сертификат:</strong> ${escapeXml(parsed.certificateSerialNumber)}
+      <strong>Сертификат:</strong> ${escapeXml(parsed.certificateSerialNumber || "НЕДОСТУПЕН")}
     </div>
     <div style="margin-bottom: 2px; word-break: break-word;">
       <strong>Владелец:</strong> ${escapeXml(parsed.certificateSubject)}
     </div>
-    <div style="margin-bottom: 2px;">
+    ${
+			parsed.certificateIssuer
+				? `<div style="margin-bottom: 2px; word-break: break-word;">
+      <strong>Кем выдан:</strong> ${escapeXml(parsed.certificateIssuer)}
+    </div>`
+				: ""
+		}
+    ${
+			validFromRu && validToRu
+				? `<div style="margin-bottom: 2px;">
       <strong>Действителен:</strong> с ${escapeXml(validFromRu)} по ${escapeXml(validToRu)}
-    </div>
+    </div>`
+				: ""
+		}
     ${
 			signedAtRu
 				? `<div style="margin-top: 3px; padding-top: 2px; border-top: 1px dashed rgba(0,51,153,0.3); font-size: 7pt;">
@@ -222,23 +363,25 @@ export function injectVisualSignatureStampIntoHtml(
 		});
 	}
 
-	// 4. Поиск целевого блока врача/руководителя (.sig-box) в клинических формах (Форма 043/у, ИДС 1051н, 043-1/у, 037/у, 003-В/у)
-	const doctorSigBoxRegex = /(<div class="sig-box"[^>]*>(?:(?!<div class="sig-box")[\s\S])*?(?:Лечащий врач|Врач-стоматолог|Врач-ортодонт|Врач-рентгенолог|Главный врач|Заведующий|Руководитель|Врач, проводивший|Врач)[\s\S]*?)(<\/div>)/i;
+	// 4. Поиск целевого блока врача/руководителя (.sig-box / .sign-box) в клинических формах (Форма 043/у, ИДС 1051н, 043-1/у, 037/у, 003-В/у, первичный пакет)
+	const doctorSigBoxRegex = /(<div class="sig(?:n)?-box"[^>]*>(?:(?!<div class="sig(?:n)?-box")[\s\S])*?(?:Лечащий врач|Врач-стоматолог|Врач-ортодонт|Врач-рентгенолог|Главный врач|Заведующий|Руководитель|Врач, проводивший|Врач|ИСПОЛНИТЕЛЬ)[\s\S]*?)(<\/div>)/i;
 	if (doctorSigBoxRegex.test(html)) {
 		return html.replace(doctorSigBoxRegex, (_match, before, closing) => {
 			const cleaned = before
-				.replace(/<div class="sig-line"><\/div>/gi, "")
+				.replace(/<div class="sig(?:n)?-line"><\/div>/gi, "")
+				.replace(/<div class="sign-hint">[^<]*<\/div>/gi, "")
 				.replace(/<span class="stamp-seal">М\.П\.<\/span>/gi, "");
 			return `${cleaned}\n<div style="margin-top: 8px;">${stampHtml}</div>\n${closing}`;
 		});
 	}
 
-	// 5. Поиск блока signature-row / sig-box в клинических формах Минздрава
-	const signatureRowRegex = /(<div class="signature-row"[\s\S]*?<div class="sig-box">[\s\S]*?)(<\/div>\s*<\/div>)/i;
+	// 5. Поиск блока signature-row / signatures-row / sig-box в клинических формах Минздрава
+	const signatureRowRegex = /(<div class="signature(?:s)?-row"[\s\S]*?<div class="sig(?:n)?-box">[\s\S]*?)(<\/div>\s*<\/div>)/i;
 	if (signatureRowRegex.test(html)) {
 		return html.replace(signatureRowRegex, (_match, before, closing) => {
 			const cleaned = before
-				.replace(/<div class="sig-line"><\/div>/gi, "")
+				.replace(/<div class="sig(?:n)?-line"><\/div>/gi, "")
+				.replace(/<div class="sign-hint">[^<]*<\/div>/gi, "")
 				.replace(/<span class="stamp-seal">М\.П\.<\/span>/gi, "");
 			return `${cleaned}\n<div style="margin-top: 8px;">${stampHtml}</div>\n${closing}`;
 		});

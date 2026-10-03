@@ -82,4 +82,4 @@ export * from "./soap/index.js";
 export * from "./somaticSafetyEngine.js";
 export * from "./clinicalMarketMaterialsCatalog.js";
 export * from "./diagnosisServiceBundles.js";
-
+export * from "./pricelistBatchImport.js";

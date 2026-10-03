@@ -24,38 +24,38 @@ export const LEAD_STATUS_VALUES: readonly LeadStatus[] = [
 
 export interface Lead {
 	id: string;
-	organizationId?: string;
+	organizationId?: string | undefined;
 	name: string;
-	patientName?: string | null;
-	phone?: string;
-	source?: string;
+	patientName?: string | null | undefined;
+	phone?: string | undefined;
+	source?: string | undefined;
 	status: LeadStatus;
-	assignedDoctorId?: string | null;
-	notes?: string | null;
-	expectedRevenue?: string;
-	createdAt?: string | Date | null;
-	stageEnteredAt?: string | Date | null;
-	lastContactedAt?: string | Date | null;
-	priority?: "urgent" | "high" | "normal";
-	clinicalTags?: string[];
-	audioRecordUrl?: string | null;
-	transcriptionSnippet?: string | null;
-	audioDurationSeconds?: number;
+	assignedDoctorId?: string | null | undefined;
+	notes?: string | null | undefined;
+	expectedRevenue?: string | undefined;
+	createdAt?: string | Date | null | undefined;
+	stageEnteredAt?: string | Date | null | undefined;
+	lastContactedAt?: string | Date | null | undefined;
+	priority?: ("urgent" | "high" | "normal") | undefined;
+	clinicalTags?: string[] | undefined;
+	audioRecordUrl?: string | null | undefined;
+	transcriptionSnippet?: string | null | undefined;
+	audioDurationSeconds?: number | undefined;
 	existingPatient?: {
 		id: string;
 		fullName: string;
-	} | null;
-	dropReason?: string | null;
+	} | null | undefined;
+	dropReason?: string | null | undefined;
 }
 
 export interface ConvertLeadToAppointmentPayload {
 	appointmentStart: string;
 	appointmentEnd: string;
-	chairId?: string | null;
-	doctorId?: string | null;
-	organizationId?: string;
-	reason?: string | null;
-	comment?: string | null;
+	chairId?: string | null | undefined;
+	doctorId?: string | null | undefined;
+	organizationId?: string | undefined;
+	reason?: string | null | undefined;
+	comment?: string | null | undefined;
 }
 
 export interface ConvertLeadResult {

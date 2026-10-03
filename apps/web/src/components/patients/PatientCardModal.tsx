@@ -293,11 +293,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									setIsTaxDeductionModalOpen(true);
 								}}
 								className="border border-teal-500/30 bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
-								title="Справка об оплате медицинских услуг для налогового вычета 13% НДФЛ (Форма КНД 1151156)"
+								title="Справка об оплате медицинских услуг для налогового вычета (13%)"
 							>
 								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-								<span className="hidden sm:inline">Справка ФНС (1151156)</span>
-								<span className="sm:hidden">ФНС 1151156</span>
+								<span className="hidden sm:inline">Справка для вычета (13%)</span>
+								<span className="sm:hidden">Вычет 13%</span>
 							</button>
 
 							<button
@@ -602,7 +602,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						<TaxDeductionCertificateModal
 							isOpen={isTaxDeductionModalOpen}
 							onClose={() => setIsTaxDeductionModalOpen(false)}
-							patientId={patientData.id}
+							patientId={patientData.id || undefined}
 							patientName={patientData.fullName || ""}
 							patientBirthDate={patientData.birthDate || ""}
 							patientInn={patientData.inn || (patientData as { taxpayerInn?: string }).taxpayerInn || ""}

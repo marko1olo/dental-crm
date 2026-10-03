@@ -483,13 +483,13 @@ export function useVisitConsentsLogic({
 			isSigned: isItemSigned,
 			watermarkText: isItemSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ОЗНАКОМЛЕНИЯ",
 		});
-		showToast("Бланк ИДС отправлен на печать", "success");
+		showToast("Бланк согласия на лечение отправлен на печать", "success");
 	}, [consentRecords, isVisitClosed, onFastPrintInformedConsent, substitutionContext]);
 
 	// Печать чистого бланка одного согласия со строками «________»
 	const handlePrintSingleBlank = useCallback((key: ConsentTemplateKey) => {
 		printBlankConsentTemplate(key, substitutionContext);
-		showToast("Чистый бланк ИДС отправлен на печать", "info");
+		showToast("Чистый бланк согласия на лечение отправлен на печать", "info");
 	}, [substitutionContext]);
 
 	// 1-Клик: Печать пакета согласий на сегодня
@@ -541,7 +541,7 @@ export function useVisitConsentsLogic({
 			handlePrintTodayPackage();
 		}
 
-		showToast("Сформировано и отправлено на печать доп. согласие на новые процедуры (ИДС)", "success");
+		showToast("Сформировано и отправлено на печать доп. согласие на новые процедуры", "success");
 	}, [consentScopeMismatch, consentRecords, substitutionContext.doctorName, patientId, persistConsentToBackend, saveConsentRecords, handlePrintSingleFilled, handlePrintTodayPackage]);
 
 	// 1-Клик: Отметить доп. согласие подписанным на бумаге без печати

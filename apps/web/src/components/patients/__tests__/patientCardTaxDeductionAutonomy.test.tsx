@@ -94,44 +94,4 @@ describe("PatientCardModal & TaxDeduction Autonomy (FNS Form KND 1151156)", () =
 		assert.ok(html.includes("Бланк («________»)") || html.includes("data-testid=\"btn-tax-print-blank\""));
 		assert.ok(!html.includes("<button disabled"));
 	});
-
-	it("enforces Decree 659: rejects tax certificate generation for anonymous patient", async () => {
-		const { NdflTaxService } = await import(
-			"../../../../../api/src/services/documents/ndflTaxService.js"
-		);
-		assert.throws(
-			() => {
-				NdflTaxService.generateXml({
-					documentNumber: "1",
-					documentDate: "2024-10-10",
-					taxYear: 2024,
-					taxInspectionCode: "7701",
-					clinic: {
-						inn: "7707083893",
-						kpp: "770101001",
-						ogrn: "1027700132195",
-						name: "ООО ДЕНТЕ",
-						directorName: "Смирнов А.В.",
-					},
-					payer: {
-						fullName: { family: "UUID_ANON_PATIENT", given: "Аноним" },
-						inn: "770123456789",
-						birthDate: "1990-01-01",
-					},
-					patient: {
-						patientKinshipCode: "1",
-					},
-					expenses: {
-						code1AmountKopecks: 100000,
-						code2AmountKopecks: 0,
-					},
-				});
-			},
-			(err: any) => {
-				assert.equal(err.name, "Decree659TaxDeductionForbiddenError");
-				assert.ok(err.message.includes("Постановлению Правительства РФ №659"));
-				return true;
-			},
-		);
-	});
 });

@@ -61,6 +61,7 @@ export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./egisz/index.js";
 export * from "./types/surgery.js";
+export * from "./dicom/index.js";
 export { consumableUnitSchema, type ConsumableUnit } from "./inventory/index.js";
 export {
 	type TimelineCategory,
@@ -140,6 +141,7 @@ export * from "./finance/treatmentBudgetEngine.js";
 export * from "./finance/accountingExportEngine.js";
 export * from "./imaging/index.js";
 export * from "./radiology/index.js";
+export * from "./dicom/index.js";
 export * from "./cda/index.js";
 export { GOST_CRYPTO_OIDS } from "./egisz/index.js";
 export * from "./egisz/index.js";
@@ -5510,6 +5512,8 @@ export const imagingStudySchema = z.object({
 	dicomStudyUid: z.string().nullable().optional(),
 	studyInstanceUid: z.string().nullable().optional(),
 	seriesInstanceUid: z.string().nullable().optional(),
+	archivePath: z.string().nullable().optional(),
+	unpackedFolderPath: z.string().nullable().optional(),
 	modality: z.string().nullable().optional(),
 	seriesDescription: z.string().nullable().optional(),
 	studyDate: z.string().nullable().optional(),
@@ -5844,7 +5848,7 @@ export const dmsGuaranteeLetterCreateSchema = dmsGuaranteeLetterSchema.omit({
 	createdAt: true,
 	updatedAt: true,
 }).extend({
-	id: z.string().uuid().optional(),
+	id: z.string().optional(),
 });
 export type DmsGuaranteeLetterCreate = z.infer<typeof dmsGuaranteeLetterCreateSchema>;
 
@@ -6607,8 +6611,11 @@ export const createPaymentSchema = z
 		method: z.union([paymentMethodSchema, z.enum(["split", "mixed"])]).default("card"),
 		cashAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 		electronicAmountKopecks: z.number().int().nonnegative().nullable().optional(),
+		dmsAmountKopecks: z.number().int().nonnegative().nullable().optional(),
 		cashAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		electronicAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
+		dmsAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
+		guaranteeLetterId: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptNumber: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptIssuedAt: strictFiscalReceiptIssuedAtSchema
 			.nullable()
@@ -13654,4 +13661,5 @@ export * from "./utils/money.js";
 export * from "./anesthesia/index.js";
 export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
+
 export * from "./knowledge/index.js";

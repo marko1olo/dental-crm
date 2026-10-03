@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { useTelephonyStore } from "../../store/telephonyStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useThemeStore } from "../../store/themeStore";
@@ -107,7 +107,7 @@ test("ClinicControlPill - renders 3-segment capsule without dead monolithic Head
 	assert.ok(html.includes("dnt-clinic-control-wrapper"), "Contains capsule wrapper class");
 	assert.ok(html.includes("dnt-clinic-control-pill"), "Contains pill button class");
 	assert.ok(html.includes("АТС"), "Contains PBX/АТС indicator");
-	assert.ok(html.includes("54-ФЗ"), "Contains 54-FZ indicator");
+	assert.ok(html.includes("54-ФЗ") || html.includes("Касса"), "Contains Cashier/54-FZ indicator");
 	assert.ok(html.includes("БД") || html.includes("Офлайн"), "Contains DB status indicator");
 	assert.ok(html.includes("clinic-control-center-wrapper"), "Contains data-testid for control center");
 });

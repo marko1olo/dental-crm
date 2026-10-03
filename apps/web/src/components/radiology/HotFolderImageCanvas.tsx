@@ -2,16 +2,16 @@ import React, { useEffect, useRef } from "react";
 import {
 	Eye,
 	FlipHorizontal,
+	FlipVertical,
 	HardDrive,
 	Image as ImageIcon,
 	Minus,
 	Plus,
+	RotateCcw,
 	RotateCw,
-	ShieldCheck,
 	Sliders,
 	Sun,
 	UploadCloud,
-	Zap,
 } from "lucide-react";
 import {
 	FILTER_PRESETS,
@@ -33,6 +33,7 @@ export interface HotFolderImageCanvasProps {
 	zoom: number;
 	rotation: number;
 	flipH: boolean;
+	flipV?: boolean;
 	brightness: number;
 	contrast: number;
 	invert: boolean;
@@ -51,6 +52,7 @@ export interface HotFolderImageCanvasProps {
 	setPdlSharpening?: (val: number) => void;
 	setRotation: React.Dispatch<React.SetStateAction<number>>;
 	setFlipH: React.Dispatch<React.SetStateAction<boolean>>;
+	setFlipV?: React.Dispatch<React.SetStateAction<boolean>>;
 	setZoom: React.Dispatch<React.SetStateAction<number>>;
 	onResetView: () => void;
 	onDragOverViewport?: (e: React.DragEvent) => void;
@@ -65,6 +67,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 	zoom,
 	rotation,
 	flipH,
+	flipV = false,
 	brightness,
 	contrast,
 	invert,
@@ -83,6 +86,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 	setPdlSharpening,
 	setRotation,
 	setFlipH,
+	setFlipV,
 	setZoom,
 	onResetView,
 	onDragOverViewport,
@@ -152,6 +156,10 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 				glRendererRef.current.dispose();
 				glRendererRef.current = null;
 			}
+			if (canvasRef.current) {
+				canvasRef.current.width = 0;
+				canvasRef.current.height = 0;
+			}
 		};
 	}, []);
 
@@ -165,20 +173,6 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 						{activeItem?.metadata.apparatusModel ?? "Vatech EzSensor HD"}
 						{activeItem?.metadata.sensorResolution ? ` · ${activeItem.metadata.sensorResolution}` : ""}
 					</span>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<div className="hfi-hud-chip">
-						<Zap className="w-3.5 h-3.5 text-amber-400" />
-						<span>
-							{activeItem?.metadata.kv ?? 65} kV · {activeItem?.metadata.ma ?? 7.0} mA · {activeItem?.metadata.exposureSec ?? 0.08} s
-						</span>
-					</div>
-
-					<div className={`hfi-hud-chip border ${doseInfo.badgeClass}`}>
-						<ShieldCheck className="w-3.5 h-3.5" />
-						<span>{doseInfo.microsvText} (В норме)</span>
-					</div>
 				</div>
 			</div>
 
@@ -219,7 +213,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 				<div
 					className="hfi-image-stage"
 					style={{
-						transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
+						transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
 						filter: glRendererRef.current?.isWebGL
 							? "none"
 							: `brightness(${brightness}%) contrast(${contrast}%) ${invert ? "invert(100%)" : ""} ${sharpness > 0 ? "url(#hfi-sharpness-kernel)" : ""}`,
@@ -361,28 +355,52 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 						<span>Негатив</span>
 					</button>
 
-					{/* Rotation */}
+					{/* Rotation CCW */}
+					<button
+						type="button"
+						onClick={() => setRotation((prev) => (prev - 90 + 360) % 360)}
+						className="hfi-dock-btn"
+						data-testid="hfi-rotate-ccw-btn"
+						title="Повернуть на 90° против часовой (CCW)"
+					>
+						<RotateCcw className="w-3.5 h-3.5" />
+					</button>
+
+					{/* Rotation CW */}
 					<button
 						type="button"
 						onClick={() => setRotation((prev) => (prev + 90) % 360)}
 						className="hfi-dock-btn"
 						data-testid="hfi-rotate-btn"
-						title="Повернуть на 90° по часовой"
+						title="Повернуть на 90° по часовой (CW)"
 					>
 						<RotateCw className="w-3.5 h-3.5" />
 						<span>{rotation}°</span>
 					</button>
 
-					{/* Flip Horizontal */}
+					{/* Flip Horizontal (Mirror X) */}
 					<button
 						type="button"
 						onClick={() => setFlipH((prev) => !prev)}
 						className={`hfi-dock-btn ${flipH ? "active" : ""}`}
 						data-testid="hfi-flip-btn"
-						title="Зеркальное отражение по горизонтали"
+						title="Зеркальное отражение по горизонтали (Mirror X)"
 					>
 						<FlipHorizontal className="w-3.5 h-3.5" />
 					</button>
+
+					{/* Flip Vertical (Mirror Y) */}
+					{setFlipV && (
+						<button
+							type="button"
+							onClick={() => setFlipV((prev) => !prev)}
+							className={`hfi-dock-btn ${flipV ? "active" : ""}`}
+							data-testid="hfi-flip-v-btn"
+							title="Зеркальное отражение по вертикали (Mirror Y)"
+						>
+							<FlipVertical className="w-3.5 h-3.5" />
+						</button>
+					)}
 
 					<div className="w-[1px] h-4 bg-slate-700" />
 
@@ -422,3 +440,5 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 		</main>
 	);
 };
+
+export default HotFolderImageCanvas;

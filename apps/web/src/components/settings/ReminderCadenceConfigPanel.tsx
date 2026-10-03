@@ -281,7 +281,7 @@ export const ReminderCadenceConfigPanel: React.FC = () => {
 									3. Памятка и контроль самочувствия через 24ч после операции
 								</h4>
 								<span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300">
-									Форма 043/у
+									Контроль приёма
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] mt-0.5">

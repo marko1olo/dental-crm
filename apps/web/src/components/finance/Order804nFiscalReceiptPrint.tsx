@@ -277,7 +277,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 					<span className="font-semibold text-[var(--ink,#0f172a)]">{receipt.taxationSystemName}</span>
 				</div>
 				<div className="flex justify-between">
-					<span>СПРАВКА ДЛЯ ФНС (КНД 1151156):</span>
+					<span>СПРАВКА ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13%):</span>
 					<span className="font-bold text-[var(--brand-primary,#0d9488)]">
 						{receipt.taxDeductionCategory === "2"
 							? "КОД 02 (Дорогостоящее)"

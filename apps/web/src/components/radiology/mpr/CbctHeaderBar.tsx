@@ -11,6 +11,7 @@ import {
 	RotateCcw,
 	Ruler,
 	Sliders,
+	SplitSquareHorizontal,
 	X,
 } from "lucide-react";
 import React from "react";
@@ -87,6 +88,7 @@ export interface CbctHeaderBarProps {
 	readonly onChangePanoThicknessMm?: ((th: number) => void) | undefined;
 	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined;
 	readonly onCopySnapshotToClipboard?: (() => void) | undefined;
+	readonly onOpenComparisonSplit?: (() => void) | undefined;
 }
 
 export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
@@ -137,6 +139,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 		onChangePanoThicknessMm,
 		onSelectClinicalPreset,
 		onCopySnapshotToClipboard,
+		onOpenComparisonSplit,
 	} = props;
 
 	const contrastMenuRef = React.useRef<HTMLDivElement | null>(null);
@@ -523,6 +526,23 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 								<Camera className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
 								<span>Копировать снимок (Ctrl+C)</span>
 							</button>
+
+							{/* Сравнение КТ исследований (До / После) — опционально Tier 3 */}
+							{onOpenComparisonSplit && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenComparisonSplit();
+										setIsStudioMenuOpen(false);
+									}}
+									className="w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 text-emerald-300/90 hover:text-emerald-200 hover:bg-zinc-800 transition-colors cursor-pointer"
+									data-testid="cbct-menu-open-comparison-split"
+									title="Сравнение исследований (До/После) и динамика остеоинтеграции"
+								>
+									<SplitSquareHorizontal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+									<span>Сравнить динамику КТ (До/После)</span>
+								</button>
+							)}
 
 							<div className="h-px bg-zinc-800 my-0.5" />
 

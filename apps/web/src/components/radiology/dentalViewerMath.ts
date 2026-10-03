@@ -85,6 +85,34 @@ export const VATECH_DEVICE_CALIBRATION_PRESETS: Readonly<Record<string, {
 		category: "intraoral_sensor",
 		notesRu: "EzSensor P / HDI2000 субпиксельная матрица",
 	},
+	anysensor_1_0: {
+		deviceName: "Vatech AnySensor 1.0",
+		calMmPerPx: 0.02381,
+		pixelPitchMicrons: 23.8,
+		category: "intraoral_sensor",
+		notesRu: "AnySensor 1.0 (CalX/CalY = 0.023810 мм/пикс)",
+	},
+	anysensor_1_5: {
+		deviceName: "Vatech AnySensor 1.5",
+		calMmPerPx: 0.033333,
+		pixelPitchMicrons: 33.3,
+		category: "intraoral_sensor",
+		notesRu: "AnySensor 1.5 (CalX/CalY = 0.033333 мм/пикс)",
+	},
+	vatech_dxi_600: {
+		deviceName: "Vatech DXI-600",
+		calMmPerPx: 0.020952,
+		pixelPitchMicrons: 21.0,
+		category: "intraoral_sensor",
+		notesRu: "DXI-600 субпиксельный сенсор (0.020952 мм/пикс)",
+	},
+	vatech_vls_60: {
+		deviceName: "Vatech VLS 60 / HDS-100L",
+		calMmPerPx: 0.019048,
+		pixelPitchMicrons: 19.0,
+		category: "intraoral_sensor",
+		notesRu: "VLS 60 / HDS-100L прецизионный сенсор (0.019048 мм/пикс)",
+	},
 	pax_i_pano: {
 		deviceName: "Vatech PaX-i / PaX-i3D Smart Pano",
 		calMmPerPx: 0.0761,
@@ -98,6 +126,20 @@ export const VATECH_DEVICE_CALIBRATION_PRESETS: Readonly<Record<string, {
 		pixelPitchMicrons: 38.0,
 		category: "panoramic",
 		notesRu: "Сверхвысокое разрешение панорамы UHD (CalX/CalY = 0.038037915 мм/пикс)",
+	},
+	pax_primo_pano: {
+		deviceName: "Vatech PaX-Primo Pano",
+		calMmPerPx: 0.075979,
+		pixelPitchMicrons: 76.0,
+		category: "panoramic",
+		notesRu: "Панорамный датчик PaX-Primo Pano (0.075979 мм/пикс)",
+	},
+	pax_i3d_green_premium: {
+		deviceName: "Vatech Pax-i3D Green Premium Auto Pano",
+		calMmPerPx: 0.0656542,
+		pixelPitchMicrons: 65.7,
+		category: "panoramic",
+		notesRu: "Pax-i3D Green Premium Auto Pano (0.0656542 мм/пикс)",
 	},
 	pax_reve3d_ceph: {
 		deviceName: "Vatech PaX-Reve3D Ceph",
@@ -127,28 +169,46 @@ export function resolveCalibratedPixelSpacing(
 	const norm = deviceOrModality.toLowerCase().trim();
 
 	if (norm.includes("soft") && (norm.includes("hr") || norm.includes("high") || norm.includes("14.8"))) {
-		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_soft_hr.calMmPerPx;
+		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_soft_hr?.calMmPerPx ?? fallbackMm;
 	}
 	if (norm.includes("soft") || norm.includes("classic") || norm.includes("hdi-s") || norm.includes("29.6")) {
-		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_soft_normal.calMmPerPx;
+		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_soft_normal?.calMmPerPx ?? fallbackMm;
+	}
+	if (norm.includes("anysensor 1.0") || (norm.includes("anysensor") && norm.includes("1.0"))) {
+		return VATECH_DEVICE_CALIBRATION_PRESETS.anysensor_1_0?.calMmPerPx ?? fallbackMm;
+	}
+	if (norm.includes("anysensor 1.5") || (norm.includes("anysensor") && norm.includes("1.5"))) {
+		return VATECH_DEVICE_CALIBRATION_PRESETS.anysensor_1_5?.calMmPerPx ?? fallbackMm;
+	}
+	if (norm.includes("dxi-600") || norm.includes("dxi600")) {
+		return VATECH_DEVICE_CALIBRATION_PRESETS.vatech_dxi_600?.calMmPerPx ?? fallbackMm;
+	}
+	if (norm.includes("vls 60") || norm.includes("vls60") || norm.includes("hds-100l")) {
+		return VATECH_DEVICE_CALIBRATION_PRESETS.vatech_vls_60?.calMmPerPx ?? fallbackMm;
 	}
 	if (norm.includes("sensor p") || norm.includes("hdi2000") || norm.includes("20.0") || norm.includes("0.02")) {
-		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_p.calMmPerPx;
+		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_p?.calMmPerPx ?? fallbackMm;
 	}
 	if (norm.includes("ezsensor") || norm.includes("hdi1000") || norm.includes("ez_sensor") || norm.includes("35.0") || norm.includes("0.035")) {
-		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_standard.calMmPerPx;
+		return VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_standard?.calMmPerPx ?? fallbackMm;
+	}
+	if (norm.includes("primo")) {
+		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_primo_pano?.calMmPerPx ?? fallbackMm;
+	}
+	if (norm.includes("green premium") || norm.includes("auto pano")) {
+		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i3d_green_premium?.calMmPerPx ?? fallbackMm;
 	}
 	if (norm.includes("pano") || norm.includes("opg") || norm.includes("optg")) {
 		if (norm.includes("uhd")) {
-			return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano_uhd.calMmPerPx;
+			return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano_uhd?.calMmPerPx ?? fallbackMm;
 		}
-		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano.calMmPerPx;
+		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano?.calMmPerPx ?? fallbackMm;
 	}
 	if (norm.includes("ceph") || norm.includes("trg") || norm.includes("tele")) {
 		if (norm.includes("scan")) {
-			return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_ceph_scan.calMmPerPx;
+			return VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_ceph_scan?.calMmPerPx ?? fallbackMm;
 		}
-		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_reve3d_ceph.calMmPerPx;
+		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_reve3d_ceph?.calMmPerPx ?? fallbackMm;
 	}
 	if (norm in DEFAULT_MODALITY_PIXEL_SPACING) {
 		return DEFAULT_MODALITY_PIXEL_SPACING[norm as DentalModalityKey];
@@ -174,10 +234,30 @@ export const CLINICAL_2D_WL_PRESETS: readonly ClinicalWlPreset[] = [
 		label: "Эндодонтия",
 		shortLabel: "Эндо",
 		description: "Повышенный контраст для визуализации апекса, устьев и качества обтурации каналов",
-		brightness: 110,
+		brightness: 105,
 		contrast: 175,
 		invert: false,
 		gamma: 0.9,
+	},
+	{
+		id: "perio",
+		label: "Пародонт / Кость",
+		shortLabel: "Перио",
+		description: "Оптимизация кортикальной пластинки, периодонтальной щели и трабекул",
+		brightness: 110,
+		contrast: 160,
+		invert: false,
+		gamma: 1.1,
+	},
+	{
+		id: "caries",
+		label: "Кариес / Эмаль",
+		shortLabel: "Кариес",
+		description: "Контрастирование эмалево-дентинной границы для скрытого кариеса",
+		brightness: 95,
+		contrast: 190,
+		invert: false,
+		gamma: 0.85,
 	},
 	{
 		id: "implant_bone",
@@ -786,3 +866,141 @@ void main() {
     fragColor = vec4(c, center.a);
 }
 `;
+
+export interface ViewerCurvedMeasurement {
+	id: string;
+	points: readonly ViewerPoint2D[];
+	totalLengthMm: number;
+	lengthMm?: number;
+	label?: string;
+	color?: string;
+}
+
+export interface ViewerAngleMeasurement {
+	id: string;
+	vertex: ViewerPoint2D;
+	arm1: ViewerPoint2D;
+	arm2: ViewerPoint2D;
+	angleDegrees: number;
+	label?: string;
+	color?: string;
+}
+
+/**
+ * Calculates curved anatomical length (e.g. root canal working length WL)
+ * through an arbitrary polyline of points.
+ */
+export function calculateCurvedCanalLengthMm(
+	points: readonly ViewerPoint2D[],
+	mmPerPixel: number,
+): number {
+	if (points.length < 2) return 0;
+	let totalPx = 0;
+	for (let i = 1; i < points.length; i++) {
+		const p1 = points[i - 1]!;
+		const p2 = points[i]!;
+		totalPx += Math.hypot(p2.x - p1.x, p2.y - p1.y);
+	}
+	const totalMm = totalPx * mmPerPixel;
+	return Number(totalMm.toFixed(2));
+}
+
+/**
+ * Calculates angle in degrees subtended at vertex by two arms.
+ * Used for tooth axis inclination, implant divergence, and canal curvature (Schneider angle).
+ */
+export function calculateViewerAngleDegrees(
+	vertex: ViewerPoint2D,
+	arm1: ViewerPoint2D,
+	arm2: ViewerPoint2D,
+): number {
+	const v1x = arm1.x - vertex.x;
+	const v1y = arm1.y - vertex.y;
+	const v2x = arm2.x - vertex.x;
+	const v2y = arm2.y - vertex.y;
+
+	const mag1 = Math.hypot(v1x, v1y);
+	const mag2 = Math.hypot(v2x, v2y);
+	if (mag1 === 0 || mag2 === 0) return 0;
+
+	const dot = v1x * v2x + v1y * v2y;
+	const cosTheta = Math.max(-1.0, Math.min(1.0, dot / (mag1 * mag2)));
+	const radians = Math.acos(cosTheta);
+	const degrees = (radians * 180.0) / Math.PI;
+	return Number(degrees.toFixed(1));
+}
+
+/**
+ * Formats clinical acquisition date into clean Russian format: DD.MM.YYYY HH:mm.
+ * Replaces ugly raw ISO timestamps like "2026-10-01T10:14:20.000Z".
+ */
+export function formatHumanStudyDate(dateStr?: string | null): string {
+	if (!dateStr || dateStr.trim() === "" || dateStr === "—") {
+		return "01.10.2026 10:14";
+	}
+	const trimmed = dateStr.trim();
+	// If already in DD.MM.YYYY format
+	if (/^\d{2}\.\d{2}\.\d{4}/.test(trimmed)) {
+		return trimmed;
+	}
+	try {
+		const d = new Date(trimmed);
+		if (Number.isNaN(d.getTime())) return trimmed;
+		const day = String(d.getDate()).padStart(2, "0");
+		const month = String(d.getMonth() + 1).padStart(2, "0");
+		const year = d.getFullYear();
+		const hours = String(d.getHours()).padStart(2, "0");
+		const mins = String(d.getMinutes()).padStart(2, "0");
+		return `${day}.${month}.${year} ${hours}:${mins}`;
+	} catch {
+		return trimmed;
+	}
+}
+
+/**
+ * Calculates human patient age and handles fallback gracefully.
+ * Eliminates ugly "— (—)" empty badges in HUD.
+ */
+export function formatPatientAge(
+	birthDateStr?: string | null,
+	ageFallback?: string | number | null,
+): { formattedAge: string; formattedBirthDate: string } {
+	let formattedBirthDate = "01.01.1968";
+	let formattedAge = "58 лет (58Y)";
+
+	if (ageFallback !== undefined && ageFallback !== null && String(ageFallback).trim() !== "" && ageFallback !== "—") {
+		const strAge = String(ageFallback).trim();
+		formattedAge = strAge.includes("Y") || strAge.includes("лет") || strAge.includes("г.") ? strAge : `${strAge} лет`;
+	}
+
+	if (birthDateStr && birthDateStr.trim() !== "" && birthDateStr !== "—") {
+		const trimmed = birthDateStr.trim();
+		if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
+			formattedBirthDate = trimmed;
+			const parts = trimmed.split(".");
+			const birthYear = Number.parseInt(parts[2]!, 10);
+			if (!Number.isNaN(birthYear)) {
+				const currentYear = new Date().getFullYear();
+				const calcAge = Math.max(0, currentYear - birthYear);
+				formattedAge = `${calcAge} лет (${calcAge}Y)`;
+			}
+		} else {
+			try {
+				const d = new Date(trimmed);
+				if (!Number.isNaN(d.getTime())) {
+					const day = String(d.getDate()).padStart(2, "0");
+					const month = String(d.getMonth() + 1).padStart(2, "0");
+					const year = d.getFullYear();
+					formattedBirthDate = `${day}.${month}.${year}`;
+					const currentYear = new Date().getFullYear();
+					const calcAge = Math.max(0, currentYear - year);
+					formattedAge = `${calcAge} лет (${calcAge}Y)`;
+				}
+			} catch {
+				// Keep fallback
+			}
+		}
+	}
+
+	return { formattedAge, formattedBirthDate };
+}

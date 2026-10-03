@@ -814,4 +814,120 @@ export function calculateOrder804nBillingEstimate(
 	};
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// КЛАССИФИКАТОР И ВАЛИДАТОР НОМЕНКЛАТУРЫ МИНЗДРАВА РФ 804Н (ПРИКАЗ № 804Н)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Регулярное выражение для проверки соответствия коду Номенклатуры медицинских услуг Минздрава РФ (Приказ № 804н).
+ * Форматы: A16.07.002, A16.07.002.001, B01.065.001, A06.07.003, A11.07.012.
+ */
+export const ORDER_804N_CODE_REGEX = /^[AB]\d{2}\.\d{2,3}(?:\.\d{3}){0,2}$/i;
+
+/**
+ * Проверяет, является ли переданная строка валидным кодом Номенклатуры Минздрава РФ 804н.
+ */
+export function isValidOrder804nCode(code: string): boolean {
+	if (!code || typeof code !== "string") return false;
+	return ORDER_804N_CODE_REGEX.test(code.trim());
+}
+
+/**
+ * Категории стоматологических услуг по Приказу Минздрава РФ № 804н.
+ */
+export type Order804nNomenclatureCategory =
+	| "therapy"
+	| "surgery"
+	| "orthopedics"
+	| "orthodontics"
+	| "pediatric"
+	| "radiology"
+	| "hygiene"
+	| "periodontics"
+	| "anesthesia"
+	| "consultation"
+	| "package"
+	| "other";
+
+/**
+ * Автоматически определяет клиническую категорию услуги по префиксу кода 804н или названию.
+ */
+export function detectOrder804nCategory(code: string, title?: string): Order804nNomenclatureCategory {
+	const trimmed = (code || "").trim().toUpperCase();
+	const titleLower = (title || "").toLowerCase();
+
+	if (
+		trimmed.startsWith("PKG") ||
+		trimmed.startsWith("CLINIC.") ||
+		titleLower.includes("пакет") ||
+		titleLower.includes("комплекс") ||
+		titleLower.includes("сертификат") ||
+		titleLower.includes("капа")
+	) {
+		return "package";
+	}
+
+	if (trimmed.startsWith("B01.065") || trimmed.startsWith("B01.066")) {
+		return "consultation";
+	}
+	if (trimmed.startsWith("B01.003")) {
+		return "anesthesia";
+	}
+	if (trimmed.startsWith("A06.07") || trimmed.startsWith("A02.07")) {
+		return "radiology";
+	}
+	if (trimmed.startsWith("A16.07.051") || trimmed.startsWith("A11.07.012") || trimmed.startsWith("A16.07.050")) {
+		return "hygiene";
+	}
+	if (
+		trimmed.startsWith("A16.07.038") ||
+		trimmed.startsWith("A16.07.039") ||
+		trimmed.startsWith("A16.07.040") ||
+		trimmed.startsWith("A16.07.019") ||
+		trimmed.startsWith("A16.07.020") ||
+		trimmed.startsWith("A11.07.010")
+	) {
+		return "periodontics";
+	}
+	if (trimmed.startsWith("A16.07.047") || trimmed.startsWith("A16.07.048") || trimmed.startsWith("A16.07.046")) {
+		return "orthodontics";
+	}
+	if (
+		trimmed.startsWith("A16.07.006") ||
+		trimmed.startsWith("A16.07.035") ||
+		trimmed.startsWith("A16.07.036") ||
+		trimmed.startsWith("A16.07.037") ||
+		trimmed.startsWith("A16.07.049") ||
+		trimmed.startsWith("A16.07.053")
+	) {
+		return "orthopedics";
+	}
+	if (
+		trimmed.startsWith("A16.07.001") ||
+		trimmed.startsWith("A16.07.024") ||
+		trimmed.startsWith("A16.07.054") ||
+		trimmed.startsWith("A16.07.055") ||
+		trimmed.startsWith("A16.07.007") ||
+		trimmed.startsWith("A16.07.041") ||
+		trimmed.startsWith("A16.07.017") ||
+		trimmed.startsWith("A16.07.016") ||
+		trimmed.startsWith("A16.07.011") ||
+		trimmed.startsWith("A16.07.012")
+	) {
+		return "surgery";
+	}
+	if (
+		trimmed.startsWith("A16.07.002") ||
+		trimmed.startsWith("A16.07.008") ||
+		trimmed.startsWith("A16.07.030") ||
+		trimmed.startsWith("A16.07.082") ||
+		trimmed.startsWith("A16.07.091") ||
+		trimmed.startsWith("A16.07.003") ||
+		trimmed.startsWith("A16.07.031")
+	) {
+		return "therapy";
+	}
+	return "other";
+}
+
 

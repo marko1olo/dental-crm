@@ -190,6 +190,10 @@ export type PhenolphthaleinColorReaction =
 	| "none_negative" // Норма: окрашивания нет (щелочные моющие средства смыты)
 	| "pink_magenta_alkali"; // Брак: розовое / малиновое окрашивание (остаточная щелочность)
 
+export type SudanColorReaction =
+	| "none_negative" // Норма: окрашивания нет (масляные и липидные загрязнения отсутствуют)
+	| "yellow_pink_lipid_stain"; // Брак: желто-розовые капли и окрашенные жировые пятна
+
 export interface PsoEvaluationInput {
 	readonly batchItemCount: number;
 	readonly testedSampleCount: number;
@@ -206,6 +210,10 @@ export interface PsoEvaluationInput {
 	// Фенолфталеин
 	readonly isPhenolphthaleinNegative: boolean;
 	readonly phenolphthaleinColor?: PhenolphthaleinColorReaction;
+
+	// Судан III (жировые и масляные загрязнения наконечников)
+	readonly isSudanNegative?: boolean;
+	readonly sudanColor?: SudanColorReaction;
 
 	// Моющее средство
 	readonly detergentBrand?: string;
@@ -320,6 +328,7 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 		itemsTypesCount = 1,
 		isAzopyramNegative,
 		isPhenolphthaleinNegative,
+		isSudanNegative = true,
 		azopyramSolutionPreparedAt,
 	} = input;
 
@@ -352,6 +361,12 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 		);
 	}
 
+	if (!isSudanNegative) {
+		reasons.push(
+			"ПОЛОЖИТЕЛЬНАЯ ПРОБА С СУДАНОМ III: обнаружены остаточные жировые и масляные загрязнения наконечников / вращающихся инструментов (желто-розовые капли и окрашенные жировые пятна).",
+		);
+	}
+
 	const isBatchApproved = reasons.length === 0;
 	const isBatchBlocked = !isBatchApproved;
 
@@ -371,6 +386,12 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 			"1. Вся партия изделий (100%) признается недостаточно отмытой от щелочных ПАВ.\n" +
 			"2. Вся партия подлежит повторному обильному ополаскиванию проточной водой не менее 5 минут, затем обессоленной / дистиллированной водой до нейтральной реакции (pH 6.5–7.5).\n" +
 			"3. Повторная фенолфталеиновая проба до полного отсутствия розового окрашивания.";
+	} else if (!isSudanNegative) {
+		clinicalActionProtocolRu =
+			"СТРОГИЙ КЛИНИЧЕСКИЙ РЕГЛАМЕНТ (ПРИ ОБНАРУЖЕНИИ МАСЕЛ И ЖИРОВ):\n" +
+			"1. Вся партия наконечников и вращающихся инструментов подлежит немедленной изоляции.\n" +
+			"2. Проводится механическая промывка внутренних каналов 70% этиловым спиртом, продувка сжатым воздухом и ультразвуковое обезжиривание в нейтральном моющем растворе.\n" +
+			"3. Повторная проба с Суданом III в удвоенном объеме выборки.";
 	} else if (freshness.isExpired) {
 		clinicalActionProtocolRu =
 			"РЕГЛАМЕНТ ПРИ ПРОСРОЧКЕ РАСТВОРА:\n" +
@@ -397,9 +418,11 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 				? "БРАК: ОБНАРУЖЕНА КРОВЬ"
 				: !isPhenolphthaleinNegative
 					? "БРАК: ОСТАТКИ ЩЕЛОЧИ"
-					: freshness.isExpired
-						? "БРАК: РАСТВОР ПРОСРОЧЕН (>2 Ч)"
-						: "БРАК: МАЛАЯ ВЫБОРКА",
+					: !isSudanNegative
+						? "БРАК: МАСЛЯНЫЕ ЗАГРЯЗНЕНИЯ"
+						: freshness.isExpired
+							? "БРАК: РАСТВОР ПРОСРОЧЕН (>2 Ч)"
+							: "БРАК: МАЛАЯ ВЫБОРКА",
 		statusBadgeClass: isBatchApproved ? "badge-success" : "badge-danger",
 	};
 }

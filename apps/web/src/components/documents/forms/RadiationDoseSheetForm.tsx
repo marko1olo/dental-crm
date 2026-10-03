@@ -53,35 +53,16 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 		return (
 			<div className="document-form-container radiation-dose-sheet-wrapper">
 				<DocumentPayloadCard
-					title="Лист учета дозовых нагрузок при рентгенологических исследованиях"
-					description="Радиационный паспорт пациента по СанПиН 2.6.1.1192-03 с контролем годовой эффективной дозы"
+					title="Учёт рентгенологических исследований"
+					description="Регистрация параметров экспозиции и дозиметрии"
 				>
 					<div
-						className={`alert ${
-							doseAssessment.riskCategory === "safe"
-								? "alert-success"
-								: doseAssessment.riskCategory === "moderate"
-									? "alert-warning"
-									: "alert-danger"
-						}`}
-						style={{ marginBottom: "16px", padding: "12px" }}
+						className="p-3 mb-4 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]"
 					>
-						<div style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px" }}>
-							Радиационная безопасность ({currentYear} год):
-						</div>
-						<div style={{ display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "center" }}>
-							<span>
-								Суммарная доза за год: <strong>{doseAssessment.totalDoseMsv.toFixed(4)} мЗв</strong> ({doseAssessment.totalDoseMicrosv.toFixed(1)} мкЗв)
-							</span>
-							<span>
-								Допустимый лимит (проф.): <strong>{doseAssessment.sanpinLimitMsv.toFixed(1)} мЗв</strong>
-							</span>
-							<span>
-								Использовано от нормы: <strong>{doseAssessment.percentageOfSanpinLimit.toFixed(1)}%</strong>
-							</span>
-							<span>
-								Статус: <strong>{doseAssessment.interpretation}</strong>
-							</span>
+						<div className="flex items-center justify-between flex-wrap gap-3">
+							<span>Отчётный период: <strong className="text-[var(--ink)]">{currentYear} год</strong></span>
+							<span>Всего исследований: <strong className="text-[var(--ink)]">{records.length}</strong></span>
+							<span>Суммарная расчётная доза: <strong className="text-[var(--ink)]">{doseAssessment.totalDoseMsv.toFixed(4)} мЗв</strong></span>
 						</div>
 					</div>
 

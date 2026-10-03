@@ -229,10 +229,10 @@ describe("SSR Rendering of WarehouseTransferModal", () => {
 			}),
 		);
 
-		assert.ok(html.includes("Межфилиальное Перемещение ТМЦ"));
-		assert.ok(html.includes("ТОРГ-13"));
+		assert.ok(html.includes("Межфилиальное перемещение материалов"));
+		assert.ok(html.includes("Перемещение материалов"));
 		assert.ok(html.includes("Склад-отправитель"));
 		assert.ok(html.includes("Склад-получатель"));
-		assert.ok(html.includes("Накладная ТОРГ-13 (А4)"));
+		assert.ok(html.includes("Накладная на перемещение"));
 	});
 });

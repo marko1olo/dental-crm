@@ -100,7 +100,7 @@ export const PlanBeforeAfterGallery: React.FC<PlanBeforeAfterGalleryProps> = ({
 					Клинический фотопротокол формируется
 				</h4>
 				<p style={{ margin: 0, fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", maxWidth: "340px" }}>
-					Фотографии зубов до и после лечения будут загружены вашим лечащим врачом после завершения санации.
+					Фотографии зубов до и после лечения будут загружены вашим лечащим врачом после завершения лечения.
 				</p>
 			</div>
 		);

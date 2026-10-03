@@ -28,12 +28,16 @@ export {
 };
 import { staffTelemetryService } from "../../services/logging/staffTelemetryService.js";
 import { ChairsideBillingItemRow } from "./ChairsideBillingItemRow";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
 export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps> = ({
 	visitId, patientId = "pat-walkin", patientName = "Пациент", patientPhone = "",
 	patientDepositRub = 0, patientFamilyBalanceRub = 0, doctorName = "Врач-стоматолог",
 	cashierName, clinicLegalName = "ООО «ДЕНТЕ»", initialServices, onServicesChange,
-	onSave, onOpenPayment, onAddBillingItem, readOnly = false, className = "",
+	onSave, onOpenPayment, onAddBillingItem,
+	dmsGuaranteeLetterId, dmsGuaranteeLetterNumber, dmsInsurerName,
+	availableDmsCoverageRub, initialSplitDmsRub,
+	readOnly = false, className = "",
 }) => {
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
 	const [services, setServices] = useState<VisitBillingServiceItem[]>(() => {
@@ -47,6 +51,46 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	const [globalDiscountReason, setGlobalDiscountReason] = useState<string>("");
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+
+	const [activeDmsLetter, setActiveDmsLetter] = useState<{
+		id: string;
+		letterNumber: string;
+		insurerName: string;
+		availableCoverageRub: number;
+	} | null>(null);
+
+	useEffect(() => {
+		if (availableDmsCoverageRub !== undefined || !patientId || patientId === "pat-walkin" || isDemo) return;
+		let isMounted = true;
+		fetch(`/api/insurance/guarantee-letters?patientId=${encodeURIComponent(patientId)}&status=active`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((r) => (r.ok ? r.json() : []))
+			.then((letters) => {
+				if (!isMounted || !Array.isArray(letters) || letters.length === 0) return;
+				const active = letters.find((l: any) => l.status === "active") || letters[0];
+				if (active) {
+					const maxCoverage = Number(active.maxCoverageRub || 0);
+					const used = Number(active.usedAmountRub || 0);
+					const available = Math.max(0, maxCoverage - used);
+					setActiveDmsLetter({
+						id: active.id,
+						letterNumber: active.letterNumber,
+						insurerName: active.insurerName,
+						availableCoverageRub: available,
+					});
+				}
+			})
+			.catch(() => {});
+		return () => {
+			isMounted = false;
+		};
+	}, [patientId, availableDmsCoverageRub, isDemo]);
+
+	const effectiveDmsId = dmsGuaranteeLetterId || activeDmsLetter?.id;
+	const effectiveDmsNumber = dmsGuaranteeLetterNumber || activeDmsLetter?.letterNumber;
+	const effectiveDmsInsurer = dmsInsurerName || activeDmsLetter?.insurerName;
+	const effectiveDmsCoverage = availableDmsCoverageRub ?? activeDmsLetter?.availableCoverageRub ?? 0;
 
 	const updateServices = useCallback(
 		(newServices: VisitBillingServiceItem[]) => {
@@ -619,7 +663,17 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 						</button>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
+						{effectiveDmsCoverage > 0 && (
+							<div
+								className="h-9 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
+								data-testid="badge-visit-dms-coverage"
+								title={`Гарантийное письмо № ${effectiveDmsNumber || ""} (${effectiveDmsInsurer || ""})`}
+							>
+								<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>ДМС: {effectiveDmsInsurer || "ГП"} ({effectiveDmsCoverage.toLocaleString("ru-RU")} ₽)</span>
+							</div>
+						)}
 						<button
 							type="button"
 							onClick={handleOpenPaymentModal}
@@ -662,6 +716,11 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 					doctorName={doctorName} clinicLegalName={clinicLegalName}
 					initialDiscountPercent={globalDiscountPercent} initialWarranty100={totals.isWarranty100}
 					initialDiscountReason={globalDiscountReason}
+					dmsGuaranteeLetterId={effectiveDmsId}
+					dmsGuaranteeLetterNumber={effectiveDmsNumber}
+					dmsInsurerName={effectiveDmsInsurer}
+					availableDmsCoverageRub={effectiveDmsCoverage > 0 ? effectiveDmsCoverage : undefined}
+					initialSplitDmsRub={initialSplitDmsRub}
 					onSuccess={() => {
 						setIsPaymentModalOpen(false);
 						showToast("Оплата успешно принята в кассу!", "success", 3000);

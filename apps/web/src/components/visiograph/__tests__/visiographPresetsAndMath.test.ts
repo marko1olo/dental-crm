@@ -102,8 +102,8 @@ describe("3D Visiograph & DICOM HU Presets Calibration", () => {
 		assert.strictEqual(huToGrayscale(0, ww, wl), 64);
 	});
 
-	test("1-Click Clinical Filters: Bone, Endodontics, Caries are registered with clinical params", () => {
-		assert.strictEqual(CLINICAL_VISIOGRAPH_FILTERS.length, 3);
+	test("1-Click Clinical Filters: Bone, Endodontics, Caries, Negative, and Pseudo-Relief are registered with clinical params", () => {
+		assert.strictEqual(CLINICAL_VISIOGRAPH_FILTERS.length, 5);
 
 		const boneFilter = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === "bone_periodont");
 		assert.ok(boneFilter);
@@ -122,6 +122,18 @@ describe("3D Visiograph & DICOM HU Presets Calibration", () => {
 		assert.strictEqual(cariesFilter.params.gamma, 1.18);
 		assert.strictEqual(cariesFilter.params.brightness, 12);
 		assert.ok(cariesFilter.label.includes("Кариес / Эмаль"));
+
+		const negativeFilter = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === "negative_cracks");
+		assert.ok(negativeFilter);
+		assert.strictEqual(negativeFilter.params.invert, true);
+		assert.strictEqual(negativeFilter.params.sharpness, 65);
+		assert.ok(negativeFilter.label.includes("Негатив / Трещины"));
+
+		const reliefFilter = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === "pseudo_relief");
+		assert.ok(reliefFilter);
+		assert.strictEqual(reliefFilter.params.pseudoRelief, true);
+		assert.strictEqual(reliefFilter.params.contrast, 25);
+		assert.ok(reliefFilter.label.includes("Псевдо-3D / Рельеф"));
 	});
 });
 

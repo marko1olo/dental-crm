@@ -269,7 +269,7 @@ export const DoctorKickoffWidget: React.FC<DoctorKickoffWidgetProps> = ({
 						type="button"
 						onClick={onOpenCheckout}
 						className="kickoff-action-btn secondary-button"
-						title="Перейти к кассе клиники (54-ФЗ)"
+						title="Перейти к кассе клиники"
 					>
 						<CreditCard size={14} aria-hidden="true" />
 						<span>{isCashReady ? "Касса готова" : "Касса"}</span>

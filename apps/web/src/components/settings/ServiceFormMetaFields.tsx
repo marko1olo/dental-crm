@@ -119,7 +119,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						}
 					>
 						<option value="vat_exempt">
-							Без НДС (пп. 2 п. 2 ст. 149 НК РФ — медицинские услуги)
+							Без НДС (Медицинские услуги)
 						</option>
 						<option value="vat_0">НДС 0%</option>
 						<option value="vat_20">

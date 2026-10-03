@@ -246,9 +246,9 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	const handleApplyAnesthesia = useCallback(() => {
 		onApplyToProtocol?.(calculation.formattedText043, calculation);
 		if (calculation.isContraindicated) {
-			showToast(`Внимание: ${calculation.contraindicationReasonRu} (зафиксировано в протоколе 043/у)`, "warning", 4000);
+			showToast(`Внимание: ${calculation.contraindicationReasonRu} (зафиксировано в протоколе)`, "warning", 4000);
 		} else if (calculation.isOverdose) {
-			showToast(`Внимание: превышение расчетной дозы МРД (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг). Зафиксировано в 043/у.`, "warning", 4000);
+			showToast(`Внимание: превышение расчетной дозы МРД (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг). Зафиксировано в медкарте.`, "warning", 4000);
 		} else {
 			showToast(`Анестезия ${drug.shortLabelRu} (${calculation.carpulesAdministered} карп.) внесена в протокол`, "success", 2500);
 		}
@@ -577,7 +577,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 							? `Внести в протокол (соматический риск: ${calculation.contraindicationReasonRu})`
 							: calculation.isOverdose
 								? `Внести в протокол с отметкой о превышении расчетной дозы (${calculation.totalDoseAdministeredMg} мг > ${calculation.maxAllowedTotalDoseMg} мг)`
-								: "Внести расчет дозы анестезии в дневник 043/у"
+								: "Внести расчет дозы анестезии в дневник приёма"
 					}
 					data-testid="btn-apply-anesthesia-protocol"
 				>
@@ -594,7 +594,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 					) : (
 						<>
 							<Zap className="h-4 w-4 text-white shrink-0" />
-							<span>Внести анестезию в 043/у</span>
+							<span>Внести анестезию в дневник</span>
 						</>
 					)}
 				</button>

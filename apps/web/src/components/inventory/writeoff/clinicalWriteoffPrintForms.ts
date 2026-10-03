@@ -1,4 +1,8 @@
-import { formatKopecksRu } from "@dental/shared";
+import {
+	formatKopecksRu,
+	generateCanonicalTorg16Html,
+	type Torg16ItemLine,
+} from "@dental/shared";
 import {
 	DEFAULT_CLINIC_LEGAL_INFO,
 	type ClinicLegalInfo,
@@ -264,95 +268,52 @@ export function generateTorg16Html(
 	const info = doc.clinicInfo || clinicInfo;
 	const totals = doc.totals;
 
-	const rowsHtml = doc.lines
-		.map((line, index) => {
-			const unitRub = kopecksToRubles(line.unitCostKopecks);
-			const totalRub = kopecksToRubles(line.totalCostKopecks);
-			const reasonDef = getDiscrepancyReason(line.discrepancyReasonCode);
+	const items: Torg16ItemLine[] = doc.lines.map((line, index) => {
+		const unitRub = kopecksToRubles(line.unitCostKopecks);
+		const totalRub = kopecksToRubles(line.totalCostKopecks);
+		const reasonDef = getDiscrepancyReason(line.discrepancyReasonCode);
 
-			return `<tr>
-				<td style="border: 1px solid #000; padding: 4px; text-align: center;">${index + 1}</td>
-				<td style="border: 1px solid #000; padding: 4px;">${line.nameRu}</td>
-				<td style="border: 1px solid #000; padding: 4px; font-family: monospace; text-align: center;">${line.sku}</td>
-				<td style="border: 1px solid #000; padding: 4px; text-align: center;">${line.unit}</td>
-				<td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">${line.actualQuantity}</td>
-				<td style="border: 1px solid #000; padding: 4px; text-align: right;">${unitRub.toFixed(2)}</td>
-				<td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">${totalRub.toFixed(2)}</td>
-				<td style="border: 1px solid #000; padding: 4px; font-size: 8pt;">${line.discrepancyNotes || reasonDef.labelRu}</td>
-			</tr>`;
-		})
-		.join("\n");
+		return {
+			itemIndex: index + 1,
+			sku: line.sku,
+			nameRu: line.nameRu,
+			unitRu: line.unit,
+			okeiCode: line.okeiCode,
+			batchNumber: line.lotNumber || "—",
+			expiryDate: line.expirationDate || "—",
+			quantity: line.actualQuantity,
+			unitCostKopecks: line.unitCostKopecks,
+			totalCostKopecks: line.totalCostKopecks,
+			totalCostRubles: totalRub,
+			defectDescriptionRu: line.discrepancyNotes || reasonDef.labelRu,
+		};
+	});
 
-	return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-	<meta charset="utf-8">
-	<title>Акт о списании товаров ТОРГ-16 № ${doc.actNumber}</title>
-	<style>
-		@page { size: A4 landscape; margin: 10mm; }
-		body { font-family: 'Times New Roman', serif; font-size: 9pt; line-height: 1.25; color: #000; }
-		.header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-		.title { text-align: center; font-weight: bold; font-size: 12pt; margin: 8px 0; text-transform: uppercase; }
-		table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-		th { border: 1px solid #000; padding: 4px; background: #f0f0f0; font-size: 8pt; text-align: center; }
-		.signs { display: flex; justify-content: space-between; margin-top: 25px; }
-	</style>
-</head>
-<body>
-	<div class="header">
-		<div>
-			<strong>Организация:</strong> ${info.clinicNameRu}<br>
-			<strong>Структурное подразделение:</strong> ${doc.cabinetNameRu}
-		</div>
-		<div style="text-align: right; font-size: 8pt;">
-			Унифицированная форма № <strong>ТОРГ-16</strong><br>
-			Форма по <strong>ОКУД 0330216</strong><br>
-			по ОКПО <strong>${info.okpoCode}</strong>
-		</div>
-	</div>
-
-	<div class="title">АКТ О СПИСАНИИ ТОВАРОВ № ${doc.actNumber}</div>
-	<div style="text-align: center;">Дата составления: <strong>${doc.actDate} г.</strong></div>
-
-	<table>
-		<thead>
-			<tr>
-				<th>№</th>
-				<th>Наименование товара / материала</th>
-				<th>Артикул (SKU)</th>
-				<th>Ед. изм.</th>
-				<th>Количество</th>
-				<th>Цена, руб.</th>
-				<th>Сумма, руб.</th>
-				<th>Причина списания</th>
-			</tr>
-		</thead>
-		<tbody>
-			${rowsHtml}
-			<tr style="font-weight: bold; background: #f8f8f8;">
-				<td colspan="4" style="border: 1px solid #000; padding: 4px; text-align: right;">ИТОГО:</td>
-				<td style="border: 1px solid #000; padding: 4px; text-align: right;">${totals.totalMaterialsQuantity}</td>
-				<td style="border: 1px solid #000; padding: 4px;"></td>
-				<td style="border: 1px solid #000; padding: 4px; text-align: right;">${totals.totalCostRubles.toFixed(2)}</td>
-				<td style="border: 1px solid #000; padding: 4px;"></td>
-			</tr>
-		</tbody>
-	</table>
-
-	<div class="signs">
-		<div style="width: 45%;">
-			<strong>Списание произведено единолично:</strong><br>
-			${doc.writtenOffByRole || (doc.isQuickCarpuleWriteoff ? (info.headNursePosition || "Старшая медицинская сестра") : (doc.doctorSpecialty || "Врач-стоматолог"))}<br>
-			________________ / ${doc.assistantFullName || doc.doctorFullName || info.headNurseFullName} /
-		</div>
-		<div style="width: 45%;">
-			<strong>Согласовано (МОЛ):</strong><br>
-			${doc.doctorSpecialty || info.chiefDoctorPosition}<br>
-			________________ / ${doc.doctorFullName || info.chiefDoctorFullName} /
-		</div>
-	</div>
-</body>
-</html>`;
+	return generateCanonicalTorg16Html({
+		actNumber: doc.actNumber,
+		actDate: doc.actDate,
+		organizationNameRu: info.clinicNameRu,
+		organizationOkpo: info.okpoCode,
+		organizationInn: info.inn,
+		organizationKpp: info.kpp,
+		warehouseNameRu: doc.cabinetNameRu,
+		molFullName: doc.doctorFullName || info.chiefDoctorFullName,
+		molPosition: doc.doctorSpecialty || info.chiefDoctorPosition,
+		reasonRu: "Списание расходных материалов и медикаментов клинического приема",
+		items,
+		isSingleSigner: true,
+		singleSignerRole:
+			doc.writtenOffByRole ||
+			(doc.isQuickCarpuleWriteoff
+				? info.headNursePosition || "Старшая медицинская сестра"
+				: doc.doctorSpecialty || "Врач-стоматолог"),
+		singleSignerFullName:
+			doc.assistantFullName || doc.doctorFullName || info.headNurseFullName,
+		totalQuantity: totals.totalMaterialsQuantity,
+		totalCostKopecks: totals.totalCostKopecks,
+		totalCostRubles: totals.totalCostRubles,
+		totalCostWordsRu: totals.totalCostFormatted,
+	});
 }
 
 /**

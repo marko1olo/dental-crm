@@ -7,21 +7,25 @@ import {
   formatTimeRange,
   formatTime,
   formatMoney,
-  CopilotMarkdown,
-  CopilotPatientCard,
-  CopilotAppointmentCard,
-  CopilotSlotCard,
+} from '../useCopilotFormat';
+import { CopilotMarkdown } from '../CopilotMarkdown';
+import { CopilotPatientCard } from '../CopilotPatientCard';
+import { CopilotAppointmentCard } from '../CopilotAppointmentCard';
+import { CopilotSlotCard } from '../CopilotSlotCard';
+import {
   CopilotActionConfirm,
-  CopilotActionConfirmation,
-  CopilotConfirmCard,
-  CopilotLabOrderCard,
-  CopilotDrugInteractionCard,
-  CopilotTimelineCard,
-  CopilotResultCard,
-  CopilotNudges,
-  CopilotSuggestions,
-  CopilotComposer,
-  CopilotDrawer,
+  CopilotActionConfirm as CopilotActionConfirmation,
+  CopilotActionConfirm as CopilotConfirmCard,
+} from '../CopilotActionConfirm';
+import { CopilotLabOrderCard } from '../CopilotLabOrderCard';
+import { CopilotDrugInteractionCard } from '../CopilotDrugInteractionCard';
+import { CopilotTimelineCard } from '../CopilotTimelineCard';
+import { CopilotResultCard } from '../CopilotResultCard';
+import { CopilotNudges } from '../CopilotNudges';
+import { CopilotSuggestions } from '../CopilotSuggestions';
+import { CopilotComposer } from '../CopilotComposer';
+import { CopilotDrawer } from '../CopilotDrawer';
+import {
   PatientProfileCard,
   ScheduleSlotPickerCard,
   Prescription107Card,
@@ -30,7 +34,7 @@ import {
   CopilotProtocol043ConfirmCard,
   CopilotDdiSafetyCard,
   DEFAULT_DENTE_REACT_STEPS,
-} from '../index';
+} from '../CopilotGenerativeCards';
 import { useVisitStore } from '../../../store/visitStore';
 
 describe('Copilot Formatters', () => {

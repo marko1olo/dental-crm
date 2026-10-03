@@ -1089,10 +1089,10 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 						type="button"
 						onClick={() => setIsFiscalModalOpen(true)}
 						className="min-h-[44px] sm:min-h-[32px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-teal-600/20 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
-						title="Принять оплату (карты, СБП, наличные) и пробить фискальный чек 54-ФЗ"
+						title="Принять оплату (карты, СБП, наличные) и выдать кассовый чек"
 					>
 						<ShieldCheck size={15} />
-						<span>Чек 54-ФЗ</span>
+						<span>Кассовый чек</span>
 					</button>
 
 					{/* Export to Comprehensive Plan */}

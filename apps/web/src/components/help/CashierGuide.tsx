@@ -100,7 +100,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 				<div className="flex items-center justify-between gap-2">
 					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
 						<MousePointer size={14} className="text-emerald-500" />
-						<span>Интерактивный сплит-чекаут (Касса 54-ФЗ)</span>
+						<span>Интерактивный сплит-чекаут (Касса и оплата)</span>
 					</div>
 					<span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
 						Комбинированная оплата в 1 клик
@@ -229,7 +229,7 @@ export const CashierGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 					{isReceiptPrinted && (
 						<div className="p-3 bg-emerald-500/10 border-t border-emerald-500/20 text-[11px] text-[var(--ink)] space-y-1 font-mono animate-in fade-in duration-200">
 							<div className="flex items-center justify-between font-bold text-emerald-800 dark:text-emerald-200">
-								<span>КАССОВЫЙ ЧЕК ККТ (54-ФЗ)</span>
+								<span>КАССОВЫЙ ЧЕК</span>
 								<span>ИТОГ: 12 500.00 ₽</span>
 							</div>
 							<div className="text-[10px] text-[var(--muted)]">

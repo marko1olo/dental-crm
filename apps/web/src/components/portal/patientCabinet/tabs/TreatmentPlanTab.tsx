@@ -145,7 +145,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 				<h4 className="pc-empty-title">План комплексного лечения формируется</h4>
 				<p className="pc-empty-desc">
 					Ваш лечащий врач <strong>{data.curatingDoctor}</strong> составляет
-					индивидуальный план санации. После согласования он сразу появится в вашем
+					индивидуальный план лечения и оздоровления. После согласования он сразу появится в вашем
 					личном кабинете.
 				</p>
 				<button

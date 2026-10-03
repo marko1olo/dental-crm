@@ -277,7 +277,7 @@ export function VisitEmkTab() {
 		);
 		updateVisitNoteField(
 			"treatmentPlan",
-			"Проведена профессиональная гигиена и санация полости рта. Обучение гигиене.",
+			"Проведена профессиональная гигиена и профилактика. Обучение гигиене.",
 		);
 		updateVisitNoteField(
 			"recommendations",
@@ -387,7 +387,8 @@ export function VisitEmkTab() {
 				diagnosis:
 					visitNoteForm?.diagnosis ||
 					"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-				treatmentPlan: visitNoteForm?.treatmentPlan || "Санация полости рта",
+				treatmentPlan:
+					visitNoteForm?.treatmentPlan || "План оздоровления и гигиены",
 				recommendations:
 					visitNoteForm?.recommendations || "Профосмотр через 6 месяцев",
 			};

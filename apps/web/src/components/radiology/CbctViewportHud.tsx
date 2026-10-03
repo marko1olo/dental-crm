@@ -295,7 +295,10 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 						}}
 						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/80 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
 						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
-						data-testid={`cbct-maximize-${viewportType}-btn`}
+						data-testid={isMaximized ? `btn-viewport-collapse-${viewportType}` : `btn-viewport-expand-${viewportType}`}
+						data-legacy-testid={`cbct-maximize-${viewportType}-btn`}
+						data-expand-testid={`btn-viewport-expand-${viewportType}`}
+						data-collapse-testid={`btn-viewport-collapse-${viewportType}`}
 						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
 					>
 						{isMaximized ? (
@@ -337,8 +340,24 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			</div>
 
 
-			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE (Compact 28px in 2x2 grid, 40px in maximized mode) */}
-			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20">
+			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE & CLINICAL TELEMETRY (Ez3D-i Standard: TH, INT, Полный срез) */}
+			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20 flex items-end gap-1.5 select-none">
+				{sliceIndex !== undefined && totalSlices !== undefined && (
+					<div
+						className="flex flex-col items-end gap-0.5 px-1.5 py-0.5 rounded bg-zinc-950/85 backdrop-blur-sm border border-zinc-800 text-[10px] font-mono leading-tight shadow-sm text-zinc-300"
+						data-testid={`cbct-bottom-telemetry-${viewportType}`}
+					>
+						<div className="flex items-center gap-1">
+							<span className="text-zinc-500">TH</span>
+							<span className="text-zinc-300 font-bold">[{slabThicknessMm !== undefined ? slabThicknessMm.toFixed(1) : "0.0"}mm]</span>
+							<span className="text-zinc-500 ml-1">INT</span>
+							<span className="text-zinc-300 font-bold">[{(pixelSpacingMm ?? 0.5).toFixed(1)}mm]</span>
+						</div>
+						<div className="text-zinc-400 text-[9px]">
+							Полный срез ({sliceIndex + 1} / {totalSlices})
+						</div>
+					</div>
+				)}
 				<OrientationCube3D viewportType={viewportType} size={isMaximized ? 40 : 28} />
 			</div>
 		</div>

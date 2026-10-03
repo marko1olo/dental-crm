@@ -5,13 +5,14 @@ import { PROJECTION_TYPES, type ProjectionAngleType } from "./directRvgTypes";
 export interface DirectRvgProjectionSelectorProps {
 	projectionType: ProjectionAngleType;
 	onSelectProjectionType: (projId: ProjectionAngleType, typicalExposureSec: number) => void;
-	voltageKv: number;
-	onChangeVoltageKv: (val: number) => void;
-	currentMa: number;
-	onChangeCurrentMa: (val: number) => void;
+	voltageKv?: number;
+	onChangeVoltageKv?: (val: number) => void;
+	currentMa?: number;
+	onChangeCurrentMa?: (val: number) => void;
 	exposureSec: number;
 	onChangeExposureSec: (val: number) => void;
 }
+
 
 export const DirectRvgProjectionSelector: React.FC<DirectRvgProjectionSelectorProps> = ({
 	projectionType,
@@ -59,48 +60,23 @@ export const DirectRvgProjectionSelector: React.FC<DirectRvgProjectionSelectorPr
 				})}
 			</div>
 
-			{/* Tube Voltage & Current Fine Steppers */}
-			<div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60">
+			{/* Clinical Exposure Adjustment (without physics kV/mA clutter per clinical mandate) */}
+			<div className="flex items-center justify-between pt-2 border-t border-slate-700/60">
 				<div>
-					<span className="text-[11px] text-slate-400 block mb-1">Напряжение</span>
-					<select
-						value={voltageKv}
-						onChange={(e) => onChangeVoltageKv(Number(e.target.value))}
-						className="w-full h-8 px-2 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono"
-						data-testid="rvg-voltage-select"
-					>
-						<option value={60}>60 кВ</option>
-						<option value={65}>65 кВ</option>
-						<option value={70}>70 кВ</option>
-					</select>
+					<span className="text-[11px] text-slate-400 block">Экспозиция визиографа</span>
+					<span className="text-[10px] text-slate-500">Автоматическая калибровка датчика</span>
 				</div>
-				<div>
-					<span className="text-[11px] text-slate-400 block mb-1">Ток трубки</span>
-					<select
-						value={currentMa}
-						onChange={(e) => onChangeCurrentMa(Number(e.target.value))}
-						className="w-full h-8 px-2 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono"
-						data-testid="rvg-current-select"
-					>
-						<option value={6.0}>6.0 мА</option>
-						<option value={7.0}>7.0 мА</option>
-						<option value={8.0}>8.0 мА</option>
-					</select>
-				</div>
-				<div>
-					<span className="text-[11px] text-slate-400 block mb-1">Экспозиция</span>
-					<select
-						value={exposureSec}
-						onChange={(e) => onChangeExposureSec(Number(e.target.value))}
-						className="w-full h-8 px-2 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono"
-						data-testid="rvg-exposure-select"
-					>
-						<option value={0.06}>0.06 с</option>
-						<option value={0.08}>0.08 с</option>
-						<option value={0.10}>0.10 с</option>
-						<option value={0.12}>0.12 с</option>
-					</select>
-				</div>
+				<select
+					value={exposureSec}
+					onChange={(e) => onChangeExposureSec(Number(e.target.value))}
+					className="h-8 px-2.5 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono cursor-pointer"
+					data-testid="rvg-exposure-select"
+				>
+					<option value={0.06}>0.06 с (быстрая)</option>
+					<option value={0.08}>0.08 с (стандарт)</option>
+					<option value={0.10}>0.10 с (усиленная)</option>
+					<option value={0.12}>0.12 с (моляры)</option>
+				</select>
 			</div>
 		</div>
 	);

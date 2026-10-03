@@ -682,10 +682,16 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const isValidUuid =
+			typeof data.id === "string" &&
+			/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+				data.id,
+			);
+
 		const [created] = await db
 			.insert(dmsGuaranteeLetters)
 			.values({
-				...(data.id ? { id: data.id } : {}),
+				...(isValidUuid ? { id: data.id } : {}),
 				organizationId: orgId,
 				contractId: data.contractId ?? null,
 				patientId: data.patientId,
@@ -1303,8 +1309,8 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			phone: "+7 (495) 123-45-67",
 			email: org?.email || undefined,
 			medicalLicenseNumber: org?.medicalLicenseNumber || "ЛО-77-01-019842",
-			chiefDoctorNameRu: org?.signatoryName || "Д-р Смирнов А.А.",
-			chiefAccountantNameRu: "Иванова Е.В.",
+			chiefDoctorNameRu: org?.signatoryName || "Главный врач",
+			chiefAccountantNameRu: org?.signatoryName || "Руководитель организации",
 		};
 
 		// 3. Данные страховой компании
@@ -1548,12 +1554,12 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				patientId: tr.patientId,
 				patientFullName: tr.patientFullName,
 				policyNumber: policyNumber || "ДМС-БЕЗ-ПОЛИСА",
-				letterNumber: letter?.letterNumber,
+				...(letter?.letterNumber ? { letterNumber: letter.letterNumber } : {}),
 				insurerName: serviceInsurerName,
 				serviceCode804n: code804n,
 				serviceName,
 				diagnosisCodeMkb10: icd10,
-				toothNumber: toothCode,
+				...(toothCode !== undefined ? { toothNumber: toothCode } : {}),
 				quantity,
 				unitPriceRub,
 				totalPriceRub,
@@ -1561,7 +1567,7 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				patientPaidRub,
 				doctorFullName: tr.doctorFullName || "Врач-стоматолог",
 				isExcluded,
-				exclusionReason: isExcluded ? "Услуга входит в исключения полиса ДМС" : undefined,
+				...(isExcluded ? { exclusionReason: "Услуга входит в исключения полиса ДМС" } : {}),
 			});
 		}
 
@@ -1640,7 +1646,7 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				serviceCode804n: code804n,
 				serviceName,
 				diagnosisCodeMkb10: icd10,
-				toothNumber: toothCode,
+				...(toothCode !== undefined ? { toothNumber: toothCode } : {}),
 				quantity: 1,
 				unitPriceRub,
 				totalPriceRub,

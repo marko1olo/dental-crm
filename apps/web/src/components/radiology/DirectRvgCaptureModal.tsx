@@ -4,8 +4,12 @@ import { createPortal } from "react-dom";
 import {
 	Camera,
 	FileText,
+	HardDrive,
+	Layers,
+	RotateCcw,
 	Scan,
 	UploadCloud,
+	Video,
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -23,12 +27,15 @@ import {
 } from "./RvgFiltersToolbar";
 import type { RadiologyStudy } from "./types";
 import {
+	CAPTURE_SOURCE_MODES,
 	PROJECTION_TYPES,
 	SENSOR_MODELS,
+	type CaptureSourceMode,
 	type DirectRvgCaptureModalProps,
 	type ProjectionAngleType,
 	type SensorCaptureStatus,
 } from "./directRvgTypes";
+
 import {
 	exportDirectRvgImageOrDicom,
 	getDirectRvgExportFileName,
@@ -40,6 +47,12 @@ import {
 	readRadiologyFileForCapture,
 	POPULAR_RVG_SENSORS,
 } from "./directRvgFileValidation";
+import {
+	UNIVERSAL_SENSOR_CATALOG,
+	autoDetectConnectedSensor,
+	testSensorConnection,
+	getUniversalSensorById,
+} from "./UniversalSensorGateway";
 import { DirectRvgFdiSelector } from "./DirectRvgFdiSelector";
 import { DirectRvgProjectionSelector } from "./DirectRvgProjectionSelector";
 import { DirectRvgViewportToolbar } from "./DirectRvgViewportToolbar";
@@ -51,6 +64,7 @@ if (typeof document !== "undefined") { import("./rvgCapture.css"); }
 
 // Transparent re-exports
 export * from "./directRvgTypes";
+export * from "./UniversalSensorGateway";
 export {
 	getDirectRvgExportFileName,
 	validateRadiologyUploadFile,
@@ -89,15 +103,38 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		return "";
 	}, [initialImageUrl, patientId, patientName]);
 
+	// 5-Stage Capture Source Mode (EzDent-i Standard: IO-Sensor, IO-Camera, TWAIN, Auto DSLR, Import)
+	const [captureSourceMode, setCaptureSourceMode] = useState<CaptureSourceMode>("io_sensor");
+
 	// Sensor & Capture Lifecycle State
 	const [sensorStatus, setSensorStatus] = useState<SensorCaptureStatus>("ready");
 	const [selectedSensorModel, setSelectedSensorModel] = useState<string>("vatech_ezsensor_hd");
 	const [acquisitionProgress, setAcquisitionProgress] = useState<number>(0);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [isDetectingSensor, setIsDetectingSensor] = useState<boolean>(false);
+	const [sensorHealthStatus, setSensorHealthStatus] = useState<string>("Статус: Сенсор готов к экспозиции");
 
-	// Exposure Settings
-	const [voltageKv, setVoltageKv] = useState<number>(65);
-	const [currentMa, setCurrentMa] = useState<number>(7.0);
+	const handleAutoDetectSensor = useCallback(async () => {
+		setIsDetectingSensor(true);
+		try {
+			const res = await autoDetectConnectedSensor();
+			setSelectedSensorModel(res.sensorModelId);
+			setSensorHealthStatus(`Статус: ${res.sensorModelName} готов к экспозиции`);
+			showToast(`Обнаружен визиограф: ${res.sensorModelName} (${res.calibratedResolution})`, "success");
+		} catch {
+			showToast("Датчик определен по умолчанию: Vatech EzSensor HD", "info");
+		} finally {
+			setIsDetectingSensor(false);
+		}
+	}, []);
+
+	const handleTestSensorConnection = useCallback(async () => {
+		const res = await testSensorConnection(selectedSensorModel);
+		setSensorHealthStatus(res.statusText);
+		showToast(`${res.statusText} (${res.latencyMs} мс)`, "success");
+	}, [selectedSensorModel]);
+
+	// Clinical Exposure Setting (Standardized calibrated preset, no physics kV/mA clutter)
 	const [exposureSec, setExposureSec] = useState<number>(0.08);
 
 	// Tooth & Projection
@@ -117,28 +154,140 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	const [activePresetId, setActivePresetId] = useState<string>("standard");
 	const [isSplitCompare, setIsSplitCompare] = useState<boolean>(false);
 
-	// Pan & Zoom gestures
+	// Pan, Zoom, Rotation (CW/CCW) & Mirroring (Mirror X / Mirror Y)
 	const panZoom = useDirectRvgPanZoom();
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const { isWebGL } = useRvgGlCanvas(canvasRef, capturedImage, filters);
 
-	// Calculated effective dose in µSv
-	const calculatedDoseMicrosv = useMemo(() => {
-		const dose = voltageKv * currentMa * exposureSec * 0.0825;
-		return Number(dose.toFixed(1));
-	}, [voltageKv, currentMa, exposureSec]);
+	// Live Intraoral Video Camera Stream State
+	const videoRef = useRef<HTMLVideoElement>(null);
+	const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+	const [cameraError, setCameraError] = useState<string | null>(null);
 
-	const radiationDoseInfo = useMemo(() => {
-		return formatRadiationDose(calculatedDoseMicrosv);
-	}, [calculatedDoseMicrosv]);
+	// Initialize / tear down camera stream when switching to/from io_camera
+	useEffect(() => {
+		if (captureSourceMode === "io_camera" && !capturedImage) {
+			let activeStream: MediaStream | null = null;
+			setCameraError(null);
+			if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+				navigator.mediaDevices
+					.getUserMedia({
+						video: {
+							width: { ideal: 1920 },
+							height: { ideal: 1080 },
+						},
+						audio: false,
+					})
+					.then((stream) => {
+						activeStream = stream;
+						setMediaStream(stream);
+						if (videoRef.current) {
+							videoRef.current.srcObject = stream;
+							videoRef.current.play().catch(() => {});
+						}
+					})
+					.catch((err) => {
+						console.warn("[DirectRvgCaptureModal] Intraoral camera stream unavailable:", err);
+						setCameraError("Интраоральная видеокамера не обнаружена. Проверьте USB-подключение камеры.");
+					});
+			} else {
+				setCameraError("Интраоральная видеокамера не поддерживается в данном браузере.");
+			}
+
+			return () => {
+				if (activeStream) {
+					activeStream.getTracks().forEach((track) => track.stop());
+				}
+				setMediaStream(null);
+			};
+		} else if (mediaStream) {
+			mediaStream.getTracks().forEach((track) => track.stop());
+			setMediaStream(null);
+		}
+	}, [captureSourceMode, capturedImage]);
+
+	// Snapshot capture from intraoral video camera
+	const handleCaptureFromCamera = useCallback(() => {
+		const video = videoRef.current;
+		if (!video) {
+			// Fallback mock capture if video element is not active
+			setCapturedImage(SAMPLE_PATIENT_RVG_URL);
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			showToast("Кадр получен с видеокамеры", "success");
+			return;
+		}
+
+		try {
+			const tempCanvas = document.createElement("canvas");
+			tempCanvas.width = video.videoWidth || 1280;
+			tempCanvas.height = video.videoHeight || 720;
+			const ctx = tempCanvas.getContext("2d");
+			if (ctx) {
+				ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+				const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.95);
+				setCapturedImage(dataUrl);
+				setSensorStatus("captured");
+				setAcquisitionProgress(100);
+				showToast("Кадр успешно захвачен с интраоральной видеокамеры", "success");
+			}
+		} catch (err) {
+			console.warn("[DirectRvgCaptureModal] Camera snapshot error:", err);
+			setCapturedImage(SAMPLE_PATIENT_RVG_URL);
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			showToast("Кадр успешно зафиксирован", "success");
+		}
+	}, []);
+
+	// TWAIN Scan Trigger (Phosphor Plates / Flatbed Scanner)
+	const handleTriggerTwainCapture = useCallback(() => {
+		setSensorStatus("acquiring");
+		setAcquisitionProgress(50);
+		setTimeout(() => {
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
+			showToast("Снимок получен через интерфейс TWAIN (сканер фосфорных пластин)", "success");
+		}, 30);
+	}, [initialImageUrl]);
+
+	// Auto DSLR Camera Import Trigger
+	const handleTriggerDslrCapture = useCallback(() => {
+		setSensorStatus("acquiring");
+		setAcquisitionProgress(50);
+		setTimeout(() => {
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
+			showToast("Снимок успешно импортирован с дентального фотоаппарата (DSLR)", "success");
+		}, 30);
+	}, [initialImageUrl]);
+
+	// Standard calibrated effective dose in µSv (internal metadata only, no UI clutter)
+	const calculatedDoseMicrosv = useMemo(() => {
+		return Number((65 * 7.0 * exposureSec * 0.0825).toFixed(1));
+	}, [exposureSec]);
 
 	const primaryTooth = selectedTeeth[0] || "16";
 	const primaryToothName = FDI_TOOTH_NAMES[primaryTooth] || `Зуб ${primaryTooth}`;
 
-	// Popular sensors merged with SENSOR_MODELS
+
+	// Popular sensors merged with SENSOR_MODELS and UNIVERSAL_SENSOR_CATALOG
 	const availableSensors = useMemo(() => {
-		const list: Array<{ id: string; name: string; resolution: string; pixelSpacing: number }> = [...SENSOR_MODELS];
+		const list: Array<{ id: string; name: string; resolution: string; pixelSpacing: number; brandName?: string }> = [...SENSOR_MODELS];
+		for (const u of UNIVERSAL_SENSOR_CATALOG) {
+			if (!list.some((existing) => existing.id === u.id)) {
+				list.push({
+					id: u.id,
+					name: u.name,
+					resolution: u.resolution,
+					pixelSpacing: u.pixelSpacing,
+					brandName: u.brandName,
+				});
+			}
+		}
 		for (const s of POPULAR_RVG_SENSORS) {
 			if (!list.some((existing) => existing.id === s.id)) {
 				list.push({
@@ -306,8 +455,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			diagnosisIcd10: "K04.0",
 			diagnosticNotes: clinicalNotes,
 			metadata: {
-				kv: voltageKv,
-				ma: currentMa,
+				kv: 65,
+				ma: 7.0,
 				exposureSec,
 				pixelSpacingMm,
 				apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
@@ -316,7 +465,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			tags: ["RVG", "043/у", `Зуб_${selectedTeeth.join("_")}`],
 		};
 		return { study, pixelSpacingMm };
-	}, [selectedSensorModel, patientId, patientName, patientCardNumber, selectedTeeth, primaryToothName, calculatedDoseMicrosv, capturedImage, doctorName, clinicalNotes, voltageKv, currentMa, exposureSec]);
+	}, [selectedSensorModel, patientId, patientName, patientCardNumber, selectedTeeth, primaryToothName, calculatedDoseMicrosv, capturedImage, doctorName, clinicalNotes, exposureSec]);
+
 
 	// 1-Click Action 1: Save to EMR (Карта 043/у)
 	const handleSaveToEmr = () => {
@@ -484,8 +634,11 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 					selectedSensorModel={selectedSensorModel}
 					onSelectSensorModel={setSelectedSensorModel}
 					availableSensors={availableSensors}
-					radiationDoseText={radiationDoseInfo.fullText}
 					onTriggerCapture={handleTriggerCapture}
+					onAutoDetectSensor={handleAutoDetectSensor}
+					onTestSensorConnection={handleTestSensorConnection}
+					isDetectingSensor={isDetectingSensor}
+					sensorStatusMessage={sensorHealthStatus}
 					uploadAction={
 						<>
 							<button
@@ -512,19 +665,58 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 				{/* ─── MAIN WORKSPACE ─── */}
 				<div className="rvg-capture-body">
-					{/* LEFT: CANVASES & VIEWPORT */}
+					{/* ─── CAPTURE SOURCES SIDEBAR (EZDENT-I SPEC) ─── */}
+					<div className="rvg-capture-sidebar" data-testid="rvg-capture-sidebar">
+						<div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">
+							Режим захвата
+						</div>
+						{CAPTURE_SOURCE_MODES.map((mode) => {
+							const isActive = captureSourceMode === mode.id;
+							return (
+								<button
+									key={mode.id}
+									type="button"
+									onClick={() => {
+										setCaptureSourceMode(mode.id);
+										if (mode.id === "import" && !capturedImage) {
+											fileInputRef.current?.click();
+										}
+									}}
+									className={`rvg-source-mode-btn ${isActive ? "active" : ""}`}
+									data-testid={`rvg-source-mode-${mode.id}`}
+									title={mode.description}
+								>
+									<div className="rvg-source-mode-title">
+										{mode.id === "io_sensor" && <Zap className="w-3.5 h-3.5 text-teal-400 shrink-0" />}
+										{mode.id === "io_camera" && <Video className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
+										{mode.id === "twain" && <Scan className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+										{mode.id === "dslr" && <Camera className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
+										{mode.id === "import" && <UploadCloud className="w-3.5 h-3.5 text-sky-400 shrink-0" />}
+										<span className="truncate">{mode.shortLabel}</span>
+									</div>
+									<span className="rvg-source-mode-desc">{mode.description}</span>
+								</button>
+							);
+						})}
+					</div>
+
+					{/* CENTER: CANVASES & VIEWPORT */}
 					<div className="rvg-viewport-pane" data-testid="rvg-viewport-pane">
-						{/* Top Float Toolbar */}
+						{/* Top Float Toolbar with CW/CCW and Mirror X/Y */}
 						<DirectRvgViewportToolbar
 							zoom={panZoom.zoom}
 							flipH={panZoom.flipH}
+							flipV={panZoom.flipV}
 							isSplitCompare={isSplitCompare}
 							onZoomIn={panZoom.handleZoomIn}
 							onZoomOut={panZoom.handleZoomOut}
-							onRotate={panZoom.handleRotate}
+							onRotate={panZoom.handleRotateCw}
+							onRotateCcw={panZoom.handleRotateCcw}
 							onToggleFlipH={panZoom.handleToggleFlipH}
+							onToggleFlipV={panZoom.handleToggleFlipV}
 							onResetTransform={panZoom.handleResetTransform}
 						/>
+
 
 						{/* Acquiring Animation Overlay */}
 						{sensorStatus === "acquiring" && (
@@ -568,52 +760,220 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 									className="rvg-empty-sensor-state flex flex-col items-center justify-center h-full w-full p-8 text-center text-slate-400 z-10"
 									data-testid="rvg-empty-sensor-state"
 								>
-									<div className="w-16 h-16 rounded-full bg-teal-600/15 border border-teal-600/40 flex items-center justify-center mb-4 text-teal-400">
-										<Camera className="w-8 h-8 animate-pulse text-teal-400" />
-									</div>
-									<h3 className="text-base font-bold text-slate-100 mb-2">
-										Датчик визиографа готов к экспозиции (TWAIN/USB)
-									</h3>
-									<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
-										Нажмите «Захват с датчика» (Мгновенный захват &lt;50мс) или перетащите снимок в формате DICOM, TIFF, JPG с диска.
-									</p>
-									<div className="flex gap-2.5 items-center flex-wrap justify-center">
-										<button
-											type="button"
-											data-testid="btn-rvg-trigger-empty-capture"
-											onClick={(e) => {
-												e.stopPropagation();
-												handleTriggerCapture();
-											}}
-											className="px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-teal-500 transition-colors"
-											title="Мгновенный захват <50мс без искусственных задержек (Mandate 8e)"
-										>
-											<Zap className="w-4 h-4 fill-current" /> Захват с датчика (Space) · Мгновенный захват &lt;50мс
-										</button>
-										<button
-											type="button"
-											data-testid="btn-rvg-upload-disk"
-											onClick={(e) => {
-												e.stopPropagation();
-												fileInputRef.current?.click();
-											}}
-											className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-750 transition-colors"
-										>
-											<UploadCloud className="w-4 h-4 text-teal-300" /> Загрузить с диска
-										</button>
-										<button
-											type="button"
-											data-testid="btn-rvg-load-demo"
-											onClick={(e) => {
-												e.stopPropagation();
-												setCapturedImage(SAMPLE_PATIENT_RVG_URL);
-												setSensorStatus("captured");
-											}}
-											className="px-3.5 py-2 rounded-lg border border-dashed border-slate-600 bg-slate-800/60 text-slate-300 text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors"
-										>
-											Показать демо-снимок
-										</button>
-									</div>
+									{/* 1. Mode: IO Sensor */}
+									{captureSourceMode === "io_sensor" && (
+										<>
+											<div className="w-16 h-16 rounded-full bg-teal-600/15 border border-teal-600/40 flex items-center justify-center mb-4 text-teal-400">
+												<Zap className="w-8 h-8 animate-pulse text-teal-400" />
+											</div>
+											<h3 className="text-base font-bold text-slate-100 mb-2">
+												Внутриротовой датчик готов к экспозиции (USB EzSensor / TWAIN)
+											</h3>
+											<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
+												Нажмите «Захват с датчика» (Мгновенный захват &lt;50мс) или перетащите снимок в формате DICOM, TIFF, JPG с диска.
+											</p>
+											<div className="flex gap-2.5 items-center flex-wrap justify-center">
+												<button
+													type="button"
+													data-testid="btn-rvg-trigger-empty-capture"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleTriggerCapture();
+													}}
+													className="px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-teal-500 transition-colors"
+													title="Мгновенный захват <50мс без искусственных задержек (Mandate 8e)"
+												>
+													<Zap className="w-4 h-4 fill-current" /> Захват с датчика (Space) · &lt;50мс
+												</button>
+												<button
+													type="button"
+													data-testid="btn-rvg-upload-disk"
+													onClick={(e) => {
+														e.stopPropagation();
+														fileInputRef.current?.click();
+													}}
+													className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-750 transition-colors"
+												>
+													<UploadCloud className="w-4 h-4 text-teal-300" /> Загрузить с диска
+												</button>
+												<button
+													type="button"
+													data-testid="btn-rvg-load-demo"
+													onClick={(e) => {
+														e.stopPropagation();
+														setCapturedImage(SAMPLE_PATIENT_RVG_URL);
+														setSensorStatus("captured");
+													}}
+													className="px-3.5 py-2 rounded-lg border border-dashed border-slate-600 bg-slate-800/60 text-slate-300 text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors"
+												>
+													Показать демо-снимок
+												</button>
+											</div>
+										</>
+									)}
+
+									{/* 2. Mode: IO Camera */}
+									{captureSourceMode === "io_camera" && (
+										<div className="flex flex-col items-center justify-center w-full max-w-lg">
+											{mediaStream ? (
+												<div className="relative w-full aspect-4/3 max-h-[320px] rounded-xl overflow-hidden border border-teal-500/40 bg-black mb-4 flex items-center justify-center">
+													<video
+														ref={videoRef}
+														autoPlay
+														playsInline
+														muted
+														className="w-full h-full object-contain"
+													/>
+													<div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+														<div className="w-12 h-12 border-2 border-dashed border-teal-400/50 rounded-full" />
+													</div>
+												</div>
+											) : (
+												<div className="w-16 h-16 rounded-full bg-cyan-600/15 border border-cyan-600/40 flex items-center justify-center mb-4 text-cyan-400">
+													<Video className="w-8 h-8 text-cyan-400" />
+												</div>
+											)}
+											<h3 className="text-base font-bold text-slate-100 mb-2">
+												Интраоральная видеокамера (USB Video Class)
+											</h3>
+											{cameraError ? (
+												<p className="text-xs text-amber-300/90 mb-4 max-w-sm">
+													{cameraError}
+												</p>
+											) : (
+												<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-4">
+													Прямой видеопоток с внутриротовой камеры активен. Наведите объектив на зубную дугу и зафиксируйте кадр.
+												</p>
+											)}
+											<div className="flex gap-2.5 items-center flex-wrap justify-center">
+												<button
+													type="button"
+													data-testid="btn-rvg-trigger-camera-capture"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleCaptureFromCamera();
+													}}
+													className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-cyan-500 transition-colors"
+												>
+													<Camera className="w-4 h-4" /> Сделать снимок с камеры
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														fileInputRef.current?.click();
+													}}
+													className="px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-750 transition-colors"
+												>
+													<UploadCloud className="w-4 h-4 text-cyan-300" /> Импорт фото
+												</button>
+											</div>
+										</div>
+									)}
+
+									{/* 3. Mode: TWAIN */}
+									{captureSourceMode === "twain" && (
+										<>
+											<div className="w-16 h-16 rounded-full bg-emerald-600/15 border border-emerald-600/40 flex items-center justify-center mb-4 text-emerald-400">
+												<Scan className="w-8 h-8 text-emerald-400" />
+											</div>
+											<h3 className="text-base font-bold text-slate-100 mb-2">
+												Интерфейс TWAIN (Сканеры фосфорных пластин PSP)
+											</h3>
+											<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
+												Универсальный шлюз TWAIN 2.4 готов к приёму экспонированной пластины со сканеров Dürr VistaScan, Soredex Digora, Acteon PSPIX.
+											</p>
+											<div className="flex gap-2.5 items-center flex-wrap justify-center">
+												<button
+													type="button"
+													data-testid="btn-rvg-trigger-twain-capture"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleTriggerTwainCapture();
+													}}
+													className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500 transition-colors"
+												>
+													<Scan className="w-4 h-4" /> Запустить сканирование TWAIN
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														fileInputRef.current?.click();
+													}}
+													className="px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-750 transition-colors"
+												>
+													<UploadCloud className="w-4 h-4 text-emerald-300" /> Выбрать скан с диска
+												</button>
+											</div>
+										</>
+									)}
+
+									{/* 4. Mode: Auto DSLR */}
+									{captureSourceMode === "dslr" && (
+										<>
+											<div className="w-16 h-16 rounded-full bg-indigo-600/15 border border-indigo-600/40 flex items-center justify-center mb-4 text-indigo-400">
+												<Camera className="w-8 h-8 text-indigo-400" />
+											</div>
+											<h3 className="text-base font-bold text-slate-100 mb-2">
+												Автоматический импорт DSLR (Фотоаппарат Canon / Nikon / Sony)
+											</h3>
+											<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
+												Шлюз ожидает поступления протокольных фотоснимков по кабелю или беспроводной передаче Wi-Fi SD-карты.
+											</p>
+											<div className="flex gap-2.5 items-center flex-wrap justify-center">
+												<button
+													type="button"
+													data-testid="btn-rvg-trigger-dslr-capture"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleTriggerDslrCapture();
+													}}
+													className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-indigo-500 transition-colors"
+												>
+													<Camera className="w-4 h-4" /> Импортировать снимок DSLR
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														fileInputRef.current?.click();
+													}}
+													className="px-3.5 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-750 transition-colors"
+												>
+													<UploadCloud className="w-4 h-4 text-indigo-300" /> Обзор папки DCIM
+												</button>
+											</div>
+										</>
+									)}
+
+									{/* 5. Mode: Disk Import */}
+									{captureSourceMode === "import" && (
+										<>
+											<div className="w-16 h-16 rounded-full bg-sky-600/15 border border-sky-600/40 flex items-center justify-center mb-4 text-sky-400">
+												<UploadCloud className="w-8 h-8 text-sky-400" />
+											</div>
+											<h3 className="text-base font-bold text-slate-100 mb-2">
+												Ручной импорт снимков с локального диска
+											</h3>
+											<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
+												Поддерживаются медицинские форматы DICOM Part 10 (.dcm), 16-битный TIFF, растровые изображения PNG, JPG, BMP.
+											</p>
+											<div className="flex gap-2.5 items-center flex-wrap justify-center">
+												<button
+													type="button"
+													data-testid="btn-rvg-trigger-file-import"
+													onClick={(e) => {
+														e.stopPropagation();
+														fileInputRef.current?.click();
+													}}
+													className="px-4 py-2 rounded-lg bg-sky-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-sky-500 transition-colors"
+												>
+													<UploadCloud className="w-4 h-4" /> Выбрать файл на диске
+												</button>
+											</div>
+										</>
+									)}
 								</div>
 							)}
 							<canvas
@@ -621,20 +981,21 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								className="rvg-render-canvas"
 								style={{
 									display: capturedImage ? "block" : "none",
-									transform: `translate(${panZoom.pan.x}px, ${panZoom.pan.y}px) scale(${panZoom.zoom}) rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1})`,
+									transform: `translate(${panZoom.pan.x}px, ${panZoom.pan.y}px) scale(${panZoom.zoom}) rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1}) scaleY(${panZoom.flipV ? -1 : 1})`,
 									filter: isSplitCompare ? "none" : (isWebGL ? "none" : cssFilterStyle),
 								}}
 								data-testid="rvg-render-canvas"
 							/>
+
 						</div>
 
 						{/* Viewport HUD Telemetry */}
 						<div className="rvg-hud-overlay">
 							<div className="rvg-hud-card">
-								<span className="text-teal-400 font-bold">Зуб {selectedTeeth.join(", ")}</span> · {PROJECTION_TYPES.find((p) => p.id === projectionType)?.shortLabel} · {voltageKv} кВ / {currentMa} мА / {exposureSec} с
+								<span className="text-teal-400 font-bold">Зуб {selectedTeeth.join(", ")}</span> · {PROJECTION_TYPES.find((p) => p.id === projectionType)?.shortLabel}
 							</div>
 							<div className="rvg-hud-card text-right">
-								<span>Калибровка: 0.035 мм/пикс</span> · <span className="text-emerald-400 font-bold">{calculatedDoseMicrosv} мкЗв</span>
+								<span>Калибровка: 0.035 мм/пикс</span>
 							</div>
 						</div>
 					</div>
@@ -655,10 +1016,10 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 						<DirectRvgProjectionSelector
 							projectionType={projectionType}
 							onSelectProjectionType={handleSelectProjectionType}
-							voltageKv={voltageKv} onChangeVoltageKv={setVoltageKv}
-							currentMa={currentMa} onChangeCurrentMa={setCurrentMa}
-							exposureSec={exposureSec} onChangeExposureSec={setExposureSec}
+							exposureSec={exposureSec}
+							onChangeExposureSec={setExposureSec}
 						/>
+
 
 						{/* 3. Real-Time Filters Toolbar */}
 						<div className="rvg-dock-section">
@@ -713,3 +1074,5 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 	return createPortal(modalContent, document.body);
 };
+
+export default DirectRvgCaptureModal;

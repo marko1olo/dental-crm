@@ -324,7 +324,7 @@ export const RadiologyFilmstripDock: React.FC<RadiologyFilmstripDockProps> = ({
 										{timeStr && <span className="text-slate-400 text-[9px] ml-1">{timeStr}</span>}
 									</div>
 									<div className="flex items-center justify-between text-slate-400 text-[9px] mt-0.5">
-										<span className="truncate">{study.title || badge.label}</span>
+										<span className="truncate">{(study as any).title || (study as any).studyDescription || badge.label}</span>
 										{isActive && (
 											<span className="text-[#00C853] font-bold text-[8px] uppercase">Активен</span>
 										)}

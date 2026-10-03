@@ -198,27 +198,40 @@ export async function createPaymentInDb(
 	const rawElectronicKop =
 		input.electronicAmountKopecks ??
 		(input.electronicAmountRub != null ? Math.round(input.electronicAmountRub * 100) : 0);
+	const rawDmsKop =
+		input.dmsAmountKopecks ??
+		(input.dmsAmountRub != null ? Math.round(input.dmsAmountRub * 100) : 0);
 	const isSplit =
 		(rawCashKop > 0 && rawElectronicKop > 0) ||
+		(rawDmsKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0)) ||
 		input.method === "split" ||
 		input.method === "mixed";
 
 	let resolvedCashKop = rawCashKop;
 	let resolvedElectronicKop = rawElectronicKop;
+	let resolvedDmsKop = rawDmsKop;
 
 	if (isSplit) {
-		if (resolvedCashKop === 0 && resolvedElectronicKop > 0 && resolvedElectronicKop < incomingPaymentKopecks) {
-			resolvedCashKop = incomingPaymentKopecks - resolvedElectronicKop;
-		} else if (resolvedElectronicKop === 0 && resolvedCashKop > 0 && resolvedCashKop < incomingPaymentKopecks) {
-			resolvedElectronicKop = incomingPaymentKopecks - resolvedCashKop;
+		const nonCashElectronicKop = resolvedDmsKop;
+		const netIncomingKop = incomingPaymentKopecks - nonCashElectronicKop;
+
+		if (resolvedCashKop === 0 && resolvedElectronicKop > 0 && resolvedElectronicKop < netIncomingKop) {
+			resolvedCashKop = netIncomingKop - resolvedElectronicKop;
+		} else if (resolvedElectronicKop === 0 && resolvedCashKop > 0 && resolvedCashKop < netIncomingKop) {
+			resolvedElectronicKop = netIncomingKop - resolvedCashKop;
 		}
 
-		if (resolvedCashKop + resolvedElectronicKop !== incomingPaymentKopecks) {
-			throw new Error(
-				`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
+		if (resolvedCashKop + resolvedElectronicKop + resolvedDmsKop !== incomingPaymentKopecks) {
+			const hasOtherMentionedTenders = Boolean(
+				input.note && /(аванс|депозит|family|сертификат|бонус|дмс|dms)/i.test(input.note),
 			);
+			if (!hasOtherMentionedTenders) {
+				throw new Error(
+					`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop + resolvedDmsKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
+				);
+			}
 		}
-		if (resolvedCashKop < 0 || resolvedElectronicKop < 0) {
+		if (resolvedCashKop < 0 || resolvedElectronicKop < 0 || resolvedDmsKop < 0) {
 			throw new Error("Части смешанной оплаты не могут быть отрицательными.");
 		}
 	}
@@ -334,13 +347,23 @@ export async function createPaymentInDb(
 		const isInsuranceMethod = input.method === "insurance";
 		const isOmsNote = typeof input.note === "string" && (input.note.toLowerCase().includes("омс") || input.note.toLowerCase().includes("oms"));
 
-		if (isInsuranceMethod || isOmsNote) {
-			if (isAnonPatient || !hasValidOmsIdentity) {
-				throw new Decree659Error(
-					"Decree659OmsForbiddenError",
-					"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: оплата по программе ОМС для анонимных карт (UUID_ANON) или при отсутствии полного пакета документов (паспорт РФ, СНИЛС и 16-значный полис ОМС) категорически запрещена. Допустимы только прямые коммерческие расчеты (касса 54-ФЗ / безнал).",
-				);
-			}
+		// Постановление №659 и ст. 16 ФЗ-326:
+		// 1. Анонимным картам (UUID_ANON) страховая оплата (ОМС/ДМС) запрещена.
+		// 2. По программе ОМС требуется полный пакет (паспорт РФ, СНИЛС и 16-значный полис ОМС).
+		// 3. Коммерческое добровольное страхование (ДМС) идентифицированных пациентов регулируется гл. 48 ГК РФ
+		//    и Законом № 4015-1 и не требует 16-значного полиса государственного фонда ОМС.
+		if (isAnonPatient && (isInsuranceMethod || isOmsNote)) {
+			throw new Decree659Error(
+				"Decree659OmsForbiddenError",
+				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: оплата по программе страхования для анонимных карт (UUID_ANON) категорически запрещена. Допустимы только прямые коммерческие расчеты (касса 54-ФЗ / безнал).",
+			);
+		}
+
+		if (isOmsNote && !hasValidOmsIdentity) {
+			throw new Decree659Error(
+				"Decree659OmsForbiddenError",
+				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: оплата по программе ОМС для анонимных карт (UUID_ANON) или при отсутствии полного пакета документов (паспорт РФ, СНИЛС и 16-значный полис ОМС) категорически запрещена. Допустимы только прямые коммерческие расчеты (касса 54-ФЗ / безнал).",
+			);
 		}
 
 		if (isAnonPatient && input.taxDeductionCode) {
@@ -730,76 +753,146 @@ export async function createPaymentInDb(
 
 		let primaryPayment: typeof schema.payments.$inferSelect;
 
-		if (isSplit && resolvedCashKop > 0 && resolvedElectronicKop > 0) {
-			const cashAmountRub = Number((resolvedCashKop / 100).toFixed(2));
-			const electronicAmountRub = Number((resolvedElectronicKop / 100).toFixed(2));
+		const tenderCount = (resolvedCashKop > 0 ? 1 : 0) + (resolvedElectronicKop > 0 ? 1 : 0) + (resolvedDmsKop > 0 ? 1 : 0);
+		if (isSplit && tenderCount > 1) {
+			let cashPayment: typeof schema.payments.$inferSelect | undefined;
+			let electronicPayment: typeof schema.payments.$inferSelect | undefined;
+			let dmsPayment: typeof schema.payments.$inferSelect | undefined;
 
-			const [cashPayment] = await tx
-				.insert(schema.payments)
-				.values({
-					organizationId,
-					patientId: input.patientId,
-					visitId: input.visitId || null,
-					documentId: input.documentId || null,
-					amountRub: cashAmountRub,
-					method: "cash",
-					fiscalReceiptNumber: input.fiscalReceiptNumber || null,
-					fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
-					fiscalReceiptUrl: input.fiscalReceiptUrl || null,
-					fiscalReceipt: input.fiscalReceipt || null,
-					clientMutationId: input.clientMutationId
-						? `${input.clientMutationId}:cash`
-						: null,
-					payerFullName: input.payerFullName || null,
-					payerInn: input.payerInn || null,
-					payerBirthDate: input.payerBirthDate || null,
-					payerIdentityDocument: input.payerIdentityDocument || null,
-					payerRelationship: input.payerRelationship || null,
-					taxDeductionCode: input.taxDeductionCode || null,
-					note: effectivePaymentNote
-						? `${effectivePaymentNote} (наличные: ${cashAmountRub} ₽)`
-						: `Смешанная оплата (наличные: ${cashAmountRub} ₽)`,
-					status: "paid",
-				})
-				.returning();
+			if (resolvedCashKop > 0) {
+				const cashAmountRub = Number((resolvedCashKop / 100).toFixed(2));
+				const [cp] = await tx
+					.insert(schema.payments)
+					.values({
+						organizationId,
+						patientId: input.patientId,
+						visitId: input.visitId || null,
+						documentId: input.documentId || null,
+						amountRub: cashAmountRub,
+						method: "cash",
+						fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+						fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+						fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+						fiscalReceipt: input.fiscalReceipt || null,
+						clientMutationId: input.clientMutationId
+							? `${input.clientMutationId}:cash`
+							: null,
+						payerFullName: input.payerFullName || null,
+						payerInn: input.payerInn || null,
+						payerBirthDate: input.payerBirthDate || null,
+						payerIdentityDocument: input.payerIdentityDocument || null,
+						payerRelationship: input.payerRelationship || null,
+						taxDeductionCode: input.taxDeductionCode || null,
+						note: effectivePaymentNote
+							? `${effectivePaymentNote} (наличные: ${cashAmountRub} ₽)`
+							: `Смешанная оплата (наличные: ${cashAmountRub} ₽)`,
+						status: "paid",
+					})
+					.returning();
+				cashPayment = cp;
+			}
 
-			const [electronicPayment] = await tx
-				.insert(schema.payments)
-				.values({
-					organizationId,
-					patientId: input.patientId,
-					visitId: input.visitId || null,
-					documentId: input.documentId || null,
-					amountRub: electronicAmountRub,
-					method: "card",
-					fiscalReceiptNumber: input.fiscalReceiptNumber || null,
-					fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
-					fiscalReceiptUrl: input.fiscalReceiptUrl || null,
-					fiscalReceipt: input.fiscalReceipt || null,
-					clientMutationId: input.clientMutationId
-						? `${input.clientMutationId}:electronic`
-						: null,
-					payerFullName: input.payerFullName || null,
-					payerInn: input.payerInn || null,
-					payerBirthDate: input.payerBirthDate || null,
-					payerIdentityDocument: input.payerIdentityDocument || null,
-					payerRelationship: input.payerRelationship || null,
-					taxDeductionCode: input.taxDeductionCode || null,
-					note: effectivePaymentNote
-						? `${effectivePaymentNote} (безналичные: ${electronicAmountRub} ₽)`
-						: `Смешанная оплата (безналичные: ${electronicAmountRub} ₽)`,
-					status: "paid",
-				})
-				.returning();
+			if (resolvedElectronicKop > 0) {
+				const electronicAmountRub = Number((resolvedElectronicKop / 100).toFixed(2));
+				const [ep] = await tx
+					.insert(schema.payments)
+					.values({
+						organizationId,
+						patientId: input.patientId,
+						visitId: input.visitId || null,
+						documentId: input.documentId || null,
+						amountRub: electronicAmountRub,
+						method: "card",
+						fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+						fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+						fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+						fiscalReceipt: input.fiscalReceipt || null,
+						clientMutationId: input.clientMutationId
+							? `${input.clientMutationId}:electronic`
+							: null,
+						payerFullName: input.payerFullName || null,
+						payerInn: input.payerInn || null,
+						payerBirthDate: input.payerBirthDate || null,
+						payerIdentityDocument: input.payerIdentityDocument || null,
+						payerRelationship: input.payerRelationship || null,
+						taxDeductionCode: input.taxDeductionCode || null,
+						note: effectivePaymentNote
+							? `${effectivePaymentNote} (безналичные: ${electronicAmountRub} ₽)`
+							: `Смешанная оплата (безналичные: ${electronicAmountRub} ₽)`,
+						status: "paid",
+					})
+					.returning();
+				electronicPayment = ep;
+			}
 
-			const chosenPrimary = electronicPayment ?? cashPayment;
+			if (resolvedDmsKop > 0) {
+				const dmsAmountRub = Number((resolvedDmsKop / 100).toFixed(2));
+				const [dp] = await tx
+					.insert(schema.payments)
+					.values({
+						organizationId,
+						patientId: input.patientId,
+						visitId: input.visitId || null,
+						documentId: input.documentId || null,
+						amountRub: dmsAmountRub,
+						method: "insurance",
+						fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+						fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+						fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+						fiscalReceipt: input.fiscalReceipt || null,
+						clientMutationId: input.clientMutationId
+							? `${input.clientMutationId}:dms`
+							: null,
+						payerFullName: input.payerFullName || null,
+						payerInn: input.payerInn || null,
+						payerBirthDate: input.payerBirthDate || null,
+						payerIdentityDocument: input.payerIdentityDocument || null,
+						payerRelationship: input.payerRelationship || null,
+						taxDeductionCode: input.taxDeductionCode || null,
+						note: effectivePaymentNote
+							? `${effectivePaymentNote} (страховая часть ДМС: ${dmsAmountRub} ₽)`
+							: `Смешанная оплата (страховая часть ДМС: ${dmsAmountRub} ₽)`,
+						status: "paid",
+					})
+					.returning();
+				dmsPayment = dp;
+
+				if (input.guaranteeLetterId && input.guaranteeLetterId !== "emergency" && input.guaranteeLetterId !== "none") {
+					const [letter] = await tx
+						.select()
+						.from(schema.dmsGuaranteeLetters)
+						.where(
+							and(
+								eq(schema.dmsGuaranteeLetters.id, input.guaranteeLetterId),
+								eq(schema.dmsGuaranteeLetters.organizationId, organizationId),
+							),
+						)
+						.for("update")
+						.limit(1);
+
+					if (letter) {
+						const nextUsed = Number(letter.usedAmountRub) + dmsAmountRub;
+						const nextStatus = nextUsed >= Number(letter.maxCoverageRub) ? "exhausted" : letter.status;
+						await tx
+							.update(schema.dmsGuaranteeLetters)
+							.set({
+								usedAmountRub: nextUsed,
+								status: nextStatus,
+								updatedAt: new Date(),
+							})
+							.where(eq(schema.dmsGuaranteeLetters.id, letter.id));
+					}
+				}
+			}
+
+			const chosenPrimary = electronicPayment ?? cashPayment ?? dmsPayment;
 			if (!chosenPrimary) {
 				throw new Error("Не удалось создать записи смешанной оплаты в базе данных.");
 			}
 			primaryPayment = chosenPrimary;
 		} else {
 			const effectiveMethod = (input.method === "split" || input.method === "mixed")
-				? "card"
+				? (resolvedDmsKop > 0 ? "insurance" : resolvedCashKop > 0 ? "cash" : "card")
 				: ((input.method as string) === "deposit" || (input.method as string) === "family_deposit")
 				? "family_wallet"
 				: input.method;
@@ -833,6 +926,38 @@ export async function createPaymentInDb(
 				throw new Error("Не удалось создать запись платежа в базе данных.");
 			}
 			primaryPayment = singlePayment;
+
+			if (
+				effectiveMethod === "insurance" &&
+				input.guaranteeLetterId &&
+				input.guaranteeLetterId !== "emergency" &&
+				input.guaranteeLetterId !== "none"
+			) {
+				const [letter] = await tx
+					.select()
+					.from(schema.dmsGuaranteeLetters)
+					.where(
+						and(
+							eq(schema.dmsGuaranteeLetters.id, input.guaranteeLetterId),
+							eq(schema.dmsGuaranteeLetters.organizationId, organizationId),
+						),
+					)
+					.for("update")
+					.limit(1);
+
+				if (letter) {
+					const nextUsed = Number(letter.usedAmountRub) + input.amountRub;
+					const nextStatus = nextUsed >= Number(letter.maxCoverageRub) ? "exhausted" : letter.status;
+					await tx
+						.update(schema.dmsGuaranteeLetters)
+						.set({
+							usedAmountRub: nextUsed,
+							status: nextStatus,
+							updatedAt: new Date(),
+						})
+						.where(eq(schema.dmsGuaranteeLetters.id, letter.id));
+				}
+			}
 		}
 
 		if (input.documentId) {
@@ -872,30 +997,44 @@ export async function createPaymentInDb(
 		}
 
 		if (input.fiscalReceiptNumber || input.fiscalReceipt) {
-			const cashRubVal = isSplit ? Number((resolvedCashKop / 100).toFixed(2)) : (input.method === "cash" ? input.amountRub : 0);
-			const electronicRubVal = isSplit ? Number((resolvedElectronicKop / 100).toFixed(2)) : (input.method !== "cash" ? input.amountRub : 0);
-			await tx.insert(schema.fiscalReceiptQueue).values({
-				organizationId,
-				paymentId: primaryPayment.id,
-				visitId: input.visitId || null,
-				receiptType: input.fiscalReceipt?.operationType || "income",
-				status: "pending_print",
-				payloadJson: {
-					amountRub: input.amountRub,
-					method: isSplit ? "split" : input.method,
-					cashRub: cashRubVal,
-					electronicRub: electronicRubVal,
-					cashKopecks: isSplit ? resolvedCashKop : (input.method === "cash" ? incomingPaymentKopecks : 0),
-					electronicKopecks: isSplit ? resolvedElectronicKop : (input.method !== "cash" ? incomingPaymentKopecks : 0),
-					fiscalReceiptNumber: input.fiscalReceiptNumber,
-					fiscalReceipt: input.fiscalReceipt,
-					payerFullName: input.payerFullName,
-					payerInn: input.payerInn,
-					taxDeductionCode: input.taxDeductionCode,
-					note: input.note,
-				},
-				retryCount: 0,
-			});
+			const isInsurance100 = input.method === "insurance" || (isSplit && resolvedDmsKop === incomingPaymentKopecks);
+			const patientCoPayKop = isSplit
+				? resolvedCashKop + resolvedElectronicKop
+				: (input.method === "insurance" ? 0 : incomingPaymentKopecks);
+
+			// По Закону 54-ФЗ (п. 9 ст. 2) и Мандату 8e:
+			// Безналичные расчеты с юрлицами (ДМС) освобождены от применения ККТ.
+			// Чек 54-ФЗ пробивается строго на доплату пациента > 0 ₽.
+			// Если 100% покрытия ДМС (доплата пациента 0 ₽), фискальный чек физлицу не пробивается.
+			if (!isInsurance100 && patientCoPayKop > 0) {
+				const cashRubVal = isSplit ? Number((resolvedCashKop / 100).toFixed(2)) : (input.method === "cash" ? input.amountRub : 0);
+				const electronicRubVal = isSplit ? Number((resolvedElectronicKop / 100).toFixed(2)) : (input.method !== "cash" && input.method !== "insurance" ? input.amountRub : 0);
+				const patientCoPayRub = Number((patientCoPayKop / 100).toFixed(2));
+
+				await tx.insert(schema.fiscalReceiptQueue).values({
+					organizationId,
+					paymentId: primaryPayment.id,
+					visitId: input.visitId || null,
+					receiptType: input.fiscalReceipt?.operationType || "income",
+					status: "pending_print",
+					payloadJson: {
+						amountRub: patientCoPayRub,
+						method: isSplit ? "split" : input.method,
+						cashRub: cashRubVal,
+						electronicRub: electronicRubVal,
+						cashKopecks: isSplit ? resolvedCashKop : (input.method === "cash" ? incomingPaymentKopecks : 0),
+						electronicKopecks: isSplit ? resolvedElectronicKop : (input.method !== "cash" && input.method !== "insurance" ? incomingPaymentKopecks : 0),
+						dmsKopecks: isSplit ? resolvedDmsKop : (input.method === "insurance" ? incomingPaymentKopecks : 0),
+						fiscalReceiptNumber: input.fiscalReceiptNumber,
+						fiscalReceipt: input.fiscalReceipt,
+						payerFullName: input.payerFullName,
+						payerInn: input.payerInn,
+						taxDeductionCode: input.taxDeductionCode,
+						note: input.note,
+					},
+					retryCount: 0,
+				});
+			}
 		}
 
 		return {

@@ -348,11 +348,12 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 								<span className="font-bold">Владелец:</span>{" "}
 								<span>{ukepSignature.doctorFullName}</span>
 							</div>
-							{ukepSignature.validFrom && ukepSignature.validTo ? (
+							{(ukepSignature.certificateValidFrom || (ukepSignature as any).validFrom) &&
+							(ukepSignature.certificateValidTo || (ukepSignature as any).validTo) ? (
 								<div>
 									<span className="font-bold">Действителен:</span> с{" "}
-									{formatStampDateRu(ukepSignature.validFrom)} по{" "}
-									{formatStampDateRu(ukepSignature.validTo)}
+									{formatStampDateRu(ukepSignature.certificateValidFrom || (ukepSignature as any).validFrom)} по{" "}
+									{formatStampDateRu(ukepSignature.certificateValidTo || (ukepSignature as any).validTo)}
 								</div>
 							) : null}
 							{ukepSignature.signedAt ? (

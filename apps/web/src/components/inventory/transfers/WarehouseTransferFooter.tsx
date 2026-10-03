@@ -26,11 +26,11 @@ export const WarehouseTransferFooter: React.FC<
 				type="button"
 				className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
 				onClick={onPrintTorg13}
-				title="Накладная ТОРГ-13 (А4): Печать накладной на перемещение"
+				title="Печать накладной на перемещение материалов"
 			>
 				<Printer size={15} />
 				<span>Накладная на перемещение</span>
-				<span className="text-[10px] opacity-60 ml-1 font-mono">ТОРГ-13</span>
+				<span className="text-[10px] opacity-60 ml-1 font-mono">Накладная</span>
 			</button>
 
 			{hasDiscrepancy && (
@@ -38,11 +38,11 @@ export const WarehouseTransferFooter: React.FC<
 					type="button"
 					className="wh-btn wh-btn-secondary text-bad-fg !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
 					onClick={onPrintTorg2}
-					title="Акт расхождений ТОРГ-2: Печать акта об установленном расхождении"
+					title="Печать акта о выявленных расхождениях"
 				>
 					<FileText size={15} />
 					<span>Акт расхождений</span>
-					<span className="text-[10px] opacity-60 ml-1 font-mono">ТОРГ-2</span>
+					<span className="text-[10px] opacity-60 ml-1 font-mono">Акт</span>
 				</button>
 			)}
 

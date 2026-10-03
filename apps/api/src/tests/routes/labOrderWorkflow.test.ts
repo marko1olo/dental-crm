@@ -81,6 +81,16 @@ describe("Dental Laboratory VITA Shades & FDI Tooth Validation", () => {
 			{ input: "0М1", expected: "0M1" }, // Bleach 0M1 with Cyrillic М
 			{ input: "ВЛ1", expected: "BL1" }, // Bleach BL1 with Cyrillic В and Л
 			{ input: "вл2", expected: "BL2" }, // Lowercase Cyrillic вл
+			{ input: "ОМ1", expected: "0M1" }, // Bleach 0M1 with Cyrillic О and М
+			{ input: "ом2", expected: "0M2" }, // Lowercase Cyrillic ом
+			{ input: "БЛ1", expected: "BL1" }, // Bleach BL1 with Cyrillic Б
+			{ input: "бл3", expected: "BL3" }, // Lowercase Cyrillic бл
+			{ input: "А3,5", expected: "A3.5" }, // Cyrillic А with decimal comma
+			{ input: "2L1,5", expected: "2L1.5" }, // Russian decimal comma
+			{ input: "3Л2,5", expected: "3L2.5" }, // Cyrillic Л with decimal comma
+			{ input: "A-2", expected: "A2" }, // Hyphenated Classical code
+			{ input: "BL-1", expected: "BL1" }, // Hyphenated Bleach code
+			{ input: "0M-1", expected: "0M1" }, // Hyphenated Bleach 0M code
 		];
 
 		for (const { input, expected } of homoglyphCases) {

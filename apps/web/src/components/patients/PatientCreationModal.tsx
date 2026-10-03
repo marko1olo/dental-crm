@@ -1260,7 +1260,7 @@ export function PatientCreationModal({
 										<ShieldCheck size={13} className="text-[var(--teal)]" />
 										СНИЛС{" "}
 										{fieldRequirements.requireSnils ? (
-											<span className="text-rose-500 font-bold">* (ЕГИСЗ)</span>
+											<span className="text-rose-500 font-bold">* (для Госуслуг)</span>
 										) : (
 											<span className="text-xs text-[var(--muted)] font-normal">
 												(опция)
@@ -1287,8 +1287,8 @@ export function PatientCreationModal({
 										</span>
 									)}
 									<span className="text-[10px] text-[var(--muted)] block mt-0.5">
-										Не блокирует регистрацию. Требуется для выгрузки
-										в ЕГИСЗ (РЭМД).
+										Не блокирует регистрацию. Требуется для электронной
+										медкарты и Госуслуг.
 									</span>
 								</div>
 

@@ -27,8 +27,7 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,

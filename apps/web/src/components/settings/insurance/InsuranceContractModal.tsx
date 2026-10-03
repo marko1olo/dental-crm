@@ -108,7 +108,7 @@ const TOP_INSURERS_PRESETS = [
 ];
 
 const STANDARD_FRANCHISE_OPTIONS = [
-	{ value: "0", label: "0% (100% ДМС)", desc: "Полное покрытие страховщиком" },
+	{ value: "0", label: "0% (100% ДМС)", desc: "Полное покрытие страховой компанией" },
 	{ value: "10", label: "10%", desc: "10% пациент, 90% ДМС" },
 	{ value: "20", label: "20%", desc: "20% пациент, 80% ДМС" },
 	{ value: "30", label: "30%", desc: "30% пациент, 70% ДМС" },

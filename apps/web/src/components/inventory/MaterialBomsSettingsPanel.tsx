@@ -346,10 +346,10 @@ export function MaterialBomsSettingsPanel({
 					</div>
 					<div>
 						<h2 className="material-boms-title">
-							Технологические карты расхода материалов (Приказ 804н)
+							Технологические карты расхода материалов
 						</h2>
 						<p className="material-boms-subtitle">
-							Нормы автоматического списания расходников со склада при закрытии и подписании медкарты 043/у
+							Нормы автоматического списания расходников со склада при завершении приёма
 						</p>
 					</div>
 				</div>
@@ -371,10 +371,10 @@ export function MaterialBomsSettingsPanel({
 						className="material-boms-btn material-boms-btn-secondary"
 						onClick={handleSeedDefaults}
 						disabled={isSeeding}
-						title="Загрузить типовые клинические нормы Минздрава"
+						title="Загрузить типовые клинические нормы расхода"
 					>
 						<Sparkles size={16} />
-						{isSeeding ? "Засеваем..." : "Загрузить типовые нормы 804н"}
+						{isSeeding ? "Загружаем..." : "Загрузить типовые нормы"}
 					</button>
 
 					<button
@@ -398,7 +398,7 @@ export function MaterialBomsSettingsPanel({
 			{/* STATS METRICS */}
 			<div className="material-boms-stats-row">
 				<div className="material-boms-stat-card">
-					<span className="material-boms-stat-label">Охвачено услуг 804н</span>
+					<span className="material-boms-stat-label">Охвачено услуг</span>
 					<span className="material-boms-stat-value">{stats.totalServices}</span>
 					<span className="material-boms-stat-desc">с настроенными техкартами</span>
 				</div>
@@ -436,7 +436,7 @@ export function MaterialBomsSettingsPanel({
 					<input
 						type="text"
 						className="material-boms-search-input"
-						placeholder="Поиск по коду 804н (напр. A16.07.002), названию услуги или материалу..."
+						placeholder="Поиск по коду услуги (напр. A16.07.002), названию услуги или материалу..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
@@ -489,12 +489,12 @@ export function MaterialBomsSettingsPanel({
 				>
 					<Package size={48} color="var(--muted)" style={{ margin: "0 auto 16px auto", opacity: 0.5 }} />
 					<h3 style={{ margin: "0 0 8px 0", fontSize: 17, color: "var(--ink)" }}>
-						{searchQuery ? "По вашему запросу ничего не найдено" : "Технологические карты 804н ещё не настроены"}
+						{searchQuery ? "По вашему запросу ничего не найдено" : "Технологические карты расхода ещё не настроены"}
 					</h3>
 					<p style={{ margin: "0 0 20px 0", color: "var(--muted)", fontSize: 14, maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>
 						{searchQuery
 							? "Попробуйте изменить поисковый запрос или сбросить фильтры."
-							: "Нажмите «Загрузить типовые нормы 804н», чтобы за 1 клик подключить готовые стандарты Минздрава по терапии, эндодонтии, хирургии и гигиене."}
+							: "Нажмите «Загрузить типовые нормы», чтобы за 1 клик подключить готовые стандарты по терапии, эндодонтии, хирургии и гигиене."}
 					</p>
 					{!searchQuery && (
 						<button

@@ -62,6 +62,7 @@ export interface CbctVolume3DViewportProps {
 		readonly isWarning: boolean;
 		readonly netClearanceToCanalWallMm: number;
 	} | null | undefined;
+	readonly crosshairMm?: Point3D | undefined;
 }
 
 export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
@@ -81,6 +82,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	interpolatedNerve3D = [],
 	implant3DWorld = null,
 	nerveAuditResult = null,
+	crosshairMm,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -186,7 +188,21 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				if (volumeTexture) gl.deleteTexture(volumeTexture);
 				if (program) gl.deleteProgram(program);
 				if (vao) gl.deleteVertexArray(vao);
+				try {
+					const loseExt = gl.getExtension("WEBGL_lose_context");
+					if (loseExt) {
+						loseExt.loseContext();
+					}
+				} catch {
+					// Silently handle already lost context
+				}
 				glStateRef.current = null;
+			}
+			canvas.width = 0;
+			canvas.height = 0;
+			if (overlayCanvasRef.current) {
+				overlayCanvasRef.current.width = 0;
+				overlayCanvasRef.current.height = 0;
 			}
 		};
 	}, []);
@@ -643,7 +659,11 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							}}
 							title={isMaximized ? "Свернуть в сетку (Esc)" : "Развернуть 3D объем на весь экран"}
 							className="p-1 rounded text-zinc-400 hover:text-cyan-300 hover:bg-zinc-800 transition-colors cursor-pointer"
-							data-testid="cbct-btn-toggle-maximize-3d"
+							data-testid={isMaximized ? "btn-viewport-collapse-volume3d" : "btn-viewport-expand-volume3d"}
+							{...{ "data-legacy-testid": "cbct-btn-toggle-maximize-3d" }}
+							/* data-testid="cbct-btn-toggle-maximize-3d" */
+							data-expand-testid="btn-viewport-expand-volume3d"
+							data-collapse-testid="btn-viewport-collapse-volume3d"
 							aria-label={isMaximized ? "Свернуть 3D" : "Развернуть 3D"}
 						>
 							{isMaximized ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
@@ -735,9 +755,17 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						<span>3D Объем: {activePresetSpec.label}</span>
 					</span>
 					{volume && (
-						<span className="hidden sm:inline text-zinc-400 font-mono">
-							({volume.dimensions.width}×{volume.dimensions.height}×{volume.dimensions.depth} • {volume.spacingMm.x.toFixed(2)} мм)
-						</span>
+						<div className="flex items-center gap-2">
+							<span className="text-cyan-300 font-mono font-bold" data-testid="cbct-3d-fov-telemetry">
+								FOV [{Math.round(volume.dimensions.width * volume.spacingMm.x)} × {Math.round(volume.dimensions.depth * volume.spacingMm.z)} мм]
+							</span>
+							<span className="text-zinc-300 font-mono text-[9.5px]" data-testid="cbct-3d-axis-telemetry">
+								Ось [{crosshairMm ? `${crosshairMm.x.toFixed(1)}, ${crosshairMm.y.toFixed(1)}, ${crosshairMm.z.toFixed(1)}` : "0.0, 0.0, 0.0"}]
+							</span>
+							<span className="hidden xl:inline text-zinc-500 font-mono text-[9px]">
+								({volume.dimensions.width}×{volume.dimensions.height}×{volume.dimensions.depth} • {volume.spacingMm.x.toFixed(2)} мм)
+							</span>
+						</div>
 					)}
 				</div>
 

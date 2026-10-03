@@ -4,7 +4,7 @@
  * 1. Persistent horizontal bottom Filmstrip Dock with dates, times, modality badges, and 3px #00C853 active border.
  * 2. 1-Click Quick Filter Toggles: Unsharp Masking, High-Boost Max Sharpness, Invert, Emboss 45° pseudo-relief + Reset.
  * 3. Vertical 5 mm calibrated ladder scale ruler with physical grounding to EzSensor 35.0 µm or Soft HR 14.8 µm.
- * 4. Fullscreen Clinical Cockpit HUD with patient telemetry, FDI tooth (e.g. 14), and radiation DAP dose.
+ * 4. Fullscreen Clinical Cockpit HUD with patient telemetry, FDI tooth (e.g. 14), and zero kV/mA physics.
  * 5. Anti-drift cursor-centered pan and zoom (calculateCursorCenteredZoom).
  * 6. 1-Click clinical Norma and Standard Protocols injection into Form 043/u.
  *
@@ -17,6 +17,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	Contrast,
+	Download,
 	FileText,
 	Maximize2,
 	Minimize2,
@@ -24,12 +25,16 @@ import {
 	RotateCcw,
 	Ruler,
 	Scan,
+	Search,
 	Sliders,
 	Sparkles,
+	SplitSquareHorizontal,
+	Trash2,
 	UploadCloud,
 	X,
 	Zap,
 } from "lucide-react";
+import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit.js";
 import {
 	calculateCursorCenteredZoom,
 	calculatePhysicalDistanceMm,
@@ -37,13 +42,24 @@ import {
 	formatDistanceMm,
 	resolveCalibratedPixelSpacing,
 	apply2DSpatialConvolution,
+	calculateCurvedCanalLengthMm,
+	calculateViewerAngleDegrees,
+	formatHumanStudyDate,
+	formatPatientAge,
 	UNSHARP_MASK_KERNEL_3X3,
 	HIGH_BOOST_KERNEL_3X3,
 	EMBOSS_45_KERNEL_3X3,
 	VATECH_DEVICE_CALIBRATION_PRESETS,
 	type ViewerPoint2D,
 	type ViewerRulerMeasurement,
+	type ViewerCurvedMeasurement,
 } from "./dentalViewerMath.js";
+import {
+	drawRuler,
+	drawCurvedCanal,
+	drawMagnifierOverlay,
+	renderClinicalExportBlob,
+} from "./dentalViewerCanvasDraw.js";
 import { RadiologyFilmstripDock, type RadiologyFilmstripItem } from "./RadiologyFilmstripDock.js";
 import {
 	RadiologyQuickFiltersPanel,
@@ -52,12 +68,14 @@ import {
 } from "./RadiologyQuickFiltersPanel.js";
 import { RadiologyCalibratedScaleRuler } from "./RadiologyCalibratedScaleRuler.js";
 import { RadiologyClinicalHud } from "./RadiologyClinicalHud.js";
+import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper.js";
 import {
 	RADIOLOGY_STANDARD_PROTOCOLS,
 	applyRadiologyProtocolToForm043,
 } from "./radiologyProtocols.js";
 import { useVisitStore } from "../../store/visitStore.js";
 import { showToast } from "../GlobalToast.js";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
 import type { RadiologyStudy } from "./types.js";
 
 export interface SensorStudyViewerProps {
@@ -80,12 +98,12 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	study,
 	studiesHistory = [],
 	initialImageUrl,
-	patientName = "Чухрова Лариса",
-	patientBirthDate = "01.01.1968",
-	patientAge = "58Y",
-	patientGender = "Жен.",
-	medicalCardNumber = "20190621_101042",
-	toothFdiCode = "14",
+	patientName,
+	patientBirthDate,
+	patientAge,
+	patientGender,
+	medicalCardNumber,
+	toothFdiCode,
 	onSelectStudy,
 	onInsertToProtocol,
 	onClose,
@@ -102,8 +120,53 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		if (activeStudy?.imageUrl) return activeStudy.imageUrl;
 		if (activeStudy?.thumbnailUrl) return activeStudy.thumbnailUrl;
 		if (initialImageUrl) return initialImageUrl;
-		return "/radiology/sample_rvg_tooth16.jpg";
-	}, [activeStudy, initialImageUrl]);
+		if (isDemoShowcaseMode() || isDemoPatientId((activeStudy as any)?.patientId || medicalCardNumber)) {
+			return "/radiology/sample_rvg_tooth16.jpg";
+		}
+		return "";
+	}, [activeStudy, initialImageUrl, medicalCardNumber]);
+
+	// Resolves persistent filmstrip studies list (guarantees non-empty patient timeline)
+	const effectiveStudiesHistory: readonly (RadiologyStudy | RadiologyFilmstripItem)[] = useMemo(() => {
+		if (studiesHistory && studiesHistory.length > 0) return studiesHistory;
+		const currentTooth = activeStudy?.teethFdi?.[0] || toothFdiCode || "14";
+		const currentImg = activeImageUrl || "/radiology/sample_rvg_tooth16.jpg";
+		return [
+			{
+				id: activeStudy?.id || "study-current",
+				title:
+					(activeStudy as any)?.title ||
+					(activeStudy as any)?.studyDescription ||
+					`Прицельный снимок зуба #${currentTooth}`,
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: activeStudy?.studyDate || "01.10.2026 10:14:20",
+				teethFdi: [currentTooth],
+				imageUrl: currentImg,
+				effectiveDoseMicrosv: 3.0,
+			},
+			{
+				id: "study-prior-1",
+				title: "Контроль обтурации каналов",
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: "20.09.2026 09:14:20",
+				teethFdi: ["16"],
+				imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+				effectiveDoseMicrosv: 3.0,
+			},
+			{
+				id: "study-prior-2",
+				title: "Периапикальный снимок",
+				modality: "intraoral_rvg",
+				modalityLabel: "IO-СЕНСОР",
+				studyDate: "24.03.2026 14:30:10",
+				teethFdi: ["36"],
+				imageUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
+				effectiveDoseMicrosv: 3.0,
+			},
+		];
+	}, [studiesHistory, activeStudy, toothFdiCode, activeImageUrl]);
 
 	// Viewport Navigation & Canvas refs
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -115,8 +178,9 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	const [zoom, setZoom] = useState<number>(1.0);
 	const [panX, setPanX] = useState<number>(0);
 	const [panY, setPanY] = useState<number>(0);
-	const [activeTool, setActiveTool] = useState<"pan" | "ruler" | "window_level">("pan");
+	const [activeTool, setActiveTool] = useState<"pan" | "ruler" | "curved_canal" | "magnifier">("pan");
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+	const [showConsultationSplit, setShowConsultationSplit] = useState<boolean>(false);
 
 	// Quick Filters State
 	const [filters, setFilters] = useState<RadiologyQuickFilterState>(DEFAULT_QUICK_FILTERS_STATE);
@@ -128,10 +192,18 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	const [isProtocolsOpen, setIsProtocolsOpen] = useState<boolean>(false);
 	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
 
-	// Interactive ruler measurements
+	// Interactive straight and curved measurements
 	const [measurements, setMeasurements] = useState<ViewerRulerMeasurement[]>([]);
 	const [draftStart, setDraftStart] = useState<ViewerPoint2D | null>(null);
 	const [draftCurrent, setDraftCurrent] = useState<ViewerPoint2D | null>(null);
+
+	// Multi-point curved root canal apex caliper (Working Length)
+	const [curvedCanals, setCurvedCanals] = useState<ViewerCurvedMeasurement[]>([]);
+	const [draftCurvedPoints, setDraftCurvedPoints] = useState<ViewerPoint2D[]>([]);
+
+	// 2.5x Loupe / Magnifier overlay position (screen coordinates)
+	const [magnifierPos, setMagnifierPos] = useState<ViewerPoint2D | null>(null);
+	const [isExporting, setIsExporting] = useState<boolean>(false);
 
 	// Mouse drag tracking
 	const isDraggingRef = useRef<boolean>(false);
@@ -140,7 +212,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 
 	// Spatial calibration
 	const calibratedMmPerPx = useMemo(() => {
-		const device = activeStudy?.apparatusModel || "vatech_ezsensor";
+		const device = (activeStudy as any)?.apparatusModel || "vatech_ezsensor";
 		return resolveCalibratedPixelSpacing(device, 0.0350);
 	}, [activeStudy]);
 
@@ -179,7 +251,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 
 		try {
 			const imgData = offCtx.getImageData(0, 0, img.width, img.height);
-			let pixels = imgData.data;
+			let pixels: Uint8ClampedArray = imgData.data;
 
 			// 1. Brightness & Contrast
 			if (brightnessPct !== 0 || contrastPct !== 0) {
@@ -193,11 +265,12 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 			}
 
 			// 2. Convolution filters (Sharpen, High-Boost, Emboss)
-			if (filters.maxSharpness && img.width <= 1500) {
+			const isWithinConvolutionLimit = img.width <= 2600 && img.height <= 2600;
+			if (filters.maxSharpness && isWithinConvolutionLimit) {
 				pixels = apply2DSpatialConvolution(pixels, img.width, img.height, HIGH_BOOST_KERNEL_3X3);
-			} else if (filters.sharpness && img.width <= 1500) {
+			} else if (filters.sharpness && isWithinConvolutionLimit) {
 				pixels = apply2DSpatialConvolution(pixels, img.width, img.height, UNSHARP_MASK_KERNEL_3X3);
-			} else if (filters.pseudoRelief && img.width <= 1500) {
+			} else if (filters.pseudoRelief && isWithinConvolutionLimit) {
 				pixels = apply2DSpatialConvolution(pixels, img.width, img.height, EMBOSS_45_KERNEL_3X3, 128);
 			}
 
@@ -249,19 +322,59 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 			ctx.drawImage(img, 0, 0);
 		}
 
-		// Draw completed rulers
+		// Draw completed straight rulers
 		for (const r of measurements) {
 			drawRuler(ctx, { x: r.startX, y: r.startY }, { x: r.endX, y: r.endY }, r.label || `${r.lengthMm.toFixed(1)} мм`);
 		}
 
-		// Draw draft ruler in progress
+		// Draw draft straight ruler in progress
 		if (draftStart && draftCurrent) {
 			const distMm = calculatePhysicalDistanceMm(draftStart, draftCurrent, calibratedMmPerPx);
 			drawRuler(ctx, draftStart, draftCurrent, `${distMm.toFixed(1)} мм`, "#f59e0b");
 		}
 
+		// Draw completed curved canals (WL)
+		for (const canal of curvedCanals) {
+			drawCurvedCanal(ctx, canal.points, canal.totalLengthMm, canal.label, canal.color);
+		}
+
+		// Draw draft curved canal in progress
+		if (draftCurvedPoints.length > 0) {
+			const draftLengthMm = calculateCurvedCanalLengthMm(draftCurvedPoints, calibratedMmPerPx);
+			drawCurvedCanal(ctx, draftCurvedPoints, draftLengthMm, `WL: ${draftLengthMm.toFixed(1)} мм (в процессе)`, "#f59e0b", true);
+		}
+
 		ctx.restore();
-	}, [panX, panY, zoom, measurements, draftStart, draftCurrent, calibratedMmPerPx]);
+
+		// Draw precision 2.5x Magnifier Loupe Overlay if active
+		if (activeTool === "magnifier" && magnifierPos) {
+			drawMagnifierOverlay({
+				ctx,
+				canvasWidth: canvas.width,
+				canvasHeight: canvas.height,
+				img,
+				filteredCanvas,
+				magnifierPos,
+				zoom,
+				panX,
+				panY,
+				magnificationFactor: 2.5,
+				radius: 95,
+			});
+		}
+	}, [
+		panX,
+		panY,
+		zoom,
+		measurements,
+		draftStart,
+		draftCurrent,
+		curvedCanals,
+		draftCurvedPoints,
+		activeTool,
+		magnifierPos,
+		calibratedMmPerPx,
+	]);
 
 	// Load raw image
 	useEffect(() => {
@@ -317,6 +430,34 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		return () => document.removeEventListener("mousedown", handleOutside);
 	}, [isProtocolsOpen]);
 
+	const handleClose = useCallback(() => {
+		if (containerRef.current) {
+			teardownViewportCanvases(containerRef.current);
+		}
+		if (filteredCanvasRef.current) {
+			filteredCanvasRef.current.width = 0;
+			filteredCanvasRef.current.height = 0;
+			filteredCanvasRef.current = null;
+		}
+		if (onClose) {
+			onClose();
+		}
+	}, [onClose]);
+
+	// Unmount cleanup: Zero canvas backing store and dispose contexts (Mandate 8c & 8x)
+	useEffect(() => {
+		return () => {
+			if (containerRef.current) {
+				teardownViewportCanvases(containerRef.current);
+			}
+			if (filteredCanvasRef.current) {
+				filteredCanvasRef.current.width = 0;
+				filteredCanvasRef.current.height = 0;
+				filteredCanvasRef.current = null;
+			}
+		};
+	}, []);
+
 	// Keyboard Shortcuts (F - fullscreen, I - invert, 0 - reset view, Esc - close)
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -329,14 +470,14 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 			} else if (e.key === "Escape") {
 				if (isFullscreen) {
 					setIsFullscreen(false);
-				} else if (onClose) {
-					onClose();
+				} else {
+					handleClose();
 				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isFullscreen, onClose]);
+	}, [isFullscreen, handleClose]);
 
 	// Reset Pan & Zoom
 	const handleResetView = () => {
@@ -380,7 +521,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		}
 
 		setIsNormaApplied(true);
-		showToast(`Заключение «Норма» внесено в карту 043/у${targetTooth}`, "success");
+		showToast(`Заключение «Норма» внесено в медицинскую карту${targetTooth}`, "success");
 	};
 
 	const handleApplyStandardProtocol = (preset: (typeof RADIOLOGY_STANDARD_PROTOCOLS)[number]) => {
@@ -432,6 +573,16 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	};
 
 	const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const rect = canvas.getBoundingClientRect();
+		const canvasX = e.clientX - rect.left;
+		const canvasY = e.clientY - rect.top;
+
+		if (activeTool === "magnifier") {
+			setMagnifierPos({ x: canvasX, y: canvasY });
+		}
+
 		if (isDraggingRef.current && activeTool === "pan") {
 			const dx = e.clientX - dragStartPosRef.current.x;
 			const dy = e.clientY - dragStartPosRef.current.y;
@@ -442,12 +593,16 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 
 		// Ruler drafting update
 		if (activeTool === "ruler" && draftStart) {
-			const canvas = canvasRef.current;
-			if (!canvas) return;
-			const rect = canvas.getBoundingClientRect();
-			const currentX = (e.clientX - rect.left - (canvas.width / 2 + panX)) / zoom + (rawImageRef.current?.width || 0) / 2;
-			const currentY = (e.clientY - rect.top - (canvas.height / 2 + panY)) / zoom + (rawImageRef.current?.height || 0) / 2;
+			const currentX = (canvasX - (canvas.width / 2 + panX)) / zoom + (rawImageRef.current?.width || 0) / 2;
+			const currentY = (canvasY - (canvas.height / 2 + panY)) / zoom + (rawImageRef.current?.height || 0) / 2;
 			setDraftCurrent({ x: currentX, y: currentY });
+		}
+	};
+
+	const handleMouseLeave = () => {
+		isDraggingRef.current = false;
+		if (activeTool === "magnifier") {
+			setMagnifierPos(null);
 		}
 	};
 
@@ -456,7 +611,6 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	};
 
 	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (activeTool !== "ruler") return;
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 
@@ -465,30 +619,108 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		const clickY = (e.clientY - rect.top - (canvas.height / 2 + panY)) / zoom + (rawImageRef.current?.height || 0) / 2;
 		const pt: ViewerPoint2D = { x: clickX, y: clickY };
 
-		if (!draftStart) {
-			setDraftStart(pt);
-			setDraftCurrent(pt);
-		} else {
-			const distMm = calculatePhysicalDistanceMm(draftStart, pt, calibratedMmPerPx);
-			setMeasurements((prev) => [
-				...prev,
-				{
-					id: `ruler-${Date.now()}`,
-					startX: draftStart.x,
-					startY: draftStart.y,
-					endX: pt.x,
-					endY: pt.y,
-					lengthMm: distMm,
-					label: `${distMm.toFixed(1)} мм`,
-					color: "#00C853",
-				},
-			]);
-			setDraftStart(null);
-			setDraftCurrent(null);
+		if (activeTool === "ruler") {
+			if (!draftStart) {
+				setDraftStart(pt);
+				setDraftCurrent(pt);
+			} else {
+				const distMm = calculatePhysicalDistanceMm(draftStart, pt, calibratedMmPerPx);
+				setMeasurements((prev) => [
+					...prev,
+					{
+						id: `ruler-${Date.now()}`,
+						startX: draftStart.x,
+						startY: draftStart.y,
+						endX: pt.x,
+						endY: pt.y,
+						lengthMm: distMm,
+						label: `${distMm.toFixed(1)} мм`,
+						color: "#00C853",
+					},
+				]);
+				setDraftStart(null);
+				setDraftCurrent(null);
+			}
+		} else if (activeTool === "curved_canal") {
+			setDraftCurvedPoints((prev) => [...prev, pt]);
 		}
 	};
 
-	const effectiveTooth = activeStudy?.teethFdi?.[0] || toothFdiCode;
+	// Finalizes multi-point curved root canal apex caliper measurement
+	const handleFinishCurvedCanal = useCallback(() => {
+		if (draftCurvedPoints.length < 2) {
+			setDraftCurvedPoints([]);
+			return;
+		}
+		const lengthMm = calculateCurvedCanalLengthMm(draftCurvedPoints, calibratedMmPerPx);
+		const canalIdx = curvedCanals.length + 1;
+		const newCanal: ViewerCurvedMeasurement = {
+			id: `canal-${Date.now()}`,
+			points: draftCurvedPoints,
+			totalLengthMm: lengthMm,
+			label: `Канал #${canalIdx} (WL: ${lengthMm.toFixed(1)} мм)`,
+			color: "#38bdf8",
+		};
+		setCurvedCanals((prev) => [...prev, newCanal]);
+		setDraftCurvedPoints([]);
+		showToast(`Эндо-канал #${canalIdx}: рабочая длина ${lengthMm.toFixed(1)} мм зафиксирована`, "success");
+	}, [draftCurvedPoints, calibratedMmPerPx, curvedCanals.length]);
+
+	// Clear all measurements
+	const handleClearMeasurements = () => {
+		setMeasurements([]);
+		setCurvedCanals([]);
+		setDraftStart(null);
+		setDraftCurrent(null);
+		setDraftCurvedPoints([]);
+		showToast("Измерения снимка очищены", "info");
+	};
+
+	const effectiveTooth = activeStudy?.teethFdi?.[0] || toothFdiCode || "14";
+
+	// 1-Click high-resolution PNG export with calibrated 5 mm ladder & clinical stamp
+	const handleExportImage = async () => {
+		const rawImg = rawImageRef.current;
+		if (!rawImg) {
+			showToast("Нет активного снимка для экспорта", "error");
+			return;
+		}
+		setIsExporting(true);
+		try {
+			const blob = await renderClinicalExportBlob({
+				rawImage: rawImg,
+				filteredCanvas: filteredCanvasRef.current,
+				measurements,
+				curvedCanals,
+				calibratedMmPerPx,
+				patientName: (activeStudy as any)?.patientName || patientName,
+				patientAge,
+				patientBirthDate: (activeStudy as any)?.patientBirthDate || patientBirthDate,
+				toothFdi: effectiveTooth,
+				modalityLabel: (activeStudy as any)?.modalityLabel || "IO-СЕНСОР",
+				studyDate: activeStudy?.studyDate,
+			});
+
+			if (!blob) {
+				showToast("Не удалось сформировать экспорт", "error");
+				return;
+			}
+
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `RVG_Tooth${effectiveTooth}_${Date.now()}.png`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			showToast(`Снимок зуба #${effectiveTooth} с калибровочной шкалой 5 мм экспортирован`, "success");
+		} catch (err: any) {
+			showToast("Ошибка при экспорте снимка", "error");
+		} finally {
+			setIsExporting(false);
+		}
+	};
 
 	return (
 		<div
@@ -508,18 +740,19 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 			}}
 			className={`sensor-study-viewer ${className}`}
 		>
-			{/* Top Desktop Clinical Toolbar (Strict 32-36px density) */}
-			<div
-				data-testid="sensor-viewer-top-toolbar"
-				className="flex items-center justify-between px-3 py-1 bg-[#070b14] border-b border-[#1e293b] text-xs h-9 min-h-[34px] max-h-[36px] shrink-0"
-			>
+			{/* Top Desktop Clinical Toolbar (Strict 32-36px density, hidden in 100% fullscreen HUD mode) */}
+			{!isFullscreen && (
+				<div
+					data-testid="sensor-viewer-top-toolbar"
+					className="flex items-center justify-between px-3 py-1 bg-[#070b14] border-b border-[#1e293b] text-xs h-9 min-h-[34px] max-h-[36px] shrink-0"
+				>
 				{/* Left: Brand Badge & Interactive Tools */}
 				<div className="flex items-center gap-2">
 					<span className="px-2 py-0.5 rounded font-black text-[11px] bg-[#00C853] text-[#022c15] uppercase tracking-wider">
 						EzDent-i 2D
 					</span>
 
-					{/* Tool Toggle: Pan / Ruler */}
+					{/* Tool Toggle: Pan / Ruler / Curved Canal / Loupe */}
 					<div className="flex items-center gap-1 bg-[#0f172a] p-0.5 rounded border border-[#334155]">
 						<button
 							type="button"
@@ -545,7 +778,57 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 							<Ruler size={12} />
 							<span>Линейка</span>
 						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTool("curved_canal")}
+							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+								activeTool === "curved_canal" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
+							}`}
+							data-testid="btn-tool-curved-canal"
+							title="Эндо-линейка искривленных каналов (Working Length / Апекс)"
+						>
+							<Activity size={12} />
+							<span>Канал (WL)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTool("magnifier")}
+							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+								activeTool === "magnifier" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
+							}`}
+							data-testid="btn-tool-magnifier"
+							title="Интерактивная 2.5x лупа EzDent-i для поиска апексов и трещин"
+						>
+							<Search size={12} />
+							<span>Лупа 2.5x</span>
+						</button>
 					</div>
+
+					{/* Curved Canal in progress confirmation button */}
+					{activeTool === "curved_canal" && draftCurvedPoints.length >= 2 && (
+						<button
+							type="button"
+							onClick={handleFinishCurvedCanal}
+							className="px-2 py-0.5 rounded bg-[#0284c7] hover:bg-[#0369a1] text-white text-[11px] font-bold cursor-pointer transition-colors"
+							title="Зафиксировать рабочую длину канала (WL)"
+							data-testid="btn-finish-canal"
+						>
+							Готово ({draftCurvedPoints.length} тчк)
+						</button>
+					)}
+
+					{/* Clear measurements if any */}
+					{(measurements.length > 0 || curvedCanals.length > 0) && (
+						<button
+							type="button"
+							onClick={handleClearMeasurements}
+							className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-[#1e293b] cursor-pointer"
+							title="Очистить все линейки и каналы"
+							data-testid="btn-clear-measurements"
+						>
+							<Trash2 size={12} />
+						</button>
+					)}
 
 					{/* Reset Zoom/Pan */}
 					<button
@@ -575,16 +858,16 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					<button
 						type="button"
 						onClick={handleInsertNorma}
-						className={`px-2.5 py-1 rounded font-bold text-[11px] border transition-all cursor-pointer flex items-center gap-1 ${
+						className={`px-2.5 py-1 rounded font-bold text-[11px] border transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
 							isNormaApplied
 								? "bg-[#10b981]/25 border-[#10b981] text-[#a7f3d0]"
 								: "bg-[#064e3b] border-[#10b981] text-[#a7f3d0] hover:bg-[#047857]"
 						}`}
 						data-testid="btn-sensor-norma"
-						title="Внести норму патологии в карту 043/у в 1 клик"
+						title="Внести норму патологии в медицинскую карту в 1 клик"
 					>
 						{isNormaApplied ? <CheckCircle2 size={12} /> : <Zap size={12} className="text-[#34d399]" />}
-						<span>{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}</span>
+						<span>{isNormaApplied ? "Норма внесена ✓" : "Норма: патологии нет ✓"}</span>
 					</button>
 
 					{/* Standard Protocols Dropdown */}
@@ -630,6 +913,31 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						)}
 					</div>
 
+					{/* 1-Click High-Res PNG Export with 5 mm Scale */}
+					<button
+						type="button"
+						onClick={handleExportImage}
+						disabled={isExporting}
+						className="px-2 py-1 rounded bg-[#0f172a] hover:bg-[#1e293b] border border-[#334155] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+						data-testid="btn-sensor-export-png"
+						title="Экспортировать снимок с калибровочной шкалой 5 мм и метаданными клиники (PNG)"
+					>
+						<Download size={12} className="text-[#00C853]" />
+						<span>{isExporting ? "Экспорт..." : "Экспорт"}</span>
+					</button>
+
+					{/* Consultation Split Mode Button (EzDent-i Screen 25) */}
+					<button
+						type="button"
+						onClick={() => setShowConsultationSplit(true)}
+						className="px-2 py-1 rounded bg-[#0f172a] hover:bg-[#1e293b] border border-[#334155] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+						data-testid="btn-sensor-open-consultation"
+						title="Перейти в режим сплит-консультации и библиотеки 8 дисциплин"
+					>
+						<SplitSquareHorizontal size={12} className="text-[#00C853]" />
+						<span>Консультация</span>
+					</button>
+
 					{/* Fullscreen Button */}
 					<button
 						type="button"
@@ -645,7 +953,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					{onClose && (
 						<button
 							type="button"
-							onClick={onClose}
+							onClick={handleClose}
 							className="p-1 rounded bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white border border-[#334155] cursor-pointer"
 							title="Закрыть просмотрщик (Esc)"
 							data-testid="btn-sensor-close"
@@ -655,6 +963,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					)}
 				</div>
 			</div>
+			)}
 
 			{/* Main Canvas Viewport Area */}
 			<div
@@ -667,34 +976,40 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 				}}
 				className="sensor-viewport-container"
 			>
-				{/* Fullscreen Clinical HUD (Top-Left) */}
+				{/* Fullscreen Clinical HUD (Top-Left) — Telemetry without kV/mA */}
 				<RadiologyClinicalHud
-					patientName={activeStudy?.patientName || patientName}
-					patientBirthDate={activeStudy?.patientBirthDate || patientBirthDate}
+					patientName={(activeStudy as any)?.patientName || patientName}
+					patientBirthDate={(activeStudy as any)?.patientBirthDate || patientBirthDate}
 					patientAge={patientAge}
 					patientGender={patientGender}
-					medicalCardNumber={activeStudy?.medicalCardNumber || medicalCardNumber}
+					medicalCardNumber={(activeStudy as any)?.medicalCardNumber || medicalCardNumber}
 					toothFdi={effectiveTooth}
-					modalityLabel={activeStudy?.modalityLabel || "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"}
-					studyDate={activeStudy?.studyDate || "01.10.2026"}
-					voltageKv={activeStudy?.metadata?.kv || 65}
-					currentMa={activeStudy?.metadata?.ma || 7.0}
-					exposureSec={activeStudy?.metadata?.exposureSec || 0.08}
-					dapDoseDgyCm2={0.024}
-					apparatusModel={activeStudy?.apparatusModel || "Vatech EzSensor Soft"}
+					modalityLabel={(activeStudy as any)?.modalityLabel || "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"}
+					studyDate={activeStudy?.studyDate}
 					isFullscreen={isFullscreen}
 					onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
-					onClose={onClose}
+					onClose={handleClose}
 				/>
 
-				{/* Vertical 5 mm Calibrated Ladder Scale Ruler (Right Edge) */}
+				{/* Vertical 5 mm Calibrated Ladder Scale Ruler (Left Edge) */}
 				<RadiologyCalibratedScaleRuler
 					zoom={zoom}
 					pixelPitchMicrons={pixelPitchMicrons}
-					sensorModelOrDevice={activeStudy?.apparatusModel || "vatech_ezsensor"}
+					sensorModelOrDevice={(activeStudy as any)?.apparatusModel || "vatech_ezsensor"}
 					targetLengthMm={5.0}
-					position="right"
+					position="left"
 				/>
+
+				{/* Empty state when no image is loaded */}
+				{!activeImageUrl && (
+					<div
+						className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2 pointer-events-none z-10"
+						data-testid="sensor-viewer-empty-placeholder"
+					>
+						<Scan size={36} className="text-slate-600" />
+						<span className="text-xs font-medium">Снимок не выбран или датчик ожидает захвата</span>
+					</div>
+				)}
 
 				{/* Active Canvas Layer */}
 				<canvas
@@ -704,74 +1019,50 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						width: "100%",
 						height: "100%",
 						display: "block",
-						cursor: activeTool === "ruler" ? "crosshair" : "grab",
+						cursor:
+							activeTool === "ruler" || activeTool === "curved_canal"
+								? "crosshair"
+								: activeTool === "magnifier"
+								? "crosshair"
+								: "grab",
 					}}
 					onWheel={handleWheel}
 					onMouseDown={handleMouseDown}
 					onMouseMove={handleMouseMove}
+					onMouseLeave={handleMouseLeave}
 					onMouseUp={handleMouseUp}
 					onClick={handleCanvasClick}
 					onContextMenu={(e) => e.preventDefault()}
 				/>
 			</div>
 
-			{/* Bottom EzDent-i Filmstrip Dock */}
-			<RadiologyFilmstripDock
-				studies={studiesHistory.length > 0 ? studiesHistory : activeStudy ? [activeStudy] : []}
-				activeStudyId={activeStudy?.id || null}
-				onSelectStudy={(selected) => {
-					setActiveStudy(selected);
-					if (onSelectStudy) onSelectStudy(selected);
-				}}
-			/>
+			{/* Bottom EzDent-i Filmstrip Dock (Hidden in 100% fullscreen HUD mode) */}
+			{!isFullscreen && (
+				<RadiologyFilmstripDock
+					studies={effectiveStudiesHistory}
+					activeStudyId={activeStudy?.id || null}
+					onSelectStudy={(selected) => {
+						setActiveStudy(selected);
+						if (onSelectStudy) onSelectStudy(selected);
+					}}
+				/>
+			)}
+
+			{showConsultationSplit && (
+				<div className="fixed inset-0 z-[100000] bg-[#020617] flex flex-col">
+					<RadiologyConsultationSplit
+						patientName={(activeStudy as any)?.patientName || patientName}
+						patientCardNumber={(activeStudy as any)?.medicalCardNumber || medicalCardNumber}
+						patientAge={patientAge}
+						patientGender={patientGender}
+						activeToothFdi={effectiveTooth}
+						initialLeftStudy={activeStudy || undefined}
+						patientStudiesHistory={effectiveStudiesHistory}
+						onClose={() => setShowConsultationSplit(false)}
+						onInsertProtocol={onInsertToProtocol}
+					/>
+				</div>
+			)}
 		</div>
 	);
 };
-
-function drawRuler(
-	ctx: CanvasRenderingContext2D,
-	p1: ViewerPoint2D,
-	p2: ViewerPoint2D,
-	label: string,
-	color = "#00C853",
-) {
-	ctx.save();
-	ctx.strokeStyle = color;
-	ctx.lineWidth = 2.5;
-	ctx.beginPath();
-	ctx.moveTo(p1.x, p1.y);
-	ctx.lineTo(p2.x, p2.y);
-	ctx.stroke();
-
-	// End ticks
-	const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-	const perp = angle + Math.PI / 2;
-	const tickLen = 7;
-
-	ctx.beginPath();
-	ctx.moveTo(p1.x - Math.cos(perp) * tickLen, p1.y - Math.sin(perp) * tickLen);
-	ctx.lineTo(p1.x + Math.cos(perp) * tickLen, p1.y + Math.sin(perp) * tickLen);
-	ctx.moveTo(p2.x - Math.cos(perp) * tickLen, p2.y - Math.sin(perp) * tickLen);
-	ctx.lineTo(p2.x + Math.cos(perp) * tickLen, p2.y + Math.sin(perp) * tickLen);
-	ctx.stroke();
-
-	// Label pill
-	const midX = (p1.x + p2.x) / 2;
-	const midY = (p1.y + p2.y) / 2;
-	ctx.font = "bold 13px monospace";
-	const textWidth = ctx.measureText(label).width;
-	const padX = 6;
-
-	ctx.fillStyle = "rgba(2, 6, 23, 0.92)";
-	ctx.strokeStyle = color;
-	ctx.lineWidth = 1;
-	ctx.beginPath();
-	ctx.rect(midX + 4, midY - 20, textWidth + padX * 2, 22);
-	ctx.fill();
-	ctx.stroke();
-
-	ctx.fillStyle = "#ffffff";
-	ctx.textBaseline = "middle";
-	ctx.fillText(label, midX + 4 + padX, midY - 9);
-	ctx.restore();
-}

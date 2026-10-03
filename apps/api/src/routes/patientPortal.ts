@@ -26,10 +26,13 @@ import {
 	revokedPortalTokens,
 } from "./portal.js";
 import {
+	extractTaxYearFromDate,
 	generateTaxCertificateQrSvg,
+	normalizePaymentsForTaxCertificate,
 	renderOfficialTaxCertificateKnd1151156Html,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
+	type TaxDeductionRelationship,
 } from "@dental/shared";
 
 export interface TelegramInitDataUser {
@@ -145,13 +148,12 @@ async function buildTaxCertificatePayload(
 		.where(and(eq(payments.patientId, patientId), eq(payments.organizationId, organizationId)));
 
 	const yearPayments = dbPayments.filter((p) => {
+		if (p.status !== "paid" && p.status !== "refunded") return false;
 		const dateStr = p.paidAt ? p.paidAt.toISOString() : p.createdAt ? p.createdAt.toISOString() : "";
-		return dateStr.startsWith(String(targetYear));
+		return extractTaxYearFromDate(dateStr) === targetYear;
 	});
 
-	let totalStandardKop = 0;
-	let totalExpensiveKop = 0;
-	const mappedPayments: TaxDeductionPaymentItem[] = [];
+	const rawMappedPayments: TaxDeductionPaymentItem[] = [];
 
 	for (const p of yearPayments) {
 		const amtRub = Number(p.amountRub) || 0;
@@ -161,25 +163,35 @@ async function buildTaxCertificatePayload(
 			(p.note && /имплант|синус|костн|остеопластик|аугментац/i.test(p.note)),
 		);
 
-		if (isExpensive) {
-			totalExpensiveKop += amtKop;
-		} else {
-			totalStandardKop += amtKop;
-		}
-
 		const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
 		const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);
+		const rawReceipt = p.fiscalReceipt as Record<string, any> | null;
+		const fiscalSign = rawReceipt?.fiscalSign || rawReceipt?.fp || rawReceipt?.fpd || "";
 
-		mappedPayments.push({
+		rawMappedPayments.push({
 			id: p.id,
 			dateIso: paymentDateIso,
 			receiptNumber: p.fiscalReceiptNumber || `ФД-${docNum}`,
 			fiscalDocumentNumber: docNum || "0",
-			fiscalSign: (p.fiscalReceipt as any)?.fiscalSign || "319841209",
+			fiscalSign,
 			serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
 			amountRub: amtKop / 100,
 			taxCode: isExpensive ? ("2" as const) : ("1" as const),
+			isRefund: p.status === "refunded" || amtKop < 0,
 		});
+	}
+
+	const mappedPayments = normalizePaymentsForTaxCertificate(rawMappedPayments, targetYear);
+
+	let totalStandardKop = 0;
+	let totalExpensiveKop = 0;
+	for (const p of mappedPayments) {
+		const amtKop = Math.round(p.amountRub * 100);
+		if (p.taxCode === "2") {
+			totalExpensiveKop += amtKop;
+		} else {
+			totalStandardKop += amtKop;
+		}
 	}
 
 	const totalStandardRub = totalStandardKop / 100;
@@ -222,7 +234,7 @@ async function buildTaxCertificatePayload(
 		payer: {
 			fullName: payerFullName || patient.fullName,
 			inn: payerInn || "",
-			relationship: "patient",
+			relationship: (relationship as TaxDeductionRelationship) || (payerFullName && payerFullName !== patient.fullName ? "other" : "patient"),
 		},
 		payments: mappedPayments,
 	};

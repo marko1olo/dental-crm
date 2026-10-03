@@ -127,7 +127,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 			<div className="loyalty-cashier-card">
 				<h4 className="loyalty-section-title">
 					<CreditCard size={20} color="var(--teal)" />
-					Калькулятор списания бонусов на кассе (54-ФЗ)
+					Калькулятор списания бонусов
 				</h4>
 
 				{redemptionSuccessMsg && (
@@ -338,7 +338,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 						className="loyalty-quick-btn one-click-btn"
 						onClick={onOneClickRedeem}
 						data-testid="loyalty-one-click-redeem-btn"
-						title="Списать максимально разрешенные бонусы в чек в 1 клик (54-ФЗ)"
+						title="Списать максимально разрешенные бонусы в чек в 1 клик"
 						style={{
 							background: "var(--teal)",
 							color: "var(--on-teal, var(--paper))",
@@ -424,7 +424,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 							color: "var(--ink)",
 						}}
 					>
-						Фискальный сплит чека по 54-ФЗ (ФФД 1.2):
+						Расчет сплита чека:
 					</div>
 					<div className="loyalty-fiscal-row">
 						<span>База, доступная для оплаты бонусами:</span>
@@ -433,7 +433,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 						</strong>
 					</div>
 					<div className="loyalty-fiscal-row">
-						<span>Тег 1215 (Зачет аванса / Бонусные баллы):</span>
+						<span>Оплата бонусами (зачет баллов):</span>
 						<strong style={{ color: "var(--teal)" }}>
 							-
 							{(
@@ -443,7 +443,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 						</strong>
 					</div>
 					<div className="loyalty-fiscal-row highlight">
-						<span>Тег 1081 / 1031 (Итого к доплате пациентом):</span>
+						<span>К доплате пациентом:</span>
 						<span style={{ fontSize: "1.125rem", fontWeight: 800 }}>
 							{redemptionCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽
 						</span>

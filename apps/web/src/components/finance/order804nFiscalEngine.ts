@@ -61,6 +61,9 @@ export interface Order804nFiscalReceiptItem {
 	readonly isRetail?: boolean | undefined;
 	readonly barcode?: string | undefined;
 	readonly sku?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly category?: string | undefined;
+	readonly materials?: string | undefined;
 }
 
 export interface SplitPaymentInput {
@@ -483,7 +486,7 @@ export const FFD12_CORRECTION_LABELS: Record<Ffd12CorrectionType, string> = {
  * Преобразование позиций плана лечения в строго валидированные фискальные позиции 54-ФЗ с копеечной точностью.
  */
 export function mapTreatmentItemsToFiscalReceipt(
-	items: readonly TreatmentPlanItem[],
+	items: readonly (TreatmentPlanItem | Order804nFiscalReceiptItem)[],
 	paymentMethod: Ffd12PaymentMethod = "full_payment",
 ): {
 	items: readonly Order804nFiscalReceiptItem[];
@@ -797,7 +800,7 @@ export function generateSbpPaymentQr(params: {
  * Построение готового фискального чека 54-ФЗ со всеми обязательными реквизитами.
  */
 export function generateFiscalReceipt54Fz(params: {
-	readonly items: readonly TreatmentPlanItem[];
+	readonly items: readonly (TreatmentPlanItem | Order804nFiscalReceiptItem)[];
 	readonly splitPayment: SplitPaymentInput;
 	readonly patientId: string;
 	readonly patientName: string;

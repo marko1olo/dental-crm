@@ -615,7 +615,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex flex-wrap items-center gap-x-1.5">
 								<span className="whitespace-nowrap shrink-0">Лицензия&nbsp;№&nbsp;{propClinicLicenseNumber}</span>
 								<span>•</span>
-								<span className="whitespace-nowrap shrink-0">Прейскурант услуг (Приказ МЗ РФ № 804н)</span>
+								<span className="whitespace-nowrap shrink-0">Прейскурант услуг</span>
 								<span>•</span>
 								<span className="whitespace-nowrap shrink-0">Гарантия (Закон РФ № 2300-1)</span>
 							</p>

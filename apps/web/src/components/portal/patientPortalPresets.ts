@@ -521,7 +521,7 @@ export const SAMPLE_BOOKING_SERVICES: BookingService[] = [
 export const SAMPLE_PORTAL_TREATMENT_PLAN: PortalTreatmentPlan = {
 	id: "plan-2026-0891",
 	planNumber: "ПЛАН-2026/891",
-	titleRu: "Комплексный план санации и ортопедической реабилитации",
+	titleRu: "Комплексный план лечения и восстановления улыбки",
 	createdDateIso: "2026-08-14",
 	curatingDoctorName: "Д-р Смирнов Алексей Петрович",
 	totalAmountRub: 84500,

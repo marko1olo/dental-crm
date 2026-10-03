@@ -1,6 +1,7 @@
 import React from "react";
 import { VisiographStudioCanvas } from "../visiograph/VisiographStudioCanvas";
 import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
+import { RadiologyCalibratedScaleRuler } from "../radiology/RadiologyCalibratedScaleRuler";
 import type { XrayScan } from "./VisiographScanHelpers";
 import type { VisiographPresetType } from "./VisiographCockpitPresets";
 
@@ -51,6 +52,7 @@ export function VisiographViewport({
 	return (
 		<div
 			className="visiograph-dominant-canvas"
+			data-testid="visiograph-dominant-canvas"
 			style={{
 				width: "100%",
 				minHeight: "480px",
@@ -73,6 +75,14 @@ export function VisiographViewport({
 					filter: filterStyle,
 					transition: "filter 0.15s ease",
 				}}
+			/>
+
+			{/* EzDent-i Calibrated Vertical 5 mm Scale Ruler (Screenshots 22, 24) */}
+			<RadiologyCalibratedScaleRuler
+				zoom={1.0}
+				sensorModelOrDevice="vatech_ezsensor"
+				targetLengthMm={5.0}
+				position="left"
 			/>
 		</div>
 	);

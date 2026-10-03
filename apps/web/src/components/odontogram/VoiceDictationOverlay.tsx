@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { useAudioFeedback } from "../../hooks/useAudioFeedback";
 import { parseDentalVoiceSpeech } from "../../services/voice/dentalGrammarParser";
+import { voiceMeterHeights } from "../workspaceActions/voiceMeter";
 
 export function VoiceDictationOverlay({
 	isOpen,
@@ -96,8 +97,9 @@ export function VoiceDictationOverlay({
 				position: "fixed",
 				inset: 0,
 				zIndex: 100000,
-				background: "rgba(0,0,0,0.75)",
-				backdropFilter: "blur(14px)",
+				background: "rgba(0, 0, 0, 0.45)",
+				backdropFilter: "blur(4px)",
+				WebkitBackdropFilter: "blur(4px)",
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
@@ -106,61 +108,84 @@ export function VoiceDictationOverlay({
 				boxSizing: "border-box",
 			}}
 			data-testid="voice-dictation-overlay"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
 		>
-			<button
-				type="button"
-				onClick={onClose}
-				aria-label="Закрыть голосовую надиктовку ДЕНТА"
-				style={{
-					position: "absolute",
-					top: 24,
-					right: 24,
-					background: "rgba(255,255,255,0.12)",
-					border: "1px solid rgba(255,255,255,0.2)",
-					borderRadius: "50%",
-					width: 48,
-					height: 48,
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					cursor: "pointer",
-					color: "#ffffff",
-					transition: "all 0.2s ease",
-				}}
-			>
-				<X size={22} />
-			</button>
-
-			{/* Real Live VU Equalizer Waveform */}
 			<div
 				style={{
+					position: "relative",
+					background: "var(--paper)",
+					border: "1px solid var(--line)",
+					borderRadius: 20,
+					padding: "32px 28px",
 					display: "flex",
+					flexDirection: "column",
 					alignItems: "center",
-					justifyContent: "center",
-					gap: 6,
-					height: 72,
-					marginBottom: 24,
+					maxWidth: 680,
+					width: "100%",
+					boxShadow: "0 24px 60px rgba(0, 0, 0, 0.4)",
 				}}
-				aria-label="Аудио индикатор"
 			>
-				{[0.3, 0.6, 1.1, 1.7, 2.0, 1.6, 1.2, 0.7, 0.4].map((mult, idx) => {
-					const barHeight = isRecording
-						? Math.max(6, Math.min(68, 6 + audioLevel * mult * 60))
-						: 6;
-					return (
-						<div
-							key={idx}
-							style={{
-								width: 6,
-								height: `${barHeight}px`,
-								background: isRecording ? "var(--teal, #0d9488)" : "#666",
-								borderRadius: 3,
-								transition: "height 0.08s cubic-bezier(0.2, 0.8, 0.4, 1)",
-							}}
-						/>
-					);
-				})}
-			</div>
+				<button
+					type="button"
+					onClick={onClose}
+					aria-label="Закрыть голосовую надиктовку ДЕНТА"
+					style={{
+						position: "absolute",
+						top: 16,
+						right: 16,
+						background: "var(--paper-soft)",
+						border: "1px solid var(--line)",
+						borderRadius: "50%",
+						width: 40,
+						height: 40,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						cursor: "pointer",
+						color: "var(--ink)",
+						transition: "all 0.2s ease",
+					}}
+				>
+					<X size={20} />
+				</button>
+
+			{/* Real Live VU Equalizer Waveform (Mandate 8s & 8zb: Deterministic volume heights) */}
+			{(() => {
+				const meterHeights = voiceMeterHeights(audioLevel * 255, 9);
+				return (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 6,
+							height: 72,
+							marginBottom: 24,
+						}}
+						aria-label="Аудио индикатор"
+					>
+						{meterHeights.map((h, idx) => {
+							const barHeight = isRecording
+								? Math.max(6, Math.min(68, Math.round((h / 100) * 68)))
+								: 6;
+							return (
+								<div
+									key={idx}
+									style={{
+										width: 6,
+										height: `${barHeight}px`,
+										background: isRecording ? "var(--teal)" : "var(--muted)",
+										borderRadius: 3,
+										transition: "height 0.08s cubic-bezier(0.2, 0.8, 0.4, 1)",
+									}}
+								/>
+							);
+						})}
+					</div>
+				);
+			})()}
 
 			{/* Central Mic Pulse Orb */}
 			<div
@@ -170,15 +195,15 @@ export function VoiceDictationOverlay({
 					height: 100,
 					borderRadius: "50%",
 					background: isRecording
-						? "var(--teal, #0d9488)"
-						: "rgba(255,255,255,0.12)",
+						? "var(--teal)"
+						: "var(--paper-soft)",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
 					boxShadow: isRecording
-						? "0 0 32px var(--teal-glow, rgba(13, 148, 136, 0.45))"
+						? "0 0 32px var(--teal-soft)"
 						: "none",
-					border: isRecording ? "3px solid #ffffff" : "3px solid transparent",
+					border: isRecording ? "3px solid var(--line)" : "3px solid transparent",
 					transition: "all 0.3s ease",
 					marginBottom: 24,
 				}}
@@ -189,16 +214,16 @@ export function VoiceDictationOverlay({
 							position: "absolute",
 							inset: -10,
 							borderRadius: "50%",
-							border: "2px solid var(--teal, #0d9488)",
+							border: "2px solid var(--teal)",
 							opacity: 0.5,
 							animation: "copilot-pulse-mic 1.5s infinite",
 						}}
 					/>
 				)}
 				{isRecording ? (
-					<Mic size={40} color="#ffffff" />
+					<Mic size={40} className="text-[var(--paper)]" />
 				) : (
-					<MicOff size={40} color="#aaaaaa" />
+					<MicOff size={40} className="text-[var(--muted)]" />
 				)}
 			</div>
 
@@ -220,7 +245,7 @@ export function VoiceDictationOverlay({
 					style={{
 						fontSize: 22,
 						fontWeight: 500,
-						color: "#ffffff",
+						color: "var(--ink)",
 						lineHeight: 1.4,
 						margin: 0,
 						wordBreak: "break-word",
@@ -232,7 +257,7 @@ export function VoiceDictationOverlay({
 							{interim && (
 								<span
 									style={{
-										color: "var(--teal-soft, #5eead4)",
+										color: "var(--teal)",
 										fontStyle: "italic",
 										fontWeight: 600,
 										marginLeft: 6,
@@ -245,7 +270,7 @@ export function VoiceDictationOverlay({
 					) : interim ? (
 						<span
 							style={{
-								color: "var(--teal-soft, #5eead4)",
+								color: "var(--teal)",
 								fontStyle: "italic",
 								fontWeight: 600,
 							}}
@@ -253,11 +278,11 @@ export function VoiceDictationOverlay({
 							{interim}
 						</span>
 					) : isRecording ? (
-						<span style={{ color: "rgba(255,255,255,0.6)" }}>
+						<span style={{ color: "var(--muted)" }}>
 							Слушаю... ДЕНТА распознает команды зубной формулы ("36 кариес", "47 пульпит")...
 						</span>
 					) : (
-						<span style={{ color: "rgba(255,255,255,0.4)" }}>
+						<span style={{ color: "var(--muted)" }}>
 							Запись остановлена
 						</span>
 					)}
@@ -272,15 +297,15 @@ export function VoiceDictationOverlay({
 							gap: 6,
 							padding: "4px 12px",
 							borderRadius: 20,
-							background: "rgba(13, 148, 136, 0.25)",
-							border: "1px solid var(--teal, #0d9488)",
-							color: "var(--teal-soft, #5eead4)",
+							background: "var(--teal-soft)",
+							border: "1px solid var(--teal)",
+							color: "var(--ink)",
 							fontSize: 13,
 							fontWeight: 600,
 							marginTop: 4,
 						}}
 					>
-						<Sparkles size={14} />
+						<Sparkles size={14} className="text-[var(--teal)]" />
 						<span>ДЕНТА распознала: {liveIntentSummary}</span>
 					</div>
 				)}
@@ -291,7 +316,7 @@ export function VoiceDictationOverlay({
 						style={{
 							fontSize: 14,
 							lineHeight: 1.4,
-							color: "#fca5a5",
+							color: "var(--bad-fg)",
 							maxWidth: 520,
 							margin: "4px 0 0 0",
 						}}
@@ -312,9 +337,9 @@ export function VoiceDictationOverlay({
 							minWidth: "44px",
 							padding: "12px 28px",
 							borderRadius: 24,
-							background: "rgba(255,255,255,0.15)",
-							color: "#ffffff",
-							border: "1px solid rgba(255,255,255,0.25)",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							border: "1px solid var(--line)",
 							fontSize: 16,
 							fontWeight: 600,
 							cursor: "pointer",
@@ -337,9 +362,9 @@ export function VoiceDictationOverlay({
 							minWidth: "44px",
 							padding: "12px 28px",
 							borderRadius: 24,
-							background: "rgba(255,255,255,0.15)",
-							color: "#ffffff",
-							border: "1px solid rgba(255,255,255,0.25)",
+							background: "var(--paper-soft)",
+							color: "var(--ink)",
+							border: "1px solid var(--line)",
 							fontSize: 16,
 							fontWeight: 600,
 							cursor: "pointer",
@@ -363,8 +388,8 @@ export function VoiceDictationOverlay({
 							minWidth: "44px",
 							padding: "12px 28px",
 							borderRadius: 24,
-							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
+							background: "var(--teal)",
+							color: "var(--paper)",
 							border: "none",
 							fontSize: 16,
 							fontWeight: 700,
@@ -373,13 +398,14 @@ export function VoiceDictationOverlay({
 							justifyContent: "center",
 							gap: 8,
 							cursor: "pointer",
-							boxShadow: "0 2px 10px rgba(13, 148, 136, 0.4)",
+							boxShadow: "0 2px 10px var(--teal-soft)",
 						}}
 					>
 						<Check size={20} />
 						<span>Применить</span>
 					</button>
 				)}
+			</div>
 			</div>
 		</div>
 	);

@@ -103,7 +103,7 @@ const DEFAULT_WAREHOUSE_ITEMS: readonly InventoryItem[] = [
 	{ id: "wh-scand-01", name: "Мепивакаин (Скандонест 3%) карпула 1.7 мл", stockQuantity: 0, criticalThreshold: 15, unitCostRub: "115.00", updatedAt: "2026-09-01", unit: "карп.", sku: "AN-MEP-17", lotNumber: "120823", expirationDate: "2027-08-31" },
 	{ id: "wh-needles-01", name: "Игла карпульная стоматологическая 30G 0.3x21мм", stockQuantity: 350, criticalThreshold: 50, unitCostRub: "12.50", updatedAt: "2026-09-01", unit: "шт.", sku: "ND-30G-21" },
 	{ id: "wh-gloves-01", name: "Перчатки нитриловые неопудренные (размер M)", stockQuantity: 12, criticalThreshold: 25, unitCostRub: "35.00", updatedAt: "2026-09-01", unit: "пар", sku: "PPE-GLV-M" },
-	{ id: "wh-kraft-01", name: "Крафт-пакет самоклеящийся 100х200 (СанПиН 3.3686-21)", stockQuantity: 420, criticalThreshold: 60, unitCostRub: "14.00", updatedAt: "2026-09-01", unit: "шт.", sku: "STER-KP-100" },
+	{ id: "wh-kraft-01", name: "Крафт-пакет самоклеящийся 100х200 (для стерилизации)", stockQuantity: 420, criticalThreshold: 60, unitCostRub: "14.00", updatedAt: "2026-09-01", unit: "шт.", sku: "STER-KP-100" },
 	{ id: "wh-comp-01", name: "Композит светоотверждаемый Estelite Sigma Quick А2", stockQuantity: 4, criticalThreshold: 2, unitCostRub: "3200.00", updatedAt: "2026-09-01", unit: "шприц", sku: "COMP-EST-A2" },
 	{ id: "wh-adhes-01", name: "Адгезивная система Single Bond Universal 5 мл", stockQuantity: 0, criticalThreshold: 1, unitCostRub: "4800.00", updatedAt: "2026-09-01", unit: "фл.", sku: "ADH-SBU-5" },
 ];
@@ -357,10 +357,10 @@ export function WarehouseManagerModal({
 										className="h-9 px-3 text-xs font-semibold rounded-lg border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] flex items-center gap-1.5 transition-colors"
 										onClick={onOpenInventoryAudit}
 										data-testid="switch-to-inventory-audit-btn"
-										title="Перейти к сличительной ведомости (ИНВ-3 / ИНВ-19)"
+										title="Перейти к инвентаризации и сличительной ведомости остатков"
 									>
 										<ClipboardCheck size={14} />
-										Инвентаризация (ИНВ-3/19)
+										Инвентаризация склада
 									</button>
 								)}
 								<button

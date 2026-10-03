@@ -298,16 +298,8 @@ export function calculateFunnelAnalysis(
 
 	// Объединяем бюджеты
 	const channelSpends: Record<CanonicalMarketingChannelKey, number> = {
-		yandex_direct:
-			customSpendMap?.yandex_direct ?? defaultSpends.yandex_direct,
-		gis_2: customSpendMap?.gis_2 ?? defaultSpends.gis_2,
-		prodoctorov: customSpendMap?.prodoctorov ?? defaultSpends.prodoctorov,
-		napopravku: customSpendMap?.napopravku ?? defaultSpends.napopravku,
-		site_seo: customSpendMap?.site_seo ?? defaultSpends.site_seo,
-		recommendations:
-			customSpendMap?.recommendations ?? defaultSpends.recommendations,
-		social_media: customSpendMap?.social_media ?? defaultSpends.social_media,
-		other: customSpendMap?.other ?? defaultSpends.other,
+		...defaultSpends,
+		...(customSpendMap ?? {}),
 	};
 
 	// 1. Определение этапов для каждого лида

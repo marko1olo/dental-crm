@@ -276,7 +276,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 										: "text-[var(--muted)] shrink-0"
 								}
 							/>
-							<span>Сводка FEFO</span>
+							<span>Сроки годности (FEFO)</span>
 							<span className="text-[10px] opacity-70 font-mono">({items.length})</span>
 						</button>
 
@@ -413,11 +413,11 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						type="button"
 						className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
 						onClick={() => setIsInboundInvoiceModalOpen(true)}
-						title="Приходная накладная поставщика (FEFO партии, ТОРГ-12, погашение овердрафта)"
+						title="Приходная накладная поставщика (партии по срокам, погашение овердрафта)"
 						data-testid="btn-acceptance-waybills"
 					>
 						<FileText size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="hidden sm:inline">Приход (FEFO)</span>
+						<span className="hidden sm:inline">Приходная накладная</span>
 					</button>
 
 					{/* Add Inventory Item Button */}

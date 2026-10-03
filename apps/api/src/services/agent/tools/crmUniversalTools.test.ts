@@ -34,10 +34,15 @@ import {
 	createLabOrderTool,
 	createPatientTool,
 	createTreatmentPlanTool,
+	getDailyPatientsTool,
+	getDoctorEarningsTool,
 	getDoctorScheduleTool,
+	getDoctorShiftsTool,
+	getFamilyDepositBalanceTool,
 	getLabOrderStatusTool,
 	getPatientSummaryTool,
 	getTeethChartTool,
+	getToothHistoryTool,
 	logMaterialUsageTool,
 	recommendPrescriptionTool,
 	registerCrmUniversalTools,
@@ -457,28 +462,37 @@ describe("8. Dental Lab (ЗТЛ) Tools (Mandate 8l & 8e)", () => {
 });
 
 describe("9. Unified Tool Registry Single-Chokepoint Execution", () => {
-	test("all 22 tools are present in CRM_UNIVERSAL_TOOLS dictionary", () => {
+	test("all expected tools are present in CRM_UNIVERSAL_TOOLS dictionary", () => {
 		const expectedTools = [
-			// 1. Patients
+			// 1. Patients & Family Deposits (Mandate 8ab)
 			"search_patients",
 			"create_patient",
 			"get_patient_summary",
-			// 2. Schedule
+			"get_family_deposit_balance",
+			"get_patient_family_deposit_and_debt",
+			// 2. Schedule, Daily Patients & Shifts (Mandate 8ab)
 			"book_appointment",
 			"reschedule_appointment",
 			"cancel_appointment",
 			"get_doctor_schedule",
-			// 3. Teeth
+			"get_daily_patients",
+			"get_doctor_shifts",
+			"get_daily_schedule_intelligence",
+			"get_doctor_shifts_and_chairs",
+			// 3. Teeth & Tooth Clinical History (Mandate 8ab)
 			"update_teeth_chart",
 			"get_teeth_chart",
+			"get_tooth_history",
 			// 4. Treatment Plans
 			"create_treatment_plan",
 			"add_treatment_stage",
 			"calculate_plan_cost",
-			// 5. Billing & 54-FZ
+			// 5. Billing & 54-FZ & Doctor Earnings (Mandate 8ab)
 			"create_invoice",
 			"apply_discount",
 			"check_cashier_shift",
+			"get_doctor_earnings",
+			"get_clinic_or_doctor_revenue",
 			// 6. Pharmacology & Safety
 			"check_drug_interactions",
 			"check_allergies",
@@ -491,11 +505,12 @@ describe("9. Unified Tool Registry Single-Chokepoint Execution", () => {
 			"get_lab_order_status",
 		];
 
-		assert.strictEqual(Object.keys(CRM_UNIVERSAL_TOOLS).length, 22);
+		assert.strictEqual(Object.keys(CRM_UNIVERSAL_TOOLS).length, expectedTools.length);
 		for (const name of expectedTools) {
 			assert.ok(CRM_UNIVERSAL_TOOLS[name], `Missing tool: ${name}`);
 		}
 	});
+
 
 	test("invoking tools via ToolRegistry.call resolves qualified 'crm.*' and bare names", async () => {
 		const ctx = createTestContext();
@@ -567,3 +582,72 @@ describe("10. Offline Copilot Fallback Router", () => {
 		assert.strictEqual(toolUse.input.updates[0].toothNumber, 46);
 	});
 });
+
+describe("11. Mandate 8ab Clinical & Operational Intelligence Tools", () => {
+	test("get_daily_patients returns scheduled patients list with card status", async () => {
+		const ctx = createTestContext();
+		const result = (await getDailyPatientsTool.handler(ctx, {
+			date: "2026-10-03",
+			statusFilter: "all",
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.ok(result.totalPatients > 0);
+		assert.ok(result.patients.length > 0);
+		assert.ok(result.patients[0].patientFullName.length > 0);
+		assert.ok(result.summaryRu.includes("СПИСОК ПАЦИЕНТОВ"));
+	});
+
+	test("get_doctor_shifts returns doctor weekly shift schedule with free windows", async () => {
+		const ctx = createTestContext();
+		const result = (await getDoctorShiftsTool.handler(ctx, {
+			startDate: "2026-10-05",
+			days: 7,
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.strictEqual(result.daysCount, 7);
+		assert.strictEqual(result.shifts.length, 7);
+		assert.ok(result.summaryRu.includes("ГРАФИК СМЕН"));
+	});
+
+	test("get_doctor_earnings calculates revenue and piecework percentage", async () => {
+		const ctx = createTestContext();
+		const result = (await getDoctorEarningsTool.handler(ctx, {
+			period: "today",
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.ok(result.grossRevenueRub > 0);
+		assert.ok(result.calculatedPieceworkRub > 0);
+		assert.strictEqual(result.pieceworkPercent, 25);
+		assert.ok(result.summaryRu.includes("ФИНАНСОВЫЕ ИТОГИ"));
+	});
+
+	test("get_tooth_history returns full timeline for tooth 36 by FDI", async () => {
+		const ctx = createTestContext();
+		const result = (await getToothHistoryTool.handler(ctx, {
+			patientId: "00000000-0000-7000-8000-000000000001",
+			toothNumber: 36,
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.strictEqual(result.toothNumber, 36);
+		assert.ok(result.eventsCount > 0);
+		assert.ok(result.summaryRu.includes("КЛИНИЧЕСКАЯ ИСТОРИЯ ЗУБА"));
+	});
+
+	test("get_family_deposit_balance returns family balance and spending permissions", async () => {
+		const ctx = createTestContext();
+		const result = (await getFamilyDepositBalanceTool.handler(ctx, {
+			patientId: "00000000-0000-7000-8000-000000000001",
+		})) as any;
+
+		assert.strictEqual(result.success, true);
+		assert.strictEqual(result.hasFamilyAccount, true);
+		assert.ok(result.familyBalanceRub > 0);
+		assert.strictEqual(result.canSpendFamilyWallet, true);
+		assert.ok(result.summaryRu.includes("СЕМЕЙНЫЙ ДЕПОЗИТ"));
+	});
+});
+

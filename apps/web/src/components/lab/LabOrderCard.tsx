@@ -173,7 +173,7 @@ export function LabOrderCard({
 							type="button"
 							onClick={() => handleOpenPrintOrder(order)}
 							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-							title="Распечатать официальный наряд технику (А4 / ГОСТ)"
+							title="Распечатать наряд в зуботехническую лабораторию"
 							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 						>
 							<Printer className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export function LabOrderCard({
 							type="button"
 							onClick={() => handleOpenPrintOrder(order)}
 							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-							title="Распечатать официальный наряд технику (А4 / ГОСТ)"
+							title="Распечатать наряд в зуботехническую лабораторию"
 							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 						>
 							<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
@@ -198,7 +198,7 @@ export function LabOrderCard({
 							type="button"
 							onClick={() => handleOpenTracking(order)}
 							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-							title="Сменить этап или статус изготовления работы в ЗТЛ"
+							title="Сменить этап или статус изготовления"
 							data-testid={`lab-order-stage-status-btn-${order.id}`}
 						>
 							<Layers className="w-3.5 h-3.5 text-indigo-500" />
@@ -324,7 +324,7 @@ export function LabOrderCard({
 										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
 									>
 										<Link className="w-3.5 h-3.5 text-emerald-500" />
-										<span>Копировать ссылку ЗТЛ</span>
+										<span>Копировать ссылку для техника</span>
 									</button>
 								)}
 							</div>

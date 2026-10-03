@@ -77,7 +77,7 @@ export const LoyaltyLedgerTab: React.FC<LoyaltyLedgerTabProps> = ({
 							<th>Баллы (+/-)</th>
 							<th>Баланс</th>
 							<th>Кассир / Врач</th>
-							<th>Чек 54-ФЗ</th>
+							<th>Кассовый чек</th>
 						</tr>
 					</thead>
 					<tbody>

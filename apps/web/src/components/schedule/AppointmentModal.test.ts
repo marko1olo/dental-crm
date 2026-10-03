@@ -377,7 +377,7 @@ describe("AppointmentModal", () => {
 		);
 	});
 
-	it("renders 1-click Оплата 54-ФЗ button for assigned patient to eliminate cashier friction per Mandates 8e, 8n", () => {
+	it("renders 1-click payment button for assigned patient to eliminate cashier friction per Mandates 8e, 8n", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(AppointmentModal, {
 				isOpen: true,
@@ -396,11 +396,11 @@ describe("AppointmentModal", () => {
 
 		assert.ok(
 			html.includes('data-testid="appointment-modal-pay-btn"'),
-			"Must render 1-click Оплата 54-ФЗ button",
+			"Must render 1-click payment button",
 		);
 		assert.ok(
-			html.includes("Оплата 54-ФЗ"),
-			"Must show text Оплата 54-ФЗ",
+			html.includes("Принять оплату"),
+			"Must show text Принять оплату",
 		);
 		assert.ok(
 			html.includes('data-testid="appointment-modal-menu-pay-btn"'),

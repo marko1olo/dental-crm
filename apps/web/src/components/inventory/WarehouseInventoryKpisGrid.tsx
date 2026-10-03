@@ -52,7 +52,7 @@ export const WarehouseInventoryKpisGrid: React.FC<WarehouseInventoryKpisGridProp
 			</div>
 
 			<div className="warehouse-kpi-card">
-				<span className="warehouse-kpi-label">Сальдо сверки (ИНВ-19)</span>
+				<span className="warehouse-kpi-label">Сальдо сличительной сверки</span>
 				<div
 					className={`warehouse-kpi-value ${
 						totals.netDiscrepancyCostRubles > 0
@@ -75,7 +75,7 @@ export const WarehouseInventoryKpisGrid: React.FC<WarehouseInventoryKpisGridProp
 			</div>
 
 			<div className="warehouse-kpi-card">
-				<span className="warehouse-kpi-label">Контроль FEFO</span>
+				<span className="warehouse-kpi-label">Контроль сроков годности</span>
 				<div
 					className="warehouse-kpi-value"
 					style={{

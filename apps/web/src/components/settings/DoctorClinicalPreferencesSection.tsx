@@ -225,7 +225,7 @@ export function DoctorClinicalPreferencesSection({
 									{
 										mode: "facsimile" as const,
 										title: "Факсимиле + штамп",
-										desc: "Графический оттиск личной подписи врача для распечатки формы 043/у.",
+										desc: "Графический оттиск личной подписи врача для распечатки медицинской карты.",
 									},
 								].map((item) => {
 									const isCurrent = (preferences.digitalSignatureMode || "simple") === item.mode;
@@ -337,7 +337,7 @@ export function DoctorClinicalPreferencesSection({
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<Pill size={15} className="text-[var(--teal)]" />
-							<span>Любимые медикаменты для рецептов (Бланк 107-1/у)</span>
+							<span>Любимые медикаменты для рецептов</span>
 						</label>
 						<span className="text-[11px] font-medium text-[var(--muted)]">
 							Быстрая выписка рецептов и назначений в 1 клик
@@ -472,7 +472,7 @@ export function DoctorClinicalPreferencesSection({
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<FileText size={15} className="text-[var(--teal)]" />
-							<span>Быстрые шаблоны дневников Формы 043/у</span>
+							<span>Быстрые шаблоны дневников приёма</span>
 						</label>
 						<span className="text-[11px] font-medium text-[var(--muted)]">
 							Отображаются в панели 1-клик в карточке визита

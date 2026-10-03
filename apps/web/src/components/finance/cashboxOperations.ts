@@ -235,6 +235,7 @@ export type TenderAllocationTarget =
 	| "family"
 	| "certificate"
 	| "bonus"
+	| "dms"
 	| "card_and_cash_5050";
 
 export interface MultiTenderStateRub {
@@ -245,10 +246,11 @@ export interface MultiTenderStateRub {
 	readonly familyRub: number;
 	readonly certificateRub?: number | undefined;
 	readonly bonusRub?: number | undefined;
+	readonly dmsRub?: number | undefined;
 }
 
 /**
- * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами / 50/50».
+ * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами / ДМС / 50/50».
  * Распределяет оставшуюся сумму до копейки без ручного ввода цифр.
  */
 export function allocateRemainderToTender(params: {
@@ -259,6 +261,7 @@ export function allocateRemainderToTender(params: {
 	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly availableCertificateRub?: number | undefined;
 	readonly availableBonusRub?: number | undefined;
+	readonly availableDmsCoverageRub?: number | undefined;
 }): MultiTenderStateRub {
 	const totalKop = rubToKopecks(params.totalDueRub);
 
@@ -269,6 +272,7 @@ export function allocateRemainderToTender(params: {
 		if (params.currentTenders.familyRub) nonCardCashKop += rubToKopecks(params.currentTenders.familyRub);
 		if (params.currentTenders.certificateRub) nonCardCashKop += rubToKopecks(params.currentTenders.certificateRub);
 		if (params.currentTenders.bonusRub) nonCardCashKop += rubToKopecks(params.currentTenders.bonusRub);
+		if (params.currentTenders.dmsRub) nonCardCashKop += rubToKopecks(params.currentTenders.dmsRub);
 
 		const remKop = Math.max(0, totalKop - nonCardCashKop);
 		const halfCardKop = Math.floor(remKop / 2);
@@ -282,6 +286,7 @@ export function allocateRemainderToTender(params: {
 			familyRub: params.currentTenders.familyRub,
 			certificateRub: params.currentTenders.certificateRub || 0,
 			bonusRub: params.currentTenders.bonusRub || 0,
+			dmsRub: params.currentTenders.dmsRub || 0,
 		};
 	}
 
@@ -293,6 +298,7 @@ export function allocateRemainderToTender(params: {
 	if (params.targetTender !== "family") otherKop += rubToKopecks(params.currentTenders.familyRub);
 	if (params.targetTender !== "certificate") otherKop += rubToKopecks(params.currentTenders.certificateRub || 0);
 	if (params.targetTender !== "bonus") otherKop += rubToKopecks(params.currentTenders.bonusRub || 0);
+	if (params.targetTender !== "dms") otherKop += rubToKopecks(params.currentTenders.dmsRub || 0);
 
 	const rawRemKop = Math.max(0, totalKop - otherKop);
 
@@ -310,6 +316,9 @@ export function allocateRemainderToTender(params: {
 	} else if (params.targetTender === "bonus" && typeof params.availableBonusRub === "number") {
 		const maxBonusKop = rubToKopecks(Math.max(0, params.availableBonusRub));
 		targetAllocatedKop = Math.min(rawRemKop, maxBonusKop);
+	} else if (params.targetTender === "dms" && typeof params.availableDmsCoverageRub === "number") {
+		const maxDmsKop = rubToKopecks(Math.max(0, params.availableDmsCoverageRub));
+		targetAllocatedKop = Math.min(rawRemKop, maxDmsKop);
 	}
 
 	return {
@@ -320,6 +329,7 @@ export function allocateRemainderToTender(params: {
 		familyRub: params.targetTender === "family" ? kopecksToRub(targetAllocatedKop) : params.currentTenders.familyRub,
 		certificateRub: params.targetTender === "certificate" ? kopecksToRub(targetAllocatedKop) : (params.currentTenders.certificateRub || 0),
 		bonusRub: params.targetTender === "bonus" ? kopecksToRub(targetAllocatedKop) : (params.currentTenders.bonusRub || 0),
+		dmsRub: params.targetTender === "dms" ? kopecksToRub(targetAllocatedKop) : (params.currentTenders.dmsRub || 0),
 	};
 }
 

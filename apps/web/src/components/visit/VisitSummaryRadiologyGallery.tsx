@@ -137,9 +137,6 @@ export const VisitSummaryRadiologyGallery: React.FC<
 												<Clock className="w-3.5 h-3.5" />
 												<span>
 													{snap.exposureTimeSec.toFixed(2)} с
-													{snap.exposureParameters?.kVp
-														? ` (${snap.exposureParameters.kVp} кВ)`
-														: ""}
 												</span>
 											</span>
 										)}

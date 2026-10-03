@@ -76,12 +76,17 @@ function createSyntheticTestVolume(dim = 64, spacingMm = 0.4): CbctVoxelVolume {
 	}
 
 	return {
+		id: "test_volume",
 		data,
 		dimensions: { width: dim, height: dim, depth: dim },
 		spacingMm: { x: spacingMm, y: spacingMm, z: spacingMm },
 		originMm: { x: 0, y: 0, z: 0 },
-		windowCenter: 500,
-		windowWidth: 2000,
+		physicalSizeMm: { x: dim * spacingMm, y: dim * spacingMm, z: dim * spacingMm },
+		minHU: -1000,
+		maxHU: 3000,
+		defaultWindowLevel: 500,
+		defaultWindowWidth: 2000,
+		isDisposed: false,
 	};
 }
 

@@ -465,7 +465,7 @@ export async function exportSnapshotToClinicalRecord(
 	if (!payload.patientId) {
 		return {
 			success: false,
-			message: "Пациент не выбран. Выберите пациента для прикрепления снимка к амбулаторной карте 043/у.",
+			message: "Пациент не выбран. Выберите пациента для прикрепления снимка к медицинской карте.",
 			protocol043Text: protocol043,
 		};
 	}
@@ -509,7 +509,7 @@ export async function exportSnapshotToClinicalRecord(
 			);
 			return {
 				success: false,
-				message: `Сервер вернул ошибку (${res.status}) при сохранении снимка в карту 043/у.`,
+				message: `Сервер вернул ошибку (${res.status}) при сохранении снимка в медицинскую карту.`,
 				protocol043Text: protocol043,
 			};
 		}
@@ -518,7 +518,7 @@ export async function exportSnapshotToClinicalRecord(
 		return {
 			success: true,
 			scanId: data.id,
-			message: "Снимок и протокол лучевого обследования успешно прикреплены к карте 043/у пациента.",
+			message: "Снимок и протокол лучевого обследования успешно прикреплены к медицинской карте пациента.",
 			protocol043Text: protocol043,
 		};
 	} catch (err) {

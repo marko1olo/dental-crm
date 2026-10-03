@@ -183,7 +183,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
 <meta charset="utf-8">
 <title>Договор № ${contract.contractNumber} на оказание платных медицинских услуг</title>
 <style>
-  @page { size: A4 portrait; margin: 10mm 12mm; }
+  @page { size: A4 portrait; margin: 12mm 10mm 12mm 20mm; }
   body {
     font-family: "PT Astra Sans", "Times New Roman", Times, serif;
     color: #0f172a;
@@ -387,7 +387,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
       Юр. адрес: ${cl.legalAddress}<br>
       Факт. адрес: ${cl.actualAddress}<br>
       ОГРН: ${cl.ogrn} · ИНН: ${cl.inn} · КПП: ${cl.kpp}<br>
-      Лицензия: № ${cl.licenseNumber} от ${cl.licenseDate} г.<br>
+      Лицензия: № ${cl.licenseNumber} от ${cl.licenseDate} г. (${cl.licenseIssuer} · Сайт: roszdravnadzor.gov.ru)<br>
       Р/с: ${cl.checkingAccount} в ${cl.bankName}<br>
       БИК: ${cl.bik} · К/с: ${cl.correspondentAccount}<br>
       Тел: ${cl.phone}<br><br>

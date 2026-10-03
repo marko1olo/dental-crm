@@ -180,7 +180,7 @@ export const logMaterialUsageTool: ToolDefinition<
 	handler: async (ctx: AgentContext, args: LogMaterialUsageInput): Promise<LogMaterialUsageResult> => {
 		const targetDb = ctx.db ?? db;
 		const orgId = ctx.organizationId || "";
-		let transactionId = crypto.randomUUID();
+		let transactionId: string = crypto.randomUUID();
 		let remainingQty = 10;
 		let isOverdraft = false;
 

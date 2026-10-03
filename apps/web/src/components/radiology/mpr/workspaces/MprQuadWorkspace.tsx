@@ -54,7 +54,7 @@ export const MprQuadWorkspace: React.FC<MprQuadWorkspaceProps> = ({
 				{maximizedViewport === "axial" && renderers.renderAxial("flex-1 flex flex-col w-full h-full")}
 				{maximizedViewport === "coronal" && renderers.renderCoronal("flex-1 flex flex-col w-full h-full")}
 				{maximizedViewport === "sagittal" && renderers.renderSagittal("flex-1 flex flex-col w-full h-full")}
-				{maximizedViewport === "panoramic" && renderers.renderPanoramic("flex-1 flex flex-col w-full h-full")}
+				{maximizedViewport === "panoramic" && renderers.renderVolume3D("flex-1 flex flex-col w-full h-full")}
 				{maximizedViewport === "cross_section" && renderers.renderCrossSection("flex-1 flex flex-col w-full h-full", true)}
 			</div>
 		);
@@ -98,9 +98,10 @@ export const MprQuadWorkspace: React.FC<MprQuadWorkspaceProps> = ({
 			data-testid="cbct-mpr-quad-grid"
 		>
 			<div className="contents">
-				{renderers.renderAxial(mobileActiveTab === "axial" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
+				{/* Ez3D-i Canonical 4-Quadrant MPR: Q1=Coronal (TL), Q2=Sagittal (TR), Q3=Axial (BL), Q4=3D Skull (BR) */}
 				{renderers.renderCoronal(mobileActiveTab === "coronal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 				{renderers.renderSagittal(mobileActiveTab === "sagittal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
+				{renderers.renderAxial(mobileActiveTab === "axial" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 				{renderers.renderVolume3D(mobileActiveTab === "panoramic" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 			</div>
 

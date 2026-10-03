@@ -18,7 +18,9 @@ import {
 	type DentalDspFilterConfig,
 	type DentalDspProfile,
 } from "../../services/voice/audioFilters";
-import "./NoiseSuppressionControl.css";
+if (typeof window !== "undefined") {
+	void import("./NoiseSuppressionControl.css");
+}
 
 export interface NoiseSuppressionControlProps {
 	profile?: DentalDspProfile | undefined;

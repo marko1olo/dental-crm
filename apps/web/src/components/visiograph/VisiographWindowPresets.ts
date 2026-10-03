@@ -23,7 +23,12 @@ export {
 } from "../dicom/VisiographWindowPresets";
 
 export interface ClinicalVisiographFilterPreset {
-	readonly id: "bone_periodont" | "endodontics" | "caries_enamel";
+	readonly id:
+		| "bone_periodont"
+		| "endodontics"
+		| "caries_enamel"
+		| "negative_cracks"
+		| "pseudo_relief";
 	readonly label: string;
 	readonly shortLabel: string;
 	readonly badge: string;
@@ -34,6 +39,8 @@ export interface ClinicalVisiographFilterPreset {
 		readonly gamma: number;
 		readonly sharpness: number;
 		readonly invert: boolean;
+		readonly maxSharpness?: boolean;
+		readonly pseudoRelief?: boolean;
 	};
 }
 
@@ -78,6 +85,38 @@ export const CLINICAL_VISIOGRAPH_FILTERS: readonly ClinicalVisiographFilterPrese
 			gamma: 1.18,
 			sharpness: 50,
 			invert: false,
+		},
+	},
+	{
+		id: "negative_cracks",
+		label: "Негатив / Трещины",
+		shortLabel: "Негатив",
+		badge: "инверсия / микротрещины корня",
+		description: "Инвертированное высококонтрастное отображение для выявления микротрещин корня, скрытых переломов и перфораций",
+		params: {
+			brightness: 0,
+			contrast: 35,
+			gamma: 1.0,
+			sharpness: 65,
+			invert: true,
+			maxSharpness: false,
+			pseudoRelief: false,
+		},
+	},
+	{
+		id: "pseudo_relief",
+		label: "Псевдо-3D / Рельеф",
+		shortLabel: "Псевдо-3D",
+		badge: "эмбоссирование 45° / микрорельеф",
+		description: "Псевдотрехмерный рельефный фильтр (Emboss 45°) для визуализации кортикальной границы и дефектов пломб",
+		params: {
+			brightness: 0,
+			contrast: 25,
+			gamma: 1.0,
+			sharpness: 40,
+			invert: false,
+			maxSharpness: false,
+			pseudoRelief: true,
 		},
 	},
 ];

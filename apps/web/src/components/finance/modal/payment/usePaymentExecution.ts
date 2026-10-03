@@ -63,6 +63,9 @@ export interface UsePaymentExecutionParams {
 	readonly setSplitSbpRub: (v: number) => void;
 	readonly splitCertificateRub: number;
 	readonly splitBonusRub: number;
+	readonly splitDmsRub?: number | undefined;
+	readonly setSplitDmsRub?: ((v: number) => void) | undefined;
+	readonly guaranteeLetterId?: string | undefined;
 	readonly isBalanced: boolean;
 	readonly patientDepositRub: number;
 	readonly patientFamilyBalanceRub: number;
@@ -115,6 +118,9 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		setSplitSbpRub,
 		splitCertificateRub,
 		splitBonusRub,
+		splitDmsRub = 0,
+		setSplitDmsRub,
+		guaranteeLetterId,
 		isBalanced,
 		patientDepositRub,
 		patientFamilyBalanceRub,
@@ -322,6 +328,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		const effectiveSbpRub = splitSbpRub;
 		const effectiveCertificateRub = splitCertificateRub;
 		const effectiveBonusRub = splitBonusRub;
+		const effectiveDmsRub = splitDmsRub || 0;
 
 		if (!isBalanced) {
 			const totalDueKop = rubToKopecks(totalDueRub);
@@ -329,7 +336,8 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 				rubToKopecks(effectiveDepositRub) +
 				rubToKopecks(effectiveSbpRub) +
 				rubToKopecks(effectiveCertificateRub) +
-				rubToKopecks(effectiveBonusRub);
+				rubToKopecks(effectiveBonusRub) +
+				rubToKopecks(effectiveDmsRub);
 			const remainderKop = Math.max(0, totalDueKop - otherKop);
 			if (effectiveCashRub > 0 && effectiveCardRub === 0) {
 				effectiveCashRub = kopecksToRub(remainderKop);
@@ -365,19 +373,25 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 			if (effectiveSbpRub > 0) parts.push(`СБП ${effectiveSbpRub} ₽`);
 			if (effectiveCertificateRub > 0) parts.push(`сертификат ${effectiveCertificateRub} ₽`);
 			if (effectiveBonusRub > 0) parts.push(`бонусы ${effectiveBonusRub} ₽`);
+			if (effectiveDmsRub > 0) parts.push(`ДМС ${effectiveDmsRub} ₽`);
 
 			const cashKop = rubToKopecks(effectiveCashRub);
 			const electronicKop = rubToKopecks(effectiveCardRub) + rubToKopecks(effectiveSbpRub);
-			const isSplitPayment = cashKop > 0 && electronicKop > 0;
+			const dmsKop = rubToKopecks(effectiveDmsRub);
+			const isSplitPayment =
+				(cashKop > 0 && electronicKop > 0) ||
+				(dmsKop > 0 && (cashKop > 0 || electronicKop > 0 || effectiveDepositRub > 0));
 			const primaryMethod = isSplitPayment
 				? "split"
-				: effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
-					? "cash"
-					: effectiveDepositRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
-						? "family_wallet"
-						: effectiveSbpRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0
-							? "online"
-							: "card";
+				: dmsKop > 0
+					? "insurance"
+					: effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+						? "cash"
+						: effectiveDepositRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+							? "family_wallet"
+							: effectiveSbpRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0
+								? "online"
+								: "card";
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 			const res = await fetch("/api/billing/payments", {
@@ -389,11 +403,14 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 					method: isSplitPayment ? "split" : primaryMethod,
 					cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
 					electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
+					dmsAmountKopecks: dmsKop > 0 ? dmsKop : undefined,
 					cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
 					electronicAmountRub:
 						effectiveCardRub + effectiveSbpRub > 0
 							? Number((effectiveCardRub + effectiveSbpRub).toFixed(2))
 							: undefined,
+					dmsAmountRub: effectiveDmsRub > 0 ? effectiveDmsRub : undefined,
+					guaranteeLetterId: guaranteeLetterId || undefined,
 					cashBoxType: selectedCashBoxType,
 					receiptTypeAlias: selectedReceiptAlias,
 					cashFlowCategory: activeCategoryTitle,

@@ -20,6 +20,12 @@ import {
 	STATUTORY_CATEGORY_DURATIONS,
 	VALID_SERVICE_CATEGORIES,
 } from "../../routes/pricelist.js";
+import { computeRepricedAmount } from "../../db/pricelistQuery.js";
+import {
+	crossReferenceWithExistingCatalog,
+	matchOrder804nNomenclature,
+} from "../../services/ai/priceListIngestionService.js";
+import { registerExportRoutes } from "../../routes/export.js";
 
 describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 	const prevEnv = { ...process.env };
@@ -29,10 +35,16 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
+		process.env.DENTAL_STATE_PERSISTENCE = "off";
 	});
 
 	after(() => {
 		process.env.NODE_ENV = prevEnv.NODE_ENV;
+		if (prevEnv.DENTAL_STATE_PERSISTENCE !== undefined) {
+			process.env.DENTAL_STATE_PERSISTENCE = prevEnv.DENTAL_STATE_PERSISTENCE;
+		} else {
+			delete process.env.DENTAL_STATE_PERSISTENCE;
+		}
 		if (prevEnv.DENTE_CLINICAL_ALLOW_UNGUARDED_READS !== undefined) {
 			process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = prevEnv.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
 		} else {
@@ -223,6 +235,170 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			assert.strictEqual(response.statusCode, 400);
 			const body = JSON.parse(response.body);
 			assert.strictEqual(body.error, "PricelistValidationError");
+		});
+	});
+
+	// ─── 4. Pricelist Export (RFC 4180 CSV with UTF-8 BOM and JSON) ───────────
+
+	describe("4. Pricelist Export (RFC 4180 CSV with UTF-8 BOM and JSON)", () => {
+		it("GET /api/pricelist/export returns CSV with UTF-8 BOM and semicolon delimiters", async () => {
+			const app = Fastify();
+			await registerPricelistRoutes(app);
+
+			const response = await app.inject({
+				method: "GET",
+				url: "/api/pricelist/export?format=csv",
+				headers: {
+					"x-organization-id": "org-test-export",
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 200);
+			assert.ok(response.headers["content-type"]?.includes("text/csv"));
+			assert.ok(response.headers["content-disposition"]?.includes("dente_pricelist_"));
+			const body = response.body;
+			assert.ok(
+				body.startsWith("\uFEFF"),
+				"CSV output must start with UTF-8 BOM for Russian Excel compatibility",
+			);
+			assert.ok(
+				body.includes(
+					"Код 804н;Коммерческое наименование;Раздел;Специальность;Цена (руб);Длительность (мин);НДС;Налоговый вычет;Статус",
+				),
+			);
+		});
+
+		it("GET /api/pricelist/export returns JSON structure when requested", async () => {
+			const app = Fastify();
+			await registerPricelistRoutes(app);
+
+			const response = await app.inject({
+				method: "GET",
+				url: "/api/pricelist/export?format=json",
+				headers: {
+					"x-organization-id": "org-test-export",
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 200);
+			const data = JSON.parse(response.body);
+			assert.strictEqual(data.success, true);
+			assert.strictEqual(data.organizationId, "org-test-export");
+			assert.ok(Array.isArray(data.items));
+		});
+
+		it("GET /api/export/pricelist alias in export.ts returns CSV with UTF-8 BOM", async () => {
+			const app = Fastify();
+			await registerExportRoutes(app);
+
+			const response = await app.inject({
+				method: "GET",
+				url: "/api/export/pricelist",
+				headers: {
+					"x-organization-id": "org-test-export",
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 200);
+			assert.ok(response.body.startsWith("\uFEFF"));
+			assert.ok(response.body.includes("Код 804н;"));
+		});
+	});
+
+	// ─── 5. Batch Repricing Engine (ACID Transaction, Money Precision & Rounding) ──
+
+	describe("5. Batch Repricing Engine (ACID Transaction, Money Precision & Rounding)", () => {
+		it("calculates percentage repricing with exact kopeck precision (none rounding)", () => {
+			// 1500.50 + 10% = 1650.55 rub
+			const repriced = computeRepricedAmount(1500.5, 10, undefined, "none");
+			assert.strictEqual(repriced, 1650.55);
+		});
+
+		it("calculates repricing with fixed delta and round_10", () => {
+			// 1543.00 + 100 = 1643.00 -> rounded to 10 = 1640.00
+			const repriced = computeRepricedAmount(1543, undefined, 100, "round_10");
+			assert.strictEqual(repriced, 1640);
+		});
+
+		it("calculates repricing with round_50 mode", () => {
+			// 2520 + 10% = 2772 -> rounded to nearest 50 = 2750
+			const repriced = computeRepricedAmount(2520, 10, undefined, "round_50");
+			assert.strictEqual(repriced, 2750);
+		});
+
+		it("calculates repricing with round_100 mode", () => {
+			// 3560 + 5% = 3738 -> rounded to nearest 100 = 3700
+			const repriced = computeRepricedAmount(3560, 5, undefined, "round_100");
+			assert.strictEqual(repriced, 3700);
+		});
+
+		it("POST /api/pricelist/batch-reprice validates payload and handles errors cleanly", async () => {
+			const app = Fastify();
+			await registerPricelistRoutes(app);
+
+			const invalidResponse = await app.inject({
+				method: "POST",
+				url: "/api/pricelist/batch-reprice",
+				headers: {
+					"x-organization-id": "org-test-reprice",
+				},
+				payload: {
+					percentChange: 99999, // exceeds max: 500
+				},
+			});
+
+			assert.strictEqual(invalidResponse.statusCode, 400);
+			const errBody = JSON.parse(invalidResponse.body);
+			assert.strictEqual(errBody.error, "PricelistValidationError");
+		});
+	});
+
+	// ─── 6. Statutory 804n Fallbacks & Cross-Referencing (Zero A16.07.000 Mocks) ─
+
+	describe("6. Statutory 804n Fallbacks & Cross-Referencing (Zero A16.07.000 Mocks)", () => {
+		it("fallback matching yields statutory A16.07.002 code instead of synthetic A16.07.000", () => {
+			const result = matchOrder804nNomenclature("Неизвестная стоматологическая процедура");
+			assert.notStrictEqual(result.code804n, "A16.07.000", "Synthetic A16.07.000 mock must not be returned");
+			assert.strictEqual(result.code804n, "A16.07.002");
+			assert.strictEqual(result.category, "therapy");
+		});
+
+		it("crossReferenceWithExistingCatalog matches exactly by title and genuine statutory code", () => {
+			const existing = [
+				{
+					id: "srv-exist-1",
+					organizationId: "org-1",
+					code: "A16.07.002.001",
+					title: "Лечение кариеса пломбой",
+					aliases: [],
+					category: "therapy" as const,
+					specialty: "therapist" as const,
+					basePriceRub: 5500,
+					durationMinutes: 45,
+					taxDeductible: true,
+					active: true,
+				},
+			];
+
+			const matchExact = crossReferenceWithExistingCatalog(
+				"A16.07.002.001",
+				"Лечение кариеса пломбой",
+				5500,
+				existing,
+			);
+
+			assert.strictEqual(matchExact.matchedExistingServiceId, "srv-exist-1");
+			assert.strictEqual(matchExact.suggestedAction, "identical");
+
+			const matchPriceChange = crossReferenceWithExistingCatalog(
+				"A16.07.002.001",
+				"Лечение кариеса пломбой",
+				6000,
+				existing,
+			);
+
+			assert.strictEqual(matchPriceChange.matchedExistingServiceId, "srv-exist-1");
+			assert.strictEqual(matchPriceChange.suggestedAction, "update_existing");
 		});
 	});
 });

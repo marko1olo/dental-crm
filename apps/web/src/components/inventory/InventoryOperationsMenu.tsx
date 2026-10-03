@@ -78,7 +78,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 				type="button"
 				className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
 				onClick={onToggle}
-				title="Операции со складом: Списание по наряду, ТОРГ-13, ИНВ-3/19, МДЛП, Техкарты"
+				title="Операции со складом: списание по наряду, перемещения, инвентаризация, маркировка, нормы расхода"
 				aria-expanded={isOpen}
 				data-testid="btn-warehouse-ops-menu"
 			>
@@ -104,10 +104,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Приходная накладная от поставщика (Стомторг, KaVo, ВладМиВа): партии FEFO, оприходование и ТОРГ-12"
+						title="Приходная накладная от поставщика (Стомторг, KaVo, ВладМиВа): партии по срокам годности и оприходование"
 					>
 						<FileText size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Приходная накладная (FEFO)</span>
+						<span>Приходная накладная (партии по срокам)</span>
 					</button>
 
 					<button
@@ -134,10 +134,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Честный Знак / МДЛП сканирование DataMatrix кодов (Схемы 701/531)"
+						title="Сканирование маркировки препаратов (DataMatrix)"
 					>
 						<QrCode size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Честный Знак / МДЛП сканирование</span>
+						<span>Маркировка препаратов</span>
 					</button>
 
 					<button
@@ -149,10 +149,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Клиническое списание расходников по нормам Приказа Минздрава 804н (Акты 0504230, М-11 и ТОРГ-16)"
+						title="Клиническое списание расходников по нормам приёма и актам списания"
 					>
 						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Списание по наряду (804н)</span>
+						<span>Списание по наряду</span>
 					</button>
 
 					<button
@@ -164,10 +164,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Списание расходных материалов по технологическим картам процедур (BOM-спецификации)"
+						title="Списание расходных материалов по технологическим картам процедур и нормам расхода"
 					>
 						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Списание по техкартам (BOM)</span>
+						<span>Нормы расхода на услуги (BOM)</span>
 					</button>
 
 					<button
@@ -179,10 +179,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Межфилиальное перемещение ТМЦ по накладным ТОРГ-13"
+						title="Межфилиальное перемещение материалов и препаратов"
 					>
 						<Truck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Перемещение (ТОРГ-13)</span>
+						<span>Перемещение материалов</span>
 					</button>
 
 					<button
@@ -194,10 +194,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Складская инвентаризация: Опись ИНВ-3, Сличительная ведомость ИНВ-19 и FEFO контроль"
+						title="Складская инвентаризация: опись остатков, сличительная ведомость и контроль сроков годности"
 					>
 						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Инвентаризация (ИНВ-3/19)</span>
+						<span>Инвентаризация склада</span>
 					</button>
 
 					<button
@@ -209,10 +209,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Официальный вывод из оборота лекарственных препаратов по Схеме 10560 ИС МДЛП (Честный ЗНАК)"
+						title="Списание и вывод из оборота маркированных лекарственных препаратов"
 					>
 						<Package size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>МДЛП (Схема 10560)</span>
+						<span>Списание маркированных препаратов</span>
 					</button>
 
 					<div className="my-1 border-t border-[var(--line)]" />
@@ -257,10 +257,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Учет и акт утилизации пустых карпул анестетиков по СанПиН 3.3686-21 без комиссии из 3 человек"
+						title="Учет и акт утилизации пустых карпул анестетиков без лишних комиссий"
 					>
 						<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Акт утилизации карпул (СанПиН)</span>
+						<span>Акт утилизации карпул</span>
 					</button>
 
 					<button

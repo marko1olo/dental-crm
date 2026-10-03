@@ -3,6 +3,8 @@ import {
 	ALL_ADULT_TEETH_NUMBERS,
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
+	MIXED_TOP_TEETH,
+	MIXED_BOTTOM_TEETH,
 	type ToothData,
 	type ToothState,
 } from "./ToothChart";
@@ -20,6 +22,7 @@ export interface UseOdontogramQuickActionsProps {
 	patientId: string;
 	activeDoctor?: any;
 	isPediatricMode: boolean;
+	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
 	teethData: ToothData[];
 	teethDataRef: React.MutableRefObject<ToothData[]>;
 	updateToothState: (
@@ -33,6 +36,7 @@ export function useOdontogramQuickActions({
 	patientId,
 	activeDoctor,
 	isPediatricMode,
+	dentitionMode,
 	teethData,
 	teethDataRef,
 	updateToothState,
@@ -53,13 +57,22 @@ export function useOdontogramQuickActions({
 	}, [updateToothState, patientId]);
 
 	const handleMarkAllHealthy = useCallback(() => {
-		const allTeeth = isPediatricMode
-			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
-			: [...ALL_ADULT_TEETH_NUMBERS];
+		const allTeeth =
+			dentitionMode === "mixed"
+				? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH]
+				: isPediatricMode
+					? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+					: [...ALL_ADULT_TEETH_NUMBERS];
 		void updateToothState(allTeeth, "Healthy", []);
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Санация: вся зубная формула отмечена здоровой в 1 клик", "success", 4000);
-	}, [isPediatricMode, updateToothState]);
+		const toastMessage =
+			dentitionMode === "mixed"
+				? "Санация: сменный прикус (24 зуба) отмечен здоровым в 1 клик"
+				: isPediatricMode
+					? "Санация: молочный прикус (20 зубов) отмечен здоровым в 1 клик"
+					: "Санация: вся зубная формула отмечена здоровой в 1 клик";
+		showToast(toastMessage, "success", 4000);
+	}, [dentitionMode, isPediatricMode, updateToothState]);
 
 	const handleMarkWisdomMissing = useCallback(() => {
 		const wisdomTeeth = [18, 28, 38, 48];

@@ -167,20 +167,21 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 
 			// Bypass expensive 2D CPU convolution filters (sharpen/emboss/smooth/maxRes) on low-spec hardware
 			// A 3x3 matrix convolution on 1-4M pixels on a dual-core Celeron blocks the UI thread for 150-300ms
-			// High-performance workstations retain full convolution filtering
-			if (!isLowSpec) {
-				if ((viewportState as any).smooth && targetWidth <= 1200) {
+			// High-performance workstations retain full convolution filtering up to 2600px
+			const isWithinConvolutionLimit = targetWidth <= 2600 && targetHeight <= 2600;
+			if (!isLowSpec && isWithinConvolutionLimit) {
+				if ((viewportState as any).smooth) {
 					const smoothed = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, SMOOTH_KERNEL_3X3);
 					imgData.data.set(smoothed);
 				}
-				if ((viewportState as any).maxRes && targetWidth <= 1200) {
+				if ((viewportState as any).maxRes) {
 					const maxResized = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, MAX_RES_KERNEL_3X3);
 					imgData.data.set(maxResized);
 				}
-				if (viewportState.sharpen > 0 && targetWidth <= 1200) {
+				if (viewportState.sharpen > 0) {
 					const sharpened = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, SHARPEN_KERNEL_3X3);
 					imgData.data.set(sharpened);
-				} else if (viewportState.emboss && targetWidth <= 1200) {
+				} else if (viewportState.emboss) {
 					const embossed = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, EMBOSS_SHADOW_KERNEL_3X3, 128);
 					imgData.data.set(embossed);
 				}

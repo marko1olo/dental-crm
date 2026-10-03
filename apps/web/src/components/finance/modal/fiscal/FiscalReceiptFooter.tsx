@@ -227,7 +227,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />
-							<span>Печать Акта (804н)</span>
+							<span>Печать акта лечения</span>
 						</button>
 					</div>
 				</>

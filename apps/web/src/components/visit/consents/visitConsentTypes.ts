@@ -18,12 +18,23 @@ export const CONSENT_KEY_TO_DOCUMENT_KIND: Partial<Record<ConsentTemplateKey, st
 	CONSENT_ORTHODONTICS: "procedure_specific_consent_packet",
 	CONSENT_HYGIENE_BLEACHING: "procedure_specific_consent_packet",
 	CONSENT_PEDIATRIC: "procedure_specific_consent_packet",
+	CONSENT_TREATMENT_REFUSAL: "medical_intervention_refusal",
+	CONSENT_EGISZ_REFUSAL: "procedure_specific_consent_packet",
+	CONSENT_WARRANTY_PASSPORT: "warranty_service_memo",
+	CONSENT_WARRANTY_POLICY: "warranty_service_memo",
+	CONSENT_SEDATION: "anesthesia_consent_log",
+	CONSENT_PHOTOPROTOCOL: "photo_video_consent",
+	CONSENT_HEALTH_QUESTIONNAIRE: "patient_intake_questionnaire",
 };
 
 export const DOCUMENT_KIND_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {
 	informed_consent: "CONSENT_INSPECTION_1051N",
 	anesthesia_consent_log: "CONSENT_ANESTHESIA",
 	personal_data_processing_consent: "CONSENT_PERSONAL_DATA",
+	medical_intervention_refusal: "CONSENT_TREATMENT_REFUSAL",
+	warranty_service_memo: "CONSENT_WARRANTY_PASSPORT",
+	photo_video_consent: "CONSENT_PHOTOPROTOCOL",
+	patient_intake_questionnaire: "CONSENT_HEALTH_QUESTIONNAIRE",
 };
 
 export const PROCEDURE_TYPE_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {

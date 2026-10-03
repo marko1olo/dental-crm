@@ -492,6 +492,16 @@ export async function updateAppointmentInDb(
 			.limit(1);
 		if (!existing) throw new Error("Запись не найдена");
 
+		if (
+			input.expectedCurrentStatus &&
+			input.expectedCurrentStatus.length > 0 &&
+			!input.expectedCurrentStatus.includes(existing.status as any)
+		) {
+			throw new Error(
+				`Слот уже занят другим администратором или приём больше не свободен (текущий статус: ${existing.status}).`,
+			);
+		}
+
 		// Перенос принимает те же ссылки, что и создание, и тем же путём уводил
 		// приём за пределы клиники.
 		await assertAppointmentResourcesBelongToOrganization(
@@ -592,6 +602,16 @@ export async function updateAppointmentInDb(
 				.limit(1);
 
 			if (!locked) throw new Error("Запись не найдена");
+
+			if (
+				input.expectedCurrentStatus &&
+				input.expectedCurrentStatus.length > 0 &&
+				!input.expectedCurrentStatus.includes(locked.status as any)
+			) {
+				throw new Error(
+					`Слот уже занят другим администратором или приём больше не свободен (текущий статус: ${locked.status}).`,
+				);
+			}
 
 			// Шаг 4: Проверка отсутствия пересечений (пропускается при овербукинге или острой боли)
 			if (!input.allowOverbooking && !isEmergencyOverrideOverall) {

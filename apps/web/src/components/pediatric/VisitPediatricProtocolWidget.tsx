@@ -1498,6 +1498,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 					defaultRepresentativeFullName={representativeFullName}
 					defaultRepresentativePhone={representativePhone || patientPhone}
 					defaultRepresentativeRole={representativeRole}
+					patientAge={patientAgeYears}
 					onSomaticChange={(status, text) => {
 						setSomaticStatus(status);
 						setSomaticText(text);

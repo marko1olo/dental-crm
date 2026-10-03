@@ -598,7 +598,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 							className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-300 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-pointer border border-zinc-700"
 							data-testid="cbct-btn-apply-to-diary"
 						>
-							В дневник 043/у
+							В дневник приёма
 						</button>
 
 						<button

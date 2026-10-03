@@ -3,6 +3,7 @@ import {
 	useCallback,
 	useEffect,
 	useId,
+	useLayoutEffect,
 	useRef,
 	useState,
 	useSyncExternalStore,
@@ -407,9 +408,12 @@ export function WorkspaceActionsSlot({
 }: WorkspaceActionsSlotProps): React.ReactElement | null {
 	const target = useWorkspaceActionSlot(slot);
 
-	// Примечание: target.replaceChildren() в cleanup намеренно удалён:
-	// createPortal() сам корректно размонтирует своих детей из DOM.
-	// Ручная очистка вызывала NotFoundError: Failed to execute 'removeChild' on 'Node'.
+	useLayoutEffect(() => {
+		if (!target) return;
+		while (target.children.length > 1) {
+			target.firstElementChild?.remove();
+		}
+	});
 
 	if (!target) return null;
 	return createPortal(children, target);

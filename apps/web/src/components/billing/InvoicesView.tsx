@@ -600,7 +600,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 						onClick={() => setIsShiftModalOpen(true)}
 						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-cashbox-shift-open"
-						title="Смена кассы (Z/X отчеты 54-ФЗ)"
+						title="Смена кассы (Z/X отчеты)"
 					>
 						<Receipt size={14} className="text-emerald-600 dark:text-emerald-400" />
 						<span className="hidden md:inline">Смена кассы</span>
@@ -622,10 +622,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 						onClick={() => setReceiptToPrint(invoices[0] || null)}
 						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-cash-receipt-print-open"
-						title="Печать фискального чека 54-ФЗ"
+						title="Печать кассового чека"
 					>
 						<Printer size={14} className="text-teal-600 dark:text-teal-400" />
-						<span className="hidden md:inline">Чек 54-ФЗ</span>
+						<span className="hidden md:inline">Кассовый чек</span>
 					</button>
 
 					<button
@@ -889,13 +889,13 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					invoiceNumber={refundInvoice.number}
 					patientId={refundInvoice.patientId}
 					patientName={refundInvoice.patientName}
-					patientPhone={refundInvoice.patientPhone}
+					patientPhone={refundInvoice.patientPhone || ""}
 					doctorName={refundInvoice.doctorName}
 					services={(refundInvoice.items || []).map((it) => ({
 						id: it.id,
-						name: it.title,
-						code804n: it.code804n,
-						toothNumber: it.toothNumber,
+						name: it.name,
+						code804n: it.code || "",
+						toothNumber: undefined,
 						priceRub: it.priceRub,
 						quantity: it.quantity,
 						doctorName: refundInvoice.doctorName,
@@ -919,7 +919,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					stageAmountKopecks={rubToKopecks(bankInstallmentInvoice.totalAmountRub)}
 					patientId={bankInstallmentInvoice.patientId}
 					patientName={bankInstallmentInvoice.patientName}
-					patientPhone={bankInstallmentInvoice.patientPhone}
+					patientPhone={bankInstallmentInvoice.patientPhone || ""}
 					clinicName={clinicLegalName}
 					onInstallmentApproved={(appr) => {
 						setBankInstallmentInvoice(null);

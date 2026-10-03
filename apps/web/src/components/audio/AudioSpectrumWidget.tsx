@@ -13,7 +13,9 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
-import "./AudioSpectrumWidget.css";
+if (typeof window !== "undefined") {
+	void import("./AudioSpectrumWidget.css");
+}
 
 export interface AudioSpectrumWidgetProps {
 	analyserNode?: AnalyserNode | null | undefined;

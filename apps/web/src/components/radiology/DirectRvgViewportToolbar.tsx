@@ -1,25 +1,31 @@
 import React from "react";
-import { Eye, FlipHorizontal, Maximize2, Minus, Plus, RotateCw } from "lucide-react";
+import { Eye, FlipHorizontal, FlipVertical, Maximize2, Minus, Plus, RotateCcw, RotateCw } from "lucide-react";
 
 export interface DirectRvgViewportToolbarProps {
 	zoom: number;
 	flipH: boolean;
+	flipV?: boolean;
 	isSplitCompare: boolean;
 	onZoomIn: () => void;
 	onZoomOut: () => void;
 	onRotate: () => void;
+	onRotateCcw?: () => void;
 	onToggleFlipH: () => void;
+	onToggleFlipV?: () => void;
 	onResetTransform: () => void;
 }
 
 export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> = ({
 	zoom,
 	flipH,
+	flipV = false,
 	isSplitCompare,
 	onZoomIn,
 	onZoomOut,
 	onRotate,
+	onRotateCcw,
 	onToggleFlipH,
+	onToggleFlipV,
 	onResetTransform,
 }) => {
 	return (
@@ -49,9 +55,18 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 				<div className="w-[1px] h-4 bg-slate-700 mx-0.5" />
 				<button
 					type="button"
+					onClick={onRotateCcw ?? onRotate}
+					className="rvg-tool-btn"
+					title="Повернуть на 90° против часовой (CCW)"
+					data-testid="rvg-rotate-ccw-btn"
+				>
+					<RotateCcw className="w-4 h-4" />
+				</button>
+				<button
+					type="button"
 					onClick={onRotate}
 					className="rvg-tool-btn"
-					title="Повернуть на 90° (R)"
+					title="Повернуть на 90° по часовой (CW / R)"
 					data-testid="rvg-rotate-btn"
 				>
 					<RotateCw className="w-4 h-4" />
@@ -60,11 +75,22 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 					type="button"
 					onClick={onToggleFlipH}
 					className={`rvg-tool-btn ${flipH ? "active" : ""}`}
-					title="Отразить по горизонтали"
+					title="Отразить по горизонтали (Mirror X)"
 					data-testid="rvg-flip-btn"
 				>
 					<FlipHorizontal className="w-4 h-4" />
 				</button>
+				{onToggleFlipV && (
+					<button
+						type="button"
+						onClick={onToggleFlipV}
+						className={`rvg-tool-btn ${flipV ? "active" : ""}`}
+						title="Отразить по вертикали (Mirror Y)"
+						data-testid="rvg-flip-v-btn"
+					>
+						<FlipVertical className="w-4 h-4" />
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={onResetTransform}
@@ -86,3 +112,4 @@ export const DirectRvgViewportToolbar: React.FC<DirectRvgViewportToolbarProps> =
 		</div>
 	);
 };
+

@@ -442,6 +442,8 @@ export function renderWebGl2VolumeRaymarching(
 	height: number,
 	isInteracting: boolean,
 	clipping: Volume3DClippingBox = DEFAULT_VOLUME_3D_CLIPPING_BOX,
+	renderMode = 0,
+	objectId = 0,
 ): void {
 	const { gl, program, vao, uniforms } = state;
 	const dim = volume.dimensions;

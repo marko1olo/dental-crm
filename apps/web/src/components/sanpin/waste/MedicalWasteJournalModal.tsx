@@ -152,10 +152,32 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 			const staffToken = readDenteStaffToken();
 
 			const nowStr = new Date().toISOString().slice(0, 16);
+			const sealClassA = generateWasteSealNumber("class_A");
 			const sealSoft = generateWasteSealNumber("class_B");
 			const sealSharp = generateWasteSealNumber("class_B");
+			const barcodeClassA = generateWasteBarcode("class_A", "GEN");
 			const barcodeSoft = generateWasteBarcode("class_B", "SOFT");
 			const barcodeSharp = generateWasteBarcode("class_B", "SHARP");
+
+			const recClassA: MedicalWasteJournalRecord = {
+				id: `rec-shift-class-a-${Date.now() - 1}`,
+				timestamp: nowStr,
+				wasteClass: "class_A",
+				departmentNameRu: departmentName || "Стоматологическое отделение",
+				packageType: "white_bag",
+				packageCount: 1,
+				grossWeightKg: 3.25,
+				tareWeightKg: 0.05,
+				netWeightKg: 3.2,
+				sealNumber: sealClassA,
+				barcode: barcodeClassA,
+				decontaminationMethod: "none_class_a",
+				storageLocation: "cabinet_room_temp",
+				operatorStaffFullName: operatorName || "Медсестра процедурного кабинета",
+				operatorStaffPosition: operatorPosition || "Медсестра",
+				status: "accumulating",
+				notes: "1-клик сдача безопасных отходов смены Класса А (упаковка, картон, бумага, чистые бахилы) по СанПиН 2.1.3684-21",
+			};
 
 			const recSoft: MedicalWasteJournalRecord = {
 				id: `rec-shift-soft-${Date.now()}`,
@@ -212,14 +234,15 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				console.warn("API quick-shift-bundle fallback to local journal state", fetchErr);
 			}
 
-			setRecords((prev) => [recSoft, recSharp, ...prev]);
+			setRecords((prev) => [recClassA, recSoft, recSharp, ...prev]);
 			if (onRecordAdded) {
+				onRecordAdded(recClassA);
 				onRecordAdded(recSoft);
 				onRecordAdded(recSharp);
 			}
 
 			showToast(
-				"Отходы смены успешно зафиксированы (пакет 2.5 кг + контейнер игл 0.8 кг)",
+				"Отходы смены успешно зафиксированы (Белый пакет Класса А 3.2 кг + Желтый пакет Класса Б 2.5 кг + Контейнер игл 0.8 кг)",
 				"success",
 			);
 			setActiveTab("journal");

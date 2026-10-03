@@ -2537,7 +2537,7 @@ export function App() {
 											/>
 										) : (
 											<ClinicalErrorBoundary
-												workspaceName="Приём (ЭМК 043/у)"
+												workspaceName="Приём пациента"
 												workspaceKey="visit"
 												visitId={dashboard?.activeVisit?.id}
 											>

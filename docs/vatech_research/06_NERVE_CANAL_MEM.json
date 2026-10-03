@@ -1,0 +1,25 @@
+{
+  "task": "Red Team Inquisitor-Documentator Ez3D #2 — Mandibular Nerve Canal Segmentation (MNCSeg & CanalCore)",
+  "subagent_id": "15e13b7d-6c27-4a40-8dd0-25fab2891458",
+  "status": "completed",
+  "completed_steps": [
+    "Read Rule 0 mandatory files: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md",
+    "Extracted and analyzed PE exports and imports of C:\\Ez3D2009\\MNCSeg.dll, CanalCore.dll, Zeus3D.dll",
+    "Uncovered PDB path 'D:\\Programming\\Corona Project\\Corona Backup\\090326 Corona-Canal 2seeds\\Release\\CanalCore.pdb' proving 2-seed point interactive algorithm ('Corona-Canal 2seeds')",
+    "Decoded CanalCore.dll exported API: GxCanalLoad, GxCanalPreprocessing, GxCanalDetection, GxCanalGetPath, GxCanalClose, and internal methods GxCanalManager::Propagation and GxCanalManager::SegmentCanal with QElem priority queue",
+    "Decoded MNCSeg.dll ITK Level Set pipeline: Anisotropic Diffusion, Gradient Magnitude Recursive Gaussian, Sigmoid intensity mapping (alpha = -20.0, beta = 3.0), Fast Marching Level Set, Binary Threshold (-1100..0 HU)",
+    "Analyzed MNCSeg.ini parameters ([Default] and [Another] sections)",
+    "Extracted clinical parameters from C:\\Ez3D2009\\user Settings\\Settings.ini: Canal Diameter 2.0 mm, Collision detection, Misch bone density thresholds (D1 >850, D2 700-850, D3 500-700, D4 0-500, D5 <0 HU), Minimal Apical Distance = 3 mm, Window Center 136, Window Width 1144",
+    "Decompiled C:\\Ez3D2009\\Doc\\UserGuideEN.chm and audited chapters 8.1 (Canal Drawing), 8.3 (Collision Detection), 9.6 (Settings), a.4 (Toolbar & menus)",
+    "Compared Ez3D architecture against dental-crm (cbctNerveCanalMath.ts, implantSafetyEngine.ts, implantNerveSafetyAudit.ts)",
+    "Formulated 100% pure TypeScript zero-mock algorithm for 2-seed fast marching voxel pathfinding (cbctNerveCanalPathfinder)",
+    "Authored comprehensive research in docs/vatech_research/06_EZ3D_NERVE_CANAL_SEGMENTATION.md"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Vatech Ez3D uses 2 seeds: Mental Foramen (start) and Mandibular Foramen (end). Sub-volume bounding box ROI shrinks voxel search space 100x.",
+    "ITK Sigmoid filter with negative alpha (-20.0) inverts gradient so cortical bone acts as an impenetrable barrier, confining Fast Marching wavefront strictly to canal lumen.",
+    "Our dental-crm had manual multi-point placement (10-25 points); implementing 2-seed pathfinder achieves commercial-grade parity with Ez3D-i/Ez3D2009 in pure TypeScript/WebGL.",
+    "Ez3D mandates 3.0 mm minimal apical distance to nerve canal and 2.0 mm lateral clearance."
+  ]
+}

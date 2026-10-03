@@ -3,7 +3,7 @@ import { CheckCircle2, Download, Truck } from "lucide-react";
 
 export interface DirectRvgFooterProps {
 	selectedTeeth: string[];
-	calculatedDoseMicrosv: number;
+	calculatedDoseMicrosv?: number;
 	isSaving: boolean;
 	onExportDicom: () => void;
 	onSendToLab: () => void;
@@ -21,10 +21,11 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 	return (
 		<div className="rvg-capture-footer">
 			<div className="rvg-footer-left-info">
-				<span className="font-mono">
-					Безопасная доза · FDI #{selectedTeeth.join(", ")} · {calculatedDoseMicrosv} мкЗв
+				<span className="font-mono text-slate-300">
+					Зуб FDI #{selectedTeeth.join(", ")} · Готовность к сохранению в карту
 				</span>
 			</div>
+
 
 			<div className="rvg-footer-actions-group">
 				{/* Action 1: Export DICOM */}

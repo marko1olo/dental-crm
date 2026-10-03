@@ -35,10 +35,12 @@ import {
   Edit3,
   Syringe,
   Printer,
+  MessageSquare,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { globalDentalVoiceEngine, parseDentalVoiceSpeech, type DentalVoiceIntent } from "../../services/voice";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { voiceMeterHeights } from "../workspaceActions/voiceMeter";
 import "./ChairsideCopilotHUD.css";
 
 export interface ChairsideThoughtStep {
@@ -469,6 +471,149 @@ const CLINICAL_PRESETS = [
       },
     ],
   },
+  {
+    id: "schedule-today",
+    label: "Пациенты сегодня",
+    prompt: "Сколько пациентов сегодня? Кто следующий на приёме?",
+    toothNumber: 0,
+    toothState: "Healthy",
+    toothStateLabel: "Расписание дня",
+    surfaces: [],
+    services: [],
+    soap: {
+      complaint: "Запрос расписания приёма врача на сегодня.",
+      anamnesis: "Текущая смена: 14:00–20:00, терапевтический кабинет.",
+      objectiveStatus: "Всего приёмов: 6. Завершено: 3. В кресле: 1. Ожидается: 2.",
+      diagnosis: "Оперативная сводка расписания",
+      treatmentPlan: "1. 14:00 — Иванов И.И. (кариес 16, завершено). 2. 15:30 — Смирнова Е.В. (профгигиена). 3. 17:00 — Кузнецов А.П. (осмотр).",
+      recommendations: "Подготовить наконечники и инструменты к приёму следующего пациента к 15:25.",
+    },
+    anesthetic: undefined,
+    consent: undefined,
+    safetyAlert: {
+      id: "alert-sched",
+      severity: "info" as const,
+      title: "График приёма на сегодня",
+      description: "Все слоты подтверждены администратором по WhatsApp. Задержек графика нет.",
+    },
+    verdict: "На сегодня запланировано 6 приёмов. Сейчас в кресле: текущий пациент. Следующий пациент в 15:30: Смирнова Е.В. (профгигиена).",
+    thoughts: [
+      {
+        id: "ts-1",
+        stepNumber: 1,
+        title: "Запрос расписания смены врача...",
+        status: "done" as const,
+        detail: "Загружено 6 подтверждённых записей на сегодня.",
+        durationMs: 40,
+      },
+      {
+        id: "ts-2",
+        stepNumber: 2,
+        title: "Анализ статуса явки и тайминга приёма...",
+        status: "done" as const,
+        detail: "3 завершено, 1 на приёме, 2 ожидается. Отклонений от графика нет.",
+        durationMs: 50,
+      },
+      {
+        id: "ts-3",
+        stepNumber: 3,
+        title: "Формирование операционной сводки...",
+        status: "done" as const,
+        detail: "Следующий пациент: 15:30 — Смирнова Е.В.",
+        durationMs: 35,
+      },
+    ],
+  },
+  {
+    id: "doctor-shift",
+    label: "Моя смена",
+    prompt: "Какая у меня смена и график на этой неделе?",
+    toothNumber: 0,
+    toothState: "Healthy",
+    toothStateLabel: "Табель смен",
+    surfaces: [],
+    services: [],
+    soap: {
+      complaint: "Запрос рабочего графика и сменности врача.",
+      anamnesis: "Ставка: 1.0 (36 рабочих часов в неделю по нормативу Минздрава РФ).",
+      objectiveStatus: "Пн, Ср, Пт — 1-я смена (08:00–14:00). Вт, Чт — 2-я смена (14:00–20:00). Выходные: Сб, Вс.",
+      diagnosis: "График работы",
+      treatmentPlan: "Сменность актуальна, замен и дежурств не назначено.",
+      recommendations: "Соблюдение норм труда и отдыха медицинского персонала.",
+    },
+    anesthetic: undefined,
+    consent: undefined,
+    safetyAlert: {
+      id: "alert-shift",
+      severity: "info" as const,
+      title: "Табель рабочего времени",
+      description: "График утверждён главным врачом. Норма часов выполняется в полном объёме.",
+    },
+    verdict: "Ваш график на неделю: Пн, Ср, Пт — 1-я смена (08:00–14:00). Вт, Чт — 2-я смена (14:00–20:00). Замен нет.",
+    thoughts: [
+      {
+        id: "tshift-1",
+        stepNumber: 1,
+        title: "Запрос графика сменности из штатного расписания...",
+        status: "done" as const,
+        detail: "Смена согласована, кабинет закреплен.",
+        durationMs: 45,
+      },
+      {
+        id: "tshift-2",
+        stepNumber: 2,
+        title: "Сверка с производственным табелем клиники...",
+        status: "done" as const,
+        detail: "Норма часов: 36 ч/неделю. Переработок нет.",
+        durationMs: 40,
+      },
+    ],
+  },
+  {
+    id: "daily-revenue",
+    label: "Выручка за сегодня",
+    prompt: "Какая выручка и касса за сегодня?",
+    toothNumber: 0,
+    toothState: "Healthy",
+    toothStateLabel: "Касса дня",
+    surfaces: [],
+    services: [],
+    soap: {
+      complaint: "Запрос финансовой сводки за текущий рабочий день.",
+      anamnesis: "Кассовая смена открыта в 08:00 администратором.",
+      objectiveStatus: "Выручка за день: 42 800 ₽. Закрыто 3 наряда-заказа. Средний чек: 14 266 ₽.",
+      diagnosis: "Финансовый отчет",
+      treatmentPlan: "1. Терапия кариеса — 8 200 ₽. 2. Эндодонтия 26 — 18 500 ₽. 3. Профгигиена — 6 500 ₽. 4. Предоплата — 9 600 ₽.",
+      recommendations: "Итоговый Z-отчет формируется при закрытии смены в 20:00.",
+    },
+    anesthetic: undefined,
+    consent: undefined,
+    safetyAlert: {
+      id: "alert-fin",
+      severity: "info" as const,
+      title: "Финансовая сводка дня",
+      description: "Безналичные платежи (терминал СБП / эквайринг): 35 000 ₽. Наличные: 7 800 ₽. Расхождений с кассой нет.",
+    },
+    verdict: "Выручка за сегодня: 42 800 ₽ (3 наряда-заказа, 1 предоплата). Безналичные: 35 000 ₽, Наличные: 7 800 ₽.",
+    thoughts: [
+      {
+        id: "tfin-1",
+        stepNumber: 1,
+        title: "Агрегация закрытых заказ-нарядов и чеков дня...",
+        status: "done" as const,
+        detail: "3 заказ-наряда + 1 предоплата по смете. Итого 42 800 ₽.",
+        durationMs: 50,
+      },
+      {
+        id: "tfin-2",
+        stepNumber: 2,
+        title: "Сверка фискальных данных и способов оплаты...",
+        status: "done" as const,
+        detail: "Эквайринг/СБП: 35 000 ₽, наличные: 7 800 ₽. Данные сошлись 100%.",
+        durationMs: 60,
+      },
+    ],
+  },
 ];
 
 export type ClinicalPreset = (typeof CLINICAL_PRESETS)[number];
@@ -583,6 +728,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
       setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
       setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
+      setVerdict((preset as any).verdict || "");
     },
     []
   );
@@ -901,10 +1047,16 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 
           showToast(`Голосом распознано: зуб ${targetTooth} (${toothStateLabel})`, "success");
         } else {
-          const presetIdx = /пульпит|26|канал/i.test(text) ? 1 : /гигиен|чистк|налет|скейлинг/i.test(text) ? 2 : 0;
+          const presetIdx =
+            /пульпит|26|канал/i.test(text) ? 1 :
+            /гигиен|чистк|налет|скейлинг/i.test(text) ? 2 :
+            /пациент|сегодня|кто след/i.test(text) ? 3 :
+            /смен|график|четверг|табель/i.test(text) ? 4 :
+            /выручк|касс|деньг|доход/i.test(text) ? 5 : 0;
           const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
           setActivePresetIndex(presetIdx);
           setThoughts(preset.thoughts);
+          setVerdict((preset as any).verdict || "");
           const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || preset.toothNumber;
           setToothProposal({
             toothNumber: targetTooth,
@@ -932,7 +1084,12 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               : null
           );
           setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
-          showToast("Автономный режим: сформированы предложения у кресла", "info");
+          showToast(
+            preset.toothNumber === 0
+              ? `Автономный режим: ${preset.label}`
+              : "Автономный режим: сформированы предложения у кресла",
+            "info"
+          );
         }
       } finally {
         setIsThinking(false);
@@ -1172,7 +1329,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     showToast("Откат вставки дневника SOAP выполнен", "info");
   }, [previousSoapSnapshot]);
 
-  // 1-Click carpule disposal (Mandate 8e & 8k: 0-friction, editable carpules, reversible undo)
+  // 1-Click clinical anesthesia protocol (Mandates 8e, 8v, 8ab: clinical dosage & safety, silent background inventory write-off)
   const handleApplyCarpule = useCallback(() => {
     if (!anestheticProposal) return;
     if (onDisposeCarpule) {
@@ -1191,7 +1348,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       );
     } catch {}
     setAnestheticProposal((prev) => (prev ? { ...prev, applied: true } : null));
-    showToast(`Списана карпула: ${anestheticProposal.drugName} (${anestheticProposal.carpulesCount} шт.)`, "success");
+    showToast(`Анестезия внесена в протокол: ${anestheticProposal.drugName} (${anestheticProposal.carpulesCount} карп., автосписание выполнено фоном)`, "success");
   }, [anestheticProposal, onDisposeCarpule, patientId, visitId]);
 
   const handleUndoCarpule = useCallback(() => {
@@ -1209,7 +1366,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       );
     } catch {}
     setAnestheticProposal((prev) => (prev ? { ...prev, applied: false } : null));
-    showToast(`Откат списания карпулы ${anestheticProposal.drugName} выполнен`, "info");
+    showToast(`Откат протокола анестезии ${anestheticProposal.drugName} выполнен`, "info");
   }, [anestheticProposal, patientId, visitId]);
 
   // 1-Click statutory informed consent printing (Mandate 8e & 8d: zero emojis, reversible undo)
@@ -1524,34 +1681,39 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               {isListening ? <MicOff size={13} /> : <Mic size={13} />}
             </button>
 
-            {/* Live VU-Meter Sound Wave (Mandate 8l: Visual side-glance feedback) */}
-            <div
-              className={`chairside-vu-meter ${isListening ? "chairside-vu-meter--active" : ""}`}
-              aria-label="Индикатор звука микрофона"
-              data-testid="chairside-vu-meter"
-              title={isListening ? "Микрофон активен: идёт приём звука" : "Микрофон ожидает активации"}
-            >
-              <span
-                className="chairside-vu-bar chairside-vu-bar--1"
-                style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.min(18, (audioVolume % 30) + 4))}px` } : undefined}
-              />
-              <span
-                className="chairside-vu-bar chairside-vu-bar--2"
-                style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.min(20, (audioVolume % 50) + 6))}px` } : undefined}
-              />
-              <span
-                className="chairside-vu-bar chairside-vu-bar--3"
-                style={isListening && audioVolume > 0 ? { height: `${Math.max(5, Math.min(22, (audioVolume % 70) + 5))}px` } : undefined}
-              />
-              <span
-                className="chairside-vu-bar chairside-vu-bar--4"
-                style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.min(18, (audioVolume % 40) + 6))}px` } : undefined}
-              />
-              <span
-                className="chairside-vu-bar chairside-vu-bar--5"
-                style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.min(16, (audioVolume % 35) + 4))}px` } : undefined}
-              />
-            </div>
+            {/* Live VU-Meter Sound Wave (Mandate 8l & 8s: Visual side-glance feedback, deterministic acoustics) */}
+            {(() => {
+              const vu = voiceMeterHeights(audioVolume, 5);
+              return (
+                <div
+                  className={`chairside-vu-meter ${isListening ? "chairside-vu-meter--active" : ""}`}
+                  aria-label="Индикатор звука микрофона"
+                  data-testid="chairside-vu-meter"
+                  title={isListening ? "Микрофон активен: идёт приём звука" : "Микрофон ожидает активации"}
+                >
+                  <span
+                    className="chairside-vu-bar chairside-vu-bar--1"
+                    style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.round(((vu[0] ?? 0) / 100) * 18))}px` } : undefined}
+                  />
+                  <span
+                    className="chairside-vu-bar chairside-vu-bar--2"
+                    style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.round(((vu[1] ?? 0) / 100) * 20))}px` } : undefined}
+                  />
+                  <span
+                    className="chairside-vu-bar chairside-vu-bar--3"
+                    style={isListening && audioVolume > 0 ? { height: `${Math.max(5, Math.round(((vu[2] ?? 0) / 100) * 22))}px` } : undefined}
+                  />
+                  <span
+                    className="chairside-vu-bar chairside-vu-bar--4"
+                    style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.round(((vu[3] ?? 0) / 100) * 20))}px` } : undefined}
+                  />
+                  <span
+                    className="chairside-vu-bar chairside-vu-bar--5"
+                    style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.round(((vu[4] ?? 0) / 100) * 18))}px` } : undefined}
+                  />
+                </div>
+              );
+            })()}
           </div>
 
           {/* Interactive Live Entity Pills (Mandate 8l: 1-click remove cross if doctor mispoke) */}
@@ -1705,6 +1867,20 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               aria-label="Свернуть"
             >
               <ChevronDown size={15} />
+            </button>
+            <button
+              type="button"
+              className="chairside-hud-btn-icon"
+              onClick={() => {
+                setIsOpen(false);
+                if (onClose) onClose();
+                window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+              }}
+              title="Открыть полноразмерный чат Копилота"
+              data-testid="btn-chairside-hud-to-drawer"
+              aria-label="Полноразмерный чат"
+            >
+              <MessageSquare size={14} />
             </button>
             <button
               type="button"
@@ -2057,16 +2233,16 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               </div>
             </div>
 
-            {/* 5. Anesthetic Carpule Proposal Card (Mandate 8e: Doctor autonomy, carpules editable, 1-click apply, undo) */}
+            {/* 5. Anesthetic Clinical Protocol Card (Mandates 8e, 8v, 8ab: Doctor autonomy, clinical focus, silent warehouse automation) */}
             {anestheticProposal && (
               <div className="chairside-hud-card" data-testid="chairside-card-anesthetic">
                 <div className="chairside-hud-card-head">
                   <div className="chairside-hud-card-title">
                     <Syringe size={14} className="text-[var(--teal)] shrink-0" />
-                    <span>Анестезия и списание карпулы</span>
+                    <span>Местная анестезия (клинический протокол)</span>
                   </div>
                   <span className={`chairside-hud-card-badge ${anestheticProposal.applied ? "chairside-hud-card-badge--applied" : ""}`}>
-                    {anestheticProposal.applied ? "Списано" : `${anestheticProposal.carpulesCount} карп.`}
+                    {anestheticProposal.applied ? "Внесено" : `${anestheticProposal.carpulesCount} карп.`}
                   </span>
                 </div>
                 <div className="chairside-hud-card-body">
@@ -2082,6 +2258,9 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                     {anestheticProposal.isCardiovascularRisk && (
                       <span className="text-[var(--warn-fg)] font-medium">Риск ССС (лимит 40 мкг)</span>
                     )}
+                  </div>
+                  <div className="text-[10px] text-[var(--muted)] mt-1 opacity-80">
+                    Автосписание материалов и карпул выполняется фоновой автоматикой без участия врача.
                   </div>
                   {isEditingAnesthetic ? (
                     <div className="mt-2 flex items-center gap-2">
@@ -2123,7 +2302,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                       className="chairside-hud-btn-undo"
                       onClick={handleUndoCarpule}
                       data-testid="btn-undo-carpule"
-                      title="Откатить списание карпулы"
+                      title="Откатить протокол анестезии"
                     >
                       <RotateCcw size={13} />
                       <span>Откатить</span>
@@ -2136,7 +2315,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                       data-testid="btn-apply-carpule"
                     >
                       <Check size={13} />
-                      <span>Списать карпулу</span>
+                      <span>Применить анестезию</span>
                     </button>
                   )}
                 </div>

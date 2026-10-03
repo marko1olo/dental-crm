@@ -287,4 +287,30 @@ describe("DmsGuaranteeLetterModal — Guarantee Letters, FDI Formula & Diagnoses
 		assert.equal(ingosPreset.maxCoverageRub, 35000);
 		assert.equal(ingosPreset.franchisePct, 15);
 	});
+
+	it("3.6 Proves Mandate 8e: 54-FZ Tag 1217 counter-provision and patient co-pay split logic", () => {
+		// Тест сплита счета: 10 000 ₽ всего, ДМС покрывает 8 000 ₽, пациент доплачивает 2 000 ₽ картой
+		const totalDueRub = 10000;
+		const availableDmsCoverageRub = 8000;
+		const totalKop = Math.round(totalDueRub * 100);
+		const dmsKop = Math.min(totalKop, Math.round(availableDmsCoverageRub * 100));
+		const patientCoPayKop = Math.max(0, totalKop - dmsKop);
+
+		assert.equal(dmsKop, 800000); // 8 000.00 ₽ (Тег 1217 безнал юрлиц)
+		assert.equal(patientCoPayKop, 200000); // 2 000.00 ₽ (чек 54-ФЗ строго на доплату пациента)
+		assert.equal(dmsKop + patientCoPayKop, totalKop); // 100% баланс до копейки
+	});
+
+	it("3.7 Proves 100% DMS payment skips consumer fiscal receipt (exempt per 54-FZ Article 2 Clause 9)", () => {
+		const totalDueRub = 5000;
+		const availableDmsCoverageRub = 50000;
+		const totalKop = Math.round(totalDueRub * 100);
+		const dmsKop = Math.min(totalKop, Math.round(availableDmsCoverageRub * 100));
+		const patientCoPayKop = Math.max(0, totalKop - dmsKop);
+
+		assert.equal(patientCoPayKop, 0, "Patient co-pay is 0 when 100% covered by DMS");
+		// При patientCoPayKop === 0 кассовый чек физлицу на ККТ не пробивается
+		const shouldPrintFiscalReceipt = patientCoPayKop > 0;
+		assert.equal(shouldPrintFiscalReceipt, false, "Zero-ruble consumer receipt must be bypassed for 100% corporate insurance settlement");
+	});
 });

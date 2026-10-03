@@ -327,18 +327,18 @@ export interface FunnelLead extends Omit<Partial<Lead>, "status" | "expectedReve
 
 	id: string;
 	name: string;
-	phone?: string;
-	source?: string;
+	phone?: string | undefined;
+	source?: string | undefined;
 	status: LeadStatus | string;
-	expectedRevenue?: string | number | null;
-	createdAt?: string | Date | null;
-	showedUp?: boolean;
-	treatmentPlanAgreed?: boolean;
-	isPaid?: boolean;
-	paidAmountRub?: number;
-	paidAmountKopecks?: number;
-	actualRevenueRub?: number;
-	stageReached?: LeadFunnelStageKey;
+	expectedRevenue?: string | number | null | undefined;
+	createdAt?: string | Date | null | undefined;
+	showedUp?: boolean | undefined;
+	treatmentPlanAgreed?: boolean | undefined;
+	isPaid?: boolean | undefined;
+	paidAmountRub?: number | undefined;
+	paidAmountKopecks?: number | undefined;
+	actualRevenueRub?: number | undefined;
+	stageReached?: LeadFunnelStageKey | undefined;
 }
 
 // ---------------------------------------------------------------------------

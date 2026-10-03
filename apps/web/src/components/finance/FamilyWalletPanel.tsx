@@ -601,16 +601,16 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						</p>
 					</div>
 
-					{/* Кнопка семейного расчета 54-ФЗ */}
+					{/* Кнопка семейного расчета */}
 					<button
 						type="button"
 						onClick={() => setIsCombinedBillingModalOpen(true)}
 						className="min-h-[44px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs font-bold shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-						title="Объединить счета членов семьи и фискализировать чек 54-ФЗ со сплитом"
+						title="Объединить счета членов семьи и принять оплату со сплитом"
 						data-testid="btn-open-family-combined-billing"
 					>
 						<Sparkles size={15} className="animate-pulse" />
-						<span>Семейный расчет 54-ФЗ</span>
+						<span>Семейная оплата</span>
 					</button>
 
 					{/* Кнопка Гроссбуха (история операций) */}
@@ -971,7 +971,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 									>
 										<div className="font-extrabold flex items-center gap-1">
 											<RotateCcw size={13} className="text-rose-600" />
-											<span>Выплата из кассы (54-ФЗ)</span>
+											<span>Выплата из кассы</span>
 										</div>
 										<div className="text-[11px] font-normal mt-0.5">
 											(Чек «Возврат прихода»)

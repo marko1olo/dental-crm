@@ -1086,7 +1086,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 														type="button"
 														onClick={onOpenTaxCertificate}
 														className="text-[10px] text-teal-600 hover:underline font-bold cursor-pointer inline-flex items-center gap-0.5"
-														title="Оформить справку для налогового вычета по форме КНД 1151156"
+														title="Оформить справку для налогового вычета (13%)"
 														data-testid="link-order-tax-certificate"
 													>
 														<span>Вычет</span>
@@ -1615,10 +1615,10 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 										onClick={onOpenTaxCertificate}
 										className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 border border-teal-500/30 bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 text-xs font-semibold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 select-none"
 										data-testid="btn-patient-tax-deduction-tab"
-										title="Оформить справку для налогового вычета 13% НДФЛ (КНД 1151156)"
+										title="Оформить справку для налогового вычета (13%)"
 									>
 										<FileCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-										<span>Справка ФНС (13%)</span>
+										<span>Справка для вычета (13%)</span>
 									</button>
 								)}
 								<button

@@ -54,6 +54,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			monthsCount: z.union([z.literal(3), z.literal(6), z.literal(12), z.literal(24)]).default(6),
 			notes: z.string().trim().max(1000).optional().nullable(),
 			startDateIso: z.string().optional(),
+			cashBoxId: z.string().uuid().optional(),
+			operatorId: z.string().uuid().optional(),
 		});
 
 		const parsed = bodySchema.safeParse(request.body);
@@ -65,7 +67,17 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { patientId, treatmentPlanId, totalAmountRub, downPaymentRub, monthsCount, notes, startDateIso } = parsed.data;
+		const {
+			patientId,
+			treatmentPlanId,
+			totalAmountRub,
+			downPaymentRub,
+			monthsCount,
+			notes,
+			startDateIso,
+			cashBoxId,
+			operatorId,
+		} = parsed.data;
 
 		if (downPaymentRub >= totalAmountRub) {
 			return reply.code(400).send({
@@ -98,7 +110,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			const now = new Date();
 			const contractNumber = `РАСС-${now.getFullYear()}-${randomInt(100000, 1000000)}`;
 
-			// Создаем договор
+			// Создаем договор: остаток долга по графику траншей строго равен сумме траншей
 			const [contract] = await tx
 				.insert(installmentContracts)
 				.values({
@@ -110,7 +122,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					downPaymentRub,
 					monthsCount,
 					paidAmountRub: 0,
-					remainingAmountRub: totalAmountRub,
+					remainingAmountRub: kopecksToRub(remainingKop),
 					status: "active",
 					signedAt: now,
 					notes: notes ?? null,
@@ -133,7 +145,53 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				.values(tranchesToInsert)
 				.returning();
 
-			return { kind: "ok" as const, contract: contract!, tranches: createdTranches };
+			// Если передан cashBoxId и есть первоначальный взнос — фиксируем кассовую операцию
+			let downPaymentOperation: typeof cashOperations.$inferSelect | undefined;
+			if (downPaymentRub > 0 && cashBoxId) {
+				await ensureOrganizationCashBoxes(tx, orgId);
+				const [targetBox] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+
+				if (targetBox) {
+					const balanceBefore = targetBox.balanceRub;
+					const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + rubToKopecks(downPaymentRub));
+
+					await tx
+						.update(cashBoxes)
+						.set({
+							balanceRub: balanceAfter,
+							updatedAt: now,
+						})
+						.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
+
+					const [op] = await tx
+						.insert(cashOperations)
+						.values({
+							organizationId: orgId,
+							cashBoxId: targetBox.id,
+							operationType: "income",
+							amountRub: downPaymentRub,
+							balanceBeforeRub: balanceBefore,
+							balanceAfterRub: balanceAfter,
+							reasonText: `Первоначальный взнос по договору рассрочки ${contractNumber}`,
+							patientId,
+							operatorId: operatorId ?? null,
+						})
+						.returning();
+					downPaymentOperation = op;
+				}
+			}
+
+			return {
+				kind: "ok" as const,
+				contract: contract!,
+				tranches: createdTranches,
+				downPaymentOperation,
+			};
 		});
 
 		if (result.kind === "patient_not_found") {
@@ -148,6 +206,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			message: `Договор рассрочки ${result.contract.contractNumber} на ${monthsCount} мес. успешно оформлен.`,
 			contract: result.contract,
 			tranches: result.tranches,
+			downPaymentOperation: result.downPaymentOperation,
 		});
 	});
 

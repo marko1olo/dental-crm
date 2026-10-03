@@ -445,9 +445,9 @@ export function SettingsAuditTab(props: Record<string, any>) {
 			<div className="panel audit-panel" data-testid="152fz-audit-panel">
 				<div className="panel-heading">
 					<div>
-						<h2>Аудит действий и 152-ФЗ защита</h2>
+						<h2>Аудит действий и журнал безопасности</h2>
 						<p className="text-xs text-slate-500 m-0 mt-0.5">
-							Криптографический реестр обращений: входы сотрудников, открытие карт 043/у, выгрузка ПДн и отзыв сессий.
+							Криптографический реестр обращений: входы сотрудников, открытие медицинских карт, выгрузка данных и отзыв сессий.
 						</p>
 					</div>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -459,7 +459,7 @@ export function SettingsAuditTab(props: Record<string, any>) {
 							data-testid="open-152fz-audit-modal-btn"
 						>
 							<FileText size={16} aria-hidden="true" />
-							<span>Журнал 152-ФЗ / ФСТЭК</span>
+							<span>Журнал безопасности данных</span>
 						</button>
 						<ShieldCheck aria-hidden="true" />
 					</div>
@@ -529,8 +529,8 @@ export function SettingsAuditTab(props: Record<string, any>) {
 						<article className="ops-empty">
 							<ShieldCheck aria-hidden="true" />
 							<p>
-								Журнал криптографического аудита 152-ФЗ активен. Все обращения к картам 043/у,
-								авторизации и выгрузки фиксируются цепочкой SHA-256. Нажмите «Журнал 152-ФЗ / ФСТЭК» для полного отчёта.
+								Журнал криптографического аудита безопасности активен. Все обращения к медицинским картам,
+								авторизации и выгрузки фиксируются цепочкой SHA-256. Нажмите «Журнал безопасности данных» для полного отчёта.
 							</p>
 						</article>
 					)}

@@ -72,13 +72,17 @@ export {
 
 // PeriodontogramChart is strictly lazy-loaded via import("../perio/PeriodontogramChart") inside OdontogramModalsLayer
 
+export interface OdontogramModuleProps {
+	patientId: string;
+	pediatricMode?: boolean | undefined;
+	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
+}
+
 export const OdontogramModule = React.memo(({
 	patientId,
 	pediatricMode,
-}: {
-	patientId: string;
-	pediatricMode?: boolean | undefined;
-}) => {
+	dentitionMode: propDentitionMode,
+}: OdontogramModuleProps) => {
 	const { odontogramUseSurfaces, activePatient, activeDoctor, auth } =
 		useAppLogicContext();
 
@@ -181,29 +185,45 @@ export const OdontogramModule = React.memo(({
 	}, [activePatient]);
 
 	const perspective = usePerspectiveStore((state) => state.perspective);
-	const isPatientChild = useMemo(() => {
+	const patientAge = useMemo(() => {
 		const bDate = (activePatient as { birthDate?: string | null } | undefined)?.birthDate;
-		if (!bDate) return false;
-		const age = calculateAge(bDate);
-		return age !== null && age < 12;
+		if (!bDate) return null;
+		return calculateAge(bDate);
 	}, [activePatient]);
 
-	const [dentitionMode, setDentitionMode] = useState<"adult" | "pediatric" | "mixed">(
-		pediatricMode ? "pediatric" : isPatientChild || perspective === "pediatric" ? "pediatric" : "adult",
-	);
-	const isPediatricMode = dentitionMode === "pediatric";
+	const initialSmartMode = useMemo<"adult" | "pediatric" | "mixed">(() => {
+		if (propDentitionMode) return propDentitionMode;
+		if (pediatricMode !== undefined) return pediatricMode ? "pediatric" : "adult";
+		if (patientAge !== null) {
+			if (patientAge < 6) return "pediatric";
+			if (patientAge < 12) return "mixed";
+			return "adult";
+		}
+		if (perspective === "pediatric") return "pediatric";
+		return "adult";
+	}, [propDentitionMode, pediatricMode, patientAge, perspective]);
+
+	const [dentitionMode, setDentitionMode] = useState<"adult" | "pediatric" | "mixed">(initialSmartMode);
+	const isPediatricMode = dentitionMode === "pediatric" || dentitionMode === "mixed";
 	const setIsPediatricMode = useCallback((val: boolean) => {
 		setDentitionMode(val ? "pediatric" : "adult");
 	}, []);
 
+	// Doctor autonomy: honor explicit prop override when it changes
 	useEffect(() => {
-		if (pediatricMode !== undefined) {
-			const target = pediatricMode ? "pediatric" : "adult";
-			setDentitionMode((prev) => (prev === target ? prev : target));
-		} else if (isPatientChild) {
-			setDentitionMode((prev) => (prev === "pediatric" ? prev : "pediatric"));
+		if (propDentitionMode) {
+			setDentitionMode(propDentitionMode);
 		}
-	}, [pediatricMode, isPatientChild]);
+	}, [propDentitionMode]);
+
+	// When patient changes, automatically derive initial smart mode, but preserve chairside doctor manual switch
+	const lastPatientIdRef = useRef(patientId);
+	useEffect(() => {
+		if (lastPatientIdRef.current !== patientId) {
+			lastPatientIdRef.current = patientId;
+			setDentitionMode(initialSmartMode);
+		}
+	}, [patientId, initialSmartMode]);
 
 	// Quick Clinical Actions and 1-Click Lab Orders
 	const {
@@ -215,6 +235,7 @@ export const OdontogramModule = React.memo(({
 		patientId,
 		activeDoctor,
 		isPediatricMode,
+		dentitionMode,
 		teethData,
 		teethDataRef,
 		updateToothState,

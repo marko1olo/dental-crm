@@ -274,7 +274,7 @@ export function FinanceToolbar({
 									size={14}
 									className="shrink-0 text-teal-600 dark:text-teal-400"
 								/>
-								<span>Касса 54-ФЗ (АРМ)</span>
+								<span>Касса и оплата</span>
 							</button>
 							<button
 								type="button"

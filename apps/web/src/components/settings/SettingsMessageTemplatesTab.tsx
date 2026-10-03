@@ -36,7 +36,7 @@ import "./SettingsMessageTemplatesTab.css";
 const SCENARIO_LABELS: Record<MessageTemplateScenario, string> = {
 	appointment_reminder_24h: "Напоминание (24ч)",
 	appointment_confirmation: "Подтверждение записи",
-	post_op_checkup_043: "Опрос 043/у (самочувствие)",
+	post_op_checkup_043: "Контроль самочувствия после приёма",
 	ztl_ready_alert: "Готовность ЗТЛ",
 	retention_recall_6m: "Профосмотр (6 мес)",
 	debt_notification: "Задолженность (СБП)",

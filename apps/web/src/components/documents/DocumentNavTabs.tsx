@@ -112,9 +112,9 @@ export function DocumentNavTabs({
 		},
 		{
 			id: "certificates_sanpin",
-			label: "Справки, снимки и стандарты",
-			tabletLabel: "Справки и стандарты",
-			mobileLabel: "Стандарты",
+			label: "Справки и выписки",
+			tabletLabel: "Справки",
+			mobileLabel: "Справки",
 			icon: <FileCheck size={15} aria-hidden="true" className="shrink-0" />,
 		},
 	];

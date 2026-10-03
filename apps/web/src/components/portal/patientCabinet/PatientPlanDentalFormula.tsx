@@ -246,7 +246,7 @@ export const PatientPlanDentalFormula: React.FC<PatientPlanDentalFormulaProps> =
 									Зубная формула &bull; {healthIndex.statusLabelRu}
 								</strong>
 								<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #64748b)" }}>
-									Клиническая формула FDI (32 зуба) &bull; Индекс санации {healthIndex.sanitationPercent}%
+									Клиническая формула FDI (32 зуба) &bull; Здоровье зубов {healthIndex.sanitationPercent}%
 								</div>
 							</div>
 						</div>
@@ -266,7 +266,7 @@ export const PatientPlanDentalFormula: React.FC<PatientPlanDentalFormulaProps> =
 								fontSize: "12px",
 							}}
 						>
-							Санация {healthIndex.sanitationPercent}%
+							Здоровье зубов: {healthIndex.sanitationPercent}%
 						</span>
 					</div>
 
@@ -365,7 +365,7 @@ export const PatientPlanDentalFormula: React.FC<PatientPlanDentalFormulaProps> =
 							backgroundColor: "#10b981",
 						}}
 					/>
-					<span>Санированы ({healthIndex.healthyCount})</span>
+					<span>Здоровы / Вылечены ({healthIndex.healthyCount})</span>
 				</button>
 
 				<button

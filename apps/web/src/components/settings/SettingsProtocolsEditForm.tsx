@@ -41,7 +41,7 @@ export const SettingsProtocolsEditForm: React.FC<
 				<div>
 					<h2>{editingId ? "Редактирование шаблона" : "Новый шаблон"}</h2>
 					<p>
-						Конструктор протокола Формы 043/у: шаблоны жалоб, дневника, МКБ-10
+						Конструктор клинического протокола: шаблоны жалоб, дневника, МКБ-10
 						и манипуляций.
 					</p>
 				</div>
@@ -145,7 +145,7 @@ export const SettingsProtocolsEditForm: React.FC<
 				<label className="dente-label">
 					<div className="flex items-center justify-between flex-wrap gap-1 mb-1.5">
 						<span className="font-bold">
-							Коды диагнозов МКБ-10 (автоподстановка в дневник 043/у)
+							Коды диагнозов МКБ-10 (автоподстановка в дневник приёма)
 						</span>
 						<span className="text-[11px] text-[var(--muted)]">
 							1 клик для добавления или снятия диагноза
@@ -235,7 +235,7 @@ export const SettingsProtocolsEditForm: React.FC<
 				{/* Шаблон плана лечения с быстрыми блоками */}
 				<label className="dente-label">
 					<div className="flex items-center justify-between flex-wrap gap-1 mb-1">
-						<span>Шаблон плана лечения и манипуляций (Форма 043/у)</span>
+						<span>Шаблон плана лечения и манипуляций</span>
 						<span className="text-[11px] text-[var(--muted)]">
 							Быстрые протоколы (1 клик):
 						</span>

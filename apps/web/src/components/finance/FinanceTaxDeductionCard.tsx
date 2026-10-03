@@ -2,9 +2,9 @@ import React from "react";
 
 export interface FinanceTaxDeductionCardProps {
 	taxDeductionEligibleRub?: number | null | undefined;
-	money?: (val: number | null) => string;
-	className?: string;
-	onOpenCertificateModal?: () => void;
+	money?: ((val: number | null) => string) | undefined;
+	className?: string | undefined;
+	onOpenCertificateModal?: (() => void) | undefined;
 }
 
 /**

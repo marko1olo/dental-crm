@@ -72,8 +72,8 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 		isCritical: true,
 	},
 	"patients.pii_full": {
-		badge: "Защита базы (152-ФЗ)",
-		hint: "Защита пациентской базы (152-ФЗ): полный просмотр и экспорт телефонов. Рядовой врач видит свои медкарты, но лишён массовой выгрузки базы клиники.",
+		badge: "Защита пациентской базы",
+		hint: "Защита клиентской базы: полный просмотр и экспорт телефонов. Рядовой врач видит свои медкарты, но лишён массовой выгрузки базы клиники.",
 		isCritical: true,
 	},
 	"clinical.records.write": {
@@ -88,7 +88,7 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 	},
 	"finance.refunds": {
 		badge: "Возвраты из кассы",
-		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по кассовым чекам (54-ФЗ).",
+		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по кассовым чекам.",
 		isCritical: false,
 	},
 	"finance.tariffs_manage": {
@@ -166,7 +166,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							<span>Матрица прав доступа</span>
 						</h2>
 						<span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 font-bold border border-teal-200 dark:border-teal-800">
-							152-ФЗ & Врачебная автономия
+							Безопасность и врачебная автономия
 						</span>
 					</div>
 					<p className="text-xs text-[var(--muted)] m-0 leading-normal">
@@ -191,7 +191,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<p className="text-[11px] text-[var(--muted)] m-0 leading-snug">
 							<strong>Соло-врач (кабинет / аренда):</strong> полный суверенитет над своими пациентами, дневником и кассой (100% автономия без бюрократии).
 							<span className="mx-1.5 hidden sm:inline text-[var(--line)]">•</span>
-							<strong className="block sm:inline mt-0.5 sm:mt-0">Клиника (многопрофильная):</strong> активируется финансовая изоляция (P&L клиники и чужие зарплаты скрыты) и защита базы 152-ФЗ (маскирование телефонов, запрет массовой выгрузки базы клиники).
+							<strong className="block sm:inline mt-0.5 sm:mt-0">Клиника (многопрофильная):</strong> активируется финансовая изоляция (P&L клиники и чужие зарплаты скрыты) и защита клиентской базы (маскирование телефонов, запрет массовой выгрузки базы клиники).
 						</p>
 					</div>
 				</div>
@@ -372,14 +372,14 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							<span className="text-xs sm:text-sm">Ключевые принципы безопасности и автономии для роли «Врач-стоматолог»:</span>
 						</div>
 						<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 font-semibold border border-teal-300 dark:border-teal-700">
-							Мандаты 8e, 8n & 152-ФЗ
+							Врачебная автономия и защита базы
 						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
 						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 							<Shield size={14} className="text-blue-600 shrink-0 mt-0.5" />
 							<div>
-								<strong className="block text-slate-900 dark:text-white">Защита базы 152-ФЗ:</strong>
+								<strong className="block text-slate-900 dark:text-white">Защита пациентской базы:</strong>
 								<span>Врач видит карты своих пациентов, но лишён массового экспорта телефонной базы клиники (защита от увода клиентской базы). В общих реестрах телефоны маскируются.</span>
 							</div>
 						</div>
@@ -437,7 +437,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 							<Shield size={14} className="text-emerald-600 shrink-0 mt-0.5" />
 							<div>
-								<strong className="block text-slate-900 dark:text-white">Суверенитет базы (152-ФЗ):</strong>
+								<strong className="block text-slate-900 dark:text-white">Безопасность базы данных:</strong>
 								<span>Право санкционированного экспорта пациентской базы и аудит всех обращений к персональным данным.</span>
 							</div>
 						</div>
@@ -460,14 +460,14 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							<span className="text-xs sm:text-sm">Барьеры безопасности для роли «Ассистент врача»:</span>
 						</div>
 						<span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 font-semibold border border-amber-300 dark:border-amber-700">
-							152-ФЗ & Сестринский сектор
+							Безопасность сестринского сектора
 						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
 						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 							<Shield size={14} className="text-amber-600 shrink-0 mt-0.5" />
 							<div>
-								<strong className="block text-slate-900 dark:text-white">Маскирование 152-ФЗ:</strong>
+								<strong className="block text-slate-900 dark:text-white">Маскирование телефонов:</strong>
 								<span>Номера телефонов, паспорта и адреса пациентов скрыты маской в реестрах для исключения утечек ПДн.</span>
 							</div>
 						</div>
@@ -481,7 +481,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 							<Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
 							<div>
-								<strong className="block text-slate-900 dark:text-white">Расходники и СанПиН:</strong>
+								<strong className="block text-slate-900 dark:text-white">Расходники и стерилизация:</strong>
 								<span>Списание материалов на визите, фиксация карпул анестетиков и ведение журналов автоклавирования.</span>
 							</div>
 						</div>
@@ -499,14 +499,14 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							</span>
 						</div>
 						<span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/60 font-semibold border border-sky-300 dark:border-sky-700">
-							Ресепшен & 54-ФЗ
+							Ресепшен & Касса
 						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
 						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 							<Coins size={14} className="text-teal-600 shrink-0 mt-0.5" />
 							<div>
-								<strong className="block text-slate-900 dark:text-white">Касса и 54-ФЗ:</strong>
+								<strong className="block text-slate-900 dark:text-white">Касса и чеки:</strong>
 								<span>Приём оплаты (нал, карта, СБП, депозит), пробитие чеков, запись на приём и подтверждение визитов.</span>
 							</div>
 						</div>

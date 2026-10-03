@@ -3,6 +3,9 @@ import {
 	type ServiceCategory,
 	dentalPricelistAnalysisRequestSchema,
 	dentalPricelistAnalysisResponseSchema,
+	analyzeTabularPricelist,
+	type ColumnMappingConfig,
+	type PricelistCollisionStrategy,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -13,6 +16,12 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
+	looksLikeZipContainer,
+	parseOds,
+	parseXlsx,
+} from "../migration/parsers/spreadsheet.js";
+import {
+	batchRepriceServicesInDb,
 	createServiceCatalogItemInDb,
 	getServiceCatalogForOrganization,
 	seedBaseline804nServicesInDb,
@@ -346,6 +355,124 @@ export async function handleSeedBaseline804n(
 	}
 }
 
+function escapeCsvCell(value: unknown, delimiter = ";"): string {
+	if (value === null || value === undefined) return "";
+	const str = String(value);
+	if (str.includes(delimiter) || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+		return `"${str.replace(/"/g, '""')}"`;
+	}
+	return str;
+}
+
+export const batchRepriceBodySchema = z.object({
+	percentChange: z.number().min(-90).max(500).optional(),
+	fixedRubChange: z.number().min(-100000).max(100000).optional(),
+	roundMode: z.enum(["none", "round_10", "round_50", "round_100"]).default("none"),
+	category: z.string().optional(),
+	specialty: z.string().optional(),
+	serviceIds: z.array(z.string()).optional(),
+});
+
+export const pricelistExportQuerySchema = z.object({
+	format: z.enum(["csv", "json"]).default("csv"),
+	category: z.string().optional(),
+	activeOnly: z
+		.union([z.boolean(), z.string()])
+		.transform((v) => v === true || v === "true" || v === "1")
+		.optional(),
+});
+
+export const pricelistParseFileSchema = z.object({
+	fileBase64: z.string().optional(),
+	rawText: z.string().optional(),
+	filename: z.string().default("pricelist.csv"),
+	selectedSheetIndex: z.number().int().min(0).default(0),
+	customMapping: z
+		.object({
+			codeCol: z.number().int().min(0).optional(),
+			order804nCol: z.number().int().min(0).optional(),
+			titleCol: z.number().int().min(0).optional(),
+			categoryCol: z.number().int().min(0).optional(),
+			specialtyCol: z.number().int().min(0).optional(),
+			priceCol: z.number().int().min(0).optional(),
+			costCol: z.number().int().min(0).optional(),
+			durationCol: z.number().int().min(0).optional(),
+			warrantyCol: z.number().int().min(0).optional(),
+		})
+		.optional(),
+});
+
+export const pricelistBatchImportBodySchema = z.object({
+	items: z.array(
+		z.object({
+			code: z.string().optional(),
+			order804nCode: z.string().optional(),
+			title: z.string().min(1, "Название услуги обязательно"),
+			category: z.string().default("other"),
+			specialty: z.string().default("universal"),
+			priceRub: z.number().nonnegative(),
+			costRub: z.number().nonnegative().optional(),
+			durationMinutes: z.number().int().positive().default(30),
+			warrantyMonths: z.number().int().nonnegative().optional(),
+			suggestedAction: z
+				.enum(["create_new", "update_existing", "skip_duplicates", "identical"])
+				.default("create_new"),
+			matchedExistingServiceId: z.string().optional().nullable(),
+		}),
+	),
+	collisionStrategy: z
+		.enum(["update_existing", "skip_duplicates", "create_new"])
+		.default("update_existing"),
+});
+
+/**
+ * Universal CSV / TSV text to matrix parser (RFC 4180 compliant with UTF-8 BOM stripping).
+ */
+export function parseCsvToMatrix(text: string): string[][] {
+	const cleaned = text
+		.replace(/^\uFEFF/, "")
+		.replace(/\r\n/g, "\n")
+		.replace(/\r/g, "\n");
+	const lines = cleaned.split("\n");
+	if (lines.length === 0) return [];
+
+	const sample = lines.slice(0, 10).join("\n");
+	const semicolonCount = (sample.match(/;/g) || []).length;
+	const commaCount = (sample.match(/,/g) || []).length;
+	const tabCount = (sample.match(/\t/g) || []).length;
+
+	let delimiter = ";";
+	if (tabCount > semicolonCount && tabCount > commaCount) delimiter = "\t";
+	else if (commaCount > semicolonCount && commaCount > tabCount) delimiter = ",";
+
+	const result: string[][] = [];
+	for (const line of lines) {
+		if (!line.trim()) continue;
+		const row: string[] = [];
+		let inQuotes = false;
+		let currentCell = "";
+		for (let i = 0; i < line.length; i++) {
+			const char = line[i];
+			if (char === '"') {
+				if (inQuotes && line[i + 1] === '"') {
+					currentCell += '"';
+					i++;
+				} else {
+					inQuotes = !inQuotes;
+				}
+			} else if (char === delimiter && !inQuotes) {
+				row.push(currentCell.trim());
+				currentCell = "";
+			} else {
+				currentCell += char;
+			}
+		}
+		row.push(currentCell.trim());
+		result.push(row);
+	}
+	return result;
+}
+
 // ─── Регистрация маршрутов прейскуранта ──────────────────────────────────────
 
 export async function registerPricelistRoutes(app: FastifyInstance) {
@@ -478,9 +605,8 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 							const specialty = normalizeSpecialty(item.specialty);
 							const statutoryCode =
 								item.code804n &&
-								item.code804n !== "A16.07.000" &&
 								item.code804n.trim().length > 0
-									? item.code804n
+									? item.code804n.trim()
 									: STATUTORY_CATEGORY_CODES[category] || "A16.07.002";
 							const durationMinutes =
 								STATUTORY_CATEGORY_DURATIONS[category] || 30;
@@ -560,6 +686,242 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 	);
 
 	/**
+	 * POST /api/pricelist/parse-file
+	 * Интеллектуальный разбор Excel (.xlsx, .xls, .ods) и CSV (.csv) с автоопределением колонок
+	 * форматов IDENT, DentalPRO, iStom, 1C:Медицина и произвольных таблиц врачей.
+	 */
+	app.post(
+		"/api/pricelist/parse-file",
+		{
+			bodyLimit: 15 * 1024 * 1024,
+		},
+		async (request, reply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"pricelist parse file",
+				))
+			) {
+				return;
+			}
+
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"pricelist parse file",
+			);
+			if (!orgId) return;
+
+			const parseResult = pricelistParseFileSchema.safeParse(request.body ?? {});
+			if (!parseResult.success) {
+				return reply.code(400).send({
+					error: "PricelistValidationError",
+					message: "Некорректный формат параметров загрузки файла прейскуранта.",
+					issues: parseResult.error.issues,
+				});
+			}
+
+			const {
+				fileBase64,
+				rawText,
+				filename,
+				selectedSheetIndex,
+				customMapping,
+			} = parseResult.data;
+
+			let rows: string[][] = [];
+			let sheets: string[] = ["Лист 1"];
+
+			if (fileBase64) {
+				try {
+					const buffer = Buffer.from(fileBase64, "base64");
+					const lowerName = filename.toLowerCase();
+
+					if (
+						lowerName.endsWith(".xlsx") ||
+						lowerName.endsWith(".ods") ||
+						looksLikeZipContainer(buffer)
+					) {
+						const isOds = lowerName.endsWith(".ods");
+						const parsedBook = isOds ? parseOds(buffer) : parseXlsx(buffer);
+						if (parsedBook.sheets.length > 0) {
+							sheets = parsedBook.sheets.map((s) => s.name);
+							const sheetIdx = Math.min(
+								selectedSheetIndex,
+								parsedBook.sheets.length - 1,
+							);
+							rows = parsedBook.sheets[sheetIdx]?.rows ?? [];
+						}
+					} else {
+						// Text / CSV buffer
+						const text = buffer.toString("utf8");
+						rows = parseCsvToMatrix(text);
+					}
+				} catch (err: unknown) {
+					request.log.error({ err }, "Ошибка при разборе файла книги прейскуранта");
+					return reply.code(400).send({
+						error: "SpreadsheetParseError",
+						message: `Не удалось разобрать файл прейскуранта: ${err instanceof Error ? err.message : "ошибка чтения"}`,
+					});
+				}
+			} else if (rawText) {
+				rows = parseCsvToMatrix(rawText);
+			} else {
+				return reply.code(400).send({
+					error: "PricelistValidationError",
+					message: "Передайте содержимое файла (fileBase64) или текст (rawText).",
+				});
+			}
+
+			const existingCatalog = await getServiceCatalogForOrganization(orgId);
+			const cleanedMapping: Partial<ColumnMappingConfig> | undefined = customMapping
+				? (Object.fromEntries(
+						Object.entries(customMapping).filter(([, v]) => v !== undefined),
+					) as Partial<ColumnMappingConfig>)
+				: undefined;
+			const analysis = analyzeTabularPricelist({
+				rows,
+				...(cleanedMapping ? { customMapping: cleanedMapping } : {}),
+				existingCatalog,
+			});
+
+			return reply.code(200).send({
+				success: true,
+				filename,
+				sheets,
+				selectedSheetIndex: Math.min(selectedSheetIndex, sheets.length - 1),
+				analysis,
+			});
+		},
+	);
+
+	/**
+	 * POST /api/pricelist/batch-import
+	 * Пакетное сохранение позиций прейскуранта в ACID-транзакции с выбором стратегии коллизий:
+	 * update_existing | skip_duplicates | create_new.
+	 */
+	app.post(
+		"/api/pricelist/batch-import",
+		{
+			bodyLimit: 15 * 1024 * 1024,
+		},
+		async (request, reply) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"pricelist batch import",
+				))
+			) {
+				return;
+			}
+
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"pricelist batch import",
+			);
+			if (!orgId) return;
+
+			const parseResult = pricelistBatchImportBodySchema.safeParse(request.body ?? {});
+			if (!parseResult.success) {
+				return reply.code(400).send({
+					error: "PricelistValidationError",
+					message: "Некорректный формат позиций прейскуранта для импорта.",
+					issues: parseResult.error.issues,
+				});
+			}
+
+			const { items, collisionStrategy } = parseResult.data;
+			let createdCount = 0;
+			let updatedCount = 0;
+			let skippedCount = 0;
+
+			try {
+				await db.transaction(async () => {
+					for (const item of items) {
+						const category = normalizeCategory(item.category);
+						const specialty = normalizeSpecialty(item.specialty);
+						const statutoryCode =
+							item.order804nCode && item.order804nCode.trim().length > 0
+								? item.order804nCode.trim()
+								: STATUTORY_CATEGORY_CODES[category] || "A16.07.002";
+						const durationMinutes =
+							item.durationMinutes || STATUTORY_CATEGORY_DURATIONS[category] || 30;
+
+						if (
+							collisionStrategy === "skip_duplicates" &&
+							item.matchedExistingServiceId
+						) {
+							skippedCount++;
+							continue;
+						}
+
+						if (
+							(collisionStrategy === "update_existing" ||
+								item.suggestedAction === "update_existing") &&
+							item.matchedExistingServiceId
+						) {
+							await updateServiceCatalogItemInDb(
+								orgId,
+								item.matchedExistingServiceId,
+								{
+									code: statutoryCode,
+									title: item.title,
+									basePriceRub: item.priceRub,
+									category,
+									specialty,
+									durationMinutes,
+								},
+							);
+							updatedCount++;
+						} else {
+							await createServiceCatalogItemInDb(orgId, {
+								code: statutoryCode,
+								title: item.title,
+								category,
+								specialty,
+								basePriceRub: item.priceRub,
+								durationMinutes,
+								taxDeductible: true,
+								active: true,
+							});
+							createdCount++;
+						}
+					}
+				});
+
+				return reply.code(200).send({
+					success: true,
+					committedCount: createdCount + updatedCount,
+					createdCount,
+					updatedCount,
+					skippedCount,
+				});
+			} catch (error) {
+				if (error instanceof ServiceCatalogStorageDisabledError) {
+					return reply.code(503).send({
+						error: "ServiceCatalogStorageDisabled",
+						message:
+							"Хранилище прейскуранта отключено: настройте постоянную базу данных.",
+					});
+				}
+				request.log.error(
+					{ err: error },
+					"Ошибка транзакции при пакетном импорте прейскуранта",
+				);
+				return reply.code(500).send({
+					error: "PricelistBatchImportError",
+					message:
+						(error as Error).message ||
+						"Ошибка транзакционного импорта прейскуранта",
+				});
+			}
+		},
+	);
+
+	/**
 	 * 1-клик быстрое наполнение прейскуранта базовым набором 804н (30 услуг).
 	 * Доступно для соло-врача и клиники (Мандаты 8e, 8k, 8n).
 	 * Устранено дублирование: канонический эндпоинт и алиасы вызывают единый обработчик handleSeedBaseline804n.
@@ -567,4 +929,124 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 	app.post("/api/pricelist/seed-baseline-804n", handleSeedBaseline804n);
 	app.post("/api/pricelist/seed-baseline", handleSeedBaseline804n);
 	app.post("/api/pricelist/seed", handleSeedBaseline804n);
+
+	/**
+	 * GET /api/pricelist/export
+	 * Выгрузка прейскуранта организации в CSV (с UTF-8 BOM \uFEFF и точкой с запятой для русского Excel) или JSON.
+	 */
+	app.get("/api/pricelist/export", async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "pricelist export"))) {
+			return;
+		}
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "pricelist export");
+		if (!orgId) return;
+
+		const queryParse = pricelistExportQuerySchema.safeParse(request.query ?? {});
+		const query = queryParse.success ? queryParse.data : { format: "csv" as const };
+
+		const catalog = await getServiceCatalogForOrganization(orgId);
+		let filtered = catalog;
+
+		if (query.category && query.category !== "all") {
+			filtered = filtered.filter((s) => s.category === query.category);
+		}
+		if (query.activeOnly) {
+			filtered = filtered.filter((s) => s.active);
+		}
+
+		const todayStr = new Date().toISOString().slice(0, 10);
+
+		if (query.format === "json") {
+			return reply.code(200).send({
+				success: true,
+				organizationId: orgId,
+				totalCount: filtered.length,
+				exportedAt: new Date().toISOString(),
+				items: filtered,
+			});
+		}
+
+		// CSV format per RFC 4180 with UTF-8 BOM
+		const delimiter = ";";
+		const headers = [
+			"Код 804н",
+			"Коммерческое наименование",
+			"Раздел",
+			"Специальность",
+			"Цена (руб)",
+			"Длительность (мин)",
+			"НДС",
+			"Налоговый вычет",
+			"Статус",
+		];
+
+		const rows: string[] = [headers.map((h) => escapeCsvCell(h, delimiter)).join(delimiter)];
+
+		for (const item of filtered) {
+			const categoryMeta = SERVICE_CATEGORIES_METADATA.find((m) => m.id === item.category);
+			const categoryTitle = categoryMeta?.shortLabel || item.category;
+			const row = [
+				item.code,
+				item.title,
+				categoryTitle,
+				item.specialty,
+				item.basePriceRub,
+				item.durationMinutes,
+				"НДС не облагается (ст. 149 НК РФ)",
+				item.taxDeductible ? "Да" : "Нет",
+				item.active ? "Активна" : "В архиве",
+			];
+			rows.push(row.map((val) => escapeCsvCell(val, delimiter)).join(delimiter));
+		}
+
+		const UTF8_BOM = "\uFEFF";
+		const csvOutput = UTF8_BOM + rows.join("\r\n");
+
+		reply.header("Content-Type", "text/csv; charset=utf-8");
+		reply.header(
+			"Content-Disposition",
+			`attachment; filename="dente_pricelist_${todayStr}.csv"`,
+		);
+		return reply.send(csvOutput);
+	});
+
+	/**
+	 * POST /api/pricelist/batch-reprice
+	 * Пакетная переоценка услуг клиники (+X%, фиксированная сумма, округление) в ACID-транзакции.
+	 */
+	app.post("/api/pricelist/batch-reprice", async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "pricelist batch reprice"))) {
+			return;
+		}
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "pricelist batch reprice");
+		if (!orgId) return;
+
+		const parseResult = batchRepriceBodySchema.safeParse(request.body ?? {});
+		if (!parseResult.success) {
+			return reply.code(400).send({
+				error: "PricelistValidationError",
+				message: "Некорректные параметры пакетной переоценки услуг.",
+			});
+		}
+
+		try {
+			const result = await batchRepriceServicesInDb(orgId, parseResult.data);
+			return reply.code(200).send(result);
+		} catch (error) {
+			if (error instanceof ServiceCatalogStorageDisabledError) {
+				return reply.code(503).send({
+					error: "ServiceCatalogStorageDisabled",
+					message:
+						"Хранилище прейскуранта отключено: настройте базу данных для сохранения изменений.",
+				});
+			}
+			request.log.error({ err: error }, "Ошибка при пакетной переоценке услуг");
+			return reply.code(500).send({
+				error: "PricelistBatchRepriceError",
+				message: (error as Error).message || "Не удалось выполнить переоценку услуг",
+			});
+		}
+	});
 }

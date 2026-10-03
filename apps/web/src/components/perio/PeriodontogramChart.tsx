@@ -125,6 +125,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		handleApplyTherapistPreset,
 		handleInsertToProtocol,
 		handleCopyProtocol,
+		dynamics,
 	} = usePerioChartLogic({
 		initialTeeth,
 		patientId: _patientId,
@@ -306,6 +307,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				psrSummaryText={psrSummaryText}
 				psrSextants={psrSextants}
 				olearyPcr={olearyPcr}
+				dynamics={dynamics}
 			/>
 		</div>
 	);

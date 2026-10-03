@@ -404,11 +404,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 								<span
 									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0"
 									data-testid="inn-physical-not-required-badge"
-									aria-label="54-ФЗ: ИНН с физлиц НЕ требуется"
-									title="54-ФЗ: ИНН с физлиц НЕ требуется"
+									aria-label="ИНН с пациентов-физлиц не требуется"
+									title="ИНН с пациентов-физлиц не требуется"
 								>
 									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-									По 54-ФЗ для физлиц не требуется
+									Для пациентов-физлиц не требуется
 								</span>
 							)}
 						</div>

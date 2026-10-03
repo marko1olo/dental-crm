@@ -21,8 +21,8 @@ import {
 import {
 	CHANNEL_DISPLAY_NAMES,
 	CHANNEL_BADGE_COLORS,
+	detectMarketingAttribution,
 } from "../../telephony/telephonyAttribution.js";
-import { detectMarketingAttribution } from "../../../../../api/src/services/telephony/telephonySecurity.js";
 
 describe("1. Marketing Channels Normalization & Drop Reasons", () => {
 	it("normalizes Avito variants to avito", () => {

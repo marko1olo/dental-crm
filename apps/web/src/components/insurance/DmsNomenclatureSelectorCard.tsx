@@ -33,7 +33,7 @@ export function DmsNomenclatureSelectorCard({
 		<div className="dms-card">
 			<h3 className="dms-card-title">
 				<CheckCircle2 size={18} className="text-[var(--brand-primary,#0d9488)]" />
-				4. Номенклатура Минздрава 804н: Согласованные услуги и диагнозы МКБ-10
+				4. Согласованные услуги и диагнозы (МКБ-10)
 			</h3>
 
 			{/* Диагнозы МКБ-10 */}
@@ -81,7 +81,7 @@ export function DmsNomenclatureSelectorCard({
 
 			{/* Поиск услуг 804н */}
 			<div className="dms-field-group" style={{ marginBottom: "12px" }}>
-				<label htmlFor={serviceSearchInputId} className="dms-label">Поиск номенклатурных услуг 804н для добавления в ГП</label>
+				<label htmlFor={serviceSearchInputId} className="dms-label">Поиск услуг для добавления в гарантийное письмо</label>
 				<div style={{ position: "relative" }}>
 					<Search size={18} style={{ position: "absolute", left: "14px", top: "13px", color: "var(--muted, #64748b)" }} />
 					<input

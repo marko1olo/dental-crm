@@ -8,7 +8,7 @@
  * 3. Hounsfield Unit (HU) Window/Level mapping with clinical presets (Bone, Soft Tissue, Enamel, Implant Metal, Airways).
  * 4. Slab Thickness Projection Modes: Single Slice, MIP (Maximum Intensity Projection), MinIP, Average IP (1-30 mm).
  * 5. High-performance zero-GC pixel pipeline with cached typed buffers.
- * 6. Procedural realistic anatomical Dental CBCT voxel volume generator (Mandible, Maxillary Sinus, Alveolar Ridge, Teeth 18..48, Inferior Alveolar Canal).
+ * 6. True 16-bit DICOM voxel pipeline with memory-safe volume lifecycle and GPU WebGL2 acceleration.
  */
 
 import {

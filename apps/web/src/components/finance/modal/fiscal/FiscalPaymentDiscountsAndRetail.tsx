@@ -188,7 +188,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 								className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 							>
 								<Copy size={14} className="text-slate-500 shrink-0" />
-								<span>Копировать текст Акта (804н)</span>
+								<span>Копировать текст акта</span>
 							</button>
 							<button
 								type="button"

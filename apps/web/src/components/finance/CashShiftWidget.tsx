@@ -509,7 +509,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<ShieldCheck size={16} className="text-purple-500" />
 							Общий оборот смены
 						</span>
-						<span className="font-mono text-[10px]">ОФД 54-ФЗ</span>
+						<span className="font-mono text-[10px]">Кассовый чек</span>
 					</div>
 					<div className="text-xl sm:text-2xl font-black font-mono text-[var(--ink,#0f172a)]">
 						{formatMoneyRu(totalTurnoverRub)}

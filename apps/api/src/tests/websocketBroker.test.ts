@@ -59,8 +59,9 @@ function addClient(
 	organizationId: string,
 	patientId?: string,
 	isClinical = true,
+	branchId?: string,
 ) {
-	wsBroker.addClient(socket as never, organizationId, patientId, isClinical);
+	wsBroker.addClient(socket as never, organizationId, patientId, isClinical, branchId);
 }
 
 function types(socket: FakeSocket): string[] {
@@ -186,5 +187,46 @@ test("несколько клиентов одной клиники получа
 	} finally {
 		first.fireClose();
 		second.fireClose();
+	}
+});
+
+test("broadcastToOrganization с branchId изолирует сообщения внутри филиала", () => {
+	const branch1 = fakeSocket();
+	const branch2 = fakeSocket();
+	const unScoped = fakeSocket();
+
+	addClient(branch1, ORG_A, undefined, true, "branch-1");
+	addClient(branch2, ORG_A, undefined, true, "branch-2");
+	addClient(unScoped, ORG_A, undefined, true, undefined);
+
+	try {
+		wsBroker.broadcastToOrganization(
+			ORG_A,
+			{
+				type: "CHAIR_STATUS_CHANGED",
+				payload: { chairId: "chair-101", status: "patient_seated" },
+			},
+			"branch-1",
+		);
+
+		assert.deepStrictEqual(
+			types(branch1),
+			["CHAIR_STATUS_CHANGED"],
+			"клиент филиала 1 должен получить оповещение своего филиала",
+		);
+		assert.deepStrictEqual(
+			types(branch2),
+			[],
+			"клиент филиала 2 НЕ должен получить оповещение филиала 1",
+		);
+		assert.deepStrictEqual(
+			types(unScoped),
+			["CHAIR_STATUS_CHANGED"],
+			"непривязанный к филиалу клиент клиники (например, управляющий сетью) получает все оповещения",
+		);
+	} finally {
+		branch1.fireClose();
+		branch2.fireClose();
+		unScoped.fireClose();
 	}
 });

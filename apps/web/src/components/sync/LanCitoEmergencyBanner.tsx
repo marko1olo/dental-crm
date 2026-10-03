@@ -53,8 +53,8 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 			{alerts.map((alert) => {
 				const urgencyLabel = URGENCY_LABELS[alert.urgency || "normal"] || "ВЫЗОВ";
 				const isCritical =
-					alert.urgency === "cito_emergency" ||
-					alert.urgency === "emergency" ||
+					(alert.urgency as string) === "cito_emergency" ||
+					(alert.urgency as string) === "emergency" ||
 					alert.urgency === "urgent";
 
 				return (

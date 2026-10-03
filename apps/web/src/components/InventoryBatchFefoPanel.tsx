@@ -188,7 +188,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 						data-testid="fefo-filter-warning"
 					>
 						<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<span>FEFO отпуск (&lt; 30 дн):</span>
+						<span>Срочный отпуск (&lt; 30 дн):</span>
 						<strong className="font-mono text-amber-600 dark:text-amber-400">{stats.warningCount}</strong>
 					</button>
 
@@ -227,13 +227,13 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 				{isLoading ? (
 					<div className="flex items-center justify-center h-48 text-xs text-[var(--muted)] gap-2">
 						<Clock className="animate-spin text-teal-600" size={18} />
-						<span>Загрузка данных партионного учета FEFO...</span>
+						<span>Загрузка данных партий и сроков годности...</span>
 					</div>
 				) : filteredBatches.length === 0 ? (
 					<div className="flex flex-col items-center justify-center h-64 text-center text-xs text-[var(--muted)] gap-2">
 						<Package size={32} className="text-[var(--muted)] opacity-50" />
 						<p className="font-medium text-[var(--ink)]">Партии материалов не найдены</p>
-						<p className="text-[11px]">Попробуйте изменить поисковый запрос или сбросить фильтры FEFO</p>
+						<p className="text-[11px]">Попробуйте изменить поисковый запрос или сбросить фильтры</p>
 					</div>
 				) : (
 					<div className="border border-[var(--line)] rounded-xl overflow-hidden shadow-xs bg-[var(--paper)]">
@@ -243,10 +243,10 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 									<th className="py-2.5 px-3">Материал</th>
 									<th className="py-2.5 px-3">Номер партии (Lot)</th>
 									<th className="py-2.5 px-3">Срок годности</th>
-									<th className="py-2.5 px-3">Статус FEFO</th>
+									<th className="py-2.5 px-3">Статус срока</th>
 									<th className="py-2.5 px-3 text-right">Текущий остаток</th>
 									<th className="py-2.5 px-3 text-right">Цена за ед.</th>
-									<th className="py-2.5 px-3 text-center">Операции FEFO</th>
+									<th className="py-2.5 px-3 text-center">Действия</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-[var(--line)]">
@@ -369,11 +369,11 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 																type="button"
 																onClick={() => onDeductItem(item, 1)}
 																className="h-7 px-2 rounded bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1 transition-colors"
-																title="Списать материал по первоочередному FEFO отпуску"
+																title="Списать материал в первоочередном порядке по сроку годности"
 																data-testid={`btn-fefo-deduct-${item.id}`}
 															>
 																<ArrowUpFromLine size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-																<span>Отпуск FEFO</span>
+																<span>Списать</span>
 															</button>
 
 															<button

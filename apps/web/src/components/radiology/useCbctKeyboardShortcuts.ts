@@ -204,6 +204,8 @@ export interface CbctKeyboardShortcutsOptions<TPreset extends string = CbctPrese
 	readonly onSelectPreset?: (preset: TPreset) => void;
 	readonly onToggleHelp?: () => void;
 	readonly onClose?: () => void;
+	readonly isMaximized?: boolean | undefined;
+	readonly onRestoreMaximize?: (() => void) | undefined;
 }
 
 /**
@@ -245,10 +247,21 @@ export function handleCbctKeyDown<TPreset extends string = CbctPresetType>(
 		return false;
 	}
 
-	// Escape closes the studio modal with memory disposal
+	// Escape: If any viewport is maximized, restore it to normal grid without closing the modal!
+	// If already in normal grid, Escape closes the studio modal with memory disposal.
 	if (event.key === "Escape") {
 		event.preventDefault?.();
 		event.stopPropagation?.();
+		if (options.isMaximized) {
+			if (options.onRestoreMaximize) {
+				options.onRestoreMaximize();
+				return true;
+			}
+			if (options.onToggleMaximize) {
+				options.onToggleMaximize();
+				return true;
+			}
+		}
 		options.onClose?.();
 		return true;
 	}

@@ -152,7 +152,7 @@ export function printVisiographLegalProtocol({
   }
   <div class="stamp-footer">
     <div>
-      <div>Заключение: Рентгенологический контроль завершен. Данные внесены в медицинскую карту (043/у).</div>
+      <div>Заключение: Рентгенологический контроль завершен. Данные внесены в медицинскую карту пациента.</div>
       <div style="margin-top: 6px;">Врач: ${doctorName} ___________________ / Подпись</div>
     </div>
     <div class="stamp-box">М.П.</div>
