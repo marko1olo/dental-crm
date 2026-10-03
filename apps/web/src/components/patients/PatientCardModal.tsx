@@ -4,6 +4,7 @@ import {
 	AlertOctagon,
 	Award,
 	CreditCard,
+	FileCheck,
 	FileText,
 	HeartPulse,
 	History,
@@ -14,6 +15,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
 import { PediatricBraveryDiplomaModal } from "../pediatric/PediatricBraveryDiplomaModal";
 import { showToast } from "../GlobalToast";
 import {
@@ -155,6 +157,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 		});
 		const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
 		const [isDmsLetterModalOpen, setIsDmsLetterModalOpen] = useState(false);
+		const [isTaxDeductionModalOpen, setIsTaxDeductionModalOpen] = useState(false);
 
 		useEffect(() => {
 			if (isOpen && effectiveInitialPatient.id) {
@@ -271,6 +274,31 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									<span className="sm:hidden">Диплом</span>
 								</button>
 							)}
+
+							<button
+								type="button"
+								data-testid="btn-patient-tax-deduction"
+								onClick={() => {
+									if (
+										patientData.fullName?.startsWith("UUID_ANON") ||
+										patientData.fullName?.toLowerCase().includes("аноним")
+									) {
+										showToast(
+											"Отказ по ПП РФ №659: формирование справки для налогового вычета на анонимных пациентов запрещено.",
+											"error",
+											5000,
+										);
+										return;
+									}
+									setIsTaxDeductionModalOpen(true);
+								}}
+								className="border border-teal-500/30 bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+								title="Справка об оплате медицинских услуг для налогового вычета 13% НДФЛ (Форма КНД 1151156)"
+							>
+								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="hidden sm:inline">Справка ФНС (1151156)</span>
+								<span className="sm:hidden">ФНС 1151156</span>
+							</button>
 
 							<button
 								type="button"
@@ -480,6 +508,20 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onNavigateToVisit={onNavigateToVisit}
 								onNewAppointment={onNewAppointment}
 								onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
+								onOpenTaxCertificate={() => {
+									if (
+										patientData.fullName?.startsWith("UUID_ANON") ||
+										patientData.fullName?.toLowerCase().includes("аноним")
+									) {
+										showToast(
+											"Отказ по ПП РФ №659: формирование справки для налогового вычета на анонимных пациентов запрещено.",
+											"error",
+											5000,
+										);
+										return;
+									}
+									setIsTaxDeductionModalOpen(true);
+								}}
 							/>
 						)}
 					</div>
@@ -554,6 +596,19 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								}}
 							/>
 						</React.Suspense>
+					)}
+					{/* 1-Клик Оформление справки для налогового вычета (КНД 1151156) */}
+					{isTaxDeductionModalOpen && (
+						<TaxDeductionCertificateModal
+							isOpen={isTaxDeductionModalOpen}
+							onClose={() => setIsTaxDeductionModalOpen(false)}
+							patientId={patientData.id}
+							patientName={patientData.fullName || ""}
+							patientBirthDate={patientData.birthDate || ""}
+							patientInn={patientData.inn || (patientData as { taxpayerInn?: string }).taxpayerInn || ""}
+							patientSnils={patientData.snils || ""}
+							autoFetchPayments={true}
+						/>
 					)}
 				</div>
 			</div>

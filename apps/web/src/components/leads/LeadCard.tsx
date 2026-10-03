@@ -23,9 +23,12 @@ import {
 	MessageSquare,
 	Phone,
 	Tag,
+	UserCheck,
 	UserPlus,
 } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { formatWhatsAppUrl } from "../messaging/omnichannelEngine";
 import {
 	CHANNEL_BADGE_COLORS,
@@ -57,10 +60,12 @@ export interface LeadCardProps {
 		e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>,
 		leadId: string,
 		nextStatus: Lead["status"],
+		options?: { reason?: string; dropReason?: string },
 	) => void;
 	onCreatePatient: (lead: Lead) => Promise<void> | void;
 	onSchedule: (leadId: string) => void;
 	onQuickSchedule?: (leadId: string) => Promise<void> | void;
+	onOpenPatientCard?: (patientId: string) => void;
 }
 
 export const LeadCard: React.FC<LeadCardProps> = ({
@@ -75,9 +80,30 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	onCreatePatient,
 	onSchedule,
 	onQuickSchedule,
+	onOpenPatientCard,
 }) => {
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const sla = getLeadSlaStatus(lead);
+	const dropReasonMatch =
+		lead.dropReason ||
+		(lead.notes ? lead.notes.match(/\[Причина срыва\]:\s*([^\n\r]+)/)?.[1] : null);
+
+	const handleOpenPatient = (e: React.MouseEvent, patientId: string) => {
+		e.stopPropagation();
+		if (onOpenPatientCard) {
+			onOpenPatientCard(patientId);
+			return;
+		}
+		try {
+			usePatientStore.getState().setSelectedPatientId(patientId);
+			useAppStore.getState().setCurrentView("patients");
+			if (typeof window !== "undefined") {
+				window.location.hash = "patients";
+			}
+		} catch {
+			// store fallback
+		}
+	};
 	const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
 	const channelBadge =
 		channelKey && CHANNEL_BADGE_COLORS[channelKey]
@@ -223,6 +249,58 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				<Clock size={10} className="shrink-0" />
 				<span>{sla.label}</span>
 			</div>
+
+			{/* Бейдж постоянного пациента клиники (Mandates 8l, 8n) */}
+			{lead.existingPatient && (
+				<div
+					style={{
+						background: "var(--teal-soft)",
+						color: "var(--teal-dark, var(--teal))",
+						border: "1px solid var(--teal)",
+						fontSize: 10.5,
+						fontWeight: 600,
+						padding: "1px 6px",
+						borderRadius: 5,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 3.5,
+						marginBottom: 6,
+						marginLeft: 4,
+						width: "fit-content",
+						cursor: "pointer",
+					}}
+					onClick={(e) => handleOpenPatient(e, lead.existingPatient!.id)}
+					title={`Номер совпадает с существующей картой: ${lead.existingPatient.fullName}. Нажмите для перехода в карту.`}
+					data-testid={`lead-existing-patient-badge-${lead.id}`}
+				>
+					<UserCheck size={10} className="shrink-0" />
+					<span>Постоянный пациент: {lead.existingPatient.fullName}</span>
+				</div>
+			)}
+
+			{/* Причина срыва / отказа обращения */}
+			{lead.status === "trash" && dropReasonMatch && (
+				<div
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 4,
+						background: "var(--rust-soft, rgba(239, 68, 68, 0.12))",
+						color: "var(--rust, #ef4444)",
+						border: "1px solid var(--rust-soft, rgba(239, 68, 68, 0.35))",
+						borderRadius: 5,
+						padding: "1px 6px",
+						fontSize: 10.5,
+						fontWeight: 600,
+						marginBottom: 6,
+						marginLeft: 4,
+					}}
+					title={`Причина срыва: ${dropReasonMatch}`}
+					data-testid={`lead-drop-reason-badge-${lead.id}`}
+				>
+					<span>Срыв: {dropReasonMatch}</span>
+				</div>
+			)}
 
 			{/* Телефонный номер (прямой клик для звонка) и компактный аудиоплеер */}
 			<div
@@ -409,6 +487,41 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							Дата: {new Date(lead.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
 						</div>
 					)}
+					{lead.existingPatient && (
+						<div
+							style={{
+								fontSize: 11.5,
+								display: "flex",
+								alignItems: "center",
+								gap: 5,
+								padding: "3px 6px",
+								background: "var(--teal-soft)",
+								borderRadius: 5,
+								border: "1px solid var(--teal)",
+							}}
+						>
+							<UserCheck size={12} style={{ color: "var(--teal-dark, var(--teal))" }} />
+							<span style={{ color: "var(--muted)" }}>В базе клиники:</span>
+							<button
+								type="button"
+								onClick={(e) => handleOpenPatient(e, lead.existingPatient!.id)}
+								style={{
+									background: "none",
+									border: "none",
+									padding: 0,
+									color: "var(--teal-dark, var(--teal))",
+									fontWeight: 600,
+									textDecoration: "underline",
+									cursor: "pointer",
+									fontSize: 11.5,
+								}}
+								title="Открыть амбулаторную карту"
+								data-testid={`instant-preview-patient-link-${lead.id}`}
+							>
+								{lead.existingPatient.fullName} →
+							</button>
+						</div>
+					)}
 					{onQuickSchedule && lead.status !== "trash" && (
 						<button
 							type="button"
@@ -573,13 +686,28 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				<select
 					value={lead.status}
 					onClick={(e) => e.stopPropagation()}
-					onChange={(e) =>
-						onStatusChange(
-							e,
-							lead.id,
-							e.target.value as Lead["status"],
-						)
-					}
+					onChange={(e) => {
+						const nextVal = e.target.value as Lead["status"];
+						if (nextVal === "trash") {
+							const selectedReason = window.prompt(
+								"Укажите причину отказа:\n1 - Дорого\n2 - Далеко\n3 - Передумал\n4 - Дубль обращения\nИли введите свой текст:",
+								"Дорого",
+							);
+							const mappedReason =
+								selectedReason === "1"
+									? "Дорого"
+									: selectedReason === "2"
+										? "Далеко / Неудобная локация"
+										: selectedReason === "3"
+											? "Передумал / Неактуально"
+											: selectedReason === "4"
+												? "Дубль обращения"
+												: (selectedReason || "Дорого");
+							onStatusChange(e, lead.id, nextVal, { dropReason: mappedReason });
+						} else {
+							onStatusChange(e, lead.id, nextVal);
+						}
+					}}
 					style={{
 						fontSize: 11,
 						padding: "2px 6px",
@@ -647,43 +775,73 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					</button>
 				)}
 
-				{/* Действие 2: Создать амбулаторную карту пациента в 1 клик */}
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						void onCreatePatient(lead);
-					}}
-					disabled={creatingPatientLeadId === lead.id}
-					style={{
-						width: "100%",
-						padding: "6px 10px",
-						borderRadius: 8,
-						fontSize: 12,
-						fontWeight: 600,
-						background: "var(--ok-bg)",
-						color: "var(--ok-fg)",
-						border: "1px solid var(--line)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: 6,
-						cursor:
-							creatingPatientLeadId === lead.id
-								? "wait"
-								: "pointer",
-						transition: "all 0.2s ease",
-					}}
-					data-testid={`create-patient-btn-${lead.id}`}
-					title="Создать карту пациента из обращения в 1 клик"
-				>
-					<UserPlus size={13} className="shrink-0" />
-					<span className="truncate">
-						{creatingPatientLeadId === lead.id
-							? "Создаём карту…"
-							: "Создать пациента в 1 клик"}
-					</span>
-				</button>
+				{/* Действие 2: Создать амбулаторную карту пациента или открыть существующую в 1 клик */}
+				{lead.existingPatient ? (
+					<button
+						type="button"
+						onClick={(e) => handleOpenPatient(e, lead.existingPatient!.id)}
+						style={{
+							width: "100%",
+							padding: "6px 10px",
+							borderRadius: 8,
+							fontSize: 12,
+							fontWeight: 600,
+							background: "var(--ok-bg)",
+							color: "var(--ok-fg)",
+							border: "1px solid var(--line)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 6,
+							cursor: "pointer",
+							transition: "all 0.2s ease",
+						}}
+						data-testid={`open-patient-btn-${lead.id}`}
+						title={`Открыть амбулаторную карту пациента ${lead.existingPatient.fullName} в 1 клик`}
+					>
+						<UserCheck size={13} className="shrink-0" />
+						<span className="truncate">
+							Карточка пациента
+						</span>
+					</button>
+				) : (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							void onCreatePatient(lead);
+						}}
+						disabled={creatingPatientLeadId === lead.id}
+						style={{
+							width: "100%",
+							padding: "6px 10px",
+							borderRadius: 8,
+							fontSize: 12,
+							fontWeight: 600,
+							background: "var(--ok-bg)",
+							color: "var(--ok-fg)",
+							border: "1px solid var(--line)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 6,
+							cursor:
+								creatingPatientLeadId === lead.id
+									? "wait"
+									: "pointer",
+							transition: "all 0.2s ease",
+						}}
+						data-testid={`create-patient-btn-${lead.id}`}
+						title="Создать карту пациента из обращения в 1 клик"
+					>
+						<UserPlus size={13} className="shrink-0" />
+						<span className="truncate">
+							{creatingPatientLeadId === lead.id
+								? "Создаём карту…"
+								: "Создать пациента в 1 клик"}
+						</span>
+					</button>
+				)}
 			</div>
 		</motion.div>
 	);

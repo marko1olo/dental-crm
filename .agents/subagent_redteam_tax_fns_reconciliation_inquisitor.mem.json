@@ -1,0 +1,30 @@
+{
+  "agent": "subagent_redteam_tax_fns_reconciliation_inquisitor",
+  "status": "completed",
+  "phase": "verified",
+  "completed_steps": [
+    "Read all required constitutional documents completely via view_file without skimming: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md",
+    "Census and inquisition of all tax deduction, FNS, KND 1151156, and 13% NDFL code across packages/shared, apps/api, apps/web",
+    "Identified and cataloged orphans, missing UI linkages, unauthenticated fetches, and broken React imports",
+    "Connected TaxDeductionCertificateModal directly to PatientCardModal header (1-click 'Справка ФНС (1151156)' button) and PatientGeneralInfoTab (insurance accordion order link & visits toolbar button)",
+    "Enforced Decree 659 (ПП РФ №659) clinical block preventing tax deduction certificate generation on anonymous patients (UUID_ANON / isAnonymous)",
+    "Added authentication headers to TaxDeductionCertificateModal preview fetch resolving 401 Unauthorized in production",
+    "Fixed missing React runtime import in SomaticAnamnesisCard.tsx",
+    "Verified all machine verification gates: check-encoding.mjs (7233 files checked, 0 errors), check-css-tokens.mjs (0 unresolvable tokens), targeted unit tests (taxDeduction.test.ts 19/19, ndflXmlGenerator.test.ts 14/14, fnsNdflXml.test.ts 20/20, taxXml.test.ts 14/14, taxDeductionCertificateAutonomy.test.tsx 4/4, financeTaxDeductionCard.test.tsx 3/3, patientCardTaxDeductionAutonomy.test.tsx 4/4)",
+    "Verified clean git diff adhering strictly to Mandate 8t (no global typecheck) and VCS standards"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "ssot_engine": "packages/shared/src/finance/taxDeduction.ts and packages/shared/src/documents/ndflXmlGenerator.ts provide full integer kopecks arithmetic, refund netting, Code 1/2 classification per Decree 458 and Nomenclature 804n, and statutory FNS Order 824@ XML generation",
+    "ui_orphan_fixed": "PatientCardModal and PatientGeneralInfoTab now have 1-click access to TaxDeductionCertificateModal with prefilled patient demographics and 54-FZ fiscal receipts",
+    "decree_659_enforced": "Anonymous patients are blocked from tax deduction certificates by UI guard and backend Decree659TaxDeductionForbiddenError",
+    "auth_headers_restored": "TaxDeductionCertificateModal preview fetch now passes denteAdminSecretRequestHeaders and denteClinicalReadHeaders"
+  },
+  "defects_fixed": [
+    "DEFECT-FNS-01: Orphaned tax deduction modal in patient card (resolved: wired btn-patient-tax-deduction and link-order-tax-certificate)",
+    "DEFECT-FNS-02: Missing auth headers in TaxDeductionCertificateModal preview fetch leading to 401 Unauthorized (resolved: injected clinical read headers)",
+    "DEFECT-FNS-03: Dangling '/ ФД №' when fiscalDocumentNumber is absent in TaxDeductionChecksTab (resolved: clean fallback formatting)",
+    "DEFECT-FNS-04: Broken React import in SomaticAnamnesisCard.tsx causing ReferenceError during SSR and static markup rendering (resolved: import React runtime)",
+    "DEFECT-FNS-05: Missing UI-level Decree 659 block for anonymous cards (resolved: added check and warning toast)"
+  ]
+}

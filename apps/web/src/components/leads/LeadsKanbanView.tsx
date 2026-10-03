@@ -6,6 +6,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { useAppStore } from "../../store/appStore";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
+import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -62,6 +63,22 @@ export function LeadsKanbanView() {
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
 	const handleCreatePatientFromLead = async (lead: Lead) => {
+		if (lead.existingPatient) {
+			try {
+				usePatientStore.getState().setSelectedPatientId(lead.existingPatient.id);
+				useAppStore.getState().setCurrentView("patients");
+				if (typeof window !== "undefined") {
+					window.location.hash = "patients";
+				}
+				showToast(
+					`Открыта амбулаторная карта постоянного пациента: ${lead.existingPatient.fullName}`,
+					"info",
+				);
+			} catch {
+				// store fallback
+			}
+			return;
+		}
 		if (creatingPatientLeadId) return;
 		setCreatingPatientLeadId(lead.id);
 		try {
@@ -93,10 +110,11 @@ export function LeadsKanbanView() {
 		e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>,
 		leadId: string,
 		nextStatus: Lead["status"],
+		options?: { reason?: string; dropReason?: string },
 	) => {
 		e.stopPropagation();
 		try {
-			await updateLeadStatus(leadId, nextStatus);
+			await updateLeadStatus(leadId, nextStatus, options);
 			showToast(`Статус изменен на ${STAGE_DISPLAY_LABELS[nextStatus] || nextStatus}`, "success");
 		} catch (err: unknown) {
 			const text =
@@ -241,7 +259,25 @@ export function LeadsKanbanView() {
 		e.preventDefault();
 		const id = e.dataTransfer?.getData("leadId") || draggedLeadId;
 		if (id) {
-			void updateLeadStatus(id, status)
+			let options: { dropReason?: string } | undefined;
+			if (status === "trash") {
+				const selectedReason = window.prompt(
+					"Укажите причину отказа:\n1 - Дорого\n2 - Далеко\n3 - Передумал\n4 - Дубль обращения\nИли введите свой текст:",
+					"Дорого",
+				);
+				const mappedReason =
+					selectedReason === "1"
+						? "Дорого"
+						: selectedReason === "2"
+							? "Далеко / Неудобная локация"
+							: selectedReason === "3"
+								? "Передумал / Неактуально"
+								: selectedReason === "4"
+									? "Дубль обращения"
+									: (selectedReason || "Дорого");
+				options = { dropReason: mappedReason };
+			}
+			void updateLeadStatus(id, status, options)
 				.then(() => {
 					showToast(
 						`Обращение переведено в статус ${STAGE_DISPLAY_LABELS[status] || status}.`,
@@ -277,17 +313,25 @@ export function LeadsKanbanView() {
 		const chairIdToBook =
 			selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
 
+		const targetLead = leads.find((l) => l.id === leadId);
+		const quickReason =
+			targetLead && Array.isArray(targetLead.clinicalTags) && targetLead.clinicalTags.length > 0
+				? `Первичная консультация: ${targetLead.clinicalTags.join(", ")}`
+				: (targetLead?.notes ? `Первичная консультация: ${targetLead.notes.slice(0, 100)}` : "Первичная консультация");
+
 		try {
 			await convertLeadToAppointment(leadId, {
 				appointmentStart: startDateTime.toISOString(),
 				appointmentEnd: endDateTime.toISOString(),
 				chairId: chairIdToBook,
 				doctorId: doctorIdToBook,
+				reason: quickReason,
+				comment: targetLead?.notes || null,
 			});
-			showToast(
-				"Создан первичный прием в расписании и карта пациента в 1 клик",
-				"success",
-			);
+			const successMsg = targetLead?.existingPatient
+				? `Создан приём в расписании для постоянного пациента: ${targetLead.existingPatient.fullName}`
+				: "Создан первичный прием в расписании и карта пациента в 1 клик";
+			showToast(successMsg, "success");
 			fetchLeads();
 		} catch (err: unknown) {
 			const text =
@@ -300,7 +344,12 @@ export function LeadsKanbanView() {
 
 	const handleConvertSubmit = async (
 		e: React.FormEvent,
-		options?: { consentMedical: boolean; consentMarketing: boolean },
+		options?: {
+			consentMedical: boolean;
+			consentMarketing: boolean;
+			reason?: string;
+			comment?: string;
+		},
 	) => {
 		e.preventDefault();
 		if (!convertingLeadId || isBooking) return;
@@ -329,6 +378,8 @@ export function LeadsKanbanView() {
 				appointmentEnd: endDateTime.toISOString(),
 				chairId: chairIdToBook,
 				doctorId: doctorIdToBook,
+				reason: options?.reason,
+				comment: options?.comment,
 			});
 
 			const activeLead = leads.find((l) => l.id === convertingLeadId);
@@ -337,10 +388,11 @@ export function LeadsKanbanView() {
 				? " [рассылки: разрешены]"
 				: " [152-ФЗ: без рекламы]";
 
-			showToast(
-				`Обращение записано на прием, создана карта пациента${sourceLabel}${consentLabel}`,
-				"success",
-			);
+			const successMsg = activeLead?.existingPatient
+				? `Обращение записано на прием к постоянному пациенту (${activeLead.existingPatient.fullName})${sourceLabel}${consentLabel}`
+				: `Обращение записано на прием, создана карта пациента${sourceLabel}${consentLabel}`;
+
+			showToast(successMsg, "success");
 			setIsConvertOpen(false);
 			setConvertingLeadId(null);
 			fetchLeads();
@@ -378,6 +430,7 @@ export function LeadsKanbanView() {
 				expectedRevenue: lead.expectedRevenue || "",
 				status: lead.status || "new",
 				notes: lead.notes || "",
+				dropReason: lead.dropReason || "",
 			});
 		} else {
 			setEditingLeadId("new");
@@ -388,6 +441,7 @@ export function LeadsKanbanView() {
 				expectedRevenue: "",
 				status: "new",
 				notes: "",
+				dropReason: "",
 			});
 		}
 		setIsEditOpen(true);
@@ -404,6 +458,7 @@ export function LeadsKanbanView() {
 					? String(editForm.expectedRevenue)
 					: "",
 				notes: editForm.notes || "",
+				dropReason: editForm.dropReason || undefined,
 			};
 
 			if (editingLeadId === "new") {
@@ -641,6 +696,13 @@ export function LeadsKanbanView() {
 												setIsConvertOpen(true);
 											}}
 											onQuickSchedule={handleQuickSchedule}
+											onOpenPatientCard={(patientId) => {
+												usePatientStore.getState().setSelectedPatientId(patientId);
+												useAppStore.getState().setCurrentView("patients");
+												if (typeof window !== "undefined") {
+													window.location.hash = "patients";
+												}
+											}}
 										/>
 									))}
 								</AnimatePresence>

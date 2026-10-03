@@ -7,7 +7,7 @@
  * - Non-blocking clean dialog
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
 	Calendar,
@@ -16,6 +16,7 @@ import {
 	ShieldCheck,
 	Tag,
 	User,
+	UserCheck,
 	X,
 } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
@@ -28,12 +29,19 @@ import {
 	isLeadBookingDisabled,
 } from "./LeadsKanbanView";
 
+export interface LeadConvertSubmitOptions {
+	consentMedical: boolean;
+	consentMarketing: boolean;
+	reason?: string;
+	comment?: string;
+}
+
 export interface LeadConvertModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (
 		e: React.FormEvent,
-		options?: { consentMedical: boolean; consentMarketing: boolean },
+		options?: LeadConvertSubmitOptions,
 	) => void;
 	staff: BookableDoctor[];
 	chairs: BookableChair[];
@@ -87,6 +95,26 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 	const [localConsentMedical, setLocalConsentMedical] = useState(true);
 	const [localConsentMarketing, setLocalConsentMarketing] = useState(false);
 
+	const defaultReason = lead
+		? (Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+			? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
+			: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"))
+		: "Первичная консультация";
+
+	const [reason, setReason] = useState(defaultReason);
+	const [comment, setComment] = useState(lead?.notes || "");
+
+	useEffect(() => {
+		if (lead) {
+			const initialReason =
+				Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+					? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
+					: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация");
+			setReason(initialReason);
+			setComment(lead.notes || "");
+		}
+	}, [lead?.id, lead?.notes, lead?.clinicalTags]);
+
 	const consentMedical =
 		controlledConsentMedical !== undefined
 			? controlledConsentMedical
@@ -117,6 +145,8 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 		onSubmit(e, {
 			consentMedical,
 			consentMarketing,
+			reason: reason.trim() || undefined,
+			comment: comment.trim() || undefined,
 		});
 	};
 
@@ -229,6 +259,29 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 									</span>
 								)}
 							</div>
+
+							{lead.existingPatient && (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: 6,
+										padding: "4px 8px",
+										background: "var(--ok-bg, rgba(16, 185, 129, 0.1))",
+										color: "var(--ok-fg, #059669)",
+										border: "1px solid var(--ok-border, var(--line))",
+										borderRadius: 6,
+										fontSize: 11.5,
+										fontWeight: 600,
+									}}
+									data-testid="lead-convert-existing-patient-alert"
+								>
+									<UserCheck size={14} className="shrink-0" />
+									<span>
+										Постоянный пациент: {lead.existingPatient.fullName} (новая карта не создается, приём привяжется к существующей)
+									</span>
+								</div>
+							)}
 
 							<div
 								style={{
@@ -498,6 +551,57 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 						) : null}
 					</div>
 
+					<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+						<label
+							htmlFor="convert-lead-reason"
+							style={{ fontSize: 13, color: "var(--muted)" }}
+						>
+							Причина приёма / первичная жалоба
+						</label>
+						<input
+							id="convert-lead-reason"
+							type="text"
+							value={reason}
+							onChange={(e) => setReason(e.target.value)}
+							placeholder="Первичная консультация"
+							style={{
+								padding: 10,
+								borderRadius: 8,
+								border: `1px solid ${borderColor}`,
+								background: colBg,
+								color: "var(--ink)",
+								fontSize: 13,
+							}}
+							data-testid="convert-lead-reason-input"
+						/>
+					</div>
+
+					<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+						<label
+							htmlFor="convert-lead-comment"
+							style={{ fontSize: 13, color: "var(--muted)" }}
+						>
+							Клинический комментарий / примечание
+						</label>
+						<textarea
+							id="convert-lead-comment"
+							value={comment}
+							onChange={(e) => setComment(e.target.value)}
+							placeholder="Анамнез, жалобы, пожелания пациента..."
+							rows={2}
+							style={{
+								padding: 10,
+								borderRadius: 8,
+								border: `1px solid ${borderColor}`,
+								background: colBg,
+								color: "var(--ink)",
+								fontSize: 13,
+								resize: "vertical",
+							}}
+							data-testid="convert-lead-comment-input"
+						/>
+					</div>
+
 					<div style={{ display: "flex", gap: 12 }}>
 						<div
 							style={{
@@ -567,7 +671,9 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 						title={
 							isBooking
 								? "Записываем..."
-								: "Создать пациента и запись в расписании"
+								: lead?.existingPatient
+									? "Записать на приём"
+									: "Создать пациента и запись в расписании"
 						}
 						style={{
 							marginTop: 8,
@@ -575,7 +681,11 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 							justifyContent: "center",
 						}}
 					>
-						{isBooking ? "Записываем..." : "Подтвердить запись и создать карту"}
+						{isBooking
+							? "Записываем..."
+							: lead?.existingPatient
+								? "Подтвердить запись на приём"
+								: "Подтвердить запись и создать карту"}
 					</button>
 				</form>
 			</motion.div>

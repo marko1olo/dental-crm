@@ -25,6 +25,8 @@ import {
 	appointments,
 	chairs,
 	clinics,
+	crmLeads,
+	crmLeadStageHistory,
 	externalScheduleActionLogs,
 	organizations,
 	patients,
@@ -1142,6 +1144,48 @@ ${offersXml}
 				appointmentSlot: `${candidateStarts.toISOString()} - ${candidateEnds.toISOString()}`,
 				status: "success",
 			});
+
+			// 8a. Автоматическая фиксация лида в CRM-конвейере клиники (Мандат 8e/8n)
+			try {
+				const now = new Date();
+				const [createdLead] = await tx
+					.insert(crmLeads)
+					.values({
+						organizationId,
+						name: patientFullName,
+						patientName: patientFullName,
+						phone: patientPhone || null,
+						source: "prodoctorov",
+						status: "consult_booked",
+						notes: `Запись через ПроДокторов / МедФлекс. Приём: ${candidateStarts.toLocaleString("ru-RU")}. ${reason}`,
+						assignedDoctorId: resolvedDoctorId,
+						priority: "high",
+						stageEnteredAt: now,
+					})
+					.returning();
+
+				if (createdLead) {
+					await tx.insert(crmLeadStageHistory).values({
+						organizationId,
+						leadId: createdLead.id,
+						fromStage: null,
+						toStage: "consult_booked",
+						changedByUserId: null,
+						durationSeconds: 0,
+						createdAt: now,
+					});
+
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "LEAD_CREATED",
+						payload: createdLead,
+					});
+				}
+			} catch (leadErr) {
+				req.log.warn(
+					{ leadErr },
+					"Failed to create CRM lead from ProDoctorov booking",
+				);
+			}
 
 			// 9. Оповещение через WebSocket в реальном времени
 			try {

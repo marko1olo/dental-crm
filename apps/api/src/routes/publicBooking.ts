@@ -7,6 +7,8 @@ import {
 	appointments,
 	chairs,
 	clinics,
+	crmLeads,
+	crmLeadStageHistory,
 	organizations,
 	patientArchiveReasonsAndBlacklists,
 	patients,
@@ -418,6 +420,54 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 		try {
 			const receipt = await publicBookingQueueService.submitBooking(parsed.data);
+
+			// Фиксация в CRM-конвейере обращений клиники (Мандат 8e / 8n)
+			if (receipt.status !== "REJECTED_CONFLICT") {
+				try {
+					const leadSource = parsed.data.source || "widget";
+					const now = new Date();
+					await withTenantCtx(parsed.data.organizationId, async (tx) => {
+						const [createdLead] = await tx
+							.insert(crmLeads)
+							.values({
+								organizationId: parsed.data.organizationId,
+								name: parsed.data.patientName,
+								patientName: parsed.data.patientName,
+								phone: parsed.data.patientPhone,
+								source: leadSource,
+								status: receipt.status === "CONFIRMED" ? "consult_booked" : "new",
+								notes: `Онлайн-запись (${leadSource}): ${receipt.status}. ${parsed.data.comment || ""}`.trim(),
+								assignedDoctorId: parsed.data.doctorId,
+								priority: "normal",
+								stageEnteredAt: now,
+							})
+							.returning();
+
+						if (createdLead) {
+							await tx.insert(crmLeadStageHistory).values({
+								organizationId: parsed.data.organizationId,
+								leadId: createdLead.id,
+								fromStage: null,
+								toStage: createdLead.status || "new",
+								changedByUserId: null,
+								durationSeconds: 0,
+								createdAt: now,
+							});
+
+							wsBroker.broadcastToOrganization(parsed.data.organizationId, {
+								type: "LEAD_CREATED",
+								payload: createdLead,
+							});
+						}
+					});
+				} catch (leadErr) {
+					request.log.warn(
+						{ leadErr },
+						"Failed to create CRM lead from public intake",
+					);
+				}
+			}
+
 			return reply.status(receipt.status === "REJECTED_CONFLICT" ? 409 : 200).send(receipt);
 		} catch (err) {
 			return reply.status(400).send({ error: (err as Error).message });

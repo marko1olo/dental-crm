@@ -32,6 +32,8 @@ export const convertLeadSchema = z.object({
 	chairId: z.string().optional().nullable(),
 	doctorId: z.string().optional().nullable(),
 	organizationId: z.string().uuid().optional(),
+	reason: z.string().optional().nullable(),
+	comment: z.string().optional().nullable(),
 });
 
 export type ConvertLeadPayload = z.infer<typeof convertLeadSchema>;
@@ -218,6 +220,14 @@ export async function convertLeadToAppointment(params: {
 		}
 
 		if (!patient) {
+			const patientNotesParts = [
+				lead.notes ? `Жалобы: ${lead.notes}` : null,
+				leadSource ? `Источник: ${leadSource}` : null,
+				Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+					? `Интерес: ${lead.clinicalTags.join(", ")}`
+					: null,
+			].filter(Boolean);
+
 			const [newPatient] = await tx
 				.insert(patients)
 				.values({
@@ -225,12 +235,11 @@ export async function convertLeadToAppointment(params: {
 					fullName: lead.name || lead.patientName || "Пациент",
 					phone: cleanPhone ?? rawPhone,
 					status: "active",
-					notes: leadSource ? `Источник: ${leadSource}` : null,
-					administrativeProfile: leadSource
-						? normalizePatientAdministrativeProfile({
-								preferredAppointmentNote: `src:${leadSource}`,
-							})
-						: null,
+					notes: patientNotesParts.length > 0 ? patientNotesParts.join("\n") : null,
+					administrativeProfile: normalizePatientAdministrativeProfile({
+						advertisingSource: leadSource ?? undefined,
+						preferredAppointmentNote: lead.notes || (leadSource ? `src:${leadSource}` : undefined),
+					}),
 				})
 				.returning();
 			patient = newPatient;
@@ -240,7 +249,25 @@ export async function convertLeadToAppointment(params: {
 			throw new Error("Не удалось разрешить или создать карту пациента из лида");
 		}
 
-		// 2. Create Appointment via protected business logic
+		// 2. Create Appointment via protected business logic with full attribution & complaints transfer
+		const resolvedReason =
+			payload.reason ||
+			(Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+				? `Первичная консультация: ${lead.clinicalTags.join(", ")}`
+				: (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
+
+		const commentParts = [
+			payload.comment || null,
+			lead.notes ? `Жалоба: ${lead.notes}` : null,
+			leadSource ? `Канал: ${leadSource}` : null,
+			Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+				? `Теги: ${lead.clinicalTags.join(", ")}`
+				: null,
+			lead.audioRecordUrl ? `Аудио: ${lead.audioRecordUrl}` : null,
+			lead.transcriptionSnippet ? `Транскрипт: ${lead.transcriptionSnippet}` : null,
+		].filter(Boolean);
+		const resolvedComment = commentParts.length > 0 ? commentParts.join(" | ") : null;
+
 		const appointment = await createAppointmentInDb(
 			organizationId,
 			{
@@ -250,6 +277,8 @@ export async function convertLeadToAppointment(params: {
 				startsAt: payload.appointmentStart,
 				endsAt: payload.appointmentEnd,
 				status: "planned",
+				reason: resolvedReason,
+				comment: resolvedComment,
 			},
 			tx,
 		);
@@ -378,8 +407,16 @@ export async function createPatientFromLead(params: {
 		}
 	}
 
-	// 3. Create Patient from Lead preserving name, normalized phone, source in 1 click
+	// 3. Create Patient from Lead preserving name, normalized phone, source, complaints & tags in 1 click
 	const leadSource = lead.source ? String(lead.source).trim() : null;
+	const patientNotesParts = [
+		lead.notes ? `Жалобы: ${lead.notes}` : null,
+		leadSource ? `Источник: ${leadSource}` : null,
+		Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0
+			? `Интерес: ${lead.clinicalTags.join(", ")}`
+			: null,
+	].filter(Boolean);
+
 	const [patient] = await db
 		.insert(patients)
 		.values({
@@ -387,12 +424,11 @@ export async function createPatientFromLead(params: {
 			fullName: lead.name || lead.patientName || "Пациент из воронки",
 			phone: cleanPhone ?? rawPhone,
 			status: "active",
-			notes: leadSource ? `Источник: ${leadSource}` : null,
-			administrativeProfile: leadSource
-				? normalizePatientAdministrativeProfile({
-						preferredAppointmentNote: `src:${leadSource}`,
-					})
-				: null,
+			notes: patientNotesParts.length > 0 ? patientNotesParts.join("\n") : null,
+			administrativeProfile: normalizePatientAdministrativeProfile({
+				advertisingSource: leadSource ?? undefined,
+				preferredAppointmentNote: lead.notes || (leadSource ? `src:${leadSource}` : undefined),
+			}),
 		})
 		.returning();
 

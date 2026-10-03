@@ -43,6 +43,9 @@ export const CHANNEL_DISPLAY_NAMES: Record<CanonicalMarketingChannelKey, string>
 	site_seo: "Сайт / SEO",
 	social_media: "Соцсети (VK / TG)",
 	recommendations: "Рекомендации",
+	avito: "Авито",
+	yandex_maps: "Яндекс.Карты",
+	max: "Мессенджер MAX",
 	other: "Прямой звонок / ВАТС",
 };
 
@@ -91,6 +94,24 @@ export const CHANNEL_BADGE_COLORS: Record<
 		text: "var(--amber, #a855f7)",
 		color: "var(--amber, #a855f7)",
 		border: "var(--amber-soft, rgba(168, 85, 247, 0.35))",
+	},
+	avito: {
+		bg: "var(--accent-soft, rgba(14, 165, 233, 0.12))",
+		text: "var(--accent, #0ea5e9)",
+		color: "var(--accent, #0ea5e9)",
+		border: "var(--accent-soft, rgba(14, 165, 233, 0.35))",
+	},
+	yandex_maps: {
+		bg: "var(--rust-soft, rgba(239, 68, 68, 0.12))",
+		text: "var(--rust, #ef4444)",
+		color: "var(--rust, #ef4444)",
+		border: "var(--rust-soft, rgba(239, 68, 68, 0.35))",
+	},
+	max: {
+		bg: "var(--teal-soft, rgba(20, 184, 166, 0.12))",
+		text: "var(--teal, #14b8a6)",
+		color: "var(--teal, #14b8a6)",
+		border: "var(--teal, rgba(20, 184, 166, 0.35))",
 	},
 	other: {
 		bg: "var(--paper-soft, rgba(100, 116, 139, 0.12))",

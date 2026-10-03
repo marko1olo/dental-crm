@@ -17,6 +17,7 @@ import { db } from "../db/client.js";
 import {
 	crmLeads,
 	crmLeadStageHistory,
+	patients,
 } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -71,8 +72,50 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		const leads = await db
 			.select()
 			.from(crmLeads)
-			.where(eq(crmLeads.organizationId, organizationId));
-		return leads;
+			.where(eq(crmLeads.organizationId, organizationId))
+			.orderBy(desc(crmLeads.createdAt));
+
+		// Phone deduplication check against existing patients database (Mandates 8l, 8n)
+		const phoneList = leads
+			.map((l) => (l.phone ? normalizePhone(l.phone) ?? l.phone.trim() : null))
+			.filter((p): p is string => Boolean(p));
+
+		const patientMap = new Map<string, { id: string; fullName: string }>();
+		if (phoneList.length > 0) {
+			const uniquePhones = Array.from(new Set(phoneList));
+			const matchedPatients = await db
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					phone: patients.phone,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						inArray(patients.phone, uniquePhones),
+					),
+				);
+
+			for (const p of matchedPatients) {
+				if (p.phone) {
+					patientMap.set(p.phone, { id: p.id, fullName: p.fullName });
+					const norm = normalizePhone(p.phone);
+					if (norm) patientMap.set(norm, { id: p.id, fullName: p.fullName });
+				}
+			}
+		}
+
+		return leads.map((lead) => {
+			const clean = lead.phone
+				? normalizePhone(lead.phone) ?? lead.phone.trim()
+				: null;
+			const existingPatient = clean ? patientMap.get(clean) ?? null : null;
+			return {
+				...lead,
+				existingPatient,
+			};
+		});
 	});
 
 	app.post("/api/leads", async (req, reply) => {
@@ -139,11 +182,28 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 			return created;
 		});
 
+		let existingPatient: { id: string; fullName: string } | null = null;
+		if (cleanPhone) {
+			const [matched] = await db
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.phone, cleanPhone),
+					),
+				)
+				.limit(1);
+			if (matched) existingPatient = matched;
+		}
+
+		const leadWithPatient = { ...lead, existingPatient };
+
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_CREATED",
-			payload: lead,
+			payload: leadWithPatient,
 		});
-		return lead;
+		return leadWithPatient;
 	});
 
 	app.get("/api/leads/pipeline-metrics", async (req, reply) => {
@@ -292,6 +352,8 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		}
 		const { toStage, notes, priority, clinicalTags, assignedDoctorId } =
 			parsed.data;
+		const bodyObj = req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : {};
+		const dropReason = typeof bodyObj.dropReason === "string" ? bodyObj.dropReason : (typeof bodyObj.reason === "string" ? bodyObj.reason : null);
 
 		const identity = getRequestIdentity(req);
 		const changedByUserId =
@@ -336,6 +398,11 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 				stageEnteredAt: now,
 			};
 			if (notes !== undefined) updateFields.notes = notes;
+			if (toStage === "trash" && dropReason) {
+				updateFields.notes = updateFields.notes
+					? `${updateFields.notes}\n[Причина срыва]: ${dropReason}`
+					: (lead.notes ? `${lead.notes}\n[Причина срыва]: ${dropReason}` : `[Причина срыва]: ${dropReason}`);
+			}
 			if (priority !== undefined) updateFields.priority = priority;
 			if (clinicalTags !== undefined) updateFields.clinicalTags = clinicalTags;
 			if (assignedDoctorId !== undefined)
@@ -401,6 +468,8 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		const statusParsed = z
 			.object({
 				status: leadStatusEnum,
+				reason: z.string().optional().nullable(),
+				dropReason: z.string().optional().nullable(),
 			})
 			.safeParse(req.body);
 		if (!statusParsed.success) {
@@ -410,6 +479,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 			});
 		}
 		const { status } = statusParsed.data;
+		const dropReason = statusParsed.data.dropReason || statusParsed.data.reason;
 		const identity = getRequestIdentity(req);
 		const changedByUserId =
 			identity?.userId && z.string().uuid().safeParse(identity.userId).success
@@ -446,9 +516,19 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 				createdAt: now,
 			});
 
+			const updateFields: Partial<typeof crmLeads.$inferInsert> = {
+				status,
+				stageEnteredAt: now,
+			};
+			if (status === "trash" && dropReason) {
+				updateFields.notes = lead.notes
+					? `${lead.notes}\n[Причина срыва]: ${dropReason}`
+					: `[Причина срыва]: ${dropReason}`;
+			}
+
 			const [updated] = await tx
 				.update(crmLeads)
-				.set({ status, stageEnteredAt: now })
+				.set(updateFields)
 				.where(
 					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
 				)

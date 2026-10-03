@@ -59,10 +59,12 @@ export const TaxDeductionChecksTab: React.FC<TaxDeductionChecksTabProps> = ({
 										<td className="p-3 font-mono text-[var(--muted,#64748b)]">{idx + 1}</td>
 										<td className="p-3 font-mono">{p.dateIso.slice(0, 10)}</td>
 										<td className="p-3 font-mono font-bold">
-											{p.receiptNumber} / ФД №{p.fiscalDocumentNumber}
+											{p.fiscalDocumentNumber
+												? (p.receiptNumber ? `${p.receiptNumber} / ФД №${p.fiscalDocumentNumber}` : `ФД №${p.fiscalDocumentNumber}`)
+												: (p.receiptNumber || "—")}
 										</td>
 										<td className="p-3 font-mono text-[11px] text-[var(--muted,#64748b)]">
-											{p.fiscalSign}
+											{p.fiscalSign || "—"}
 										</td>
 										<td className="p-3 max-w-[220px] truncate min-w-0" title={p.serviceName}>{p.serviceName}</td>
 										<td className="p-3 font-mono font-bold text-teal-700 dark:text-teal-300">

@@ -16,6 +16,7 @@ import {
 	generateFnsTaxDeductionXml,
 	generateFamilyTaxDeductionBatch,
 	generateTaxCertificateQrSvg,
+	normalizePaymentsForTaxCertificate,
 	renderOfficialTaxCertificateKnd1151156Html,
 	renderTaxDeductionBatchCertificateHtml,
 	validateRussianInn,
@@ -27,6 +28,7 @@ import {
 } from "./taxDeductionEngine";
 import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { TaxDeductionFamilyTab } from "./TaxDeductionFamilyTab";
 import { TaxDeductionChecksTab } from "./TaxDeductionChecksTab";
@@ -89,16 +91,16 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	const clinicProfile = appLogic?.clinic;
 
 	const clinicName = propClinicName || clinicProfile?.legalName || clinicProfile?.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
-	const clinicInn = propClinicInn || clinicProfile?.inn || "7707083893";
-	const clinicKpp = propClinicKpp || clinicProfile?.kpp || "770101001";
-	const clinicOgrn = propClinicOgrn || clinicProfile?.ogrn || "1027700132195";
-	const clinicLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "ЛО41-01137-77/00368421";
-	const clinicLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "12.10.2021";
-	const clinicAddress = propClinicAddress || clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
+	const clinicInn = propClinicInn || clinicProfile?.inn || "";
+	const clinicKpp = propClinicKpp || clinicProfile?.kpp || "";
+	const clinicOgrn = propClinicOgrn || clinicProfile?.ogrn || "";
+	const clinicLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "";
+	const clinicLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "";
+	const clinicAddress = propClinicAddress || clinicProfile?.address || "";
 	const chiefDoctorName =
 		propChiefDoctorName && propChiefDoctorName !== "Руководитель клиники"
 			? propChiefDoctorName
-			: (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "Смирнов Александр Владимирович";
+			: (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "";
 
 	const currentYear = new Date().getFullYear();
 	const [activeTab, setActiveTab] = useState<"form" | "checks" | "family" | "xml">("form");
@@ -132,7 +134,13 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	React.useEffect(() => {
 		if (isOpen && patientId && payments.length === 0) {
 			setIsLoadingPayments(true);
-			fetch(`/api/documents/tax-deduction/preview/${encodeURIComponent(patientId)}?year=${selectedYear}`)
+			const headers: Record<string, string> = {
+				...denteAdminSecretRequestHeaders(),
+				...(appLogic?.auth?.denteClinicalReadHeaders?.() ?? {}),
+			};
+			fetch(`/api/documents/tax-deduction/preview/${encodeURIComponent(patientId)}?year=${selectedYear}`, {
+				headers,
+			})
 				.then((res) => (res.ok ? res.json() : null))
 				.then((data) => {
 					if (data?.receipts && Array.isArray(data.receipts)) {
@@ -158,7 +166,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 					setIsLoadingPayments(false);
 				});
 		}
-	}, [isOpen, patientId, payments.length, selectedYear]);
+	}, [isOpen, patientId, payments.length, selectedYear, appLogic?.auth]);
 
 	const effectivePayments = useMemo(() => {
 		return payments.length > 0 ? payments : fetchedPayments;
@@ -305,7 +313,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 
 	const yearPayments = useMemo(() => {
 		if (!isOpen) return [];
-		return effectivePayments.filter((p) => extractTaxYearFromDate(p.dateIso) === selectedYear);
+		return normalizePaymentsForTaxCertificate(effectivePayments, selectedYear);
 	}, [isOpen, effectivePayments, selectedYear]);
 
 	const getCertificateParams = (): TaxDeductionCertificateParams => ({

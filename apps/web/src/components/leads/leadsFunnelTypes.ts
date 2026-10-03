@@ -98,6 +98,9 @@ export type CanonicalMarketingChannelKey =
 	| "site_seo"
 	| "recommendations"
 	| "social_media"
+	| "avito"
+	| "yandex_maps"
+	| "max"
 	| "other";
 
 export interface MarketingChannelMeta {
@@ -159,6 +162,27 @@ export const MARKETING_CHANNELS: readonly MarketingChannelMeta[] = [
 		iconType: "message",
 	},
 	{
+		key: "avito",
+		label: "Авито",
+		defaultSpendRub: 20000,
+		color: "var(--accent)",
+		iconType: "shopping-bag",
+	},
+	{
+		key: "yandex_maps",
+		label: "Яндекс.Карты / Гео",
+		defaultSpendRub: 25000,
+		color: "var(--bad-fg)",
+		iconType: "map-pin",
+	},
+	{
+		key: "max",
+		label: "Мессенджер MAX",
+		defaultSpendRub: 10000,
+		color: "var(--primary)",
+		iconType: "message-square",
+	},
+	{
 		key: "other",
 		label: "Прочие / Прямой звонок",
 		defaultSpendRub: 5000,
@@ -188,9 +212,30 @@ export function normalizeMarketingChannel(
 		s === "site_seo" ||
 		s === "social_media" ||
 		s === "recommendations" ||
+		s === "avito" ||
+		s === "yandex_maps" ||
+		s === "max" ||
 		s === "other"
 	) {
 		return s as CanonicalMarketingChannelKey;
+	}
+
+	if (s.includes("авито") || s.includes("avito")) {
+		return "avito";
+	}
+	if (
+		s.includes("карты") ||
+		s.includes("яндекс.карты") ||
+		s.includes("яндекс карты") ||
+		s.includes("yandex maps") ||
+		s.includes("yandex_maps") ||
+		s.includes("maps.yandex") ||
+		s.includes("гео")
+	) {
+		return "yandex_maps";
+	}
+	if (s.includes("max") || s.includes("макс")) {
+		return "max";
 	}
 
 	if (
@@ -254,6 +299,17 @@ export function normalizeMarketingChannel(
 
 	return "other";
 }
+
+/** Список канонических причин срыва / отказа обращения (Mandates 8l, 8n) */
+export const LEAD_DROP_REASONS = [
+	"Дорого",
+	"Далеко / Неудобная локация",
+	"Передумал / Неактуально",
+	"Дубль обращения",
+	"Другое",
+] as const;
+
+export type LeadDropReason = (typeof LEAD_DROP_REASONS)[number];
 
 /** Получение читаемой метки рекламного канала */
 export function getMarketingChannelLabel(

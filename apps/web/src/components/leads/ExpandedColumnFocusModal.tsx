@@ -39,6 +39,8 @@ import {
 	X,
 } from "lucide-react";
 import type { Lead, LeadStatus } from "../../store/leadsStore";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { formatWhatsAppUrl } from "../messaging/omnichannelEngine";
 import {
 	CHANNEL_BADGE_COLORS,
@@ -602,6 +604,9 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 								{visibleLeads.map((lead) => {
 								const sla = getLeadSlaStatus(lead);
 								const isSelected = selectedLeadIds.has(lead.id);
+								const dropReasonMatch =
+									lead.dropReason ||
+									(lead.notes ? lead.notes.match(/\[Причина срыва\]:\s*([^\n\r]+)/)?.[1] : null);
 								const channelKey = lead.source
 									? normalizeMarketingChannel(lead.source)
 									: null;
@@ -658,6 +663,62 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 												<span>{sla.label}</span>
 											</div>
 										</div>
+
+										{/* Бейджи статуса пациента и причины срыва */}
+										{(lead.existingPatient || (lead.status === "trash" && dropReasonMatch)) && (
+											<div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 4, marginBottom: 4 }}>
+												{lead.existingPatient && (
+													<div
+														style={{
+															display: "inline-flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 10.5,
+															fontWeight: 600,
+															color: "var(--teal-dark, var(--teal))",
+															background: "var(--teal-soft)",
+															border: "1px solid var(--teal)",
+															padding: "1px 6px",
+															borderRadius: 4,
+															cursor: "pointer",
+														}}
+														onClick={(e) => {
+															e.stopPropagation();
+															usePatientStore.getState().setSelectedPatientId(lead.existingPatient!.id);
+															useAppStore.getState().setCurrentView("patients");
+															if (typeof window !== "undefined") {
+																window.location.hash = "patients";
+															}
+															onClose();
+														}}
+														title={`Постоянный пациент базы клиники: ${lead.existingPatient.fullName}. Нажмите для перехода в карту.`}
+														data-testid={`expanded-existing-patient-badge-${lead.id}`}
+													>
+														<UserCheck size={11} className="shrink-0" />
+														<span>Постоянный пациент: {lead.existingPatient.fullName}</span>
+													</div>
+												)}
+												{lead.status === "trash" && dropReasonMatch && (
+													<div
+														style={{
+															display: "inline-flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 10.5,
+															fontWeight: 600,
+															color: "var(--rust, #ef4444)",
+															background: "var(--rust-soft, rgba(239, 68, 68, 0.1))",
+															border: "1px solid var(--rust, #ef4444)",
+															padding: "1px 6px",
+															borderRadius: 4,
+														}}
+														title={`Причина срыва: ${dropReasonMatch}`}
+													>
+														<span>Срыв: {dropReasonMatch}</span>
+													</div>
+												)}
+											</div>
+										)}
 
 										{/* Phone & Audio Recording Row */}
 										<div className="expanded-focus-card-phone-row">
@@ -768,15 +829,36 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 												</button>
 											)}
 
-											<button
-												type="button"
-												onClick={() => void onCreatePatient(lead)}
-												className="expanded-focus-action-btn expanded-focus-action-btn--patient"
-												title="Создать карту пациента в 1 клик"
-											>
-												<UserPlus size={12} />
-												<span>В пациенты</span>
-											</button>
+											{lead.existingPatient ? (
+												<button
+													type="button"
+													onClick={() => {
+														usePatientStore.getState().setSelectedPatientId(lead.existingPatient!.id);
+														useAppStore.getState().setCurrentView("patients");
+														if (typeof window !== "undefined") {
+															window.location.hash = "patients";
+														}
+														onClose();
+													}}
+													className="expanded-focus-action-btn expanded-focus-action-btn--patient"
+													title={`Открыть карту постоянного пациента: ${lead.existingPatient.fullName}`}
+													data-testid={`expanded-open-patient-btn-${lead.id}`}
+												>
+													<UserCheck size={12} />
+													<span>Карта</span>
+												</button>
+											) : (
+												<button
+													type="button"
+													onClick={() => void onCreatePatient(lead)}
+													className="expanded-focus-action-btn expanded-focus-action-btn--patient"
+													title="Создать карту пациента в 1 клик"
+													data-testid={`expanded-create-patient-btn-${lead.id}`}
+												>
+													<UserPlus size={12} />
+													<span>В пациенты</span>
+												</button>
+											)}
 										</div>
 									</div>
 								);
@@ -829,6 +911,9 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 									{visibleLeads.map((lead) => {
 										const sla = getLeadSlaStatus(lead);
 										const isSelected = selectedLeadIds.has(lead.id);
+										const dropReasonMatch =
+											lead.dropReason ||
+											(lead.notes ? lead.notes.match(/\[Причина срыва\]:\s*([^\n\r]+)/)?.[1] : null);
 										const channelKey = lead.source
 											? normalizeMarketingChannel(lead.source)
 											: null;
@@ -872,6 +957,25 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 														<span className="expanded-focus-table-name" title={lead.name}>
 															{lead.name}
 														</span>
+														{lead.existingPatient && (
+															<span
+																className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)] shrink-0 cursor-pointer"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	usePatientStore.getState().setSelectedPatientId(lead.existingPatient!.id);
+																	useAppStore.getState().setCurrentView("patients");
+																	if (typeof window !== "undefined") {
+																		window.location.hash = "patients";
+																	}
+																	onClose();
+																}}
+																title={`Постоянный пациент клиники: ${lead.existingPatient.fullName}. Нажмите для перехода в карту.`}
+																data-testid={`expanded-table-patient-badge-${lead.id}`}
+															>
+																<UserCheck size={10} />
+																<span className="truncate max-w-[85px]">{lead.existingPatient.fullName}</span>
+															</span>
+														)}
 														<button
 															type="button"
 															onClick={(e) => {
@@ -931,6 +1035,11 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 												{/* Notes / Clinical Tags */}
 												<td>
 													<div className="expanded-focus-table-notes" title={lead.notes || ""}>
+														{lead.status === "trash" && dropReasonMatch && (
+															<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--rust-soft,rgba(239,68,68,0.1))] text-[var(--rust,#ef4444)] border border-[var(--rust,#ef4444)] mr-1 shrink-0">
+																Срыв: {dropReasonMatch}
+															</span>
+														)}
 														{lead.notes || <span className="text-[var(--muted)]">—</span>}
 													</div>
 												</td>
@@ -997,14 +1106,34 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 																<Calendar size={12} />
 															</button>
 														)}
-														<button
-															type="button"
-															onClick={() => void onCreatePatient(lead)}
-															className="expanded-focus-table-action-btn"
-															title="Создать карту пациента"
-														>
-															<UserPlus size={12} />
-														</button>
+														{lead.existingPatient ? (
+															<button
+																type="button"
+																onClick={() => {
+																	usePatientStore.getState().setSelectedPatientId(lead.existingPatient!.id);
+																	useAppStore.getState().setCurrentView("patients");
+																	if (typeof window !== "undefined") {
+																		window.location.hash = "patients";
+																	}
+																	onClose();
+																}}
+																className="expanded-focus-table-action-btn"
+																title={`Открыть карту постоянного пациента: ${lead.existingPatient.fullName}`}
+																data-testid={`expanded-table-open-patient-btn-${lead.id}`}
+															>
+																<UserCheck size={12} />
+															</button>
+														) : (
+															<button
+																type="button"
+																onClick={() => void onCreatePatient(lead)}
+																className="expanded-focus-table-action-btn"
+																title="Создать карту пациента"
+																data-testid={`expanded-table-create-patient-btn-${lead.id}`}
+															>
+																<UserPlus size={12} />
+															</button>
+														)}
 													</div>
 												</td>
 											</tr>

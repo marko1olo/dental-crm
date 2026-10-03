@@ -41,6 +41,11 @@ export interface Lead {
 	audioRecordUrl?: string | null;
 	transcriptionSnippet?: string | null;
 	audioDurationSeconds?: number;
+	existingPatient?: {
+		id: string;
+		fullName: string;
+	} | null;
+	dropReason?: string | null;
 }
 
 export interface ConvertLeadToAppointmentPayload {
@@ -49,6 +54,8 @@ export interface ConvertLeadToAppointmentPayload {
 	chairId?: string | null;
 	doctorId?: string | null;
 	organizationId?: string;
+	reason?: string | null;
+	comment?: string | null;
 }
 
 export interface ConvertLeadResult {
@@ -61,7 +68,11 @@ interface LeadsState {
 	isLoading: boolean;
 	error: string | null;
 	fetchLeads: () => Promise<void>;
-	updateLeadStatus: (id: string, status: LeadStatus) => Promise<void>;
+	updateLeadStatus: (
+		id: string,
+		status: LeadStatus,
+		options?: { reason?: string; dropReason?: string },
+	) => Promise<void>;
 	batchUpdateStage: (
 		leadIds: string[],
 		toStage: LeadStatus,
@@ -172,18 +183,34 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			set({ error: operatorFacing, isLoading: false });
 		}
 	},
-	updateLeadStatus: async (id, status) => {
+	updateLeadStatus: async (id, status, options) => {
 		// Optimistic update
 		const previousLeads = get().leads;
+		const dropReason = options?.dropReason || options?.reason;
 		set({
-			leads: previousLeads.map((l) => (l.id === id ? { ...l, status } : l)),
+			leads: previousLeads.map((l) =>
+				l.id === id
+					? {
+							...l,
+							status,
+							...(dropReason
+								? {
+										notes: l.notes
+											? `${l.notes}\n[Причина срыва]: ${dropReason}`
+											: `[Причина срыва]: ${dropReason}`,
+										dropReason,
+								  }
+								: {}),
+					  }
+					: l,
+			),
 		});
 
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}/status`, {
 				method: "PATCH",
 				headers: authHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({ status }),
+				body: JSON.stringify({ status, dropReason, reason: dropReason }),
 			});
 			if (!res.ok) {
 				set({ leads: previousLeads });

@@ -1,0 +1,109 @@
+{
+  "agent_role": "Red Team Inquisitor — Leads Pipeline, Inbound Inquiries & Ad Booking",
+  "direction": 6,
+  "status": "completed",
+  "phase": "verified",
+  "created_at": "2026-10-03T01:06:00Z",
+  "updated_at": "2026-10-03T05:20:00Z",
+  "completed_steps": [
+    "mandatory_rules_reading",
+    "deep_codebase_census_leads_and_inbound",
+    "identify_orphans_duplicates_mocks",
+    "audit_backend_routes_and_schema",
+    "audit_frontend_views_and_stores",
+    "implement_fixes_and_consolidation",
+    "verify_with_targeted_tests_and_encoding",
+    "prepare_verbatim_report"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "defects": [
+      {
+        "id": "DEFECT-LEAD-CONVERT-LOSS-OF-NOTES",
+        "severity": "CRITICAL",
+        "description": "convertLeadToAppointment created new patient from lead but discarded lead.notes (complaints), lead.clinicalTags, and marketing source attribution.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/api/src/routes/leadsConversion.ts",
+          "apps/web/src/store/leadsStore.ts",
+          "apps/web/src/components/leads/LeadConvertModal.tsx",
+          "apps/web/src/components/leads/LeadsKanbanView.tsx"
+        ]
+      },
+      {
+        "id": "DEFECT-DUPLICATE-PATIENT-DETECTION-UI-BLINDNESS",
+        "severity": "CRITICAL",
+        "description": "Backend returned existingPatient when phone matched patients table, but LeadCard.tsx, LeadConvertModal.tsx and ExpandedColumnFocusModal.tsx ignored it or failed to provide 1-click navigation to patient profile, repeatedly rendering 'Create Patient' button and risking duplicate cards.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/web/src/components/leads/LeadCard.tsx",
+          "apps/web/src/components/leads/LeadConvertModal.tsx",
+          "apps/web/src/components/leads/LeadsKanbanView.tsx",
+          "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx"
+        ]
+      },
+      {
+        "id": "DEFECT-LEAD-DROP-REASON-MISSING-STORES-AND-KANBAN",
+        "severity": "HIGH",
+        "description": "Moving lead to 'trash' lacked reason dropdown/prompt in Kanban drop and store signature, losing marketing reason why leads dropped out.",
+        "status": "FIXED",
+        "fixed_in": [
+          "packages/shared/src/leads/leadSchemas.ts",
+          "apps/api/src/routes/leads.ts",
+          "apps/web/src/store/leadsStore.ts",
+          "apps/web/src/components/leads/LeadsKanbanView.tsx",
+          "apps/web/src/components/leads/LeadCard.tsx",
+          "apps/web/src/components/leads/LeadFormModal.tsx",
+          "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx"
+        ]
+      },
+      {
+        "id": "DEFECT-EXTERNAL-BOOKING-LEAD-INTAKE-ORPHANED",
+        "severity": "HIGH",
+        "description": "ProDoctorov webhook and /cloud-intake widget created appointments without creating crmLeads entries or broadcasting LEAD_CREATED for the CRM funnel.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/api/src/routes/integrations/prodoctorov.ts",
+          "apps/api/src/routes/publicBooking.ts"
+        ]
+      },
+      {
+        "id": "DEFECT-MARKETING-ATTRIBUTION-CHANNELS-MISSING",
+        "severity": "MEDIUM",
+        "description": "detectMarketingAttribution and normalizeMarketingChannel lacked Avito, Yandex.Maps, and MAX messenger detection.",
+        "status": "FIXED",
+        "fixed_in": [
+          "apps/api/src/services/telephony/telephonySecurity.ts",
+          "apps/web/src/components/leads/leadsFunnelTypes.ts",
+          "apps/web/src/components/telephony/telephonyAttribution.ts"
+        ]
+      }
+    ]
+  },
+  "modifications": [
+    "packages/shared/src/leads/leadSchemas.ts",
+    "apps/api/src/routes/leads.ts",
+    "apps/api/src/routes/leadsConversion.ts",
+    "apps/api/src/routes/integrations/prodoctorov.ts",
+    "apps/api/src/routes/publicBooking.ts",
+    "apps/api/src/services/telephony/telephonySecurity.ts",
+    "apps/web/src/store/leadsStore.ts",
+    "apps/web/src/components/leads/leadsFunnelTypes.ts",
+    "apps/web/src/components/telephony/telephonyAttribution.ts",
+    "apps/web/src/components/leads/LeadCard.tsx",
+    "apps/web/src/components/leads/LeadConvertModal.tsx",
+    "apps/web/src/components/leads/LeadFormModal.tsx",
+    "apps/web/src/components/leads/LeadsKanbanView.tsx",
+    "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx",
+    "apps/web/src/tests/leadsExistingPatientDeduplicationAndConversion.test.ts"
+  ],
+  "verification": {
+    "encoding": "PASSED (7234 files, 0 issues)",
+    "css_tokens": "PASSED (165 CSS files, 0 unresolved tokens)",
+    "targeted_unit_tests": [
+      "leadsExistingPatientDeduplicationAndConversion.test.ts: 8 passed, 0 failed",
+      "leadsBatchStageAndMarketingIntakeSplit.test.ts: 5 passed, 0 failed",
+      "leadsKanbanDefaultDay.test.ts: 7 passed, 0 failed"
+    ]
+  }
+}

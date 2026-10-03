@@ -357,7 +357,16 @@ export function detectMarketingAttribution(params: {
 		.toLowerCase();
 
 	if (utmRaw) {
-		if (/yandex|direct|директ|рся|rsya/i.test(utmRaw)) {
+		if (/avito|авито/i.test(utmRaw)) {
+			detectedChannel = "avito";
+			detectedLabel = "Авито";
+		} else if (/maps.*yandex|yandex.*maps|яндекс.*карт|карт.*яндекс/i.test(utmRaw)) {
+			detectedChannel = "yandex_maps";
+			detectedLabel = "Яндекс.Карты";
+		} else if (/\bmax\b|vk.*max|мессенджер.*макс/i.test(utmRaw)) {
+			detectedChannel = "max";
+			detectedLabel = "Мессенджер MAX";
+		} else if (/yandex|direct|директ|рся|rsya/i.test(utmRaw)) {
 			detectedChannel = "yandex_direct";
 			detectedLabel = "Яндекс.Директ";
 		} else if (/2gis|gis|2гис|дубльгис/i.test(utmRaw)) {
@@ -380,7 +389,16 @@ export function detectMarketingAttribution(params: {
 
 	if (detectedChannel === "telephony" && params.advertising_channel) {
 		const ch = params.advertising_channel.trim().toLowerCase();
-		if (/direct|яндекс|yandex/i.test(ch)) {
+		if (/avito|авито/i.test(ch)) {
+			detectedChannel = "avito";
+			detectedLabel = "Авито";
+		} else if (/maps.*yandex|yandex.*maps|яндекс.*карт|карт.*яндекс/i.test(ch)) {
+			detectedChannel = "yandex_maps";
+			detectedLabel = "Яндекс.Карты";
+		} else if (/\bmax\b|vk.*max|мессенджер.*макс/i.test(ch)) {
+			detectedChannel = "max";
+			detectedLabel = "Мессенджер MAX";
+		} else if (/direct|яндекс|yandex/i.test(ch)) {
 			detectedChannel = "yandex_direct";
 			detectedLabel = "Яндекс.Директ";
 		} else if (/2gis|2гис/i.test(ch)) {
@@ -403,7 +421,16 @@ export function detectMarketingAttribution(params: {
 
 	if (detectedChannel === "telephony" && params.targetRaw) {
 		const trLower = params.targetRaw.toLowerCase();
-		if (/direct|yandex|директ/i.test(trLower)) {
+		if (/avito|авито/i.test(trLower)) {
+			detectedChannel = "avito";
+			detectedLabel = "Авито";
+		} else if (/maps.*yandex|yandex.*maps|яндекс.*карт|карт.*яндекс/i.test(trLower)) {
+			detectedChannel = "yandex_maps";
+			detectedLabel = "Яндекс.Карты";
+		} else if (/\bmax\b|vk.*max|мессенджер.*макс/i.test(trLower)) {
+			detectedChannel = "max";
+			detectedLabel = "Мессенджер MAX";
+		} else if (/direct|yandex|директ/i.test(trLower)) {
 			detectedChannel = "yandex_direct";
 			detectedLabel = "Яндекс.Директ";
 		} else if (/2gis|2гис/i.test(trLower)) {

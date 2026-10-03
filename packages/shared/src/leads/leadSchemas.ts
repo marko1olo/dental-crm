@@ -52,6 +52,8 @@ export const patchLeadStageSchema = z.object({
 	priority: leadPriorityEnum.optional(),
 	clinicalTags: z.array(z.string()).optional(),
 	assignedDoctorId: z.string().uuid().optional().nullable(),
+	reason: z.string().optional().nullable(),
+	dropReason: z.string().optional().nullable(),
 });
 
 export type PatchLeadStageInput = z.infer<typeof patchLeadStageSchema>;

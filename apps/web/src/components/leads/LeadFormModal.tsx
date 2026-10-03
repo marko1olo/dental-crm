@@ -9,7 +9,7 @@
 
 import type React from "react";
 import { motion } from "framer-motion";
-import { Edit2, Trash2, UserPlus, X } from "lucide-react";
+import { Edit2, Trash2, UserCheck, UserPlus, X } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
 
 export interface LeadFormModalProps {
@@ -114,6 +114,28 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 						<X size={20} />
 					</button>
 				</div>
+
+				{currentLead?.existingPatient && (
+					<div
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 6,
+							background: "var(--teal-soft)",
+							color: "var(--teal-dark, var(--teal))",
+							border: "1px solid var(--teal)",
+							borderRadius: 6,
+							padding: "4px 8px",
+							fontSize: 12,
+							fontWeight: 600,
+							marginBottom: 14,
+						}}
+						data-testid="modal-existing-patient-badge"
+					>
+						<UserCheck size={13} className="shrink-0" />
+						<span>Постоянный пациент клиники: {currentLead.existingPatient.fullName}</span>
+					</div>
+				)}
 
 				<form
 					onSubmit={onSubmit}
@@ -286,6 +308,41 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 							<option value="trash">Отказ</option>
 						</select>
 					</div>
+
+					{editForm.status === "trash" && (
+						<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+							<label
+								htmlFor="edit-lead-drop-reason"
+								style={{ fontSize: 13, color: "var(--muted)" }}
+							>
+								Причина срыва / отказа
+							</label>
+							<select
+								id="edit-lead-drop-reason"
+								value={editForm.dropReason || "Дорого"}
+								onChange={(e) =>
+									setEditForm({
+										...editForm,
+										dropReason: e.target.value,
+									})
+								}
+								style={{
+									padding: 10,
+									borderRadius: 8,
+									border: `1px solid ${borderColor}`,
+									background: colBg,
+									color: "var(--ink)",
+									cursor: "pointer",
+								}}
+							>
+								<option value="Дорого">Дорого</option>
+								<option value="Далеко / Неудобная локация">Далеко</option>
+								<option value="Передумал / Неактуально">Передумал</option>
+								<option value="Дубль обращения">Дубль обращения</option>
+								<option value="Другое">Другое</option>
+							</select>
+						</div>
+					)}
 
 					<div
 						style={{
