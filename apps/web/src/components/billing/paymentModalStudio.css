@@ -1,0 +1,246 @@
+/**
+ * paymentModalStudio.css — Studio Clinical HIG styling for 1-click checkout & 54-FZ thermal receipt.
+ *
+ * Governed by:
+ * - Mandate 8d pt 4: WCAG AAA contrast, no gray dirty patches.
+ * - Mandate 8d pt 5: Premium typography of printable documents.
+ * - Mandate 8e: Doctor & Cashier autonomy (0 friction, 1-click fast checkout).
+ */
+
+/* Thermal Receipt Paper Simulation */
+.receipt-tape-container {
+	position: relative;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding: 12px 8px;
+}
+
+.receipt-tape-paper {
+	background: #ffffff !important;
+	color: #0f172a !important;
+	color-scheme: light !important;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	width: 100%;
+	max-width: 360px;
+	padding: 24px 20px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-size: 12px;
+	line-height: 1.45;
+	user-select: text;
+	position: relative;
+}
+
+/* Ensure deep physical black/charcoal text on thermal paper in dark theme */
+.receipt-tape-paper h1,
+.receipt-tape-paper h2,
+.receipt-tape-paper h3,
+.receipt-tape-paper h4,
+.receipt-tape-paper p,
+.receipt-tape-paper span,
+.receipt-tape-paper div {
+	color: inherit;
+}
+
+.receipt-tape-paper .text-slate-950,
+.receipt-tape-paper .text-slate-900 {
+	color: #020617 !important;
+}
+
+.receipt-tape-paper .text-slate-800 {
+	color: #1e293b !important;
+}
+
+.receipt-tape-paper .text-slate-700 {
+	color: #334155 !important;
+}
+
+.receipt-tape-paper .text-slate-600 {
+	color: #475569 !important;
+}
+
+.receipt-tape-paper .text-slate-500 {
+	color: #475569 !important;
+}
+
+.receipt-tape-paper .text-teal-700,
+.receipt-tape-paper .text-teal-800 {
+	color: #0f766e !important;
+}
+
+.receipt-tape-paper .text-emerald-700 {
+	color: #047857 !important;
+}
+
+/* Authentic tear/perforation edge simulation */
+.receipt-tape-tear-top {
+	position: absolute;
+	top: -6px;
+	left: 0;
+	right: 0;
+	height: 6px;
+	background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+	background-size: 10px 10px;
+	opacity: 0.95;
+}
+
+.receipt-tape-tear-bottom {
+	position: absolute;
+	bottom: -6px;
+	left: 0;
+	right: 0;
+	height: 6px;
+	background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+	background-size: 10px 10px;
+	opacity: 0.95;
+}
+
+/* Receipt Typography Helpers */
+.receipt-divider-dashed {
+	border-top: 1px dashed #cbd5e1;
+	margin: 10px 0;
+}
+
+.receipt-divider-double {
+	border-top: 2px dashed #94a3b8;
+	margin: 12px 0;
+}
+
+.receipt-qr-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	background: #ffffff;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	margin: 12px 0;
+}
+
+.receipt-qr-box svg {
+	width: 140px;
+	height: 140px;
+}
+
+/* Studio HIG Payment Cockpit */
+.payment-studio-cockpit {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* 1-Click Method Switcher */
+.payment-method-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 8px;
+}
+
+.payment-method-pill {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 8px 12px;
+	border-radius: 12px;
+	font-weight: 700;
+	font-size: 13px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.payment-method-pill:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.payment-method-pill.is-active {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 2px 8px -1px rgba(13, 148, 136, 0.35);
+}
+
+/* Denomination bill quick buttons */
+.cash-bill-chip {
+	min-height: 40px;
+	padding: 6px 12px;
+	border-radius: 10px;
+	font-family: ui-monospace, monospace;
+	font-weight: 800;
+	font-size: 13px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.cash-bill-chip:hover {
+	border-color: #10b981;
+	background: rgba(16, 185, 129, 0.08);
+	color: #047857;
+	transform: translateY(-1px);
+}
+
+.cash-bill-chip:active {
+	transform: scale(0.97);
+}
+
+/* Live Change HUD */
+.change-display-hud {
+	padding: 12px 16px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.change-display-hud.has-change {
+	background: rgba(16, 185, 129, 0.12);
+	border: 1px solid rgba(16, 185, 129, 0.35);
+	color: #065f46;
+}
+
+[data-theme="dark"] .change-display-hud.has-change {
+	background: rgba(16, 185, 129, 0.2);
+	border-color: rgba(16, 185, 129, 0.4);
+	color: #6ee7b7;
+}
+
+.change-display-hud.is-exact {
+	background: rgba(59, 130, 246, 0.1);
+	border: 1px solid rgba(59, 130, 246, 0.3);
+	color: #1d4ed8;
+}
+
+[data-theme="dark"] .change-display-hud.is-exact {
+	background: rgba(59, 130, 246, 0.2);
+	border-color: rgba(59, 130, 246, 0.4);
+	color: #93c5fd;
+}
+
+.change-display-hud.has-shortage {
+	background: rgba(245, 158, 11, 0.1);
+	border: 1px solid rgba(245, 158, 11, 0.3);
+	color: #b45309;
+}
+
+[data-theme="dark"] .change-display-hud.has-shortage {
+	background: rgba(245, 158, 11, 0.2);
+	border-color: rgba(245, 158, 11, 0.4);
+	color: #fcd34d;
+}

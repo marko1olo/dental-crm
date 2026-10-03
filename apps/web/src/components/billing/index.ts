@@ -10,4 +10,7 @@ export * from "./installmentsEngine";
 export * from "./PatientInstallmentsModal";
 export * from "./RetailProductsModal";
 export * from "./billingMath";
+export * from "./PaymentModal";
+export * from "./ReceiptPreview";
+export * from "./CashRegisterDrawer";
 

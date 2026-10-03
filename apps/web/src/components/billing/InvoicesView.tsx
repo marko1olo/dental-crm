@@ -32,7 +32,7 @@ import {
 	sliceDomList,
 } from "../../utils/domVirtualizationHelper.js";
 const PaymentModal = lazy(() =>
-	import("../finance/PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
+	import("./PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
 );
 import { CashboxShiftModal } from "../finance/CashboxShiftModal.js";
 import { CashReceiptPrintModal } from "../finance/CashReceiptPrintModal.js";

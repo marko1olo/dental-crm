@@ -408,7 +408,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 									title="ИНН с пациентов-физлиц не требуется"
 								>
 									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-									Для пациентов-физлиц не требуется
+									По 54-ФЗ для физлиц не требуется
 								</span>
 							)}
 						</div>

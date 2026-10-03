@@ -171,7 +171,7 @@ export const PaymentBuyerAndStomxBar: React.FC<PaymentBuyerAndStomxBarProps> = (
 								<span>ИНН пациента (необязательно, для справки НДФЛ 13%):</span>
 							</span>
 							<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium" data-testid="inn-physical-not-required-badge">
-								Для физлиц не требуется
+								По 54-ФЗ для физлиц не требуется
 							</span>
 						</div>
 						<div className="relative">
