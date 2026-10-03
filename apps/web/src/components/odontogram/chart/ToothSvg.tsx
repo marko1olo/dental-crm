@@ -256,14 +256,6 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 	);
 
 	const renderNumberBadge = () => {
-		const isLeftMolar = (number >= 16 && number <= 18) || (number >= 46 && number <= 48) || (number >= 54 && number <= 55) || (number >= 84 && number <= 85);
-		const isRightMolar = (number >= 26 && number <= 28) || (number >= 36 && number <= 38) || (number >= 64 && number <= 65) || (number >= 74 && number <= 75);
-		const hudAlignClass = isLeftMolar
-			? "left-0"
-			: isRightMolar
-			? "right-0"
-			: "left-1/2 -translate-x-1/2";
-
 		return (
 			<div className="relative flex flex-col items-center group/badge">
 				{!activeStamp && onQuickStateChange && (
@@ -271,6 +263,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						number={number}
 						isTop={isTop}
 						isPrimary={isPrimary}
+						state={state}
 						surfaces={surfaces}
 						useSurfaces={useSurfaces}
 						selectedTeeth={selectedTeeth}

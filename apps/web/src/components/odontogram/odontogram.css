@@ -435,15 +435,16 @@
 	display: block;
 	width: 100%;
 	max-width: 100%;
-	min-height: 300px;
+	min-height: 240px;
 	margin: 0 auto;
 	overflow-x: auto;
-	padding: 24px 12px;
+	overflow-y: visible;
+	padding: 12px 6px 14px;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: thin;
 	touch-action: pan-x pan-y;
 	overscroll-behavior-x: contain;
-	contain: layout paint;
+	contain: layout style;
 }
 
 @media (max-width: 768px) {
@@ -634,7 +635,7 @@
 	flex-direction: row;
 	align-items: center;
 	flex-wrap: nowrap;
-	gap: 4px;
+	gap: 3px;
 	flex-shrink: 0;
 }
 
@@ -643,7 +644,7 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	width: 14px;
+	width: 8px;
 	flex-shrink: 0;
 	position: relative;
 }
@@ -1396,10 +1397,10 @@
 	align-items: center;
 	justify-content: center;
 	flex-wrap: nowrap;
-	gap: 6px;
+	gap: 3px;
 	width: max-content;
 	margin: 0 auto;
-	min-height: 140px;
+	min-height: 120px;
 }
 
 .teeth-row.top-row {
@@ -1868,6 +1869,35 @@
 	box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.45);
 	backdrop-filter: blur(16px);
 	-webkit-backdrop-filter: blur(16px);
+}
+
+.tooth-card-hud-compact {
+	width: 210px !important;
+	min-width: 210px !important;
+	max-width: 220px !important;
+	box-sizing: border-box !important;
+}
+
+.tooth-svg-wrapper:hover,
+.tooth-svg-wrapper:focus-within,
+.tooth-svg-wrapper:has(:hover),
+.tooth-svg-wrapper:has(.tooth-hover-quick-hud:hover),
+.tooth-svg-wrapper:has(.tooth-hover-quick-hud:not(.hidden)) {
+	contain: none !important;
+	z-index: 100 !important;
+}
+
+.tooth-svg-wrapper:hover .tooth-number-badge,
+.tooth-svg-wrapper:focus-within .tooth-number-badge {
+	z-index: 105 !important;
+}
+
+.tooth-svg-wrapper:hover .tooth-hover-quick-hud,
+.tooth-svg-wrapper:focus-within .tooth-hover-quick-hud,
+.group:hover .tooth-hover-quick-hud,
+.group\/badge:hover .tooth-hover-quick-hud {
+	display: flex !important;
+	z-index: 110 !important;
 }
 
 .tooth-hover-quick-hud button {

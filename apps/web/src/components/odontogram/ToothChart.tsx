@@ -6,6 +6,7 @@ import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService"
 import { showToast } from "../GlobalToast";
 import { loadStoredTeethData } from "./odontogramStorage";
 import { getToothConfig } from "../../utils/math/toothGeometry";
+import { ToothRadialMenu } from "./ToothRadialMenu";
 
 // ============================================================================
 // ZERO-DOWNTIME CANONICAL RE-EXPORTS (MANDATES 8e, 8k, 8n)
@@ -250,7 +251,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		const recalculate = () => {
 			const el = archContainerRef.current;
 			if (!el) return;
-			const available = Math.max(0, el.clientWidth - 16);
+			const available = Math.max(0, el.clientWidth - 24);
 			const isQuadrantView = currentQuadrant !== "all";
 			const activeTeeth = isQuadrantView
 				? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, isPediatricEffective)
@@ -261,9 +262,10 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				return acc + w;
 			}, 0) || 1200;
 
-			const naturalWidth = isQuadrantView ? baseNaturalWidth + 40 : baseNaturalWidth / 2 + 60;
-			const calculated = naturalWidth > 0 ? available / naturalWidth : 1;
-			const minScale = isQuadrantView ? 0.8 : 0.28;
+			// Natural width at 1.0 scale: teeth widths + gaps & sagittal midline
+			const naturalWidth = isQuadrantView ? baseNaturalWidth + 30 : baseNaturalWidth + 90;
+			const calculated = naturalWidth > 0 ? (available - 16) / naturalWidth : 1;
+			const minScale = isQuadrantView ? 0.75 : 0.35;
 			const targetScale = Math.min(1.0, Math.max(minScale, calculated));
 
 			if (Math.abs(appliedArchScaleRef.current - targetScale) > 0.02) {
@@ -304,7 +306,11 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
 	}, [selectedTeeth, onQuickStateChange]);
 
-	const [modalTooth, setModalTooth] = useState<number | null>(null);
+	const [localRadialData, setLocalRadialData] = useState<{
+		toothNumber: number;
+		anchorRect: { x: number; y: number; width: number; height: number };
+		currentState?: ToothState;
+	} | null>(null);
 
 	const handleToothClick = useCallback(
 		(e: React.MouseEvent, num: number, surface?: string) => {
@@ -317,10 +323,27 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					: [...current, effectiveSurface];
 				onSurfacesChange([num], nextSurfaces);
 			}
+			const el = (e?.currentTarget as HTMLElement) ?? (e?.target as HTMLElement);
+			const rect =
+				el && typeof el.getBoundingClientRect === "function"
+					? el.getBoundingClientRect()
+					: typeof DOMRect !== "undefined"
+						? new DOMRect(0, 0, 0, 0)
+						: ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect);
+
 			if (onToothClick) {
-				(onToothClick as any)(e, num, effectiveSurface);
+				(onToothClick as any)(num, rect, effectiveSurface);
 			} else if (!effectiveSurface) {
-				setModalTooth(num);
+				setLocalRadialData({
+					toothNumber: num,
+					anchorRect: {
+						x: rect?.left ?? 0,
+						y: rect?.top ?? 0,
+						width: rect?.width || 48,
+						height: rect?.height || 90,
+					},
+					currentState: toothDataMap.get(num)?.state ?? "Healthy",
+				});
 			}
 		},
 		[onToothClick, onSurfacesChange, toothDataMap, useSurfaces],
@@ -379,25 +402,21 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				onResorptionChange={onResorptionChange}
 			/>
 
-			{modalTooth !== null && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-					<div className="bg-[var(--paper)] border border-[var(--line)] rounded-xl p-4 shadow-xl max-w-xs w-full flex flex-col items-center gap-3">
-						<div className="flex items-center justify-between w-full">
-							<span className="text-sm font-bold text-[var(--ink)]">Зуб {modalTooth} — Поверхности</span>
-							<button type="button" onClick={() => setModalTooth(null)} className="p-1 rounded-md text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" aria-label="Закрыть">
-								<X size={14} />
-							</button>
-						</div>
-						<SurfaceSelector
-							selected={toothDataMap.get(modalTooth)?.surfaces ?? []}
-							onChange={(nextSurfaces) => {
-								if (onSurfacesChange) {
-									onSurfacesChange([modalTooth], nextSurfaces);
-								}
-							}}
-						/>
-					</div>
-				</div>
+			{localRadialData && (
+				<ToothRadialMenu
+					toothNumber={localRadialData.toothNumber}
+					anchorRect={localRadialData.anchorRect}
+					currentState={localRadialData.currentState}
+					surfaces={toothDataMap.get(localRadialData.toothNumber)?.surfaces}
+					onSelectState={(state, surfs) => {
+						onQuickStateChange?.([localRadialData.toothNumber], state, surfs);
+						setLocalRadialData(null);
+					}}
+					onSelectSurfaces={(surfs) => {
+						onSurfacesChange?.([localRadialData.toothNumber], surfs);
+					}}
+					onClose={() => setLocalRadialData(null)}
+				/>
 			)}
 		</div>
 	);

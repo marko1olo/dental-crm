@@ -25,6 +25,7 @@ import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { isPrimaryTooth } from "@dental/shared";
 import { triggerHaptic } from "../../native/mobileBridge";
+import { SurfaceSelector } from "./chart/SurfaceSelector";
 
 export interface RadialMenuItem {
 	id: string;
@@ -1140,6 +1141,18 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									})}
 								</div>
 
+								{/* 2D Anatomical Surface Selector & Black Cavity Presets */}
+								<div className="flex justify-center p-1 my-1">
+									<SurfaceSelector
+										selected={selectedSurfaces}
+										onChange={(next) => {
+											setSelectedSurfaces(next);
+											onSelectSurfaces?.(next);
+										}}
+										size={85}
+									/>
+								</div>
+
 								{/* 6-Surface interactive toggle chips */}
 								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
 									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Отдельно:</span>
@@ -1638,6 +1651,18 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											</button>
 										);
 									})}
+								</div>
+
+								{/* 2D Anatomical Surface Selector & Black Cavity Presets */}
+								<div className="flex justify-center p-1 my-1">
+									<SurfaceSelector
+										selected={selectedSurfaces}
+										onChange={(next) => {
+											setSelectedSurfaces(next);
+											onSelectSurfaces?.(next);
+										}}
+										size={80}
+									/>
 								</div>
 							</div>
 						</details>
