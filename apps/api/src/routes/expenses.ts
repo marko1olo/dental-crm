@@ -17,7 +17,7 @@ import {
 	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
@@ -26,6 +26,7 @@ import {
 	cashBoxes,
 	cashExpenseReasons,
 	cashOperations,
+	payments,
 } from "../db/schema.js";
 import {
 	ensureOrganizationCashBoxes,
@@ -56,7 +57,7 @@ const listExpensesQuerySchema = z.object({
 const summaryQuerySchema = z.object({
 	organizationId: z.string().optional(),
 	month: z.string().optional(), // YYYY-MM
-	revenueRub: z.coerce.number().min(0).default(0),
+	revenueRub: z.coerce.number().min(0).optional(),
 });
 
 function mapCategoryToReasonCode(category: ExpenseCategory): number {
@@ -68,6 +69,7 @@ function mapCategoryToReasonCode(category: ExpenseCategory): number {
 		case "utilities": return 10;
 		case "lab_costs": return 11;
 		case "rent": return 100;
+		case "equipment_lease": return 5;
 		default: return 8; // подотчет / прочие
 	}
 }
@@ -148,10 +150,14 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 			];
 
 			if (startDate) {
-				conditions.push(sql`${cashOperations.createdAt} >= ${startDate}`);
+				conditions.push(
+					sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) >= ${startDate}`
+				);
 			}
 			if (endDate) {
-				conditions.push(sql`${cashOperations.createdAt} <= ${endDate}T23:59:59.999Z`);
+				conditions.push(
+					sql`COALESCE(${cashOperations.metadata}->>'expenseDate', SUBSTRING(${cashOperations.createdAt}::text, 1, 10)) <= ${endDate}`
+				);
 			}
 
 			const rows = await tx
@@ -307,7 +313,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 
 		const { month, revenueRub } = parsed.data;
 
-		const records = await withTenantCtx(organizationId, async (tx) => {
+		const { records, autoRevenueRub } = await withTenantCtx(organizationId, async (tx) => {
 			const rows = await tx
 				.select()
 				.from(cashOperations)
@@ -319,7 +325,33 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				)
 				.orderBy(desc(cashOperations.createdAt));
 
-			return rows.map(rowToExpenseRecord);
+			let monthRevenue = 0;
+			if ((revenueRub === undefined || revenueRub === 0) && month) {
+				const [yearStr, monthStr] = month.split("-");
+				const y = Number(yearStr);
+				const m = Number(monthStr);
+				if (Number.isFinite(y) && Number.isFinite(m) && m >= 1 && m <= 12) {
+					const monthStart = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
+					const monthEnd = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+					const paidPayments = await tx
+						.select({ amountRub: payments.amountRub })
+						.from(payments)
+						.where(
+							and(
+								eq(payments.organizationId, organizationId),
+								eq(payments.status, "paid"),
+								gte(payments.paidAt, monthStart),
+								lte(payments.paidAt, monthEnd),
+							),
+						);
+					monthRevenue = paidPayments.reduce((acc, p) => acc + (p.amountRub || 0), 0);
+				}
+			}
+
+			return {
+				records: rows.map(rowToExpenseRecord),
+				autoRevenueRub: monthRevenue,
+			};
 		});
 
 		let filtered = records;
@@ -327,8 +359,12 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 			filtered = filtered.filter((e) => e.expenseDate.startsWith(month));
 		}
 
+		const effectiveRevenueRub = (revenueRub !== undefined && revenueRub > 0)
+			? revenueRub
+			: autoRevenueRub;
+
 		const summary = calculateMonthlyExpensesSummary(filtered);
-		const profit = calculateNetProfitAndMargin(revenueRub, summary.totalExpensesRub);
+		const profit = calculateNetProfitAndMargin(effectiveRevenueRub, summary.totalExpensesRub);
 
 		return {
 			data: {

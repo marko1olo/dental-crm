@@ -97,6 +97,7 @@ export function FinancialAnalyticsModal({
 	const [departments, setDepartments] = useState<ExecutiveDepartmentData[]>([]);
 	const [cashBoxes, setCashBoxes] = useState<CashBoxRecord[]>([]);
 	const [expenseReasons, setExpenseReasons] = useState<ExpenseReasonRecord[]>([]);
+	const [realPnl, setRealPnl] = useState<any | null>(null);
 
 	// Escape listener
 	useEffect(() => {
@@ -108,17 +109,37 @@ export function FinancialAnalyticsModal({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
 
+	const getPeriodDateRange = (p: PeriodChoice) => {
+		const now = new Date();
+		const y = now.getFullYear();
+		const m = now.getMonth();
+		if (p === "quarter") {
+			const qStart = Math.floor(m / 3) * 3;
+			const from = new Date(Date.UTC(y, qStart, 1)).toISOString().slice(0, 10);
+			const to = new Date(Date.UTC(y, qStart + 3, 0)).toISOString().slice(0, 10);
+			return { from, to };
+		}
+		if (p === "year") {
+			return { from: `${y}-01-01`, to: `${y}-12-31` };
+		}
+		const from = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
+		const to = new Date(Date.UTC(y, m + 1, 0)).toISOString().slice(0, 10);
+		return { from, to };
+	};
+
 	// Fetch live financial data
 	const loadFinancialData = async () => {
 		if (!isOpen) return;
 		setIsLoading(true);
 		try {
 			const headers = denteAdminSecretRequestHeaders();
+			const dates = getPeriodDateRange(period);
 
-			const [execRes, cashRes, expRes] = await Promise.all([
+			const [execRes, cashRes, expRes, pnlRes] = await Promise.all([
 				fetch(`/api/analytics/executive?period=${period}`, { headers }),
 				fetch("/api/cash/cash-box", { headers }),
 				fetch("/api/cash/expense-reasons", { headers }),
+				fetch(`/api/reports/pnl?from=${dates.from}&to=${dates.to}`, { headers }),
 			]);
 
 			if (execRes.ok) {
@@ -144,6 +165,13 @@ export function FinancialAnalyticsModal({
 					setExpenseReasons(json.data);
 				}
 			}
+
+			if (pnlRes.ok) {
+				const json = await pnlRes.json();
+				if (json?.data) {
+					setRealPnl(json.data);
+				}
+			}
 		} catch {
 			// Gracefully fallback
 		} finally {
@@ -155,19 +183,19 @@ export function FinancialAnalyticsModal({
 		loadFinancialData();
 	}, [isOpen, period]);
 
-	// Financial Calculations (Kopecks & Rubles)
-	const totalRevenueRub = Math.round((executiveKpis?.totalRevenueKopecks || 0) / 100);
-	// In dental economics, direct consumables/COGS typically run ~18-20% of revenue
-	const estimatedCogsRub = Math.round(totalRevenueRub * 0.18);
-	const grossProfitRub = Math.max(0, totalRevenueRub - estimatedCogsRub);
-	// OPEX: Marketing + estimated payroll (~40%) + rent & overhead (~15%)
-	const marketingSpendRub = Math.round((executiveKpis?.totalMarketingSpendKopecks || 0) / 100);
-	const estimatedPayrollRub = Math.round(totalRevenueRub * 0.40);
-	const estimatedOverheadRub = Math.round(totalRevenueRub * 0.15);
-	const totalOpexRub = marketingSpendRub + estimatedPayrollRub + estimatedOverheadRub;
-	const ebitdaRub = Math.max(0, grossProfitRub - (estimatedPayrollRub + estimatedOverheadRub));
-	const netProfitRub = Math.max(0, ebitdaRub - Math.round(totalRevenueRub * 0.06)); // 6% USN tax
-	const netMarginPercent = totalRevenueRub > 0 ? Math.round((netProfitRub / totalRevenueRub) * 100) : 0;
+	// Financial Calculations (Kopecks & Rubles with Real Accounting Grounding)
+	const totalRevenueRub = realPnl?.grossRevenueRub ?? Math.round((executiveKpis?.totalRevenueKopecks || 0) / 100);
+	const estimatedCogsRub = realPnl?.totalCogsRub ?? Math.round(totalRevenueRub * 0.18);
+	const grossProfitRub = realPnl?.grossProfitRub ?? Math.max(0, totalRevenueRub - estimatedCogsRub);
+	const marketingSpendRub = (realPnl?.statutoryExpenses?.find((e: any) => e.reasonId === 6)?.amountRub) ?? Math.round((executiveKpis?.totalMarketingSpendKopecks || 0) / 100);
+	const estimatedPayrollRub = realPnl?.directDoctorPieceRateRub ?? Math.round(totalRevenueRub * 0.40);
+	const estimatedOverheadRub = realPnl?.totalOpexRub !== undefined
+		? Math.max(0, realPnl.totalOpexRub - marketingSpendRub)
+		: Math.round(totalRevenueRub * 0.15);
+	const totalOpexRub = realPnl?.totalOpexRub ?? (marketingSpendRub + estimatedPayrollRub + estimatedOverheadRub);
+	const ebitdaRub = realPnl?.ebitdaRub ?? Math.max(0, grossProfitRub - (estimatedPayrollRub + estimatedOverheadRub));
+	const netProfitRub = realPnl?.netProfitRub ?? Math.max(0, ebitdaRub - Math.round(totalRevenueRub * 0.06));
+	const netMarginPercent = realPnl?.netMarginPct ?? (totalRevenueRub > 0 ? Math.round((netProfitRub / totalRevenueRub) * 100) : 0);
 
 	// Total cash in boxes
 	const totalCashRub = useMemo(() => {
@@ -180,11 +208,11 @@ export function FinancialAnalyticsModal({
 			const rows = [
 				["Статья P&L", "Сумма (₽)"],
 				["Выручка (Gross Revenue)", totalRevenueRub],
-				["Себестоимость материалов (COGS ~18%)", estimatedCogsRub],
+				[realPnl ? "Себестоимость лечения (COGS факт)" : "Себестоимость материалов (COGS ~18%)", estimatedCogsRub],
 				["Валовая прибыль (Gross Profit)", grossProfitRub],
-				["ФОТ и вознаграждения (~40%)", estimatedPayrollRub],
+				[realPnl ? "ФОТ врачей и персонала (факт)" : "ФОТ и вознаграждения (~40%)", estimatedPayrollRub],
 				["Маркетинг и реклама", marketingSpendRub],
-				["Аренда и накладные расходы (~15%)", estimatedOverheadRub],
+				[realPnl ? "Аренда и накладные расходы (факт)" : "Аренда и накладные расходы (~15%)", estimatedOverheadRub],
 				["EBITDA", ebitdaRub],
 				["Чистая прибыль (Net Profit)", netProfitRub],
 				["Рентабельность (%)", `${netMarginPercent}%`],
@@ -323,7 +351,9 @@ export function FinancialAnalyticsModal({
 						<div className="fin-analytics-kpi-value">
 							{estimatedCogsRub.toLocaleString("ru-RU")} ₽
 						</div>
-						<div className="fin-analytics-kpi-sub">Норма расхода: ~18%</div>
+						<div className="fin-analytics-kpi-sub">
+							{realPnl ? `Факт P&L (${realPnl.grossRevenueRub > 0 ? Math.round((estimatedCogsRub / realPnl.grossRevenueRub) * 100) : 0}%)` : "Норма расхода: ~18%"}
+						</div>
 					</div>
 
 					{/* 3. Валовая прибыль */}
@@ -335,7 +365,9 @@ export function FinancialAnalyticsModal({
 						<div className="fin-analytics-kpi-value text-sky-400">
 							{grossProfitRub.toLocaleString("ru-RU")} ₽
 						</div>
-						<div className="fin-analytics-kpi-sub">Маржа: ~82%</div>
+						<div className="fin-analytics-kpi-sub">
+							{realPnl ? `Маржинальность: ${realPnl.grossMarginPct}%` : `Маржа: ~${totalRevenueRub > 0 ? Math.round((grossProfitRub / totalRevenueRub) * 100) : 0}%`}
+						</div>
 					</div>
 
 					{/* 4. OPEX */}

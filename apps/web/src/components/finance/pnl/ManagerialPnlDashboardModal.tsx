@@ -8,6 +8,7 @@ import {
 	CreditCard,
 	DollarSign,
 	PieChart,
+	PlusCircle,
 	RefreshCw,
 	TrendingDown,
 	TrendingUp,
@@ -21,6 +22,7 @@ import {
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { fetchManagerialPnl } from "../../../lib/managerialPnlApi";
 import { showToast } from "../../GlobalToast";
+import { QuickExpenseModal } from "../QuickExpenseModal";
 import "./ManagerialPnlDashboardModal.css";
 
 interface Props {
@@ -35,6 +37,7 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 	const [report, setReport] = useState<ManagerialPnlReport | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [periodPreset, setPeriodPreset] = useState<"current_month" | "prev_month" | "quarter" | "year">("current_month");
+	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState<boolean>(false);
 
 	const getDatesForPreset = useCallback((preset: "current_month" | "prev_month" | "quarter" | "year") => {
 		const now = new Date();
@@ -141,6 +144,16 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 
 						<button
 							type="button"
+							className="pnl-action-btn-expense"
+							onClick={() => setIsQuickExpenseOpen(true)}
+							title="Внести операционный расход (аренда, материалы, коммуналка)"
+						>
+							<PlusCircle size={13} />
+							<span>+ Расход</span>
+						</button>
+
+						<button
+							type="button"
 							className="pnl-btn-close"
 							onClick={onClose}
 							title="Закрыть"
@@ -239,6 +252,9 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 													<th>Направление</th>
 													<th>Выручка (₽)</th>
 													<th>Доля (%)</th>
+													<th>Прямые затраты</th>
+													<th>Маржа (₽)</th>
+													<th>Рентабельность (%)</th>
 													<th>Средний чек</th>
 												</tr>
 											</thead>
@@ -265,6 +281,15 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 																{dept.revenueRub.toLocaleString("ru-RU")} ₽
 															</td>
 															<td>{dept.sharePct}%</td>
+															<td className="text-rose-600">
+																{dept.directCostsRub.toLocaleString("ru-RU")} ₽
+															</td>
+															<td className="font-semibold text-emerald-600">
+																{dept.marginRub.toLocaleString("ru-RU")} ₽
+															</td>
+															<td className="font-semibold">
+																{dept.marginPct}%
+															</td>
 															<td>{dept.averageBillRub.toLocaleString("ru-RU")} ₽</td>
 														</tr>
 													);
@@ -273,6 +298,9 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 													<td>ИТОГО ВЫРУЧКА</td>
 													<td>{report.grossRevenueRub.toLocaleString("ru-RU")} ₽</td>
 													<td>100%</td>
+													<td className="text-rose-600">{report.totalCogsRub.toLocaleString("ru-RU")} ₽</td>
+													<td className="text-emerald-600">{report.grossProfitRub.toLocaleString("ru-RU")} ₽</td>
+													<td>{report.grossMarginPct}%</td>
 													<td>—</td>
 												</tr>
 											</tbody>
@@ -389,10 +417,203 @@ export const ManagerialPnlDashboardModal: React.FC<Props> = ({ isOpen, onClose }
 									</table>
 								</div>
 							</div>
+
+							{/* Секция 4: Точка безубыточности (CVP Break-Even Analysis) */}
+							{report.breakEven && (
+								<div className="pnl-section-block">
+									<h3 className="pnl-section-title">
+										<TrendingUp size={15} className="text-emerald-600" />
+										4. Точка безубыточности (CVP-анализ практики)
+									</h3>
+									<div className="pnl-breakeven-grid">
+										<div className="pnl-breakeven-card">
+											<span className="pnl-kpi-label">Точка безубыточности</span>
+											<span className="pnl-kpi-val text-blue-600">
+												{report.breakEven.breakEvenRevenueRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="pnl-kpi-sub">
+												Требуется визитов: <b>{report.breakEven.breakEvenVisitsCount}</b>
+											</span>
+										</div>
+
+										<div className="pnl-breakeven-card">
+											<span className="pnl-kpi-label">Постоянные расходы (Fixed)</span>
+											<span className="pnl-kpi-val">
+												{report.breakEven.fixedCostsRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="pnl-kpi-sub">Аренда, оклады, IT, коммуналка</span>
+										</div>
+
+										<div className="pnl-breakeven-card">
+											<span className="pnl-kpi-label">Переменные расходы (Variable)</span>
+											<span className="pnl-kpi-val cogs">
+												{report.breakEven.variableCostsRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="pnl-kpi-sub">Материалы, ЗТЛ, сдельный ФОТ</span>
+										</div>
+
+										<div className="pnl-breakeven-card">
+											<span className="pnl-kpi-label">Коэффициент марж. дохода</span>
+											<span className="pnl-kpi-val profit">
+												{(report.breakEven.contributionMarginRatio * 100).toFixed(1)}%
+											</span>
+											<span className="pnl-kpi-sub">
+												Марж. доход: {report.breakEven.contributionMarginRub.toLocaleString("ru-RU")} ₽
+											</span>
+										</div>
+
+										<div className="pnl-breakeven-card">
+											<span className="pnl-kpi-label">Запас фин. прочности</span>
+											<span className={`pnl-kpi-val ${report.breakEven.isBreakEvenReached ? "profit" : "loss"}`}>
+												{report.breakEven.marginOfSafetyRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="pnl-kpi-sub">
+												{report.breakEven.isBreakEvenReached
+													? `Запас безопасности: +${report.breakEven.marginOfSafetyPct}%`
+													: "Ниже точки безубыточности"}
+											</span>
+										</div>
+
+										<div className="pnl-breakeven-card">
+											<span className="pnl-kpi-label">Статус безубыточности</span>
+											<div className="mt-1">
+												<span
+													className={`pnl-status-pill ${report.breakEven.isBreakEvenReached ? "success" : "danger"}`}
+												>
+													{report.breakEven.isBreakEvenReached ? "Безубыточность достигнута" : "Зона риска"}
+												</span>
+											</div>
+											<span className="pnl-kpi-sub mt-1">
+												{report.grossRevenueRub >= report.breakEven.breakEvenRevenueRub
+													? `Превышение на ${(report.grossRevenueRub - report.breakEven.breakEvenRevenueRub).toLocaleString("ru-RU")} ₽`
+													: `Дефицит: ${(report.breakEven.breakEvenRevenueRub - report.grossRevenueRub).toLocaleString("ru-RU")} ₽`}
+											</span>
+										</div>
+									</div>
+								</div>
+							)}
+
+							{/* Секция 5: Юнит-экономика стоматологических кресел */}
+							{report.chairEconomics && (
+								<div className="pnl-section-block">
+									<h3 className="pnl-section-title">
+										<Building2 size={15} className="text-indigo-600" />
+										5. Юнит-экономика стоматологических кресел
+									</h3>
+									<div className="pnl-chair-summary-grid">
+										<div className="pnl-kpi-card">
+											<span className="pnl-kpi-label">Активных установок</span>
+											<span className="pnl-kpi-val text-indigo-600">
+												{report.chairEconomics.activeChairsCount} кресел
+											</span>
+											<span className="pnl-kpi-sub">
+												Фонд часов: {report.chairEconomics.totalOperatingHours} ч
+											</span>
+										</div>
+
+										<div className="pnl-kpi-card">
+											<span className="pnl-kpi-label">Загрузка фонда кресел</span>
+											<span className="pnl-kpi-val">
+												{report.chairEconomics.chairOccupancyRatePct}%
+											</span>
+											<span className="pnl-kpi-sub">
+												Отработано: {report.chairEconomics.totalOccupiedHours} ч
+											</span>
+										</div>
+
+										<div className="pnl-kpi-card">
+											<span className="pnl-kpi-label">Себестоимость часа доступности</span>
+											<span className="pnl-kpi-val text-slate-700">
+												{report.chairEconomics.costPerAvailableChairHourRub.toLocaleString("ru-RU")} ₽/ч
+											</span>
+											<span className="pnl-kpi-sub">Все расходы / фонд часов</span>
+										</div>
+
+										<div className="pnl-kpi-card">
+											<span className="pnl-kpi-label">Себестоимость часа приема</span>
+											<span className="pnl-kpi-val text-rose-600">
+												{report.chairEconomics.costPerOccupiedChairHourRub.toLocaleString("ru-RU")} ₽/ч
+											</span>
+											<span className="pnl-kpi-sub">Все расходы / занятые часы</span>
+										</div>
+
+										<div className="pnl-kpi-card">
+											<span className="pnl-kpi-label">Выручка на кресло</span>
+											<span className="pnl-kpi-val revenue">
+												{report.chairEconomics.revenuePerChairRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="pnl-kpi-sub">Средняя выработка</span>
+										</div>
+
+										<div className="pnl-kpi-card">
+											<span className="pnl-kpi-label">Прибыль на кресло</span>
+											<span className={`pnl-kpi-val ${report.chairEconomics.profitPerChairRub >= 0 ? "profit" : "loss"}`}>
+												{report.chairEconomics.profitPerChairRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="pnl-kpi-sub">Чистый финансовый итог</span>
+										</div>
+									</div>
+
+									{report.chairEconomics.chairs.length > 0 && (
+										<div className="pnl-table-wrapper">
+											<table className="pnl-table">
+												<thead>
+													<tr>
+														<th>Установка / Кабинет</th>
+														<th style={{ textAlign: "center" }}>Часы фонда</th>
+														<th style={{ textAlign: "center" }}>Часы приема</th>
+														<th style={{ textAlign: "center" }}>Загрузка (%)</th>
+														<th style={{ textAlign: "right" }}>Выручка (₽)</th>
+														<th style={{ textAlign: "right" }}>Расход (₽)</th>
+														<th style={{ textAlign: "right" }}>Прибыль кресла (₽)</th>
+													</tr>
+												</thead>
+												<tbody>
+													{report.chairEconomics.chairs.map((chair) => (
+														<tr key={chair.chairId}>
+															<td className="font-semibold text-slate-800">
+																{chair.chairName} {chair.roomName ? `(${chair.roomName})` : ""}
+															</td>
+															<td style={{ textAlign: "center" }}>{chair.operatingHours} ч</td>
+															<td style={{ textAlign: "center" }}>{chair.occupiedHours} ч</td>
+															<td style={{ textAlign: "center" }}>
+																<span className="font-semibold">{chair.occupancyRatePct}%</span>
+															</td>
+															<td style={{ textAlign: "right", fontWeight: 600 }}>
+																{chair.revenueRub.toLocaleString("ru-RU")} ₽
+															</td>
+															<td style={{ textAlign: "right", color: "var(--muted)" }}>
+																{chair.costRub.toLocaleString("ru-RU")} ₽
+															</td>
+															<td
+																style={{
+																	textAlign: "right",
+																	fontWeight: 700,
+																	color: chair.profitRub >= 0 ? "#059669" : "#dc2626",
+																}}
+															>
+																{chair.profitRub.toLocaleString("ru-RU")} ₽
+															</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
+										</div>
+									)}
+								</div>
+							)}
 						</>
 					) : null}
 				</div>
 			</div>
+
+			{isQuickExpenseOpen && (
+				<QuickExpenseModal
+					isOpen={isQuickExpenseOpen}
+					onClose={() => setIsQuickExpenseOpen(false)}
+					onSuccess={() => loadPnl(periodPreset)}
+				/>
+			)}
 		</div>
 	);
 };

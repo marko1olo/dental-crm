@@ -28,6 +28,7 @@ import { FinanceToolbar } from "./components/finance/FinanceToolbar";
 import { FinanceInvoicesModal } from "./components/finance/FinanceInvoicesModal";
 import { FinanceCashboxModal } from "./components/finance/FinanceCashboxModal";
 import { PatientBillingModal } from "./components/finance/PatientBillingModal";
+import { QuickExpenseModal } from "./components/finance/QuickExpenseModal";
 
 const ManagerialPnlDashboardModal = lazy(() =>
 	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
@@ -330,6 +331,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const [isCashShiftOpen, setIsCashShiftOpen] = useState(false);
 	const [isCashboxOpen, setIsCashboxOpen] = useState(false);
 	const [isBillingActOpen, setIsBillingActOpen] = useState(false);
+	const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		const saved = safeLocalStorageGetItem("dente_cash_shift_open");
@@ -509,11 +511,15 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					setIsBillingActOpen(false);
 					return;
 				}
+				if (isQuickExpenseOpen) {
+					setIsQuickExpenseOpen(false);
+					return;
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen]);
+	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen, isCashboxOpen, isBillingActOpen, isQuickExpenseOpen]);
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-32 max-sm:pb-48 max-w-full min-w-0 overflow-x-hidden" id="finance">
@@ -538,6 +544,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				onGoToDocuments={onGoToDocuments}
 				onOpenCashbox={() => setIsCashboxOpen(true)}
 				onOpenBillingAct={() => setIsBillingActOpen(true)}
+				onOpenQuickExpense={() => setIsQuickExpenseOpen(true)}
 			/>
 
 			{isCashShiftOpen && (
@@ -570,46 +577,53 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				strategyLabels={scenarioStrategyLabels}
 			/>
 
-			{/* Сворачиваемый блок клинических рекомендаций и правил (не крадёт полезную высоту экрана, свернут по умолчанию) */}
-			<details
-				className="clinical-recommendations-accordion group rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-xs shadow-xs my-0.5 sm:my-1 select-none"
-				data-testid="clinical-recommendations-accordion"
-			>
-				<summary className="flex items-center justify-between cursor-pointer font-medium text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors min-h-[26px]">
-					<div className="flex items-center gap-1.5">
-						<FileText size={13} className="text-[var(--teal)] shrink-0" />
-						<span className="text-[11px] sm:text-xs">Клинические рекомендации и правила</span>
-						{clinicalRuleSummary && (
-							<span className="text-[10px] sm:text-[11px] text-[var(--muted)] font-normal">
-								{((clinicalRuleSummary.unresolved ?? 0) > 0
-									? `${clinicalRuleSummary.unresolved} нерешённых`
-									: clinicalRuleSummary.activeRules ?? 0)}
-							</span>
-						)}
-					</div>
-					<ChevronDown
-						size={13}
-						className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
-					/>
-				</summary>
-				<div className="pt-2 space-y-2">
-					<ClinicalRulePanel
-						actionLabels={clinicalRuleActionLabels}
-						context="finance"
-						evaluations={clinicalRuleEvaluations ?? []}
-						patientId={documentPatient?.id ?? null}
-						serviceTitle={serviceTitle}
-						severityLabels={clinicalRuleSeverityLabels}
-						staffRoleLabels={staffRoleLabels}
-						summary={clinicalRuleSummary}
-					/>
+			{/* Сворачиваемый блок клинических рекомендаций и правил (отображается только при наличии активных правил или замечаний) */}
+			{Boolean(
+				(clinicalRuleSummary &&
+					((clinicalRuleSummary.unresolved ?? 0) > 0 ||
+						(clinicalRuleSummary.activeRules ?? 0) > 0)) ||
+					(clinicalRuleEvaluations && clinicalRuleEvaluations.length > 0),
+			) && (
+				<details
+					className="clinical-recommendations-accordion group rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-xs shadow-xs my-0.5 sm:my-1 select-none"
+					data-testid="clinical-recommendations-accordion"
+				>
+					<summary className="flex items-center justify-between cursor-pointer font-medium text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors min-h-[26px]">
+						<div className="flex items-center gap-1.5">
+							<FileText size={13} className="text-[var(--teal)] shrink-0" />
+							<span className="text-[11px] sm:text-xs">Клинические рекомендации и правила</span>
+							{clinicalRuleSummary && (
+								<span className="text-[10px] sm:text-[11px] text-[var(--muted)] font-normal">
+									{((clinicalRuleSummary.unresolved ?? 0) > 0
+										? `${clinicalRuleSummary.unresolved} нерешённых`
+										: clinicalRuleSummary.activeRules ?? 0)}
+								</span>
+							)}
+						</div>
+						<ChevronDown
+							size={13}
+							className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
+						/>
+					</summary>
+					<div className="pt-2 space-y-2">
+						<ClinicalRulePanel
+							actionLabels={clinicalRuleActionLabels}
+							context="finance"
+							evaluations={clinicalRuleEvaluations ?? []}
+							patientId={documentPatient?.id ?? null}
+							serviceTitle={serviceTitle}
+							severityLabels={clinicalRuleSeverityLabels}
+							staffRoleLabels={staffRoleLabels}
+							summary={clinicalRuleSummary}
+						/>
 
-					<ClinicalAiPersonalizePanel
-						context="finance"
-						patientId={documentPatient?.id ?? null}
-					/>
-				</div>
-			</details>
+						<ClinicalAiPersonalizePanel
+							context="finance"
+							patientId={documentPatient?.id ?? null}
+						/>
+					</div>
+				</details>
+			)}
 
 			{/* Контейнер кассового модуля с отступом pb-28 для исключения перекрытия интерактивных кнопок плавающим баром (Мандаты 8d, 8p) */}
 			<div className="finance-cashbox-container pb-28 sm:pb-24">
@@ -788,6 +802,16 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					patientFamilyBalanceRub={documentPatient?.familyBalanceRub ?? 0}
 					clinicName={dashboard?.clinicSettings?.name}
 					clinicInn={dashboard?.clinicSettings?.inn}
+				/>
+			)}
+
+			{isQuickExpenseOpen && (
+				<QuickExpenseModal
+					isOpen={isQuickExpenseOpen}
+					onClose={() => setIsQuickExpenseOpen(false)}
+					onSuccess={() => {
+						void loadDashboard?.();
+					}}
 				/>
 			)}
 		</div>

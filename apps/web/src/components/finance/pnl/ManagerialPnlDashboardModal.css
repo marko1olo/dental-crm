@@ -274,3 +274,72 @@
 	background: #fef3c7;
 	color: #92400e;
 }
+
+.pnl-section-block {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 6px;
+}
+
+.pnl-breakeven-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+}
+
+.pnl-breakeven-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 6px;
+	padding: 10px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pnl-chair-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+}
+
+.pnl-status-pill {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 3px 8px;
+	border-radius: 4px;
+}
+
+.pnl-status-pill.success {
+	background: #dcfce7;
+	color: #15803d;
+	border: 1px solid #bbf7d0;
+}
+
+.pnl-status-pill.danger {
+	background: #fee2e2;
+	color: #b91c1c;
+	border: 1px solid #fecaca;
+}
+
+.pnl-action-btn-expense {
+	height: 32px;
+	padding: 0 12px;
+	border: 1px solid #b91c1c;
+	border-radius: 4px;
+	background: #b91c1c;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	color: #ffffff;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: background 0.15s ease;
+}
+
+.pnl-action-btn-expense:hover {
+	background: #991b1b;
+}

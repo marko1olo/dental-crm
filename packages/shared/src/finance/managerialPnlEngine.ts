@@ -3,14 +3,17 @@
  *
  * ФИНАНСОВЫЙ И НОРМАТИВНЫЙ КОНТУР:
  * • Построен строго на 6 кассовых счетах (`cash_boxes`) и 12 канонических статьях расхода (`cash_expense_reasons`).
- * • Расчеты строго в рублях и копейках без псевдонаучных диорам и абстрактных симуляций.
+ * • Расчеты строго в копейках без потери точности (zero float drift).
  * • Формирует прозрачный отчет о прибылях и убытках:
  *   Валовая выручка (Gross Revenue) -> Себестоимость лечения (COGS) ->
  *   Валовая прибыль (Gross Profit) -> Операционные расходы (OPEX) -> EBITDA ->
  *   Налоги -> Чистая прибыль (Net Profit).
+ * • Включает расчет точки безубыточности (Break-Even Point, CVP-анализ)
+ *   и юнит-экономику кресел клиники.
  */
 
 import { z } from "zod";
+import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
 
 export type ClinicalSpecialtyDepartment =
 	| "therapy"
@@ -41,6 +44,9 @@ export interface DepartmentRevenueItem {
 	sharePct: number; // Доля в выручке %
 	servicesCount: number;
 	averageBillRub: number;
+	directCostsRub: number; // Прямая себестоимость направления (материалы, ЗТЛ, ФОТ)
+	marginRub: number;      // Маржинальный доход (выручка - прямые затраты)
+	marginPct: number;      // Маржинальность направления (%)
 }
 
 export interface StatutoryExpenseRow {
@@ -61,6 +67,51 @@ export interface CashBoxRevenueItem {
 	revenueRub: number;
 	sharePct: number;
 	paymentsCount: number;
+}
+
+/**
+ * Точка безубыточности стоматологической практики (CVP Break-Even Analysis).
+ */
+export interface BreakEvenAnalysis {
+	fixedCostsRub: number;           // Постоянные расходы (Аренда, оклады, коммуналка, связь, амортизация)
+	variableCostsRub: number;        // Переменные расходы (Материалы, ЗТЛ, сдельная оплата врачей)
+	contributionMarginRub: number;   // Маржинальная прибыль (Выручка - Переменные расходы)
+	contributionMarginRatio: number; // Коэффициент маржинального дохода (CM / Revenue)
+	breakEvenRevenueRub: number;     // Точка безубыточности в деньгах: FixedCosts / CMRatio
+	breakEvenVisitsCount: number;    // Точка безубыточности в визитах/пациентах
+	marginOfSafetyRub: number;       // Запас финансовой прочности в рублях
+	marginOfSafetyPct: number;       // Запас финансовой прочности в %
+	isBreakEvenReached: boolean;     // Достигнута ли точка безубыточности
+}
+
+/**
+ * Юнит-экономика отдельного стоматологического кресла.
+ */
+export interface ChairUnitEconomicsItem {
+	chairId: string;
+	chairName: string;
+	roomName?: string | undefined;
+	operatingHours: number;
+	occupiedHours: number;
+	occupancyRatePct: number;
+	revenueRub: number;
+	costRub: number;
+	profitRub: number;
+}
+
+/**
+ * Сводная юнит-экономика кресел клиники.
+ */
+export interface ChairEconomicsSummary {
+	activeChairsCount: number;
+	totalOperatingHours: number;
+	totalOccupiedHours: number;
+	chairOccupancyRatePct: number;
+	costPerAvailableChairHourRub: number;
+	costPerOccupiedChairHourRub: number;
+	revenuePerChairRub: number;
+	profitPerChairRub: number;
+	chairs: ChairUnitEconomicsItem[];
 }
 
 export interface ManagerialPnlReport {
@@ -96,6 +147,29 @@ export interface ManagerialPnlReport {
 
 	isProfitable: boolean;
 	totalExpensesRub: number;
+
+	// 5. CVP Анализ точки безубыточности
+	breakEven: BreakEvenAnalysis;
+
+	// 6. Юнит-экономика кресел
+	chairEconomics: ChairEconomicsSummary;
+}
+
+export interface ChairInputItem {
+	chairId: string;
+	chairName: string;
+	roomName?: string | undefined;
+	operatingHours?: number;
+	occupiedHours?: number;
+	revenueRub?: number;
+}
+
+export interface ChairEconomicsConfig {
+	activeChairsCount?: number;
+	operatingDays?: number;
+	operatingHoursPerDay?: number;
+	occupiedHours?: number;
+	chairs?: ChairInputItem[];
 }
 
 export interface CalculateManagerialPnlInput {
@@ -114,81 +188,58 @@ export interface CalculateManagerialPnlInput {
 		reasonName?: string;
 	}>;
 	doctorPieceRatePayrollRub?: number;
+	departmentDirectCosts?: Partial<Record<ClinicalSpecialtyDepartment, number>>;
+	chairEconomics?: ChairEconomicsConfig;
 }
 
 /**
  * Канонический расчет управленческого P&L стоматологической клиники.
+ * Все расчеты выполняются в целочисленных копейках (zero float drift).
  */
 export function calculateManagerialPnl(input: CalculateManagerialPnlInput): ManagerialPnlReport {
-	// 1. Агрегация выручки по направлениям
-	const deptSums: Record<ClinicalSpecialtyDepartment, { sum: number; count: number }> = {
-		therapy: { sum: 0, count: 0 },
-		orthopedics: { sum: 0, count: 0 },
-		surgery: { sum: 0, count: 0 },
-		orthodontics: { sum: 0, count: 0 },
-		hygiene: { sum: 0, count: 0 },
-		pediatric: { sum: 0, count: 0 },
-		diagnostic: { sum: 0, count: 0 },
+	// 1. Агрегация выручки по направлениям (в копейках)
+	const deptSumsKop: Record<ClinicalSpecialtyDepartment, { sumKop: number; count: number }> = {
+		therapy: { sumKop: 0, count: 0 },
+		orthopedics: { sumKop: 0, count: 0 },
+		surgery: { sumKop: 0, count: 0 },
+		orthodontics: { sumKop: 0, count: 0 },
+		hygiene: { sumKop: 0, count: 0 },
+		pediatric: { sumKop: 0, count: 0 },
+		diagnostic: { sumKop: 0, count: 0 },
 	};
 
-	// Агрегация по кассам
-	const boxSums: Record<string, { name: string; type: CashBoxKind; sum: number; count: number }> = {};
+	// Агрегация по кассам (в копейках)
+	const boxSumsKop: Record<string, { name: string; type: CashBoxKind; sumKop: number; count: number }> = {};
 
-	let grossRevenueRub = 0;
+	let grossRevenueKop = 0;
 
 	for (const p of input.payments) {
-		const amt = Math.max(0, p.amountRub);
-		grossRevenueRub += amt;
+		const amtRub = Math.max(0, p.amountRub);
+		const amtKop = rubToKopecks(amtRub);
+		grossRevenueKop += amtKop;
 
 		// Направление
 		let deptKey: ClinicalSpecialtyDepartment = "therapy";
-		if (p.department && p.department in deptSums) {
+		if (p.department && p.department in deptSumsKop) {
 			deptKey = p.department as ClinicalSpecialtyDepartment;
 		}
-		deptSums[deptKey].sum += amt;
-		deptSums[deptKey].count += 1;
+		deptSumsKop[deptKey].sumKop += amtKop;
+		deptSumsKop[deptKey].count += 1;
 
 		// Касса
 		const bId = p.cashBoxId || p.cashBoxType || "cashless";
 		const bName = p.cashBoxName || (p.cashBoxType === "main" ? "Основная касса (наличные)" : "Безналичный эквайринг");
 		const bType: CashBoxKind = p.cashBoxType || "cashless";
-		if (!boxSums[bId]) {
-			boxSums[bId] = { name: bName, type: bType, sum: 0, count: 0 };
+		if (!boxSumsKop[bId]) {
+			boxSumsKop[bId] = { name: bName, type: bType, sumKop: 0, count: 0 };
 		}
-		boxSums[bId].sum += amt;
-		boxSums[bId].count += 1;
+		boxSumsKop[bId].sumKop += amtKop;
+		boxSumsKop[bId].count += 1;
 	}
 
-	grossRevenueRub = Number(grossRevenueRub.toFixed(2));
+	const grossRevenueRub = kopecksToRub(grossRevenueKop);
 
-	const departmentRevenue: DepartmentRevenueItem[] = (
-		Object.keys(deptSums) as ClinicalSpecialtyDepartment[]
-	).map((dept) => {
-		const info = deptSums[dept];
-		const sum = Number(info.sum.toFixed(2));
-		return {
-			department: dept,
-			titleRu: DEPARTMENT_METADATA_RU[dept].label,
-			revenueRub: sum,
-			sharePct: grossRevenueRub > 0 ? Number(((sum / grossRevenueRub) * 100).toFixed(1)) : 0,
-			servicesCount: info.count,
-			averageBillRub: info.count > 0 ? Math.round(sum / info.count) : 0,
-		};
-	});
-
-	const cashBoxRevenue: CashBoxRevenueItem[] = Object.entries(boxSums).map(([bId, b]) => {
-		const sum = Number(b.sum.toFixed(2));
-		return {
-			boxId: bId,
-			boxName: b.name,
-			boxType: b.type,
-			revenueRub: sum,
-			sharePct: grossRevenueRub > 0 ? Number(((sum / grossRevenueRub) * 100).toFixed(1)) : 0,
-			paymentsCount: b.count,
-		};
-	});
-
-	// 2. Агрегация расходов по 12 регламентированным статьям StomX
+	// 2. Агрегация расходов по 12 регламентированным статьям StomX (в копейках)
 	const STATUTORY_NAMES: Record<number, { name: string; isLocked: boolean; costNature: "direct_cogs" | "opex" | "taxes" }> = {
 		1: { name: "Зарплата врачей и персонала", isLocked: true, costNature: "direct_cogs" },
 		2: { name: "Налоги и сборы", isLocked: false, costNature: "taxes" },
@@ -205,72 +256,251 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		100: { name: "Аренда помещения", isLocked: false, costNature: "opex" },
 	};
 
-	const expenseSums: Record<number, number> = {
+	const expenseSumsKop: Record<number, number> = {
 		1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0,
 	};
 
-	let totalExpensesRub = 0;
+	let totalExpensesKop = 0;
 
 	for (const e of input.expenses) {
-		const amt = Math.max(0, e.amountRub);
+		const amtRub = Math.max(0, e.amountRub);
+		const amtKop = rubToKopecks(amtRub);
 		const normalizedId = e.reasonId === 100 ? 12 : e.reasonId;
-		if (normalizedId in expenseSums) {
-			expenseSums[normalizedId] = (expenseSums[normalizedId] || 0) + amt;
+		if (normalizedId in expenseSumsKop) {
+			expenseSumsKop[normalizedId] = (expenseSumsKop[normalizedId] || 0) + amtKop;
 		}
-		totalExpensesRub += amt;
+		totalExpensesKop += amtKop;
 	}
 
 	// Если передан расчетный ФОТ врачей от сделки и он выше записанного в кассе
-	const currentSalaryExpense = expenseSums[1] ?? 0;
-	if (input.doctorPieceRatePayrollRub && input.doctorPieceRatePayrollRub > currentSalaryExpense) {
-		const diff = input.doctorPieceRatePayrollRub - currentSalaryExpense;
-		expenseSums[1] = input.doctorPieceRatePayrollRub;
-		totalExpensesRub += diff;
+	const currentSalaryKop = expenseSumsKop[1] ?? 0;
+	if (input.doctorPieceRatePayrollRub) {
+		const inputDoctorPieceRateKop = rubToKopecks(input.doctorPieceRatePayrollRub);
+		if (inputDoctorPieceRateKop > currentSalaryKop) {
+			const diffKop = inputDoctorPieceRateKop - currentSalaryKop;
+			expenseSumsKop[1] = inputDoctorPieceRateKop;
+			totalExpensesKop += diffKop;
+		}
 	}
 
-	totalExpensesRub = Number(totalExpensesRub.toFixed(2));
+	const totalExpensesRub = kopecksToRub(totalExpensesKop);
 
 	const statutoryExpenses: StatutoryExpenseRow[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((id) => {
 		const meta = STATUTORY_NAMES[id] || { name: `Статья ${id}`, isLocked: false, costNature: "opex" as const };
-		const amt = Number((expenseSums[id] || 0).toFixed(2));
+		const amtKop = expenseSumsKop[id] || 0;
+		const amtRub = kopecksToRub(amtKop);
 		return {
 			reasonId: id,
 			titleRu: meta.name,
 			isLocked: meta.isLocked,
-			amountRub: amt,
-			shareOfExpensesPct: totalExpensesRub > 0 ? Number(((amt / totalExpensesRub) * 100).toFixed(1)) : 0,
+			amountRub: amtRub,
+			shareOfExpensesPct: totalExpensesKop > 0 ? Number(((amtKop / totalExpensesKop) * 100).toFixed(1)) : 0,
 			costNature: meta.costNature,
 		};
 	});
 
-	// 3. Расчет себестоимости лечения (COGS)
-	const directLabCostRub = Number((expenseSums[11] || 0).toFixed(2));
-	const directMaterialsCostRub = Number(((expenseSums[4] || 0) + (expenseSums[5] || 0)).toFixed(2));
-	const directDoctorPieceRateRub = Number((expenseSums[1] || 0).toFixed(2));
-	const totalCogsRub = Number((directLabCostRub + directMaterialsCostRub + directDoctorPieceRateRub).toFixed(2));
+	// 3. Расчет себестоимости лечения (COGS) в копейках
+	const directLabCostKop = expenseSumsKop[11] || 0;
+	const directMaterialsCostKop = (expenseSumsKop[4] || 0) + (expenseSumsKop[5] || 0);
+	const directDoctorPieceRateKop = expenseSumsKop[1] || 0;
+	const totalCogsKop = directLabCostKop + directMaterialsCostKop + directDoctorPieceRateKop;
 
-	const grossProfitRub = Number((grossRevenueRub - totalCogsRub).toFixed(2));
-	const grossMarginPct = grossRevenueRub > 0
-		? Number(((grossProfitRub / grossRevenueRub) * 100).toFixed(1))
+	const directLabCostRub = kopecksToRub(directLabCostKop);
+	const directMaterialsCostRub = kopecksToRub(directMaterialsCostKop);
+	const directDoctorPieceRateRub = kopecksToRub(directDoctorPieceRateKop);
+	const totalCogsRub = kopecksToRub(totalCogsKop);
+
+	const grossProfitKop = grossRevenueKop - totalCogsKop;
+	const grossProfitRub = kopecksToRub(grossProfitKop);
+	const grossMarginPct = grossRevenueKop > 0
+		? Number(((grossProfitKop / grossRevenueKop) * 100).toFixed(1))
 		: 0;
 
-	// 4. Операционные затраты (OPEX)
+	// Маржинальность направлений (Specialty Margins)
+	const departmentRevenue: DepartmentRevenueItem[] = (
+		Object.keys(deptSumsKop) as ClinicalSpecialtyDepartment[]
+	).map((dept) => {
+		const info = deptSumsKop[dept];
+		const sumRub = kopecksToRub(info.sumKop);
+
+		// Расчет прямых затрат направления
+		let deptDirectCostsKop = 0;
+		if (input.departmentDirectCosts && input.departmentDirectCosts[dept] !== undefined) {
+			deptDirectCostsKop = rubToKopecks(input.departmentDirectCosts[dept]!);
+		} else if (grossRevenueKop > 0 && totalCogsKop > 0) {
+			// Пропорциональное распределение COGS по выручке
+			deptDirectCostsKop = Math.round((info.sumKop / grossRevenueKop) * totalCogsKop);
+		}
+
+		const deptDirectCostsRub = kopecksToRub(deptDirectCostsKop);
+		const deptMarginKop = info.sumKop - deptDirectCostsKop;
+		const deptMarginRub = kopecksToRub(deptMarginKop);
+		const deptMarginPct = info.sumKop > 0
+			? Number(((deptMarginKop / info.sumKop) * 100).toFixed(1))
+			: 0;
+
+		return {
+			department: dept,
+			titleRu: DEPARTMENT_METADATA_RU[dept].label,
+			revenueRub: sumRub,
+			sharePct: grossRevenueKop > 0 ? Number(((info.sumKop / grossRevenueKop) * 100).toFixed(1)) : 0,
+			servicesCount: info.count,
+			averageBillRub: info.count > 0 ? Math.round(sumRub / info.count) : 0,
+			directCostsRub: deptDirectCostsRub,
+			marginRub: deptMarginRub,
+			marginPct: deptMarginPct,
+		};
+	});
+
+	const cashBoxRevenue: CashBoxRevenueItem[] = Object.entries(boxSumsKop).map(([bId, b]) => {
+		const sumRub = kopecksToRub(b.sumKop);
+		return {
+			boxId: bId,
+			boxName: b.name,
+			boxType: b.type,
+			revenueRub: sumRub,
+			sharePct: grossRevenueKop > 0 ? Number(((b.sumKop / grossRevenueKop) * 100).toFixed(1)) : 0,
+			paymentsCount: b.count,
+		};
+	});
+
+	// 4. Операционные затраты (OPEX) в копейках
 	const opexReasons = [3, 6, 7, 8, 9, 10, 12];
-	const totalOpexRub = Number(
-		opexReasons.reduce((acc, rId) => acc + (expenseSums[rId] || 0), 0).toFixed(2)
+	const totalOpexKop = opexReasons.reduce((acc, rId) => acc + (expenseSumsKop[rId] || 0), 0);
+	const totalOpexRub = kopecksToRub(totalOpexKop);
+
+	// 5. EBITDA и Чистая прибыль в копейках
+	const ebitdaKop = grossProfitKop - totalOpexKop;
+	const ebitdaRub = kopecksToRub(ebitdaKop);
+	const ebitdaMarginPct = grossRevenueKop > 0
+		? Number(((ebitdaKop / grossRevenueKop) * 100).toFixed(1))
+		: 0;
+
+	const taxesKop = expenseSumsKop[2] || 0;
+	const taxesRub = kopecksToRub(taxesKop);
+
+	const netProfitKop = ebitdaKop - taxesKop;
+	const netProfitRub = kopecksToRub(netProfitKop);
+	const netMarginPct = grossRevenueKop > 0
+		? Number(((netProfitKop / grossRevenueKop) * 100).toFixed(1))
+		: 0;
+
+	// 6. CVP Анализ точки безубыточности (Break-Even Analysis)
+	const fixedCostsKop = totalOpexKop + taxesKop; // Постоянные расходы клиники
+	const variableCostsKop = totalCogsKop;          // Переменные расходы (COGS)
+	const contributionMarginKop = grossRevenueKop - variableCostsKop; // Маржинальный доход (Gross Profit)
+	const contributionMarginRatio = grossRevenueKop > 0
+		? contributionMarginKop / grossRevenueKop
+		: 0;
+
+	let breakEvenRevenueKop = 0;
+	if (contributionMarginRatio > 0 && fixedCostsKop > 0) {
+		breakEvenRevenueKop = Math.round(fixedCostsKop / contributionMarginRatio);
+	}
+	const breakEvenRevenueRub = kopecksToRub(breakEvenRevenueKop);
+
+	const totalPaymentsCount = input.payments.length;
+	const avgVisitBillKop = totalPaymentsCount > 0 ? Math.round(grossRevenueKop / totalPaymentsCount) : 0;
+	const breakEvenVisitsCount = avgVisitBillKop > 0 ? Math.ceil(breakEvenRevenueKop / avgVisitBillKop) : 0;
+
+	const marginOfSafetyKop = Math.max(0, grossRevenueKop - breakEvenRevenueKop);
+	const marginOfSafetyRub = kopecksToRub(marginOfSafetyKop);
+	const marginOfSafetyPct = grossRevenueKop > 0
+		? Number(((marginOfSafetyKop / grossRevenueKop) * 100).toFixed(1))
+		: 0;
+
+	const breakEven: BreakEvenAnalysis = {
+		fixedCostsRub: kopecksToRub(fixedCostsKop),
+		variableCostsRub: kopecksToRub(variableCostsKop),
+		contributionMarginRub: kopecksToRub(contributionMarginKop),
+		contributionMarginRatio: Number(contributionMarginRatio.toFixed(3)),
+		breakEvenRevenueRub,
+		breakEvenVisitsCount,
+		marginOfSafetyRub,
+		marginOfSafetyPct,
+		isBreakEvenReached: grossRevenueKop >= breakEvenRevenueKop && breakEvenRevenueKop > 0,
+	};
+
+	// 7. Юнит-экономика стоматологических кресел (Chair Unit Economics)
+	const chairCfg = input.chairEconomics || {};
+	const activeChairsCount = Math.max(
+		1,
+		chairCfg.activeChairsCount ?? (chairCfg.chairs?.length || 1),
 	);
+	const operatingDays = Math.max(1, chairCfg.operatingDays ?? 26);
+	const operatingHoursPerDay = Math.max(1, chairCfg.operatingHoursPerDay ?? 12);
+	const totalOperatingHours = activeChairsCount * operatingDays * operatingHoursPerDay;
 
-	// 5. EBITDA и Чистая прибыль
-	const ebitdaRub = Number((grossProfitRub - totalOpexRub).toFixed(2));
-	const ebitdaMarginPct = grossRevenueRub > 0
-		? Number(((ebitdaRub / grossRevenueRub) * 100).toFixed(1))
+	// Если есть детальные кресла в инпуте
+	let chairsList: ChairUnitEconomicsItem[] = [];
+	let totalOccupiedHours = 0;
+
+	if (chairCfg.chairs && chairCfg.chairs.length > 0) {
+		chairsList = chairCfg.chairs.map((c) => {
+			const opHours = c.operatingHours ?? operatingDays * operatingHoursPerDay;
+			const occHours = c.occupiedHours ?? 0;
+			totalOccupiedHours += occHours;
+			const occPct = opHours > 0 ? Number(((occHours / opHours) * 100).toFixed(1)) : 0;
+			const revRub = c.revenueRub ?? (grossRevenueRub / chairCfg.chairs!.length);
+			const costRub = activeChairsCount > 0 ? totalExpensesRub / activeChairsCount : 0;
+			const pRub = revRub - costRub;
+			return {
+				chairId: c.chairId,
+				chairName: c.chairName,
+				roomName: c.roomName,
+				operatingHours: opHours,
+				occupiedHours: occHours,
+				occupancyRatePct: occPct,
+				revenueRub: Math.round(revRub),
+				costRub: Math.round(costRub),
+				profitRub: Math.round(pRub),
+			};
+		});
+	} else {
+		// Оценка загрузки по числу визитов (в среднем 1 час на визит)
+		totalOccupiedHours = chairCfg.occupiedHours ?? Math.min(totalPaymentsCount, totalOperatingHours);
+		const revPerChair = Math.round(grossRevenueRub / activeChairsCount);
+		const costPerChair = Math.round(totalExpensesRub / activeChairsCount);
+		const profitPerChair = Math.round(netProfitRub / activeChairsCount);
+		const occPct = totalOperatingHours > 0
+			? Number(((totalOccupiedHours / totalOperatingHours) * 100).toFixed(1))
+			: 0;
+
+		chairsList = Array.from({ length: activeChairsCount }).map((_, idx) => ({
+			chairId: `chair-${idx + 1}`,
+			chairName: `Установка №${idx + 1}`,
+			operatingHours: Math.round(totalOperatingHours / activeChairsCount),
+			occupiedHours: Math.round(totalOccupiedHours / activeChairsCount),
+			occupancyRatePct: occPct,
+			revenueRub: revPerChair,
+			costRub: costPerChair,
+			profitRub: profitPerChair,
+		}));
+	}
+
+	const costPerAvailableChairHourRub = totalOperatingHours > 0
+		? Math.round(totalExpensesRub / totalOperatingHours)
+		: 0;
+	const costPerOccupiedChairHourRub = totalOccupiedHours > 0
+		? Math.round(totalExpensesRub / totalOccupiedHours)
+		: 0;
+	const revenuePerChairRub = Math.round(grossRevenueRub / activeChairsCount);
+	const profitPerChairRub = Math.round(netProfitRub / activeChairsCount);
+	const chairOccupancyRatePct = totalOperatingHours > 0
+		? Number(((totalOccupiedHours / totalOperatingHours) * 100).toFixed(1))
 		: 0;
 
-	const taxesRub = Number((expenseSums[2] || 0).toFixed(2));
-	const netProfitRub = Number((ebitdaRub - taxesRub).toFixed(2));
-	const netMarginPct = grossRevenueRub > 0
-		? Number(((netProfitRub / grossRevenueRub) * 100).toFixed(1))
-		: 0;
+	const chairEconomics: ChairEconomicsSummary = {
+		activeChairsCount,
+		totalOperatingHours,
+		totalOccupiedHours,
+		chairOccupancyRatePct,
+		costPerAvailableChairHourRub,
+		costPerOccupiedChairHourRub,
+		revenuePerChairRub,
+		profitPerChairRub,
+		chairs: chairsList,
+	};
 
 	return {
 		period: input.period,
@@ -293,5 +523,7 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		netMarginPct,
 		isProfitable: netProfitRub >= 0,
 		totalExpensesRub,
+		breakEven,
+		chairEconomics,
 	};
 }

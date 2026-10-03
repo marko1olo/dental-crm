@@ -188,33 +188,55 @@ export function calculateAccountsReceivable(
 	};
 }
 
+export interface RealExpensesInput {
+	readonly cogsKopecks?: number;
+	readonly payrollKopecks?: number;
+	readonly overheadKopecks?: number;
+	readonly marketingSpendKopecks?: number;
+	readonly taxKopecks?: number;
+}
+
 /**
- * Расчет P&L структуры стоматологической клиники по экономическим нормативам.
+ * Расчет P&L структуры стоматологической клиники.
+ * При наличии реальных статей расходов (COGS, ФОТ, накладные) производит точный расчет.
+ * При их отсутствии рассчитывает ориентировочные показатели по экономическим нормативам стоматологии.
  */
 export function calculateClinicPnl(
 	grossRevenueKopecks: number,
 	customMarketingSpendKopecks = 0,
+	realExpenses?: RealExpensesInput,
 ): ClinicPnlSummary {
 	const rev = Math.max(0, Math.round(grossRevenueKopecks));
 
-	// Нормативы стоматологической экономики:
-	// COGS (стоматологические расходники, анестетики, слепочные массы): 18%
-	const cogsKopecks = Math.round(rev * 0.18);
+	// Себестоимость лечения (COGS: материалы, ЗТЛ, медикаменты)
+	const cogsKopecks = realExpenses?.cogsKopecks !== undefined
+		? Math.max(0, Math.round(realExpenses.cogsKopecks))
+		: Math.round(rev * 0.18);
 	const grossProfitKopecks = Math.max(0, rev - cogsKopecks);
 
-	// OPEX:
-	// Маркетинг: либо факт, либо 4% от выручки
-	const marketingSpendKopecks = Math.max(0, Math.round(customMarketingSpendKopecks));
-	// ФОТ (врачи 25-30% + ассистенты, санитарки, ресепшен ~10-15%): суммарно 40%
-	const payrollKopecks = Math.round(rev * 0.40);
-	// Аренда, коммуналка, амортизация установок и софт: 15%
-	const overheadKopecks = Math.round(rev * 0.15);
+	// Маркетинг: факт из расходов / KPI либо норматив
+	const marketingSpendKopecks = realExpenses?.marketingSpendKopecks !== undefined
+		? Math.max(0, Math.round(realExpenses.marketingSpendKopecks))
+		: Math.max(0, Math.round(customMarketingSpendKopecks));
+
+	// ФОТ: факт из кассы / начислений либо норматив 40%
+	const payrollKopecks = realExpenses?.payrollKopecks !== undefined
+		? Math.max(0, Math.round(realExpenses.payrollKopecks))
+		: Math.round(rev * 0.40);
+
+	// Накладные расходы (аренда, коммуналка, связь, софт): факт либо норматив 15%
+	const overheadKopecks = realExpenses?.overheadKopecks !== undefined
+		? Math.max(0, Math.round(realExpenses.overheadKopecks))
+		: Math.round(rev * 0.15);
 
 	const totalOpexKopecks = marketingSpendKopecks + payrollKopecks + overheadKopecks;
-	const ebitdaKopecks = Math.max(0, grossProfitKopecks - totalOpexKopecks);
+	const ebitdaKopecks = Math.max(0, grossProfitKopecks - (payrollKopecks + overheadKopecks));
 
-	// Налог УСН (Доходы 6%)
-	const estimatedTaxKopecks = Math.round(rev * 0.06);
+	// Налог УСН (факт либо 6% от выручки)
+	const estimatedTaxKopecks = realExpenses?.taxKopecks !== undefined
+		? Math.max(0, Math.round(realExpenses.taxKopecks))
+		: Math.round(rev * 0.06);
+
 	const netProfitKopecks = Math.max(0, ebitdaKopecks - estimatedTaxKopecks);
 	const netMarginPercent = rev > 0 ? Number(((netProfitKopecks / rev) * 100).toFixed(1)) : 0;
 
@@ -243,6 +265,7 @@ export function calculateFinancialAnalytics(params: {
 	readonly visits?: readonly RawVisitFinancialItem[];
 	readonly marketingSpendKopecks?: number;
 	readonly periodLabel?: string;
+	readonly realExpenses?: RealExpensesInput;
 }): FinancialAnalyticsSummary {
 	const {
 		payments,
@@ -250,6 +273,7 @@ export function calculateFinancialAnalytics(params: {
 		visits = [],
 		marketingSpendKopecks = 0,
 		periodLabel = "Текущий период",
+		realExpenses,
 	} = params;
 
 	let totalRevenueKopecks = 0;
@@ -354,7 +378,7 @@ export function calculateFinancialAnalytics(params: {
 	const accountsReceivable = calculateAccountsReceivable(invoices);
 
 	// P&L
-	const pnl = calculateClinicPnl(netRevenueKopecks, marketingSpendKopecks);
+	const pnl = calculateClinicPnl(netRevenueKopecks, marketingSpendKopecks, realExpenses);
 
 	const isEmpty = totalRevenueKopecks === 0 && completedVisitsCount === 0 && accountsReceivable.openInvoicesCount === 0;
 

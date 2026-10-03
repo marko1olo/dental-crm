@@ -8,6 +8,7 @@ import {
 	FileCheck,
 	Banknote,
 	ShieldCheck,
+	PlusCircle,
 } from "lucide-react";
 
 export interface FinanceToolbarProps {
@@ -26,6 +27,7 @@ export interface FinanceToolbarProps {
 	onGoToDocuments: () => void;
 	onOpenCashbox: () => void;
 	onOpenBillingAct?: () => void;
+	onOpenQuickExpense?: () => void;
 }
 
 export function FinanceToolbar({
@@ -44,6 +46,7 @@ export function FinanceToolbar({
 	onGoToDocuments,
 	onOpenCashbox,
 	onOpenBillingAct,
+	onOpenQuickExpense,
 }: FinanceToolbarProps) {
 	return (
 		<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
@@ -88,7 +91,7 @@ export function FinanceToolbar({
 					title={
 						isCashShiftOpen
 							? "Скрыть панель кассовой смены"
-							: "Открыть управление сменой ККТ 54-ФЗ"
+							: "Открыть управление кассовой сменой"
 					}
 					aria-expanded={isCashShiftOpen}
 					data-testid="btn-toggle-cash-shift"
@@ -98,8 +101,8 @@ export function FinanceToolbar({
 							isShiftOpen ? "bg-emerald-500" : "bg-rose-500"
 						}`}
 					/>
-					<span className="sm:hidden">ККТ</span>
-					<span className="hidden sm:inline">ККТ 54-ФЗ</span>
+					<span className="sm:hidden">Касса</span>
+					<span className="hidden sm:inline">Касса онлайн</span>
 				</button>
 			</div>
 			<div className="finance-header-actions flex items-center gap-1.5 shrink-0 flex-nowrap">
@@ -129,12 +132,26 @@ export function FinanceToolbar({
 					className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 inline-flex items-center gap-1 font-semibold text-xs px-2 sm:px-2.5 py-0 cursor-pointer rounded-lg shrink-0"
 					type="button"
 					onClick={onOpenInvoices}
-					aria-label="Счета и акты (804н)"
+					aria-label="Счета и акты"
 					data-testid="btn-finance-open-invoices"
 				>
 					<ReceiptText size={13} className="shrink-0" />
-					<span className="truncate hidden sm:inline">Счета и акты (804н)</span>
+					<span className="truncate hidden sm:inline">Счета и акты</span>
 				</button>
+				{onOpenQuickExpense && (
+					<button
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 inline-flex items-center gap-1 font-semibold text-xs px-2 sm:px-2.5 py-0 cursor-pointer rounded-lg shrink-0 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/10 active:scale-95 transition-all"
+						type="button"
+						onClick={onOpenQuickExpense}
+						aria-label="Внести расход"
+						data-testid="btn-finance-open-quick-expense"
+						title="1-клик внесение чека расхода (аренда, материалы, коммуналка)"
+					>
+						<PlusCircle size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
+						<span className="truncate hidden sm:inline">+ Расход</span>
+						<span className="truncate sm:hidden">+ Расход</span>
+					</button>
+				)}
 
 				{/* Поповер вторичных действий: P&L, Документы и Смена ККТ */}
 				<div className="relative shrink-0">
@@ -158,6 +175,24 @@ export function FinanceToolbar({
 							className="absolute right-0 top-full mt-1 w-52 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
 							role="menu"
 						>
+							{onOpenQuickExpense && (
+								<button
+									type="button"
+									onClick={() => {
+										onCloseFinanceOptions();
+										onOpenQuickExpense();
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--line)] text-rose-700 dark:text-rose-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
+									role="menuitem"
+									data-testid="menuitem-quick-expense"
+								>
+									<PlusCircle
+										size={14}
+										className="shrink-0 text-rose-600 dark:text-rose-400"
+									/>
+									<span>Внести чек расхода</span>
+								</button>
+							)}
 							<button
 								type="button"
 								onClick={() => {

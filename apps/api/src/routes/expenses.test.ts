@@ -3,8 +3,11 @@
  */
 
 import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { before, describe, it } from "node:test";
 import Fastify from "fastify";
+import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
+import { organizations } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { registerExpensesRoutes } from "./expenses.js";
@@ -31,6 +34,20 @@ function createStaffHeaders(organizationId: string, userId = "usr-admin-1", role
 }
 
 describe("Expenses & P&L API Routes", () => {
+	before(async () => {
+		await withTenantCtx(ORG_ID_1, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({ id: ORG_ID_1, name: "Test Expenses Org 1" })
+				.onConflictDoNothing();
+		});
+		await withTenantCtx(ORG_ID_2, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({ id: ORG_ID_2, name: "Test Expenses Org 2" })
+				.onConflictDoNothing();
+		});
+	});
 	it("creates a new operating expense via POST /api/v1/expenses", async () => {
 		const app = await buildTestApp();
 		const headers = createStaffHeaders(ORG_ID_1);
@@ -179,4 +196,64 @@ describe("Expenses & P&L API Routes", () => {
 		});
 		assert.equal(delAgainRes.statusCode, 404);
 	});
+
+	it("filters expenses by effective expenseDate in metadata via startDate/endDate", async () => {
+		const app = await buildTestApp();
+		const headers = createStaffHeaders(ORG_ID_1);
+
+		// Create an expense dated in July 2026
+		await app.inject({
+			method: "POST",
+			url: "/api/v1/expenses",
+			headers,
+			payload: {
+				category: "utilities",
+				amountKopecks: 1500000,
+				expenseDate: "2026-07-15",
+				description: "Электроэнергия Июль",
+			},
+		});
+
+		// Query specifically for July range
+		const resJuly = await app.inject({
+			method: "GET",
+			url: "/api/v1/expenses?startDate=2026-07-01&endDate=2026-07-31",
+			headers,
+		});
+
+		assert.equal(resJuly.statusCode, 200);
+		const julyData = resJuly.json().data;
+		assert.ok(julyData.length >= 1);
+		assert.ok(julyData.some((e: any) => e.expenseDate === "2026-07-15"));
+
+		// Query for June range -> July expense must NOT be included
+		const resJune = await app.inject({
+			method: "GET",
+			url: "/api/v1/expenses?startDate=2026-06-01&endDate=2026-06-30",
+			headers,
+		});
+
+		assert.equal(resJune.statusCode, 200);
+		const juneData = resJune.json().data;
+		assert.ok(!juneData.some((e: any) => e.expenseDate === "2026-07-15"));
+	});
+
+	it("computes monthly P&L summary with auto revenue when revenueRub is omitted", async () => {
+		const app = await buildTestApp();
+		const headers = createStaffHeaders(ORG_ID_1);
+
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/expenses/summary?month=2026-08",
+			headers,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const json = res.json();
+		assert.ok(json.data.summary);
+		assert.ok(json.data.profit);
+		assert.equal(typeof json.data.profit.revenueRub, "number");
+		assert.equal(typeof json.data.profit.netProfitRub, "number");
+	});
 });
+
