@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DENTE 3D Intraoral Scan Viewer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #090d16;
+  color: #e2e8f0;
+  overflow: hidden;
+  touch-action: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+#dropzone {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(9, 13, 22, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+#dropzone.hidden { display: none; }
+#dropzone.dragover { background: rgba(30, 41, 59, 0.92); border: 2px dashed #6366f1; }
+.drop-box {
+  border: 2px dashed #475569;
+  border-radius: 12px;
+  padding: 36px 48px;
+  text-align: center;
+  max-width: 480px;
+}
+.drop-title { font-size: 16px; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+.drop-sub { font-size: 12px; color: #94a3b8; margin-bottom: 18px; line-height: 1.5; }
+.btn-primary {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #4338ca; }
+#loading {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: #818cf8; font-size: 13px; text-align: center; z-index: 20; display: none;
+}
+#loading .spinner {
+  width: 36px; height: 36px; border: 3px solid #334155; border-top-color: #818cf8;
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#error {
+  position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+  background: rgba(239, 68, 68, 0.9); color: #fff; padding: 8px 16px;
+  border-radius: 6px; font-size: 12px; z-index: 30; display: none;
+}
+#top-controls {
+  position: absolute; top: 12px; left: 12px; z-index: 20;
+  display: flex; gap: 8px; align-items: center;
+}
+#materials {
+  position: absolute; top: 12px; right: 12px; z-index: 20;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.ctrl-btn, .mat-btn {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: all 0.15s;
+}
+.ctrl-btn:hover, .mat-btn:hover { background: rgba(30, 41, 59, 0.9); color: #fff; }
+.mat-btn.active {
+  background: #4f46e5;
+  border-color: #6366f1;
+  color: #fff;
+}
+#info {
+  position: absolute; bottom: 12px; left: 12px; z-index: 20;
+  color: #64748b; font-size: 11px; font-family: monospace;
+  background: rgba(15, 23, 42, 0.7); padding: 4px 8px; border-radius: 4px;
+}
+#file-input { display: none; }
+</style>
+</head>
+<body>
+<div id="container"></div>
+
+<div id="top-controls">
+  <button class="ctrl-btn" onclick="openFilePicker()">Открыть скан</button>
+  <button class="ctrl-btn" onclick="resetCamera()">Сброс камеры</button>
+</div>
+
+<div id="materials">
+  <button class="mat-btn active" data-mat="tooth" onclick="setMaterial('tooth')">Зуб (Эмаль)</button>
+  <button class="mat-btn" data-mat="gum" onclick="setMaterial('gum')">Десна</button>
+  <button class="mat-btn" data-mat="metal" onclick="setMaterial('metal')">Металл</button>
+  <button class="mat-btn" data-mat="zirconia" onclick="setMaterial('zirconia')">Цирконий</button>
+  <button class="mat-btn" data-mat="wireframe" onclick="setMaterial('wireframe')">Сетка (STL)</button>
+</div>
+
+<div id="dropzone" onclick="openFilePicker()">
+  <div class="drop-box">
+    <div class="drop-title">3D-просмотрщик интраоральных сканов</div>
+    <div class="drop-sub">
+      Перетащите файл 3D-скана челюсти (STL, OBJ, PLY) сюда<br>
+      или нажмите кнопку для выбора файла
+    </div>
+    <button class="btn-primary" type="button">Выбрать файл (.stl, .obj, .ply)</button>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".stl,.obj,.ply">
+<div id="loading"><div class="spinner"></div>Загрузка 3D модели...</div>
+<div id="error"></div>
+<div id="info">Ожидание загрузки скана</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+const MATERIALS = {
+  tooth:     { color: 0xf5f5dc, metalness: 0.1, roughness: 0.4, wireframe: false },
+  gum:       { color: 0xffb6c1, metalness: 0.0, roughness: 0.6, wireframe: false },
+  metal:     { color: 0xc0c0c0, metalness: 0.9, roughness: 0.2, wireframe: false },
+  zirconia:  { color: 0xffffff, metalness: 0.3, roughness: 0.1, wireframe: false },
+  wireframe: { color: 0x6366f1, metalness: 0.0, roughness: 1.0, wireframe: true },
+};
+
+let scene, camera, renderer, controls, currentMesh;
+let currentPreset = 'tooth';
+
+function init() {
+  const container = document.getElementById('container');
+  const w = window.innerWidth, h = window.innerHeight;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x090d16);
+
+  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
+  camera.position.set(0, 0, 100);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+  container.appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 5;
+  controls.maxDistance = 500;
+
+  // 4-Point Dental Studio Lighting
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  const main = new THREE.DirectionalLight(0xffffff, 1.2);
+  main.position.set(50, 50, 50);
+  scene.add(main);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+  fill.position.set(-50, 30, -50);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0x6366f1, 0.35);
+  rim.position.set(0, -50, -50);
+  scene.add(rim);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  (function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+
+  setupFileHandling();
+  checkUrlParams();
+}
+
+function fitCamera(mesh) {
+  const box = new THREE.Box3().setFromObject(mesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const dist = maxDim * 1.2;
+
+  mesh.position.sub(center);
+  camera.position.set(dist * 0.7, dist * 0.5, dist);
+  camera.lookAt(0, 0, 0);
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+function applyMaterial(preset) {
+  if (!currentMesh) return;
+  currentPreset = preset;
+  const m = MATERIALS[preset];
+  const mat = new THREE.MeshStandardMaterial({
+    color: m.color,
+    metalness: m.metalness,
+    roughness: m.roughness,
+    wireframe: m.wireframe,
+    side: THREE.DoubleSide,
+  });
+  currentMesh.traverse((child) => {
+    if (child.isMesh) child.material = mat;
+  });
+}
+
+window.setMaterial = function(preset) {
+  applyMaterial(preset);
+  document.querySelectorAll('.mat-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-mat') === preset);
+  });
+};
+
+window.resetCamera = function() {
+  if (currentMesh) fitCamera(currentMesh);
+};
+
+window.loadModel = function(url, ext) {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('error').style.display = 'none';
+  document.getElementById('dropzone').classList.add('hidden');
+
+  const normalizedExt = (ext || '').toLowerCase().replace(/^\./, '');
+  let loader;
+  switch (normalizedExt) {
+    case 'stl': loader = new STLLoader(); break;
+    case 'obj': loader = new OBJLoader(); break;
+    case 'ply': loader = new PLYLoader(); break;
+    default:
+      showError('Формат .' + normalizedExt + ' не поддерживается (используйте STL, OBJ, PLY)');
+      return;
+  }
+
+  const onLoad = (result) => {
+    if (currentMesh) scene.remove(currentMesh);
+    if (normalizedExt === 'obj') {
+      currentMesh = result;
+    } else {
+      result.computeVertexNormals();
+      currentMesh = new THREE.Mesh(result);
+    }
+    applyMaterial(currentPreset);
+    scene.add(currentMesh);
+    fitCamera(currentMesh);
+    showInfo(currentMesh);
+    document.getElementById('loading').style.display = 'none';
+  };
+
+  const onError = (err) => {
+    showError('Ошибка загрузки: ' + (err.message || 'Не удалось прочитать файл'));
+  };
+
+  loader.load(url, onLoad, undefined, onError);
+};
+
+function showError(msg) {
+  document.getElementById('loading').style.display = 'none';
+  const el = document.getElementById('error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function showInfo(obj) {
+  let verts = 0, faces = 0;
+  obj.traverse((c) => {
+    if (c.isMesh && c.geometry) {
+      const g = c.geometry;
+      verts += g.attributes.position ? g.attributes.position.count : 0;
+      faces += g.index ? g.index.count / 3 : (g.attributes.position ? g.attributes.position.count / 3 : 0);
+    }
+  });
+  const fmt = (n) => n > 1000000 ? (n / 1000000).toFixed(1) + 'M' : n > 1000 ? (n / 1000).toFixed(1) + 'K' : n;
+  document.getElementById('info').textContent = fmt(verts) + ' вершин · ' + fmt(Math.round(faces)) + ' полигонов';
+}
+
+function setupFileHandling() {
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+
+  window.openFilePicker = () => fileInput.click();
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) handleFile(file);
+  });
+
+  window.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('hidden');
+    dropzone.classList.add('dragover');
+  });
+
+  window.addEventListener('dragleave', (e) => {
+    if (e.target === dropzone) dropzone.classList.remove('dragover');
+  });
+
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+}
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop() || '';
+  const url = URL.createObjectURL(file);
+  window.loadModel(url, ext);
+}
+
+function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const modelUrl = params.get('model');
+  const ext = params.get('ext') || (modelUrl ? modelUrl.split('.').pop() : '');
+  if (modelUrl) {
+    window.loadModel(modelUrl, ext);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

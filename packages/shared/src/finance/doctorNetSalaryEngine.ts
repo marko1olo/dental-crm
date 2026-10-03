@@ -18,6 +18,7 @@ import {
 	rublesToKopecks,
 } from "../money.js";
 import { kopecksToRub as kopecksToRubles } from "../fiscal/kopecksArithmetic.js";
+import type { IdentMaterialWriteoffResult } from "../warehouse/identMaterialWriteoffEngine.js";
 
 export interface SpecialtyCategoryRates {
 	readonly therapyPercent?: number; // Терапия
@@ -121,6 +122,49 @@ export interface CategoryAccrualBreakdown {
 	readonly accruedRub: number;
 }
 
+/**
+ * Политики распределения скидок и частичной оплаты IDENT (IDENT Payroll Models):
+ * 1. "gross_unconditional": «Без учета скидки» (Формула 1 IDENT) — скидки покрываются клиникой, врач получает 100% со своей базы.
+ * 2. "clinic_first": «Сначала клиника» — из внесенных пациентом средств сначала компенсируются расходы клиники (материалы + ЗТЛ).
+ * 3. "doctor_first": «Сначала врач» — из внесенных пациентом средств сначала выплачивается вознаграждение врачу.
+ * 4. "proportional": «Пропорционально» — оплаченная сумма делит чистую базу пропорционально коэффициенту оплаты (paid / invoiceTotal).
+ */
+export type IdentDiscountAllocationPolicy =
+	| "clinic_first"
+	| "doctor_first"
+	| "proportional"
+	| "gross_unconditional";
+
+export interface IdentDiscountSalaryBaseParams {
+	readonly grossRevenueKop: Kopecks;
+	readonly invoiceTotalKop: Kopecks;
+	readonly paidKop: Kopecks;
+	readonly discountKop: Kopecks;
+	readonly clinicCostsKop: Kopecks;
+	readonly policy: IdentDiscountAllocationPolicy;
+}
+
+export interface IdentDiscountSalaryBaseResult {
+	readonly doctorBaseKop: Kopecks;
+	readonly doctorBaseRub: number;
+	readonly clinicShareKop: Kopecks;
+	readonly clinicShareRub: number;
+	readonly policyApplied: IdentDiscountAllocationPolicy;
+	readonly isFullyPaid: boolean;
+	readonly debtKop: Kopecks;
+	readonly debtRub: number;
+}
+
+/**
+ * Разовое удержание из процента врача (Dentaro: компенсация брака/переделок ЗТЛ).
+ */
+export interface DoctorOneTimeDeduction {
+	readonly id: string;
+	readonly amountKop: Kopecks;
+	readonly reason: string;
+	readonly orderNumber?: string;
+}
+
 export interface DoctorNetSalaryInput {
 	/** Общая выручка от оказанных услуг (Gross) в рублях или копейках */
 	readonly grossRevenueRub?: number;
@@ -159,6 +203,9 @@ export interface DoctorNetSalaryInput {
 	/** Штрафы и удержания */
 	readonly penaltiesRub?: number;
 	readonly penaltiesKop?: Kopecks;
+
+	/** Разовые удержания из процента врача (Dentaro: лабораторный брак, переделки) */
+	readonly oneTimeDeductions?: readonly DoctorOneTimeDeduction[];
 
 	/** Ставка НДФЛ в процентах (по умолчанию 13%) */
 	readonly ndflRatePercent?: number;
@@ -223,7 +270,12 @@ export interface DoctorNetSalaryBreakdown {
 	readonly overheadConsumablesCoveredRub: number;
 
 	/** Детализация начислений по медицинским категориям (терапия, ортопедия, хирургия, ортодонтия, гигиена) */
-	readonly categoriesBreakdown?: readonly CategoryAccrualBreakdown[];
+	readonly categoriesBreakdown?: readonly CategoryAccrualBreakdown[] | undefined;
+
+	/** Разовые вычеты из вознаграждения врача (Dentaro: лабораторный брак, переделки) */
+	readonly oneTimeDeductions?: readonly DoctorOneTimeDeduction[] | undefined;
+	readonly oneTimeDeductionsTotalKop: Kopecks;
+	readonly oneTimeDeductionsTotalRub: number;
 
 	/** Чистая выплата "На руки" = TotalAccrued - NDFL */
 	readonly netPayoutKop: Kopecks;
@@ -287,12 +339,21 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 	const bonusesKop = toKop(input.bonusesRub, input.bonusesKop);
 	const penaltiesKop = toKop(input.penaltiesRub, input.penaltiesKop);
 
+	// Разовые вычеты из процента врача (Dentaro)
+	let oneTimeDeductionsTotalKop = 0 as Kopecks;
+	if (input.oneTimeDeductions && input.oneTimeDeductions.length > 0) {
+		for (const d of input.oneTimeDeductions) {
+			oneTimeDeductionsTotalKop = (oneTimeDeductionsTotalKop + Math.max(0, d.amountKop)) as Kopecks;
+		}
+	}
+	const effectivePieceworkAccruedKop = Math.max(0, pieceworkAccruedKop - oneTimeDeductionsTotalKop) as Kopecks;
+
 	// Депремирование по ТК РФ (ст. 137, 192): неначисление или уменьшение стимулирующей премии,
 	// но категорически запрещено вычитать штрафы из сдельной части, оклада или процедурных тарифов!
 	const effectiveBonusesKop = Math.max(0, bonusesKop - penaltiesKop) as Kopecks;
 
 	// Общее начисление до налога
-	const rawAccruedKop = pieceworkAccruedKop + fixedSalaryKop + serviceSalaryPriceKop + effectiveBonusesKop;
+	const rawAccruedKop = effectivePieceworkAccruedKop + fixedSalaryKop + serviceSalaryPriceKop + effectiveBonusesKop;
 	const totalAccruedKop = Math.max(0, rawAccruedKop) as Kopecks;
 
 	const ndflRatePercent = input.ndflRatePercent !== undefined ? Math.max(0, input.ndflRatePercent) : 13;
@@ -315,6 +376,9 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 		categoryPercent,
 		pieceworkAccruedKop,
 		pieceworkAccruedRub: kopecksToRubles(pieceworkAccruedKop),
+		oneTimeDeductions: input.oneTimeDeductions,
+		oneTimeDeductionsTotalKop,
+		oneTimeDeductionsTotalRub: kopecksToRubles(oneTimeDeductionsTotalKop),
 		fixedSalaryKop,
 		fixedSalaryRub: kopecksToRubles(fixedSalaryKop),
 		serviceSalaryPriceKop,
@@ -337,6 +401,396 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 		formattedTotalAccrued: formatKopecksRu(totalAccruedKop),
 		formattedNdflTax: formatKopecksRu(ndflTaxKop),
 		formattedNetPayout: formatKopecksRu(netPayoutKop),
+	};
+}
+
+/**
+ * Расчет расчетной базы врача при скидках и частичной оплате долга по каноническим политикам IDENT.
+ */
+export function calculateIdentDiscountSalaryBase(
+	params: IdentDiscountSalaryBaseParams,
+): IdentDiscountSalaryBaseResult {
+	const { grossRevenueKop, invoiceTotalKop, paidKop, discountKop, clinicCostsKop, policy } = params;
+	const isFullyPaid = paidKop >= invoiceTotalKop;
+	const debtKop = Math.max(0, invoiceTotalKop - paidKop) as Kopecks;
+
+	let doctorBaseKop: Kopecks;
+	let clinicShareKop: Kopecks;
+
+	switch (policy) {
+		case "gross_unconditional": {
+			doctorBaseKop = Math.max(0, grossRevenueKop - clinicCostsKop) as Kopecks;
+			clinicShareKop = Math.max(0, paidKop - doctorBaseKop) as Kopecks;
+			break;
+		}
+		case "clinic_first": {
+			const clinicCovered = Math.min(paidKop, clinicCostsKop);
+			doctorBaseKop = Math.max(0, paidKop - clinicCostsKop) as Kopecks;
+			clinicShareKop = clinicCovered as Kopecks;
+			break;
+		}
+		case "doctor_first": {
+			const targetDoctorBase = Math.max(0, grossRevenueKop - clinicCostsKop) as Kopecks;
+			doctorBaseKop = Math.min(paidKop, targetDoctorBase) as Kopecks;
+			clinicShareKop = Math.max(0, paidKop - doctorBaseKop) as Kopecks;
+			break;
+		}
+		case "proportional": {
+			const targetDoctorBase = Math.max(0, grossRevenueKop - clinicCostsKop - discountKop) as Kopecks;
+			if (invoiceTotalKop <= 0 || paidKop <= 0) {
+				doctorBaseKop = 0 as Kopecks;
+				clinicShareKop = 0 as Kopecks;
+			} else {
+				const ratio = Math.min(1, paidKop / invoiceTotalKop);
+				doctorBaseKop = Math.round(targetDoctorBase * ratio) as Kopecks;
+				clinicShareKop = Math.max(0, paidKop - doctorBaseKop) as Kopecks;
+			}
+			break;
+		}
+	}
+
+	return {
+		doctorBaseKop,
+		doctorBaseRub: kopecksToRubles(doctorBaseKop),
+		clinicShareKop,
+		clinicShareRub: kopecksToRubles(clinicShareKop),
+		policyApplied: policy,
+		isFullyPaid,
+		debtKop,
+		debtRub: kopecksToRubles(debtKop),
+	};
+}
+
+// ─── 3 IDENT SALARY CALCULATION MODELS & 2-LEVEL MATERIAL INTEGRATION ─────────
+
+/**
+ * 3 канонические модели расчета сдельной заработной платы врачей IDENT:
+ * 1. "gross": По валовой выручке (Gross). Начисление от прейскурантной стоимости услуг. Клиника берет все расходы (ЗТЛ и материалы) на себя.
+ * 2. "net": По чистой выручке (Net). Из базы вычитаются расходы на ЗТЛ и прямые дорогостоящие материалы (Уровень 2: expensive_clinical).
+ *    Общеклинические накладные материалы (Уровень 1: cheap_overhead — салфетки, валики, слюноотсосы) НЕ удерживаются (ст. 129 ТК РФ).
+ * 3. "cash_basis": По кассовому чеку (Cash Basis). Начисление строго по факту поступления средств в кассу/на р/сч.
+ *    Поддерживает «Цену для ЗП» (salary_price) и 4 политики распределения скидок и частичных оплат.
+ */
+export type IdentSalaryModel = "gross" | "net" | "cash_basis";
+
+export const IDENT_SALARY_MODEL_NAMES_RU: Record<IdentSalaryModel, string> = {
+	gross: "По валовой выручке (Gross — без вычета лаборатории и материалов)",
+	net: "По чистой выручке (Net — за вычетом прямых материалов и ЗТЛ)",
+	cash_basis: "По кассовому чеку (Cash Basis — по факту денег в кассе с учетом «Цены для ЗП»)",
+};
+
+/**
+ * Способ применения «Цены для ЗП» (salary_price) в IDENT:
+ * - "flat_addition": фиксированная ставка/доплата за единицу услуги к сдельщине врача.
+ * - "replaces_gross_base": расчет процента ведется от эталонной «Цены для ЗП» вместо цены коммерческого прайса
+ *   (актуально при маркетинговых акциях и дисконтных программах, чтобы врач не терял в доходе).
+ */
+export type IdentSalaryPriceApplicationMode = "flat_addition" | "replaces_gross_base";
+
+export interface IdentDoctorSalaryCalculationParams {
+	readonly model: IdentSalaryModel;
+	/** Валовая стоимость оказанных услуг (Gross) в копейках или рублях */
+	readonly grossRevenueKop?: Kopecks;
+	readonly grossRevenueRub?: number;
+	/** Итоговая сумма счета с учетом скидок пациента */
+	readonly invoiceTotalKop?: Kopecks;
+	readonly invoiceTotalRub?: number;
+	/** Фактически оплачено пациентом в кассу (для модели cash_basis и политик частичной оплаты) */
+	readonly paidAmountKop?: Kopecks;
+	readonly paidAmountRub?: number;
+	/** Расходы на ЗТЛ (вычитаются в модели Net и при политиках clinic_first / proportional) */
+	readonly labCostKop?: Kopecks;
+	readonly labCostRub?: number;
+	/** Расходы на дорогие клинические материалы (Уровень 2: expensive_clinical) */
+	readonly expensiveMaterialsCostKop?: Kopecks;
+	readonly expensiveMaterialsCostRub?: number;
+	/** Общеклинические накладные расходы (Уровень 1: cheap_overhead) — не удерживаются с врача ст. 129 ТК РФ */
+	readonly overheadMaterialsCostKop?: Kopecks;
+	readonly overheadMaterialsCostRub?: number;
+	/** Результат 2-уровневого списания материалов IDENT (автоматически извлекает уровни 1 и 2) */
+	readonly materialWriteoffResult?: IdentMaterialWriteoffResult;
+	/** Процент вознаграждения врача от расчетной базы (напр. 25 = 25%) */
+	readonly doctorPercent: number;
+	/** «Цена для ЗП» (salary_price) из прейскуранта или номенклатуры */
+	readonly salaryPriceKop?: Kopecks;
+	readonly salaryPriceRub?: number;
+	/** Способ применения «Цены для ЗП» (по умолчанию "flat_addition") */
+	readonly salaryPriceApplication?: IdentSalaryPriceApplicationMode;
+	/** Политика распределения скидок и частичной оплаты IDENT (по умолчанию "proportional") */
+	readonly discountPolicy?: IdentDiscountAllocationPolicy;
+	/** Гарантированный оклад за период */
+	readonly fixedSalaryKop?: Kopecks;
+	readonly fixedSalaryRub?: number;
+	/** Стимулирующие премии и бонусы */
+	readonly bonusesKop?: Kopecks;
+	readonly bonusesRub?: number;
+	/** Регламентное депремирование (ст. 137, 192 ТК РФ — только из бонусов) */
+	readonly penaltiesKop?: Kopecks;
+	readonly penaltiesRub?: number;
+	/** Разовые вычеты из процента (Dentaro: лабораторный брак, переделки) */
+	readonly oneTimeDeductions?: readonly DoctorOneTimeDeduction[];
+	/** Ставка НДФЛ (по умолчанию 13%) */
+	readonly ndflRatePercent?: number;
+}
+
+export interface IdentDoctorSalaryCalculationResult {
+	readonly model: IdentSalaryModel;
+	readonly modelNameRu: string;
+	readonly grossRevenueKop: Kopecks;
+	readonly grossRevenueRub: number;
+	/** Эффективная расчетная база, с которой начислен процент врача */
+	readonly effectiveBaseKop: Kopecks;
+	readonly effectiveBaseRub: number;
+	readonly appliedPercent: number;
+	/** Сдельное начисление врача (Base * %) */
+	readonly pieceworkAccruedKop: Kopecks;
+	readonly pieceworkAccruedRub: number;
+	/** Доплата за процедуры по «Цене для ЗП» (при flat_addition) */
+	readonly salaryPriceAdditionKop: Kopecks;
+	readonly salaryPriceAdditionRub: number;
+	/** Фиксированный оклад */
+	readonly fixedSalaryKop: Kopecks;
+	readonly fixedSalaryRub: number;
+	/** Бонусы до депремирования */
+	readonly bonusesKop: Kopecks;
+	readonly bonusesRub: number;
+	/** Сумма депремирования */
+	readonly penaltiesKop: Kopecks;
+	readonly penaltiesRub: number;
+	/** Эффективные премии (бонусы за вычетом депремирования) */
+	readonly effectiveBonusesKop: Kopecks;
+	readonly effectiveBonusesRub: number;
+	/** Разовые удержания Dentaro */
+	readonly oneTimeDeductionsTotalKop: Kopecks;
+	readonly oneTimeDeductionsTotalRub: number;
+	/** Итого начислено до налога */
+	readonly totalAccruedKop: Kopecks;
+	readonly totalAccruedRub: number;
+	/** НДФЛ (13%) */
+	readonly ndflTaxKop: Kopecks;
+	readonly ndflTaxRub: number;
+	/** Чистая выплата «На руки» */
+	readonly netPayoutKop: Kopecks;
+	readonly netPayoutRub: number;
+	/** Для модели Cash Basis: отложенный остаток вознаграждения до погашения долга пациентом */
+	readonly deferredPendingDoctorEarningsKop: Kopecks;
+	readonly deferredPendingDoctorEarningsRub: number;
+	/** Доля фактической оплаты по кассе (0..1) */
+	readonly paidRatio: number;
+	/** Фактически удержанные расходы на ЗТЛ */
+	readonly deductedLabKop: Kopecks;
+	readonly deductedLabRub: number;
+	/** Фактически удержанные дорогие материалы Уровня 2 */
+	readonly deductedExpensiveMaterialsKop: Kopecks;
+	readonly deductedExpensiveMaterialsRub: number;
+	/** Общеклинические расходники Уровня 1, покрытые клиникой (гарантия ст. 129 ТК РФ) */
+	readonly coveredOverheadMaterialsKop: Kopecks;
+	readonly coveredOverheadMaterialsRub: number;
+}
+
+/**
+ * Извлекает себестоимость материалов для уменьшения расчетной базы врача из результатов 2-уровневого списания IDENT.
+ * Уровень 1 (общеклинические overhead-материалы: салфетки, валики, слюноотсосы) оплачивается клиникой и НЕ удерживается (ст. 129 ТК РФ).
+ * Уровень 2 (дорогие клинические материалы: импланты, мембраны, абатменты) подлежит вычету в модели Net.
+ */
+export function extractDeductibleMaterialsFromWriteoff(
+	writeoffResult: IdentMaterialWriteoffResult,
+): {
+	expensiveClinicalCostKop: Kopecks;
+	cheapOverheadCostKop: Kopecks;
+	totalDoctorDeductibleKop: Kopecks;
+} {
+	return {
+		expensiveClinicalCostKop: writeoffResult.clinicalTotalCostKopecks,
+		cheapOverheadCostKop: writeoffResult.overheadTotalCostKopecks,
+		totalDoctorDeductibleKop: writeoffResult.totalDoctorDeductibleCostKopecks,
+	};
+}
+
+/**
+ * Рассчитывает заработную плату врача по 3 моделям IDENT:
+ * 1. Gross (без вычета ЗТЛ и материалов)
+ * 2. Net (за вычетом ЗТЛ и материалов Уровня 2, защищая Уровень 1 ст. 129 ТК РФ)
+ * 3. Cash Basis (по факту денег в кассе с поддержкой «Цены для ЗП» и 4 политик скидки)
+ */
+export function calculateIdentDoctorSalary(
+	params: IdentDoctorSalaryCalculationParams,
+): IdentDoctorSalaryCalculationResult {
+	const grossRevenueKop = toKop(params.grossRevenueRub, params.grossRevenueKop);
+	const rawInvoiceTotal = toKop(params.invoiceTotalRub, params.invoiceTotalKop);
+	const invoiceTotalKop = rawInvoiceTotal > 0 ? rawInvoiceTotal : grossRevenueKop;
+
+	let expensiveMaterialsCostKop = toKop(params.expensiveMaterialsCostRub, params.expensiveMaterialsCostKop);
+	let overheadMaterialsCostKop = toKop(params.overheadMaterialsCostRub, params.overheadMaterialsCostKop);
+
+	if (params.materialWriteoffResult) {
+		const extracted = extractDeductibleMaterialsFromWriteoff(params.materialWriteoffResult);
+		if (expensiveMaterialsCostKop === 0) {
+			expensiveMaterialsCostKop = extracted.expensiveClinicalCostKop;
+		}
+		if (overheadMaterialsCostKop === 0) {
+			overheadMaterialsCostKop = extracted.cheapOverheadCostKop;
+		}
+	}
+
+	const labCostKop = toKop(params.labCostRub, params.labCostKop);
+	const salaryPriceKop = toKop(params.salaryPriceRub, params.salaryPriceKop);
+	const fixedSalaryKop = toKop(params.fixedSalaryRub, params.fixedSalaryKop);
+	const bonusesKop = toKop(params.bonusesRub, params.bonusesKop);
+	const penaltiesKop = toKop(params.penaltiesRub, params.penaltiesKop);
+
+	const doctorPercent = Math.max(0, Math.min(100, params.doctorPercent));
+	const salaryPriceApp = params.salaryPriceApplication ?? "flat_addition";
+	const discountPolicy = params.discountPolicy ?? "proportional";
+
+	let effectiveBaseKop = 0 as Kopecks;
+	let pieceworkAccruedKop = 0 as Kopecks;
+	let salaryPriceAdditionKop = 0 as Kopecks;
+	let deductedLabKop = 0 as Kopecks;
+	let deductedExpensiveMaterialsKop = 0 as Kopecks;
+	let coveredOverheadMaterialsKop = overheadMaterialsCostKop;
+	let paidRatio = 1.0;
+	let deferredPendingDoctorEarningsKop = 0 as Kopecks;
+
+	switch (params.model) {
+		case "gross": {
+			// Модель 1: Валовая выручка без вычетов ЗТЛ и материалов
+			const baseCandidate = (salaryPriceApp === "replaces_gross_base" && salaryPriceKop > 0)
+				? salaryPriceKop
+				: grossRevenueKop;
+			effectiveBaseKop = Math.max(0, baseCandidate) as Kopecks;
+			pieceworkAccruedKop = Math.round((effectiveBaseKop * doctorPercent) / 100) as Kopecks;
+			salaryPriceAdditionKop = salaryPriceApp === "flat_addition" ? salaryPriceKop : 0 as Kopecks;
+			deductedLabKop = 0 as Kopecks;
+			deductedExpensiveMaterialsKop = 0 as Kopecks;
+			paidRatio = 1.0;
+			deferredPendingDoctorEarningsKop = 0 as Kopecks;
+			break;
+		}
+
+		case "net": {
+			// Модель 2: Чистая выручка (Gross - Lab - Expensive Materials)
+			const baseCandidate = (salaryPriceApp === "replaces_gross_base" && salaryPriceKop > 0)
+				? salaryPriceKop
+				: grossRevenueKop;
+			deductedLabKop = labCostKop;
+			deductedExpensiveMaterialsKop = expensiveMaterialsCostKop;
+			// Общеклинические материалы (Уровень 1) защищены ст. 129 ТК РФ и НЕ удерживаются
+			effectiveBaseKop = Math.max(0, baseCandidate - labCostKop - expensiveMaterialsCostKop) as Kopecks;
+			pieceworkAccruedKop = Math.round((effectiveBaseKop * doctorPercent) / 100) as Kopecks;
+			salaryPriceAdditionKop = salaryPriceApp === "flat_addition" ? salaryPriceKop : 0 as Kopecks;
+			paidRatio = 1.0;
+			deferredPendingDoctorEarningsKop = 0 as Kopecks;
+			break;
+		}
+
+		case "cash_basis": {
+			// Модель 3: По факту денег в кассе (Cash Basis)
+			const paidAmountKop = toKop(params.paidAmountRub, params.paidAmountKop);
+			paidRatio = invoiceTotalKop > 0 ? Math.min(1, Math.max(0, paidAmountKop / invoiceTotalKop)) : 1.0;
+
+			const targetBaseCandidate = (salaryPriceApp === "replaces_gross_base" && salaryPriceKop > 0)
+				? salaryPriceKop
+				: grossRevenueKop;
+			const clinicCostsKop = (labCostKop + expensiveMaterialsCostKop) as Kopecks;
+
+			const discountResult = calculateIdentDiscountSalaryBase({
+				grossRevenueKop: targetBaseCandidate,
+				invoiceTotalKop,
+				paidKop: paidAmountKop,
+				discountKop: Math.max(0, targetBaseCandidate - invoiceTotalKop) as Kopecks,
+				clinicCostsKop,
+				policy: discountPolicy,
+			});
+
+			effectiveBaseKop = discountResult.doctorBaseKop;
+			pieceworkAccruedKop = Math.round((effectiveBaseKop * doctorPercent) / 100) as Kopecks;
+			salaryPriceAdditionKop = salaryPriceApp === "flat_addition"
+				? Math.round(salaryPriceKop * paidRatio) as Kopecks
+				: 0 as Kopecks;
+
+			deductedLabKop = labCostKop;
+			deductedExpensiveMaterialsKop = expensiveMaterialsCostKop;
+
+			// Расчет отложенного вознаграждения (если счет оплачен не полностью)
+			const fullPotentialDiscountResult = calculateIdentDiscountSalaryBase({
+				grossRevenueKop: targetBaseCandidate,
+				invoiceTotalKop,
+				paidKop: invoiceTotalKop,
+				discountKop: Math.max(0, targetBaseCandidate - invoiceTotalKop) as Kopecks,
+				clinicCostsKop,
+				policy: discountPolicy,
+			});
+			const potentialBaseAt100 = fullPotentialDiscountResult.doctorBaseKop;
+			const potentialPieceworkAt100 = Math.round((potentialBaseAt100 * doctorPercent) / 100) as Kopecks;
+			const potentialSalaryPriceAt100 = salaryPriceApp === "flat_addition" ? salaryPriceKop : 0 as Kopecks;
+			const potentialTotalAt100 = (potentialPieceworkAt100 + potentialSalaryPriceAt100) as Kopecks;
+
+			deferredPendingDoctorEarningsKop = Math.max(
+				0,
+				potentialTotalAt100 - (pieceworkAccruedKop + salaryPriceAdditionKop),
+			) as Kopecks;
+			break;
+		}
+	}
+
+	// Разовые удержания Dentaro (брак ЗТЛ, переделки) из сдельщины
+	let oneTimeDeductionsTotalKop = 0 as Kopecks;
+	if (params.oneTimeDeductions && params.oneTimeDeductions.length > 0) {
+		for (const d of params.oneTimeDeductions) {
+			oneTimeDeductionsTotalKop = (oneTimeDeductionsTotalKop + Math.max(0, d.amountKop)) as Kopecks;
+		}
+	}
+	const grossDoctorEarningsKop = (pieceworkAccruedKop + salaryPriceAdditionKop) as Kopecks;
+	const effectivePieceworkKop = Math.max(0, grossDoctorEarningsKop - oneTimeDeductionsTotalKop) as Kopecks;
+
+	// Депремирование по ст. 137, 192 ТК РФ — только из бонусов, оклад и сдельная часть защищены
+	const effectiveBonusesKop = Math.max(0, bonusesKop - penaltiesKop) as Kopecks;
+
+	// Итого начислено до налога
+	const totalAccruedKop = Math.max(0, effectivePieceworkKop + fixedSalaryKop + effectiveBonusesKop) as Kopecks;
+
+	const ndflRatePercent = params.ndflRatePercent !== undefined ? Math.max(0, params.ndflRatePercent) : 13;
+	const ndflTaxKop = Math.round((totalAccruedKop * ndflRatePercent) / 100) as Kopecks;
+	const netPayoutKop = Math.max(0, totalAccruedKop - ndflTaxKop) as Kopecks;
+
+	return {
+		model: params.model,
+		modelNameRu: IDENT_SALARY_MODEL_NAMES_RU[params.model],
+		grossRevenueKop,
+		grossRevenueRub: kopecksToRubles(grossRevenueKop),
+		effectiveBaseKop,
+		effectiveBaseRub: kopecksToRubles(effectiveBaseKop),
+		appliedPercent: doctorPercent,
+		pieceworkAccruedKop,
+		pieceworkAccruedRub: kopecksToRubles(pieceworkAccruedKop),
+		salaryPriceAdditionKop,
+		salaryPriceAdditionRub: kopecksToRubles(salaryPriceAdditionKop),
+		fixedSalaryKop,
+		fixedSalaryRub: kopecksToRubles(fixedSalaryKop),
+		bonusesKop,
+		bonusesRub: kopecksToRubles(bonusesKop),
+		penaltiesKop,
+		penaltiesRub: kopecksToRubles(penaltiesKop),
+		effectiveBonusesKop,
+		effectiveBonusesRub: kopecksToRubles(effectiveBonusesKop),
+		oneTimeDeductionsTotalKop,
+		oneTimeDeductionsTotalRub: kopecksToRubles(oneTimeDeductionsTotalKop),
+		totalAccruedKop,
+		totalAccruedRub: kopecksToRubles(totalAccruedKop),
+		ndflTaxKop,
+		ndflTaxRub: kopecksToRubles(ndflTaxKop),
+		netPayoutKop,
+		netPayoutRub: kopecksToRubles(netPayoutKop),
+		deferredPendingDoctorEarningsKop,
+		deferredPendingDoctorEarningsRub: kopecksToRubles(deferredPendingDoctorEarningsKop),
+		paidRatio,
+		deductedLabKop,
+		deductedLabRub: kopecksToRubles(deductedLabKop),
+		deductedExpensiveMaterialsKop,
+		deductedExpensiveMaterialsRub: kopecksToRubles(deductedExpensiveMaterialsKop),
+		coveredOverheadMaterialsKop,
+		coveredOverheadMaterialsRub: kopecksToRubles(coveredOverheadMaterialsKop),
 	};
 }
 

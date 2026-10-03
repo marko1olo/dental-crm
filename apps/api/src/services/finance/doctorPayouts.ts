@@ -1892,3 +1892,17 @@ export function generateDoctorT51Payslip(
 
 	return generateDoctorT51Html(payload);
 }
+
+// ─── RE-EXPORTS: IDENT SALARY MODELS & CALCULATION ENGINE ───────────────────
+export {
+	type IdentSalaryModel,
+	type IdentDoctorSalaryCalculationParams,
+	type IdentDoctorSalaryCalculationResult,
+	type IdentSalaryPriceApplicationMode,
+	type IdentDiscountAllocationPolicy,
+	type DoctorOneTimeDeduction,
+	calculateIdentDoctorSalary,
+	extractDeductibleMaterialsFromWriteoff,
+	IDENT_SALARY_MODEL_NAMES_RU,
+} from "@dental/shared";
+

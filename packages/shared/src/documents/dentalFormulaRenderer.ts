@@ -41,20 +41,34 @@ export interface GraphicalDentalFormulaOptions {
 	compact?: boolean | undefined;
 }
 
-const PERMANENT_UPPER_RIGHT = [18, 17, 16, 15, 14, 13, 12, 11] as const;
-const PERMANENT_UPPER_LEFT = [21, 22, 23, 24, 25, 26, 27, 28] as const;
-const PERMANENT_LOWER_RIGHT = [48, 47, 46, 45, 44, 43, 42, 41] as const;
-const PERMANENT_LOWER_LEFT = [31, 32, 33, 34, 35, 36, 37, 38] as const;
+export const PERMANENT_UPPER_RIGHT = [18, 17, 16, 15, 14, 13, 12, 11] as const;
+export const PERMANENT_UPPER_LEFT = [21, 22, 23, 24, 25, 26, 27, 28] as const;
+export const PERMANENT_LOWER_RIGHT = [48, 47, 46, 45, 44, 43, 42, 41] as const;
+export const PERMANENT_LOWER_LEFT = [31, 32, 33, 34, 35, 36, 37, 38] as const;
 
-const DECIDUOUS_UPPER_RIGHT = [55, 54, 53, 52, 51] as const;
-const DECIDUOUS_UPPER_LEFT = [61, 62, 63, 64, 65] as const;
-const DECIDUOUS_LOWER_RIGHT = [85, 84, 83, 82, 81] as const;
-const DECIDUOUS_LOWER_LEFT = [71, 72, 73, 74, 75] as const;
+export const ALL_FDI_PERMANENT_TEETH: readonly number[] = [
+	18, 17, 16, 15, 14, 13, 12, 11,
+	21, 22, 23, 24, 25, 26, 27, 28,
+	31, 32, 33, 34, 35, 36, 37, 38,
+	41, 42, 43, 44, 45, 46, 47, 48,
+];
+
+export const DECIDUOUS_UPPER_RIGHT = [55, 54, 53, 52, 51] as const;
+export const DECIDUOUS_UPPER_LEFT = [61, 62, 63, 64, 65] as const;
+export const DECIDUOUS_LOWER_RIGHT = [85, 84, 83, 82, 81] as const;
+export const DECIDUOUS_LOWER_LEFT = [71, 72, 73, 74, 75] as const;
+
+export const ALL_FDI_DECIDUOUS_TEETH: readonly number[] = [
+	55, 54, 53, 52, 51,
+	61, 62, 63, 64, 65,
+	71, 72, 73, 74, 75,
+	85, 84, 83, 82, 81,
+];
 
 /**
  * Нормализует клинический статус зуба к канонической палитре.
  */
-function normalizeToothStatus(rawStatus?: string, rawStatusCode?: string): {
+export function normalizeToothStatus(rawStatus?: string, rawStatusCode?: string): {
 	category: "sound" | "caries" | "pulpitis" | "periodontitis" | "filled" | "crown" | "implant" | "missing" | "root" | "watch";
 	code: string;
 	label: string;
@@ -574,4 +588,199 @@ export function renderGraphicalDentalFormulaHtml(options: GraphicalDentalFormula
 </div>
 <!-- END_GRAPHICAL_DENTAL_FORMULA -->
   `;
+}
+
+/**
+ * Преобразует произвольный ввод данных зубной формулы в унифицированную карту зубов Map<number, ToothStateData>.
+ */
+export function extractTeethMapFromInput(
+	input?:
+		| Record<string | number, ToothStateData | string | Record<string, unknown>>
+		| Array<ClinicalToothRowInput>
+		| readonly Record<string, unknown>[]
+		| DentalFormulaRecordInput
+		| null
+		| undefined,
+): Map<number, ToothStateData> {
+	const map = new Map<number, ToothStateData>();
+	if (!input) return map;
+
+	// Если передан массив строк
+	if (Array.isArray(input)) {
+		for (const row of input) {
+			const toothNum =
+				typeof (row as ClinicalToothRowInput).toothOrArea === "string"
+					? Number.parseInt((row as ClinicalToothRowInput).toothOrArea, 10)
+					: Number((row as unknown as Record<string, unknown>).toothNumber);
+			if (Number.isFinite(toothNum)) {
+				map.set(toothNum, {
+					toothNumber: toothNum,
+					status:
+						((row as ClinicalToothRowInput).status as string) ||
+						((row as ClinicalToothRowInput).diagnosisOrFinding as string) ||
+						"sound",
+					statusCode: (row as unknown as ToothStateData).statusCode || undefined,
+					diagnosisText:
+						((row as ClinicalToothRowInput).diagnosisOrFinding as string) ||
+						((row as unknown as ToothStateData).diagnosisText as string) ||
+						undefined,
+				});
+			}
+		}
+		return map;
+	}
+
+	// Если передан объект с полем teeth
+	if (typeof input === "object" && input !== null) {
+		const obj = input as Record<string, unknown>;
+		if (Array.isArray(obj.teeth)) {
+			for (const t of obj.teeth as Array<Record<string, unknown>>) {
+				const toothNum = Number(t.toothNumber ?? t.tooth ?? t.toothOrArea);
+				if (Number.isFinite(toothNum)) {
+					map.set(toothNum, {
+						toothNumber: toothNum,
+						status: String(t.status ?? t.state ?? "sound"),
+						statusCode: t.statusCode ? String(t.statusCode) : undefined,
+						diagnosisText: t.diagnosisText ? String(t.diagnosisText) : undefined,
+					});
+				}
+			}
+			return map;
+		}
+
+		// Иначе объект ключей 11..48: status
+		for (const [key, val] of Object.entries(obj)) {
+			const toothNum = Number.parseInt(key, 10);
+			if (Number.isFinite(toothNum)) {
+				if (typeof val === "string") {
+					map.set(toothNum, {
+						toothNumber: toothNum,
+						status: val,
+					});
+				} else if (typeof val === "object" && val !== null) {
+					const tObj = val as Record<string, unknown>;
+					map.set(toothNum, {
+						toothNumber: toothNum,
+						status: String(tObj.status ?? tObj.state ?? "sound"),
+						statusCode: tObj.statusCode ? String(tObj.statusCode) : undefined,
+						diagnosisText: tObj.diagnosisText ? String(tObj.diagnosisText) : undefined,
+					});
+				}
+			}
+		}
+	}
+
+	return map;
+}
+
+/**
+ * Генерирует читаемую текстовую расшифровку зубной формулы на русском языке:
+ * Пример: «Кариес: зубы 16, 24; Пломба: зубы 36, 46; Отсутствует: зубы 18, 28, 38, 48; Интактные: остальные зубы».
+ */
+export function generateDentalFormulaBreakdownText(
+	input?:
+		| Record<string | number, ToothStateData | string | Record<string, unknown>>
+		| Array<ClinicalToothRowInput>
+		| readonly Record<string, unknown>[]
+		| DentalFormulaRecordInput
+		| null
+		| undefined,
+): string {
+	const teethMap = extractTeethMapFromInput(input);
+	if (teethMap.size === 0) {
+		return "Зубные ряды интактны, кариозных поражений и патологии твердых тканей зубов не выявлено";
+	}
+
+	const groups: Record<string, number[]> = {
+		caries: [],
+		pulpitis: [],
+		periodontitis: [],
+		filled: [],
+		crown: [],
+		implant: [],
+		missing: [],
+		root: [],
+		watch: [],
+	};
+
+	let totalPathologyCount = 0;
+
+	for (const toothNum of ALL_FDI_PERMANENT_TEETH) {
+		const toothData = teethMap.get(toothNum);
+		if (!toothData) continue;
+		const norm = normalizeToothStatus(toothData.status, toothData.statusCode);
+		if (norm.category !== "sound" && groups[norm.category]) {
+			groups[norm.category]?.push(toothNum);
+			totalPathologyCount++;
+		}
+	}
+
+	if (totalPathologyCount === 0) {
+		return "Зубные ряды интактны, патологий твердых тканей зубов и пародонта не выявлено";
+	}
+
+	const categoryLabels: Record<string, string> = {
+		caries: "Кариес",
+		pulpitis: "Пульпит",
+		periodontitis: "Периодонтит",
+		filled: "Пломба",
+		crown: "Коронка",
+		implant: "Имплантат",
+		missing: "Отсутствует",
+		root: "Корень",
+		watch: "Наблюдение",
+	};
+
+	const parts: string[] = [];
+	for (const [catKey, teeth] of Object.entries(groups)) {
+		if (teeth.length > 0) {
+			const label = categoryLabels[catKey] ?? catKey;
+			const sorted = [...teeth].sort((a, b) => a - b);
+			const prefix = sorted.length > 1 ? "зубы" : "зуб";
+			parts.push(`${label}: ${prefix} ${sorted.join(", ")}`);
+		}
+	}
+
+	parts.push("Интактные: остальные зубы");
+	return parts.join("; ");
+}
+
+/**
+ * Возвращает карту токенов всех зубов 11..48 (и 51..85 если есть):
+ * { "18": "0", "18т": "Отсутствует", "16": "C", "16т": "Кариес", ... }
+ */
+export function resolveAllTeethTokens(
+	input?:
+		| Record<string | number, ToothStateData | string | Record<string, unknown>>
+		| Array<ClinicalToothRowInput>
+		| readonly Record<string, unknown>[]
+		| DentalFormulaRecordInput
+		| null
+		| undefined,
+): Record<string, string> {
+	const map: Record<string, string> = {};
+	const teethMap = extractTeethMapFromInput(input);
+
+	for (const toothNum of ALL_FDI_PERMANENT_TEETH) {
+		const toothData = teethMap.get(toothNum);
+		if (toothData) {
+			const norm = normalizeToothStatus(toothData.status, toothData.statusCode);
+			map[String(toothNum)] = norm.code;
+			map[`${toothNum}т`] = norm.label;
+		} else {
+			map[String(toothNum)] = "H";
+			map[`${toothNum}т`] = "Здоровый";
+		}
+	}
+
+	for (const toothNum of ALL_FDI_DECIDUOUS_TEETH) {
+		const toothData = teethMap.get(toothNum);
+		if (toothData) {
+			const norm = normalizeToothStatus(toothData.status, toothData.statusCode);
+			map[String(toothNum)] = norm.code;
+			map[`${toothNum}т`] = norm.label;
+		}
+	}
+
+	return map;
 }
