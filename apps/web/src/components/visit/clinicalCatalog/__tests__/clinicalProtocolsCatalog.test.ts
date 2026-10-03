@@ -84,3 +84,27 @@ test("Clinical Protocols 1142 Catalog - AI Copilot apply_clinical_protocol dispa
 	assert.ok(form.diagnosis?.includes("K04.0") || form.diagnosis?.includes("Пульпит"), "Diagnosis must be pulpitis");
 });
 
+test("Clinical Protocols 1142 Catalog - Multi-tooth edge case preserves all tooth diagnoses", async () => {
+	const { dispatchCrmAction } = await import("../../../../services/ai/aiActionDispatcher.js");
+	const { useVisitStore } = await import("../../../../store/visitStore.js");
+
+	// Step 1: Tooth 16 caries
+	await dispatchCrmAction({
+		callId: "test_call_multi_1",
+		name: "apply_clinical_protocol",
+		arguments: { query: "кариес дентина", toothNumber: 16 },
+	});
+
+	// Step 2: Tooth 17 pulpitis
+	await dispatchCrmAction({
+		callId: "test_call_multi_2",
+		name: "apply_clinical_protocol",
+		arguments: { query: "пульпит", toothNumber: 17 },
+	});
+
+	const form = useVisitStore.getState().visitNoteForm;
+	assert.ok(form.diagnosis?.includes("16"), "Diagnosis must retain tooth 16");
+	assert.ok(form.diagnosis?.includes("17"), "Diagnosis must retain tooth 17");
+	assert.ok(form.diagnosis?.includes(";"), "Multiple diagnoses must be semicolon-separated");
+});
+

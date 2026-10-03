@@ -309,10 +309,15 @@ export function buildProcedureVisitNotePatch(
 		);
 	}
 
-	if (procedure.matchedIcd10 && !currentForm.diagnosis) {
-		patch.diagnosis = targetTooth
+	if (procedure.matchedIcd10) {
+		const newDiag = targetTooth
 			? `${procedure.matchedIcd10} (зуб ${targetTooth})`
 			: procedure.matchedIcd10;
+		patch.diagnosis = appendClinicalText(
+			currentForm.diagnosis,
+			newDiag,
+			"; ",
+		);
 	}
 
 	return patch;
@@ -355,11 +360,13 @@ export function buildChunkVisitNotePatch(
 				chunk.text,
 			);
 			break;
-		case "diagnosis":
-			patch.diagnosis = targetTooth
+		case "diagnosis": {
+			const newDiag = targetTooth
 				? `${chunk.name} (зуб ${targetTooth})`
 				: chunk.name;
+			patch.diagnosis = appendClinicalText(currentForm.diagnosis, newDiag, "; ");
 			break;
+		}
 		default:
 			patch.treatmentPlan = appendClinicalText(
 				currentForm.treatmentPlan,
