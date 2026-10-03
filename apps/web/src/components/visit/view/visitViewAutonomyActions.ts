@@ -1,4 +1,10 @@
 import { showToast } from "../../GlobalToast";
+import {
+	parseSafetyProfileFromText,
+	isSomaticProfilePhysiologicalNorm,
+	isNegativeAllergyStatement,
+} from "../../patients/safetyMath";
+import { formatSafetyProfileToDiaryText } from "../../patients/patientSafetyEvaluation";
 
 export async function executePolishTranscriptAutonomy({
 	hasVisitTranscriptText,
@@ -50,13 +56,32 @@ export function executeApplySomaticNormAutonomy({
 	updateVisitNoteField,
 	visitNoteForm,
 	showToastFn = showToast,
+	activePatient,
 }: {
 	updateVisitNoteField?: (field: string, val: string) => void;
 	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+	// biome-ignore lint/suspicious/noExplicitAny: patient
+	activePatient?: any;
 }) {
-	const normText =
+	const rawAllergies = activePatient?.allergies || "";
+	const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
+	const somaticText = `${activePatient?.somaticNotes || ""} ${activePatient?.concomitantDiseases || ""}`.trim();
+	const combinedText = `${allergyText} ${somaticText}`.trim();
+
+	const safety = parseSafetyProfileFromText(combinedText);
+	const isClean = isSomaticProfilePhysiologicalNorm(safety) && isNegativeAllergyStatement(allergyText);
+
+	let normText =
 		"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
+	let toastMessage = "Применена норма: соматически здоров (1 клик)";
+
+	if (!isClean && combinedText) {
+		const formattedDiary = formatSafetyProfileToDiaryText(safety);
+		normText = `${formattedDiary} Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает.`;
+		toastMessage = "Подставлен анамнез с учетом соматического статуса пациента (1 клик)";
+	}
+
 	const objNorm =
 		"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 	if (typeof updateVisitNoteField === "function") {
@@ -85,7 +110,7 @@ export function executeApplySomaticNormAutonomy({
 			// ignore in SSR or test environments
 		}
 	}
-	showToastFn("Применена норма: соматически здоров (1 клик)", "success");
+	showToastFn(toastMessage, "success");
 	return { executed: true, normText };
 }
 
@@ -132,12 +157,57 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	updateVisitNoteField,
 	visitNoteForm,
 	showToastFn = showToast,
+	activePatient,
 }: {
 	updateVisitNoteField?: (field: string, val: string) => void;
 	visitNoteForm?: { treatment?: string } | null;
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+	// biome-ignore lint/suspicious/noExplicitAny: patient
+	activePatient?: any;
 }) {
-	const anesthesiaText = "Анестезия: инфильтрационная / проводниковая Sol. Articaini 4% с эпинефрином 1:100 000 — 1.7 мл (Артикаин). Анестезия наступила через 3 минуты, глубокая, достаточная для безболезненного вмешательства. Без осложнений.";
+	const rawAllergies = activePatient?.allergies || "";
+	const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
+	const somaticText = `${activePatient?.somaticNotes || ""} ${activePatient?.concomitantDiseases || ""}`.trim();
+	const combinedText = `${allergyText} ${somaticText}`.toLowerCase();
+	const safety = parseSafetyProfileFromText(combinedText);
+
+	let anesthesiaText =
+		"Анестезия: инфильтрационная / проводниковая Sol. Articaini 4% с эпинефрином 1:100 000 — 1.7 мл (Артикаин). Анестезия наступила через 3 минуты, глубокая, достаточная для безболезненного вмешательства. Без осложнений.";
+	let toastMessage = "Добавлена стандартная анестезия: Sol. Articaini 4% (1 клик)";
+
+	if (
+		safety.hasHypertension ||
+		safety.hasCardiovascularDisease ||
+		safety.hasIhd ||
+		safety.hasArrhythmia ||
+		combinedText.includes("гипертон") ||
+		combinedText.includes("давлен") ||
+		combinedText.includes("ибс")
+	) {
+		anesthesiaText =
+			"Анестезия (кардио-протокол): инфильтрационная / проводниковая Sol. Mepivacaini 3% без вазоконстриктора (Скандонест) — 1.7 мл. Анестезия наступила через 3 минуты, гемодинамика стабильная, АД и пульс в норме. Без осложнений.";
+		toastMessage = "Добавлена кардио-безопасная анестезия: Sol. Mepivacaini 3% plain (1 клик)";
+	} else if (
+		safety.hasArticaineAllergy ||
+		safety.hasSulfiteAllergy ||
+		combinedText.includes("артикаин") ||
+		combinedText.includes("ультракаин") ||
+		combinedText.includes("сульфит")
+	) {
+		anesthesiaText =
+			"Анестезия (гипоаллергенный протокол): Sol. Mepivacaini 3% без вазоконстриктора и без сульфитных консервантов (Скандонест) — 1.7 мл. Без признаков аллергических реакций.";
+		toastMessage = "Добавлена гипоаллергенная анестезия: Sol. Mepivacaini 3% (1 клик)";
+	} else if (
+		(safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") ||
+		combinedText.includes("беременн") ||
+		combinedText.includes("лактац") ||
+		combinedText.includes("триместр")
+	) {
+		anesthesiaText =
+			"Анестезия (гестационный протокол): инфильтрационная Sol. Articaini 4% с минимальным содержанием эпинефрина 1:200 000 — 1.7 мл. Без осложнений.";
+		toastMessage = "Добавлена безопасная анестезия для беременных: Sol. Articaini 1:200 000 (1 клик)";
+	}
+
 	if (typeof updateVisitNoteField === "function") {
 		const current = visitNoteForm?.treatment || "";
 		updateVisitNoteField(
@@ -145,6 +215,6 @@ export function executeApplyAnesthesiaPresetAutonomy({
 			current ? `${current}\n\n${anesthesiaText}` : anesthesiaText,
 		);
 	}
-	showToastFn("Добавлена стандартная анестезия: Sol. Articaini 4% (1 клик)", "success");
+	showToastFn(toastMessage, "success");
 	return { executed: true, anesthesiaText };
 }

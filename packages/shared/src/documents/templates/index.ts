@@ -1,5 +1,6 @@
 import { GENERAL_TEMPLATES_HTML } from "./generalAndContracts.js";
 import { ORTHO_AND_DIAGNOSTIC_TEMPLATES_HTML } from "./orthoAndDiagnosticConsents.js";
+import { PATIENT_MEMOS_TEMPLATES_HTML } from "./patientMemosConsents.js";
 import { SURGERY_AND_IMPLANT_TEMPLATES_HTML } from "./surgeryAndImplantConsents.js";
 import {
 	SHARED_DOCUMENT_CSS,
@@ -10,19 +11,25 @@ import {
 import { THERAPY_AND_PERIO_TEMPLATES_HTML } from "./therapyAndPerioConsents.js";
 
 export * from "./templateStyles.js";
+export * from "./generalAndContracts.js";
+export * from "./therapyAndPerioConsents.js";
+export * from "./surgeryAndImplantConsents.js";
+export * from "./patientMemosConsents.js";
+export * from "./orthoAndDiagnosticConsents.js";
 
 /**
- * Объединенный реестр всех 49 HTML-бланков Минздрава РФ
+ * Объединенный реестр всех канонических HTML-бланков стоматологической практики РФ
  */
 export const ALL_DEFAULT_TEMPLATES_BY_ALIAS: Record<string, string> = {
 	...GENERAL_TEMPLATES_HTML,
 	...THERAPY_AND_PERIO_TEMPLATES_HTML,
 	...SURGERY_AND_IMPLANT_TEMPLATES_HTML,
+	...PATIENT_MEMOS_TEMPLATES_HTML,
 	...ORTHO_AND_DIAGNOSTIC_TEMPLATES_HTML,
 };
 
 /**
- * Возвращает канонический HTML-шаблон для любого из 49 бланков по его stomxId, alias или названию.
+ * Возвращает канонический HTML-шаблон для любого из бланков по его stomxId, alias или названию.
  */
 export function getDefaultTemplateContentHtml(
 	stomxId?: number | null,
@@ -85,6 +92,15 @@ export function getDefaultTemplateContentHtml(
 		81: "otkaz_ot_lecheniya",
 		82: "polozhenie_o_garantiyakh",
 		83: "soglasie_na_obrabku_pd",
+		84: "protocol_khirurgicheskoy_operacii",
+		85: "ids_udalenie_retinirovannyh_zubov",
+		86: "ids_kostnaya_plastika_nkr",
+		87: "ids_ortodontiya_retenciya",
+		88: "pamyatka_posle_udaleniya",
+		89: "pamyatka_implantaciya",
+		90: "pamyatka_protezirovanie",
+		91: "pamyatka_otbelivanie",
+		92: "pamyatka_ortodontiya",
 	};
 
 	if (stomxId && stomxMap[stomxId]) {
@@ -92,6 +108,27 @@ export function getDefaultTemplateContentHtml(
 		if (ALL_DEFAULT_TEMPLATES_BY_ALIAS[alias]) {
 			return ALL_DEFAULT_TEMPLATES_BY_ALIAS[alias];
 		}
+	}
+
+	// Поиск по вхождению названия (русские термины)
+	const lowerName = (name ?? "").toLowerCase();
+	if (lowerName.includes("операци") || lowerName.includes("протокол операции")) {
+		return ALL_DEFAULT_TEMPLATES_BY_ALIAS["protocol_khirurgicheskoy_operacii"] ?? "";
+	}
+	if (lowerName.includes("памятка") && (lowerName.includes("удал") || lowerName.includes("удален"))) {
+		return ALL_DEFAULT_TEMPLATES_BY_ALIAS["pamyatka_posle_udaleniya"] ?? "";
+	}
+	if (lowerName.includes("памятка") && (lowerName.includes("имплант") || lowerName.includes("имплантат"))) {
+		return ALL_DEFAULT_TEMPLATES_BY_ALIAS["pamyatka_implantaciya"] ?? "";
+	}
+	if (lowerName.includes("памятка") && (lowerName.includes("протез") || lowerName.includes("коронк"))) {
+		return ALL_DEFAULT_TEMPLATES_BY_ALIAS["pamyatka_protezirovanie"] ?? "";
+	}
+	if (lowerName.includes("памятка") && (lowerName.includes("отбеливан") || lowerName.includes("диета"))) {
+		return ALL_DEFAULT_TEMPLATES_BY_ALIAS["pamyatka_otbelivanie"] ?? "";
+	}
+	if (lowerName.includes("памятка") && (lowerName.includes("брекет") || lowerName.includes("ортодонт"))) {
+		return ALL_DEFAULT_TEMPLATES_BY_ALIAS["pamyatka_ortodontiya"] ?? "";
 	}
 
 	// Качественный фоллбек для нестандартного шаблона
@@ -106,8 +143,8 @@ export function getDefaultTemplateContentHtml(
   <div class="doc-title">${docTitle}</div>
   ${renderPatientInfoBlock()}
   <p class="doc-paragraph">
-    Настоящий медицинский документ оформлен в стоматологической клинике <strong>{{Клиника.Название}}</strong> 
-    врачом <strong>{{АктивныйВрач.Должность}} {{АктивныйВрач.ФИО}}</strong> для пациента <strong>{{Пациент.ФИО}}</strong>.
+    Настоящий документ сформирован в медицинской информационной системе <strong>{{Клиника.Название}}</strong> 
+    в отношении пациента <strong>{{Пациент.ФИО}}</strong>.
   </p>
   ${renderSignaturesBlock()}
 </div>

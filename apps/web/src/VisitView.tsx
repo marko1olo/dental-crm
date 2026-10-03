@@ -362,7 +362,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		<>
 			<div className="panel visit-panel pb-28 sm:pb-8" id="visit" data-testid="visit-view">
 				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) ═══ */}
-				<header className="visit-monolithic-header rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0 sticky top-0 z-30 backdrop-blur-md" data-testid="visit-header-monolith" aria-label="Шапка текущего приёма">
+				<header className="visit-monolithic-header rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md" data-testid="visit-header-monolith" aria-label="Шапка текущего приёма">
 					{/* Строка 1: Пациент, возраст, бейдж аллергии, кнопка нормы 043/у, действия */}
 					<div className="min-h-[32px] h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--glass-border)] flex-nowrap min-w-0 max-w-full">
 						<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
@@ -574,7 +574,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2: Вкладки приёма с плавным фейдом по краям на мобильных */}
-					<div className="relative border-t border-[var(--glass-border)]/50 bg-[var(--paper-soft)]">
+					<div className="relative border-t border-[var(--glass-border)]/50 bg-[var(--paper-soft)] rounded-b-xl">
 						<div className="flex items-center gap-1.5 px-2 py-1 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
 							{[
 								{ id: "emk", testId: "visit-subtab-emk", label: "Дневник приёма" },
@@ -834,9 +834,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						useVisitStore.getState().setVisitToothRecord(selectedToothForMenu.code, {
 							toothNumber: toothNum,
 							state: state as any,
-							cavity: cavityStr,
 							surfaces: selectedSurfaces,
-							diagnosis: field === "diagnosis" ? text : undefined,
+							...(cavityStr ? { cavity: cavityStr } : {}),
+							...(field === "diagnosis" && text ? { diagnosis: text } : {}),
 						});
 
 						if (text && field) {

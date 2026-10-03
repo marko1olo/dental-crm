@@ -181,6 +181,20 @@ async function captureClinicalConsentsProofs() {
         localStorage.setItem("dente_theme_mode", "light");
         localStorage.setItem("dente_onboarding_completed", "true");
         localStorage.setItem("dente_onboarding_dismissed", "true");
+        localStorage.setItem("dente_tour_completed", "true");
+        localStorage.setItem(
+          "dente_quest_progress_v2",
+          JSON.stringify({
+            currentTrackId: "solo_doctor",
+            currentStepIndex: 0,
+            completedStepIds: [],
+            completedTrackIds: ["solo_doctor", "reception_admin", "imaging_diagnostics"],
+            isTourActive: false,
+            isDismissedPermanently: true,
+            isPaused: true,
+            lastInteractionTimestamp: Date.now(),
+          })
+        );
         localStorage.setItem(
           "dente_ui_preferences_v1",
           JSON.stringify({
@@ -262,6 +276,12 @@ async function captureClinicalConsentsProofs() {
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(url.includes("list") || url.includes("status") ? [] : {}) });
   });
 
+  async function cleanOverlays(p) {
+    await p.evaluate(() => {
+      document.querySelectorAll("[data-testid='doctor-training-coach-mark-card'], [data-testid='guided-tour-spotlight-overlay'], .tour-spotlight-root, .tour-backdrop-clickable-zone, .coach-mark-card, .onboarding-modal, [class*='tour-spotlight']").forEach((el) => el.remove());
+    });
+  }
+
   async function applyTheme(p, th) {
     await p.waitForFunction(() => typeof window !== "undefined" && Boolean(window.__useThemeStore), { timeout: 20000 }).catch(() => {});
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -284,6 +304,7 @@ async function captureClinicalConsentsProofs() {
         await p.waitForTimeout(400);
       }
     }
+    await cleanOverlays(p);
   }
 
   console.log("\nNavigating to #documents...");
@@ -292,15 +313,7 @@ async function captureClinicalConsentsProofs() {
   await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
   await page.waitForSelector("#documents, .documents-panel", { state: "visible", timeout: 30000 });
   await page.waitForTimeout(1000);
-
-  // Dismiss any lingering onboarding modal
-  await page.evaluate(() => {
-    const dismissBtn = Array.from(document.querySelectorAll("button")).find(
-      (b) => b.textContent && (b.textContent.includes("Больше не показывать") || b.textContent.includes("Пропустить"))
-    );
-    if (dismissBtn) dismissBtn.click();
-  });
-  await page.waitForTimeout(500);
+  await cleanOverlays(page);
 
   // 1. Expand Document Templates Catalog
   console.log("Opening Document Templates Catalog...");
@@ -308,10 +321,11 @@ async function captureClinicalConsentsProofs() {
     const details = document.querySelector(".document-templates-collapsible");
     if (details) {
       details.setAttribute("open", "true");
-      details.scrollIntoView({ behavior: "instant", block: "center" });
+      details.scrollIntoView({ behavior: "instant", block: "start" });
     }
   });
   await page.waitForTimeout(600);
+  await cleanOverlays(page);
 
   // Capture DocumentTemplatesCatalog Light
   console.log("Capturing DocumentTemplatesCatalog Light...");
@@ -346,6 +360,7 @@ async function captureClinicalConsentsProofs() {
     }
   });
   await page.waitForTimeout(1000);
+  await cleanOverlays(page);
 
   // Capture ProcedureSpecificConsentForm Dark
   console.log("Capturing ProcedureSpecificConsentForm Dark...");
@@ -375,6 +390,7 @@ async function captureClinicalConsentsProofs() {
     }
   });
   await page.waitForTimeout(1000);
+  await cleanOverlays(page);
 
   // Capture PostVisitRecommendationsForm Light
   console.log("Capturing PostVisitRecommendationsForm Light...");
@@ -392,7 +408,7 @@ async function captureClinicalConsentsProofs() {
 
   await desktopContext.close();
   await browser.close();
-  console.log("\nAll clinical consent and memo proofs captured successfully!");
+  console.log("\nAll clinical consent and memo proofs captured successfully without overlays!");
 }
 
 captureClinicalConsentsProofs().catch((err) => {

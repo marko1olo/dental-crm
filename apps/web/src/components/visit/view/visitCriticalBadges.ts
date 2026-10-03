@@ -55,21 +55,28 @@ export function calculateActivePatientCriticalBadges(
 	const safety = parseSafetyProfileFromText(combinedMedicalText);
 	const combinedLower = combinedMedicalText.toLowerCase();
 
-	// 1. Аллергия на местные анестетики (Лидокаин, Артикаин, Новокаин) — ВИТАЛЬНАЯ УГРОЗА В КРЕСЛЕ
-	const hasAnestheticAllergy =
-		safety.hasLidocaineAllergy ||
-		safety.hasArticaineAllergy ||
-		safety.hasMepivacaineAllergy ||
-		safety.hasEsterAnestheticsAllergy ||
-		(!hasNegativeAllergy && (combinedLower.includes("анестетик") || combinedLower.includes("анестези")));
+	// 1. Аллергия на местные анестетики (Лидокаин, Артикаин, Убистезин, Септанест, Новокаин) — ВИТАЛЬНАЯ УГРОЗА В КРЕСЛЕ
+	const hasLidocaine = safety.hasLidocaineAllergy || combinedLower.includes("лидокаин") || combinedLower.includes("ксилокаин");
+	const hasArticaine = safety.hasArticaineAllergy || combinedLower.includes("артикаин") || combinedLower.includes("ультракаин") || combinedLower.includes("септанест") || combinedLower.includes("убистезин");
+	const hasOtherAnesthetic = safety.hasMepivacaineAllergy || safety.hasEsterAnestheticsAllergy || (!hasNegativeAllergy && (combinedLower.includes("анестетик") || combinedLower.includes("анестези")));
 
-	if (hasAnestheticAllergy) {
+	if (hasLidocaine || (!hasArticaine && hasOtherAnesthetic)) {
 		badges.push({
 			id: "lidocaine",
 			testId: "visit-focus-lidocaine-alert",
-			title: "АЛЛЕРГИЯ НА МЕСТНЫЕ АНЕСТЕТИКИ (Лидокаин/Артикаин): РИСК АНАФИЛАКТИЧЕСКОГО ШОКА!",
+			title: "АЛЛЕРГИЯ НА МЕСТНЫЕ АНЕСТЕТИКИ (Лидокаин): РИСК АНАФИЛАКТИЧЕСКОГО ШОКА! Рекомендован Мепивакаин 3% plain или Артикаин без парабенов",
 			shortLabel: "ЛИДОКАИН ⚠️",
-			fullLabel: "ЛИДОКАИН — АЛЛЕРГИЯ НА АНЕСТЕТИКИ!",
+			fullLabel: "ЛИДОКАИН: аллергия! Рекомендован Мепивакаин 3% без вазоконстриктора",
+		});
+	}
+
+	if (hasArticaine) {
+		badges.push({
+			id: "articaine",
+			testId: "visit-focus-articaine-alert",
+			title: "АЛЛЕРГИЯ НА АРТИКАИН (Ультракаин / Убистезин / Септанест): РИСК АНАФИЛАКТИЧЕСКОГО ШОКА! Рекомендован Мепивакаин 3% без вазоконстриктора (Скандонест)",
+			shortLabel: "АРТИКАИН ⚠️",
+			fullLabel: "АРТИКАИН: аллергия! Рекомендован Мепивакаин 3% без вазоконстриктора",
 		});
 	}
 
@@ -78,9 +85,9 @@ export function calculateActivePatientCriticalBadges(
 		badges.push({
 			id: "penicillin",
 			testId: "visit-focus-penicillin-alert",
-			title: "АЛЛЕРГИЯ НА ПЕНИЦИЛЛИНЫ (Амоксиклав/Аугментин): ЗАПРЕТ ПЕНИЦИЛЛИНОВОГО РЯДА!",
+			title: "АЛЛЕРГИЯ НА ПЕНИЦИЛЛИНЫ (Амоксициллин/Амоксиклав/Аугментин): ЗАПРЕТ ПЕНИЦИЛЛИНОВ! Рекомендована замена на Кларитромицин 500 мг или Клиндамицин 300 мг",
 			shortLabel: "ПЕНИЦИЛЛИН ⚠️",
-			fullLabel: "ПЕНИЦИЛЛИН — АЛЛЕРГИЯ НА АНТИБИОТИКИ!",
+			fullLabel: "ПЕНИЦИЛЛИН: аллергия! Альтернатива: Кларитромицин / Клиндамицин",
 		});
 	}
 
@@ -95,7 +102,28 @@ export function calculateActivePatientCriticalBadges(
 		});
 	}
 
-	// 4. ЭКС (кардиостимулятор) — ЗАПРЕТ УЗ-скейлера и коагулятора
+	// 4. Гипертоническая болезнь / Сердечно-сосудистые риски (запрет на адреналин 1:100 000, рекомендован 1:200 000 или скандонест)
+	if (
+		safety.hasHypertension ||
+		safety.hasCardiovascularDisease ||
+		safety.hasIhd ||
+		safety.hasArrhythmia ||
+		combinedLower.includes("гипертон") ||
+		combinedLower.includes("гипертенз") ||
+		combinedLower.includes("давлен") ||
+		combinedLower.includes("ибс") ||
+		combinedLower.includes("стенокард")
+	) {
+		badges.push({
+			id: "hypertension",
+			testId: "visit-focus-hypertension-alert",
+			title: "Артериальная гипертензия / ССЗ: ограничение вазоконстрикторов! Запрет адреналина 1:100 000, рекомендован Мепивакаин 3% plain или Артикаин 1:200 000",
+			shortLabel: "АГ / ССЗ",
+			fullLabel: "ГИПЕРТОНИЯ / ССЗ: адреналин <= 1:200 000 или скандонест",
+		});
+	}
+
+	// 5. ЭКС (кардиостимулятор) — ЗАПРЕТ УЗ-скейлера и коагулятора
 	if (safety.hasPacemakerExs || combinedLower.includes("экс") || combinedLower.includes("кардиостимулятор")) {
 		badges.push({
 			id: "pacemaker",
@@ -106,45 +134,53 @@ export function calculateActivePatientCriticalBadges(
 		});
 	}
 
-	// 5. Антикоагулянтная терапия — риск кровотечения
-	if (safety.takesAnticoagulants || combinedLower.includes("антикоагулянт") || combinedLower.includes("варфарин") || combinedLower.includes("ксарелто")) {
+	// 6. Антикоагулянтная терапия — риск кровотечения при хирургии
+	if (
+		safety.takesAnticoagulants ||
+		safety.hasAnticoagulantTherapy ||
+		combinedLower.includes("антикоагулянт") ||
+		combinedLower.includes("варфарин") ||
+		combinedLower.includes("ксарелто") ||
+		combinedLower.includes("аспирин") ||
+		combinedLower.includes("дезагрегант")
+	) {
 		badges.push({
 			id: "anticoagulant",
 			testId: "visit-focus-anticoagulant-alert",
-			title: "Антикоагулянтная терапия: риск кровотечения",
-			shortLabel: "АКТ",
-			fullLabel: "Антикоагулянты (риск кровотечения)",
+			title: "Антикоагулянтная терапия (варфарин/аспирин/НОАК): высокий риск луночкового кровотечения при удалении! Местный гемостаз, ушивание лунки",
+			shortLabel: "АНТИКОАГ.",
+			fullLabel: "АНТИКОАГУЛЯНТЫ — риск кровотечения при удалении",
 		});
 	}
 
-	// 6. Сахарный диабет
+	// 7. Сахарный диабет — риск замедленной остеоинтеграции
 	if (safety.hasDiabetesMellitus || combinedLower.includes("диабет")) {
 		badges.push({
 			id: "diabetes",
 			testId: "visit-focus-diabetes-alert",
-			title: "Сахарный диабет: риск гипогликемии и замедленной регенерации",
+			title: "Сахарный диабет: риск гипогликемии и замедленной остеоинтеграции имплантов, атравматичный протокол",
 			shortLabel: "СД",
-			fullLabel: "Сахарный диабет",
+			fullLabel: "САХАРНЫЙ ДИАБЕТ — риск остеоинтеграции имплантов",
 		});
 	}
 
-	// 7. Беременность
-	if ((safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") || combinedLower.includes("беременн") || combinedLower.includes("триместр")) {
+	// 8. Беременность и период лактации
+	if ((safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") || combinedLower.includes("беременн") || combinedLower.includes("лактац") || combinedLower.includes("триместр")) {
 		badges.push({
 			id: "pregnancy",
 			testId: "visit-focus-pregnancy-alert",
-			title: "Беременность: ограничение адреналина и рентгена",
-			shortLabel: "БЕРЕМ.",
-			fullLabel: "Беременность",
+			title: "Беременность / Лактация: безопасные анестетики без эпинефрина (или адреналин <= 1:200 000), защита фартуком при рентгене",
+			shortLabel: "БЕРЕМЕННОСТЬ",
+			fullLabel: "БЕРЕМЕННОСТЬ — анестетик без адреналина / 1:200 000",
 		});
 	}
 
-	// 8. Бисфосфонаты — риск остеонекроза челюсти (БОНЧ)
-	if (safety.takesBisphosphonates || combinedLower.includes("бисфосфон") || combinedLower.includes("остеопороз")) {
+	// 9. Бисфосфонаты — риск остеонекроза челюсти (БОНЧ)
+	if (safety.takesBisphosphonates || safety.hasBisphosphonateTherapy || combinedLower.includes("бисфосфон") || combinedLower.includes("остеопороз")) {
 		badges.push({
 			id: "bisphosphonates",
 			testId: "visit-focus-bisphosphonates-alert",
-			title: "Бисфосфонаты: риск остеонекроза челюсти!",
+			title: "Бисфосфонаты: риск остеонекроза челюсти (MRONJ/БОНЧ)! Атравматичное удаление, консилиум перед костной пластикой",
 			shortLabel: "БИСФОСФ.",
 			fullLabel: "Бисфосфонаты — риск некроза челюсти!",
 		});

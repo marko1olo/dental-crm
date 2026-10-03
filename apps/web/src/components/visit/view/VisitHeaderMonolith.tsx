@@ -6,6 +6,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	FlaskConical,
 	Lock,
 	MoreHorizontal,
 	Printer,
@@ -21,6 +22,8 @@ import { useAppStore } from "../../../store/appStore";
 import { showToast } from "../../GlobalToast";
 import { useSoftPresence } from "../../../hooks/useSoftPresence";
 import { SoftPresenceIndicator } from "../../presence/SoftPresenceIndicator";
+import { resolveAppointmentLabStatus } from "../../schedule/appointmentCardHelpers";
+import { getVitaShadeHex } from "@dental/shared";
 
 export interface VisitHeaderMonolithProps {
 	// biome-ignore lint/suspicious/noExplicitAny: patient
@@ -58,6 +61,7 @@ export interface VisitHeaderMonolithProps {
 	setIsDoctorShiftModalOpen: (v: boolean) => void;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
 	setIsStagePaymentModalOpen: (v: boolean) => void;
+	onOpenLabOrderModal?: () => void;
 }
 
 export function VisitHeaderMonolith({
@@ -86,6 +90,7 @@ export function VisitHeaderMonolith({
 	setIsDoctorShiftModalOpen,
 	setIsPriceValidatorModalOpen,
 	setIsStagePaymentModalOpen,
+	onOpenLabOrderModal,
 }: VisitHeaderMonolithProps) {
 	const visitId = activeAppointment?.id || activeAppointment?.appointmentId;
 	const patientId = activePatient?.id || activePatient?.patientId;
@@ -96,7 +101,7 @@ export function VisitHeaderMonolith({
 
 	return (
 		<header
-			className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0 sticky top-0 z-30 backdrop-blur-md"
+			className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md"
 			data-testid="visit-header-monolith"
 			aria-label="Шапка текущего приёма"
 		>
@@ -183,6 +188,43 @@ export function VisitHeaderMonolith({
 						</span>
 					))}
 
+					{/* Статус наряда ЗТЛ у кресла врача (Готов в клинике / В лаборатории / Просрочен) */}
+					{(() => {
+						const labStatus = resolveAppointmentLabStatus(activeAppointment);
+						if (!labStatus) return null;
+						const hexColor = getVitaShadeHex(labStatus.colorVita);
+
+						return (
+							<span
+								className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-bold text-xs shadow-2xs shrink-0 cursor-pointer transition-transform hover:scale-105 border ${labStatus.badgeClass}`}
+								title={`Наряд ЗТЛ ${labStatus.orderNumber || ""}: ${labStatus.labelRu}. ${
+									labStatus.workTypeRu ? `Изделие: ${labStatus.workTypeRu}. ` : ""
+								}${labStatus.toothFdi ? `Зуб: ${labStatus.toothFdi}. ` : ""}${
+									labStatus.colorVita ? `VITA: ${labStatus.colorVita}. ` : ""
+								}${labStatus.dueDateIso ? `Срок: ${labStatus.dueDateIso.slice(0, 10)}. ` : ""}Нажмите для открытия ЗТЛ`}
+								onClick={() => {
+									useAppStore.getState().setCurrentView("lab");
+									showToast(`Открыт журнал ЗТЛ: ${labStatus.orderNumber || "Наряд"} (${labStatus.labelRu})`, "info");
+								}}
+								data-testid="visit-header-lab-status-badge"
+							>
+								<span>{labStatus.isOverdue ? "⚠️" : labStatus.state === "ready_in_clinic" ? "🦷" : "⏳"}</span>
+								<span className="font-extrabold">
+									{labStatus.isOverdue
+										? `ЗТЛ: +${labStatus.daysOverdue} дн!`
+										: labStatus.labelRu}
+								</span>
+								{labStatus.colorVita && (
+									<span
+										className="inline-block w-2.5 h-2.5 rounded-full border border-black/20"
+										style={{ backgroundColor: hexColor || "#EBD7BB" }}
+										title={`Цвет VITA ${labStatus.colorVita}`}
+									/>
+								)}
+							</span>
+						);
+					})()}
+
 					{/* Индикатор мягкого совместного присутствия (Soft Presence) */}
 					<SoftPresenceIndicator
 						activePeers={activePeers}
@@ -228,6 +270,30 @@ export function VisitHeaderMonolith({
 							aria-hidden="true"
 						/>
 						<span className="hidden lg:inline">Печать дневника</span>
+					</button>
+
+					{/* Наряд ЗТЛ (1 клик для ортопеда у кресла) */}
+					<button
+						type="button"
+						onClick={() => {
+							if (typeof onOpenLabOrderModal === "function") {
+								onOpenLabOrderModal();
+							} else {
+								useAppStore.getState().setCurrentView("lab");
+								showToast("Открыт журнал ЗТЛ", "info");
+							}
+						}}
+						data-testid="btn-visit-lab-order-fast"
+						className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+						title="Наряд в зуботехническую лабораторию (ЗТЛ)"
+						aria-label="Наряд в лабораторию ЗТЛ"
+					>
+						<FlaskConical
+							className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0"
+							aria-hidden="true"
+						/>
+						<span className="hidden sm:inline">Наряд ЗТЛ</span>
+						<span className="sm:hidden">ЗТЛ</span>
 					</button>
 
 					{/* Экстренная помощь / Аптечка анти-шок (тихий служебный доступ) */}
@@ -429,6 +495,34 @@ export function VisitHeaderMonolith({
 								className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper))] text-[var(--ink)] shadow-xl z-50 p-1.5 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
 								role="menu"
 							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsHeaderMoreMenuOpen(false);
+										if (typeof onOpenLabOrderModal === "function") {
+											onOpenLabOrderModal();
+										} else {
+											useAppStore.getState().setCurrentView("lab");
+											showToast("Открыт журнал ЗТЛ", "info");
+										}
+									}}
+									data-testid="visit-more-action-lab-order"
+									className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+									role="menuitem"
+								>
+									<FlaskConical
+										size={14}
+										className="text-teal-600 dark:text-teal-400 shrink-0"
+									/>
+									<div className="flex flex-col">
+										<span className="font-semibold">
+											Наряд в зуботехническую лабораторию (ЗТЛ)
+										</span>
+										<span className="text-[10px] text-[var(--muted)]">
+											Заказ коронок, мостов, вкладок, All-on-4
+										</span>
+									</div>
+								</button>
 								<button
 									type="button"
 									onClick={() => {

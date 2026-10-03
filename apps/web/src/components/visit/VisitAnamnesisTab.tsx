@@ -16,6 +16,7 @@ import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { parseSafetyProfileFromText } from "../patients/safetyMath";
 
 export interface VisitAnamnesisTabProps {
 	onAppendAnamnesis?: (text: string) => void;
@@ -91,11 +92,61 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 				if (Array.isArray(parsed.selectedRisks)) setSelectedRisks(parsed.selectedRisks);
 				if (Array.isArray(parsed.selectedHistory)) setSelectedHistory(parsed.selectedHistory);
 				if (typeof parsed.customNotes === "string") setCustomNotes(parsed.customNotes);
+				return;
 			}
 		} catch {
 			// ignore storage errors
 		}
-	}, [storageKey]);
+
+		// Автоподтягивание соматических рисков из активного пациента (Мандат 8e / 8i / 8k)
+		// biome-ignore lint/suspicious/noExplicitAny: active patient
+		const activePat = (appLogic as any)?.activePatient;
+		if (activePat) {
+			const rawAllergies = activePat.allergies || "";
+			const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
+			const fullText = `${allergyStr} ${activePat.somaticNotes || ""} ${activePat.concomitantDiseases || ""}`.trim();
+			if (fullText) {
+				const safety = parseSafetyProfileFromText(fullText);
+				const autoRisks: string[] = [];
+				if (safety.hasLidocaineAllergy || safety.hasArticaineAllergy || safety.hasAnestheticAllergy) {
+					autoRisks.push("Аллергия на местные анестетики");
+				}
+				if (safety.hasPenicillinAllergy) {
+					autoRisks.push("Аллергия на антибиотики (пенициллин)");
+				}
+				if (safety.hasNsaidAllergy) {
+					autoRisks.push("Аллергия на НПВП (аспириновая триада)");
+				}
+				if (safety.hasLatexAllergy) {
+					autoRisks.push("Аллергия на латекс");
+				}
+				if (safety.hasPacemakerExs) {
+					autoRisks.push("Имплантированный кардиостимулятор (ЭКС / ИКД)");
+				}
+				if (safety.hasHypertension) {
+					autoRisks.push("Гипертоническая болезнь");
+				}
+				if (safety.hasIhd || safety.hasArrhythmia) {
+					autoRisks.push("Ишемическая болезнь сердца / аритмия");
+				}
+				if (safety.hasDiabetesMellitus) {
+					autoRisks.push("Сахарный диабет");
+				}
+				if (safety.takesAnticoagulants) {
+					autoRisks.push("Прием антикоагулянтов / дезагрегантов");
+				}
+				if (safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") {
+					autoRisks.push("Беременность / период лактации");
+				}
+				if (safety.takesBisphosphonates) {
+					autoRisks.push("Прием бисфосфонатов");
+				}
+				if (autoRisks.length > 0) {
+					setSelectedRisks(autoRisks);
+				}
+			}
+		}
+	}, [storageKey, (appLogic as any)?.activePatient]);
 
 	// Debounced autosave draft on modification (300ms debounce per Mandate 8e & safeLocalStorage)
 	useEffect(() => {
@@ -287,31 +338,31 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					<button
 						type="button"
 						onClick={onOpenStomxTemplates ?? (() => window.dispatchEvent(new CustomEvent("dente-open-stomx-templates")))}
-						className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
+						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-3 py-1.5 rounded-xl text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-open-stomt-templates-anamnesis"
 						title="Открыть каталог 448 клинических шаблонов из StomX (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
 					>
-						<Sparkles className="w-3.5 h-3.5" />
+						<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 						<span>Клинические шаблоны StomX (448)</span>
 					</button>
 					<button
 						type="button"
 						onClick={handleApplyPhysiologicalNorm}
-						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
+						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-somatic-norm-one-click"
 						title="1 клик: заполнить осмотр нормой (соматически здоров)"
 					>
-						<ShieldCheck className="w-4 h-4" />
+						<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
 						<span>Соматически здоров / Норма Z01.2 (1-клик)</span>
 					</button>
 					<button
 						type="button"
 						onClick={applyToDiary}
-						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-xs sm:text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors shadow-xs cursor-pointer active:scale-98"
+						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold transition-colors shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-apply-anamnesis-to-diary"
 						title="Перенести текущие данные анамнеза в дневник приёма"
 					>
-						<Plus className="w-3.5 h-3.5" />
+						<Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
 						<span>В дневник приёма</span>
 					</button>
 				</div>
