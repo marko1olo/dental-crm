@@ -16,6 +16,7 @@ import {
 	Sparkles,
 	Stethoscope,
 	Syringe,
+	X,
 	XCircle,
 	Zap,
 } from "lucide-react";
@@ -189,11 +190,21 @@ export function VisitClinicalToothModal({
 				}
 			/>
 			<div
-				className="_ccm-content"
+				className="_ccm-content relative"
 				role="dialog"
 				aria-modal="true"
 				aria-label={`Зуб ${code}`}
 			>
+				<button
+					type="button"
+					onClick={closeClinicalModal}
+					className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[var(--paper-strong)] border border-[var(--glass-border)] shadow-md text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer transition-all z-50"
+					aria-label="Закрыть модальное окно"
+					title="Закрыть (Esc)"
+				>
+					<X className="w-4 h-4 shrink-0" />
+				</button>
+
 				{/* ── LEFT: Diagnosis ── */}
 				<div className="_ccm-panel">
 					<h4 className="_ccm-h flex items-center gap-1.5">
@@ -325,42 +336,20 @@ export function VisitClinicalToothModal({
 
 				{/* ── CENTER: Tooth preview ── */}
 				<div className="_ccm-center">
-					<div className="_ccm-code-badge">Зуб {code}</div>
+					<div className="flex items-center justify-between w-full mb-1">
+						<span className="text-xs font-bold text-[var(--ink)]">Зуб {code}</span>
+						<span className="text-[10px] text-[var(--muted)] font-mono">FDI</span>
+					</div>
 					<div className="_ccm-tooth-stage" aria-hidden="true">
 						{toothSvg}
 					</div>
 
-					{/* Селектор полостей (Класс по Блэку: O, MO, OD, MOD, V) */}
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							gap: "4px",
-							width: "100%",
-							marginTop: "6px",
-							marginBottom: "8px",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "11px",
-								fontWeight: 600,
-								textTransform: "uppercase",
-								letterSpacing: "0.05em",
-								color: "var(--muted)",
-							}}
-						>
-							Полость (Класс по Блэку)
+					{/* Селектор полостей по Блэку (компактные клинические чипы) */}
+					<div className="flex flex-col items-center gap-1.5 w-full my-2 pt-2 border-t border-[var(--glass-border)]">
+						<span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider">
+							Поверхности (Блэк)
 						</span>
-						<div
-							style={{
-								display: "flex",
-								gap: "4px",
-								flexWrap: "wrap",
-								justifyContent: "center",
-							}}
-						>
+						<div className="flex items-center justify-center gap-1 flex-wrap">
 							{["O", "MO", "OD", "MOD", "V"].map((cavity) => {
 								const isSelected = selectedSurfaces.includes(cavity);
 								return (
@@ -369,21 +358,12 @@ export function VisitClinicalToothModal({
 										type="button"
 										data-testid={`btn-cavity-${cavity.toLowerCase()}`}
 										onClick={() => handleSelectSurface(cavity)}
-										style={{
-											padding: "2px 8px",
-											fontSize: "11px",
-											fontWeight: 700,
-											borderRadius: "4px",
-											border: isSelected
-												? "1px solid var(--amber, #f59e0b)"
-												: "1px solid var(--line)",
-											backgroundColor: isSelected
-												? "var(--warn-bg, #fef3c7)"
-												: "var(--paper-soft)",
-											color: isSelected ? "var(--warn-ink, #b45309)" : "var(--ink)",
-											cursor: "pointer",
-											transition: "all 0.15s ease",
-										}}
+										className={`h-7 px-2.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+											isSelected
+												? "bg-amber-500 text-white border-amber-500 shadow-2xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
+										}`}
+										title={`Полость класса ${cavity}`}
 									>
 										{cavity}
 									</button>
@@ -394,10 +374,10 @@ export function VisitClinicalToothModal({
 
 					<button
 						type="button"
-						className="_ccm-close-btn"
+						className="_ccm-close-btn w-full mt-auto"
 						onClick={closeClinicalModal}
 					>
-						Закрыть
+						Готово
 					</button>
 				</div>
 

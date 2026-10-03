@@ -416,8 +416,9 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transform: scale(2.5);
-	filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.18));
+	transform: none;
+	max-height: 155px;
+	filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.08));
 }
 ._ccm-h {
 	margin: 0 0 0.15rem;
