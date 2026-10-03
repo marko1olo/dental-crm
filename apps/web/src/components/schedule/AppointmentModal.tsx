@@ -497,27 +497,34 @@ export function AppointmentModal(props: AppointmentModalProps) {
     </div>
   );
 
+  if (isWaitlistDrawerOpen && waitlistTargetSlot) {
+    const drawerNode = (
+      <WaitlistDrawer
+        isOpen={isWaitlistDrawerOpen}
+        onClose={() => {
+          setIsWaitlistDrawerOpen(false);
+          setWaitlistTargetSlot(null);
+          onClose();
+        }}
+        targetSlot={waitlistTargetSlot}
+        dashboard={dashboard}
+        onAppointmentCreated={() => {
+          setIsWaitlistDrawerOpen(false);
+          setWaitlistTargetSlot(null);
+          onClose();
+        }}
+      />
+    );
+    return typeof document !== "undefined"
+      ? createPortal(drawerNode, document.body)
+      : drawerNode;
+  }
+
   return (
     <>
       {typeof document !== "undefined"
         ? createPortal(modalContent, document.body)
         : modalContent}
-      {isWaitlistDrawerOpen && waitlistTargetSlot && (
-        <WaitlistDrawer
-          isOpen={isWaitlistDrawerOpen}
-          onClose={() => {
-            setIsWaitlistDrawerOpen(false);
-            setWaitlistTargetSlot(null);
-          }}
-          targetSlot={waitlistTargetSlot}
-          dashboard={dashboard}
-          onAppointmentCreated={() => {
-            setIsWaitlistDrawerOpen(false);
-            setWaitlistTargetSlot(null);
-            onClose();
-          }}
-        />
-      )}
     </>
   );
 }

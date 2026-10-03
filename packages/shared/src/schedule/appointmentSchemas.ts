@@ -144,6 +144,7 @@ export const updateAppointmentSchema = z
 		comment: z.string().trim().max(1000).nullable().optional(),
 		allowOverbooking: z.boolean().optional(),
 		allowEmergencyOverride: z.boolean().optional(),
+		expectedCurrentStatus: z.array(appointmentStatusSchema).optional(),
 	})
 	.superRefine((value, context) => {
 		const startsAt =

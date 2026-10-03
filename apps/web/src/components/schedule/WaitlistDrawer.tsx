@@ -20,6 +20,8 @@ import {
   extractPatientPoliteName,
   filterWaitlistCandidates,
   generate152FzWaitlistOfferMessage,
+  openWhatsAppChat,
+  openTelegramChat,
 } from "./waitlistCancellationEngine";
 import { WaitlistQuickAddForm } from "./WaitlistQuickAddForm";
 import { WaitlistToolbar } from "./WaitlistToolbar";
@@ -36,6 +38,8 @@ export {
   generate152FzWaitlistOfferMessage,
   detectWaitlistUrgency,
   extractPatientPoliteName,
+  openWhatsAppChat,
+  openTelegramChat,
   WaitlistQuickAddForm,
   WaitlistToolbar,
   WaitlistCandidateCard,

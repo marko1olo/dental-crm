@@ -15,6 +15,7 @@ import {
 	URGENCY_CONFIG,
 	generate152FzWaitlistOfferMessage,
 } from "./waitlistCancellationEngine";
+import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
 
 const DEMO_SHOWCASE_WAITLIST_CANDIDATES: WaitlistCandidateItem[] = [
 	{
@@ -255,6 +256,7 @@ export function useWaitlistDrawerOperations({
 							body: JSON.stringify({
 								patientId: item.patientId,
 								status: "planned",
+								expectedCurrentStatus: ["cancelled", "no_show"],
 								reason:
 									item.treatmentCategory ||
 									item.notes ||
@@ -275,13 +277,33 @@ export function useWaitlistDrawerOperations({
 						return;
 					}
 				} else {
+					const effectiveDoctorUserId =
+						targetSlot.doctorUserId ||
+						item.preferredDoctorId ||
+						auth?.user?.id ||
+						staff.find(
+							// biome-ignore lint/suspicious/noExplicitAny: doctor filtering
+							(s: any) =>
+								s.role === "doctor" ||
+								s.role === "Врач" ||
+								s.role === "admin" ||
+								s.role === "owner",
+						)?.id ||
+						undefined;
+
+					const effectiveChairId =
+						targetSlot.chairId ||
+						dashboard?.clinicSettings?.chairs?.[0]?.id ||
+						dashboard?.chairs?.[0]?.id ||
+						DEFAULT_SOLO_CHAIR.id;
+
 					const postRes = await fetch("/api/appointments", {
 						method: "POST",
 						headers: waitlistWriteHeaders(),
 						body: JSON.stringify({
 							patientId: item.patientId,
-							doctorUserId: targetSlot.doctorUserId,
-							chairId: targetSlot.chairId,
+							doctorUserId: effectiveDoctorUserId,
+							chairId: effectiveChairId,
 							startsAt: targetSlot.startsAt,
 							endsAt: targetSlot.endsAt,
 							status: "planned",
@@ -434,9 +456,19 @@ export function useWaitlistDrawerOperations({
 						if (patData?.id) {
 							effectivePatientId = patData.id;
 						}
+					} else {
+						const errData = await patRes.json().catch(() => null);
+						showToast(
+							errData?.message || "Не удалось создать карту нового пациента",
+							"error",
+						);
+						setIsSubmitting(false);
+						return;
 					}
 				} catch {
-					effectivePatientId = `pat-wait-${Date.now()}`;
+					showToast("Ошибка связи с сервером при создании карты пациента", "error");
+					setIsSubmitting(false);
+					return;
 				}
 			}
 

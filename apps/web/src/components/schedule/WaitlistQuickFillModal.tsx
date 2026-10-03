@@ -751,31 +751,57 @@ export function WaitlistQuickFillModal({
 					currentSlot.endsAt ||
 					new Date(Date.parse(startsAt) + 30 * 60_000).toISOString();
 
-				const res = await fetch("/api/appointments", {
-					method: "POST",
-					headers: waitlistWriteHeaders(),
-					body: JSON.stringify({
-						patientId: patient.patientId,
-						doctorUserId,
-						chairId,
-						startsAt,
-						endsAt,
-						status: "planned",
-						reason: patient.treatmentCategory || "Запись из листа ожидания",
-						comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
-						assistantUserId: "",
-						clientMutationId: `waitlist-quickfill-${Date.now()}`,
-						allowOverbooking: true,
-					}),
-				});
-
-				if (!res.ok) {
-					const err = await res.json().catch(() => null);
-					showToast(
-						err?.message || "Не удалось создать запись на приём",
-						"error",
+				if (currentSlot.appointmentId) {
+					const patchRes = await fetch(
+						`/api/appointments/${encodeURIComponent(currentSlot.appointmentId)}`,
+						{
+							method: "PATCH",
+							headers: waitlistWriteHeaders(),
+							body: JSON.stringify({
+								patientId: patient.patientId,
+								status: "planned",
+								expectedCurrentStatus: ["cancelled", "no_show"],
+								reason: patient.treatmentCategory || "Запись из листа ожидания",
+								comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+								assistantUserId: "",
+							}),
+						},
 					);
-					return;
+
+					if (!patchRes.ok) {
+						const err = await patchRes.json().catch(() => null);
+						showToast(
+							err?.message || "Не удалось занять окно расписания",
+							"error",
+						);
+						return;
+					}
+				} else {
+					const res = await fetch("/api/appointments", {
+						method: "POST",
+						headers: waitlistWriteHeaders(),
+						body: JSON.stringify({
+							patientId: patient.patientId,
+							doctorUserId,
+							chairId,
+							startsAt,
+							endsAt,
+							status: "planned",
+							reason: patient.treatmentCategory || "Запись из листа ожидания",
+							comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+							assistantUserId: "",
+							clientMutationId: `waitlist-quickfill-${Date.now()}`,
+						}),
+					});
+
+					if (!res.ok) {
+						const err = await res.json().catch(() => null);
+						showToast(
+							err?.message || "Не удалось создать запись на приём",
+							"error",
+						);
+						return;
+					}
 				}
 
 				if (updateNewAppointmentDraft) {

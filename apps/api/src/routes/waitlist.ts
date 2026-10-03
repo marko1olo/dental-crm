@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -58,7 +58,7 @@ export async function registerWaitlistRoutes(
 				.where(
 					and(
 						eq(appointmentWaitlists.organizationId, orgId),
-						eq(appointmentWaitlists.status, "active"),
+						inArray(appointmentWaitlists.status, ["active", "waiting"]),
 					),
 				)
 				.orderBy(desc(appointmentWaitlists.createdAt));
@@ -207,7 +207,7 @@ export async function registerWaitlistRoutes(
 						}),
 					)
 					.optional(),
-				status: z.enum(["active", "fulfilled"]).optional(),
+				status: z.enum(["active", "waiting", "fulfilled", "cancelled"]).optional(),
 			});
 
 			const parsed = updateSchema.safeParse(request.body);
@@ -273,7 +273,7 @@ export async function registerWaitlistRoutes(
 
 			const { id } = request.params as { id: string };
 			const statusSchema = z.object({
-				status: z.enum(["active", "fulfilled"]),
+				status: z.enum(["active", "waiting", "fulfilled", "cancelled"]),
 			});
 
 			const parsed = statusSchema.safeParse(request.body);

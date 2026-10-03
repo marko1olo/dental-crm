@@ -27,7 +27,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
-import { openWhatsAppChat } from "./WaitlistQuickFillModal";
+import { openWhatsAppChat } from "./waitlistCancellationEngine";
 
 export type WaitlistMatchRow = {
 	entryId: string;
@@ -167,6 +167,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 					body: JSON.stringify({
 						patientId: match.patientId,
 						status: "planned",
+						expectedCurrentStatus: ["cancelled", "no_show"],
 						reason: match.reason || "Запись из листа ожидания (посадка в окно)",
 						comment: `Занято из листа ожидания: пациент ${match.patientName}`,
 						assistantUserId: "",

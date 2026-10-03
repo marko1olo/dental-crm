@@ -1,0 +1,78 @@
+{
+  "task": "Red Team Inquisition & Self-Fixing: Waitlist, Hot Slots & Downtime Dispatcher",
+  "status": "completed",
+  "completed_steps": [
+    "Read all mandatory authority files: core.md, frontend.md, engineering.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md completely",
+    "Reconnaissance: Located backend routes (waitlist.ts, waitlistMatches.ts, appointments.ts), schema (schedule.ts), matching services (waitlistMatching.ts, smartGapFillerService.ts), frontend engines and drawers (WaitlistDrawer.tsx, useWaitlistDrawerOperations.ts, FreedSlotsPanel.tsx, WaitlistMatchesBlock.tsx, WaitlistQuickFillModal.tsx, waitlistCancellationEngine.ts)",
+    "Identified Defect #1: Silent omission of default status: 'waiting' entries in GET /api/waitlist (only filtered by 'active', dropping newly created or migrated records)",
+    "Identified Defect #2: Disconnected Smart Gap-Filler daemon with silent error swallowing (catch { return null; }), incomplete priority scoring and absence of weekday/time-range validation against patient preferences",
+    "Identified Defect #3: Concurrency race condition on 1-click slot filling (multiple receptionists simultaneously attempting to take the same freed slot without optimistic status check, risking silent patient overwrite)",
+    "Identified Defect #4: WaitlistQuickFillModal hardcoding allowOverbooking: true and attempting duplicate POST instead of PATCHing cancelled appointmentId with expectedCurrentStatus",
+    "Identified Defect #5: Modal matryoshka in AppointmentModal.tsx stacking two full-screen modal overlays (AppointmentModal + WaitlistDrawer) simultaneously",
+    "Identified Defect #6: Redundant competing modal mounts in ScheduleViewModals.tsx (both WaitlistDrawer and WaitlistQuickFillModal mounted for the same slot)",
+    "Identified Defect #7: Missing chair & doctor fallback in useWaitlistDrawerOperations.ts leading to 400 Bad Request in solo doctor / 1-chair clinics (Mandate 8n)",
+    "Identified Defect #8: Invalid UUID fallback 'pat-wait-${Date.now()}' on quick patient creation failure in useWaitlistDrawerOperations.ts violating PostgreSQL schema constraints",
+    "Self-fixed Defect #1: Updated apps/api/src/routes/waitlist.ts to query inArray(status, ['active', 'waiting']) and allow waiting/cancelled in PUT/PATCH schemas",
+    "Self-fixed Defect #2: Hardened smartGapFillerService.ts with parsePreferredRanges, slotFitsRanges, parsePreferredWeekday, clinical priority weights (urgent/pain=100, high=80, plan=75, medium=50, low=25), and logged errors with console.error; connected triggerSmartGapFiller on appointment cancellation in appointments.ts with HOT_SLOT_FREED websocket broadcast",
+    "Self-fixed Defect #3: Added expectedCurrentStatus to updateAppointmentSchema in @dental/shared, enforced optimistic concurrency in updateAppointmentInDb and in-memory sampleData, returning structured HTTP 409 conflict when a freed slot is already claimed",
+    "Self-fixed Defect #4: Updated useWaitlistDrawerOperations.ts, WaitlistMatchesBlock.tsx, and WaitlistQuickFillModal.tsx to pass expectedCurrentStatus: ['cancelled', 'no_show'] on 1-click booking into freed windows",
+    "Self-fixed Defect #5: Eliminated modal matryoshka in AppointmentModal.tsx by transitioning directly to WaitlistDrawer without rendering underlying cancelled appointment dialog",
+    "Self-fixed Defect #6: Consolidated ScheduleViewModals.tsx on WaitlistDrawer as SSOT (isOpen={waitlistOpen || waitlistQuickFillSlot !== null}), eliminating duplicate modal mount",
+    "Self-fixed Defect #7: Added DEFAULT_SOLO_CHAIR and active staff doctor fallbacks in useWaitlistDrawerOperations.ts ensuring 100% solo doctor autonomy (Mandate 8n)",
+    "Self-fixed Defect #8: Replaced invalid UUID string fallback with explicit error toast and safe return in useWaitlistDrawerOperations.ts",
+    "Fixed SSR safety issue in InventoryConfirmDialog.tsx by importing React",
+    "Created automated unit test apps/api/src/tests/waitlistConcurrency.test.ts verifying race condition prevention and conflict error rejection",
+    "Ran verification: check-encoding (7213 files clean), check-css-tokens (165 css files clean, 0 unresolved), and all targeted unit tests (waitlistMatching, waitlistConcurrency, waitlistCancellation, WaitlistQuickFillModal, modalPortalsSsrSafety, soloDoctorScheduleAutonomy: 50/50 passing with 0 failures)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "code": "WAITLIST_GHOST_STATUS_FILTER",
+      "severity": "CRITICAL",
+      "description": "GET /api/waitlist dropped all entries with default status 'waiting' because of eq(status, 'active')",
+      "status": "FIXED"
+    },
+    {
+      "code": "CONCURRENT_HOT_SLOT_OVERWRITE_RACE",
+      "severity": "CRITICAL",
+      "description": "Two receptionists booking the same freed window could overwrite each other without optimistic concurrency lock",
+      "status": "FIXED"
+    },
+    {
+      "code": "GAP_FILLER_DAEMON_ORPHANED_AND_PRIMITIVE",
+      "severity": "HIGH",
+      "description": "smartGapFillerService was never invoked on appointment cancellation, swallowed errors silently, and lacked weekday/time matching",
+      "status": "FIXED"
+    },
+    {
+      "code": "QUICKFILL_MODAL_BLIND_OVERBOOKING",
+      "severity": "HIGH",
+      "description": "WaitlistQuickFillModal hardcoded allowOverbooking: true and ignored appointmentId, creating conflicting duplicate appointments",
+      "status": "FIXED"
+    },
+    {
+      "code": "MODAL_MATRYOSHKA_APPOINTMENT_WAITLIST",
+      "severity": "HIGH",
+      "description": "AppointmentModal.tsx rendered both modalContent and WaitlistDrawer simultaneously, creating double backdrops and trapping user in cancelled modal on dismiss",
+      "status": "FIXED"
+    },
+    {
+      "code": "DUPLICATE_WAITLIST_MODAL_MOUNT_IN_SCHEDULE",
+      "severity": "MEDIUM",
+      "description": "ScheduleViewModals.tsx mounted both WaitlistDrawer and WaitlistQuickFillModal for the same freed slot, violating SSOT",
+      "status": "FIXED"
+    },
+    {
+      "code": "SOLO_DOCTOR_1_CHAIR_FALLBACK_FAIL",
+      "severity": "HIGH",
+      "description": "useWaitlistDrawerOperations.ts failed with 400 Bad Request when booking slot without explicit doctor or chair in solo practice",
+      "status": "FIXED"
+    },
+    {
+      "code": "FAKE_UUID_PATIENT_FALLBACK",
+      "severity": "HIGH",
+      "description": "useWaitlistDrawerOperations.ts caught patient creation errors and assigned pat-wait-${Date.now()} violating PostgreSQL UUID foreign key constraint",
+      "status": "FIXED"
+    }
+  ]
+}

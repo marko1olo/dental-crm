@@ -538,3 +538,21 @@ export function filterWaitlistCandidates(
     })
     .sort((a, b) => b.scoring.score - a.scoring.score);
 }
+
+/**
+ * Opens WhatsApp chat via wa.me link.
+ */
+export function openWhatsAppChat(phone: string, text: string) {
+  const cleanPhone = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
+  const encodedText = encodeURIComponent(text);
+  window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, "_blank");
+}
+
+/**
+ * Opens Telegram chat/share link offering the opened slot.
+ */
+export function openTelegramChat(phone: string, text: string) {
+  const cleanPhone = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
+  const encodedText = encodeURIComponent(text);
+  window.open(`https://t.me/share/url?text=${encodedText}`, "_blank");
+}

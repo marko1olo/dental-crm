@@ -19,6 +19,8 @@ import {
 	patients,
 	users,
 } from "../../db/schema.js";
+import { registerAppointmentsRoutes } from "../../routes/appointments.js";
+import { registerWaitlistRoutes } from "../../routes/waitlist.js";
 import { registerWaitlistMatchRoutes } from "../../routes/waitlistMatches.js";
 import {
 	fixtureUuid,
@@ -101,7 +103,9 @@ describe("подбор на освободившееся окно", () => {
 		app = createTenantTestApp();
 		process.env.NODE_ENV = "test";
                 process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
+                await registerWaitlistRoutes(app);
                 await registerWaitlistMatchRoutes(app);
+                await registerAppointmentsRoutes(app);
 
 		try {
 			/*
@@ -368,5 +372,60 @@ describe("подбор на освободившееся окно", () => {
 		// Не 403 и не пустой список: чужой клинике нельзя даже подтверждать, что
 		// такой приём существует.
 		assert.equal(response.statusCode, 404, response.body);
+	});
+
+	test("GET /api/waitlist возвращает записи со статусом waiting (не отсекает дефолтный статус)", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/waitlist",
+			headers: ORG_HEADERS,
+		});
+		assert.equal(response.statusCode, 200, response.body);
+		const items = JSON.parse(response.body) as Array<{ id: string; status: string }>;
+		assert.ok(items.length >= 3, "Должны вернуться все 3 записи листа ожидания");
+		assert.ok(
+			items.some((i) => i.id === WAIT_BEST && i.status === "waiting"),
+			"Запись со статусом waiting должна присутствовать в ответе",
+		);
+	});
+
+	test("посадка в окно с expectedCurrentStatus защищает от гонки и возвращает 409 при занятом окне", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		// Шаг 1: Администратор А успешно занимает отмененное окно CANCELLED_APPOINTMENT
+		const firstClaim = await app.inject({
+			method: "PATCH",
+			url: `/api/appointments/${CANCELLED_APPOINTMENT}`,
+			headers: ORG_HEADERS,
+			payload: {
+				patientId: BEST_MATCH,
+				status: "planned",
+				expectedCurrentStatus: ["cancelled", "no_show"],
+				reason: "Посадка из листа ожидания Администратор А",
+			},
+		});
+		assert.equal(firstClaim.statusCode, 200, firstClaim.body);
+
+		// Шаг 2: Администратор Б пытается занять то же окно, ожидая что оно еще отменено
+		const secondClaim = await app.inject({
+			method: "PATCH",
+			url: `/api/appointments/${CANCELLED_APPOINTMENT}`,
+			headers: ORG_HEADERS,
+			payload: {
+				patientId: OTHER_DOCTOR_WAITER,
+				status: "planned",
+				expectedCurrentStatus: ["cancelled", "no_show"],
+				reason: "Посадка из листа ожидания Администратор Б",
+			},
+		});
+		// Должен вернуть 409 Conflict, так как окно уже имеет статус planned
+		assert.equal(secondClaim.statusCode, 409, secondClaim.body);
+		const err = JSON.parse(secondClaim.body);
+		assert.ok(
+			err.message.includes("уже занят") || err.message.includes("больше не свободен"),
+			"Сообщение об ошибке должно объяснять конфликт одновременного занятия окна",
+		);
 	});
 });

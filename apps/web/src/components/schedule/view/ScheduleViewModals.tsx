@@ -5,8 +5,7 @@ import { AppointmentModal } from "../AppointmentModal";
 import { DoctorFreeSlotsModal } from "../DoctorFreeSlotsModal";
 import { SlotConflictModal } from "../SlotConflictModal";
 import { UrgentScheduleRequestsWidget } from "../UrgentScheduleRequestsWidget";
-import { WaitlistDrawer } from "../WaitlistDrawer";
-import { WaitlistQuickFillModal, type TargetSlotInfo } from "../WaitlistQuickFillModal";
+import { WaitlistDrawer, type TargetSlotInfo } from "../WaitlistDrawer";
 import {
   DoctorShiftRosterModal,
   type DoctorShift,
@@ -301,7 +300,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       </div>
 
       <WaitlistDrawer
-        isOpen={waitlistOpen}
+        isOpen={waitlistOpen || waitlistQuickFillSlot !== null}
         onClose={() => {
           setWaitlistOpen(false);
           setWaitlistQuickFillSlot(null);
@@ -316,16 +315,6 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
             void loadDashboard();
           }
         }}
-      />
-      {/* Canonical Waitlist Drawer (SSOT) handles targetSlot automatically; WaitlistQuickFillModal is reserved for standalone fallback */}
-      <WaitlistQuickFillModal
-        isOpen={waitlistQuickFillSlot !== null && !waitlistOpen}
-        onClose={() => setWaitlistQuickFillSlot(null)}
-        targetSlot={waitlistQuickFillSlot}
-        updateNewAppointmentDraft={updateNewAppointmentDraft}
-        focusNewAppointmentEditor={focusNewAppointmentEditor}
-        dashboard={dashboard}
-        auth={auth}
       />
       <DoctorShiftRosterModal
         isOpen={isRosterModalOpen}

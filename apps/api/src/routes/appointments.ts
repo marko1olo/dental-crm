@@ -21,6 +21,7 @@ import {
 } from "../db/schema.js";
 import { openVisitForAppointmentInDb } from "../db/visitsQuery.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
+import { triggerSmartGapFiller } from "../services/daemons/smartGapFillerService.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import {
 	appointmentCreateValidationMessage,
@@ -431,6 +432,24 @@ export const updateAppointmentHandler = async (
 				...(input.status ? { status: input.status } : {}),
 			},
 		});
+
+		if (input.status === "cancelled" || input.status === "no_show") {
+			triggerSmartGapFiller(params.appointmentId, { organizationId: orgId })
+				.then((alert) => {
+					if (alert && alert.candidates.length > 0) {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "HOT_SLOT_FREED",
+							payload: alert,
+						});
+					}
+				})
+				.catch((gapErr) => {
+					request.log.warn(
+						{ err: gapErr, appointmentId: params.appointmentId, orgId },
+						"[appointments] Не удалось выполнить анализ smartGapFiller при отмене приёма",
+					);
+				});
+		}
 
 		let dashboard: Awaited<ReturnType<typeof getDashboardFromDb>>;
 		try {
