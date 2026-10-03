@@ -168,7 +168,14 @@ export function getAvatarColor(name: string | null | undefined): {
  * Formats duration in seconds to MM:SS string (or HH:MM:SS if >= 1 hour).
  */
 export function formatDurationTimer(totalSeconds: number): string {
-	const sec = Math.max(0, Math.floor(totalSeconds));
+	if (
+		!Number.isFinite(totalSeconds) ||
+		Number.isNaN(totalSeconds) ||
+		totalSeconds < 0
+	) {
+		return "00:00";
+	}
+	const sec = Math.floor(totalSeconds);
 	const hours = Math.floor(sec / 3600);
 	const minutes = Math.floor((sec % 3600) / 60);
 	const remainingSeconds = sec % 60;

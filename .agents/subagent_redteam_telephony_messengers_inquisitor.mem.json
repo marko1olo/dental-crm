@@ -1,0 +1,45 @@
+{
+  "role": "Red Team Inquisitor — Telephony, Softphones & Messengers",
+  "domain": "telephony, pbx, softphone, call cards, call recordings, audio players, webhooks, messengers (telegram, whatsapp, vk)",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Critical Law #0: Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md in full",
+    "Reconnaissance of telephony and messengers in frontend (apps/web), backend (apps/api), and packages/shared",
+    "Audited orphans & mount points: Verified TelephonyFloatingWidget, IncomingCallPopup, TelephonyDrawer in workspaceShell.tsx (doctor mode immunity respected per Mandate 8e); WhatsAppChatPanel in CommunicationsView.tsx; PatientWhatsappSendPanel in PatientOverviewTab.tsx; Telegram in App.tsx & settings; VK in apps/api/src/routes/vk.ts",
+    "Audited duplicates & SSOT: Collapsed duplicated formatDurationTimer and generateWaveformBars in apps/web/src/store/telephonyClinical.ts to re-export canonical implementations from @dental/shared",
+    "Audited mocks & stubs (Zero-Mock Invariant): Eliminated broken <audio src='' /> player in CallAudioPlayer.tsx when recordingUrl is empty/missing, replacing with honest zero-mock fallback ('Запись звонка не подключена или недоступна')",
+    "Fixed desktop ergonomics & density (Mandates 8c, 8d): Replaced inflated min-h-[44px] desktop buttons with compact 28-36px density controls in CallAudioPlayer.tsx",
+    "Enhanced error resilience in packages/shared/src/telephony/formatters.ts: Handled non-finite numbers (NaN, Infinity, negative) returning '00:00'",
+    "Added Suite 9 to apps/web/src/components/telephony/__tests__/telephonyHub.test.ts verifying zero-mock fallback, desktop density, and formatDurationTimer edge cases",
+    "Ran verification suite: node scripts/check-encoding.mjs (7185 files checked, 0 errors); npx tsx --test apps/web/src/components/telephony/__tests__/*.test.ts and voiceAndTelephonyAutonomyInquisition.test.ts (146 passing tests, 0 failures)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "ZERO_MOCK_CALL_AUDIO_PLAYER",
+      "severity": "HIGH",
+      "file": "apps/web/src/components/telephony/CallAudioPlayer.tsx",
+      "issue": "When recordingUrl was empty or falsy, CallAudioPlayer mounted a broken <audio src=''> element with active 00:00/00:00 controls instead of an honest empty state.",
+      "remediation": "Implemented zero-mock fallback returning [data-testid='call-audio-player-empty'] with 'Запись звонка не подключена или недоступна' and optional STT transcript panel."
+    },
+    {
+      "id": "DUPLICATE_TELEPHONY_FORMATTERS",
+      "severity": "MEDIUM",
+      "file": "apps/web/src/store/telephonyClinical.ts",
+      "issue": "formatDurationTimer and generateWaveformBars were duplicated between apps/web/src/store/telephonyClinical.ts and packages/shared/src/telephony/formatters.ts.",
+      "remediation": "Deduplicated by re-exporting canonical implementations directly from @dental/shared."
+    },
+    {
+      "id": "DESKTOP_CONTROL_BLOAT",
+      "severity": "MEDIUM",
+      "file": "apps/web/src/components/telephony/CallAudioPlayer.tsx",
+      "issue": "Toolbar controls had hardcoded min-h-[44px] min-w-[44px] Tailwind utility classes, violating desktop clinical density (28-36px) per Mandates 8c and 8d.",
+      "remediation": "Refactored button styles to compact desktop density (play button 32-36px, skip buttons 32px, speed pills 28px) while maintaining unmount audio cleanup contracts."
+    }
+  ],
+  "verification": {
+    "encoding": "7185 files checked, 0 errors",
+    "tests_passed": 146,
+    "tests_failed": 0
+  }
+}

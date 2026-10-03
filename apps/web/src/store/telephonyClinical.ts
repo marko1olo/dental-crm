@@ -795,38 +795,8 @@ export function openWhatsAppChat(phone: string, text: string): void {
 	window.open(url, "_blank");
 }
 
-/**
- * Formats duration in seconds to MM:SS string (or HH:MM:SS if >= 1 hour).
- */
-export function formatDurationTimer(totalSeconds: number): string {
-	if (
-		!Number.isFinite(totalSeconds) ||
-		Number.isNaN(totalSeconds) ||
-		totalSeconds < 0
-	) {
-		return "00:00";
-	}
-	const sec = Math.floor(totalSeconds);
-	const hours = Math.floor(sec / 3600);
-	const minutes = Math.floor((sec % 3600) / 60);
-	const remainingSeconds = sec % 60;
-
-	if (hours > 0) {
-		return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-	}
-	return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-}
-
-/**
- * Honest flat recording track indicator (normalized level 0.5)
- * Eliminates fake procedural Math.sin waveform diorama per Core Route item 11 / Mandate 8p.
- */
-export function generateWaveformBars(
-	_seed: string | null | undefined,
-	count = 48,
-): number[] {
-	const barCount = Math.max(1, count);
-	return new Array(barCount).fill(0.5);
-}
-
-export { resolvePatientCategory } from "@dental/shared";
+export {
+	formatDurationTimer,
+	generateWaveformBars,
+	resolvePatientCategory,
+} from "@dental/shared";

@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { describe, test } from "node:test";
 import type {
 	Appointment,
@@ -710,4 +712,62 @@ describe("Telephony & Reception Live Hub Suite", () => {
 			useTelephonyStore.getState().dismissCall();
 		});
 	});
+
+	describe("9. Call Audio Player & Zero-Mock Recording Fallback (Mandates 8c, 8d, 8k, 8p)", () => {
+		test("formatDurationTimer handles edge cases cleanly (negative, NaN, non-finite)", () => {
+			assert.equal(formatDurationTimer(-10), "00:00");
+			assert.equal(formatDurationTimer(Number.NaN), "00:00");
+			assert.equal(formatDurationTimer(Number.POSITIVE_INFINITY), "00:00");
+			assert.equal(formatDurationTimer(0), "00:00");
+			assert.equal(formatDurationTimer(65), "01:05");
+			assert.equal(formatDurationTimer(3665), "01:01:05");
+		});
+
+		test("generateWaveformBars returns honest flat 0.5 amplitude values (Zero-Mock Invariant)", () => {
+			const bars = generateWaveformBars("test-seed-xyz", 30);
+			assert.equal(bars.length, 30);
+			assert.ok(bars.every((b) => b === 0.5), "All waveform bars must be honest 0.5 flat level");
+		});
+
+		test("CallAudioPlayer.tsx enforces zero-mock fallback and desktop clinical density", () => {
+			const playerPath = path.resolve(
+				process.cwd(),
+				"apps/web/src/components/telephony/CallAudioPlayer.tsx",
+			);
+			const source = fs.readFileSync(playerPath, "utf-8");
+
+			// Zero-mock fallback when recording is missing/empty
+			assert.ok(
+				source.includes('data-testid="call-audio-player-empty"'),
+				"CallAudioPlayer must include data-testid='call-audio-player-empty' for missing recording",
+			);
+			assert.ok(
+				source.includes("Запись звонка не подключена или недоступна"),
+				"CallAudioPlayer must render honest empty state message",
+			);
+
+			// Desktop clinical density: buttons use compact heights (min-h-[32px] / min-h-[36px]), not bloated 44px
+			assert.ok(
+				source.includes("min-h-[36px] min-w-[36px] w-9 h-9 sm:w-8 sm:h-8 sm:min-h-[32px] sm:min-w-[32px]"),
+				"Play button must have compact desktop density",
+			);
+			assert.ok(
+				source.includes("min-h-[32px] min-w-[32px] h-8 w-8"),
+				"Skip buttons must use compact desktop 32px height",
+			);
+			assert.ok(
+				source.includes("min-h-[28px] min-w-[28px] h-7 px-2 py-0.5"),
+				"Speed pills must use compact desktop height",
+			);
+
+			// Audio element unmount cleanup contract (prevent memory and playback leaks)
+			assert.ok(
+				source.includes("audioRef.current.pause()") &&
+				source.includes('audioRef.current.src = ""') &&
+				source.includes("audioRef.current.load()"),
+				"CallAudioPlayer must clean up audio element on unmount",
+			);
+		});
+	});
 });
+

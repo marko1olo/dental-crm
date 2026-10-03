@@ -209,6 +209,66 @@ export function CallAudioPlayer({
 		audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
+	// Zero-Mock Fallback: Honest empty state when call recording is not available/configured
+	if (!recordingUrl || recordingUrl.trim() === "") {
+		return (
+			<div
+				data-testid="call-audio-player-empty"
+				className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--glass-border,var(--line,#e2e8f0))] text-xs flex flex-col gap-2 shadow-xs"
+			>
+				<div className="flex items-center justify-center gap-2 py-3 text-[var(--muted,#64748b)]">
+					<VolumeX size={18} className="text-[var(--muted,#94a3b8)]" />
+					<span className="font-medium">Запись звонка не подключена или недоступна</span>
+				</div>
+				{transcriptUtterances.length > 0 && (
+					<div className="pt-2 border-t border-[var(--line,#e2e8f0)]">
+						<button
+							type="button"
+							onClick={() => setShowTranscript((prev) => !prev)}
+							className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[32px] py-1 transition-colors cursor-pointer"
+						>
+							<Sparkles size={13} className="text-amber-500" />
+							<span>
+								{showTranscript
+									? "Скрыть расшифровку речи"
+									: "Показать расшифровку речи (AI STT)"}
+							</span>
+						</button>
+						{showTranscript && (
+							<div className="space-y-2 max-h-48 overflow-y-auto pr-1 pt-2">
+								{transcriptUtterances.map((u) => (
+									<div
+										key={`${u.speaker}-${u.startTimeSeconds}`}
+										className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)]"
+									>
+										<div className="flex items-center justify-between text-[10px] mb-1 font-bold">
+											<span
+												className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
+													u.speaker === "operator"
+														? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]"
+														: "bg-[var(--info-bg,rgba(2,132,199,0.1))] text-[var(--info-fg,#0284c7)] border border-[var(--info-fg,rgba(2,132,199,0.3))]"
+												}`}
+											>
+												{u.speaker === "operator" ? "Оператор" : "Пациент"}
+											</span>
+											<span className="font-mono text-[var(--muted,#64748b)]">
+												{formatDurationTimer(u.startTimeSeconds)} -{" "}
+												{formatDurationTimer(u.endTimeSeconds)}
+											</span>
+										</div>
+										<p className="text-[var(--ink,#0f172a)] text-[11px] leading-relaxed">
+											{u.text}
+										</p>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+		);
+	}
+
 	return (
 		<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--glass-border,var(--line,#e2e8f0))] text-[var(--ink,#0f172a)] text-xs flex flex-col gap-2.5 shadow-xs">
 			<audio
@@ -231,7 +291,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={togglePlay}
-						className="min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="min-h-[36px] min-w-[36px] w-9 h-9 sm:w-8 sm:h-8 sm:min-h-[32px] sm:min-w-[32px] rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						title={isPlaying ? "Пауза" : "Воспроизвести запись"}
 						aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					>
@@ -246,7 +306,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(-10)}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
+						className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
 						title="Назад на 10 сек"
 						aria-label="Назад на 10 секунд"
 					>
@@ -257,7 +317,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(10)}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
+						className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
 						title="Вперед на 10 сек"
 						aria-label="Вперед на 10 секунд"
 					>
@@ -271,14 +331,14 @@ export function CallAudioPlayer({
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) with touch-targets >= 44x44px and gap-2 */}
-					<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-1 border border-[var(--line,#e2e8f0)] gap-2">
+					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) */}
+					<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-0.5 border border-[var(--line,#e2e8f0)] gap-1">
 						{speeds.map((s) => (
 							<button
 								key={s}
 								type="button"
 								onClick={() => setPlaybackSpeed(s)}
-								className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
+								className={`min-h-[28px] min-w-[28px] h-7 px-2 py-0.5 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
 									playbackSpeed === s
 										? "bg-[var(--teal)] text-white shadow-xs"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))]"
@@ -294,7 +354,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all"
+						className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all"
 						title={isMuted ? "Включить звук" : "Выключить звук"}
 						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 					>
@@ -371,7 +431,7 @@ export function CallAudioPlayer({
 				<button
 					type="button"
 					onClick={() => setShowTranscript((prev) => !prev)}
-					className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[44px] py-1 transition-colors cursor-pointer"
+					className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[32px] py-1 transition-colors cursor-pointer"
 					aria-expanded={showTranscript}
 				>
 					<Sparkles size={13} className="text-amber-500" />
@@ -386,7 +446,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={handleCopyTranscript}
-						className="min-h-[44px] text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors cursor-pointer"
+						className="min-h-[32px] text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors cursor-pointer"
 						title="Скопировать текст диалога"
 					>
 						{copiedTranscript ? (
