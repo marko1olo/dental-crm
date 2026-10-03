@@ -357,6 +357,17 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				};
 			}, [isDocsMenuOpen]);
 
+			useEffect(() => {
+				const handleOpenDms = () => setIsDmsLetterOpen(true);
+				const handleOpenRegistry = () => setIsDmsRegistryOpen(true);
+				window.addEventListener("dente:open-dms-letters", handleOpenDms);
+				window.addEventListener("dente:open-dms-registry", handleOpenRegistry);
+				return () => {
+					window.removeEventListener("dente:open-dms-letters", handleOpenDms);
+					window.removeEventListener("dente:open-dms-registry", handleOpenRegistry);
+				};
+			}, []);
+
 			const handleSaveDmsLetter = useCallback(
 				async (letter: DmsGuaranteeLetter) => {
 					try {
@@ -517,6 +528,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											title="Открыть медицинскую карту пациента"
 											data-testid="patient-workspace-open-043u-btn"
 										>
+											{/* Карта пациента (043/у) - амбулаторный стандарт стоматологии */}
 											<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
 											<span>Медицинская карта</span>
 										</button>

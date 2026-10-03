@@ -437,6 +437,8 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 						<DmsRegistryExportModal
 							isOpen={isDmsRegistryOpen}
 							onClose={() => setIsDmsRegistryOpen(false)}
+							patientId={patientId}
+							patientName={patientName || undefined}
 						/>
 					</Suspense>
 				)}

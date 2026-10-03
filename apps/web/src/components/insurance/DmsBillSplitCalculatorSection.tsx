@@ -29,6 +29,7 @@ import {
 } from "./dmsSplitEngine";
 import type { BillItemToSplit } from "./DmsGuaranteeLetterModal";
 import { formatRubKopecks } from "./insuranceMath";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export interface DmsBillSplitCalculatorSectionProps {
 	readonly letter: DmsGuaranteeLetter;
@@ -64,14 +65,17 @@ export const DEMO_VISIT_BILL_ITEMS: readonly BillItemToSplit[] = [
 
 export function DmsBillSplitCalculatorSection({
 	letter,
-	billItems = DEMO_VISIT_BILL_ITEMS,
+	billItems,
 }: DmsBillSplitCalculatorSectionProps) {
 	const cashInputId = useId();
 	const [paymentMethod, setPaymentMethod] = useState<PatientPaymentMethod>("card");
 	const [mixedCashRub, setMixedCashRub] = useState<number>(5000);
 
+	const isDemo = isDemoShowcaseMode();
+	const effectiveItems = billItems !== undefined ? billItems : (isDemo ? DEMO_VISIT_BILL_ITEMS : []);
+
 	const mappedItems: DmsBillableLineItem[] = useMemo(() => {
-		return billItems.map((item) => ({
+		return effectiveItems.map((item) => ({
 			id: item.id,
 			serviceCode: item.serviceCode804n,
 			serviceCode804n: item.serviceCode804n,
@@ -81,7 +85,7 @@ export function DmsBillSplitCalculatorSection({
 			unitPriceKopecks: item.unitPriceKopecks,
 			discountPercent: item.discountPercent,
 		}));
-	}, [billItems]);
+	}, [effectiveItems]);
 
 	const splitCalculation = useMemo(() => {
 		const cashKopecks =
@@ -133,10 +137,32 @@ export function DmsBillSplitCalculatorSection({
 				и исключений страховой программы.
 			</p>
 
-			{/* Сводные показатели визита */}
-			<div className="dms-stats-row" style={{ marginBottom: "14px" }}>
-				<div className="dms-stat-card">
-					<span className="dms-stat-label">Общая сумма счета</span>
+			{mappedItems.length === 0 ? (
+				<div
+					style={{
+						padding: "20px",
+						borderRadius: "10px",
+						border: "1px dashed var(--line, #cbd5e1)",
+						textAlign: "center",
+						backgroundColor: "var(--paper-soft, #f8fafc)",
+						margin: "8px 0",
+					}}
+					data-testid="empty-dms-bill-items"
+				>
+					<Split size={24} style={{ margin: "0 auto 8px", opacity: 0.5, color: "var(--teal, #0d9488)" }} />
+					<p style={{ fontWeight: 600, fontSize: "0.875rem", margin: "0 0 4px", color: "var(--ink, #0f172a)" }}>
+						В счёте визита пока нет добавленных услуг
+					</p>
+					<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+						Добавьте выполненные манипуляции в приём для расчёта распределения франшизы и страхового покрытия ДМС.
+					</p>
+				</div>
+			) : (
+				<>
+					{/* Сводные показатели визита */}
+					<div className="dms-stats-row" style={{ marginBottom: "14px" }}>
+						<div className="dms-stat-card">
+							<span className="dms-stat-label">Общая сумма счета</span>
 					<span className="dms-stat-value font-mono">
 						{formatCurrencyRub(splitCalculation.totalBillKopecks)}
 					</span>
@@ -374,6 +400,8 @@ export function DmsBillSplitCalculatorSection({
 					</tfoot>
 				</table>
 			</div>
+				</>
+			)}
 		</div>
 	);
 }

@@ -16,6 +16,7 @@ import {
 	Megaphone,
 	Phone,
 	Plus,
+	Shield,
 	ShieldAlert,
 	ShieldCheck,
 	Stethoscope,
@@ -177,6 +178,7 @@ export interface PatientGeneralInfoTabProps {
 	activeSection?: "all" | "general" | "somatic" | "visits" | "family" | undefined;
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onNewAppointment?: ((patientId?: string) => void) | undefined;
+	onOpenDmsLetters?: (() => void) | undefined;
 }
 
 /**
@@ -198,6 +200,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 		activeSection = "all",
 		onNavigateToVisit,
 		onNewAppointment,
+		onOpenDmsLetters,
 	}) {
 		const currentProfile = safetyProfile ?? DEFAULT_SOMATIC_HEALTHY_NORM;
 		const safetyEvaluation = useMemo(() => {
@@ -1118,7 +1121,32 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									</div>
 
 									<div className="flex flex-col gap-1">
-										<label className="text-[11px] font-bold text-[var(--muted)]">Полис ДМС (Номер)</label>
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-bold text-[var(--muted)]">Полис ДМС (Номер)</label>
+											<button
+												type="button"
+												onClick={() => {
+													if (onOpenDmsLetters) {
+														onOpenDmsLetters();
+													} else {
+														window.dispatchEvent(
+															new CustomEvent("dente:open-dms-letters", {
+																detail: {
+																	patientId: patient?.id,
+																	patientFullName: patient?.fullName,
+																},
+															}),
+														);
+													}
+												}}
+												className="h-6 px-2 rounded text-[11px] font-bold bg-teal-50 dark:bg-teal-950/40 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 cursor-pointer flex items-center gap-1 transition-colors"
+												title="Открыть гарантийные письма и согласованные услуги по ДМС"
+												data-testid="btn-open-dms-letters-tab"
+											>
+												<Shield className="w-3 h-3 text-teal-600 dark:text-teal-400 shrink-0" />
+												<span>Гарантийные письма</span>
+											</button>
+										</div>
 										<input
 											type="text"
 											className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"

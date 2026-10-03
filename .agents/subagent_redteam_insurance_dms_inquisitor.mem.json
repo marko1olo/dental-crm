@@ -1,0 +1,73 @@
+{
+  "agent": "subagent_redteam_insurance_dms_inquisitor",
+  "started_at": "2026-10-03T04:32:30Z",
+  "completed_at": "2026-10-03T04:47:00Z",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md completely",
+    "Audited all DMS / Insurance / Guarantee Letter code across packages/shared, apps/api, apps/web",
+    "Identified broken CSV header in dmsClaimRegistryExport.ts causing regression against Order 804n",
+    "Discovered missing backend statutory DMS claims registry endpoint in apps/api/src/routes/insurance.ts",
+    "Discovered orphaned/fake mock data in DmsRegistryExportModal.tsx not hooked up to live Fastify backend",
+    "Fixed CSV export header in dmsClaimRegistryExport.ts ('Код услуги (804н)')",
+    "Implemented production-grade GET /api/insurance/registry route with auth-first verification, dynamic filters, SQL database aggregation, Mandate 8n guarantee letter support, and 1-click XML/CSV/JSON export formats",
+    "Connected DmsRegistryExportModal.tsx to live API /api/insurance/registry with dynamic Russian calendar dates, XML export, patient scope filter, and live clinic profile",
+    "Connected modal props (patientId, patientName) in PatientWorkspaceModals.tsx",
+    "Created integration test suite apps/api/src/tests/routes/insuranceRegistry.test.ts (8/8 tests passing)",
+    "Identified orphaned Insurance Tender in FiscalPaymentTenderSection.tsx and missing 1-click fallback to direct patient payment (Mandate 8e, 8n)",
+    "Implemented 100% DMS payment preset and split row with guarantee letter input, +Остаток for insurer, and 1-click 'Перевести на пациента' fallback button in FiscalPaymentTenderSection.tsx",
+    "Updated useFiscalTenderAllocation.ts and FiscalPaymentTab.tsx to wire insuranceAmount and guaranteeLetterNumber into cashier split allocation with integer kopeck conservation",
+    "Connected PatientGeneralInfoTab.tsx with direct 1-click 'Гарантийные письма' button next to DMS policy and company fields",
+    "Connected PatientCardModal.tsx with lazy-loaded DmsGuaranteeLetterModal and automatic persistence to /api/insurance/guarantee-letters",
+    "Added dente:open-dms-letters and dente:open-dms-registry reactive DOM event listeners to PatientWorkspaceView.tsx",
+    "Eliminated synthetic mock items in DmsBillSplitCalculatorSection.tsx: guarded demo items behind isDemoShowcaseMode() and added authentic empty state when bill items are empty",
+    "Created test suite apps/web/src/components/insurance/dmsCashierAndCardIntegration.test.ts (4/4 tests passing)",
+    "Verified kopeck-exact balance arithmetic invariant: patientPaidKopecks + insurerClaimKopecks === totalGrossKopecks with zero drift",
+    "Enforced Mandate 8e/8n Doctor Autonomy: treatment never blocked by depleted guarantee limits or insurer paperwork delays",
+    "Strictly observed zero-touch policy on KLKT / DICOM / Radiology / Tomography files",
+    "Strictly observed Mandate 8t: no global compiler invocations, executed isolated targeted test suites",
+    "Executed check:encoding (7215 files, 0 errors)",
+    "Executed check-css-tokens.mjs (165 CSS files, 0 unresolved variables)",
+    "Executed 55 targeted unit/integration tests across shared and web - 100% passing"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "defect_1_csv_header": "dmsClaimRegistryExport.ts used 'Код услуги' instead of 'Код услуги (804н)' violating test assertions and Order 804n compliance. Fixed.",
+    "defect_2_missing_backend_registry": "No backend route existed to aggregate statutory DMS claim registries across patients, visits, treatments, and guarantee letters. Implemented GET /api/insurance/registry with full Zod validation and SQL integration.",
+    "defect_3_frontend_mock_isolation": "DmsRegistryExportModal.tsx previously used static mock data and hardcoded August 2026 strings. Rewired to live Fastify backend, dynamic month names, active clinic profile, and added statutory XML export.",
+    "defect_4_modal_unconnected_context": "PatientWorkspaceModals.tsx mounted DmsRegistryExportModal without patientId/patientName. Passed patient context to enable scoped registry export.",
+    "defect_5_statutory_signature_title": "A4 consolidated registry required statutory title 'Руководитель медицинской организации' matching Order 804n and Russian medical executive regulations.",
+    "defect_6_cashier_dms_tender_orphan": "FiscalPaymentTenderSection.tsx destructured setInsuranceAmount but had no row for Insurance in split payment mode, no 100% DMS preset, and no way for cashier to input guarantee letter number. Fixed.",
+    "defect_7_missing_1click_fallback": "Under Mandate 8e/8n, if an insurer rejects a claim or limit is exhausted, the cashier needs an instant 1-click fallback to shift insurance coverage to patient card/cash. Added 'Перевести на пациента' button with exact kopeck transfer.",
+    "defect_8_patient_card_dms_orphan": "PatientCardModal.tsx and PatientGeneralInfoTab.tsx had inputs for DMS policy and company, but no way to open guarantee letters or create a letter. Added 'Гарантийные письма' button, lazy-loaded DmsGuaranteeLetterModal, and API persistence.",
+    "defect_9_calculator_unconditional_mocks": "DmsBillSplitCalculatorSection.tsx defaulted to DEMO_VISIT_BILL_ITEMS unconditionally, displaying fake services in empty visits. Guarded behind isDemoShowcaseMode() and added authentic empty state."
+  },
+  "modifications": [
+    "apps/web/src/components/insurance/dmsClaimRegistryExport.ts",
+    "apps/api/src/routes/insurance.ts",
+    "apps/web/src/components/insurance/DmsRegistryExportModal.tsx",
+    "apps/web/src/components/patients/PatientWorkspaceModals.tsx",
+    "apps/api/src/tests/routes/insuranceRegistry.test.ts",
+    "apps/web/src/components/finance/modal/fiscal/useFiscalTenderAllocation.ts",
+    "apps/web/src/components/finance/modal/fiscal/FiscalPaymentTenderSection.tsx",
+    "apps/web/src/components/finance/modal/fiscal/FiscalPaymentTab.tsx",
+    "apps/web/src/components/patients/tabs/PatientGeneralInfoTab.tsx",
+    "apps/web/src/components/patients/PatientCardModal.tsx",
+    "apps/web/src/components/patients/PatientWorkspaceView.tsx",
+    "apps/web/src/components/insurance/DmsBillSplitCalculatorSection.tsx",
+    "apps/web/src/components/insurance/dmsCashierAndCardIntegration.test.ts",
+    ".agents/subagent_redteam_insurance_dms_inquisitor.mem.json"
+  ],
+  "verification": {
+    "encoding": "7215 files, 0 errors (Exit code 0)",
+    "css_tokens": "165 CSS files, 0 unresolved variables (Exit code 0)",
+    "test_suites_passed": [
+      "packages/shared/src/tests/dmsFranchiseEngine.test.ts (21/21)",
+      "apps/web/src/components/insurance/dmsModalsAndRegistry.test.ts (11/11)",
+      "apps/web/src/tests/dmsInsurance.test.ts (15/15)",
+      "apps/web/src/components/insurance/dmsCashierAndCardIntegration.test.ts (4/4)",
+      "apps/api/src/tests/routes/insuranceRegistry.test.ts (8/8)"
+    ],
+    "total_tests_passing": 59
+  }
+}

@@ -6,16 +6,20 @@
 import {
 	CheckCircle2,
 	Download,
+	FileCode,
 	FileSpreadsheet,
 	FileText,
+	Loader2,
 	Printer,
 	Search,
 	X,
 } from "lucide-react";
-import React, { useId, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import "./insurance.css";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { generateDmsRegistryXml, type DmsRegistryData } from "@dental/shared";
 import {
 	calculateRegistryTotals,
 	exportRegistryToCsv,
@@ -29,6 +33,8 @@ import {
 export interface DmsRegistryExportModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly patientId?: string;
+	readonly patientName?: string;
 	readonly records?: readonly DmsRegistryServiceRecord[];
 	readonly clinicInfo?: {
 		readonly name: string;
@@ -46,6 +52,8 @@ export interface DmsRegistryExportModalProps {
 export function DmsRegistryExportModal({
 	isOpen,
 	onClose,
+	patientId,
+	patientName,
 	records = [],
 	clinicInfo = {
 		name: 'ООО «Стоматологический Центр «ДЕНТЕ»',
@@ -71,6 +79,12 @@ export function DmsRegistryExportModal({
 	const [selectedInsurer, setSelectedInsurer] = useState<string>("all");
 	const [periodFilter, setPeriodFilter] = useState<string>("current_month");
 	const [searchFilter, setSearchFilter] = useState<string>("");
+	const [scopePatientOnly, setScopePatientOnly] = useState<boolean>(Boolean(patientId));
+
+	// Состояние загрузки из API
+	const [fetchedRecords, setFetchedRecords] = useState<DmsRegistryServiceRecord[]>([]);
+	const [fetchedClinic, setFetchedClinic] = useState<any>(null);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	// Параметры двустороннего акта сдачи-приемки
 	const [actNumber, setActNumber] = useState<string>(`АКТ-${new Date().getFullYear()}-08/1`);
@@ -79,10 +93,94 @@ export function DmsRegistryExportModal({
 	const [contractDate, setContractDate] = useState<string>("12.01.2026");
 	const [representative, setRepresentative] = useState<string>("Руководитель управления мед. страхования");
 
+	// Вычисление динамического периода
+	const now = new Date();
+	const monthNamesRu = [
+		"Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+		"Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+	];
+	const currentMonthName = monthNamesRu[now.getMonth()];
+	const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+	const prevMonthName = monthNamesRu[prevMonthDate.getMonth()];
+	const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+
+	const periodDisplay =
+		periodFilter === "current_month"
+			? `${currentMonthName} ${now.getFullYear()} г.`
+			: periodFilter === "prev_month"
+				? `${prevMonthName} ${prevMonthDate.getFullYear()} г.`
+				: `${currentQuarter} квартал ${now.getFullYear()} г.`;
+
+	// Загрузка данных с бэкенда при открытии модального окна
+	useEffect(() => {
+		if (!isOpen) return;
+		if (records && records.length > 0) return;
+
+		let isMounted = true;
+		setIsLoading(true);
+
+		const params = new URLSearchParams();
+		if (selectedInsurer !== "all") params.set("insurerKey", selectedInsurer);
+		if (periodFilter) params.set("period", periodFilter);
+		if (scopePatientOnly && patientId) params.set("patientId", patientId);
+
+		fetch(`/api/insurance/registry?${params.toString()}`, {
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+		})
+			.then(async (res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
+			})
+			.then((data) => {
+				if (!isMounted) return;
+				if (Array.isArray(data.serviceRecords)) {
+					setFetchedRecords(data.serviceRecords);
+				}
+				if (data.clinic) {
+					setFetchedClinic(data.clinic);
+				}
+				if (data.registryNumber) {
+					setActNumber(`АКТ-${data.registryNumber.replace("РЕЕСТР-", "")}`);
+				}
+				if (data.insuranceCompany?.contractNumber) {
+					setContractNumber(data.insuranceCompany.contractNumber);
+				}
+				if (data.insuranceCompany?.contractDate) {
+					setContractDate(data.insuranceCompany.contractDate);
+				}
+			})
+			.catch(() => {
+				// Оффлайн / локальный фолбэк
+			})
+			.finally(() => {
+				if (isMounted) setIsLoading(false);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, records, selectedInsurer, periodFilter, scopePatientOnly, patientId]);
+
 	if (!isOpen) return null;
 
+	const activeRecords = records && records.length > 0 ? records : fetchedRecords;
+	const activeClinic = {
+		name: fetchedClinic?.nameRu || clinicInfo.name,
+		inn: fetchedClinic?.inn || clinicInfo.inn,
+		kpp: fetchedClinic?.kpp || clinicInfo.kpp,
+		ogrn: fetchedClinic?.ogrn || clinicInfo.ogrn,
+		address: fetchedClinic?.addressRu || clinicInfo.address,
+		chiefDoctor: fetchedClinic?.chiefDoctorNameRu || clinicInfo.chiefDoctor,
+		bankAccount: fetchedClinic?.bankAccount || clinicInfo.bankAccount,
+		bic: fetchedClinic?.bankBik || clinicInfo.bic,
+		corrAccount: fetchedClinic?.bankCorrAccount || clinicInfo.corrAccount,
+	};
+
 	// Отфильтрованные записи
-	const filteredRecords = records.filter((rec) => {
+	const filteredRecords = activeRecords.filter((rec) => {
 		if (selectedInsurer !== "all" && rec.insurerName !== selectedInsurer) {
 			return false;
 		}
@@ -98,18 +196,11 @@ export function DmsRegistryExportModal({
 		return true;
 	});
 
-	const periodDisplay =
-		periodFilter === "current_month"
-			? "Август 2026 г."
-			: periodFilter === "prev_month"
-				? "Июль 2026 г."
-				: "3 квартал 2026 г.";
-
 	const summary: DmsRegistrySummary = calculateRegistryTotals(
 		filteredRecords,
 		selectedInsurer === "all" ? "Все страховые компании" : selectedInsurer,
-		"01.08.2026",
-		"31.08.2026",
+		"01.01.2026",
+		"31.12.2026",
 	);
 
 	// Экспорт в CSV (Excel)
@@ -120,7 +211,7 @@ export function DmsRegistryExportModal({
 		}
 		const csvContent = exportRegistryToCsv(
 			filteredRecords,
-			clinicInfo,
+			activeClinic,
 			selectedInsurer === "all" ? "Все компании" : selectedInsurer,
 			periodDisplay,
 		);
@@ -139,12 +230,81 @@ export function DmsRegistryExportModal({
 		showToast(`Реестр ДМС (${filteredRecords.length} услуг) успешно экспортирован в CSV/Excel`, "success");
 	};
 
+	// Экспорт в XML (Минздрав / Страховые компании)
+	const handleExportXml = () => {
+		if (filteredRecords.length === 0) {
+			showToast("Нет записей для экспорта XML", "warning");
+			return;
+		}
+		const todayIso = new Date().toISOString().slice(0, 10);
+		const startMonthIso = todayIso.slice(0, 7) + "-01";
+		const dmsData: DmsRegistryData = {
+			registryNumber: actNumber || `РЕЕСТР-${todayIso.replace(/-/g, "")}`,
+			registryDate: todayIso,
+			periodStart: startMonthIso,
+			periodEnd: todayIso,
+			clinic: {
+				nameRu: activeClinic.name,
+				inn: activeClinic.inn,
+				kpp: activeClinic.kpp || "770101001",
+				ogrn: activeClinic.ogrn || "1157746890123",
+				addressRu: activeClinic.address,
+				phone: "+7 (495) 123-45-67",
+				medicalLicenseNumber: "ЛО-77-01-019842",
+				chiefDoctorNameRu: activeClinic.chiefDoctor,
+				chiefAccountantNameRu: "Иванова Е.В.",
+			},
+			insuranceCompany: {
+				companyId: selectedInsurer,
+				nameRu: selectedInsurer === "all" ? "Все страховые компании (Сводный отчет)" : selectedInsurer,
+				inn: "7736035485",
+				contractNumber,
+				contractDate,
+			},
+			records: filteredRecords.map((r, idx) => ({
+				recordId: r.id || `rec-${idx + 1}`,
+				serviceDate: r.visitDate,
+				patientFullName: r.patientFullName,
+				patientBirthDate: "1990-01-01",
+				patientGender: "М" as const,
+				policyNumber: r.policyNumber,
+				guaranteeLetterNumber: r.letterNumber || "ГП-БЕЗ-НОМЕРА",
+				icd10Code: r.diagnosisCodeMkb10 || "K02.1",
+				icd10DescriptionRu: "Стоматологическое лечение",
+				toothNumberFdi: typeof r.toothNumber === "number" ? r.toothNumber : Number(r.toothNumber) || undefined,
+				serviceCode804n: r.serviceCode804n,
+				serviceNameRu: r.serviceName,
+				doctorFullName: r.doctorFullName || "Врач-стоматолог",
+				quantity: r.quantity,
+				unitPriceKopecks: Math.round(r.unitPriceRub * 100),
+				totalGrossKopecks: Math.round(r.totalPriceRub * 100),
+				franchisePercent: 0,
+				patientPaidKopecks: Math.round(r.patientPaidRub * 100),
+				insurerClaimKopecks: Math.round(r.dmsCoveredRub * 100),
+			})),
+		};
+
+		const xmlContent = generateDmsRegistryXml(dmsData);
+		const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		const filename = `DMS_Registry_${selectedInsurer.replace(/[^a-zA-Zа-яА-Я0-9]/g, "_")}_${todayIso}.xml`;
+		link.setAttribute("href", url);
+		link.setAttribute("download", filename);
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+
+		showToast(`Электронный XML-реестр (${filteredRecords.length} услуг) успешно выгружен`, "success");
+	};
+
 	// Печать двустороннего акта сдачи-приемки
 	const handlePrintAct = () => {
 		const actHtml = generateBilateralAcceptanceActHtml({
 			records: filteredRecords,
 			summary,
-			clinicInfo,
+			clinicInfo: activeClinic,
 			insurerInfo: {
 				name: selectedInsurer === "all" ? "Страховая компания ДМС" : selectedInsurer,
 				contractNumber,
@@ -221,6 +381,26 @@ export function DmsRegistryExportModal({
 							))}
 						</div>
 
+						{patientId && (
+							<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", padding: "8px 12px", background: "var(--paper-soft, #f8fafc)", borderRadius: "8px", border: "1px solid var(--line, #e2e8f0)" }}>
+								<label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8125rem", cursor: "pointer", fontWeight: 600 }}>
+									<input
+										type="checkbox"
+										checked={scopePatientOnly}
+										onChange={(e) => setScopePatientOnly(e.target.checked)}
+										style={{ cursor: "pointer" }}
+									/>
+									<span>Только текущий пациент {patientName ? `(${patientName})` : ""}</span>
+								</label>
+								{isLoading && (
+									<div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "var(--primary, #0284c7)" }}>
+										<Loader2 size={14} className="animate-spin" />
+										<span>Загрузка данных...</span>
+									</div>
+								)}
+							</div>
+						)}
+
 						<div className="dms-grid-3">
 							<div className="dms-field-group">
 								<label htmlFor={filterInsurerSelectId} className="dms-label">Страховая компания (ДМС)</label>
@@ -247,9 +427,9 @@ export function DmsRegistryExportModal({
 									onChange={(e) => setPeriodFilter(e.target.value)}
 									className="dms-select"
 								>
-									<option value="current_month">Текущий месяц (Август 2026)</option>
-									<option value="prev_month">Предыдущий месяц (Июль 2026)</option>
-									<option value="quarter">3 квартал 2026 года</option>
+									<option value="current_month">Текущий месяц ({currentMonthName} {now.getFullYear()})</option>
+									<option value="prev_month">Предыдущий месяц ({prevMonthName} {prevMonthDate.getFullYear()})</option>
+									<option value="quarter">{currentQuarter} квартал {now.getFullYear()} года</option>
 								</select>
 							</div>
 
@@ -347,7 +527,7 @@ export function DmsRegistryExportModal({
 								{filteredRecords.length === 0 ? (
 									<tr>
 										<td colSpan={11} style={{ textAlign: "center", padding: "2rem", color: "var(--muted, #64748b)" }}>
-											Нет оказанных услуг по ДМС за выбранный период
+											{isLoading ? "Загрузка реестра медицинских услуг ДМС..." : "Нет оказанных услуг по ДМС за выбранный период"}
 										</td>
 									</tr>
 								) : (
@@ -469,7 +649,7 @@ export function DmsRegistryExportModal({
 							<div className="dms-field-group">
 								<span className="dms-label">Реквизиты клиники (Исполнитель)</span>
 								<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", padding: "10px", background: "var(--paper, #fff)", borderRadius: "10px", border: "1px solid var(--line, #cbd5e1)" }}>
-									{clinicInfo.name} &bull; ИНН: {clinicInfo.inn} &bull; Гл. врач: {clinicInfo.chiefDoctor}
+									{activeClinic.name} &bull; ИНН: {activeClinic.inn} &bull; Гл. врач: {activeClinic.chiefDoctor}
 								</div>
 							</div>
 						</div>
@@ -499,6 +679,16 @@ export function DmsRegistryExportModal({
 						>
 							<Download size={18} />
 							Экспорт реестра XLS/CSV
+						</button>
+
+						<button
+							type="button"
+							className="dms-btn dms-btn-secondary"
+							onClick={handleExportXml}
+							title="Экспорт в электронный XML-формат реестра ДМС для страховых компаний"
+						>
+							<FileCode size={18} />
+							Экспорт XML
 						</button>
 
 						<button

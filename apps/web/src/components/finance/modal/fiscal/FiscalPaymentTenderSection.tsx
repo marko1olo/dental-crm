@@ -39,7 +39,10 @@ export interface FiscalPaymentTenderSectionProps {
 	readonly setDepositAmount: React.Dispatch<React.SetStateAction<number>>;
 	readonly certificateAmount: number;
 	readonly setCertificateAmount: React.Dispatch<React.SetStateAction<number>>;
+	readonly insuranceAmount?: number | undefined;
 	readonly setInsuranceAmount: (val: number) => void;
+	readonly guaranteeLetterNumber?: string | undefined;
+	readonly setGuaranteeLetterNumber?: ((val: string) => void) | undefined;
 	readonly remainingRub: number;
 	readonly allocation: {
 		isFullyAllocated: boolean;
@@ -47,7 +50,7 @@ export interface FiscalPaymentTenderSectionProps {
 		remainingKopecks: number;
 		allocatedKopecks: number;
 	};
-	readonly handleFillRemaining: (type: "cash" | "card" | "sbp" | "deposit" | "certificate") => void;
+	readonly handleFillRemaining: (type: "cash" | "card" | "sbp" | "deposit" | "certificate" | "insurance") => void;
 	readonly handleAutoDistributeRemaining: () => void;
 	readonly handleAutoBalanceOverallocation: () => void;
 }
@@ -75,7 +78,10 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 	setDepositAmount,
 	certificateAmount,
 	setCertificateAmount,
+	insuranceAmount = 0,
 	setInsuranceAmount,
+	guaranteeLetterNumber = "",
+	setGuaranteeLetterNumber,
 	remainingRub,
 	allocation,
 	handleFillRemaining,
@@ -248,6 +254,24 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 				>
 					<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-white shrink-0" : "text-purple-600 shrink-0"} />
 					<span>Гарантия (0 ₽)</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						selectSingleMethod("insurance");
+						setPaymentMode("split");
+						showToast("Применено 100% покрытие по ДМС (безналичный расчёт со страховой)", "info", 2000);
+					}}
+					className={`h-7 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
+						insuranceAmount > 0 && insuranceAmount === totalSumRub
+							? "bg-sky-600 text-white border-sky-600 shadow-2xs"
+							: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-sky-500/30 text-sky-700 dark:text-sky-300 hover:bg-sky-50 hover:border-sky-500"
+					}`}
+					data-testid="preset-full-dms"
+					title="Оплата 100% через ДМС (по безналичному расчету со страховой компанией)"
+				>
+					<ShieldCheck size={13} className={insuranceAmount > 0 && insuranceAmount === totalSumRub ? "text-white shrink-0" : "text-sky-600 shrink-0"} />
+					<span>100% ДМС</span>
 				</button>
 				<button
 					type="button"
@@ -686,6 +710,72 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 										className="h-6 px-2 rounded-md text-[11px] font-bold text-rose-600 hover:bg-rose-50 cursor-pointer ml-auto"
 									>
 										Сброс
+									</button>
+								)}
+							</div>
+						</div>
+
+						{/* Insurance / DMS Row (Тег 1217 / Безнал Страховой) */}
+						<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-sky-500/30 space-y-2" data-testid="split-insurance-row">
+							<div className="flex items-center justify-between gap-3">
+								<div className="flex items-center gap-2.5">
+									<ShieldCheck size={16} className="text-sky-600 shrink-0" />
+									<div>
+										<span className="text-xs font-bold block text-[var(--ink,#0f172a)]">
+											ДМС / Страховая компания
+										</span>
+										<span className="text-[11px] text-[var(--muted,#64748b)]">
+											Покрытие по гарантийному письму
+										</span>
+									</div>
+								</div>
+								<div className="flex items-center gap-1.5">
+									<input
+										type="number"
+										min={0}
+										max={totalSumRub}
+										value={insuranceAmount || ""}
+										onChange={(e) => setInsuranceAmount(Math.max(0, Number(e.target.value) || 0))}
+										placeholder="0"
+										className="h-8 w-28 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+										data-testid="input-insurance-amount"
+									/>
+									{remainingRub > 0 && (
+										<button
+											type="button"
+											onClick={() => handleFillRemaining("insurance")}
+											className="h-8 px-2.5 text-xs font-bold rounded-lg bg-sky-600 hover:bg-sky-700 text-white cursor-pointer transition-all active:scale-95"
+											data-testid="btn-fill-remaining-insurance"
+										>
+											+Остаток
+										</button>
+									)}
+								</div>
+							</div>
+
+							<div className="flex items-center gap-2 pt-1 border-t border-[var(--border,#cbd5e1)] flex-wrap">
+								<input
+									type="text"
+									value={guaranteeLetterNumber || ""}
+									onChange={(e) => setGuaranteeLetterNumber?.(e.target.value)}
+									placeholder="№ гарантийного письма"
+									className="h-7 px-2 text-[11px] rounded-md border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] flex-1 min-w-[140px]"
+									data-testid="input-tender-guarantee-letter"
+								/>
+								{insuranceAmount > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const fallbackAmt = insuranceAmount;
+											setInsuranceAmount(0);
+											setCardAmount((prev) => prev + fallbackAmt);
+											showToast(`ДМС переведен на оплату пациентом (карта): ${formatMoneyRu(fallbackAmt)}`, "info", 2000);
+										}}
+										className="h-7 px-2.5 rounded-md text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 cursor-pointer transition-colors"
+										title="1-клик отмена страхового покрытия и мгновенный перевод на оплату картой пациентом"
+										data-testid="btn-fallback-dms-to-patient"
+									>
+										Перевести на пациента
 									</button>
 								)}
 							</div>

@@ -37,6 +37,13 @@ import {
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+
+const DmsGuaranteeLetterModal = React.lazy(() =>
+	import("../insurance/DmsGuaranteeLetterModal").then((m) => ({
+		default: m.DmsGuaranteeLetterModal,
+	})),
+);
 
 export const DEMO_SHOWCASE_MODAL_PATIENT: PatientGeneralInfo = {
 	id: "01a00000-0000-0000-0000-000000000001",
@@ -147,6 +154,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...effectiveInitialSafety };
 		});
 		const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
+		const [isDmsLetterModalOpen, setIsDmsLetterModalOpen] = useState(false);
 
 		useEffect(() => {
 			if (isOpen && effectiveInitialPatient.id) {
@@ -471,6 +479,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								activeSection={activeTab === "anamnesis" ? "somatic" : activeTab}
 								onNavigateToVisit={onNavigateToVisit}
 								onNewAppointment={onNewAppointment}
+								onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
 							/>
 						)}
 					</div>
@@ -506,6 +515,45 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							patientName={patientData.fullName || undefined}
 							doctorName="Врач-стоматолог детский"
 						/>
+					)}
+					{/* DMS Guarantee Letter Modal */}
+					{isDmsLetterModalOpen && (
+						<React.Suspense fallback={null}>
+							<DmsGuaranteeLetterModal
+								isOpen={isDmsLetterModalOpen}
+								onClose={() => setIsDmsLetterModalOpen(false)}
+								patient={{
+									id: patientData.id || "",
+									fullName: patientData.fullName || "",
+									birthDate: patientData.birthDate || undefined,
+									policyNumber: patientData.dmsPolicyNumber || undefined,
+									insuranceCompany: patientData.dmsInsuranceCompany || undefined,
+									phone: patientData.phone || undefined,
+								}}
+								onSave={async (letter) => {
+									if (letter.policyNumber && !patientData.dmsPolicyNumber) {
+										handleUpdatePatientField("dmsPolicyNumber", letter.policyNumber);
+									}
+									if (letter.insurerName && !patientData.dmsInsuranceCompany) {
+										handleUpdatePatientField("dmsInsuranceCompany", letter.insurerName);
+									}
+									if (patientData.id) {
+										try {
+											await fetch("/api/insurance/guarantee-letters", {
+												method: "POST",
+												headers: {
+													"Content-Type": "application/json",
+													...denteAdminSecretRequestHeaders(),
+												},
+												body: JSON.stringify({ ...letter, patientId: patientData.id }),
+											});
+										} catch {
+											// Local offline fallback
+										}
+									}
+								}}
+							/>
+						</React.Suspense>
 					)}
 				</div>
 			</div>

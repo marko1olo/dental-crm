@@ -254,13 +254,14 @@ export function useFiscalTenderAllocation({
 		}
 	};
 
-	const handleFillRemaining = (type: "cash" | "card" | "sbp" | "deposit" | "certificate") => {
+	const handleFillRemaining = (type: "cash" | "card" | "sbp" | "deposit" | "certificate" | "insurance") => {
 		const unallocatedKop = Math.max(0, allocation.remainingKopecks);
 		if (unallocatedKop <= 0) return;
 		if (type === "cash") setCashAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		if (type === "card") setCardAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		if (type === "sbp") setSbpAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		if (type === "certificate") setCertificateAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
+		if (type === "insurance") setInsuranceAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		if (type === "deposit") {
 			const maxDepositKop = Math.min(rubToKopecks(patientDepositRub), rubToKopecks(depositAmount) + unallocatedKop);
 			setDepositAmount(kopecksToRub(maxDepositKop));
