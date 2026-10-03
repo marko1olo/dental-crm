@@ -42,6 +42,32 @@ import { useAppStore } from "../store/appStore";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { getDemoDentalLabOrderData } from "../components/lab/dentalLabOrderEngine";
 import { formatLabOrderTeethOrJaw, isJawWideConstruction, SHADE_SWATCH_MAP } from "../components/lab/labMath";
+import {
+	DENTAL_LAB_CONSTRUCTIONS,
+	CANONICAL_LAB_WORK_TYPES,
+	type DentalLabConstructionType,
+} from "../components/lab/dentalLabDefinitions";
+
+export function formatLabConstructionTitle(type?: string | null, material?: string | null): string {
+	const raw = (type || material || "").trim();
+	if (!raw) return "Конструкция";
+	if (raw in DENTAL_LAB_CONSTRUCTIONS) {
+		return DENTAL_LAB_CONSTRUCTIONS[raw as DentalLabConstructionType].shortNameRu;
+	}
+	const fromCatalog = CANONICAL_LAB_WORK_TYPES.find(
+		(w) => w.id === raw || w.titleRu.toLowerCase() === raw.toLowerCase(),
+	);
+	if (fromCatalog) return fromCatalog.titleRu;
+	const map: Record<string, string> = {
+		crown_zirconia: "Коронка ZrO2",
+		crown_emax: "Коронка e.MAX",
+		metal_ceramic: "Металлокерамика",
+		clasp_denture: "Бюгельный протез",
+		aligner_splint: "Каппа / элайнер",
+		surgical_guide: "Хирургический шаблон",
+	};
+	return map[raw] || raw;
+}
 
 const DentalLabOrderModal = lazy(() =>
 	import("../components/lab/DentalLabOrderModal").then((module) => ({
@@ -223,7 +249,7 @@ export function LabOrdersPage() {
 		const total = orders.length;
 		const inProgress = orders.filter((o) => o.status === "in_progress" || o.status === "sent").length;
 		const tryIn = orders.filter((o) => o.status === "fitting" || o.status === "refitting").length;
-		const ready = orders.filter((o) => o.status === "shipped" || o.status === "delivered" || o.status === "received" || o.status === "completed").length;
+		const ready = orders.filter((o) => o.status === "ready" || o.status === "ready_in_clinic" || o.status === "shipped" || o.status === "delivered" || o.status === "received" || o.status === "completed").length;
 		const completed = orders.filter((o) => o.status === "completed").length;
 		const overdue = orders.filter((o) => {
 			if (!o.dueDate || o.status === "completed" || o.status === "cancelled") return false;
@@ -486,18 +512,25 @@ export function LabOrdersPage() {
 	const getStatusBadge = (status?: string) => {
 		switch (status) {
 			case "sent":
+			case "sent_to_lab":
 				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">Отправлен в ЗТЛ</span>;
 			case "in_progress":
 				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">В работе (CAD/CAM)</span>;
 			case "fitting":
 			case "refitting":
+			case "try_in":
 				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300">На примерке / Доработке</span>;
+			case "ready":
+			case "ready_in_clinic":
 			case "shipped":
 			case "delivered":
 			case "received":
 				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">В клинике / Готов к сдаче</span>;
 			case "completed":
+			case "delivered_to_patient":
 				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Сдан / Установлен</span>;
+			case "warranty_rework":
+				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">Гарантия / Переделка</span>;
 			case "cancelled":
 				return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">Аннулирован</span>;
 			default:
@@ -533,13 +566,14 @@ export function LabOrdersPage() {
 				{/* Center: Search & Filters */}
 				<div className="flex items-center gap-1.5 flex-1 max-w-xl">
 					<div className="relative flex-1">
-						<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2 top-1/2 -translate-y-1/2" />
+						<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
 						<input
 							type="text"
-							placeholder="Поиск (пациент, врач, зуб, материал)..."
+							placeholder="Поиск (пациент, врач, зуб)..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full h-7.5 min-h-[30px] pl-7 pr-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
+							style={{ paddingLeft: "32px" }}
+							className="w-full h-7.5 min-h-[30px] pr-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
 						/>
 					</div>
 					<select
@@ -615,7 +649,7 @@ export function LabOrdersPage() {
 								onClick={() => setStatusFilter(f.id)}
 								className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
 									isActive
-										? "bg-[var(--teal)] text-white shadow-2xs"
+										? "bg-teal-600 text-white shadow-2xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 								data-testid={`lab-status-filter-${f.id}`}
@@ -633,7 +667,7 @@ export function LabOrdersPage() {
 						onClick={() => setViewMode("table")}
 						className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 							viewMode === "table"
-								? "bg-[var(--teal)] text-white shadow-2xs"
+								? "bg-teal-600 text-white shadow-2xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 						}`}
 						title="Плотный десктопный реестр (32px)"
@@ -647,7 +681,7 @@ export function LabOrdersPage() {
 						onClick={() => setViewMode("cards")}
 						className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 							viewMode === "cards"
-								? "bg-[var(--teal)] text-white shadow-2xs"
+								? "bg-teal-600 text-white shadow-2xs"
 								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 						}`}
 						title="Вид карточками"
@@ -745,7 +779,7 @@ export function LabOrdersPage() {
 										{/* 4. Конструкция & Материал */}
 										<td className="px-3 py-0 whitespace-nowrap align-middle">
 											<span className="truncate max-w-[190px] inline-block align-middle text-[11px] text-[var(--ink)]" title={`${order.constructionType || ""} ${order.material || ""}`}>
-												{order.constructionType || order.material || "Конструкция"}
+												{formatLabConstructionTitle(order.constructionType, order.material ?? undefined)}
 											</span>
 										</td>
 

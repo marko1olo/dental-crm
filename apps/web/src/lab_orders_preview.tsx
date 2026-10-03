@@ -25,11 +25,21 @@ function LabOrdersPreviewApp() {
 	const rawTheme = (params.get("theme") || "light") as ThemeMode;
 	const initialTab = (params.get("tab") || "registry") as "registry" | "chairside";
 	const [activeTab, setActiveTab] = useState<"registry" | "chairside">(initialTab);
+	const [currentTheme, setCurrentTheme] = useState<string>(rawTheme);
 
 	useEffect(() => {
 		const resolved = resolveTheme(rawTheme, false);
 		applyThemeToRoot(document.documentElement, resolved);
 		document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen`;
+		setCurrentTheme(resolved.theme);
+
+		const syncTheme = () => {
+			const active = document.documentElement.getAttribute("data-theme") || resolved.theme;
+			setCurrentTheme(active);
+		};
+		const observer = new MutationObserver(syncTheme);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
+		return () => observer.disconnect();
 	}, [rawTheme]);
 
 	return (
@@ -41,12 +51,12 @@ function LabOrdersPreviewApp() {
 							Зуботехническая лаборатория (ЗТЛ): Реестр и Кресельная панель
 						</h1>
 						<p className="text-xs text-[var(--muted)]">
-							Врач: Д-р Воронов А.В. | Тема: {rawTheme.toUpperCase()} | 32px унифицированные контролы
+							Врач: Д-р Воронов А.В. | Тема: {currentTheme.toUpperCase()} | 32px унифицированные контролы
 						</p>
 					</div>
 
 					<div className="flex items-center gap-3">
-						<div className="inline-flex rounded-lg bg-[var(--paper-soft)] p-0.5 border border-[var(--glass-border)]">
+						<div className="inline-flex rounded-lg bg-[var(--paper-soft)] p-0.5 border border-[var(--glass-border)] gap-1">
 							<button
 								type="button"
 								data-testid="tab-lab-registry"
@@ -82,8 +92,8 @@ function LabOrdersPreviewApp() {
 									window.location.href = url.toString();
 								}}
 								className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
-									rawTheme === "light"
-										? "bg-[var(--accent)] text-white border-[var(--accent)]"
+									currentTheme === "light"
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
 										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
 								}`}
 							>
@@ -97,8 +107,8 @@ function LabOrdersPreviewApp() {
 									window.location.href = url.toString();
 								}}
 								className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
-									rawTheme === "dark"
-										? "bg-[var(--accent)] text-white border-[var(--accent)]"
+									currentTheme === "dark"
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
 										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
 								}`}
 							>
