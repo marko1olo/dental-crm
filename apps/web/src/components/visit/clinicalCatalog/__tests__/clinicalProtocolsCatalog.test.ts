@@ -59,3 +59,28 @@ test("Clinical Protocols 1142 Catalog - buildChunkVisitNotePatch for individual 
 	assert.ok(patch.complaint?.includes("Старая жалоба"), "Should keep existing complaints");
 	assert.ok(patch.complaint?.includes(complaintsChunk.text), "Should append new complaints");
 });
+
+test("Clinical Protocols 1142 Catalog - AI Copilot apply_clinical_protocol dispatching without context overflow", async () => {
+	const { dispatchCrmAction } = await import("../../../../services/ai/aiActionDispatcher.js");
+	const { useVisitStore } = await import("../../../../store/visitStore.js");
+
+	const res = await dispatchCrmAction({
+		callId: "test_ai_protocol_call_1",
+		name: "apply_clinical_protocol",
+		arguments: {
+			query: "пульпит",
+			toothNumber: 26,
+			specialty: "therapy",
+		},
+	});
+
+	assert.equal(res.success, true, "Dispatching should succeed");
+	assert.ok(res.message.includes("Применён клинический протокол"), "Should return success message");
+	assert.ok(res.message.includes("26"), "Should mention tooth 26");
+
+	const form = useVisitStore.getState().visitNoteForm;
+	assert.ok(form.complaint, "Complaint must be set by AI action");
+	assert.ok(form.treatmentPlan, "Treatment plan must be set by AI action");
+	assert.ok(form.diagnosis?.includes("K04.0") || form.diagnosis?.includes("Пульпит"), "Diagnosis must be pulpitis");
+});
+

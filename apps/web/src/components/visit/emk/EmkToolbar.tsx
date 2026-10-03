@@ -222,6 +222,22 @@ export function EmkToolbar({
 					</button>
 				)}
 
+				{onOpenProtocolsCatalog && (
+					<button
+						type="button"
+						data-testid="btn-open-protocols-catalog-1142"
+						onClick={onOpenProtocolsCatalog}
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal)] hover:text-white transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
+						title="Каталог клинических протоколов и шаблонов лечения (1 142 шаблона)"
+					>
+						<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Протоколы</span>
+						<span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
+							1 142
+						</span>
+					</button>
+				)}
+
 				<div className="relative inline-flex items-center shrink-0" ref={menuRef}>
 					<button
 						type="button"
@@ -234,7 +250,7 @@ export function EmkToolbar({
 						}`}
 					>
 						<Tag className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Протоколы...</span>
+						<span className="whitespace-nowrap shrink-0">Ещё SOAP...</span>
 						<ChevronDown size={11} className={`shrink-0 transition-transform ${isExtraMenuOpen ? "rotate-180" : ""}`} />
 					</button>
 

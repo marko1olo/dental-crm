@@ -14,6 +14,11 @@ import {
 	readDenteClinicToken,
 	readDenteStaffToken,
 } from "../../lib/safeLocalStorage";
+import {
+	searchGroupedProcedures,
+	buildProcedureVisitNotePatch,
+	type SpecialtyCategoryKey,
+} from "../../components/visit/clinicalCatalog/clinicalProtocolsCatalog";
 
 export type CRMActionCategory =
 	| "clinical_odontogram"
@@ -97,6 +102,11 @@ export function getActionTitleRu(toolName: string): string {
 		case "draft_043u_soap_diary":
 		case "save_protocol_043":
 			return "Заполнение дневника приёма";
+		case "apply_clinical_protocol":
+		case "search_clinical_protocols":
+		case "select_clinical_protocol":
+		case "use_clinical_protocol":
+			return "Применение клинического протокола из каталога (1 142)";
 		case "calculate_804n_estimate":
 		case "create_treatment_plan":
 		case "suggest_treatment_plan":
@@ -265,6 +275,69 @@ export async function dispatchCrmAction(
 				category: "clinical_diary",
 				message: "Дневник приёма успешно заполнен клиническим протоколом.",
 				data: { complaints, diagnosis, treatmentPlan },
+			};
+		}
+
+		// 2.5 Clinical Protocol from Catalog (1 142 SSOT Protocols & IDENT/DentalPRO Parity)
+		if (
+			shortName === "apply_clinical_protocol" ||
+			shortName === "select_clinical_protocol" ||
+			shortName === "use_clinical_protocol"
+		) {
+			const query = String(args.query || args.procedureName || args.name || args.protocol || "");
+			const toothNum = normalizeToothNumber(args.toothNumber ?? args.tooth ?? args.activeTooth);
+			const specialty = (args.specialty as SpecialtyCategoryKey) || "all";
+
+			const foundProcedures = searchGroupedProcedures(query, specialty);
+			const procedure = foundProcedures[0];
+
+			if (!procedure) {
+				return {
+					success: false,
+					callId,
+					actionName: name,
+					category: "clinical_diary",
+					message: `Клинический протокол по запросу «${query}» не найден в каталоге (1 142 шаблона). Попробуйте уточнить запрос.`,
+				};
+			}
+
+			const currentForm = useVisitStore.getState().visitNoteForm;
+			const patch = buildProcedureVisitNotePatch(procedure, currentForm, toothNum);
+
+			useVisitStore.getState().setVisitNoteForm((prev) => ({
+				...prev,
+				...(patch.complaint ? { complaint: patch.complaint } : {}),
+				...(patch.anamnesis ? { anamnesis: patch.anamnesis } : {}),
+				...(patch.objectiveStatus ? { objectiveStatus: patch.objectiveStatus } : {}),
+				...(patch.treatmentPlan ? { treatmentPlan: patch.treatmentPlan } : {}),
+				...(patch.recommendations ? { recommendations: patch.recommendations } : {}),
+				...(patch.diagnosis ? { diagnosis: patch.diagnosis } : {}),
+			}));
+
+			if (toothNum) {
+				useAppStore.getState().setActiveTooth(toothNum);
+				if (procedure.categoryKey === "surgery") {
+					useVisitStore.getState().setToothState(String(toothNum), "missing");
+				} else if (procedure.categoryKey === "orthopedics") {
+					useVisitStore.getState().setToothState(String(toothNum), "done");
+				} else {
+					useVisitStore.getState().setToothState(String(toothNum), "treatment");
+				}
+			}
+
+			return {
+				success: true,
+				callId,
+				actionName: name,
+				category: "clinical_diary",
+				message: `Применён клинический протокол: «${procedure.procedureName}» (${procedure.categoryName})${procedure.matchedIcd10 ? `, МКБ: ${procedure.matchedIcd10}` : ""}${toothNum ? ` для зуба ${toothNum}` : ""}.`,
+				data: {
+					procedureId: procedure.id,
+					procedureName: procedure.procedureName,
+					matchedIcd10: procedure.matchedIcd10,
+					tooth: toothNum,
+					patch,
+				},
 			};
 		}
 

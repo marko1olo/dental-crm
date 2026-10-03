@@ -423,17 +423,43 @@ export class AIAssistantService {
 			return;
 		}
 
-		// 2. Form 043/u SOAP Diary
-		if (lower.includes("дневник") || lower.includes("043") || lower.includes("протокол")) {
-			const callId = `local_043_${Date.now()}`;
-			const toolName = "draft_043u_soap_diary";
+		// 2. Clinical Protocols Catalog (1 142 Protocols & DentalPRO/IDENT Parity) & SOAP Diary
+		if (
+			lower.includes("протокол") ||
+			lower.includes("шаблон") ||
+			lower.includes("дневник") ||
+			lower.includes("043") ||
+			lower.includes("соап") ||
+			lower.includes("soap")
+		) {
+			const callId = `local_protocol_${Date.now()}`;
+			const toolName = "apply_clinical_protocol";
+
+			// Determine specialty or specific query keywords
+			let query = "кариес дентина";
+			if (lower.includes("пульпит")) query = "пульпит";
+			else if (lower.includes("периодонтит")) query = "периодонтит";
+			else if (lower.includes("удален") || lower.includes("экстракц")) query = "удаление зуба";
+			else if (lower.includes("имплант") || lower.includes("имплантац")) query = "имплантация";
+			else if (lower.includes("синус") || lower.includes("костн")) query = "синус-лифтинг";
+			else if (lower.includes("гигиен") || lower.includes("чистк") || lower.includes("air flow")) query = "профессиональная гигиена";
+			else if (lower.includes("отбеливан")) query = "отбеливание";
+			else if (lower.includes("коронк") || lower.includes("винир") || lower.includes("протез")) query = "препарирование коронка";
+			else if (lower.includes("детск") || lower.includes("молочн")) query = "детский";
+			else if (lower.includes("норма") || lower.includes("здоров") || lower.includes("осмотр")) query = "профилактический осмотр";
+			else {
+				// Strip stop words to search catalog
+				const cleaned = lower
+					.replace(/(примени|выбери|заполни|поставь|открой|протокол|шаблон|дневник|карту|043|по|на|для|зуб|зуба|\d{2})/gi, "")
+					.trim();
+				if (cleaned.length > 2) {
+					query = cleaned;
+				}
+			}
+
 			const args = {
-				tooth: currentTooth,
-				complaint: "Жалобы на кратковременные боли от сладкого и холодного.",
-				anamnesis: "Зуб беспокоит около двух недель. Соматически здоров (Мандат 8e).",
-				objective: "Кариозная полость на жевательной поверхности в пределах дентина, зондирование болезненно по эмалево-дентинной границе.",
-				diagnosis: "K02.1 Кариес дентина",
-				treatment: "Инфильтрационная анестезия, препарирование, светоотверждаемый нанокомпозит, шлифовка, полировка.",
+				query,
+				toothNumber: currentTooth,
 			};
 
 			const toolCallObj: AssistantToolCall = {
@@ -446,14 +472,15 @@ export class AIAssistantService {
 			};
 
 			msg.toolCalls = [toolCallObj];
-			await copilotActionRunner.executeAction({
+			const actionResult = await copilotActionRunner.executeAction({
 				callId,
 				name: toolName,
 				arguments: args,
 				confirmed: true,
 			});
 
-			msg.content = `Дневник приёма успешно заполнен клиническим протоколом для зуба ${currentTooth}. Протокол записан в медицинскую карту.`;
+			msg.content = actionResult?.message ||
+				`Применён клинический протокол «${query}» для зуба ${currentTooth}. Дневник приёма и зубная формула обновлены.`;
 			this.callbacks.onMessageUpdated?.({ ...msg });
 			return;
 		}
