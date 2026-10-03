@@ -1,29 +1,25 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
 	Search,
 	X,
 	BookOpen,
 	Zap,
 	ShieldCheck,
-	Tag,
 	ChevronDown,
 	ChevronUp,
+	ChevronLeft,
+	ChevronRight,
 	Check,
-	Sparkles,
-	Filter,
-	Stethoscope,
 	FileText,
 	Layers,
 	Activity,
 } from "lucide-react";
-import { showToast } from "../../GlobalToast";
 import {
 	type ClinicalChunk1142,
 	type GroupedClinicalProcedure,
 	type SpecialtyCategoryKey,
 	type VisitNoteFieldsPatch,
 	ALL_CLINICAL_CHUNKS_1142,
-	GROUPED_CLINICAL_PROCEDURES,
 	SPECIALTY_CATEGORIES_META,
 	searchClinicalChunks,
 	searchGroupedProcedures,
@@ -56,10 +52,43 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 		const [page, setPage] = useState<number>(1);
 		const PAGE_SIZE = 30;
 
-		// Сброс страницы при смене категории или поиска
-		React.useEffect(() => {
+		const tabsRef = useRef<HTMLDivElement>(null);
+		const [canScrollLeft, setCanScrollLeft] = useState<boolean>(false);
+		const [canScrollRight, setCanScrollRight] = useState<boolean>(false);
+
+		// Сброс страницы при смене категории, поискового запроса или режима
+		useEffect(() => {
 			setPage(1);
 		}, [searchQuery, activeCategory, viewMode]);
+
+		// Отслеживание возможности скролла табов специализаций
+		const checkTabScroll = useCallback(() => {
+			const el = tabsRef.current;
+			if (!el) return;
+			const atStart = el.scrollLeft <= 4;
+			const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+			setCanScrollLeft(!atStart);
+			setCanScrollRight(!atEnd);
+		}, []);
+
+		useEffect(() => {
+			checkTabScroll();
+			const el = tabsRef.current;
+			if (!el) return;
+			el.addEventListener("scroll", checkTabScroll, { passive: true });
+			window.addEventListener("resize", checkTabScroll);
+			return () => {
+				el.removeEventListener("scroll", checkTabScroll);
+				window.removeEventListener("resize", checkTabScroll);
+			};
+		}, [checkTabScroll, viewMode]);
+
+		const scrollTabs = useCallback((direction: "left" | "right") => {
+			const el = tabsRef.current;
+			if (!el) return;
+			const distance = direction === "left" ? -220 : 220;
+			el.scrollBy({ left: distance, behavior: "smooth" });
+		}, []);
 
 		// Фильтрация сгруппированных процедур
 		const filteredProcedures = useMemo(() => {
@@ -98,7 +127,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 		const handleApplySingleChunk = useCallback((chunk: ClinicalChunk1142) => {
 			const patch = buildChunkVisitNotePatch(chunk, currentNoteForm, activeTooth);
 			const toothLabel = activeTooth ? ` (зуб ${activeTooth})` : "";
-			onApplyPatch(patch, `Добавлен фрагмент: «${chunk.name}»${toothLabel}`);
+			onApplyPatch(patch, `Добавлен раздел: «${chunk.name}»${toothLabel}`);
 		}, [currentNoteForm, activeTooth, onApplyPatch]);
 
 		const handleApplyDiagnosis = useCallback((chunk: ClinicalChunk1142) => {
@@ -120,7 +149,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 				data-testid="clinical-protocols-catalog-modal"
 			>
 				<div
-					className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+					className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] rounded-2xl w-full max-w-6xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
 					onClick={(e) => e.stopPropagation()}
 				>
 					{/* ── ШАПКА МОДАЛЬНОГО ОКНА ── */}
@@ -130,15 +159,15 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 								<BookOpen size={18} />
 							</div>
 							<div>
-								<div className="flex items-center gap-2">
+								<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 									<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] leading-tight">
 										Каталог клинических протоколов
 									</h3>
-									<span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
+									<span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shrink-0">
 										1 142 протокола
 									</span>
 									{activeTooth && (
-										<span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-800 dark:text-blue-300 border border-blue-500/30">
+										<span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-800 dark:text-blue-300 border border-blue-500/30 shrink-0">
 											{`Зуб ${activeTooth}`}
 										</span>
 									)}
@@ -161,15 +190,15 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 					</div>
 
 					{/* ── ПОИСКОВАЯ СТРОКА И РЕЖИМЫ ОТОБРАЖЕНИЯ ── */}
-					<div className="p-3 border-b border-[var(--glass-border)] bg-[var(--paper)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+					<div className="p-3 border-b border-[var(--glass-border)] bg-[var(--paper)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
 						<div className="relative flex-1">
-							<Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+							<Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по процедуре, МКБ-10, материалу или симптому (например: кариес, пульпит, виниры)..."
-								className="w-full pl-9 pr-8 py-1.5 text-xs sm:text-sm rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal)] transition-colors"
+								className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal)] transition-colors placeholder:text-[var(--muted)]"
 								autoFocus
 								data-testid="input-search-protocols"
 							/>
@@ -178,6 +207,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 									type="button"
 									onClick={() => setSearchQuery("")}
 									className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									aria-label="Очистить поиск"
 								>
 									<X size={14} />
 								</button>
@@ -189,9 +219,10 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 							<button
 								type="button"
 								onClick={() => setViewMode("procedures")}
-								className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								style={viewMode === "procedures" ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" } : undefined}
+								className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									viewMode === "procedures"
-										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-2xs"
+										? "shadow-2xs"
 										: "text-[var(--ink)] hover:text-[var(--teal-dark)]"
 								}`}
 								data-testid="btn-view-mode-procedures"
@@ -203,9 +234,10 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 							<button
 								type="button"
 								onClick={() => setViewMode("chunks")}
-								className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								style={viewMode === "chunks" ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" } : undefined}
+								className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									viewMode === "chunks"
-										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-2xs"
+										? "shadow-2xs"
 										: "text-[var(--ink)] hover:text-[var(--teal-dark)]"
 								}`}
 								data-testid="btn-view-mode-chunks"
@@ -217,9 +249,10 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 							<button
 								type="button"
 								onClick={() => setViewMode("diagnoses")}
-								className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								style={viewMode === "diagnoses" ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" } : undefined}
+								className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									viewMode === "diagnoses"
-										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-2xs"
+										? "shadow-2xs"
 										: "text-[var(--ink)] hover:text-[var(--teal-dark)]"
 								}`}
 								data-testid="btn-view-mode-diagnoses"
@@ -230,42 +263,78 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 						</div>
 					</div>
 
-					{/* ── ТАБЫ СПЕЦИАЛЬНОСТЕЙ ── */}
+					{/* ── ТАБЫ СПЕЦИАЛЬНОСТЕЙ СО СКРОЛЛОМ И СТРЕЛКАМИ ── */}
 					{viewMode !== "diagnoses" && (
-						<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-soft)] shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-							{SPECIALTY_CATEGORIES_META.map((meta) => {
-								const isActive = activeCategory === meta.key;
-								return (
+						<div className="relative px-2 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-soft)] shrink-0 flex items-center">
+							{/* Левая стрелка прокрутки */}
+							{canScrollLeft && (
+								<div className="absolute left-1 z-10 flex items-center pr-2 bg-gradient-to-r from-[var(--paper-soft)] via-[var(--paper-soft)]/90 to-transparent">
 									<button
-										key={meta.key}
 										type="button"
-										onClick={() => setActiveCategory(meta.key)}
-										className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer whitespace-nowrap min-w-max ${
-											isActive
-												? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal-fill,var(--teal))] shadow-2xs"
-												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)] hover:border-[var(--teal)] hover:text-[var(--teal-dark)]"
-										}`}
-										data-testid={`tab-specialty-${meta.key}`}
+										onClick={() => scrollTabs("left")}
+										className="w-6 h-6 rounded-md bg-[var(--paper-strong)] border border-[var(--glass-border)] shadow-xs flex items-center justify-center text-[var(--ink)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-colors cursor-pointer"
+										aria-label="Прокрутить вкладки влево"
 									>
-										<span>{meta.shortLabel}</span>
-										<span
-											className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-												isActive
-													? "bg-white/20 text-white"
-													: "bg-[var(--paper-soft)] text-[var(--muted)]"
-											}`}
-										>
-											{meta.count}
-										</span>
+										<ChevronLeft size={14} />
 									</button>
-								);
-							})}
+								</div>
+							)}
+
+							{/* Контейнер вкладок */}
+							<div
+								ref={tabsRef}
+								className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full"
+							>
+								{SPECIALTY_CATEGORIES_META.map((meta) => {
+									const isActive = activeCategory === meta.key;
+									return (
+										<button
+											key={meta.key}
+											type="button"
+											onClick={() => setActiveCategory(meta.key)}
+											style={isActive ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)", borderColor: "var(--teal-fill)" } : undefined}
+											className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer whitespace-nowrap select-none ${
+												isActive
+													? "shadow-2xs"
+													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)] hover:border-[var(--teal)] hover:text-[var(--teal-dark)]"
+											}`}
+											data-testid={`tab-specialty-${meta.key}`}
+										>
+											<span>{meta.shortLabel}</span>
+											<span
+												style={isActive ? { backgroundColor: "rgba(255, 255, 255, 0.22)", color: "inherit" } : undefined}
+												className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+													isActive
+														? ""
+														: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)]"
+												}`}
+											>
+												{meta.count}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+
+							{/* Правая стрелка прокрутки */}
+							{canScrollRight && (
+								<div className="absolute right-1 z-10 flex items-center pl-2 bg-gradient-to-l from-[var(--paper-soft)] via-[var(--paper-soft)]/90 to-transparent">
+									<button
+										type="button"
+										onClick={() => scrollTabs("right")}
+										className="w-6 h-6 rounded-md bg-[var(--paper-strong)] border border-[var(--glass-border)] shadow-xs flex items-center justify-center text-[var(--ink)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-colors cursor-pointer"
+										aria-label="Прокрутить вкладки вправо"
+									>
+										<ChevronRight size={14} />
+									</button>
+								</div>
+							)}
 						</div>
 					)}
 
-					{/* ── ТЕЛО КАТАЛОГА (СПИСОК КАРТОЧЕК) ── */}
+					{/* ── ТЕЛО КАТАЛОГА (ПЛОТНЫЙ 2-3 КОЛОНОЧНЫЙ ГРИД) ── */}
 					<div
-						className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5"
+						className="flex-1 overflow-y-auto p-3 sm:p-4"
 						data-testid="protocols-catalog-list"
 					>
 						{viewMode === "procedures" && (
@@ -276,157 +345,214 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 										<p className="text-xs mt-1">Попробуйте изменить поисковый запрос или выбрать вкладку «Все»</p>
 									</div>
 								) : (
-									paginatedProcedures.map((proc) => {
-										const isExpanded = expandedProcedureId === proc.id;
-										return (
-											<div
-												key={proc.id}
-												className="p-3 sm:p-3.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] hover:border-[var(--teal)]/50 transition-all shadow-2xs space-y-2"
-												data-testid={`card-procedure-${proc.id}`}
-											>
-												<div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
-													<div className="space-y-1">
-														<div className="flex items-center gap-2 flex-wrap">
+									<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+										{paginatedProcedures.map((proc) => {
+											const isExpanded = expandedProcedureId === proc.id;
+											return (
+												<div
+													key={proc.id}
+													className={`p-3 sm:p-3.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] hover:border-[var(--teal)]/60 transition-all shadow-2xs flex flex-col justify-between space-y-2.5 ${
+														isExpanded ? "ring-1 ring-[var(--teal)] bg-[var(--paper-strong)]" : ""
+													}`}
+													data-testid={`card-procedure-${proc.id}`}
+												>
+													{/* Заголовок карточки: бейджи и название */}
+													<div className="space-y-1.5">
+														<div className="flex items-center gap-1.5 flex-wrap">
 															<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
 																{proc.categoryName}
 															</span>
 															{proc.matchedIcd10 && (
-																<span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/30">
-																	{proc.matchedIcd10}
+																<span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40">
+																	{proc.matchedIcd10.split(" ")[0]}
 																</span>
 															)}
-															<span className="text-[10px] text-[var(--muted)] font-mono">
-																{proc.totalChunks} блоков
+															<span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)]">
+																{proc.totalChunks} этапов
 															</span>
 														</div>
 
-														<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)]">
+														<h4
+															className="text-xs sm:text-sm font-bold text-[var(--ink)] leading-snug line-clamp-2"
+															title={proc.procedureName}
+														>
 															{proc.procedureName}
 														</h4>
 													</div>
 
-													{/* 1-Click Primary CTA */}
-													<div className="flex items-center gap-1.5 shrink-0 ml-auto">
+													{/* Чипы клинических этапов */}
+													<div className="flex items-center gap-1 flex-wrap pt-2 border-t border-[var(--glass-border)] text-xs">
+														<span className="text-[10px] font-bold text-[var(--muted)] mr-0.5">Этапы:</span>
+														{proc.complaints && (
+															<button
+																type="button"
+																onClick={() => handleApplySingleChunk(proc.complaints!)}
+																className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer"
+																title="Вставить только жалобы"
+															>
+																+ Жалобы
+															</button>
+														)}
+														{proc.anamnesis && (
+															<button
+																type="button"
+																onClick={() => handleApplySingleChunk(proc.anamnesis!)}
+																className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer"
+																title="Вставить только анамнез"
+															>
+																+ Анамнез
+															</button>
+														)}
+														{proc.objective && (
+															<button
+																type="button"
+																onClick={() => handleApplySingleChunk(proc.objective!)}
+																className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer"
+																title="Вставить только объективный статус"
+															>
+																+ Статус
+															</button>
+														)}
+														{proc.treatment && (
+															<button
+																type="button"
+																onClick={() => handleApplySingleChunk(proc.treatment!)}
+																className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer"
+																title="Вставить только протокол лечения"
+															>
+																+ Лечение
+															</button>
+														)}
+														{proc.recommendations && (
+															<button
+																type="button"
+																onClick={() => handleApplySingleChunk(proc.recommendations!)}
+																className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer"
+																title="Вставить только рекомендации"
+															>
+																+ Реком.
+															</button>
+														)}
+													</div>
+
+													{/* Кнопки действий: 1-клик и детали */}
+													<div className="flex items-center gap-1.5 pt-2 border-t border-[var(--glass-border)] mt-auto">
 														<button
 															type="button"
 															onClick={() => handleApplyFullProcedure(proc)}
-															className="h-7 sm:h-8 px-3 rounded-lg text-xs font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
+															style={{ backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" }}
+															className="h-8 px-3 rounded-lg text-xs font-extrabold shadow-xs hover:opacity-90 transition-all flex items-center justify-center gap-1.5 flex-1 cursor-pointer touch-manipulation active:scale-[0.98]"
 															title="1-клик вставка жалоб, анамнеза, статуса, протокола лечения и рекомендаций"
 															data-testid={`btn-apply-full-proc-${proc.id}`}
 														>
 															<Zap size={13} className="shrink-0" />
-															<span>Применить в дневник</span>
+															<span>Применить (1 клик)</span>
 														</button>
 
 														<button
 															type="button"
 															onClick={() => setExpandedProcedureId(isExpanded ? null : proc.id)}
-															className="h-7 sm:h-8 px-2 rounded-lg text-xs font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] transition-colors cursor-pointer flex items-center gap-1"
+															className={`h-8 px-2.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer flex items-center gap-1 shrink-0 ${
+																isExpanded
+																	? "border-[var(--teal)] bg-[var(--teal-soft)] text-[var(--teal-dark)]"
+																	: "border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)]"
+															}`}
 															title="Посмотреть текст разделов"
 															aria-label={isExpanded ? "Свернуть" : "Развернуть детали"}
 														>
-															{isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+															<span>{isExpanded ? "Свернуть" : "Детали"}</span>
+															{isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
 														</button>
 													</div>
-												</div>
 
-												{/* Чипы точечной вставки отдельных блоков */}
-												<div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[var(--glass-border)] text-xs">
-													<span className="text-[10px] font-bold text-[var(--muted)] mr-1">Точечно:</span>
-													{proc.complaints && (
-														<button
-															type="button"
-															onClick={() => handleApplySingleChunk(proc.complaints!)}
-															className="px-2 py-0.5 rounded-md text-[11px] font-medium border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
-															title="Вставить только жалобы"
-														>
-															+ Жалобы
-														</button>
-													)}
-													{proc.anamnesis && (
-														<button
-															type="button"
-															onClick={() => handleApplySingleChunk(proc.anamnesis!)}
-															className="px-2 py-0.5 rounded-md text-[11px] font-medium border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
-															title="Вставить только анамнез"
-														>
-															+ Анамнез
-														</button>
-													)}
-													{proc.objective && (
-														<button
-															type="button"
-															onClick={() => handleApplySingleChunk(proc.objective!)}
-															className="px-2 py-0.5 rounded-md text-[11px] font-medium border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
-															title="Вставить только объективный статус"
-														>
-															+ Статус
-														</button>
-													)}
-													{proc.treatment && (
-														<button
-															type="button"
-															onClick={() => handleApplySingleChunk(proc.treatment!)}
-															className="px-2 py-0.5 rounded-md text-[11px] font-medium border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
-															title="Вставить только протокол лечения"
-														>
-															+ Лечение
-														</button>
-													)}
-													{proc.recommendations && (
-														<button
-															type="button"
-															onClick={() => handleApplySingleChunk(proc.recommendations!)}
-															className="px-2 py-0.5 rounded-md text-[11px] font-medium border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
-															title="Вставить только рекомендации"
-														>
-															+ Рекомендации
-														</button>
+													{/* Развернутый предварительный просмотр текста */}
+													{isExpanded && (
+														<div className="pt-2 border-t border-[var(--glass-border)] space-y-2 text-xs animate-in fade-in duration-100 max-h-64 overflow-y-auto pr-1">
+															{proc.complaints && (
+																<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+																	<div className="flex items-center justify-between mb-1">
+																		<span className="font-bold text-[11px] text-[var(--teal-dark)]">Жалобы</span>
+																		<button
+																			type="button"
+																			onClick={() => handleApplySingleChunk(proc.complaints!)}
+																			className="text-[10px] font-bold text-[var(--teal-dark)] hover:underline cursor-pointer"
+																		>
+																			+ Вставить
+																		</button>
+																	</div>
+																	<p className="text-[11px] text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{proc.complaints.text}</p>
+																</div>
+															)}
+															{proc.anamnesis && (
+																<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+																	<div className="flex items-center justify-between mb-1">
+																		<span className="font-bold text-[11px] text-[var(--teal-dark)]">Анамнез</span>
+																		<button
+																			type="button"
+																			onClick={() => handleApplySingleChunk(proc.anamnesis!)}
+																			className="text-[10px] font-bold text-[var(--teal-dark)] hover:underline cursor-pointer"
+																		>
+																			+ Вставить
+																		</button>
+																	</div>
+																	<p className="text-[11px] text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{proc.anamnesis.text}</p>
+																</div>
+															)}
+															{proc.objective && (
+																<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+																	<div className="flex items-center justify-between mb-1">
+																		<span className="font-bold text-[11px] text-[var(--teal-dark)]">Объективный статус</span>
+																		<button
+																			type="button"
+																			onClick={() => handleApplySingleChunk(proc.objective!)}
+																			className="text-[10px] font-bold text-[var(--teal-dark)] hover:underline cursor-pointer"
+																		>
+																			+ Вставить
+																		</button>
+																	</div>
+																	<p className="text-[11px] text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{proc.objective.text}</p>
+																</div>
+															)}
+															{proc.treatment && (
+																<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+																	<div className="flex items-center justify-between mb-1">
+																		<span className="font-bold text-[11px] text-[var(--teal-dark)]">Проведенное лечение</span>
+																		<button
+																			type="button"
+																			onClick={() => handleApplySingleChunk(proc.treatment!)}
+																			className="text-[10px] font-bold text-[var(--teal-dark)] hover:underline cursor-pointer"
+																		>
+																			+ Вставить
+																		</button>
+																	</div>
+																	<p className="text-[11px] text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{proc.treatment.text}</p>
+																</div>
+															)}
+															{proc.recommendations && (
+																<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--glass-border)]">
+																	<div className="flex items-center justify-between mb-1">
+																		<span className="font-bold text-[11px] text-[var(--teal-dark)]">Рекомендации</span>
+																		<button
+																			type="button"
+																			onClick={() => handleApplySingleChunk(proc.recommendations!)}
+																			className="text-[10px] font-bold text-[var(--teal-dark)] hover:underline cursor-pointer"
+																		>
+																			+ Вставить
+																		</button>
+																	</div>
+																	<p className="text-[11px] text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{proc.recommendations.text}</p>
+																</div>
+															)}
+														</div>
 													)}
 												</div>
-
-												{/* Развернутый предварительный просмотр текста */}
-												{isExpanded && (
-													<div className="mt-2 p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-xs space-y-2 animate-in fade-in duration-100">
-														{proc.complaints && (
-															<div>
-																<div className="font-bold text-[var(--teal-dark)] mb-0.5">Жалобы:</div>
-																<p className="text-[var(--ink)] whitespace-pre-wrap">{proc.complaints.text}</p>
-															</div>
-														)}
-														{proc.anamnesis && (
-															<div>
-																<div className="font-bold text-[var(--teal-dark)] mb-0.5">Анамнез:</div>
-																<p className="text-[var(--ink)] whitespace-pre-wrap">{proc.anamnesis.text}</p>
-															</div>
-														)}
-														{proc.objective && (
-															<div>
-																<div className="font-bold text-[var(--teal-dark)] mb-0.5">Объективный статус:</div>
-																<p className="text-[var(--ink)] whitespace-pre-wrap">{proc.objective.text}</p>
-															</div>
-														)}
-														{proc.treatment && (
-															<div>
-																<div className="font-bold text-[var(--teal-dark)] mb-0.5">Проведенное лечение:</div>
-																<p className="text-[var(--ink)] whitespace-pre-wrap">{proc.treatment.text}</p>
-															</div>
-														)}
-														{proc.recommendations && (
-															<div>
-																<div className="font-bold text-[var(--teal-dark)] mb-0.5">Рекомендации:</div>
-																<p className="text-[var(--ink)] whitespace-pre-wrap">{proc.recommendations.text}</p>
-															</div>
-														)}
-													</div>
-												)}
-											</div>
-										);
-									})
+											);
+										})}
+									</div>
 								)}
 
 								{filteredProcedures.length > paginatedProcedures.length && (
-									<div className="text-center pt-2">
+									<div className="text-center pt-4">
 										<button
 											type="button"
 											onClick={() => setPage((p) => p + 1)}
@@ -446,43 +572,47 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 										<p className="text-sm font-semibold">Блоки по запросу «{searchQuery}» не найдены</p>
 									</div>
 								) : (
-									paginatedChunks.map((chunk) => (
-										<div
-											key={chunk.id}
-											className="p-3 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] hover:border-[var(--teal)]/50 transition-all shadow-2xs flex items-start justify-between gap-3"
-										>
-											<div className="space-y-1 min-w-0 flex-1">
-												<div className="flex items-center gap-2">
-													<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)]">
-														{chunk.categoryName}
-													</span>
-													<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper-soft)] text-[var(--muted)]">
-														ID: {chunk.id}
-													</span>
-												</div>
-												<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">
-													{chunk.name}
-												</h4>
-												<p className="text-xs text-[var(--muted)] line-clamp-2">
-													{chunk.text}
-												</p>
-											</div>
-
-											<button
-												type="button"
-												onClick={() => handleApplySingleChunk(chunk)}
-												className="shrink-0 h-7 sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal-soft)] hover:bg-[var(--teal-fill,var(--teal))] hover:text-white text-[var(--teal-dark)] transition-all cursor-pointer flex items-center gap-1"
-												title="Вставить блок в соответствующий раздел карты"
+									<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+										{paginatedChunks.map((chunk) => (
+											<div
+												key={chunk.id}
+												className="p-3 sm:p-3.5 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] hover:border-[var(--teal)]/60 transition-all shadow-2xs flex flex-col justify-between h-full space-y-2"
 											>
-												<Zap size={12} />
-												<span>Вставить</span>
-											</button>
-										</div>
-									))
+												<div className="space-y-1.5 min-w-0">
+													<div className="flex items-center gap-1.5 flex-wrap">
+														<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
+															{chunk.categoryName}
+														</span>
+														<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)]">
+															ID: {chunk.id}
+														</span>
+													</div>
+													<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] leading-snug line-clamp-2" title={chunk.name}>
+														{chunk.name}
+													</h4>
+													<p className="text-xs text-[var(--muted)] line-clamp-3 leading-relaxed">
+														{chunk.text}
+													</p>
+												</div>
+
+												<div className="pt-2 border-t border-[var(--glass-border)] mt-auto">
+													<button
+														type="button"
+														onClick={() => handleApplySingleChunk(chunk)}
+														className="w-full h-8 px-3 rounded-lg text-xs font-bold bg-[var(--teal-soft)] hover:bg-[var(--teal-fill)] hover:text-[var(--on-teal)] text-[var(--teal-dark)] transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98]"
+														title="Вставить блок в соответствующий раздел карты"
+													>
+														<Zap size={13} />
+														<span>Вставить в дневник</span>
+													</button>
+												</div>
+											</div>
+										))}
+									</div>
 								)}
 
 								{filteredChunks.length > paginatedChunks.length && (
-									<div className="text-center pt-2">
+									<div className="text-center pt-4">
 										<button
 											type="button"
 											onClick={() => setPage((p) => p + 1)}
@@ -502,39 +632,42 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 										<p className="text-sm font-semibold">Диагнозы МКБ-10 по запросу «{searchQuery}» не найдены</p>
 									</div>
 								) : (
-									paginatedDiagnoses.map((diag) => (
-										<div
-											key={diag.id}
-											className="p-2.5 sm:p-3 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] hover:border-[var(--teal)]/50 transition-all shadow-2xs flex items-center justify-between gap-3"
-										>
-											<div className="space-y-0.5 min-w-0 flex-1">
-												<div className="flex items-center gap-2">
-													{diag.icd10 && (
-														<span className="text-xs font-mono font-black px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/30">
-															{diag.icd10}
-														</span>
-													)}
-													<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">
+									<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 items-stretch">
+										{paginatedDiagnoses.map((diag) => (
+											<div
+												key={diag.id}
+												className="p-2.5 sm:p-3 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] hover:border-[var(--teal)]/60 transition-all shadow-2xs flex items-center justify-between gap-2.5"
+											>
+												<div className="space-y-1 min-w-0 flex-1">
+													<div className="flex items-center gap-2">
+														{diag.icd10 && (
+															<span className="text-[11px] font-mono font-black px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 shrink-0">
+																{diag.icd10}
+															</span>
+														)}
+													</div>
+													<h4 className="text-xs sm:text-sm font-semibold text-[var(--ink)] leading-snug line-clamp-2" title={diag.name}>
 														{diag.name}
 													</h4>
 												</div>
-											</div>
 
-											<button
-												type="button"
-												onClick={() => handleApplyDiagnosis(diag)}
-												className="shrink-0 h-7 sm:h-8 px-3 rounded-lg text-xs font-bold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-												title="Установить этот диагноз в карту приёма"
-											>
-												<Check size={13} />
-												<span>Выбрать</span>
-											</button>
-										</div>
-									))
+												<button
+													type="button"
+													onClick={() => handleApplyDiagnosis(diag)}
+													style={{ backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" }}
+													className="shrink-0 h-8 px-3 rounded-lg text-xs font-bold hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98]"
+													title="Установить этот диагноз в карту приёма"
+												>
+													<Check size={13} />
+													<span>Выбрать</span>
+												</button>
+											</div>
+										))}
+									</div>
 								)}
 
 								{filteredDiagnoses.length > paginatedDiagnoses.length && (
-									<div className="text-center pt-2">
+									<div className="text-center pt-4">
 										<button
 											type="button"
 											onClick={() => setPage((p) => p + 1)}
@@ -551,7 +684,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 					{/* ── ПОДВАЛ МОДАЛЬНОГО ОКНА ── */}
 					<div className="px-4 py-2.5 border-t border-[var(--glass-border)] bg-[var(--paper-soft)] flex items-center justify-between text-xs text-[var(--muted)] shrink-0">
 						<div className="flex items-center gap-2">
-							<ShieldCheck size={14} className="text-emerald-500" />
+							<ShieldCheck size={14} className="text-emerald-500 shrink-0" />
 							<span>Стандарты СтАР & Минздрава РФ • Полный массив 1 142 клинических протокола</span>
 						</div>
 
