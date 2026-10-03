@@ -281,6 +281,122 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 
 		return reply.send(items);
 	});
+
+	// GET /api/warehouse/:organizationId/batches — Партии FEFO со сроками годности (inventoryQuery SSOT)
+	server.get<{
+		Params: { organizationId: string };
+		Querystring: {
+			itemId?: string;
+			status?: "active" | "depleted" | "expired" | "quarantine" | "all";
+			warehouseId?: string;
+			limit?: string | number;
+			offset?: string | number;
+		};
+	}>(
+		"/:organizationId/batches",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"warehouse batches read",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const limit = request.query.limit ? Number(request.query.limit) : undefined;
+			const offset = request.query.offset ? Number(request.query.offset) : undefined;
+
+			const batches = await inventoryQuery.getStockBatches(organizationId, {
+				itemId: request.query.itemId,
+				status: request.query.status,
+				warehouseId: request.query.warehouseId,
+				limit,
+				offset,
+			});
+			return reply.send(batches);
+		},
+	);
+
+	// GET /api/warehouse/batches — Партии FEFO с автоопределением организации (Zero Dead-Ends)
+	server.get<{
+		Querystring: {
+			itemId?: string;
+			status?: "active" | "depleted" | "expired" | "quarantine" | "all";
+			warehouseId?: string;
+			limit?: string | number;
+			offset?: string | number;
+		};
+	}>(
+		"/batches",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"warehouse batches read",
+			);
+			if (!resolvedOrgId) return;
+
+			const limit = request.query.limit ? Number(request.query.limit) : undefined;
+			const offset = request.query.offset ? Number(request.query.offset) : undefined;
+
+			const batches = await inventoryQuery.getStockBatches(resolvedOrgId, {
+				itemId: request.query.itemId,
+				status: request.query.status,
+				warehouseId: request.query.warehouseId,
+				limit,
+				offset,
+			});
+			return reply.send(batches);
+		},
+	);
+
+	// GET /api/warehouse/:organizationId/batches/expiring — Мониторинг истекающих партий (Shelf-Life Monitor)
+	server.get<{
+		Params: { organizationId: string };
+		Querystring: { daysAhead?: string | number };
+	}>(
+		"/:organizationId/batches/expiring",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"warehouse expiring batches read",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const daysAhead = request.query.daysAhead ? Number(request.query.daysAhead) : 30;
+			const batches = await inventoryQuery.getExpiringBatches(organizationId, daysAhead);
+			return reply.send(batches);
+		},
+	);
+
+	// GET /api/warehouse/batches/expiring — Мониторинг истекающих партий с автоопределением организации
+	server.get<{
+		Querystring: { daysAhead?: string | number };
+	}>(
+		"/batches/expiring",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"warehouse expiring batches read",
+			);
+			if (!resolvedOrgId) return;
+
+			const daysAhead = request.query.daysAhead ? Number(request.query.daysAhead) : 30;
+			const batches = await inventoryQuery.getExpiringBatches(resolvedOrgId, daysAhead);
+			return reply.send(batches);
+		},
+	);
 };
 
 export default warehouseRoutes;

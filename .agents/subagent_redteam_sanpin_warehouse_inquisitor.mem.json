@@ -1,0 +1,49 @@
+{
+  "subagent": "subagent_redteam_sanpin_warehouse_inquisitor",
+  "status": "completed",
+  "current_phase": "reporting",
+  "completed_steps": [
+    "Full read of core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md",
+    "Reconnaissance of warehouse & sterilization files (doctor path, SanPiN journals, inventory queries)",
+    "Audit for Mandate 8v & 8ab: ChairsideSterilizationPouchWidget eradicated, 0 blocking popups/modals in doctor visit flow, allowOverdraft=true guaranteed",
+    "Search for orphans: found orphan inventoryQuery.getStockBatches & getExpiringBatches with missing API routes",
+    "Search for duplicates: found raw db.select().from(inventoryItems) bypassing SSOT in routes/inventory.ts; found fragile duplicate stock subtraction in crmWarehouseLabTools.ts",
+    "Self-fix in place: exposed batch & expiring-batch routes in /api/inventory and /api/warehouse with dual-route parity (Mandate 8n)",
+    "Self-fix in place: consolidated routes/inventory.ts to use canonical inventoryQuery.getInventoryItems",
+    "Self-fix in place: wired visitId in executeSoftOverdraftDeduct and consolidated logMaterialUsageTool to delegate to executeSoftOverdraftDeduct",
+    "Self-fix in place: added offline test fixture fallback to getLabOrderStatusTool",
+    "Targeted test verification: 47/47 tests passing (warehouseStockEndpoint, warehouseSoftOverdraftAndTechCardInquisitor, inventoryQuery, crmUniversalTools)",
+    "check-encoding.mjs passed: 7187 files verified with 0 defects"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "high",
+      "domain": "inventory_api_orphans",
+      "description": "inventoryQuery.getStockBatches and getExpiringBatches existed in db/inventoryQuery.ts but had no exposed API routes, preventing FEFO batch visibility and shelf-life monitoring.",
+      "status": "resolved",
+      "resolution": "Exposed GET /:organizationId/batches, GET /batches, GET /:organizationId/batches/expiring, and GET /batches/expiring on both /api/inventory and /api/warehouse routes."
+    },
+    {
+      "severity": "medium",
+      "domain": "inventory_queries_ssot",
+      "description": "routes/inventory.ts bypassed inventoryQuery SSOT with inline raw db.select().from(inventoryItems) queries on items and summary endpoints.",
+      "status": "resolved",
+      "resolution": "Replaced inline queries with canonical inventoryQuery.getInventoryItems(organizationId)."
+    },
+    {
+      "severity": "high",
+      "domain": "ai_copilot_warehouse_deduction",
+      "description": "crmWarehouseLabTools.ts (log_material_usage) implemented duplicate, fragile stock deduction without row locking (for update) or zero-dead-ends auto-creation.",
+      "status": "resolved",
+      "resolution": "Consolidated logMaterialUsageTool to delegate directly to canonical executeSoftOverdraftDeduct from services/warehouse/warehouseOperations.ts."
+    },
+    {
+      "severity": "low",
+      "domain": "soft_overdraft_visit_link",
+      "description": "executeSoftOverdraftDeduct accepted visitId in softOverdraftDeductSchema but omitted it from the inventoryTransactions insert values.",
+      "status": "resolved",
+      "resolution": "Added visitId: data.visitId || null and returned the transaction record."
+    }
+  ]
+}

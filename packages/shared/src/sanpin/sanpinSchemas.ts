@@ -42,6 +42,8 @@ export const psoTestTypeEnumSchema = z.enum([
 	"azopyram",
 	"phenolphthalein",
 	"both",
+	"sudan_iii",
+	"all",
 ]);
 export type PsoTestTypeEnum = z.infer<typeof psoTestTypeEnumSchema>;
 
@@ -54,6 +56,7 @@ export const psoCleaningLogSchema = z.object({
 	testedSampleCount: z.number().int().min(1, "Количество проверенных изделий должно быть >= 1"),
 	isAzopyramNegative: z.boolean().default(true),
 	isPhenolphthaleinNegative: z.boolean().default(true),
+	isSudanNegative: z.boolean().default(true),
 	isBatchApproved: z.boolean().default(true),
 	detergentBrand: z.string().nullable().optional(),
 	rejectionReason: z.string().nullable().optional(),
@@ -72,6 +75,7 @@ export const createPsoCleaningLogDtoSchema = z.object({
 	testedSampleCount: z.number().int().min(1, "Количество образцов должно быть не менее 1 шт."),
 	isAzopyramNegative: z.boolean().default(true),
 	isPhenolphthaleinNegative: z.boolean().default(true),
+	isSudanNegative: z.boolean().default(true).optional(),
 	detergentBrand: z.string().trim().max(120).optional().nullable(),
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
@@ -754,6 +758,7 @@ export class SanPiNRegulatoryEngine {
 		testedCount: number,
 		isAzopyramNegative: boolean,
 		isPhenolphthaleinNegative: boolean,
+		isSudanNegative: boolean = true,
 	): {
 		isBatchApproved: boolean;
 		minSampleRequired: number;
@@ -787,6 +792,15 @@ export class SanPiNRegulatoryEngine {
 				samplingSatisfied: true,
 				rejectionReason:
 					"Положительная фенолфталеиновая проба (остатки щелочных компонентов моющих средств). Вся партия подлежит повторному ополаскиванию дистиллированной водой.",
+			};
+		}
+		if (!isSudanNegative) {
+			return {
+				isBatchApproved: false,
+				minSampleRequired,
+				samplingSatisfied: true,
+				rejectionReason:
+					"Положительная проба с Суданом III (обнаружены остаточные жировые и масляные загрязнения наконечников). Вся партия подлежит обезжириванию и повторной ПСО.",
 			};
 		}
 

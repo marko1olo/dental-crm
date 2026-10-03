@@ -179,22 +179,26 @@ export async function executeSoftOverdraftDeduct(
 				),
 			);
 
-		await tx.insert(inventoryTransactions).values({
-			organizationId,
-			itemId: item.id,
-			inventoryItemId: item.id,
-			transactionType: isOverdraft ? "emergency_overdraft" : "consumption",
-			qty: String(-data.quantity),
-			quantityChanged: String(-data.quantity),
-			isOverdraft,
-			notes:
-				data.reason ??
-				(isOverdraft
-					? `Мягкий овердрафт: экстренное списание при нулевом/недостаточном остатке (дефицит: ${deficit})`
-					: "Списание расходных материалов"),
-			userId,
-			createdAt: new Date(),
-		});
+		const [txRecord] = await tx
+			.insert(inventoryTransactions)
+			.values({
+				organizationId,
+				itemId: item.id,
+				inventoryItemId: item.id,
+				visitId: data.visitId || null,
+				transactionType: isOverdraft ? "emergency_overdraft" : "consumption",
+				qty: String(-data.quantity),
+				quantityChanged: String(-data.quantity),
+				isOverdraft,
+				notes:
+					data.reason ??
+					(isOverdraft
+						? `Мягкий овердрафт: экстренное списание при нулевом/недостаточном остатке (дефицит: ${deficit})`
+						: "Списание расходных материалов"),
+				userId,
+				createdAt: new Date(),
+			})
+			.returning();
 
 		return {
 			item,
@@ -202,6 +206,7 @@ export async function executeSoftOverdraftDeduct(
 			newStock,
 			isOverdraft,
 			deficit,
+			transaction: txRecord,
 		};
 	});
 }

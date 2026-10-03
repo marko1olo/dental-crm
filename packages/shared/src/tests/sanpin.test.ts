@@ -61,6 +61,12 @@ describe("SanPiN Regulatory Engine & Shared Contracts", () => {
 			assert.ok(evalAlkali.rejectionReason?.includes("фенолфталеиновая проба"));
 		});
 
+		test("rejects batch on positive Sudan III test (residual oils and lipids)", () => {
+			const evalSudan = SanPiNRegulatoryEngine.evaluatePsoSampling(100, 5, true, true, false);
+			assert.strictEqual(evalSudan.isBatchApproved, false);
+			assert.ok(evalSudan.rejectionReason?.includes("Суданом III"));
+		});
+
 		test("validates createPsoCleaningLogDtoSchema", () => {
 			const valid = createPsoCleaningLogDtoSchema.safeParse({
 				instrumentName: "Боры стоматологические",
