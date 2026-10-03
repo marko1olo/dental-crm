@@ -1,5 +1,5 @@
 import React from "react";
-import { Bold, Eraser, FileCheck, Italic, List, Pill, PlusCircle, Sparkles, Tag, Zap } from "lucide-react";
+import { Bold, BookOpen, Eraser, FileCheck, Italic, List, Pill, PlusCircle, Sparkles, Tag, Zap } from "lucide-react";
 import { DebouncedEmkTextarea } from "./DebouncedEmkTextarea";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import { formatSoapFromPreset, getPresetsByIcd10 } from "../clinicalSoapPresets";
@@ -239,10 +239,24 @@ export function EmkDiaryProtocolSection({
 			{/* Протокол лечения / Дневник */}
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
-					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<FileCheck size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Протокол лечения и манипуляций</span>
-					</label>
+					<div className="flex items-center gap-2">
+						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<FileCheck size={14} className="text-[var(--teal,var(--brand-primary))]" />
+							<span>Протокол лечения и манипуляций</span>
+						</label>
+						{onOpenTemplatesModal && (
+							<button
+								type="button"
+								onClick={onOpenTemplatesModal}
+								className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+								data-testid="btn-open-protocols-catalog-diary"
+								title="Открыть полный каталог клинических протоколов (1 142 шаблона)"
+							>
+								<BookOpen size={12} />
+								<span>Каталог протоколов (1 142)</span>
+							</button>
+						)}
+					</div>
 
 					{/* 26px compact formatting toolbar */}
 					<div className="flex items-center gap-1 bg-[var(--paper-subtle,rgba(0,0,0,0.02))] border border-[var(--line)] rounded-md px-1.5 py-0.5 h-[26px]">

@@ -1,5 +1,6 @@
 import React from "react";
 import {
+	BookOpen,
 	Calendar,
 	Check,
 	ChevronDown,
@@ -26,6 +27,7 @@ export interface EmkToolbarProps {
 	onApplySoapPreset?: ((preset: ClinicalSoapPreset) => void) | undefined;
 	onToggleStarProtocols?: (() => void) | undefined;
 	isStarProtocolsOpen?: boolean | undefined;
+	onOpenProtocolsCatalog?: (() => void) | undefined;
 	onToggleCopilot?: (() => void) | undefined;
 	isCopilotOpen?: boolean | undefined;
 	onScheduleNextVisit?: ((days: number) => void) | undefined;
@@ -47,6 +49,7 @@ export function EmkToolbar({
 	onApplySoapPreset = () => {},
 	onToggleStarProtocols = () => {},
 	isStarProtocolsOpen = false,
+	onOpenProtocolsCatalog,
 	onToggleCopilot = () => {},
 	isCopilotOpen = false,
 	onScheduleNextVisit = () => {},
@@ -283,6 +286,25 @@ export function EmkToolbar({
 								</button>
 							)}
 							<div className="h-px bg-[var(--glass-border)] my-1" />
+							{onOpenProtocolsCatalog && (
+								<button
+									type="button"
+									data-testid="btn-open-protocols-catalog-1142"
+									onClick={() => {
+										onOpenProtocolsCatalog();
+										setIsExtraMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-bold text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] flex items-center justify-between gap-2 cursor-pointer transition-colors"
+								>
+									<div className="flex items-center gap-2">
+										<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+										<span>Все шаблоны (1 142)</span>
+									</div>
+									<span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
+										1 142
+									</span>
+								</button>
+							)}
 							<button
 								type="button"
 								data-testid="btn-toggle-star-protocols-toolbar"

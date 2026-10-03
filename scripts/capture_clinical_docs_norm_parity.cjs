@@ -103,6 +103,8 @@ async function capture() {
 
   console.log("Navigating to #visit...");
   await page.evaluate(() => { window.location.hash = "visit"; });
+  await page.waitForSelector('text=Ковалёв', { state: "visible", timeout: 10000 }).catch(() => {});
+  await page.locator('text=Дневник приёма').first().waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   await page.waitForTimeout(1000);
 
   // Remove overlays again
@@ -139,6 +141,61 @@ async function capture() {
       fs.copyFileSync(normShotPath, path.join(d, `visit_emk_1click_norms_${theme}.png`));
     }
     console.log(`Captured: visit_emk_1click_norms_${theme}.png`);
+
+    // ── СЪЁМКА КАТАЛОГА 1 142 КЛИНИЧЕСКИХ ПРОТОКОЛОВ ──
+    console.log(`Opening clinical protocols catalog modal (1 142 chunks) in ${theme}...`);
+    const catalogModal = page.locator('[data-testid="clinical-protocols-catalog-modal"]');
+
+    // 1. Try diary button
+    const diaryBtn = page.locator('[data-testid="btn-open-protocols-catalog-diary"]').first();
+    if (await diaryBtn.count() > 0) {
+      await diaryBtn.scrollIntoViewIfNeeded().catch(() => {});
+      await diaryBtn.click({ force: true }).catch(() => {});
+    }
+
+    // 2. If not opened, try toolbar menu
+    if (!(await catalogModal.isVisible())) {
+      const toolbarMenuBtn = page.locator('[data-testid="btn-toggle-extra-soap-menu"]').first();
+      if (await toolbarMenuBtn.count() > 0) {
+        await toolbarMenuBtn.scrollIntoViewIfNeeded().catch(() => {});
+        await toolbarMenuBtn.click({ force: true }).catch(() => {});
+        await page.waitForTimeout(300);
+        const menuCatalogBtn = page.locator('[data-testid="btn-open-protocols-catalog-1142"]').first();
+        if (await menuCatalogBtn.isVisible()) {
+          await menuCatalogBtn.click({ force: true }).catch(() => {});
+        }
+      }
+    }
+
+    // 3. If still not opened, try presets bar
+    if (!(await catalogModal.isVisible())) {
+      const openCatalogBtn = page.locator('[data-testid="btn-open-soap-templates-modal-bar"]').first();
+      if (await openCatalogBtn.count() > 0) {
+        await openCatalogBtn.scrollIntoViewIfNeeded().catch(() => {});
+        await openCatalogBtn.click({ force: true }).catch(() => {});
+      }
+    }
+
+    await catalogModal.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+
+    if (await catalogModal.isVisible()) {
+      await page.waitForTimeout(400);
+      const catalogShotPath = path.resolve(`docs/screenshots/inquisition_live/clinical_protocols_catalog_1142_${theme}.png`);
+      await page.screenshot({ path: catalogShotPath, fullPage: false });
+      for (const d of targetDirs) {
+        fs.copyFileSync(catalogShotPath, path.join(d, `clinical_protocols_catalog_1142_${theme}.png`));
+      }
+      console.log(`Captured: clinical_protocols_catalog_1142_${theme}.png`);
+
+      // Close modal
+      const closeBtn = page.locator('[data-testid="btn-close-protocols-catalog-modal"]');
+      if (await closeBtn.isVisible()) {
+        await closeBtn.click({ force: true });
+        await page.waitForTimeout(300);
+      }
+    } else {
+      console.error(`FAILED to open catalog modal in ${theme}!`);
+    }
   }
 
   // ── РЕНДЕРИНГ КЛИНИЧЕСКОГО ДОКУМЕНТА С МАКРО-ТЕГАМИ IDENT ──
@@ -146,8 +203,7 @@ async function capture() {
   const tempHtmlPath = path.resolve("scripts/temp_document_preview.html");
 
   // Подключаем модули шаблонизатора напрямую
-  const sharedModule = await import("../packages/shared/src/index.ts");
-  const { renderDocumentTemplate } = sharedModule;
+  const { renderDocumentTemplate } = require("../packages/shared/dist/documents/templateEngine.js");
 
   const sampleTemplate = `
 <!DOCTYPE html>
@@ -184,39 +240,39 @@ async function capture() {
       <div class="doc-badge">Карта приёма № {НомерКарты}</div>
     </div>
 
-    <div class="section-title">1. Паспортная часть и соматический статус (Паритет IDENT)</div>
+    <div class="section-title">1. Паспортная часть и соматический статус</div>
     <div class="grid-2">
       <div>
         <div class="field-label">Пациент (ФИО)</div>
-        <div class="field-value">{ФамилияИмяОтчество}</div>
+        <div class="field-value">{ФамилияИмяОтчество} ({Пол}, {Возраст} лет)</div>
       </div>
       <div>
-        <div class="field-label">Фамилия и инициалы (IDENT)</div>
-        <div class="field-value">{ФамилияИО} ({Пол}, {Возраст} лет)</div>
+        <div class="field-label">Дата рождения</div>
+        <div class="field-value">{ДатаРождения}</div>
       </div>
     </div>
     <div class="grid-2" style="margin-top: 8px;">
-      <div>
-        <div class="field-label">Дата рождения</div>
-        <div class="field-value">{ДатаРождения} (Год: {ГодРождения})</div>
-      </div>
       <div>
         <div class="field-label">Контакты</div>
         <div class="field-value">{Телефоны} · {Email}</div>
       </div>
-    </div>
-    <div class="grid-2" style="margin-top: 8px;">
       <div>
         <div class="field-label">Адрес проживания</div>
         <div class="field-value">{Адрес}</div>
       </div>
+    </div>
+    <div class="grid-2" style="margin-top: 8px;">
       <div>
-        <div class="field-label">Соматический статус & Аллергии</div>
-        <div class="field-value">{СоматическийСтатус}; Аллергостатус: {Аллергии}</div>
+        <div class="field-label">Соматический статус</div>
+        <div class="field-value">{СоматическийСтатус}</div>
+      </div>
+      <div>
+        <div class="field-label">Аллергологический статус</div>
+        <div class="field-value">{Аллергии}</div>
       </div>
     </div>
 
-    <div class="section-title">2. Протокол осмотра и дневник приёма (Без устаревшего 043/у)</div>
+    <div class="section-title">2. Протокол клинического осмотра и дневник приёма</div>
     <div class="grid-2">
       <div>
         <div class="field-label">Жалобы</div>

@@ -210,11 +210,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 							type="button"
 							onClick={onOpenTemplatesModal}
 							className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-							title="Открыть полный каталог клинических протоколов со списанием материалов"
+							title="Открыть полный промышленный каталог клинических протоколов и дневников приёма (1 142 шаблона)"
 							data-testid="btn-open-soap-templates-modal-bar"
 						>
 							<BookOpen size={15} className="shrink-0" />
-							<span>Все шаблоны</span>
+							<span>Все шаблоны (1 142)</span>
 						</button>
 					)}
 

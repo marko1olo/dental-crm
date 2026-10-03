@@ -77,6 +77,10 @@ import {
 	type ClinicalVisitCompletionResult,
 	completeClinicalVisitAndAssembleEstimate,
 } from "./clinicalVisitWorkflow";
+import {
+	ClinicalProtocolsCatalogModal,
+	type VisitNoteFieldsPatch,
+} from "./clinicalCatalog";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
 import { EmkVoicePilot } from "./EmkVoicePilot";
@@ -438,6 +442,31 @@ export function VisitEmkTab() {
 		return generateQrCodeSvg(sbpPayloadUrl, { size: 200 });
 	}, [sbpPayloadUrl]);
 
+	const handleApplyCatalogPatch = React.useCallback(
+		(patch: VisitNoteFieldsPatch, successMessage: string) => {
+			if (patch.complaint) {
+				updateVisitNoteField("complaint", patch.complaint);
+			}
+			if (patch.anamnesis) {
+				updateVisitNoteField("anamnesis", patch.anamnesis);
+			}
+			if (patch.objectiveStatus) {
+				updateVisitNoteField("objectiveStatus", patch.objectiveStatus);
+			}
+			if (patch.treatmentPlan) {
+				updateVisitNoteField("treatmentPlan", patch.treatmentPlan);
+			}
+			if (patch.recommendations) {
+				updateVisitNoteField("recommendations", patch.recommendations);
+			}
+			if (patch.diagnosis) {
+				updateVisitNoteField("diagnosis", patch.diagnosis);
+			}
+			showToast(successMessage, "success", 3000);
+		},
+		[updateVisitNoteField],
+	);
+
 	return (
 		<section
 			data-testid="visit-emk-tab"
@@ -467,6 +496,7 @@ export function VisitEmkTab() {
 					onApplyNorm={handleApplyPhysiologicalNorm}
 					onToggleStarProtocols={() => setIsStarProtocolsOpen((v) => !v)}
 					isStarProtocolsOpen={isStarProtocolsOpen}
+					onOpenProtocolsCatalog={() => setIsSoapTemplatesModalOpen(true)}
 					onScheduleNext={() => handleScheduleNextVisit(5)}
 					onOpenConsent={() => setIsConsentModalOpen(true)}
 					onPrint043={() => setIsPrintModalOpen(true)}
@@ -550,7 +580,7 @@ export function VisitEmkTab() {
 					updateVisitNoteField={updateVisitNoteField}
 					isLocked={isLocked}
 					activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
-					onOpenTemplatesModal={() => setIsStarProtocolsOpen(true)}
+					onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 				/>
 
 				<EmkAnesthesiaSection
@@ -860,6 +890,26 @@ export function VisitEmkTab() {
 					setIsStarProtocolsOpen(false);
 					showToast(`Применено клинических протоколов: ${diaries.length}`, "success", 3000);
 				}}
+			/>
+
+			{/* Полный промышленный каталог клинических протоколов (1 142 шаблона) */}
+			<ClinicalProtocolsCatalogModal
+				isOpen={isSoapTemplatesModalOpen}
+				onClose={() => setIsSoapTemplatesModalOpen(false)}
+				activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+				currentNoteForm={visitNoteForm}
+				onApplyPatch={handleApplyCatalogPatch}
+				initialSpecialty={
+					dashboard?.activeVisit?.specialty === "surgery"
+						? "surgery"
+						: dashboard?.activeVisit?.specialty === "orthopedics"
+							? "orthopedics"
+							: dashboard?.activeVisit?.specialty === "periodontics"
+								? "periodontics"
+								: dashboard?.activeVisit?.specialty === "pediatric"
+									? "pediatric"
+									: "all"
+				}
 			/>
 
 			{/* Информированное добровольное согласие (ИДС) */}
