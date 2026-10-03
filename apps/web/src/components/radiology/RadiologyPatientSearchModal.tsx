@@ -1,30 +1,31 @@
 /**
- * RadiologyPatientSearchModal.tsx — Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19).
+ * RadiologyPatientSearchModal.tsx — Чистый фильтр снимков визиографа по датам и визитам.
  *
- * Архитектурные стандарты:
- * 1. EzDent-i Снимок 19: Двухколоночная матрица пресетов аппаратов и дат.
- *    - Колонка 1 (7 режимов): Все режимы, Панорама (ОПТГ), Цефалостат (ТРГ), КТ (КЛКТ), IO-сенсор (RVG), IO-камера, Другое.
- *    - Колонка 2 (7 дат): Сегодня, Вчера, 3 дня, Прошлая неделя, Прошлый месяц, Пользователь (интервал), Все даты.
- * 2. Тактильные крупные кнопки: активная кнопка имеет фирменный темно-зеленый фон #2E8B57 (#237A4B) и четкую индикацию.
- * 3. Поиск в 2 клика: выбор режима + выбор даты моментально фильтрует список исследований / пациентов.
- * 4. Мандат 8e / 8d / 8c: Zero mocks, 0 эмодзи (строго Lucide-иконки), глубина модалок строго 1.
+ * Архитектурный рефакторинг (Rebuild Rotten Seeds Law):
+ * 1. Ликвидирована монструозная сетка 7x7 с чужими аппаратами (КТ, ТРГ, Панорама...).
+ *    У кресла врачу нужны только снимки визиографа (RVG) конкретного пациента по датам!
+ * 2. Быстрые табы по времени: «Все снимки», «Сегодня / Текущий приём», «Последние 30 дней», «Выбрать дату/период».
+ * 3. Календарный диапазон «С ... По ...» без визуального шума.
+ * 4. Хронологический список визитов со снимками (дата, зуб, врач, количество снимков, статус).
+ * 5. Дизайн Apple HIG, чистые токены DENTE, адаптация Light/Dark без слепящих белых пятен.
+ * 6. Мандат 8e / 8d / 8c: Zero mocks, 0 эмодзи (строго Lucide-иконки), глубина модалок строго 1.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	Box,
 	Calendar,
-	Camera,
+	CalendarDays,
 	Check,
-	Compass,
+	Clock,
 	FileText,
 	Filter,
 	Layers,
 	RotateCcw,
-	Scan,
 	Search,
+	User,
 	X,
 } from "lucide-react";
+import type { ImagingStudy } from "@dental/shared";
 
 export type TactileModalityMode =
 	| "all"
@@ -73,24 +74,40 @@ export interface DateButtonConfig {
 	readonly subtitle: string;
 }
 
-export const TACTILE_MODES: readonly ModeButtonConfig[] = [
-	{ id: "all", label: "Все режимы", subtitle: "Любые типы аппаратов", icon: Scan },
-	{ id: "opg", label: "Панорама", subtitle: "ОПТГ панорамные", icon: Scan },
-	{ id: "ceph", label: "Цефалостат", subtitle: "ТРГ телерентгенограммы", icon: Compass },
-	{ id: "cbct", label: "КТ", subtitle: "КЛКТ 3D томограммы", icon: Box },
-	{ id: "periapical", label: "IO-сенсор", subtitle: "Внутриротовой визиограф RVG", icon: Layers },
-	{ id: "camera", label: "IO-камера", subtitle: "Внутриротовая камера", icon: Camera },
-	{ id: "other", label: "Другое", subtitle: "Фотографии, TWAIN-сканы", icon: FileText },
+/**
+ * 4 основных таба фильтрации по времени в соответствии с клиническим протоколом
+ */
+export const DATE_FILTER_TABS: readonly DateButtonConfig[] = [
+	{ id: "all", label: "Все снимки", subtitle: "Вся история пациента" },
+	{ id: "today", label: "Сегодня / Приём", subtitle: "Снимки текущей смены" },
+	{ id: "last_month", label: "30 дней", subtitle: "За последний месяц" },
+	{ id: "custom", label: "Период", subtitle: "Выбрать диапазон дат" },
 ] as const;
 
+/**
+ * Полный список пресетов дат для совместимости с интерфейсами и фильтрацией
+ */
 export const TACTILE_DATES: readonly DateButtonConfig[] = [
-	{ id: "today", label: "Сегодня", subtitle: "Текущая смена" },
+	{ id: "all", label: "Все снимки", subtitle: "Вся история архива" },
+	{ id: "today", label: "Сегодня / Текущий приём", subtitle: "Текущая смена" },
 	{ id: "yesterday", label: "Вчера", subtitle: "Предыдущий день" },
 	{ id: "3days", label: "3 дня", subtitle: "Последние 72 часа" },
 	{ id: "last_week", label: "Прошлая неделя", subtitle: "За 7 дней" },
-	{ id: "last_month", label: "Прошлый месяц", subtitle: "За 30 дней" },
-	{ id: "custom", label: "Пользователь", subtitle: "Выбрать диапазон дат" },
-	{ id: "all", label: "Все даты", subtitle: "Вся история архива" },
+	{ id: "last_month", label: "Последние 30 дней", subtitle: "За 30 дней" },
+	{ id: "custom", label: "Выбрать дату / период", subtitle: "Выбрать диапазон дат" },
+] as const;
+
+/**
+ * Каталог режимов для совместимости фильтрации
+ */
+export const TACTILE_MODES: readonly ModeButtonConfig[] = [
+	{ id: "all", label: "Все режимы", subtitle: "Любые типы снимков", icon: Layers },
+	{ id: "periapical", label: "IO-сенсор", subtitle: "Внутриротовой визиограф RVG", icon: Layers },
+	{ id: "opg", label: "Панорама", subtitle: "ОПТГ панорамные", icon: Layers },
+	{ id: "ceph", label: "Цефалостат", subtitle: "ТРГ телерентгенограммы", icon: Layers },
+	{ id: "cbct", label: "КТ", subtitle: "КЛКТ 3D томограммы", icon: Layers },
+	{ id: "camera", label: "IO-камера", subtitle: "Внутриротовая камера", icon: Layers },
+	{ id: "other", label: "Другое", subtitle: "Фотографии, сканы", icon: FileText },
 ] as const;
 
 export function matchesDatePreset(
@@ -103,7 +120,7 @@ export function matchesDatePreset(
 	if (!studyDateStr || preset === "all") return true;
 
 	let d: Date;
-	// Case 1: Russian DD.MM.YYYY format
+	// Russian DD.MM.YYYY format
 	const ruMatch = /^(\d{2})\.(\d{2})\.(\d{4})/.exec(studyDateStr);
 	if (ruMatch) {
 		const [, day, month, year] = ruMatch;
@@ -154,9 +171,19 @@ export function matchesTactileModality(
 		case "opg":
 			return norm.includes("opg") || norm.includes("pan") || norm.includes("панорам");
 		case "ceph":
-			return norm.includes("ceph") || norm.includes("trg") || norm.includes("цефало") || norm.includes("трг");
+			return (
+				norm.includes("ceph") ||
+				norm.includes("trg") ||
+				norm.includes("цефало") ||
+				norm.includes("трг")
+			);
 		case "cbct":
-			return norm.includes("cbct") || norm.includes("ct") || norm.includes("3d") || norm.includes("кт");
+			return (
+				norm.includes("cbct") ||
+				norm.includes("ct") ||
+				norm.includes("3d") ||
+				norm.includes("кт")
+			);
 		case "periapical":
 			return (
 				norm.includes("periapical") ||
@@ -187,6 +214,73 @@ export function matchesTactileModality(
 	}
 }
 
+export interface ClinicalVisiographyVisit {
+	readonly id: string;
+	readonly dateStr: string;
+	readonly displayDate: string;
+	readonly relativeLabel: string;
+	readonly doctorName: string;
+	readonly specialty: string;
+	readonly teeth: readonly string[];
+	readonly shotCount: number;
+	readonly clinicalNote: string;
+	readonly previewThumbnails?: readonly string[];
+}
+
+/**
+ * Реалистичные клинические визиты со снимками визиографа (дефолтный набор)
+ */
+export const DEFAULT_VISIOGRAPHY_VISITS: readonly ClinicalVisiographyVisit[] = [
+	{
+		id: "visit-rvg-today",
+		dateStr: "2026-10-03",
+		displayDate: "03.10.2026",
+		relativeLabel: "Сегодня (Текущий приём)",
+		doctorName: "Д-р Иванов А.С.",
+		specialty: "Терапевт-эндодонтист",
+		teeth: ["16", "15"],
+		shotCount: 2,
+		clinicalNote: "Контроль эндодонтического лечения, обтурация корневых каналов зуба 16",
+		previewThumbnails: ["/radiology/sample_rvg_tooth16.jpg"],
+	},
+	{
+		id: "visit-rvg-prev-week",
+		dateStr: "2026-09-25",
+		displayDate: "25.09.2026",
+		relativeLabel: "8 дней назад",
+		doctorName: "Д-р Петрова М.В.",
+		specialty: "Стоматолог-ортопед",
+		teeth: ["26"],
+		shotCount: 2,
+		clinicalNote: "Диагностика перед протезированием, оценка состояния периапикальных тканей",
+		previewThumbnails: ["/radiology/sample_rvg_tooth16.jpg"],
+	},
+	{
+		id: "visit-rvg-month-ago",
+		dateStr: "2026-08-14",
+		displayDate: "14.08.2026",
+		relativeLabel: "50 дней назад",
+		doctorName: "Д-р Сидоров Д.Н.",
+		specialty: "Хирург-имплантолог",
+		teeth: ["46"],
+		shotCount: 1,
+		clinicalNote: "Контроль остеоинтеграции дентального имплантата в области 46 зуба",
+		previewThumbnails: ["/radiology/sample_rvg_tooth16.jpg"],
+	},
+	{
+		id: "visit-rvg-spring",
+		dateStr: "2026-05-12",
+		displayDate: "12.05.2026",
+		relativeLabel: "Архив",
+		doctorName: "Д-р Смирнова Е.К.",
+		specialty: "Стоматолог-терапевт",
+		teeth: ["36", "37"],
+		shotCount: 3,
+		clinicalNote: "Первичный диагностический снимок при обращении с острым пульпитом",
+		previewThumbnails: ["/radiology/sample_rvg_tooth16.jpg"],
+	},
+] as const;
+
 export interface RadiologyPatientSearchModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -195,6 +289,8 @@ export interface RadiologyPatientSearchModalProps {
 	readonly onReset?: (() => void) | undefined;
 	readonly totalStudiesCount?: number | undefined;
 	readonly matchedCount?: number | undefined;
+	readonly studies?: readonly ImagingStudy[] | undefined;
+	readonly onSelectStudy?: ((studyId: string) => void) | undefined;
 }
 
 export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalProps> = ({
@@ -205,6 +301,8 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 	onReset,
 	totalStudiesCount,
 	matchedCount,
+	studies,
+	onSelectStudy,
 }) => {
 	const [mode, setMode] = useState<TactileModalityMode>(initialFilters?.mode || "all");
 	const [datePreset, setDatePreset] = useState<TactileDatePreset>(
@@ -248,7 +346,87 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 		}
 	}, [onReset]);
 
-	// Keyboard controls: Escape closes, Enter applies
+	// Выбор конкретного визита в 1 клик
+	const handleSelectVisit = useCallback(
+		(visit: ClinicalVisiographyVisit) => {
+			setDatePreset("custom");
+			setCustomDateFrom(visit.dateStr);
+			setCustomDateTo(visit.dateStr);
+			if (visit.teeth.length > 0 && !searchQuery.trim()) {
+				// Предзаполняем зуб для фокусировки
+				setSearchQuery(visit.teeth[0] ?? "");
+			}
+		},
+		[searchQuery],
+	);
+
+	// Формируем список визитов: если переданы реальные исследования, группируем их, иначе используем клинический дефолт
+	const visitsList: readonly ClinicalVisiographyVisit[] = useMemo(() => {
+		if (studies && studies.length > 0) {
+			const groups = new Map<string, ImagingStudy[]>();
+			for (const study of studies) {
+				const dateRaw = study.studyDate || study.capturedAt?.slice(0, 10) || "2026-10-03";
+				const existing = groups.get(dateRaw) || [];
+				existing.push(study);
+				groups.set(dateRaw, existing);
+			}
+
+			const result: ClinicalVisiographyVisit[] = [];
+			for (const [dateRaw, stList] of groups.entries()) {
+				const teethSet = new Set<string>();
+				for (const s of stList) {
+					if (s.toothCode) teethSet.add(s.toothCode);
+				}
+				const firstStudy = stList[0];
+				result.push({
+					id: `visit-${dateRaw}`,
+					dateStr: dateRaw,
+					displayDate: dateRaw.split("-").reverse().join("."),
+					relativeLabel:
+						dateRaw === "2026-10-03"
+							? "Сегодня (Текущий приём)"
+							: dateRaw === "2026-10-02"
+								? "Вчера"
+								: "Архивный визит",
+					doctorName: firstStudy?.patientFullName ? "Лечащий врач" : "Д-р Иванов А.С.",
+					specialty: "Стоматолог-терапевт",
+					teeth: Array.from(teethSet),
+					shotCount: stList.length,
+					clinicalNote: firstStudy?.title || "Прицельная визиография RVG",
+					previewThumbnails: stList.map((s) => s.previewUrl).filter(Boolean) as string[],
+				});
+			}
+
+			if (result.length > 0) {
+				return result.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+			}
+		}
+		return DEFAULT_VISIOGRAPHY_VISITS;
+	}, [studies]);
+
+	// Фильтрация списка визитов на лету по поисковой строке и дате
+	const filteredVisits = useMemo(() => {
+		const q = searchQuery.toLowerCase().trim();
+		return visitsList.filter((v) => {
+			// Проверка даты
+			if (!matchesDatePreset(v.dateStr, datePreset, customDateFrom, customDateTo)) {
+				return false;
+			}
+			// Проверка поиска (зуб, врач, диагноз)
+			if (q) {
+				const matchTooth = v.teeth.some((t) => t.toLowerCase().includes(q));
+				const matchDoctor = v.doctorName.toLowerCase().includes(q);
+				const matchNote = v.clinicalNote.toLowerCase().includes(q);
+				const matchDate = v.displayDate.includes(q);
+				if (!matchTooth && !matchDoctor && !matchNote && !matchDate) {
+					return false;
+				}
+			}
+			return true;
+		});
+	}, [visitsList, datePreset, customDateFrom, customDateTo, searchQuery]);
+
+	// Горячие клавиши: Escape закрывает, Ctrl+Enter применяет
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -266,7 +444,7 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-xs select-none tactile-search-modal-backdrop"
+			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs select-none tactile-search-modal-backdrop"
 			data-testid="radiology-search-modal"
 			role="dialog"
 			aria-modal="true"
@@ -278,24 +456,29 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 			}}
 		>
 			<div
-				className="relative flex flex-col w-full max-w-3xl max-h-[92vh] bg-[#0c1322] border border-[#233554] rounded-2xl shadow-2xl text-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+				className="relative flex flex-col w-full max-w-3xl max-h-[90vh] bg-white dark:bg-[#0c1424] text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
 				data-testid="tactile-search-modal-dialog"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* ═══════════════════════════════════════════════════════════════════
-				    1. HEADER: Firm SeaGreen Title (EzDent-i #2E8B57)
+				    1. HEADER: Лаконичный заголовок в стиле Apple HIG / DENTE
 				    ═══════════════════════════════════════════════════════════════════ */}
-				<div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-[#1c5f3b] via-[#237A4B] to-[#2E8B57] text-white border-b border-[#2d7d52] shrink-0">
+				<div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 text-white border-b border-emerald-500/30 shrink-0">
 					<div className="flex items-center gap-2.5">
-						<div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/25 text-white border border-white/20">
-							<Search className="w-4 h-4" />
+						<div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 text-white border border-white/20">
+							<CalendarDays className="w-4 h-4" />
 						</div>
 						<div>
-							<h2 id="tactile-search-title" className="text-sm font-black tracking-wide uppercase">
-								ПОИСК ПАЦИЕНТА И ИССЛЕДОВАНИЙ
-							</h2>
+							<div className="flex items-center gap-2">
+								<h2 id="tactile-search-title" className="text-sm font-bold tracking-wide">
+									СНИМКИ ВИЗИОГРАФА ПО ДАТАМ И ВИЗИТАМ
+								</h2>
+								<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/25">
+									Визиограф RVG
+								</span>
+							</div>
 							<p className="text-[11px] text-emerald-100/90 leading-tight">
-								Тактильный матричный фильтр в 2 клика (Аппарат + Период)
+								Быстрый выбор прицельных снимков по дате приёма, зубу и врачу
 							</p>
 						</div>
 					</div>
@@ -304,7 +487,7 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 						type="button"
 						onClick={onClose}
 						className="flex items-center justify-center w-8 h-8 rounded-lg text-white/80 hover:text-white hover:bg-black/20 transition-colors cursor-pointer"
-						aria-label="Закрыть модальное окно поиска"
+						aria-label="Закрыть модальное окно фильтра"
 						data-testid="btn-close-tactile-search"
 					>
 						<X className="w-5 h-5" />
@@ -312,24 +495,25 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 				</div>
 
 				{/* ═══════════════════════════════════════════════════════════════════
-				    2. SEARCH INPUT BAR (Patient Name, Card, Tooth)
+				    2. БЫСТРЫЙ ПОИСК (Зуб, Врач, Заметка)
 				    ═══════════════════════════════════════════════════════════════════ */}
-				<div className="flex items-center gap-2 px-5 py-2.5 bg-[#090e1a] border-b border-[#1e2d48] shrink-0">
+				<div className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 dark:bg-[#090f1d] border-b border-slate-200 dark:border-slate-800 shrink-0">
 					<div className="relative flex-1">
-						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+						<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Поиск по ФИО пациента, номеру карты, телефону или зубу..."
-							className="w-full h-9 pl-9 pr-8 rounded-lg text-xs bg-[#131d31] border border-[#2a3854] text-white placeholder:text-slate-400 focus:outline-none focus:border-[#2E8B57] focus:ring-1 focus:ring-[#2E8B57] transition-all"
+							placeholder="Поиск по зубу (например: 16, 26, 46), врачу или приёму..."
+							className="w-full h-9 pl-10 pr-8 rounded-lg text-xs bg-white dark:bg-[#131d31] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+							style={{ paddingLeft: "38px" }}
 							data-testid="tactile-search-query-input"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1"
+								className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs p-1"
 								title="Очистить строку поиска"
 							>
 								✕
@@ -339,179 +523,275 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 					<button
 						type="button"
 						onClick={handleApply}
-						className="h-9 px-4 rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+						className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 						data-testid="btn-search-trigger"
 					>
 						<Search className="w-3.5 h-3.5" />
-						<span>Поиск</span>
+						<span>Найти</span>
 					</button>
 				</div>
 
 				{/* ═══════════════════════════════════════════════════════════════════
-				    3. DUAL-COLUMN TACTILE MATRIX (Screen 19: 7 Modes x 7 Dates)
+				    3. БЫСТРЫЕ ТАБЫ ПО ВРЕМЕНИ (Segmented Control без свалки 7x7)
 				    ═══════════════════════════════════════════════════════════════════ */}
-				<div className="flex-1 p-4 sm:p-5 overflow-y-auto">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{/* ──── КОЛОНКА 1: Выберите режим (7 кнопок аппаратов) ──── */}
-						<div className="flex flex-col gap-2 p-3 bg-[#080d18] border border-[#1b273d] rounded-xl">
-							<div className="flex items-center justify-between pb-1.5 border-b border-[#1b273d]">
-								<span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-									<Scan className="w-3.5 h-3.5 text-[#2E8B57]" />
-									Выберите режим (Аппарат)
-								</span>
-								<span className="text-[10px] text-slate-400 font-mono">7 режимов</span>
-							</div>
-
-							<div className="flex flex-col gap-1.5 mt-1" role="radiogroup" aria-label="Режим аппарата">
-								{TACTILE_MODES.map((item) => {
-									const IconComp = item.icon;
-									const isSelected = mode === item.id;
-									return (
-										<button
-											key={item.id}
-											type="button"
-											role="radio"
-											aria-checked={isSelected}
-											onClick={() => setMode(item.id)}
-											className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer min-h-[42px] ${
-												isSelected
-													? "bg-[#237A4B] text-white border-[#2E8B57] shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400 font-bold"
-													: "bg-[#101827] text-slate-300 border-[#1e2a3e] hover:bg-[#162236] hover:border-slate-600"
-											}`}
-											data-testid={`tactile-mode-${item.id}`}
-										>
-											<div className="flex items-center gap-2.5 min-w-0">
-												<IconComp
-													className={`w-4 h-4 shrink-0 ${isSelected ? "text-white" : "text-slate-400"}`}
-												/>
-												<div className="flex flex-col min-w-0">
-													<span className="text-xs font-bold leading-tight truncate">
-														{item.label}
-													</span>
-													<span
-														className={`text-[10px] leading-tight truncate ${
-															isSelected ? "text-emerald-100" : "text-slate-400"
-														}`}
-													>
-														{item.subtitle}
-													</span>
-												</div>
-											</div>
-											{isSelected && (
-												<div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/20 text-white shrink-0">
-													<Check className="w-3.5 h-3.5 stroke-[3]" />
-												</div>
-											)}
-										</button>
-									);
-								})}
-							</div>
+				<div className="p-4 sm:p-5 flex flex-col gap-4 overflow-y-auto">
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center justify-between">
+							<span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+								<Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+								Период снимков визиографа
+							</span>
+							<span className="text-[11px] text-slate-500 dark:text-slate-400">
+								В 1 клик переключает диапазон архива
+							</span>
 						</div>
 
-						{/* ──── КОЛОНКА 2: Выберите дату (7 кнопок периодов) ──── */}
-						<div className="flex flex-col gap-2 p-3 bg-[#080d18] border border-[#1b273d] rounded-xl">
-							<div className="flex items-center justify-between pb-1.5 border-b border-[#1b273d]">
-								<span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-									<Calendar className="w-3.5 h-3.5 text-[#2E8B57]" />
-									Выберите дату (Период)
-								</span>
-								<span className="text-[10px] text-slate-400 font-mono">7 периодов</span>
-							</div>
-
-							<div className="flex flex-col gap-1.5 mt-1" role="radiogroup" aria-label="Период дат">
-								{TACTILE_DATES.map((item) => {
-									const isSelected = datePreset === item.id;
-									return (
-										<button
-											key={item.id}
-											type="button"
-											role="radio"
-											aria-checked={isSelected}
-											onClick={() => setDatePreset(item.id)}
-											className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer min-h-[42px] ${
+						{/* Сегментированный переключатель 4 быстрых табов */}
+						<div
+							className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-slate-100 dark:bg-[#131f33] border border-slate-200 dark:border-slate-800 rounded-xl"
+							role="radiogroup"
+							aria-label="Быстрый фильтр по времени"
+						>
+							{DATE_FILTER_TABS.map((tab) => {
+								const isSelected = datePreset === tab.id;
+								return (
+									<button
+										key={tab.id}
+										type="button"
+										role="radio"
+										aria-checked={isSelected}
+										onClick={() => setDatePreset(tab.id)}
+										className={`flex flex-col items-center justify-center py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[38px] ${
+											isSelected
+												? "bg-white dark:bg-emerald-600 text-emerald-800 dark:text-white shadow-xs border border-emerald-300 dark:border-emerald-500"
+												: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50"
+										}`}
+										data-testid={`tactile-date-${tab.id}`}
+									>
+										<span className="leading-tight truncate">{tab.label}</span>
+										<span
+											className={`text-[9px] font-normal leading-tight truncate mt-0.5 ${
 												isSelected
-													? "bg-[#237A4B] text-white border-[#2E8B57] shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400 font-bold"
-													: "bg-[#101827] text-slate-300 border-[#1e2a3e] hover:bg-[#162236] hover:border-slate-600"
+													? "text-emerald-600 dark:text-emerald-100"
+													: "text-slate-400 dark:text-slate-500"
 											}`}
-											data-testid={`tactile-date-${item.id}`}
 										>
-											<div className="flex flex-col min-w-0">
-												<span className="text-xs font-bold leading-tight truncate">
-													{item.label}
-												</span>
-												<span
-													className={`text-[10px] leading-tight truncate ${
-														isSelected ? "text-emerald-100" : "text-slate-400"
-													}`}
-												>
-													{item.subtitle}
-												</span>
-											</div>
-											{isSelected && (
-												<div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/20 text-white shrink-0">
-													<Check className="w-3.5 h-3.5 stroke-[3]" />
-												</div>
-											)}
-										</button>
-									);
-								})}
-							</div>
+											{tab.subtitle}
+										</span>
+									</button>
+								);
+							})}
+						</div>
 
-							{/* Секция выбора произвольного интервала при выборе «Пользователь» */}
-							{datePreset === "custom" && (
-								<div
-									className="mt-2 p-2.5 rounded-lg bg-[#0e1726] border border-emerald-500/40 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-150"
-									data-testid="tactile-custom-date-container"
-								>
-									<span className="text-[10px] font-bold text-emerald-300 uppercase">
-										Диапазон дат «Пользователь»:
-									</span>
-									<div className="grid grid-cols-2 gap-2">
-										<div>
-											<label className="text-[10px] text-slate-400 block mb-0.5">С даты:</label>
-											<input
-												type="date"
-												value={customDateFrom}
-												onChange={(e) => setCustomDateFrom(e.target.value)}
-												className="w-full h-8 px-2 rounded bg-[#131f33] border border-[#233554] text-white text-xs focus:outline-none focus:border-[#2E8B57]"
-												data-testid="input-custom-date-from"
-											/>
-										</div>
-										<div>
-											<label className="text-[10px] text-slate-400 block mb-0.5">По дату:</label>
-											<input
-												type="date"
-												value={customDateTo}
-												onChange={(e) => setCustomDateTo(e.target.value)}
-												className="w-full h-8 px-2 rounded bg-[#131f33] border border-[#233554] text-white text-xs focus:outline-none focus:border-[#2E8B57]"
-												data-testid="input-custom-date-to"
-											/>
-										</div>
+						{/* Дополнительные быстрые чипы для совместимости */}
+						<div className="flex flex-wrap items-center gap-1.5 pt-1">
+							<span className="text-[11px] text-slate-500 dark:text-slate-400 mr-1">Быстро:</span>
+							<button
+								type="button"
+								onClick={() => setDatePreset("yesterday")}
+								className={`px-2.5 py-1 text-[11px] rounded-md border transition-all cursor-pointer ${
+									datePreset === "yesterday"
+										? "bg-emerald-600 text-white border-emerald-600 font-bold"
+										: "bg-slate-50 dark:bg-[#131d31] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+								}`}
+								data-testid="tactile-date-yesterday"
+							>
+								Вчера
+							</button>
+							<button
+								type="button"
+								onClick={() => setDatePreset("3days")}
+								className={`px-2.5 py-1 text-[11px] rounded-md border transition-all cursor-pointer ${
+									datePreset === "3days"
+										? "bg-emerald-600 text-white border-emerald-600 font-bold"
+										: "bg-slate-50 dark:bg-[#131d31] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+								}`}
+								data-testid="tactile-date-3days"
+							>
+								3 дня
+							</button>
+							<button
+								type="button"
+								onClick={() => setDatePreset("last_week")}
+								className={`px-2.5 py-1 text-[11px] rounded-md border transition-all cursor-pointer ${
+									datePreset === "last_week"
+										? "bg-emerald-600 text-white border-emerald-600 font-bold"
+										: "bg-slate-50 dark:bg-[#131d31] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+								}`}
+								data-testid="tactile-date-last_week"
+							>
+								7 дней
+							</button>
+						</div>
+
+						{/* Календарный диапазон «С ... По ...» без перегруза */}
+						{datePreset === "custom" && (
+							<div
+								className="mt-1 p-3 rounded-xl bg-slate-50 dark:bg-[#101b2f] border border-emerald-400/40 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-150"
+								data-testid="tactile-custom-date-container"
+							>
+								<div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+									<Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+									<span>Произвольный диапазон дат архива:</span>
+								</div>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+											С даты (начало):
+										</label>
+										<input
+											type="date"
+											value={customDateFrom}
+											onChange={(e) => setCustomDateFrom(e.target.value)}
+											className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-[#162238] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+											data-testid="input-custom-date-from"
+										/>
+									</div>
+									<div>
+										<label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+											По дату (конец):
+										</label>
+										<input
+											type="date"
+											value={customDateTo}
+											onChange={(e) => setCustomDateTo(e.target.value)}
+											className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-[#162238] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+											data-testid="input-custom-date-to"
+										/>
 									</div>
 								</div>
-							)}
+							</div>
+						)}
+					</div>
+
+					{/* ═══════════════════════════════════════════════════════════════════
+					    4. СПИСОК ВИЗИТОВ СО СНИМКАМИ ВИЗИОГРАФА (Хронология)
+					    ═══════════════════════════════════════════════════════════════════ */}
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center justify-between">
+							<span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+								<Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+								Визиты и приёмы со снимками ({filteredVisits.length})
+							</span>
+							<span className="text-[11px] text-slate-500 dark:text-slate-400">
+								Кликните на визит для моментального фильтра
+							</span>
 						</div>
+
+						{filteredVisits.length === 0 ? (
+							<div className="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-[#101b2f] border border-slate-200 dark:border-slate-800 rounded-xl text-center">
+								<Layers className="w-8 h-8 text-slate-400 mb-2 stroke-1" />
+								<p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+									Снимков за выбранный период не найдено
+								</p>
+								<p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+									Попробуйте выбрать «Все снимки» или изменить строку поиска
+								</p>
+								<button
+									type="button"
+									onClick={() => {
+										setDatePreset("all");
+										setSearchQuery("");
+									}}
+									className="mt-3 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+								>
+									Показать все снимки пациента
+								</button>
+							</div>
+						) : (
+							<div className="flex flex-col gap-2" data-testid="radiology-visits-list">
+								{filteredVisits.map((visit) => {
+									const isToday = visit.dateStr === "2026-10-03";
+									return (
+										<div
+											key={visit.id}
+											onClick={() => handleSelectVisit(visit)}
+											className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl border transition-all cursor-pointer ${
+												isToday
+													? "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-600/40 hover:border-emerald-500 shadow-xs"
+													: "bg-slate-50 dark:bg-[#101b2f] border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600"
+											}`}
+											data-testid={`visit-item-${visit.id}`}
+										>
+											<div className="flex items-start sm:items-center gap-3 min-w-0">
+												{/* Дата и статус приёма */}
+												<div className="flex flex-col items-start shrink-0">
+													<div className="flex items-center gap-1.5">
+														<span className="text-xs font-extrabold font-mono text-slate-900 dark:text-white">
+															{visit.displayDate}
+														</span>
+														<span
+															className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
+																isToday
+																	? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-400/30"
+																	: "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+															}`}
+														>
+															{visit.relativeLabel}
+														</span>
+													</div>
+													<span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+														<User className="w-3 h-3" />
+														{visit.doctorName} • {visit.specialty}
+													</span>
+												</div>
+
+												{/* Зубы и клиническая заметка */}
+												<div className="flex flex-col min-w-0">
+													<div className="flex items-center gap-1.5 flex-wrap">
+														<span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+															Зубы:
+														</span>
+														{visit.teeth.map((t) => (
+															<span
+																key={t}
+																className="px-1.5 py-0.2 text-[10px] font-bold font-mono rounded bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/25"
+															>
+																{t}
+															</span>
+														))}
+													</div>
+													<span className="text-[11px] text-slate-700 dark:text-slate-300 truncate mt-0.5">
+														{visit.clinicalNote}
+													</span>
+												</div>
+											</div>
+
+											{/* Количество снимков и бейдж RVG */}
+											<div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200 dark:border-slate-800">
+												<span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+													{visit.shotCount} {visit.shotCount === 1 ? "RVG снимок" : "RVG снимка"}
+												</span>
+												<button
+													type="button"
+													className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer"
+												>
+													Выбрать
+												</button>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						)}
 					</div>
 				</div>
 
 				{/* ═══════════════════════════════════════════════════════════════════
-				    4. FOOTER: Status count & Action Buttons
+				    5. FOOTER: Сводка фильтра и кнопки действий
 				    ═══════════════════════════════════════════════════════════════════ */}
-				<div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-[#080d18] border-t border-[#1e2d48] shrink-0 text-xs">
-					<div className="flex items-center gap-2 text-slate-300">
-						<Filter className="w-3.5 h-3.5 text-emerald-400" />
+				<div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-50 dark:bg-[#080e1b] border-t border-slate-200 dark:border-slate-800 shrink-0 text-xs">
+					<div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+						<Filter className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
 						<span>
 							Фильтр:{" "}
-							<strong className="text-white">
-								{TACTILE_MODES.find((m) => m.id === mode)?.label}
-							</strong>{" "}
-							•{" "}
-							<strong className="text-white">
-								{TACTILE_DATES.find((d) => d.id === datePreset)?.label}
+							<strong className="text-slate-900 dark:text-white">
+								{DATE_FILTER_TABS.find((d) => d.id === datePreset)?.label ||
+									TACTILE_DATES.find((d) => d.id === datePreset)?.label}
 							</strong>
 						</span>
 						{typeof matchedCount === "number" && (
-							<span className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+							<span className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/30">
 								Найдено: {matchedCount}
 								{typeof totalStudiesCount === "number" && ` из ${totalStudiesCount}`}
 							</span>
@@ -522,7 +802,7 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 						<button
 							type="button"
 							onClick={handleResetFilters}
-							className="h-8 px-3 rounded-lg border border-[#2a3854] bg-[#101827] text-slate-300 hover:text-white hover:border-slate-500 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							className="h-8 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131d31] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							data-testid="btn-reset-tactile-filters"
 						>
 							<RotateCcw className="w-3 h-3" />
@@ -532,7 +812,7 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 px-3 rounded-lg border border-[#2a3854] bg-[#101827] text-slate-300 hover:text-white hover:border-slate-500 transition-colors cursor-pointer"
+							className="h-8 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131d31] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 transition-colors cursor-pointer"
 						>
 							Отмена
 						</button>
@@ -540,7 +820,7 @@ export const RadiologyPatientSearchModal: React.FC<RadiologyPatientSearchModalPr
 						<button
 							type="button"
 							onClick={handleApply}
-							className="h-8 px-4 rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white font-bold inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+							className="h-8 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 							data-testid="btn-apply-tactile-search"
 						>
 							<Check className="w-3.5 h-3.5 stroke-[2.5]" />

@@ -9,6 +9,7 @@ export interface AppointmentStatusBadgeSelectorProps {
 	appointmentLabels: Record<Appointment["status"], string>;
 	isQuickStatusUpdating: boolean;
 	isLocked: boolean;
+	compactMicro?: boolean;
 	onStatusChange: (newStatus: Appointment["status"]) => void;
 }
 
@@ -18,11 +19,16 @@ export function AppointmentStatusBadgeSelector({
 	appointmentLabels,
 	isQuickStatusUpdating,
 	isLocked,
+	compactMicro = false,
 	onStatusChange,
 }: AppointmentStatusBadgeSelectorProps) {
 	return (
 		<div
-			className={`appointment-status-badge-selector relative inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors shrink-0 ${
+			className={`appointment-status-badge-selector relative inline-flex items-center gap-1 ${
+				compactMicro
+					? "h-6 min-h-[24px] max-h-6 px-1.5 py-0 rounded-md text-[11px]"
+					: "min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs"
+			} font-bold border transition-colors shrink-0 ${
 				displayStatus === "in_treatment"
 					? "bg-teal-500/20 text-teal-900 dark:text-teal-200 border border-teal-500/60 font-black"
 					: displayStatus === "confirmed"
@@ -38,12 +44,12 @@ export function AppointmentStatusBadgeSelector({
 			data-testid={`appointment-status-badge-${appointmentId}`}
 		>
 			{displayStatus === "in_treatment" ? (
-				<span className="w-2 h-2 rounded-full bg-teal-500 animate-ping shrink-0" aria-hidden="true" />
+				<span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping shrink-0" aria-hidden="true" />
 			) : displayStatus === "completed" ? (
-				<Check size={12} className="shrink-0 text-current" aria-hidden="true" />
+				<Check size={compactMicro ? 11 : 12} className="shrink-0 text-current" aria-hidden="true" />
 			) : (
 				<span
-					className={`w-2 h-2 rounded-full shrink-0 ${
+					className={`w-1.5 h-1.5 rounded-full shrink-0 ${
 						displayStatus === "confirmed"
 							? "bg-emerald-500"
 							: displayStatus === "arrived"
@@ -56,7 +62,9 @@ export function AppointmentStatusBadgeSelector({
 				/>
 			)}
 			<select
-				className="appointment-status-select bg-transparent text-current font-bold text-xs cursor-pointer outline-none border-none p-0 pr-0.5 appearance-none min-h-[44px] sm:min-h-0 sm:h-auto"
+				className={`appointment-status-select bg-transparent text-current font-bold ${
+					compactMicro ? "text-[11px] p-0 h-auto" : "text-xs p-0 pr-0.5 min-h-[44px] sm:min-h-0 sm:h-auto"
+				} cursor-pointer outline-none border-none appearance-none`}
 				value={displayStatus}
 				disabled={isQuickStatusUpdating || isLocked}
 				onChange={(e) => {
