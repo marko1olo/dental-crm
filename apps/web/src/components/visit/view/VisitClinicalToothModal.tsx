@@ -1,15 +1,15 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	Activity,
 	AlertTriangle,
 	Anchor,
 	CheckCircle2,
+	ChevronRight,
 	CircleDot,
 	ClipboardList,
 	Crown,
 	Edit3,
-	Eye,
 	FileCheck2,
 	Flame,
 	Scissors,
@@ -45,6 +45,8 @@ export interface VisitClinicalToothModalProps {
 	visitWarnings?: any[];
 }
 
+type TabType = "diagnosis" | "therapy" | "endo" | "surgery";
+
 export function VisitClinicalToothModal({
 	selectedToothForMenu,
 	closeClinicalModal,
@@ -54,8 +56,8 @@ export function VisitClinicalToothModal({
 	handleSelectDiagnosis,
 	handleSelectSurface,
 	selectedSurfaces,
-	isSurfaceMode,
-	setIsSurfaceMode,
+	isSurfaceMode: _isSurfaceMode,
+	setIsSurfaceMode: _setIsSurfaceMode,
 	setEndoModalToothNumber,
 	setEndoModalToothState,
 	setIsEndoModalOpen,
@@ -72,6 +74,26 @@ export function VisitClinicalToothModal({
 	const geom = getToothPath(Number(code));
 	const cfg = getToothConfig(Number(code));
 
+	// По умолчанию открываем Терапию, если зуб в лечении/наблюдении, иначе Диагностику
+	const [activeTab, setActiveTab] = useState<TabType>(() => {
+		if (materialCategory) {
+			return materialCategory === "crown" || materialCategory === "veneer" || materialCategory === "implant"
+				? "surgery"
+				: "therapy";
+		}
+		return state === "treatment" || state === "watch" ? "therapy" : "diagnosis";
+	});
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				closeClinicalModal();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [closeClinicalModal]);
+
 	const FILL: Record<string, string> = {
 		idle: "var(--paper)",
 		planned: "var(--info-bg)",
@@ -81,12 +103,12 @@ export function VisitClinicalToothModal({
 		missing: "var(--paper-soft)",
 	};
 	const STROKE: Record<string, string> = {
-		idle: "#94a3b8",
-		planned: "#0284c7",
-		treatment: "#dc2626",
-		watch: "#d97706",
-		done: "#166534",
-		missing: "#cbd5e1",
+		idle: "var(--line-strong, #64748b)",
+		planned: "var(--teal, #0284c7)",
+		treatment: "var(--bad-fg, #dc2626)",
+		watch: "var(--warn-fg, #d97706)",
+		done: "var(--ok-fg, #166534)",
+		missing: "var(--line, #cbd5e1)",
 	};
 	const ROOT_FILL: Record<string, string> = {
 		idle: "var(--paper-soft)",
@@ -97,21 +119,33 @@ export function VisitClinicalToothModal({
 		missing: "var(--paper-soft)",
 	};
 	const ROOT_STROKE: Record<string, string> = {
-		idle: "#cbd5e1",
-		planned: "#38bdf8",
-		treatment: "#f87171",
-		watch: "#fbbf24",
-		done: "#4ade80",
-		missing: "#cbd5e1",
+		idle: "var(--line, #cbd5e1)",
+		planned: "var(--teal, #38bdf8)",
+		treatment: "var(--bad-fg, #f87171)",
+		watch: "var(--warn-fg, #fbbf24)",
+		done: "var(--ok-fg, #4ade80)",
+		missing: "var(--line, #cbd5e1)",
 	};
 
 	const isLower = Number(code) >= 30;
 
-	const toothSvg = (
+	// Статусный лейбл
+	const statusMeta =
+		state === "treatment"
+			? { label: "Лечение", color: "text-red-500", dot: "bg-red-500" }
+			: state === "watch"
+				? { label: "Кариес", color: "text-amber-500", dot: "bg-amber-500" }
+				: state === "done"
+					? { label: "Санирован", color: "text-emerald-500", dot: "bg-emerald-500" }
+					: state === "missing"
+						? { label: "Удалён", color: "text-slate-400", dot: "bg-slate-400" }
+						: { label: "Интактен", color: "text-emerald-600", dot: "bg-emerald-500" };
+
+	const toothSvgMini = (
 		<svg
 			aria-hidden="true"
-			width={cfg.width}
-			height={cfg.height}
+			width="22"
+			height="28"
 			viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
 			fill="none"
 			style={{ transform: isLower ? "scaleY(-1)" : "none" }}
@@ -121,23 +155,22 @@ export function VisitClinicalToothModal({
 					<path
 						d={geom.root}
 						fill="var(--paper-soft)"
-						stroke="#cbd5e1"
+						stroke="var(--muted)"
 						strokeWidth="1.2"
-						opacity="0.15"
+						opacity="0.3"
 					/>
 					<path
 						d={geom.crown}
 						fill="var(--paper-soft)"
-						stroke="#cbd5e1"
+						stroke="var(--muted)"
 						strokeWidth="1.2"
-						opacity="0.15"
+						opacity="0.3"
 					/>
 					<path
 						d="M20 20L80 130M80 20L20 130"
-						stroke="#ef4444"
-						strokeWidth="5"
+						stroke="var(--bad-fg, #ef4444)"
+						strokeWidth="4"
 						strokeLinecap="round"
-						opacity="0.7"
 					/>
 				</g>
 			) : (
@@ -145,7 +178,7 @@ export function VisitClinicalToothModal({
 					<path
 						d={geom.root}
 						fill={ROOT_FILL[state] ?? "var(--paper-soft)"}
-						stroke={ROOT_STROKE[state] ?? "#cbd5e1"}
+						stroke={ROOT_STROKE[state] ?? "var(--line)"}
 						strokeWidth="1.5"
 						strokeLinejoin="round"
 					/>
@@ -162,18 +195,10 @@ export function VisitClinicalToothModal({
 					<path
 						d={geom.crown}
 						fill={FILL[state] ?? "var(--paper)"}
-						stroke={STROKE[state] ?? "#94a3b8"}
-						strokeWidth="2.2"
+						stroke={STROKE[state] ?? "var(--line-strong)"}
+						strokeWidth="1.8"
 						strokeLinejoin="round"
 					/>
-					{geom.fissures && (
-						<path
-							d={geom.fissures}
-							fill="none"
-							stroke="rgba(0,0,0,0.15)"
-							strokeWidth="0.8"
-						/>
-					)}
 				</g>
 			)}
 		</svg>
@@ -188,168 +213,34 @@ export function VisitClinicalToothModal({
 				onKeyDown={(e) =>
 					(e.key === "Enter" || e.key === " ") && closeClinicalModal()
 				}
+				aria-label="Закрыть"
 			/>
 			<div
-				className="_ccm-content relative"
+				className="_ccm-content"
 				role="dialog"
 				aria-modal="true"
-				aria-label={`Зуб ${code}`}
+				aria-label={`Клиническая карта: Зуб ${code}`}
 			>
-				<button
-					type="button"
-					onClick={closeClinicalModal}
-					className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[var(--paper-strong)] border border-[var(--glass-border)] shadow-md text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer transition-all z-50"
-					aria-label="Закрыть модальное окно"
-					title="Закрыть (Esc)"
-				>
-					<X className="w-4 h-4 shrink-0" />
-				</button>
-
-				{/* ── LEFT: Diagnosis ── */}
-				<div className="_ccm-panel">
-					<h4 className="_ccm-h flex items-center gap-1.5">
-						<Stethoscope className="w-4 h-4 text-indigo-500 shrink-0" />
-						<span>Диагностика</span>
-					</h4>
-
-					{visitWarnings && visitWarnings.length > 0 && (
-						<div className="_ccm-warn flex items-center gap-1 flex-wrap">
-							<strong className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-								<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-								Риски:
-							</strong>{" "}
-							{visitWarnings.map((w: any) => w.title).join(" · ")}
+				{/* ── 1. STUDIO HEADER ── */}
+				<div className="_ccm-header">
+					<div className="_ccm-header-left">
+						<div className="_ccm-tooth-badge" aria-hidden="true">
+							{toothSvgMini}
 						</div>
-					)}
-
-					<div className="_ccm-label">Состояние</div>
-
-					<button
-						type="button"
-						className={`_ccm-btn${state === "idle" ? " active" : ""}`}
-						data-color="green"
-						onClick={() => handleSelectDiagnosis("idle")}
-					>
-						<span>Здоров / Норма</span>{" "}
-						<CircleDot className="w-4 h-4 text-emerald-500 shrink-0" />
-					</button>
-
-					<button
-						type="button"
-						className={`_ccm-btn${state === "done" ? " active" : ""}`}
-						data-color="green"
-						onClick={() =>
-							handleSelectDiagnosis(
-								"done",
-								"зуб санирован / здоров",
-								"diagnosis",
-							)
-						}
-					>
-						<span>Санирован / Готово</span>{" "}
-						<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-					</button>
-
-					<button
-						type="button"
-						className={`_ccm-btn${state === "missing" ? " active" : ""}`}
-						data-color="slate"
-						onClick={() =>
-							handleSelectDiagnosis(
-								"missing",
-								"зуб отсутствует",
-								"diagnosis",
-							)
-						}
-					>
-						<span>Отсутствует / Удалён</span>{" "}
-						<XCircle className="w-4 h-4 text-slate-400 shrink-0" />
-					</button>
-
-					<div className="_ccm-label">Патологии</div>
-
-					<button
-						type="button"
-						className={`_ccm-btn${state === "watch" ? " active" : ""}`}
-						data-color="amber"
-						onClick={() => {
-							const cavityNote = selectedSurfaces.length > 0 ? ` (${selectedSurfaces.join("")})` : "";
-							handleSelectDiagnosis(
-								"watch",
-								`K02.1 Кариес дентина${cavityNote}`,
-								"diagnosis",
-							);
-						}}
-					>
-						<span>Кариес дентина (K02.1){selectedSurfaces.length > 0 ? ` [${selectedSurfaces.join("")}]` : ""}</span>{" "}
-						<AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-					</button>
-
-					<button
-						type="button"
-						className="_ccm-btn"
-						data-color="red"
-						onClick={() =>
-							handleSelectDiagnosis(
-								"treatment",
-								"K04.0 Острый пульпит",
-								"diagnosis",
-							)
-						}
-					>
-						<span>Острый пульпит (K04.0)</span>{" "}
-						<Flame className="w-4 h-4 text-red-500 shrink-0" />
-					</button>
-
-					<button
-						type="button"
-						className="_ccm-btn"
-						data-color="rose"
-						onClick={() =>
-							handleSelectDiagnosis(
-								"treatment",
-								"K04.5 Хронический апикальный периодонтит / киста",
-								"diagnosis",
-							)
-						}
-					>
-						<span>Периодонтит / Киста (K04.5)</span>{" "}
-						<CircleDot className="w-4 h-4 text-rose-500 shrink-0" />
-					</button>
-
-					<button
-						type="button"
-						className="_ccm-btn"
-						data-color="amber"
-						onClick={() =>
-							handleSelectDiagnosis(
-								"watch",
-								"K03.1 Клиновидный дефект",
-								"diagnosis",
-							)
-						}
-					>
-						<span>Клиновидный дефект (K03.1)</span>{" "}
-						<Activity className="w-4 h-4 text-amber-500 shrink-0" />
-					</button>
-				</div>
-
-				{/* ── CENTER: Tooth preview ── */}
-				<div className="_ccm-center">
-					<div className="flex items-center justify-between w-full mb-1">
-						<span className="text-xs font-bold text-[var(--ink)]">Зуб {code}</span>
-						<span className="text-[10px] text-[var(--muted)] font-mono">FDI</span>
-					</div>
-					<div className="_ccm-tooth-stage" aria-hidden="true">
-						{toothSvg}
+						<div className="_ccm-header-title-wrap">
+							<span className="_ccm-tooth-title">Зуб {code}</span>
+							<span className="_ccm-fdi-badge">FDI</span>
+							<span className="_ccm-status-pill">
+								<span className={`_ccm-status-dot ${statusMeta.dot}`} />
+								<span>{statusMeta.label}</span>
+							</span>
+						</div>
 					</div>
 
-					{/* Селектор полостей по Блэку (компактные клинические чипы) */}
-					<div className="flex flex-col items-center gap-1.5 w-full my-2 pt-2 border-t border-[var(--glass-border)]">
-						<span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider">
-							Поверхности (Блэк)
-						</span>
-						<div className="flex items-center justify-center gap-1 flex-wrap">
+					{/* Сегментные чипы полостей Блэка */}
+					<div className="_ccm-cavity-cluster">
+						<span className="_ccm-cavity-label">Блэк:</span>
+						<div className="_ccm-cavity-pills">
 							{["O", "MO", "OD", "MOD", "V"].map((cavity) => {
 								const isSelected = selectedSurfaces.includes(cavity);
 								return (
@@ -358,11 +249,7 @@ export function VisitClinicalToothModal({
 										type="button"
 										data-testid={`btn-cavity-${cavity.toLowerCase()}`}
 										onClick={() => handleSelectSurface(cavity)}
-										className={`h-7 px-2.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-											isSelected
-												? "bg-amber-500 text-white border-amber-500 shadow-2xs"
-												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
-										}`}
+										className={`_ccm-cavity-btn${isSelected ? " active" : ""}`}
 										title={`Полость класса ${cavity}`}
 									>
 										{cavity}
@@ -372,316 +259,593 @@ export function VisitClinicalToothModal({
 						</div>
 					</div>
 
+					{/* Кнопка закрытия ✕ */}
 					<button
 						type="button"
-						className="_ccm-close-btn w-full mt-auto"
 						onClick={closeClinicalModal}
+						className="_ccm-close-btn-icon"
+						aria-label="Закрыть модальное окно"
+						title="Закрыть (Esc)"
 					>
-						Готово
+						<X className="w-3.5 h-3.5" />
 					</button>
 				</div>
 
-				{/* ── RIGHT: Treatment ── */}
-				<div className="_ccm-panel">
-					<h4
-						className="_ccm-h"
-						style={{ display: "flex", alignItems: "center", gap: "6px" }}
+				{/* ── 2. SEGMENTED TABS (STUDIO HIG) ── */}
+				<div className="_ccm-tabs-bar">
+					<button
+						type="button"
+						onClick={() => setActiveTab("diagnosis")}
+						className={`_ccm-tab-btn${activeTab === "diagnosis" ? " active" : ""}`}
 					>
-						<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" />
-						<span>Лечение (Зуб {code})</span>
-					</h4>
+						<Stethoscope className="w-3.5 h-3.5 shrink-0" />
+						<span>Диагностика</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("therapy")}
+						className={`_ccm-tab-btn${activeTab === "therapy" ? " active" : ""}`}
+					>
+						<Sparkles className="w-3.5 h-3.5 shrink-0" />
+						<span>Терапия & Пломба</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("endo")}
+						className={`_ccm-tab-btn${activeTab === "endo" ? " active" : ""}`}
+					>
+						<Zap className="w-3.5 h-3.5 shrink-0" />
+						<span>Эндодонтия</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("surgery")}
+						className={`_ccm-tab-btn${activeTab === "surgery" ? " active" : ""}`}
+					>
+						<Crown className="w-3.5 h-3.5 shrink-0" />
+						<span>Орто & Хирургия</span>
+					</button>
+				</div>
 
-					{materialCategory ? (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: ".45rem",
-								animation: "_ccm-fade .15s ease-out",
-							}}
-						>
-							<div className="_ccm-label">
-								{materialCategory === "filling"
-									? "Пломбировочный материал"
-									: materialCategory === "crown"
-										? "Коронка (Ортопедия)"
-										: materialCategory === "veneer"
-											? "Винир (Ортопедия)"
-											: "Имплантат"}
-							</div>
+				{/* ── 3. BODY CONTENT (STUDIO STUDIO DENSITY, ZERO CLIPPING) ── */}
+				<div className="_ccm-body-pane">
+					{/* ── TAB 1: ДИАГНОСТИКА ── */}
+					{activeTab === "diagnosis" && (
+						<div className="_ccm-pane-section">
+							{visitWarnings && visitWarnings.length > 0 && (
+								<div className="_ccm-warn">
+									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<span className="truncate">
+										Риски: {visitWarnings.map((w: any) => w.title).join(" · ")}
+									</span>
+								</div>
+							)}
 
-							{materialCategory === "filling" && (
+							<div className="_ccm-sub-label">Физиологическое состояние</div>
+							<div className="_ccm-items-grid">
 								<button
 									type="button"
-									className="_ccm-btn"
-									data-color="teal"
-									onClick={() => {
-										const cavityNote = selectedSurfaces.length > 0 ? ` (полость ${selectedSurfaces.join("")})` : "";
+									className={`_ccm-action-item${state === "idle" ? " active" : ""}`}
+									onClick={() => handleSelectDiagnosis("idle")}
+								>
+									<span className="_ccm-btn-dot _ccm-dot-idle" />
+									<span className="_ccm-item-title">Здоров / Интактен</span>
+									<CircleDot className="w-3.5 h-3.5 text-[var(--muted)] ml-auto shrink-0" />
+								</button>
+								<button
+									type="button"
+									className={`_ccm-action-item${state === "done" ? " active" : ""}`}
+									onClick={() =>
 										handleSelectDiagnosis(
 											"done",
-											`установлена пломба${cavityNote} (светоотверждаемый композит Filtek Z250 / Gradia Direct), шлифовка, полировка`,
-											"treatmentPlan",
+											"зуб санирован / здоров",
+											"diagnosis",
+										)
+									}
+								>
+									<span className="_ccm-btn-dot _ccm-dot-done" />
+									<span className="_ccm-item-title">Санирован / Ранее лечен</span>
+									<CheckCircle2 className="w-3.5 h-3.5 text-[var(--teal)] ml-auto shrink-0" />
+								</button>
+								<button
+									type="button"
+									className={`_ccm-action-item${state === "missing" ? " active" : ""}`}
+									onClick={() =>
+										handleSelectDiagnosis(
+											"missing",
+											"зуб отсутствует",
+											"diagnosis",
+										)
+									}
+								>
+									<span className="_ccm-btn-dot _ccm-dot-missing" />
+									<span className="_ccm-item-title">Отсутствует / Удалён</span>
+									<XCircle className="w-3.5 h-3.5 text-[var(--muted)] ml-auto shrink-0" />
+								</button>
+							</div>
+
+							<div className="_ccm-sub-label">Патологии зубного ряда (МКБ-10)</div>
+							<div className="_ccm-items-grid">
+								<button
+									type="button"
+									className={`_ccm-action-item${state === "watch" ? " active" : ""}`}
+									onClick={() => {
+										const cavityNote =
+											selectedSurfaces.length > 0
+												? ` (${selectedSurfaces.join("")})`
+												: "";
+										handleSelectDiagnosis(
+											"watch",
+											`K02.1 Кариес дентина${cavityNote}`,
+											"diagnosis",
 										);
-										setMaterialCategory(null);
 									}}
 								>
-									<span>Световой композит{selectedSurfaces.length > 0 ? ` [${selectedSurfaces.join("")}]` : ""}</span>{" "}
-									<Sparkles className="w-4 h-4 text-teal-500 shrink-0" />
+									<span className="_ccm-btn-dot _ccm-dot-watch" />
+									<span className="_ccm-item-title">
+										K02.1 Кариес дентина
+										{selectedSurfaces.length > 0
+											? ` [${selectedSurfaces.join("")}]`
+											: ""}
+									</span>
+									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 ml-auto shrink-0" />
 								</button>
-							)}
-
-							{materialCategory === "crown" && (
-								<>
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="teal"
-										onClick={() => {
-											setLabOrderModalToothNumber(selectedToothForMenu?.code);
-											setIsLabOrderModalOpen(true);
-											closeClinicalModal();
-										}}
-									>
-										<span>1-Клик: Наряд в ЗТЛ на коронку (ZrO2, А2)</span>{" "}
-										<FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
-									</button>
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="teal"
-										onClick={() => {
-											handleSelectDiagnosis(
-												"done",
-												`установлена металлокерамическая / диоксид циркония коронка с фиксацией на постоянный цемент`,
-												"treatmentPlan",
-											);
-											setMaterialCategory(null);
-										}}
-									>
-										<span>Коронка зафиксирована (Цирконий / Керула)</span>{" "}
-										<Crown className="w-4 h-4 text-amber-500 shrink-0" />
-									</button>
-								</>
-							)}
-
-							{materialCategory === "veneer" && (
-								<>
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="teal"
-										onClick={() => {
-											setLabOrderModalToothNumber(selectedToothForMenu?.code);
-											setIsLabOrderModalOpen(true);
-											closeClinicalModal();
-										}}
-									>
-										<span>1-Клик: Наряд в ЗТЛ на винир (E.max, А1)</span>{" "}
-										<FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
-									</button>
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="teal"
-										onClick={() => {
-											handleSelectDiagnosis(
-												"done",
-												`установлен керамический винир IPS e.max Press с адгезивной фиксацией (Variolink Esthetic)`,
-												"treatmentPlan",
-											);
-											setMaterialCategory(null);
-										}}
-									>
-										<span>Винир E.max зафиксирован</span>{" "}
-										<Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
-									</button>
-								</>
-							)}
-
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="slate"
-								onClick={() => setMaterialCategory(null)}
-							>
-								<span>← Назад к видам лечения</span>
-							</button>
-						</div>
-					) : (
-						<>
-							<div className="_ccm-label">Терапия</div>
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="teal"
-								onClick={() => {
-									const cavityNote = selectedSurfaces.length > 0 ? ` полости [${selectedSurfaces.join("")}]` : " кариозной полости";
-									handleSelectDiagnosis(
-										"treatment",
-										`препарирование${cavityNote}, медикаментозная обработка, пломбирование`,
-										"treatmentPlan",
-									);
-								}}
-							>
-								<span>Лечение кариеса{selectedSurfaces.length > 0 ? ` [${selectedSurfaces.join("")}]` : ""}</span>{" "}
-								<Edit3 className="w-4 h-4 text-teal-500 shrink-0" />
-							</button>
-
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="teal"
-								onClick={() => setMaterialCategory("filling")}
-							>
-								<span>Поставить пломбу...</span>{" "}
-								<Crown className="w-4 h-4 text-emerald-500 shrink-0" />
-							</button>
-
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="pink"
-								onClick={() =>
-									handleSelectDiagnosis(
-										"treatment",
-										"депульпирование, обтурация каналов",
-										"treatmentPlan",
-									)
-								}
-							>
-								<span>Лечение каналов (Эндо)</span>{" "}
-								<Zap className="w-4 h-4 text-pink-500 shrink-0" />
-							</button>
-
-							<button
-								type="button"
-								data-testid="visit-view-endo-canal-log-btn"
-								className="_ccm-btn"
-								data-color="pink"
-								style={{
-									borderColor: "var(--teal, var(--line))",
-									backgroundColor: "var(--surface-muted, var(--paper))",
-									color: "var(--ink)",
-									fontWeight: "bold",
-								}}
-								onClick={() => {
-									setEndoModalToothNumber(Number(code));
-									setEndoModalToothState(
-										state === "treatment"
-											? "Пульпит / Периодонтит"
-											: state,
-									);
-									setIsEndoModalOpen(true);
-								}}
-							>
-								<span className="flex-1 text-left">
-									Журнал каналов (MB1, MB2, DB, P)
-								</span>{" "}
-								<ClipboardList className="w-4 h-4 text-pink-500 shrink-0" />
-							</button>
-
-							<button
-								type="button"
-								data-testid="visit-view-anesthesia-dosage-btn"
-								className="_ccm-btn"
-								data-color="sky"
-								style={{
-									borderColor: "var(--teal, var(--line))",
-									backgroundColor: "var(--surface-muted, var(--paper))",
-									color: "var(--ink)",
-									fontWeight: "bold",
-								}}
-								onClick={() => {
-									appendToEMKField(
-										"treatmentPlan",
-										`Анестезия зуба ${code}: Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.`,
-									);
-									showToast(
-										`Анестезия зуба ${code} (1 карп.) внесена в протокол`,
-										"success",
-										2500,
-									);
-									closeClinicalModal();
-								}}
-							>
-								<span className="flex-1 text-left">
-									Анестезия зуба {code} (1 карп.)
-								</span>{" "}
-								<Syringe className="w-4 h-4 text-sky-500 shrink-0" />
-							</button>
-
-							<div className="_ccm-label">Ортопедия</div>
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="violet"
-								onClick={() => setMaterialCategory("crown")}
-							>
-								<span>Коронка</span>{" "}
-								<Crown className="w-4 h-4 text-violet-500 shrink-0" />
-							</button>
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="violet"
-								onClick={() => setMaterialCategory("veneer")}
-							>
-								<span>Винир</span>{" "}
-								<Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
-							</button>
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="teal"
-								onClick={() => {
-									setLabOrderModalToothNumber(selectedToothForMenu?.code);
-									setIsLabOrderModalOpen(true);
-									closeClinicalModal();
-								}}
-							>
-								<span>Наряд в ЗТЛ (CAD/CAM)</span>{" "}
-								<FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
-							</button>
-
-							<div className="_ccm-label">Хирургия</div>
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="red"
-								onClick={() =>
-									handleSelectDiagnosis(
-										"treatment",
-										"удаление зуба: анестезия, синдесмотомия, экстракция, ревизия лунки",
-										"treatmentPlan",
-									)
-								}
-							>
-								<span>Удаление зуба</span>{" "}
-								<Scissors className="w-4 h-4 text-red-500 shrink-0" />
-							</button>
-							<button
-								type="button"
-								className="_ccm-btn"
-								data-color="violet"
-								onClick={() => {
-									if (
-										visitWarnings?.some((w: any) =>
-											/бисфосф|bisph/i.test(w.title + w.detail),
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"treatment",
+											"K04.0 Острый пульпит",
+											"diagnosis",
 										)
-									) {
-										showToast(
-											`Предупреждение: у пациента бисфосфонаты в анамнезе (риск остеонекроза челюсти). Окончательное решение принимает лечащий хирург.`,
-											"warning",
-										);
 									}
-									setMaterialCategory("implant");
-								}}
-							>
-								<span>Имплантация</span>{" "}
-								<Anchor className="w-4 h-4 text-violet-500 shrink-0" />
-							</button>
-						</>
+								>
+									<span className="_ccm-btn-dot _ccm-dot-treatment" />
+									<span className="_ccm-item-title">K04.0 Острый пульпит</span>
+									<Flame className="w-3.5 h-3.5 text-red-500 ml-auto shrink-0" />
+								</button>
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"treatment",
+											"K04.5 Хронический апикальный периодонтит / киста",
+											"diagnosis",
+										)
+									}
+								>
+									<span className="_ccm-btn-dot _ccm-dot-treatment" />
+									<span className="_ccm-item-title">
+										K04.5 Периодонтит / Киста
+									</span>
+									<CircleDot className="w-3.5 h-3.5 text-red-500 ml-auto shrink-0" />
+								</button>
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"watch",
+											"K03.1 Клиновидный дефект",
+											"diagnosis",
+										)
+									}
+								>
+									<span className="_ccm-btn-dot _ccm-dot-watch" />
+									<span className="_ccm-item-title">
+										K03.1 Клиновидный дефект
+									</span>
+									<Activity className="w-3.5 h-3.5 text-amber-500 ml-auto shrink-0" />
+								</button>
+							</div>
+						</div>
 					)}
+
+					{/* ── TAB 2: ТЕРАПИЯ & ПЛОМБА ── */}
+					{activeTab === "therapy" && (
+						<div className="_ccm-pane-section">
+							{materialCategory === "filling" ? (
+								<div className="_ccm-material-subview">
+									<div className="_ccm-sub-label">
+										Выбор композитного материала
+									</div>
+									<div className="_ccm-items-grid">
+										<button
+											type="button"
+											className="_ccm-action-item"
+											onClick={() => {
+												const cavityNote =
+													selectedSurfaces.length > 0
+														? ` (полость ${selectedSurfaces.join("")})`
+														: "";
+												handleSelectDiagnosis(
+													"done",
+													`установлена пломба${cavityNote} (композит Filtek Z250 / Gradia Direct), шлифовка, полировка`,
+													"treatmentPlan",
+												);
+												setMaterialCategory(null);
+											}}
+										>
+											<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+											<span className="_ccm-item-title">
+												Световой композит Filtek Z250 / Gradia
+												{selectedSurfaces.length > 0
+													? ` [${selectedSurfaces.join("")}]`
+													: ""}
+											</span>
+											<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+										</button>
+										<button
+											type="button"
+											className="_ccm-action-item"
+											onClick={() => {
+												const cavityNote =
+													selectedSurfaces.length > 0
+														? ` (полость ${selectedSurfaces.join("")})`
+														: "";
+												handleSelectDiagnosis(
+													"done",
+													`установлена пломба${cavityNote} (эстетический нанокомпозит Ceram.x Spectra ST), шлифовка, полировка`,
+													"treatmentPlan",
+												);
+												setMaterialCategory(null);
+											}}
+										>
+											<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+											<span className="_ccm-item-title">
+												Нанокомпозит Ceram.x Spectra ST
+											</span>
+											<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+										</button>
+										<button
+											type="button"
+											className="_ccm-action-item"
+											onClick={() => {
+												const cavityNote =
+													selectedSurfaces.length > 0
+														? ` (полость ${selectedSurfaces.join("")})`
+														: "";
+												handleSelectDiagnosis(
+													"done",
+													`установлена высокоэстетическая пломба${cavityNote} (Estelite Asteria Tokuyama), полировка`,
+													"treatmentPlan",
+												);
+												setMaterialCategory(null);
+											}}
+										>
+											<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+											<span className="_ccm-item-title">
+												Премиум Estelite Asteria
+											</span>
+											<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+										</button>
+										<button
+											type="button"
+											className="_ccm-action-item _ccm-back-row"
+											onClick={() => setMaterialCategory(null)}
+										>
+											<span>← Назад к видам терапии</span>
+										</button>
+									</div>
+								</div>
+							) : (
+								<div className="_ccm-items-grid">
+									<div className="_ccm-sub-label">Терапевтические протоколы</div>
+									<button
+										type="button"
+										className="_ccm-action-item"
+										onClick={() => {
+											const cavityNote =
+												selectedSurfaces.length > 0
+													? ` полости [${selectedSurfaces.join("")}]`
+													: " кариозной полости";
+											handleSelectDiagnosis(
+												"treatment",
+												`препарирование${cavityNote}, медикаментозная обработка, пломбирование`,
+												"treatmentPlan",
+											);
+										}}
+									>
+										<Edit3 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+										<span className="_ccm-item-title">
+											Лечение кариеса
+											{selectedSurfaces.length > 0
+												? ` [${selectedSurfaces.join("")}]`
+												: ""}
+										</span>
+										<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+									</button>
+
+									<button
+										type="button"
+										className="_ccm-action-item"
+										onClick={() => setMaterialCategory("filling")}
+									>
+										<Crown className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+										<span className="_ccm-item-title">
+											Поставить световую пломбу...
+										</span>
+										<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+									</button>
+
+									<button
+										type="button"
+										data-testid="visit-view-anesthesia-dosage-btn"
+										className="_ccm-action-item highlight"
+										onClick={() => {
+											appendToEMKField(
+												"treatmentPlan",
+												`Анестезия зуба ${code}: Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.`,
+											);
+											showToast(
+												`Анестезия зуба ${code} (1 карп.) внесена в протокол`,
+												"success",
+												2500,
+											);
+											closeClinicalModal();
+										}}
+									>
+										<Syringe className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+										<span className="_ccm-item-title font-semibold">
+											Анестезия зуба {code} (Sol. Ultracaini 1.7 мл, 1 карп.)
+										</span>
+									</button>
+
+									<button
+										type="button"
+										data-testid="visit-view-endo-canal-log-btn"
+										className="_ccm-action-item"
+										onClick={() => {
+											setEndoModalToothNumber(Number(code));
+											setEndoModalToothState(
+												state === "treatment"
+													? "Пульпит / Периодонтит"
+													: state,
+											);
+											setIsEndoModalOpen(true);
+										}}
+									>
+										<ClipboardList className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+										<span className="_ccm-item-title">
+											Журнал каналов (MB1, MB2, DB, P)
+										</span>
+										<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+									</button>
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* ── TAB 3: ЭНДОДОНТИЯ ── */}
+					{activeTab === "endo" && (
+						<div className="_ccm-pane-section">
+							<div className="_ccm-sub-label">Эндодонтический протокол</div>
+							<div className="_ccm-items-grid">
+								<button
+									type="button"
+									data-testid="visit-view-endo-canal-log-btn"
+									className="_ccm-action-item highlight"
+									onClick={() => {
+										setEndoModalToothNumber(Number(code));
+										setEndoModalToothState(
+											state === "treatment"
+												? "Пульпит / Периодонтит"
+												: state,
+										);
+										setIsEndoModalOpen(true);
+									}}
+								>
+									<ClipboardList className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span className="_ccm-item-title font-semibold">
+										Журнал каналов (MB1, MB2, DB, P) — рабочая длина
+									</span>
+									<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+								</button>
+
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"treatment",
+											"депульпирование, хемомеханическая обработка каналов ProTaper Gold",
+											"treatmentPlan",
+										)
+									}
+								>
+									<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<span className="_ccm-item-title">
+										Первичное эндо: депульпирование, расширение
+									</span>
+								</button>
+
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"treatment",
+											"временная обтурация каналов гидроокисью кальция (Calasept / Metapex)",
+											"treatmentPlan",
+										)
+									}
+								>
+									<FileCheck2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span className="_ccm-item-title">
+										Временная обтурация (Calasept / Metapex)
+									</span>
+								</button>
+
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"done",
+											"постоянная обтурация каналов гуттаперчей методом латеральной компакции с силером AH Plus",
+											"treatmentPlan",
+										)
+									}
+								>
+									<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+									<span className="_ccm-item-title">
+										Постоянная обтурация (Гуттаперча + AH Plus)
+									</span>
+								</button>
+
+								<button
+									type="button"
+									data-testid="visit-view-anesthesia-dosage-btn"
+									className="_ccm-action-item"
+									onClick={() => {
+										appendToEMKField(
+											"treatmentPlan",
+											`Анестезия зуба ${code}: Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная.`,
+										);
+										showToast(
+											`Анестезия зуба ${code} внесена в протокол`,
+											"success",
+											2500,
+										);
+										closeClinicalModal();
+									}}
+								>
+									<Syringe className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+									<span className="_ccm-item-title">
+										Анестезия зуба {code} (1 карп.)
+									</span>
+								</button>
+							</div>
+						</div>
+					)}
+
+					{/* ── TAB 4: ОРТОПЕДИЯ & ХИРУРГИЯ ── */}
+					{activeTab === "surgery" && (
+						<div className="_ccm-pane-section">
+							<div className="_ccm-sub-label">Ортопедия (CAD/CAM & Лаборатория)</div>
+							<div className="_ccm-items-grid">
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() => {
+										setLabOrderModalToothNumber(
+											selectedToothForMenu?.code,
+										);
+										setIsLabOrderModalOpen(true);
+										closeClinicalModal();
+									}}
+								>
+									<FileCheck2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span className="_ccm-item-title font-semibold">
+										1-Клик: Наряд в ЗТЛ (CAD/CAM коронка ZrO2 / E.max)
+									</span>
+									<ChevronRight className="w-3.5 h-3.5 text-[var(--muted)] ml-auto" />
+								</button>
+
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() => {
+										handleSelectDiagnosis(
+											"done",
+											`установлена и зафиксирована металлокерамическая / диоксид циркония коронка`,
+											"treatmentPlan",
+										);
+										closeClinicalModal();
+									}}
+								>
+									<Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<span className="_ccm-item-title">
+										Коронка зафиксирована на цемент
+									</span>
+								</button>
+
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() => {
+										handleSelectDiagnosis(
+											"done",
+											`установлен керамический винир IPS e.max Press с адгезивной фиксацией`,
+											"treatmentPlan",
+										);
+										closeClinicalModal();
+									}}
+								>
+									<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span className="_ccm-item-title">
+										Керамический винир E.max зафиксирован
+									</span>
+								</button>
+							</div>
+
+							<div className="_ccm-sub-label">Хирургия & Имплантация</div>
+							<div className="_ccm-items-grid">
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() =>
+										handleSelectDiagnosis(
+											"treatment",
+											"удаление зуба: анестезия, синдесмотомия, экстракция, кюретаж лунки",
+											"treatmentPlan",
+										)
+									}
+								>
+									<Scissors className="w-3.5 h-3.5 text-red-500 shrink-0" />
+									<span className="_ccm-item-title">
+										Удаление зуба (синдесмотомия, экстракция)
+									</span>
+								</button>
+
+								<button
+									type="button"
+									className="_ccm-action-item"
+									onClick={() => {
+										if (
+											visitWarnings?.some((w: any) =>
+												/бисфосф|bisph/i.test(w.title + w.detail),
+											)
+										) {
+											showToast(
+												`Предупреждение: у пациента бисфосфонаты в анамнезе (риск остеонекроза челюсти).`,
+												"warning",
+											);
+										}
+										handleSelectDiagnosis(
+											"treatment",
+											"дентальная имплантация в позиции зуба",
+											"treatmentPlan",
+										);
+										closeClinicalModal();
+									}}
+								>
+									<Anchor className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span className="_ccm-item-title">
+										Дентальная имплантация
+									</span>
+								</button>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* ── 4. STUDIO FOOTER ── */}
+				<div className="_ccm-footer">
+					<span className="_ccm-footer-hint">
+						{selectedSurfaces.length > 0
+							? `Выбрана полость: [${selectedSurfaces.join("")}]`
+							: `Зуб ${code} · Клинический протокол`}
+					</span>
+					<button
+						type="button"
+						onClick={closeClinicalModal}
+						className="_ccm-footer-done-btn"
+					>
+						Готово
+					</button>
 				</div>
 			</div>
 		</>,
