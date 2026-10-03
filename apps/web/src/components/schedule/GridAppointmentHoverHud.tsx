@@ -2,6 +2,7 @@ import {
 	type Appointment,
 	type Dashboard,
 	type DentalSpecialty,
+	getVitaShadeHex,
 } from "@dental/shared";
 import {
 	AlertTriangle,
@@ -36,6 +37,7 @@ import {
 	isAppointmentInChair,
 	getNormalizedAppointmentStatusLabel,
 	type DoctorSpecialtyTheme,
+	resolveAppointmentLabStatus,
 } from "./appointmentCardHelpers";
 
 export interface GridAppointmentHoverHudProps {
@@ -256,6 +258,75 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 				})()}
 			</div>
 
+			{/* 4.1. Клинический наряд ЗТЛ и готовность конструкции к визиту */}
+			{(() => {
+				const labInfo = resolveAppointmentLabStatus(a);
+				if (!labInfo) return null;
+				const hexColor = getVitaShadeHex(labInfo.colorVita);
+
+				return (
+					<div
+						className={`p-2.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+							labInfo.isOverdue
+								? "bg-rose-500/10 border-rose-500/40"
+								: labInfo.state === "ready_in_clinic"
+									? "bg-emerald-500/10 border-emerald-500/40"
+									: "bg-amber-500/10 border-amber-500/40"
+						}`}
+						data-testid={`hover-hud-lab-status-${a.id}`}
+					>
+						<div className="flex items-center justify-between gap-1 font-bold">
+							<span className="flex items-center gap-1.5">
+								<span>{labInfo.isOverdue ? "⚠️" : labInfo.state === "ready_in_clinic" ? "🦷" : "⏳"}</span>
+								<span className="text-[var(--ink)]">Наряд ЗТЛ:</span>
+								<span className="font-mono text-[var(--muted)]">{labInfo.orderNumber || "ЗТЛ"}</span>
+							</span>
+							<span className={`px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider font-extrabold border ${labInfo.badgeClass}`}>
+								{labInfo.isOverdue ? `Просрочен на ${labInfo.daysOverdue} дн!` : labInfo.shortLabelRu}
+							</span>
+						</div>
+
+						<div className="text-[11px] text-[var(--ink)] opacity-90 flex items-center justify-between">
+							<span>{labInfo.workTypeRu || "Зуботехническое изделие"}</span>
+							{labInfo.toothFdi && <span className="font-mono font-bold text-teal-700 dark:text-teal-300">Зуб {labInfo.toothFdi}</span>}
+						</div>
+
+						<div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
+							<div className="flex items-center gap-1.5">
+								{labInfo.colorVita && (
+									<span className="flex items-center gap-1 font-semibold text-[var(--ink)]">
+										<span
+											className="inline-block w-3 h-3 rounded-full border border-[var(--line)] shadow-2xs"
+											style={{ backgroundColor: hexColor || "#EBD7BB" }}
+											title={`VITA ${labInfo.colorVita}`}
+										/>
+										<span>VITA {labInfo.colorVita}</span>
+									</span>
+								)}
+								{labInfo.dueDateIso && (
+									<span className="text-[10px]">
+										Срок: {new Date(labInfo.dueDateIso).toLocaleDateString("ru-RU")}
+									</span>
+								)}
+							</div>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									useAppStore.getState().setCurrentView("lab-orders");
+									showToast(`Открыт журнал ЗТЛ: ${labInfo.orderNumber || "Наряд"}`, "info");
+									onMouseLeave();
+								}}
+								className="text-[10px] font-bold text-teal-700 dark:text-teal-300 hover:underline cursor-pointer"
+								data-testid={`hover-hud-open-lab-order-${a.id}`}
+							>
+								Открыть в ЗТЛ →
+							</button>
+						</div>
+					</div>
+				);
+			})()}
+
 			{/* 5. Врач, ассистент, кресло */}
 			<div className="pt-2 border-t border-[var(--line)] space-y-1 text-[11px] text-[var(--muted)]">
 				<div className="flex items-center justify-between gap-1">
@@ -413,10 +484,10 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 					{/* DentalPRO expo26: 6-Action Clinical Micro-HUD */}
 					<div className="pt-2 border-t border-[var(--line)] space-y-1.5" data-testid={`clinical-micro-hud-${a.id}`}>
 						<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
-							<span>Клинические действия (DentalPRO 6-Action HUD)</span>
+							<span>Клинические действия</span>
 						</div>
 						<div className="grid grid-cols-3 gap-1">
-							{/* 1. Амбулаторная карта 043/у */}
+							{/* 1. Медицинская карта */}
 							<button
 								type="button"
 								data-testid={`hud-action-emr-${a.id}`}
@@ -427,13 +498,13 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 										usePatientStore.getState().setSelectedPatientId(patObj.id);
 									}
 									useAppStore.getState().setCurrentView("visit");
-									showToast(`Амбулаторная карта: ${pName}`, "info");
+									showToast(`Медицинская карта: ${pName}`, "info");
 								}}
 								className="h-8 px-1.5 rounded-lg text-[10px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
-								title="Открыть амбулаторную карту 043/у"
+								title="Открыть медицинскую карту пациента"
 							>
 								<FileText size={12} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-								<span className="truncate">Карта 043/у</span>
+								<span className="truncate">Медкарта</span>
 							</button>
 
 							{/* 2. Запланировать посещение (Re-book) */}

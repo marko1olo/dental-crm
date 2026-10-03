@@ -77,10 +77,10 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[260px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
 			onClick={(e) => e.stopPropagation()}
 		>
-			{/* DentalPRO expo26: Clinical Actions Section */}
+			{/* Clinical Actions Section */}
 			<div className="space-y-0.5 pb-1 border-b border-[var(--line)]" data-testid={`menu-clinical-hud-${a.id}`}>
 				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
-					Клинические действия (DentalPRO)
+					Клинические действия
 				</div>
 				<button
 					type="button"
@@ -90,14 +90,14 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 							usePatientStore.getState().setSelectedPatientId(patObj.id);
 						}
 						useAppStore.getState().setCurrentView("visit");
-						showToast(`Амбулаторная карта: ${pName}`, "info");
+						showToast(`Медицинская карта: ${pName}`, "info");
 					}}
 					className="w-full text-left min-h-[36px] px-2.5 py-1 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-cyan-700 dark:text-cyan-300 font-bold transition-colors cursor-pointer"
-					title="Открыть амбулаторную карту 043/у"
+					title="Открыть медицинскую карту пациента"
 					data-testid={`menu-emr-btn-${a.id}`}
 				>
 					<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-					<span>Амбулаторная карта 043/у</span>
+					<span>Медицинская карта</span>
 				</button>
 				<button
 					type="button"
