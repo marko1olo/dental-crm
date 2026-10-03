@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
@@ -68,9 +68,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	const [isTouchOrMobile, setIsTouchOrMobile] = useState<boolean>(() => {
 		if (typeof window !== "undefined") {
 			return (
-				window.innerWidth <= 1024 ||
-				"ontouchstart" in window ||
-				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+				window.innerWidth <= 768 ||
+				(window.innerWidth <= 1024 &&
+					("ontouchstart" in window ||
+						(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)))
 			);
 		}
 		return false;
@@ -79,9 +80,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	useEffect(() => {
 		const handleResize = () => {
 			setIsTouchOrMobile(
-				window.innerWidth <= 1024 ||
-				"ontouchstart" in window ||
-				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+				window.innerWidth <= 768 ||
+				(window.innerWidth <= 1024 &&
+					("ontouchstart" in window ||
+						(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)))
 			);
 		};
 		window.addEventListener("resize", handleResize);
@@ -380,6 +382,21 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
 	const vh = typeof window !== "undefined" ? window.innerHeight : 800;
 
+	// Smart Edge Clamping & Arc Flipping geometry
+	const EDGE_THRESHOLD_X = 380;
+	const isNearLeftEdge = rawCenterX < EDGE_THRESHOLD_X;
+	const isNearRightEdge = rawCenterX > vw - EDGE_THRESHOLD_X;
+	const layoutMode: "circular" | "left-wing" | "right-wing" = isNearRightEdge
+		? "left-wing"
+		: isNearLeftEdge
+			? "right-wing"
+			: "circular";
+
+	// Hub pinned directly to tooth center with safety margin against screen borders
+	const hubX = Math.max(50, Math.min(vw - 50, rawCenterX));
+	const hubY = Math.max(190, Math.min(vh - 210, rawCenterY));
+	const subAnchorX = layoutMode === "right-wing" ? hubX + 215 : hubX - 215;
+
 	// Clamp menu center to prevent edge clipping while staying true to the tooth position
 	const radius = Math.min(170, Math.max(120, Math.floor((vw - 90) / 2)));
 	const minMarginX = Math.min(240, vw / 2);
@@ -388,11 +405,45 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	const centerX = Math.max(minMarginX, Math.min(rawCenterX, vw - minMarginX));
 	const centerY = Math.max(minMarginTop, Math.min(rawCenterY, vh - minMarginBottom));
 
+	// Grouping items for wing fan columns (Hot Path in Col 1, Specialized in Col 2)
+	const wingCol1Items = useMemo(() => {
+		const hotPathStates: string[] = ["Caries", "Pulpitis", "Filled", "Crown", "Healthy"];
+		const result: typeof items = [];
+		for (const st of hotPathStates) {
+			const found = items.find((it) => it.state === st);
+			if (found) result.push(found);
+		}
+		for (const it of items) {
+			if (!result.includes(it) && result.length < 5) {
+				result.push(it);
+			}
+		}
+		return result;
+	}, [items]);
+
+	const wingCol2Items = useMemo(() => {
+		const specializedStates: string[] = ["Periodontitis", "Implant", "Missing", "Retained", "Root"];
+		const result: typeof items = [];
+		for (const st of specializedStates) {
+			const found = items.find((it) => it.state === st);
+			if (found) result.push(found);
+		}
+		for (const it of items) {
+			if (!wingCol1Items.includes(it) && !result.includes(it)) {
+				result.push(it);
+			}
+		}
+		return result;
+	}, [items, wingCol1Items]);
+
 	const content = (
 		<div
-			className={`radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto bg-black/60 backdrop-blur-[4px] animate-fadeIn ${
+			className={`radial-tooth-menu-overlay fixed inset-0 z-[9999] pointer-events-auto animate-fadeIn ${
 				isTouchOrMobile ? "flex flex-col justify-end p-0 sm:p-4" : ""
 			}`}
+			style={{
+				backgroundColor: "rgba(15, 23, 42, 0.55)",
+			}}
 			data-testid="tooth-radial-menu-overlay"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) {
@@ -882,10 +933,12 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					)}
 				</div>
 			) : (
-				/* Desktop Clamped Circular Radial Menu */
-				<div
-					ref={menuRef}
-					className="radial-tooth-menu-container absolute select-none flex items-center justify-center pointer-events-none"
+				/* Desktop Radial Menu: Smart Edge Clamping & Arc Flipping */
+				layoutMode === "circular" ? (
+					/* Desktop Clamped Circular Radial Menu */
+					<div
+						ref={menuRef}
+						className="radial-tooth-menu-container absolute select-none flex items-center justify-center pointer-events-none"
 					style={{
 						left: `${centerX}px`,
 						top: `${centerY}px`,
@@ -1392,7 +1445,257 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						</div>
 					)}
 				</div>
-			)}
+			) : (
+				/* Edge Wing Fan for Extreme Teeth (18, 28, 38, 48) */
+				<div
+					ref={menuRef}
+					className="radial-tooth-menu-container absolute inset-0 select-none pointer-events-none"
+					role="dialog"
+					aria-label={`Радиальное меню зуба ${toothNumber} (${layoutMode})`}
+				>
+					{/* Frosted Wing Pod Backdrop */}
+					<div
+						className="radial-wing-pod absolute rounded-3xl bg-[var(--odontogram-paper)]/95 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none transition-all duration-200"
+						style={{
+							width: "440px",
+							height: "350px",
+							left: `${subAnchorX}px`,
+							top: `${hubY}px`,
+							transform: "translate(-50%, -50%)",
+						}}
+					/>
+
+					{/* Center Tooth Hub Pinned Over Tooth */}
+					<div
+						className="absolute flex flex-col items-center justify-center w-22 h-22 rounded-full bg-[var(--odontogram-surface)] border-2 border-[var(--teal,#0d9488)] shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
+						style={{
+							left: `${hubX}px`,
+							top: `${hubY}px`,
+							transform: "translate(-50%, -50%)",
+						}}
+					>
+						<span className="text-[11px] uppercase font-black text-[var(--teal,#0d9488)] tracking-wider">Зуб</span>
+						<span className="text-2xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
+						<button
+							type="button"
+							onClick={onClose}
+							className="absolute -top-3 left-1/2 -translate-x-1/2 min-w-[32px] min-h-[32px] w-8 h-8 flex items-center justify-center rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
+							title="Закрыть (Esc)"
+							aria-label="Закрыть меню"
+						>
+							<X size={16} />
+						</button>
+					</div>
+
+					{/* Wing Columns: Col 1 (Hot Path) & Col 2 (Specialized) */}
+					<div className="radial-wing-columns-wrapper absolute inset-0 pointer-events-none">
+						{/* Column 1: Hot Path */}
+						{wingCol1Items.map((item, rowIdx) => {
+							const colX = layoutMode === "right-wing" ? hubX + 138 : hubX - 138;
+							const rowY = hubY + (rowIdx - 2) * 50;
+							const isCurrent = currentState === item.state;
+
+							return (
+								<button
+									key={item.id}
+									type="button"
+									onClick={() => {
+										if (item.state) onSelectState(item.state, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
+										onClose();
+									}}
+									style={{
+										position: "absolute",
+										left: `${colX}px`,
+										top: `${rowY}px`,
+										transform: "translate(-50%, -50%)",
+										background: item.bgGradient,
+										width: "136px",
+										minHeight: "42px",
+										height: "42px",
+										padding: "0 10px",
+										borderRadius: "14px",
+										border: "1.5px solid rgba(255, 255, 255, 0.35)",
+										boxShadow: isCurrent
+											? "0 0 0 3px #ffffff, 0 8px 24px -2px rgba(0, 0, 0, 0.55)"
+											: "0 4px 14px -2px rgba(0, 0, 0, 0.35)",
+									}}
+									className={`radial-item-btn pointer-events-auto flex items-center justify-between text-xs font-bold text-white cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95 focus:outline-none touch-manipulation ${
+										isCurrent ? "font-black ring-2 ring-white" : "opacity-95 hover:opacity-100"
+									}`}
+									title={item.label}
+									data-testid={`radial-btn-${item.id}`}
+								>
+									<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
+									<span className="whitespace-nowrap font-black text-[12px] tracking-tight truncate flex-1 px-1.5 text-left">{item.shortLabel}</span>
+									{item.hotkey && (
+										<span className="shrink-0 w-4 h-4 rounded bg-white/20 text-[10px] font-mono flex items-center justify-center font-black opacity-80">
+											{item.hotkey}
+										</span>
+									)}
+								</button>
+							);
+						})}
+
+						{/* Column 2: Specialized */}
+						{wingCol2Items.map((item, rowIdx) => {
+							const colX = layoutMode === "right-wing" ? hubX + 288 : hubX - 288;
+							const rowY = hubY + (rowIdx - 2) * 50;
+							const isCurrent = currentState === item.state;
+
+							return (
+								<button
+									key={item.id}
+									type="button"
+									onClick={() => {
+										if (item.state) onSelectState(item.state, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
+										onClose();
+									}}
+									style={{
+										position: "absolute",
+										left: `${colX}px`,
+										top: `${rowY}px`,
+										transform: "translate(-50%, -50%)",
+										background: item.bgGradient,
+										width: "136px",
+										minHeight: "42px",
+										height: "42px",
+										padding: "0 10px",
+										borderRadius: "14px",
+										border: "1.5px solid rgba(255, 255, 255, 0.35)",
+										boxShadow: isCurrent
+											? "0 0 0 3px #ffffff, 0 8px 24px -2px rgba(0, 0, 0, 0.55)"
+											: "0 4px 14px -2px rgba(0, 0, 0, 0.35)",
+									}}
+									className={`radial-item-btn pointer-events-auto flex items-center justify-between text-xs font-bold text-white cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95 focus:outline-none touch-manipulation ${
+										isCurrent ? "font-black ring-2 ring-white" : "opacity-95 hover:opacity-100"
+									}`}
+									title={item.label}
+									data-testid={`radial-btn-${item.id}`}
+								>
+									<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
+									<span className="whitespace-nowrap font-black text-[12px] tracking-tight truncate flex-1 px-1.5 text-left">{item.shortLabel}</span>
+									{item.hotkey && (
+										<span className="shrink-0 w-4 h-4 rounded bg-white/20 text-[10px] font-mono flex items-center justify-center font-black opacity-80">
+											{item.hotkey}
+										</span>
+									)}
+								</button>
+							);
+						})}
+					</div>
+
+					{/* Top Surfaces Bar in Wing mode */}
+					<div
+						className="absolute flex flex-col items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-2xl border border-[var(--odontogram-border)] shadow-xl z-20"
+						style={{
+							left: `${subAnchorX}px`,
+							top: `${hubY - 175}px`,
+							transform: "translate(-50%, 0)",
+						}}
+					>
+						<details className="odontogram-desktop-surfaces-accordion group flex flex-col items-center transition-all">
+							<summary className="flex items-center gap-2 cursor-pointer select-none px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300">
+								<span className="uppercase font-black tracking-wide">Поверхности (опционально)</span>
+								<span className="text-[11px] font-mono font-bold text-[var(--odontogram-ink-muted)]">
+									{selectedSurfaces.length > 0 ? `[${selectedSurfaces.join("")}]` : "вся коронка"}
+								</span>
+								<span className="text-[10px] text-[var(--odontogram-ink-muted)] group-open:hidden">▾</span>
+								<span className="text-[10px] text-[var(--odontogram-ink-muted)] hidden group-open:inline">▴</span>
+							</summary>
+							<div className="flex flex-col items-center gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--odontogram-border-subtle)]">
+								<div className="flex items-center gap-1">
+									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
+									{[
+										{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
+										{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
+										{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
+										{ label: "O", surfs: ["O"], title: "Окклюзионная (O)" },
+										{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
+										{ label: "L/P", surfs: ["L"], title: "Язычная / Нёбная (L/P)" },
+										{ label: "B", surfs: ["B"], title: "Буккальная / Щёчная (B)" },
+									].map((chip) => {
+										const isMatch =
+											chip.surfs.length === selectedSurfaces.length &&
+											chip.surfs.every((s) => selectedSurfaces.includes(s));
+										return (
+											<button
+												key={chip.label}
+												type="button"
+												onClick={() => {
+													const next = isMatch ? [] : [...chip.surfs];
+													setSelectedSurfaces(next);
+													onSelectSurfaces?.(next);
+												}}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+													isMatch
+														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+												}`}
+												title={chip.title}
+												data-testid={`radial-wing-quick-surf-${chip.label.replace("/", "-")}`}
+											>
+												[{chip.label}]
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						</details>
+					</div>
+
+					{/* Bottom Actions Bar in Wing mode */}
+					{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
+						<div
+							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
+							style={{
+								left: `${subAnchorX}px`,
+								top: `${hubY + 145}px`,
+								transform: "translate(-50%, 0)",
+							}}
+						>
+							{onOpenTherapy && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenTherapy();
+										onClose();
+									}}
+									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+								>
+									<DentalHandpiece size={14} />
+									<span>Терапия</span>
+								</button>
+							)}
+							{onAddToInvoice && (
+								<button
+									type="button"
+									onClick={() => {
+										onAddToInvoice();
+										onClose();
+									}}
+									className="min-h-[36px] text-xs font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+								>
+									<Coins size={14} />
+									<span>В смету</span>
+								</button>
+							)}
+							{onOpenEndo && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenEndo();
+										onClose();
+									}}
+									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+								>
+									<EndoFileCanal size={14} />
+									<span>Журнал каналов</span>
+								</button>
+							)}
+						</div>
+					)}
+				</div>
+			))}
 		</div>
 	);
 
