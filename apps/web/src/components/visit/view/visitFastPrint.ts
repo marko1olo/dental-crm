@@ -128,7 +128,7 @@ export function executeFastPrint043u({
 
 	StaffActionAuditService.logDocumentPrint({
 		documentType: "emr_card_043",
-		title: "Медицинская карта 043/у",
+		title: "Медицинская карта",
 		patientId: activePatient?.id,
 	});
 	showToast(

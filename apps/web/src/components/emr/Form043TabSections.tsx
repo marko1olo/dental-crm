@@ -309,7 +309,7 @@ export const Form043DiariesTab: React.FC<Form043DiariesTabProps> = React.memo(
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
 						<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
 							<Calendar className="w-4 h-4 text-sky-600" />
-							4. Дневники клинических приёмов (Форма 043/у)
+							4. Дневники клинических приёмов (Медицинская карта)
 						</h3>
 						<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
 							<button
@@ -324,10 +324,10 @@ export const Form043DiariesTab: React.FC<Form043DiariesTabProps> = React.memo(
 									}
 								}}
 								data-testid="form043-synthesize-diary-btn"
-								title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
+								title="Сформировать дневник по МКБ-10 и зубной формуле"
 							>
 								<Sparkles className="w-4 h-4" />
-								<span>Сформировать дневник 043/у по МКБ-10 и формуле</span>
+								<span>Сформировать дневник по МКБ-10 и формуле</span>
 							</button>
 						</div>
 					</div>

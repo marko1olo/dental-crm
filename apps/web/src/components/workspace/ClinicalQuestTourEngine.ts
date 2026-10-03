@@ -335,7 +335,7 @@ export const CLINICAL_QUEST_TRACKS: readonly QuestTrack[] = [
 		id: "solo_doctor",
 		title: "Быстрый старт соло-врача",
 		shortTitle: "Соло-врач",
-		description: "4 ключевые операции за креслом: расписание, одонтограмма, карта 043/у и касса 54-ФЗ.",
+		description: "4 ключевые операции за креслом: расписание, зубная формула, медицинская карта и касса.",
 		roleBadge: "Врач-стоматолог",
 		estimatedMinutes: 2,
 		steps: SOLO_DOCTOR_TRACK_STEPS,

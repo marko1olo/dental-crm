@@ -5,4 +5,6 @@ export * from "./grading.js";
 export * from "./protocol043.js";
 export * from "./oleary.js";
 export * from "./hygieneIndices.js";
+export * from "./extendedHygieneIndices.js";
+export * from "./dynamics.js";
 export * from "./adapters.js";

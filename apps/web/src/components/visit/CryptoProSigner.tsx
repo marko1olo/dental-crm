@@ -1,4 +1,4 @@
-import { CheckCircle2, Lock, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Lock, Printer, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -17,6 +17,7 @@ interface CryptoProSignerProps {
 		signature: string,
 		alreadySavedId?: string | null,
 	) => Promise<void>;
+	onPrintDraft?: () => void;
 }
 
 /*
@@ -96,6 +97,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	lockedAt,
 	ensureDraftSaved,
 	onLock,
+	onPrintDraft,
 }) => {
 	const [certificates, setCertificates] = useState<CertificateInfo[]>([]);
 	const [certificatesLoaded, setCertificatesLoaded] = useState(false);
@@ -334,7 +336,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 					setFailureText(null);
 					setShowPinDialog(true);
 				}}
-				className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl transition-colors border border-zinc-700"
+				className="flex items-center gap-2 px-4 py-2 bg-[var(--teal,var(--brand-primary))] hover:opacity-90 text-[var(--on-teal,white)] rounded-xl transition-colors border border-[var(--teal,var(--brand-primary))] shadow-sm min-h-[44px] cursor-pointer font-medium"
 			>
 				<Lock className="w-4 h-4" />
 				<span>Подписать и закрыть</span>
@@ -356,9 +358,29 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							<ShieldCheck className="w-6 h-6 text-[var(--teal,var(--brand-primary))]" />
 							Подписание дневника
 						</h3>
-						<p className="text-[var(--muted)] text-sm mb-6">
+						<p className="text-[var(--muted)] text-sm mb-4">
 							После подписания редактирование будет заблокировано.
 						</p>
+
+						{/* Бумажная автономия: быстрая печать черновика/бланка в 1 клик (Мандаты 8e, 8n) */}
+						<div className="mb-4">
+							<button
+								type="button"
+								disabled={lockInProgress}
+								onClick={() => {
+									if (onPrintDraft) {
+										onPrintDraft();
+									} else if (typeof window !== "undefined") {
+										window.print();
+									}
+								}}
+								className="w-full py-2.5 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+								title="Распечатать карту или протокол приёма со штампом черновика для бумажной подписи"
+							>
+								<Printer className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+								<span>Печать протокола (черновик со штампом врача)</span>
+							</button>
+						</div>
 
 						<div className="flex gap-2 mb-6 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 							<button
@@ -435,7 +457,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									<p
 										role="status"
 										aria-live="polite"
-										className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-200 text-xs leading-relaxed"
+										className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-800 dark:text-amber-200 text-xs leading-relaxed"
 									>
 										{CRYPTO_SIGNING_UNAVAILABLE_TEXT}
 									</p>
@@ -443,7 +465,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								<div>
 									<label
 										htmlFor="cryptopro-cert-select"
-										className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider"
+										className="block text-xs font-medium text-[var(--muted)] mb-2 uppercase tracking-wider"
 									>
 										Выберите сертификат
 									</label>
@@ -478,7 +500,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									{!isLoadingCerts &&
 									certificatesLoaded &&
 									certificates.length === 0 ? (
-										<p className="mt-2 text-xs text-amber-400">
+										<p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
 											Ни одного сертификата не видно. Проверьте: носитель
 											Рутокен вставлен, КриптоПро установлен, расширение
 											браузера включено. Затем нажмите «Обновить список».
@@ -489,7 +511,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										type="button"
 										onClick={loadCertificates}
 										disabled={isLoadingCerts || lockInProgress}
-										className="mt-2 text-xs text-rose-400 hover:text-rose-300 disabled:opacity-60"
+										className="mt-2 text-xs text-[var(--teal,var(--brand-primary))] hover:underline disabled:opacity-60 cursor-pointer"
 									>
 										{isLoadingCerts ? "Обновляю…" : "Обновить список"}
 									</button>
@@ -529,7 +551,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							<div
 								role="alert"
 								aria-live="assertive"
-								className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-200 text-xs leading-relaxed"
+								className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-800 dark:text-rose-200 text-xs leading-relaxed"
 							>
 								{failureText}
 							</div>
@@ -544,7 +566,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							<div
 								role="status"
 								aria-live="polite"
-								className="mb-4 p-3 rounded-xl bg-zinc-800/70 border border-zinc-700 text-zinc-300 text-xs leading-relaxed"
+								className="mb-4 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] text-xs leading-relaxed"
 							>
 								Отправили подпись и ждём подтверждения сервера — это пара
 								секунд. Не закрывайте окно: пока подтверждения нет, запись НЕ

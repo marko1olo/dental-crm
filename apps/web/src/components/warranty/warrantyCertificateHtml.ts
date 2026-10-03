@@ -431,7 +431,7 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
       </div>
       <div>
         <div class="label">Медицинская карта</div>
-        <div class="val">№ ${patient.cardNumber} (Форма 043/у)</div>
+        <div class="val">№ ${patient.cardNumber}</div>
       </div>
       <div>
         <div class="label">Лечащий врач</div>

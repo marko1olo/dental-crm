@@ -54,6 +54,7 @@ import {
 } from "../consents/InformedConsentModal";
 import type { MedicalCardForm043uData } from "../emr/emr043Types";
 import { Form043PrintModal } from "../emr/Form043PrintModal";
+import { EmrProtocolGeneratorModal } from "../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -244,6 +245,18 @@ export function VisitEmkTab() {
 			}
 		};
 	}, [flushSoloPendingSave]);
+
+	const handleScheduleNextVisit = React.useCallback((daysAhead: number = 5) => {
+		const targetDate = new Date();
+		targetDate.setDate(targetDate.getDate() + daysAhead);
+		const dateStr = targetDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+		const nextText = `Повторный контрольный осмотр и приём назначен на ${dateStr} (+${daysAhead} дн.).`;
+		updateVisitNoteField(
+			"recommendations",
+			appendClinicalText(visitNoteForm?.recommendations || "", nextText, "\n"),
+		);
+		showToast(`Следующий этап запланирован: ${dateStr}`, "success", 4000);
+	}, [visitNoteForm, updateVisitNoteField]);
 
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
 		updateVisitNoteField(
@@ -452,7 +465,9 @@ export function VisitEmkTab() {
 					}
 					onApplyNorm={handleApplyPhysiologicalNorm}
 					onToggleStarProtocols={() => setIsStarProtocolsOpen((v) => !v)}
-					onScheduleNext={() => setIsNextVisitModalOpen(true)}
+					isStarProtocolsOpen={isStarProtocolsOpen}
+					onScheduleNext={() => handleScheduleNextVisit(5)}
+					onOpenConsent={() => setIsConsentModalOpen(true)}
 					onPrint043={() => setIsPrintModalOpen(true)}
 				/>
 				<button
@@ -533,6 +548,8 @@ export function VisitEmkTab() {
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
 					isLocked={isLocked}
+					activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+					onOpenTemplatesModal={() => setIsStarProtocolsOpen(true)}
 				/>
 
 				<EmkAnesthesiaSection
@@ -761,7 +778,116 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
-			{/* Интерактивное модальное окно медицинской карты Форма 043/у */}
+			{/* Клинические протоколы СтАР / МКБ-10 (Мандаты 8e, 8n) */}
+			<EmrProtocolGeneratorModal
+				isOpen={isStarProtocolsOpen}
+				onClose={() => setIsStarProtocolsOpen(false)}
+				patientFullName={activePatient?.fullName}
+				patientBirthDate={activePatient?.birthDate}
+				medicalCardNumber={activePatient?.medicalCardNumber || activePatient?.id}
+				doctorFullName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+				doctorSpecialty={dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт"}
+				initialToothNumber={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+				initialIcd10Code={visitNoteForm?.diagnosis ? String(visitNoteForm.diagnosis).split(" ")[0] : undefined}
+				initialSpecialty={
+					dashboard?.activeVisit?.specialty === "surgery"
+						? "surgery"
+						: dashboard?.activeVisit?.specialty === "orthopedics"
+							? "orthopedics"
+							: dashboard?.activeVisit?.specialty === "periodontics"
+								? "periodontics"
+								: dashboard?.activeVisit?.specialty === "pediatric"
+									? "pediatric"
+									: "therapy"
+				}
+				onApplyDiary={(newDiary) => {
+					if (newDiary.subjectiveComplaints) {
+						updateVisitNoteField(
+							"complaint",
+							appendClinicalText(visitNoteForm?.complaint || "", newDiary.subjectiveComplaints, "\n"),
+						);
+					}
+					if (newDiary.objectiveStatusLocalis) {
+						updateVisitNoteField(
+							"objectiveStatus",
+							appendClinicalText(visitNoteForm?.objectiveStatus || "", newDiary.objectiveStatusLocalis, "\n"),
+						);
+					}
+					if (newDiary.assessmentDiagnosisText || newDiary.assessmentIcd10Code) {
+						const diagText = newDiary.assessmentDiagnosisText
+							? `${newDiary.assessmentIcd10Code ? newDiary.assessmentIcd10Code + " " : ""}${newDiary.assessmentDiagnosisText}${newDiary.toothNumber ? ` (зуб ${newDiary.toothNumber})` : ""}`
+							: (newDiary.assessmentIcd10Code || "");
+						updateVisitNoteField("diagnosis", diagText);
+					}
+					if (newDiary.procedureProtocol) {
+						updateVisitNoteField(
+							"treatmentPlan",
+							appendClinicalText(visitNoteForm?.treatmentPlan || "", newDiary.procedureProtocol, "\n"),
+						);
+					}
+					if (newDiary.homeCareRecommendations) {
+						updateVisitNoteField(
+							"recommendations",
+							appendClinicalText(visitNoteForm?.recommendations || "", newDiary.homeCareRecommendations, "\n"),
+						);
+					}
+					setIsStarProtocolsOpen(false);
+					showToast("Клинический протокол СтАР применён к приёму", "success", 3000);
+				}}
+				onApplyBatchDiaries={(diaries) => {
+					if (!diaries || diaries.length === 0) return;
+					for (const d of diaries) {
+						if (d.subjectiveComplaints) {
+							updateVisitNoteField("complaint", appendClinicalText(visitNoteForm?.complaint || "", d.subjectiveComplaints, "\n"));
+						}
+						if (d.objectiveStatusLocalis) {
+							updateVisitNoteField("objectiveStatus", appendClinicalText(visitNoteForm?.objectiveStatus || "", d.objectiveStatusLocalis, "\n"));
+						}
+						if (d.assessmentDiagnosisText || d.assessmentIcd10Code) {
+							const diagText = d.assessmentDiagnosisText
+								? `${d.assessmentIcd10Code ? d.assessmentIcd10Code + " " : ""}${d.assessmentDiagnosisText}${d.toothNumber ? ` (зуб ${d.toothNumber})` : ""}`
+								: (d.assessmentIcd10Code || "");
+							updateVisitNoteField("diagnosis", diagText);
+						}
+						if (d.procedureProtocol) {
+							updateVisitNoteField("treatmentPlan", appendClinicalText(visitNoteForm?.treatmentPlan || "", d.procedureProtocol, "\n"));
+						}
+						if (d.homeCareRecommendations) {
+							updateVisitNoteField("recommendations", appendClinicalText(visitNoteForm?.recommendations || "", d.homeCareRecommendations, "\n"));
+						}
+					}
+					setIsStarProtocolsOpen(false);
+					showToast(`Применено клинических протоколов: ${diaries.length}`, "success", 3000);
+				}}
+			/>
+
+			{/* Информированное добровольное согласие (ИДС) */}
+			<InformedConsentModal
+				isOpen={isConsentModalOpen}
+				onClose={() => setIsConsentModalOpen(false)}
+				patient={activePatient ? {
+					fullName: activePatient.fullName,
+					birthDate: activePatient.birthDate,
+					passport: activePatient.passport,
+					phone: activePatient.phone,
+					snils: activePatient.snils,
+					address: activePatient.address,
+					cardNumber: activePatient.medicalCardNumber || activePatient.cardNumber || activePatient.id,
+				} : undefined}
+				doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+				doctorSpecialty={dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт"}
+				diagnosisIcd={visitNoteForm?.diagnosis ? String(visitNoteForm.diagnosis).split(" ")[0] : undefined}
+				toothNumbers={dashboard?.activeVisit?.diagnosisTooth ? String(dashboard.activeVisit.diagnosisTooth) : undefined}
+				isLocked={isSignedVisit}
+				isSigned={isSignedVisit}
+				status={isSignedVisit ? "signed" : "draft"}
+				onConsentConfirmed={(payload) => {
+					showToast(`ИДС «${payload.intervention || payload.consentType}» подтверждено`, "success", 3000);
+					setIsConsentModalOpen(false);
+				}}
+			/>
+
+			{/* Интерактивное модальное окно медицинской карты */}
 			<Form043PrintModal
 				isOpen={isPrintModalOpen}
 				onClose={() => setIsPrintModalOpen(false)}
@@ -773,7 +899,7 @@ export function VisitEmkTab() {
 				status={isSignedVisit ? "signed" : "draft"}
 			/>
 
-			{/* Печатная форма 043/у */}
+			{/* Печатная форма медицинской карты */}
 			<EmkPrintableForm043
 				patient={activePatient}
 				visitNoteForm={visitNoteForm}

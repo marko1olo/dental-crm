@@ -2,9 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	calculateCombinedHygieneReport,
+	calculateFedorovVolodkinaScore,
 	calculateKpiScore,
 	calculateOhiSScore,
+	calculatePerioDynamics,
+	calculatePhpScore,
 	calculatePmaScore,
+	calculateSilnessLoeScore,
 	createDefaultPerioTeeth,
 	createHealthyHygieneAssessment,
 	deriveHygieneFromPerioTeeth,
@@ -165,5 +169,105 @@ describe("Dental Hygiene Indices Engine (OHI-S, PMA, KPI Leus)", () => {
 		assert.ok(report.summaryText043.includes("PMA"));
 		assert.ok(report.summaryText043.includes("КПИ"));
 		assert.ok(report.summaryText043.includes("интактны"));
+	});
+
+	it("calculates Silness-Löe cervical plaque index (0.0..3.0)", () => {
+		const healthy = calculateSilnessLoeScore({});
+		assert.equal(healthy.score, 0);
+		assert.equal(healthy.evaluation, "excellent");
+		assert.equal(healthy.isOptimal, true);
+
+		const moderate = calculateSilnessLoeScore([
+			{ toothNumber: 16, silnessScore: 1 },
+			{ toothNumber: 11, silnessScore: 2 },
+			{ toothNumber: 26, silnessScore: 1 },
+			{ toothNumber: 36, silnessScore: 2 },
+			{ toothNumber: 31, silnessScore: 1 },
+			{ toothNumber: 46, silnessScore: 2 },
+		]);
+		assert.equal(moderate.score, 1.5);
+		assert.equal(moderate.evaluation, "moderate");
+		assert.equal(moderate.isOptimal, false);
+	});
+
+	it("calculates Fedorov-Volodkina staining index (1.0..5.0)", () => {
+		const healthy = calculateFedorovVolodkinaScore({});
+		assert.equal(healthy.score, 1.0);
+		assert.equal(healthy.evaluation, "good");
+		assert.equal(healthy.isOptimal, true);
+
+		const poor = calculateFedorovVolodkinaScore([
+			{ toothNumber: 16, fedorovScore: 2 },
+			{ toothNumber: 11, fedorovScore: 3 },
+			{ toothNumber: 26, fedorovScore: 2 },
+			{ toothNumber: 36, fedorovScore: 3 },
+			{ toothNumber: 31, fedorovScore: 2 },
+			{ toothNumber: 46, fedorovScore: 2 },
+		]);
+		// avg = (2+3+2+3+2+2)/6 = 14/6 = 2.3
+		assert.equal(poor.score, 2.3);
+		assert.equal(poor.evaluation, "poor");
+	});
+
+	it("calculates Podshadley-Haley PHP index (0.0..5.0)", () => {
+		const healthy = calculatePhpScore({});
+		assert.equal(healthy.score, 0);
+		assert.equal(healthy.evaluation, "excellent");
+		assert.equal(healthy.isOptimal, true);
+
+		const moderate = calculatePhpScore([
+			{ toothNumber: 16, phpScore: 1 },
+			{ toothNumber: 11, phpScore: 2 },
+			{ toothNumber: 26, phpScore: 1 },
+			{ toothNumber: 36, phpScore: 1 },
+			{ toothNumber: 31, phpScore: 1 },
+			{ toothNumber: 46, phpScore: 1 },
+		]);
+		// avg = (1+2+1+1+1+1)/6 = 7/6 = 1.2
+		assert.equal(moderate.score, 1.2);
+		assert.equal(moderate.evaluation, "moderate");
+	});
+
+	it("calculates periodontal visit dynamics ('Было / Стало') correctly", () => {
+		const baseline = {
+			fmbsPercent: 32,
+			fmpsPercent: 45,
+			meanPocketDepthMm: 3.8,
+			maxPocketDepthMm: 6,
+			meanCalMm: 4.0,
+			maxCalMm: 6,
+			deepPocketsCount: 8,
+			moderatePocketsCount: 14,
+			normalPocketsCount: 170,
+			sitesWithBopCount: 61,
+			sitesWithPlaqueCount: 86,
+			sitesWithSuppurationCount: 2,
+			sitesWithCalculusCount: 20,
+			teethWithMobilityCount: 2,
+			teethWithFurcationCount: 1,
+			totalMeasuredSitesCount: 192,
+			assessedTeethCount: 32,
+		};
+
+		const followUp = {
+			...baseline,
+			fmbsPercent: 8,
+			fmpsPercent: 12,
+			meanPocketDepthMm: 2.3,
+			deepPocketsCount: 1,
+			moderatePocketsCount: 4,
+		};
+
+		const dynamics = calculatePerioDynamics(followUp, baseline, {
+			baselineDate: "12.01.2026",
+			currentDate: "20.02.2026",
+		});
+
+		assert.equal(dynamics.hasComparison, true);
+		assert.equal(dynamics.overallTrend, "improved");
+		assert.equal(dynamics.bopDiffPercent, -24);
+		assert.equal(dynamics.deepPocketsDiffCount, -7);
+		assert.ok(dynamics.summaryRu.includes("Положительная динамика"));
+		assert.ok(dynamics.form043DynamicsTextRu.includes("12.01.2026"));
 	});
 });

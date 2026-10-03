@@ -44,7 +44,7 @@ export const OdontogramPrintA4: React.FC<OdontogramPrintA4Props> = ({
 						119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99 • dente-clinic.ru
 					</div>
 					<h1 className="text-lg font-black tracking-tight text-slate-950 uppercase mt-2">
-						Клиническая зубная формула (Форма № 043/у)
+						Клиническая зубная формула (Медицинская карта)
 					</h1>
 					<p className="text-xs font-semibold text-slate-600">
 						Приказ Минздрава России от 15.12.2014 № 834н • Прикус: {isPediatricMode ? "Детский / сменный (зубы 51–85)" : "Постоянный взрослый (зубы 11–48)"}

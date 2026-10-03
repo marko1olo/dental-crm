@@ -90,7 +90,7 @@ export function generateComprehensivePerio043Text(
 		lines.push("   • Шинирование подвижных зубов стекловолоконной лентой (Ribbond / GrandTEC).");
 	}
 	lines.push("   • Обучение контролируемой индивидуальной гигиене полости рта (межзубные ёршики, монопучковая щетка, ирригатор).");
-	lines.push("   • Диспансерный пародонтологический ре-осмотр и ре-оценка (Re-evaluation) через 6-8 недель.");
+	lines.push("   • Контрольный пародонтологический осмотр и переоценка (Re-evaluation) через 6-8 недель.");
 
 	if (options?.customNotes) {
 		lines.push("");

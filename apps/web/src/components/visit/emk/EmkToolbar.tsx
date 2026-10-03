@@ -28,6 +28,7 @@ export interface EmkToolbarProps {
 	isCopilotOpen?: boolean | undefined;
 	onScheduleNextVisit?: ((days: number) => void) | undefined;
 	onScheduleNext?: (() => void) | undefined;
+	onOpenConsent?: (() => void) | undefined;
 	onPrint043?: (() => void) | undefined;
 	hasUnsavedChanges?: boolean | undefined;
 	voicePilotNode?: React.ReactNode | undefined;
@@ -46,6 +47,7 @@ export function EmkToolbar({
 	isCopilotOpen = false,
 	onScheduleNextVisit = () => {},
 	onScheduleNext,
+	onOpenConsent,
 	onPrint043,
 	hasUnsavedChanges = false,
 	voicePilotNode,
@@ -243,8 +245,22 @@ export function EmkToolbar({
 								className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal)] hover:bg-[var(--teal-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 							>
 								<Sparkles className="w-3.5 h-3.5 shrink-0" />
-								<span>Каталог услуг</span>
+								<span>Клинические протоколы (СтАР)</span>
 							</button>
+							{onOpenConsent && (
+								<button
+									type="button"
+									data-testid="btn-open-consent-toolbar"
+									onClick={() => {
+										onOpenConsent();
+										setIsExtraMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
+								>
+									<ShieldCheck className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+									<span>Согласие пациента (ИДС)</span>
+								</button>
+							)}
 						</div>
 					)}
 				</div>
