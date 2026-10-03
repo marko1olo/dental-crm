@@ -257,14 +257,14 @@ export function isLowSpecDevice(): boolean {
 		return true;
 	}
 
-	if (typeof document !== "undefined") {
+	if (typeof document !== "undefined" && document.documentElement) {
 		const root = document.documentElement;
 		if (
-			root.getAttribute("data-low-spec") === "true" ||
-			root.getAttribute("data-hardware-tier") === "low" ||
-			root.getAttribute("data-perf") === "low" ||
-			root.classList.contains("low-spec-mode") ||
-			root.classList.contains("low-spec-perf")
+			root.getAttribute?.("data-low-spec") === "true" ||
+			root.getAttribute?.("data-hardware-tier") === "low" ||
+			root.getAttribute?.("data-perf") === "low" ||
+			root.classList?.contains?.("low-spec-mode") ||
+			root.classList?.contains?.("low-spec-perf")
 		) {
 			return true;
 		}
