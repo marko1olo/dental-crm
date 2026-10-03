@@ -332,6 +332,17 @@ html[data-theme="dark"].low-spec-mode .card-glass {
 	background-color: var(--paper-strong) !important;
 }
 
+/* DentalPRO Expo26 Lateral Drawer semi-transparent schedule backdrop protection */
+html [data-testid="quick-booking-drawer"],
+html .quick-booking-drawer-overlay,
+html[data-hardware-tier="low"] .quick-booking-drawer-overlay,
+html[data-low-spec="true"] .quick-booking-drawer-overlay,
+html.low-spec-mode .quick-booking-drawer-overlay,
+[data-testid="quick-booking-drawer"],
+.quick-booking-drawer-overlay {
+	background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
 /* Header, topbar, toolbar solid background */
 html[data-hardware-tier="low"] .app-header,
 html[data-hardware-tier="low"] .topbar,
@@ -788,6 +799,16 @@ html.low-spec-mode .transition-all {
 	contain: paint layout;
 	content-visibility: auto;
 	contain-intrinsic-size: 1px 84px;
+}
+
+/* Exemption for active/hovered appointment cards to prevent clipping popovers/HUDs (Apple HIG & Progressive Disclosure) */
+.appointment-card:hover,
+.appointment-card.is-hovered,
+.appointment-card[data-hovered="true"],
+.appointment-block:hover,
+.schedule-card:hover {
+	contain: none !important;
+	content-visibility: visible !important;
 }
 
 /* Tier C: Large Clinical Protocol & Treatment Plan Cards (~120px - 180px height) */

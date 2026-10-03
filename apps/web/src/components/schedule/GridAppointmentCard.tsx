@@ -37,6 +37,7 @@ import {
 	getGridAppointmentCardContainerClasses,
 	extractTeethList,
 	resolveAppointmentClinicalBadges,
+	resolveAppointmentLabStatus,
 } from "./appointmentCardHelpers";
 import { GridAppointmentHoverHud } from "./GridAppointmentHoverHud";
 import { GridAppointmentMenu } from "./GridAppointmentMenu";
@@ -154,7 +155,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 	const isCito = isAppointmentCito(a);
 	const pBalance = resolvePatientBalance(patObj);
 	const pAllergyAlert = getPatientAllergyAlert(patObj, a?.reason);
-	const clinicalBadges = resolveAppointmentClinicalBadges(a, patObj, pBalance, pAllergyAlert);
+	const labStatusInfo = resolveAppointmentLabStatus(a);
+	const clinicalBadges = resolveAppointmentClinicalBadges(a, patObj, pBalance, pAllergyAlert, labStatusInfo);
 
 	const diffMs = Date.parse(a.endsAt) - Date.parse(a.startsAt);
 	const durationMin =
@@ -204,7 +206,12 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				);
 				e.dataTransfer.effectAllowed = "move";
 			}}
-			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 52px" }}
+			style={
+				isHovered
+					? { zIndex: 50, position: "relative", contain: "none", contentVisibility: "visible" }
+					: { contentVisibility: "auto", containIntrinsicSize: "1px 52px" }
+			}
+			data-hovered={isHovered ? "true" : undefined}
 			className={`appointment-card m-0 mb-0 w-full h-full text-left p-2 rounded-xl border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1.5 transition-all min-h-[44px] cursor-grab active:cursor-grabbing relative ${getGridAppointmentCardContainerClasses(
 				a.status,
 				{ collision: Boolean(collision), isCito, docTheme },
@@ -337,8 +344,23 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									).map((badge) => (
 										<span
 											key={badge.id}
-											className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-bold border shrink-0 ${badge.badgeClass}`}
+											className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-bold border shrink-0 ${badge.badgeClass} ${badge.id === "lab_order" ? "cursor-pointer hover:opacity-85 transition-opacity" : ""}`}
 											title={badge.title}
+											onClick={
+												badge.id === "lab_order"
+													? (e) => {
+															e.stopPropagation();
+															useAppStore.getState().setCurrentView("lab");
+															if (typeof window !== "undefined") {
+																window.location.hash = "#lab";
+															}
+															showToast(
+																`ЗТЛ: ${labStatusInfo?.labelRu || "Наряд"} (${labStatusInfo?.orderNumber || "Наряд"})`,
+																"info",
+															);
+														}
+													: undefined
+											}
 											data-testid={`badge-${badge.id}-${a.id}`}
 										>
 											<span className="text-[11px] leading-none">{badge.icon}</span>
@@ -372,7 +394,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									}}
 									className={`h-[24px] min-h-[24px] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 w-fit max-w-full truncate ${
 										isAppointmentInChair(a.status)
-											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs ring-1 ring-teal-400/50 dark:bg-teal-500/25 dark:text-teal-300 dark:border dark:border-teal-400/50 dark:ring-0"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs ring-1 ring-teal-400/50 dark:bg-teal-600 dark:text-white font-bold shadow-xs dark:border-0 dark:ring-0"
 											: a.status === "arrived"
 												? "bg-amber-500 text-white shadow-xs"
 												: a.status === "confirmed"
@@ -565,6 +587,30 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									>
 										<FileText size={9} className="shrink-0" />
 										<span>План</span>
+									</span>
+								)}
+								{labStatusInfo && (
+									<span
+										className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border shrink-0 transition-transform hover:scale-105 cursor-pointer ${labStatusInfo.badgeClass}`}
+										title={`Статус наряда ЗТЛ: ${labStatusInfo.labelRu}${labStatusInfo.workTypeRu ? ` (${labStatusInfo.workTypeRu})` : ""}${labStatusInfo.colorVita ? ` VITA ${labStatusInfo.colorVita}` : ""}. Нажмите для перехода в ЗТЛ`}
+										onClick={(e) => {
+											e.stopPropagation();
+											useAppStore.getState().setCurrentView("lab");
+											if (typeof window !== "undefined") {
+												window.location.hash = "#lab";
+											}
+											showToast(`ЗТЛ: ${labStatusInfo.labelRu} (${labStatusInfo.orderNumber || "Наряд"})`, "info");
+										}}
+										data-testid={`appointment-lab-badge-${a.id}`}
+									>
+										<span className="text-[10px] leading-none">
+											{labStatusInfo.isOverdue ? "⚠️" : labStatusInfo.state === "ready_in_clinic" ? "✓" : "⏳"}
+										</span>
+										<span>
+											{labStatusInfo.isOverdue
+												? `ЗТЛ: +${labStatusInfo.daysOverdue}д!`
+												: labStatusInfo.shortLabelRu}
+										</span>
 									</span>
 								)}
 							</div>

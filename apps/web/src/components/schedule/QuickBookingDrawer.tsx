@@ -111,8 +111,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
   const drawerElement = (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/20 backdrop-blur-[1px] transition-opacity"
+      className="fixed inset-0 z-50 flex justify-end bg-black/25 transition-opacity quick-booking-drawer-overlay"
       data-testid="quick-booking-drawer"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.25)" }}
       onKeyDown={handleKeyDown}
       role="dialog"
       aria-modal="true"
