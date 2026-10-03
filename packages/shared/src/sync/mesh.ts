@@ -1073,10 +1073,11 @@ export function createLanP2PMessage<TPayload extends Record<string, unknown>>(pa
 	senderRole: LanNodeRole;
 	senderName: string;
 	organizationId: string;
+	branchId?: string | undefined;
 	payload: TPayload;
-	vectorClock?: VectorClock;
-	messageId?: string;
-	sentAt?: string;
+	vectorClock?: VectorClock | undefined;
+	messageId?: string | undefined;
+	sentAt?: string | undefined;
 }): LanP2PMessage<TPayload> {
 	const messageId =
 		params.messageId ||
@@ -1088,6 +1089,7 @@ export function createLanP2PMessage<TPayload extends Record<string, unknown>>(pa
 		eventType: params.eventType,
 		senderNodeId: params.senderNodeId,
 		organizationId: params.organizationId,
+		branchId: params.branchId,
 		payload: params.payload,
 		sentAt,
 	});
@@ -1099,6 +1101,7 @@ export function createLanP2PMessage<TPayload extends Record<string, unknown>>(pa
 		senderRole: params.senderRole,
 		senderName: params.senderName,
 		organizationId: params.organizationId,
+		branchId: params.branchId,
 		sentAt,
 		payload: params.payload,
 		vectorClock: params.vectorClock,
@@ -1146,6 +1149,7 @@ export function validateLanP2PMessage(
 			eventType: msg.eventType,
 			senderNodeId: msg.senderNodeId,
 			organizationId: msg.organizationId,
+			branchId: msg.branchId,
 			payload: msg.payload,
 			sentAt: msg.sentAt,
 		});

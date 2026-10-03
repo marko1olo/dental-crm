@@ -1,5 +1,5 @@
 /**
- * DENTE CRM — Unified Offline Subsystem
+ * DENTE CRM — Unified Offline Subsystem Facade
  *
  * MANDATE COMPLIANCE:
  * - Mandate 8c: Low-spec 5400 RPM HDD zero-seek optimization.
@@ -8,9 +8,4 @@
  * - Mandate 8s: Friction-killer — unified offline entry point.
  */
 
-export * from "./offlineVisitDrafting.js";
-export * from "./offlineAppointmentQueue.js";
-export * from "./offlinePricelistCache.js";
-export * from "./offlinePaymentQueue.js";
-export * from "./networkResilience.js";
-export * from "../services/offline/index.js";
+export * from "../services/offline/index";

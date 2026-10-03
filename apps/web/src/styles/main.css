@@ -1395,6 +1395,11 @@ html.dark .boot-state .boot-subtitle,
 	background: #f59e0b;
 }
 
+.workspace-continuity-dot--lan {
+	background: #0ea5e9;
+	box-shadow: 0 0 6px rgba(14, 165, 233, 0.4);
+}
+
 .workspace-continuity-dot--online {
 	background: #10b981;
 }
@@ -1410,6 +1415,15 @@ html.dark .boot-state .boot-subtitle,
 
 .workspace-continuity-strip.offline .workspace-continuity-text {
 	color: #92400e;
+}
+
+.workspace-continuity-strip.lan {
+	background: rgba(14, 165, 233, 0.08);
+	border-color: rgba(14, 165, 233, 0.25);
+}
+
+.workspace-continuity-strip.lan .workspace-continuity-text {
+	color: #0369a1;
 }
 
 .workspace-continuity-actions {

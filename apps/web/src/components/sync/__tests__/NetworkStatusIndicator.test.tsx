@@ -70,5 +70,22 @@ describe("NetworkStatusIndicator & Offline Mutation Outbox", () => {
 			"Indicator must be keyboard accessible via tabIndex 0",
 		);
 	});
+
+	it("5. Quiet Telemetry invariant: compact mode omits wordy text labels to prevent clinical UI clutter", () => {
+		const markup = renderToStaticMarkup(
+			createElement(NetworkStatusIndicator, { compact: true }),
+		);
+
+		// Compact mode must retain root capsule, accessibility, and indicator dot
+		assert.ok(markup.includes('data-testid="network-status-indicator"'));
+		assert.ok(markup.includes('role="button"'));
+		assert.ok(markup.includes('rounded-full'));
+
+		// But must NOT render bulky text tags ("Локальная сеть (LAN)") in the button body
+		assert.ok(
+			!markup.includes("Локальная сеть (LAN)"),
+			"Compact mode must enforce Quiet Telemetry and eliminate screaming LAN text ovals",
+		);
+	});
 });
 

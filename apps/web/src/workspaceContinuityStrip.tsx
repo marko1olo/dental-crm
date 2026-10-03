@@ -46,18 +46,23 @@ export function WorkspaceContinuityStrip({
 	isSyncingMutations = false,
 	onClearMutations,
 }: WorkspaceContinuityStripProps) {
-	const effectiveOnline = networkState ? networkState.isOnline : isOnline;
+	const isLan = Boolean(networkState?.isLan || networkState?.mode === "lan_online");
+	const effectiveConnected = networkState
+		? (networkState.isOnline || networkState.isLan)
+		: isOnline;
+	const isPureOffline = !effectiveConnected;
+	const isLanOnly = isLan && !networkState?.isOnline;
 	const totalPending =
 		pendingVisitSaveCount + pendingSpeechChunkCount + pendingMutationCount;
 
 	const visible =
-		!effectiveOnline ||
+		isPureOffline ||
+		isLanOnly ||
 		totalPending > 0 ||
 		browserContinuityCritical;
 
 	if (!visible) return null;
 
-	const isOffline = !effectiveOnline;
 	const statusText = isSyncingMutations
 		? totalPending > 0
 			? `Синхронизация (${pluralizeChanges(totalPending)} в очереди)`
@@ -66,11 +71,11 @@ export function WorkspaceContinuityStrip({
 			? networkState.mode === "cloud_online"
 				? `В сети${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
 				: networkState.mode === "lan_online"
-					? `Автономный режим (Wi-Fi)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
+					? `Локальная сеть (Wi-Fi)${networkState.rttMs !== null ? ` · ${networkState.rttMs} мс` : ""}`
 					: totalPending > 0
 						? `Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
 						: "Автономный офлайн"
-			: isOffline
+			: isPureOffline
 				? totalPending > 0
 					? `Автономный режим (${pluralizeChanges(totalPending)} в очереди)`
 					: "Автономный офлайн"
@@ -78,7 +83,7 @@ export function WorkspaceContinuityStrip({
 
 	return (
 		<section
-			className={`workspace-continuity-strip offline-continuity-strip ${isOffline ? "offline" : "queued"}`}
+			className={`workspace-continuity-strip offline-continuity-strip ${isPureOffline ? "offline" : isLanOnly ? "lan" : "queued"}`}
 			role="status"
 			aria-live="polite"
 		>
@@ -86,20 +91,24 @@ export function WorkspaceContinuityStrip({
 			<div className="workspace-continuity-left">
 				<span
 					className={`workspace-continuity-dot ${
-						isOffline
+						isPureOffline
 							? "workspace-continuity-dot--offline"
-							: totalPending > 0
-								? "workspace-continuity-dot--queued"
-								: "workspace-continuity-dot--online"
+							: isLanOnly
+								? "workspace-continuity-dot--lan"
+								: totalPending > 0
+									? "workspace-continuity-dot--queued"
+									: "workspace-continuity-dot--online"
 					}`}
 					aria-hidden="true"
 				/>
 				<span className="workspace-continuity-text">
-					{isOffline
+					{isPureOffline
 						? `Офлайн · Данные сохраняются локально${totalPending > 0 ? ` (${pluralizeChanges(totalPending)})` : ""}`
-						: totalPending > 0
-							? `Очередь синхронизации: ${pluralizeChanges(totalPending)}`
-							: statusText}
+						: isLanOnly
+							? `Локальная сеть (Wi-Fi)${networkState?.rttMs !== null && networkState?.rttMs !== undefined ? ` · ${networkState.rttMs} мс` : ""}${totalPending > 0 ? ` · ${pluralizeChanges(totalPending)} в очереди` : ""}`
+							: totalPending > 0
+								? `Очередь синхронизации: ${pluralizeChanges(totalPending)}`
+								: statusText}
 				</span>
 			</div>
 

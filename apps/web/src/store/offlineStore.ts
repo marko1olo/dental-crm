@@ -28,6 +28,7 @@ import {
 	saveOfflineDraft,
 	updateOfflineMutationStatus,
 } from "../utils/offlineMutationQueue";
+import { OfflineSyncService } from "../services/offline/offlineSyncService";
 
 export interface OfflineStore {
 	networkState: NetworkState;
@@ -130,7 +131,8 @@ export const useOfflineStore = create<OfflineStore>((set, get) => ({
 
 	syncOutbox: async (executor) => {
 		const { isSyncing, networkState } = get();
-		if (isSyncing || !networkState.isOnline) {
+		const isConnected = networkState.isOnline || networkState.isLan;
+		if (isSyncing || !isConnected) {
 			return { syncedCount: 0, failedCount: 0 };
 		}
 
@@ -139,42 +141,58 @@ export const useOfflineStore = create<OfflineStore>((set, get) => ({
 		let failedCount = 0;
 
 		try {
-			const pending = await getPendingOfflineMutations();
+			if (executor) {
+				const pending = await getPendingOfflineMutations();
 
-			for (const mutation of pending) {
-				try {
-					await updateOfflineMutationStatus(mutation.mutationId, "syncing");
+				for (const mutation of pending) {
+					try {
+						await updateOfflineMutationStatus(mutation.mutationId, "syncing");
 
-					let success = true;
-					if (executor) {
-						success = await executor(mutation);
-					}
+						const success = await executor(mutation);
 
-					if (success) {
-						await updateOfflineMutationStatus(mutation.mutationId, "synced");
-						syncedCount++;
-					} else {
+						if (success) {
+							await updateOfflineMutationStatus(mutation.mutationId, "synced");
+							syncedCount++;
+						} else {
+							await updateOfflineMutationStatus(
+								mutation.mutationId,
+								"failed",
+								"Sync executor returned false",
+							);
+							failedCount++;
+						}
+					} catch (err) {
+						const errorMsg =
+							err instanceof Error ? err.message : "Sync failure";
 						await updateOfflineMutationStatus(
 							mutation.mutationId,
 							"failed",
-							"Sync executor returned false",
+							errorMsg,
 						);
 						failedCount++;
 					}
-				} catch (err) {
-					const errorMsg =
-						err instanceof Error ? err.message : "Sync failure";
-					await updateOfflineMutationStatus(
-						mutation.mutationId,
-						"failed",
-						errorMsg,
-					);
-					failedCount++;
+				}
+
+				// Clean synced mutations
+				await clearSyncedOfflineMutations();
+			} else {
+				// Canonical batch drain to sync gateway /api/sync/gateway
+				const drainResult = await OfflineSyncService.getInstance().drainOutbox();
+				syncedCount =
+					drainResult.appliedCount +
+					drainResult.duplicateCount +
+					drainResult.mergedCount;
+				failedCount = drainResult.failedCount;
+
+				if (drainResult.errors.length > 0 && syncedCount === 0) {
+					const firstError = drainResult.errors[0];
+					const errText =
+						firstError?.error ||
+						(firstError as unknown as { message?: string })?.message ||
+						"Sync gateway batch drain failed";
+					throw new Error(errText);
 				}
 			}
-
-			// Clean synced mutations
-			await clearSyncedOfflineMutations();
 
 			const remaining = await getPendingOfflineMutations();
 			const metrics = await getOfflineQueueMetrics();
@@ -191,7 +209,12 @@ export const useOfflineStore = create<OfflineStore>((set, get) => ({
 		} catch (err) {
 			const errorMsg =
 				err instanceof Error ? err.message : "General sync error";
+			const remaining = await getPendingOfflineMutations().catch(() => []);
+			const metrics = await getOfflineQueueMetrics().catch(() => initialMetrics);
 			set({
+				pendingMutations: remaining,
+				pendingMutationCount: remaining.length,
+				metrics,
 				isSyncing: false,
 				lastSyncError: errorMsg,
 			});

@@ -304,6 +304,7 @@ export const lanP2PMessageSchema = z.object({
 	senderRole: lanNodeRoleSchema,
 	senderName: z.string().min(1).max(128),
 	organizationId: z.string().min(1),
+	branchId: z.string().optional(),
 	sentAt: z.string(),
 	payload: z.record(z.string(), z.unknown()),
 	vectorClock: vectorClockSchema.optional(),

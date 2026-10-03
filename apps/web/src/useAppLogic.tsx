@@ -240,6 +240,10 @@ import {
 	onCrossTabClinicalEntityChange,
 	scheduleStoragePruneIdle,
 } from "./services/storage";
+import { lanHeartbeatManager } from "./services/lanDiscovery/lanServerDiscovery";
+import { lanMeshReplicationService } from "./services/offline/lanMeshReplicationService";
+import { lanP2PDispatcher } from "./services/offline/lanP2PDispatcher";
+import type { LanNodeRole } from "@dental/shared";
 import { describeMprClinicalPresetProjectionFallback } from "./mprClinicalStatus";
 import {
 	dentalMaterialKindLabels,
@@ -3421,6 +3425,58 @@ export function useAppLogic(): any {
 			unsubClinical();
 		};
 	}, [loadDashboard, setDashboard]);
+
+	useEffect(() => {
+		// DENTE LAN Mesh & Offline Server Discovery Lifecycle (Mandate 8e, 8n)
+		lanHeartbeatManager.start();
+
+		const unsubServer = lanHeartbeatManager.onServerChanged((server) => {
+			if (server && server.status === "online") {
+				lanMeshReplicationService.registerPeerNode({
+					nodeId: server.serverId,
+					role: "primary_server",
+					name: server.serverName,
+					baseUrl: server.baseUrl,
+					ipAddresses: server.lanAddresses || [],
+					port: server.apiPort || 4100,
+					status: server.status === "online" ? "online" : "degraded",
+					lastSeenIso: server.discoveredAt,
+					vectorClock: {},
+				});
+
+				// Connect WebSocket for instantaneous (<50ms) peer events
+				const wsProtocol = server.baseUrl.startsWith("https") ? "wss:" : "ws:";
+				const wsHost = server.baseUrl.replace(/^https?:\/\//, "");
+				lanP2PDispatcher.connectWebSocket(`${wsProtocol}//${wsHost}/api/lan/p2p/ws`);
+			}
+
+			lanMeshReplicationService.evaluateNetworkTier({
+				isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
+				isCloudReachable: lanHeartbeatManager.getState().isCloudReachable,
+				lanServer: server,
+			});
+		});
+
+		return () => {
+			unsubServer();
+			lanHeartbeatManager.stop();
+			lanP2PDispatcher.disconnectWebSocket();
+		};
+	}, []);
+
+	useEffect(() => {
+		const lanRole: LanNodeRole =
+			selectedWorkspaceRole === "doctor"
+				? "doctor_tablet"
+				: selectedWorkspaceRole === "administrator"
+					? "reception_workstation"
+					: "autonomous_workstation";
+
+		lanP2PDispatcher.configure({
+			nodeRole: lanRole,
+			organizationId: dashboard?.clinic?.id || undefined,
+		});
+	}, [selectedWorkspaceRole, dashboard?.clinic?.id]);
 
 	useEffect(() => {
 		if (!dashboard) return;

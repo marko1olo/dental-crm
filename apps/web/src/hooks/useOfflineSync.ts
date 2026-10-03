@@ -73,7 +73,8 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 		[],
 	);
 
-	const prevOnlineRef = useRef(isOnline);
+	const isConnected = isOnline || isLan;
+	const prevConnectedRef = useRef(isConnected);
 	const isSyncing = isStoreSyncing || isServiceSyncing;
 	const isMountedRef = useRef(true);
 
@@ -141,10 +142,10 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 		}
 	}, [refresh, autoRefreshIntervalMs]);
 
-	// 3. Выполнение синхронизации
+	// 3. Выполнение синхронизации (разрешено как при доступе к облаку, так и при локальной сети LAN клиники)
 	const syncNow = useCallback(
 		async (drainOptions?: SyncBatchDrainOptions): Promise<SyncBatchDrainResult> => {
-			if (!isOnline) {
+			if (!isOnline && !isLan) {
 				return {
 					processedCount: 0,
 					appliedCount: 0,
@@ -183,6 +184,7 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 		},
 		[
 			isOnline,
+			isLan,
 			batchSize,
 			maxRetries,
 			baseBackoffMs,
@@ -196,16 +198,16 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 		],
 	);
 
-	// 4. Автоматический дренаж очереди при возвращении в сеть (Reconnect)
+	// 4. Автоматический дренаж очереди при возвращении в сеть (Reconnect — Cloud или LAN)
 	useEffect(() => {
-		const wasOffline = !prevOnlineRef.current;
-		const nowOnline = isOnline;
-		prevOnlineRef.current = isOnline;
+		const wasConnected = prevConnectedRef.current;
+		const nowConnected = isOnline || isLan;
+		prevConnectedRef.current = nowConnected;
 
-		if (wasOffline && nowOnline && autoSyncOnReconnect && pendingMutationCount > 0) {
+		if (!wasConnected && nowConnected && autoSyncOnReconnect && pendingMutationCount > 0) {
 			void syncNow();
 		}
-	}, [isOnline, autoSyncOnReconnect, pendingMutationCount, syncNow]);
+	}, [isOnline, isLan, autoSyncOnReconnect, pendingMutationCount, syncNow]);
 
 	// 5. Удобные обертки для мутаций и черновиков
 	const enqueueMutation = useCallback(

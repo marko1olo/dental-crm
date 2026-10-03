@@ -292,4 +292,66 @@ describe("LanP2PDispatcher — Instantaneous Clinical P2P Messaging & Multi-Tran
 		assert.equal(typeof status.totalSentMessages, "number");
 		assert.equal(typeof status.totalReceivedMessages, "number");
 	});
+
+	it("7. Branch isolation: messages from another branch of the same clinic network are strictly filtered out", async () => {
+		const branch1Reception = new LanP2PDispatcher({
+			nodeId: "reception-branch-1",
+			nodeRole: "reception_workstation",
+			organizationId: "org-dental-chain",
+			branchId: "branch-lenina-01",
+		});
+
+		let branch1EventReceived = false;
+		branch1Reception.onAnyEvent(() => {
+			branch1EventReceived = true;
+		});
+
+		// Message broadcast from Branch 2 (same organization, different branch)
+		const branch2Message = createLanP2PMessage({
+			eventType: "assistant_call_cito",
+			senderNodeId: "tablet-branch-2-cab-3",
+			senderRole: "doctor_tablet",
+			senderName: "Cab 3 Doctor Tablet (Branch Mira)",
+			organizationId: "org-dental-chain",
+			branchId: "branch-mira-02", // Different branch!
+			payload: {
+				callId: "cito-branch2-001",
+				cabinetNumber: 3,
+				urgency: "cito_emergency",
+				reason: "anesthesia_aid",
+				doctorId: "doc-branch2",
+				doctorName: "Dr Branch 2",
+				calledAt: new Date().toISOString(),
+				status: "pending",
+			},
+		});
+
+		const result = branch1Reception.handleIncomingRawMessage(branch2Message, "broadcast_channel");
+		assert.equal(result, false, "Cross-branch message must be filtered out to protect branch isolation");
+		assert.equal(branch1EventReceived, false, "Branch 1 listener must NOT receive alerts from Branch 2");
+
+		// Message broadcast from Branch 1 (matching branch)
+		const branch1Message = createLanP2PMessage({
+			eventType: "assistant_call_cito",
+			senderNodeId: "tablet-branch-1-cab-1",
+			senderRole: "doctor_tablet",
+			senderName: "Cab 1 Doctor Tablet (Branch Lenina)",
+			organizationId: "org-dental-chain",
+			branchId: "branch-lenina-01", // Matching branch!
+			payload: {
+				callId: "cito-branch1-001",
+				cabinetNumber: 1,
+				urgency: "cito_emergency",
+				reason: "anesthesia_aid",
+				doctorId: "doc-branch1",
+				doctorName: "Dr Branch 1",
+				calledAt: new Date().toISOString(),
+				status: "pending",
+			},
+		});
+
+		const resultMatch = branch1Reception.handleIncomingRawMessage(branch1Message, "broadcast_channel");
+		assert.equal(resultMatch, true, "Same-branch message must be processed");
+		assert.equal(branch1EventReceived, true, "Branch 1 listener must receive alerts from its own branch");
+	});
 });

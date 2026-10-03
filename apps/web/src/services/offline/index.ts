@@ -17,3 +17,9 @@ export * from "./offlineIntegrityService";
 export * from "./lanP2PDispatcher";
 export * from "./lowSpecHddOptimizer";
 
+// Domain queues & network resilience (Mandate 8c, 8e, 8n)
+export * from "../../offline/offlineVisitDrafting";
+export * from "../../offline/offlineAppointmentQueue";
+export * from "../../offline/offlinePricelistCache";
+export * from "../../offline/offlinePaymentQueue";
+export * from "../../offline/networkResilience";

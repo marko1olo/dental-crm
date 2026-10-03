@@ -40,6 +40,7 @@ export interface LanP2PDispatcherConfig {
 	nodeRole?: LanNodeRole;
 	nodeName?: string;
 	organizationId?: string;
+	branchId?: string;
 	customWebSocketUrl?: string | null;
 	fetchImpl?: typeof fetch;
 }
@@ -49,6 +50,7 @@ export interface LanP2PDispatcherStatus {
 	nodeRole: LanNodeRole;
 	nodeName: string;
 	organizationId: string;
+	branchId?: string | undefined;
 	isBroadcastChannelActive: boolean;
 	isWebSocketConnected: boolean;
 	activeTransportCount: number;
@@ -86,6 +88,7 @@ export class LanP2PDispatcher {
 	private nodeRole: LanNodeRole = "doctor_tablet";
 	private nodeName = "Doctor Tablet Workstation";
 	private organizationId = "default-org";
+	private branchId?: string;
 
 	private broadcastChannel: BroadcastChannel | null = null;
 	private webSocket: WebSocket | null = null;
@@ -112,6 +115,7 @@ export class LanP2PDispatcher {
 		if (config?.nodeRole) this.nodeRole = config.nodeRole;
 		if (config?.nodeName) this.nodeName = config.nodeName;
 		if (config?.organizationId) this.organizationId = config.organizationId;
+		if (config?.branchId) this.branchId = config.branchId;
 		if (config?.customWebSocketUrl !== undefined)
 			this.customWebSocketUrl = config.customWebSocketUrl;
 		if (config?.fetchImpl) this.customFetch = config.fetchImpl;
@@ -140,6 +144,7 @@ export class LanP2PDispatcher {
 		if (config.nodeRole) this.nodeRole = config.nodeRole;
 		if (config.nodeName) this.nodeName = config.nodeName;
 		if (config.organizationId) this.organizationId = config.organizationId;
+		if (config.branchId !== undefined) this.branchId = config.branchId;
 		if (config.customWebSocketUrl !== undefined) {
 			this.customWebSocketUrl = config.customWebSocketUrl;
 			this.reconnectWebSocket();
@@ -303,6 +308,14 @@ export class LanP2PDispatcher {
 			}
 		}
 
+		// Filter by branch if specified (Strict cross-branch clinical isolation)
+		if (this.branchId && msg.branchId) {
+			if (msg.branchId !== this.branchId) {
+				logger.warn(`[LanP2PDispatcher] Rejected message from mismatched branch: expected '${this.branchId}', got '${msg.branchId}'`);
+				return false;
+			}
+		}
+
 		// Deduplication check with bounded LRU
 		const now = Date.now();
 		if (this.seenMessageIds.size > this.MAX_SEEN_MESSAGE_IDS / 2) {
@@ -461,6 +474,7 @@ export class LanP2PDispatcher {
 		doctorId?: string;
 		doctorName?: string;
 		note?: string;
+		branchId?: string;
 		vectorClock?: VectorClock;
 	}): Promise<LanP2PMessage<LanChairStatusEvent>> {
 		const event = createChairStatusEvent(params);
@@ -470,6 +484,7 @@ export class LanP2PDispatcher {
 			senderRole: this.nodeRole,
 			senderName: this.nodeName,
 			organizationId: this.organizationId,
+			branchId: params.branchId || this.branchId,
 			payload: event as unknown as Record<string, unknown>,
 			...(params.vectorClock ? { vectorClock: params.vectorClock } : {}),
 		}) as LanP2PMessage<LanChairStatusEvent>;
@@ -488,6 +503,7 @@ export class LanP2PDispatcher {
 		urgency?: LanCitoUrgency;
 		reason?: LanCitoCallReason;
 		customMessage?: string;
+		branchId?: string;
 		vectorClock?: VectorClock;
 	}): Promise<LanP2PMessage<LanAssistantCitoEvent>> {
 		const event = createAssistantCitoEvent(params);
@@ -497,6 +513,7 @@ export class LanP2PDispatcher {
 			senderRole: this.nodeRole,
 			senderName: this.nodeName,
 			organizationId: this.organizationId,
+			branchId: params.branchId || this.branchId,
 			payload: event as unknown as Record<string, unknown>,
 			...(params.vectorClock ? { vectorClock: params.vectorClock } : {}),
 		}) as LanP2PMessage<LanAssistantCitoEvent>;
@@ -518,6 +535,7 @@ export class LanP2PDispatcher {
 		totalAmountRub?: number;
 		totalAmountKopecks?: number;
 		comments?: string;
+		branchId?: string;
 		vectorClock?: VectorClock;
 	}): Promise<LanP2PMessage<LanInvoiceTransferEvent>> {
 		const event = createInvoiceTransferEvent(params);
@@ -527,6 +545,7 @@ export class LanP2PDispatcher {
 			senderRole: this.nodeRole,
 			senderName: this.nodeName,
 			organizationId: this.organizationId,
+			branchId: params.branchId || this.branchId,
 			payload: event as unknown as Record<string, unknown>,
 			...(params.vectorClock ? { vectorClock: params.vectorClock } : {}),
 		}) as LanP2PMessage<LanInvoiceTransferEvent>;
@@ -540,6 +559,7 @@ export class LanP2PDispatcher {
 	 */
 	public async broadcastStaffAction(
 		action: StaffActionAuditEntry,
+		branchId?: string,
 	): Promise<LanP2PMessage<StaffActionAuditEntry>> {
 		const message = createLanP2PMessage({
 			eventType: "staff_action_telemetry",
@@ -547,6 +567,7 @@ export class LanP2PDispatcher {
 			senderRole: this.nodeRole,
 			senderName: this.nodeName,
 			organizationId: this.organizationId,
+			branchId: branchId || this.branchId,
 			payload: action as unknown as Record<string, unknown>,
 		}) as LanP2PMessage<StaffActionAuditEntry>;
 
@@ -564,6 +585,7 @@ export class LanP2PDispatcher {
 			senderRole: this.nodeRole,
 			senderName: this.nodeName,
 			organizationId: this.organizationId,
+			branchId: this.branchId,
 			payload: {
 				status: "online",
 				pingedAt: new Date().toISOString(),
@@ -627,6 +649,7 @@ export class LanP2PDispatcher {
 			nodeRole: this.nodeRole,
 			nodeName: this.nodeName,
 			organizationId: this.organizationId,
+			branchId: this.branchId,
 			isBroadcastChannelActive: isBcActive,
 			isWebSocketConnected: isWsActive,
 			activeTransportCount: transportCount,

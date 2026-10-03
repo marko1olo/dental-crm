@@ -45,6 +45,8 @@ import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
 import { useOfflineMutationQueue } from "./hooks/useOfflineMutationQueue";
+import { useLanP2P } from "./hooks/useLanP2P";
+import { LanCitoEmergencyBanner } from "./components/sync/LanCitoEmergencyBanner";
 import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import { actionFailureToast } from "./lib/panelStateText";
 import {
@@ -338,6 +340,7 @@ export function App() {
 		syncNow: syncOfflineMutations,
 		isSyncing: isSyncingMutations,
 	} = useOfflineMutationQueue();
+	const { activeCitoAlerts, dismissCitoAlert } = useLanP2P();
 	/*
 		256 ИМЁН УБРАНЫ ИЗ ЭТОГО РАЗБОРА, ПОТОМУ ЧТО ПРЕДСТАВЛЕНИЯ
 		(VisitView, FinanceView, CommunicationsView, DocumentsView, PatientsView, ShiftView)
@@ -1732,6 +1735,11 @@ export function App() {
 						onLockSession={handleLockSession}
 						onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
 						onOpenCbctDemo={() => setIsCbctDirectModalOpen(true)}
+					/>
+					<LanCitoEmergencyBanner
+						alerts={activeCitoAlerts}
+						onDismiss={dismissCitoAlert}
+						onAcknowledge={dismissCitoAlert}
 					/>
 					<WorkspaceContinuityStrip
 						browserContinuityCritical={browserContinuityCritical}
