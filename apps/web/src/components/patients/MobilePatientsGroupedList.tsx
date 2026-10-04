@@ -1,3 +1,7 @@
+/**
+ * Dental CRM — Dedicated Mobile Patient Registry & Grouped Inset Cards
+ * Compliant with Apple Health / iOS Settings HIG (§2.3 in MOBILE_DESIGN_APPLE_HIG.md)
+ */
 import type { Dashboard, Patient } from "@dental/shared";
 import {
 	ChevronRight,
