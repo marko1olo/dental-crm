@@ -263,7 +263,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
           return {
             stripe: "bg-amber-500",
             badgeBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40",
-            label: appointmentLabels[status] || "Ожидает",
+            label: "В холле",
           };
         case "completed":
           return {
@@ -575,6 +575,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
                   {/* Right: Grouped List Card */}
                   <div
                     className="schedule-mobile-card"
+                    data-testid="schedule-mobile-appt-card"
                     onClick={() => {
                       setSelectedMobileAppt(appt);
                     }}
@@ -649,27 +650,29 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
         </div>
 
         {/* 5. Floating Bottom Bar (Natural Thumb Zone CTA) */}
-        <div className="schedule-mobile-bottom-bar">
-          <button
-            type="button"
-            className="schedule-mobile-primary-action-btn"
-            onClick={() => {
-              if (onSlotClick) {
-                onSlotClick({
-                  dateKey: effectiveDateKey,
-                  doctorUserId: selectedDoctorId || null,
-                  chairId: selectedChairId || null,
-                  durationMinutes: 30,
-                });
-              } else if (onQuickBooking) {
-                onQuickBooking();
-              }
-            }}
-          >
-            <Plus size={18} />
-            <span>Новая запись</span>
-          </button>
-        </div>
+        {!selectedMobileAppt && (
+          <div className="schedule-mobile-bottom-bar">
+            <button
+              type="button"
+              className="schedule-mobile-primary-action-btn"
+              onClick={() => {
+                if (onSlotClick) {
+                  onSlotClick({
+                    dateKey: effectiveDateKey,
+                    doctorUserId: selectedDoctorId || null,
+                    chairId: selectedChairId || null,
+                    durationMinutes: 30,
+                  });
+                } else if (onQuickBooking) {
+                  onQuickBooking();
+                }
+              }}
+            >
+              <Plus size={18} />
+              <span>Новая запись</span>
+            </button>
+          </div>
+        )}
 
         {/* 6. Native iOS Bottom Sheet Drawer for Appointment Details & Actions */}
         <ScheduleMobileBottomSheet

@@ -151,7 +151,7 @@ export function ScheduleMobileBottomSheet({
 
           return (
             <div
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200"
+              className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200"
               onClick={() => onClose()}
               role="dialog"
               aria-modal="true"
@@ -159,7 +159,7 @@ export function ScheduleMobileBottomSheet({
               data-testid="schedule-grid-mobile-bottom-sheet"
             >
               <div
-                className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
+                className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 pb-28 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Top Grab Handle */}
@@ -193,10 +193,12 @@ export function ScheduleMobileBottomSheet({
                           <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
                         )}
                         <span>
-                          {getNormalizedAppointmentStatusLabel(
-                            selectedMobileAppt.status,
-                            appointmentLabels,
-                          )}
+                          {selectedMobileAppt.status === "arrived"
+                            ? "В холле"
+                            : getNormalizedAppointmentStatusLabel(
+                                selectedMobileAppt.status,
+                                appointmentLabels,
+                              )}
                         </span>
                       </span>
                     </div>
@@ -415,7 +417,7 @@ export function ScheduleMobileBottomSheet({
                         className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <UserCheck size={14} />
-                        <span>Пришел</span>
+                        <span>В холле</span>
                       </button>
                       <button
                         type="button"

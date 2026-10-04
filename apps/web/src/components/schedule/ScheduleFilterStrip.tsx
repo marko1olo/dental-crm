@@ -436,13 +436,13 @@ export function ScheduleFilterStrip({
 								scheduleStatusFilter === "arrived" ? "all" : "arrived",
 							)
 						}
-						title="Очередь смены: Ожидает приёма (пациент в холле клиники). 1 клик для фильтрации"
-						aria-label="Фильтр: Ожидает приёма"
+						title="Очередь смены: В холле (пациент ожидает в холле клиники). 1 клик для фильтрации"
+						aria-label="Фильтр: В холле"
 						aria-pressed={scheduleStatusFilter === "arrived"}
 					>
 						<UserCheck size={12} className="shrink-0 text-amber-500" />
-						<span className="hidden 2xl:inline whitespace-nowrap shrink-0">Ожидает приёма</span>
-						<span className="2xl:hidden whitespace-nowrap shrink-0">Ожидает</span>
+						<span className="hidden 2xl:inline whitespace-nowrap shrink-0">В холле клиники</span>
+						<span className="2xl:hidden whitespace-nowrap shrink-0">В холле</span>
 						{queueCounts?.arrived !== undefined && (
 							<span
 								data-testid="schedule-queue-count-arrived"

@@ -56,7 +56,7 @@ export function AppointmentModalStatusSection({
         <button
           type="button"
           onClick={() => setStatus("planned")}
-          className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
             status === "planned"
               ? "bg-[var(--teal)] text-white font-bold border-[var(--teal)]"
               : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
@@ -69,7 +69,7 @@ export function AppointmentModalStatusSection({
         <button
           type="button"
           onClick={() => setStatus("confirmed")}
-          className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
             status === "confirmed"
               ? "bg-emerald-600 text-white font-bold border-emerald-600"
               : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
@@ -82,7 +82,7 @@ export function AppointmentModalStatusSection({
         <button
           type="button"
           onClick={() => setStatus("arrived")}
-          className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
             status === "arrived"
               ? "bg-emerald-600 text-white font-bold border-emerald-600"
               : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
@@ -90,12 +90,12 @@ export function AppointmentModalStatusSection({
           data-testid="modal-status-btn-arrived"
         >
           <UserCheck size={12} className="shrink-0" />
-          <span className="whitespace-nowrap leading-none">Пришел</span>
+          <span className="whitespace-nowrap leading-none">В холле</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("in_treatment")}
-          className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
             status === "in_treatment"
               ? "bg-cyan-600 text-white font-bold border-cyan-600"
               : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
@@ -108,7 +108,7 @@ export function AppointmentModalStatusSection({
         <button
           type="button"
           onClick={() => setStatus("completed")}
-          className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
             status === "completed"
               ? "bg-slate-700 text-white font-bold border-slate-700"
               : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
@@ -121,7 +121,7 @@ export function AppointmentModalStatusSection({
         <button
           type="button"
           onClick={() => setStatus("no_show")}
-          className={`h-7 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
             status === "no_show"
               ? "bg-rose-600 text-white font-bold border-rose-600"
               : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
@@ -149,7 +149,7 @@ export function AppointmentModalStatusSection({
             );
           }
         }}
-        className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1"
+        className="w-full px-2.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1"
         data-testid="select-appointment-status"
       >
         {(

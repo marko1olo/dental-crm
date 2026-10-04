@@ -41,11 +41,11 @@
 }
 
 .schedule-mobile-nav-btn {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -63,11 +63,11 @@
 }
 
 .schedule-mobile-today-chip {
-  height: 32px;
-  padding: 0 10px;
-  font-size: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 13px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper-soft, #f8fafc);
   color: var(--ink, #0f172a);
@@ -184,16 +184,16 @@
 }
 
 .schedule-mobile-filter-chip {
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 10px;
-  font-size: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper-soft, #f8fafc);
   color: var(--ink, #0f172a);
@@ -303,7 +303,7 @@
 
 .schedule-mobile-card-header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
@@ -314,10 +314,11 @@
   color: var(--ink, #0f172a);
   line-height: 1.25;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
+  flex: 1;
 }
 
 .schedule-mobile-status-badge {
@@ -480,7 +481,7 @@
   position: fixed;
   bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
   right: 16px;
-  z-index: 10000;
+  z-index: 40;
   display: flex;
   align-items: center;
 }

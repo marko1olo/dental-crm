@@ -196,7 +196,7 @@ export function QuickBookingInlinePatientForm({
             data-testid="quick-booking-new-patient-name-input"
             value={newPatientFullName}
             onChange={(e) => setNewPatientFullName(e.target.value)}
-            placeholder="Иванов Иван Иванович"
+            placeholder="Фамилия Имя Отчество"
             className="w-full p-2 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
           />
         </div>

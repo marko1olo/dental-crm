@@ -357,7 +357,7 @@ export function AppointmentModalHeader({
         <button
           type="button"
           onClick={onClose}
-          className="h-8 w-8 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+          className="h-8 w-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
           aria-label="Закрыть"
           data-testid="appointment-modal-close-btn"
         >

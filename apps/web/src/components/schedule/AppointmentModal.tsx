@@ -157,7 +157,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       data-testid="appointment-modal"
       role="dialog"
       aria-modal="true"
@@ -170,7 +170,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
         aria-label="Закрыть модальное окно"
       />
 
-      <div className="relative w-full max-w-2xl bg-[var(--paper)] border border-[var(--line-strong)] rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90vh] overflow-hidden animate-scale-in">
+      <div className="relative w-full max-w-2xl bg-[var(--paper)] border-t sm:border border-[var(--line-strong)] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90dvh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom sm:animate-scale-in">
+        {/* Mobile Tactile Drag Handle */}
+        <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
         {/* Header: Strict 1-row clinical toolbar (32-36px, Mandate 8p, 8c) */}
         <AppointmentModalHeader
           appointment={appointment}
