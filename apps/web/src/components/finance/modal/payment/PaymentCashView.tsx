@@ -71,16 +71,16 @@ export const PaymentCashView: React.FC<PaymentCashViewProps> = ({
 						value={receivedCashRub || ""}
 						onChange={(e) => setReceivedCashRub(Math.max(0, parseFloat(e.target.value) || 0))}
 						placeholder="0 ₽"
-						className="h-10 w-full px-3 text-base font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500"
+						className="h-11 sm:h-10 w-full px-3 text-lg sm:text-base font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500 shadow-2xs"
 						data-testid="input-cash-received"
 					/>
 					<button
 						type="button"
 						onClick={() => setReceivedCashRub(totalDueRub)}
-						className="cash-quick-match-btn"
+						className="cash-quick-match-btn min-h-[44px]"
 						title="Внести сумму ровно без сдачи"
 					>
-						<Zap size={14} className="text-emerald-600 dark:text-emerald-400" />
+						<Zap size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Без сдачи</span>
 					</button>
 				</div>
@@ -199,7 +199,7 @@ export const PaymentCashView: React.FC<PaymentCashViewProps> = ({
 				onClick={handleCashSubmit}
 				disabled={isSubmittingCash}
 				title={isSubmittingCash ? "Идет фиксация наличных в кассе..." : undefined}
-				className="cash-submit-primary-btn"
+				className="cash-submit-primary-btn hidden sm:flex"
 				data-testid="btn-cash-submit"
 			>
 				<CheckCircle size={16} className="shrink-0" />

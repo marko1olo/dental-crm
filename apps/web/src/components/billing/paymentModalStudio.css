@@ -27,14 +27,14 @@
 	color: var(--ink, #0f172a);
 }
 
-[data-theme="dark"] .payment-modal h2,
-[data-theme="dark"] .payment-modal h3,
-[data-theme="dark"] .payment-modal strong {
+[data-theme="dark"] .payment-modal:not(.receipt-tape-paper) h2,
+[data-theme="dark"] .payment-modal:not(.receipt-tape-paper) h3:not(.receipt-tape-paper h3),
+[data-theme="dark"] .payment-modal:not(.receipt-tape-paper) strong:not(.receipt-tape-paper strong) {
 	color: #f8fafc !important;
 }
 
-[data-theme="dark"] .payment-modal p,
-[data-theme="dark"] .payment-modal label {
+[data-theme="dark"] .payment-modal p:not(.receipt-tape-paper p),
+[data-theme="dark"] .payment-modal label:not(.receipt-tape-paper label) {
 	color: #94a3b8 !important;
 }
 
@@ -878,15 +878,21 @@
 	position: relative;
 }
 
-/* Ensure deep physical black/charcoal text on thermal paper in dark theme */
+/* Ensure deep physical black/charcoal text on thermal paper in all themes */
+.receipt-tape-paper,
+.receipt-tape-paper * {
+	color-scheme: light !important;
+}
+
 .receipt-tape-paper h1,
 .receipt-tape-paper h2,
 .receipt-tape-paper h3,
 .receipt-tape-paper h4,
 .receipt-tape-paper p,
 .receipt-tape-paper span,
+.receipt-tape-paper strong,
 .receipt-tape-paper div {
-	color: inherit;
+	color: #0f172a !important;
 }
 
 .receipt-tape-paper .text-slate-950,
@@ -907,7 +913,7 @@
 }
 
 .receipt-tape-paper .text-slate-500 {
-	color: #475569 !important;
+	color: #64748b !important;
 }
 
 .receipt-tape-paper .text-teal-700,
@@ -1016,3 +1022,168 @@
 	border-color: rgba(245, 158, 11, 0.4);
 	color: #fcd34d;
 }
+
+/* ==========================================================================
+   9. APPLE HIG & SQUARE POS MOBILE ADAPTIVE LAYER (<= 768px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	/* Native iOS Bottom Sheet Drawer Frame */
+	.payment-modal-backdrop {
+		align-items: flex-end !important;
+		padding: 0 !important;
+		background: rgba(0, 0, 0, 0.65) !important;
+		backdrop-filter: blur(12px) !important;
+		-webkit-backdrop-filter: blur(12px) !important;
+	}
+
+	.payment-modal {
+		width: 100% !important;
+		max-width: 100% !important;
+		border-radius: 24px 24px 0 0 !important;
+		max-height: 92dvh !important;
+		border-bottom: none !important;
+		border-left: none !important;
+		border-right: none !important;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35) !important;
+		animation: mobile-sheet-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes mobile-sheet-slide-up {
+		from {
+			transform: translateY(100%);
+			opacity: 0.8;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	/* Hero Amount Dominance (Square POS / Apple Wallet Style) */
+	.mobile-payment-hero {
+		padding: 16px 20px;
+		background: var(--paper-soft, #f8fafc);
+		border-bottom: 1px solid var(--line, #cbd5e1);
+		text-align: center;
+	}
+
+	[data-theme="dark"] .mobile-payment-hero {
+		background: #0f172a !important;
+		border-color: #334155 !important;
+	}
+
+	.mobile-payment-hero-amount {
+		font-size: 38px !important;
+		line-height: 1.1;
+		font-weight: 900;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		letter-spacing: -0.03em;
+		color: var(--ink, #0f172a);
+	}
+
+	[data-theme="dark"] .mobile-payment-hero-amount {
+		color: #f8fafc !important;
+	}
+
+	/* 2-Column Tactile Cash Bill Cards (§3.4 MOBILE_DESIGN_APPLE_HIG.md) */
+	.cash-bill-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+	}
+
+	.cash-add-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+		margin-top: 8px !important;
+	}
+
+	.cash-bill-chip,
+	.cash-add-chip,
+	.cash-exact-chip {
+		min-height: 52px !important;
+		height: 52px !important;
+		font-size: 15px !important;
+		border-radius: 14px !important;
+		padding: 0 12px !important;
+		font-weight: 800 !important;
+		border-width: 1.5px !important;
+	}
+
+	.cash-bill-chip:active,
+	.cash-add-chip:active,
+	.cash-exact-chip:active {
+		transform: scale(0.96) !important;
+	}
+
+	/* Method Switcher on Mobile: Smooth scrollable row or 2-column tiles */
+	.payment-method-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+	}
+
+	.payment-method-pill {
+		min-height: 48px !important;
+		height: 48px !important;
+		font-size: 13px !important;
+		padding: 8px 12px !important;
+		border-radius: 12px !important;
+	}
+
+	/* Primary Action in Natural Thumb Zone (Floating Bottom Bar) */
+	.mobile-sticky-checkout-bar {
+		position: sticky;
+		bottom: 0;
+		width: 100%;
+		background: var(--paper, #ffffff);
+		border-top: 1px solid var(--line, #cbd5e1);
+		padding: 12px 16px max(14px, env(safe-area-inset-bottom)) !important;
+		z-index: 40;
+		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	[data-theme="dark"] .mobile-sticky-checkout-bar {
+		background: #0f172a !important;
+		border-color: #334155 !important;
+		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+	}
+
+	.payment-footer-cancel-btn {
+		display: none !important;
+	}
+
+	.payment-footer-submit-btn {
+		width: 100% !important;
+		min-width: 100% !important;
+		min-height: 52px !important;
+		height: 52px !important;
+		font-size: 15px !important;
+		font-weight: 800 !important;
+		border-radius: 16px !important;
+		justify-content: center !important;
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+	}
+
+	/* Tactile Drag Handle */
+	.mobile-drag-handle-bar {
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--line-strong, #94a3b8);
+		margin: 8px auto 4px auto;
+		opacity: 0.6;
+	}
+
+	/* Receipt tape full-width fit on mobile */
+	.receipt-tape-container {
+		padding: 8px 4px !important;
+	}
+
+	.receipt-tape-paper {
+		max-width: 100% !important;
+		width: 100% !important;
+		padding: 18px 14px !important;
+		font-size: 11px !important;
+	}
+}
+

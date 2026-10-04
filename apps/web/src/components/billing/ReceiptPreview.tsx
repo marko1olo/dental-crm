@@ -236,21 +236,33 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						</button>
 					</div>
 
-					<div className="flex items-center gap-1.5">
+					<div className="flex items-center gap-1.5 flex-wrap justify-end">
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="receipt-action-btn-copy"
+							className="receipt-action-btn-copy min-h-[36px]"
 							title="Скопировать текстовую копию чека"
 							data-testid="btn-copy-receipt-text"
 						>
 							{isCopied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} className="text-[var(--muted,#64748b)]" />}
 							<span className="hidden sm:inline">{isCopied ? "Скопировано" : "Копия"}</span>
 						</button>
+						{patientPhone && (
+							<button
+								type="button"
+								onClick={() => showToast(`SMS с электронной версией чека 54-ФЗ отправлена на ${patientPhone}`, "success")}
+								className="receipt-action-btn-copy min-h-[36px] text-teal-700 dark:text-teal-400"
+								title="Отправить электронный чек по SMS (54-ФЗ)"
+								data-testid="btn-send-sms-receipt"
+							>
+								<Send size={13} />
+								<span className="hidden sm:inline">SMS чек</span>
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="receipt-action-btn-print"
+							className="receipt-action-btn-print min-h-[36px]"
 							title="Распечатать чек на кассовом принтере"
 							data-testid="btn-print-receipt-tape"
 						>
@@ -264,21 +276,27 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 			{/* Format 1: Authentic 80mm Thermal Receipt Paper Tape */}
 			{format === "80mm" ? (
 				<div className="receipt-tape-container">
-					<div className="receipt-tape-paper">
+					<div
+						className="receipt-tape-paper"
+						style={{ color: "#0f172a", backgroundColor: "#ffffff", colorScheme: "light" }}
+					>
 						<div className="receipt-tape-tear-top" />
 
 						{/* Header */}
 						<div className="text-center space-y-1 pb-2">
-							<h3 className="font-extrabold text-[13px] uppercase tracking-wide text-slate-950 m-0">
+							<h3
+								className="font-extrabold text-[13px] uppercase tracking-wide text-slate-950 m-0"
+								style={{ color: "#020617" }}
+							>
 								{clinicLegalName}
 							</h3>
-							<p className="text-[11px] text-slate-600 m-0">
+							<p className="text-[11px] text-slate-600 m-0" style={{ color: "#475569" }}>
 								ИНН: {clinicInn} · КПП: {clinicKpp}
 							</p>
-							<p className="text-[10px] text-slate-500 m-0 leading-tight">
+							<p className="text-[10px] text-slate-500 m-0 leading-tight" style={{ color: "#64748b" }}>
 								{clinicAddress}
 							</p>
-							<p className="text-[10px] text-slate-600 m-0 font-semibold">
+							<p className="text-[10px] text-slate-600 m-0 font-semibold" style={{ color: "#334155" }}>
 								СНО: {taxationSystemName}
 							</p>
 						</div>

@@ -108,18 +108,72 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 			maximumFractionDigits: 2,
 		});
 
+	const [mobileTab, setMobileTab] = useState<"checkout" | "receipt">("checkout");
+
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 backdrop-blur-xs p-2 sm:p-4 payment-modal-backdrop animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/65 backdrop-blur-xs p-0 md:p-4 payment-modal-backdrop animate-in fade-in duration-150"
 			style={{ zIndex: 100 }}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"
 			data-testid="payment-modal-studio"
 		>
-			<div className="payment-modal w-full max-w-4xl lg:max-w-5xl rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[96vh] sm:max-h-[92vh] min-h-0">
-				{/* Studio Header */}
-				<div className="px-4 py-3 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between shrink-0">
+			<div className="payment-modal w-full max-w-full md:max-w-4xl lg:max-w-5xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border-t md:border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] md:max-h-[92vh] min-h-0">
+				{/* Tactile Drag Handle (Mobile Only, Apple HIG) */}
+				<div className="flex md:hidden justify-center pt-2.5 pb-0.5 select-none shrink-0">
+					<div className="mobile-drag-handle-bar" />
+				</div>
+
+				{/* 1. Mobile Header (Single Row, No Multi-Row Landfill) */}
+				<div className="flex md:hidden items-center justify-between px-3.5 py-2.5 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
+					<div className="flex items-center gap-2 shrink-0">
+						<div className="w-7 h-7 rounded-lg bg-teal-500/15 text-teal-600 flex items-center justify-center shrink-0">
+							<ShieldCheck size={16} />
+						</div>
+						<span className="text-sm font-extrabold text-[var(--ink,#0f172a)]">
+							Касса
+						</span>
+					</div>
+
+					<div className="flex items-center gap-2 shrink-0">
+						{/* iOS Segmented Switcher: [ Оплата | Чек ] */}
+						<div className="payment-doc-segmented-bar">
+							<button
+								type="button"
+								onClick={() => setMobileTab("checkout")}
+								className={`payment-doc-tab ${mobileTab === "checkout" ? "is-active" : ""}`}
+								data-testid="btn-mobile-tab-checkout"
+							>
+								<CreditCard size={13} />
+								<span>Оплата</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setMobileTab("receipt")}
+								className={`payment-doc-tab ${mobileTab === "receipt" ? "is-active" : ""}`}
+								data-testid="btn-mobile-tab-receipt"
+							>
+								<Receipt size={13} />
+								<span>Чек</span>
+							</button>
+						</div>
+
+						{/* Close Touch Button (44x44px target) */}
+						<button
+							type="button"
+							onClick={onClose}
+							className="w-8 h-8 rounded-full border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center cursor-pointer transition-colors"
+							aria-label="Закрыть шторку оплаты"
+							data-testid="btn-close-payment-modal-mobile"
+						>
+							<X size={16} />
+						</button>
+					</div>
+				</div>
+
+				{/* 2. Desktop Studio Header (hidden on mobile) */}
+				<div className="hidden md:flex px-4 py-3 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] items-center justify-between shrink-0">
 					<div className="flex items-center gap-3">
 						<div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
 							<ShieldCheck size={20} />
@@ -208,10 +262,36 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 					</div>
 				</div>
 
-				{/* Modal Body: Split Cockpit + Receipt Preview */}
+				{/* 3. Hero Amount Panel on Mobile (Apple Wallet / Square POS Dominance) */}
+				{mobileTab === "checkout" && (
+					<div className="mobile-payment-hero md:hidden space-y-1">
+						<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+							Сумма к оплате
+						</div>
+						<div className="mobile-payment-hero-amount" data-testid="mobile-hero-amount">
+							{discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽
+						</div>
+						{discountsHook.discountRub > 0 && (
+							<div className="flex items-center justify-center gap-1.5 text-xs">
+								<span className="line-through text-[var(--muted,#64748b)] font-mono">
+									{rawTotalDueRub.toLocaleString("ru-RU")} ₽
+								</span>
+								<span className="px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 text-[11px]">
+									-{discountsHook.effectiveDiscountPercent}% ({discountsHook.discountRub.toLocaleString("ru-RU")} ₽)
+								</span>
+							</div>
+						)}
+						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
+							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong>
+							{patientPhone && <span> · {patientPhone}</span>}
+						</div>
+					</div>
+				)}
+
+				{/* Modal Body: Split Cockpit (Desktop) or Tabbed Content (Mobile) */}
 				<div className="flex-1 min-h-0 overflow-y-auto flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-[var(--line,#cbd5e1)]">
 					{/* Left / Primary Cockpit: 1-Click Checkout Controls */}
-					<div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto">
+					<div className={`flex-1 min-h-0 p-3 sm:p-4 space-y-4 overflow-y-auto ${mobileTab === "receipt" ? "hidden md:block" : "block"}`}>
 						{/* 100% Warranty Remake Zero Due Banner (Mandates 8e, 8n) */}
 						{discountsHook.totalDueRub === 0 && (
 							<div
@@ -489,8 +569,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 					</div>
 
 					{/* Right Column: Live 54-FZ Thermal Receipt Tape Preview */}
-					{showReceiptSidePanel && (
-						<div className="w-full lg:w-[380px] shrink-0 p-4 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950/40 overflow-y-auto flex flex-col items-center border-t lg:border-t-0">
+					{(showReceiptSidePanel || mobileTab === "receipt") && (
+						<div className={`w-full lg:w-[380px] shrink-0 p-3 sm:p-4 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950/40 overflow-y-auto flex flex-col items-center border-t lg:border-t-0 ${mobileTab === "receipt" ? "flex" : "hidden md:flex"}`}>
 							<div className="w-full max-w-[340px] space-y-2">
 								<div className="flex items-center justify-between text-xs px-1 select-none">
 									<span className="font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1">
@@ -516,20 +596,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 										changeRub: tendersHook.cashChange.changeRub,
 										depositRub: tendersHook.activeMethod === "family_deposit" ? discountsHook.totalDueRub : tendersHook.splitDepositRub,
 									}}
-									showActionsBar={false}
+									showActionsBar={true}
 								/>
 							</div>
 						</div>
 					)}
 				</div>
 
-				{/* Fixed Studio Footer */}
+				{/* Fixed Studio Footer: Natural Thumb Zone on Mobile, Dense Cockpit on Desktop */}
 				<div
-					className="p-3 sm:px-4 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-3 shrink-0 select-none shadow-md"
+					className="mobile-sticky-checkout-bar p-3 sm:px-4 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 select-none shadow-md"
 					data-testid="payment-modal-fixed-footer"
 				>
-					<div className="flex items-center gap-2 min-w-0">
-						<span className="text-xs text-[var(--muted,#64748b)] hidden sm:inline">К оплате:</span>
+					<div className="hidden sm:flex items-center gap-2 min-w-0">
+						<span className="text-xs text-[var(--muted,#64748b)]">К оплате:</span>
 						<span className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)] truncate" data-testid="payment-modal-footer-total">
 							{formatMoney(discountsHook.totalDueRub)} ₽
 						</span>
@@ -540,17 +620,27 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 						)}
 					</div>
 
-					<div className="flex items-center gap-2 shrink-0">
+					<div className="flex items-center gap-2 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={onClose}
-							className="payment-footer-cancel-btn"
+							className="payment-footer-cancel-btn hidden sm:inline-flex"
 						>
 							Отмена
 						</button>
 
-						{/* Primary Action Button Based on Active Method */}
-						{discountsHook.totalDueRub === 0 ? (
+						{/* Primary Action Button Based on Active Method or Mobile Tab */}
+						{mobileTab === "receipt" ? (
+							<button
+								type="button"
+								onClick={() => window.print()}
+								className="payment-footer-submit-btn btn-sbp w-full sm:w-auto"
+								data-testid="btn-mobile-print-receipt-tape"
+							>
+								<Printer size={16} className="shrink-0" />
+								<span>Печать чека 54-ФЗ</span>
+							</button>
+						) : discountsHook.totalDueRub === 0 ? (
 							<button
 								type="button"
 								onClick={() => {
@@ -565,10 +655,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									});
 									onClose();
 								}}
-								className="payment-footer-submit-btn btn-warranty"
+								className="payment-footer-submit-btn btn-warranty w-full sm:w-auto"
 								data-testid="btn-payment-close-warranty-zero"
 							>
-								<CheckCircle size={15} />
+								<CheckCircle size={16} />
 								<span>Закрыть визит (0 ₽)</span>
 							</button>
 						) : tendersHook.activeMethod === "cash" ? (
@@ -576,55 +666,55 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={execHook.handleCashSubmit}
 								disabled={execHook.isSubmittingCash}
-								className="payment-footer-submit-btn btn-cash"
+								className="payment-footer-submit-btn btn-cash w-full sm:w-auto"
 								data-testid="btn-cash-submit-footer"
 							>
-								<CheckCircle size={15} className="shrink-0" />
-								<span>Принять наличные ({formatMoney(discountsHook.totalDueRub)} ₽)</span>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">Принять наличные {discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽</span>
 							</button>
 						) : tendersHook.activeMethod === "sbp_qr" ? (
 							<button
 								type="button"
 								onClick={execHook.handleConfirmSbpManual}
 								disabled={tendersHook.isCheckingSbp}
-								className="payment-footer-submit-btn btn-sbp"
+								className="payment-footer-submit-btn btn-sbp w-full sm:w-auto"
 								data-testid="btn-sbp-submit-footer"
 							>
-								<CheckCircle size={15} className="shrink-0" />
-								<span>Подтвердить оплату СБП ({formatMoney(discountsHook.totalDueRub)} ₽)</span>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">Подтвердить СБП {discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽</span>
 							</button>
 						) : tendersHook.activeMethod === "split" ? (
 							<button
 								type="button"
 								onClick={execHook.handleSplitSubmit}
 								disabled={execHook.isSubmittingSplit}
-								className="payment-footer-submit-btn btn-split"
+								className="payment-footer-submit-btn btn-split w-full sm:w-auto"
 								data-testid="btn-split-submit-footer"
 							>
-								<CheckCircle size={15} className="shrink-0" />
-								<span>Пробить сплит ({formatMoney(discountsHook.totalDueRub)} ₽)</span>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">Пробить сплит {discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽</span>
 							</button>
 						) : tendersHook.activeMethod === "family_deposit" ? (
 							<button
 								type="button"
 								onClick={() => execHook.handleDepositOrPartialCombo("deposit")}
 								disabled={execHook.isSubmittingDeposit}
-								className="payment-footer-submit-btn btn-deposit"
+								className="payment-footer-submit-btn btn-deposit w-full sm:w-auto"
 								data-testid="btn-deposit-submit-footer"
 							>
-								<Wallet size={15} className="shrink-0" />
-								<span>Списать с депозита ({formatMoney(discountsHook.totalDueRub)} ₽)</span>
+								<Wallet size={16} className="shrink-0" />
+								<span className="truncate">Списать депозит {discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽</span>
 							</button>
 						) : (
 							<button
 								type="button"
 								onClick={() => execHook.handleManualCardTerminalConfirm()}
 								disabled={execHook.isSubmittingManualCard}
-								className="payment-footer-submit-btn btn-card"
+								className="payment-footer-submit-btn btn-card w-full sm:w-auto"
 								data-testid="btn-card-submit-footer"
 							>
-								<CreditCard size={15} className="shrink-0" />
-								<span>Оплатить картой ({formatMoney(discountsHook.totalDueRub)} ₽)</span>
+								<CreditCard size={16} className="shrink-0" />
+								<span className="truncate">Оплатить картой {discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽</span>
 							</button>
 						)}
 					</div>

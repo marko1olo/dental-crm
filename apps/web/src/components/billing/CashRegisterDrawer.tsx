@@ -136,28 +136,33 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-50 flex flex-col justify-end md:justify-end md:flex-row bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="cash-register-drawer-title"
 			data-testid="cash-register-drawer"
 		>
-			<div className="bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-l border-[var(--line,#cbd5e1)] w-full max-w-md sm:max-w-lg md:max-w-xl h-full shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+			<div className="bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,#cbd5e1)] w-full max-w-full md:max-w-xl rounded-t-[24px] md:rounded-none max-h-[92dvh] md:max-h-full h-full shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom md:slide-in-from-right duration-200">
+				{/* Tactile Drag Handle (Mobile Only) */}
+				<div className="flex md:hidden justify-center pt-2.5 pb-0.5 select-none shrink-0">
+					<div className="mobile-drag-handle-bar" />
+				</div>
+
 				{/* Drawer Header */}
-				<div className="p-4 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between shrink-0">
+				<div className="p-3.5 sm:p-4 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between shrink-0">
 					<div className="flex items-center gap-2.5">
 						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
 							<Wallet size={18} />
 						</div>
 						<div>
-							<h3 id="cash-register-drawer-title" className="text-base font-extrabold m-0 text-[var(--ink,#0f172a)] flex items-center gap-2">
+							<h3 id="cash-register-drawer-title" className="text-sm sm:text-base font-extrabold m-0 text-[var(--ink,#0f172a)] flex items-center gap-2">
 								<span>Касса и чеки</span>
 								<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
 									<CheckCircle2 size={12} />
 									<span>Смена № 14 открыта</span>
 								</span>
 							</h3>
-							<p className="text-xs text-[var(--muted,#64748b)] m-0">
+							<p className="text-xs text-[var(--muted,#64748b)] m-0 truncate max-w-[200px] sm:max-w-none">
 								{cashierFullName} • {clinicLegalName}
 							</p>
 						</div>
@@ -166,7 +171,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-8 h-8 rounded-xl border border-[var(--line,#cbd5e1)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line,#cbd5e1)] cursor-pointer transition-colors"
+						className="w-9 h-9 rounded-full border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						aria-label="Закрыть шторку кассы"
 						data-testid="btn-close-cash-register-drawer"
 					>
@@ -441,12 +446,12 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 					)}
 				</div>
 
-				{/* Fixed Drawer Footer */}
-				<div className="p-3.5 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-2 shrink-0">
+				{/* Fixed Drawer Footer (Natural Thumb Zone) */}
+				<div className="p-3.5 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-2.5 shrink-0 pb-[max(14px,env(safe-area-inset-bottom))]">
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[40px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+						className="min-h-[46px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
 					>
 						Закрыть
 					</button>
@@ -457,10 +462,10 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 							onClose();
 							onOpenPaymentModal?.();
 						}}
-						className="flex-1 min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 transition-all"
+						className="flex-1 min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 transition-all"
 						data-testid="btn-drawer-new-payment"
 					>
-						<Plus size={16} />
+						<Plus size={18} />
 						<span>Принять оплату (1 клик)</span>
 					</button>
 				</div>
