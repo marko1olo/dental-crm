@@ -56,6 +56,7 @@ import "./styles/token-aliases.css";
 // Минимальный размер зон нажатия на узких экранах.
 import "./styles/touch-targets.css";
 import "./styles/modules/mobile-touch.css";
+import "./styles/modules/mobile-inventory.css";
 // Горизонтальные переполнения, подтверждённые замерами.
 import "./styles/overflow-fixes.css";
 // Контраст текста по WCAG 1.4.3.

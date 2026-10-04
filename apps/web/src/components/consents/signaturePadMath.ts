@@ -572,5 +572,5 @@ export function exportSignatureToPng(
 	}
 }
 
-export { generateSha256, type ConsentIntegrityPayload, generatePaperSignatureSvg, PAPER_SIGNATURE_FALLBACK_PNG, generateConsentIntegrityHash } from "./consentIntegrityHash";
+export { generateSha256, type ConsentIntegrityPayload, generatePaperSignatureSvg, generateSmsPepSignatureSvg, PAPER_SIGNATURE_FALLBACK_PNG, generateConsentIntegrityHash } from "./consentIntegrityHash";
 export { type ConsentPdfAOptions, escapeXml, escapePdfString, transliterateRussianToAscii, generatePdfA1bDocument, downloadConsentPdfA } from "./consentPdfAEngine";

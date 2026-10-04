@@ -4,6 +4,7 @@ import type {
   ConsentSubstitutionContext,
 } from './types';
 import { getConsentTemplate } from './registry';
+import { isDemoShowcaseMode } from '../../../lib/demoMode.js';
 
 /**
  * Контекст чистого бланка со строками «________» для ручного заполнения пациентом на бумаге до приема
@@ -11,6 +12,7 @@ import { getConsentTemplate } from './registry';
 export function getBlankConsentSubstitutionContext(
 	clinicDefaults?: Partial<ConsentSubstitutionContext>,
 ): ConsentSubstitutionContext {
+	const isDemo = isDemoShowcaseMode();
 	return {
 		patientName: "________________________________________",
 		birthDate: "«___» _________ _____ г.",
@@ -19,16 +21,16 @@ export function getBlankConsentSubstitutionContext(
 		clinicName:
 			clinicDefaults?.clinicName ||
 			clinicDefaults?.clinicLegalName ||
-			"ООО «Стоматологическая клиника ДЕНТЕ»",
+			(isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
 		clinicLegalName:
 			clinicDefaults?.clinicLegalName ||
 			clinicDefaults?.clinicName ||
-			"ООО «Стоматологическая клиника ДЕНТЕ»",
+			(isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
 		clinicAddress:
 			clinicDefaults?.clinicAddress ||
-			"г. Москва, ул. Большая Стоматологическая, д. 12",
-		clinicOgrn: clinicDefaults?.clinicOgrn || "1217700123456",
-		licenseNumber: clinicDefaults?.licenseNumber || "ЛО41-01137-77/00368421",
+			(isDemo ? "г. Москва, ул. Большая Стоматологическая, д. 12" : "«________________________________________»"),
+		clinicOgrn: clinicDefaults?.clinicOgrn || (isDemo ? "1217700123456" : "«________________»"),
+		licenseNumber: clinicDefaults?.licenseNumber || (isDemo ? "ЛО41-01137-77/00368421" : "«________________________________________»"),
 		diagnosisIcd: "________________________________________",
 		toothNumbers: "________________________",
 		date: "«___» _________ 20___ г.",
@@ -84,18 +86,19 @@ export function substitutePlaceholders(
 		);
 	}
 
+	const isDemo = isDemoShowcaseMode();
 	const map: Record<string, string> = {
 		"{{PATIENT_NAME}}": context.patientName?.trim() || "________________________________________",
 		"{{BIRTH_DATE}}": context.birthDate?.trim() || "«___» _________ _____ г.",
 		"{{PASSPORT}}": context.passport?.trim() || "серия ______ № ________ выдан ____________________",
 		"{{DOCTOR_NAME}}": context.doctorName?.trim() || "________________________",
-		"{{CLINIC_NAME}}": context.clinicName?.trim() || context.clinicLegalName?.trim() || "ООО «Стоматологическая клиника ДЕНТЕ»",
-		"{{CLINIC_LEGAL_NAME}}": context.clinicLegalName?.trim() || context.clinicName?.trim() || "ООО «Стоматологическая клиника ДЕНТЕ»",
-		"{{CLINIC_ADDRESS}}": context.clinicAddress?.trim() || "г. Москва, ул. Большая Стоматологическая, д. 12",
-		"{{CLINIC_OGRN}}": context.clinicOgrn?.trim() || "1217700123456",
-		"{{LICENSE_NUMBER}}": context.licenseNumber?.trim() || "ЛО41-01137-77/00368421",
-		"{{DIAGNOSIS_ICD}}": context.diagnosisIcd?.trim() || "Первичный осмотр и консультация",
-		"{{TOOTH_NUMBERS}}": context.toothNumbers?.trim() || "Полость рта (зубной ряд)",
+		"{{CLINIC_NAME}}": context.clinicName?.trim() || context.clinicLegalName?.trim() || (isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+		"{{CLINIC_LEGAL_NAME}}": context.clinicLegalName?.trim() || context.clinicName?.trim() || (isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+		"{{CLINIC_ADDRESS}}": context.clinicAddress?.trim() || (isDemo ? "г. Москва, ул. Большая Стоматологическая, д. 12" : "«________________________________________»"),
+		"{{CLINIC_OGRN}}": context.clinicOgrn?.trim() || (isDemo ? "1217700123456" : "«________________»"),
+		"{{LICENSE_NUMBER}}": context.licenseNumber?.trim() || (isDemo ? "ЛО41-01137-77/00368421" : "«________________________________________»"),
+		"{{DIAGNOSIS_ICD}}": context.diagnosisIcd?.trim() || (isDemo ? "Первичный осмотр и консультация" : "________________________________________"),
+		"{{TOOTH_NUMBERS}}": context.toothNumbers?.trim() || (isDemo ? "Полость рта (зубной ряд)" : "________________________"),
 		"{{DATE}}": context.date?.trim() || defaultDate,
 		"{{SNILS}}": context.snils?.trim() || "____________________",
 		"{{PATIENT_PHONE}}": context.phone?.trim() || "+7 (____) ____-____",

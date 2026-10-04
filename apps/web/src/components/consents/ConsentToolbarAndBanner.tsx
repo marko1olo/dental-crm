@@ -186,7 +186,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Пациент</span>
 					<span
-						className="consent-meta-value truncate"
+						className="consent-meta-value break-words"
 						title={cleanContext.patientName || "Бланк для ручного заполнения («________»)"}
 					>
 						{cleanContext.patientName || <em style={{ color: "var(--muted, #64748b)" }}>Бланк («________»)</em>}
@@ -199,7 +199,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Лечащий врач</span>
 					<span
-						className="consent-meta-value truncate"
+						className="consent-meta-value break-words"
 						title={cleanContext.doctorName || "Врач не назначен"}
 					>
 						{cleanContext.doctorName || <em style={{ color: "var(--muted, #64748b)" }}>Не назначен</em>}
@@ -209,7 +209,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Диагноз (МКБ-10)</span>
 					<span
-						className="consent-meta-value truncate"
+						className="consent-meta-value break-words"
 						title={cleanContext.diagnosisIcd || "Первичный осмотр"}
 					>
 						{cleanContext.diagnosisIcd || <em style={{ color: "var(--muted, #64748b)" }}>Не указан</em>}

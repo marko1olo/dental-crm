@@ -22,6 +22,7 @@ import {
 	type ConsentScopeMismatchResult,
 } from "../../consents/consentSummaryHelper";
 import { detectRequiredVisitConsents } from "../../consents/consentSsotEngine";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import {
 	type VisitConsentsTabPatient,
 	type VisitConsentsTabDoctor,
@@ -93,32 +94,9 @@ export function useVisitConsentsLogic({
 			// ignore json error
 		}
 
-		const hasCard = Boolean(activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.cardOpenedAt);
-		const initialDate = activePatient?.cardOpenedAt
-			? new Date(activePatient.cardOpenedAt).toLocaleDateString("ru-RU")
-			: new Date().toLocaleDateString("ru-RU");
-
+		// ‼️ RED TEAM ИНВАРИАНТ: Согласия НЕ генерируются из воздуха задним числом.
+		// Документ регистрируется подписанным исключительно по факту реального подписания пациентом (323-ФЗ ст. 20).
 		const defaults: Record<string, ConsentRecordState> = {};
-
-		if (hasCard) {
-			defaults.CONSENT_PERSONAL_DATA = {
-				isSigned: true,
-				signedAt: `${initialDate}, 09:10`,
-				method: "paper",
-				doctorName: "Регистратура",
-				notes: "Оригинал подписан при первичном оформлении медицинской карты",
-				integrityHash: generateSha256(`PDN_${patientId}_${initialDate}`),
-			};
-			defaults.CONSENT_INSPECTION_1051N = {
-				isSigned: true,
-				signedAt: `${initialDate}, 09:15`,
-				method: "paper",
-				doctorName: activeDoctor?.fullName || "Врач-стоматолог",
-				notes: "Оригинал согласия на лечение подшит в медицинскую карту",
-				integrityHash: generateSha256(`INSP_${patientId}_${initialDate}`),
-			};
-		}
-
 		return defaults;
 	});
 
@@ -171,10 +149,10 @@ export function useVisitConsentsLogic({
 			doctorName: docName,
 			clinicName: clinicBrand,
 			clinicLegalName: clinicLegal,
-			clinicAddress: dashboard?.clinicSettings?.profile?.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
-			clinicOgrn: dashboard?.clinicSettings?.profile?.ogrn || "1217700123456",
-			licenseNumber: dashboard?.clinicSettings?.profile?.medicalLicenseNumber || "ЛО41-01137-77/00368421",
-			diagnosisIcd: visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование",
+			clinicAddress: dashboard?.clinicSettings?.profile?.address || (isDemoShowcaseMode() ? "г. Москва, ул. Большая Стоматологическая, д. 12" : "«________________________________________»"),
+			clinicOgrn: dashboard?.clinicSettings?.profile?.ogrn || (isDemoShowcaseMode() ? "1217700123456" : "«________________»"),
+			licenseNumber: dashboard?.clinicSettings?.profile?.medicalLicenseNumber || (isDemoShowcaseMode() ? "ЛО41-01137-77/00368421" : "«________________________________________»"),
+			diagnosisIcd: visitNoteForm?.diagnosis || (isDemoShowcaseMode() ? "Z01.2 Стоматологическое обследование" : "________________________________________"),
 			toothNumbers: toothLabel,
 			date: new Date().toLocaleDateString("ru-RU"),
 			snils: activePatient?.snils || null,
@@ -234,7 +212,9 @@ export function useVisitConsentsLogic({
 	const itemsWithStatus = useMemo(() => {
 		return CLINICAL_CONSENTS_LIST.map((item) => {
 			const record = consentRecords[item.key];
-			const isSigned = Boolean(record?.isSigned) || isVisitClosed;
+			// ‼️ RED TEAM ИНВАРИАНТ: закрытие визита врачом НЕ подменяет подпись пациента в ИДС (ст. 20 323-ФЗ).
+			// Согласие является подписанным ТОЛЬКО при наличии реальной записи о подписании (record?.isSigned).
+			const isSigned = Boolean(record?.isSigned);
 			const isReq = Boolean(requiredFlags[item.key]);
 
 			let status: ConsentStatusType = "not_signed";
@@ -259,7 +239,7 @@ export function useVisitConsentsLogic({
 				renderedTemplate,
 			};
 		});
-	}, [consentRecords, isVisitClosed, requiredFlags, substitutionContext]);
+	}, [consentRecords, requiredFlags, substitutionContext]);
 
 	// Список согласий, требуемых сегодня, но еще не подписанных
 	const unsignedRequiredItems = useMemo(() => {

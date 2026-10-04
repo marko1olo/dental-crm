@@ -13,6 +13,7 @@ export interface ConsentModalFooterProps {
 	activeMode: "packages" | "single";
 	packageDocsCount: number;
 	isSubmitting: boolean;
+	isSigningReady?: boolean | undefined;
 	onPrint: () => void;
 	onPrintBlank: () => void;
 	onDownloadPdfA: () => void;
@@ -25,6 +26,7 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 	activeMode,
 	packageDocsCount,
 	isSubmitting,
+	isSigningReady = true,
 	onPrint,
 	onPrintBlank,
 	onDownloadPdfA,
@@ -157,7 +159,16 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 					className="consent-action-btn primary"
 					data-testid="btn-confirm-sign"
 					onClick={onConfirmSign}
-					disabled={isSubmitting}
+					disabled={isSubmitting || !isSigningReady}
+					style={{
+						background: isSigningReady ? "var(--teal)" : "var(--muted)",
+						cursor: isSigningReady ? "pointer" : "not-allowed",
+					}}
+					title={
+						isSigningReady
+							? (activeMode === "packages" ? "Подтвердить пакет согласий" : "Подтвердить согласие")
+							: "Для подтверждения поставьте подпись на экране, введите код из СМС или подтвердите бумажный бланк"
+					}
 				>
 					<Zap size={18} />
 					<span>

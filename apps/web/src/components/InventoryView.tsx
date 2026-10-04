@@ -58,9 +58,15 @@ import { InventoryExternalModals } from "./inventory/InventoryExternalModals.js"
 import { InventoryBatchFefoPanel } from "./InventoryBatchFefoPanel.js";
 import { InventoryInboundInvoiceModal } from "./InventoryInboundInvoiceModal.js";
 import { InventoryServiceUsagePanel } from "./InventoryServiceUsagePanel.js";
+import { useIsMobile } from "../hooks/useIsMobile.js";
+import {
+	MobileInventoryGroupedList,
+	type MobileInventoryCategoryType,
+} from "./inventory/MobileInventoryGroupedList.js";
 
 // 100% прозрачные реэкспорты декомпозированных модулей склада (Мандат 8b)
 export * from "./InventoryStockTable.js";
+export * from "./inventory/MobileInventoryGroupedList.js";
 export * from "./InventoryBatchFefoPanel.js";
 export * from "./InventoryInboundInvoiceModal.js";
 export * from "./InventoryServiceUsagePanel.js";
@@ -306,11 +312,136 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	const paperSoftBg = "var(--paper-soft)";
 	const borderColor = "var(--line)";
 
+	const isMobile = useIsMobile(768);
+
 	if (isLoading && items.length === 0) {
 		return (
 			<div className="flex items-center justify-center h-full text-[var(--muted)] gap-3">
 				<Package size={20} />
 				<span>Загрузка склада...</span>
+			</div>
+		);
+	}
+
+	if (isMobile) {
+		return (
+			<div className="w-full h-full flex flex-col overflow-hidden bg-[var(--paper)] text-[var(--ink)]">
+				<MobileInventoryGroupedList
+					items={items}
+					organizationId={organizationId}
+					searchQuery={searchQuery}
+					onSearchChange={setSearchQuery}
+					onClearSearch={() => setSearchQuery("")}
+					selectedCategory={
+						selectedCategory === "therapy" || selectedCategory === "composite"
+							? "filling"
+							: (selectedCategory as MobileInventoryCategoryType)
+					}
+					onSelectCategory={(cat) => {
+						setSelectedCategory(
+							cat === "filling" ? "composite" : (cat as InventoryCategoryFilter),
+						);
+					}}
+					onQuickDeduct={async (item, qty) => {
+						const res = await fetch(
+							`/api/inventory/${organizationId}/${item.id}/stock`,
+							{
+								method: "PATCH",
+								headers: getHeaders({
+									"Content-Type": "application/json",
+								}),
+								body: JSON.stringify({
+									adjustment: -(qty || 1),
+									allowOverdraft: true,
+								}),
+							},
+						);
+						if (res.ok) {
+							fetchItems();
+						}
+					}}
+					onReceiveItem={async (item, qty, lotNumber, expDate) => {
+						const res = await fetch(
+							`/api/inventory/${organizationId}/${item.id}/stock`,
+							{
+								method: "PATCH",
+								headers: getHeaders({
+									"Content-Type": "application/json",
+								}),
+								body: JSON.stringify({
+									adjustment: qty || 1,
+									allowOverdraft: true,
+									lotNumber,
+									expirationDate: expDate,
+								}),
+							},
+						);
+						if (res.ok) {
+							fetchItems();
+						}
+					}}
+					onSelectItem={(item) => openEditModal(item)}
+					onEditItem={(item) => openEditModal(item)}
+					onOpenAddModal={openAddModal}
+					onOpenInboundInvoice={() => setIsInboundInvoiceModalOpen(true)}
+					onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
+					onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+					isWritingOffCarpules={isWritingOffCarpules}
+					onRefresh={() => fetchItems()}
+					money={money}
+				/>
+
+				{/* Modals & Dialogs on mobile */}
+				<InventoryItemFormModal
+					isOpen={showModal}
+					onClose={() => setShowModal(false)}
+					editingItem={editingItem}
+					formData={formData}
+					setFormData={setFormData}
+					onSubmit={handleSaveItem}
+					isSaving={isSavingItem}
+				/>
+
+				{confirmDialog?.isOpen && (
+					<InventoryConfirmDialog
+						title={confirmDialog.title}
+						message={confirmDialog.message}
+						onConfirm={confirmDialog.onConfirm}
+						onCancel={() => setConfirmDialog(null)}
+					/>
+				)}
+
+				<InventoryExternalModals
+					organizationId={organizationId}
+					items={items}
+					auditInitialDoc={auditInitialDoc}
+					isClinicalWriteoffOpen={isClinicalWriteoffOpen}
+					onCloseClinicalWriteoff={() => setIsClinicalWriteoffOpen(false)}
+					isProcedureDeductionOpen={isProcedureDeductionOpen}
+					onCloseProcedureDeduction={() => setIsProcedureDeductionOpen(false)}
+					isWarehouseTransferOpen={isWarehouseTransferOpen}
+					onCloseWarehouseTransfer={() => setIsWarehouseTransferOpen(false)}
+					isInventoryAuditOpen={isInventoryAuditOpen}
+					onCloseInventoryAudit={() => setIsInventoryAuditOpen(false)}
+					onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)}
+					isMdlpDisposalOpen={isMdlpDisposalOpen}
+					onCloseMdlpDisposal={() => setIsMdlpDisposalOpen(false)}
+					isWarehouseManagerOpen={isWarehouseManagerOpen}
+					onCloseWarehouseManager={() => setIsWarehouseManagerOpen(false)}
+					isMdlpScanningOpen={isMdlpScanningOpen}
+					onCloseMdlpScanning={() => setIsMdlpScanningOpen(false)}
+					isNurseCarpuleModalOpen={isNurseCarpuleModalOpen}
+					onCloseNurseCarpuleModal={() => setIsNurseCarpuleModalOpen(false)}
+					isAcceptanceWaybillsOpen={isAcceptanceWaybillsOpen}
+					onCloseAcceptanceWaybills={() => setIsAcceptanceWaybillsOpen(false)}
+					isInboundInvoiceModalOpen={isInboundInvoiceModalOpen}
+					onCloseInboundInvoiceModal={() => setIsInboundInvoiceModalOpen(false)}
+					isDeductingMaterials={isDeductingMaterials}
+					setIsDeductingMaterials={setIsDeductingMaterials}
+					fetchItems={fetchItems}
+					getHeaders={getHeaders}
+					onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
+				/>
 			</div>
 		);
 	}

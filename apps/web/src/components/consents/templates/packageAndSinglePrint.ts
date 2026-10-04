@@ -15,6 +15,7 @@ import {
   renderConsentTemplate,
 } from './renderer';
 import { printHtmlViaWindowOrIframe } from './printCore';
+import { isDemoShowcaseMode } from '../../../lib/demoMode.js';
 
 /**
  * Формирование преамбулы сторон с учетом правового статуса документа (согласие / отказ / гарантия / несовершеннолетний)
@@ -74,9 +75,10 @@ export function generateConsentPackagePrintHtml(
 		? getBlankConsentSubstitutionContext(options.clinicDefaults || options.context)
 		: (options.context || getBlankConsentSubstitutionContext(options.clinicDefaults));
 
-	const clinicName = baseContext.clinicName || baseContext.clinicLegalName || "ООО «Стоматологическая клиника ДЕНТЕ»";
-	const clinicLicense = baseContext.licenseNumber || "ЛО41-01137-77/00368421";
-	const clinicAddress = baseContext.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
+	const isDemo = isDemoShowcaseMode();
+	const clinicName = baseContext.clinicName || baseContext.clinicLegalName || (isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»");
+	const clinicLicense = baseContext.licenseNumber || (isDemo ? "ЛО41-01137-77/00368421" : "«________________________________________»");
+	const clinicAddress = baseContext.clinicAddress || (isDemo ? "г. Москва, ул. Большая Стоматологическая, д. 12" : "«________________________________________»");
 	const today = baseContext.date || new Date().toLocaleDateString("ru-RU");
 	const effectiveWatermark = options.watermarkText || (options.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
 	const stampColor = effectiveWatermark.includes("ПОДПИСАНО") ? "#059669" : "#64748b";
@@ -406,9 +408,10 @@ export function generateSingleConsentTemplatePrintHtml(
 		? getBlankConsentSubstitutionContext(options.clinicDefaults || options.context)
 		: (options.context || getBlankConsentSubstitutionContext(options.clinicDefaults));
 
-	const clinicName = baseContext.clinicName || baseContext.clinicLegalName || "ООО «Стоматологическая клиника ДЕНТЕ»";
-	const clinicLicense = baseContext.licenseNumber || "ЛО41-01137-77/00368421";
-	const clinicAddress = baseContext.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
+	const isDemo = isDemoShowcaseMode();
+	const clinicName = baseContext.clinicName || baseContext.clinicLegalName || (isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»");
+	const clinicLicense = baseContext.licenseNumber || (isDemo ? "ЛО41-01137-77/00368421" : "«________________________________________»");
+	const clinicAddress = baseContext.clinicAddress || (isDemo ? "г. Москва, ул. Большая Стоматологическая, д. 12" : "«________________________________________»");
 	const clinicPhone = baseContext.phone || "";
 	const today = baseContext.date || new Date().toLocaleDateString("ru-RU");
 	const effectiveWatermark = options.watermarkText || (options.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");

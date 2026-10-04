@@ -819,7 +819,7 @@ html.dark .consent-document-sheet .consent-document-subtitle {
 	}
 
 	.consent-modal-body {
-		padding: 12px 16px;
+		padding: 12px 16px calc(90px + env(safe-area-inset-bottom, 20px)) 16px;
 		gap: 12px;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;

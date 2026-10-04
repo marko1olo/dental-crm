@@ -355,3 +355,134 @@ test("SanPiN 2.6.1.1192-03 Radiation Dose Sheet template #15 integrates correctl
 	assert.ok(html.includes("Лист учета дозовых нагрузок") || html.includes("ДОЗОВЫХ НАГРУЗОК"));
 	assert.ok(html.includes("Смирнов Алексей Викторович"));
 });
+
+test("RED TEAM INQUISITOR: informedConsentEngine strictly prevents fake mock signatures and enforces authentic verification", async () => {
+	const {
+		isConsentVectorSignatureEmpty,
+		validateConsentSigningInput,
+		generateSmsPepSignatureSvg,
+		generatePaperVerifiedSignatureSvg,
+		createConsentAuditRecord,
+		calculateSha256,
+	} = await import("../clinical/informedConsentEngine.js");
+
+	// 1. Zero Fake Signatures: Blank tablet strokes are strictly rejected
+	assert.equal(isConsentVectorSignatureEmpty([]), true, "Empty stroke array must be empty");
+	assert.equal(isConsentVectorSignatureEmpty([{ points: [{ x: 10, y: 10, time: 100 }] }]), true, "1-point doodle below threshold must be empty");
+
+	const emptyTabletValidation = validateConsentSigningInput({
+		method: "tablet_stylus",
+		tabletStrokes: [],
+	});
+	assert.equal(emptyTabletValidation.valid, false, "Blank tablet signature must fail validation");
+	assert.ok(emptyTabletValidation.error?.includes("отсутствует") || emptyTabletValidation.error?.includes("стилус"));
+
+	// 2. Real Vector Strokes pass validation
+	const validStrokes = [
+		{
+			points: [
+				{ x: 10, y: 10, time: 100 },
+				{ x: 20, y: 15, time: 120 },
+				{ x: 30, y: 25, time: 140 },
+				{ x: 40, y: 40, time: 160 },
+				{ x: 50, y: 60, time: 180 },
+			],
+		},
+	];
+	assert.equal(isConsentVectorSignatureEmpty(validStrokes), false);
+	const validTabletValidation = validateConsentSigningInput({
+		method: "tablet_stylus",
+		tabletStrokes: validStrokes,
+	});
+	assert.equal(validTabletValidation.valid, true);
+
+	// 3. SMS OTP: Must be exactly 4 digits, fake/short codes rejected
+	const shortSmsValidation = validateConsentSigningInput({
+		method: "sms_otp",
+		smsOtpCode: "12",
+	});
+	assert.equal(shortSmsValidation.valid, false);
+	assert.ok(shortSmsValidation.error?.includes("4-значн") || shortSmsValidation.error?.includes("4 цифр"));
+
+	const validSmsValidation = validateConsentSigningInput({
+		method: "sms_otp",
+		smsOtpCode: "5821",
+	});
+	assert.equal(validSmsValidation.valid, true);
+
+	// SMS PEP SVG stamp contains 63-FZ and patient phone
+	const smsSvg = generateSmsPepSignatureSvg({
+		patientFullName: "Иванов Иван Иванович",
+		phoneMasked: "+7 (999) ***-45-67",
+		timestampIso: "2026-10-04T12:00:00.000Z",
+		integrityHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		clinicName: "ООО ДЕНТЕ",
+	});
+	assert.ok(smsSvg.includes("63-ФЗ"), "SMS SVG must cite 63-FZ");
+	assert.ok(smsSvg.includes("ПЭП"), "SMS SVG must mention PEP");
+	assert.ok(smsSvg.includes("+7 (999) ***-45-67"), "SMS SVG must include masked phone");
+
+	// 4. Paper Physical: Rejects unconfirmed without scan
+	const unconfirmedPaper = validateConsentSigningInput({
+		method: "paper_physical",
+		paperOriginalStored: false,
+	});
+	assert.equal(unconfirmedPaper.valid, false);
+	assert.ok(unconfirmedPaper.error?.includes("скан") || unconfirmedPaper.error?.includes("карту"));
+
+	const confirmedPaper = validateConsentSigningInput({
+		method: "paper_physical",
+		paperOriginalStored: true,
+	});
+	assert.equal(confirmedPaper.valid, true);
+
+	const paperWithScan = validateConsentSigningInput({
+		method: "paper_physical",
+		paperOriginalStored: false,
+		scanFileName: "scan_consent_043u.pdf",
+		scanFileSizeBytes: 1024 * 350,
+	});
+	assert.equal(paperWithScan.valid, true);
+
+	const paperSvg = generatePaperVerifiedSignatureSvg({
+		date: "04.10.2026",
+		clinicName: "ООО ДЕНТЕ",
+		patientFullName: "Иванов Иван Иванович",
+		scanFileName: "scan_consent_043u.pdf",
+		scanFileSizeBytes: 1024 * 350,
+	});
+	assert.ok(paperSvg.includes("scan_consent_043u.pdf"));
+	assert.ok(paperSvg.includes("323-ФЗ"));
+	assert.ok(paperSvg.includes("043/у"));
+
+	// 5. Audit Trail & Anti-Backdating Invariant
+	const auditRecord = createConsentAuditRecord({
+		documentCode: "CONSENT_INSPECTION_1051N",
+		patientId: "patient-123",
+		patientFullName: "Иванов Иван Иванович",
+		verificationMethod: "tablet_stylus",
+		documentText: "Информированное добровольное согласие на медицинское вмешательство...",
+		clientTimestampIso: "2026-10-04T10:00:00.000Z",
+		serverTimestampIso: "2026-10-04T10:00:05.000Z",
+		strokes: validStrokes,
+	});
+
+	assert.equal(auditRecord.isBackdated, false);
+	assert.equal(auditRecord.documentCode, "CONSENT_INSPECTION_1051N");
+	assert.equal(auditRecord.verificationMethod, "tablet_stylus");
+	assert.ok(auditRecord.integrityHash.length === 64, "Must produce valid 64-char SHA-256 hash");
+
+	// Backdating detection: difference > 300 seconds
+	const backdatedRecord = createConsentAuditRecord({
+		documentCode: "CONSENT_INSPECTION_1051N",
+		patientId: "patient-123",
+		patientFullName: "Иванов Иван Иванович",
+		verificationMethod: "tablet_stylus",
+		documentText: "Текст документа...",
+		clientTimestampIso: "2026-10-01T10:00:00.000Z",
+		serverTimestampIso: "2026-10-04T10:00:00.000Z",
+	});
+	assert.equal(backdatedRecord.isBackdated, true, "Signatures older than 300s drift must be flagged as backdated");
+	assert.ok(backdatedRecord.auditNotes.some((n: string) => n.includes("задним числом")));
+});
+

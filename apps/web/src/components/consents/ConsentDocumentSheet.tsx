@@ -199,6 +199,31 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 						<div style={{ fontSize: "12px", color: "var(--ink)", wordBreak: "break-word" }}>
 							Подпись: __________________ / {cleanContext.patientName} /
 						</div>
+						{!isClosedOrSigned ? (
+							<div
+								style={{
+									fontSize: "11px",
+									color: "var(--amber-dark, #b45309)",
+									fontStyle: "italic",
+									marginTop: "3px",
+								}}
+								data-testid="sheet-status-unsigned"
+							>
+								Статус: Не подписан (требуется роспись пациента на бланке или планшете)
+							</div>
+						) : (
+							<div
+								style={{
+									fontSize: "11px",
+									color: "var(--ok-fg, #059669)",
+									fontWeight: 600,
+									marginTop: "3px",
+								}}
+								data-testid="sheet-status-signed"
+							>
+								Статус: Подписан и заверен (подшит в архив карты № 043/у)
+							</div>
+						)}
 					</div>
 					<div>
 						<div

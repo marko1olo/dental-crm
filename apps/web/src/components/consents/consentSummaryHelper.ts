@@ -7,6 +7,7 @@ import {
 } from "./consentTemplates.js";
 import type { SignatureVectorData } from "./signaturePadMath.js";
 import { STATUTORY_CONSENT_KEY_LABELS } from "./consentSsotEngine.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export interface SignedConsentPayload {
 	templateKey: ConsentTemplateKey;
@@ -29,8 +30,10 @@ export interface SignedConsentPayload {
 	smsOtpCode?: string | null;
 	attachedToForm043u: boolean;
 	paperOriginalStored?: boolean;
+	scanFileName?: string | null | undefined;
 	statusText?: string;
 	note?: string;
+	auditTrail?: unknown;
 }
 
 export interface PatientConsentSummaryParams {
@@ -118,18 +121,19 @@ export function cleanPrintableConsentText(text: string): string {
  * Валидирует и нормализует контекст подстановки, гарантируя отсутствие мусора в распечатываемом бланке.
  */
 export function sanitizeConsentContext(context: ConsentSubstitutionContext): ConsentSubstitutionContext {
+	const isDemo = isDemoShowcaseMode();
 	return {
 		patientName: sanitizeConsentFieldValue(context.patientName, "________________________________________"),
 		birthDate: sanitizeConsentFieldValue(context.birthDate, "«___» _________ _____ г."),
 		passport: sanitizeConsentFieldValue(context.passport, "серия ______ № ________ выдан ____________________"),
 		doctorName: sanitizeConsentFieldValue(context.doctorName, "Лечащий врач-стоматолог"),
-		clinicName: sanitizeConsentFieldValue(context.clinicName, "ООО «Стоматологическая клиника ДЕНТЕ»"),
-		clinicLegalName: sanitizeConsentFieldValue(context.clinicLegalName, "ООО «Стоматологическая клиника ДЕНТЕ»"),
-		clinicAddress: sanitizeConsentFieldValue(context.clinicAddress, "г. Москва, ул. Большая Стоматологическая, д. 12"),
-		clinicOgrn: sanitizeConsentFieldValue(context.clinicOgrn, "1217700123456"),
-		licenseNumber: sanitizeConsentFieldValue(context.licenseNumber, "ЛО41-01137-77/00368421"),
-		diagnosisIcd: sanitizeConsentFieldValue(context.diagnosisIcd, "Первичный осмотр и обследование"),
-		toothNumbers: sanitizeConsentFieldValue(context.toothNumbers, "Полость рта (зубной ряд)"),
+		clinicName: sanitizeConsentFieldValue(context.clinicName, isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+		clinicLegalName: sanitizeConsentFieldValue(context.clinicLegalName, isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+		clinicAddress: sanitizeConsentFieldValue(context.clinicAddress, isDemo ? "г. Москва, ул. Большая Стоматологическая, д. 12" : "«________________________________________»"),
+		clinicOgrn: sanitizeConsentFieldValue(context.clinicOgrn, isDemo ? "1217700123456" : "«________________»"),
+		licenseNumber: sanitizeConsentFieldValue(context.licenseNumber, isDemo ? "ЛО41-01137-77/00368421" : "«________________________________________»"),
+		diagnosisIcd: sanitizeConsentFieldValue(context.diagnosisIcd, isDemo ? "Первичный осмотр и обследование" : "________________________________________"),
+		toothNumbers: sanitizeConsentFieldValue(context.toothNumbers, isDemo ? "Полость рта (зубной ряд)" : "________________________"),
 		date: sanitizeConsentFieldValue(context.date, new Date().toLocaleDateString("ru-RU")),
 		snils: sanitizeConsentFieldValue(context.snils, "___-___-___ __"),
 		phone: sanitizeConsentFieldValue(context.phone, "+7 (___) ___-__-__"),

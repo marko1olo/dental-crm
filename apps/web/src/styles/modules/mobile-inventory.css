@@ -1,0 +1,768 @@
+/* mobile-inventory.css - Apple Store Inventory HIG / iOS Grouped Inset Cards for DENTE Dental CRM */
+
+.mobile-inventory-container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 100vw;
+	min-height: 100%;
+	overflow-x: clip;
+	box-sizing: border-box;
+	background: var(--paper);
+	color: var(--ink);
+	padding-bottom: 96px;
+	position: relative;
+}
+
+/* 1. Sticky Header Bar (Title, Search, Category Chips) */
+.mobile-inventory-header-bar {
+	position: sticky;
+	top: 0;
+	z-index: 30;
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
+	padding: 10px 14px 8px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-inventory-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.mobile-inventory-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.mobile-inventory-title-icon {
+	color: var(--teal);
+	flex-shrink: 0;
+}
+
+.mobile-inventory-title-text {
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -0.015em;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.25;
+}
+
+.mobile-inventory-kpi-badge {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.mobile-inventory-kpi-badge.has-shortage {
+	background: rgba(239, 68, 68, 0.12);
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* 1-Row Search with Clear & Barcode */
+.mobile-inventory-search-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.mobile-inventory-search-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+.mobile-inventory-search-icon {
+	position: absolute;
+	left: 12px;
+	color: var(--muted);
+	pointer-events: none;
+}
+
+.mobile-inventory-search-input {
+	width: 100%;
+	height: 42px;
+	min-height: 42px;
+	padding: 0 40px 0 38px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+.mobile-inventory-search-input:focus {
+	background: var(--paper);
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.mobile-inventory-search-clear {
+	position: absolute;
+	right: 6px;
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	min-height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	border-radius: 50%;
+	cursor: pointer;
+}
+
+/* Quick Carpule 1-Click Disposal in Header */
+.mobile-inventory-quick-carpule-btn {
+	height: 42px;
+	min-height: 42px;
+	min-width: 44px;
+	padding: 0 10px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-quick-carpule-btn:active {
+	transform: scale(0.96);
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}
+
+/* 2. Horizontal Category Chips Scroller */
+.mobile-inventory-chips-scroller {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	padding-bottom: 2px;
+	margin: 0 -4px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+.mobile-inventory-chips-scroller::-webkit-scrollbar {
+	display: none;
+}
+
+.mobile-inventory-chip {
+	height: 36px;
+	min-height: 36px;
+	min-width: 44px;
+	padding: 0 12px;
+	border-radius: 9999px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-chip:active {
+	transform: scale(0.96);
+}
+
+.mobile-inventory-chip.active {
+	background: var(--teal) !important;
+	color: var(--on-teal, #ffffff) !important;
+	border-color: var(--teal) !important;
+	font-weight: 600;
+	box-shadow: 0 2px 6px rgba(20, 184, 166, 0.25);
+}
+
+.mobile-inventory-chip-count {
+	font-size: 11px;
+	font-weight: 700;
+	background: rgba(0, 0, 0, 0.08);
+	padding: 1px 6px;
+	border-radius: 9999px;
+	line-height: 1.2;
+}
+
+.mobile-inventory-chip.active .mobile-inventory-chip-count {
+	background: rgba(255, 255, 255, 0.25);
+	color: var(--on-teal, #ffffff);
+}
+
+/* 3. Grouped Inset Cards Container (Apple Store Inventory Style) */
+.mobile-inventory-grouped-inset {
+	margin: 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+/* Material Row inside Grouped Inset Card */
+.mobile-inventory-item-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 14px;
+	min-height: 64px;
+	background: var(--paper);
+	cursor: pointer;
+	position: relative;
+	transition: background-color 0.12s ease;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	box-sizing: border-box;
+}
+
+.mobile-inventory-item-row:active {
+	background: var(--paper-soft);
+}
+
+/* Inset Separator (offset by icon box 38px + gap 12px + padding 14px = 64px) */
+.mobile-inventory-item-row:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	left: 64px;
+	right: 0;
+	bottom: 0;
+	height: 1px;
+	background: var(--line-subtle);
+}
+
+/* Category-tinted Icon Box */
+.mobile-inventory-icon-box {
+	width: 38px;
+	height: 38px;
+	min-width: 38px;
+	min-height: 38px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-soft);
+}
+
+.mobile-inventory-icon-box.anesthesia {
+	background: rgba(20, 184, 166, 0.12);
+	color: #0d9488;
+	border-color: rgba(20, 184, 166, 0.3);
+}
+
+.mobile-inventory-icon-box.filling {
+	background: rgba(14, 165, 233, 0.12);
+	color: #0284c7;
+	border-color: rgba(14, 165, 233, 0.3);
+}
+
+.mobile-inventory-icon-box.endo {
+	background: rgba(168, 85, 247, 0.12);
+	color: #9333ea;
+	border-color: rgba(168, 85, 247, 0.3);
+}
+
+.mobile-inventory-icon-box.impression {
+	background: rgba(245, 158, 11, 0.12);
+	color: #d97706;
+	border-color: rgba(245, 158, 11, 0.3);
+}
+
+.mobile-inventory-icon-box.ppe {
+	background: rgba(34, 197, 94, 0.12);
+	color: #16a34a;
+	border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Material Content Info */
+.mobile-inventory-item-info {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.mobile-inventory-item-name {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	line-height: 1.25;
+	word-break: break-word;
+}
+
+.mobile-inventory-item-meta {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--muted);
+	line-height: 1.3;
+}
+
+.mobile-inventory-stock-highlight {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+/* Badges for Critical Stock & FEFO */
+.mobile-inventory-badges-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-top: 2px;
+}
+
+.mobile-inventory-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 7px;
+	border-radius: 6px;
+	white-space: nowrap;
+	line-height: 1.2;
+}
+
+.mobile-inventory-badge.critical-warning {
+	background: rgba(245, 158, 11, 0.15);
+	color: #b45309;
+	border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.mobile-inventory-badge.critical-deficit {
+	background: rgba(239, 68, 68, 0.15);
+	color: #b91c1c;
+	border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.mobile-inventory-badge.fefo-expired {
+	background: rgba(239, 68, 68, 0.15);
+	color: #dc2626;
+	border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.mobile-inventory-badge.fefo-warning {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.mobile-inventory-badge.fefo-ok {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* 4. 1-Tap Quick Write-Off Button (Chairside Ergonomics) */
+.mobile-inventory-quick-deduct-btn {
+	min-width: 44px;
+	min-height: 44px;
+	height: 44px;
+	padding: 0 10px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+}
+
+.mobile-inventory-quick-deduct-btn:active {
+	transform: scale(0.92);
+	background: rgba(239, 68, 68, 0.12);
+	border-color: rgba(239, 68, 68, 0.4);
+	color: #dc2626;
+}
+
+.mobile-inventory-quick-deduct-btn:disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* 5. Sticky Bottom Action Bar in Natural Thumb Zone */
+.mobile-inventory-bottom-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	padding: 10px 16px max(14px, env(safe-area-inset-bottom));
+	z-index: 40;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.mobile-inventory-primary-fab {
+	flex: 1;
+	min-height: 50px;
+	height: 50px;
+	border-radius: 14px;
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+	transition: transform 0.15s ease, opacity 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-primary-fab:active {
+	transform: scale(0.98);
+	opacity: 0.92;
+}
+
+.mobile-inventory-secondary-btn {
+	min-height: 50px;
+	height: 50px;
+	min-width: 50px;
+	padding: 0 14px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+	flex-shrink: 0;
+}
+
+.mobile-inventory-secondary-btn:active {
+	transform: scale(0.96);
+	background: var(--paper);
+}
+
+/* 6. Native iOS Bottom Sheet Drawer */
+.mobile-inventory-drawer-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	animation: mobile-fade-in 0.2s ease-out;
+}
+
+.mobile-inventory-drawer-surface {
+	width: 100%;
+	max-height: 88dvh;
+	background: var(--paper);
+	border-top: 1px solid var(--line);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: mobile-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+.mobile-inventory-drag-handle-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 10px 0 6px 0;
+	cursor: grab;
+}
+
+.mobile-inventory-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, rgba(150, 150, 150, 0.4));
+}
+
+.mobile-inventory-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 18px 12px 18px;
+	border-bottom: 1px solid var(--line-subtle);
+}
+
+.mobile-inventory-drawer-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.mobile-inventory-drawer-close {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 50%;
+	background: var(--paper-soft);
+	border: none;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.mobile-inventory-drawer-close:active {
+	background: var(--line);
+}
+
+.mobile-inventory-drawer-body {
+	flex: 1;
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Stepper Quantity Control */
+.mobile-inventory-stepper-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	margin: 8px 0;
+}
+
+.mobile-inventory-stepper-btn {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-stepper-btn:active {
+	transform: scale(0.92);
+	background: var(--teal-surface);
+	border-color: var(--teal);
+}
+
+.mobile-inventory-stepper-val {
+	font-size: 32px;
+	font-weight: 800;
+	color: var(--ink);
+	min-width: 80px;
+	text-align: center;
+	font-family: monospace;
+}
+
+/* Quick Increment Chips in Drawer */
+.mobile-inventory-quick-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 8px;
+}
+
+.mobile-inventory-quick-chip {
+	height: 44px;
+	min-height: 44px;
+	border-radius: 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-quick-chip:active {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal);
+	transform: scale(0.95);
+}
+
+/* Input Fields inside Drawer */
+.mobile-inventory-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.mobile-inventory-field-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.mobile-inventory-field-input {
+	width: 100%;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.mobile-inventory-field-input:focus {
+	background: var(--paper);
+	border-color: var(--teal);
+}
+
+/* Sticky Action Footer in Drawer */
+.mobile-inventory-drawer-footer {
+	padding: 14px 18px max(16px, env(safe-area-inset-bottom)) 18px;
+	border-top: 1px solid var(--line-subtle);
+	background: var(--paper);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.mobile-inventory-drawer-submit {
+	width: 100%;
+	min-height: 52px;
+	height: 52px;
+	border-radius: 14px;
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border: none;
+	font-size: 16px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+	transition: transform 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobile-inventory-drawer-submit:active {
+	transform: scale(0.98);
+}
+
+.mobile-inventory-drawer-secondary-link {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+	padding: 6px;
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+/* Animations */
+@keyframes mobile-slide-up {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+@keyframes mobile-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
