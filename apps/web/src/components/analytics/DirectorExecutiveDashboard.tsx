@@ -34,7 +34,10 @@ import {
 import {
 	Activity,
 	AlertTriangle,
+	Calendar,
+	CalendarPlus,
 	Coins,
+	CreditCard,
 	Filter,
 	Layers,
 	RefreshCw,
@@ -336,7 +339,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
 						<button
 							type="button"
-							className="executive-refresh-btn"
+							className="executive-primary-action-btn"
 							onClick={() => {
 								if (onNavigateToSection) {
 									onNavigateToSection("schedule");
@@ -346,7 +349,8 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 							}}
 							title="Записать пациента на приём"
 						>
-							Записать пациента
+							<CalendarPlus size={14} aria-hidden="true" />
+							<span>Записать пациента</span>
 						</button>
 						<button
 							type="button"
@@ -360,7 +364,8 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 							}}
 							title="Открыть смену или перейти в кассу"
 						>
-							Перейти в кассу
+							<CreditCard size={14} aria-hidden="true" />
+							<span>Перейти в кассу</span>
 						</button>
 						{period !== "month" && (
 							<button
@@ -368,7 +373,8 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 								className="executive-refresh-btn"
 								onClick={() => handlePeriodSelect("month")}
 							>
-								Показать за месяц
+								<Calendar size={14} aria-hidden="true" />
+								<span>Показать за месяц</span>
 							</button>
 						)}
 					</div>

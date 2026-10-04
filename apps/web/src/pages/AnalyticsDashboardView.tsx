@@ -7,6 +7,7 @@ import {
 	Check,
 	ChevronDown,
 	DollarSign,
+	Download,
 	MoreHorizontal,
 	Printer,
 	RefreshCw,
@@ -50,6 +51,8 @@ const FinancialAnalyticsModal = lazy(() =>
 	})),
 );
 import { MarketingAttributionDashboard } from "../components/analytics/MarketingAttributionDashboard";
+import { showToast } from "../components/GlobalToast";
+import { buildRfc4180Csv, triggerCsvDownload } from "../components/reports/reportsCsvExport";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
 	type AnalyticsDashboardData,
@@ -284,6 +287,48 @@ export function AnalyticsDashboardView() {
 		appLogic?.dashboard,
 	]);
 
+	const handleExportExecutiveCsv = useCallback(() => {
+		try {
+			const rows: (string | number)[][] = [
+				["СВОДНЫЙ АНАЛИТИЧЕСКИЙ ОТЧЕТ КЛИНИКИ (DENTE CRM)", `Период: ${dateRange}`],
+				["Дата формирования", new Date().toLocaleString("ru-RU")],
+				["Филиал", branchFilter === "all" ? "Все филиалы" : branchFilter],
+				[],
+				["КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ (KPI)", "Значение"],
+				["Всего пациентов", data?.kpis?.totalPatients ?? 0],
+				["Первичные пациенты", data?.kpis?.primaryPatientsCount ?? 0],
+				["Повторные пациенты", data?.kpis?.repeatPatientsCount ?? 0],
+				["Выручка кассы (₽)", (data?.kpis?.totalRevenue ?? 0) / 100],
+				["Наличная выручка (₽)", (data?.kpis?.cashRevenue ?? 0) / 100],
+				["Безналичная выручка / карты (₽)", (data?.kpis?.cardRevenue ?? 0) / 100],
+				["Всего приемов", data?.kpis?.totalAppointments ?? 0],
+				["Загрузка кресел (%)", `${data?.kpis?.chairOccupancyRatePercent ?? 0}%`],
+				["Средний чек (₽)", (data?.kpis?.averageCheck ?? 0) / 100],
+			];
+
+			if (Array.isArray(data?.doctorProfitabilityJson) && data.doctorProfitabilityJson.length > 0) {
+				rows.push([]);
+				rows.push(["ВЫРАБОТКА ВРАЧЕЙ", "Выручка (₽)", "Маржа клиники (₽)", "Успешность (%)", "Услуг", "Нарядов ЗТЛ"]);
+				for (const doc of data.doctorProfitabilityJson) {
+					rows.push([
+						doc.name,
+						(doc.revenue ?? 0) / 100,
+						doc.clinicMarginRub ? doc.clinicMarginRub / 100 : "—",
+						doc.completionRate !== null && doc.completionRate !== undefined ? `${doc.completionRate}%` : "—",
+						doc.services804nCount ?? 0,
+						doc.labOrdersCount ?? 0,
+					]);
+				}
+			}
+
+			const csv = buildRfc4180Csv(rows, ";");
+			triggerCsvDownload(csv, `Dente_Analytics_Export_${dateRange}_${Date.now()}.csv`);
+			showToast("Сводный отчет аналитики выгружен в CSV (Excel)", "success");
+		} catch {
+			showToast("Не удалось экспортировать отчет", "error");
+		}
+	}, [data, dateRange, branchFilter]);
+
 	const retryButton = (
 		<button
 			type="button"
@@ -415,6 +460,43 @@ export function AnalyticsDashboardView() {
 							)}
 						</div>
 					</div>
+
+					{/* Тактильные кнопки действий тулбара: Экспорт, Печать, Обновление */}
+					<div className="flex items-center gap-1.5 shrink-0" role="group" aria-label="Действия с отчетом">
+						<button
+							type="button"
+							className="analytics-action-btn"
+							onClick={handleExportExecutiveCsv}
+							title="Экспорт сводного отчета в Excel / CSV"
+							data-testid="analytics-export-csv-btn"
+						>
+							<Download size={13} aria-hidden="true" />
+							<span className="hidden sm:inline">Экспорт</span>
+						</button>
+
+						<button
+							type="button"
+							className="analytics-action-btn"
+							onClick={() => window.print()}
+							title="Распечатать аналитику / Сохранить в PDF"
+							data-testid="analytics-print-btn"
+						>
+							<Printer size={13} aria-hidden="true" />
+							<span className="hidden sm:inline">Печать</span>
+						</button>
+
+						<button
+							type="button"
+							className="analytics-action-btn"
+							onClick={retry}
+							disabled={loading}
+							title="Обновить данные аналитики"
+							aria-label="Обновить данные аналитики"
+							data-testid="analytics-refresh-btn"
+						>
+							<RefreshCw size={13} className={loading ? "animate-spin text-[var(--teal)]" : ""} aria-hidden="true" />
+						</button>
+					</div>
 				</div>
 			</header>
 
@@ -428,11 +510,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "executive"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all border ${
-						analyticsSection === "executive"
-							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
-							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
-					}`}
+					className={`analytics-tab-btn ${analyticsSection === "executive" ? "analytics-tab-btn--active" : ""}`}
 					onClick={() => {
 						setAnalyticsSection("executive");
 						setIsSectionMoreOpen(false);
@@ -444,11 +522,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "operational"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all border ${
-						analyticsSection === "operational"
-							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
-							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
-					}`}
+					className={`analytics-tab-btn ${analyticsSection === "operational" ? "analytics-tab-btn--active" : ""}`}
 					onClick={() => {
 						setAnalyticsSection("operational");
 						setIsSectionMoreOpen(false);
@@ -460,11 +534,7 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "curators"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all border ${
-						analyticsSection === "curators"
-							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
-							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
-					}`}
+					className={`analytics-tab-btn ${analyticsSection === "curators" ? "analytics-tab-btn--active" : ""}`}
 					onClick={() => {
 						setAnalyticsSection("curators");
 						setIsSectionMoreOpen(false);
@@ -484,12 +554,12 @@ export function AnalyticsDashboardView() {
 							analyticsSection === "marketing"
 						}
 						aria-expanded={isSectionMoreOpen}
-						className={`inline-flex h-[34px] min-h-[34px] items-center justify-center gap-1.5 rounded-md px-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+						className={`analytics-tab-btn ${
 							analyticsSection === "lost_patients" ||
 							analyticsSection === "freed_slots" ||
 							analyticsSection === "marketing"
-								? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
-								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+								? "analytics-tab-btn--active"
+								: ""
 						}`}
 						onClick={() => setIsSectionMoreOpen((prev) => !prev)}
 						title="Дополнительные разделы аналитики (Возврат, Освободившиеся окна, Маркетинг, ROI)"

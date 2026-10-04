@@ -33,13 +33,14 @@
 .online-period-toggle {
 	display: inline-flex;
 	align-items: center;
-	background: var(--paper-soft, #f8fafc);
-	border: 1px solid var(--line, #cbd5e1);
-	border-radius: 8px;
-	padding: 2px;
-	gap: 2px;
-	height: 32px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 3px;
+	gap: 3px;
+	height: 34px;
 	box-sizing: border-box;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .online-period-btn {
@@ -48,12 +49,12 @@
 	padding: 0 0.625rem;
 	font-size: 0.75rem;
 	font-weight: 600;
-	border: none;
+	border: 1px solid transparent;
 	background: transparent;
-	color: var(--muted, #64748b);
-	border-radius: 6px;
+	color: var(--muted);
+	border-radius: 9px;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -61,45 +62,57 @@
 	user-select: none;
 }
 
+.online-period-btn:hover:not(.active) {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
 .online-period-btn.active {
-	background: var(--paper-strong, #ffffff);
-	color: var(--ink, #0f172a);
+	background: var(--teal);
+	color: var(--on-teal);
 	font-weight: 700;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+	border-color: var(--teal);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .online-tab-btn {
-	height: 32px;
-	min-height: 32px;
+	height: 34px;
+	min-height: 34px;
 	padding: 0 0.875rem;
 	font-size: 0.75rem;
 	font-weight: 700;
-	border-radius: 8px;
-	border: none;
+	border-radius: 10px;
+	border: 1px solid var(--line);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	white-space: nowrap;
 	flex-shrink: 0;
 	user-select: none;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .online-tab-btn.active {
-	background: var(--teal, #0d9488);
-	color: var(--on-teal, #ffffff);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	background: var(--teal);
+	color: var(--on-teal);
+	border-color: var(--teal);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .online-tab-btn:not(.active) {
-	background: var(--paper-soft, #f1f5f9);
-	color: var(--muted, #64748b);
+	background: var(--paper);
+	color: var(--muted);
+	border-color: var(--line);
 }
 
 .online-tab-btn:not(.active):hover {
-	color: var(--ink, #0f172a);
-	background: var(--line, #e2e8f0);
+	color: var(--ink);
+	background: var(--paper-soft);
+	border-color: var(--teal);
 }
 
 @media (pointer: coarse), (max-width: 640px) {
@@ -160,6 +173,6 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .online-period-btn.active {
-	background: var(--paper-strong);
-	color: var(--ink);
+	background: var(--teal);
+	color: var(--on-teal);
 }

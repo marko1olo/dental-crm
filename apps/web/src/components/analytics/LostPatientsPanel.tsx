@@ -325,8 +325,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 
 				<div className="flex items-center gap-2 flex-wrap">
 					<div
-						className="inline-flex items-center p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] min-h-[36px] flex-nowrap gap-1.5 overflow-x-auto max-w-full"
-						style={{ gap: "6px" }}
+						className="inline-flex items-center p-[3px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] min-h-[34px] flex-nowrap gap-1 overflow-x-auto max-w-full shadow-inner"
 						role="tablist"
 					>
 						<button
@@ -334,10 +333,10 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							role="tab"
 							aria-selected={activeTab === "risk_list"}
 							onClick={() => setActiveTab("risk_list")}
-							className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+							className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
 								activeTab === "risk_list"
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm border border-[var(--line)] font-semibold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									? "bg-[var(--teal)] text-[var(--on-teal)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 						>
 							Зона риска ({filteredPatients.length})
@@ -347,10 +346,10 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							role="tab"
 							aria-selected={activeTab === "recall_cohorts"}
 							onClick={() => setActiveTab("recall_cohorts")}
-							className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+							className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
 								activeTab === "recall_cohorts"
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm border border-[var(--line)] font-semibold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+									? "bg-[var(--teal)] text-[var(--on-teal)] shadow-xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 						>
 							Когорты Recall 6/12м
@@ -361,7 +360,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 						type="button"
 						onClick={fetchLostPatients}
 						disabled={loading}
-						className="p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors"
+						className="p-1.5 min-h-[34px] min-w-[34px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors shadow-xs flex items-center justify-center cursor-pointer"
 						title="Обновить аналитику"
 						aria-label="Обновить аналитику"
 					>

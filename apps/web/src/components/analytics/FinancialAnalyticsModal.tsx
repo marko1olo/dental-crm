@@ -285,34 +285,42 @@ export function FinancialAnalyticsModal({
 
 				{/* 2. CONTROLS BAR */}
 				<div className="fin-analytics-controls">
-					<div className="fin-analytics-period-tabs">
-						<span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", marginRight: 6 }}>
+					<div className="fin-analytics-period-wrapper">
+						<span className="fin-analytics-period-label">
 							Период:
 						</span>
-						<button
-							type="button"
-							className={`fin-analytics-tab-btn ${period === "month" ? "active" : ""}`}
-							onClick={() => setPeriod("month")}
-							data-testid="period-month-btn"
-						>
-							Текущий месяц
-						</button>
-						<button
-							type="button"
-							className={`fin-analytics-tab-btn ${period === "quarter" ? "active" : ""}`}
-							onClick={() => setPeriod("quarter")}
-							data-testid="period-quarter-btn"
-						>
-							Квартал
-						</button>
-						<button
-							type="button"
-							className={`fin-analytics-tab-btn ${period === "year" ? "active" : ""}`}
-							onClick={() => setPeriod("year")}
-							data-testid="period-year-btn"
-						>
-							2026 год
-						</button>
+						<div className="fin-analytics-period-tabs" role="radiogroup" aria-label="Период отчета">
+							<button
+								type="button"
+								className={`fin-analytics-tab-btn ${period === "month" ? "active" : ""}`}
+								onClick={() => setPeriod("month")}
+								data-testid="period-month-btn"
+								role="radio"
+								aria-checked={period === "month"}
+							>
+								Текущий месяц
+							</button>
+							<button
+								type="button"
+								className={`fin-analytics-tab-btn ${period === "quarter" ? "active" : ""}`}
+								onClick={() => setPeriod("quarter")}
+								data-testid="period-quarter-btn"
+								role="radio"
+								aria-checked={period === "quarter"}
+							>
+								Квартал
+							</button>
+							<button
+								type="button"
+								className={`fin-analytics-tab-btn ${period === "year" ? "active" : ""}`}
+								onClick={() => setPeriod("year")}
+								data-testid="period-year-btn"
+								role="radio"
+								aria-checked={period === "year"}
+							>
+								2026 год
+							</button>
+						</div>
 					</div>
 
 					<button

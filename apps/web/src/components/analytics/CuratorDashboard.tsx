@@ -416,48 +416,45 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 						paddingTop: "4px",
 					}}
 				>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-						<span style={{ fontSize: "12px", color: "var(--ink-muted, #64748b)", fontWeight: 600 }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+						<span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 600 }}>
 							Сумма:
 						</span>
-						<button
-							type="button"
-							onClick={() => setSelectedPriceRange("all")}
-							className={`curator-pill-btn ${selectedPriceRange === "all" ? "active" : ""}`}
-							style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
-						>
-							Все суммы
-						</button>
-						<button
-							type="button"
-							onClick={() => setSelectedPriceRange("low")}
-							className={`curator-pill-btn ${selectedPriceRange === "low" ? "active" : ""}`}
-							style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
-						>
-							&lt; 50 тыс. ₽
-						</button>
-						<button
-							type="button"
-							onClick={() => setSelectedPriceRange("medium")}
-							className={`curator-pill-btn ${selectedPriceRange === "medium" ? "active" : ""}`}
-							style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
-						>
-							50–150 тыс. ₽
-						</button>
-						<button
-							type="button"
-							onClick={() => setSelectedPriceRange("high")}
-							className={`curator-pill-btn ${selectedPriceRange === "high" ? "active" : ""}`}
-							style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
-						>
-							&gt; 150 тыс. ₽
-						</button>
+						<div className="curator-filter-pills" role="radiogroup" aria-label="Фильтр по сумме сметы">
+							<button
+								type="button"
+								onClick={() => setSelectedPriceRange("all")}
+								className={`curator-pill-btn ${selectedPriceRange === "all" ? "active" : ""}`}
+							>
+								Все суммы
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelectedPriceRange("low")}
+								className={`curator-pill-btn ${selectedPriceRange === "low" ? "active" : ""}`}
+							>
+								&lt; 50 тыс. ₽
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelectedPriceRange("medium")}
+								className={`curator-pill-btn ${selectedPriceRange === "medium" ? "active" : ""}`}
+							>
+								50–150 тыс. ₽
+							</button>
+							<button
+								type="button"
+								onClick={() => setSelectedPriceRange("high")}
+								className={`curator-pill-btn ${selectedPriceRange === "high" ? "active" : ""}`}
+							>
+								&gt; 150 тыс. ₽
+							</button>
+						</div>
 
 						<button
 							type="button"
 							onClick={() => setOnlyAttentionFlags(!onlyAttentionFlags)}
-							className={`curator-pill-btn ${onlyAttentionFlags ? "active" : ""}`}
-							style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px", marginLeft: "8px" }}
+							className={`curator-toggle-filter-btn ${onlyAttentionFlags ? "active" : ""}`}
 						>
 							<AlertTriangle className="w-3.5 h-3.5" />
 							Только требующие внимания

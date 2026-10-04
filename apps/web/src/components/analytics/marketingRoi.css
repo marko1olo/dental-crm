@@ -24,9 +24,9 @@
 	max-height: 92vh;
 	display: flex;
 	flex-direction: column;
-	background-color: var(--paper, #1e293b);
-	color: var(--ink, #f8fafc);
-	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	border-radius: 20px;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
 	overflow: hidden;
@@ -38,8 +38,8 @@
 	align-items: center;
 	justify-content: space-between;
 	padding: 16px 20px;
-	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
-	background-color: var(--paper-soft, #0f172a);
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper-soft);
 	gap: 12px;
 	flex-shrink: 0;
 }
@@ -67,7 +67,7 @@
 	font-size: 1.1rem;
 	font-weight: 800;
 	line-height: 1.25;
-	color: var(--ink, #f8fafc);
+	color: var(--ink);
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
@@ -82,15 +82,72 @@
 	border-radius: 9999px;
 	background-color: var(--teal-surface, rgba(13, 148, 136, 0.15));
 	color: var(--teal, #14b8a6);
-	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	border: 1px solid var(--line);
 	letter-spacing: 0.05em;
 	text-transform: uppercase;
 }
 
 .marketing-roi-subtitle {
 	font-size: 0.75rem;
-	color: var(--muted, #94a3b8);
+	color: var(--muted);
 	margin-top: 2px;
+}
+
+.marketing-roi-header-right {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Переключатель периода в шапке модалки — macOS / Studio HIG Segmented Control */
+.marketing-roi-period-selector {
+	display: inline-flex;
+	align-items: center;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 3px;
+	gap: 3px;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.marketing-roi-period-btn {
+	height: 28px;
+	min-height: 28px;
+	padding: 0 11px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 500;
+	cursor: pointer;
+	border: 1px solid transparent;
+	background-color: transparent;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+	white-space: nowrap;
+}
+
+.marketing-roi-period-btn:hover:not(.active) {
+	color: var(--ink);
+	background-color: var(--paper);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.marketing-roi-period-btn.active {
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.35), 0 1px 2px rgba(0, 0, 0, 0.1);
+	border-color: transparent;
+}
+
+[data-theme="dark"] .marketing-roi-period-btn.active,
+[data-theme="night"] .marketing-roi-period-btn.active {
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
 }
 
 .marketing-roi-close-btn {
@@ -100,7 +157,7 @@
 	border-radius: 12px;
 	border: 1px solid transparent;
 	background: transparent;
-	color: var(--muted, #94a3b8);
+	color: var(--muted);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -109,9 +166,59 @@
 }
 
 .marketing-roi-close-btn:hover {
-	color: var(--ink, #f8fafc);
-	background-color: var(--paper-strong, #334155);
-	border-color: var(--line, rgba(204, 251, 241, 0.2));
+	color: var(--ink);
+	background-color: var(--paper-soft);
+	border-color: var(--line);
+}
+
+/* Навигационные табы модалки (MarketingRoiModal nav) */
+.marketing-roi-nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 20px;
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper);
+	overflow-x: auto;
+}
+
+.marketing-roi-tab {
+	height: 34px;
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 10px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	border: 1px solid var(--line);
+	background-color: var(--paper-soft);
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: all 0.15s ease-in-out;
+	user-select: none;
+}
+
+.marketing-roi-tab:hover:not(.active) {
+	color: var(--ink);
+	background-color: var(--paper);
+	border-color: var(--teal);
+}
+
+.marketing-roi-tab.active {
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
+	border-color: var(--teal);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+}
+
+[data-theme="dark"] .marketing-roi-tab.active,
+[data-theme="night"] .marketing-roi-tab.active {
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
 }
 
 /* Controls Bar */
@@ -122,8 +229,8 @@
 	flex-wrap: wrap;
 	gap: 12px;
 	padding: 12px 20px;
-	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
-	background-color: var(--paper, #1e293b);
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper);
 	flex-shrink: 0;
 }
 
@@ -136,15 +243,15 @@
 }
 
 .marketing-roi-tab-btn {
-	min-height: 38px;
+	min-height: 34px;
 	padding: 6px 14px;
 	border-radius: 10px;
-	font-size: 0.8rem;
+	font-size: 0.75rem;
 	font-weight: 600;
 	cursor: pointer;
-	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
-	background-color: var(--paper-soft, #0f172a);
-	color: var(--muted, #94a3b8);
+	border: 1px solid var(--line);
+	background-color: var(--paper-soft);
+	color: var(--muted);
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -153,8 +260,8 @@
 }
 
 .marketing-roi-tab-btn:hover {
-	color: var(--ink, #f8fafc);
-	background-color: var(--paper-strong, #334155);
+	color: var(--ink);
+	background-color: var(--paper-soft);
 }
 
 .marketing-roi-tab-btn.active {

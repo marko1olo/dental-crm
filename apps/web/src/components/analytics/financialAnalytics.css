@@ -120,68 +120,111 @@
 	flex-wrap: wrap;
 	gap: 10px;
 	padding: 10px 20px;
-	border-bottom: 1px solid var(--line, rgba(204, 251, 241, 0.15));
-	background-color: var(--paper, #1e293b);
+	border-bottom: 1px solid var(--line);
+	background-color: var(--paper);
 	flex-shrink: 0;
 }
 
-.fin-analytics-period-tabs {
+.fin-analytics-period-wrapper {
 	display: flex;
 	align-items: center;
-	gap: 4px;
+	gap: 8px;
+}
+
+.fin-analytics-period-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.fin-analytics-period-tabs {
+	display: inline-flex;
+	align-items: center;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 3px;
+	gap: 3px;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .fin-analytics-tab-btn {
-	height: 32px;
-	min-height: 32px;
+	height: 28px;
+	min-height: 28px;
 	padding: 0 12px;
 	border-radius: 8px;
 	font-size: 0.75rem;
-	font-weight: 600;
+	font-weight: 500;
 	cursor: pointer;
-	border: 1px solid var(--line, rgba(204, 251, 241, 0.15));
-	background-color: var(--paper-soft, #0f172a);
-	color: var(--muted, #94a3b8);
-	display: flex;
+	border: 1px solid transparent;
+	background-color: transparent;
+	color: var(--muted);
+	display: inline-flex;
 	align-items: center;
-	gap: 4px;
-	transition: all 0.15s ease-in-out;
+	gap: 5px;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+	white-space: nowrap;
 }
 
 @media (pointer: coarse), (max-width: 640px) {
 	.fin-analytics-tab-btn {
-		min-height: 44px;
+		min-height: 40px;
 		height: auto;
-		padding: 8px 12px;
+		padding: 6px 12px;
 	}
 }
 
-.fin-analytics-tab-btn:hover {
-	color: var(--ink, #f8fafc);
-	background-color: var(--paper-strong, #334155);
+.fin-analytics-tab-btn:hover:not(.active) {
+	color: var(--ink);
+	background-color: var(--paper);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .fin-analytics-tab-btn.active {
-	background-color: var(--teal, #0d9488);
-	color: var(--on-teal, #ffffff);
-	border-color: var(--teal, #0d9488);
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
+	border-color: transparent;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.35), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .fin-analytics-tab-btn.active,
+[data-theme="night"] .fin-analytics-tab-btn.active {
+	background-color: var(--teal);
+	color: var(--on-teal, #ffffff) !important;
 }
 
 .fin-analytics-action-btn {
-	height: 32px;
-	min-height: 32px;
-	padding: 0 12px;
-	border-radius: 8px;
+	height: 34px;
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 10px;
 	font-size: 0.75rem;
 	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
-	background-color: var(--paper-strong, #334155);
-	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line);
+	background-color: var(--paper);
+	color: var(--ink);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 	transition: all 0.15s ease-in-out;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.fin-analytics-action-btn:hover:not(:disabled) {
+	border-color: var(--teal);
+	background-color: var(--paper-soft);
+	color: var(--teal-dark, var(--teal));
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.fin-analytics-action-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
 }
 
 @media (pointer: coarse), (max-width: 640px) {
