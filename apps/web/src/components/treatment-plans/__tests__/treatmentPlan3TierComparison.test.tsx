@@ -183,4 +183,68 @@ describe('TreatmentPlan3TierComparison & Sticky Estimates Suite', () => {
     assert.ok(html.includes('1051н'), 'Must cite Order 1051n in informed consent');
     assert.ok(html.includes('323-ФЗ'), 'Must cite 323-FZ in informed consent');
   });
+
+  it('renders rich clinical turnkey presets (45k, 145k, 380k) with zero 0 ₽ values when patient has no charted pathology', () => {
+    const emptyTiers = generate3TierPlanComparison([]);
+    assert.equal(emptyTiers.length, 3);
+    const [eco, std, opt] = emptyTiers;
+
+    assert.equal(eco?.totalRub, 45000, 'Economy tier must be 45 000 ₽');
+    assert.equal(eco?.durationWeeks, 3, 'Economy duration must be 3 weeks');
+    assert.equal(eco?.durationVisits, 3, 'Economy visits must be 3');
+    assert.equal(eco?.warrantyYears, 1, 'Economy warranty must be 1 year');
+
+    assert.equal(std?.totalRub, 145000, 'Standard tier must be 145 000 ₽');
+    assert.equal(std?.durationWeeks, 6, 'Standard duration must be 6 weeks');
+    assert.equal(std?.durationVisits, 5, 'Standard visits must be 5');
+    assert.equal(std?.warrantyYears, 2, 'Standard warranty must be 2 years');
+
+    assert.equal(opt?.totalRub, 380000, 'Optimum tier must be 380 000 ₽');
+    assert.equal(opt?.durationWeeks, 16, 'Optimum duration must be 16 weeks');
+    assert.equal(opt?.durationVisits, 8, 'Optimum visits must be 8');
+    assert.ok(String(opt?.warrantyYears).includes('5'), 'Optimum warranty must be 5+ years');
+
+    const html = renderToString(
+      <TreatmentPlan3TierComparison
+        tiers={emptyTiers}
+        selectedTierId="optimum"
+        onSelectTier={() => {}}
+        onApproveAndSign={() => {}}
+        onOpenInstallment={() => {}}
+        onPrintContract={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('45 000'), 'Must render 45 000 ₽ in HTML');
+    assert.ok(html.includes('145 000'), 'Must render 145 000 ₽ in HTML');
+    assert.ok(html.includes('380 000'), 'Must render 380 000 ₽ in HTML');
+    assert.equal(html.includes('0 ₽/мес'), false, 'Must NOT contain 0 ₽/мес');
+  });
+
+  it('eliminates button landfill in 3-tier toolbar: clean segmented controls and [ ⚙ Параметры сметы ▾ ] dropdown', () => {
+    const html = renderToString(
+      <TreatmentPlan3TierComparison
+        tiers={sampleTiers}
+        selectedTierId="optimum"
+        onSelectTier={() => {}}
+        onApproveAndSign={() => {}}
+        onOpenInstallment={() => {}}
+        onPrintContract={() => {}}
+        onOpenComparatorStudio={() => {}}
+      />
+    );
+
+    // Dropdown button exists
+    assert.ok(html.includes('data-testid="tp-3tier-params-btn"'), 'Must render tp-3tier-params-btn');
+    assert.ok(html.includes('Параметры сметы'), 'Must render Parameters label');
+
+    // Secondary items grouped inside dropdown menu
+    assert.ok(html.includes('Вычет 13% (НДФЛ)'), 'Must render NDFL toggle in parameters dropdown');
+    assert.ok(html.includes('Студия сравнения планов'), 'Must render studio trigger in parameters dropdown');
+
+    // Messenger share button remains accessible
+    assert.ok(html.includes('data-testid="top-copy-messenger-btn"'), 'Must render top messenger share button');
+  });
 });
+
+

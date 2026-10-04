@@ -140,113 +140,115 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 	return (
 		<>
 			{/* Top Bar: Title & Global Quick Actions */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--line,var(--border,#cbd5e1))]">
-				<div className="flex items-center gap-3 min-w-0 max-w-full">
-					<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
-						<Layers size={22} />
-					</div>
-					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-2 flex-wrap">
-							<h2 className="text-lg font-black text-[var(--ink,#0f172a)] truncate">
+			<div className="flex flex-col gap-3 pb-3.5 border-b border-[var(--line,var(--border,#cbd5e1))]">
+				{/* Row 1: Clinical Header, Protocol Status & Patient Info */}
+				<div className="flex flex-wrap items-center justify-between gap-2.5">
+					<div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+						<div className="p-2 sm:p-2.5 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
+							<Layers size={18} />
+						</div>
+						<div className="flex items-center gap-2 flex-wrap min-w-0">
+							<h2 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)] whitespace-nowrap m-0">
 								Комплексный план лечения
 							</h2>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20 shrink-0">
+							<span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20 shrink-0">
 								Клинический протокол
 							</span>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20 shrink-0">
+							<span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20 shrink-0">
 								СтАР
 							</span>
 							{planAgeDays > 30 && (
 								<span
-									className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs shrink-0"
+									className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs shrink-0"
 									title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (Мандат 8e)."
 								>
 									<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-									План составлен более 30 дней назад, цены могут быть скорректированы
+									<span>План составлен более 30 дней назад</span>
 								</span>
 							)}
-
-							{/* 1-Click Status Transitions (Mandates 8e, 8c — Doctor Autonomy & Zero Barriers) */}
-							<div
-								className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs text-xs shrink-0"
-								role="group"
-								aria-label="Статус плана лечения"
-								data-testid="treatment-plan-status-control"
-							>
-								<button
-									type="button"
-									onClick={() => onStatusTransition("draft")}
-									data-testid="tp-status-btn-draft"
-									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-										planStatus === "draft"
-											? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
-											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-									}`}
-									title="Черновик плана лечения"
-								>
-									Черновик
-								</button>
-								<button
-									type="button"
-									onClick={() => onStatusTransition("agreed")}
-									data-testid="tp-status-btn-agreed"
-									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-										planStatus === "agreed"
-											? "bg-emerald-600 text-white shadow-2xs"
-											: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800"
-									}`}
-									title="План согласован с пациентом (1 клик)"
-								>
-									<Check size={12} />
-									<span>Согласован</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => onStatusTransition("in_progress")}
-									data-testid="tp-status-btn-in-progress"
-									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-										planStatus === "in_progress"
-											? "bg-teal-600 text-white shadow-2xs"
-											: "text-teal-700 dark:text-teal-400 hover:text-teal-800"
-									}`}
-									title="План переведен в работу (1 клик)"
-								>
-									<Zap size={12} />
-									<span>В работе</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => onStatusTransition("completed")}
-									data-testid="tp-status-btn-completed"
-									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-										planStatus === "completed"
-											? "bg-blue-600 text-white shadow-2xs"
-											: "text-blue-700 dark:text-blue-400 hover:text-blue-800"
-									}`}
-									title="Лечение по плану завершено"
-								>
-									Завершен
-								</button>
-							</div>
 						</div>
-						<p
-							className="text-xs text-[var(--muted,#64748b)] truncate"
-							title={`Пациент: ${patientName} · ${totalItemsCount} процедур · 3 клинических этапа`}
+
+						{/* 1-Click Status Transitions (Mandates 8e, 8c — Doctor Autonomy & Zero Barriers) */}
+						<div
+							className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs text-xs shrink-0"
+							role="group"
+							aria-label="Статус плана лечения"
+							data-testid="treatment-plan-status-control"
 						>
-							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong> ·{" "}
-							{totalItemsCount} процедур · 3 клинических этапа
-						</p>
+							<button
+								type="button"
+								onClick={() => onStatusTransition("draft")}
+								data-testid="tp-status-btn-draft"
+								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+									planStatus === "draft"
+										? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+								title="Черновик плана лечения"
+							>
+								Черновик
+							</button>
+							<button
+								type="button"
+								onClick={() => onStatusTransition("agreed")}
+								data-testid="tp-status-btn-agreed"
+								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+									planStatus === "agreed"
+										? "bg-emerald-600 text-white shadow-2xs"
+										: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800"
+								}`}
+								title="План согласован с пациентом (1 клик)"
+							>
+								<Check size={12} />
+								<span>Согласован</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => onStatusTransition("in_progress")}
+								data-testid="tp-status-btn-in-progress"
+								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+									planStatus === "in_progress"
+										? "bg-teal-600 text-white shadow-2xs"
+										: "text-teal-700 dark:text-teal-400 hover:text-teal-800"
+								}`}
+								title="План переведен в работу (1 клик)"
+							>
+								<Zap size={12} />
+								<span>В работе</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => onStatusTransition("completed")}
+								data-testid="tp-status-btn-completed"
+								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+									planStatus === "completed"
+										? "bg-blue-600 text-white shadow-2xs"
+										: "text-blue-700 dark:text-blue-400 hover:text-blue-800"
+								}`}
+								title="Лечение по плану завершено"
+							>
+								Завершен
+							</button>
+						</div>
 					</div>
+
+					<p
+						className="text-xs text-[var(--muted,#64748b)] truncate m-0 shrink-0"
+						title={`Пациент: ${patientName} · ${totalItemsCount} процедур · 3 клинических этапа`}
+					>
+						Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong> ·{" "}
+						{totalItemsCount} процедур · 3 этапа
+					</p>
 				</div>
 
-				{/* Global Buttons: View Toggles, Clean Hick's/Miller's Toolbar & Actions */}
-				<div className="flex flex-wrap items-center gap-2">
+				{/* Row 2: Clean 36px Command Bar — Tab Switcher (Left) & Actions (Right) */}
+				<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,var(--border,#cbd5e1))]/50">
 					{/* Tab Switcher: 3 Tiers vs Stages vs 4 Phases */}
-					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] max-w-full overflow-x-auto">
+					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 gap-1">
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
-							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "3tier"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -257,7 +259,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("stages")}
-							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "stages"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -269,7 +271,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							type="button"
 							onClick={() => setActiveViewTab("phased4")}
 							data-testid="tp-tab-phased4"
-							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "phased4"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -279,60 +281,62 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						</button>
 					</div>
 
-					{/* Secondary 1: Digital Signature Indicator / Button */}
-					{signedAgreement ? (
-						<div
-							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] sm:h-[38px] touch-manipulation"
-							data-testid="tp-signed-badge"
-						>
-							<ShieldCheck size={16} />
-							<span>ПОДПИСАНО</span>
-						</div>
-					) : (
+					{/* Action Buttons Right Group */}
+					<div className="flex flex-wrap items-center gap-2 shrink-0">
+						{/* Secondary 1: Digital Signature Indicator / Button */}
+						{signedAgreement ? (
+							<div
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] sm:h-[38px] touch-manipulation whitespace-nowrap shrink-0"
+								data-testid="tp-signed-badge"
+							>
+								<ShieldCheck size={15} />
+								<span>ПОДПИСАНО</span>
+							</div>
+						) : (
+							<button
+								type="button"
+								onClick={onOpenSignModal}
+								className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-xs whitespace-nowrap shrink-0"
+								title="Открыть окно цифровой подписи согласия"
+								data-testid="tp-sign-btn"
+							>
+								<PenTool size={14} />
+								<span>Подписать</span>
+							</button>
+						)}
+
+						{/* Secondary 2: Quick Export to Cashier (1 click) */}
 						<button
 							type="button"
-							onClick={onOpenSignModal}
-							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-xs"
-							title="Открыть окно цифровой подписи согласия"
-							data-testid="tp-sign-btn"
+							onClick={onExportCashier}
+							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
+							title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
+							data-testid="tp-quick-cashier-btn"
 						>
-							<PenTool size={14} />
-							<span>Подписать</span>
+							<Send size={14} />
+							<span>В кассу</span>
 						</button>
-					)}
 
-					{/* Secondary 2: Quick Export to Cashier (1 click) */}
-					<button
-						type="button"
-						onClick={onExportCashier}
-						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
-						title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
-						data-testid="tp-quick-cashier-btn"
-					>
-						<Send size={15} />
-						<span>В кассу</span>
-					</button>
-
-					{/* Secondary 3: 1-Click CBCT Auto-Plan (Findings to 3-Tier Estimate) */}
-					<button
-						type="button"
-						onClick={onGenerateCbctAutoPlan}
-						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
-						title="Сформировать 3 сценария плана лечения на основе находок 3D КЛКТ (имплантация, синус-лифтинг, санация, ортопедия)"
-						data-testid="generate-cbct-auto-plan-btn"
-					>
-						<Sparkles size={15} className="text-amber-600 dark:text-amber-400" />
-						<span>Автоплан по КЛКТ</span>
-					</button>
-
-					{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
-					<div className="relative inline-flex items-center" ref={optionsMenuRef}>
+						{/* Secondary 3: 1-Click CBCT Auto-Plan (Findings to 3-Tier Estimate) */}
 						<button
 							type="button"
-							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
-							title="Дополнительные студии, валидация и печать"
-							aria-label="Опции плана лечения"
+							onClick={onGenerateCbctAutoPlan}
+							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
+							title="Сформировать 3 сценария плана лечения на основе находок 3D КЛКТ (имплантация, синус-лифтинг, санация, ортопедия)"
+							data-testid="generate-cbct-auto-plan-btn"
+						>
+							<Sparkles size={14} className="text-amber-600 dark:text-amber-400" />
+							<span>Автоплан по КЛКТ</span>
+						</button>
+
+						{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
+						<div className="relative inline-flex items-center" ref={optionsMenuRef}>
+							<button
+								type="button"
+								onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
+								className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3 py-1 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation whitespace-nowrap"
+								title="Дополнительные студии, валидация и печать"
+								aria-label="Опции плана лечения"
 							aria-expanded={isOptionsMenuOpen}
 							data-testid="treatment-plan-options-menu-btn"
 						>
@@ -525,11 +529,11 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						</div>
 					</div>
 
-					{/* STRICTLY 1 DOMINANT PRIMARY ACTION: Save to DB */}
+					{/* STRICTLY 1 DOMINANT PRIMARY ACTION: Save to DB with High-Contrast Teal in Light and Dark mode */}
 					<button
 						type="button"
 						onClick={onSavePlanToDatabase}
-						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto touch-manipulation"
+						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 border border-teal-500/40 cursor-pointer transition-all shadow-sm active:scale-98 shrink-0 whitespace-nowrap touch-manipulation"
 						data-testid="treatment-plan-save-btn"
 					>
 						<Save size={15} className={isSaving ? "animate-spin" : ""} />
@@ -537,6 +541,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 					</button>
 				</div>
 			</div>
+		</div>
 
 			{/* Service Area: Collapsible Toolbars (Mandates 8p, 8d — Screen Height Budget <= 160-180px) */}
 			<div className="flex flex-col gap-2">

@@ -5,7 +5,21 @@ import { VisitSurgeryProtocolTab } from "./surgery/VisitSurgeryProtocolTab";
 import { VisitTherapyProtocolWidget } from "./therapy/VisitTherapyProtocolWidget";
 import { VisitPediatricProtocolWidget } from "../pediatric/VisitPediatricProtocolWidget";
 
-export function VisitSpecialtyFocus() {
+export interface VisitSpecialtyFocusProps {
+	compact?: boolean;
+	isDrawerOpen?: boolean;
+	onToggleDrawer?: (open: boolean) => void;
+	renderBarOnly?: boolean;
+	renderDrawerOnly?: boolean;
+}
+
+export function VisitSpecialtyFocus({
+	compact = false,
+	isDrawerOpen: propIsDrawerOpen,
+	onToggleDrawer: propOnToggleDrawer,
+	renderBarOnly = false,
+	renderDrawerOnly = false,
+}: VisitSpecialtyFocusProps = {}) {
 	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
 	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
 	// выдумывает, и вторая ветка была недостижима.
@@ -22,7 +36,18 @@ export function VisitSpecialtyFocus() {
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	} = context as any;
 
-	const [isProtocolDrawerOpen, setIsProtocolDrawerOpen] = useState(false);
+	const [localIsProtocolDrawerOpen, setLocalIsProtocolDrawerOpen] = useState(false);
+	const isProtocolDrawerOpen =
+		propIsDrawerOpen !== undefined ? propIsDrawerOpen : localIsProtocolDrawerOpen;
+	const setIsProtocolDrawerOpen = (valOrFn: any) => {
+		const next =
+			typeof valOrFn === "function" ? valOrFn(isProtocolDrawerOpen) : valOrFn;
+		if (propOnToggleDrawer) {
+			propOnToggleDrawer(next);
+		} else {
+			setLocalIsProtocolDrawerOpen(next);
+		}
+	};
 	const [activeTooth, setActiveTooth] = useState<number | null>(
 		Number(context?.dashboard?.activeVisit?.diagnosisTooth) || 16,
 	);
@@ -52,7 +77,9 @@ export function VisitSpecialtyFocus() {
 		selectedSpecialty === "children";
 	const isSurgery =
 		selectedSpecialty === "surgery" ||
-		selectedSpecialty === "хирургия";
+		selectedSpecialty === "хирургия" ||
+		selectedSpecialty === "surgeon" ||
+		selectedSpecialty === "implantologist";
 	const isTherapy =
 		selectedSpecialty === "therapy" ||
 		selectedSpecialty === "терапия" ||
@@ -124,115 +151,132 @@ export function VisitSpecialtyFocus() {
 			? "Хирургический протокол"
 			: "Терапевтический протокол";
 
-	return (
-		<div className="flex flex-col gap-2 shrink-0">
-			<section
-				data-testid="visit-specialty-focus"
-				className="specialty-focus-bar bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 min-h-[32px] sm:h-8 text-xs shrink-0 select-none"
-				aria-label="Фокус специальности приема"
-			>
-				<div className="flex items-center gap-2 min-w-0">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] shrink-0">Фокус:</span>
-					<strong className="font-semibold text-xs text-[var(--ink)] truncate">{currentSpecialtyLabel}</strong>
-					<span className="text-xs text-[var(--muted)] hidden sm:inline shrink-0">
+	const barSection = (
+		<section
+			data-testid="visit-specialty-focus"
+			className={`specialty-focus-bar bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-between gap-1.5 shrink-0 select-none ${
+				compact
+					? "h-7 px-2 rounded-lg"
+					: "rounded-xl px-3 py-1.5 min-h-[32px] sm:h-8 text-xs"
+			}`}
+			aria-label="Фокус специальности приема"
+		>
+			<div className="flex items-center gap-1.5 min-w-0">
+				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">Фокус:</span>
+				<strong className="font-semibold text-xs text-[var(--ink)] truncate max-w-[120px]">{currentSpecialtyLabel}</strong>
+				{!compact && (
+					<span className="text-xs text-[var(--muted)] hidden lg:inline shrink-0">
 						({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
 					</span>
-				</div>
-				<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
-					{focusOptions.length === 0 ? (
-						<span className="text-xs text-[var(--muted)] truncate">
-							Направления не настроены
-						</span>
-					) : null}
-					{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-					{focusOptions.map((option: any) => (
-						<button
-							className={`px-2.5 py-1 min-h-[32px] sm:h-7 rounded text-xs font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-[var(--paper)] font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
-							type="button"
-							key={option.specialty}
-							aria-pressed={selectedSpecialty === option.specialty}
-							onClick={() => {
-								if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
-								if (setSelectedProtocolId) setSelectedProtocolId(null);
-							}}
-							title={option.hint}
-						>
-							<strong>{option.title}</strong>
-						</button>
-					))}
-
-					{/* Кнопка быстрого протокола специальности (Мандаты 8c, 8e: Warm Context Tier 2) */}
+				)}
+			</div>
+			<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
+				{!compact && focusOptions.length === 0 ? (
+					<span className="text-xs text-[var(--muted)] truncate">
+						Направления не настроены
+					</span>
+				) : null}
+				{!compact && focusOptions.map((option: any) => (
 					<button
+						className={`px-2 py-0.5 sm:h-7 rounded text-xs font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-white font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
 						type="button"
-						onClick={() => setIsProtocolDrawerOpen((prev) => !prev)}
-						className="px-2.5 py-1 min-h-[32px] sm:h-7 rounded text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--teal)]/40 bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-950/40 text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white"
-						title="Развернуть специализированный протокол приема"
-						data-testid="toggle-specialty-protocol-drawer"
+						key={option.specialty}
+						aria-pressed={selectedSpecialty === option.specialty}
+						onClick={() => {
+							if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
+							if (setSelectedProtocolId) setSelectedProtocolId(null);
+						}}
+						title={option.hint}
 					>
-						<FileText size={12} className="shrink-0" />
-						<span className="hidden sm:inline">Протокол:</span>
-						<span>{isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
-						<ChevronDown size={12} className={`shrink-0 transform transition-transform ${isProtocolDrawerOpen ? "rotate-180" : ""}`} />
+						<strong>{option.title}</strong>
 					</button>
-				</div>
-			</section>
+				))}
 
-			{/* Dedicated Specialty Protocol Drawer (Tier 2 Warm Context) */}
-			{isProtocolDrawerOpen && (
-				<div
-					data-testid="specialty-protocol-drawer"
-					className="specialty-protocol-drawer p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-md animate-in fade-in slide-in-from-top-2 duration-150"
+				{/* Кнопка быстрого специализированного бланка (Мандаты 8c, 8e: Warm Context Tier 2) */}
+				<button
+					type="button"
+					onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
+					className="h-6 sm:h-7 px-2 rounded text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white"
+					title="Развернуть специализированный бланк приема"
+					data-testid="toggle-specialty-protocol-drawer"
 				>
-					<div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--line)]">
-						<span className="font-bold text-xs text-[var(--ink)] flex items-center gap-2">
-							<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" />
-							{activeWidgetTitle} (Зуб {activeTooth || "—"})
-						</span>
-						<button
-							type="button"
-							onClick={() => setIsProtocolDrawerOpen(false)}
-							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold cursor-pointer px-2 py-0.5 rounded inline-flex items-center gap-1"
-						>
-							<X size={12} className="shrink-0" aria-hidden="true" />
-							<span>Свернуть</span>
-						</button>
-					</div>
+					<FileText size={11} className="shrink-0" />
+					<span className="hidden sm:inline">Бланк:</span>
+					<span>{isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
+					<ChevronDown size={11} className={`shrink-0 transform transition-transform ${isProtocolDrawerOpen ? "rotate-180" : ""}`} />
+				</button>
+			</div>
+		</section>
+	);
 
-					{isChildDentition ? (
-						<VisitPediatricProtocolWidget
-							activeTooth={activeTooth}
-							activeSurfaces={activeSurfaces}
-							onSelectSurfaces={(s) => setActiveSurfaces([...s])}
-							onApplyProtocolText={handleApplyProtocolText}
-							onAddToInvoice={handleAddToInvoice}
-							initialFranklRating={franklRating}
-							onFranklChange={setFranklRating}
-							patientName={activePatient?.fullName}
-							patientAgeYears={patientAgeYears}
-							doctorName={activeDoctor?.fullName}
-							clinicName={context?.dashboard?.organization?.name}
-						/>
-					) : isSurgery ? (
-						<VisitSurgeryProtocolTab
-							activeTooth={activeTooth}
-							onSelectActiveTooth={setActiveTooth}
-							patientName={activePatient?.fullName}
-							patientId={activePatient?.id}
-							doctorName={activeDoctor?.fullName}
-							doctorId={activeDoctor?.id}
-							onApplyToDiary={handleApplyProtocolText}
-						/>
-					) : (
-						<VisitTherapyProtocolWidget
-							activeTooth={activeTooth}
-							activeSurfaces={activeSurfaces}
-							onSelectSurfaces={(s) => setActiveSurfaces([...s])}
-							onApplyProtocolText={handleApplyProtocolText}
-							onAddToInvoice={handleAddToInvoice}
-						/>
-					)}
-				</div>
+	const drawerSection = isProtocolDrawerOpen ? (
+		<div
+			data-testid="specialty-protocol-drawer"
+			className="specialty-protocol-drawer p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-md animate-in fade-in slide-in-from-top-2 duration-150"
+		>
+			<div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--line)]">
+				<span className="font-bold text-xs text-[var(--ink)] flex items-center gap-2">
+					<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" />
+					{activeWidgetTitle} (Зуб {activeTooth || "—"})
+				</span>
+				<button
+					type="button"
+					onClick={() => setIsProtocolDrawerOpen(false)}
+					className="text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold cursor-pointer px-2 py-0.5 rounded inline-flex items-center gap-1"
+				>
+					<X size={12} className="shrink-0" aria-hidden="true" />
+					<span>Свернуть</span>
+				</button>
+			</div>
+
+			{isChildDentition ? (
+				<VisitPediatricProtocolWidget
+					activeTooth={activeTooth}
+					activeSurfaces={activeSurfaces}
+					onSelectSurfaces={(s) => setActiveSurfaces([...s])}
+					onApplyProtocolText={handleApplyProtocolText}
+					onAddToInvoice={handleAddToInvoice}
+					initialFranklRating={franklRating}
+					onFranklChange={setFranklRating}
+					patientName={activePatient?.fullName}
+					patientAgeYears={patientAgeYears}
+					doctorName={activeDoctor?.fullName}
+					clinicName={context?.dashboard?.organization?.name}
+				/>
+			) : isSurgery ? (
+				<VisitSurgeryProtocolTab
+					activeTooth={activeTooth}
+					onSelectActiveTooth={setActiveTooth}
+					patientName={activePatient?.fullName}
+					patientId={activePatient?.id}
+					doctorName={activeDoctor?.fullName}
+					doctorId={activeDoctor?.id}
+					onApplyToDiary={handleApplyProtocolText}
+				/>
+			) : (
+				<VisitTherapyProtocolWidget
+					activeTooth={activeTooth}
+					activeSurfaces={activeSurfaces}
+					onSelectSurfaces={(s) => setActiveSurfaces([...s])}
+					onApplyProtocolText={handleApplyProtocolText}
+					onAddToInvoice={handleAddToInvoice}
+				/>
 			)}
+		</div>
+	) : null;
+
+	if (renderBarOnly) {
+		return barSection;
+	}
+
+	if (renderDrawerOnly) {
+		return drawerSection;
+	}
+
+	return (
+		<div className="flex flex-col gap-1.5 shrink-0">
+			{barSection}
+			{drawerSection}
 		</div>
 	);
 }

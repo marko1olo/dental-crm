@@ -251,24 +251,22 @@ export function EmkDiaryProtocolSection({
 	};
 
 	return (
-		<div className="flex flex-col gap-4">
-			{/* 1-клик протоколы у кресла: глубоко спрятаны в свернутый спойлер (Мандаты 8c, 8e, 8x: чистый экран по умолчанию) */}
-			<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
-				<summary className="flex items-center justify-between p-2 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
-					<span className="font-bold flex items-center gap-1.5">
-						<Sparkles size={12} className="text-amber-500" />
-						<span>Экспресс-протоколы у кресла ({EXPRESS_PROTOCOLS.length})</span>
-					</span>
-					<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+		<div className="flex flex-col gap-2.5">
+			{/* 1-клик протоколы у кресла: спокойный тихий аккордеон без серого визуального шума */}
+			<details className="group text-xs transition-all">
+				<summary className="inline-flex items-center gap-1.5 px-1 py-0.5 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors rounded-md hover:bg-[var(--paper-soft)]">
+					<BookOpen size={11} className="text-[var(--teal)] shrink-0" />
+					<span className="font-medium">Экспресс-протоколы у кресла ({EXPRESS_PROTOCOLS.length})</span>
+					<span className="text-[9px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
 				</summary>
-				<div className="p-2 pt-1 border-t border-[var(--line)]/40 grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+				<div className="p-2 pt-1.5 border-t border-[var(--glass-border)] grid grid-cols-2 sm:grid-cols-5 gap-1.5 mt-1 bg-[var(--paper-soft)]/40 rounded-lg">
 					{EXPRESS_PROTOCOLS.map((proto) => (
 						<button
 							key={proto.key}
 							type="button"
 							data-testid={`btn-emk-express-${proto.key}`}
 							onClick={() => handleApplyExpressProtocol(proto.key)}
-							className={`min-h-[36px] px-2 py-1 rounded-md border text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
+							className={`min-h-[28px] h-7 px-2 py-0.5 rounded-md border text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
 							title={`Заполнить полный SOAP: ${proto.label}`}
 						>
 							<span className="font-mono text-[10px] font-bold">{proto.code}</span>
@@ -279,7 +277,7 @@ export function EmkDiaryProtocolSection({
 			</details>
 
 			{/* Диагноз */}
-			<div className="flex flex-col gap-2">
+			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-2">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Tag size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -294,19 +292,17 @@ export function EmkDiaryProtocolSection({
 					value={visitNoteForm?.diagnosis || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Код МКБ-10 и клинический развернутый диагноз..."
-					className="w-full min-h-[60px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[50px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
-				{/* Быстрые чипы МКБ-10: глубоко спрятаны в свернутый спойлер */}
-				<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
-					<summary className="flex items-center justify-between px-2 py-1 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
-						<span className="flex items-center gap-1">
-							<Sparkles size={11} className="text-[var(--teal,var(--brand-primary))]" />
-							<span>Шаблоны диагнозов МКБ-10 ({icd10Chips.length})</span>
-						</span>
-						<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+				{/* Быстрые чипы МКБ-10: спокойный компактный аккордеон */}
+				<details className="group text-xs transition-all mt-0.5">
+					<summary className="inline-flex items-center gap-1.5 px-1 py-0.5 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors rounded-md hover:bg-[var(--paper-soft)]">
+						<BookOpen size={11} className="text-[var(--teal)] shrink-0" />
+						<span className="font-medium">Шаблоны диагнозов МКБ-10 ({icd10Chips.length})</span>
+						<span className="text-[9px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
 					</summary>
-					<div className="p-2 pt-1 border-t border-[var(--line)]/40 flex items-center gap-1.5 flex-wrap">
+					<div className="p-2 pt-1.5 border-t border-[var(--glass-border)] flex items-center gap-1.5 flex-wrap mt-1 bg-[var(--paper-soft)]/40 rounded-lg">
 						{icd10Chips.map((chip, idx) => (
 							<div
 								key={idx}
@@ -338,7 +334,7 @@ export function EmkDiaryProtocolSection({
 			</div>
 
 			{/* Протокол лечения / Дневник */}
-			<div className="flex flex-col gap-2">
+			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-2">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -349,7 +345,7 @@ export function EmkDiaryProtocolSection({
 							<button
 								type="button"
 								onClick={onOpenTemplatesModal}
-								className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal-soft)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+								className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white border border-[var(--line)] transition-colors inline-flex items-center gap-1 cursor-pointer"
 								data-testid="btn-open-protocols-catalog-diary"
 								title="Открыть полный каталог клинических протоколов (1 142 шаблона)"
 							>
@@ -402,12 +398,12 @@ export function EmkDiaryProtocolSection({
 					value={visitNoteForm?.treatmentPlan || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Подробный протокол вмешательства: препарирование, медикаментозная обработка, пломбировочный материал, полировка, рекомендации..."
-					className="w-full min-h-[140px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[80px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 			</div>
 
 			{/* Рекомендации и назначения */}
-			<div className="flex flex-col gap-2">
+			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-2">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Pill size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -422,19 +418,18 @@ export function EmkDiaryProtocolSection({
 					value={visitNoteForm?.recommendations || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Назначения врача, режим питания, медикаментозная терапия, дата контрольного визита..."
-					className="w-full min-h-[80px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[56px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
 				{/* Быстрые шаблоны рекомендаций: глубоко спрятаны в свернутый спойлер */}
-				<details className="group rounded-md border border-[var(--line)]/50 bg-[var(--paper-soft)]/30 text-xs transition-all">
-					<summary className="flex items-center justify-between px-2 py-1 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--ink)]">
-						<span className="flex items-center gap-1">
-							<Sparkles size={11} className="text-[var(--teal,var(--brand-primary))]" />
-							<span>Шаблоны рекомендаций ({recommendationChips.length})</span>
-						</span>
-						<span className="text-[10px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+				{/* Быстрые шаблоны рекомендаций: спокойный компактный аккордеон */}
+				<details className="group text-xs transition-all mt-0.5">
+					<summary className="inline-flex items-center gap-1.5 px-1 py-0.5 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors rounded-md hover:bg-[var(--paper-soft)]">
+						<BookOpen size={11} className="text-[var(--teal)] shrink-0" />
+						<span className="font-medium">Шаблоны рекомендаций ({recommendationChips.length})</span>
+						<span className="text-[9px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
 					</summary>
-					<div className="p-2 pt-1 border-t border-[var(--line)]/40 flex items-center gap-1.5 flex-wrap">
+					<div className="p-2 pt-1.5 border-t border-[var(--glass-border)] flex items-center gap-1.5 flex-wrap mt-1 bg-[var(--paper-soft)]/40 rounded-lg">
 						{recommendationChips.map((chip, idx) => (
 							<button
 								key={idx}

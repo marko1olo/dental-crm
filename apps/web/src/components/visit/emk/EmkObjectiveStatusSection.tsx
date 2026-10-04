@@ -53,10 +53,9 @@ export function EmkObjectiveStatusSection({
 	};
 
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col gap-3">
 			{/* Объективный статус */}
-			{/* Объективный статус */}
-			<div className="flex flex-col gap-2">
+			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Stethoscope size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -83,7 +82,7 @@ export function EmkObjectiveStatusSection({
 					value={visitNoteForm?.objectiveStatus || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Внешний осмотр, лимфоузлы, прикус, состояние СОПР, десен, детальный статус зуба (кариозная полость, перкуссия, зондирование, подвижность)..."
-					className="w-full min-h-[100px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[72px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
 				{/* Быстрые шаблоны осмотра: глубоко спрятаны в свернутый спойлер (Мандаты 8c, 8e, 8x: чистый холст по умолчанию) */}
@@ -147,7 +146,7 @@ export function EmkObjectiveStatusSection({
 			</div>
 
 			{/* Дополнительные исследования */}
-			<div className="flex flex-col gap-2">
+			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-2">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Activity size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -162,7 +161,7 @@ export function EmkObjectiveStatusSection({
 					value={visitNoteForm?.examination || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Данные рентгенографии, ЭОД, КЛКТ, диагностических проб..."
-					className="w-full min-h-[70px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[56px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
 				/>
 
 				{/* Быстрые шаблоны исследований: глубоко спрятаны в свернутый спойлер */}

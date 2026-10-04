@@ -154,6 +154,8 @@ export function VisitEmkTab() {
 	const visitNoteForm = storeVisitNoteForm ?? contextVisitNoteForm ?? {};
 
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
+	const [isSpecialtyDrawerOpen, setIsSpecialtyDrawerOpen] =
+		React.useState<boolean>(false);
 	const [isRevisingVisitNote, setIsRevisingVisitNote] =
 		React.useState<boolean>(false);
 	const [isSoapTemplatesModalOpen, setIsSoapTemplatesModalOpen] =
@@ -385,15 +387,17 @@ export function VisitEmkTab() {
 				diagnosis: formatted.diagnosis,
 				diagnosisIcd10: preset.icd10,
 				treatmentPlan: formatted.treatmentPlan,
-				services: preset.service804n
-					? [
-							{
-								code: preset.service804n.code804n,
-								title: preset.service804n.title,
-								price: preset.service804n.basePriceRub,
-							},
-						]
-					: undefined,
+				...(preset.service804n
+					? {
+							services: [
+								{
+									code: preset.service804n.code804n,
+									title: preset.service804n.title,
+									price: preset.service804n.basePriceRub,
+								},
+							],
+						}
+					: {}),
 			});
 
 			showToast(
@@ -589,8 +593,22 @@ export function VisitEmkTab() {
 			</span>
 
 			{/* Тулбар ЭМК */}
-			<div className="flex items-center gap-1.5 flex-wrap">
+			<div className="w-full min-w-0">
 				<EmkToolbar
+					activeEmkTab={activeEmkTab}
+					setActiveEmkTab={setActiveEmkTab}
+					hasUnsavedChanges={hasSoloUnsavedChanges}
+					noteForm={visitNoteForm}
+					specialtyFocusNode={
+						<div data-testid="visit-specialty-focus-container" className="inline-flex items-center">
+							<VisitSpecialtyFocus
+								compact
+								renderBarOnly
+								isDrawerOpen={isSpecialtyDrawerOpen}
+								onToggleDrawer={setIsSpecialtyDrawerOpen}
+							/>
+						</div>
+					}
 					voicePilotNode={
 						<EmkVoicePilot
 							onApplySoapNotes={(notes) => {
@@ -628,10 +646,17 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
-			{/* Компактный 32px фокус специальности (терапия / хирургия / детство) */}
-			<div className="mt-2" data-testid="visit-specialty-focus-container">
-				<VisitSpecialtyFocus />
-			</div>
+			{/* Выдвижной специализированный бланк (Tier 2 Warm Context), открываемый из чипа тулбара */}
+			{isSpecialtyDrawerOpen && (
+				<div className="mt-2" data-testid="visit-specialty-drawer-container">
+					<VisitSpecialtyFocus
+						compact
+						renderDrawerOnly
+						isDrawerOpen={isSpecialtyDrawerOpen}
+						onToggleDrawer={setIsSpecialtyDrawerOpen}
+					/>
+				</div>
+			)}
 
 			{isSignedVisit && (
 				<div
@@ -671,86 +696,173 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Секции Формы 043/у */}
-			<div className="space-y-3 mt-3">
-				<EmkComplaintsSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-				/>
+			<div className="space-y-3 mt-2.5">
+				{activeEmkTab === "all" ? (
+					<>
+						{/* 2-колоночный компактный SOAP-грид (Субъективно + Объективно | Диагноз + Лечение) */}
+						<div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+							<div className="space-y-3 min-w-0">
+								<EmkComplaintsSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+								/>
+								<EmkObjectiveStatusSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+								/>
+							</div>
 
-				<EmkObjectiveStatusSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-				/>
+							<div className="space-y-3 min-w-0">
+								<EmkDiaryProtocolSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
+								/>
+							</div>
+						</div>
 
-				<EmkDiaryProtocolSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-					activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
-					onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
-				/>
+						{/* Специализированные клинические разделы у кресла */}
+						<EmkAnesthesiaSection
+							visitNoteForm={visitNoteForm}
+							updateVisitNoteField={updateVisitNoteField}
+							isLocked={isLocked}
+							patientAge={activePatient?.age}
+							patientGender={activePatient?.gender}
+						/>
 
-				<EmkAnesthesiaSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-					patientAge={activePatient?.age}
-					patientGender={activePatient?.gender}
-				/>
+						<EmkEndoSection
+							visitNoteForm={visitNoteForm}
+							updateVisitNoteField={updateVisitNoteField}
+							isLocked={isLocked}
+							activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+						/>
 
-				<EmkEndoSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-					activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
-				/>
+						<Suspense fallback={null}>
+							<details className="group border-t border-[var(--line)] pt-2 bg-transparent" data-testid="emk-orthopedics-details">
+								<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+									<span className="flex items-center gap-1.5">
+										<Award size={14} className="text-amber-500" />
+										<span>Ортопедический протокол и заказ в лабораторию (ЗТЛ)</span>
+									</span>
+								</summary>
+								<div className="pt-2">
+									<OrthopedicsChairsidePanel
+										patientId={activePatient?.id}
+										activeToothFdi={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+										isLocked={isLocked}
+									/>
+								</div>
+							</details>
+						</Suspense>
 
-				<Suspense fallback={null}>
-					<details className="group border-t border-[var(--line)] pt-2 bg-transparent" data-testid="emk-orthopedics-details">
-						<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
-							<span className="flex items-center gap-1.5">
-								<Award size={14} className="text-amber-500" />
-								<span>Ортопедический протокол и заказ в лабораторию (ЗТЛ)</span>
-							</span>
-						</summary>
-						<div className="pt-2">
-							<OrthopedicsChairsidePanel
-								patientId={activePatient?.id}
-								activeToothFdi={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+						<EmkServicesSection
+							visitNoteForm={visitNoteForm}
+							updateVisitNoteField={updateVisitNoteField}
+							isLocked={isLocked}
+						/>
+
+						<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
+							<EgiszMultipleDiagnosesWidget />
+							<details className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent" data-testid="emk-icd10-selector-details">
+								<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+									<span className="flex items-center gap-1.5">
+										<Tag size={14} className="text-emerald-500" />
+										<span>Клинический классификатор МКБ-10 (Стоматология)</span>
+									</span>
+								</summary>
+								<div className="pt-2">
+									<Icd10ClinicalSelector
+										selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+										onSelect={(item, tooth) => {
+											const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
+											updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
+										}}
+									/>
+								</div>
+							</details>
+						</div>
+					</>
+				) : (
+					<div className="space-y-3">
+						{(activeEmkTab === "complaint" || activeEmkTab === "anamnesis") && (
+							<EmkComplaintsSection
+								visitNoteForm={visitNoteForm}
+								updateVisitNoteField={updateVisitNoteField}
 								isLocked={isLocked}
 							/>
-						</div>
-					</details>
-				</Suspense>
+						)}
 
-				<EmkServicesSection
-					visitNoteForm={visitNoteForm}
-					updateVisitNoteField={updateVisitNoteField}
-					isLocked={isLocked}
-				/>
-
-				<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
-					<EgiszMultipleDiagnosesWidget />
-					<details className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent" data-testid="emk-icd10-selector-details">
-						<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
-							<span className="flex items-center gap-1.5">
-								<Tag size={14} className="text-emerald-500" />
-								<span>Клинический классификатор МКБ-10 (Стоматология)</span>
-							</span>
-						</summary>
-						<div className="pt-2">
-							<Icd10ClinicalSelector
-								selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
-								onSelect={(item, tooth) => {
-									const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
-									updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
-								}}
+						{activeEmkTab === "objectiveStatus" && (
+							<EmkObjectiveStatusSection
+								visitNoteForm={visitNoteForm}
+								updateVisitNoteField={updateVisitNoteField}
+								isLocked={isLocked}
 							/>
-						</div>
-					</details>
-				</div>
+						)}
+
+						{(activeEmkTab === "diagnosis" ||
+							activeEmkTab === "treatmentPlan" ||
+							activeEmkTab === "recommendations") && (
+							<EmkDiaryProtocolSection
+								visitNoteForm={visitNoteForm}
+								updateVisitNoteField={updateVisitNoteField}
+								isLocked={isLocked}
+								activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+								onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
+							/>
+						)}
+
+						{activeEmkTab === "diagnosis" && (
+							<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
+								<EgiszMultipleDiagnosesWidget />
+								<details className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent" data-testid="emk-icd10-selector-details">
+									<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+										<span className="flex items-center gap-1.5">
+											<Tag size={14} className="text-emerald-500" />
+											<span>Клинический классификатор МКБ-10 (Стоматология)</span>
+										</span>
+									</summary>
+									<div className="pt-2">
+										<Icd10ClinicalSelector
+											selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+											onSelect={(item, tooth) => {
+												const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
+												updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
+											}}
+										/>
+									</div>
+								</details>
+							</div>
+						)}
+
+						{activeEmkTab === "treatmentPlan" && (
+							<>
+								<EmkAnesthesiaSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+									patientAge={activePatient?.age}
+									patientGender={activePatient?.gender}
+								/>
+								<EmkEndoSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+								/>
+								<EmkServicesSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+								/>
+							</>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Нижний командный бар: Сохранение и Завершение (Мандаты 8e, 8n) */}

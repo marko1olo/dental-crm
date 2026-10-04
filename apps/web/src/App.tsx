@@ -176,6 +176,11 @@ const LeadsKanbanView = lazyWithRetry(() =>
 		default: module.LeadsKanbanView,
 	})),
 );
+const LabOrdersPage = lazyWithRetry(() =>
+	import("./pages/LabOrdersPage").then((module) => ({
+		default: module.LabOrdersPage,
+	})),
+);
 const CbctMprImplantStudioModal = lazyWithRetry(() =>
 	import("./components/radiology/CbctMprImplantStudioModal").then((module) => ({
 		default: module.CbctMprImplantStudioModal,
@@ -1039,12 +1044,18 @@ export function App() {
 			if (typeof window === "undefined") return;
 			const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase();
 			const [route] = hash.split("/");
-			if (route === "sanpin") {
+			if (route === "visit") {
+				setCurrentView("visit");
+			} else if (route === "schedule") {
+				setCurrentView("schedule");
+			} else if (route === "patients") {
+				setCurrentView("patients");
+			} else if (route === "finance") {
+				setCurrentView("finance");
+			} else if (route === "sanpin") {
 				setCurrentView("scanner");
 			} else if (route === "cmo") {
 				setCurrentView("analytics");
-			} else if (route === "lab") {
-				setCurrentView("inventory");
 			} else if (route === "telephony") {
 				setCurrentView("communications");
 			}
@@ -1810,7 +1821,8 @@ export function App() {
 					) : null}
 					{!onboardingDismissed &&
 					!showFullOnboardingGuide &&
-					!isLocalOnboardingDismissed ? (
+					!isLocalOnboardingDismissed &&
+					currentView !== "visit" ? (
 						<section
 							className="onboarding-compact-strip"
 							aria-label="Первичная настройка клиники"
@@ -3447,6 +3459,31 @@ export function App() {
 								>
 									<LeadsKanbanView />
 								</ClinicalErrorBoundary>
+							</Suspense>
+						</WorkspaceRouteErrorBoundary>
+					) : null}
+					{currentView === "lab" ? (
+						<WorkspaceRouteErrorBoundary
+							view="lab"
+							label={viewLabels.lab}
+							panelClassName="panel lab-panel p-2 sm:p-3 overflow-hidden max-w-full"
+							panelId="lab"
+						>
+							<Suspense
+								fallback={
+									<section
+										className="panel lab-panel"
+										id="lab"
+										aria-label={viewLabels.lab}
+										aria-busy="true"
+									>
+										<div className="panel-heading">
+											<h2>{viewLabels.lab}</h2>
+										</div>
+									</section>
+								}
+							>
+								<LabOrdersPage />
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
