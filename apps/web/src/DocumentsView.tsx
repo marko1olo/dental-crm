@@ -42,6 +42,7 @@ import { DocumentVoidConfirmationModal } from "./components/documents/tabs/Docum
 import { DocumentAuditFactsModal } from "./components/documents/tabs/DocumentAuditFactsModal";
 import { DocumentRegistryTab } from "./components/documents/tabs/DocumentRegistryTab";
 import { DocumentModalsContainer } from "./components/documents/tabs/DocumentModalsContainer";
+import { MobileDocumentsHub } from "./components/documents/mobile/MobileDocumentsHub";
 import "./styles/modules/documents.css";
 import "./components/documents/documentNavigation.css";
 
@@ -420,7 +421,33 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 	return (
 		<div className="panel documents-panel" id="documents">
-			<DocumentHeaderSection
+			{/* Mobile Dedicated Apple HIG Documents Hub (<768px) */}
+			<div className="md:hidden w-full">
+				<MobileDocumentsHub
+					documents={typedActiveDocuments}
+					activePatient={activePatient}
+					activeDoctor={activeDoctor}
+					documentLabels={documentLabels}
+					documentStatusLabels={documentStatusLabels}
+					documentKindMetadata={documentKindMetadata}
+					formatShortDate={(d) => (d ? formatShortDate(d) : "")}
+					money={money}
+					onRequestIssue={requestDocumentIssue}
+					onDownloadPdf={downloadIssuedDocumentPdf}
+					onOpenHtml={openIssuedDocumentHtml}
+					onLoadAuditFacts={loadDocumentAuditFacts}
+					onDirectPrintPrimaryIntake={handleDirectPrintPrimaryIntake}
+					onOpenPrimaryIntakeModal={() => setIsPrimaryIntakeOpen(true)}
+					onOpenCreateDocumentModal={(kind) => {
+						setSelectedDocumentKind(kind);
+						void createDocument(kind);
+					}}
+				/>
+			</div>
+
+			{/* Desktop Documents Experience (>=768px) */}
+			<div className="hidden md:block w-full">
+				<DocumentHeaderSection
 				activePatient={activePatient}
 				activeDoctor={activeDoctor}
 				clinicProfileDraft={clinicProfileDraft}
@@ -710,6 +737,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				setIsEgiszRemdOpen={setIsEgiszRemdOpen}
 				requestDocumentVoid={requestDocumentVoid}
 			/>
+			</div>
 
 			{/* 10. ПАКЕТНЫЕ МОДАЛКИ (ПЕРВИЧНЫЙ, ХИРУРГИЧЕСКИЙ, ТАКС, САНПИН, СЭМД, ЭЛН) */}
 			<DocumentModalsContainer
