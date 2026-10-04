@@ -37,11 +37,14 @@ import {
 	namedDevelopmentModeActive,
 	unguardedBypassAllowed,
 } from "../accessGuard.js";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
+import { db } from "../db/client.js";
 import {
+	appointments,
 	communicationTasks,
 	denteTelegramBotConfigs,
+	denteTelegramChatLinks,
 	messengerInboundEvents,
 } from "../db/schema.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
@@ -121,11 +124,17 @@ import {
 } from "../text/repairMojibake.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import { TelegramBotHostingService } from "../services/telegram/TelegramBotHostingService.js";
+import { telegramMultiTenantSupervisor } from "../services/telegram/TelegramMultiTenantSupervisor.js";
 import { TelegramInteractiveTriageService } from "../services/telegram/TelegramInteractiveTriageService.js";
 import {
 	TELEGRAM_BOT_PRESETS,
 	TelegramBotPresetsEngine,
 } from "../services/telegram/TelegramBotPresets.js";
+import { TelegramRedFlagDetector } from "../services/telegram/TelegramRedFlagDetector.js";
+import { TelegramEmergencyEscalationService } from "../services/telegram/TelegramEmergencyEscalationService.js";
+import { TelegramVoiceIntakeService } from "../services/telegram/TelegramVoiceIntakeService.js";
+import { TelegramPostOpCarePipeline } from "../services/telegram/TelegramPostOpCarePipeline.js";
+import { TelegramReferralLoyaltyService } from "../services/telegram/TelegramReferralLoyaltyService.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -2562,16 +2571,23 @@ function safeCommandKeyboard(
 function reviewReplyFor(
 	settings: DenteTelegramBotSettings,
 ): TelegramWebhookReplyPackage {
+	const npsButtons: Array<{ text: string; callback_data: string }> = [
+		{ text: "1 ⭐", callback_data: "nps:latest:1" },
+		{ text: "2 ⭐", callback_data: "nps:latest:2" },
+		{ text: "3 ⭐", callback_data: "nps:latest:3" },
+		{ text: "4 ⭐", callback_data: "nps:latest:4" },
+		{ text: "5 ⭐", callback_data: "nps:latest:5" },
+	];
 	const buttons = reviewButtons(settings);
-	if (!buttons.length) {
-		return {
-			text: "Ссылка для оценки клиники пока не настроена. Попросите администратора добавить ссылку на отзывы или карточку клиники в настройках DENTE.",
-			replyMarkup: safeCommandKeyboard(settings, "help"),
-		};
+	const rows: Array<Array<Record<string, unknown>>> = [
+		npsButtons as Array<Record<string, unknown>>,
+	];
+	if (buttons.length > 0) {
+		rows.push(buttons as Array<Record<string, unknown>>);
 	}
 	return {
-		text: "Спасибо за визит. Можно оставить отзыв о клинике по безопасной общей ссылке ниже.",
-		replyMarkup: replyMarkupWithNextActions([buttons], settings),
+		text: "Пожалуйста, оцените качество обслуживания и ваш визит в клинику от 1 до 5 звёзд:",
+		replyMarkup: { inline_keyboard: rows },
 		photoUrl: patientMenuCardPhoto(settings, "review"),
 	};
 }
@@ -3460,13 +3476,30 @@ async function sendWebhookSuggestedReply(
 
 async function handleWebhook(
 	request: FastifyRequest<{
-		Params: { organizationId?: string; botConfigId?: string };
+		Params: { organizationId?: string; botConfigId?: string; botTokenHash?: string };
 	}>,
 	reply: FastifyReply,
 ) {
+	let targetOrgId = request.params.organizationId ?? null;
+	let targetBotConfigId = request.params.botConfigId ?? null;
+
+	const botTokenHash = request.params.botTokenHash;
+	if (botTokenHash) {
+		const supervisorBot = telegramMultiTenantSupervisor.getBotByTokenHash(botTokenHash);
+		if (!supervisorBot) {
+			return reply.code(404).send({
+				ok: false,
+				error: "TelegramTenantNotFound",
+				message: "Бот не найден в реестре Multi-Tenant Supervisor по token hash.",
+			});
+		}
+		targetOrgId = supervisorBot.organizationId;
+		targetBotConfigId = supervisorBot.botConfigId;
+	}
+
 	const runtimeResult = resolveTelegramRuntimeContext(
-		request.params.organizationId ?? null,
-		request.params.botConfigId ?? null,
+		targetOrgId,
+		targetBotConfigId,
 	);
 	if (!runtimeResult.ok) {
 		return reply.code(runtimeResult.statusCode).send({
@@ -3521,6 +3554,23 @@ async function handleWebhook(
 			ok: false,
 			error: "TelegramWebhookSecretMismatch",
 		});
+	}
+
+	// Если бот отслеживается в TelegramMultiTenantSupervisor, проверяем Rate Limiter (Token Bucket flood protection)
+	const supervisorBot = botTokenHash
+		? telegramMultiTenantSupervisor.getBotByTokenHash(botTokenHash)
+		: telegramMultiTenantSupervisor.getBotByOrg(runtime.organizationId, runtime.botConfigId);
+	if (supervisorBot) {
+		if (!supervisorBot.rateLimiter.tryConsume(1)) {
+			supervisorBot.metrics.rateLimitedUpdates++;
+			return reply.code(429).send({
+				ok: false,
+				error: "TelegramRateLimitExceeded",
+				message: "Превышен лимит запросов к боту клиники (Flood Protection).",
+			});
+		}
+		supervisorBot.lastActiveAt = new Date();
+		supervisorBot.slidingRps.record();
 	}
 
 	// Ответы бота («когда мой приём», подтверждение записи) строятся по
@@ -3620,6 +3670,241 @@ async function handleWebhook(
 			botConfigId: runtime.botConfigId,
 			state: domainState,
 		});
+
+		// Приём рефералов / друзей по deep link: /start ref_...
+		if (
+			messageText &&
+			/^\/start\s+ref_/i.test(messageText.trim()) &&
+			chatId
+		) {
+			const startPayload = messageText.trim().replace(/^\/start\s+/i, "");
+			const fromUser =
+				isRecord(update.message) && isRecord(update.message.from)
+					? (update.message.from as Record<string, unknown>)
+					: undefined;
+			const refereeProfile = fromUser
+				? {
+						fullName: [fromUser.first_name, fromUser.last_name]
+							.filter(Boolean)
+							.map(String)
+							.join(" "),
+						username:
+							typeof fromUser.username === "string"
+								? fromUser.username
+								: undefined,
+					}
+				: undefined;
+
+			const referralResult =
+				await TelegramReferralLoyaltyService.processReferralStart(
+					runtime.organizationId,
+					chatId,
+					startPayload,
+					refereeProfile,
+				);
+
+			const event = recordDenteTelegramWebhookEvent({
+				updateId: update.update_id,
+				organizationId: runtime.organizationId,
+				botConfigId: runtime.botConfigId,
+				chatFingerprint: chatHash,
+				updateKind,
+				command: "/start",
+				status: referralResult.success ? "processed" : "rejected",
+				action: "telegram_referral_start_handled",
+				warnings: referralResult.errorMessage ? [referralResult.errorMessage] : [],
+			});
+
+			const webAppUrl =
+				referralResult.webAppUrl ||
+				`${runtime.settings.patientPortalBaseUrl || "https://dente.clinic"}/#/portal/tgapp/${runtime.organizationId}?patientId=${referralResult.refereePatientId || ""}`;
+
+			const replyMarkup = {
+				inline_keyboard: [
+					[
+						{
+							text: "📱 Открыть Карманную клинику",
+							web_app: { url: webAppUrl },
+						},
+					],
+					[
+						{
+							text: "📅 Записаться на приём со скидкой",
+							callback_data: "dente:schedule",
+						},
+					],
+				],
+			};
+
+			if (chatId && runtime.botToken) {
+				await sendTelegramTextMessage({
+					botToken: runtime.botToken,
+					chatId,
+					text: referralResult.welcomeMessage,
+					replyMarkup,
+				}).catch(() => {});
+			}
+
+			return denteTelegramWebhookResponseSchema.parse(
+				readableTelegramPayload({
+					ok: true,
+					duplicate: false,
+					action: "telegram_referral_start_handled",
+					suggestedReply: readableTelegramText(referralResult.welcomeMessage),
+					suggestedReplyMarkup: readableTelegramPayload(replyMarkup),
+					suggestedPhotoUrl: null,
+					warnings: referralResult.errorMessage ? [referralResult.errorMessage] : [],
+					event,
+				}),
+			);
+		}
+
+		// Маршрутизация обратной связи NPS (1-5 звёзд: 5/5 -> Карты/2ГИС, 1-4 -> Сервисная служба)
+		if (callbackData?.startsWith("nps:")) {
+			const parts = callbackData.split(":");
+			let appointmentId = parts[1] || "";
+			let score = Number.parseInt(parts[2] || parts[1] || "5", 10);
+			if (parts.length === 2 && !Number.isNaN(Number(parts[1]))) {
+				appointmentId = "";
+				score = Number(parts[1]);
+			}
+
+			if (!appointmentId || appointmentId === "latest") {
+				try {
+					await withTenantCtx(runtime.organizationId, async () => {
+						const [chatLink] = await db
+							.select()
+							.from(denteTelegramChatLinks)
+							.where(
+								and(
+									eq(denteTelegramChatLinks.organizationId, runtime.organizationId),
+									eq(denteTelegramChatLinks.chatFingerprint, chatHash || ""),
+								),
+							)
+							.limit(1);
+
+						if (chatLink?.patientId) {
+							const [latestAppt] = await db
+								.select({ id: appointments.id })
+								.from(appointments)
+								.where(
+									and(
+										eq(appointments.organizationId, runtime.organizationId),
+										eq(appointments.patientId, chatLink.patientId),
+									),
+								)
+								.orderBy(desc(appointments.startAt))
+								.limit(1);
+							if (latestAppt) {
+								appointmentId = latestAppt.id;
+							}
+						}
+					});
+				} catch {}
+			}
+
+			const npsResult = await TelegramReferralLoyaltyService.handleNpsFeedback(
+				runtime.organizationId,
+				{
+					appointmentId: appointmentId || "anonymous",
+					score,
+					telegramChatId: chatId ?? undefined,
+				},
+				{
+					clinicName: runtime.settings.botName || "DENTE",
+					yandexMapsUrl: runtime.settings.yandexReviewUrl || undefined,
+					twoGisUrl: runtime.settings.twoGisReviewUrl || undefined,
+				},
+			);
+
+			if (callbackQueryId && runtime.botToken) {
+				void answerTelegramCallbackQuery({
+					botToken: runtime.botToken,
+					callbackQueryId,
+					text: score === 5 ? "⭐ Спасибо за высшую оценку!" : "Спасибо за отзыв!",
+				}).catch(() => {});
+			}
+
+			const messageId =
+				isRecord(update.callback_query) &&
+				isRecord(update.callback_query.message) &&
+				typeof update.callback_query.message.message_id === "number"
+					? update.callback_query.message.message_id
+					: null;
+
+			const inlineKeyboard: Array<Array<{ text: string; url?: string; callback_data?: string }>> = [];
+			if (npsResult.routeDestination === "external_review") {
+				const row: Array<{ text: string; url: string }> = [];
+				if (npsResult.yandexMapsUrl) {
+					row.push({ text: "⭐️ Яндекс Карты", url: npsResult.yandexMapsUrl });
+				}
+				if (npsResult.twoGisUrl) {
+					row.push({ text: "🗺 2ГИС", url: npsResult.twoGisUrl });
+				}
+				if (row.length > 0) {
+					inlineKeyboard.push(row);
+				}
+			}
+			inlineKeyboard.push([
+				{ text: "🏠 Главное меню", callback_data: "dente:start" },
+			]);
+
+			const replyMarkup = { inline_keyboard: inlineKeyboard };
+
+			const activeBotToken = runtime.botToken;
+			const activeChatId = chatId;
+			if (messageId && activeChatId && activeBotToken) {
+				await editTelegramMessageText({
+					botToken: activeBotToken,
+					chatId: activeChatId,
+					messageId,
+					text: npsResult.replyMessage,
+					replyMarkup,
+				}).catch(async () => {
+					await sendTelegramTextMessage({
+						botToken: activeBotToken,
+						chatId: activeChatId,
+						text: npsResult.replyMessage,
+						replyMarkup,
+					}).catch(() => {});
+				});
+			} else if (activeChatId && activeBotToken) {
+				await sendTelegramTextMessage({
+					botToken: activeBotToken,
+					chatId: activeChatId,
+					text: npsResult.replyMessage,
+					replyMarkup,
+				}).catch(() => {});
+			}
+
+			const event = recordDenteTelegramWebhookEvent({
+				updateId: update.update_id,
+				organizationId: runtime.organizationId,
+				botConfigId: runtime.botConfigId,
+				chatFingerprint: chatHash,
+				updateKind,
+				command: `/callback:${callbackData}`,
+				status: "processed",
+				action:
+					npsResult.routeDestination === "external_review"
+						? "telegram_nps_external_review_routed"
+						: "telegram_nps_service_recovery_escalated",
+				warnings: [],
+			});
+
+			return denteTelegramWebhookResponseSchema.parse(
+				readableTelegramPayload({
+					ok: true,
+					duplicate: false,
+					action: event.action,
+					suggestedReply: readableTelegramText(npsResult.replyMessage),
+					suggestedReplyMarkup: readableTelegramPayload(replyMarkup),
+					suggestedPhotoUrl: null,
+					warnings: [],
+					event,
+				}),
+			);
+		}
 
 		// Двусторонний Ack-loop Интеркома персонала в Telegram
 		if (callbackData?.startsWith("intercom_ack:")) {
@@ -3744,8 +4029,61 @@ async function handleWebhook(
 			}
 		}
 
-		// Автоматизированный послеоперационный опрос (Post-op Recovery Survey)
+		// Автоматизированный 4-этапный послеоперационный опрос и детектор осложнений (Post-op Recovery Pipeline)
 		if (callbackData?.startsWith("postop:")) {
+			const messageId =
+				isRecord(update.callback_query) &&
+				isRecord(update.callback_query.message) &&
+				typeof update.callback_query.message.message_id === "number"
+					? update.callback_query.message.message_id
+					: null;
+
+			const postOpCareResult = await TelegramPostOpCarePipeline.handlePostOpCallback({
+				callbackData,
+				callbackQueryId,
+				chatFingerprint: chatHash ?? "",
+				chatId: chatId ?? "",
+				messageId,
+				botToken: runtime.botToken || "",
+				organizationId: runtime.organizationId,
+				clinicId: runtime.clinicId,
+			});
+
+			if (postOpCareResult.handled && postOpCareResult.screen) {
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: `/callback:${callbackData}`,
+					status: "processed",
+					action: postOpCareResult.isEmergency
+						? "telegram_postop_emergency_handled"
+						: "telegram_postop_survey_handled",
+					warnings: postOpCareResult.isEmergency
+						? ["Экстренное послеоперационное осложнение CITO эскалировано дежурному врачу"]
+						: [],
+				});
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: postOpCareResult.isEmergency
+							? "telegram_postop_emergency_handled"
+							: "telegram_postop_survey_handled",
+						suggestedReply: readableTelegramText(postOpCareResult.screen.text),
+						suggestedReplyMarkup: readableTelegramPayload(postOpCareResult.screen.replyMarkup),
+						suggestedPhotoUrl: null,
+						warnings: postOpCareResult.isEmergency
+							? ["Экстренное послеоперационное осложнение CITO эскалировано дежурному врачу"]
+							: [],
+						event,
+					}),
+				);
+			}
+
 			const parts = callbackData.split(":");
 			let day: 1 | 3 = 1;
 			let score = 1;
@@ -3761,13 +4099,6 @@ async function handleWebhook(
 			if (!isNaN(parsedScore)) {
 				score = Math.max(1, Math.min(5, parsedScore));
 			}
-
-			const messageId =
-				isRecord(update.callback_query) &&
-				isRecord(update.callback_query.message) &&
-				typeof update.callback_query.message.message_id === "number"
-					? update.callback_query.message.message_id
-					: null;
 
 			const surveyResult = TelegramBotPresetsEngine.evaluatePostOpSurvey({
 				day,
@@ -3971,6 +4302,125 @@ async function handleWebhook(
 						),
 						suggestedPhotoUrl: null,
 						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// Приём голосовых обращений пациентов (Voice Note Intake & Transcription)
+		if (updateKind === "voice" && chatId && runtime.botToken) {
+			const message = isRecord(update.message) ? update.message : null;
+			const voice = isRecord(message?.voice) ? message.voice : null;
+			const fileId =
+				voice && typeof voice.file_id === "string" ? voice.file_id : null;
+
+			if (fileId) {
+				const voiceResult =
+					await TelegramVoiceIntakeService.handleVoiceIntake({
+						botToken: runtime.botToken,
+						organizationId: runtime.organizationId,
+						clinicId: runtime.clinicId,
+						botConfigId: runtime.botConfigId,
+						chatId,
+						chatFingerprint: chatHash,
+						fileId,
+						duration: typeof voice?.duration === "number" ? voice.duration : undefined,
+						mimeType: typeof voice?.mime_type === "string" ? voice.mime_type : "audio/ogg",
+						updateId: update.update_id,
+					});
+
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: null,
+					status: voiceResult.ok ? "processed" : "rejected",
+					action: voiceResult.isEmergency
+						? "telegram_patient_voice_emergency"
+						: "telegram_patient_voice_received",
+					warnings: voiceResult.redFlags.hasRedFlags
+						? [voiceResult.redFlags.doctorAlertSummary]
+						: [],
+				});
+
+				if (chatId) {
+					await sendTelegramTextMessage({
+						botToken: runtime.botToken,
+						chatId,
+						text: voiceResult.responseScreen.text,
+						replyMarkup: voiceResult.responseScreen.replyMarkup,
+					});
+				}
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: voiceResult.isEmergency
+							? "telegram_patient_voice_emergency"
+							: "telegram_patient_voice_received",
+						suggestedReply: readableTelegramText(voiceResult.responseScreen.text),
+						suggestedReplyMarkup: readableTelegramPayload(
+							voiceResult.responseScreen.replyMarkup,
+						),
+						suggestedPhotoUrl: null,
+						warnings: voiceResult.redFlags.hasRedFlags
+							? [voiceResult.redFlags.doctorAlertSummary]
+							: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// Детектор красных флагов в текстовых сообщениях пациентов (Red Flag Text Emergency Alert)
+		if (messageText && chatId && runtime.botToken && !command) {
+			const textRedFlags = TelegramRedFlagDetector.evaluateText(messageText);
+			if (textRedFlags.hasRedFlags) {
+				const escResult = await TelegramEmergencyEscalationService.escalateEmergency({
+					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
+					chatId,
+					chatFingerprint: chatHash,
+					source: "text_message",
+					redFlagResult: textRedFlags,
+					rawMessageText: messageText,
+					botToken: runtime.botToken,
+				});
+
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: null,
+					status: "processed",
+					action: "telegram_patient_text_emergency",
+					warnings: [textRedFlags.doctorAlertSummary],
+				});
+
+				await sendTelegramTextMessage({
+					botToken: runtime.botToken,
+					chatId,
+					text: escResult.emergencyScreen.text,
+					replyMarkup: escResult.emergencyScreen.replyMarkup,
+				});
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: "telegram_patient_text_emergency",
+						suggestedReply: readableTelegramText(escResult.emergencyScreen.text),
+						suggestedReplyMarkup: readableTelegramPayload(
+							escResult.emergencyScreen.replyMarkup,
+						),
+						suggestedPhotoUrl: null,
+						warnings: [textRedFlags.doctorAlertSummary],
 						event,
 					}),
 				);
@@ -4331,6 +4781,11 @@ async function handleWebhook(
 			}
 		}
 
+		if (supervisorBot) {
+			supervisorBot.metrics.totalUpdates++;
+			supervisorBot.metrics.successfulUpdates++;
+		}
+
 		return denteTelegramWebhookResponseSchema.parse(
 			readableTelegramPayload({
 				ok: true,
@@ -4357,6 +4812,7 @@ export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
 		handleWebhook,
 	);
 	app.post("/api/telegram/webhook/:organizationId", options, handleWebhook);
+	app.post("/api/telegram/webhook/token/:botTokenHash", options, handleWebhook);
 }
 
 function registerTelegramStatusRoutes(
@@ -4383,6 +4839,89 @@ function registerTelegramStatusRoutes(
 			version: "2.4.0",
 		};
 	});
+
+	/**
+	 * Сводка High-Density Telegram Supervisor: мониторинг памяти, активных ботов, RPS и latency.
+	 */
+	app.get(
+		"/api/telegram/supervisor/status",
+		telegramControlPlaneRouteOptions,
+		async () => {
+			return {
+				ok: true,
+				supervisor: telegramMultiTenantSupervisor.getSupervisorStatus(),
+			};
+		},
+	);
+
+	/**
+	 * Горячий перезапуск конкретного бота в супервизоре.
+	 */
+	app.post<{ Params: { botId: string } }>(
+		"/api/telegram/supervisor/bots/:botId/reload",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const botId = request.params.botId?.trim();
+			if (!botId) {
+				return reply.code(400).send({
+					ok: false,
+					error: "BotIdRequired",
+					message: "Параметр botId обязателен.",
+				});
+			}
+			try {
+				const runtime = await telegramMultiTenantSupervisor.reloadBot(botId);
+				return {
+					ok: true,
+					bot: {
+						botId: runtime.botId,
+						organizationId: runtime.organizationId,
+						botConfigId: runtime.botConfigId,
+						status: runtime.status,
+						mode: runtime.mode,
+						webhookUrl: runtime.webhookUrl,
+					},
+				};
+			} catch (err: unknown) {
+				return reply.code(404).send({
+					ok: false,
+					error: "BotReloadFailed",
+					message: err instanceof Error ? err.message : String(err),
+				});
+			}
+		},
+	);
+
+	/**
+	 * Проверка здоровья конкретного бота и вебхука через Telegram Bot API.
+	 */
+	app.get<{ Params: { botId: string } }>(
+		"/api/telegram/supervisor/bots/:botId/health",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const botId = request.params.botId?.trim();
+			if (!botId) {
+				return reply.code(400).send({
+					ok: false,
+					error: "BotIdRequired",
+					message: "Параметр botId обязателен.",
+				});
+			}
+			try {
+				const health = await telegramMultiTenantSupervisor.checkBotHealth(botId);
+				return {
+					ok: true,
+					health,
+				};
+			} catch (err: unknown) {
+				return reply.code(404).send({
+					ok: false,
+					error: "BotNotFound",
+					message: err instanceof Error ? err.message : String(err),
+				});
+			}
+		},
+	);
 
 	/**
 	 * Проверка токена Telegram-бота через getMe.
