@@ -191,7 +191,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 					<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
 						<span>ВЕРХНЯЯ ЧЕЛЮСТЬ (МАКСИЛЛА) • 18–11 | 21–28</span>
 						<span className="text-[10px] text-[var(--muted)]">
-							Вестибулярно (DB • B • MB) / Небно (DL • L • ML)
+							Вестибулярно (ДВ • В • МВ) / Небно (ДО • О • МО)
 						</span>
 					</div>
 
@@ -245,7 +245,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 					<div className="flex items-center justify-between px-2 py-1 bg-[var(--paper-soft)] rounded-t-lg border-b border-[var(--line)] text-xs font-bold text-teal-400">
 						<span>НИЖНЯЯ ЧЕЛЮСТЬ (МАНДИБУЛА) • 48–41 | 31–38</span>
 						<span className="text-[10px] text-[var(--muted)]">
-							Вестибулярно (DB • B • MB) / Язычно (DL • L • ML)
+							Вестибулярно (ДВ • В • МВ) / Язычно (ДО • О • МО)
 						</span>
 					</div>
 

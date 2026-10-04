@@ -47,6 +47,7 @@ import { PatientAdministrativeForm } from "./components/patients/PatientAdminist
 import { PatientSearchAutocomplete } from "./components/patients/PatientSearchAutocomplete";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { MobilePatientsGroupedList } from "./components/patients/MobilePatientsGroupedList";
+import { MobilePatientProfileWorkspace } from "./components/patients/MobilePatientProfileWorkspace";
 import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
 import {
 	RadiologyPatientSearchModal,
@@ -264,6 +265,7 @@ export function executeOpenPatientVisitAutonomy({
 	showToastFn = showToast,
 }: {
 	selectedPatient: Patient | null | undefined;
+	visitId?: string;
 	setSelectedPatientId?: (id: string) => void;
 	setCurrentView?: (view: any) => void;
 	showToastFn?: (
@@ -814,6 +816,25 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						isLoadingLost={isLoadingLost}
 						money={money}
 					/>
+				) : mobileActiveView === "card" && selectedPatient ? (
+					<MobilePatientProfileWorkspace
+						patient={selectedPatient}
+						dashboard={props.dashboard as any}
+						onBack={() => setMobileActiveView("list")}
+						onSelectPatient={handleSelectPatient}
+						onOpenVisit={(visitId) =>
+							executeOpenPatientVisitAutonomy({ selectedPatient, visitId })
+						}
+						onNewAppointment={(patientId) =>
+							executeBookPatientAppointmentAutonomy({ selectedPatient })
+						}
+						money={money}
+						patientCoreDraft={patientCoreDraft}
+						updatePatientCoreDraft={updatePatientCoreDraft}
+						savePatientCore={savePatientCore}
+						patientCoreDirty={patientCoreDirty}
+						patientCoreSaveState={patientCoreSaveState}
+					/>
 				) : null}
 			</div>
 
@@ -900,7 +921,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
 			<div
-				className={`patients-main-grid max-md:px-2 max-md:pb-6 max-md:flex-1 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"} ${mobileActiveView === "list" ? "max-md:!hidden" : ""}`}
+				className="patients-main-grid max-md:!hidden md:flex"
 			>
 				{/* Left Column: Patient List (Desktop) */}
 				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full hidden md:flex">

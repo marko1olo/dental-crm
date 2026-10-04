@@ -1,0 +1,148 @@
+/**
+ * apps/web/src/styles/modules/mobile-settings.css
+ *
+ * DENTE Apple HIG Mobile Settings & Grouped Inset Lists Styles.
+ * Compliant with Apple iOS HIG & Mandates 8b, 8c, 8d, 8e:
+ * - 0px horizontal drift: overflow-x: clip; max-width: 100vw;
+ * - Grouped Inset Lists with 16px radius and subtle inset dividers
+ * - Natural thumb zone floating bottom bars
+ * - 44x44px touch target ergonomics
+ * - Zero hardcoded colors, 100% design system tokens
+ */
+
+.mobile-settings-root,
+.mobile-prices-view,
+.mobile-staff-view {
+	width: 100%;
+	max-width: 100vw;
+	overflow-x: clip;
+	box-sizing: border-box;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Touch Target Minimum Invariant (44x44px) */
+@media (max-width: 768px), (pointer: coarse) {
+	.mobile-touch-target {
+		min-width: 44px;
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.mobile-settings-row {
+		min-height: 52px;
+	}
+}
+
+/* Safe Area Inset Support */
+.mobile-bottom-bar-safe {
+	padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.mobile-top-bar-safe {
+	padding-top: max(12px, env(safe-area-inset-top));
+}
+
+/* Floating Bottom Bar with Glassmorphic Blur */
+.mobile-floating-bottom-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 40;
+	padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+}
+
+/* Grouped Inset Card Container */
+.mobile-grouped-inset-card {
+	border-radius: 16px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Inset Separator */
+.mobile-inset-separator {
+	height: 1px;
+	background: var(--line-subtle, rgba(0, 0, 0, 0.06));
+	margin-left: 56px;
+}
+
+[data-theme="dark"] .mobile-inset-separator,
+[data-theme="night"] .mobile-inset-separator,
+[data-theme="cyber_xray"] .mobile-inset-separator {
+	background: var(--line-subtle, rgba(255, 255, 255, 0.06));
+}
+
+/* Drawer Surface Animation & Resiliency */
+@keyframes sheetSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+.mobile-drawer-sheet {
+	animation: sheetSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	will-change: transform;
+}
+
+/* Sovereign Search Input */
+.mobile-settings-search-input {
+	padding-left: 2.6rem !important;
+}
+
+/* Sovereign Filter Chips */
+.mobile-filter-chip {
+	min-height: 34px;
+	padding: 0 14px;
+	border-radius: 9999px;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.mobile-filter-chip:active {
+	transform: scale(0.96);
+}
+
+.mobile-filter-chip.active {
+	background: var(--teal-fill, var(--teal));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+.mobile-filter-chip .chip-counter {
+	font-size: 11px;
+	font-family: var(--font-mono, monospace);
+	padding: 1px 6px;
+	border-radius: 9999px;
+	font-weight: 700;
+	background: var(--line);
+	color: var(--muted);
+}
+
+.mobile-filter-chip.active .chip-counter {
+	background: rgba(255, 255, 255, 0.25);
+	color: #ffffff;
+}
+

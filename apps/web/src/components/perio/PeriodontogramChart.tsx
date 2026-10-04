@@ -16,7 +16,7 @@
  */
 
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
-import React, { useId } from "react";
+import React, { useId, useState } from "react";
 import { HygieneIndicesPanel } from "../hygiene/HygieneIndicesPanel";
 
 // Transparent zero-downtime re-exports
@@ -33,12 +33,14 @@ export * from "./chart/PerioKeypadDrawer";
 export * from "./chart/PerioArchGrid";
 export * from "./chart/PerioToothInspector";
 export * from "./chart/PerioDiagnosticsPanel";
+export * from "./chart/PerioMobileTouchCockpit";
 
 import { PerioArchGrid } from "./chart/PerioArchGrid";
 import { PerioDiagnosticsPanel } from "./chart/PerioDiagnosticsPanel";
 import { PerioExpressBanner } from "./chart/PerioExpressBanner";
 import { PerioHelpDrawer } from "./chart/PerioHelpDrawer";
 import { PerioKeypadDrawer } from "./chart/PerioKeypadDrawer";
+import { PerioMobileTouchCockpit } from "./chart/PerioMobileTouchCockpit";
 import { PerioSummaryBar } from "./chart/PerioSummaryBar";
 import { PerioToolbar } from "./chart/PerioToolbar";
 import { PerioToothInspector } from "./chart/PerioToothInspector";
@@ -137,6 +139,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		doctorName,
 	});
 
+	const [viewModeOverride, setViewModeOverride] = useState<"auto" | "touch" | "desktop">("auto");
+
 	return (
 		<div
 			ref={containerRef}
@@ -144,13 +148,115 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			tabIndex={isProbeKeyboardEnabled ? 0 : -1}
 			onKeyDown={handleKeyDown}
 			data-testid="interactive-periodontogram"
-			className="interactive-periodontogram flex flex-col gap-4 select-none relative focus:outline-none focus:ring-1 focus:ring-teal-500/50 rounded-2xl p-2 sm:p-4 bg-[var(--paper)] border border-[var(--line)] shadow-xs"
+			className="interactive-periodontogram flex flex-col gap-4 select-none relative focus:outline-none focus:ring-1 focus:ring-teal-500/50 rounded-2xl p-2 sm:p-4 bg-[var(--paper)] border border-[var(--line)] shadow-xs overflow-x-clip max-w-[100vw] w-full"
 		>
+			{/* Ergonomic Mode Switcher (Doctor Autonomy Mandate 8e & Apple HIG) */}
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold select-none w-full">
+				<div className="grid grid-cols-2 gap-1 w-full sm:w-auto sm:flex sm:items-center">
+					<button
+						type="button"
+						onClick={() => setViewModeOverride("touch")}
+						className={`min-h-[40px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
+							viewModeOverride === "touch"
+								? "bg-[var(--paper)] text-teal-300 font-bold shadow-xs border border-teal-500/40"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="perio-mode-touch-btn"
+					>
+						<span>Сенсорный (Q1–Q4)</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setViewModeOverride("desktop")}
+						className={`min-h-[40px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
+							viewModeOverride === "desktop"
+								? "bg-[var(--paper)] text-teal-300 font-bold shadow-xs border border-teal-500/40"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="perio-mode-desktop-btn"
+					>
+						<span>Полная сетка (18–48)</span>
+					</button>
+				</div>
+				<div className="flex items-center justify-between sm:justify-end gap-2 px-1">
+					{viewModeOverride !== "auto" && (
+						<button
+							type="button"
+							onClick={() => setViewModeOverride("auto")}
+							className="min-h-[36px] px-2 py-1 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer"
+						>
+							Авто
+						</button>
+					)}
+					<span className="text-[11px] text-[var(--muted)] hidden md:inline px-1 truncate">
+						{viewModeOverride === "touch"
+							? "Florida Probe Touch (1–7+ мм, 6 датчиков на зуб)"
+							: "Форма 043/у (32 зуба, 192 точки зондирования)"}
+					</span>
+				</div>
+			</div>
+
 			{/* ═══════════════════════════════════════════════════════════════════
-			    HEADER & 1-CLICK FAST ACTIONS TOOLBAR (32-36px, h-9, min-h-[36px])
-			    Touch targets: min-h-[44px] min-w-[44px]
+			    TOUCH-FIRST MOBILE COCKPIT (APPLE HIG 390x844 & FLORIDA PROBE)
+			    Visible by default on mobile screens (md:hidden) or when forced
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<PerioToolbar
+			<div
+				className={
+					viewModeOverride === "desktop"
+						? "hidden"
+						: viewModeOverride === "touch"
+							? "block w-full"
+							: "block md:hidden w-full"
+				}
+			>
+				<PerioMobileTouchCockpit
+					toothMap={toothMap}
+					selectedToothNumber={selectedToothNumber}
+					onSelectTooth={setSelectedToothNumber}
+					focusedSite={focusedSite}
+					onFocusSite={(toothNumber, siteKey) => {
+						setIsProbeKeyboardEnabled(true);
+						setFocusedSite({ toothNumber, siteKey });
+						setSelectedToothNumber(toothNumber);
+					}}
+					readOnly={readOnly}
+					onKeypadDepth={handleKeypadDepth}
+					onToggleBop={handleKeypadToggleBop}
+					onTogglePlaque={handleKeypadTogglePlaque}
+					onToggleSuppuration={handleKeypadToggleSuppuration}
+					onPrevSite={moveToPreviousSite}
+					onNextSite={moveToNextSite}
+					onCycleMobility={handleCycleMobility}
+					onCycleFurcation={handleCycleFurcation}
+					updateToothSite={updateToothSite}
+					updateToothProperties={updateToothProperties}
+					summary={summary}
+					aapDiagnosis={aapDiagnosis}
+					onApplyExpressPreset={handleApplyExpressPreset}
+					onSetAllIntact={handleSetAllIntact}
+					onInsertToProtocol={handleInsertToProtocol}
+					insertStatus={insertStatus}
+				/>
+			</div>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    DESKTOP TRADITIONAL FULL-ARCH VIEW (1440px Cockpit)
+			    Visible on desktop screens (hidden md:flex) or when forced
+			    ═══════════════════════════════════════════════════════════════════ */}
+			<div
+				className={`flex-col gap-4 w-full ${
+					viewModeOverride === "touch"
+						? "hidden"
+						: viewModeOverride === "desktop"
+							? "flex"
+							: "hidden md:flex"
+				}`}
+			>
+				{/* ═══════════════════════════════════════════════════════════════════
+				    HEADER & 1-CLICK FAST ACTIONS TOOLBAR (32-36px, h-9, min-h-[36px])
+				    Touch targets: min-h-[44px] min-w-[44px]
+				    ═══════════════════════════════════════════════════════════════════ */}
+				<PerioToolbar
 				aapDiagnosis={aapDiagnosis}
 				readOnly={readOnly}
 				selectedToothNumber={selectedToothNumber}
@@ -309,6 +415,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				olearyPcr={olearyPcr}
 				dynamics={dynamics}
 			/>
+			</div>
 		</div>
 	);
 });

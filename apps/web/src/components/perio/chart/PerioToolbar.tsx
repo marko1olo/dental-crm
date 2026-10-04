@@ -96,7 +96,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<ShieldCheck size={16} className="shrink-0" />
-						<span>1-клик: Здоровый пародонт (Норма)</span>
+						<span>1-клик: Вся десна здорова (Норма)</span>
 					</button>
 
 					{/* 1-Click Pro-Hygiene: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}

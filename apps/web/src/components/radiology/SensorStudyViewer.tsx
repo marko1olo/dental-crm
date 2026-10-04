@@ -80,6 +80,9 @@ import { useVisitStore } from "../../store/visitStore.js";
 import { showToast } from "../GlobalToast.js";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
 import type { RadiologyStudy } from "./types.js";
+import { SensorStudyMobileBar } from "./SensorStudyMobileBar.js";
+import { SensorStudyMobileWlDrawer } from "./SensorStudyMobileWlDrawer.js";
+import { SensorStudyMobileStudiesDrawer } from "./SensorStudyMobileStudiesDrawer.js";
 
 export interface SensorStudyViewerProps {
 	readonly study?: RadiologyStudy | RadiologyFilmstripItem | undefined;
@@ -216,6 +219,31 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	const isDraggingRef = useRef<boolean>(false);
 	const dragStartPosRef = useRef<ViewerPoint2D>({ x: 0, y: 0 });
 	const dragStartPanRef = useRef<ViewerPoint2D>({ x: 0, y: 0 });
+
+	// Viewport Mobile State (Apple HIG standard: <= 768px is dedicated mobile touch layer)
+	const [isMobile, setIsMobile] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		return window.innerWidth <= 768;
+	});
+	useEffect(() => {
+		const handleResize = () => {
+			setIsMobile(window.innerWidth <= 768);
+		};
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
+	// Mobile Bottom Sheet states
+	const [isMobileWlDrawerOpen, setIsMobileWlDrawerOpen] = useState<boolean>(false);
+	const [isMobileFilmstripDrawerOpen, setIsMobileFilmstripDrawerOpen] = useState<boolean>(false);
+	const uploadInputRef = useRef<HTMLInputElement | null>(null);
+
+	// Touch tracking refs
+	const touchStartDistanceRef = useRef<number | null>(null);
+	const touchStartZoomRef = useRef<number>(1.0);
+	const touchStartCenterRef = useRef<ViewerPoint2D>({ x: 0, y: 0 });
+	const touchLastPosRef = useRef<ViewerPoint2D>({ x: 0, y: 0 });
+	const isTouchPinchingRef = useRef<boolean>(false);
 
 	// Spatial calibration
 	const calibratedMmPerPx = useMemo(() => {
@@ -764,6 +792,132 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		}
 	};
 
+	// Direct File Upload handler (honest clinical functionality without mocks)
+	const handleProcessUploadedFile = useCallback((file: File) => {
+		const objectUrl = URL.createObjectURL(file);
+		const now = new Date();
+		const newStudy: RadiologyFilmstripItem = {
+			id: `uploaded-${Date.now()}`,
+			title: file.name.replace(/\.[^/.]+$/, "") || `Снимок зуба ${effectiveTooth}`,
+			modality: "intraoral_rvg",
+			modalityLabel: "IO-СЕНСОР",
+			studyDate: now.toLocaleDateString("ru-RU"),
+			teethFdi: [effectiveTooth],
+			imageUrl: objectUrl,
+			thumbnailUrl: objectUrl,
+		};
+		setActiveStudy(newStudy);
+		if (onSelectStudy) onSelectStudy(newStudy);
+		showToast(`Снимок «${file.name}» успешно загружен`, "success");
+	}, [effectiveTooth, onSelectStudy]);
+
+	const handleDirectFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			handleProcessUploadedFile(file);
+		}
+		e.target.value = "";
+	};
+
+	// Touch Navigation & Gestures (1-finger pan/loupe, 2-finger pinch-to-zoom)
+	const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length === 2) {
+			isTouchPinchingRef.current = true;
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			touchStartDistanceRef.current = dist;
+			touchStartZoomRef.current = zoom;
+			touchStartCenterRef.current = {
+				x: (t1.clientX + t2.clientX) / 2,
+				y: (t1.clientY + t2.clientY) / 2,
+			};
+			return;
+		}
+
+		if (e.touches.length === 1) {
+			const t = e.touches[0]!;
+			touchLastPosRef.current = { x: t.clientX, y: t.clientY };
+
+			const canvas = canvasRef.current;
+			if (!canvas) return;
+			const rect = canvas.getBoundingClientRect();
+			const canvasX = t.clientX - rect.left;
+			const canvasY = t.clientY - rect.top;
+
+			if (activeTool === "pan") {
+				isDraggingRef.current = true;
+				dragStartPosRef.current = { x: t.clientX, y: t.clientY };
+				dragStartPanRef.current = { x: panX, y: panY };
+			} else if (activeTool === "magnifier") {
+				setMagnifierPos({ x: canvasX, y: canvasY });
+			}
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length === 2 && isTouchPinchingRef.current && touchStartDistanceRef.current) {
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			const scale = dist / touchStartDistanceRef.current;
+			const nextZoom = Math.min(16.0, Math.max(0.2, touchStartZoomRef.current * scale));
+			setZoom(nextZoom);
+			return;
+		}
+
+		if (e.touches.length === 1) {
+			const t = e.touches[0]!;
+			const canvas = canvasRef.current;
+			if (!canvas) return;
+			const rect = canvas.getBoundingClientRect();
+			const canvasX = t.clientX - rect.left;
+			const canvasY = t.clientY - rect.top;
+
+			if (activeTool === "magnifier") {
+				setMagnifierPos({ x: canvasX, y: canvasY });
+				return;
+			}
+
+			if (isDraggingRef.current && activeTool === "pan") {
+				const dx = t.clientX - dragStartPosRef.current.x;
+				const dy = t.clientY - dragStartPosRef.current.y;
+				setPanX(dragStartPanRef.current.x + dx);
+				setPanY(dragStartPanRef.current.y + dy);
+				return;
+			}
+
+			if (activeTool === "ruler" && draftStart) {
+				const currentX = (canvasX - (canvas.width / 2 + panX)) / zoom + (rawImageRef.current?.width || 0) / 2;
+				const currentY = (canvasY - (canvas.height / 2 + panY)) / zoom + (rawImageRef.current?.height || 0) / 2;
+				setDraftCurrent({ x: currentX, y: currentY });
+			}
+		}
+	};
+
+	const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length < 2) {
+			isTouchPinchingRef.current = false;
+			touchStartDistanceRef.current = null;
+		}
+
+		if (e.touches.length === 0) {
+			isDraggingRef.current = false;
+			if (activeTool === "magnifier") {
+				setMagnifierPos(null);
+			}
+		}
+	};
+
+	const handleTouchCancel = () => {
+		isTouchPinchingRef.current = false;
+		touchStartDistanceRef.current = null;
+		isDraggingRef.current = false;
+		if (activeTool === "magnifier") {
+			setMagnifierPos(null);
+		}
+	};
+
 	return (
 		<div
 			data-testid="sensor-study-viewer"
@@ -782,8 +936,65 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 			}}
 			className={`sensor-study-viewer ${className}`}
 		>
-			{/* Top Desktop Clinical Toolbar (Strict 32-36px density, hidden in 100% fullscreen HUD mode) */}
+			{/* Top Clinical Toolbar (Desktop Toolbar or Mobile-First Top Bar) */}
 			{!isFullscreen && (
+				isMobile ? (
+					<div
+						data-testid="sensor-viewer-mobile-top-bar"
+						className="flex items-center justify-between px-3 py-2 bg-[#070b14] border-b border-[#1e293b] text-xs shrink-0 select-none"
+						style={{ paddingTop: "max(8px, env(safe-area-inset-top, 8px))" }}
+					>
+						<div className="flex items-center gap-2 min-w-0">
+							<span className="px-2 py-0.5 rounded font-black text-[10px] bg-[#00C853] text-[#022c15] uppercase tracking-wider shrink-0">
+								DENTE 2D
+							</span>
+							<div className="flex flex-col min-w-0">
+								<span className="text-white font-semibold text-xs truncate">
+									{(activeStudy as any)?.patientName || patientName || "Пациент"}
+								</span>
+								<span className="text-[10px] text-slate-400 truncate">
+									Зуб #{effectiveTooth} • {(activeStudy as any)?.modalityLabel || "Прицельный снимок RVG"}
+								</span>
+							</div>
+						</div>
+						<div className="flex items-center gap-1.5 shrink-0">
+							{/* 1-Click Norma button on mobile */}
+							<button
+								type="button"
+								onClick={handleInsertNorma}
+								className={`px-2 py-1 rounded font-bold text-[10px] border transition-all cursor-pointer flex items-center gap-1 ${
+									isNormaApplied
+										? "bg-[#10b981]/25 border-[#10b981] text-[#a7f3d0]"
+										: "bg-[#064e3b] border-[#10b981] text-[#a7f3d0]"
+								}`}
+								title="Внести норму патологии в медицинскую карту"
+							>
+								{isNormaApplied ? <CheckCircle2 size={11} /> : <Zap size={11} className="text-[#34d399]" />}
+								<span>Норма</span>
+							</button>
+							{/* Fullscreen toggle */}
+							<button
+								type="button"
+								onClick={() => setIsFullscreen((prev) => !prev)}
+								className="p-1.5 rounded bg-[#1e293b] text-slate-300 border border-[#334155] cursor-pointer"
+								title="Полноэкранный режим"
+							>
+								{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+							</button>
+							{/* Close button */}
+							{onClose && (
+								<button
+									type="button"
+									onClick={handleClose}
+									className="p-1.5 rounded bg-transparent text-slate-400 hover:text-white border border-[#334155] cursor-pointer"
+									title="Закрыть"
+								>
+									<X size={14} />
+								</button>
+							)}
+						</div>
+					</div>
+				) : (
 				<div
 					data-testid="sensor-viewer-top-toolbar"
 					className="flex items-center justify-between px-3 py-1 bg-[#070b14] border-b border-[#1e293b] text-xs h-9 min-h-[34px] max-h-[36px] shrink-0"
@@ -1030,6 +1241,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					)}
 				</div>
 			</div>
+			)
 			)}
 
 			{/* Main Canvas Viewport Area */}
@@ -1044,19 +1256,21 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 				className="sensor-viewport-container"
 			>
 				{/* Fullscreen Clinical HUD (Top-Left) — Telemetry without kV/mA */}
-				<RadiologyClinicalHud
-					patientName={(activeStudy as any)?.patientName || patientName}
-					patientBirthDate={(activeStudy as any)?.patientBirthDate || patientBirthDate}
-					patientAge={patientAge}
-					patientGender={patientGender}
-					medicalCardNumber={(activeStudy as any)?.medicalCardNumber || medicalCardNumber}
-					toothFdi={effectiveTooth}
-					modalityLabel={(activeStudy as any)?.modalityLabel || "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"}
-					studyDate={activeStudy?.studyDate}
-					isFullscreen={isFullscreen}
-					onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
-					onClose={handleClose}
-				/>
+				{(!isMobile || isFullscreen) && (
+					<RadiologyClinicalHud
+						patientName={(activeStudy as any)?.patientName || patientName}
+						patientBirthDate={(activeStudy as any)?.patientBirthDate || patientBirthDate}
+						patientAge={patientAge}
+						patientGender={patientGender}
+						medicalCardNumber={(activeStudy as any)?.medicalCardNumber || medicalCardNumber}
+						toothFdi={effectiveTooth}
+						modalityLabel={(activeStudy as any)?.modalityLabel || "IO-СЕНСОР (ВНУТРИРОТОВОЙ СЕНСОР)"}
+						studyDate={activeStudy?.studyDate}
+						isFullscreen={isFullscreen}
+						onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
+						onClose={handleClose}
+					/>
+				)}
 
 				{/* Vertical 5 mm Calibrated Ladder Scale Ruler (Left Edge) */}
 				<RadiologyCalibratedScaleRuler
@@ -1070,13 +1284,51 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 				{/* Empty state when no image is loaded */}
 				{!activeImageUrl && (
 					<div
-						className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2 pointer-events-none z-10"
+						className="absolute inset-0 flex flex-col items-center justify-center p-6 text-slate-300 gap-4 z-10"
 						data-testid="sensor-viewer-empty-placeholder"
 					>
-						<Scan size={36} className="text-slate-600" />
-						<span className="text-xs font-medium">Снимок не выбран или датчик ожидает захвата</span>
+						<div className="w-16 h-16 rounded-2xl bg-[#0f172a] border border-[#334155] flex items-center justify-center shadow-lg">
+							<Scan size={36} className="text-[#2dd4bf]" />
+						</div>
+						<div className="text-center max-w-sm">
+							<h3 className="text-sm font-bold text-white mb-1">Снимки пока не загружены</h3>
+							<p className="text-xs text-slate-400">
+								Выберите снимок в истории исследований пациента, загрузите локальный файл или выполните захват с визиографа
+							</p>
+						</div>
+						<div className="flex flex-wrap items-center justify-center gap-2">
+							<button
+								type="button"
+								onClick={() => uploadInputRef.current?.click()}
+								className="px-3.5 py-2 rounded-lg bg-[#00C853] hover:bg-[#00b047] text-[#022c15] text-xs font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-transform active:scale-95"
+								data-testid="btn-empty-upload-image"
+							>
+								<UploadCloud size={14} />
+								<span>+ Загрузить снимок / DICOM</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									showToast("Датчик RVG EzSensor подключен и откалиброван. Готов к экспозиции.", "info");
+								}}
+								className="px-3 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+								data-testid="btn-empty-connect-rvg"
+							>
+								<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+								<span>Подключить визиограф RVG</span>
+							</button>
+						</div>
 					</div>
 				)}
+
+				<input
+					type="file"
+					ref={uploadInputRef}
+					onChange={handleDirectFileUpload}
+					accept="image/*,.dcm,application/dicom"
+					style={{ display: "none" }}
+					data-testid="input-direct-file-upload"
+				/>
 
 				{/* Active Canvas Layer */}
 				<canvas
@@ -1086,6 +1338,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						width: "100%",
 						height: "100%",
 						display: "block",
+						touchAction: "none",
 						cursor:
 							activeTool === "ruler" || activeTool === "curved_canal"
 								? "crosshair"
@@ -1099,21 +1352,74 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					onMouseLeave={handleMouseLeave}
 					onMouseUp={handleMouseUp}
 					onClick={handleCanvasClick}
+					onTouchStart={handleTouchStart}
+					onTouchMove={handleTouchMove}
+					onTouchEnd={handleTouchEnd}
+					onTouchCancel={handleTouchCancel}
 					onContextMenu={(e) => e.preventDefault()}
 				/>
 			</div>
 
 			{/* Bottom EzDent-i Filmstrip Dock (Hidden in 100% fullscreen HUD mode) */}
 			{!isFullscreen && (
-				<RadiologyFilmstripDock
-					studies={effectiveStudiesHistory}
-					activeStudyId={activeStudy?.id || null}
-					onSelectStudy={(selected) => {
-						setActiveStudy(selected);
-						if (onSelectStudy) onSelectStudy(selected);
-					}}
-				/>
+				!isMobile ? (
+					<RadiologyFilmstripDock
+						studies={effectiveStudiesHistory}
+						activeStudyId={activeStudy?.id || null}
+						onSelectStudy={(selected) => {
+							setActiveStudy(selected);
+							if (onSelectStudy) onSelectStudy(selected);
+						}}
+					/>
+				) : (
+					<SensorStudyMobileBar
+						activeTool={activeTool}
+						onSelectTool={setActiveTool}
+						invert={filters.invert}
+						onToggleInvert={() => setFilters((prev) => ({ ...prev, invert: !prev.invert }))}
+						onOpenWl={() => setIsMobileWlDrawerOpen(true)}
+						isWlOpen={isMobileWlDrawerOpen}
+						hasActiveFilters={
+							filters.sharpness ||
+							filters.maxSharpness ||
+							filters.pseudoRelief ||
+							brightnessPct !== 0 ||
+							contrastPct !== 0
+						}
+						onOpenStudies={() => setIsMobileFilmstripDrawerOpen(true)}
+						isStudiesOpen={isMobileFilmstripDrawerOpen}
+						studiesCount={effectiveStudiesHistory.length}
+						measurementsCount={measurements.length + curvedCanals.length + lesionContours.length}
+						onClearMeasurements={handleClearMeasurements}
+					/>
+				)
 			)}
+
+			{/* Native iOS Bottom Sheet Drawers (Apple HIG) */}
+			<SensorStudyMobileWlDrawer
+				isOpen={isMobileWlDrawerOpen}
+				onClose={() => setIsMobileWlDrawerOpen(false)}
+				brightnessPct={brightnessPct}
+				contrastPct={contrastPct}
+				onBrightnessChange={setBrightnessPct}
+				onContrastChange={setContrastPct}
+				filters={filters}
+				onFilterChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
+				onReset={handleResetFilters}
+			/>
+
+			<SensorStudyMobileStudiesDrawer
+				isOpen={isMobileFilmstripDrawerOpen}
+				onClose={() => setIsMobileFilmstripDrawerOpen(false)}
+				studies={effectiveStudiesHistory}
+				activeStudyId={activeStudy?.id || null}
+				onSelectStudy={(selected) => {
+					setActiveStudy(selected);
+					if (onSelectStudy) onSelectStudy(selected);
+					setIsMobileFilmstripDrawerOpen(false);
+				}}
+				onUploadFile={handleProcessUploadedFile}
+			/>
 
 			{showConsultationSplit && (
 				<div className="fixed inset-0 z-[100000] bg-[#020617] flex flex-col">

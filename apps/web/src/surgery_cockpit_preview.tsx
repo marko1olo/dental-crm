@@ -69,47 +69,53 @@ function SurgeryCockpitPreviewApp() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[var(--paper)] text-[var(--ink)] p-4 sm:p-6 transition-colors duration-200">
-			<div className="max-w-7xl mx-auto space-y-6">
+		<div
+			className={`min-h-screen bg-[var(--paper)] text-[var(--ink)] ${
+				view === "perio" ? "p-1 sm:p-4" : "p-2 sm:p-6"
+			} transition-colors duration-200 overflow-x-clip max-w-[100vw]`}
+		>
+			<div className="max-w-7xl mx-auto space-y-4">
 				{/* Header & Theme switcher */}
-				<header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--glass-border)]">
-					<div>
-						<h1 className="text-xl font-bold tracking-tight text-[var(--ink)]">
-							Хирургический протокол, имплантология и пародонтология (DENTE CRM)
-						</h1>
-						<p className="text-xs text-[var(--muted)]">
-							Пациент: Ковалёв Р.С. | Врач: Д-р Воронов А.В. | Тема: {rawTheme.toUpperCase()} | Режим: {view.toUpperCase()}
-						</p>
-					</div>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={() => {
-								window.location.search = `?theme=light&view=${view}`;
-							}}
-							className={`h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
-								rawTheme === "light"
-									? "bg-[var(--accent)] text-white border-[var(--accent)]"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
-							}`}
-						>
-							Light
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								window.location.search = `?theme=dark&view=${view}`;
-							}}
-							className={`h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
-								rawTheme === "dark"
-									? "bg-[var(--accent)] text-white border-[var(--accent)]"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
-							}`}
-						>
-							Dark
-						</button>
-					</div>
-				</header>
+				{view !== "perio" && (
+					<header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--glass-border)]">
+						<div>
+							<h1 className="text-xl font-bold tracking-tight text-[var(--ink)]">
+								Хирургический протокол, имплантология и пародонтология (DENTE CRM)
+							</h1>
+							<p className="text-xs text-[var(--muted)]">
+								Пациент: Ковалёв Р.С. | Врач: Д-р Воронов А.В. | Тема: {rawTheme.toUpperCase()} | Режим: {view.toUpperCase()}
+							</p>
+						</div>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									window.location.search = `?theme=light&view=${view}`;
+								}}
+								className={`h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
+									rawTheme === "light"
+										? "bg-[var(--accent)] text-white border-[var(--accent)]"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
+								}`}
+							>
+								Light
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									window.location.search = `?theme=dark&view=${view}`;
+								}}
+								className={`h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
+									rawTheme === "dark"
+										? "bg-[var(--accent)] text-white border-[var(--accent)]"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
+								}`}
+							>
+								Dark
+							</button>
+						</div>
+					</header>
+				)}
 
 				{/* 1. Tooth Extraction Cockpit */}
 				{(view === "all" || view === "extraction") && (
@@ -233,14 +239,20 @@ function SurgeryCockpitPreviewApp() {
 				{(view === "all" || view === "perio") && (
 					<section
 						data-testid="perio-chart-section"
-						className="bg-[var(--paper-card)] border border-[var(--glass-border)] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
+						className={
+							view === "perio"
+								? "w-full max-w-full overflow-x-clip"
+								: "bg-[var(--paper-card)] border border-[var(--glass-border)] rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
+						}
 					>
-						<div className="flex items-center justify-between">
-							<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
-								6. Пародонтограмма 6-точечного зондирования Florida Probe (32 зуба, 192 точки)
-							</h2>
-							<span className="text-xs text-[var(--muted)]">Мандаты 8e / 8k / 8d</span>
-						</div>
+						{view !== "perio" && (
+							<div className="flex items-center justify-between">
+								<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
+									6. Пародонтограмма 6-точечного зондирования Florida Probe (32 зуба, 192 точки)
+								</h2>
+								<span className="text-xs text-[var(--muted)]">Мандаты 8e / 8k / 8d</span>
+							</div>
+						)}
 						<PeriodontogramChart
 							patientId="pat-101"
 							patientName="Ковалёв Роман Станиславович"

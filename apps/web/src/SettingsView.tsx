@@ -17,6 +17,7 @@ import {
 	Bot,
 	Building2,
 	ChevronDown,
+	ChevronLeft,
 	ClipboardCheck,
 	Database,
 	DollarSign,
@@ -40,6 +41,11 @@ import {
 	Wand2,
 } from "lucide-react";
 import "./styles/modules/settings.css";
+import "./styles/modules/mobile-settings.css";
+import { useIsMobile } from "./hooks/useIsMobile";
+import { MobileSettingsRootView } from "./components/settings/mobile/MobileSettingsRootView";
+import { MobileSettingsPricesView } from "./components/settings/mobile/MobileSettingsPricesView";
+import { MobileSettingsStaffView } from "./components/settings/mobile/MobileSettingsStaffView";
 import type {
 	DentalPricelistAnalysisResponse,
 } from "@dental/shared";
@@ -82,6 +88,8 @@ import { SettingsReportingTab } from "./components/settings/SettingsReportingTab
 import { SettingsRulesTab } from "./components/settings/SettingsRulesTab";
 import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
+import { PublicBookingLinkPanel } from "./components/settings/PublicBookingLinkPanel";
+import { StaffCommissionsPanel } from "./components/settings/StaffCommissionsPanel";
 
 export type SettingsRoleMode = "doctor" | "admin" | "owner" | "all";
 
@@ -305,6 +313,146 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 			</button>
 		);
 	};
+
+	const isMobile = useIsMobile(768);
+	const [mobileSection, setMobileSection] = useState<string>(() => {
+		if (settingsTab && settingsTab !== "clinic") return settingsTab;
+		return "root";
+	});
+
+	// Synchronize when settingsTab changes from external links / URL hashes
+	useEffect(() => {
+		if (settingsTab === "prices") {
+			setMobileSection("prices");
+		} else if (settingsTab === "staff") {
+			setMobileSection("staff");
+		}
+	}, [settingsTab]);
+
+	if (isMobile) {
+		return (
+			<section
+				className="settings-zone-mobile w-full min-w-0"
+				style={{
+					background: "var(--paper)",
+					color: "var(--ink)",
+					position: "relative",
+					overflowY: "auto",
+					overflowX: "clip",
+					maxWidth: "100vw",
+					minHeight: "100dvh",
+				}}
+				id="settings"
+				aria-label="Настройки клиники"
+				data-testid="settings-view"
+			>
+				{mobileSection === "prices" || settingsTab === "prices" ? (
+					<MobileSettingsPricesView
+						appLogic={logic}
+						onBackToSettings={() => {
+							setMobileSection("root");
+							selectSettingsTab("clinic");
+						}}
+					/>
+				) : mobileSection === "staff" || settingsTab === "staff" ? (
+					<MobileSettingsStaffView
+						appLogic={logic}
+						onBackToSettings={() => {
+							setMobileSection("root");
+							selectSettingsTab("clinic");
+						}}
+					/>
+				) : mobileSection !== "root" ? (
+					<div className="flex flex-col w-full max-w-[100vw] overflow-x-clip pb-24">
+						<div className="sticky top-0 z-30 bg-[var(--paper)]/95 backdrop-blur-md border-b border-[var(--line)] px-4 py-2.5 flex items-center justify-between">
+							<button
+								type="button"
+								onClick={() => {
+									setMobileSection("root");
+									selectSettingsTab("clinic");
+								}}
+								className="min-w-[44px] min-h-[44px] -ml-2 px-2 flex items-center gap-1 text-[15px] font-medium text-[var(--teal)] hover:opacity-80 active:scale-95 transition-transform cursor-pointer"
+								aria-label="Назад в настройки"
+								data-testid="btn-mobile-subtab-back"
+							>
+								<ChevronLeft size={20} className="shrink-0" />
+								<span>Настройки</span>
+							</button>
+							<h2 className="text-[17px] font-semibold text-[var(--ink)] tracking-tight truncate px-2">
+								{mobileSection === "clinic" && "Клиника и юрлицо"}
+								{mobileSection === "clinic_fiscal" && "Касса и 54-ФЗ"}
+								{mobileSection === "clinic_schedule" && "График работы"}
+								{mobileSection === "access" && "Права доступа (RBAC)"}
+								{mobileSection === "protocols" && "Протоколы лечения"}
+								{mobileSection === "rules" && "Клинические правила"}
+								{mobileSection === "procedure-boms" && "Техкарты материалов"}
+								{mobileSection === "messengers" && "Мессенджеры"}
+								{mobileSection === "booking" && "Онлайн-запись"}
+								{mobileSection === "imports" && "Перенос данных"}
+								{mobileSection === "audit" && "Журнал аудита"}
+								{mobileSection === "commissions" && "Комиссии врачей"}
+								{mobileSection === "prices_import" && "Импорт прайса"}
+							</h2>
+							<div className="w-9" />
+						</div>
+
+						<div className="p-4 space-y-4 overflow-x-clip max-w-[100vw]">
+							{mobileSection === "clinic" && (
+								<SettingsClinicTab props={settingsProps} settingsTab="clinic" />
+							)}
+							{mobileSection === "clinic_fiscal" && (
+								<SettingsClinicTab props={settingsProps} settingsTab="clinic" />
+							)}
+							{mobileSection === "clinic_schedule" && (
+								<SettingsClinicTab props={settingsProps} settingsTab="clinic" />
+							)}
+							{mobileSection === "access" && (
+								<SettingsAccessTab
+									{...({ props: settingsProps, settingsTab: "access" } as {
+										props: typeof settingsProps;
+										settingsTab: string;
+									})}
+								/>
+							)}
+							{mobileSection === "protocols" && <SettingsProtocolsTab />}
+							{mobileSection === "rules" && <SettingsRulesTab />}
+							{mobileSection === "procedure-boms" && (
+								<MaterialBomsSettingsPanel
+									{...(logic?.auth?.currentUser?.organizationId
+										? { organizationId: logic.auth.currentUser.organizationId }
+										: {})}
+								/>
+							)}
+							{mobileSection === "messengers" && (
+								<SettingsMessengersTab props={settingsProps} settingsTab="messengers" />
+							)}
+							{mobileSection === "booking" && <PublicBookingLinkPanel />}
+							{mobileSection === "imports" && <MigrationWizard />}
+							{mobileSection === "audit" && <AuditLogsPanel />}
+							{mobileSection === "commissions" && <StaffCommissionsPanel />}
+							{mobileSection === "prices_import" && <SettingsPricesTab />}
+						</div>
+					</div>
+				) : (
+					<MobileSettingsRootView
+						appLogic={logic}
+						onSelectSection={(secId) => {
+							if (secId === "prices") {
+								setMobileSection("prices");
+								selectSettingsTab("prices");
+							} else if (secId === "staff") {
+								setMobileSection("staff");
+								selectSettingsTab("staff");
+							} else {
+								setMobileSection(secId);
+								selectSettingsTab(secId);
+							}
+						}}
+					/>
+				)}
+			</section>
+		);
+	}
 
 	return (
 		<motion.section
