@@ -44,8 +44,8 @@ import {
 	X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { useAppLogicContext, useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -135,7 +135,7 @@ export const MobilePatientProfileWorkspace: React.FC<
 	patientCoreSaveState = "idle",
 	className = "",
 }) => {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const dashboard = propDashboard ?? appLogic?.dashboard;
 
 	const [activeTab, setActiveTab] = useState<MobilePatientTab>("card");
@@ -244,23 +244,43 @@ export const MobilePatientProfileWorkspace: React.FC<
 				/(?:аллерги[яиею]|аллергическ\w*)\s*(?:на|:)?\s*([^.,;!\n]+)/i,
 			);
 			if (match && match[1]) {
-				const cleaned = match[1].replace(/^(на|к)\s+/i, "").trim();
-				if (cleaned) return cleaned;
+				const matchedText = match[1];
+				if (!/отрицает|нет|не отягощ|без осложнен/i.test(matchedText)) {
+					const cleaned = matchedText.replace(/^(на|к)\s+/i, "").trim();
+					if (cleaned) return cleaned;
+				}
 			}
-			if (
-				/лидокаин|новокаин|пенициллин|латекс|йод|ультракаин|артикаин/i.test(
-					raw,
-				)
-			) {
-				const found: string[] = [];
-				if (/лидокаин/i.test(raw)) found.push("Лидокаин");
-				if (/пенициллин/i.test(raw)) found.push("Пенициллин");
-				if (/новокаин/i.test(raw)) found.push("Новокаин");
-				if (/латекс/i.test(raw)) found.push("Латекс");
-				if (/йод/i.test(raw)) found.push("Йод");
-				if (/артикаин|ультракаин/i.test(raw)) found.push("Артикаин");
-				if (found.length > 0) return found.join(", ");
-			}
+			const found: string[] = [];
+			const checkAllergen = (regex: RegExp, negRegex: RegExp, name: string) => {
+				if (regex.test(raw) && !negRegex.test(raw)) {
+					found.push(name);
+				}
+			};
+
+			checkAllergen(
+				/лидокаин/i,
+				/переносимость(?:\s+\w+){0,4}\s+лидокаин\w*(?:\s+\w+){0,4}\s+хорош|лидокаин\w*(?:\s+\w+){0,4}\s+отрицает/i,
+				"Лидокаин",
+			);
+			checkAllergen(
+				/пенициллин/i,
+				/пенициллин\w*(?:\s+\w+){0,4}\s+отрицает/i,
+				"Пенициллин",
+			);
+			checkAllergen(
+				/новокаин/i,
+				/новокаин\w*(?:\s+\w+){0,4}\s+отрицает/i,
+				"Новокаин",
+			);
+			checkAllergen(/латекс/i, /латекс\w*(?:\s+\w+){0,4}\s+отрицает/i, "Латекс");
+			checkAllergen(/йод/i, /йод\w*(?:\s+\w+){0,4}\s+отрицает/i, "Йод");
+			checkAllergen(
+				/артикаин|ультракаин/i,
+				/переносимость(?:\s+\w+){0,4}\s+артикаин\w*(?:\s+\w+){0,4}\s+хорош|артикаин\w*(?:\s+\w+){0,4}\s+отрицает|ультракаин\w*(?:\s+\w+){0,4}\s+отрицает/i,
+				"Артикаин",
+			);
+
+			if (found.length > 0) return found.join(", ");
 		}
 
 		if ((patient as any).clinicalSafetyProfile) {
@@ -579,7 +599,7 @@ export const MobilePatientProfileWorkspace: React.FC<
 						data-testid="mobile-btn-copy-phone"
 					>
 						<Copy size={17} className="text-[var(--muted)]" />
-						<span>Копировать</span>
+						<span>Копия</span>
 					</button>
 				</div>
 			</section>
