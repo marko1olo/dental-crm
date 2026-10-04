@@ -13,6 +13,7 @@ import { useChairScheduleState } from "./useChairScheduleState";
 import { DoctorFreeSlotsModal } from "./DoctorFreeSlotsModal";
 import { PreventiveInspectionModal } from "./PreventiveInspectionModal";
 import { findPreventiveInspectionCandidates } from "./doctorFreeSlotsEngine";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 // Transparent re-exports per Mandates 8b, 8e
 export * from "./ChairScheduleTypes";
@@ -59,9 +60,11 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
     }).length;
   }, [dashboard?.patients, dashboard?.appointments, appointments, dateKey]);
 
+  const isMobile = useIsMobile(768);
+
   return (
     <div className="flex flex-col h-full w-full bg-[var(--paper)]">
-      {!hideToolbar && (
+      {!hideToolbar && !isMobile && (
         <ChairScheduleToolbar
           chairs={state.chairs}
           isSoloDoctor={state.isSoloDoctor}

@@ -63,6 +63,8 @@ import { ScheduleMobileBottomSheet } from "./grid/ScheduleMobileBottomSheet";
 import { ScheduleGridFooter } from "./grid/ScheduleGridFooter";
 import { ScheduleGridModals } from "./grid/ScheduleGridModals";
 import type { ScheduleGridProps } from "./grid/gridTypes";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { ScheduleMobileAgendaView } from "./ScheduleMobileAgendaView";
 
 export const ScheduleGrid = React.memo(function ScheduleGrid(
   props: ScheduleGridProps,
@@ -171,6 +173,35 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(
       toDateTimeLocalValue(now.toISOString(), timezone).slice(11, 13),
       10,
     ) || now.getHours();
+
+  const isMobile = useIsMobile(768);
+
+  if (isMobile && dashboard) {
+    return (
+      <ScheduleMobileAgendaView
+        dashboard={dashboard}
+        dateKey={dateKey}
+        appointments={appointments}
+        onDateChange={(newDateKey) => {
+          window.dispatchEvent(
+            new CustomEvent("dente:schedule-date-change", { detail: newDateKey })
+          );
+        }}
+        onSlotClick={onSlotClick}
+        onAppointmentClick={onAppointmentClick}
+        onQuickStatusChange={onQuickStatusChange}
+        onAppointmentMove={onAppointmentMove ? (id: string, updates: any) => onAppointmentMove(id, updates) : undefined}
+        patientName={patientName}
+        formatTime={formatTime}
+        toDateTimeLocalValue={toDateTimeLocalValue}
+        appointmentLabels={appointmentLabels}
+        selectedChairId={selectedChairId}
+        selectedDoctorId={selectedDoctorId}
+        chairDoctorAssignments={props.chairDoctorAssignments}
+        timezone={timezone}
+      />
+    );
+  }
 
   return (
     <div className="space-y-1.5 sm:space-y-2">

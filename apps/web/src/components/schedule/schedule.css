@@ -184,3 +184,19 @@
 	color: var(--muted);
 	margin-top: 2px;
 }
+
+/* ─── 4. MOBILE AGENDA VIEW LAYER PER APPLE HIG (<= 768px) ─── */
+@media (max-width: 768px) {
+	.schedule-filter-strip {
+		display: none !important;
+	}
+	.schedule-panel {
+		padding: 0 !important;
+		overflow-x: clip !important;
+		max-width: 100vw !important;
+	}
+	.schedule-grid-container {
+		overflow-x: clip !important;
+		max-width: 100vw !important;
+	}
+}

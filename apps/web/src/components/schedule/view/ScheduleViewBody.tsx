@@ -8,6 +8,8 @@ import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
 import type { TargetSlotInfo } from "../WaitlistDrawer";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { AppointmentScheduleDraft } from "./scheduleViewTypes";
+import { useIsMobile } from "../../../hooks/useIsMobile";
+import { ScheduleMobileAgendaView } from "../ScheduleMobileAgendaView";
 
 export interface ScheduleViewBodyProps {
   scheduleViewMode: "timeline" | "grid" | "chairs";
@@ -121,6 +123,94 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     resetScheduleFilters,
     setScheduleDateFilter,
   } = props;
+
+  const isMobile = useIsMobile(768);
+
+  if (isMobile && dashboard) {
+    return (
+      <ScheduleMobileAgendaView
+        dashboard={dashboard}
+        dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
+        appointments={dashboard?.appointments ?? []}
+        onDateChange={setScheduleDateFilter}
+        onSlotClick={(slot) => {
+          setQuickBookingSlot(slot);
+          setQuickBookingOpen(true);
+        }}
+        onAppointmentClick={(appointment) => {
+          setModalAppointment(appointment);
+        }}
+        onQuickStatusChange={async (appointmentId, status) => {
+          updateAppointmentScheduleDraft(appointmentId, "status", status);
+          const success = await saveAppointmentSchedule(appointmentId);
+          if (success) {
+            const p = dashboard?.appointments?.find(
+              (a) => a.id === appointmentId,
+            );
+            const pName =
+              p && patientName
+                ? patientName(dashboard?.patients ?? [], p.patientId)
+                : "Пациент";
+            const label = appointmentLabels[status] || status;
+            showToast(`«${pName}» — статус «${label}»`, "success", 3000);
+          }
+        }}
+        onAppointmentMove={async (appointmentId, updates) => {
+          if (updates.startsAt)
+            updateAppointmentScheduleDraft(
+              appointmentId,
+              "startsAt",
+              updates.startsAt,
+            );
+          if (updates.endsAt)
+            updateAppointmentScheduleDraft(
+              appointmentId,
+              "endsAt",
+              updates.endsAt,
+            );
+          if (updates.chairId !== undefined)
+            updateAppointmentScheduleDraft(
+              appointmentId,
+              "chairId",
+              updates.chairId,
+            );
+          if (updates.doctorUserId !== undefined)
+            updateAppointmentScheduleDraft(
+              appointmentId,
+              "doctorUserId",
+              updates.doctorUserId,
+            );
+          return await saveAppointmentSchedule(appointmentId, {
+            allowOverbooking: updates.allowOverbooking ?? true,
+            allowEmergencyOverride: true,
+          });
+        }}
+        patientName={patientName}
+        formatTime={formatTime}
+        toDateTimeLocalValue={toDateTimeLocalValue}
+        appointmentLabels={appointmentLabels}
+        selectedChairId={scheduleChairFilterId}
+        onSelectChair={setScheduleChairFilterId}
+        selectedDoctorId={scheduleDoctorFilterId}
+        chairDoctorAssignments={
+          savedDoctorShifts.length > 0 ||
+          Object.keys(computedChairDoctorAssignments).length > 0
+            ? computedChairDoctorAssignments
+            : undefined
+        }
+        onQuickBooking={() => {
+          setQuickBookingSlot({
+            dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+            doctorUserId: scheduleDoctorFilterId || null,
+            chairId: scheduleChairFilterId || null,
+            durationMinutes: 30,
+          });
+          setQuickBookingOpen(true);
+        }}
+        timezone={dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
+      />
+    );
+  }
 
   if (scheduleViewMode === "chairs") {
     if (!dashboard) return null;
