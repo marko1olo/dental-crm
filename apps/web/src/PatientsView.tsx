@@ -46,6 +46,7 @@ import {
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
 import { PatientSearchAutocomplete } from "./components/patients/PatientSearchAutocomplete";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
+import { MobilePatientsGroupedList } from "./components/patients/MobilePatientsGroupedList";
 import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
 import {
 	RadiologyPatientSearchModal,
@@ -795,8 +796,29 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			className="patients-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-0 max-md:!rounded-none max-md:min-h-screen max-md:h-full max-md:flex-1 pb-6"
 			id="patients"
 		>
-			{/* Clean Single-Tier Toolbar Header */}
-			<header className="patients-header max-md:!rounded-none max-md:!border-x-0 max-md:!border-t-0 max-md:!shadow-none max-md:!bg-[var(--paper)] max-md:px-3">
+			{/* Mobile Dedicated Apple Health Grouped Inset Experience (<768px) */}
+			<div className="md:hidden w-full">
+				{mobileActiveView === "list" ? (
+					<MobilePatientsGroupedList
+						patients={displayPatients ?? []}
+						selectedPatientId={selectedPatient?.id ?? null}
+						onSelectPatient={handleSelectPatient}
+						onCreatePatient={() => setIsCreateModalOpen(true)}
+						onOpenTactileSearch={() => setShowTactileSearch(true)}
+						patientInsightById={patientInsightById}
+						query={localQuery}
+						onQueryChange={handleSearchChange}
+						onClearQuery={handleClearSearch}
+						showLostPatientsOnly={showLostPatientsOnly}
+						onToggleLostPatients={toggleLostPatients}
+						isLoadingLost={isLoadingLost}
+						money={money}
+					/>
+				) : null}
+			</div>
+
+			{/* Clean Single-Tier Toolbar Header (Desktop >=768px) */}
+			<header className="patients-header max-md:!hidden md:flex">
 				<div className="patients-search-box">
 					<Search aria-hidden="true" className="search-icon" />
 					<input
@@ -842,11 +864,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						type="button"
 						className="secondary-button shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[#2E8B57]/40 text-[#2E8B57] bg-[#2E8B57]/10 hover:bg-[#2E8B57]/20"
 						onClick={() => setShowTactileSearch(true)}
-						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+						title="Тактильная матрица поиска исследований по аппаратам и датам"
 						data-testid="btn-patients-tactile-search"
 					>
 						<Filter size={14} aria-hidden="true" className="shrink-0" />
-						<span className="whitespace-nowrap truncate">Матрица поиска (Снимок 19)</span>
+						<span className="whitespace-nowrap truncate">Матрица поиска</span>
 					</button>
 
 					<button
@@ -878,10 +900,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
 			<div
-				className={`patients-main-grid max-md:px-2 max-md:pb-6 max-md:flex-1 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"}`}
+				className={`patients-main-grid max-md:px-2 max-md:pb-6 max-md:flex-1 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"} ${mobileActiveView === "list" ? "max-md:!hidden" : ""}`}
 			>
-				{/* Left Column: Patient List */}
-				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full">
+				{/* Left Column: Patient List (Desktop) */}
+				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full hidden md:flex">
 					{patientPagination.visibleItems.map((patient) => {
 						const insight = patientInsightById?.get(patient.id);
 						const patientIsSelected = selectedPatient?.id === patient.id;

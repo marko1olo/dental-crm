@@ -13,6 +13,7 @@ import {
 	isQuadrantTop,
 	getQuadrantTitle,
 } from "./toothChartTypes";
+import { MobileQuadrantTabs } from "../MobileQuadrantTabs";
 
 export interface ToothChartToolbarProps {
 	hideExpressActions?: boolean | undefined;
@@ -46,13 +47,27 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 	handleSelectQuadrant,
 }) => {
 	return (
-		<div
-			className="odontogram-unified-toolbar mb-1.5 select-none flex items-center justify-between gap-1.5 flex-nowrap overflow-x-auto no-scrollbar min-h-[32px] sm:min-h-[36px] sm:h-9 py-0.5"
-			data-testid="tooth-chart-express-actions"
-		>
-			{/* Quadrants on the left */}
+		<div className="tooth-chart-toolbar-wrapper w-full flex flex-col gap-1 mb-1">
+			{/* Mobile 2x2 Quadrant Tabs per Apple HIG (< 768px) */}
 			{!hideQuadrantSwitcher && (
-				<div className="odontogram-quadrant-bar mb-1 select-none min-h-[32px] h-8 sm:h-9 flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0" data-testid="odontogram-quadrant-bar">
+				<div className="block sm:hidden w-full">
+					<MobileQuadrantTabs
+						currentQuadrant={currentQuadrant}
+						onSelectQuadrant={handleSelectQuadrant}
+						isPediatricEffective={isPediatricEffective}
+						isMixedEffective={isMixedEffective}
+						showAllOption={true}
+					/>
+				</div>
+			)}
+
+			<div
+				className="odontogram-unified-toolbar mb-0.5 select-none flex items-center justify-between gap-1.5 flex-nowrap overflow-x-auto no-scrollbar min-h-[32px] sm:min-h-[36px] sm:h-9 py-0.5"
+				data-testid="tooth-chart-express-actions"
+			>
+				{/* Desktop Quadrants on the left (hidden on mobile) */}
+				{!hideQuadrantSwitcher && (
+					<div className="odontogram-quadrant-bar mb-0 select-none min-h-[32px] h-8 sm:h-9 hidden sm:flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0" data-testid="odontogram-quadrant-bar">
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant("all")}
@@ -213,6 +228,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 				</div>
 			)}
 		</div>
+	</div>
 	);
 });
 ToothChartToolbar.displayName = "ToothChartToolbar";

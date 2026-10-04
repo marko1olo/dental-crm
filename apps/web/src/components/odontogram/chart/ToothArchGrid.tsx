@@ -64,15 +64,16 @@ export const ToothArchGrid: React.FC<ToothArchGridProps> = memo(({
 		{isQuadrantView ? (
 			/* Focused Single Quadrant Large Mobile View */
 			<div
-				className="tooth-chart-arch-wrapper quadrant-view-wrapper"
+				className="tooth-chart-arch-wrapper quadrant-view-wrapper w-full max-w-full"
 				data-testid="quadrant-focused-view"
 				style={{
-					minWidth: "max-content",
+					width: "100%",
+					maxWidth: "100%",
 					margin: "0 auto",
 					position: "relative",
 				}}
 			>
-				<div className="flex items-center justify-between w-full max-w-lg px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2 gap-1.5">
+				<div className="hidden sm:flex items-center justify-between w-full max-w-lg px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2 gap-1.5">
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", pediatricMode))}
@@ -113,7 +114,7 @@ export const ToothArchGrid: React.FC<ToothArchGridProps> = memo(({
 								<ToothSVG
 									key={num}
 									number={num}
-									scale={Math.max(0.85, archScale)}
+									scale={Math.max(1.0, archScale)}
 									state={tData ? tData.state : "Healthy"}
 									material={tData?.material}
 									canalObturation={tData?.canalObturation}

@@ -256,7 +256,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(() => {
 		if (controlledQuadrant !== undefined) return controlledQuadrant;
-		if (typeof window !== "undefined" && window.innerWidth < 640) {
+		if (typeof window !== "undefined" && window.innerWidth <= 768) {
 			return isPediatricEffective ? "Q5" : "Q1";
 		}
 		return "all";
@@ -270,6 +270,16 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			archContainerRef.current.scrollLeft = 0;
 		}
 	};
+
+	useEffect(() => {
+		const handleViewportResize = () => {
+			if (typeof window !== "undefined" && window.innerWidth <= 768 && controlledQuadrant === undefined) {
+				setLocalQuadrant((prev) => (prev === "all" ? (isPediatricEffective ? "Q5" : "Q1") : prev));
+			}
+		};
+		window.addEventListener("resize", handleViewportResize);
+		return () => window.removeEventListener("resize", handleViewportResize);
+	}, [isPediatricEffective, controlledQuadrant]);
 
 	useEffect(() => {
 		if (controlledQuadrant !== undefined && localQuadrant !== controlledQuadrant) {
@@ -548,6 +558,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							currentQuadrant={currentQuadrant}
 							onSelectQuadrant={handleSelectQuadrant}
 							isPediatricEffective={isPediatricEffective}
+							isMixedEffective={isMixedEffective}
 						/>
 
 						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row ${
@@ -570,7 +581,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 										<ToothWrapper
 											key={num}
 											tooth={tData}
-											scale={Math.max(1.0, archScale)}
+											scale={archScale}
 											isTop={isTopQuadrant}
 											isSelected={selectedTeeth.includes(num)}
 											selectedTeeth={selectedTeeth}

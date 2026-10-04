@@ -21,6 +21,7 @@ export * from "./chart/ToothStandardGraphic";
 export * from "./chart/ToothSvg";
 export * from "./chart/ToothChartToolbar";
 export * from "./chart/ToothArchGrid";
+export * from "./MobileQuadrantTabs";
 
 import {
 	type ToothChartProps,
@@ -121,13 +122,29 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	const isPediatricEffective = effectiveDentitionMode === "pediatric";
 	const isMixedEffective = effectiveDentitionMode === "mixed";
 
-	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>("all");
+	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(() => {
+		if (controlledQuadrant !== undefined) return controlledQuadrant;
+		if (typeof window !== "undefined" && window.innerWidth <= 768) {
+			return isPediatricEffective ? "Q5" : "Q1";
+		}
+		return "all";
+	});
 	const currentQuadrant = controlledQuadrant ?? localQuadrant;
 
 	const handleSelectQuadrant = (q: OdontogramQuadrantId) => {
 		setLocalQuadrant(q);
 		if (onQuadrantChange) onQuadrantChange(q);
 	};
+
+	useEffect(() => {
+		const handleViewportResize = () => {
+			if (typeof window !== "undefined" && window.innerWidth <= 768 && controlledQuadrant === undefined) {
+				setLocalQuadrant((prev) => (prev === "all" ? (isPediatricEffective ? "Q5" : "Q1") : prev));
+			}
+		};
+		window.addEventListener("resize", handleViewportResize);
+		return () => window.removeEventListener("resize", handleViewportResize);
+	}, [isPediatricEffective, controlledQuadrant]);
 
 	// 1-Click Fast Actions (Mandate 8e / 8k)
 	const handleMarkIntactDentition = () => {

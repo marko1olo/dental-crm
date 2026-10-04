@@ -264,7 +264,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				{
 					id: "periodontitis",
 					label: "Периодонтит (Pt)",
-					shortLabel: "Периодонтит (Pt)",
+					shortLabel: "Периодонт (Pt)",
 					state: "Periodontitis",
 					icon: <EndoFileCanal size={16} className="text-orange-100" />,
 					color: "from-amber-600 to-orange-700",
@@ -465,15 +465,16 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined,
 						transition: isDraggingSheet ? "none" : "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
 						touchAction: "pan-y",
+						paddingBottom: "max(1.25rem, calc(1rem + env(safe-area-inset-bottom, 0px)))",
 					}}
-					className="radial-mobile-sheet w-full max-w-xl mx-auto bg-[var(--odontogram-paper)] border-t sm:border border-[var(--odontogram-border)] rounded-t-3xl sm:rounded-2xl shadow-2xl p-4 sm:p-5 flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto animate-slideUp select-none"
+					className="radial-mobile-sheet w-full max-w-xl mx-auto bg-[var(--odontogram-paper)] border-t sm:border border-[var(--odontogram-border)] rounded-t-[28px] sm:rounded-2xl shadow-2xl p-4 sm:p-5 flex flex-col gap-3.5 max-h-[88vh] overflow-y-auto animate-slideUp select-none"
 					role="dialog"
 					aria-label={`Меню статуса зуба ${toothNumber}`}
 					onClick={(e) => e.stopPropagation()}
 				>
-					{/* Sheet Drag Handle - Enhanced touch grab zone */}
+					{/* Sheet Drag Handle - Apple HIG 36x5px grab handle */}
 					<div
-						className="w-16 h-2 rounded-full bg-[var(--odontogram-border-strong)] mx-auto opacity-70 mb-1 cursor-grab active:cursor-grabbing hover:opacity-100 transition-opacity"
+						className="w-9 h-[5px] rounded-full bg-[var(--odontogram-border-strong)] mx-auto opacity-70 mb-1 cursor-grab active:cursor-grabbing hover:opacity-100 transition-opacity"
 						title="Потяните вниз для закрытия"
 					/>
 
@@ -520,7 +521,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										}
 									}}
 									style={{ background: item.bgGradient }}
-									className={`radial-item-btn min-h-[52px] min-w-[48px] px-4 py-3 rounded-2xl font-bold text-white flex items-center justify-between gap-2.5 shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation border border-white/25 ${
+									className={`radial-item-btn min-h-[50px] min-w-[48px] px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl font-bold text-white flex items-center justify-between gap-2 shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation border border-white/25 ${
 										isCurrent
 											? "ring-2 ring-white scale-[1.02] font-black"
 											: "opacity-90 hover:opacity-100"
@@ -528,11 +529,11 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									title={item.label}
 									data-testid={`radial-btn-${item.id}`}
 								>
-									<div className="flex items-center gap-2.5 min-w-0">
+									<div className="flex items-center gap-2 min-w-0">
 										<span className="shrink-0">{item.icon}</span>
-										<span className="text-sm sm:text-base font-black truncate">{item.shortLabel}</span>
+										<span className="text-xs sm:text-sm font-black truncate">{item.shortLabel}</span>
 									</div>
-									<span className="text-xs px-2 py-0.5 rounded-md bg-black/35 text-white font-mono font-black shrink-0">
+									<span className="text-xs px-1.5 py-0.5 rounded-md bg-black/35 text-white font-mono font-black shrink-0">
 										{item.hotkey}
 									</span>
 								</button>
