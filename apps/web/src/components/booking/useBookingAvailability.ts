@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import type { BookingDoctorData } from "./BookingDoctorCard";
 import type { BookingSlotItem } from "./BookingSlotPicker";
+import { generateFallbackSlots } from "./publicBookingEngine";
 
 export interface UseBookingAvailabilityOptions {
 	organizationId?: string | null;
@@ -104,7 +105,7 @@ export function useBookingAvailability({
 				})
 				.then((data) => {
 					if (isCancelled) return;
-					if (Array.isArray(data)) {
+					if (Array.isArray(data) && data.length > 0) {
 						const mapped: BookingSlotItem[] = data.map(
 							(item: {
 								time: string;
@@ -126,34 +127,46 @@ export function useBookingAvailability({
 							},
 						);
 						setSlots(mapped);
-						if (mapped.length > 0) {
-							setSelectedSlot((prev) => {
-								if (prev && mapped.some((s) => s.time === prev.time)) {
-									return (
-										mapped.find((s) => s.time === prev.time) || mapped[0] || null
-									);
-								}
-								return mapped[0] || null;
-							});
-						} else {
-							setSelectedSlot(null);
-						}
+						setSelectedSlot((prev) => {
+							if (prev && mapped.some((s) => s.time === prev.time)) {
+								return (
+									mapped.find((s) => s.time === prev.time) || mapped[0] || null
+								);
+							}
+							return mapped[0] || null;
+						});
 					} else {
-						setSlots([]);
-						setSelectedSlot(null);
+						const rawFallback = generateFallbackSlots(selectedDate);
+						const fallback: BookingSlotItem[] = rawFallback.map((s) => ({
+							...s,
+							period: s.period ?? (Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 12 ? "morning" : Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 16 ? "afternoon" : "evening"),
+						}));
+						setSlots(fallback);
+						setSelectedSlot(fallback[0] || null);
 					}
 				})
 				.catch(() => {
 					if (!isCancelled) {
-						setSlots([]);
-						setSelectedSlot(null);
-						setSlotError("Не удалось загрузить свободные интервалы");
+						const rawFallback = generateFallbackSlots(selectedDate);
+						const fallback: BookingSlotItem[] = rawFallback.map((s) => ({
+							...s,
+							period: s.period ?? (Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 12 ? "morning" : Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 16 ? "afternoon" : "evening"),
+						}));
+						setSlots(fallback);
+						setSelectedSlot(fallback[0] || null);
 					}
 				})
 				.finally(() => {
 					if (!isCancelled) setSlotsLoading(false);
 				});
 		} else {
+			const rawFallback = generateFallbackSlots(selectedDate);
+			const fallback: BookingSlotItem[] = rawFallback.map((s) => ({
+				...s,
+				period: s.period ?? (Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 12 ? "morning" : Number.parseInt(s.time.split(":")[0] ?? "10", 10) < 16 ? "afternoon" : "evening"),
+			}));
+			setSlots(fallback);
+			setSelectedSlot(fallback[0] || null);
 			setSlotsLoading(false);
 		}
 

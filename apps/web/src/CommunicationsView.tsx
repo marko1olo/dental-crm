@@ -12,6 +12,8 @@ import {
 	Send,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
+import { useIsMobile } from "./hooks/useIsMobile";
+import { MobileCommunicationsMessenger } from "./components/communications/MobileCommunicationsMessenger";
 import { CommunicationEventRow } from "./components/communications/CommunicationEventRow";
 import { CommunicationTaskCard } from "./components/communications/CommunicationTaskCard";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
@@ -182,8 +184,53 @@ export function CommunicationsView(
 			(dashboard?.communicationSummary?.overdue ?? 0) ||
 			(dashboard?.communicationSummary?.urgentTasks ?? 0) ||
 			(dashboard?.communicationSummary?.appointmentConfirmations ?? 0) ||
-			(dashboard?.communicationSummary?.postVisitInstructions ?? 0),
+			(dashboard?.communicationSummary?.postVisitInstructions ?? 0)
 	);
+	const isMobile = useIsMobile(768);
+
+	if (isMobile) {
+		return (
+			<div
+				className="mobile-communications-container"
+				style={{ width: "100%", maxWidth: "100vw", overflowX: "clip" }}
+				data-testid="communications-view"
+			>
+				<MobileCommunicationsMessenger
+					dashboard={dashboard}
+					onGoToSchedule={onGoToSchedule}
+					completeCommunicationTask={completeCommunicationTask}
+					communicationNote={communicationNote}
+					onCommunicationNoteChange={onCommunicationNoteChange}
+					communicationSavingTaskId={communicationSavingTaskId}
+					openCommunicationTaskDocumentWorkflow={openCommunicationTaskDocumentWorkflow}
+					communicationChannelLabels={communicationChannelLabels}
+					communicationPriorityLabels={communicationPriorityLabels}
+					communicationIntentLabels={communicationIntentLabels}
+					communicationStatusLabels={communicationStatusLabels}
+					documentKindsForCommunicationTask={documentKindsForCommunicationTask}
+					documentLabels={documentLabels}
+					staffRoleLabels={staffRoleLabels}
+					formatDateTime={formatDateTime}
+				/>
+				{isRecallsHubOpen && (
+					<Suspense fallback={null}>
+						<PatientRecallsHubModal
+							isOpen={isRecallsHubOpen}
+							onClose={() => setIsRecallsHubOpen(false)}
+						/>
+					</Suspense>
+				)}
+				{isOmnichannelHubOpen && (
+					<Suspense fallback={null}>
+						<PatientOmnichannelHubModal
+							isOpen={isOmnichannelHubOpen}
+							onClose={() => setIsOmnichannelHubOpen(false)}
+						/>
+					</Suspense>
+				)}
+			</div>
+		);
+	}
 
 	return (
 		<div
