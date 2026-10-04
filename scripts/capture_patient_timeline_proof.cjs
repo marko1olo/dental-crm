@@ -55,9 +55,13 @@ async function captureTimelineProofs() {
 
   await page.waitForTimeout(2000);
 
-  const lightPath = path.join(targetDir, "proof_patient_history_timeline_light.png");
-  await page.screenshot({ path: lightPath, fullPage: false });
-  console.log("[Captured]", lightPath);
+  const lightButtonsPath = path.join(targetDir, "proof_patient_history_expand_buttons_light.png");
+  await page.screenshot({ path: lightButtonsPath, fullPage: false });
+  console.log("[Captured]", lightButtonsPath);
+
+  const lightTimelinePath = path.join(targetDir, "proof_patient_history_timeline_light.png");
+  await page.screenshot({ path: lightTimelinePath, fullPage: false });
+  console.log("[Captured]", lightTimelinePath);
 
   // 2. Capture Dark Mode
   console.log("Navigating to preview in Dark Mode...");
@@ -68,9 +72,13 @@ async function captureTimelineProofs() {
 
   await page.waitForTimeout(2000);
 
-  const darkPath = path.join(targetDir, "proof_patient_history_timeline_dark.png");
-  await page.screenshot({ path: darkPath, fullPage: false });
-  console.log("[Captured]", darkPath);
+  const darkButtonsPath = path.join(targetDir, "proof_patient_history_expand_buttons_dark.png");
+  await page.screenshot({ path: darkButtonsPath, fullPage: false });
+  console.log("[Captured]", darkButtonsPath);
+
+  const darkTimelinePath = path.join(targetDir, "proof_patient_history_timeline_dark.png");
+  await page.screenshot({ path: darkTimelinePath, fullPage: false });
+  console.log("[Captured]", darkTimelinePath);
 
   await browser.close();
   console.log("All screenshots captured successfully!");

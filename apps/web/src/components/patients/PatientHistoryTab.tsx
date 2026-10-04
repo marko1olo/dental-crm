@@ -28,11 +28,14 @@ import {
 	Filter,
 	Layers,
 	Package,
+	Plus,
 	Printer,
 	Search,
 	Shield,
 	ShieldCheck,
 	Sparkles,
+	SquareMinus,
+	SquarePlus,
 	Stethoscope,
 	User,
 	X,
@@ -559,8 +562,8 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 						})}
 					</div>
 
-					{/* Поиск по диагнозу / зубу + Кнопки Свернуть/Развернуть */}
-					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1 justify-end">
+					{/* Поиск по диагнозу / зубу + Кнопки Свернуть/Развернуть + Добавить приём */}
+					<div className="clinical-timeline-actions">
 						<div className="clinical-timeline-search">
 							<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
 							<input
@@ -575,7 +578,7 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 								<button
 									type="button"
 									onClick={() => setSearchQuery("")}
-									className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer p-0.5 bg-transparent border-0"
+									className="clinical-search-clear-btn"
 									title="Очистить поиск"
 								>
 									<X className="w-3.5 h-3.5" />
@@ -583,25 +586,27 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 							)}
 						</div>
 
-						{/* Expand/Collapse All */}
-						<div className="flex items-center gap-1 shrink-0">
+						{/* Expand/Collapse All — Studio HIG Micro-Buttons */}
+						<div className="clinical-timeline-toggle-group" data-testid="timeline-accordion-controls">
 							<button
 								type="button"
 								onClick={handleExpandAll}
-								className="px-2 py-1 text-[11px] font-semibold rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer transition-colors"
+								className="clinical-timeline-toggle-btn clinical-timeline-expand-all-btn"
 								title="Развернуть протоколы всех визитов"
 								data-testid="btn-timeline-expand-all"
 							>
-								Развернуть все
+								<SquarePlus className="clinical-toggle-icon text-teal-600 dark:text-teal-400" />
+								<span>Развернуть всё</span>
 							</button>
 							<button
 								type="button"
 								onClick={handleCollapseAll}
-								className="px-2 py-1 text-[11px] font-semibold rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
-								title="Свернуть все в компактные строки"
+								className="clinical-timeline-toggle-btn clinical-timeline-collapse-all-btn"
+								title="Свернуть все визиты в компактные строки"
 								data-testid="btn-timeline-collapse-all"
 							>
-								Свернуть все
+								<SquareMinus className="clinical-toggle-icon text-slate-500 dark:text-slate-400" />
+								<span>Свернуть всё</span>
 							</button>
 						</div>
 
@@ -610,9 +615,10 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 							<button
 								type="button"
 								onClick={() => onNewAppointment(patientId || undefined)}
-								className="min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg bg-[var(--teal)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 shadow-xs"
+								className="clinical-timeline-primary-btn"
 								data-testid="btn-timeline-new-appointment"
 							>
+								<Plus className="w-3.5 h-3.5" />
 								<span>+ Приём</span>
 							</button>
 						)}
@@ -701,12 +707,12 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 											title="Нажмите, чтобы развернуть протокол приёма"
 										>
 											<div className="clinical-visit-left-pills">
-												{/* Стрелка раскрытия */}
-												<span className="text-[var(--muted)] p-0.5 shrink-0 transition-transform">
+												{/* Кнопка-индикатор раскрытия */}
+												<span className={`clinical-row-chevron-badge ${isExpanded ? "expanded" : ""}`} aria-hidden="true">
 													{isExpanded ? (
-														<ChevronDown className="w-4 h-4 text-[var(--teal)]" />
+														<ChevronDown className="w-3.5 h-3.5 text-[var(--teal)]" />
 													) : (
-														<ChevronRight className="w-4 h-4" />
+														<ChevronRight className="w-3.5 h-3.5" />
 													)}
 												</span>
 
@@ -898,7 +904,7 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 													<button
 														type="button"
 														onClick={() => handlePrint(visit)}
-														className="min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-2xs"
+														className="clinical-btn-print"
 														data-testid={`btn-print-visit-${visit.id}`}
 														title="Распечатать медицинскую карту приёма по форме 043/у"
 													>
@@ -910,11 +916,12 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 														<button
 															type="button"
 															onClick={() => onNavigateToVisit(visit.id)}
-															className="min-h-[32px] h-8 px-3.5 text-xs font-bold rounded-lg bg-[var(--teal)] text-white hover:opacity-90 cursor-pointer inline-flex items-center gap-1.5 transition-all shadow-xs"
+															className="clinical-btn-goto"
 															data-testid={`btn-goto-visit-${visit.id}`}
+															title="Перейти к полной карте приёма"
 														>
 															<span>К визиту</span>
-															<ExternalLink className="w-3 h-3" />
+															<ExternalLink className="w-3.5 h-3.5" />
 														</button>
 													)}
 												</div>

@@ -48,7 +48,8 @@
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
-	color: var(--muted);
+	color: var(--ink);
+	opacity: 0.9;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
@@ -56,19 +57,43 @@
 	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
 	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .clinical-filter-chip:hover {
 	background: var(--paper-strong, var(--paper));
-	color: var(--ink);
+	color: var(--teal);
 	border-color: var(--teal);
+	opacity: 1;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.12);
 }
 
 .clinical-filter-chip.active {
 	background: var(--teal);
-	color: var(--on-teal, #ffffff);
+	color: #ffffff;
 	border-color: var(--teal);
-	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+	opacity: 1;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+	font-weight: 700;
+}
+
+.clinical-filter-chip.active .clinical-filter-count {
+	color: rgba(255, 255, 255, 0.85);
+}
+
+.clinical-filter-count {
+	font-size: 11px;
+	color: var(--muted);
+	transition: color 0.18s ease;
+}
+
+/* Действия в тулбаре: поиск + кнопки управления */
+.clinical-timeline-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
 }
 
 .clinical-timeline-search {
@@ -76,9 +101,9 @@
 	align-items: center;
 	gap: 8px;
 	position: relative;
-	min-width: 280px;
-	flex: 1;
-	max-width: 400px;
+	min-width: 240px;
+	width: 280px;
+	max-width: 100%;
 }
 
 .clinical-search-input {
@@ -97,7 +122,117 @@
 .clinical-search-input:focus {
 	border-color: var(--teal);
 	background: var(--paper);
-	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.18);
+}
+
+.clinical-search-clear-btn {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.clinical-search-clear-btn:hover {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.08);
+}
+
+/* Группа кнопок разворачивания/сворачивания аккордеонов */
+.clinical-timeline-toggle-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+/* Микро-кнопка Studio HIG: четкие рамки, мягкий фон, иконка и hover */
+.clinical-timeline-toggle-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 11px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.clinical-timeline-toggle-btn:hover {
+	background: var(--paper-strong, var(--paper));
+	border-color: var(--teal);
+	color: var(--teal);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
+}
+
+.clinical-timeline-toggle-btn:active {
+	transform: translateY(1px);
+	box-shadow: none;
+}
+
+.clinical-timeline-toggle-btn:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 1px;
+}
+
+.clinical-timeline-toggle-btn .clinical-toggle-icon {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+	transition: transform 0.18s ease;
+}
+
+.clinical-timeline-toggle-btn:hover .clinical-toggle-icon {
+	transform: scale(1.12);
+}
+
+/* Кнопка создания визита */
+.clinical-timeline-primary-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: var(--teal);
+	color: #ffffff;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+	flex-shrink: 0;
+}
+
+.clinical-timeline-primary-btn:hover {
+	opacity: 0.92;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.clinical-timeline-primary-btn:active {
+	transform: translateY(1px);
 }
 
 /* 2. Группы по годам и месяцам */
@@ -347,6 +482,35 @@
 	transform: scale(1.05);
 }
 
+/* Кнопка-индикатор раскрытия в строке визита */
+.clinical-row-chevron-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	flex-shrink: 0;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.clinical-visit-compact-row:hover .clinical-row-chevron-badge {
+	border-color: var(--teal);
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.08);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
+}
+
+.clinical-row-chevron-badge.expanded {
+	border-color: var(--teal);
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.12);
+}
+
 /* Действия внизу протокола */
 .clinical-details-actions {
 	display: flex;
@@ -355,4 +519,85 @@
 	gap: 8px;
 	padding-top: 8px;
 	border-top: 1px solid var(--line);
+}
+
+.clinical-btn-print {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.clinical-btn-print:hover {
+	background: var(--paper-strong, var(--paper));
+	border-color: var(--teal);
+	color: var(--teal);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
+}
+
+.clinical-btn-print:active {
+	transform: translateY(1px);
+	box-shadow: none;
+}
+
+.clinical-btn-goto {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 14px;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: var(--teal);
+	color: #ffffff;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.clinical-btn-goto:hover {
+	opacity: 0.92;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.clinical-btn-goto:active {
+	transform: translateY(1px);
+}
+
+/* Тематическая калибровка контрастности для темных тем (WCAG AAA) */
+:root[data-theme="dark"] .clinical-pill-status-paid,
+.theme-dark .clinical-pill-status-paid {
+	color: #34d399;
+	background: rgba(16, 185, 129, 0.16);
+	border-color: rgba(52, 211, 153, 0.35);
+}
+
+:root[data-theme="dark"] .clinical-pill-warranty,
+.theme-dark .clinical-pill-warranty {
+	color: #a5b4fc;
+	background: rgba(99, 102, 241, 0.16);
+	border-color: rgba(165, 180, 252, 0.35);
+}
+
+:root[data-theme="dark"] .clinical-pill-tooth,
+.theme-dark .clinical-pill-tooth {
+	color: #2dd4bf;
+	background: rgba(13, 148, 136, 0.18);
+	border-color: rgba(45, 212, 191, 0.35);
 }
