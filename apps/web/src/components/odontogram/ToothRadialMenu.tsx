@@ -164,9 +164,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Кариес молочного зуба (C)",
 					shortLabel: "Кариес (C)",
 					state: "Caries",
-					icon: <ToothCaries size={16} className="text-amber-200" />,
-					color: "from-amber-600 to-amber-800",
-					bgGradient: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
+					icon: <ToothCaries size={16} className="text-amber-100" />,
+					color: "from-orange-500 to-amber-700",
+					bgGradient: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)",
 					hotkey: "К",
 				},
 				{
@@ -174,9 +174,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пульпотомия / Пульпит (P)",
 					shortLabel: "Пульпит (P)",
 					state: "Pulpitis",
-					icon: <ToothPulpitis size={16} className="text-rose-200" />,
-					color: "from-red-500 to-rose-700",
-					bgGradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
+					icon: <ToothPulpitis size={16} className="text-rose-100" />,
+					color: "from-rose-500 to-red-700",
+					bgGradient: "linear-gradient(135deg, #f43f5e 0%, #be123c 100%)",
 					hotkey: "Ф",
 				},
 				{
@@ -184,9 +184,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Периодонтит (Pt)",
 					shortLabel: "Периодонтит (Pt)",
 					state: "Periodontitis",
-					icon: <EndoFileCanal size={16} className="text-orange-200" />,
-					color: "from-orange-500 to-rose-600",
-					bgGradient: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)",
+					icon: <EndoFileCanal size={16} className="text-orange-100" />,
+					color: "from-amber-600 to-orange-700",
+					bgGradient: "linear-gradient(135deg, #ea580c 0%, #9a3412 100%)",
 					hotkey: "Е",
 				},
 				{
@@ -194,9 +194,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пломба (F)",
 					shortLabel: "Пломба (F)",
 					state: "Filled",
-					icon: <Sparkles size={16} className="text-blue-200" />,
-					color: "from-blue-600 to-blue-800",
-					bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+					icon: <Sparkles size={16} className="text-sky-100" />,
+					color: "from-sky-500 to-blue-700",
+					bgGradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
 					hotkey: "П",
 				},
 				{
@@ -204,9 +204,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Коронка NuSmile / 3M (Cr)",
 					shortLabel: "Коронка (Cr)",
 					state: "Crown",
-					icon: <DentalCrown size={16} className="text-emerald-200" />,
-					color: "from-emerald-600 to-emerald-800",
-					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+					icon: <DentalCrown size={16} className="text-emerald-100" />,
+					color: "from-emerald-500 to-teal-700",
+					bgGradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
 					hotkey: "Ц",
 				},
 				{
@@ -214,9 +214,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Имплант / Герметизация (Imp)",
 					shortLabel: "Имплант (Imp)",
 					state: "Implant",
-					icon: <DentalImplant size={16} className="text-slate-200" />,
-					color: "from-slate-600 to-slate-800",
-					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+					icon: <DentalImplant size={16} className="text-indigo-100" />,
+					color: "from-indigo-500 to-indigo-700",
+					bgGradient: "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)",
 					hotkey: "И",
 				},
 				{
@@ -224,9 +224,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Отсутствует / Смена (X)",
 					shortLabel: "Отсутствует (X)",
 					state: "Missing",
-					icon: <Trash2 size={16} className="text-slate-300" />,
-					color: "from-slate-500 to-zinc-700",
-					bgGradient: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+					icon: <Trash2 size={16} className="text-rose-300" />,
+					color: "from-slate-600 to-slate-800",
+					bgGradient: "linear-gradient(135deg, #475569 0%, #334155 100%)",
 					hotkey: "0",
 				},
 				{
@@ -234,9 +234,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Здоров (0)",
 					shortLabel: "Здоров (0)",
 					state: "Healthy",
-					icon: <ToothDeciduous size={16} className="text-emerald-200" />,
-					color: "from-emerald-500 to-teal-700",
-					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+					icon: <ToothDeciduous size={16} className="text-emerald-100" />,
+					color: "from-emerald-600 to-teal-800",
+					bgGradient: "linear-gradient(135deg, #059669 0%, #047857 100%)",
 					hotkey: "З",
 				},
 			]
@@ -246,9 +246,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Кариес (C)",
 					shortLabel: "Кариес (C)",
 					state: "Caries",
-					icon: <ToothCaries size={16} className="text-amber-200" />,
-					color: "from-amber-600 to-amber-800",
-					bgGradient: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
+					icon: <ToothCaries size={16} className="text-amber-100" />,
+					color: "from-orange-500 to-amber-700",
+					bgGradient: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)",
 					hotkey: "К",
 				},
 				{
@@ -256,9 +256,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пульпит (P)",
 					shortLabel: "Пульпит (P)",
 					state: "Pulpitis",
-					icon: <ToothPulpitis size={16} className="text-rose-200" />,
-					color: "from-red-500 to-rose-700",
-					bgGradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
+					icon: <ToothPulpitis size={16} className="text-rose-100" />,
+					color: "from-rose-500 to-red-700",
+					bgGradient: "linear-gradient(135deg, #f43f5e 0%, #be123c 100%)",
 					hotkey: "Ф",
 				},
 				{
@@ -266,9 +266,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Периодонтит (Pt)",
 					shortLabel: "Периодонтит (Pt)",
 					state: "Periodontitis",
-					icon: <EndoFileCanal size={16} className="text-orange-200" />,
-					color: "from-orange-500 to-rose-600",
-					bgGradient: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)",
+					icon: <EndoFileCanal size={16} className="text-orange-100" />,
+					color: "from-amber-600 to-orange-700",
+					bgGradient: "linear-gradient(135deg, #ea580c 0%, #9a3412 100%)",
 					hotkey: "Е",
 				},
 				{
@@ -276,9 +276,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пломба (F)",
 					shortLabel: "Пломба (F)",
 					state: "Filled",
-					icon: <Sparkles size={16} className="text-blue-200" />,
-					color: "from-blue-600 to-blue-800",
-					bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+					icon: <Sparkles size={16} className="text-sky-100" />,
+					color: "from-sky-500 to-blue-700",
+					bgGradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
 					hotkey: "П",
 				},
 				{
@@ -286,9 +286,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Коронка (Cr)",
 					shortLabel: "Коронка (Cr)",
 					state: "Crown",
-					icon: <DentalCrown size={16} className="text-emerald-200" />,
-					color: "from-emerald-600 to-emerald-800",
-					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+					icon: <DentalCrown size={16} className="text-emerald-100" />,
+					color: "from-emerald-500 to-teal-700",
+					bgGradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
 					hotkey: "Ц",
 				},
 				{
@@ -296,9 +296,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Имплант (Imp)",
 					shortLabel: "Имплант (Imp)",
 					state: "Implant",
-					icon: <DentalImplant size={16} className="text-slate-200" />,
-					color: "from-slate-600 to-slate-800",
-					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+					icon: <DentalImplant size={16} className="text-indigo-100" />,
+					color: "from-indigo-500 to-indigo-700",
+					bgGradient: "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)",
 					hotkey: "И",
 				},
 				{
@@ -306,9 +306,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Отсутствует (X)",
 					shortLabel: "Отсутствует (X)",
 					state: "Missing",
-					icon: <Trash2 size={16} className="text-slate-300" />,
-					color: "from-slate-500 to-zinc-700",
-					bgGradient: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+					icon: <Trash2 size={16} className="text-rose-300" />,
+					color: "from-slate-600 to-slate-800",
+					bgGradient: "linear-gradient(135deg, #475569 0%, #334155 100%)",
 					hotkey: "0",
 				},
 				{
@@ -316,9 +316,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Ретинированный (Р)",
 					shortLabel: "Ретинир. (Р)",
 					state: "Retained",
-					icon: <AlertTriangle size={16} className="text-purple-200" />,
-					color: "from-purple-600 to-indigo-800",
-					bgGradient: "linear-gradient(135deg, #9333ea 0%, #4f46e5 100%)",
+					icon: <AlertTriangle size={16} className="text-purple-100" />,
+					color: "from-purple-500 to-purple-800",
+					bgGradient: "linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)",
 					hotkey: "Р",
 				},
 				{
@@ -326,9 +326,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Разрушенный корень (R)",
 					shortLabel: "Корень (R)",
 					state: "Root",
-					icon: <ToothExtractForceps size={16} className="text-rose-300" />,
+					icon: <ToothExtractForceps size={16} className="text-rose-100" />,
 					color: "from-rose-800 to-rose-950",
-					bgGradient: "linear-gradient(135deg, #9f1239 0%, #4c0519 100%)",
+					bgGradient: "linear-gradient(135deg, #be123c 0%, #881337 100%)",
 					hotkey: "R",
 				},
 				{
@@ -336,9 +336,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Здоров (0)",
 					shortLabel: "Здоров (0)",
 					state: "Healthy",
-					icon: <ToothMolar size={16} className="text-emerald-200" />,
-					color: "from-emerald-500 to-teal-700",
-					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+					icon: <ToothMolar size={16} className="text-emerald-100" />,
+					color: "from-emerald-600 to-teal-800",
+					bgGradient: "linear-gradient(135deg, #059669 0%, #047857 100%)",
 					hotkey: "З",
 				},
 			];
@@ -401,10 +401,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 		: Math.max(225, Math.min(vw - 225, hubX - 215));
 
 	// Clamp menu center to prevent edge clipping while staying true to the tooth position
-	const radius = 120;
-	const minMarginX = Math.min(240, vw / 2);
-	const minMarginTop = 190;
-	const minMarginBottom = 190;
+	const radius = 185;
+	const minMarginX = Math.min(300, vw / 2);
+	const minMarginTop = 250;
+	const minMarginBottom = 250;
 	const centerX = Math.max(minMarginX, Math.min(rawCenterX, vw - minMarginX));
 	const centerY = Math.max(minMarginTop, Math.min(rawCenterY, vh - minMarginBottom));
 
@@ -945,8 +945,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					style={{
 						left: `${centerX}px`,
 						top: `${centerY}px`,
-						width: "480px",
-						height: "480px",
+						width: "500px",
+						height: "500px",
 						transform: "translate(-50%, -50%)",
 					}}
 					role="dialog"
@@ -954,10 +954,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				>
 					{/* Background Glass Disc - centered at container origin */}
 					<div
-						className="absolute rounded-full bg-[var(--odontogram-paper)]/92 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none"
+						className="radial-glass-disc absolute rounded-full pointer-events-none transition-all duration-200"
 						style={{
-							width: `${(radius + 45) * 2}px`,
-							height: `${(radius + 45) * 2}px`,
+							width: `${(radius + 40) * 2}px`,
+							height: `${(radius + 40) * 2}px`,
 							left: "50%",
 							top: "50%",
 							transform: "translate(-50%, -50%)",
@@ -966,19 +966,19 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 					{/* Center Tooth Hub - centered at container origin */}
 					<div
-						className="absolute flex flex-col items-center justify-center w-24 h-24 rounded-full bg-[var(--odontogram-surface)] border-2 border-[var(--teal,#0d9488)] shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
+						className="radial-tooth-hub absolute flex flex-col items-center justify-center w-24 h-24 rounded-full z-40 pointer-events-auto"
 						style={{
 							left: "50%",
 							top: "50%",
 							transform: "translate(-50%, -50%)",
 						}}
 					>
-						<span className="text-xs uppercase font-black text-[var(--teal,#0d9488)] tracking-wider">Зуб</span>
-						<span className="text-3xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
+						<span className="text-xs uppercase font-black tracking-wider radial-tooth-hub-label">Зуб</span>
+						<span className="text-3xl font-black leading-none radial-tooth-hub-num drop-shadow-sm">{toothNumber}</span>
 						<button
 							type="button"
 							onClick={onClose}
-							className="absolute -top-3 -right-3 min-w-[36px] min-h-[36px] w-9 h-9 flex items-center justify-center p-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
+							className="radial-close-btn absolute -top-2.5 -right-2.5 min-w-[36px] min-h-[36px] w-9 h-9 flex items-center justify-center p-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none pointer-events-auto z-50 border-2 border-white/60"
 							title="Закрыть (Esc)"
 							aria-label="Закрыть меню"
 						>
@@ -993,6 +993,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							const x = Math.cos(angle) * radius;
 							const y = Math.sin(angle) * radius;
 							const isCurrent = currentState === item.state;
+							const roundX = Math.round(x);
+							const roundY = Math.round(y);
 
 							return (
 								<button
@@ -1004,9 +1006,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									style={{
 										position: "absolute",
-										left: "50%",
-										top: "50%",
-										transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+										left: `calc(50% ${roundX >= 0 ? `+ ${roundX}px` : `- ${Math.abs(roundX)}px`})`,
+										top: `calc(50% ${roundY >= 0 ? `+ ${roundY}px` : `- ${Math.abs(roundY)}px`})`,
+										transform: "translate(-50%, -50%)",
 										background: item.bgGradient,
 										minWidth: "max-content",
 										width: "max-content",
@@ -1014,15 +1016,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										display: "inline-flex",
 										alignItems: "center",
 										justifyContent: "center",
-										gap: "8px",
-										padding: "10px 18px",
+										gap: "6px",
+										padding: "6px 11px",
 										borderRadius: "9999px",
-										border: "1.5px solid rgba(255, 255, 255, 0.35)",
+										border: "1.5px solid rgba(255, 255, 255, 0.45)",
 										boxShadow: isCurrent
-											? "0 0 0 3px #ffffff, 0 14px 32px -4px rgba(0, 0, 0, 0.65)"
-											: "0 8px 22px -3px rgba(0, 0, 0, 0.45)",
+											? "0 0 0 3px #ffffff, 0 14px 32px -4px rgba(0, 0, 0, 0.75)"
+											: "0 8px 22px -3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
 									}}
-									className={`radial-item-btn pointer-events-auto min-h-[44px] sm:min-h-[32px] min-w-[44px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none touch-manipulation ${
+									className={`radial-item-btn pointer-events-auto min-h-[38px] text-xs font-bold text-white cursor-pointer transition-all duration-200 hover:scale-108 active:scale-95 focus:outline-none touch-manipulation ${
 										isCurrent
 											? "scale-105 font-black ring-2 ring-white"
 											: "opacity-95 hover:opacity-100"
@@ -1030,8 +1032,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									title={item.label}
 									data-testid={`radial-btn-${item.id}`}
 								>
-									<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-									<span className="whitespace-nowrap font-black text-[13px] sm:text-[14px] tracking-tight">{item.shortLabel}</span>
+									<span className="shrink-0 flex items-center justify-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{item.icon}</span>
+									<span className="whitespace-nowrap font-black text-[11.5px] tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{item.shortLabel}</span>
 								</button>
 							);
 						})}
@@ -1039,7 +1041,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 					{/* Top Quick Bar: Pediatric Resorption (0-100%) for primary teeth OR 6-Surfaces & Black I-VI for adult teeth */}
 					<div
-						className="absolute flex flex-col items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-2xl border border-[var(--odontogram-border)] shadow-xl z-20"
+						className="radial-top-bar absolute flex flex-col items-center gap-1.5 pointer-events-auto px-3.5 py-1.5 rounded-2xl z-20"
 						style={{
 							left: "50%",
 							top: `calc(50% - ${radius + 70}px)`,
@@ -1048,7 +1050,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					>
 						{isPrimaryTooth(toothNumber) ? (
 							<div className="flex items-center gap-1.5">
-								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
+								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-300 px-1">Резорбция:</span>
 								<button
 									type="button"
 									onClick={() => {
@@ -1096,18 +1098,18 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							</div>
 						) : (
 							<details className="odontogram-desktop-surfaces-accordion group flex flex-col items-center transition-all">
-								<summary className="flex items-center gap-2 cursor-pointer select-none px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300">
+								<summary className="flex items-center gap-2 cursor-pointer select-none px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200">
 									<span className="uppercase font-black tracking-wide">Поверхности (опционально)</span>
-									<span className="text-[11px] font-mono font-bold text-[var(--odontogram-ink-muted)]">
+									<span className="text-[11px] font-mono font-bold text-[var(--odontogram-ink-muted)] dark:text-slate-300">
 										{selectedSurfaces.length > 0 ? `[${selectedSurfaces.join("")}]` : "вся коронка"}
 									</span>
-									<span className="text-[10px] text-[var(--odontogram-ink-muted)] group-open:hidden">▾</span>
-									<span className="text-[10px] text-[var(--odontogram-ink-muted)] hidden group-open:inline">▴</span>
+									<span className="text-[10px] text-[var(--odontogram-ink-muted)] dark:text-slate-400 group-open:hidden">▾</span>
+									<span className="text-[10px] text-[var(--odontogram-ink-muted)] dark:text-slate-400 hidden group-open:inline">▴</span>
 								</summary>
-								<div className="flex flex-col items-center gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--odontogram-border-subtle)]">
+								<div className="flex flex-col items-center gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--odontogram-border-subtle)] dark:border-slate-700/80">
 									{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
 									<div className="flex items-center gap-1">
-										<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
+										<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-300 px-1">Поверхности:</span>
 									{[
 										{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
 										{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
@@ -1131,8 +1133,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 												}}
 												className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 													isMatch
-														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+														? "bg-teal-600 text-white border-teal-500 shadow-sm scale-105 font-black"
+														: "bg-[var(--odontogram-paper)] dark:bg-slate-900/90 text-[var(--odontogram-ink)] dark:text-slate-100 border-[var(--odontogram-border-subtle)] dark:border-slate-700/80 hover:bg-[var(--odontogram-surface-hover)] dark:hover:bg-slate-800"
 												}`}
 												title={chip.title}
 												data-testid={`radial-desktop-quick-surf-${chip.label.replace("/", "-")}`}
@@ -1370,7 +1372,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					{/* Quick Action Footer Controls */}
 					{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
 						<div
-							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
+							className="radial-bottom-actions absolute flex items-center gap-2 pointer-events-auto px-3.5 py-1.5 rounded-full z-20"
 							style={{
 								left: "50%",
 								top: `calc(50% + ${radius + ((Boolean(iropz && iropz > 0.6) || currentState === "Pulpitis" || currentState === "Periodontitis") ? 85 : 45)}px)`,
@@ -1390,10 +1392,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 dark:hover:bg-teal-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
 									<DentalHandpiece size={14} />
-									<span>Терапия</span>
+									<span className="font-extrabold tracking-wide">Терапия</span>
 								</button>
 							)}
 							{onAddToInvoice && (
@@ -1409,10 +1411,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[36px] text-xs font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 dark:hover:bg-teal-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
 									<Coins size={14} />
-									<span>В смету</span>
+									<span className="font-extrabold tracking-wide">В смету</span>
 								</button>
 							)}
 							{onOpenEndo && !onAddToInvoice && (
@@ -1428,10 +1430,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 dark:hover:bg-rose-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
 									<EndoFileCanal size={14} />
-									<span>Журнал каналов</span>
+									<span className="font-extrabold tracking-wide">Журнал каналов</span>
 								</button>
 							)}
 							{onOpenEndo && onAddToInvoice && onOpenTherapy && (
@@ -1470,10 +1472,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				>
 					{/* Frosted Wing Pod Backdrop */}
 					<div
-						className="radial-wing-pod absolute rounded-3xl bg-[var(--odontogram-paper)]/95 backdrop-blur-2xl border border-[var(--odontogram-border)] shadow-2xl pointer-events-none transition-all duration-200"
+						className="radial-wing-pod absolute rounded-3xl pointer-events-none transition-all duration-200"
 						style={{
-							width: "440px",
-							height: "350px",
+							width: "480px",
+							height: "360px",
 							left: `${subAnchorX}px`,
 							top: `${hubY}px`,
 							transform: "translate(-50%, -50%)",
@@ -1482,19 +1484,19 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 					{/* Center Tooth Hub Pinned Over Tooth */}
 					<div
-						className="absolute flex flex-col items-center justify-center w-22 h-22 rounded-full bg-[var(--odontogram-surface)] border-2 border-[var(--teal,#0d9488)] shadow-2xl text-[var(--odontogram-ink)] z-20 pointer-events-auto"
+						className="radial-tooth-hub absolute flex flex-col items-center justify-center w-22 h-22 rounded-full z-40 pointer-events-auto"
 						style={{
 							left: `${hubX}px`,
 							top: `${hubY}px`,
 							transform: "translate(-50%, -50%)",
 						}}
 					>
-						<span className="text-[11px] uppercase font-black text-[var(--teal,#0d9488)] tracking-wider">Зуб</span>
-						<span className="text-2xl font-black leading-none text-[var(--odontogram-ink)]">{toothNumber}</span>
+						<span className="text-[11px] uppercase font-black tracking-wider radial-tooth-hub-label">Зуб</span>
+						<span className="text-2xl font-black leading-none radial-tooth-hub-num drop-shadow-sm">{toothNumber}</span>
 						<button
 							type="button"
 							onClick={onClose}
-							className="absolute -top-3 left-1/2 -translate-x-1/2 min-w-[32px] min-h-[32px] w-8 h-8 flex items-center justify-center rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-400 pointer-events-auto"
+							className="radial-close-btn absolute -top-2.5 left-1/2 -translate-x-1/2 min-w-[32px] min-h-[32px] w-8 h-8 flex items-center justify-center rounded-full bg-rose-600 hover:bg-rose-500 text-white shadow-xl cursor-pointer transition-transform hover:scale-110 active:scale-95 focus:outline-none pointer-events-auto z-50 border-2 border-white/60"
 							title="Закрыть (Esc)"
 							aria-label="Закрыть меню"
 						>
@@ -1506,7 +1508,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					<div className="radial-wing-columns-wrapper absolute inset-0 pointer-events-none">
 						{/* Column 1: Hot Path */}
 						{wingCol1Items.map((item, rowIdx) => {
-							const colX = layoutMode === "right-wing" ? subAnchorX - 75 : subAnchorX + 75;
+							const colX = layoutMode === "right-wing" ? subAnchorX - 96 : subAnchorX + 96;
 							const rowY = hubY + (rowIdx - 2) * 50;
 							const isCurrent = currentState === item.state;
 
@@ -1524,15 +1526,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										top: `${rowY}px`,
 										transform: "translate(-50%, -50%)",
 										background: item.bgGradient,
-										width: "136px",
+										width: "176px",
 										minHeight: "42px",
 										height: "42px",
-										padding: "0 10px",
+										padding: "0 8px",
 										borderRadius: "14px",
-										border: "1.5px solid rgba(255, 255, 255, 0.35)",
+										border: "1.5px solid rgba(255, 255, 255, 0.45)",
 										boxShadow: isCurrent
-											? "0 0 0 3px #ffffff, 0 8px 24px -2px rgba(0, 0, 0, 0.55)"
-											: "0 4px 14px -2px rgba(0, 0, 0, 0.35)",
+											? "0 0 0 3px #ffffff, 0 8px 24px -2px rgba(0, 0, 0, 0.65)"
+											: "0 6px 18px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
 									}}
 									className={`radial-item-btn pointer-events-auto flex items-center justify-between text-xs font-bold text-white cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95 focus:outline-none touch-manipulation ${
 										isCurrent ? "font-black ring-2 ring-white" : "opacity-95 hover:opacity-100"
@@ -1540,10 +1542,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									title={item.label}
 									data-testid={`radial-btn-${item.id}`}
 								>
-									<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-									<span className="whitespace-nowrap font-black text-[12px] tracking-tight truncate flex-1 px-1.5 text-left">{item.shortLabel}</span>
+									<span className="shrink-0 flex items-center justify-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{item.icon}</span>
+									<span className="whitespace-nowrap font-black text-[11px] tracking-tight truncate flex-1 px-1 text-left drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{item.shortLabel}</span>
 									{item.hotkey && (
-										<span className="shrink-0 w-4 h-4 rounded bg-white/20 text-[10px] font-mono flex items-center justify-center font-black opacity-80">
+										<span className="shrink-0 w-4 h-4 rounded bg-white/20 text-[10px] font-mono flex items-center justify-center font-black opacity-90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
 											{item.hotkey}
 										</span>
 									)}
@@ -1553,7 +1555,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 						{/* Column 2: Specialized */}
 						{wingCol2Items.map((item, rowIdx) => {
-							const colX = layoutMode === "right-wing" ? subAnchorX + 75 : subAnchorX - 75;
+							const colX = layoutMode === "right-wing" ? subAnchorX + 96 : subAnchorX - 96;
 							const rowY = hubY + (rowIdx - 2) * 50;
 							const isCurrent = currentState === item.state;
 
@@ -1571,15 +1573,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										top: `${rowY}px`,
 										transform: "translate(-50%, -50%)",
 										background: item.bgGradient,
-										width: "136px",
+										width: "176px",
 										minHeight: "42px",
 										height: "42px",
-										padding: "0 10px",
+										padding: "0 8px",
 										borderRadius: "14px",
-										border: "1.5px solid rgba(255, 255, 255, 0.35)",
+										border: "1.5px solid rgba(255, 255, 255, 0.45)",
 										boxShadow: isCurrent
-											? "0 0 0 3px #ffffff, 0 8px 24px -2px rgba(0, 0, 0, 0.55)"
-											: "0 4px 14px -2px rgba(0, 0, 0, 0.35)",
+											? "0 0 0 3px #ffffff, 0 8px 24px -2px rgba(0, 0, 0, 0.65)"
+											: "0 6px 18px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
 									}}
 									className={`radial-item-btn pointer-events-auto flex items-center justify-between text-xs font-bold text-white cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95 focus:outline-none touch-manipulation ${
 										isCurrent ? "font-black ring-2 ring-white" : "opacity-95 hover:opacity-100"
@@ -1587,10 +1589,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									title={item.label}
 									data-testid={`radial-btn-${item.id}`}
 								>
-									<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-									<span className="whitespace-nowrap font-black text-[12px] tracking-tight truncate flex-1 px-1.5 text-left">{item.shortLabel}</span>
+									<span className="shrink-0 flex items-center justify-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{item.icon}</span>
+									<span className="whitespace-nowrap font-black text-[11px] tracking-tight truncate flex-1 px-1 text-left drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{item.shortLabel}</span>
 									{item.hotkey && (
-										<span className="shrink-0 w-4 h-4 rounded bg-white/20 text-[10px] font-mono flex items-center justify-center font-black opacity-80">
+										<span className="shrink-0 w-4 h-4 rounded bg-white/20 text-[10px] font-mono flex items-center justify-center font-black opacity-90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
 											{item.hotkey}
 										</span>
 									)}
@@ -1601,7 +1603,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 					{/* Top Surfaces Bar in Wing mode */}
 					<div
-						className="absolute flex flex-col items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-2xl border border-[var(--odontogram-border)] shadow-xl z-20"
+						className="radial-top-bar absolute flex flex-col items-center gap-1.5 pointer-events-auto px-3.5 py-1.5 rounded-2xl z-20"
 						style={{
 							left: `${subAnchorX}px`,
 							top: `${Math.max(16, hubY - 175)}px`,
@@ -1609,17 +1611,17 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						}}
 					>
 						<details className="odontogram-desktop-surfaces-accordion group flex flex-col items-center transition-all">
-							<summary className="flex items-center gap-2 cursor-pointer select-none px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300">
+							<summary className="flex items-center gap-2 cursor-pointer select-none px-2 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200">
 								<span className="uppercase font-black tracking-wide">Поверхности (опционально)</span>
-								<span className="text-[11px] font-mono font-bold text-[var(--odontogram-ink-muted)]">
+								<span className="text-[11px] font-mono font-bold text-[var(--odontogram-ink-muted)] dark:text-slate-300">
 									{selectedSurfaces.length > 0 ? `[${selectedSurfaces.join("")}]` : "вся коронка"}
 								</span>
-								<span className="text-[10px] text-[var(--odontogram-ink-muted)] group-open:hidden">▾</span>
-								<span className="text-[10px] text-[var(--odontogram-ink-muted)] hidden group-open:inline">▴</span>
+								<span className="text-[10px] text-[var(--odontogram-ink-muted)] dark:text-slate-400 group-open:hidden">▾</span>
+								<span className="text-[10px] text-[var(--odontogram-ink-muted)] dark:text-slate-400 hidden group-open:inline">▴</span>
 							</summary>
-							<div className="flex flex-col items-center gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--odontogram-border-subtle)]">
+							<div className="flex flex-col items-center gap-1.5 mt-1.5 pt-1.5 border-t border-[var(--odontogram-border-subtle)] dark:border-slate-700/80">
 								<div className="flex items-center gap-1">
-									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
+									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-300 px-1">Поверхности:</span>
 									{[
 										{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
 										{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
@@ -1643,8 +1645,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 												}}
 												className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 													isMatch
-														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+														? "bg-teal-600 text-white border-teal-500 shadow-sm scale-105 font-black"
+														: "bg-[var(--odontogram-paper)] dark:bg-slate-900/90 text-[var(--odontogram-ink)] dark:text-slate-100 border-[var(--odontogram-border-subtle)] dark:border-slate-700/80 hover:bg-[var(--odontogram-surface-hover)] dark:hover:bg-slate-800"
 												}`}
 												title={chip.title}
 												data-testid={`radial-wing-quick-surf-${chip.label.replace("/", "-")}`}
@@ -1673,7 +1675,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					{/* Bottom Actions Bar in Wing mode */}
 					{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
 						<div
-							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
+							className="radial-bottom-actions absolute flex items-center gap-2 pointer-events-auto px-3.5 py-1.5 rounded-full z-20"
 							style={{
 								left: `${subAnchorX}px`,
 								top: `${Math.min(vh - 55, hubY + 145)}px`,
@@ -1687,10 +1689,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onOpenTherapy();
 										onClose();
 									}}
-									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 dark:hover:bg-teal-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
 								>
 									<DentalHandpiece size={14} />
-									<span>Терапия</span>
+									<span className="font-extrabold tracking-wide">Терапия</span>
 								</button>
 							)}
 							{onAddToInvoice && (
@@ -1700,10 +1702,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onAddToInvoice();
 										onClose();
 									}}
-									className="min-h-[36px] text-xs font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 dark:hover:bg-teal-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
 								>
 									<Coins size={14} />
-									<span>В смету</span>
+									<span className="font-extrabold tracking-wide">В смету</span>
 								</button>
 							)}
 							{onOpenEndo && (
@@ -1713,10 +1715,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onOpenEndo();
 										onClose();
 									}}
-									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
+									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 dark:hover:bg-rose-500/25 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0 inline-flex items-center gap-1.5"
 								>
 									<EndoFileCanal size={14} />
-									<span>Журнал каналов</span>
+									<span className="font-extrabold tracking-wide">Журнал каналов</span>
 								</button>
 							)}
 						</div>
