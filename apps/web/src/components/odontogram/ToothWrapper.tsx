@@ -28,6 +28,7 @@ import type { ToothData, ToothState } from "./ToothChart";
 import { TOOTH_STATE_LABELS } from "./ToothChart";
 import { useIsTouchScreen } from "./useIsTouchScreen";
 import { AnatomicalToothSVG } from "./AnatomicalToothSVG";
+import { ToothCardHud } from "./chart/ToothCardHud";
 
 export interface ToothWrapperProps {
 	tooth: ToothData;
@@ -187,195 +188,23 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 
 		const isTouchScreen = useIsTouchScreen();
 
-		const renderNumberBadge = () => {
-			const isLeftMolar =
-				(number >= 16 && number <= 18) ||
-				(number >= 46 && number <= 48) ||
-				(number >= 54 && number <= 55) ||
-				(number >= 84 && number <= 85);
-			const isRightMolar =
-				(number >= 26 && number <= 28) ||
-				(number >= 36 && number <= 38) ||
-				(number >= 64 && number <= 65) ||
-				(number >= 74 && number <= 75);
-			const hudAlignClass = isLeftMolar
-				? "left-0"
-				: isRightMolar
-					? "right-0"
-					: "left-1/2 -translate-x-1/2";
+		const isPrimary = Boolean(pediatricMode || (number >= 51 && number <= 85));
 
+		const renderNumberBadge = () => {
 			return (
 				<div className="relative flex flex-col items-center group/badge">
 					{!activeStamp && onQuickStateChange && !isTouchScreen && (
-						<div
-							className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-150 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
-								isTop ? "bottom-full mb-2" : "top-full mt-2"
-							}`}
-							onClick={(e) => e.stopPropagation()}
-						>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Caries");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Кариес"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Кариес</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Filled");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Пломба"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Пломба</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Pulpitis");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Пульпит"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Пульпит</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Periodontitis");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Периодонтит"
-								data-testid={`quick-periodontitis-${number}`}
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Периодонтит</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Crown");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Коронка"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Коронка</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Implant");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Имплантат"
-								data-testid={`quick-implant-${number}`}
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Имплант</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Missing");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Удален"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Удален</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Retained");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-800 dark:text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Ретинированный"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Ретинирован</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Root");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-700/15 hover:bg-rose-700 text-rose-900 dark:text-rose-200 hover:text-white border border-rose-700/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Корень"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-rose-700 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Корень</span>
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									const targets =
-										selectedTeeth?.includes(number) && selectedTeeth.length > 0
-											? selectedTeeth
-											: [number];
-									onQuickStateChange(targets, "Healthy");
-								}}
-								className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
-								title="Здоров"
-							>
-								<span className="w-2.5 h-2.5 rounded-full bg-teal-400 inline-block shadow-xs shrink-0" />
-								<span className="whitespace-nowrap shrink-0 font-bold">Здоров</span>
-							</button>
-						</div>
+						<ToothCardHud
+							number={number}
+							isTop={isTop}
+							isPrimary={isPrimary}
+							state={state}
+							surfaces={tooth.surfaces}
+							useSurfaces={useSurfaces}
+							selectedTeeth={selectedTeeth}
+							rootResorptionStage={effectiveResorption}
+							onQuickStateChange={onQuickStateChange}
+						/>
 					)}
 
 					<span

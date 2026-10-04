@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import { Activity } from "lucide-react";
 import {
 	type ToothState,
 	type RootResorptionStage,
@@ -59,7 +60,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 
 	return (
 		<div
-			className={`tooth-hover-quick-hud tooth-card-hud-compact absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex flex-col transition-all duration-150 z-50 p-1.5 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-xl backdrop-blur-md pointer-events-auto whitespace-nowrap w-[210px] min-w-[210px] max-w-[220px] box-border ${
+			className={`tooth-hover-quick-hud tooth-card-hud-compact absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex flex-col transition-all duration-150 z-50 p-1.5 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-xl backdrop-blur-md pointer-events-auto whitespace-nowrap w-[216px] min-w-[216px] max-w-[226px] box-border ${
 				isTop ? "top-full mt-1.5" : "bottom-full mb-1.5"
 			}`}
 			onClick={(e) => e.stopPropagation()}
@@ -129,28 +130,47 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						</button>
 					</div>
 
-					{/* Молочный прикус: Вторичные компактные действия */}
-					<div className="grid grid-cols-4 gap-0.5">
+					{/* Молочный прикус: Эндодонтия (Пульпотомия & Периодонтит) */}
+					<div className="grid grid-cols-2 gap-1 mb-1">
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Pulpitis", useSurfaces ? surfaces : undefined);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-rose-500/10 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 !text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 touch-manipulation"
 							title="Витальная пульпотомия молочного зуба (Biodentine/MTA)"
 							data-testid={`quick-pulpotomy-${number}`}
 						>
-							Пульп
+							<span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
+							<span>Пульп</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
+								onQuickStateChange(getTargets(), "Periodontitis", useSurfaces ? surfaces : undefined);
+							}}
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-[#ea580c]/15 hover:bg-[#ea580c] text-[#c2410c] dark:text-orange-300 hover:text-white border border-[#ea580c]/40 hover:border-[#ea580c] !text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 touch-manipulation group/pt"
+							title="Периодонтит молочного зуба (Pt, K04.4 / K04.5)"
+							data-testid={`quick-periodontitis-${number}`}
+						>
+							<Activity className="w-3 h-3 text-[#ea580c] group-hover/pt:text-white shrink-0" />
+							<span>Перио</span>
+							<span className="px-1 py-0.2 rounded text-[8px] font-black bg-[#ea580c]/20 dark:bg-[#ea580c]/30 text-[#ea580c] dark:text-orange-200 group-hover/pt:bg-white/20 group-hover/pt:text-white border border-[#ea580c]/30 leading-none">Pt</span>
+						</button>
+					</div>
+
+					{/* Молочный прикус: Вторичные компактные действия */}
+					<div className="grid grid-cols-3 gap-0.5">
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Crown", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
 							title="Эстетическая циркониевая коронка NuSmile / 3M"
 							data-testid={`quick-nusmile-${number}`}
 						>
@@ -168,7 +188,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 									const nextStage = stages[nextIdx] ?? 0;
 									onResorptionChange(getTargets(), nextStage);
 								}}
-								className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+								className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-orange-500/10 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
 								title={`Сменить стадию физиологической резорбции корня (текущая: ${rootResorptionStage ?? 0}%)`}
 								data-testid={`quick-resorption-${number}`}
 							>
@@ -182,7 +202,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Missing", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-slate-500/10 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-slate-500/10 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
 							title="Физиологическая смена зуба (выпал / эксфолиация)"
 							data-testid={`quick-exfoliated-${number}`}
 						>
@@ -237,28 +257,47 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 						</button>
 					</div>
 
-					{/* Постоянный прикус: Вторичные компактные действия */}
-					<div className="grid grid-cols-4 gap-0.5">
+					{/* Постоянный прикус: Эндодонтия (Пульпит & Периодонтит) */}
+					<div className="grid grid-cols-2 gap-1 mb-1">
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Pulpitis", useSurfaces ? surfaces : undefined);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-rose-500/10 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
-							title="Пульпит"
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 !text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 touch-manipulation"
+							title="Пульпит (K04.0)"
 							data-testid={`quick-pulpitis-${number}`}
 						>
-							Пульпит
+							<span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
+							<span>Пульпит</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
+								onQuickStateChange(getTargets(), "Periodontitis", useSurfaces ? surfaces : undefined);
+							}}
+							className="!min-h-[24px] !h-[24px] px-1 rounded-md bg-[#ea580c]/15 hover:bg-[#ea580c] text-[#c2410c] dark:text-orange-300 hover:text-white border border-[#ea580c]/40 hover:border-[#ea580c] !text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 touch-manipulation group/pt"
+							title="Периодонтит (Pt, K04.4 / K04.5 Хронический апикальный периодонтит)"
+							data-testid={`quick-periodontitis-${number}`}
+						>
+							<Activity className="w-3 h-3 text-[#ea580c] group-hover/pt:text-white shrink-0" />
+							<span>Периодонтит</span>
+							<span className="px-1 py-0.2 rounded text-[8px] font-black bg-[#ea580c]/20 dark:bg-[#ea580c]/30 text-[#ea580c] dark:text-orange-200 group-hover/pt:bg-white/20 group-hover/pt:text-white border border-[#ea580c]/30 leading-none">Pt</span>
+						</button>
+					</div>
+
+					{/* Постоянный прикус: Ортопедия и Хирургия (Коронка, Имплант, Удален) */}
+					<div className="grid grid-cols-3 gap-0.5">
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Crown", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
 							title="Коронка"
 							data-testid={`quick-crown-${number}`}
 						>
@@ -271,7 +310,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Implant", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
 							title="Имплантат"
 							data-testid={`quick-implant-${number}`}
 						>
@@ -284,7 +323,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								e.stopPropagation();
 								onQuickStateChange(getTargets(), "Missing", []);
 							}}
-							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-red-600/10 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/30 !text-[9px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
+							className="!min-h-[22px] !h-[22px] px-0.5 rounded bg-red-600/10 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/30 !text-[10px] font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 truncate touch-manipulation"
 							title="Удален"
 							data-testid={`quick-missing-${number}`}
 						>

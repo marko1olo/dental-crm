@@ -1872,10 +1872,14 @@
 }
 
 .tooth-card-hud-compact {
-	width: 210px !important;
-	min-width: 210px !important;
-	max-width: 220px !important;
+	width: 216px !important;
+	min-width: 216px !important;
+	max-width: 226px !important;
 	box-sizing: border-box !important;
+}
+
+.tooth-card-hud-compact button {
+	touch-action: manipulation;
 }
 
 .tooth-svg-wrapper:hover,

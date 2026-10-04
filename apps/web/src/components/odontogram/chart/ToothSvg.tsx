@@ -538,6 +538,20 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Periodontitis", useSurfaces ? surfaces : undefined);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-orange-600/15 text-orange-950 dark:text-orange-200 border border-[#ea580c]/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
+								data-testid={`touch-quick-periodontitis-${number}`}
+								title="Периодонтит (Pt, K04.4 / K04.5)"
+							>
+								<span className="w-2 h-2 rounded-full bg-[#ea580c]" />
+								Периодонтит
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Crown", []);
 								}}
 								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"

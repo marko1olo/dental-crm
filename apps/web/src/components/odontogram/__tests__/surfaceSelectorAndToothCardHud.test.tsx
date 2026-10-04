@@ -4,6 +4,10 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { SurfaceSelector } from "../chart/SurfaceSelector";
 import { ToothCardHud } from "../chart/ToothCardHud";
+import {
+	generateSoapFromOdontogramFinding,
+	type OdontogramFindingInput,
+} from "../../../lib/clinicalProtocols043";
 
 describe("SurfaceSelector & Black Cavity Class Presets", () => {
 	it("renders all 6 anatomical surface segments and labels without crashes", () => {
@@ -76,8 +80,11 @@ describe("ToothCardHud Compact Non-Overlapping Architecture", () => {
 		assert.ok(html.includes('data-testid="quick-filled-16"'), "Must contain quick Filled action");
 		assert.ok(html.includes('data-testid="quick-healthy-16"'), "Must contain quick Healthy action");
 
-		// Вторичные кнопки
+		// Вторичные кнопки: Эндодонтия (Пульпит & Периодонтит), Ортопедия и Хирургия
 		assert.ok(html.includes('data-testid="quick-pulpitis-16"'), "Must contain quick Pulpitis action");
+		assert.ok(html.includes('data-testid="quick-periodontitis-16"'), "Must contain quick Periodontitis action");
+		assert.ok(html.includes("Периодонтит"), "Must display human Periodontitis text");
+		assert.ok(html.includes(">Pt<"), "Must display clinical Pt badge");
 		assert.ok(html.includes('data-testid="quick-crown-16"'), "Must contain quick Crown action");
 		assert.ok(html.includes('data-testid="quick-implant-16"'), "Must contain quick Implant action");
 		assert.ok(html.includes('data-testid="quick-missing-16"'), "Must contain quick Missing action");
@@ -98,8 +105,47 @@ describe("ToothCardHud Compact Non-Overlapping Architecture", () => {
 
 		assert.ok(html.includes("Зуб 55"), "Must show primary tooth number 55");
 		assert.ok(html.includes('data-testid="quick-pulpotomy-55"'), "Must contain Pulpotomy action");
+		assert.ok(html.includes('data-testid="quick-periodontitis-55"'), "Must contain primary Periodontitis action");
 		assert.ok(html.includes('data-testid="quick-nusmile-55"'), "Must contain NuSmile crown action");
 		assert.ok(html.includes('data-testid="quick-resorption-55"'), "Must contain Resorption action");
 		assert.ok(html.includes('data-testid="quick-exfoliated-55"'), "Must contain Exfoliated action");
+	});
+
+	it("1-click Periodontitis action sets status and generates Order 043/y SOAP protocol", () => {
+		let chosenTargets: number[] = [];
+		let chosenState: string | null = null;
+		let chosenSurfaces: readonly string[] | undefined;
+
+		const onQuickStateChange = (
+			targets: number[],
+			state: any,
+			surfaces?: readonly string[] | undefined,
+		) => {
+			chosenTargets = targets;
+			chosenState = state;
+			chosenSurfaces = surfaces;
+		};
+
+		// 1-Click action invocation
+		onQuickStateChange([36], "Periodontitis", undefined);
+		assert.deepStrictEqual(chosenTargets, [36]);
+		assert.strictEqual(chosenState, "Periodontitis");
+		assert.strictEqual(chosenSurfaces, undefined, "Quiet Mode preserves surfaces without forcing modals");
+
+		// Synthesis of Order 043/y SOAP protocol
+		const finding: OdontogramFindingInput = {
+			toothNumber: 36,
+			state: "Periodontitis",
+		};
+		const soap = generateSoapFromOdontogramFinding(finding);
+
+		assert.strictEqual(soap.toothNumber, 36);
+		assert.ok(
+			soap.diagnosisIcd10 === "K04.5" || soap.diagnosisIcd10 === "K04.4",
+			"Must produce apical periodontitis ICD-10 code K04.4 or K04.5",
+		);
+		assert.ok(soap.diagnosisIcd10Label.includes("периодонтит"));
+		assert.ok(soap.anamnesis.includes("36"));
+		assert.ok(soap.treatmentDescription.includes("корневых каналов"));
 	});
 });
