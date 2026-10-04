@@ -11314,9 +11314,9 @@ html.dark .emk-tab-button,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="night"]
 	.emk-tab-button {
-	color: var(--ink);
-	background: var(--paper);
-	border: 1px solid var(--line);
+	color: var(--muted);
+	background: transparent;
+	border: 1px solid transparent;
 }
 
 html.dark .emk-tab-button:hover,
@@ -11326,9 +11326,9 @@ html.dark .emk-tab-button:hover,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="night"]
 	.emk-tab-button:hover {
-	background: var(--paper-strong);
-	border-color: var(--teal);
-	color: var(--teal-ink, var(--teal));
+	background: color-mix(in srgb, var(--paper) 60%, transparent);
+	border-color: transparent;
+	color: var(--ink);
 }
 
 html.dark .emk-tab-button.active,
@@ -11338,10 +11338,12 @@ html.dark .emk-tab-button.active,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="night"]
 	.emk-tab-button.active {
-	background: var(--teal-fill, var(--teal)) !important;
-	border-color: rgba(255, 255, 255, 0.25) !important;
-	color: var(--on-teal, #ffffff) !important;
-	font-weight: 800 !important;
+	background: var(--paper) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+	font-weight: 600 !important;
+	border-radius: 6px !important;
 }
 
 .visit-note-head {

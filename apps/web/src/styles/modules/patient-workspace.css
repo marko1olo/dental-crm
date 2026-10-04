@@ -386,10 +386,10 @@
 	width: 100%;
 	min-width: 0;
 	max-width: 100%;
-	min-height: 36px;
-	height: 36px;
-	max-height: 36px;
-	padding: 2px 8px;
+	min-height: 38px;
+	height: 38px;
+	max-height: 38px;
+	padding: 3px 8px;
 	overflow-x: auto;
 	scrollbar-width: none;
 	box-sizing: border-box;
@@ -533,27 +533,26 @@
 }
 
 .emk-voice-pilot-hud > div:first-child {
-	min-height: 26px !important;
-	padding: 0 4px !important;
+	min-height: 32px !important;
+	padding: 0 !important;
 }
 
 .emk-voice-pilot-hud button {
-	min-height: 24px !important;
-	height: 26px !important;
-	padding: 1px 8px !important;
-	font-size: 11px !important;
+	min-height: 32px !important;
+	height: 32px !important;
+	box-sizing: border-box !important;
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tab-button {
-	background: var(--paper);
-	border: 1px solid var(--line);
-	color: var(--ink);
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--muted);
 	padding: 0 10px;
 	height: 28px;
-	border-radius: 8px;
+	border-radius: 6px;
 	font-size: 12px;
-	font-weight: 700;
+	font-weight: 500;
 	transition: all 0.15s ease;
 	cursor: pointer;
 	white-space: nowrap;
@@ -564,17 +563,18 @@
 }
 
 .emk-tab-button:hover {
-	background: var(--paper-strong);
-	color: var(--teal-ink, var(--teal));
-	border-color: var(--teal);
+	background: color-mix(in srgb, var(--paper) 60%, transparent);
+	color: var(--ink);
+	border-color: transparent;
 }
 
 .emk-tab-button.active {
-	background: var(--teal-fill, var(--teal)) !important;
-	border-color: var(--teal) !important;
-	color: var(--on-teal, #ffffff) !important;
-	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.25) !important;
-	font-weight: 800 !important;
+	background: var(--paper) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+	font-weight: 600 !important;
+	border-radius: 6px !important;
 }
 
 .emk-tab-dot {

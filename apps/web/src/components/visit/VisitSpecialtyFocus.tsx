@@ -151,34 +151,48 @@ export function VisitSpecialtyFocus({
 			? "Хирургический протокол"
 			: "Терапевтический протокол";
 
-	const barSection = (
+	const barSection = compact ? (
+		<div data-testid="visit-specialty-focus" className="inline-flex items-center shrink-0">
+			<button
+				type="button"
+				data-testid="toggle-specialty-protocol-drawer"
+				onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
+				className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
+					isProtocolDrawerOpen
+						? "border-[var(--teal)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))]"
+						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))]"
+				}`}
+				title="Развернуть специализированный бланк приема"
+				aria-expanded={isProtocolDrawerOpen}
+				aria-label="Специализированный клинический бланк"
+			>
+				<FileText size={13} className="text-[var(--teal)] shrink-0" />
+				<span>Бланк: {isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
+				<ChevronDown size={12} className={`shrink-0 transition-transform duration-150 ${isProtocolDrawerOpen ? "rotate-180" : ""}`} />
+			</button>
+		</div>
+	) : (
 		<section
 			data-testid="visit-specialty-focus"
-			className={`specialty-focus-bar bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-between gap-1.5 shrink-0 select-none ${
-				compact
-					? "h-7 px-2 rounded-lg"
-					: "rounded-xl px-3 py-1.5 min-h-[32px] sm:h-8 text-xs"
-			}`}
+			className="specialty-focus-bar bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-between gap-1.5 shrink-0 select-none rounded-lg px-3 min-h-[32px] h-8 text-xs shadow-2xs"
 			aria-label="Фокус специальности приема"
 		>
 			<div className="flex items-center gap-1.5 min-w-0">
 				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">Фокус:</span>
 				<strong className="font-semibold text-xs text-[var(--ink)] truncate max-w-[120px]">{currentSpecialtyLabel}</strong>
-				{!compact && (
-					<span className="text-xs text-[var(--muted)] hidden lg:inline shrink-0">
-						({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
-					</span>
-				)}
+				<span className="text-xs text-[var(--muted)] hidden lg:inline shrink-0">
+					({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
+				</span>
 			</div>
 			<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
-				{!compact && focusOptions.length === 0 ? (
+				{focusOptions.length === 0 ? (
 					<span className="text-xs text-[var(--muted)] truncate">
 						Направления не настроены
 					</span>
 				) : null}
-				{!compact && focusOptions.map((option: any) => (
+				{focusOptions.map((option: any) => (
 					<button
-						className={`px-2 py-0.5 sm:h-7 rounded text-xs font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-white font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
+						className={`px-2 py-0.5 sm:h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-white font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
 						type="button"
 						key={option.specialty}
 						aria-pressed={selectedSpecialty === option.specialty}
@@ -196,7 +210,7 @@ export function VisitSpecialtyFocus({
 				<button
 					type="button"
 					onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
-					className="h-6 sm:h-7 px-2 rounded text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white"
+					className="h-7 px-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white"
 					title="Развернуть специализированный бланк приема"
 					data-testid="toggle-specialty-protocol-drawer"
 				>

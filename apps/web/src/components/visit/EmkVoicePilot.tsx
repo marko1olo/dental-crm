@@ -186,11 +186,11 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed inline-flex items-center select-none shrink-0 ${className}`.trim()}
 				data-testid="emk-voice-pilot-hud"
 			>
-				<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all">
+				<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all h-8 min-h-[32px] max-h-[32px]">
 					<button
 						type="button"
 						onClick={handleToggleMic}
-						className="h-7 px-2.5 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
+						className="h-8 min-h-[32px] max-h-[32px] px-2.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
 						title="Начать диктовку (Ctrl+Space)"
 						aria-label="Начать диктовку"
 					>
@@ -200,7 +200,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsExpanded(true)}
-						className="h-7 px-1.5 border-l border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center"
+						className="h-8 min-h-[32px] max-h-[32px] px-2 border-l border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center"
 						title="Развернуть пульт AI-Пилота"
 						aria-label="Развернуть пульт AI-Пилота"
 					>
@@ -219,7 +219,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			<button
 				type="button"
 				onClick={handleToggleMic}
-				className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 rounded-lg flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 ${
+				className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg flex items-center justify-center font-semibold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 ${
 					isListening
 						? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/40"
 						: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
@@ -228,17 +228,17 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 				aria-label={isListening ? "Остановить диктовку" : "Начать диктовку"}
 				aria-pressed={isListening}
 			>
-				{isListening ? <MicOff size={12} /> : <Mic size={12} />}
+				{isListening ? <MicOff size={13} /> : <Mic size={13} />}
 				<span className="hidden sm:inline text-xs">{isListening ? "Стоп" : "Диктовка"}</span>
 			</button>
 
-			<span className="text-xs font-bold text-[var(--ink)] hidden md:inline-flex items-center gap-1 shrink-0">
-				<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
+			<span className="text-xs font-semibold text-[var(--ink)] hidden md:inline-flex items-center gap-1 shrink-0">
+				<Sparkles size={13} className="text-[var(--teal,#0d9488)]" />
 				<span className="hidden xl:inline">AI-Пилот</span>
 			</span>
 
 			<span
-				className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase tracking-wider shrink-0 ${
+				className={`text-[10px] font-mono px-2 py-0.5 rounded-lg font-bold uppercase tracking-wider shrink-0 h-8 min-h-[32px] max-h-[32px] inline-flex items-center ${
 					isListening
 						? "bg-rose-500 text-white animate-pulse"
 						: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
@@ -253,7 +253,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 					onClick={handleApplyAll}
 					title={isApplied ? "Повторно применить/обновить в карте" : "Применить распознанные данные в карту"}
 					aria-label={isApplied ? "Повторно обновить в карте" : "Применить в карту"}
-					className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs shrink-0 ${
+					className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0 ${
 						isApplied
 							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25"
 							: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
@@ -267,11 +267,11 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 			<button
 				type="button"
 				onClick={() => setIsExpanded((v) => !v)}
-				className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-0.5 shrink-0"
+				className="h-8 min-h-[32px] max-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-1 shrink-0"
 				title={isExpanded ? "Свернуть панель AI-Пилота" : "Развернуть панель AI-Пилота"}
 				aria-label="Переключить пульт AI-Пилота"
 			>
-				<span className="hidden sm:inline text-[10px]">Пульт</span>
+				<span className="hidden sm:inline text-xs">Пульт</span>
 				<ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
 			</button>
 

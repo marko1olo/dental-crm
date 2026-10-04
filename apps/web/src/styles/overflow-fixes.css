@@ -275,10 +275,10 @@
 	flex-direction: row !important;
 	align-items: center !important;
 	justify-content: space-between !important;
-	min-height: 36px !important;
-	height: 36px !important;
-	max-height: 36px !important;
-	padding: 2px 8px !important;
+	min-height: 38px !important;
+	height: 38px !important;
+	max-height: 38px !important;
+	padding: 3px 8px !important;
 	gap: 6px !important;
 	width: 100% !important;
 	min-width: 0 !important;
