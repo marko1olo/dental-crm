@@ -1,16 +1,44 @@
 import {
+	Activity,
 	Clock,
 	FileText,
+	Layers,
 	Package,
 	Plus,
 	Search,
+	ShieldCheck,
+	Sparkles,
 	Syringe,
+	Target,
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { money } from "../AppHelpers.js";
 import { sliceDomList } from "../utils/domVirtualizationHelper.js";
 import { isDemoShowcaseMode } from "../utils/demoModeEngine.js";
+
+export type InventoryCategoryFilter =
+	| "all"
+	| "anesthesia"
+	| "therapy"
+	| "composite"
+	| "disposables"
+	| "surgery"
+	| "endo";
+
+export const INVENTORY_CATEGORIES: Array<{
+	id: InventoryCategoryFilter;
+	label: string;
+	icon: React.ComponentType<{ size?: number; className?: string }>;
+}> = [
+	{ id: "all", label: "Все", icon: Package },
+	{ id: "anesthesia", label: "Анестезия", icon: Syringe },
+	{ id: "therapy", label: "Терапия", icon: Sparkles },
+	{ id: "composite", label: "Композиты", icon: Layers },
+	{ id: "disposables", label: "Расходники", icon: ShieldCheck },
+	{ id: "surgery", label: "Хирургия", icon: Activity },
+	{ id: "endo", label: "Эндодонтия", icon: Target },
+];
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog.js";
 import { useInventoryLogic } from "./inventory/useInventoryLogic.js";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar.js";
@@ -109,16 +137,98 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
 	const [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
 
+	const [selectedCategory, setSelectedCategory] =
+		useState<InventoryCategoryFilter>("all");
+
 	// Виртуализация списка для слабых ноутбуков (Мандаты 8c, 8n)
 	const [displayLimit, setDisplayLimit] = useState(40);
 
 	React.useEffect(() => {
 		setDisplayLimit(40);
-	}, [searchQuery, activeSubTab]);
+	}, [searchQuery, activeSubTab, selectedCategory]);
+
+	const categoryFilteredItems = useMemo(() => {
+		const list = filteredItems ?? [];
+		if (selectedCategory === "all") return list;
+		return list.filter((item) => {
+			const name = (item.name || "").toLowerCase();
+			const cat = (item.category || "").toLowerCase();
+			if (selectedCategory === "anesthesia") {
+				return (
+					cat.includes("анестез") ||
+					name.includes("анестез") ||
+					name.includes("карпул") ||
+					name.includes("артикаин") ||
+					name.includes("ультракаин") ||
+					name.includes("септанест") ||
+					name.includes("скандонест") ||
+					name.includes("убистезин") ||
+					name.includes("лидокаин")
+				);
+			}
+			if (selectedCategory === "therapy") {
+				return (
+					cat.includes("терапи") ||
+					name.includes("пломб") ||
+					name.includes("бонд") ||
+					name.includes("адгезив") ||
+					name.includes("трави") ||
+					name.includes("паста")
+				);
+			}
+			if (selectedCategory === "composite") {
+				return (
+					cat.includes("композит") ||
+					name.includes("композит") ||
+					name.includes("filtek") ||
+					name.includes("gradia") ||
+					name.includes("estelite") ||
+					name.includes("харизма") ||
+					name.includes("спектрум")
+				);
+			}
+			if (selectedCategory === "disposables") {
+				return (
+					cat.includes("расход") ||
+					name.includes("расход") ||
+					name.includes("перчатк") ||
+					name.includes("маск") ||
+					name.includes("нагрудник") ||
+					name.includes("слюноотсос") ||
+					name.includes("валик") ||
+					name.includes("шприц")
+				);
+			}
+			if (selectedCategory === "surgery") {
+				return (
+					cat.includes("хирург") ||
+					name.includes("хирург") ||
+					name.includes("имплант") ||
+					name.includes("мембран") ||
+					name.includes("шовн") ||
+					name.includes("кост") ||
+					name.includes("скальпель") ||
+					name.includes("винт")
+				);
+			}
+			if (selectedCategory === "endo") {
+				return (
+					cat.includes("эндо") ||
+					name.includes("эндо") ||
+					name.includes("гуттаперч") ||
+					name.includes("файл") ||
+					name.includes("силлер") ||
+					name.includes("девавит") ||
+					name.includes("бумажн")
+				);
+			}
+			return true;
+		});
+	}, [filteredItems, selectedCategory]);
 
 	const inventorySlice = useMemo(() => {
-		return sliceDomList(filteredItems ?? [], displayLimit, 0);
-	}, [filteredItems, displayLimit]);
+		return sliceDomList(categoryFilteredItems ?? [], displayLimit, 0);
+	}, [categoryFilteredItems, displayLimit]);
 
 	// Инициализация документа инвентаризации ИНВ-3/19
 	const auditInitialDoc: WarehouseInventoryAuditDocument = useMemo(() => {
@@ -235,7 +345,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeSubTab === "inventory" && stockViewMode === "standard"
 									? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] border border-transparent hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)]"
+									: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)] shadow-xs"
 							}`}
 							role="tab"
 							aria-selected={activeSubTab === "inventory" && stockViewMode === "standard"}
@@ -262,7 +372,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeSubTab === "inventory" && stockViewMode === "fefo"
 									? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] border border-transparent hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)]"
+									: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)] shadow-xs"
 							}`}
 							role="tab"
 							aria-selected={activeSubTab === "inventory" && stockViewMode === "fefo"}
@@ -286,7 +396,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeSubTab === "rules"
 									? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] border border-transparent hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)]"
+									: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)] shadow-xs"
 							}`}
 							role="tab"
 							aria-selected={activeSubTab === "rules"}
@@ -411,7 +521,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					{/* Quick Acceptance Inbound Invoice Button */}
 					<button
 						type="button"
-						className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
+						className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] shadow-xs"
 						onClick={() => setIsInboundInvoiceModalOpen(true)}
 						title="Приходная накладная поставщика (партии по срокам, погашение овердрафта)"
 						data-testid="btn-acceptance-waybills"
@@ -423,7 +533,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					{/* Add Inventory Item Button */}
 					<button
 						type="button"
-						className="primary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 rounded-lg font-bold text-xs cursor-pointer bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-none"
+						className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-3 rounded-lg font-bold text-xs cursor-pointer bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-none shadow-xs"
 						onClick={openAddModal}
 						data-testid="btn-add-inventory-item"
 					>
@@ -432,6 +542,58 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					</button>
 				</div>
 			</div>
+
+			{/* CATEGORY FILTER CHIPS ROW (Studio HIG - tactile button chips) */}
+			{activeSubTab === "inventory" && (
+				<div
+					className="min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap shrink-0"
+					role="group"
+					aria-label="Фильтр по категориям материалов"
+					data-testid="inventory-category-filters-row"
+				>
+					<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] mr-1 shrink-0">
+						Категории:
+					</span>
+					{INVENTORY_CATEGORIES.map((cat) => {
+						const Icon = cat.icon;
+						const isActive = selectedCategory === cat.id;
+						return (
+							<button
+								key={cat.id}
+								type="button"
+								onClick={() => setSelectedCategory(cat.id)}
+								className={`h-7 px-2.5 rounded-lg text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shrink-0 transition-all border whitespace-nowrap ${
+									isActive
+										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs font-bold"
+										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] hover:text-[var(--teal-dark)]"
+								}`}
+								style={
+									isActive
+										? {
+												color: "#ffffff",
+												backgroundColor: "var(--teal)",
+												borderColor: "var(--teal)",
+											}
+										: undefined
+								}
+								data-testid={`inventory-category-chip-${cat.id}`}
+							>
+								<Icon
+									size={13}
+									className={
+										isActive
+											? "text-white shrink-0"
+											: "text-teal-600 dark:text-teal-400 shrink-0"
+									}
+								/>
+								<span style={isActive ? { color: "#ffffff" } : undefined}>
+									{cat.label}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			)}
 
 			{/* Accordion 1-Click Clinical Packages Write-Off Bar */}
 			{activeSubTab === "inventory" && isQuickPackagesOpen && (

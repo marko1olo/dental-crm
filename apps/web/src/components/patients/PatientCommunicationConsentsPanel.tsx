@@ -352,7 +352,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
 					{dirty && (
-						<span className="text-xs px-2.5 py-1 rounded-lg border border-amber-400/30 bg-amber-500/10 text-amber-200 font-semibold">
+						<span className="text-xs px-2.5 py-1 rounded-lg border border-amber-600/30 dark:border-amber-400/30 bg-amber-500/15 dark:bg-amber-500/10 text-amber-800 dark:text-amber-200 font-semibold">
 							Есть изменения
 						</span>
 					)}
@@ -382,7 +382,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			) : null}
 
 			{error && (
-				<p className="mb-3 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3 py-2">
+				<p className="mb-3 text-xs text-rose-700 dark:text-rose-300 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3 py-2">
 					{error}
 				</p>
 			)}
@@ -426,7 +426,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 													disabled={saving}
 													className={
 														on
-															? "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600/25 text-emerald-200 border border-emerald-400/35 inline-flex items-center justify-center cursor-pointer transition-colors"
+															? "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 dark:bg-emerald-600/25 text-emerald-800 dark:text-emerald-200 border border-emerald-600/30 dark:border-emerald-400/35 inline-flex items-center justify-center cursor-pointer transition-colors"
 															: "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-medium bg-[var(--paper-strong)] text-[var(--muted)] border border-[var(--glass-border)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center cursor-pointer transition-colors"
 													}
 												>
@@ -439,7 +439,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 							))}
 						</tbody>
 					</table>
-					<p className="mt-2 text-xs text-zinc-500 leading-relaxed">
+					<p className="mt-2 text-xs text-[var(--muted)] leading-relaxed">
 						По умолчанию служебные — разрешены, реклама — запрещена, пока
 						администратор не зафиксирует иное.
 					</p>

@@ -228,7 +228,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 
 									{document.status === "draft" ? (
 										<button
-											className="doc-link min-h-[44px] sm:min-h-[36px]"
+											className="tactile-doc-btn tactile-doc-btn--primary doc-link min-h-[44px] sm:min-h-[32px] sm:h-8"
 											type="button"
 											disabled={documentStatusSaving}
 											aria-busy={documentStatusSaving || undefined}
@@ -236,12 +236,14 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 											aria-describedby={documentLifecycleGuidanceId}
 											aria-label={`Проверить и выдать документ: ${documentActionContext}`}
 											title={`Проверить и выдать документ: ${documentActionContext}`}
+											data-testid={`btn-issue-doc-${document.id}`}
 										>
-											Проверить и выдать
+											<FileSignature size={14} className="shrink-0" aria-hidden="true" />
+											<span>Проверить и выдать</span>
 										</button>
 									) : (
 										<button
-											className="doc-link min-h-[44px] sm:min-h-[36px]"
+											className="tactile-doc-btn tactile-doc-btn--secondary doc-link min-h-[44px] sm:min-h-[32px] sm:h-8"
 											type="button"
 											onClick={() =>
 												void downloadIssuedDocumentPdf(document.id)
@@ -249,27 +251,31 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 											aria-describedby={documentLifecycleGuidanceId}
 											aria-label={`Печать / Скачать PDF: ${documentActionContext}`}
 											title={`Печать / Скачать PDF: ${documentActionContext}`}
+											data-testid={`btn-pdf-doc-${document.id}`}
 										>
-											Скачать PDF
+											<Printer size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+											<span>Печать / PDF</span>
 										</button>
 									)}
 
 									<button
-										className="doc-link min-h-[44px] sm:min-h-[36px]"
+										className="tactile-doc-btn tactile-doc-btn--ghost doc-link min-h-[44px] sm:min-h-[32px] sm:h-8"
 										type="button"
 										onClick={() => void openIssuedDocumentHtml(document.id)}
 										aria-describedby={documentLifecycleGuidanceId}
 										aria-label={`Открыть HTML документа: ${documentActionContext}`}
 										title={`Открыть HTML документа: ${documentActionContext}`}
+										data-testid={`btn-open-doc-${document.id}`}
 									>
-										Открыть
+										<FileText size={14} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
+										<span>Открыть</span>
 									</button>
 
 									<div
 										style={{ position: "relative", display: "inline-block" }}
 									>
 										<button
-											className="doc-link document-row-actions-btn min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]"
+											className="tactile-doc-btn tactile-doc-btn--icon doc-link document-row-actions-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8"
 											type="button"
 											onClick={() =>
 												setOpenDocActionMenuId(
