@@ -516,19 +516,36 @@
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 8px;
-	padding-top: 8px;
+	gap: 10px;
+	padding-top: 12px;
 	border-top: 1px solid var(--line);
+	flex-wrap: wrap;
+}
+
+.clinical-warranty-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--muted);
+	margin-right: auto;
+}
+
+.clinical-actions-btn-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
 }
 
 .clinical-btn-print {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	height: 32px;
-	padding: 0 12px;
+	height: 34px;
+	padding: 0 14px;
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: 700;
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
@@ -552,11 +569,41 @@
 	box-shadow: none;
 }
 
+.clinical-btn-plan {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 34px;
+	padding: 0 14px;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid rgba(99, 102, 241, 0.3);
+	background: rgba(99, 102, 241, 0.1);
+	color: #6366f1;
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(99, 102, 241, 0.08);
+}
+
+.clinical-btn-plan:hover {
+	background: rgba(99, 102, 241, 0.18);
+	border-color: #6366f1;
+	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+}
+
+.clinical-btn-plan:active {
+	transform: translateY(1px);
+	box-shadow: none;
+}
+
 .clinical-btn-goto {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	height: 32px;
+	height: 34px;
 	padding: 0 14px;
 	font-size: 12px;
 	font-weight: 700;
@@ -580,24 +627,481 @@
 	transform: translateY(1px);
 }
 
-/* Тематическая калибровка контрастности для темных тем (WCAG AAA) */
-:root[data-theme="dark"] .clinical-pill-status-paid,
-.theme-dark .clinical-pill-status-paid {
+/* ═════════════════════════════════════════════════════════════════════════
+   5. МОБИЛЬНЫЙ КАРТОЧНЫЙ СЛОЙ (Apple Health Records Style)
+   ═════════════════════════════════════════════════════════════════════════ */
+.clinical-mobile-card-header {
+	display: none;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px 14px;
+	cursor: pointer;
+	user-select: none;
+	transition: background 0.18s ease;
+}
+
+.clinical-mobile-card-header:hover {
+	background: var(--paper-soft);
+}
+
+.clinical-mobile-header-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.clinical-mobile-meta-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex-wrap: wrap;
+}
+
+.clinical-specialty-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	white-space: nowrap;
+}
+
+.specialty-therapy {
+	color: var(--teal);
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+.specialty-surgery {
+	color: #9333ea;
+	background: rgba(147, 51, 234, 0.12);
+	border: 1px solid rgba(147, 51, 234, 0.25);
+}
+
+.specialty-orthopedics {
+	color: #d97706;
+	background: rgba(217, 119, 6, 0.12);
+	border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+.specialty-hygiene {
+	color: #059669;
+	background: rgba(5, 150, 105, 0.12);
+	border: 1px solid rgba(5, 150, 105, 0.25);
+}
+
+.specialty-orthodontics {
+	color: #2563eb;
+	background: rgba(37, 99, 235, 0.12);
+	border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.specialty-all {
+	color: var(--muted);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+
+.clinical-mobile-date {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	font-family: var(--font-mono, monospace);
+}
+
+.clinical-mobile-diagnosis-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.clinical-mobile-diagnosis {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1;
+}
+
+.clinical-diagnosis-code {
+	font-size: 14px;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+}
+
+.clinical-diagnosis-title {
+	font-size: 14px;
+	line-height: 1.35;
+	word-break: break-word;
+}
+
+.clinical-mobile-bottom-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding-top: 4px;
+	border-top: 1px dashed var(--line);
+}
+
+.clinical-mobile-doctor {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	color: var(--muted);
+	font-weight: 500;
+	min-width: 0;
+}
+
+.clinical-mobile-finances {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.clinical-mobile-amount {
+	font-size: 13px;
+	font-weight: 800;
+	font-family: var(--font-mono, monospace);
+}
+
+.clinical-mobile-payment-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 7px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+}
+
+.clinical-mobile-payment-badge.status-paid {
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border-color: rgba(16, 185, 129, 0.3);
+}
+
+.clinical-mobile-payment-badge.status-scheduled {
+	background: var(--paper-soft);
+	color: var(--muted);
+	border-color: var(--line);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   6. СЕТКА СНИМКОВ И ФОТОПРОТОКОЛА
+   ═════════════════════════════════════════════════════════════════════════ */
+.clinical-scans-section {
+	width: 100%;
+}
+
+.clinical-scans-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	gap: 10px;
+	width: 100%;
+}
+
+.clinical-scan-card {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--paper);
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.clinical-scan-card:hover {
+	border-color: var(--teal);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+}
+
+.clinical-scan-thumb {
+	aspect-ratio: 1;
+	width: 100%;
+	position: relative;
+	background: #000000;
+	overflow: hidden;
+}
+
+.clinical-scan-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.2s ease;
+}
+
+.clinical-scan-card:hover .clinical-scan-thumb img {
+	transform: scale(1.06);
+}
+
+.clinical-scan-kind-badge {
+	position: absolute;
+	bottom: 5px;
+	right: 5px;
+	font-size: 10px;
+	font-weight: 800;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.85);
 	color: #34d399;
-	background: rgba(16, 185, 129, 0.16);
-	border-color: rgba(52, 211, 153, 0.35);
+	font-family: var(--font-mono, monospace);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.clinical-scan-meta {
+	padding: 6px 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: var(--paper);
+}
+
+.clinical-scan-title {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.clinical-scan-tooth {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--teal);
+	font-family: var(--font-mono, monospace);
+}
+
+.clinical-materials-section {
+	width: 100%;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   7. АДАПТИВНЫЕ МЕДИА-ПРАВИЛА (Anti-Desktop-Squeeze, Viewport <= 768px)
+   ═════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+	.clinical-visit-compact-row {
+		display: none !important;
+	}
+
+	.clinical-mobile-card-header {
+		display: flex !important;
+	}
+
+	.clinical-timeline-container {
+		gap: 12px;
+		overflow-x: clip;
+		max-width: 100%;
+	}
+
+	.clinical-timeline-toolbar {
+		padding: 12px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		border-radius: 14px;
+	}
+
+	.clinical-timeline-search {
+		min-width: 100%;
+		width: 100%;
+	}
+
+	.clinical-search-input {
+		height: 38px;
+		font-size: 13px;
+	}
+
+	/* Горизонтальный скроллер чипов без полосы прокрутки (Apple HIG) */
+	.clinical-timeline-filters-scroll,
+	.clinical-timeline-filters {
+		display: flex;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		gap: 8px;
+		padding: 2px 2px 6px 2px;
+		width: 100%;
+	}
+
+	.clinical-timeline-filters-scroll::-webkit-scrollbar,
+	.clinical-timeline-filters::-webkit-scrollbar {
+		display: none;
+	}
+
+	.clinical-filter-chip {
+		height: 36px;
+		padding: 0 12px;
+		font-size: 12px;
+		flex-shrink: 0;
+	}
+
+	.clinical-timeline-actions {
+		width: 100%;
+		justify-content: space-between;
+		gap: 10px;
+	}
+
+	.clinical-timeline-toggle-group {
+		gap: 10px;
+		flex: 1;
+	}
+
+	.clinical-timeline-toggle-btn {
+		height: 36px;
+		padding: 0 10px;
+		font-size: 12px;
+		flex: 1;
+		justify-content: center;
+	}
+
+	.clinical-timeline-primary-btn {
+		height: 36px;
+		padding: 0 14px;
+		font-size: 13px;
+	}
+
+	.clinical-month-group {
+		padding: 10px;
+		border-radius: 14px;
+	}
+
+	.clinical-visit-accordion {
+		border-radius: 12px;
+	}
+
+	.clinical-soap-grid {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.clinical-soap-card.md\:col-span-2 {
+		grid-column: span 1;
+	}
+
+	.clinical-scans-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.clinical-details-actions {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.clinical-warranty-badge {
+		margin-right: 0;
+		padding-bottom: 4px;
+	}
+
+	.clinical-actions-btn-group {
+		width: 100%;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+
+	.clinical-btn-print,
+	.clinical-btn-plan,
+	.clinical-btn-goto {
+		height: 44px;
+		min-height: 44px;
+		justify-content: center;
+		font-size: 13px;
+		width: 100%;
+	}
+
+	.clinical-btn-goto {
+		grid-column: span 2;
+	}
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   8. ТЕМАТИЧЕСКАЯ КАЛИБРОВКА КОНТРАСТНОСТИ ДЛЯ ТЕМНЫХ ТЕМ (WCAG AAA)
+   ═════════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] .clinical-pill-status-paid,
+.theme-dark .clinical-pill-status-paid,
+:root[data-theme="dark"] .clinical-mobile-payment-badge.status-paid,
+.theme-dark .clinical-mobile-payment-badge.status-paid {
+	color: #34d399;
+	background: rgba(16, 185, 129, 0.18);
+	border-color: rgba(52, 211, 153, 0.4);
 }
 
 :root[data-theme="dark"] .clinical-pill-warranty,
 .theme-dark .clinical-pill-warranty {
 	color: #a5b4fc;
-	background: rgba(99, 102, 241, 0.16);
-	border-color: rgba(165, 180, 252, 0.35);
+	background: rgba(99, 102, 241, 0.18);
+	border-color: rgba(165, 180, 252, 0.4);
 }
 
 :root[data-theme="dark"] .clinical-pill-tooth,
 .theme-dark .clinical-pill-tooth {
 	color: #2dd4bf;
-	background: rgba(13, 148, 136, 0.18);
+	background: rgba(13, 148, 136, 0.2);
+	border-color: rgba(45, 212, 191, 0.4);
+}
+
+:root[data-theme="dark"] .specialty-therapy,
+.theme-dark .specialty-therapy {
+	color: #2dd4bf;
+	background: rgba(13, 148, 136, 0.2);
 	border-color: rgba(45, 212, 191, 0.35);
 }
+
+:root[data-theme="dark"] .specialty-surgery,
+.theme-dark .specialty-surgery {
+	color: #c084fc;
+	background: rgba(147, 51, 234, 0.2);
+	border-color: rgba(192, 132, 252, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-orthopedics,
+.theme-dark .specialty-orthopedics {
+	color: #fbbf24;
+	background: rgba(217, 119, 6, 0.2);
+	border-color: rgba(251, 191, 36, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-hygiene,
+.theme-dark .specialty-hygiene {
+	color: #34d399;
+	background: rgba(5, 150, 105, 0.2);
+	border-color: rgba(52, 211, 153, 0.35);
+}
+
+:root[data-theme="dark"] .specialty-orthodontics,
+.theme-dark .specialty-orthodontics {
+	color: #60a5fa;
+	background: rgba(37, 99, 235, 0.2);
+	border-color: rgba(96, 165, 250, 0.35);
+}
+
+:root[data-theme="dark"] .clinical-btn-plan,
+.theme-dark .clinical-btn-plan {
+	color: #a5b4fc;
+	background: rgba(99, 102, 241, 0.2);
+	border-color: rgba(165, 180, 252, 0.35);
+}
+
+:root[data-theme="dark"] .clinical-btn-plan:hover,
+.theme-dark .clinical-btn-plan:hover {
+	background: rgba(99, 102, 241, 0.3);
+	border-color: #a5b4fc;
+}
+

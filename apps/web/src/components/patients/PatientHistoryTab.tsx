@@ -21,6 +21,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
+	ClipboardList,
 	Clock,
 	DollarSign,
 	ExternalLink,
@@ -65,6 +66,7 @@ export const SPECIALTY_FILTERS: SpecialtyFilterOption[] = [
 	{ id: "surgery", label: "Хирургия & Имплантация" },
 	{ id: "orthopedics", label: "Ортопедия" },
 	{ id: "hygiene", label: "Профгигиена" },
+	{ id: "orthodontics", label: "Ортодонтия" },
 ];
 
 export interface ClinicalMaterialItem {
@@ -106,6 +108,7 @@ export interface ClinicalVisitItem {
 	recommendations?: string | undefined;
 	materialsDeducted?: ClinicalMaterialItem[] | undefined;
 	attachedScan?: ClinicalAttachedScan | null | undefined;
+	attachedScans?: ClinicalAttachedScan[] | undefined;
 	isSigned?: boolean | undefined;
 }
 
@@ -117,6 +120,8 @@ export interface PatientHistoryTabProps {
 	onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	onNewAppointment?: ((patientId?: string) => void) | undefined;
 	onPrintProtocol?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onExtract043?: ((visit: ClinicalVisitItem) => void) | undefined;
+	onAddToTreatmentPlan?: ((visit: ClinicalVisitItem) => void) | undefined;
 	className?: string | undefined;
 }
 
@@ -157,6 +162,20 @@ export const DEFAULT_CLINICAL_VISITS: ClinicalVisitItem[] = [
 			kind: "RVG",
 			tooth: "16",
 		},
+		attachedScans: [
+			{
+				title: "Прицельный снимок RVG зуба 16",
+				previewUrl: "/radiology/sample_rvg_tooth16.jpg",
+				kind: "RVG",
+				tooth: "16",
+			},
+			{
+				title: "Окклюзионный фотопротокол 16",
+				previewUrl: "/radiology/sample_rvg_tooth16.jpg",
+				kind: "ФОТО",
+				tooth: "16",
+			},
+		],
 		isSigned: true,
 	},
 	{
@@ -226,6 +245,14 @@ export const DEFAULT_CLINICAL_VISITS: ClinicalVisitItem[] = [
 			kind: "RVG",
 			tooth: "36",
 		},
+		attachedScans: [
+			{
+				title: "Радиовизиография обтурации 36",
+				previewUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
+				kind: "RVG",
+				tooth: "36",
+			},
+		],
 		isSigned: true,
 	},
 	{
@@ -263,6 +290,20 @@ export const DEFAULT_CLINICAL_VISITS: ClinicalVisitItem[] = [
 			kind: "CBCT",
 			tooth: "46",
 		},
+		attachedScans: [
+			{
+				title: "3D КЛКТ позиционирования 46",
+				previewUrl: "/radiology/sample_rvg_pathology.jpg",
+				kind: "CBCT",
+				tooth: "46",
+			},
+			{
+				title: "Панорамная томограмма ОПТГ",
+				previewUrl: "/radiology/sample_rvg_pathology.jpg",
+				kind: "ОПТГ",
+				tooth: "46",
+			},
+		],
 		isSigned: true,
 	},
 	{
@@ -307,6 +348,8 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 		onNavigateToVisit,
 		onNewAppointment,
 		onPrintProtocol,
+		onExtract043,
+		onAddToTreatmentPlan,
 		className = "",
 	}) {
 		// Active filters
@@ -523,10 +566,40 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 					onPrintProtocol(visit);
 				} else if (typeof window !== "undefined") {
 					window.print();
-					showToast(`Печать медицинской карты 043/у по визиту от ${visit.date.slice(0, 10)}`, "info");
+					showToast(`Печать протокола приёма по визиту от ${visit.date.slice(0, 10)}`, "info");
 				}
 			},
 			[onPrintProtocol],
+		);
+
+		// Extract Form 043/u handler
+		const handleExtract043 = useCallback(
+			(visit: ClinicalVisitItem) => {
+				if (onExtract043) {
+					onExtract043(visit);
+				} else if (onPrintProtocol) {
+					onPrintProtocol(visit);
+				} else if (typeof window !== "undefined") {
+					window.print();
+					showToast(`Медицинская выписка: сформирована по визиту от ${visit.date.slice(0, 10)} (${visit.diagnosisCode})`, "success");
+				}
+			},
+			[onExtract043, onPrintProtocol],
+		);
+
+		// Add to treatment plan handler
+		const handleAddToTreatmentPlan = useCallback(
+			(visit: ClinicalVisitItem) => {
+				if (onAddToTreatmentPlan) {
+					onAddToTreatmentPlan(visit);
+				} else {
+					showToast(
+						`Диагноз ${visit.diagnosisCode} (${visit.diagnosisTitle})${visit.toothNumber ? ` • Зуб ${visit.toothNumber}` : ""} добавлен в предварительный план лечения`,
+						"success",
+					);
+				}
+			},
+			[onAddToTreatmentPlan],
 		);
 
 		return (
@@ -691,9 +764,9 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 										className={`clinical-visit-accordion ${isExpanded ? "expanded" : ""}`}
 										data-testid={`timeline-visit-card-${visit.id}`}
 									>
-										{/* ─── COMPACT 1-LINE ROW (36px) ────────────────────── */}
+										{/* ─── DESKTOP COMPACT ROW (hidden on mobile, visible on md+) ────── */}
 										<div
-											className="clinical-visit-compact-row"
+											className="clinical-visit-compact-row hidden md:flex"
 											onClick={() => toggleAccordion(visit.id)}
 											role="button"
 											tabIndex={0}
@@ -784,13 +857,90 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 											</div>
 										</div>
 
+										{/* ─── MOBILE APPLE HEALTH RECORDS CARD HEADER (visible on mobile <md) ────── */}
+										<div
+											className="clinical-mobile-card-header flex md:hidden"
+											onClick={() => toggleAccordion(visit.id)}
+											role="button"
+											tabIndex={0}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													toggleAccordion(visit.id);
+												}
+											}}
+											aria-expanded={isExpanded}
+											title="Нажмите, чтобы развернуть протокол приёма"
+										>
+											{/* Top Meta: Specialty Chip + Date/Time + Chevron */}
+											<div className="clinical-mobile-header-top">
+												<div className="clinical-mobile-meta-group">
+													<span className={`clinical-specialty-pill specialty-${visit.specialty}`}>
+														{visit.specialtyLabelRu}
+													</span>
+													<span className="clinical-mobile-date">
+														<Clock className="w-3 h-3 text-[var(--muted)]" />
+														<span>{formattedDateStr}</span>
+													</span>
+												</div>
+												<span className={`clinical-row-chevron-badge ${isExpanded ? "expanded" : ""}`} aria-hidden="true">
+													{isExpanded ? (
+														<ChevronDown className="w-4 h-4 text-[var(--teal)]" />
+													) : (
+														<ChevronRight className="w-4 h-4" />
+													)}
+												</span>
+											</div>
+
+											{/* Middle Line: Big Prominent Diagnosis + Tooth */}
+											<div className="clinical-mobile-diagnosis-row">
+												<div className="clinical-mobile-diagnosis">
+													<span className="clinical-diagnosis-code font-mono font-black text-teal-600 dark:text-teal-400">
+														{visit.diagnosisCode}
+													</span>
+													<span className="clinical-diagnosis-title font-semibold text-[var(--ink)]">
+														{visit.diagnosisTitle}
+													</span>
+												</div>
+												{visit.toothNumber && (
+													<span className="clinical-pill-tooth shrink-0" data-testid={`mobile-pill-tooth-${visit.toothNumber}`}>
+														<ToothMolar className="w-3.5 h-3.5 text-[var(--teal)]" />
+														<span>Зуб {visit.toothNumber}</span>
+													</span>
+												)}
+											</div>
+
+											{/* Bottom Line: Doctor + Finances + Status */}
+											<div className="clinical-mobile-bottom-row">
+												<div className="clinical-mobile-doctor">
+													<User className="w-3 h-3 text-[var(--muted)]" />
+													<span className="truncate">{visit.doctorName}</span>
+												</div>
+												<div className="clinical-mobile-finances">
+													<span className="clinical-mobile-amount font-mono font-bold text-[var(--ink)]">
+														{visit.amountRub.toLocaleString("ru-RU")} ₽
+													</span>
+													<span className={`clinical-mobile-payment-badge status-${visit.paymentStatus}`}>
+														{visit.isPaid ? (
+															<>
+																<Check className="w-3 h-3" />
+																<span>Оплачен</span>
+															</>
+														) : (
+															<span>Запланирован</span>
+														)}
+													</span>
+												</div>
+											</div>
+										</div>
+
 										{/* ─── EXPANDED DETAILED PROTOCOL PANE ──────────────── */}
 										{isExpanded && (
 											<div
 												className="clinical-visit-details-pane"
 												data-testid={`timeline-visit-details-${visit.id}`}
 											>
-												{/* SOAP Сетка клинических данных */}
+												{/* SOAP Сетка клинических данных Формы 043/у */}
 												<div className="clinical-soap-grid">
 													{/* Жалобы */}
 													<div className="clinical-soap-card">
@@ -839,37 +989,64 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 													)}
 												</div>
 
-												{/* Списанные материалы и прикрепленный снимок */}
-												{(visit.materialsDeducted?.length || visit.attachedScan) && (
+												{/* Списанные материалы и прикрепленные снимки (Apple Health Records Grid) */}
+												{((visit.attachedScans && visit.attachedScans.length > 0) || visit.attachedScan || (visit.materialsDeducted && visit.materialsDeducted.length > 0)) && (
 													<div className="clinical-attachments-row">
-														{/* Снимок RVG / КТ */}
-														{visit.attachedScan && (
-															<div className="flex flex-col gap-1.5">
-																<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1">
-																	<Eye className="w-3 h-3 text-[var(--teal)]" />
-																	<span>Контрольный снимок ({visit.attachedScan.kind})</span>
+														{/* Сетка снимков RVG / КТ / Фото */}
+														{(() => {
+															const scansList = visit.attachedScans && visit.attachedScans.length > 0
+																? visit.attachedScans
+																: visit.attachedScan
+																	? [visit.attachedScan]
+																	: [];
+
+															if (scansList.length === 0) return null;
+
+															return (
+																<div className="clinical-scans-section w-full">
+																	<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 mb-2">
+																		<Eye className="w-3.5 h-3.5 text-[var(--teal)]" />
+																		<span>Прикрепленные снимки и рентгенограммы ({scansList.length})</span>
+																	</div>
+																	<div className="clinical-scans-grid">
+																		{scansList.map((scan, sIdx) => (
+																			<div
+																				key={sIdx}
+																				className="clinical-scan-card"
+																				title={`${scan.title} — нажмите для просмотра`}
+																				onClick={(e) => {
+																					e.stopPropagation();
+																					showToast(`Просмотр снимка: ${scan.title}`, "info");
+																				}}
+																			>
+																				<div className="clinical-scan-thumb">
+																					<img
+																						src={scan.previewUrl}
+																						alt={scan.title}
+																						loading="lazy"
+																					/>
+																					<span className="clinical-scan-kind-badge">
+																						{scan.kind}
+																					</span>
+																				</div>
+																				<div className="clinical-scan-meta">
+																					<span className="clinical-scan-title truncate">{scan.title}</span>
+																					{scan.tooth && (
+																						<span className="clinical-scan-tooth">Зуб {scan.tooth}</span>
+																					)}
+																				</div>
+																			</div>
+																		))}
+																	</div>
 																</div>
-																<div
-																	className="clinical-xray-preview"
-																	title="Нажмите для детального просмотра"
-																>
-																	<img
-																		src={visit.attachedScan.previewUrl}
-																		alt={visit.attachedScan.title}
-																		loading="lazy"
-																	/>
-																	<span className="absolute bottom-1 right-1 text-[9px] font-bold bg-black/80 px-1 py-0.2 rounded text-emerald-400">
-																		{visit.attachedScan.kind}
-																	</span>
-																</div>
-															</div>
-														)}
+															);
+														})()}
 
 														{/* Списанные материалы по техкарте (Мандат 8v) */}
 														{visit.materialsDeducted && visit.materialsDeducted.length > 0 && (
-															<div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
-																<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1">
-																	<Package className="w-3 h-3 text-purple-500" />
+															<div className="clinical-materials-section w-full">
+																<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+																	<Package className="w-3.5 h-3.5 text-purple-500" />
 																	<span>Списано со склада по техкарте:</span>
 																</div>
 																<div className="flex flex-wrap gap-1.5">
@@ -890,40 +1067,57 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 													</div>
 												)}
 
-												{/* Нижняя панель действий протокола */}
+												{/* Нижняя панель действий протокола (Медицинская выписка + В план лечения) */}
 												<div className="clinical-details-actions">
 													{visit.warrantyUntil && (
-														<div className="text-xs text-[var(--muted)] mr-auto flex items-center gap-1.5">
+														<div className="clinical-warranty-badge">
 															<ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
 															<span>
-																Гарантийный паспорт: <strong>до {visit.warrantyUntil}</strong> (при профосмотре каждые 6 мес.)
+																Гарантия: <strong>до {visit.warrantyUntil}</strong>
 															</span>
 														</div>
 													)}
 
-													<button
-														type="button"
-														onClick={() => handlePrint(visit)}
-														className="clinical-btn-print"
-														data-testid={`btn-print-visit-${visit.id}`}
-														title="Распечатать медицинскую карту приёма по форме 043/у"
-													>
-														<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-														<span>Печать 043/у</span>
-													</button>
-
-													{onNavigateToVisit && (
+													<div className="clinical-actions-btn-group">
 														<button
 															type="button"
-															onClick={() => onNavigateToVisit(visit.id)}
+															onClick={() => handleExtract043(visit)}
+															className="clinical-btn-print"
+															data-testid={`btn-extract-043-${visit.id}`}
+															title="Сформировать медицинскую выписку из карты"
+														>
+															<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+															<span>Медицинская выписка</span>
+														</button>
+
+														<button
+															type="button"
+															onClick={() => handleAddToTreatmentPlan(visit)}
+															className="clinical-btn-plan"
+															data-testid={`btn-add-to-plan-${visit.id}`}
+															title="Включить клинический диагноз и манипуляцию в план лечения"
+														>
+															<ClipboardList className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+															<span>В план лечения</span>
+														</button>
+
+														<button
+															type="button"
+															onClick={() => {
+																if (onNavigateToVisit) {
+																	onNavigateToVisit(visit.id);
+																} else {
+																	showToast(`Переход к протоколу визита ${visit.id}`, "info");
+																}
+															}}
 															className="clinical-btn-goto"
 															data-testid={`btn-goto-visit-${visit.id}`}
 															title="Перейти к полной карте приёма"
 														>
 															<span>К визиту</span>
-															<ExternalLink className="w-3.5 h-3.5" />
+															<ExternalLink className="w-3.5 h-3.5 shrink-0" />
 														</button>
-													)}
+													</div>
 												</div>
 											</div>
 										)}

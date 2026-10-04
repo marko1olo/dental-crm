@@ -97,31 +97,31 @@ function PatientTimelinePreviewApp() {
 	useEffect(() => {
 		const resolved = resolveTheme(rawTheme, false);
 		applyThemeToRoot(document.documentElement, resolved);
-		document.body.className = `theme-${resolved.theme} bg-[var(--paper-soft)] text-[var(--ink)] antialiased min-h-screen p-4 sm:p-6`;
+		document.body.className = `theme-${resolved.theme} bg-[var(--paper-soft)] text-[var(--ink)] antialiased min-h-screen p-2 sm:p-6`;
 	}, [rawTheme]);
 
 	return (
-		<div className="max-w-6xl mx-auto flex flex-col gap-6">
+		<div className="w-full max-w-6xl mx-auto flex flex-col gap-3 sm:gap-6">
 			{/* Top Bar for Demonstration */}
-			<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xs">
-				<div className="flex items-center gap-2">
-					<div className="w-3 h-3 rounded-full bg-[var(--teal)]" />
-					<span className="text-sm font-bold text-[var(--ink)]">
-						Клинический таймлайн визитов пациента — Ковалёв Роман Станиславович (38 лет)
+			<div className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xs">
+				<div className="flex items-center gap-2 min-w-0">
+					<div className="w-2.5 h-2.5 rounded-full bg-[var(--teal)] shrink-0" />
+					<span className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">
+						Клинический таймлайн визитов — Ковалёв Р. С. (38 лет)
 					</span>
 				</div>
-				<div className="flex items-center gap-2 text-xs font-semibold">
-					<span className="px-2 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]">
-						Тема: {rawTheme}
+				<div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold shrink-0">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]">
+						{rawTheme}
 					</span>
-					<span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20">
+					<span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20">
 						CLS = 0
 					</span>
 				</div>
 			</div>
 
 			{/* Main Section: Compact Structured Clinical Timeline with Accordions */}
-			<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
+			<div className="p-2 sm:p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 				<PatientHistoryTab
 					patientId="pat-1"
 					patientName="Ковалёв Роман Станиславович"
