@@ -485,6 +485,15 @@ export const DoctorClinicalTrainingTour: React.FC<DoctorClinicalTrainingTourProp
 	const nextTrackId = getNextTrackId(activeTrack.id);
 	const nextTrack = nextTrackId ? CLINICAL_QUEST_TRACKS.find((t) => t.id === nextTrackId) : null;
 
+	// Completely disable desktop training tour on mobile screens (<= 768px) per Apple HIG & mobile mandate
+	if (typeof window !== "undefined" && window.innerWidth <= 768 && !forceOpen) {
+		return null;
+	}
+
+	if (!isOpen) {
+		return null;
+	}
+
 	return (
 		<>
 			{/* 1. Cinematic Spotlight Overlay with Non-blocking SVG Mask Cutout */}

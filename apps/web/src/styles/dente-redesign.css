@@ -1959,14 +1959,25 @@ button[data-tooth-state="missing"] {
 		display: none;
 	}
 	.topbar {
-		padding: 8px 14px;
-		padding-left: max(16px, calc(12px + env(safe-area-inset-left)));
-		padding-right: max(12px, calc(8px + env(safe-area-inset-right)));
-		flex-wrap: nowrap;
-		gap: 8px;
-		min-height: 52px;
-		height: auto !important;
-		max-height: none !important;
+		padding: 0 12px;
+		padding-top: env(safe-area-inset-top, 0px) !important;
+		padding-left: max(12px, calc(8px + env(safe-area-inset-left, 0px))) !important;
+		padding-right: max(12px, calc(8px + env(safe-area-inset-right, 0px))) !important;
+		flex-wrap: nowrap !important;
+		gap: 8px !important;
+		height: calc(44px + env(safe-area-inset-top, 0px)) !important;
+		min-height: calc(44px + env(safe-area-inset-top, 0px)) !important;
+		max-height: calc(44px + env(safe-area-inset-top, 0px)) !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		background: color-mix(in srgb, var(--paper-strong, var(--paper)) 88%, transparent) !important;
+		backdrop-filter: blur(20px) !important;
+		-webkit-backdrop-filter: blur(20px) !important;
+		border-bottom: 1px solid var(--line) !important;
+		position: sticky !important;
+		top: 0 !important;
+		z-index: 40 !important;
+		box-sizing: border-box !important;
 	}
 	.topbar h1,
 	.topbar-clinic h1 {
@@ -2048,8 +2059,8 @@ button[data-tooth-state="missing"] {
 		padding: 6px 12px;
 		font-size: 12px;
 		white-space: nowrap;
-		min-height: 44px;
-		min-width: 44px;
+		min-height: 36px;
+		min-width: 36px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -2060,6 +2071,23 @@ button[data-tooth-state="missing"] {
 	.top-actions .topbar-copilot-button,
 	.top-actions .compact-top-button {
 		display: none !important;
+	}
+	@media (max-width: 768px) {
+		.top-actions {
+			display: none !important;
+		}
+
+		/* Полное скрытие десктопных онбординг-туров, коуч-марок и баннеров на мобильных экранах */
+		[data-testid="doctor-training-coach-mark-card"],
+		[data-testid="coach-mark-target-beacon"],
+		.tour-spotlight-root,
+		[data-testid="guided-tour-spotlight-overlay"],
+		.tour-backdrop-clickable-zone,
+		.onboarding-compact-strip,
+		.default-clinic-banner,
+		[data-testid="demo-mode-banner"] {
+			display: none !important;
+		}
 	}
 }
 
@@ -2340,19 +2368,25 @@ button[data-tooth-state="missing"] {
    замеренные 64px с запасом 8px и не зависят от настроек шрифта. */
 @media (max-width: 840px) {
 	.app-shell.dente-redesign {
-		display: grid;
-		grid-template-rows: 1fr auto;
-		grid-template-columns: 100%;
-		height: 100dvh;
-		max-height: 100dvh;
-		overflow: hidden;
+		display: flex !important;
+		flex-direction: column !important;
+		height: 100dvh !important;
+		min-height: 100dvh !important;
+		max-height: 100dvh !important;
+		overflow-x: clip !important;
+		max-width: 100vw !important;
+		width: 100% !important;
 	}
 	.app-shell.dente-redesign .workspace {
-		min-height: 0;
-		overflow-y: auto;
-		-webkit-overflow-scrolling: touch;
-		overscroll-behavior-y: contain;
-		padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+		flex: 1 1 auto !important;
+		min-height: 0 !important;
+		overflow-y: auto !important;
+		overflow-x: clip !important;
+		max-width: 100vw !important;
+		width: 100% !important;
+		-webkit-overflow-scrolling: touch !important;
+		overscroll-behavior-y: contain !important;
+		padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px) !important;
 	}
 	.app-shell.dente-redesign .workspace > *,
 	.work-grid,

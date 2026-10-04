@@ -93,9 +93,11 @@ import {
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
 	ActionIcon,
+	getFilteredAppViews,
 	WorkspaceSidebar,
 	WorkspaceTopbar,
 } from "./workspaceShell";
+import { MobileTabBar } from "./components/layout/MobileTabBar";
 
 const TreatmentPlanModule = lazyWithRetry(() =>
 	import("./components/treatment-plans/TreatmentPlanModule").then((module) => ({
@@ -1823,6 +1825,7 @@ export function App() {
 					{!onboardingDismissed &&
 					!showFullOnboardingGuide &&
 					!isLocalOnboardingDismissed &&
+					!(typeof window !== "undefined" && window.innerWidth <= 768) &&
 					currentView !== "visit" &&
 					!(typeof window !== "undefined" && window.location.hash.toLowerCase().includes("visit")) ? (
 						<section
@@ -3513,34 +3516,15 @@ export function App() {
 						<A2hsPromptModal />
 					</Suspense>
 				</section>
-				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
-					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (
-						<a
-							key={view}
-							className={currentView === view ? "active" : ""}
-							href={`#${view}`}
-							aria-current={currentView === view ? "page" : undefined}
-							onPointerEnter={() => preloadWorkspaceView(view, "hover")}
-							onPointerLeave={() => preloadWorkspaceView(view, "cancel")}
-							onFocus={() => preloadWorkspaceView(view, "hover")}
-							onBlur={() => preloadWorkspaceView(view, "cancel")}
-						>
-							<ActionIcon section={view} />
-							<span>{viewLabels[view]}</span>
-						</a>
-					))}
-					<a
-						href="#settings"
-						className={currentView === "settings" ? "active" : ""}
-						onPointerEnter={() => preloadWorkspaceView("settings", "hover")}
-						onPointerLeave={() => preloadWorkspaceView("settings", "cancel")}
-						onFocus={() => preloadWorkspaceView("settings", "hover")}
-						onBlur={() => preloadWorkspaceView("settings", "cancel")}
-					>
-						<Database aria-hidden="true" />
-						<span>Ещё</span>
-					</a>
-				</nav>
+				<MobileTabBar
+					currentView={currentView}
+					onSelectView={(view) => {
+						setCurrentView(view);
+						window.location.hash = view;
+					}}
+					onViewIntent={preloadWorkspaceView}
+					allowedViews={getFilteredAppViews(selectedWorkspaceRole)}
+				/>
 				{isCbctTunerOpen && (
 					<Suspense fallback={null}>
 						<CbctTunerPlayground

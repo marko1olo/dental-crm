@@ -1,0 +1,381 @@
+/* ==========================================================================
+   DENTE MOBILE HUMAN INTERFACE GUIDELINES (Apple iOS HIG)
+   Native iOS Bottom Tab Bar & Bottom Sheet Drawer Styles
+   ========================================================================== */
+
+/* 1. БАЗОВАЯ ВИДИМОСТЬ: Таб-бар скрыт на десктопе, активен на смартфонах и планшетах (<= 840px) */
+.mobile-tab-bar,
+.dnt-bottom-nav {
+	display: none;
+}
+
+@media (max-width: 840px) {
+	/* 2. NATIVE IOS BOTTOM TAB BAR CONTAINER */
+	.mobile-tab-bar,
+	.dnt-bottom-nav {
+		display: flex !important;
+		position: fixed !important;
+		left: 0 !important;
+		right: 0 !important;
+		bottom: 0 !important;
+		z-index: 9999 !important;
+		width: 100% !important;
+		max-width: 100vw !important;
+		height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+		padding-top: 0 !important;
+		padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+		padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
+		padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+		background: var(--paper-strong) !important;
+		backdrop-filter: blur(20px) saturate(180%) !important;
+		-webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+		border-top: 1px solid var(--line) !important;
+		align-items: stretch !important;
+		justify-content: space-around !important;
+		box-sizing: border-box !important;
+		box-shadow: 0 -4px 20px -4px rgba(0, 0, 0, 0.16) !important;
+		user-select: none !important;
+		-webkit-user-select: none !important;
+		-webkit-tap-highlight-color: transparent !important;
+	}
+
+	/* Исключаем появление шестого нештатного слота внутри монолитного таб-бара */
+	.mobile-tab-bar .dnt-actions-nav-slot,
+	.dnt-bottom-nav .dnt-actions-nav-slot {
+		display: none !important;
+	}
+
+	/* 3. TAB BAR ITEMS */
+	.mobile-tab-item {
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
+		justify-content: center !important;
+		gap: 3px !important;
+		flex: 1 1 0% !important;
+		min-width: 44px !important;
+		min-height: 52px !important;
+		max-width: 84px !important;
+		padding: 4px 2px !important;
+		color: var(--muted) !important;
+		text-decoration: none !important;
+		background: transparent !important;
+		border: none !important;
+		cursor: pointer !important;
+		transition: color 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.12s ease !important;
+		position: relative !important;
+		box-sizing: border-box !important;
+	}
+
+	.mobile-tab-item:active {
+		transform: scale(0.92) !important;
+	}
+
+	.mobile-tab-icon-wrap {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		width: 28px !important;
+		height: 24px !important;
+		position: relative !important;
+		transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+	}
+
+	.mobile-tab-icon {
+		width: 22px !important;
+		height: 22px !important;
+		stroke-width: 2.15 !important;
+		transition: stroke 0.18s ease, filter 0.18s ease !important;
+	}
+
+	.mobile-tab-label {
+		font-size: 11px !important;
+		font-weight: 500 !important;
+		line-height: 1.1 !important;
+		letter-spacing: -0.01em !important;
+		white-space: nowrap !important;
+		text-align: center !important;
+		transition: color 0.18s ease, font-weight 0.18s ease !important;
+	}
+
+	/* Активное состояние таба (Active Tab State) */
+	.mobile-tab-item.active {
+		color: var(--teal, #0d9488) !important;
+	}
+
+	.mobile-tab-item.active .mobile-tab-label {
+		font-weight: 600 !important;
+		color: var(--teal, #0d9488) !important;
+	}
+
+	.mobile-tab-item.active .mobile-tab-icon {
+		stroke: var(--teal, #0d9488) !important;
+	}
+
+	/* Активная точка/маркер над активным табом в стиле iOS */
+	.mobile-tab-item.active::before {
+		content: "" !important;
+		position: absolute !important;
+		top: 2px !important;
+		width: 16px !important;
+		height: 2.5px !important;
+		border-radius: 999px !important;
+		background: var(--teal, #0d9488) !important;
+		opacity: 0.9 !important;
+	}
+
+	/* Тёмная тема: подсветка активного таба */
+	[data-theme="dark"] .mobile-tab-item.active,
+	[data-theme="night"] .mobile-tab-item.active,
+	[data-theme="ocean"] .mobile-tab-item.active,
+	[data-theme="cyber_xray"] .mobile-tab-item.active {
+		color: var(--teal, #00f0ff) !important;
+	}
+
+	[data-theme="dark"] .mobile-tab-item.active .mobile-tab-label,
+	[data-theme="night"] .mobile-tab-item.active .mobile-tab-label,
+	[data-theme="ocean"] .mobile-tab-item.active .mobile-tab-label,
+	[data-theme="cyber_xray"] .mobile-tab-item.active .mobile-tab-label {
+		color: var(--teal, #00f0ff) !important;
+	}
+
+	[data-theme="dark"] .mobile-tab-item.active .mobile-tab-icon,
+	[data-theme="night"] .mobile-tab-item.active .mobile-tab-icon,
+	[data-theme="ocean"] .mobile-tab-item.active .mobile-tab-icon,
+	[data-theme="cyber_xray"] .mobile-tab-item.active .mobile-tab-icon {
+		stroke: var(--teal, #00f0ff) !important;
+	}
+
+	[data-theme="dark"] .mobile-tab-item.active::before,
+	[data-theme="night"] .mobile-tab-item.active::before,
+	[data-theme="ocean"] .mobile-tab-item.active::before,
+	[data-theme="cyber_xray"] .mobile-tab-item.active::before {
+		background: var(--teal, #00f0ff) !important;
+	}
+}
+
+/* 4. NATIVE APPLE IOS BOTTOM SHEET ("ЕЩЁ") */
+.ios-bottom-sheet-backdrop {
+	position: fixed !important;
+	inset: 0 !important;
+	z-index: 10000 !important;
+	background: rgba(0, 0, 0, 0.45) !important;
+	backdrop-filter: blur(8px) !important;
+	-webkit-backdrop-filter: blur(8px) !important;
+	display: flex !important;
+	flex-direction: column !important;
+	justify-content: flex-end !important;
+	animation: iosSheetFadeIn 0.22s ease-out forwards !important;
+}
+
+@keyframes iosSheetFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.ios-bottom-sheet-surface {
+	position: relative !important;
+	width: 100% !important;
+	max-width: 100vw !important;
+	max-height: 86dvh !important;
+	background: var(--paper) !important;
+	border-top: 1px solid var(--line) !important;
+	border-radius: 24px 24px 0 0 !important;
+	box-shadow: 0 -16px 40px -8px rgba(0, 0, 0, 0.35) !important;
+	display: flex !important;
+	flex-direction: column !important;
+	animation: iosSheetSlideUp 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) forwards !important;
+	overflow: hidden !important;
+	padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+@keyframes iosSheetSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+/* Tactile Drag Handle по Apple HIG */
+.ios-bottom-sheet-handle-wrap {
+	display: flex !important;
+	justify-content: center !important;
+	padding-top: 10px !important;
+	padding-bottom: 6px !important;
+	cursor: grab !important;
+}
+
+.ios-bottom-sheet-handle {
+	width: 36px !important;
+	height: 5px !important;
+	border-radius: 999px !important;
+	background: var(--line-strong, rgba(148, 163, 184, 0.45)) !important;
+}
+
+/* Header */
+.ios-bottom-sheet-header {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	padding: 6px 18px 12px 20px !important;
+	border-bottom: 1px solid var(--line-subtle, var(--line)) !important;
+}
+
+.ios-bottom-sheet-title {
+	margin: 0 !important;
+	font-size: 18px !important;
+	font-weight: 700 !important;
+	color: var(--ink) !important;
+	letter-spacing: -0.02em !important;
+}
+
+.ios-bottom-sheet-close-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	border-radius: 999px !important;
+	background: var(--paper-soft, rgba(148, 163, 184, 0.15)) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--muted) !important;
+	cursor: pointer !important;
+	transition: background 0.15s ease, transform 0.1s ease !important;
+}
+
+.ios-bottom-sheet-close-btn:active {
+	transform: scale(0.92) !important;
+}
+
+/* Scrollable Body */
+.ios-bottom-sheet-body {
+	flex: 1 1 auto !important;
+	overflow-y: auto !important;
+	overscroll-behavior-y: contain !important;
+	-webkit-overflow-scrolling: touch !important;
+	padding: 14px 16px 20px 16px !important;
+}
+
+/* Grouped Lists (iOS Settings / Apple Health Style) */
+.ios-grouped-section {
+	margin-bottom: 18px !important;
+}
+
+.ios-grouped-section-title {
+	padding: 0 8px 6px 8px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.05em !important;
+	color: var(--muted) !important;
+}
+
+.ios-grouped-card {
+	background: var(--paper-soft, var(--paper)) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 16px !important;
+	overflow: hidden !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.ios-grouped-row {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	min-height: 52px !important;
+	padding: 10px 14px !important;
+	text-decoration: none !important;
+	color: var(--ink) !important;
+	background: transparent !important;
+	border: none !important;
+	width: 100% !important;
+	cursor: pointer !important;
+	box-sizing: border-box !important;
+	transition: background 0.15s ease !important;
+	position: relative !important;
+}
+
+.ios-grouped-row:not(:last-child)::after {
+	content: "" !important;
+	position: absolute !important;
+	bottom: 0 !important;
+	right: 0 !important;
+	left: 56px !important;
+	height: 1px !important;
+	background: var(--line-subtle, var(--line)) !important;
+}
+
+.ios-grouped-row:active {
+	background: var(--paper) !important;
+}
+
+.ios-grouped-row.active {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1)) !important;
+}
+
+.ios-grouped-row.active .ios-row-title {
+	color: var(--teal, #0d9488) !important;
+	font-weight: 700 !important;
+}
+
+.ios-row-left {
+	display: flex !important;
+	align-items: center !important;
+	gap: 12px !important;
+	min-width: 0 !important;
+	flex: 1 1 auto !important;
+}
+
+.ios-row-icon-badge {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	border-radius: 8px !important;
+	flex-shrink: 0 !important;
+}
+
+.ios-row-texts {
+	display: flex !important;
+	flex-direction: column !important;
+	min-width: 0 !important;
+	text-align: left !important;
+}
+
+.ios-row-title {
+	font-size: 15px !important;
+	font-weight: 600 !important;
+	line-height: 1.25 !important;
+	color: var(--ink) !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
+.ios-row-subtitle {
+	font-size: 12.5px !important;
+	font-weight: 400 !important;
+	line-height: 1.25 !important;
+	color: var(--muted) !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
+.ios-row-chevron {
+	color: var(--muted) !important;
+	flex-shrink: 0 !important;
+	margin-left: 8px !important;
+	opacity: 0.6 !important;
+}

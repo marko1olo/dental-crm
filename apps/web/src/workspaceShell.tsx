@@ -18,6 +18,7 @@ import {
 	FileCheck2,
 	FileText,
 	Flame,
+	FlaskConical,
 	Flower2,
 	Image as ImageIcon,
 	Laptop,
@@ -161,6 +162,7 @@ export const sidebarIcons: Record<AppView, LucideIcon> = {
 	analytics: BarChart3,
 	communications: MessageSquare,
 	inventory: Package,
+	lab: FlaskConical,
 	scanner: ScanLine,
 	leads: UserPlus,
 	settings: Database,
@@ -184,6 +186,7 @@ export const actionIcons: Record<AppView, LucideIcon> = {
 	analytics: TrendingUp,
 	communications: MessageSquare,
 	inventory: PackageSearch,
+	lab: FlaskConical,
 	scanner: ScanLine,
 	leads: UserPlus,
 	settings: Database,
@@ -299,6 +302,7 @@ export const sidebarHints: Record<AppView, string> = {
 	analytics: "Отчёты и выручка",
 	communications: "Звонки и чаты",
 	inventory: "Склад и материалы",
+	lab: "Наряды ЗТЛ и коронки",
 	scanner: "Стерилизация и автоклавы",
 	leads: "Воронка и лиды",
 	settings: "Клиника и интеграции",
@@ -723,16 +727,18 @@ export function WorkspaceTopbar({
 	}, [lastMessage, triggerIncomingCall, isDoctorMode]);
 
 	return (
-		<header className="topbar min-h-[44px] sm:h-11 sm:max-h-11 pl-3 sm:pl-4 flex items-center justify-between overflow-visible">
+		<header className="topbar min-h-[44px] sm:h-11 sm:max-h-11 pl-2 sm:pl-4 flex items-center justify-between overflow-visible">
 			<div className="topbar-context shrink-0 min-w-fit flex items-center flex-nowrap overflow-visible gap-2 sm:gap-3">
-				<div className="topbar-clinic shrink-0 min-w-[140px] sm:max-w-[280px] max-w-[200px] pl-3 sm:pl-0 flex flex-col justify-center leading-tight">
-					<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5">
+				<div className="topbar-brand-mobile sm:hidden flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0 ml-1">
+					<Stethoscope size={18} aria-hidden="true" />
+				</div>
+				<div className="topbar-clinic shrink-0 min-w-0 sm:max-w-[280px] max-w-[140px] pl-1 sm:pl-0 flex flex-col justify-center leading-tight">
+					<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5 hidden sm:block">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
 					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden text-sm font-bold leading-tight m-0">
 						<span className="sm:hidden">
-							{formatDisplayClinicName(clinicName).split(/\s+/)[0] ||
-								formatDisplayClinicName(clinicName)}
+							{formatDisplayClinicName(clinicName)}
 						</span>
 						<span className="hidden sm:inline">
 							{formatDisplayClinicName(clinicName)}
