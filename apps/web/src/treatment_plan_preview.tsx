@@ -51,7 +51,7 @@ function TreatmentPlanPreviewApp() {
 				<header className="flex items-center justify-between pb-1.5 border-b border-[var(--line)] text-xs">
 					<div className="flex items-center gap-2">
 						<span className="font-extrabold text-[var(--ink)]">План лечения · 3-Tier Сравнение</span>
-						<span className="text-[var(--muted)]">| Иванов И. И.</span>
+						<span className="text-[var(--muted)]">| Кузнецов Д. М.</span>
 					</div>
 					<div className="flex items-center gap-1.5">
 						<button
@@ -88,7 +88,7 @@ function TreatmentPlanPreviewApp() {
 					planAgeDays={0}
 					planStatus={planStatus}
 					onStatusTransition={setPlanStatus}
-					patientName="Иванов Иван Иванович"
+					patientName="Кузнецов Дмитрий Михайлович"
 					totalItemsCount={8}
 					activeViewTab={activeTab}
 					setActiveViewTab={setActiveTab}

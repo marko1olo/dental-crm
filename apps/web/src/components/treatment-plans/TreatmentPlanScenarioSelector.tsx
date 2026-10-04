@@ -34,6 +34,7 @@ export interface TreatmentPlanScenarioSelectorProps {
 	readonly onOpenInstallmentModal: () => void;
 	readonly onOpenSignModal: () => void;
 	readonly onOpenContractPrint: () => void;
+	readonly onChangeStageStatus?: ((stage: TreatmentPlanStage, newStatus: any) => void) | undefined;
 	readonly children?: React.ReactNode | undefined;
 }
 
@@ -58,6 +59,7 @@ export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelect
 	onOpenInstallmentModal,
 	onOpenSignModal,
 	onOpenContractPrint,
+	onChangeStageStatus,
 	children,
 }) => {
 	if (activeViewTab === "3tier") {
@@ -121,6 +123,24 @@ export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelect
 				onOpenInstallment={onOpenInstallmentModal}
 				onApproveAndSign={onOpenSignModal}
 				onPrintContract={onOpenContractPrint}
+				onChangeStageStatus={(category, newStatus) => {
+					const matchingStage =
+						stages.find((s) => {
+							if (category === "hygiene_sanitation" || category === "endo_therapy") {
+								return s.stageKind === "stage_1_therapy";
+							}
+							if (category === "surgery_implant") {
+								return s.stageKind === "stage_2_surgery";
+							}
+							if (category === "ortho_prosthetics") {
+								return s.stageKind === "stage_3_orthopedics";
+							}
+							return false;
+						}) || stages[0];
+					if (matchingStage && onChangeStageStatus) {
+						onChangeStageStatus(matchingStage, newStatus);
+					}
+				}}
 			/>
 		);
 	}

@@ -178,6 +178,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				}}
 				onOpenSignModal={() => logic.setIsSignModalOpen(true)}
 				onOpenContractPrint={() => logic.setIsContractPrintOpen(true)}
+				onChangeStageStatus={logic.handleChangeStageStatus}
 			>
 				<div className="flex flex-col gap-4">
 					{/* Doctor Specialty Filter Bar & Stage Actions (Mandate 8e: Doctor Autonomy) */}
