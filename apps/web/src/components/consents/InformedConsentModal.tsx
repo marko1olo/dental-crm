@@ -1,10 +1,14 @@
 import {
 	AlertTriangle,
 	Check,
+	ChevronDown,
+	ChevronUp,
 	Copy,
+	FileText,
 	Lock,
 	ShieldCheck,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -153,6 +157,22 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [currentPoints, setCurrentPoints] = useState<SignaturePoint[]>([]);
 	const [isDrawing, setIsDrawing] = useState<boolean>(false);
 
+	// Мобильный адаптив и сенсорная эргономика (Apple HIG 390x844)
+	const [isMobile, setIsMobile] = useState<boolean>(false);
+	const [planAndRisksAccepted, setPlanAndRisksAccepted] = useState<boolean>(true);
+	const [alternativesUnderstood, setAlternativesUnderstood] = useState<boolean>(true);
+	const [isDocumentTextExpanded, setIsDocumentTextExpanded] = useState<boolean>(false);
+	const [smsOtpCode, setSmsOtpCode] = useState<string>("");
+
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(typeof window !== "undefined" && window.innerWidth <= 768);
+		};
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
 	const isClosedOrSigned = !isDraft && Boolean(
 		isSigned ||
 		isLocked ||
@@ -179,6 +199,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	// Синхронизация при открытии
 	useEffect(() => {
 		if (isOpen) {
+			const mobileViewport = typeof window !== "undefined" && window.innerWidth <= 768;
 			setActiveMode(initialMode || "packages");
 			setActivePackageKey(initialPackageKey || "PACKAGE_PRIMARY_VISIT");
 			setActiveKey(initialTemplateKey);
@@ -187,10 +208,15 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setIsPrintingBlank(false);
 			setCustomDiagnosis(diagnosisIcd || "");
 			setCustomTeeth(toothNumbers || "");
-			setVerificationMethod(initialVerificationMethod || "paper_physical");
+			// На смартфонах и планшетах у кресла по умолчанию включается удобная роспись пальцем
+			setVerificationMethod(initialVerificationMethod || (mobileViewport ? "tablet_stylus" : "paper_physical"));
 			setStrokes([]);
 			setCurrentPoints([]);
 			setIsDrawing(false);
+			setPlanAndRisksAccepted(true);
+			setAlternativesUnderstood(true);
+			setIsDocumentTextExpanded(false);
+			setSmsOtpCode("");
 		}
 	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, initialVerificationMethod, diagnosisIcd, toothNumbers]);
 
@@ -575,6 +601,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			aria-labelledby="consent-modal-title"
 		>
 			<div className="consent-modal-container" onClick={(e) => e.stopPropagation()}>
+				{/* Тактильный Drag Handle для Apple iOS Bottom Sheet (<= 768px) */}
+				<div className="consent-mobile-drag-handle" aria-hidden="true">
+					<div className="consent-mobile-drag-handle-bar" />
+				</div>
+
 				{/* Header */}
 				<header className="consent-header">
 					<div className="consent-header-titles min-w-0 flex-1">
@@ -680,35 +711,115 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						</div>
 					)}
 
-					{/* Просмотр текста согласия */}
-					<ConsentDocumentSheet
-						rendered={rendered}
-						effectiveContext={effectiveContext}
-						effectiveWatermark={effectiveWatermark}
-						stampColor={stampColor}
-						isClosedOrSigned={isClosedOrSigned}
-					/>
+					{/* НА МОБИЛЬНОМ У КРЕСЛА: HOT PATH РОСПИСИ ПАЛЬЦЕМ В ПЕРВУЮ ОЧЕРЕДЬ */}
+					{isMobile && (
+						<ConsentSigningPanel
+							verificationMethod={verificationMethod}
+							setVerificationMethod={setVerificationMethod}
+							paperOriginalConfirmed={paperOriginalConfirmed}
+							setPaperOriginalConfirmed={setPaperOriginalConfirmed}
+							strokes={strokes}
+							setStrokes={setStrokes}
+							currentPoints={currentPoints}
+							setCurrentPoints={setCurrentPoints}
+							isDrawing={isDrawing}
+							setIsDrawing={setIsDrawing}
+							activeMode={activeMode}
+							packageDocsCount={currentPackage.templateKeys.length}
+							isSubmitting={isSubmitting}
+							onConfirmSign={handleConfirmSign}
+							onPrint={handlePrint}
+							onPrintBlank={handlePrintBlank}
+							onDownloadPdfA={handleDownloadPdfA}
+							planAndRisksAccepted={planAndRisksAccepted}
+							setPlanAndRisksAccepted={setPlanAndRisksAccepted}
+							alternativesUnderstood={alternativesUnderstood}
+							setAlternativesUnderstood={setAlternativesUnderstood}
+							isMobile={true}
+							patientPhone={substitutionContext.phone ?? null}
+							smsOtpCode={smsOtpCode}
+							setSmsOtpCode={setSmsOtpCode}
+						/>
+					)}
 
-					{/* Блок подтверждения бумажного оригинала или векторного планшета (323-ФЗ ст. 20) */}
-					<ConsentSigningPanel
-						verificationMethod={verificationMethod}
-						setVerificationMethod={setVerificationMethod}
-						paperOriginalConfirmed={paperOriginalConfirmed}
-						setPaperOriginalConfirmed={setPaperOriginalConfirmed}
-						strokes={strokes}
-						setStrokes={setStrokes}
-						currentPoints={currentPoints}
-						setCurrentPoints={setCurrentPoints}
-						isDrawing={isDrawing}
-						setIsDrawing={setIsDrawing}
-						activeMode={activeMode}
-						packageDocsCount={currentPackage.templateKeys.length}
-						isSubmitting={isSubmitting}
-						onConfirmSign={handleConfirmSign}
-						onPrint={handlePrint}
-						onPrintBlank={handlePrintBlank}
-						onDownloadPdfA={handleDownloadPdfA}
-					/>
+					{/* Просмотр текста согласия: на мобиле сворачиваемый аккордеон, на ПК полный лист */}
+					{isMobile ? (
+						<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden">
+							<button
+								type="button"
+								onClick={() => setIsDocumentTextExpanded((v) => !v)}
+								className="w-full flex items-center justify-between p-3.5 text-xs sm:text-sm font-semibold text-[var(--ink)] bg-[var(--paper-soft)] cursor-pointer hover:bg-[var(--paper)] transition-colors"
+							>
+								<span className="flex items-center gap-2">
+									<FileText size={16} className="text-[var(--teal,#0d9488)]" />
+									<span>Юридический текст согласия (Приказ 1051н)</span>
+								</span>
+								<span className="text-xs text-[var(--muted)] flex items-center gap-1">
+									{isDocumentTextExpanded ? (
+										<>
+											<span>Свернуть</span>
+											<ChevronUp size={14} />
+										</>
+									) : (
+										<>
+											<span>Читать полный текст</span>
+											<ChevronDown size={14} />
+										</>
+									)}
+								</span>
+							</button>
+							{isDocumentTextExpanded && (
+								<div className="p-3 border-t border-[var(--line)]">
+									<ConsentDocumentSheet
+										rendered={rendered}
+										effectiveContext={effectiveContext}
+										effectiveWatermark={effectiveWatermark}
+										stampColor={stampColor}
+										isClosedOrSigned={isClosedOrSigned}
+									/>
+								</div>
+							)}
+						</div>
+					) : (
+						<ConsentDocumentSheet
+							rendered={rendered}
+							effectiveContext={effectiveContext}
+							effectiveWatermark={effectiveWatermark}
+							stampColor={stampColor}
+							isClosedOrSigned={isClosedOrSigned}
+						/>
+					)}
+
+					{/* НА ДЕСКТОПЕ: ПАНЕЛЬ ПОДПИСАНИЯ ПОД ДОКУМЕНТОМ */}
+					{!isMobile && (
+						<ConsentSigningPanel
+							verificationMethod={verificationMethod}
+							setVerificationMethod={setVerificationMethod}
+							paperOriginalConfirmed={paperOriginalConfirmed}
+							setPaperOriginalConfirmed={setPaperOriginalConfirmed}
+							strokes={strokes}
+							setStrokes={setStrokes}
+							currentPoints={currentPoints}
+							setCurrentPoints={setCurrentPoints}
+							isDrawing={isDrawing}
+							setIsDrawing={setIsDrawing}
+							activeMode={activeMode}
+							packageDocsCount={currentPackage.templateKeys.length}
+							isSubmitting={isSubmitting}
+							onConfirmSign={handleConfirmSign}
+							onPrint={handlePrint}
+							onPrintBlank={handlePrintBlank}
+							onDownloadPdfA={handleDownloadPdfA}
+							planAndRisksAccepted={planAndRisksAccepted}
+							setPlanAndRisksAccepted={setPlanAndRisksAccepted}
+							alternativesUnderstood={alternativesUnderstood}
+							setAlternativesUnderstood={setAlternativesUnderstood}
+							isMobile={false}
+							patientPhone={substitutionContext.phone ?? null}
+							smsOtpCode={smsOtpCode}
+							setSmsOtpCode={setSmsOtpCode}
+						/>
+					)}
 
 					{/* Панель криптографической целостности SHA-256 */}
 					<div className="consent-integrity-card">
@@ -730,18 +841,40 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					</div>
 				</div>
 
-				{/* Footer */}
-				<ConsentModalFooter
-					activeMode={activeMode}
-					packageDocsCount={currentPackage.templateKeys.length}
-					isSubmitting={isSubmitting}
-					onPrint={handlePrint}
-					onPrintBlank={handlePrintBlank}
-					onDownloadPdfA={handleDownloadPdfA}
-					onCopyPatientSummary={handleCopyPatientSummary}
-					onConfirmSign={() => handleConfirmSign()}
-					onClose={onClose}
-				/>
+				{/* Floating Bottom Bar на смартфонах (Natural Thumb Zone CTA) */}
+				{isMobile && (
+					<div className="consent-floating-bottom-bar">
+						<button
+							type="button"
+							className="consent-mobile-primary-cta"
+							data-testid="btn-confirm-sign-mobile"
+							onClick={() => handleConfirmSign()}
+							disabled={isSubmitting}
+						>
+							<Zap size={20} />
+							<span>
+								{activeMode === "packages"
+									? `Подтвердить и подписать пакет (${currentPackage.templateKeys.length} док.)`
+									: "Подтвердить и подписать ИДС"}
+							</span>
+						</button>
+					</div>
+				)}
+
+				{/* Desktop Footer */}
+				{!isMobile && (
+					<ConsentModalFooter
+						activeMode={activeMode}
+						packageDocsCount={currentPackage.templateKeys.length}
+						isSubmitting={isSubmitting}
+						onPrint={handlePrint}
+						onPrintBlank={handlePrintBlank}
+						onDownloadPdfA={handleDownloadPdfA}
+						onCopyPatientSummary={handleCopyPatientSummary}
+						onConfirmSign={() => handleConfirmSign()}
+						onClose={onClose}
+					/>
+				)}
 			</div>
 		</div>
 	);

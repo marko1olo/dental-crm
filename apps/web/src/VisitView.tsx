@@ -386,7 +386,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) ═══ */}
 				<header className="visit-monolithic-header rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md" data-testid="visit-header-monolith" aria-label="Шапка текущего приёма">
 					{/* Строка 1: Пациент, возраст, бейдж аллергии, кнопка нормы 043/у, действия */}
-					<div className="min-h-[32px] h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--glass-border)] flex-nowrap min-w-0 max-w-full">
+					<div className="min-h-[40px] sm:min-h-[32px] h-10 sm:h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--glass-border)] flex-nowrap min-w-0 max-w-full">
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 min-w-0">
 							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 							<span

@@ -167,7 +167,8 @@ export function VisitSpecialtyFocus({
 				aria-label="Специализированный клинический бланк"
 			>
 				<FileText size={13} className="text-[var(--teal)] shrink-0" />
-				<span>Бланк: {isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
+				<span className="hidden sm:inline">Бланк: {isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
+				<span className="sm:hidden">{isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
 				<ChevronDown size={12} className={`shrink-0 transition-transform duration-150 ${isProtocolDrawerOpen ? "rotate-180" : ""}`} />
 			</button>
 		</div>

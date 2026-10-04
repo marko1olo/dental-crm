@@ -818,5 +818,217 @@ html.dark .visit-subtab-btn.active {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   APPLE iOS HIG CHAIRSIDE MOBILE ARCHITECTURE (390×844)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Sovereign Mobile Top Bar */
+.mobile-visit-topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 12px;
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-bottom: 1px solid var(--line);
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* 2. iOS Segmented Progress Bar */
+.mobile-segmented-bar {
+	display: flex;
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 3px;
+	gap: 3px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.mobile-segmented-btn {
+	flex: 1;
+	min-height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	border-radius: 9px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink-muted);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+	user-select: none;
+	white-space: nowrap;
+}
+
+.mobile-segmented-btn.active {
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	border: 1px solid var(--line);
+}
+
+/* 3. Step-by-Step Clinical Protocol Cards */
+.mobile-protocol-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 14px;
+	margin-bottom: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.mobile-norm-action-btn {
+	width: 100%;
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	background: color-mix(in srgb, var(--ok-bg) 85%, var(--paper));
+	color: var(--ok-fg);
+	border: 1px solid color-mix(in srgb, var(--ok-fg) 35%, transparent);
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.mobile-norm-action-btn:active {
+	transform: scale(0.98);
+	background: color-mix(in srgb, var(--ok-bg) 95%, var(--paper));
+}
+
+/* 4. Horizontal Quick Phrases Chip Scroller */
+.horizontal-chip-scroller {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	padding: 4px 1px;
+	touch-action: pan-x;
+	-webkit-overflow-scrolling: touch;
+}
+
+.horizontal-chip-scroller::-webkit-scrollbar {
+	display: none;
+}
+
+.mobile-phrase-chip {
+	display: inline-flex;
+	align-items: center;
+	min-height: 34px;
+	padding: 0 12px;
+	border-radius: 17px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 500;
+	white-space: nowrap;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.mobile-phrase-chip:active {
+	transform: scale(0.96);
+	background: var(--paper);
+	border-color: var(--ink);
+}
+
+/* 5. Floating Bottom Bar (Natural Thumb Zone) */
+.mobile-bottom-bar-floating {
+	position: fixed;
+	bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+	left: 0;
+	right: 0;
+	z-index: 9000;
+	background: color-mix(in srgb, var(--paper-strong) 94%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	padding: 8px 12px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	box-sizing: border-box;
+}
+
+.mobile-bottom-cta-primary {
+	width: 100%;
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	background: var(--ok-fg);
+	color: #ffffff;
+	border: none;
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 800;
+	cursor: pointer;
+	touch-action: manipulation;
+	box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+	transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+.mobile-bottom-cta-primary:active {
+	transform: scale(0.98);
+	opacity: 0.92;
+}
+
+.mobile-bottom-cta-next {
+	width: 100%;
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	background: var(--brand);
+	color: #ffffff;
+	border: none;
+	border-radius: 12px;
+	font-size: 14px;
+	font-weight: 800;
+	cursor: pointer;
+	touch-action: manipulation;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+	transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+.mobile-bottom-cta-next:active {
+	transform: scale(0.98);
+	opacity: 0.92;
+}
+
+.mobile-bottom-secondary-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+}
+
+
 
 

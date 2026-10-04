@@ -1,14 +1,16 @@
 import {
-	CheckCircle2,
 	Download,
 	FileText,
 	PenTool,
 	Printer,
+	RefreshCw,
 	RotateCcw,
 	ShieldCheck,
+	Smartphone,
 	Zap,
 } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { showToast } from "../GlobalToast.js";
 import {
 	getPointerCoordinates,
 	renderStrokeToSvgPath,
@@ -34,6 +36,14 @@ export interface ConsentSigningPanelProps {
 	onPrint: () => void;
 	onPrintBlank: () => void;
 	onDownloadPdfA: () => void;
+	planAndRisksAccepted?: boolean | undefined;
+	setPlanAndRisksAccepted?: ((accepted: boolean) => void) | undefined;
+	alternativesUnderstood?: boolean | undefined;
+	setAlternativesUnderstood?: ((understood: boolean) => void) | undefined;
+	isMobile?: boolean | undefined;
+	patientPhone?: string | null | undefined;
+	smsOtpCode?: string | undefined;
+	setSmsOtpCode?: ((code: string) => void) | undefined;
 }
 
 export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
@@ -54,8 +64,34 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 	onPrint,
 	onPrintBlank,
 	onDownloadPdfA,
+	planAndRisksAccepted,
+	setPlanAndRisksAccepted,
+	alternativesUnderstood,
+	setAlternativesUnderstood,
+	isMobile = false,
+	patientPhone,
+	smsOtpCode = "",
+	setSmsOtpCode,
 }) => {
-	// Pointer Event Handlers for SVG Vector Pad
+	const [smsCountdown, setSmsCountdown] = useState<number>(0);
+
+	// Определение темной темы для благородных чернил подписи
+	const isDarkMode = typeof document !== "undefined" && Boolean(
+		document.documentElement?.getAttribute?.("data-theme") === "dark" ||
+		document.documentElement?.classList?.contains?.("dark") ||
+		document.body?.classList?.contains?.("dark-mode")
+	);
+	const strokeColor = isDarkMode ? "#f8fafc" : "#0f172a";
+
+	useEffect(() => {
+		if (smsCountdown <= 0) return;
+		const timer = setInterval(() => {
+			setSmsCountdown((c) => (c > 0 ? c - 1 : 0));
+		}, 1000);
+		return () => clearInterval(timer);
+	}, [smsCountdown]);
+
+	// Pointer Event Handlers for SVG Vector Touch Pad
 	const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
 		e.preventDefault();
 		(e.target as Element).setPointerCapture?.(e.pointerId);
@@ -79,7 +115,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 		} catch {}
 		setIsDrawing(false);
 		if (currentPoints.length > 0) {
-			setStrokes((prev) => [...prev, { points: currentPoints, color: "var(--ink)" }]);
+			setStrokes((prev) => [...prev, { points: currentPoints, color: strokeColor }]);
 			setCurrentPoints([]);
 		}
 	};
@@ -98,13 +134,351 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 				gap: "0.85rem",
 				background: "var(--paper-soft)",
 				border: "1px solid var(--line-strong, var(--teal))",
-				borderRadius: "var(--radius-lg, 12px)",
-				padding: "1.25rem",
+				borderRadius: "var(--radius-lg, 16px)",
+				padding: isMobile ? "0.85rem" : "1.25rem",
 			}}
 		>
-			{verificationMethod === "paper_physical" ? (
-				<>
-					{/* Верхняя строка статуса: Бумажный приоритет (323-ФЗ ст. 20) */}
+			{/* ВЕРХНИЙ СЕГМЕНТИРОВАННЫЙ ПЕРЕКЛЮЧАТЕЛЬ МЕТОДОВ (APPLE HIG SEGMENTED CONTROL) */}
+			<div
+				className="flex w-full p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)] gap-1 shrink-0"
+				role="tablist"
+				aria-label="Способ подтверждения согласия"
+			>
+				<button
+					type="button"
+					data-testid="tab-method-tablet"
+					role="tab"
+					aria-selected={verificationMethod === "tablet_stylus"}
+					className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+						verificationMethod === "tablet_stylus"
+							? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
+							: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+					}`}
+					onClick={() => setVerificationMethod("tablet_stylus")}
+				>
+					<PenTool size={14} className="shrink-0" />
+					<span className="truncate">Роспись пальцем</span>
+				</button>
+
+				<button
+					type="button"
+					data-testid="tab-method-sms"
+					role="tab"
+					aria-selected={verificationMethod === "sms_otp"}
+					className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+						verificationMethod === "sms_otp"
+							? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
+							: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+					}`}
+					onClick={() => setVerificationMethod("sms_otp")}
+				>
+					<Smartphone size={14} className="shrink-0" />
+					<span className="truncate">Код из СМС</span>
+				</button>
+
+				<button
+					type="button"
+					data-testid="tab-method-paper"
+					role="tab"
+					aria-selected={verificationMethod === "paper_physical"}
+					className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+						verificationMethod === "paper_physical"
+							? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
+							: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+					}`}
+					onClick={() => setVerificationMethod("paper_physical")}
+				>
+					<Printer size={14} className="shrink-0" />
+					<span className="truncate">Бумажный бланк</span>
+				</button>
+			</div>
+
+			{/* БЫСТРЫЕ КАРТОЧКИ СОГЛАСИЯ (APPLE IOS GROUPED CHECKBOX CARDS) */}
+			{setPlanAndRisksAccepted && (
+				<div className="flex flex-col gap-2 pt-0.5">
+					<label
+						className={`consent-ios-toggle-card ${planAndRisksAccepted ? "active" : ""}`}
+						data-testid="toggle-consent-plan-risks"
+					>
+						<input
+							type="checkbox"
+							className="consent-ios-checkbox"
+							checked={planAndRisksAccepted}
+							onChange={(e) => setPlanAndRisksAccepted(e.target.checked)}
+						/>
+						<div className="flex flex-col min-w-0">
+							<span className="font-semibold text-xs sm:text-sm text-[var(--ink)] leading-snug">
+								Согласен с предложенным планом лечения и возможными рисками
+							</span>
+							<span className="text-[11px] text-muted mt-0.5">
+								Федеральный закон № 323-ФЗ ст. 20 (информированное добровольное согласие)
+							</span>
+						</div>
+					</label>
+
+					{setAlternativesUnderstood && (
+						<label
+							className={`consent-ios-toggle-card ${alternativesUnderstood ? "active" : ""}`}
+							data-testid="toggle-consent-alternatives"
+						>
+							<input
+								type="checkbox"
+								className="consent-ios-checkbox"
+								checked={alternativesUnderstood}
+								onChange={(e) => setAlternativesUnderstood(e.target.checked)}
+							/>
+							<div className="flex flex-col min-w-0">
+								<span className="font-semibold text-xs sm:text-sm text-[var(--ink)] leading-snug">
+									С альтернативными методами лечения и стоимостью ознакомлен
+								</span>
+								<span className="text-[11px] text-muted mt-0.5">
+									Разъяснены последствия отказа и гарантийные обязательства клиники
+								</span>
+							</div>
+						</label>
+					)}
+				</div>
+			)}
+
+			{/* =============================================================== */}
+			{/* РЕЖИМ 1: ТАКТИЛЬНАЯ ЗОНА РОСПИСИ ПАЛЬЦЕМ / СТИЛУСОМ             */}
+			{/* =============================================================== */}
+			{verificationMethod === "tablet_stylus" && (
+				<div className="flex flex-col gap-2">
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-2">
+							<PenTool size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span className="font-bold text-xs sm:text-sm text-[var(--ink)]">
+								{isMobile ? "Роспись пальцем на экране" : "Электронная подпись (сенсорный ввод / стилус)"}
+							</span>
+						</div>
+						<span className="consent-statutory-badge shrink-0">
+							Вектор SVG • SHA-256
+						</span>
+					</div>
+
+					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.4 }}>
+						Пациент ставит росчерк пальцем прямо в кресле. Штрихи сглаживаются кривыми Безье и фиксируются в карте 043/у.
+					</p>
+
+					{/* ТАКТИЛЬНАЯ ЗОНА РОСПИСИ ПАЛЬЦЕМ (ВЫСОТА >= 190px, СКРУГЛЕНИЕ 16px) */}
+					<div className="consent-touch-signature-box">
+						<button
+							type="button"
+							className="consent-signature-clear-btn"
+							data-testid="btn-clear-vector-strokes"
+							onClick={handleClearStrokes}
+							title="Очистить росчерк подписи"
+						>
+							<RotateCcw size={13} />
+							<span>Очистить</span>
+						</button>
+
+						<svg
+							data-testid="consent-vector-pad-svg"
+							className="consent-touch-signature-svg"
+							onPointerDown={handlePointerDown}
+							onPointerMove={handlePointerMove}
+							onPointerUp={handlePointerUp}
+							onPointerLeave={handlePointerUp}
+						>
+							{/* Деликатная пунктирная базовая линия росписи */}
+							<line
+								x1="20"
+								y1="145"
+								x2="95%"
+								y2="145"
+								stroke="var(--line-strong, #94a3b8)"
+								strokeWidth="1.2"
+								strokeDasharray="5,5"
+								opacity="0.6"
+							/>
+							{strokes.length === 0 && currentPoints.length === 0 && (
+								<text
+									x="50%"
+									y="125"
+									textAnchor="middle"
+									dominantBaseline="middle"
+									fill="var(--muted, #94a3b8)"
+									fontSize="14"
+									fontWeight="500"
+									style={{ pointerEvents: "none", userSelect: "none" }}
+								>
+									Подпись пациента ✍ (распишитесь пальцем)
+								</text>
+							)}
+							{strokes.map((stroke, sIdx) => {
+								if (stroke.points.length === 1 && stroke.points[0]) {
+									return (
+										<circle
+											key={sIdx}
+											cx={stroke.points[0].x}
+											cy={stroke.points[0].y}
+											r={1.8}
+											fill={stroke.color || strokeColor}
+										/>
+									);
+								}
+								const d = renderStrokeToSvgPath(stroke.points);
+								if (!d) return null;
+								return (
+									<path
+										key={sIdx}
+										d={d}
+										fill="none"
+										stroke={stroke.color || strokeColor}
+										strokeWidth={2.4}
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									/>
+								);
+							})}
+							{currentPoints.length > 1 && (
+								<path
+									d={renderStrokeToSvgPath(currentPoints)}
+									fill="none"
+									stroke="var(--teal, #0d9488)"
+									strokeWidth={2.4}
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								/>
+							)}
+						</svg>
+					</div>
+
+					{/* Действия для десктопа (на мобиле вынесено в липкий Bottom Bar) */}
+					{!isMobile && (
+						<div className="flex items-center gap-3 pt-1 flex-wrap">
+							<button
+								type="button"
+								className="consent-action-btn primary"
+								data-testid="btn-confirm-tablet-signed"
+								onClick={() => onConfirmSign("tablet_stylus")}
+								disabled={isSubmitting}
+								style={{
+									minHeight: "44px",
+									fontSize: "14px",
+									fontWeight: "bold",
+									background: "var(--teal)",
+									color: "var(--on-teal, #ffffff)",
+									boxShadow: "var(--shadow-1)",
+									cursor: "pointer",
+								}}
+							>
+								<Zap size={18} />
+								<span>
+									{activeMode === "packages"
+										? `Подтвердить векторный пакет (${packageDocsCount} док.) в 1 клик`
+										: "Подтвердить векторную подпись (1 клик)"}
+								</span>
+							</button>
+							<button
+								type="button"
+								className="consent-tool-btn"
+								data-testid="btn-download-pdfa-tablet"
+								onClick={onDownloadPdfA}
+								title="Скачать архивный документ ISO 19005-1 PDF/A-1b с векторной подписью"
+							>
+								<Download size={16} />
+								<span>Скачать PDF/A</span>
+							</button>
+							<button
+								type="button"
+								className="consent-mode-btn active"
+								onClick={() => setVerificationMethod("paper_physical")}
+								data-testid="tab-method-paper-return"
+								style={{
+									height: "36px",
+									padding: "0 12px",
+									fontSize: "12px",
+									borderRadius: "8px",
+									background: "var(--paper)",
+									color: "var(--ink)",
+									border: "1px solid var(--line-strong)",
+									cursor: "pointer",
+								}}
+								title="Свернуть сенсорную подпись и вернуться к бумажному бланку А4"
+							>
+								<Printer size={14} />
+								<span>Вернуться к бумажному бланку</span>
+							</button>
+							<button
+								type="button"
+								className="consent-tool-btn"
+								onClick={() => setVerificationMethod("paper_physical")}
+								title="Отменить экранную подпись и перейти к распечатке на бумаге"
+							>
+								<Printer size={16} />
+								<span>Печать на бумаге</span>
+							</button>
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* =============================================================== */}
+			{/* РЕЖИМ 2: ПОДТВЕРЖДЕНИЕ ЧЕРЕЗ СМС-КОД                           */}
+			{/* =============================================================== */}
+			{verificationMethod === "sms_otp" && (
+				<div className="flex flex-col gap-3 py-1">
+					<div className="flex items-center gap-2">
+						<Smartphone size={20} className="text-[var(--teal,#0d9488)] shrink-0" />
+						<span className="font-bold text-sm text-[var(--ink)]">
+							Подтверждение через код из СМС (простая электронная подпись)
+						</span>
+					</div>
+
+					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+						На номер телефона пациента {patientPhone ? <strong>{patientPhone}</strong> : "(в карте)"} отправляется разовый 4-значный код подтверждения ИДС.
+					</p>
+
+					<div className="flex items-center gap-3 flex-wrap">
+						<input
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							maxLength={6}
+							placeholder="1 2 3 4"
+							value={smsOtpCode}
+							onChange={(e) => setSmsOtpCode?.(e.target.value.replace(/\D/g, ""))}
+							data-testid="input-sms-otp-code"
+							className="w-36 h-12 text-center text-xl font-mono font-bold tracking-widest rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						/>
+						<button
+							type="button"
+							className="consent-tool-btn h-12 px-4"
+							onClick={() => {
+								setSmsCountdown(60);
+								showToast("СМС с кодом подтверждения отправлено пациенту", "info");
+							}}
+							disabled={smsCountdown > 0}
+						>
+							<RefreshCw size={14} className={smsCountdown > 0 ? "animate-spin" : ""} />
+							<span>{smsCountdown > 0 ? `Повтор через ${smsCountdown}с` : "Отправить код"}</span>
+						</button>
+					</div>
+
+					{!isMobile && (
+						<button
+							type="button"
+							className="consent-action-btn primary mt-1"
+							data-testid="btn-confirm-sms-signed"
+							onClick={() => onConfirmSign("sms_otp")}
+							disabled={isSubmitting}
+							style={{ minHeight: "44px", fontSize: "14px", fontWeight: "bold" }}
+						>
+							<Zap size={18} />
+							<span>Подтвердить согласие по СМС</span>
+						</button>
+					)}
+				</div>
+			)}
+
+			{/* =============================================================== */}
+			{/* РЕЖИМ 3: ПОДПИСАНИЕ НА БУМАЖНОМ НОСИТЕЛЕ (323-ФЗ СТ. 20)        */}
+			{/* =============================================================== */}
+			{verificationMethod === "paper_physical" && (
+				<div className="flex flex-col gap-3">
 					<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
 						<div className="flex items-center gap-2">
 							<ShieldCheck size={22} className="text-[var(--teal,#0d9488)] shrink-0" />
@@ -112,29 +486,14 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)
 							</span>
 						</div>
-						<div className="flex items-center gap-2">
-							<span className="consent-statutory-badge shrink-0">
-								Оригинал в карте
-							</span>
-							{/* Кнопка-таб для машинной совместимости с селекторами */}
-							<button
-								type="button"
-								className="consent-mode-btn active"
-								onClick={() => setVerificationMethod("paper_physical")}
-								data-testid="tab-method-paper"
-								style={{ display: "none" }}
-								aria-hidden="true"
-							>
-								<Printer size={13} />
-								<span>Бумажный бланк</span>
-							</button>
-						</div>
+						<span className="consent-statutory-badge shrink-0">
+							Оригинал в карте
+						</span>
 					</div>
 
 					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
 						Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
-						Бумажный оригинал подшивается в медицинскую карту пациента (срок хранения 25 лет).
-						В электронной карте фиксируется отметка с криптографическим отпечатком SHA-256.
+						Бумажный оригинал подшивается в медицинскую карту пациента формы № 043/у (срок хранения 25 лет).
 					</p>
 
 					{/* Чекбокс подтверждения наличия бумажного оригинала */}
@@ -151,7 +510,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						</span>
 					</label>
 
-					{/* КРУПНЫЕ ДОМИНИРУЮЩИЕ КНОПКИ ДЕЙСТВИЯ (PAPER-FIRST) */}
+					{/* Кнопки бумажного режима */}
 					<div className="flex items-center gap-3 pt-1 flex-wrap">
 						<button
 							type="button"
@@ -231,7 +590,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						</button>
 					</div>
 
-					{/* СПРЯТАННАЯ СЕКЦИЯ: подпись на экране строго опциональная */}
+					{/* Опциональный переход к сенсорному планшету/экрану */}
 					<div
 						className="pt-2 flex items-center justify-between flex-wrap gap-2"
 						style={{ borderTop: "1px dashed var(--line)" }}
@@ -243,7 +602,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							type="button"
 							className="consent-mode-btn"
 							onClick={() => setVerificationMethod("tablet_stylus")}
-							data-testid="tab-method-tablet"
+							data-testid="tab-method-tablet-optional"
 							style={{
 								height: "28px",
 								padding: "0 10px",
@@ -260,182 +619,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							<span>Подписать на экране / планшете (опционально)</span>
 						</button>
 					</div>
-				</>
-			) : (
-				<>
-					{/* РАЗВЁРНУТЫЙ СЕНСОРНЫЙ ПЛАНШЕТ (ТОЛЬКО ЕСЛИ ПОЛЬЗОВАТЕЛЬ ЯВНО ВЫБРАЛ) */}
-					<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
-						<div className="flex items-center gap-2">
-							<PenTool size={20} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span className="font-bold text-sm text-[var(--ink)]">
-								Электронная векторная подпись (сенсорный ввод / стилус)
-							</span>
-						</div>
-						<div className="flex items-center gap-2 flex-wrap">
-							<button
-								type="button"
-								className="consent-tool-btn py-1 px-2 text-xs"
-								onClick={handleClearStrokes}
-								data-testid="btn-clear-vector-strokes"
-								title="Очистить поле подписи"
-							>
-								<RotateCcw size={12} />
-								<span>Очистить</span>
-							</button>
-
-							<button
-								type="button"
-								className="consent-mode-btn active"
-								onClick={() => setVerificationMethod("paper_physical")}
-								data-testid="tab-method-paper"
-								style={{
-									height: "26px",
-									padding: "0 10px",
-									fontSize: "11.5px",
-									borderRadius: "6px",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									border: "1px solid var(--line-strong)",
-									cursor: "pointer",
-								}}
-								title="Свернуть сенсорную подпись и вернуться к бумажному бланку А4"
-							>
-								<Printer size={13} />
-								<span>Вернуться к бумажному бланку</span>
-							</button>
-
-							<span className="consent-statutory-badge">
-								Векторные кривые Безье
-							</span>
-						</div>
-					</div>
-
-					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
-						Пациент ставит векторную подпись на экране планшета или монитора. Росчерк сглаживается кубическими кривыми Безье и фиксируется в векторе SVG с отпечатком SHA-256.
-					</p>
-
-					{/* Сенсорная SVG-панель без использования Canvas */}
-					<div
-						style={{
-							position: "relative",
-							width: "100%",
-							height: "140px",
-							background: "var(--paper)",
-							border: "1.5px dashed var(--line-strong, var(--teal))",
-							borderRadius: "8px",
-							touchAction: "none",
-							userSelect: "none",
-						}}
-					>
-						<svg
-							data-testid="consent-vector-pad-svg"
-							style={{
-								width: "100%",
-								height: "100%",
-								display: "block",
-								cursor: "crosshair",
-							}}
-							onPointerDown={handlePointerDown}
-							onPointerMove={handlePointerMove}
-							onPointerUp={handlePointerUp}
-							onPointerLeave={handlePointerUp}
-						>
-							{strokes.length === 0 && currentPoints.length === 0 && (
-								<text
-									x="50%"
-									y="50%"
-									textAnchor="middle"
-									dominantBaseline="middle"
-									fill="var(--muted, #94a3b8)"
-									fontSize="13"
-									style={{ pointerEvents: "none", userSelect: "none" }}
-								>
-									Поставьте подпись на сенсорном экране (векторный ввод)
-								</text>
-							)}
-							{strokes.map((stroke, sIdx) => {
-								if (stroke.points.length === 1 && stroke.points[0]) {
-									return (
-										<circle
-											key={sIdx}
-											cx={stroke.points[0].x}
-											cy={stroke.points[0].y}
-											r={1.5}
-											fill={stroke.color || "var(--ink, #0f172a)"}
-										/>
-									);
-								}
-								const d = renderStrokeToSvgPath(stroke.points);
-								if (!d) return null;
-								return (
-									<path
-										key={sIdx}
-										d={d}
-										fill="none"
-										stroke={stroke.color || "var(--ink, #0f172a)"}
-										strokeWidth={2}
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									/>
-								);
-							})}
-							{currentPoints.length > 1 && (
-								<path
-									d={renderStrokeToSvgPath(currentPoints)}
-									fill="none"
-									stroke="var(--teal, #0d9488)"
-									strokeWidth={2}
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							)}
-						</svg>
-					</div>
-
-					<div className="flex items-center gap-3 pt-1 flex-wrap">
-						<button
-							type="button"
-							className="consent-action-btn primary"
-							data-testid="btn-confirm-tablet-signed"
-							onClick={() => onConfirmSign("tablet_stylus")}
-							disabled={isSubmitting}
-							style={{
-								minHeight: "44px",
-								fontSize: "14px",
-								fontWeight: "bold",
-								background: "var(--teal)",
-								color: "var(--on-teal, #ffffff)",
-								boxShadow: "var(--shadow-1)",
-							}}
-						>
-							<Zap size={18} />
-							<span>
-								{activeMode === "packages"
-									? `Подтвердить векторный пакет (${packageDocsCount} док.) в 1 клик`
-									: "Подтвердить векторную подпись (1 клик)"}
-							</span>
-						</button>
-						<button
-							type="button"
-							className="consent-tool-btn"
-							data-testid="btn-download-pdfa-tablet"
-							onClick={onDownloadPdfA}
-							title="Скачать архивный документ ISO 19005-1 PDF/A-1b с векторной подписью"
-						>
-							<Download size={16} />
-							<span>Скачать PDF/A</span>
-						</button>
-						<button
-							type="button"
-							className="consent-tool-btn"
-							onClick={() => setVerificationMethod("paper_physical")}
-							title="Отменить экранную подпись и перейти к распечатке на бумаге"
-						>
-							<Printer size={16} />
-							<span>Печать на бумаге</span>
-						</button>
-					</div>
-				</>
+				</div>
 			)}
 		</div>
 	);

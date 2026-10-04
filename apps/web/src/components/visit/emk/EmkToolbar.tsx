@@ -153,6 +153,13 @@ export function EmkToolbar({
 		{ id: "recommendations", label: "Рекомендации", shortLabel: "Советы" },
 	];
 
+	const mobileSteps = [
+		{ id: "complaints", label: "1. Жалобы" },
+		{ id: "objectiveStatus", label: "2. Осмотр" },
+		{ id: "diagnosis", label: "3. Диагноз" },
+		{ id: "treatmentPlan", label: "4. Лечение" },
+	];
+
 	const isTabFilled = (tabId: string) => {
 		if (tabId === "all") return false;
 		if (tabId === "complaints") {
@@ -169,11 +176,16 @@ export function EmkToolbar({
 				String(noteForm.statusLocalis ?? "").trim()
 			);
 		}
-		if (tabId === "diary") {
+		if (tabId === "diary" || tabId === "treatmentPlan") {
 			return Boolean(
-				String(noteForm.diagnosis ?? "").trim() ||
 				String(noteForm.treatmentPlan ?? "").trim() ||
 				String(noteForm.treatmentDescription ?? "").trim()
+			);
+		}
+		if (tabId === "diagnosis") {
+			return Boolean(
+				String(noteForm.diagnosis ?? "").trim() ||
+				String(noteForm.icd10 ?? "").trim()
 			);
 		}
 		if (tabId === "recommendations") {
@@ -187,6 +199,8 @@ export function EmkToolbar({
 		if (tabId === "complaints" && (activeEmkTab === "complaint" || activeEmkTab === "anamnesis")) return true;
 		if (tabId === "objectiveStatus" && (activeEmkTab === "status" || activeEmkTab === "objective")) return true;
 		if (tabId === "diary" && (activeEmkTab === "diagnosis" || activeEmkTab === "treatmentPlan" || activeEmkTab === "protocol")) return true;
+		if (tabId === "diagnosis" && (activeEmkTab === "diagnosis" || (activeEmkTab === "diary" && !noteForm.treatmentPlan))) return true;
+		if (tabId === "treatmentPlan" && (activeEmkTab === "treatmentPlan" || activeEmkTab === "protocol")) return true;
 		return false;
 	};
 
@@ -448,42 +462,78 @@ export function EmkToolbar({
 
 			{/* СТРОКА 2: Навигационный сегментированный таб-бар Формы 043/у (SOAP Segmented Control) */}
 			<div
-				className="emk-tabs-container flex items-center gap-1 p-1 w-full min-w-0 h-[36px] min-h-[36px] max-h-[36px] bg-[var(--paper-soft)] border-t border-[var(--line)] overflow-x-auto scrollbar-none box-border"
+				className="emk-tabs-container w-full min-w-0 bg-[var(--paper-soft)] border-t border-[var(--line)] box-border"
 				role="tablist"
 				aria-label="Вкладки разделов приема"
 				data-testid="emk-tabs-container"
 			>
-				{tabs.map((tab) => {
-					const isFilled = isTabFilled(tab.id);
-					const isActive = isTabActive(tab.id);
-					return (
-						<button
-							key={tab.id}
-							type="button"
-							role="tab"
-							aria-selected={isActive}
-							className={`emk-tab-button flex-1 min-w-[70px] sm:min-w-0 whitespace-nowrap text-xs h-7 px-2.5 sm:px-3 font-semibold rounded-md transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 touch-manipulation select-none border ${
-								isActive
-									? "active bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50 border border-transparent font-medium"
-							}`}
-							onClick={() => setActiveEmkTab(tab.id)}
-						>
-							<span className="hidden sm:inline">{tab.label}</span>
-							<span className="sm:hidden">{tab.shortLabel}</span>
-							{isFilled && (
-								<span
-									className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-										isActive
-											? "bg-[var(--teal,#0d9488)] ring-1 ring-[var(--teal)]/40"
-											: "bg-emerald-500/80"
-									}`}
-									title="Раздел заполнен"
-								/>
-							)}
-						</button>
-					);
-				})}
+				{/* Мобильный вариант (Apple HIG Segmented Control, 44px touch targets) */}
+				<div className="sm:hidden flex items-center p-1 gap-1 w-full min-w-0">
+					{mobileSteps.map((step) => {
+						const isFilled = isTabFilled(step.id);
+						const isActive = isTabActive(step.id);
+						return (
+							<button
+								key={step.id}
+								type="button"
+								role="tab"
+								aria-selected={isActive}
+								className={`mobile-segmented-btn flex-1 min-h-[40px] px-1 text-xs font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation select-none border ${
+									isActive
+										? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-xs font-bold"
+										: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border-transparent font-medium"
+								}`}
+								onClick={() => setActiveEmkTab(step.id)}
+							>
+								<span>{step.label}</span>
+								{isFilled && (
+									<span
+										className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+											isActive
+												? "bg-[var(--teal,#0d9488)] ring-1 ring-[var(--teal)]/40"
+												: "bg-emerald-500/80"
+										}`}
+										title="Раздел заполнен"
+									/>
+								)}
+							</button>
+						);
+					})}
+				</div>
+
+				{/* Десктопный вариант (полный 5-вкладочный бар со всеми разделами) */}
+				<div className="hidden sm:flex items-center gap-1 p-1 w-full min-w-0 h-[36px] min-h-[36px] max-h-[36px] overflow-x-auto scrollbar-none">
+					{tabs.map((tab) => {
+						const isFilled = isTabFilled(tab.id);
+						const isActive = isTabActive(tab.id);
+						return (
+							<button
+								key={tab.id}
+								type="button"
+								role="tab"
+								aria-selected={isActive}
+								className={`emk-tab-button flex-1 min-w-0 whitespace-nowrap text-xs h-7 px-3 font-semibold rounded-md transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 touch-manipulation select-none border ${
+									isActive
+										? "active bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50 border border-transparent font-medium"
+								}`}
+								onClick={() => setActiveEmkTab(tab.id)}
+							>
+								<span>{tab.label}</span>
+								{isFilled && (
+									<span
+										className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+											isActive
+												? "bg-[var(--teal,#0d9488)] ring-1 ring-[var(--teal)]/40"
+												: "bg-emerald-500/80"
+										}`}
+										title="Раздел заполнен"
+									/>
+								)}
+							</button>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);
