@@ -14,6 +14,8 @@
 - **[Documentation Index & Navigation Matrix](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главная точка входа и матрица быстрого перехода для ИИ-агентов.
 - **[Supreme Law: THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Абсолютная конституция: презумпция брака, запрет сикофантии, HIG, Мандат 8e.
 - **[AGENTS.md (.agents)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Главная конституция (Мандаты 1..11, доказательство скриншотами, запрет мождибаке, отчётность HEAD).
+- **[Design & Art Director's Bible](file:///C:/Clinic_MVP/dental-crm/.agents/DESIGNER_VISUAL_INQUISITION_BIBLE.md)** — Библия дизайнерского аудита: 5 признаков колхозного интерфейса, 6 законов продуктового дизайна, 3-Second Squint Test.
+- **[Apple Mobile HIG & Anti-Desktop-Squeeze Standard](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md)** — Высший стандарт мобильного дизайна Apple iOS HIG, сенсорная эргономика 44x44px, Natural Thumb Zone, Bottom Sheets и Grouped Cards.
 - **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Архитектура монорепозитория (`apps/web`, `apps/api`, `packages/shared`, React 19).
 - **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Схема Drizzle ORM PostgreSQL 18.4 (`.data/pg18`, порт 5432).
 - **[Database Setup & Recovery](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Развёртывание PostgreSQL, полифилл `uuidv7()`, push-процедуры.

@@ -7,6 +7,7 @@ Before starting any development or refactoring, you MUST load and read the follo
 - **[Documentation Index & Navigation Matrix](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system and AI Agent Navigation Matrix.
 - **[Supreme Law: THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — CTO Supremacy, zero mocks, presumption of defect, Apple/Mac HIG, Mandate 8e.
 - **[Design & Art Director's Bible](file:///C:/Clinic_MVP/dental-crm/.agents/DESIGNER_VISUAL_INQUISITION_BIBLE.md)** — The Art Director's Bible: 5 признаков колхозного интерфейса, 6 законов продуктового дизайна, 3-Second Squint Test, Portfolio Test.
+- **[Apple Mobile HIG & Anti-Desktop-Squeeze Standard](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md)** — Стандарт мобильного дизайна Apple iOS HIG, сенсорная эргономика 44x44px, Natural Thumb Zone, нативные Bottom Sheets и Grouped Cards вместо сжатого десктопа.
 - **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API, React 19 client, WebSocket broker.
 - **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM over native PostgreSQL 18 at `127.0.0.1:5432` (`.data/pg18`, `pg.Pool`, `DATABASE_URL` required; PGlite is NOT installed), migrations, seeding.
 - **[Database Setup & Recovery](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Local PostgreSQL setup, `uuidv7()` polyfill, schema push bypass.
@@ -416,6 +417,20 @@ Use these exclusively. Blind terminal navigation is banned.
   * **Здоровое зерно:** Архитектура и логика верные, есть локальный баг, опечатка, сдвиг или дефект стилей -> правим точечно и хирургически.
   * **Гнилое зерно:** Сама концепция убогая, нелогичная, кнопочный полигон, свалка, антипаттерн -> без страха сносим нахуй и комплексно переделываем с нуля по First Principles!
 - **АНТИ-НЕДОДЕЛКИ (NO PERPETUAL HALF-ASSED JUNK):** Запрещено оставлять «временные» костыли, обрубки кнопок, срезанный клиппинг, пустые дыры на пол-экрана или неработающие фальшивые заглушки. Любая переделка доводится до монолитного, логичного и проверенного визуалом результата.
+
+**8ze. THE APPLE MOBILE HIG & ANTI-DESKTOP-SQUEEZE MANDATE (МАНДАТ 8ze: СТАНДАРТ МОБИЛЬНОГО ДИЗАЙНА УРОВНЯ APPLE И ТОТАЛЬНЫЙ ЗАПРЕТ НА МЕХАНИЧЕСКИЙ РЕСАЙЗ ДЕСКТОПА В УМЕ)**:
+- **Высший нормативный стандарт мобильного интерфейса:** [`MOBILE_DESIGN_APPLE_HIG.md`](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md).
+- **Сырые слова Создателя (1:1 Verbatim):**
+  > *«у нас абсолютно везде катастрофа с мобильным дизайном. типичные твои методы ужать цсс и тп не работают это ебаный ад. надо составить, как делать пиздатый мобильный дизайн уровня эппла а не говно внахлест которое ты тупо пытался в уме заресайзить»*
+- **Диагноз «Ужатый в уме десктоп» (The Desktop Squeeze Pathology — Гнилое зерно):** Механическое ужимание десктопного экрана (тулбар из 10 кнопок, 8-колоночные таблицы, 16 зубов зубной дуги) через мелкие `@media (max-width: 768px)` превращает смартфон в мусорную свалку: кнопки ломаются в 3 ряда, слова срезаются многоточиями («Компл...», «Ди...»), появляется паразитный горизонтальный скролл страницы, а модалки блокируют экран с микроскопическими крестиками в углах. Лечить это косметическими припарками ЗАПРЕЩЕНО — мобильный интерфейс строится с нуля как самостоятельный эргономический слой.
+- **5 ключевых инвариантов мобильной архитектуры Apple iOS HIG:**
+  1. *Natural Thumb Zone First:* 80% ключевых транзакционных действий (Primary CTA: «Сохранить», «Оплатить», «Завершить приём», «Выбрать статус») находятся в нижней трети экрана на плашке Floating Bottom Bar со стеклянным размытием `backdrop-blur-xl` и паддингом `env(safe-area-inset-bottom)`.
+  2. *Запрет на центрированные модалки:* На мобилке модалки СТРОГО ЗАПРЕЩЕНЫ. Только нативные **Bottom Sheet Drawers** со свайпом вниз для закрытия, верхними скруглениями 24px, тактильным хэндлом Drag Handle (36×5px) и липкой кнопкой действия внизу.
+  3. *Grouped List Cards вместо таблиц:* Многоколоночные таблицы на смартфонах ЗАПРЕЩЕНЫ и трансформируются в сгруппированные списки карточек (iOS Settings / Health style) с разделителями 1px, высотой строки $\ge 52\text{px}$, четкой типографикой и стрелочкой перехода `ChevronRight`.
+  4. *Сенсорный минимум (Touch Target) $\ge 44\times 44\text{px}$:* Мандат врача в перчатках — ни один кликабельный элемент не может быть меньше $44\times 44\text{px}$. Расстояние между кнопками — не менее 8px.
+  5. *0px паразитного горизонтального скролла:* `overflow-x: clip; max-width: 100vw;` на корневом уровне страницы. Горизонтальные списки скроллятся строго локально внутри своих контейнеров (`overflow-x: auto scrollbar-none`).
+- **Клинические паттерны DENTE на экранах 390×844:** Расписание переключается из 5-колоночной сетки в вертикальный таймлайн **Agenda (День одного кресла)**; ЭМК строится через пошаговый прогресс-бар и карточки с 1-кликовой нормой; зубная формула переключается крупными квадрантами (Q1–Q4) или каруселью зубов; касса фокусируется на крупной сумме по центру и кнопке «Оплатить» на всю ширину.
+- **Red Team Mobile Visual Proof Gate:** Любая мобильная верстка проверяется реальными скриншотами на эмуляторе 390×844 в двух обязательных состояниях: ☀️ **Mobile Light** и 🌙 **Mobile Dark**. Запрет на проверку линтерами или «в уме».
 
 **9. WORKSPACE HYGIENE & SCRIPT BOUNDARIES (THE NATIVE-FIRST LAW)**
 - **КАТЕГОРИЧЕСКИЙ ЗАПРЕТ СКРИПТОВ-КОСТЫЛЕЙ В КОРНЕ:** Запрещено создавать одноразовые скрипты-костыли в корне проекта (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, `fix.cjs`), модифицирующие рабочий код или обходящие git. Все правки исходного кода вносятся нативно через инструмент `replace_file_content`.
