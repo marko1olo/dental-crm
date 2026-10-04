@@ -141,7 +141,57 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 		return [...right, ...left];
 	}, [isMixed]);
 
-	const renderToothButton = (tooth: PediatricToothItem) => {
+	// Квадранты для суверенного мобильного режима (Apple HIG: Natural Thumb Zone & Anti-Desktop-Squeeze)
+	const quadrant5Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		return isMixed ? [PERMANENT_SIX_TEETH[16]!, ...PRIMARY_UPPER_RIGHT] : PRIMARY_UPPER_RIGHT;
+	}, [isMixed]);
+
+	const quadrant6Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		return isMixed ? [...PRIMARY_UPPER_LEFT, PERMANENT_SIX_TEETH[26]!] : PRIMARY_UPPER_LEFT;
+	}, [isMixed]);
+
+	const quadrant7Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		return isMixed ? [...PRIMARY_LOWER_LEFT, PERMANENT_SIX_TEETH[36]!] : PRIMARY_LOWER_LEFT;
+	}, [isMixed]);
+
+	const quadrant8Teeth = useMemo<readonly PediatricToothItem[]>(() => {
+		return isMixed ? [PERMANENT_SIX_TEETH[46]!, ...PRIMARY_LOWER_RIGHT] : PRIMARY_LOWER_RIGHT;
+	}, [isMixed]);
+
+	const getQuadrantKeyForTooth = (t: number | null | undefined): "q5" | "q6" | "q7" | "q8" => {
+		if (!t) return "q5";
+		if (t === 16 || (t >= 51 && t <= 55)) return "q5";
+		if (t === 26 || (t >= 61 && t <= 65)) return "q6";
+		if (t === 36 || (t >= 71 && t <= 75)) return "q7";
+		if (t === 46 || (t >= 81 && t <= 85)) return "q8";
+		return "q5";
+	};
+
+	const [activeMobileQuadrant, setActiveMobileQuadrant] = React.useState<"q5" | "q6" | "q7" | "q8">(() =>
+		getQuadrantKeyForTooth(activeTooth),
+	);
+
+	React.useEffect(() => {
+		if (activeTooth) {
+			setActiveMobileQuadrant(getQuadrantKeyForTooth(activeTooth));
+		}
+	}, [activeTooth]);
+
+	const mobileQuadrantsMeta = useMemo(
+		() => [
+			{ key: "q5" as const, labelRu: "Q5 Вверх-Право", shortLabelRu: "Q5 Вверх-Пр", jawRu: "Верхняя челюсть (справа)", teeth: quadrant5Teeth },
+			{ key: "q6" as const, labelRu: "Q6 Вверх-Лево", shortLabelRu: "Q6 Вверх-Лев", jawRu: "Верхняя челюсть (слева)", teeth: quadrant6Teeth },
+			{ key: "q7" as const, labelRu: "Q7 Низ-Лево", shortLabelRu: "Q7 Низ-Лев", jawRu: "Нижняя челюсть (слева)", teeth: quadrant7Teeth },
+			{ key: "q8" as const, labelRu: "Q8 Низ-Право", shortLabelRu: "Q8 Низ-Пр", jawRu: "Нижняя челюсть (справа)", teeth: quadrant8Teeth },
+		],
+		[quadrant5Teeth, quadrant6Teeth, quadrant7Teeth, quadrant8Teeth],
+	);
+
+	const activeQuadrantObj = useMemo(() => {
+		return mobileQuadrantsMeta.find((q) => q.key === activeMobileQuadrant) ?? mobileQuadrantsMeta[0]!;
+	}, [mobileQuadrantsMeta, activeMobileQuadrant]);
+
+	const renderToothButton = (tooth: PediatricToothItem, isMobileCard = false) => {
 		const isSelected = activeTooth === tooth.toothNumber;
 		const finding = toothFindings[tooth.toothNumber] ?? "Healthy";
 		const isPrimary = tooth.isPrimary;
@@ -173,12 +223,16 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			findingClass = "bg-slate-100 text-slate-500 border-slate-300 line-through dark:bg-slate-800 dark:text-slate-400";
 		}
 
+		const sizeClass = isMobileCard
+			? "min-w-[50px] min-h-[56px] py-1.5 px-1 sm:min-w-0"
+			: "min-w-[40px] sm:min-w-[42px] min-h-[44px] sm:min-h-[48px] p-1";
+
 		return (
 			<button
-				key={tooth.toothNumber}
+				key={`${isMobileCard ? "mob-" : ""}${tooth.toothNumber}`}
 				type="button"
 				onClick={() => onSelectTooth?.(tooth.toothNumber)}
-				className={`relative flex flex-col items-center justify-center rounded-xl border p-1 transition-all select-none cursor-pointer touch-manipulation min-w-[40px] sm:min-w-[42px] min-h-[44px] sm:min-h-[48px] active:scale-95 ${
+				className={`relative flex flex-col items-center justify-center rounded-xl border transition-all select-none cursor-pointer touch-manipulation active:scale-95 ${sizeClass} ${
 					isSelected
 						? "border-teal-600 bg-teal-50/90 text-teal-950 shadow-sm ring-2 ring-teal-500/40 dark:border-teal-400 dark:bg-teal-950/70 dark:text-teal-100 font-extrabold z-10"
 						: `${findingClass} hover:border-teal-400 hover:bg-[var(--paper-soft,#f8fafc)]`
@@ -193,7 +247,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 					</span>
 				)}
 
-				<span className="font-mono text-xs sm:text-sm font-black tracking-tight">
+				<span className={`font-mono font-black tracking-tight ${isMobileCard ? "text-sm sm:text-base" : "text-xs sm:text-sm"}`}>
 					{tooth.label}
 				</span>
 
@@ -321,52 +375,110 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ЗУБНАЯ ДУГА: ВЕРХНЯЯ ЧЕЛЮСТЬ (ВЕРХНИЕ ЗУБЫ) */}
+			{/* МОБИЛЬНЫЙ СУВЕРЕННЫЙ РЕЖИМ (APPLE HIG: ПЕРЕКЛЮЧАТЕЛЬ КВАДРАНТОВ) */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div className="mb-2">
-				<div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-					<span>Правый верх (Квадрант 5 / 1)</span>
-					<span className="text-[11px] font-extrabold text-[var(--ink,#0f172a)]">Верхняя челюсть</span>
-					<span>Левый верх (Квадрант 6 / 2)</span>
+			<div className="sm:hidden mb-2" data-testid="pediatric-mobile-quadrant-view">
+				<div className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-[var(--muted,#64748b)]">
+					<span>Квадрант детского прикуса:</span>
+					<span className="font-extrabold text-[var(--ink,#0f172a)]">{activeQuadrantObj.labelRu}</span>
 				</div>
-				<div className="overflow-x-auto pb-1">
+
+				{/* 4 тач-кнопки квадрантов */}
+				<div className="grid grid-cols-2 gap-1.5 mb-2.5" data-testid="pediatric-quadrants-selector">
+					{mobileQuadrantsMeta.map((q) => {
+						const isQActive = activeMobileQuadrant === q.key;
+						return (
+							<button
+								key={q.key}
+								type="button"
+								onClick={() => {
+									setActiveMobileQuadrant(q.key);
+									const firstTooth = q.teeth[0]?.toothNumber;
+									if (firstTooth && onSelectTooth) {
+										onSelectTooth(firstTooth);
+									}
+								}}
+								className={`min-h-[44px] h-[44px] px-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98] ${
+									isQActive
+										? "bg-teal-600 text-white border-teal-600 shadow-sm"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+								}`}
+								data-testid={`pediatric-quadrant-btn-${q.key}`}
+							>
+								<span className="truncate">{q.labelRu}</span>
+								<span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
+									({q.teeth.length} з.)
+								</span>
+							</button>
+						);
+					})}
+				</div>
+
+				{/* Крупные зубы выбранного квадранта (ровно 5 или 6 в ряд без скролла) */}
+				<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-2">
+					<div className="mb-1.5 flex items-center justify-between text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">
+						<span>{activeQuadrantObj.jawRu}</span>
+						<span>{activeQuadrantObj.teeth[0]?.type.startsWith("molar") ? "Моляры → Резцы" : "Резцы → Моляры"}</span>
+					</div>
 					<div
-						className={`grid gap-1 sm:gap-1.5 mx-auto justify-center ${
-							isMixed ? "grid-cols-12 min-w-[520px]" : "grid-cols-10 min-w-[440px]"
+						className={`grid gap-1.5 justify-center ${
+							activeQuadrantObj.teeth.length >= 6 ? "grid-cols-6" : "grid-cols-5"
 						}`}
-						data-testid="pediatric-upper-arch"
+						data-testid="pediatric-mobile-teeth-grid"
 					>
-						{upperRow.map(renderToothButton)}
+						{activeQuadrantObj.teeth.map((t) => renderToothButton(t, true))}
 					</div>
 				</div>
 			</div>
 
-			{/* Разделитель окклюзии */}
-			<div className="relative my-2.5 flex items-center justify-center">
-				<div className="w-full border-t border-dashed border-[var(--line,#e2e8f0)]" />
-				<span className="absolute bg-[var(--paper-soft,#f8fafc)] px-2 text-[10px] font-mono font-bold uppercase text-[var(--muted,#64748b)]">
-					Окклюзионная плоскость
-				</span>
-			</div>
-
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* ЗУБНАЯ ДУГА: НИЖНЯЯ ЧЕЛЮСТЬ (НИЖНИЕ ЗУБЫ) */}
+			{/* ДЕСКТОПНЫЙ РЕЖИМ: ПОЛНЫЕ ДУГИ ВЕРХНЕЙ И НИЖНЕЙ ЧЕЛЮСТЕЙ       */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			<div>
-				<div className="overflow-x-auto pb-1">
-					<div
-						className={`grid gap-1 sm:gap-1.5 mx-auto justify-center ${
-							isMixed ? "grid-cols-12 min-w-[520px]" : "grid-cols-10 min-w-[440px]"
-						}`}
-						data-testid="pediatric-lower-arch"
-					>
-						{lowerRow.map(renderToothButton)}
+			<div className="hidden sm:block">
+				{/* ЗУБНАЯ ДУГА: ВЕРХНЯЯ ЧЕЛЮСТЬ (ВЕРХНИЕ ЗУБЫ) */}
+				<div className="mb-2">
+					<div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+						<span>Правый верх (Квадрант 5 / 1)</span>
+						<span className="text-[11px] font-extrabold text-[var(--ink,#0f172a)]">Верхняя челюсть</span>
+						<span>Левый верх (Квадрант 6 / 2)</span>
+					</div>
+					<div className="overflow-x-auto pb-1">
+						<div
+							className={`grid gap-1 sm:gap-1.5 mx-auto justify-center ${
+								isMixed ? "grid-cols-12 min-w-[520px]" : "grid-cols-10 min-w-[440px]"
+							}`}
+							data-testid="pediatric-upper-arch"
+						>
+							{upperRow.map((t) => renderToothButton(t, false))}
+						</div>
 					</div>
 				</div>
-				<div className="mt-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-					<span>Правый низ (Квадрант 8 / 4)</span>
-					<span className="text-[11px] font-extrabold text-[var(--ink,#0f172a)]">Нижняя челюсть</span>
-					<span>Левый низ (Квадрант 7 / 3)</span>
+
+				{/* Разделитель окклюзии */}
+				<div className="relative my-2.5 flex items-center justify-center">
+					<div className="w-full border-t border-dashed border-[var(--line,#e2e8f0)]" />
+					<span className="absolute bg-[var(--paper-soft,#f8fafc)] px-2 text-[10px] font-mono font-bold uppercase text-[var(--muted,#64748b)]">
+						Окклюзионная плоскость
+					</span>
+				</div>
+
+				{/* ЗУБНАЯ ДУГА: НИЖНЯЯ ЧЕЛЮСТЬ (НИЖНИЕ ЗУБЫ) */}
+				<div>
+					<div className="overflow-x-auto pb-1">
+						<div
+							className={`grid gap-1 sm:gap-1.5 mx-auto justify-center ${
+								isMixed ? "grid-cols-12 min-w-[520px]" : "grid-cols-10 min-w-[440px]"
+							}`}
+							data-testid="pediatric-lower-arch"
+						>
+							{lowerRow.map((t) => renderToothButton(t, false))}
+						</div>
+					</div>
+					<div className="mt-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+						<span>Правый низ (Квадрант 8 / 4)</span>
+						<span className="text-[11px] font-extrabold text-[var(--ink,#0f172a)]">Нижняя челюсть</span>
+						<span>Левый низ (Квадрант 7 / 3)</span>
+					</div>
 				</div>
 			</div>
 
@@ -375,15 +487,15 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			{activeTooth && (onToothFindingChange || onResorptionChange || onSurfaceToggle) && (
 				<div
-					className="mt-3 pt-2.5 border-t border-[var(--line,#e2e8f0)] flex flex-wrap items-center justify-between gap-2"
+					className="mt-3 pt-2.5 border-t border-[var(--line,#e2e8f0)] flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between"
 					data-testid="pediatric-active-tooth-toolbar"
 				>
-					<div className="flex flex-wrap items-center gap-1.5 min-w-0">
-						<span className="text-[11px] font-black uppercase text-[var(--muted,#64748b)]">
+					<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center min-w-0">
+						<span className="text-[11px] font-black uppercase text-[var(--muted,#64748b)] shrink-0">
 							Зуб {activeTooth}:
 						</span>
 						{onToothFindingChange && (
-							<div className="flex flex-wrap items-center gap-1" data-testid="active-tooth-findings-group">
+							<div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-1" data-testid="active-tooth-findings-group">
 								{(
 									[
 										{ id: "Healthy", label: "Здоров" },
@@ -401,7 +513,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 											key={st.id}
 											type="button"
 											onClick={() => onToothFindingChange(activeTooth, st.id)}
-											className={`min-h-[28px] sm:min-h-0 sm:h-6 px-1.5 rounded text-[10px] font-bold border transition cursor-pointer select-none active:scale-95 ${
+											className={`min-h-[44px] sm:min-h-0 sm:h-6 px-2 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-bold border transition cursor-pointer select-none active:scale-95 flex items-center justify-center ${
 												isCurrent
 													? "bg-teal-600 text-white border-teal-600 shadow-xs"
 													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
@@ -419,16 +531,16 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 					<div className="flex flex-wrap items-center gap-2">
 						{onSurfaceToggle && (
 							<details
-								className="group/surfaces relative rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-zinc-850 px-2 py-0.5 text-xs shrink-0"
+								className="group/surfaces relative rounded-xl sm:rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-zinc-850 px-2.5 sm:px-2 py-1 sm:py-0.5 text-xs shrink-0"
 								data-testid="pediatric-surfaces-disclosure"
 							>
 								<summary
-									className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors list-none"
+									className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] sm:text-[10px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors list-none min-h-[36px] sm:min-h-0"
 									title="Указать анатомические поверхности коронки (опционально)"
 								>
-									<span>Поверхности (опц.)</span>
+									<span>Поверхности</span>
 									{(toothSurfaces[activeTooth] || []).length > 0 && (
-										<span className="font-mono text-[9px] font-bold text-teal-600 dark:text-teal-400">
+										<span className="font-mono text-[10px] sm:text-[9px] font-bold text-teal-600 dark:text-teal-400">
 											[{(toothSurfaces[activeTooth] || []).join("")}]
 										</span>
 									)}
@@ -437,7 +549,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 									</span>
 								</summary>
 								<div
-									className="flex items-center gap-1 pt-1.5 pb-0.5"
+									className="flex flex-wrap items-center gap-1 pt-1.5 pb-0.5"
 									data-testid="active-tooth-surfaces-group"
 								>
 									{(
@@ -456,7 +568,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 												key={sf.id}
 												type="button"
 												onClick={() => onSurfaceToggle(activeTooth, sf.id)}
-												className={`min-h-[24px] sm:min-h-0 sm:h-5 px-1.5 rounded text-[10px] font-mono font-medium border transition cursor-pointer select-none active:scale-95 ${
+												className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-5 px-2 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-mono font-medium border transition cursor-pointer select-none active:scale-95 flex items-center justify-center ${
 													isSelected
 														? "bg-zinc-700 text-white border-zinc-700 shadow-xs dark:bg-zinc-600"
 														: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
@@ -474,7 +586,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 
 						{isPrimaryTooth(activeTooth) && onResorptionChange && (
 							<div className="flex items-center gap-1 shrink-0" data-testid="active-tooth-resorption-group">
-								<span className="text-[10px] font-black uppercase text-[var(--muted,#64748b)] mr-0.5">
+								<span className="text-[11px] sm:text-[10px] font-black uppercase text-[var(--muted,#64748b)] mr-0.5">
 									Резорбция:
 								</span>
 								{([0, 25, 50, 75, 100] as const).map((r) => {
@@ -485,7 +597,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 											key={r}
 											type="button"
 											onClick={() => onResorptionChange(activeTooth, r)}
-											className={`min-h-[28px] sm:min-h-0 sm:h-6 px-1.5 rounded text-[10px] font-mono font-bold border transition cursor-pointer select-none active:scale-95 ${
+											className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-6 px-2 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-mono font-bold border transition cursor-pointer select-none active:scale-95 flex items-center justify-center ${
 												isCurrent
 													? "bg-rose-600 text-white border-rose-600 shadow-xs"
 													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"

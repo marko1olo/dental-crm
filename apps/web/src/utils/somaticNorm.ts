@@ -164,6 +164,26 @@ export function isNegativeAllergyStatement(text?: string | string[] | null | unk
 	}
 
 	// If text contains positive confirmed allergens, it is NOT negative
+	// UNLESS it is part of a negative qualification or good tolerance statement
+	const hasNegativeQualification =
+		lower.includes("аллергоанамнез не отягощен") ||
+		lower.includes("аллергоанамнез не отягощён") ||
+		lower.includes("аллергии отрицает") ||
+		lower.includes("аллергию отрицает") ||
+		lower.includes("переносимость местных анестетиков артикаинового ряда хорошая") ||
+		lower.includes("переносимость анестетиков хорошая") ||
+		lower.includes("переносимость хорошая") ||
+		lower.includes("переносит хорошо");
+
+	const hasExplicitAllergyTrigger =
+		lower.includes("аллергия на") ||
+		lower.includes("аллергии на") ||
+		lower.includes("непереносимость") ||
+		lower.includes("аллергическая реакция") ||
+		lower.includes("шок") ||
+		lower.includes("отек квинке") ||
+		lower.includes("отёк квинке");
+
 	const hasSpecificAllergen =
 		lower.includes("артикаин") ||
 		lower.includes("ультракаин") ||
@@ -191,7 +211,7 @@ export function isNegativeAllergyStatement(text?: string | string[] | null | unk
 		lower.includes("анафилакс") ||
 		lower.includes("отек квинке");
 
-	if (hasSpecificAllergen) {
+	if (hasSpecificAllergen && (!hasNegativeQualification || hasExplicitAllergyTrigger)) {
 		return false;
 	}
 

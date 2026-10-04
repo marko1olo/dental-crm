@@ -760,7 +760,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			: `Соматический статус ребенка: физиологическая норма (соматически здоров).\n   • Физическое развитие: ${somaticStatus.physicalDevelopmentRu}.\n   • Аллергологический анамнез: ${somaticStatus.allergiesRu}.\n   • Хронические заболевания: ${somaticStatus.chronicDiseasesRu}.`;
 
 		const fullProtocolText043 = [
-			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)",
+			"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
 			"────────────────────────────────────────────────────────────",
 			`1. Родитель / Сопровождающий:`,
 			`   ${repLine}`,
@@ -779,7 +779,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"",
 			`5. Объект вмешательства: Зуб #${currentTooth} (${PEDIATRIC_TEETH_NAMES[currentTooth] ?? `Зуб ${currentTooth}`})`,
 			`   Диагноз (МКБ-10): ${diagnosisIcd10} — ${diagnosisNameRu}`,
-			`   Услуги: ${services.map((s) => `${s.code} ${s.nameRu}`).join("; ")}`,
+			`   Услуги и манипуляции: ${services.map((s) => `${s.code} ${s.nameRu}`).join("; ")}`,
 			"",
 			"6. Осмотр и зубная формула:",
 			`   ${statusLocalis}`,
@@ -950,7 +950,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 		setOrthoNoHarmfulHabits(true);
 
 		const fullText = [
-			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)",
+			"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
 			"────────────────────────────────────────────────────────────",
 			"1. Психоэмоциональный статус (Шкала Франкла): Рейтинг 4 (++) — 4 (++) Определенно позитивное",
 			"   Поведение: Восторжен, искренний интерес, улыбка, абсолютное доверие",
@@ -963,7 +963,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"",
 			"3. Объект осмотра: Временный прикус (зубы 51..85)",
 			`   Диагноз (МКБ-10): ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisIcd10} — ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisNameRu}`,
-			`   Услуги: ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
+			`   Услуги и манипуляции: ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
 			"",
 			"4. Осмотр и зубная формула:",
 			`   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.statusLocalisRu}`,
@@ -1034,7 +1034,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 		setOrthoNoHarmfulHabits(true);
 
 		const fullText = [
-			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)",
+			"ДНЕВНИК ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (МЕДИЦИНСКАЯ КАРТА)",
 			"────────────────────────────────────────────────────────────",
 			"1. Психоэмоциональный статус (Шкала Франкла): Рейтинг 3 (+) — 3 (+) Позитивное / контактен",
 			"   Поведение: Контактен, сотрудничает, спокойно выполняет указания врача",
@@ -1047,7 +1047,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"",
 			"3. Объект осмотра: Адаптационный приём без препарирования (зубы 51..85)",
 			"   Диагноз (МКБ-10): Z01.2 — Стоматологическое обследование / адаптация к стоматологическому приему (Z01.2)",
-			"   Услуги: A01.07.001 Прием (осмотр, консультация) врача-стоматолога детского первичный; A14.07.003 Обучение гигиене полости рта",
+			"   Услуги и манипуляции: A01.07.001 Прием (осмотр, консультация) врача-стоматолога детского первичный; A14.07.003 Обучение гигиене полости рта",
 			"",
 			"4. Осмотр и зубная формула:",
 			"   Временный прикус. Слизистая оболочка полости рта бледно-розовая, чистая, влажная. Состояние зубов удовлетворительное. Зубные ряды правильной формы. Окклюзионные взаимоотношения гармоничны.",
@@ -1135,7 +1135,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 
 	return (
 		<section
-			aria-label="Канонический протокол детского приема 043/у"
+			aria-label="Протокол детского стоматологического приёма в медицинской карте"
 			className={`pediatric-protocol-widget rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 shadow-xs transition ${className}`.trim()}
 			data-testid="pediatric-protocol-widget"
 		>
@@ -1674,10 +1674,10 @@ export const VisitPediatricProtocolWidget: React.FC<
 						</div>
 					</div>
 
-					{/* Превью протокола Формы 043/у */}
+					{/* Превью записи в медицинскую карту */}
 					<div>
 						<div className="mb-1 text-xs font-bold text-[var(--ink,#0f172a)]">
-							Превью готовой записи (автогенерация):
+							Превью записи в медицинскую карту пациента (дневник приёма):
 						</div>
 						<pre className="max-h-48 overflow-y-auto rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 text-[11px] leading-relaxed text-[var(--ink,#0f172a)] font-mono whitespace-pre-wrap">
 							{clinicalCalculation.fullProtocolText043}
@@ -1687,17 +1687,17 @@ export const VisitPediatricProtocolWidget: React.FC<
 			)}
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			{/* НИЖНИЙ ПЛАНШЕТ ДЕЙСТВИЙ: 1-КЛИК В КАРТУ, В СМЕТУ, ПАМЯТКА РОДИТЕЛЯМ */}
+			{/* ДЕСКТОПНЫЙ ПЛАНШЕТ ДЕЙСТВИЙ (md:flex)                                */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] min-w-0">
+			<div className="hidden md:flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] min-w-0">
 				<div className="flex flex-wrap items-center gap-2">
-					{/* Кнопка 1-клик в 043/у */}
+					{/* Кнопка 1-клик в карту */}
 					<button
 						type="button"
 						onClick={handleInsertToForm043}
 						className="inline-flex min-h-[48px] sm:min-h-0 sm:h-9 items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-teal-700 active:scale-95 cursor-pointer touch-manipulation"
 						data-testid="pediatric-btn-apply-043"
-						title="Внести протокол в медицинскую карту"
+						title="Внести протокол в медицинскую карту (043/у)"
 						aria-label="Внести в 043/у"
 					>
 						<FileText className="h-4 w-4 shrink-0" />
@@ -1715,7 +1715,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 						<span>В смету ({clinicalCalculation.services804n.length})</span>
 					</button>
 
-					{/* Кнопка «Памятка родителям после приёма» (Анти-Матрёшка: глубина 1) */}
+					{/* Кнопка «Памятка родителям после приёма» */}
 					<button
 						type="button"
 						onClick={() => setIsMemoModalOpen(true)}
@@ -1726,7 +1726,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 						<span>Памятка родителям</span>
 					</button>
 
-					{/* Кнопка «Диплом за храбрость» (1-клик, печать грамоты маленькому пациенту) */}
+					{/* Кнопка «Диплом за храбрость» */}
 					<button
 						type="button"
 						onClick={() => setIsDiplomaModalOpen(true)}
@@ -1746,6 +1746,73 @@ export const VisitPediatricProtocolWidget: React.FC<
 						{clinicalCalculation.services804n[0]?.code} •{" "}
 						{clinicalCalculation.services804n[0]?.nameRu}
 					</div>
+				</div>
+			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* МОБИЛЬНЫЙ FLOATING BOTTOM BAR (APPLE HIG: THUMB ZONE & PRIMARY CTA >= 52px) */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			<div
+				className="md:hidden sticky bottom-0 -mx-3.5 sm:-mx-5 -mb-3.5 sm:-mb-5 mt-4 z-20 backdrop-blur-xl bg-[var(--paper,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex flex-col gap-2"
+				data-testid="pediatric-mobile-bottom-bar"
+			>
+				{/* Верхняя строка мобильного бара: сводка диагноза + зуба */}
+				<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] px-0.5">
+					<span className="font-bold text-[var(--ink,#0f172a)] truncate">
+						Зуб {currentTooth} • {activePreset.shortLabelRu}
+					</span>
+					<span className="font-mono text-xs font-extrabold text-teal-700 dark:text-teal-400 shrink-0 ml-2">
+						{clinicalCalculation.diagnosisIcd10}
+					</span>
+				</div>
+
+				{/* Главная кнопка действия (Primary CTA): Внести протокол в карту (высота >= 52px) */}
+				<button
+					type="button"
+					onClick={handleInsertToForm043}
+					className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-teal-600 px-4 text-sm font-extrabold text-white shadow-md transition hover:bg-teal-700 active:scale-[0.98] cursor-pointer touch-manipulation select-none"
+					data-testid="pediatric-mobile-btn-apply"
+					title="Внести протокол в медицинскую карту (043/у)"
+					aria-label="Внести в 043/у"
+				>
+					<FileText className="h-5 w-5 shrink-0" />
+					<span>Внести протокол в карту</span>
+				</button>
+
+				{/* Быстрые вторичные действия в зоне большого пальца: плитки >= 44x44px */}
+				<div className="grid grid-cols-3 gap-2">
+					<button
+						type="button"
+						onClick={handleAddServicesToInvoice}
+						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50/80 px-2 text-xs font-bold text-teal-800 transition active:scale-95 dark:border-teal-800/60 dark:bg-teal-950/40 dark:text-teal-300 cursor-pointer touch-manipulation select-none"
+						data-testid="pediatric-mobile-btn-invoice"
+						title="Добавить услуги в смету"
+					>
+						<Coins className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+						<span className="truncate">В смету ({clinicalCalculation.services804n.length})</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsMemoModalOpen(true)}
+						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50/80 px-2 text-xs font-bold text-purple-900 transition active:scale-95 dark:border-purple-800/60 dark:bg-purple-950/40 dark:text-purple-200 cursor-pointer touch-manipulation select-none"
+						data-testid="pediatric-mobile-btn-memo"
+						title="Печать памятки родителям"
+					>
+						<Printer className="h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
+						<span className="truncate">Памятка</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsDiplomaModalOpen(true)}
+						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50/80 px-2 text-xs font-bold text-amber-900 transition active:scale-95 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 cursor-pointer touch-manipulation select-none"
+						data-testid="pediatric-mobile-btn-diploma"
+						title="Печать диплома за храбрость"
+					>
+						<Award className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+						<span className="truncate">Диплом</span>
+					</button>
 				</div>
 			</div>
 

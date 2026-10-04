@@ -245,7 +245,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			{/* РАЗДЕЛ 2: АВТОПОДСТАНОВКА ЗАКОННОГО ПРЕДСТАВИТЕЛЯ (РОДИТЕЛЯ) В 043/у */}
+			{/* РАЗДЕЛ 2: АВТОПОДСТАНОВКА ЗАКОННОГО ПРЕДСТАВИТЕЛЯ (РОДИТЕЛЯ) В КАРТУ */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3">
 				<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -254,7 +254,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 						<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)]">
 							Родитель / Законный представитель:
 						</span>
-						<span className="sr-only">Форма 043/у, ст. 20 323-ФЗ, ст. 64 СК РФ</span>
+						<span className="sr-only">Медицинская карта, ст. 20 323-ФЗ, ст. 64 СК РФ</span>
 					</div>
 
 					<button
