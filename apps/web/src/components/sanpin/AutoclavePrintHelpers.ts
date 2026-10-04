@@ -277,7 +277,7 @@ export function handleGenerateMonthlyForm257(
 
 	const printWin = window.open("", "_blank");
 	if (!printWin) {
-		showToast("Разрешите всплывающие окна для печати Формы 257/у", "error");
+		showToast("Разрешите всплывающие окна для печати журнала работы стерилизаторов (автоклавов)", "error");
 		return;
 	}
 	printWin.document.write(html);
@@ -286,7 +286,7 @@ export function handleGenerateMonthlyForm257(
 	setTimeout(() => printWin.print(), 500);
 
 	showToast(
-		`Сгенерирована официальная Форма 257/у за ${monthNameRu} (${generatedRecords.length} циклов)!`,
+		`Сформирован журнал работы стерилизаторов (автоклавов) за ${monthNameRu} (${generatedRecords.length} циклов)!`,
 		"success",
 		4000,
 	);

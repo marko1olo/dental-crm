@@ -215,11 +215,11 @@ export function AutoclaveRegisterTab() {
 		<div className="sanpin-tab-content">
 			{/* Official Form Header for Print */}
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ АВТОКЛАВА</h2>
+				<h2>ЖУРНАЛ РАБОТЫ СТЕРИЛИЗАТОРОВ (АВТОКЛАВОВ)</h2>
 				<p title="Контроль работы стерилизаторов">Стерилизация инструментов и контроль качества</p>
 			</div>
 
-			{/* Compact 1-Click Autoclave Shift Cycle Strip (32px, 8px radius) */}
+			{/* Compact 1-Click Autoclave Shift Cycle Strip (32px desktop, 44px mobile touch) */}
 			<div
 				className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-1.5 my-1 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] min-w-0"
 				style={{ minHeight: "36px", borderRadius: "8px" }}
@@ -238,8 +238,7 @@ export function AutoclaveRegisterTab() {
 						type="button"
 						onClick={handleQuickShiftBatch}
 						aria-busy={isLoggingBatch}
-						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:bg-teal-700 inline-flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm w-full sm:w-auto shrink-0 whitespace-nowrap"
-						style={{ minHeight: "32px", height: "32px", borderRadius: "8px" }}
+						className="sanpin-btn touch-manipulation h-9 sm:h-8 px-3 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:bg-teal-700 inline-flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm w-full sm:w-auto shrink-0 whitespace-nowrap min-h-[44px] sm:min-h-[32px]"
 						data-testid="banner-autoclave-quick-shift-btn"
 						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в журнал"
 					>

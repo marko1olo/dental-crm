@@ -300,3 +300,188 @@
 	border-radius: 8px !important;
 	font-size: 0.8125rem !important;
 }
+
+/* ==========================================================================
+   APPLE HIG MOBILE GROUPED LIST CARDS & BOTTOM SHEET (<= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+	.sanpin-container {
+		padding: 0.65rem;
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.sanpin-table-toolbar {
+		flex-wrap: nowrap !important;
+		padding: 0.35rem 0.5rem !important;
+		gap: 0.4rem !important;
+	}
+
+	.sanpin-table-toolbar input,
+	.sanpin-table-toolbar select {
+		min-height: 44px !important;
+		height: 44px !important;
+		font-size: 0.875rem !important;
+	}
+
+	.sanpin-touch-btn {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		height: 44px !important;
+	}
+}
+
+/* Mobile Grouped Card Component */
+.sanpin-mobile-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 0.875rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
+	position: relative;
+}
+
+[data-theme="dark"] .sanpin-mobile-card,
+.dark .sanpin-mobile-card {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.sanpin-mobile-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding-bottom: 0.4rem;
+	border-bottom: 1px solid var(--line-subtle, rgba(226, 232, 240, 0.6));
+}
+
+[data-theme="dark"] .sanpin-mobile-card-header,
+.dark .sanpin-mobile-card-header {
+	border-bottom-color: rgba(51, 65, 85, 0.6);
+}
+
+.sanpin-mobile-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+	font-size: 0.8125rem;
+	line-height: 1.35;
+}
+
+.sanpin-mobile-card-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.sanpin-mobile-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding-top: 0.5rem;
+	border-top: 1px solid var(--line-subtle, rgba(226, 232, 240, 0.6));
+}
+
+[data-theme="dark"] .sanpin-mobile-card-actions,
+.dark .sanpin-mobile-card-actions {
+	border-top-color: rgba(51, 65, 85, 0.6);
+}
+
+/* Native Bottom Sheet Drawer for Mobile */
+.sanpin-bottom-sheet-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	z-index: 9999;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	animation: sanpinBackdropFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sanpin-bottom-sheet {
+	background: var(--paper-strong, #ffffff);
+	border-top: 1px solid var(--line, #e2e8f0);
+	border-radius: 24px 24px 0 0;
+	padding: 0.65rem 1rem calc(1rem + env(safe-area-inset-bottom, 16px));
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	max-height: 85dvh;
+	overflow-y: auto;
+	box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+	animation: sanpinSheetSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .sanpin-bottom-sheet,
+.dark .sanpin-bottom-sheet {
+	background: #0f172a;
+	border-top-color: #334155;
+	box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.sanpin-bottom-sheet-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line, #cbd5e1);
+	margin: 0 auto 0.35rem;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .sanpin-bottom-sheet-handle,
+.dark .sanpin-bottom-sheet-handle {
+	background: #475569;
+}
+
+.sanpin-bottom-sheet-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.75rem 1rem;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .sanpin-bottom-sheet-item,
+.dark .sanpin-bottom-sheet-item {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+.sanpin-bottom-sheet-item:hover,
+.sanpin-bottom-sheet-item:active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+@keyframes sanpinBackdropFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes sanpinSheetSlideUp {
+	from { transform: translateY(100%); }
+	to { transform: translateY(0); }
+}
+

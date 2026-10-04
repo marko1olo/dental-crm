@@ -41,6 +41,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { CabinetReadinessTab } from "./CabinetReadinessTab";
 import { AutoclaveRegisterTab } from "./AutoclaveRegisterTab";
 import { BactericidalRegisterTab } from "./BactericidalRegisterTab";
@@ -111,9 +112,9 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 		shortLabel: "Стерилизация",
 		icon: Flame,
 		tabs: [
-			{ id: "autoclave", label: "Журнал автоклава", shortLabel: "Автоклав", category: "sterilization", icon: Flame },
+			{ id: "autoclave", label: "Журнал работы стерилизаторов (автоклавов)", shortLabel: "Автоклавы", category: "sterilization", icon: Flame },
 			{ id: "sterilizers", label: "Парк стерилизаторов", shortLabel: "Оборудование", category: "sterilization", icon: Gauge },
-			{ id: "pso", label: "Проверка чистоты инструментов (пробы)", shortLabel: "Пробы чистоты", category: "sterilization", icon: FlaskConical },
+			{ id: "pso", label: "Контроль предстерилизационной очистки (азопирам)", shortLabel: "Контроль ПСО", category: "sterilization", icon: FlaskConical },
 			{ id: "cabinet_readiness", label: "Готовность кабинета к приёму", shortLabel: "Готовность кабинета", category: "sterilization", icon: ShieldCheck },
 			{ id: "retroactive_batch", label: "Сухожар и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Sparkles },
 		],
@@ -231,7 +232,9 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 
 function DisinfectantsRegisterTab() {
 	const [query, setQuery] = useState("");
-	const [records, setRecords] = useState<DisinfectantSolutionRecord[]>(DEFAULT_DISINFECTANT_RECORDS);
+	const [records, setRecords] = useState<DisinfectantSolutionRecord[]>(() =>
+		isDemoShowcaseMode() ? DEFAULT_DISINFECTANT_RECORDS : []
+	);
 	const filtered = useMemo(() => {
 		const q = query.trim().toLowerCase();
 		if (!q) return records;
@@ -330,25 +333,33 @@ function DisinfectantsRegisterTab() {
 						</tr>
 					</thead>
 					<tbody>
-						{filtered.map((r) => (
-							<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
-								<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.tradeNameRu}</td>
-								<td style={{ fontSize: "0.875rem" }}>{r.purposeRu}</td>
-								<td>
-									<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
-										{r.concentrationPercent}% ({r.volumeLiters} л)
-									</span>
+						{filtered.length === 0 ? (
+							<tr>
+								<td colSpan={7} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--muted)" }}>
+									Нет приготовленных дезрастворов. Нажмите «Приготовить раствор» для внесения партии.
 								</td>
-								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.preparationDate}</td>
-								<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.expiryDate}</td>
-								<td>
-									<span style={{ fontSize: "0.8rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
-										<Check size={13} /> {r.testStripResultRu}
-									</span>
-								</td>
-								<td style={{ fontSize: "0.85rem", fontWeight: 500 }}>{r.responsibleNurseRu}</td>
 							</tr>
-						))}
+						) : (
+							filtered.map((r) => (
+								<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
+									<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.tradeNameRu}</td>
+									<td style={{ fontSize: "0.875rem" }}>{r.purposeRu}</td>
+									<td>
+										<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
+											{r.concentrationPercent}% ({r.volumeLiters} л)
+										</span>
+									</td>
+									<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.preparationDate}</td>
+									<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.expiryDate}</td>
+									<td>
+										<span style={{ fontSize: "0.8rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+											<Check size={13} /> {r.testStripResultRu}
+										</span>
+									</td>
+									<td style={{ fontSize: "0.85rem", fontWeight: 500 }}>{r.responsibleNurseRu}</td>
+								</tr>
+							))
+						)}
 					</tbody>
 				</table>
 			</div>
@@ -412,7 +423,9 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 
 function BacLabRegisterTab() {
 	const [query, setQuery] = useState("");
-	const [records, setRecords] = useState<BacLabRecord[]>(DEFAULT_BAC_LAB_RECORDS);
+	const [records, setRecords] = useState<BacLabRecord[]>(() =>
+		isDemoShowcaseMode() ? DEFAULT_BAC_LAB_RECORDS : []
+	);
 	const filtered = useMemo(() => {
 		const q = query.trim().toLowerCase();
 		if (!q) return records;
@@ -487,25 +500,33 @@ function BacLabRegisterTab() {
 						</tr>
 					</thead>
 					<tbody>
-						{filtered.map((r) => (
-							<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
-								<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.actNumberRu}</td>
-								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.sampleDate}</td>
-								<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{r.targetObjectRu}</td>
-								<td style={{ fontSize: "0.825rem" }}>{r.pathogensTestedRu}</td>
-								<td>
-									<span style={{ fontSize: "0.825rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
-										<Check size={13} /> {r.resultRu}
-									</span>
-								</td>
-								<td style={{ fontSize: "0.825rem", color: "var(--muted)" }}>{r.labNameRu}</td>
-								<td>
-									<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
-										{r.statusRu}
-									</span>
+						{filtered.length === 0 ? (
+							<tr>
+								<td colSpan={7} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--muted)" }}>
+									Журнал бактериологических исследований пуст. Нажмите «Внести протокол смывов» для регистрации акта лаборатории.
 								</td>
 							</tr>
-						))}
+						) : (
+							filtered.map((r) => (
+								<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
+									<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.actNumberRu}</td>
+									<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.sampleDate}</td>
+									<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{r.targetObjectRu}</td>
+									<td style={{ fontSize: "0.825rem" }}>{r.pathogensTestedRu}</td>
+									<td>
+										<span style={{ fontSize: "0.825rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+											<Check size={13} /> {r.resultRu}
+										</span>
+									</td>
+									<td style={{ fontSize: "0.825rem", color: "var(--muted)" }}>{r.labNameRu}</td>
+									<td>
+										<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
+											{r.statusRu}
+										</span>
+									</td>
+								</tr>
+							))
+						)}
 					</tbody>
 				</table>
 			</div>
@@ -559,7 +580,9 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 
 function NeedleDisposalRegisterTab() {
 	const [query, setQuery] = useState("");
-	const [records, setRecords] = useState<NeedleDisposalRecord[]>(DEFAULT_NEEDLE_DISPOSAL_RECORDS);
+	const [records, setRecords] = useState<NeedleDisposalRecord[]>(() =>
+		isDemoShowcaseMode() ? DEFAULT_NEEDLE_DISPOSAL_RECORDS : []
+	);
 	const filtered = useMemo(() => {
 		const q = query.trim().toLowerCase();
 		if (!q) return records;
@@ -637,21 +660,29 @@ function NeedleDisposalRegisterTab() {
 						</tr>
 					</thead>
 					<tbody>
-						{filtered.map((r) => (
-							<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
-								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.shiftDateRu}</td>
-								<td style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>{r.wasteTypeRu}</td>
-								<td style={{ fontSize: "0.825rem" }}>{r.treatmentMethodRu}</td>
-								<td>
-									<span className="sanpin-tag" style={{ fontSize: "0.825rem", fontWeight: 700, background: "var(--warn-bg)", color: "var(--warn-fg)", border: "1px solid var(--warn-fg)" }}>
-										{r.netWeightKg} кг (Класс Б)
-									</span>
+						{filtered.length === 0 ? (
+							<tr>
+								<td colSpan={7} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--muted)" }}>
+									Журнал утилизации острых инструментов пуст. Нажмите «Внести партию игл» для фиксации обезвреженных отходов.
 								</td>
-								<td style={{ fontSize: "0.825rem", fontFamily: "monospace" }}>{r.containerCodeRu}</td>
-								<td style={{ fontSize: "0.85rem" }}>{r.surrenderedNurseRu}</td>
-								<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.acceptedNurseRu}</td>
 							</tr>
-						))}
+						) : (
+							filtered.map((r) => (
+								<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
+									<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.shiftDateRu}</td>
+									<td style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>{r.wasteTypeRu}</td>
+									<td style={{ fontSize: "0.825rem" }}>{r.treatmentMethodRu}</td>
+									<td>
+										<span className="sanpin-tag" style={{ fontSize: "0.825rem", fontWeight: 700, background: "var(--warn-bg)", color: "var(--warn-fg)", border: "1px solid var(--warn-fg)" }}>
+											{r.netWeightKg} кг (Класс Б)
+										</span>
+									</td>
+									<td style={{ fontSize: "0.825rem", fontFamily: "monospace" }}>{r.containerCodeRu}</td>
+									<td style={{ fontSize: "0.85rem" }}>{r.surrenderedNurseRu}</td>
+									<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.acceptedNurseRu}</td>
+								</tr>
+							))
+						)}
 					</tbody>
 				</table>
 			</div>
@@ -1214,7 +1245,7 @@ function SanpinRegistersInner() {
 				<div className="sanpin-title-block" style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexShrink: 0 }}>
 					<h1 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--ink)" }}>
 						<ShieldCheck size={20} color="var(--brand-primary, #2563eb)" />
-						<span>Стерилизационная и санитарный контроль</span>
+						<span>Санитарный контроль и стерилизация</span>
 					</h1>
 					<span className="sanpin-badge-gov" title="Норма стерилизации и чистоты" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
 						<CheckCircle2 size={12} /> Норма стерилизации
@@ -1585,7 +1616,7 @@ function SanpinRegistersInner() {
 									data-testid="open-journal-257-header-btn"
 								>
 									<FileSpreadsheet size={15} color="var(--teal)" />
-									<span>Журнал автоклава</span>
+									<span>Журнал работы стерилизаторов (автоклавов)</span>
 								</button>
 
 								{/* Печать текущей вкладки */}
