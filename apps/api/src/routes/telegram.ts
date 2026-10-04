@@ -3783,17 +3783,18 @@ async function handleWebhook(
 							)
 							.limit(1);
 
-						if (chatLink?.patientId) {
+						const chatPatientId = chatLink?.subjectType === "patient" ? chatLink.subjectId : null;
+						if (chatPatientId) {
 							const [latestAppt] = await db
 								.select({ id: appointments.id })
 								.from(appointments)
 								.where(
 									and(
 										eq(appointments.organizationId, runtime.organizationId),
-										eq(appointments.patientId, chatLink.patientId),
+										eq(appointments.patientId, chatPatientId),
 									),
 								)
-								.orderBy(desc(appointments.startAt))
+								.orderBy(desc(appointments.startsAt))
 								.limit(1);
 							if (latestAppt) {
 								appointmentId = latestAppt.id;
@@ -3811,9 +3812,9 @@ async function handleWebhook(
 					telegramChatId: chatId ?? undefined,
 				},
 				{
-					clinicName: runtime.settings.botName || "DENTE",
-					yandexMapsUrl: runtime.settings.yandexReviewUrl || undefined,
-					twoGisUrl: runtime.settings.twoGisReviewUrl || undefined,
+					clinicName: (runtime.settings as any)?.botName || "DENTE",
+					yandexMapsUrl: (runtime.settings as any)?.yandexReviewUrl || undefined,
+					twoGisUrl: (runtime.settings as any)?.twoGisReviewUrl || undefined,
 				},
 			);
 
