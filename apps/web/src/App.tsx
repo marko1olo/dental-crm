@@ -1058,7 +1058,7 @@ export function App() {
 				setCurrentView("finance");
 			} else if (route === "sanpin") {
 				setCurrentView("scanner");
-			} else if (route === "cmo") {
+			} else if (route === "cmo" || route === "payout" || route === "payouts") {
 				setCurrentView("analytics");
 			} else if (route === "telephony") {
 				setCurrentView("communications");
@@ -2733,7 +2733,9 @@ export function App() {
 											</div>
 										}
 									>
-										<AnalyticsDashboardView />
+										{typeof window === "undefined" || !window.location.hash.includes("payout") ? (
+											<AnalyticsDashboardView />
+										) : null}
 									</Suspense>
 									{/*
                 Экран выше показывает воронку, доли кресел и когорты; того, по

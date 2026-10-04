@@ -1,0 +1,855 @@
+/**
+ * mobile-doctor-payout.css — Sovereign Mobile Doctor Payout & T-51 Wallet (Apple HIG)
+ * 
+ * Invariants:
+ * 1. Zero hex colors (Strict token compliance: var(--paper), var(--ink), etc.).
+ * 2. 0px horizontal drift (overflow-x: clip, max-width: 100vw).
+ * 3. Touch targets >= 44x44px for gloved doctor chairside touch ergonomics.
+ * 4. Apple Wallet / Neobank Card aesthetics with subtle glass blur & smooth active states.
+ */
+
+.doctor-wallet-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: clip;
+  padding: 12px 14px 140px 14px;
+  gap: 16px;
+}
+
+/* ── Top Header & Month Bar ── */
+.doctor-wallet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.doctor-wallet-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doctor-wallet-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.doctor-wallet-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.doctor-wallet-month-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.doctor-wallet-month-badge:active {
+  transform: scale(0.97);
+  background: var(--line-subtle);
+}
+
+.doctor-wallet-month-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+/* ── Horizontal Doctor Chip Scroller ── */
+.doctor-wallet-chips-scroller {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 2px 6px 2px;
+  margin: 0 -14px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.doctor-wallet-chips-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.doctor-wallet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
+  color: var(--muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-chip--active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.doctor-wallet-chip:active {
+  transform: scale(0.96);
+}
+
+/* ── Apple Wallet Hero Card ── */
+.doctor-wallet-card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 20px 18px 18px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.doctor-wallet-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--teal), var(--accent), var(--emerald));
+}
+
+.doctor-wallet-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.doctor-wallet-card-brand {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.doctor-wallet-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  color: var(--teal);
+  border: 1px solid color-mix(in srgb, var(--teal) 24%, transparent);
+}
+
+.doctor-wallet-card-doctor {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 2px 0;
+  line-height: 1.3;
+}
+
+.doctor-wallet-card-role {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.doctor-wallet-card-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 18px 0 16px 0;
+  text-align: center;
+}
+
+.doctor-wallet-card-amount {
+  font-size: 36px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.doctor-wallet-card-amount-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.doctor-wallet-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-subtle);
+  margin-top: 6px;
+}
+
+.doctor-wallet-card-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doctor-wallet-card-stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doctor-wallet-card-stat-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.doctor-wallet-card-stat-val--danger {
+  color: var(--rose);
+}
+
+/* ── Section Headers ── */
+.doctor-wallet-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 8px 0;
+}
+
+.doctor-wallet-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0;
+}
+
+.doctor-wallet-section-count {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── Category Breakdown Cards ── */
+.doctor-wallet-categories-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.doctor-wallet-cat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  min-height: 58px;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.doctor-wallet-cat-card:active {
+  transform: scale(0.98);
+  background: var(--paper-soft);
+}
+
+.doctor-wallet-cat-card--deduction {
+  background: color-mix(in srgb, var(--rose) 4%, var(--paper));
+  border-color: color-mix(in srgb, var(--rose) 20%, var(--line));
+}
+
+.doctor-wallet-cat-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.doctor-wallet-cat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--paper-soft);
+  color: var(--teal);
+}
+
+.doctor-wallet-cat-icon--therapy {
+  background: color-mix(in srgb, var(--teal) 14%, transparent);
+  color: var(--teal);
+}
+
+.doctor-wallet-cat-icon--ortho {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.doctor-wallet-cat-icon--surgery {
+  background: color-mix(in srgb, var(--amber) 16%, transparent);
+  color: var(--amber);
+}
+
+.doctor-wallet-cat-icon--deduction {
+  background: color-mix(in srgb, var(--rose) 16%, transparent);
+  color: var(--rose);
+}
+
+.doctor-wallet-cat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.doctor-wallet-cat-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.doctor-wallet-cat-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.doctor-wallet-cat-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rose) 12%, transparent);
+  color: var(--rose);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-cat-rate {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.doctor-wallet-cat-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+.doctor-wallet-cat-amount {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.doctor-wallet-cat-amount--plus {
+  color: var(--emerald);
+}
+
+.doctor-wallet-cat-amount--minus {
+  color: var(--rose);
+}
+
+.doctor-wallet-cat-subrev {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Grouped Inset Shifts Card (Apple Settings / Health style) ── */
+.doctor-wallet-shifts-group {
+  width: 100%;
+  border-radius: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.doctor-wallet-shift-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px;
+  min-height: 56px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.doctor-wallet-shift-row:last-child {
+  border-bottom: none;
+}
+
+.doctor-wallet-shift-row:active {
+  background: var(--paper-soft);
+}
+
+.doctor-wallet-shift-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.doctor-wallet-shift-cal-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-shift-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.doctor-wallet-shift-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctor-wallet-shift-meta {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.doctor-wallet-shift-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+.doctor-wallet-shift-amount {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.doctor-wallet-shift-chevron {
+  color: var(--muted);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ── Sticky Bottom Thumb Zone Action Bar ── */
+.doctor-wallet-bottom-bar {
+  position: fixed;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line);
+  padding: 8px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.doctor-wallet-primary-cta {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.doctor-wallet-primary-cta:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.doctor-wallet-sec-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.doctor-wallet-sec-cta:active {
+  transform: scale(0.96);
+  background: var(--line-subtle);
+}
+
+/* ── Native iOS Bottom Sheet Drawer ── */
+.doctor-wallet-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.doctor-wallet-sheet-surface {
+  position: relative;
+  width: 100%;
+  max-height: 88dvh;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  animation: slideUpWalletSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes slideUpWalletSheet {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.doctor-wallet-sheet-handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 6px 0;
+  cursor: grab;
+}
+
+.doctor-wallet-sheet-handle {
+  width: 36px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line-strong);
+}
+
+.doctor-wallet-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 18px 12px 18px;
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.doctor-wallet-sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.doctor-wallet-sheet-close {
+  width: 36px;
+  height: 36px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--paper-soft);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+}
+
+.doctor-wallet-sheet-close:active {
+  background: var(--line-subtle);
+  color: var(--ink);
+}
+
+.doctor-wallet-sheet-summary-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--paper-soft);
+  border: 1px solid var(--line-subtle);
+  border-radius: 12px;
+  margin: 12px 16px 4px 16px;
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.doctor-wallet-sheet-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.doctor-wallet-sheet-summary-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doctor-wallet-sheet-summary-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.doctor-wallet-sheet-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doctor-wallet-visit-item {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.doctor-wallet-visit-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.doctor-wallet-visit-patient {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.doctor-wallet-visit-cardno {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.doctor-wallet-visit-revenue {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doctor-wallet-visit-earned {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--emerald);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doctor-wallet-service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px dashed var(--line-subtle);
+}
+
+.doctor-wallet-service-name {
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.doctor-wallet-service-code {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  border: 1px solid var(--line-subtle);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-tooth-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-service-price {
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.doctor-wallet-sheet-footer {
+  padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+/* ── Empty State ── */
+.doctor-wallet-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--paper-soft);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  gap: 8px;
+}
+
+.doctor-wallet-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.doctor-wallet-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.doctor-wallet-empty-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  max-width: 280px;
+}

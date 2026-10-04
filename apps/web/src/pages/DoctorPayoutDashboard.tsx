@@ -61,6 +61,8 @@ import { isGeneralClinicOverheadConsumable } from "@dental/shared";
 import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
 import type { DoctorCompletedServiceItem } from "../components/finance/payroll/payrollEngine";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { useIsMobile } from "../hooks/useIsMobile";
+import { DoctorPayoutMobileWallet } from "../components/finance/DoctorPayoutMobileWallet";
 
 /** Состояние расчёта по врачу. Значения приходят с сервера как есть. */
 type DoctorPayoutState =
@@ -350,6 +352,7 @@ function parseCommissionInput(raw: string): number | null {
 }
 
 export function DoctorPayoutDashboard() {
+	const isMobile = useIsMobile(768);
 	const [month, setMonth] = useState<string>(() => currentMonthValue());
 	const [state, setState] = useState<PayoutLoadState>({ kind: "loading" });
 	const [editingRateFor, setEditingRateFor] = useState<string | null>(null);
@@ -580,6 +583,63 @@ export function DoctorPayoutDashboard() {
 	if (state.kind === "denied") return null;
 
 	const monthLabel = monthLabelOf(month);
+
+	if (isMobile) {
+		if (state.kind === "needs_staff_login") {
+			return (
+				<div className="doctor-wallet-container">
+					<h3 className="doctor-wallet-title">Выплаты врачам</h3>
+					<p className="ops-notice" role="status">
+						Выплаты не показаны: нет входа сотрудника. {state.message} Войдите в
+						рабочий кабинет клиники и подтвердите себя PIN-кодом — после этого
+						расчёт откроется.
+					</p>
+				</div>
+			);
+		}
+		if (state.kind === "failed") {
+			return (
+				<div className="doctor-wallet-container">
+					<h3 className="doctor-wallet-title">Выплаты врачам</h3>
+					<p className="ops-notice ops-notice--error" role="alert">
+						Расчёт выплат за {monthLabel} не выполнен. {state.message} {state.action}
+					</p>
+				</div>
+			);
+		}
+		return (
+			<>
+				<DoctorPayoutMobileWallet
+					report={report}
+					month={month}
+					onMonthChange={setMonth}
+					onRefresh={() => void load(month)}
+					onOpenPayrollModal={(doc) => setPayrollModalDoctor(doc)}
+					canEditRates={canEditRates}
+					isLoading={state.kind === "loading"}
+				/>
+				{payrollModalDoctor ? (
+					<DoctorPayrollModal
+						isOpen={Boolean(payrollModalDoctor)}
+						onClose={() => setPayrollModalDoctor(null)}
+						initialDoctorId={payrollModalDoctor.doctorUserId}
+						initialServices={doctorServicesForPayrollModal(payrollModalDoctor)}
+						initialBasePercentage={payrollModalDoctor.commissionPct ?? undefined}
+						initialPeriodStart={report?.period ? report.period.from.slice(0, 10) : undefined}
+						initialPeriodEnd={report?.period ? report.period.to.slice(0, 10) : undefined}
+						doctorsList={[
+							{
+								id: payrollModalDoctor.doctorUserId,
+								name: payrollModalDoctor.doctorName,
+								specialtyId: mapRoleToSpecialtyId(payrollModalDoctor.role),
+							},
+						]}
+					/>
+				) : null}
+			</>
+		);
+	}
+
 	/*
 	 * Ни одного врача с пригодной ставкой: итоговые суммы складывать не из чего.
 	 * Это не «ноль к выплате» — это отсутствие расчёта, и в итогах оно должно
@@ -1436,7 +1496,7 @@ export function DoctorPayoutDashboard() {
 	);
 }
 
-function mapRoleToSpecialtyId(role: string): string {
+export function mapRoleToSpecialtyId(role: string): string {
 	const r = role.toLowerCase().trim();
 	if (r.includes("orthoped") || r.includes("ортопед")) return "orthopedist";
 	if (r.includes("implant") || r.includes("имплант")) return "surgeon_implantologist";
@@ -1449,7 +1509,7 @@ function mapRoleToSpecialtyId(role: string): string {
 	return "therapist";
 }
 
-function inferServiceCategory(
+export function inferServiceCategory(
 	serviceName: string,
 	doctorSpecialtyId: string,
 ): "therapy" | "surgery" | "orthopedics" | "orthodontics" | "hygiene" | "retail_hygiene" {
@@ -1519,7 +1579,7 @@ function inferServiceCategory(
 	return "therapy";
 }
 
-function doctorServicesForPayrollModal(
+export function doctorServicesForPayrollModal(
 	row: DoctorPayoutRow,
 ): DoctorCompletedServiceItem[] {
 	const specialtyId = mapRoleToSpecialtyId(row.role);

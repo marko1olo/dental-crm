@@ -179,7 +179,22 @@ export function ManagerReportsPanel({
 		useState<ReportSlice<ReceivablesDetail>>(pendingSlice);
 	const [scheduleLoad, setScheduleLoad] =
 		useState<ReportSlice<ScheduleLoadReport>>(pendingSlice);
-	const [activeSection, setActiveSection] = useState<ReportSectionTab>("all");
+	const [activeSection, setActiveSection] = useState<ReportSectionTab>(() =>
+		typeof window !== "undefined" && window.location.hash.includes("payout")
+			? "doctors"
+			: "all",
+	);
+
+	useEffect(() => {
+		const checkHash = () => {
+			if (typeof window !== "undefined" && window.location.hash.includes("payout")) {
+				setActiveSection("doctors");
+			}
+		};
+		checkHash();
+		window.addEventListener("hashchange", checkHash);
+		return () => window.removeEventListener("hashchange", checkHash);
+	}, []);
 
 	const load = useCallback(async () => {
 		setLoading(true);
