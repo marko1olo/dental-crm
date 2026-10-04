@@ -15271,9 +15271,6 @@ html.dark .communication-side .panel-heading h3,
 /* ───────────────────────────────────────────────
    HIDDEN PANELS (role-filtered / noise reduction)
    ─────────────────────────────────────────────── */
-.specialty-focus-bar {
-	display: none;
-}
 .clinical-rule-panel {
 	display: none;
 }
@@ -17443,9 +17440,6 @@ body.dark-mode .document-manual-override {
 .patient-card-column,
 .patient-card-body,
 .patient-workspace,
-.treatment-plan-module,
-.treatment-3tier-comparison,
-.treatment-plan-phased-view,
 .visit-note-panel,
 .visit-view-layout,
 .workspace.view-visit,
@@ -17464,9 +17458,6 @@ body.dark-mode .document-manual-override {
 	.patient-card-column,
 	.patient-card-body,
 	.patient-workspace,
-	.treatment-plan-module,
-	.treatment-3tier-comparison,
-	.treatment-plan-phased-view,
 	.visit-note-panel,
 	.visit-view-layout,
 	.workspace.view-visit,

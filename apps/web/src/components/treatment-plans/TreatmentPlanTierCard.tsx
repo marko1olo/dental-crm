@@ -129,7 +129,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 	return (
 		<div
 			onClick={() => onCardClick(tier)}
-			className={`relative flex flex-col justify-between rounded-3xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full flex-1 min-w-0 ${
+			className={`relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full max-h-[620px] min-h-0 overflow-hidden flex-1 min-w-0 ${
 				isSelected
 					? `${tier.borderClass} shadow-xl ring-2 ring-[var(--teal,var(--brand-primary))]/20 z-10`
 					: "border-[var(--line,var(--border,#cbd5e1))] opacity-95 hover:opacity-100 hover:border-[var(--line-strong)] shadow-md"
@@ -169,8 +169,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 
 			{/* Scrollable Card Body: flat stages and materials */}
 			<div
-				className="flex-1 sm:overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 sm:my-3 sm:overscroll-contain sm:max-h-[560px] pb-4 sm:pb-12"
-				style={{ scrollPaddingBottom: "240px" }}
+				className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 overscroll-contain"
 			>
 				{/* Pricing Section: Flat tonal underlay (Anti-Matryoshka Law) */}
 				<div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] space-y-1 sm:space-y-1.5">
@@ -421,7 +420,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 			</div>
 
 			{/* Actions Bottom: Sticky Fixed Footer (Miller's Law: <= 2 Action Buttons) */}
-			<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] p-3 sm:p-3.5 pb-3.5 sm:pb-3.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-3xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0">
+			<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] p-3 -mx-3.5 sm:-mx-4 -mb-3.5 sm:-mb-4 rounded-b-2xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0">
 				<button
 					type="button"
 					onClick={(e) => onSignClick(e, tier)}

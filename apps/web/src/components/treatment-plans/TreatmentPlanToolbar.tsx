@@ -27,16 +27,11 @@ import {
 	Zap,
 } from "lucide-react";
 import { DentalLabOrder } from "../icons/DentalIcons.js";
-import {
-	COPILOT_PRESET_ACTIONS,
-	type CopilotCommandType,
-} from "../../services/ai/treatmentPlanCopilot";
-import {
-	CLINICAL_BUNDLES,
-	type ClinicalBundleId,
-} from "./treatmentPlanBundlesEngine";
-import { ClinicalBundlesPanel } from "./ClinicalBundlesPanel";
+import type { CopilotCommandType } from "../../services/ai/treatmentPlanCopilot";
+import type { ClinicalBundleId } from "./treatmentPlanBundlesEngine";
 import type { TreatmentPlanStatus } from "./types";
+import { TreatmentPlanDiscountsModal } from "./TreatmentPlanDiscountsModal";
+import { TreatmentPlanCopilotModal } from "./TreatmentPlanCopilotModal";
 
 export interface TreatmentPlanToolbarProps {
 	readonly planAgeDays: number;
@@ -124,6 +119,8 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 	orthopedicTeeth,
 }) => {
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(initialOptionsMenuOpen);
+	const [isDiscountsModalOpen, setIsDiscountsModalOpen] = useState<boolean>(false);
+	const [isCopilotModalOpen, setIsCopilotModalOpen] = useState<boolean>(false);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
 	// Close options dropdown on outside click
@@ -140,7 +137,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 	return (
 		<>
 			{/* Top Bar: Title & Global Quick Actions */}
-			<div className="flex flex-col gap-3 pb-3.5 border-b border-[var(--line,var(--border,#cbd5e1))]">
+			<div className="flex flex-col gap-2 pb-2 border-b border-[var(--line,var(--border,#cbd5e1))]">
 				{/* Row 1: Clinical Header, Protocol Status & Patient Info */}
 				<div className="flex flex-wrap items-center justify-between gap-2.5">
 					<div className="flex items-center gap-2.5 min-w-0 flex-wrap">
@@ -242,7 +239,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 				</div>
 
 				{/* Row 2: Clean 36px Command Bar — Tab Switcher (Left) & Actions (Right) */}
-				<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,var(--border,#cbd5e1))]/50">
+				<div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/50">
 					{/* Tab Switcher: 3 Tiers vs Stages vs 4 Phases */}
 					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 gap-1">
 						<button
@@ -414,6 +411,54 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							<button
 								type="button"
 								onClick={() => {
+									setIsDiscountsModalOpen(true);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="options-menu-discount-btn"
+							>
+								<div className="flex items-center gap-2">
+									<Percent size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span>Скидки и бонусы пациента</span>
+								</div>
+								{discountPercent > 0 && (
+									<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+										-{discountPercent}%
+									</span>
+								)}
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setIsCopilotModalOpen(true);
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="module-copilot-ai-audit-btn"
+								title="Открыть ИИ-Ассистент врача, пресеты СтАР и аудит"
+							>
+								<Bot size={14} className="text-amber-500 shrink-0" />
+								<span>AI Copilot & Клинический аудит</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onOpenChairsideBundlesModal();
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="open-chairside-bundles-modal-btn"
+								title="Открыть клинические пакеты услуг у кресла («Все включено»)"
+							>
+								<PackageCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>Клинические пакеты («Все включено»)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
 									onOpenCuratorModal();
 									setIsOptionsMenuOpen(false);
 								}}
@@ -543,250 +588,28 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 			</div>
 		</div>
 
-			{/* Service Area: Collapsible Toolbars (Mandates 8p, 8d — Screen Height Budget <= 160-180px) */}
-			<div className="flex flex-col gap-2">
-				{/* Financial Adjustments Bar: Discounts & Loyalty Bonus Points */}
-				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] text-xs overflow-hidden transition-all">
-					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
-						<div className="flex items-center gap-2 flex-wrap">
-							<Percent size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							<span>Скидки и бонусы пациента</span>
-							{discountPercent > 0 && (
-								<span className="px-2 py-0.5 rounded-full font-mono font-bold text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-									-{discountPercent}%
-								</span>
-							)}
-							{bonusPointsToUseRub > 0 && (
-								<span className="px-2 py-0.5 rounded-full font-mono font-bold text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-									-{bonusPointsToUseRub.toLocaleString("ru-RU")} ₽
-								</span>
-							)}
-						</div>
-						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
-							<Coins size={13} className="text-amber-500 shrink-0" />
-							<span className="font-mono">{patientBalanceRub.toLocaleString("ru-RU")} ₽</span>
-							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
-						</div>
-					</summary>
-					<div className="p-3.5 pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-						{/* Quick Discounts */}
-						<div className="flex items-center gap-2">
-							<span className="font-semibold text-[var(--muted,#64748b)]">Скидка:</span>
-							<div className="flex items-center gap-1 flex-wrap">
-								{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
-									<button
-										key={pct}
-										type="button"
-										onClick={() => setDiscountPercent(pct)}
-										title={
-											pct === 100
-												? "100% скидка: гарантийные переделки и персонал (без паролей и согласований)"
-												: `Применить скидку ${pct}%`
-										}
-										className={`px-2.5 py-1 min-h-[44px] sm:min-h-[32px] inline-flex items-center justify-center rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
-											discountPercent === pct
-												? pct === 100
-													? "bg-emerald-600 text-white shadow-xs"
-													: "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-												: pct === 100
-													? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 border border-emerald-500/30"
-													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
-										}`}
-									>
-										{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
-									</button>
-								))}
-								{discountPercent === 100 && (
-									<span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 ml-1">
-										0 ₽ (Гарантия / Персонал)
-									</span>
-								)}
-								<div className="inline-flex items-center gap-1 ml-1.5" title="Произвольная скидка врача (0-100%) без мастер-паролей (Мандат 8e)">
-									<input
-										type="number"
-										min="0"
-										max="100"
-										value={discountPercent}
-										onChange={(e) => {
-											const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-											setDiscountPercent(val);
-										}}
-										className="w-14 min-h-[32px] h-8 px-1.5 text-xs font-mono font-bold rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
-										placeholder="%"
-									/>
-									<span className="text-xs text-[var(--muted,#64748b)] font-bold">%</span>
-								</div>
-							</div>
-						</div>
+			{/* Decoupled Modals for Discounts and AI Copilot (Mandates 8p, 8d — Screen Height Budget <= 160-180px) */}
+			<TreatmentPlanDiscountsModal
+				isOpen={isDiscountsModalOpen}
+				onClose={() => setIsDiscountsModalOpen(false)}
+				discountPercent={discountPercent}
+				setDiscountPercent={setDiscountPercent}
+				bonusPointsToUseRub={bonusPointsToUseRub}
+				setBonusPointsToUseRub={setBonusPointsToUseRub}
+				patientBalanceRub={patientBalanceRub}
+			/>
 
-						{/* Loyalty Points / Patient Deposit */}
-						<div className="flex items-center gap-3">
-							<div className="flex items-center gap-1.5">
-								<Coins size={14} className="text-amber-500" />
-								<span className="text-[var(--muted,#64748b)]">
-									Баланс/Бонусы:{" "}
-									<strong className="font-mono text-[var(--ink,#0f172a)]">
-										{patientBalanceRub.toLocaleString("ru-RU")} ₽
-									</strong>
-								</span>
-							</div>
-
-							{patientBalanceRub > 0 && (
-								<div className="flex items-center gap-1.5">
-									<input
-										type="number"
-										min={0}
-										max={patientBalanceRub}
-										value={bonusPointsToUseRub || ""}
-										onChange={(e) => {
-											const val = Math.max(0, Math.min(patientBalanceRub, Number(e.target.value) || 0));
-											setBonusPointsToUseRub(val);
-										}}
-										placeholder="Списать ₽"
-										className="w-24 min-h-[44px] sm:min-h-[32px] px-2 py-1 text-xs font-mono rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
-									/>
-									{bonusPointsToUseRub > 0 && (
-										<button
-											type="button"
-											onClick={() => setBonusPointsToUseRub(0)}
-											className="min-h-[44px] sm:min-h-0 px-2 py-1 text-[11px] text-rose-500 hover:underline cursor-pointer inline-flex items-center"
-										>
-											Сбросить
-										</button>
-									)}
-								</div>
-							)}
-						</div>
-					</div>
-				</details>
-
-				{/* AI Copilot Clinical Assistant Bar */}
-				<details className="group rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs shadow-xs overflow-hidden transition-all">
-					<summary className="cursor-pointer text-xs font-bold text-[var(--teal-dark,var(--teal))] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
-						<div className="flex items-center gap-2 flex-wrap">
-							<Sparkles size={15} className="text-amber-500 shrink-0" />
-							<span>AI Copilot (Ассистент врача & Аудит)</span>
-							{customStages && (
-								<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
-									AI-модификации
-								</span>
-							)}
-							{copilotFeedback && (
-								<span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 border border-indigo-500/20 truncate max-w-[240px]">
-									{copilotFeedback}
-								</span>
-							)}
-						</div>
-						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
-							<span className="hidden sm:inline">Пресеты СтАР, Оптимизация, Аудит</span>
-							<ChevronDown size={14} className="transition-transform group-open:rotate-180 text-[var(--ink,#0f172a)]" />
-						</div>
-					</summary>
-					<div className="p-3.5 pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))] flex flex-col gap-2.5">
-						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-							<div className="flex items-center gap-2 flex-wrap">
-								{COPILOT_PRESET_ACTIONS.map((action) => (
-									<button
-										key={action.id}
-										type="button"
-										disabled={isCopilotExecuting}
-										onClick={() => onExecuteCopilot(action.id)}
-										className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-all disabled:opacity-50 shadow-2xs text-[11px] inline-flex items-center justify-center touch-manipulation"
-										title={action.description}
-										data-testid={`module-copilot-btn-${action.id}`}
-									>
-										{action.title}
-									</button>
-								))}
-
-								<button
-									type="button"
-									onClick={onOpenPresenterModal}
-									className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl font-bold bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-all shadow-2xs text-[11px] inline-flex items-center justify-center gap-1.5 touch-manipulation"
-									title="Запустить клиническую валидацию СтАР, проверку анатомии FDI и генерацию объяснения для пациента"
-									data-testid="module-copilot-ai-audit-btn"
-								>
-									<Bot size={13} className="text-amber-600 dark:text-amber-400" />
-									<span>ИИ-Аудит & Презентация</span>
-								</button>
-							</div>
-
-							<div className="flex items-center gap-2 shrink-0">
-								{Boolean(customStages || cbctAutoPlanTiers) && (
-									<button
-										type="button"
-										onClick={onResetPlan}
-										className="min-h-[44px] sm:min-h-0 px-2.5 py-1 rounded-lg text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 cursor-pointer inline-flex items-center justify-center touch-manipulation"
-										title="Сбросить все ручные правки и AI модификации"
-										data-testid="copilot-reset-plan-btn"
-									>
-										Сбросить к исходному
-									</button>
-								)}
-							</div>
-						</div>
-
-						{copilotFeedback && (
-							<div
-								className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-950 dark:text-indigo-100 text-xs mt-1"
-								data-testid="module-copilot-feedback"
-							>
-								<div className="flex items-center gap-2">
-									<Bot size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-									<span>{copilotFeedback}</span>
-								</div>
-								<button
-									type="button"
-									onClick={() => setCopilotFeedback(null)}
-									className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-4 shrink-0"
-								>
-									Скрыть
-								</button>
-							</div>
-						)}
-					</div>
-				</details>
-
-				{/* Turnkey Clinical Packages 1-Click Panel (Mandate 8e, 8p) */}
-				<div className="flex items-center justify-between gap-2 p-1">
-					<button
-						type="button"
-						onClick={onOpenChairsideBundlesModal}
-						className="h-8 px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-						title="Открыть клинические пакеты услуг у кресла («Все включено»)"
-						data-testid="open-chairside-bundles-modal-btn"
-					>
-						<PackageCheck size={15} />
-						<span>Клинические пакеты («Все включено»)</span>
-						<span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-white/20 text-white ml-1">
-							{CLINICAL_BUNDLES.length} пакетов
-						</span>
-					</button>
-				</div>
-				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] text-xs overflow-hidden transition-all">
-					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
-						<div className="flex items-center gap-2">
-							<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							<span>Готовые клинические пакеты «под ключ» ({CLINICAL_BUNDLES.length} пакетов)</span>
-							<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
-								1 клик
-							</span>
-						</div>
-						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
-							<span className="hidden sm:inline font-mono">Прейскурант услуг</span>
-							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
-						</div>
-					</summary>
-					<div className="p-2 border-t border-[var(--line,var(--border,#cbd5e1))]">
-						<ClinicalBundlesPanel
-							compact={true}
-							onApplyBundle={onApplyClinicalBundle}
-							initialToothNumber={orthopedicTeeth[0] || 16}
-							className="border-0 shadow-none p-2"
-						/>
-					</div>
-				</details>
-			</div>
+			<TreatmentPlanCopilotModal
+				isOpen={isCopilotModalOpen}
+				onClose={() => setIsCopilotModalOpen(false)}
+				isCopilotExecuting={isCopilotExecuting}
+				onExecuteCopilot={onExecuteCopilot}
+				onOpenPresenterModal={onOpenPresenterModal}
+				onResetPlan={onResetPlan}
+				hasCustomModifications={Boolean(customStages || cbctAutoPlanTiers)}
+				copilotFeedback={copilotFeedback}
+				setCopilotFeedback={setCopilotFeedback}
+			/>
 		</>
 	);
 };

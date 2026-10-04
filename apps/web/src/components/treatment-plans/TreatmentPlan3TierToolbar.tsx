@@ -71,25 +71,16 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 	}, [isParamsOpen]);
 
 	return (
-		<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-2xs">
+		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-2xs">
 			{/* Left: Module Title & Clinical Standards Badge */}
-			<div className="flex items-center gap-2.5 min-w-0">
-				<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
-					<Sparkles size={16} />
-				</div>
-				<div className="min-w-0">
-					<div className="flex items-center gap-2 flex-wrap">
-						<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-normal sm:whitespace-nowrap shrink-0">
-							3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
-						</span>
-						<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
-							Стандарты СтАР
-						</span>
-					</div>
-					<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 leading-relaxed break-words">
-						Интерактивное сравнение клинических этапов, сроков, гарантий и программ оплаты 0%
-					</p>
-				</div>
+			<div className="flex items-center gap-2 min-w-0">
+				<Sparkles size={15} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+				<span className="font-bold text-xs text-[var(--ink,#0f172a)] whitespace-nowrap">
+					3-Tier Сравнение планов
+				</span>
+				<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
+					СтАР
+				</span>
 			</div>
 
 			{/* Right: Streamlined Controls (Segmented Modes + Messenger Share + Params Dropdown) */}

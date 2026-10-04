@@ -696,6 +696,57 @@ export function getDefaultClinicalPresetStages(
 	return [stage1, stage2, stage3];
 }
 
+export function normalizeToothState(state: unknown): ToothState {
+	if (!state || typeof state !== "string") return "Healthy";
+	const trimmed = state.trim().toLowerCase();
+	switch (trimmed) {
+		case "caries":
+		case "кариес":
+			return "Caries";
+		case "pulpitis":
+		case "пульпит":
+			return "Pulpitis";
+		case "periodontitis":
+		case "периодонтит":
+			return "Periodontitis";
+		case "missing":
+		case "отсутствует":
+		case "удален":
+		case "удалён":
+			return "Missing";
+		case "crown":
+		case "коронка":
+			return "Crown";
+		case "implant":
+		case "имплант":
+		case "имплантат":
+			return "Implant";
+		case "root":
+		case "корень":
+			return "Root";
+		case "impacted":
+		case "дистопирован":
+		case "дистопия":
+		case "ретинирован":
+		case "ретенция":
+			return "Retained";
+		case "filled":
+		case "пломба":
+			return "Filled";
+		default:
+			return "Healthy";
+	}
+}
+
+export function hasToothDefect(t: ToothData): boolean {
+	const normState = normalizeToothState(t.state);
+	if (normState !== "Healthy" && normState !== "Filled") return true;
+	if (Boolean(t.boneLossLevel && t.boneLossLevel > 0)) return true;
+	if (Boolean(t.mobility && t.mobility > 0)) return true;
+	if (Boolean(t.furcationGrade && t.furcationGrade > 0)) return true;
+	return false;
+}
+
 export function generateTierPlanStages(
 	tierId: TreatmentPlanTierId,
 	teeth: readonly ToothData[],
@@ -707,19 +758,11 @@ export function generateTierPlanStages(
 	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 
 	const effectiveTeeth =
-		isDemo && (!teeth || teeth.length === 0 || !teeth.some((t) => (t.state && t.state !== "Healthy" && t.state !== "Filled") || Boolean(t.boneLossLevel && t.boneLossLevel > 0)))
+		isDemo && (!teeth || teeth.length === 0 || !teeth.some(hasToothDefect))
 			? DEMO_SHOWCASE_TEETH
 			: teeth;
 
-	const hasPathology = (effectiveTeeth || []).some((t) => {
-		const s = t.state || "Healthy";
-		return (
-			(s !== "Healthy" && s !== "Filled") ||
-			Boolean(t.boneLossLevel && t.boneLossLevel > 0) ||
-			Boolean(t.mobility && t.mobility > 0) ||
-			Boolean(t.furcationGrade && t.furcationGrade > 0)
-		);
-	});
+	const hasPathology = (effectiveTeeth || []).some(hasToothDefect);
 
 	if (!hasPathology) {
 		return getDefaultClinicalPresetStages(tierId, catalog, validDiscountPct, { isDemoMode: isDemo });
@@ -766,8 +809,9 @@ export function generateTierPlanStages(
 	const missingLower: number[] = [];
 
 	for (const tooth of effectiveTeeth) {
-		const num = tooth.toothNumber;
-		const state: ToothState | string = tooth.state || "Healthy";
+		const num = tooth.toothNumber ?? (tooth as any).id ?? (tooth as any).number;
+		if (typeof num !== "number" || !Number.isFinite(num)) continue;
+		const state: ToothState = normalizeToothState(tooth.state);
 		const isDeciduous = isDeciduousTooth(num);
 
 		if (isDeciduous) {
@@ -779,7 +823,7 @@ export function generateTierPlanStages(
 				stage1Items.push(createPlanItem("s1-ped-pulp-" + num, 1, "stage_1_therapy", defPulp, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 				const defCrown = ORDER_804N_DICTIONARY.PediatricCrownSSC!;
 				stage3Items.push(createPlanItem("s3-ped-crown-" + num, 3, "stage_3_orthopedics", defCrown, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
-			} else if (state === "Periodontitis" || state === "Root" || state === "Impacted") {
+			} else if (state === "Periodontitis" || state === "Root" || state === "Retained") {
 				const defExt = ORDER_804N_DICTIONARY.PediatricExtraction!;
 				stage2Items.push(createPlanItem("s2-ped-ext-" + num, 2, "stage_2_surgery", defExt, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 			}
@@ -816,7 +860,7 @@ export function generateTierPlanStages(
 			continue;
 		}
 
-		if (state === "Impacted") {
+		if (state === "Retained") {
 			const defComplexExt = ORDER_804N_DICTIONARY.ComplexExtraction!;
 			stage2Items.push(createPlanItem("s2-impacted-" + num, 2, "stage_2_surgery", defComplexExt, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
 			continue;
@@ -944,7 +988,7 @@ export function generateTierPlanStages(
 					);
 				}
 			}
-		} else if (state === "Crown" || state === "CrownNeeded") {
+		} else if (state === "Crown") {
 			if (tierId === "economy") {
 				const defMK = ORDER_804N_DICTIONARY.CrownMetalCeramic!;
 				stage3Items.push(createPlanItem("s3-crown-" + num, 3, "stage_3_orthopedics", defMK, num, catalog, validDiscountPct, { isDemoMode: isDemo }));

@@ -68,7 +68,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	return (
 		<div
-			className={`treatment-plan-module flex flex-col gap-5 w-full bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] p-5 shadow-xl ${className}`.trim()}
+			className={`treatment-plan-module flex flex-col gap-3.5 w-full bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] p-3.5 shadow-lg ${className}`.trim()}
 			data-testid="treatment-plan-module"
 		>
 			{/* Top Bar, Quick Actions, Status, Tabs, and Collapsible Toolbars */}

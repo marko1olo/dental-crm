@@ -20,8 +20,13 @@ import type { ToothData } from "./components/odontogram/ToothChart";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStatus } from "./components/treatment-plans/types";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
 
-// Patient with no charted pathology: triggers rich clinical turnkey presets (45k, 145k, 380k)
-const sampleTeeth: ToothData[] = [];
+// Patient with real charted pathology: wired strictly to real dental pathology and clinical nomenclature (Order 804n)
+const sampleTeeth: ToothData[] = [
+	{ toothNumber: 16, state: "Caries" },
+	{ toothNumber: 24, state: "Root" },
+	{ toothNumber: 36, state: "Missing" },
+	{ toothNumber: 46, state: "Pulpitis" },
+];
 
 const sampleTiers = generate3TierPlanComparison(sampleTeeth);
 
@@ -41,27 +46,23 @@ function TreatmentPlanPreviewApp() {
 	}, [rawTheme]);
 
 	return (
-		<div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-[var(--ink)] p-4 sm:p-6 transition-colors duration-200">
-			<div className="max-w-7xl mx-auto space-y-4">
-				<header className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[var(--line)]">
-					<div>
-						<h1 className="text-xl font-bold tracking-tight text-[var(--ink)]">
-							План лечения · 3-Tier Сравнение & Командная панель
-						</h1>
-						<p className="text-xs text-[var(--muted)]">
-							Пациент: Иванов Иван Иванович | Врач: Д-р Смирнов А.В. | Тема: {rawTheme.toUpperCase()}
-						</p>
-					</div>
+		<div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-[var(--ink)] p-2.5 sm:p-3 transition-colors duration-200">
+			<div className="max-w-[1400px] mx-auto space-y-2.5">
+				<header className="flex items-center justify-between pb-1.5 border-b border-[var(--line)] text-xs">
 					<div className="flex items-center gap-2">
+						<span className="font-extrabold text-[var(--ink)]">План лечения · 3-Tier Сравнение</span>
+						<span className="text-[var(--muted)]">| Иванов И. И.</span>
+					</div>
+					<div className="flex items-center gap-1.5">
 						<button
 							type="button"
 							onClick={() => {
 								window.location.search = `?theme=light`;
 							}}
-							className={`h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
+							className={`h-6 px-2.5 rounded-md text-[11px] font-bold border transition-all ${
 								rawTheme === "light"
 									? "bg-[var(--accent)] text-white border-[var(--accent)]"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-strong)]"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 							}`}
 						>
 							Light
@@ -71,10 +72,10 @@ function TreatmentPlanPreviewApp() {
 							onClick={() => {
 								window.location.search = `?theme=dark`;
 							}}
-							className={`h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
+							className={`h-6 px-2.5 rounded-md text-[11px] font-bold border transition-all ${
 								rawTheme === "dark"
 									? "bg-[var(--accent)] text-white border-[var(--accent)]"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-strong)]"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 							}`}
 						>
 							Dark
@@ -126,7 +127,7 @@ function TreatmentPlanPreviewApp() {
 				/>
 
 				{/* 2. 3-Tier Studio with Toolbar and Comparison Cards */}
-				<main className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl p-4 sm:p-6 shadow-sm">
+				<main className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl p-3 shadow-sm">
 					<TreatmentPlan3TierComparison
 						tiers={sampleTiers}
 						selectedTierId={selectedTierId}

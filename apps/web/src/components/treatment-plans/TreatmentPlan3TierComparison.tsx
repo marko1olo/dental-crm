@@ -180,7 +180,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 	return (
 		<div
-			className={`treatment-3tier-comparison flex flex-col gap-4 sm:gap-6 w-full pb-60 sm:pb-36 ${className}`.trim()}
+			className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-2 ${className}`.trim()}
 			data-testid="treatment-3tier-comparison"
 		>
 			{/* 30-Day Plan Age Unblocked Notice (Mandate 8e) */}
@@ -252,7 +252,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			</div>
 
 			{/* Desktop 3-Tier Grid Layout (>= 640px / hidden sm:grid) */}
-			<div className="hidden sm:grid sm:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+			<div className="hidden sm:grid sm:grid-cols-3 gap-3 sm:gap-4 items-stretch h-[calc(100vh-250px)] min-h-[500px] max-h-[620px] overflow-hidden">
 				{tiers.map((tier) => renderSingleTierCard(tier, false))}
 			</div>
 

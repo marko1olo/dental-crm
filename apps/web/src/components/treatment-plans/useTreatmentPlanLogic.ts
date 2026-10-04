@@ -65,6 +65,7 @@ import {
 	createExpressLabOrder,
 	dispatchStageStartEvents,
 } from "./treatmentPlanNetworkSync";
+import { useTreatmentPlanTeeth } from "./useTreatmentPlanTeeth";
 
 export interface UseTreatmentPlanLogicProps {
 	readonly patientId: string;
@@ -88,6 +89,7 @@ export function useTreatmentPlanLogic({
 	onStatusChange,
 }: UseTreatmentPlanLogicProps) {
 	const { dashboard, auth } = useAppLogicContext();
+	const effectiveTeethData = useTreatmentPlanTeeth(patientId, teethData);
 
 	const planAgeDays = useMemo(() => {
 		if (!planCreatedAtIso) return 0;
@@ -101,9 +103,7 @@ export function useTreatmentPlanLogic({
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
 
-	const [planStatus, setPlanStatus] = useState<TreatmentPlanStatus>(
-		initialStatus || "agreed",
-	);
+	const [planStatus, setPlanStatus] = useState<TreatmentPlanStatus>(initialStatus || "agreed");
 
 	// Modals State
 	const [isSignModalOpen, setIsSignModalOpen] = useState<boolean>(false);
@@ -125,18 +125,14 @@ export function useTreatmentPlanLogic({
 	const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
 
 	// Filters
-	const [specialtyFilter, setSpecialtyFilter] = useState<
-		"all" | "therapy" | "surgery" | "orthopedics" | "orthodontics" | "periodontics"
-	>("all");
+	const [specialtyFilter, setSpecialtyFilter] = useState<"all" | "therapy" | "surgery" | "orthopedics" | "orthodontics" | "periodontics">("all");
 	const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState<boolean>(false);
 	const [targetStageForAdd, setTargetStageForAdd] = useState<TreatmentPlanStage | null>(null);
 	const [isCreateStageModalOpen, setIsCreateStageModalOpen] = useState<boolean>(false);
 
 	// AI Copilot & Custom Stages State
 	const [customStages, setCustomStages] = useState<TreatmentPlanStage[] | null>(null);
-	const [cbctAutoPlanTiers, setCbctAutoPlanTiers] = useState<
-		[TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] | null
-	>(null);
+	const [cbctAutoPlanTiers, setCbctAutoPlanTiers] = useState<[TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] | null>(null);
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
 	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
 
@@ -185,8 +181,8 @@ export function useTreatmentPlanLogic({
 
 	const planTiers = useMemo(() => {
 		if (cbctAutoPlanTiers) return cbctAutoPlanTiers;
-		return generate3TierPlanComparison(teethData, catalog, discountPercent);
-	}, [cbctAutoPlanTiers, teethData, catalog, discountPercent]);
+		return generate3TierPlanComparison(effectiveTeethData, catalog, discountPercent);
+	}, [cbctAutoPlanTiers, effectiveTeethData, catalog, discountPercent]);
 
 	const currentTier = useMemo(() => {
 		return planTiers.find((t) => t.tierId === selectedTierId) ?? planTiers[2]!;
@@ -196,8 +192,8 @@ export function useTreatmentPlanLogic({
 		if (currentTier?.stages && currentTier.stages.length > 0) {
 			return currentTier.stages;
 		}
-		return generateTreatmentPlanStages(teethData, catalog, discountPercent);
-	}, [teethData, catalog, discountPercent, currentTier]);
+		return generateTreatmentPlanStages(effectiveTeethData, catalog, discountPercent);
+	}, [effectiveTeethData, catalog, discountPercent, currentTier]);
 
 	const stages = customStages ?? autoStages;
 
@@ -269,7 +265,7 @@ export function useTreatmentPlanLogic({
 
 	const handleGenerateCbctAutoPlan = () => {
 		try {
-			const findings = extractCbctFindingsFromOdontogramAndStorage(patientId, teethData);
+			const findings = extractCbctFindingsFromOdontogramAndStorage(patientId, effectiveTeethData);
 			const generatedTiers = generateCbctAutoPlanScenarios(findings, catalog, discountPercent);
 			setCbctAutoPlanTiers(generatedTiers);
 			setSelectedTierId("standard");
@@ -460,7 +456,7 @@ export function useTreatmentPlanLogic({
 			return Array.from(new Set(teethFromStages)).sort((a, b) => a - b);
 		}
 
-		const teethFromOdontogram = (teethData || [])
+		const teethFromOdontogram = (effectiveTeethData || [])
 			.filter((t) => {
 				const s = String(t.state || "").toLowerCase();
 				return (
@@ -480,7 +476,7 @@ export function useTreatmentPlanLogic({
 		}
 
 		return [21];
-	}, [stages, teethData]);
+	}, [stages, effectiveTeethData]);
 
 	const handleOpenLabOrder = (teeth?: number[]) => {
 		setSelectedLabTeeth(teeth && teeth.length > 0 ? teeth : orthopedicTeeth);
