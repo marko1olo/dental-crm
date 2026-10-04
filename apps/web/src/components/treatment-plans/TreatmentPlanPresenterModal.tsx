@@ -449,7 +449,10 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 			aria-modal="true"
 			aria-labelledby="treatment-presenter-modal-title"
 		>
-			<div className={"treatment-presenter-container " + className}>
+			<div className={`treatment-presenter-modal treatment-presenter-container ${isFullscreen ? "treatment-presenter-fullscreen " : ""}${className}`}>
+				{/* Apple HIG Drag Handle for Mobile Viewports (<= 768px) */}
+				<div className="treatment-presenter-drag-handle sm:hidden" />
+
 				{/* Top Header */}
 				<TreatmentPlanPresenterHeader
 					patientName={patientName}

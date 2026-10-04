@@ -167,7 +167,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 
 						{/* 1-Click Status Transitions (Mandates 8e, 8c — Doctor Autonomy & Zero Barriers) */}
 						<div
-							className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs text-xs shrink-0"
+							className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs text-xs shrink-0 gap-1 overflow-x-auto max-w-full"
 							role="group"
 							aria-label="Статус плана лечения"
 							data-testid="treatment-plan-status-control"
@@ -176,10 +176,10 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								type="button"
 								onClick={() => onStatusTransition("draft")}
 								data-testid="tp-status-btn-draft"
-								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									planStatus === "draft"
 										? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)]"
 								}`}
 								title="Черновик плана лечения"
 							>
@@ -189,38 +189,38 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								type="button"
 								onClick={() => onStatusTransition("agreed")}
 								data-testid="tp-status-btn-agreed"
-								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap touch-manipulation ${
 									planStatus === "agreed"
 										? "bg-emerald-600 text-white shadow-2xs"
-										: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800"
+										: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:bg-[var(--paper-strong)]"
 								}`}
 								title="План согласован с пациентом (1 клик)"
 							>
-								<Check size={12} />
+								<Check size={13} />
 								<span>Согласован</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => onStatusTransition("in_progress")}
 								data-testid="tp-status-btn-in-progress"
-								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap touch-manipulation ${
 									planStatus === "in_progress"
 										? "bg-teal-600 text-white shadow-2xs"
-										: "text-teal-700 dark:text-teal-400 hover:text-teal-800"
+										: "text-teal-700 dark:text-teal-400 hover:text-teal-800 hover:bg-[var(--paper-strong)]"
 								}`}
 								title="План переведен в работу (1 клик)"
 							>
-								<Zap size={12} />
+								<Zap size={13} />
 								<span>В работе</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => onStatusTransition("completed")}
 								data-testid="tp-status-btn-completed"
-								className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									planStatus === "completed"
 										? "bg-blue-600 text-white shadow-2xs"
-										: "text-blue-700 dark:text-blue-400 hover:text-blue-800"
+										: "text-blue-700 dark:text-blue-400 hover:text-blue-800 hover:bg-[var(--paper-strong)]"
 								}`}
 								title="Лечение по плану завершено"
 							>

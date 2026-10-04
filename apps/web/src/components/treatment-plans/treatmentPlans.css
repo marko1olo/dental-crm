@@ -8,7 +8,7 @@
 .treatment-presenter-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 1000;
+	z-index: 10050;
 	background: rgba(15, 23, 42, 0.75);
 	backdrop-filter: blur(8px);
 	display: flex;
@@ -18,7 +18,8 @@
 	box-sizing: border-box;
 }
 
-.treatment-presenter-modal {
+.treatment-presenter-modal,
+.treatment-presenter-container {
 	--tp-bg: var(--paper);
 	--tp-surface: var(--paper-strong);
 	--tp-surface-soft: var(--paper-soft);
@@ -51,9 +52,11 @@
 	overflow: hidden;
 	box-sizing: border-box;
 	font-family: inherit;
+	overflow-x: clip;
 }
 
-.treatment-presenter-modal.treatment-presenter-fullscreen {
+.treatment-presenter-modal.treatment-presenter-fullscreen,
+.treatment-presenter-container.treatment-presenter-fullscreen {
 	background: transparent;
 	position: fixed;
 	inset: 0;
@@ -291,6 +294,34 @@
 }
 
 @media (max-width: 768px) {
+	.treatment-presenter-backdrop {
+		padding: 0;
+		align-items: flex-end;
+	}
+	.treatment-presenter-modal,
+	.treatment-presenter-container {
+		border-radius: 24px 24px 0 0;
+		max-height: 94vh;
+		height: 94vh;
+		width: 100%;
+		max-width: 100vw;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+	}
+	.treatment-presenter-drag-handle {
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--tp-border);
+		margin: 8px auto 0 auto;
+		flex-shrink: 0;
+	}
+	.treatment-presenter-fullscreen-btn,
+	.treatment-presenter-header-print-btn {
+		display: none !important;
+	}
 	.treatment-presenter-header {
 		flex-direction: column;
 		align-items: stretch;

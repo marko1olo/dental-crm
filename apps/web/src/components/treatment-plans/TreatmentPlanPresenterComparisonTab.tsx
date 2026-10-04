@@ -353,104 +353,181 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 													{/* Stage Content */}
 													{isExpanded && (
 														<div className="treatment-stage-table-wrap">
-															<table className="treatment-stage-table">
-																<thead>
-																	<tr>
-																		<th className="w-10">№</th>
-																		<th className="w-28">Код услуги</th>
-																		<th className="w-16">Зуб FDI</th>
-																		<th>Наименование услуги</th>
-																		<th className="w-16 text-center">Кол-во</th>
-																		<th className="w-24 text-right">Цена</th>
-																		<th className="w-24 text-right">Итого</th>
-																	</tr>
-																</thead>
-																<tbody>
-																	{(() => {
-																		const microConsumables = stage.items.filter(isMicroConsumable);
-																		const displayList = showMicroConsumables
-																			? stage.items
-																			: stage.items.filter((it) => !isMicroConsumable(it));
-																		return (
-																			<>
-																				{displayList.length === 0 ? (
-																					<tr>
-																						<td colSpan={7} className="py-6 text-center text-xs text-[var(--tp-text-muted)]">
-																							В данном этапе пока нет назначенных медицинских услуг.
-																						</td>
-																					</tr>
-																				) : (
-																					displayList.map((item, idx) => (
-																						<tr key={item.id || idx}>
-																							<td className="text-center font-mono text-[var(--tp-text-muted)]">
-																								{idx + 1}
-																							</td>
-																							<td>
-																								<span className="code-804n-badge">{item.code804n}</span>
-																							</td>
-																							<td className="text-center">
-																								{item.toothNumber ? (
-																									<span className="tooth-fdi-badge">{item.toothNumber}</span>
-																								) : (
-																									<span className="text-[var(--tp-text-muted)]">—</span>
+															{(() => {
+																const microConsumables = stage.items.filter(isMicroConsumable);
+																const displayList = showMicroConsumables
+																	? stage.items
+																	: stage.items.filter((it) => !isMicroConsumable(it));
+																return (
+																	<>
+																		{/* Mobile Card List (< 768px) */}
+																		<div className="md:hidden space-y-2 py-2" data-testid={"stage-mobile-cards-" + stage.stageNumber}>
+																			{displayList.length === 0 ? (
+																				<div className="py-4 text-center text-xs text-[var(--tp-text-muted)]">
+																					В данном этапе пока нет назначенных медицинских услуг.
+																				</div>
+																			) : (
+																				displayList.map((item, idx) => (
+																					<div
+																						key={item.id || idx}
+																						className="p-3 rounded-xl bg-[var(--tp-surface-soft)] border border-[var(--tp-border)] space-y-1.5"
+																						data-testid={`stage-item-mobile-${idx}`}
+																					>
+																						<div className="flex items-center justify-between gap-2">
+																							<div className="flex items-center gap-1.5 min-w-0">
+																								<span className="code-804n-badge text-[10px]">{item.code804n}</span>
+																								{item.toothNumber && (
+																									<span className="tooth-fdi-badge text-[11px] w-6 h-6">{item.toothNumber}</span>
 																								)}
-																							</td>
-																							<td>
-																								<div className="font-semibold text-[var(--tp-text-main)] break-words min-w-0">
-																									{item.name}
-																								</div>
-																								{item.clinicalRationale && (
-																									<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
-																										{item.clinicalRationale}
-																									</div>
-																								)}
-																								{(item.requiresManualPricing || item.priceRub === 0) && (
-																									<div className="mt-1">
-																										<MissingPriceAlert
-																											item={item}
-																											onUpdatePrice={onUpdateItemPrice}
-																											variant="inline"
-																										/>
-																									</div>
-																								)}
-																							</td>
-																							<td className="text-center font-semibold">{item.quantity}</td>
-																							<td className="text-right text-[var(--tp-text-muted)] font-mono">
-																								{(item.unitPriceRub || 0).toLocaleString("ru-RU")} ₽
-																							</td>
-																							<td className={`text-right font-bold font-mono ${
-																								item.requiresManualPricing || item.priceRub === 0
-																									? "text-amber-600 dark:text-amber-400"
-																									: "text-[var(--tp-text-main)]"
-																							}`}>
+																							</div>
+																							<span
+																								className={`font-bold font-mono text-xs whitespace-nowrap ${
+																									item.requiresManualPricing || item.priceRub === 0
+																										? "text-amber-600 dark:text-amber-400"
+																										: "text-[var(--tp-text-main)]"
+																								}`}
+																							>
 																								{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
+																							</span>
+																						</div>
+
+																						<div className="text-xs font-semibold text-[var(--tp-text-main)] leading-snug break-words">
+																							{item.name}
+																						</div>
+
+																						{item.clinicalRationale && (
+																							<div className="text-[11px] text-[var(--tp-text-muted)] leading-tight">
+																								{item.clinicalRationale}
+																							</div>
+																						)}
+
+																						<div className="flex items-center justify-between text-[11px] text-[var(--tp-text-muted)] pt-1 border-t border-[var(--tp-border)]/50">
+																							<span>Кол-во: {item.quantity} шт.</span>
+																							<span>{(item.unitPriceRub || 0).toLocaleString("ru-RU")} ₽/ед.</span>
+																						</div>
+
+																						{(item.requiresManualPricing || item.priceRub === 0) && (
+																							<div className="mt-1">
+																								<MissingPriceAlert
+																									item={item}
+																									onUpdatePrice={onUpdateItemPrice}
+																									variant="inline"
+																								/>
+																							</div>
+																						)}
+																					</div>
+																				))
+																			)}
+																			{microConsumables.length > 0 && (
+																				<div className="p-2.5 rounded-xl bg-[var(--tp-surface-soft)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-muted)] space-y-1">
+																					<div className="leading-snug">
+																						Сопутствующие микро-расходники ({microConsumables.length} поз.) включены в стоимость процедур.
+																					</div>
+																					<button
+																						type="button"
+																						onClick={() => setShowMicroConsumables?.((prev) => !prev)}
+																						className="text-[var(--tp-primary)] hover:underline font-bold text-xs cursor-pointer"
+																					>
+																						{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
+																					</button>
+																				</div>
+																			)}
+																		</div>
+
+																		{/* Desktop 7-Column Table (>= 768px) */}
+																		<div className="hidden md:block">
+																			<table className="treatment-stage-table">
+																				<thead>
+																					<tr>
+																						<th className="w-10">№</th>
+																						<th className="w-28">Код услуги</th>
+																						<th className="w-16">Зуб FDI</th>
+																						<th>Наименование услуги</th>
+																						<th className="w-16 text-center">Кол-во</th>
+																						<th className="w-24 text-right">Цена</th>
+																						<th className="w-24 text-right">Итого</th>
+																					</tr>
+																				</thead>
+																				<tbody>
+																					{displayList.length === 0 ? (
+																						<tr>
+																							<td colSpan={7} className="py-6 text-center text-xs text-[var(--tp-text-muted)]">
+																								В данном этапе пока нет назначенных медицинских услуг.
 																							</td>
 																						</tr>
-																					))
-																				)}
-																				{microConsumables.length > 0 && (
-																					<tr className="bg-[var(--paper-soft)] border-t border-[var(--border)]">
-																						<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
-																							<div className="flex items-center justify-between flex-wrap gap-2">
-																								<span className="flex items-center gap-1.5 font-medium">
-																									<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
-																								</span>
-																								<button
-																									type="button"
-																									onClick={() => setShowMicroConsumables?.((prev) => !prev)}
-																									className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
-																								>
-																									{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
-																								</button>
-																							</div>
-																						</td>
-																					</tr>
-																				)}
-																			</>
-																		);
-																	})()}
-																</tbody>
-															</table>
+																					) : (
+																						displayList.map((item, idx) => (
+																							<tr key={item.id || idx}>
+																								<td className="text-center font-mono text-[var(--tp-text-muted)]">
+																									{idx + 1}
+																								</td>
+																								<td>
+																									<span className="code-804n-badge">{item.code804n}</span>
+																								</td>
+																								<td className="text-center">
+																									{item.toothNumber ? (
+																										<span className="tooth-fdi-badge">{item.toothNumber}</span>
+																									) : (
+																										<span className="text-[var(--tp-text-muted)]">—</span>
+																									)}
+																								</td>
+																								<td>
+																									<div className="font-semibold text-[var(--tp-text-main)] break-words min-w-0">
+																										{item.name}
+																									</div>
+																									{item.clinicalRationale && (
+																										<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
+																											{item.clinicalRationale}
+																										</div>
+																									)}
+																									{(item.requiresManualPricing || item.priceRub === 0) && (
+																										<div className="mt-1">
+																											<MissingPriceAlert
+																												item={item}
+																												onUpdatePrice={onUpdateItemPrice}
+																												variant="inline"
+																											/>
+																										</div>
+																									)}
+																								</td>
+																								<td className="text-center font-semibold">{item.quantity}</td>
+																								<td className="text-right text-[var(--tp-text-muted)] font-mono">
+																									{(item.unitPriceRub || 0).toLocaleString("ru-RU")} ₽
+																								</td>
+																								<td className={`text-right font-bold font-mono ${
+																									item.requiresManualPricing || item.priceRub === 0
+																										? "text-amber-600 dark:text-amber-400"
+																										: "text-[var(--tp-text-main)]"
+																								}`}>
+																									{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
+																								</td>
+																							</tr>
+																						))
+																					)}
+																					{microConsumables.length > 0 && (
+																						<tr className="bg-[var(--paper-soft)] border-t border-[var(--border)]">
+																							<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
+																								<div className="flex items-center justify-between flex-wrap gap-2">
+																									<span className="flex items-center gap-1.5 font-medium">
+																										<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																									</span>
+																									<button
+																										type="button"
+																										onClick={() => setShowMicroConsumables?.((prev) => !prev)}
+																										className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																									>
+																										{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
+																									</button>
+																								</div>
+																							</td>
+																						</tr>
+																					)}
+																				</tbody>
+																			</table>
+																		</div>
+																	</>
+																);
+															})()}
 														</div>
 													)}
 												</div>

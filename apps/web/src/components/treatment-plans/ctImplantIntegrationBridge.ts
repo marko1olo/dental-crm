@@ -354,9 +354,9 @@ const TIER_METAS: Record<TreatmentPlanTierId, {
 		],
 	},
 	standard: {
-		title: "★ Оптимум (Рекомендуемый клинический стандарт)",
+		title: "Оптимум (Рекомендуемый клинический стандарт)",
 		subtitle: "Клинический золотой стандарт: Dentium SuperLine / Osstem, коронки из многослойного диоксида циркония ZrO2",
-		badge: "★ Оптимум — Выбор врачей",
+		badge: "Оптимум — Выбор врачей",
 		badgeClass: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30",
 		borderClass: "border-[var(--teal,var(--brand-primary))]/50 hover:border-[var(--teal,var(--brand-primary))] shadow-md",
 		isRecommended: true,

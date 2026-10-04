@@ -23,7 +23,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Clock, Star } from "lucide-react";
+import { Clock, PenTool, Star } from "lucide-react";
 import {
 	formatWarrantyYearsText,
 	type TreatmentPlanTier,
@@ -180,7 +180,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 	return (
 		<div
-			className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-2 ${className}`.trim()}
+			className={`treatment-3tier-comparison flex flex-col gap-3 w-full pb-44 sm:pb-2 ${className}`.trim()}
 			data-testid="treatment-3tier-comparison"
 		>
 			{/* 30-Day Plan Age Unblocked Notice (Mandate 8e) */}
@@ -214,31 +214,35 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 			{/* Apple HIG Segmented Control for Mobile Viewports (<= 640px / sm:hidden) */}
 			<div
-				className="sm:hidden w-full p-1 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,var(--border,#cbd5e1))] shadow-inner flex items-stretch gap-1"
+				className="sm:hidden w-full p-1.5 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,var(--border,#cbd5e1))] shadow-inner flex items-stretch gap-1.5"
 				data-testid="treatment-3tier-segmented-control"
 			>
 				{tiers.map((tier) => {
 					const isCurrent = activeTierId === tier.tierId;
 					const shortLabel = getTierShortLabel(tier);
+					const isRecommended = Boolean(tier.isRecommended || tier.tierId === "standard");
 					return (
 						<button
 							key={tier.tierId}
 							type="button"
 							onClick={() => handleCardClick(tier)}
-							className={`flex-1 min-h-[48px] py-1.5 px-2 rounded-xl text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center min-w-0 ${
+							className={`flex-1 min-h-[50px] py-1 px-2 rounded-xl text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center min-w-0 touch-manipulation ${
 								isCurrent
-									? "bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] shadow-md font-extrabold ring-1 ring-[var(--teal,var(--brand-primary))]/30"
+									? "bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] shadow-md font-extrabold ring-1 ring-[var(--teal,var(--brand-primary))]/40"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-medium"
 							}`}
 							data-testid={`segmented-tab-${tier.tierId}`}
+							aria-pressed={isCurrent}
 						>
-							<span className="text-xs truncate flex items-center justify-center gap-1 max-w-full min-w-0">
-								{tier.isRecommended && (
+							<span className="text-xs truncate flex items-center justify-center gap-1 max-w-full min-w-0 font-bold">
+								{isRecommended && (
 									<Star size={11} className="text-amber-500 fill-amber-500 shrink-0" />
 								)}
 								<span className="truncate min-w-0">{shortLabel}</span>
 							</span>
-							<span className="text-[11px] font-mono font-bold text-[var(--teal,var(--brand-primary))] whitespace-nowrap mt-0.5">
+							<span className={`text-[11px] font-mono font-bold whitespace-nowrap mt-0.5 ${
+								isCurrent ? "text-[var(--teal,var(--brand-primary))]" : "opacity-85"
+							}`}>
 								{tier.totalRub.toLocaleString("ru-RU")} ₽
 							</span>
 						</button>
@@ -258,6 +262,40 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 			{/* Bottom Block: Clinical Treatment Roadmap */}
 			<TreatmentPlanRoadmapGrid activeTier={activeTier} />
+
+			{/* Floating Bottom Bar in Natural Thumb Zone for Mobile (<= 640px / sm:hidden) */}
+			<div
+				className="sm:hidden fixed left-0 right-0 z-40 px-4 py-2.5 bg-[var(--paper-strong,var(--paper,#ffffff))]/95 backdrop-blur-xl border-t border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex items-center justify-between gap-3"
+				style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}
+				data-testid="treatment-mobile-floating-thumb-bar"
+			>
+				<div className="flex flex-col min-w-0 flex-1">
+					<div className="flex items-center gap-1 text-xs text-[var(--muted,#64748b)] font-medium truncate">
+						<span>Выбран:</span>
+						<span className="font-extrabold text-[var(--ink,#0f172a)] truncate">
+							{getTierShortLabel(activeTier)}
+						</span>
+					</div>
+					<div className="text-lg font-black font-mono text-[var(--teal,var(--brand-primary))] whitespace-nowrap">
+						{formatPlanPriceRub(activeTier.totalRub)}
+					</div>
+					{activePaymentMode === "installment" && (
+						<div className="text-[10px] text-[var(--muted,#64748b)] font-mono whitespace-nowrap truncate">
+							Рассрочка 0%: {(activeTier.installments?.[installmentMonths]?.monthlyPaymentRub ?? Math.round(activeTier.totalRub / installmentMonths)).toLocaleString("ru-RU")} ₽/мес
+						</div>
+					)}
+				</div>
+
+				<button
+					type="button"
+					onClick={(e) => handleSignClick(e, activeTier)}
+					className="min-h-[48px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-extrabold text-sm shadow-md active:scale-98 flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-emerald-500"
+					data-testid="mobile-primary-sign-btn"
+				>
+					<PenTool size={16} className="shrink-0" />
+					<span className="whitespace-nowrap">Согласовать план</span>
+				</button>
+			</div>
 		</div>
 	);
 };

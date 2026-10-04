@@ -71,7 +71,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 	}, [isParamsOpen]);
 
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-2xs">
+		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-2xs max-w-full overflow-x-clip">
 			{/* Left: Module Title & Clinical Standards Badge */}
 			<div className="flex items-center gap-2 min-w-0">
 				<Sparkles size={15} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -84,10 +84,10 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 			</div>
 
 			{/* Right: Streamlined Controls (Segmented Modes + Messenger Share + Params Dropdown) */}
-			<div className="flex flex-wrap items-center gap-2 shrink-0">
+			<div className="flex items-center gap-1.5 overflow-x-auto max-w-full scrollbar-none overscroll-contain py-0.5 shrink-0">
 				{/* Payment Mode Selector: Segmented Control */}
 				<div
-					className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs gap-1"
+					className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs gap-1 shrink-0"
 					role="group"
 					aria-label="Режим расчета оплаты"
 				>

@@ -129,7 +129,11 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 	return (
 		<div
 			onClick={() => onCardClick(tier)}
-			className={`relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full max-h-[620px] min-h-0 overflow-hidden flex-1 min-w-0 ${
+			className={`relative flex flex-col justify-between rounded-2xl p-3.5 sm:p-4 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] ${
+				isMobile
+					? "w-full min-w-0 shadow-md"
+					: "h-full max-h-[620px] min-h-0 overflow-hidden flex-1 min-w-0"
+			} ${
 				isSelected
 					? `${tier.borderClass} shadow-xl ring-2 ring-[var(--teal,var(--brand-primary))]/20 z-10`
 					: "border-[var(--line,var(--border,#cbd5e1))] opacity-95 hover:opacity-100 hover:border-[var(--line-strong)] shadow-md"
@@ -138,7 +142,13 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 		>
 			{/* Recommended Pill with Elevation */}
 			{tier.isRecommended && (
-				<div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-[11px] font-black shadow-lg uppercase tracking-wider whitespace-nowrap z-30">
+				<div
+					className={`flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-[11px] font-black shadow-lg uppercase tracking-wider whitespace-nowrap z-30 ${
+						isMobile
+							? "self-center mb-1 -mt-1"
+							: "absolute -top-3.5 left-1/2 -translate-x-1/2"
+					}`}
+				>
 					<Crown size={13} />
 					<span>{tier.badge}</span>
 				</div>
@@ -169,15 +179,19 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 
 			{/* Scrollable Card Body: flat stages and materials */}
 			<div
-				className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 overscroll-contain"
+				className={
+					isMobile
+						? "space-y-2.5 my-2"
+						: "flex-1 overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 overscroll-contain"
+				}
 			>
 				{/* Pricing Section: Flat tonal underlay (Anti-Matryoshka Law) */}
-				<div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] space-y-1 sm:space-y-1.5">
-					<div className="flex items-baseline justify-between gap-2">
-						<span className="text-xs text-[var(--muted,#64748b)] font-medium">
+				<div className="p-3 sm:p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))]/50 space-y-1 sm:space-y-1.5">
+					<div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-2">
+						<span className="text-xs text-[var(--muted,#64748b)] font-semibold uppercase tracking-wider">
 							Полная стоимость:
 						</span>
-						<span className="text-lg sm:text-xl font-black text-[var(--ink,#0f172a)] font-mono whitespace-nowrap">
+						<span className="text-2xl sm:text-xl font-black text-[var(--ink,#0f172a)] font-mono tracking-tight whitespace-nowrap">
 							{formatPlanPriceRub(tier.totalRub)}
 						</span>
 					</div>
@@ -343,11 +357,21 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 
 					{/* Expanded Stages Content */}
 					{isExpandedStages && (
-						<div className="mt-1.5 max-h-56 overflow-y-auto min-h-0 divide-y divide-[var(--line,var(--border,#cbd5e1))]/40 text-[11px] px-1 py-1">
+						<div
+							className={
+								isMobile
+									? "mt-2 space-y-2 text-[11px]"
+									: "mt-1.5 max-h-56 overflow-y-auto min-h-0 divide-y divide-[var(--line,var(--border,#cbd5e1))]/40 text-[11px] px-1 py-1"
+							}
+						>
 							{tier.stages.map((stg) => (
 								<div
 									key={stg.stageNumber}
-									className="py-1.5 first:pt-0 last:pb-0 space-y-0.5 min-w-0"
+									className={
+										isMobile
+											? "p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))]/60 space-y-1 min-w-0 shadow-2xs"
+											: "py-1.5 first:pt-0 last:pb-0 space-y-0.5 min-w-0"
+									}
 								>
 									<div className="flex justify-between items-center font-bold gap-2 min-w-0">
 										<span className="text-[var(--teal-dark,var(--teal))] truncate min-w-0" title={stg.title}>
@@ -363,15 +387,24 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 									{(() => {
 										const displayItems = stg.items.filter((it) => !isMicroConsumable(it));
 										return displayItems.length > 0 ? (
-											<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1 min-w-0">
-												{displayItems.slice(0, 4).map((it) => (
-													<li key={it.id} className="truncate min-w-0" title={it.name}>
-														• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
+											<ul
+												className={
+													isMobile
+														? "text-[10px] text-[var(--muted,#64748b)] space-y-1 pl-1.5 border-l-2 border-[var(--teal,var(--brand-primary))]/40 m-0 list-none mt-1.5 min-w-0"
+														: "max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1 min-w-0"
+												}
+											>
+												{displayItems.slice(0, isMobile ? 6 : 4).map((it) => (
+													<li key={it.id} className="truncate min-w-0 flex items-center gap-1.5" title={it.name}>
+														<Check size={11} className="text-teal-600 dark:text-teal-400 shrink-0" />
+														<span className="truncate">
+															{it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
+														</span>
 													</li>
 												))}
-												{displayItems.length > 4 && (
-													<li className="italic text-[var(--teal,var(--brand-primary))] truncate min-w-0">
-														+ еще {displayItems.length - 4} процедур
+												{displayItems.length > (isMobile ? 6 : 4) && (
+													<li className="italic text-[var(--teal,var(--brand-primary))] truncate min-w-0 pl-4">
+														+ еще {displayItems.length - (isMobile ? 6 : 4)} процедур
 													</li>
 												)}
 											</ul>

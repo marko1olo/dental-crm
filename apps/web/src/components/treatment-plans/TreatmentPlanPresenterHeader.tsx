@@ -93,30 +93,30 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onCopyTiersSummary}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
+						className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
 						title="Скопировать смету для пациента (WhatsApp / Telegram)"
+						aria-label="Скопировать смету"
 						data-testid="presenter-copy-tiers-summary-btn"
 					>
-						<Copy size={14} className="text-[var(--tp-primary)] shrink-0" />
+						<Copy size={15} className="text-[var(--tp-primary)] shrink-0" />
 						<span className="hidden sm:inline">Скопировать смету</span>
-						<span className="sm:hidden">Копия</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onPrintAppendix}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
+						className="treatment-presenter-header-print-btn hidden md:inline-flex min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
 						title="Печать Приложения №1 к Договору (ПП РФ № 736)"
 						data-testid="presenter-header-print-btn"
 					>
 						<Printer size={14} className="shrink-0" />
-						<span className="hidden md:inline">Печать №1</span>
+						<span>Печать №1</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onToggleFullscreen}
-						className="treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
+						className="treatment-presenter-fullscreen-btn hidden sm:inline-flex treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
 						title={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 						aria-label={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 						data-testid="presenter-fullscreen-btn"
@@ -127,7 +127,7 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onClose}
-						className="treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
+						className="treatment-presenter-close-btn w-11 h-11 sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
 						aria-label="Закрыть модальное окно"
 						data-testid="close-treatment-presenter-btn"
 					>

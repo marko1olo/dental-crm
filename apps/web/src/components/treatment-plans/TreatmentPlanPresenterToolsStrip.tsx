@@ -80,7 +80,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 
 	return (
 		<>
-				<div className="flex items-center justify-between gap-2 px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs">
+				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs overflow-x-auto scrollbar-none">
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="text-[11px] font-bold text-[var(--tp-text-muted)] mr-1 hidden sm:inline">Инструменты врача:</span>
 
@@ -88,7 +88,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "copilot" ? null : "copilot"))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
+							className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
 								activeToolsPanel === "copilot"
 									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
@@ -105,7 +105,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "bundles" ? null : "bundles"))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
+							className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
 								activeToolsPanel === "bundles"
 									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
@@ -122,7 +122,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
+							className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
 								activeToolsPanel === "doctorDiscount" || doctorDiscountPercent > 0
 									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
