@@ -29,6 +29,7 @@ import {
 	type FefoTrafficLightInfo,
 } from "./fefoTrafficLight.js";
 import type { InventoryItem } from "./inventoryDataMappers.js";
+import { InventoryMobileCards } from "./InventoryMobileCards.js";
 
 export type ExpiryTrafficStatus = "good" | "warning_soon" | "expired" | "normal" | "unknown";
 
@@ -152,7 +153,7 @@ export function getExpiryTrafficLight(
 	};
 }
 
-export { getWarehouseFefoTrafficLight, getFefoTrafficLight };
+export { getWarehouseFefoTrafficLight, getFefoTrafficLight, type FefoTrafficLightInfo };
 
 const CATEGORY_MAP: Record<string, { label: string; className: string }> = {
 	anesthesia: { label: "Анестезия", className: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30" },
@@ -329,8 +330,29 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 			role="region"
 			aria-label="Складской учет материалов и контроль сроков годности FEFO"
 		>
+			{/* Мобильный слой: Apple iOS HIG Grouped List Cards (вместо сжатого десктопа и 8 колонок) */}
+			<div className="inventory-mobile-cards-wrapper block md:hidden p-2.5" data-testid="inventory-mobile-cards-view">
+				<InventoryMobileCards
+					items={filteredItems}
+					isLoading={isLoading}
+					effectiveSearch={effectiveSearch}
+					loadError={loadError}
+					onSelectItem={onSelectItem}
+					onDeductItem={handleExecuteDeduct}
+					onReceiveItem={handleExecuteReceive}
+					onOpenWaybills={onOpenWaybills}
+					onOpenAddModal={onOpenAddModal}
+					onRetry={onRetry}
+					onOpenDisposalModal={(item) => setDisposalPromptItem(item)}
+					onOpenWarehouseManager={onOpenWarehouseManager}
+					onOpenInventoryAudit={onOpenInventoryAudit}
+					onEditItem={onEditItem}
+					onDeleteItem={onDeleteItem}
+				/>
+			</div>
+
 			<table
-				className="inventory-view-table"
+				className="inventory-view-table hidden md:table"
 				style={{
 					width: "100%",
 					tableLayout: "fixed",
@@ -525,10 +547,10 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 										</span>
 									</div>
 								) : (
-									<div className="flex flex-col items-center gap-3 max-w-md mx-auto text-center">
+									<div className="flex flex-col items-center gap-3 max-w-md mx-auto text-center" data-testid="inventory-empty-state-card">
 										<Package size={36} className="text-teal-600 dark:text-teal-400" />
-										<span className="text-[var(--ink)] font-bold text-base">
-											На складе пока нет материалов и партий
+										<span className="text-[var(--ink)] font-bold text-base" data-testid="inventory-empty-state-title">
+											Материалы не заприходованы. Добавить первую партию
 										</span>
 										<span className="text-[var(--muted)] text-xs leading-relaxed">
 											Оформите первую приходную накладную для оприходования медикаментов, анестетиков и расходников по FEFO.
@@ -553,7 +575,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 													data-testid="empty-state-add-first-material-btn"
 												>
 													<Plus size={14} />
-													<span>Создать вручную</span>
+													<span>Добавить первую партию</span>
 												</button>
 											)}
 										</div>

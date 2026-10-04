@@ -27,10 +27,10 @@ import {
 import { showToast } from "../GlobalToast";
 import type { InventoryItem } from "./useInventoryLogic";
 import {
-	formatRuDate,
 	resolveFefoDeductionBatches,
 	validateBatchForClinicalUse,
 } from "./fefoTrafficLight.js";
+import { useInventoryStore } from "../../store/inventoryStore.js";
 
 // ─── 1. SHIFT CLOSE CLASS B WASTE TYPES ──────────────────────────────────────
 
@@ -309,7 +309,31 @@ export async function performAutoVisitBomDeduction(
 		showToast(toastMessage, toastType);
 	}
 
-	// 5. Asynchronous background network sync if organizationId and fetchFn available
+	// 5. Asynchronous background network sync and client inventoryStore mutation (Mandate 8e, 8k, 8n)
+	try {
+		useInventoryStore.getState().deductStock(
+			options.organizationId || "org-default",
+			result.items.map((i) => ({
+				inventoryItemId: i.inventoryItemId,
+				itemName: i.itemName,
+				quantity: i.deductedQty,
+				visitId: options.visitId,
+				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
+				lotNumber: (i as any).batchId || null,
+				expirationDate: (i as any).expirationDate || null,
+				unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
+			})),
+			{
+				visitId: options.visitId,
+				...(options.fetchFn ? { customFetch: options.fetchFn as any } : {}),
+				allowOverdraft: options.allowOverdraft ?? true,
+				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
+			},
+		).catch(() => {});
+	} catch {
+		// Non-blocking local store update
+	}
+
 	if (options.organizationId && options.fetchFn) {
 		const payload = {
 			visitId: options.visitId,
@@ -321,6 +345,16 @@ export async function performAutoVisitBomDeduction(
 			services: normalizedServices.map((s) => ({
 				serviceId: s.serviceCode,
 				quantity: s.quantity,
+			})),
+			items: result.items.map((i) => ({
+				inventoryItemId: i.inventoryItemId,
+				id: i.inventoryItemId,
+				name: i.itemName,
+				quantity: i.deductedQty,
+				unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
+				reason: `Автосписание по визиту ${options.visitNumber || options.visitId}`,
+				lotNumber: (i as any).batchId || null,
+				expirationDate: (i as any).expirationDate || null,
 			})),
 			allowOverdraft: true,
 			paperJournalAcknowledged: true,

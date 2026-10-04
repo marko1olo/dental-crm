@@ -66,6 +66,7 @@ export interface ReceiptPreviewProps {
 	readonly totalDueRub: number;
 	readonly payments?: ReceiptPaymentDetails | undefined;
 	readonly isWarranty100?: boolean | undefined;
+	readonly isPaid?: boolean | undefined;
 	readonly fnSerial?: string | undefined;
 	readonly fiscalDocumentNumber?: string | undefined;
 	readonly fiscalSign?: string | undefined;
@@ -94,9 +95,10 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 	totalDueRub,
 	payments = {},
 	isWarranty100 = false,
+	isPaid,
 	fnSerial = "9960440300123456",
-	fiscalDocumentNumber = "1042",
-	fiscalSign = "3948201842",
+	fiscalDocumentNumber: propFiscalDocumentNumber,
+	fiscalSign: propFiscalSign,
 	kktRegNumber = "0001234567012345",
 	ofdName = "Платформа ОФД",
 	ofdUrl = "https://check.ofd.ru",
@@ -105,6 +107,9 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 	className = "",
 	showActionsBar = true,
 }) => {
+	const isPrecheck = isPaid === false && !propFiscalDocumentNumber;
+	const fiscalDocumentNumber = propFiscalDocumentNumber || (isPrecheck ? undefined : `ФД-${shiftNumber}-${receiptNumber}`);
+	const fiscalSign = propFiscalSign || (isPrecheck ? undefined : String(Math.abs(Array.from(`${fnSerial}:${fiscalDocumentNumber || "1"}:${totalDueRub}`).reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) | 0, 0) % 9000000000 + 1000000000)));
 	const [format, setFormat] = useState<"80mm" | "a4">(defaultFormat);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -306,9 +311,20 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						{/* Document Requisites (54-FZ) */}
 						<div className="space-y-1 text-[11px] text-slate-800">
 							<div className="flex justify-between items-center font-bold text-slate-950">
-								<span>{isWarranty100 ? "АКТ ГАРАНТИЙНОГО ОБСЛУЖИВАНИЯ" : "КАССОВЫЙ ЧЕК / ПРИХОД"}</span>
+								<span>
+									{isWarranty100
+										? "АКТ ГАРАНТИЙНОГО ОБСЛУЖИВАНИЯ"
+										: isPrecheck
+										? "ПРЕДВАРИТЕЛЬНЫЙ ЧЕК (ПРЕДЧЕК)"
+										: "КАССОВЫЙ ЧЕК / ПРИХОД"}
+								</span>
 								<span className="font-mono">№ {receiptNumber}</span>
 							</div>
+							{isPrecheck && !isWarranty100 && (
+								<div className="p-1 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] font-bold text-amber-800 dark:text-amber-300 text-center uppercase tracking-wide" data-testid="badge-precheck-not-fiscal">
+									ПРЕДВАРИТЕЛЬНЫЙ ЧЕК (ПРЕДЧЕК) — НЕ ЯВЛЯЕТСЯ ФИСКАЛЬНЫМ ДОКУМЕНТОМ
+								</div>
+							)}
 							<div className="flex justify-between text-slate-600">
 								<span>ПРИЗНАК РАСЧЕТА:</span>
 								<span className="font-semibold text-slate-950">ПОЛНЫЙ РАСЧЕТ (Тег 1214)</span>
@@ -451,10 +467,10 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</div>
 							<div className="flex justify-between">
 								<span>ФН: {fnSerial}</span>
-								<span>ФД: {fiscalDocumentNumber}</span>
+								<span>ФД: {isPrecheck ? "Ожидает фискализации при оплате" : (fiscalDocumentNumber || "Ожидает фискализации")}</span>
 							</div>
 							<div className="flex justify-between">
-								<span>ФПД: {fiscalSign}</span>
+								<span>ФПД: {isPrecheck ? "—" : (fiscalSign || "—")}</span>
 								<span>СНО: УСН</span>
 							</div>
 							<div className="flex justify-between">
@@ -467,8 +483,8 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</div>
 						</div>
 
-						{/* FNS Verification QR Code */}
-						{fnsQrSvg && !isWarranty100 && (
+						{/* FNS Verification QR Code or Precheck Notification */}
+						{fnsQrSvg && !isWarranty100 && !isPrecheck ? (
 							<div className="receipt-qr-box">
 								<div
 									dangerouslySetInnerHTML={{ __html: fnsQrSvg }}
@@ -487,7 +503,11 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 									{ofdUrl}
 								</a>
 							</div>
-						)}
+						) : !isWarranty100 ? (
+							<div className="receipt-qr-box border border-dashed border-slate-300 p-2.5 my-2 text-center rounded bg-slate-50 dark:bg-slate-900/50 text-[10px] text-slate-500 font-mono" data-testid="precheck-qr-placeholder">
+								QR-код фискализации 54-ФЗ формируется после проведения платежа через кассу
+							</div>
+						) : null}
 
 						{/* Thank you note */}
 						<div className="text-center pt-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
@@ -503,10 +523,14 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 					<div className="border-b border-slate-300 pb-3 flex justify-between items-start">
 						<div>
 							<h2 className="text-sm font-black uppercase text-slate-950 m-0">
-								ТОВАРНЫЙ ЧЕК / СПРАВКА ОБ ОПЛАТЕ МЕДУСЛУГ
+								{isPrecheck
+									? "ПРЕДВАРИТЕЛЬНЫЙ РАСЧЕТ СТОИМОСТИ (ПРЕДЧЕК)"
+									: "ТОВАРНЫЙ ЧЕК / СПРАВКА ОБ ОПЛАТЕ МЕДУСЛУГ"}
 							</h2>
 							<p className="text-[11px] text-slate-600 m-0">
-								К кассовому чеку № {receiptNumber} от {effectiveDate}
+								{isPrecheck
+									? `Предварительный расчет квитанции № ${receiptNumber} от ${effectiveDate}`
+									: `К кассовому чеку № ${receiptNumber} от ${effectiveDate}`}
 							</p>
 						</div>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300">

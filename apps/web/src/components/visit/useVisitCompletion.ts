@@ -25,6 +25,7 @@ import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { performAutoVisitBomDeduction } from "../inventory/autoBomDeductionEngine";
+import { useInventoryStore } from "../../store/inventoryStore";
 import type { AutoVisitBomDeductionResult } from "@dental/shared";
 
 export interface UseVisitCompletionOptions {
@@ -164,6 +165,7 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 						allowOverdraft: true, // Мягкий овердрафт: дефицит склада никогда не блокирует приём (Мандат 8e, 8n)
 						includeStandardPpe: true,
 						organizationId: activeVisit?.organizationId || (dashboard as any)?.clinicSettings?.profile?.organizationId || "org-default",
+						warehouseItems: useInventoryStore.getState().items as any,
 						fetchFn: fetchWithHandling as unknown as typeof fetch,
 					});
 				} catch (deductionErr) {

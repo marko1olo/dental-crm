@@ -588,6 +588,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									patientPhone={patientPhone}
 									cashierFullName={effectiveCashier}
 									isWarranty100={discountsHook.isWarranty100}
+									isPaid={false}
 									payments={{
 										cardRub: tendersHook.activeMethod === "card_terminal" ? discountsHook.totalDueRub : tendersHook.splitCardRub,
 										sbpRub: tendersHook.activeMethod === "sbp_qr" ? discountsHook.totalDueRub : tendersHook.splitSbpRub,

@@ -88,19 +88,23 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	onClose,
 	onConfirmWriteoff,
 	initialServices,
-	patientName = "Смирнов Алексей Викторович",
-	patientId = "PAT-2026-0881",
+	patientName: propPatientName,
+	patientId: propPatientId,
 	patientBirthDate = "1988-04-12",
-	doctorFullName = "Д-р Кузнецов М.С.",
+	doctorFullName: propDoctorFullName,
 	doctorSpecialty = "Врач-стоматолог терапевт",
 	assistantFullName = "Смирнова А.В. (ассистент)",
 	cabinetId = "cab_01_therapy",
 	cabinetNameRu = "Кабинет №1 (Терапия)",
-	stockBatches = DENTAL_CABINET_STOCK_PRESETS,
+	stockBatches: propStockBatches,
 	defaultFormType = "0504230",
 	isDeducting = false,
 }) => {
 	const isDemo = isDemoShowcaseMode();
+	const patientName = propPatientName ?? (isDemo ? "Смирнов Алексей Викторович" : "Пациент");
+	const patientId = propPatientId ?? (isDemo ? "PAT-2026-0881" : "");
+	const doctorFullName = propDoctorFullName ?? (isDemo ? "Д-р Кузнецов М.С." : "Лечащий врач");
+	const stockBatches = propStockBatches ?? (isDemo ? DENTAL_CABINET_STOCK_PRESETS : []);
 
 	const services = useMemo((): readonly CompletedClinicalService[] => {
 		if (initialServices && initialServices.length > 0) {

@@ -40,6 +40,8 @@ import { showToast } from "../components/GlobalToast";
 import type { DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
 import { useAppStore } from "../store/appStore";
 import { isDemoShowcaseMode } from "../lib/demoMode";
+import { useIsMobile } from "../hooks/useIsMobile";
+import { MobileLabOrdersTimeline } from "../components/lab/mobile/MobileLabOrdersTimeline";
 import { getDemoDentalLabOrderData } from "../components/lab/dentalLabOrderEngine";
 import { formatLabOrderTeethOrJaw, isJawWideConstruction, SHADE_SWATCH_MAP } from "../components/lab/labMath";
 import {
@@ -112,6 +114,7 @@ export {
 };
 
 export function LabOrdersPage() {
+	const isMobile = useIsMobile(768);
 	const [orders, setOrders] = useState<DentalLabOrderData[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -591,7 +594,24 @@ export function LabOrdersPage() {
 	};
 
 	return (
-		<div className="w-full max-w-full space-y-2.5 overflow-hidden">
+		<>
+			{isMobile ? (
+				<MobileLabOrdersTimeline
+					orders={orders}
+					isLoading={isLoading}
+					error={error}
+					onRefresh={fetchOrders}
+					onOpenNewOrder={handleOpenNewOrder}
+					onOpenTrackerModal={() => setIsTrackerModalOpen(true)}
+					onStatusChange={handleStatusChange}
+					onPrintOrder={handleOpenPrintOrder}
+					onTechnicianComment={handleTechnicianComment}
+					onAttachScan={handleAttach3DScan}
+					onReclamation={handleReclamation}
+					copyPortalLink={copyPortalLink}
+				/>
+			) : (
+				<div className="w-full max-w-full space-y-2.5 overflow-hidden">
 			{/* ─── ТУЛБАР ЗТЛ: СТРОГО 1 СТРОКА 32-36PX (МАНДАТЫ 8d п. 2, 8p, ЗАКОН ХИКА) ─── */}
 			<div className="h-9 min-h-[36px] flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs w-full max-w-full overflow-hidden">
 				{/* Left: Brand Icon + Title + Inline Metrics */}
@@ -780,7 +800,7 @@ export function LabOrdersPage() {
 			) : filteredOrders.length === 0 ? (
 				<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
 					<FlaskConical className="w-10 h-10 mx-auto text-teal-600 dark:text-teal-400" />
-					<p className="font-bold text-sm text-[var(--ink)]">Нарядов в зуботехническую лабораторию пока нет</p>
+					<p className="font-bold text-sm text-[var(--ink)]" data-testid="lab-orders-empty-state-title">Нет нарядов в зуботехническую лабораторию</p>
 					<p className="max-w-md mx-auto text-[var(--muted)]">
 						Оформите новый заказ-наряд в лабораторию с выбором зубов по FDI, расцветки VITA и автоматическим расчетом удержания себестоимости с врача.
 					</p>
@@ -855,13 +875,17 @@ export function LabOrdersPage() {
 
 										{/* 5. VITA */}
 										<td className="px-2 py-0 whitespace-nowrap align-middle">
-											<span className="inline-flex items-center gap-1 font-bold text-[11px]">
-												<span
-													className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-													style={{ backgroundColor: swatchBg }}
-												/>
-												<span>{order.colorVita || "A2"}</span>
-											</span>
+											{order.colorVita ? (
+												<span className="inline-flex items-center gap-1 font-bold text-[11px]">
+													<span
+														className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
+														style={{ backgroundColor: swatchBg }}
+													/>
+													<span>{order.colorVita}</span>
+												</span>
+											) : (
+												<span className="text-[var(--muted)] text-[11px]">—</span>
+											)}
 										</td>
 
 										{/* 6. Статус */}
@@ -1040,6 +1064,8 @@ export function LabOrdersPage() {
 					))}
 				</div>
 			)}
+		</div>
+	)}
 
 			{/* Modal Instance */}
 			{isModalOpen && (
@@ -1098,6 +1124,6 @@ export function LabOrdersPage() {
 				onClose={() => setIsReadyInClinicModalOpen(false)}
 				order={readyInClinicOrder}
 			/>
-		</div>
+		</>
 	);
 }

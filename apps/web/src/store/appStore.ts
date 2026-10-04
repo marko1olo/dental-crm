@@ -845,3 +845,5 @@ if (typeof window !== "undefined") {
 	(window as any).__useAppStore = useAppStore;
 }
 
+export * from "./inventoryStore.js";
+

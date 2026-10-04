@@ -15,13 +15,30 @@ export {
 	type InventoryItem,
 	inventoryItemFromServer,
 };
+import { useInventoryStore } from "../../store/inventoryStore.js";
 
 export function useInventoryLogic(organizationId: string) {
+	const storeItems = useInventoryStore((s) => s.items);
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 	const dashboard = appLogic?.dashboard;
+
+	useEffect(() => {
+		if (storeItems.length > 0) {
+			setItems((prev) => {
+				const storeMap = new Map(storeItems.map((i) => [i.id, i]));
+				return prev.map((item) => {
+					const updated = storeMap.get(item.id);
+					if (updated && updated.stockQuantity !== item.stockQuantity) {
+						return { ...item, stockQuantity: updated.stockQuantity };
+					}
+					return item;
+				});
+			});
+		}
+	}, [storeItems]);
 
 	const getHeaders = useCallback(
 		(extra?: Record<string, string>) => {
@@ -154,7 +171,22 @@ export function useInventoryLogic(organizationId: string) {
 			});
 			if (res.ok) {
 				const data = await res.json();
-				setItems(Array.isArray(data) ? data.map(inventoryItemFromServer) : []);
+				const parsed = Array.isArray(data) ? data.map(inventoryItemFromServer) : [];
+				setItems(parsed);
+				useInventoryStore.getState().setItems(
+					parsed.map((it) => ({
+						id: it.id,
+						name: it.name,
+						sku: it.sku || null,
+						barcode: it.barcode || null,
+						stockQuantity: it.stockQuantity,
+						criticalThreshold: it.criticalThreshold ?? 0,
+						unitCostRub: typeof it.unitCostRub === "number" ? it.unitCostRub : parseFloat(String(it.unitCostRub)) || 0,
+						lotNumber: it.lotNumber || null,
+						expirationDate: it.expirationDate || null,
+						isOverdraft: it.stockQuantity <= 0,
+					})),
+				);
 				setLoadError(null);
 			} else {
 				setLoadError(
