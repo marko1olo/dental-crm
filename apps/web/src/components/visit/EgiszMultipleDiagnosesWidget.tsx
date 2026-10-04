@@ -53,7 +53,7 @@ export function EgiszMultipleDiagnosesWidget() {
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
 					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-					Сопутствующие диагнозы ЕГИСЗ (СЭМД CDA R2)
+					Сопутствующие диагнозы (Электронная карта)
 				</span>
 				<button
 					type="button"
@@ -70,7 +70,7 @@ export function EgiszMultipleDiagnosesWidget() {
 
 			{loading ? (
 				<p className="text-[var(--muted)] italic text-xs">
-					Загрузка реестра диагнозов ЕГИСЗ...
+					Загрузка реестра диагнозов...
 				</p>
 			) : error ? (
 				<div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-lg border border-rose-200 dark:border-rose-800 text-xs">
@@ -79,8 +79,8 @@ export function EgiszMultipleDiagnosesWidget() {
 				</div>
 			) : items.length === 0 ? (
 				<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] text-xs">
-					Нет зарегистрированных сопутствующих диагнозов в ЕГИСЗ для клиники.
-					Основной диагноз приёма будет экспортирован в CDA R2.
+					Нет зарегистрированных сопутствующих диагнозов.
+					Основной диагноз приёма будет внесён в медицинскую карту.
 				</div>
 			) : (
 				<ul className="space-y-1.5 max-h-36 overflow-y-auto pr-1">

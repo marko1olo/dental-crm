@@ -182,4 +182,48 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!orthoWidgetCode.includes("Дневник приёма (Форма 043/у)"), "Preview header must not have '(Форма 043/у)'");
 		assert.ok(orthoWidgetCode.includes("Дневник приёма"), "Preview header must be clean 'Дневник приёма'");
 	});
+
+	it("16. Doctor Chairside & EMK: purged 54-FZ, 804n, CDA R2, EGISZ, and cartoon emojis (Mandate 8x & 8d)", () => {
+		const emkTabCode = readComponent("components/visit/VisitEmkTab.tsx");
+		assert.ok(!emkTabCode.includes("54-ФЗ"), "VisitEmkTab must not have 54-ФЗ in doctor CTA");
+		assert.ok(emkTabCode.includes("Завершить приём и сформировать чек"), "VisitEmkTab must have clean receipt CTA");
+
+		const summaryModalCode = readComponent("components/visit/VisitSummaryModal.tsx");
+		assert.ok(!summaryModalCode.includes("СЭМД ЕГИСЗ"), "VisitSummaryModal must not have СЭМД ЕГИСЗ");
+		assert.ok(!summaryModalCode.includes("📄 Памятка"), "VisitSummaryModal must not have cartoon emoji");
+		assert.ok(summaryModalCode.includes("Электронная карта (Госуслуги)"), "VisitSummaryModal must have plain clinical term");
+
+		const odontogramTabCode = readComponent("components/visit/VisitOdontogramTab.tsx");
+		assert.ok(!odontogramTabCode.includes("Дневник и ЕГИСЗ"), "VisitOdontogramTab must not mention ЕГИСЗ in doctor notice");
+
+		const surgeryBarCode = readComponent("components/visit/surgery/VisitSurgeryExtractionBar.tsx");
+		assert.ok(!surgeryBarCode.includes("Номенклатура 804н"), "VisitSurgeryExtractionBar must not cite order 804н");
+		assert.ok(surgeryBarCode.includes("Сложность экстракции (Услуга)"), "VisitSurgeryExtractionBar must use human term Услуга");
+
+		const egiszWidgetCode = readComponent("components/visit/EgiszMultipleDiagnosesWidget.tsx");
+		assert.ok(!egiszWidgetCode.includes("CDA R2"), "EgiszMultipleDiagnosesWidget must not expose technical CDA R2 jargon");
+
+		const consentCode = readComponent("components/visit/consents/visitConsentTypes.ts");
+		assert.ok(!consentCode.includes("Персональные данные и ЕГИСЗ"), "Consent category must not have bird language");
+		assert.ok(!consentCode.includes("(РЭМД)"), "Consent summary must not have technical acronym (РЭМД)");
+	});
+
+	it("17. Patient Card & Odontogram: purged 043/u, 54-FZ and Potemkin placeholders (Mandate 8x, 8z, 18)", () => {
+		const historyCode = readComponent("components/patients/PatientHistoryTab.tsx");
+		assert.ok(!historyCode.includes("Выписка 043/у"), "PatientHistoryTab must not have Выписка 043/у");
+		assert.ok(historyCode.includes("Выписка из карты"), "PatientHistoryTab must have clean label Выписка из карты");
+
+		const classicGostCode = readComponent("components/odontogram/classicGostTypes.ts");
+		assert.ok(!classicGostCode.includes("Форма 043/у"), "classicGostTypes must not cite Форма 043/у");
+
+		const odontogramLayerCode = readComponent("components/odontogram/OdontogramModalsLayer.tsx");
+		assert.ok(!odontogramLayerCode.includes("фискализирован (54-ФЗ)"), "OdontogramModalsLayer must not have 54-ФЗ");
+
+		const creationModalCode = readComponent("components/patients/PatientCreationModal.tsx");
+		assert.ok(!creationModalCode.includes('placeholder="Иванов Иван Иванович"'), "PatientCreationModal must not have Potemkin placeholder");
+
+		const patientSafetyCode = readComponent("components/patients/patientSafetyEvaluation.ts");
+		assert.ok(!patientSafetyCode.includes("амбулаторной карты 043/у"), "patientSafetyEvaluation must not include 043/у");
+	});
 });
+

@@ -207,7 +207,7 @@ export function SettingsPricesTab() {
 					? (s as unknown as { priceKopecks: number }).priceKopecks / 100
 					: 0);
 			const basePriceRub = Number.isFinite(rawPrice) ? Math.round(rawPrice * 100) / 100 : 0;
-			const code804n = (s.code || "").trim() || "A16.07.000";
+			const code804n = (s.code || "").trim() || "A16.07.002";
 			const category = (s.category as Order804nCategory) || detectCategoryFrom804nCode(code804n, s.title);
 			const specialty = (s.specialty as DoctorSpecialty) || "therapist";
 			return {

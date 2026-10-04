@@ -159,15 +159,15 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 					className="consent-action-btn primary"
 					data-testid="btn-confirm-sign"
 					onClick={onConfirmSign}
-					disabled={isSubmitting || !isSigningReady}
+					disabled={isSubmitting}
 					style={{
-						background: isSigningReady ? "var(--teal)" : "var(--muted)",
-						cursor: isSigningReady ? "pointer" : "not-allowed",
+						background: isSigningReady ? "var(--teal)" : "var(--brand-primary, var(--teal))",
+						cursor: isSubmitting ? "wait" : "pointer",
 					}}
 					title={
 						isSigningReady
 							? (activeMode === "packages" ? "Подтвердить пакет согласий" : "Подтвердить согласие")
-							: "Для подтверждения поставьте подпись на экране, введите код из СМС или подтвердите бумажный бланк"
+							: "Подтвердить подписание"
 					}
 				>
 					<Zap size={18} />

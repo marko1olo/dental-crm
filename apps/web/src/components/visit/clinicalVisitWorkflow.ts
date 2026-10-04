@@ -459,7 +459,7 @@ export function completeClinicalVisitAndAssembleEstimate(
 			if (price > 0) {
 				planItems.push({
 					id: p.id || `plan-item-${planItems.length + 1}`,
-					code: p.code || "A16.07.000",
+					code: p.code || "A16.07.002",
 					name: p.title || p.name || "Стоматологическая услуга",
 					quantity: qty,
 					priceRub: price,
