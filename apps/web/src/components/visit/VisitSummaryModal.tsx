@@ -42,6 +42,7 @@ import {
 } from "./VisitSummaryRadiologyGallery";
 import { VisitSummaryDiarySections } from "./VisitSummaryDiarySections";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
+import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart";
 
 export {
 	type RadiologySnapshotItem,
@@ -548,7 +549,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 											Зуб {t.toothNumber}:
 										</span>
 										<span className="text-[var(--teal-dark)] font-medium min-w-0 break-words">
-											{t.state}
+											{TOOTH_STATE_LABELS[t.state as ToothState] || t.state}
 										</span>
 										{t.surfaces && t.surfaces.length > 0 ? (
 											<span className="text-[var(--muted)] min-w-0 break-words">
@@ -634,7 +635,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							title="Открыть памятку пациенту с рекомендациями после приёма"
 						>
 							<FileText className="w-4 h-4" />
-							<span>📄 Памятка пациенту</span>
+							<span>Памятка пациенту</span>
 						</button>
 					</div>
 
@@ -739,7 +740,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								data-testid="summary-egisz-btn"
 							>
 								<ShieldCheck className="w-4 h-4" />
-								СЭМД ЕГИСЗ
+								Электронная карта (Госуслуги)
 							</button>
 						) : null}
 						<button
@@ -750,7 +751,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							title="Распечатать памятку пациенту с рекомендациями после приёма"
 						>
 							<FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-							<span>📄 Памятка пациенту</span>
+							<span>Памятка пациенту</span>
 						</button>
 						<button
 							type="button"

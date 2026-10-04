@@ -21,6 +21,13 @@ globalThis.React = React;
 
 registerHooks({
 	resolve(specifier, context, nextResolve) {
+		if (specifier.endsWith(".css") || specifier.includes(".css")) {
+			return {
+				format: "module",
+				shortCircuit: true,
+				url: "data:text/javascript," + encodeURIComponent("export default {};"),
+			};
+		}
 		if (specifier === "vitest") {
 			return {
 				format: "module",

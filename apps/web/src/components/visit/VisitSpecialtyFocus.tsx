@@ -180,7 +180,7 @@ export function VisitSpecialtyFocus({
 		>
 			<div className="flex items-center gap-1.5 min-w-0">
 				<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] shrink-0 hidden sm:inline">Фокус:</span>
-				<strong className="font-semibold text-xs text-[var(--ink)] truncate max-w-[120px]">{currentSpecialtyLabel}</strong>
+				<strong className="font-semibold text-xs text-[var(--ink)] truncate">{currentSpecialtyLabel}</strong>
 				<span className="text-xs text-[var(--muted)] hidden lg:inline shrink-0">
 					({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
 				</span>

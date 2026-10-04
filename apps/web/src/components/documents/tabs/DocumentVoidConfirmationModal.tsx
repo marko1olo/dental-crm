@@ -7,6 +7,7 @@ import type {
 	Patient,
 	VoidDocumentInput,
 } from "@dental/shared";
+import { CANONICAL_DOCUMENT_STATUS_LABELS } from "../documentAutonomy";
 
 export interface DocumentVoidConfirmationModalProps {
 	documentVoidConfirmation: GeneratedDocument | null;
@@ -110,6 +111,7 @@ export const DocumentVoidConfirmationModal: React.FC<
 						: ""}{" "}
 					·{" "}
 					{documentStatusLabels?.[documentVoidConfirmation.status] ??
+						CANONICAL_DOCUMENT_STATUS_LABELS[documentVoidConfirmation.status] ??
 						documentVoidConfirmation.status}
 				</p>
 			</div>
@@ -211,7 +213,9 @@ export const DocumentVoidConfirmationModal: React.FC<
 							?.map((document) => (
 								<option key={document.id} value={document.id}>
 									{documentLabels?.[document.kind] ?? document.kind} ·{" "}
-									{documentStatusLabels?.[document.status] ?? document.status}
+									{documentStatusLabels?.[document.status] ??
+										CANONICAL_DOCUMENT_STATUS_LABELS[document.status] ??
+										document.status}
 								</option>
 							))}
 					</select>

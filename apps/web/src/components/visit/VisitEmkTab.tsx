@@ -10,6 +10,7 @@ import {
 	Calendar,
 	Check,
 	CheckCircle2,
+	ChevronRight,
 	Clock,
 	Copy,
 	Download,
@@ -819,7 +820,7 @@ export function VisitEmkTab() {
 										data-testid="btn-mobile-norm-step1"
 									>
 										<Check size={16} />
-										<span>✓ Норма: Жалоб нет, соматически здоров</span>
+										<span>Норма: Жалоб нет, соматически здоров</span>
 									</button>
 									<div className="horizontal-chip-scroller mb-1">
 										{[
@@ -872,7 +873,7 @@ export function VisitEmkTab() {
 										data-testid="btn-mobile-norm-step2"
 									>
 										<Check size={16} />
-										<span>✓ Норма: Слизистая розовая, КПУ норма</span>
+										<span>Норма: Слизистая розовая, КПУ норма</span>
 									</button>
 									<div className="horizontal-chip-scroller mb-1">
 										{[
@@ -933,7 +934,7 @@ export function VisitEmkTab() {
 											data-testid="btn-mobile-norm-step3"
 										>
 											<Check size={16} />
-											<span>✓ Норма: Z01.2 Стоматологический осмотр</span>
+											<span>Норма: Z01.2 Стоматологический осмотр</span>
 										</button>
 										<div className="horizontal-chip-scroller mb-1">
 											{[
@@ -977,7 +978,7 @@ export function VisitEmkTab() {
 											data-testid="btn-mobile-norm-step4"
 										>
 											<Check size={16} />
-											<span>✓ Норма: Профосмотр, профгигиена</span>
+											<span>Норма: Профосмотр, профгигиена</span>
 										</button>
 										<div className="horizontal-chip-scroller mb-1">
 											{[
@@ -1137,7 +1138,8 @@ export function VisitEmkTab() {
 						className="mobile-bottom-cta-next"
 						data-testid="btn-mobile-next-step"
 					>
-						<span>Далее: Осмотр и статус ➔</span>
+						<span>Далее: Осмотр и статус</span>
+						<ChevronRight size={16} />
 					</button>
 				)}
 
@@ -1148,7 +1150,8 @@ export function VisitEmkTab() {
 						className="mobile-bottom-cta-next"
 						data-testid="btn-mobile-next-step"
 					>
-						<span>Далее: Диагноз (МКБ-10) ➔</span>
+						<span>Далее: Диагноз (МКБ-10)</span>
+						<ChevronRight size={16} />
 					</button>
 				)}
 
@@ -1159,7 +1162,8 @@ export function VisitEmkTab() {
 						className="mobile-bottom-cta-next"
 						data-testid="btn-mobile-next-step"
 					>
-						<span>Далее: Лечение и протокол ➔</span>
+						<span>Далее: Лечение и протокол</span>
+						<ChevronRight size={16} />
 					</button>
 				)}
 
@@ -1172,7 +1176,8 @@ export function VisitEmkTab() {
 						data-testid="btn-mobile-primary-complete"
 					>
 						<Check size={18} className="shrink-0" />
-						<span>✓ Завершить приём и чек (54-ФЗ) ➔</span>
+						<span>Завершить приём и сформировать чек</span>
+						<ChevronRight size={16} className="shrink-0" />
 					</button>
 				)}
 

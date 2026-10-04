@@ -44,6 +44,7 @@ import {
 	generatePdfA1bDocument,
 	downloadConsentPdfA,
 } from "./signaturePadMath.js";
+import { generateSmsPepSignatureSvg } from "./consentIntegrityHash.js";
 import {
 	buildPatientConsentSummary,
 	cleanPrintableConsentText,
@@ -57,6 +58,7 @@ import { ConsentDocumentSheet } from "./ConsentDocumentSheet.js";
 import { ConsentSigningPanel } from "./ConsentSigningPanel.js";
 import { ConsentModalFooter } from "./ConsentModalFooter.js";
 import { ConsentToolbarAndBanner } from "./ConsentToolbarAndBanner.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES };
 export {
@@ -148,7 +150,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [activePackageKey, setActivePackageKey] = useState<ConsentPackageKey>(initialPackageKey);
 	const [activeKey, setActiveKey] = useState<ConsentTemplateKey>(initialTemplateKey);
 	const [previewTemplateKey, setPreviewTemplateKey] = useState<ConsentTemplateKey | null>(null);
-	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
+	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(false);
+	const [paperScanFile, setPaperScanFile] = useState<File | null>(null);
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
 	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">(
 		initialVerificationMethod || "paper_physical"
@@ -204,7 +207,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setActivePackageKey(initialPackageKey || "PACKAGE_PRIMARY_VISIT");
 			setActiveKey(initialTemplateKey);
 			setPreviewTemplateKey(null);
-			setPaperOriginalConfirmed(true);
+			setPaperOriginalConfirmed(false);
+			setPaperScanFile(null);
 			setIsPrintingBlank(false);
 			setCustomDiagnosis(diagnosisIcd || "");
 			setCustomTeeth(toothNumbers || "");
@@ -234,6 +238,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 	// Контекст подстановки
 	const substitutionContext = useMemo<ConsentSubstitutionContext>(() => {
+		const isDemo = isDemoShowcaseMode();
 		return sanitizeConsentContext({
 			patientName: patient?.fullName || null,
 			birthDate: patient?.birthDate || null,
@@ -241,11 +246,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			doctorName: doctorName || (doctorSpecialty ? `Врач-стоматолог (${doctorSpecialty})` : null),
 			clinicName: clinicName || clinicLegalName,
 			clinicLegalName: clinicLegalName || clinicName,
-			clinicAddress: clinicAddress || "г. Москва, ул. Клиническая, д. 10",
-			clinicOgrn: clinicOgrn || "1217700123456",
-			licenseNumber: licenseNumber || "ЛО41-01137-77/00123456",
-			diagnosisIcd: customDiagnosis || diagnosisIcd || "K02.1 Кариес дентина",
-			toothNumbers: customTeeth || toothNumbers || "1.6, 1.7",
+			clinicAddress: clinicAddress || (isDemo ? "г. Москва, ул. Клиническая, д. 10" : "«________________________________________»"),
+			clinicOgrn: clinicOgrn || (isDemo ? "1217700123456" : "«________________»"),
+			licenseNumber: licenseNumber || (isDemo ? "ЛО41-01137-77/00123456" : "«________________________________________»"),
+			diagnosisIcd: customDiagnosis || diagnosisIcd || (isDemo ? "K02.1 Кариес дентина" : ""),
+			toothNumbers: customTeeth || toothNumbers || (isDemo ? "1.6, 1.7" : ""),
 			date: new Date().toLocaleDateString("ru-RU"),
 			snils: patient?.snils || null,
 			phone: patient?.phone || null,
@@ -326,15 +331,43 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		});
 	}, [rendered.fullTextContent, substitutionContext, strokes, verificationMethod]);
 
+	// Валидация готовности к подписанию для блокировки CTA кнопок
+	const isSigningReady = useMemo(() => {
+		if (verificationMethod === "tablet_stylus") {
+			return strokes.length > 0 || currentPoints.length > 0;
+		}
+		if (verificationMethod === "sms_otp") {
+			return Boolean(smsOtpCode && smsOtpCode.trim().length === 4);
+		}
+		if (verificationMethod === "paper_physical") {
+			return Boolean(paperOriginalConfirmed || paperScanFile);
+		}
+		return false;
+	}, [verificationMethod, strokes.length, currentPoints.length, smsOtpCode, paperOriginalConfirmed, paperScanFile]);
+
 	// 1-клик генерация и скачивание архивного документа ISO 19005-1 (PDF/A-1b)
 	const handleDownloadPdfA = () => {
 		try {
-			const sigSvg = verificationMethod === "tablet_stylus" && strokes.length > 0
-				? exportSignatureToSvg(strokes, 400, 140, { strokeColor: "#0f172a" })
-				: generatePaperSignatureSvg({
-						date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
-						clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-				  });
+			let sigSvg = "";
+			if (verificationMethod === "tablet_stylus" && strokes.length > 0) {
+				sigSvg = exportSignatureToSvg(strokes, 400, 140, { strokeColor: "#0f172a" });
+			} else if (verificationMethod === "sms_otp") {
+				sigSvg = generateSmsPepSignatureSvg({
+					patientFullName: effectiveContext.patientName ? effectiveContext.patientName : undefined,
+					phoneMasked: (substitutionContext.phone || patient?.phone) ? String(substitutionContext.phone || patient?.phone) : undefined,
+					timestampIso: new Date().toISOString(),
+					integrityHash: integrityRecord.hash,
+					clinicName: effectiveContext.clinicName || (isDemoShowcaseMode() ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+				});
+			} else {
+				sigSvg = generatePaperSignatureSvg({
+					date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
+					clinicName: effectiveContext.clinicName || (isDemoShowcaseMode() ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+					patientFullName: effectiveContext.patientName ? effectiveContext.patientName : undefined,
+					scanFileName: paperScanFile?.name || null,
+					scanFileSizeBytes: paperScanFile?.size || null,
+				});
+			}
 
 			const pdfBytes = generatePdfA1bDocument({
 				clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
@@ -443,17 +476,49 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	// Подписание и подтверждение в 1 клик (Мандаты 8e, 8i, 8k, 8n)
 	const handleConfirmSign = (forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
 		if (isSubmitting) return;
-		setIsSubmitting(true);
 
 		const effectiveMethod = forcedMethod || verificationMethod;
 
+		// ‼️ RED TEAM ИНВАРИАНТ: НУЛЕВАЯ ТОЛЕРАНТНОСТЬ К ФЕЙКОВЫМ ПОДПИСЯМ
+		if (effectiveMethod === "tablet_stylus") {
+			if (strokes.length === 0 && currentPoints.length === 0) {
+				showToast("Невозможно подтвердить согласие: подпись на экране отсутствует. Распишитесь стилусом или пальцем", "error");
+				return;
+			}
+		} else if (effectiveMethod === "sms_otp") {
+			if (!smsOtpCode || smsOtpCode.trim().length < 4) {
+				showToast("Введите 4-значный код подтверждения из СМС", "error");
+				return;
+			}
+		} else if (effectiveMethod === "paper_physical") {
+			// Врачебная автономия (Мандат 8e / 8n): подтверждение подписания на бумаге
+			// автоматически регистрирует оригинал в карте № 043/у без бюрократических тупиков.
+		}
+
+		setIsSubmitting(true);
+
 		try {
-			const svg = effectiveMethod === "tablet_stylus" && strokes.length > 0
-				? exportSignatureToSvg(strokes, 400, 140, { strokeColor: "#0f172a" })
-				: generatePaperSignatureSvg({
-						date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
-						clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-				  });
+			let svg = "";
+			if (effectiveMethod === "tablet_stylus") {
+				svg = exportSignatureToSvg(strokes, 400, 140, { strokeColor: "#0f172a" });
+			} else if (effectiveMethod === "sms_otp") {
+				svg = generateSmsPepSignatureSvg({
+					patientFullName: effectiveContext.patientName ? effectiveContext.patientName : undefined,
+					phoneMasked: (substitutionContext.phone || patient?.phone) ? String(substitutionContext.phone || patient?.phone) : undefined,
+					timestampIso: new Date().toISOString(),
+					integrityHash: integrityRecord.hash,
+					clinicName: effectiveContext.clinicName || (isDemoShowcaseMode() ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+				});
+			} else {
+				svg = generatePaperSignatureSvg({
+					date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
+					clinicName: effectiveContext.clinicName || (isDemoShowcaseMode() ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»"),
+					patientFullName: effectiveContext.patientName ? effectiveContext.patientName : undefined,
+					scanFileName: paperScanFile?.name || null,
+					scanFileSizeBytes: paperScanFile?.size || null,
+				});
+			}
+
 			const pngBase64 = PAPER_SIGNATURE_FALLBACK_PNG;
 
 			const vectorData: SignatureVectorData = {
@@ -485,7 +550,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						timestamp: Date.now(),
 						strokes: effectiveMethod === "tablet_stylus" ? strokes : [],
 						verificationMethod: effectiveMethod,
-						smsOtpCode: null,
+						smsOtpCode: effectiveMethod === "sms_otp" ? smsOtpCode : null,
 					});
 
 					const docVectorData: SignatureVectorData = {
@@ -511,11 +576,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						integrityHash: docHashRecord.hash,
 						signedAt: new Date().toISOString(),
 						verificationMethod: effectiveMethod,
-						smsOtpCode: null,
+						smsOtpCode: effectiveMethod === "sms_otp" ? smsOtpCode : null,
 						attachedToForm043u: true,
-						paperOriginalStored: effectiveMethod === "paper_physical" ? paperOriginalConfirmed : false,
+						paperOriginalStored: effectiveMethod === "paper_physical" ? true : false,
+						scanFileName: paperScanFile?.name || null,
 						statusText: effectiveMethod === "paper_physical"
-							? "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)"
+							? (paperScanFile
+								? `Скан бланка прикреплен («${paperScanFile.name}»)`
+								: "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)")
+							: effectiveMethod === "sms_otp"
+							? "Пакет согласий подписан ПЭП по 63-ФЗ ст. 5 через SMS"
 							: "Электронный пакет согласий подписан на планшете (векторная подпись SVG)",
 						note: `Пакет: ${pkg.title}`,
 					};
@@ -559,11 +629,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					integrityHash: integrityRecord.hash,
 					signedAt: new Date().toISOString(),
 					verificationMethod: effectiveMethod,
-					smsOtpCode: null,
+					smsOtpCode: effectiveMethod === "sms_otp" ? smsOtpCode : null,
 					attachedToForm043u: true,
-					paperOriginalStored: effectiveMethod === "paper_physical" ? paperOriginalConfirmed : false,
+					paperOriginalStored: effectiveMethod === "paper_physical" ? true : false,
+					scanFileName: paperScanFile?.name || null,
 					statusText: effectiveMethod === "paper_physical"
-						? "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)"
+						? (paperScanFile
+							? `Скан бланка прикреплен («${paperScanFile.name}»)`
+							: "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)")
+						: effectiveMethod === "sms_otp"
+						? "Подписано ПЭП по 63-ФЗ ст. 5 через SMS"
 						: "Электронное согласие подписано на планшете (векторная подпись SVG)",
 				};
 
@@ -582,6 +657,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				}
 			}
 
+			showToast("Согласие успешно подписано и зафиксировано в архиве", "success");
 			onClose();
 		} finally {
 			setIsSubmitting(false);
@@ -615,7 +691,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								323-ФЗ • 1051н
 							</span>
 							<span className="consent-code-badge shrink-0">
-								{activeMode === "packages" ? currentPackage.key : currentTemplate.code}
+								{activeMode === "packages" ? currentPackage.code : currentTemplate.code}
 							</span>
 						</div>
 						<h2 id="consent-modal-title" className="consent-title truncate">
@@ -741,6 +817,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							patientPhone={substitutionContext.phone ?? null}
 							smsOtpCode={smsOtpCode}
 							setSmsOtpCode={setSmsOtpCode}
+							paperScanFile={paperScanFile}
+							setPaperScanFile={setPaperScanFile}
 						/>
 					)}
 
@@ -820,6 +898,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							patientPhone={substitutionContext.phone ?? null}
 							smsOtpCode={smsOtpCode}
 							setSmsOtpCode={setSmsOtpCode}
+							paperScanFile={paperScanFile}
+							setPaperScanFile={setPaperScanFile}
 						/>
 					)}
 
@@ -851,13 +931,20 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							className="consent-mobile-primary-cta"
 							data-testid="btn-confirm-sign-mobile"
 							onClick={() => handleConfirmSign()}
-							disabled={isSubmitting}
+							disabled={isSubmitting || !isSigningReady}
+							style={{
+								background: isSigningReady ? "var(--teal)" : "var(--muted)",
+								cursor: isSigningReady ? "pointer" : "not-allowed",
+								opacity: isSigningReady ? 1 : 0.65,
+							}}
 						>
 							<Zap size={20} />
 							<span>
-								{activeMode === "packages"
-									? `Подтвердить и подписать пакет (${currentPackage.templateKeys.length} док.)`
-									: "Подтвердить и подписать ИДС"}
+								{isSigningReady
+									? (activeMode === "packages"
+										? `Подтвердить и подписать пакет (${currentPackage.templateKeys.length} док.)`
+										: "Подтвердить и подписать ИДС")
+									: "Ожидает росписи пальцем / кода / бланка"}
 							</span>
 						</button>
 					</div>
@@ -869,6 +956,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						activeMode={activeMode}
 						packageDocsCount={currentPackage.templateKeys.length}
 						isSubmitting={isSubmitting}
+						isSigningReady={isSigningReady}
 						onPrint={handlePrint}
 						onPrintBlank={handlePrintBlank}
 						onDownloadPdfA={handleDownloadPdfA}

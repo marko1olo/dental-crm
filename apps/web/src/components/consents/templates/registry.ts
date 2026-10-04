@@ -59,8 +59,8 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 	PACKAGE_PRIMARY_VISIT: {
 		key: "PACKAGE_PRIMARY_VISIT",
 		code: "ПАКЕТ-ПЕРВИЧНЫЙ",
-		title: "Пакет: Первичный приём",
-		shortTitle: "Первичный приём",
+		title: "Первичный комплекс ИДС (323-ФЗ)",
+		shortTitle: "Первичный комплекс ИДС (323-ФЗ)",
 		subtitle: "Персональные данные + Осмотр и диагностика + Местная анестезия + Терапия",
 		templateKeys: [
 			"CONSENT_PERSONAL_DATA",
@@ -73,8 +73,8 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 	PACKAGE_SURGERY: {
 		key: "PACKAGE_SURGERY",
 		code: "ПАКЕТ-ХИРУРГИЯ",
-		title: "Пакет: Хирургия и имплантация",
-		shortTitle: "Хирургия / Имплантация",
+		title: "Хирургический комплекс ИДС",
+		shortTitle: "Хирургический комплекс ИДС",
 		subtitle: "Персональные данные + Местная анестезия + Хирургическое вмешательство / Имплантация",
 		templateKeys: [
 			"CONSENT_PERSONAL_DATA",
@@ -86,8 +86,8 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 	PACKAGE_ORTHOPEDICS: {
 		key: "PACKAGE_ORTHOPEDICS",
 		code: "ПАКЕТ-ОРТОПЕДИЯ",
-		title: "Пакет: Ортопедия",
-		shortTitle: "Ортопедия / Протезирование",
+		title: "Ортопедический комплекс ИДС",
+		shortTitle: "Ортопедический комплекс ИДС",
 		subtitle: "Персональные данные + Местная анестезия + Ортопедическое лечение",
 		templateKeys: [
 			"CONSENT_PERSONAL_DATA",
@@ -157,9 +157,9 @@ export function getConsentTemplate(key: ConsentTemplateKey): ConsentTemplate {
 }
 
 export const PACKAGE_SHORT_TITLES: Record<ConsentPackageKey, string> = {
-	PACKAGE_PRIMARY_VISIT: "Пакет: Первичный приём (4 док.)",
-	PACKAGE_SURGERY: "Пакет: Хирургия (3 док.)",
-	PACKAGE_ORTHOPEDICS: "Пакет: Ортопедия (3 док.)",
+	PACKAGE_PRIMARY_VISIT: "Первичный комплекс ИДС (323-ФЗ)",
+	PACKAGE_SURGERY: "Хирургический комплекс ИДС",
+	PACKAGE_ORTHOPEDICS: "Ортопедический комплекс ИДС",
 };
 
 export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {

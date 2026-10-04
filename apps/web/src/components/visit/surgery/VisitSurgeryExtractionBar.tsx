@@ -113,7 +113,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 						title="1-Клик норма: лунка ушита, Альвожил, гемостаз полный"
 					>
 						<Zap size={14} className="text-amber-300" />
-						<span>✓ Протокол без осложнений: лунка ушита, гемостаз полный</span>
+						<span>Протокол без осложнений: лунка ушита, гемостаз полный</span>
 					</button>
 
 					<button
@@ -131,7 +131,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 
 			{/* Сложность удаления */}
 			<div className="space-y-1">
-				<span className="text-[11px] font-bold text-[var(--muted)]">Сложность экстракции (Номенклатура 804н):</span>
+				<span className="text-[11px] font-bold text-[var(--muted)]">Сложность экстракции (Услуга):</span>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 					{EXTRACTION_COMPLEXITY_OPTIONS.map((opt) => {
 						const isSel = complexity === opt.id;

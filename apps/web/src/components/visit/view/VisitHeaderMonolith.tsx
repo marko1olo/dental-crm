@@ -240,7 +240,13 @@ export function VisitHeaderMonolith({
 								}}
 								data-testid="visit-header-lab-status-badge"
 							>
-								<span>{labStatus.isOverdue ? "⚠️" : labStatus.state === "ready_in_clinic" ? "🦷" : "⏳"}</span>
+								{labStatus.isOverdue ? (
+									<AlertTriangle size={14} className="shrink-0" />
+								) : labStatus.state === "ready_in_clinic" ? (
+									<CheckCircle2 size={14} className="shrink-0" />
+								) : (
+									<Clock size={14} className="shrink-0" />
+								)}
 								<span className="font-extrabold">
 									{labStatus.isOverdue
 										? `ЗТЛ: +${labStatus.daysOverdue} дн!`

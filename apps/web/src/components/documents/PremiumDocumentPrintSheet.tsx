@@ -9,7 +9,7 @@ import {
 	useDocumentBrandingStore,
 } from "../../store/documentBrandingStore";
 import type { RadiologySnapshotItem } from "../visit/VisitSummaryModal";
-import type { ToothData } from "../odontogram/ToothChart";
+import { type ToothData, type ToothState, TOOTH_STATE_LABELS } from "../odontogram/ToothChart";
 import "../../styles/premium-document-print.css";
 
 export interface PremiumDocumentPrintSheetProps {
@@ -309,7 +309,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 								<div className="doc-teeth-formula-grid">
 									{activeTeethWithFindings.map((tooth) => (
 										<span key={tooth.toothNumber} className="doc-tooth-pill">
-											<strong>Зуб {tooth.toothNumber}:</strong> {tooth.state}
+											<strong>Зуб {tooth.toothNumber}:</strong> {TOOTH_STATE_LABELS[tooth.state as ToothState] || tooth.state}
 											{tooth.surfaces && tooth.surfaces.length > 0
 												? ` (${tooth.surfaces.join(", ")})`
 												: ""}

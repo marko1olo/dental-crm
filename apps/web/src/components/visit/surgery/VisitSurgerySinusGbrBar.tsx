@@ -109,7 +109,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 					title="1-Клик норма: остеопластика, мембрана Шнайдера интактна, гемостаз полный"
 				>
 					<Zap size={14} className="text-amber-300" />
-					<span>✓ Норма НКР: мембрана Шнайдера интактна, графт внесен, гемостаз устойчивый</span>
+					<span>Норма НКР: мембрана Шнайдера интактна, графт внесен, гемостаз устойчивый</span>
 				</button>
 			</div>
 

@@ -259,7 +259,7 @@ export function VisitClinicalToothModal({
 						</div>
 					</div>
 
-					{/* Кнопка закрытия ✕ */}
+					{/* Кнопка закрытия */}
 					<button
 						type="button"
 						onClick={closeClinicalModal}

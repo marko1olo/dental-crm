@@ -219,3 +219,12 @@ export function documentRowLifecycleGuidance(
 	}
 	return `Аннулировано. Источник: ${sourceLabel}.`;
 }
+
+export const CANONICAL_DOCUMENT_STATUS_LABELS: Record<string, string> = {
+	draft: "Черновик",
+	issued: "Выдан",
+	voided: "Аннулирован",
+	pending: "В обработке",
+	signed: "Подписан",
+	archived: "В архиве",
+};

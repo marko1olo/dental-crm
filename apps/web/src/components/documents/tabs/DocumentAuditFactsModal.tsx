@@ -6,7 +6,7 @@ import type {
 	DocumentStatus,
 } from "@dental/shared";
 import { DocumentUkepSignButton } from "../DocumentUkepSignButton";
-import { humanizeDocumentAuditText } from "../documentAutonomy";
+import { CANONICAL_DOCUMENT_STATUS_LABELS, humanizeDocumentAuditText } from "../documentAutonomy";
 import { isoDateLabel } from "../../../AppHelpers";
 
 export interface DocumentAuditFactsModalProps {
@@ -59,6 +59,7 @@ export const DocumentAuditFactsModal: React.FC<DocumentAuditFactsModalProps> = R
 						</strong>
 						<p>
 							{documentStatusLabels?.[documentAuditFacts.status] ??
+								CANONICAL_DOCUMENT_STATUS_LABELS[documentAuditFacts.status] ??
 								documentAuditFacts.status}{" "}
 							·{" "}
 							{documentAuditFacts.issuedAt

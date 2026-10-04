@@ -48,6 +48,8 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode, getDemoExecutiveAnalytics } from "../../lib/demoMode";
 import { ExecutiveFunnelMetrics } from "./ExecutiveFunnelMetrics";
 import { ExecutivePnlWidget } from "./ExecutivePnlWidget";
+import { ExecutiveDashboard } from "./ExecutiveDashboard";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import "./executiveDashboard.css";
 
 export interface DirectorExecutiveDashboardProps {
@@ -67,6 +69,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 }) => {
 	const [internalPeriod, setInternalPeriod] = useState<ExecutivePeriod>(initialPeriod);
 	const period = controlledPeriod ?? internalPeriod;
+	const isMobile = useIsMobile(768);
 
 	const handlePeriodSelect = useCallback(
 		(p: ExecutivePeriod) => {
@@ -213,6 +216,19 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 	useEffect(() => {
 		loadDashboard();
 	}, [loadDashboard]);
+
+	if (isMobile) {
+		return (
+			<ExecutiveDashboard
+				period={period as any}
+				onPeriodChange={(p) => {
+					if (p === "week") handlePeriodSelect("month");
+					else handlePeriodSelect(p as ExecutivePeriod);
+				}}
+				onNavigateToSection={onNavigateToSection}
+			/>
+		);
+	}
 
 	if (loading && !payload) {
 		return (

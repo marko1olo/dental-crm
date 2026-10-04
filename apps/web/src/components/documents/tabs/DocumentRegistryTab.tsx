@@ -24,7 +24,7 @@ import {
 } from "../DocumentRegistryFilterBar";
 import type { DocumentCategoryTab } from "../DocumentNavTabs";
 import { EmptyState } from "../../EmptyState";
-import { documentRowLifecycleGuidance } from "../documentAutonomy";
+import { CANONICAL_DOCUMENT_STATUS_LABELS, documentRowLifecycleGuidance } from "../documentAutonomy";
 
 export interface DocumentRegistryTabProps {
 	activeCategoryTab?: DocumentCategoryTab;
@@ -172,7 +172,9 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 									<h3>{documentActionLabel}</h3>
 									<p>
 										{documentKindLabel} ·{" "}
-										{documentStatusLabels?.[document.status] ?? document.status}
+										{documentStatusLabels?.[document.status] ??
+											CANONICAL_DOCUMENT_STATUS_LABELS[document.status] ??
+											document.status}
 										<span
 											className={
 												documentSourceStatusClassNames?.[docSourceStatus] ??
@@ -228,7 +230,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 
 									{document.status === "draft" ? (
 										<button
-											className="tactile-doc-btn tactile-doc-btn--primary doc-link min-h-[44px] sm:min-h-[32px] sm:h-8"
+											className="tactile-doc-btn tactile-doc-btn--primary doc-link min-h-[44px] sm:min-h-[36px] sm:h-8"
 											type="button"
 											disabled={documentStatusSaving}
 											aria-busy={documentStatusSaving || undefined}
@@ -243,7 +245,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 										</button>
 									) : (
 										<button
-											className="tactile-doc-btn tactile-doc-btn--secondary doc-link min-h-[44px] sm:min-h-[32px] sm:h-8"
+											className="tactile-doc-btn tactile-doc-btn--secondary doc-link min-h-[44px] sm:min-h-[36px] sm:h-8"
 											type="button"
 											onClick={() =>
 												void downloadIssuedDocumentPdf(document.id)
@@ -259,7 +261,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 									)}
 
 									<button
-										className="tactile-doc-btn tactile-doc-btn--ghost doc-link min-h-[44px] sm:min-h-[32px] sm:h-8"
+										className="tactile-doc-btn tactile-doc-btn--ghost doc-link min-h-[44px] sm:min-h-[36px] sm:h-8"
 										type="button"
 										onClick={() => void openIssuedDocumentHtml(document.id)}
 										aria-describedby={documentLifecycleGuidanceId}

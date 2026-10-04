@@ -65,7 +65,7 @@ export function calculateActivePatientCriticalBadges(
 			id: "lidocaine",
 			testId: "visit-focus-lidocaine-alert",
 			title: "АЛЛЕРГИЯ НА МЕСТНЫЕ АНЕСТЕТИКИ (Лидокаин): РИСК АНАФИЛАКТИЧЕСКОГО ШОКА! Рекомендован Мепивакаин 3% plain или Артикаин без парабенов",
-			shortLabel: "ЛИДОКАИН ⚠️",
+			shortLabel: "ЛИДОКАИН",
 			fullLabel: "ЛИДОКАИН: аллергия! Рекомендован Мепивакаин 3% без вазоконстриктора",
 		});
 	}
@@ -75,7 +75,7 @@ export function calculateActivePatientCriticalBadges(
 			id: "articaine",
 			testId: "visit-focus-articaine-alert",
 			title: "АЛЛЕРГИЯ НА АРТИКАИН (Ультракаин / Убистезин / Септанест): РИСК АНАФИЛАКТИЧЕСКОГО ШОКА! Рекомендован Мепивакаин 3% без вазоконстриктора (Скандонест)",
-			shortLabel: "АРТИКАИН ⚠️",
+			shortLabel: "АРТИКАИН",
 			fullLabel: "АРТИКАИН: аллергия! Рекомендован Мепивакаин 3% без вазоконстриктора",
 		});
 	}
@@ -86,7 +86,7 @@ export function calculateActivePatientCriticalBadges(
 			id: "penicillin",
 			testId: "visit-focus-penicillin-alert",
 			title: "АЛЛЕРГИЯ НА ПЕНИЦИЛЛИНЫ (Амоксициллин/Амоксиклав/Аугментин): ЗАПРЕТ ПЕНИЦИЛЛИНОВ! Рекомендована замена на Кларитромицин 500 мг или Клиндамицин 300 мг",
-			shortLabel: "ПЕНИЦИЛЛИН ⚠️",
+			shortLabel: "ПЕНИЦИЛЛИН",
 			fullLabel: "ПЕНИЦИЛЛИН: аллергия! Альтернатива: Кларитромицин / Клиндамицин",
 		});
 	}

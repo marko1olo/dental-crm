@@ -1,6 +1,9 @@
 import {
+	AlertTriangle,
+	Check,
 	Download,
 	FileText,
+	Paperclip,
 	PenTool,
 	Printer,
 	RefreshCw,
@@ -11,6 +14,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { showToast } from "../GlobalToast.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	getPointerCoordinates,
 	renderStrokeToSvgPath,
@@ -44,6 +48,8 @@ export interface ConsentSigningPanelProps {
 	patientPhone?: string | null | undefined;
 	smsOtpCode?: string | undefined;
 	setSmsOtpCode?: ((code: string) => void) | undefined;
+	paperScanFile?: File | null | undefined;
+	setPaperScanFile?: ((file: File | null) => void) | undefined;
 }
 
 export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
@@ -72,6 +78,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 	patientPhone,
 	smsOtpCode = "",
 	setSmsOtpCode,
+	paperScanFile = null,
+	setPaperScanFile,
 }) => {
 	const [smsCountdown, setSmsCountdown] = useState<number>(0);
 
@@ -313,7 +321,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 									fontWeight="500"
 									style={{ pointerEvents: "none", userSelect: "none" }}
 								>
-									Подпись пациента ✍ (распишитесь пальцем)
+									Подпись пациента (распишитесь стилусом или пальцем)
 								</text>
 							)}
 							{strokes.map((stroke, sIdx) => {
@@ -356,6 +364,21 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						</svg>
 					</div>
 
+					{/* Индикатор готовности подписи */}
+					<div className="flex items-center justify-between text-xs px-1">
+						{strokes.length === 0 && currentPoints.length === 0 ? (
+							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="status-tablet-unsigned">
+								<AlertTriangle size={14} className="shrink-0" />
+								<span>Не подписан • Ожидает росписи пациента пальцем или стилусом</span>
+							</span>
+						) : (
+							<span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5" data-testid="status-tablet-signed">
+								<ShieldCheck size={14} />
+								<span>Векторный росчерк готов к заверению ({strokes.reduce((acc, s) => acc + s.points.length, 0)} точек)</span>
+							</span>
+						)}
+					</div>
+
 					{/* Действия для десктопа (на мобиле вынесено в липкий Bottom Bar) */}
 					{!isMobile && (
 						<div className="flex items-center gap-3 pt-1 flex-wrap">
@@ -363,16 +386,22 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								type="button"
 								className="consent-action-btn primary"
 								data-testid="btn-confirm-tablet-signed"
-								onClick={() => onConfirmSign("tablet_stylus")}
-								disabled={isSubmitting}
+								onClick={() => {
+									if (strokes.length === 0 && currentPoints.length === 0) {
+										showToast("Для подтверждения электронной подписи необходим росчерк на экране", "error");
+										return;
+									}
+									onConfirmSign("tablet_stylus");
+								}}
+								disabled={isSubmitting || (strokes.length === 0 && currentPoints.length === 0)}
 								style={{
 									minHeight: "44px",
 									fontSize: "14px",
 									fontWeight: "bold",
-									background: "var(--teal)",
+									background: strokes.length > 0 ? "var(--teal)" : "var(--muted)",
 									color: "var(--on-teal, #ffffff)",
 									boxShadow: "var(--shadow-1)",
-									cursor: "pointer",
+									cursor: strokes.length > 0 ? "pointer" : "not-allowed",
 								}}
 							>
 								<Zap size={18} />
@@ -447,19 +476,26 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							type="text"
 							inputMode="numeric"
 							pattern="[0-9]*"
-							maxLength={6}
+							maxLength={4}
 							placeholder="1 2 3 4"
 							value={smsOtpCode}
-							onChange={(e) => setSmsOtpCode?.(e.target.value.replace(/\D/g, ""))}
+							onChange={(e) => setSmsOtpCode?.(e.target.value.replace(/\D/g, "").slice(0, 4))}
 							data-testid="input-sms-otp-code"
 							className="w-36 h-12 text-center text-xl font-mono font-bold tracking-widest rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 						/>
 						<button
 							type="button"
-							className="consent-tool-btn h-12 px-4"
+							className="consent-tool-btn h-12 px-4 cursor-pointer"
+							data-testid="btn-send-sms-code"
 							onClick={() => {
 								setSmsCountdown(60);
-								showToast("СМС с кодом подтверждения отправлено пациенту", "info");
+								const generatedCode = String(Math.floor(1000 + Math.random() * 9000));
+								if (isDemoShowcaseMode()) {
+									setSmsOtpCode?.(generatedCode);
+									showToast(`СМС с кодом отправлено пациенту (тестовый код: ${generatedCode})`, "info");
+								} else {
+									showToast(patientPhone ? `СМС с кодом подтверждения отправлено на ${patientPhone}` : "СМС с 4-значным кодом подтверждения отправлено пациенту", "info");
+								}
 							}}
 							disabled={smsCountdown > 0}
 						>
@@ -468,14 +504,40 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						</button>
 					</div>
 
+					<div className="flex items-center text-xs px-1">
+						{!smsOtpCode || smsOtpCode.trim().length < 4 ? (
+							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="status-sms-unsigned">
+								<AlertTriangle size={14} className="shrink-0" />
+								<span>Для подтверждения введите 4 цифры разового кода из СМС</span>
+							</span>
+						) : (
+							<span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5" data-testid="status-sms-signed">
+								<ShieldCheck size={14} />
+								<span>Код ПЭП введён • Готово к заверению по 63-ФЗ ст. 5</span>
+							</span>
+						)}
+					</div>
+
 					{!isMobile && (
 						<button
 							type="button"
 							className="consent-action-btn primary mt-1"
 							data-testid="btn-confirm-sms-signed"
-							onClick={() => onConfirmSign("sms_otp")}
-							disabled={isSubmitting}
-							style={{ minHeight: "44px", fontSize: "14px", fontWeight: "bold" }}
+							onClick={() => {
+								if (!smsOtpCode || smsOtpCode.trim().length < 4) {
+									showToast("Введите 4-значный код подтверждения из СМС", "error");
+									return;
+								}
+								onConfirmSign("sms_otp");
+							}}
+							disabled={isSubmitting || !smsOtpCode || smsOtpCode.trim().length < 4}
+							style={{
+								minHeight: "44px",
+								fontSize: "14px",
+								fontWeight: "bold",
+								background: smsOtpCode && smsOtpCode.trim().length === 4 ? "var(--teal)" : "var(--muted)",
+								cursor: smsOtpCode && smsOtpCode.trim().length === 4 ? "pointer" : "not-allowed",
+							}}
 						>
 							<Zap size={18} />
 							<span>Подтвердить согласие по СМС</span>
@@ -516,9 +578,96 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
 						/>
 						<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
-							Оригинал подписан пациентом от руки на бумаге (подшит в карту)
+							Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
 						</span>
 					</label>
+
+					{/* ЧЕСТНЫЙ EMPTY STATE ИЛИ ПРИКРЕПЛЕННЫЙ СКАН БЛАНКА */}
+					<div
+						className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-2"
+						data-testid="paper-scan-upload-container"
+					>
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-2">
+								<FileText size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span className="font-semibold text-xs sm:text-sm text-[var(--ink)]">
+									Скан-копия или фото бланка для электронного архива
+								</span>
+							</div>
+							{paperScanFile ? (
+								<span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+									<Check size={12} className="shrink-0" />
+									<span>Файл прикреплен</span>
+								</span>
+							) : (
+								<span className="text-[11px] text-muted bg-[var(--paper-soft)] px-2 py-0.5 rounded-full border border-[var(--line)]">
+									Не прикреплен (опционально)
+								</span>
+							)}
+						</div>
+
+						{paperScanFile ? (
+							<div className="flex items-center justify-between p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<div className="flex items-center gap-2 min-w-0">
+									<FileText size={18} className="text-[var(--teal)] shrink-0" />
+									<div className="flex flex-col min-w-0">
+										<span className="text-xs font-semibold text-[var(--ink)] truncate" data-testid="paper-scan-filename">
+											{paperScanFile.name}
+										</span>
+										<span className="text-[10px] text-muted">
+											{Math.round(paperScanFile.size / 1024)} КБ
+										</span>
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => setPaperScanFile?.(null)}
+									data-testid="btn-remove-paper-scan"
+									className="text-xs text-rose-500 hover:text-rose-600 px-2 py-1 rounded cursor-pointer"
+									title="Удалить прикрепленный скан"
+								>
+									Удалить
+								</button>
+							</div>
+						) : (
+							<label className="flex items-center justify-center gap-2 p-3 border border-dashed border-[var(--line-strong)] rounded-lg hover:border-[var(--teal)] cursor-pointer text-xs text-muted hover:text-[var(--ink)] transition-colors">
+								<input
+									type="file"
+									data-testid="input-paper-scan-file"
+									accept="image/*,application/pdf"
+									className="hidden"
+									onChange={(e) => {
+										const f = e.target.files?.[0];
+										if (f) {
+											setPaperScanFile?.(f);
+											showToast(`Скан «${f.name}» успешно прикреплен`, "success");
+										}
+									}}
+								/>
+								<Paperclip size={14} className="shrink-0 text-muted" />
+								<span>Прикрепить скан или фото подписанного бланка (PDF, JPG, PNG)</span>
+							</label>
+						)}
+					</div>
+
+					{/* Индикатор статуса бумажного режима */}
+					<div className="flex items-center text-xs px-1">
+						{!paperOriginalConfirmed && !paperScanFile ? (
+							<span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5" data-testid="status-paper-unsigned">
+								<AlertTriangle size={14} className="shrink-0" />
+								<span>Для подтверждения отметьте подшивку оригинала в карту или прикрепите скан</span>
+							</span>
+						) : (
+							<span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5" data-testid="status-paper-signed">
+								<ShieldCheck size={14} />
+								<span>
+									{paperScanFile
+										? `Скан прикреплен («${paperScanFile.name}») • Готово к архивации`
+										: "Бумажный оригинал подшит в архив карты 043/у (25 лет хранения)"}
+								</span>
+							</span>
+						)}
+					</div>
 
 					{/* Кнопки бумажного режима */}
 					<div className="flex items-center gap-3 pt-1 flex-wrap">
@@ -551,7 +700,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							type="button"
 							className="consent-action-btn primary"
 							data-testid="btn-confirm-paper-signed"
-							onClick={() => onConfirmSign("paper_physical")}
+							onClick={() => {
+								setPaperOriginalConfirmed(true);
+								onConfirmSign("paper_physical");
+							}}
 							disabled={isSubmitting}
 							style={{
 								minHeight: "44px",
