@@ -175,17 +175,15 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 				</div>
 
 				{/* Navigation Tabs */}
-				<div className="flex border-b border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] px-4 shrink-0 text-xs font-bold">
+				<div className="cash-drawer-tabs">
 					<button
 						type="button"
 						onClick={() => {
 							setActiveTab("shift");
 							setSelectedReceipt(null);
 						}}
-						className={`py-2.5 px-3 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-							activeTab === "shift" && !selectedReceipt
-								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						className={`cash-drawer-tab-btn ${
+							activeTab === "shift" && !selectedReceipt ? "is-active" : ""
 						}`}
 						data-testid="tab-register-shift"
 					>
@@ -195,10 +193,8 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveTab("receipts")}
-						className={`py-2.5 px-3 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-							activeTab === "receipts" || selectedReceipt
-								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						className={`cash-drawer-tab-btn ${
+							activeTab === "receipts" || selectedReceipt ? "is-active" : ""
 						}`}
 						data-testid="tab-register-receipts"
 					>
@@ -211,10 +207,8 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 							setActiveTab("operations");
 							setSelectedReceipt(null);
 						}}
-						className={`py-2.5 px-3 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-							activeTab === "operations"
-								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						className={`cash-drawer-tab-btn ${
+							activeTab === "operations" ? "is-active" : ""
 						}`}
 						data-testid="tab-register-operations"
 					>

@@ -251,10 +251,10 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 								setSplitCertificateRub(0);
 								setSplitBonusRub(0);
 							}}
-							className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+							className="split-remainder-chip"
 							data-testid="btn-payment-combo-dms-card"
 						>
-							<ShieldCheck size={12} />
+							<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
 							<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Карта</span>
 						</button>
 						<button
@@ -271,10 +271,10 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 								setSplitCertificateRub(0);
 								setSplitBonusRub(0);
 							}}
-							className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+							className="split-remainder-chip"
 							data-testid="btn-payment-combo-dms-cash"
 						>
-							<ShieldCheck size={12} />
+							<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
 							<span>ДМС ({Math.min(totalDueRub, availableDmsCoverageRub)} ₽) + Нал</span>
 						</button>
 					</>
@@ -294,9 +294,9 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 							setSplitBonusRub(0);
 							setSplitDmsRub?.(0);
 						}}
-						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						className="split-remainder-chip"
 					>
-						<Zap size={12} />
+						<Zap size={12} className="text-indigo-600 dark:text-indigo-400" />
 						<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта</span>
 					</button>
 				)}
@@ -315,9 +315,9 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 							setSplitBonusRub(0);
 							setSplitDmsRub?.(0);
 						}}
-						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						className="split-remainder-chip"
 					>
-						<Zap size={12} />
+						<Zap size={12} className="text-emerald-600 dark:text-emerald-400" />
 						<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Нал</span>
 					</button>
 				)}
@@ -332,7 +332,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						setSplitBonusRub(0);
 						setSplitDmsRub?.(0);
 					}}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 				>
 					Всё на карту
 				</button>
@@ -347,28 +347,28 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						setSplitBonusRub(0);
 						setSplitDmsRub?.(0);
 					}}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 				>
 					Всё наличными
 				</button>
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("card")}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 				>
 					Остаток на карту
 				</button>
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("cash")}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 				>
 					Остаток наличными
 				</button>
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("sbp")}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 					data-testid="btn-payment-remainder-sbp"
 				>
 					Остаток через СБП
@@ -376,7 +376,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("certificate")}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 					data-testid="btn-payment-remainder-certificate"
 				>
 					Остаток сертификатом
@@ -384,7 +384,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("bonus")}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 					data-testid="btn-payment-remainder-bonus"
 				>
 					Остаток бонусами
@@ -392,17 +392,17 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("dms")}
-					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+					className="split-remainder-chip"
 					data-testid="btn-payment-remainder-dms"
 				>
-					<ShieldCheck size={12} />
+					<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400" />
 					<span>Остаток на ДМС</span>
 				</button>
 				{patientDepositRub > 0 && (
 					<button
 						type="button"
 						onClick={() => applySplitRemainder("deposit")}
-						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						className="split-remainder-chip"
 						data-testid="btn-payment-remainder-deposit"
 					>
 						Остаток из аванса
@@ -412,7 +412,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 					<button
 						type="button"
 						onClick={() => applySplitRemainder("family")}
-						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						className="split-remainder-chip"
 						data-testid="btn-payment-remainder-family"
 					>
 						Остаток из семьи
@@ -421,7 +421,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("card_and_cash_5050")}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer flex items-center"
+					className="split-remainder-chip"
 					data-testid="btn-payment-remainder-5050"
 					title="Разделить оставшуюся сумму 50/50 между картой и наличными (копеечная точность)"
 				>

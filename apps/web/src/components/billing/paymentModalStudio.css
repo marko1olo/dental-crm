@@ -2,12 +2,857 @@
  * paymentModalStudio.css — Studio Clinical HIG styling for 1-click checkout & 54-FZ thermal receipt.
  *
  * Governed by:
- * - Mandate 8d pt 4: WCAG AAA contrast, no gray dirty patches.
+ * - Mandate 8d pt 4: WCAG AAA contrast, no gray dirty patches, crisp tactile button borders & depths.
  * - Mandate 8d pt 5: Premium typography of printable documents.
- * - Mandate 8e: Doctor & Cashier autonomy (0 friction, 1-click fast checkout).
+ * - Mandate 8e: Doctor & Cashier autonomy (0 friction, 1-click fast checkout, tactile denominations).
  */
 
-/* Thermal Receipt Paper Simulation */
+/* ==========================================================================
+   1. STUDIO HIG CASH REGISTER & PAYMENT MODAL BUTTON ARCHITECTURE
+   ========================================================================== */
+
+/* Button Reset Override: ensure all buttons inside .payment-modal and .receipt-preview-root have explicit styling */
+.payment-modal button,
+.receipt-preview-root button,
+.cash-register-drawer button {
+	font-family: inherit;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+/* Ensure strong crisp typography across modal headers in all themes (WCAG AAA) */
+.payment-modal h2,
+.payment-modal h3,
+.payment-modal strong {
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .payment-modal h2,
+[data-theme="dark"] .payment-modal h3,
+[data-theme="dark"] .payment-modal strong {
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .payment-modal p,
+[data-theme="dark"] .payment-modal label {
+	color: #94a3b8 !important;
+}
+
+/* Cash Register Drawer Tab Bar & Action Buttons */
+.cash-drawer-tabs {
+	display: flex;
+	border-bottom: 1.5px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	padding: 0 16px;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .cash-drawer-tabs {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+.cash-drawer-tab-btn {
+	padding: 10px 14px;
+	font-size: 12px;
+	font-weight: 700;
+	border: none !important;
+	border-bottom: 2.5px solid transparent !important;
+	background: transparent !important;
+	color: var(--muted, #64748b) !important;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.cash-drawer-tab-btn:hover {
+	color: var(--ink, #0f172a) !important;
+}
+
+.cash-drawer-tab-btn.is-active {
+	border-bottom-color: var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488) !important;
+	font-weight: 800;
+}
+
+[data-theme="dark"] .cash-drawer-tab-btn {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .cash-drawer-tab-btn:hover {
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .cash-drawer-tab-btn.is-active {
+	border-bottom-color: #2dd4bf !important;
+	color: #2dd4bf !important;
+}
+
+/* 1-Click Method Switcher */
+.payment-method-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 8px;
+}
+
+.payment-method-pill {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 12px;
+	font-weight: 700;
+	font-size: 13px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.payment-method-pill:hover {
+	border-color: var(--teal, #0d9488) !important;
+	background: var(--paper, #ffffff) !important;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
+}
+
+.payment-method-pill.is-active {
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	border-color: #0d9488 !important;
+	color: #ffffff !important;
+	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
+}
+
+[data-theme="dark"] .payment-method-pill {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .payment-method-pill:hover {
+	background: #334155 !important;
+	border-color: #2dd4bf !important;
+}
+
+[data-theme="dark"] .payment-method-pill.is-active {
+	background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+	border-color: #2dd4bf !important;
+	color: #ffffff !important;
+}
+
+/* ==========================================================================
+   2. QUICK DENOMINATION BILLS (КАССОВЫЕ КУПЮРЫ И СУММЫ)
+   ========================================================================== */
+
+.cash-bill-grid {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 6px;
+}
+
+.cash-add-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.cash-bill-chip {
+	min-height: 38px;
+	height: 38px;
+	padding: 0 8px;
+	border-radius: 10px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-weight: 800;
+	font-size: 12px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	user-select: none;
+}
+
+.cash-bill-chip:hover {
+	border-color: #10b981 !important;
+	background: #ecfdf5 !important;
+	color: #065f46 !important;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+.cash-bill-chip:active {
+	transform: scale(0.97);
+}
+
+.cash-bill-chip.is-active {
+	background: linear-gradient(135deg, #059669, #047857) !important;
+	border-color: #059669 !important;
+	color: #ffffff !important;
+	box-shadow: 0 3px 8px rgba(5, 150, 105, 0.35);
+}
+
+[data-theme="dark"] .cash-bill-chip {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .cash-bill-chip:hover {
+	background: #064e3b !important;
+	border-color: #34d399 !important;
+	color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .cash-bill-chip.is-active {
+	background: linear-gradient(135deg, #059669, #10b981) !important;
+	border-color: #34d399 !important;
+	color: #ffffff !important;
+}
+
+/* Add-amount chip (+1 000, +2 000, +5 000) */
+.cash-add-chip {
+	min-height: 38px;
+	height: 38px;
+	padding: 0 8px;
+	border-radius: 10px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-weight: 800;
+	font-size: 12px;
+	border: 1.5px solid #a7f3d0 !important;
+	background: #ecfdf5 !important;
+	color: #065f46 !important;
+	box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.cash-add-chip:hover {
+	border-color: #059669 !important;
+	background: #d1fae5 !important;
+	color: #047857 !important;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+.cash-add-chip:active {
+	transform: scale(0.97);
+}
+
+[data-theme="dark"] .cash-add-chip {
+	background: rgba(6, 78, 59, 0.45) !important;
+	border-color: rgba(52, 211, 153, 0.4) !important;
+	color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .cash-add-chip:hover {
+	background: rgba(6, 78, 59, 0.75) !important;
+	border-color: #34d399 !important;
+	color: #ecfdf5 !important;
+}
+
+/* Exact ("Ровно") chip */
+.cash-exact-chip {
+	min-height: 38px;
+	height: 38px;
+	padding: 0 8px;
+	border-radius: 10px;
+	font-weight: 800;
+	font-size: 12px;
+	border: 1.5px solid #bfdbfe !important;
+	background: #eff6ff !important;
+	color: #1e40af !important;
+	box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.cash-exact-chip:hover {
+	border-color: #2563eb !important;
+	background: #dbeafe !important;
+	color: #1d4ed8 !important;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+}
+
+.cash-exact-chip:active {
+	transform: scale(0.97);
+}
+
+[data-theme="dark"] .cash-exact-chip {
+	background: rgba(30, 58, 138, 0.4) !important;
+	border-color: rgba(96, 165, 250, 0.4) !important;
+	color: #bfdbfe !important;
+}
+
+[data-theme="dark"] .cash-exact-chip:hover {
+	background: rgba(30, 58, 138, 0.7) !important;
+	border-color: #60a5fa !important;
+	color: #eff6ff !important;
+}
+
+/* Inline "Без сдачи" button next to cash input */
+.cash-quick-match-btn {
+	height: 40px;
+	padding: 0 14px;
+	border-radius: 12px;
+	background: #ecfdf5 !important;
+	border: 1.5px solid #a7f3d0 !important;
+	color: #065f46 !important;
+	font-size: 12px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	shrink: 0;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
+	white-space: nowrap;
+}
+
+.cash-quick-match-btn:hover {
+	background: #d1fae5 !important;
+	border-color: #059669 !important;
+	color: #047857 !important;
+	transform: translateY(-1px);
+}
+
+[data-theme="dark"] .cash-quick-match-btn {
+	background: rgba(6, 78, 59, 0.4) !important;
+	border-color: rgba(52, 211, 153, 0.4) !important;
+	color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .cash-quick-match-btn:hover {
+	background: rgba(6, 78, 59, 0.7) !important;
+	border-color: #34d399 !important;
+}
+
+/* Primary Cash Action Button ("Подтвердить прием ... ₽ в кассу") */
+.cash-submit-primary-btn {
+	min-height: 44px;
+	height: 44px;
+	width: 100%;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #059669, #047857) !important;
+	border: 1px solid #047857 !important;
+	color: #ffffff !important;
+	font-weight: 800 !important;
+	font-size: 13px !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.cash-submit-primary-btn:hover:not(:disabled) {
+	background: linear-gradient(135deg, #047857, #065f46) !important;
+	transform: translateY(-1px);
+	box-shadow: 0 5px 14px rgba(5, 150, 105, 0.45);
+}
+
+.cash-submit-primary-btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.cash-submit-primary-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	filter: grayscale(0.5);
+}
+
+[data-theme="dark"] .cash-submit-primary-btn {
+	background: linear-gradient(135deg, #059669, #10b981) !important;
+	border-color: #34d399 !important;
+	color: #ffffff !important;
+	box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35);
+}
+
+/* ==========================================================================
+   3. DOCTOR DISCOUNT PRESET CHIPS (СКИДКИ ВРАЧА)
+   ========================================================================== */
+
+.discount-preset-chip {
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 12px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.discount-preset-chip:hover {
+	border-color: #f59e0b !important;
+	background: #fffbeb !important;
+	color: #b45309 !important;
+	transform: translateY(-1px);
+}
+
+.discount-preset-chip:active {
+	transform: scale(0.97);
+}
+
+.discount-preset-chip.is-active {
+	background: linear-gradient(135deg, #d97706, #b45309) !important;
+	border-color: #d97706 !important;
+	color: #ffffff !important;
+	box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+}
+
+[data-theme="dark"] .discount-preset-chip {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .discount-preset-chip:hover {
+	background: #451a03 !important;
+	border-color: #fbbf24 !important;
+	color: #fef3c7 !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.is-active {
+	background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+	border-color: #fbbf24 !important;
+	color: #0f172a !important;
+}
+
+/* Warranty 100% preset chip */
+.discount-preset-chip.discount-preset-warranty {
+	border-color: #e9d5ff !important;
+	background: #faf5ff !important;
+	color: #7e22ce !important;
+}
+
+.discount-preset-chip.discount-preset-warranty:hover {
+	border-color: #9333ea !important;
+	background: #f3e8ff !important;
+	color: #6b21a8 !important;
+}
+
+.discount-preset-chip.discount-preset-warranty.is-active {
+	background: linear-gradient(135deg, #9333ea, #7e22ce) !important;
+	border-color: #9333ea !important;
+	color: #ffffff !important;
+	box-shadow: 0 2px 8px rgba(147, 51, 234, 0.35);
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-warranty {
+	background: rgba(88, 28, 135, 0.3) !important;
+	border-color: rgba(192, 132, 252, 0.4) !important;
+	color: #e9d5ff !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-warranty:hover {
+	background: rgba(88, 28, 135, 0.6) !important;
+	border-color: #c084fc !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-warranty.is-active {
+	background: linear-gradient(135deg, #a855f7, #9333ea) !important;
+	border-color: #c084fc !important;
+	color: #ffffff !important;
+}
+
+/* Combo split preset chip */
+.discount-preset-chip.discount-preset-combo {
+	border-color: #99f6e4 !important;
+	background: #f0fdfa !important;
+	color: #0f766e !important;
+}
+
+.discount-preset-chip.discount-preset-combo:hover {
+	border-color: #0d9488 !important;
+	background: #ccfbf1 !important;
+}
+
+[data-theme="dark"] .discount-preset-chip.discount-preset-combo {
+	background: rgba(19, 78, 74, 0.35) !important;
+	border-color: rgba(45, 212, 191, 0.4) !important;
+	color: #99f6e4 !important;
+}
+
+/* ==========================================================================
+   4. DOCUMENT & RECEIPT SEGMENTED CONTROLS (ШАПКА И ПРЕДПРОСМОТР)
+   ========================================================================== */
+
+.payment-doc-segmented-bar {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft, #f1f5f9) !important;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	border-radius: 12px;
+	padding: 2.5px;
+	gap: 2px;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.payment-doc-tab {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 9px;
+	font-size: 12px;
+	font-weight: 700;
+	border: 1px solid transparent !important;
+	background: transparent !important;
+	color: var(--muted, #64748b) !important;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	white-space: nowrap;
+	user-select: none;
+}
+
+.payment-doc-tab:hover {
+	color: var(--ink, #0f172a) !important;
+	background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.payment-doc-tab.is-active {
+	background: var(--paper, #ffffff) !important;
+	color: var(--teal, #0d9488) !important;
+	border-color: var(--line, #cbd5e1) !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+	font-weight: 800;
+}
+
+[data-theme="dark"] .payment-doc-segmented-bar {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .payment-doc-tab {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .payment-doc-tab:hover {
+	color: #f1f5f9 !important;
+	background: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .payment-doc-tab.is-active {
+	background: #1e293b !important;
+	color: #2dd4bf !important;
+	border-color: #475569 !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* Modal Close Button */
+.payment-modal-close-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--muted, #64748b) !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	shrink: 0;
+}
+
+.payment-modal-close-btn:hover {
+	border-color: #ef4444 !important;
+	background: #fef2f2 !important;
+	color: #dc2626 !important;
+}
+
+[data-theme="dark"] .payment-modal-close-btn {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .payment-modal-close-btn:hover {
+	background: #450a0a !important;
+	border-color: #f87171 !important;
+	color: #fca5a5 !important;
+}
+
+/* ==========================================================================
+   5. FIXED MODAL FOOTER BUTTONS
+   ========================================================================== */
+
+.payment-footer-cancel-btn {
+	min-height: 38px;
+	height: 38px;
+	padding: 0 16px;
+	border-radius: 12px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--muted, #64748b) !important;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.payment-footer-cancel-btn:hover {
+	background: var(--paper, #ffffff) !important;
+	color: var(--ink, #0f172a) !important;
+	border-color: var(--line-strong, #94a3b8) !important;
+}
+
+[data-theme="dark"] .payment-footer-cancel-btn {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .payment-footer-cancel-btn:hover {
+	background: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+.payment-footer-submit-btn {
+	min-height: 38px;
+	height: 38px;
+	padding: 0 18px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	border: 1px solid transparent !important;
+	color: #ffffff !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+	user-select: none;
+}
+
+.payment-footer-submit-btn:hover:not(:disabled) {
+	transform: translateY(-1px);
+	filter: brightness(1.08);
+}
+
+.payment-footer-submit-btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.payment-footer-submit-btn.btn-cash {
+	background: linear-gradient(135deg, #059669, #047857) !important;
+	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
+}
+
+.payment-footer-submit-btn.btn-card {
+	background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+	box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+}
+
+.payment-footer-submit-btn.btn-sbp {
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
+}
+
+.payment-footer-submit-btn.btn-split {
+	background: linear-gradient(135deg, #9333ea, #7e22ce) !important;
+	box-shadow: 0 3px 10px rgba(147, 51, 234, 0.35);
+}
+
+.payment-footer-submit-btn.btn-deposit {
+	background: linear-gradient(135deg, #4f46e5, #4338ca) !important;
+	box-shadow: 0 3px 10px rgba(79, 70, 229, 0.35);
+}
+
+.payment-footer-submit-btn.btn-warranty {
+	background: linear-gradient(135deg, #059669, #047857) !important;
+	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
+}
+
+/* ==========================================================================
+   6. RECEIPT PREVIEW ACTION BAR & FORMAT SWITCHER (ВКЛАДКИ ЧЕКА)
+   ========================================================================== */
+
+.receipt-format-segmented {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft, #f1f5f9) !important;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	border-radius: 10px;
+	padding: 2.5px;
+	gap: 2px;
+}
+
+.receipt-format-btn {
+	height: 26px;
+	padding: 0 10px;
+	border-radius: 7px;
+	font-size: 11px;
+	font-weight: 700;
+	border: 1px solid transparent !important;
+	background: transparent !important;
+	color: var(--muted, #64748b) !important;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.receipt-format-btn.is-active {
+	background: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
+	font-weight: 800;
+}
+
+[data-theme="dark"] .receipt-format-segmented {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+[data-theme="dark"] .receipt-format-btn {
+	color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .receipt-format-btn.is-active {
+	background: #0d9488 !important;
+	color: #ffffff !important;
+}
+
+.receipt-action-btn-copy {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper, #ffffff) !important;
+	color: var(--ink, #0f172a) !important;
+	font-size: 11px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.receipt-action-btn-copy:hover {
+	background: var(--paper-soft, #f8fafc) !important;
+	border-color: var(--line-strong, #94a3b8) !important;
+}
+
+[data-theme="dark"] .receipt-action-btn-copy {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+.receipt-action-btn-print {
+	height: 30px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid #0f766e !important;
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	color: #ffffff !important;
+	font-size: 11px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	cursor: pointer;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+	transition: all 0.15s ease;
+}
+
+.receipt-action-btn-print:hover {
+	filter: brightness(1.08);
+	transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   7. 1-CLICK SPLIT CHIPS
+   ========================================================================== */
+
+.split-remainder-chip {
+	min-height: 28px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 11px;
+	font-weight: 700;
+	border: 1.5px solid var(--line, #cbd5e1) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.split-remainder-chip:hover {
+	border-color: var(--teal, #0d9488) !important;
+	background: var(--paper, #ffffff) !important;
+	transform: translateY(-1px);
+}
+
+[data-theme="dark"] .split-remainder-chip {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .split-remainder-chip:hover {
+	border-color: #2dd4bf !important;
+	background: #334155 !important;
+}
+
+/* ==========================================================================
+   8. THERMAL RECEIPT PAPER SIMULATION
+   ========================================================================== */
+
 .receipt-tape-container {
 	position: relative;
 	width: 100%;
@@ -123,79 +968,6 @@
 .receipt-qr-box svg {
 	width: 140px;
 	height: 140px;
-}
-
-/* Studio HIG Payment Cockpit */
-.payment-studio-cockpit {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-/* 1-Click Method Switcher */
-.payment-method-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-	gap: 8px;
-}
-
-.payment-method-pill {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	min-height: 44px;
-	padding: 8px 12px;
-	border-radius: 12px;
-	font-weight: 700;
-	font-size: 13px;
-	border: 1px solid var(--line, #cbd5e1);
-	background: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	cursor: pointer;
-	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-	user-select: none;
-}
-
-.payment-method-pill:hover {
-	border-color: var(--teal, #0d9488);
-	background: var(--paper-soft, #f8fafc);
-}
-
-.payment-method-pill.is-active {
-	background: var(--teal, #0d9488);
-	border-color: var(--teal, #0d9488);
-	color: #ffffff;
-	box-shadow: 0 2px 8px -1px rgba(13, 148, 136, 0.35);
-}
-
-/* Denomination bill quick buttons */
-.cash-bill-chip {
-	min-height: 40px;
-	padding: 6px 12px;
-	border-radius: 10px;
-	font-family: ui-monospace, monospace;
-	font-weight: 800;
-	font-size: 13px;
-	border: 1px solid var(--line, #cbd5e1);
-	background: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	cursor: pointer;
-	transition: all 0.15s ease;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.cash-bill-chip:hover {
-	border-color: #10b981;
-	background: rgba(16, 185, 129, 0.08);
-	color: #047857;
-	transform: translateY(-1px);
-}
-
-.cash-bill-chip:active {
-	transform: scale(0.97);
 }
 
 /* Live Change HUD */

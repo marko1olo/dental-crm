@@ -7,8 +7,9 @@
  * - Prominent, clean total due in ₽.
  * - 1-click tender selection: Card/Terminal, SBP QR (instant dynamic vector SVG), Cash with exact match & bills.
  * - Quick denomination bills (1 000, 2 000, 5 000, 10 000 ₽) with instant change calculation HUD.
- * - Compact doctor discounts (0%, 5%, 10%, 15%, 20%, 50%, warranty 100%) without accordion clutter.
+ * - Compact doctor discounts (0%, 5%, 10%, 15%, 20%, 50%, warranty 100%) with tactile Studio HIG chips.
  * - Integrated live 54-FZ thermal receipt tape with genuine FNS verification QR code.
+ * - Document tabs: Segmented Tab Bar (macOS Studio HIG) for Receipt, Invoice & Act 804n.
  * - Zero emojis (strict Lucide vector icons).
  * - WCAG AAA contrast in both Light and Dark themes.
  */
@@ -157,49 +158,48 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
-						{/* Toggle live receipt tape preview */}
-						<button
-							type="button"
-							onClick={() => setShowReceiptSidePanel((prev) => !prev)}
-							className={`h-8 px-2.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
-								showReceiptSidePanel
-									? "bg-teal-500/15 border-teal-500/40 text-teal-800 dark:text-teal-200"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
-							title="Показать/скрыть кассовую ленту 54-ФЗ"
-							data-testid="btn-toggle-receipt-tape"
-						>
-							<Receipt size={14} />
-							<span className="hidden sm:inline">Кассовая лента 54-ФЗ</span>
-						</button>
+					<div className="flex items-center gap-2.5">
+						{/* Studio HIG Segmented Tab Bar: Documents & Receipt Toggle */}
+						<div className="payment-doc-segmented-bar" data-testid="payment-header-doc-tabs">
+							<button
+								type="button"
+								onClick={() => setShowReceiptSidePanel((prev) => !prev)}
+								className={`payment-doc-tab ${showReceiptSidePanel ? "is-active" : ""}`}
+								title="Показать/скрыть кассовую ленту 54-ФЗ"
+								data-testid="btn-toggle-receipt-tape"
+							>
+								<Receipt size={14} className={showReceiptSidePanel ? "text-teal-600 dark:text-teal-400" : ""} />
+								<span className="hidden sm:inline">Кассовая лента 54-ФЗ</span>
+							</button>
 
-						<button
-							type="button"
-							onClick={discountsHook.handleQuickPrintInvoice}
-							className="hidden md:flex h-8 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] items-center gap-1 cursor-pointer transition-colors"
-							title="Быстрая печать счета"
-							data-testid="btn-payment-modal-print-invoice"
-						>
-							<Printer size={13} className="text-slate-500" />
-							<span>Счет</span>
-						</button>
+							<button
+								type="button"
+								onClick={discountsHook.handleQuickPrintInvoice}
+								className="payment-doc-tab hidden md:inline-flex"
+								title="Быстрая печать счета на оплату"
+								data-testid="btn-payment-modal-print-invoice"
+							>
+								<Printer size={13} className="text-slate-500" />
+								<span>Счет</span>
+							</button>
 
-						<button
-							type="button"
-							onClick={discountsHook.handleQuickPrintAct}
-							className="hidden md:flex h-8 px-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] items-center gap-1 cursor-pointer transition-colors"
-							title="Быстрая печать акта оказанных услуг"
-							data-testid="btn-payment-modal-print-act"
-						>
-							<FileText size={13} className="text-slate-500" />
-							<span>Акт 804н</span>
-						</button>
+							<button
+								type="button"
+								onClick={discountsHook.handleQuickPrintAct}
+								className="payment-doc-tab hidden md:inline-flex"
+								title="Быстрая печать акта оказанных услуг"
+								data-testid="btn-payment-modal-print-act"
+							>
+								<FileText size={13} className="text-slate-500" />
+								<span>Акт 804н</span>
+							</button>
+						</div>
 
+						{/* Tactile Close Button */}
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-8 h-8 rounded-xl border border-[var(--line,#cbd5e1)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line,#cbd5e1)] cursor-pointer transition-colors shrink-0"
+							className="payment-modal-close-btn"
 							aria-label="Закрыть модальное окно"
 							data-testid="btn-close-payment-modal"
 						>
@@ -238,7 +238,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 										});
 										onClose();
 									}}
-									className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+									className="payment-footer-submit-btn btn-warranty"
 									data-testid="btn-payment-close-warranty-zero"
 								>
 									<Sparkles size={14} />
@@ -390,15 +390,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 							/>
 						)}
 
-						{/* Doctor Discounts Row (Compact, Single Row, NO 3-Nested Accordions!) */}
-						<div className="p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payment-modal-presets-bar">
+						{/* Doctor Discounts Row (Studio Clinical HIG Tactile Chips) */}
+						<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs" data-testid="payment-modal-presets-bar">
 							<div className="flex items-center justify-between gap-2 flex-wrap">
 								<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
 									<Percent size={14} className="text-amber-500 shrink-0" />
 									<span>Скидки врача:</span>
 								</div>
 								<div className="flex items-center gap-1.5">
-									<label htmlFor="input-discount-custom-percent" className="text-[11px] text-[var(--muted,#64748b)] font-medium">
+									<label htmlFor="input-discount-custom-percent" className="text-[11px] text-[var(--muted,#64748b)] font-semibold">
 										Своя скидка, %:
 									</label>
 									<input
@@ -410,13 +410,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 										value={discountsHook.discountPercent || ""}
 										onChange={(e) => discountsHook.handleCustomPercentChange(parseFloat(e.target.value) || 0)}
 										placeholder="0%"
-										className="h-7 w-16 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-md text-[var(--ink,#0f172a)] outline-none focus:border-amber-500"
+										className="h-8 w-18 px-2.5 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500 shadow-2xs"
 										data-testid="input-discount-custom-percent"
 									/>
 								</div>
 							</div>
 
-							{/* 1-Click Preset Pills */}
+							{/* Tactile Discount Preset Chips */}
 							<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none flex-wrap">
 								{DISCOUNT_PRESETS.map((p) => {
 									const isActive = discountsHook.effectiveDiscountPercent === p.percent && !discountsHook.isWarranty100;
@@ -425,15 +425,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 											key={p.percent}
 											type="button"
 											onClick={() => discountsHook.applyDiscountPreset(p.percent, p.reason)}
-											className={`h-7 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-												isActive
-													? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-													: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-amber-400"
-											}`}
+											className={`discount-preset-chip ${isActive ? "is-active" : ""}`}
 											data-testid={p.testId}
 											title={p.title}
 										>
-											{p.percent > 0 && <Percent size={11} className={isActive ? "text-white" : "text-amber-600"} />}
+											{p.percent > 0 && <Percent size={11} className={isActive ? "text-white" : "text-amber-600 dark:text-amber-400"} />}
 											<span>{p.label}</span>
 										</button>
 									);
@@ -441,11 +437,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								<button
 									type="button"
 									onClick={discountsHook.applyWarranty100Preset}
-									className={`h-7 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-										discountsHook.isWarranty100
-											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-											: "bg-[var(--paper,#ffffff)] border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50"
-									}`}
+									className={`discount-preset-chip discount-preset-warranty ${discountsHook.isWarranty100 ? "is-active" : ""}`}
 									data-testid="preset-warranty-100"
 									title="Гарантийное обслуживание — скидка 100%"
 								>
@@ -455,18 +447,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								<button
 									type="button"
 									onClick={tendersHook.applyThreeWayCashCardAdvancePreset}
-									className="h-7 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-500 text-[var(--ink,#0f172a)] text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0"
+									className="discount-preset-chip discount-preset-combo"
 									data-testid="preset-three-way-split"
 									title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
 								>
-									<Users size={12} className="text-teal-600" />
+									<Users size={12} className="text-teal-600 dark:text-teal-400" />
 									<span>Нал + Карта + Аванс</span>
 								</button>
 							</div>
 						</div>
 
 						{/* 54-FZ Buyer Info (Frictionless, Citizen INN is strictly optional) */}
-						<div className="p-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payer-type-section">
+						<div className="p-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payer-type-section">
 							<div className="flex items-center justify-between flex-wrap gap-2">
 								<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
 									<User size={14} className="text-teal-600" />
@@ -489,7 +481,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									onChange={(e) => tendersHook.handleInnChange(e.target.value)}
 									placeholder="ИНН пациента (необязательно, 12 цифр для справки НДФЛ 13%)"
 									maxLength={12}
-									className="h-8 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
+									className="h-8 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-teal-500 shadow-2xs"
 									data-testid="input-buyer-inn-physical"
 								/>
 							</div>
@@ -552,7 +544,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="payment-footer-cancel-btn"
 						>
 							Отмена
 						</button>
@@ -573,7 +565,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									});
 									onClose();
 								}}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+								className="payment-footer-submit-btn btn-warranty"
 								data-testid="btn-payment-close-warranty-zero"
 							>
 								<CheckCircle size={15} />
@@ -584,7 +576,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={execHook.handleCashSubmit}
 								disabled={execHook.isSubmittingCash}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all truncate"
+								className="payment-footer-submit-btn btn-cash"
 								data-testid="btn-cash-submit-footer"
 							>
 								<CheckCircle size={15} className="shrink-0" />
@@ -595,7 +587,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={execHook.handleConfirmSbpManual}
 								disabled={tendersHook.isCheckingSbp}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all truncate"
+								className="payment-footer-submit-btn btn-sbp"
 								data-testid="btn-sbp-submit-footer"
 							>
 								<CheckCircle size={15} className="shrink-0" />
@@ -606,7 +598,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={execHook.handleSplitSubmit}
 								disabled={execHook.isSubmittingSplit}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all truncate"
+								className="payment-footer-submit-btn btn-split"
 								data-testid="btn-split-submit-footer"
 							>
 								<CheckCircle size={15} className="shrink-0" />
@@ -617,7 +609,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={() => execHook.handleDepositOrPartialCombo("deposit")}
 								disabled={execHook.isSubmittingDeposit}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all truncate"
+								className="payment-footer-submit-btn btn-deposit"
 								data-testid="btn-deposit-submit-footer"
 							>
 								<Wallet size={15} className="shrink-0" />
@@ -628,7 +620,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								type="button"
 								onClick={() => execHook.handleManualCardTerminalConfirm()}
 								disabled={execHook.isSubmittingManualCard}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all truncate"
+								className="payment-footer-submit-btn btn-card"
 								data-testid="btn-card-submit-footer"
 							>
 								<CreditCard size={15} className="shrink-0" />

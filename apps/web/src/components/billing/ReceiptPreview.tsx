@@ -217,15 +217,11 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 			{/* Action Toolbar */}
 			{showActionsBar && (
 				<div className="flex items-center justify-between gap-2 w-full max-w-[360px] px-1 select-none">
-					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line,#cbd5e1)] text-xs">
+					<div className="receipt-format-segmented">
 						<button
 							type="button"
 							onClick={() => setFormat("80mm")}
-							className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-								format === "80mm"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
+							className={`receipt-format-btn ${format === "80mm" ? "is-active" : ""}`}
 							data-testid="btn-format-80mm"
 						>
 							Лента 80мм
@@ -233,11 +229,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<button
 							type="button"
 							onClick={() => setFormat("a4")}
-							className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-								format === "a4"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
+							className={`receipt-format-btn ${format === "a4" ? "is-active" : ""}`}
 							data-testid="btn-format-a4"
 						>
 							А4 Справка
@@ -248,17 +240,17 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1 cursor-pointer transition-colors"
+							className="receipt-action-btn-copy"
 							title="Скопировать текстовую копию чека"
 							data-testid="btn-copy-receipt-text"
 						>
-							{isCopied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} className="text-[var(--muted,#64748b)]" />}
+							{isCopied ? <Check size={13} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={13} className="text-[var(--muted,#64748b)]" />}
 							<span className="hidden sm:inline">{isCopied ? "Скопировано" : "Копия"}</span>
 						</button>
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="h-8 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+							className="receipt-action-btn-print"
 							title="Распечатать чек на кассовом принтере"
 							data-testid="btn-print-receipt-tape"
 						>
