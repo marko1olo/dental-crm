@@ -59,6 +59,14 @@ export type PublicPortalRoute =
 			readonly kind: "budget";
 			/** Токен сметы из ссылки. */
 			readonly token: string;
+	  }
+	| {
+			/** Telegram WebApp Mini App (Pocket Clinic). */
+			readonly kind: "tgapp";
+			/** Идентификатор организации/клиники (опционален). */
+			readonly organizationId: string | null;
+			/** Идентификатор пациента (опционален). */
+			readonly patientId?: string | null;
 	  };
 
 /**
@@ -97,6 +105,13 @@ export const CHECKIN_PORTAL_PATH = "/portal/checkin/";
  */
 export const CABINET_PORTAL_PATH = "/portal/cabinet/";
 export const PATIENT_PORTAL_PATH = "/portal/patient/";
+
+/**
+ * Пути Telegram WebApp Mini App:
+ * `#/portal/tgapp/<идентификатор клиники>` или `#/tgapp`.
+ */
+export const TGAPP_PORTAL_PATH = "/portal/tgapp/";
+export const TGAPP_SHORT_PATH = "/tgapp";
 
 /**
  * Снимает процентное кодирование с одного сегмента адреса.
@@ -202,6 +217,33 @@ export function publicPortalRouteFromHash(
 			return {
 				kind: "cabinet",
 				organizationId: decodeSegment(rawOrg) || null,
+			};
+		}
+	}
+
+	for (const tgPath of [TGAPP_PORTAL_PATH, "/portal/tgapp", "/tgapp"]) {
+		const tgBase = tgPath.replace(/\/$/, "");
+		if (
+			path === tgBase ||
+			path.startsWith(`${tgBase}/`) ||
+			path.startsWith(`${tgBase}?`)
+		) {
+			const queryIndex = path.indexOf("?");
+			let rawOrg: string | null = null;
+			let rawPatient: string | null = null;
+			if (queryIndex !== -1) {
+				const params = new URLSearchParams(path.slice(queryIndex));
+				rawOrg = params.get("org") || params.get("organizationId");
+				rawPatient = params.get("patientId") || params.get("patient");
+			}
+			if (!rawOrg) {
+				const segment = path.slice(tgBase.length).replace(/^\//, "").split(/[/?#&]/)[0] ?? "";
+				rawOrg = segment || null;
+			}
+			return {
+				kind: "tgapp",
+				organizationId: rawOrg ? decodeSegment(rawOrg) : null,
+				patientId: rawPatient ? decodeSegment(rawPatient) : null,
 			};
 		}
 	}

@@ -2,12 +2,13 @@
  * DENTE CRM — EzDent-i Consultation Canvas Rendering & Snapshot Engine
  *
  * Implements:
- * 1. High-precision vector arrow rendering for pathology marking
+ * 1. High-precision vector arrow and laser pointer rendering for chairside presentation
  * 2. Viewport 2D canvas transformations (pan, zoom, centering, invert filter)
- * 3. Screen-to-image coordinate projection
- * 4. Composite Dual-Viewport Snapshot generation (Camera tool)
+ * 3. Screen-to-image coordinate projection (with optional fit-scale compensation)
+ * 4. Composite Dual-Viewport Snapshot generation (Camera tool for Medical Card)
  *
  * Mandate 8b: Decomposed helper module (<300 lines).
+ * Mandate 8e: Doctor Autonomy & Clinical Clarity.
  */
 
 export interface ViewportAnnotation {
@@ -50,10 +51,55 @@ export function drawVectorArrow(
 	const angle = Math.atan2(to.y - from.y, to.x - from.x);
 	ctx.beginPath();
 	ctx.moveTo(to.x, to.y);
-	ctx.lineTo(to.x - headLength * Math.cos(angle - Math.PI / 6), to.y - headLength * Math.sin(angle - Math.PI / 6));
-	ctx.lineTo(to.x - headLength * Math.cos(angle + Math.PI / 6), to.y - headLength * Math.sin(angle + Math.PI / 6));
+	ctx.lineTo(
+		to.x - headLength * Math.cos(angle - Math.PI / 6),
+		to.y - headLength * Math.sin(angle - Math.PI / 6),
+	);
+	ctx.lineTo(
+		to.x - headLength * Math.cos(angle + Math.PI / 6),
+		to.y - headLength * Math.sin(angle + Math.PI / 6),
+	);
 	ctx.closePath();
 	ctx.fill();
+}
+
+/**
+ * Draws an active laser pointer spotlight for chairside clinical demonstration.
+ */
+export function drawLaserPointer(
+	ctx: CanvasRenderingContext2D,
+	pos: { x: number; y: number },
+	scale: number,
+): void {
+	const r = 16 / scale;
+	ctx.save();
+
+	// Outer soft pulse halo
+	const gradient = ctx.createRadialGradient(pos.x, pos.y, 2 / scale, pos.x, pos.y, r);
+	gradient.addColorStop(0, "rgba(239, 68, 68, 0.95)");
+	gradient.addColorStop(0.3, "rgba(239, 68, 68, 0.6)");
+	gradient.addColorStop(0.7, "rgba(244, 63, 94, 0.25)");
+	gradient.addColorStop(1, "rgba(244, 63, 94, 0)");
+
+	ctx.fillStyle = gradient;
+	ctx.beginPath();
+	ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+	ctx.fill();
+
+	// Concentric target ring
+	ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+	ctx.lineWidth = 1.5 / scale;
+	ctx.beginPath();
+	ctx.arc(pos.x, pos.y, 8 / scale, 0, Math.PI * 2);
+	ctx.stroke();
+
+	// Core intense laser bead
+	ctx.fillStyle = "#ffffff";
+	ctx.beginPath();
+	ctx.arc(pos.x, pos.y, 3 / scale, 0, Math.PI * 2);
+	ctx.fill();
+
+	ctx.restore();
 }
 
 /**
@@ -65,6 +111,7 @@ export function getImageCoords(
 	naturalDimensions: { width: number; height: number },
 	clientX: number,
 	clientY: number,
+	useFitScale = false,
 ): { x: number; y: number } {
 	const rect = canvas.getBoundingClientRect();
 	const imgW = naturalDimensions.width || 400;
@@ -73,14 +120,18 @@ export function getImageCoords(
 	const screenX = clientX - rect.left;
 	const screenY = clientY - rect.top;
 
-	const imgX = (screenX - (canvas.width / 2 + state.panX)) / state.zoom + imgW / 2;
-	const imgY = (screenY - (canvas.height / 2 + state.panY)) / state.zoom + imgH / 2;
+	const scaleFactor = useFitScale
+		? Math.min((canvas.width * 0.92) / imgW, (canvas.height * 0.92) / imgH) * state.zoom
+		: state.zoom;
+
+	const imgX = (screenX - (canvas.width / 2 + state.panX)) / scaleFactor + imgW / 2;
+	const imgY = (screenY - (canvas.height / 2 + state.panY)) / scaleFactor + imgH / 2;
 	return { x: imgX, y: imgY };
 }
 
 /**
- * Renders viewport image and annotations to HTML5 Canvas.
- * Uses medium-slate (#1e293b) background matching EzDent-i Screenshot 25.
+ * Renders viewport image, annotations, and laser spotlight to HTML5 Canvas.
+ * Uses clinical deep slate (#070b14) background with automatic responsive fit.
  */
 export function renderViewportToCanvas(params: {
 	canvas: HTMLCanvasElement | null;
@@ -90,8 +141,19 @@ export function renderViewportToCanvas(params: {
 	draftPoints?: readonly { x: number; y: number }[];
 	activeTool?: string;
 	annotationColor?: string;
+	laserPoint?: { x: number; y: number } | null;
 }): void {
-	const { canvas, img, state, isActive, draftPoints = [], activeTool, annotationColor = "#ef4444" } = params;
+	const {
+		canvas,
+		img,
+		state,
+		isActive,
+		draftPoints = [],
+		activeTool,
+		annotationColor = "#ef4444",
+		laserPoint,
+	} = params;
+
 	if (!canvas || !img || img.naturalWidth === 0) return;
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
@@ -102,13 +164,20 @@ export function renderViewportToCanvas(params: {
 	ctx.save();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	// Neutral slate background matching EzDent-i Screenshot 25
-	ctx.fillStyle = "#1e293b";
+	// Neutral dark medical background
+	ctx.fillStyle = "#070b14";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	// Calculate responsive fit scale so image fills available viewport cleanly
+	const fitScale = Math.min(
+		(canvas.width * 0.94) / img.naturalWidth,
+		(canvas.height * 0.94) / img.naturalHeight,
+	);
+	const effectiveZoom = fitScale * state.zoom;
 
 	// Transformation matrix
 	ctx.translate(canvas.width / 2 + state.panX, canvas.height / 2 + state.panY);
-	ctx.scale(state.zoom, state.zoom);
+	ctx.scale(effectiveZoom, effectiveZoom);
 	ctx.translate(-img.naturalWidth / 2, -img.naturalHeight / 2);
 
 	ctx.imageSmoothingEnabled = true;
@@ -125,7 +194,7 @@ export function renderViewportToCanvas(params: {
 	for (const ann of state.annotations) {
 		ctx.strokeStyle = ann.color;
 		ctx.fillStyle = ann.color;
-		ctx.lineWidth = 3 / state.zoom;
+		ctx.lineWidth = 3 / effectiveZoom;
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
 
@@ -139,7 +208,7 @@ export function renderViewportToCanvas(params: {
 		} else if (ann.type === "arrow" && ann.points.length >= 2) {
 			const p1 = ann.points[0]!;
 			const p2 = ann.points[ann.points.length - 1]!;
-			drawVectorArrow(ctx, p1, p2, 14 / state.zoom);
+			drawVectorArrow(ctx, p1, p2, 14 / effectiveZoom);
 		}
 	}
 
@@ -147,7 +216,7 @@ export function renderViewportToCanvas(params: {
 	if (isActive && draftPoints.length > 0) {
 		ctx.strokeStyle = annotationColor;
 		ctx.fillStyle = annotationColor;
-		ctx.lineWidth = 3 / state.zoom;
+		ctx.lineWidth = 3 / effectiveZoom;
 		ctx.lineCap = "round";
 
 		if (activeTool === "pencil" && draftPoints.length > 1) {
@@ -158,8 +227,18 @@ export function renderViewportToCanvas(params: {
 			}
 			ctx.stroke();
 		} else if (activeTool === "arrow" && draftPoints.length >= 2) {
-			drawVectorArrow(ctx, draftPoints[0]!, draftPoints[draftPoints.length - 1]!, 14 / state.zoom);
+			drawVectorArrow(
+				ctx,
+				draftPoints[0]!,
+				draftPoints[draftPoints.length - 1]!,
+				14 / effectiveZoom,
+			);
 		}
+	}
+
+	// Draw Interactive Laser Spotlight
+	if (laserPoint) {
+		drawLaserPointer(ctx, laserPoint, effectiveZoom);
 	}
 
 	ctx.restore();
@@ -202,7 +281,7 @@ export function captureCompositeSnapshot(params: {
 
 	ctx.fillStyle = "#00C853";
 	ctx.font = "bold 13px sans-serif";
-	ctx.fillText("EzDent-i КОНСУЛЬТАЦИЯ · СРАВНИТЕЛЬНЫЙ СПЛИТ", 12, 26);
+	ctx.fillText("Клиническая консультация · Сплит (До / После)", 12, 26);
 
 	ctx.fillStyle = "#94a3b8";
 	ctx.font = "11px sans-serif";

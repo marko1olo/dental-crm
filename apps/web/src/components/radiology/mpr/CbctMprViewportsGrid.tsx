@@ -573,27 +573,29 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		</div>
 	);
 
+	const renderVolume3DViewport = (extraClassName = "flex-1 flex flex-col", options?: { isEndoMode?: boolean | undefined; hideSwitcher?: boolean | undefined }) => (
+		<CbctVolume3DViewport
+			volume={volume}
+			extraClassName={extraClassName}
+			isActive={activeViewport === "panoramic"}
+			onPointerDownCapture={() => setActiveViewport("panoramic")}
+			onMouseEnter={() => onHoverViewport?.("panoramic")}
+			onMouseLeave={() => onHoverViewport?.(null)}
+			onDoubleClick={() => handleToggleMaximize("panoramic")}
+			switcherSlot={options?.hideSwitcher ? undefined : renderFourthQuadrantSwitcher()}
+			isMaximized={maximizedViewport === "panoramic"}
+			onToggleMaximize={() => handleToggleMaximize("panoramic")}
+			nervePoints={nervePoints}
+			interpolatedNerve3D={interpolatedNerve3D}
+			implant3DWorld={implant3DWorld}
+			nerveAuditResult={nerveAuditResult}
+			crosshairMm={crosshairMm}
+		/>
+	);
+
 	const renderFourthQuadrantViewport = (extraClassName = "flex-1 flex flex-col") => {
 		if (fourthQuadrantMode === "volume3d") {
-			return (
-				<CbctVolume3DViewport
-					volume={volume}
-					extraClassName={extraClassName}
-					isActive={activeViewport === "panoramic"}
-					onPointerDownCapture={() => setActiveViewport("panoramic")}
-					onMouseEnter={() => onHoverViewport?.("panoramic")}
-					onMouseLeave={() => onHoverViewport?.(null)}
-					onDoubleClick={() => handleToggleMaximize("panoramic")}
-					switcherSlot={renderFourthQuadrantSwitcher()}
-					isMaximized={maximizedViewport === "panoramic"}
-					onToggleMaximize={() => handleToggleMaximize("panoramic")}
-					nervePoints={nervePoints}
-					interpolatedNerve3D={interpolatedNerve3D}
-					implant3DWorld={implant3DWorld}
-					nerveAuditResult={nerveAuditResult}
-					crosshairMm={crosshairMm}
-				/>
-			);
+			return renderVolume3DViewport(extraClassName);
 		}
 
 		return renderPanoramicViewport(extraClassName);
@@ -663,7 +665,11 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		renderSagittal: (extraClassName) => renderSagittalViewport(extraClassName),
 		renderPanoramic: (extraClassName) => renderPanoramicViewport(extraClassName),
 		renderCrossSection: (extraClassName, isMaximized) => renderCrossSectionViewport(extraClassName, isMaximized),
-		renderVolume3D: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
+		renderVolume3D: (extraClassName, options) =>
+			renderVolume3DViewport(
+				extraClassName,
+				options?.isEndoMode ? { ...options, hideSwitcher: true } : options,
+			),
 		// Layout contract guarantees: renderFourthQuadrantViewport(extraClassName) in quad, layout_1_plus_3: renderFourthQuadrantViewport(extraClassName)
 	};
 

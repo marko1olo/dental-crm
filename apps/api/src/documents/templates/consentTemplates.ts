@@ -193,6 +193,8 @@ export function procedureSpecificConsentPacket(document: GeneratedDocument) {
 			warranty_passport: "гарантийный паспорт и условия",
 			somatic_health_questionnaire: "анкета о соматическом здоровье и рисках",
 			xray_dose_load_sheet: "лист учета дозовых нагрузок при рентгене",
+			bone_grafting: "костная пластика и остеопластические материалы",
+			aligners: "ортодонтическое лечение на элайнерах",
 		};
 		return `<h2>Процедурное информированное добровольное согласие: ${escapeHtml(procedureTypeLabels[payload.procedureType])}</h2>
     <div class="notice">

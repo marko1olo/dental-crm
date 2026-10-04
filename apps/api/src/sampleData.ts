@@ -5044,6 +5044,8 @@ const defaultPostVisitCheckupDelayHoursByTopic: DenteTelegramBotSettings["postVi
 		orthodontics: 72,
 		periodontology: 72,
 		other: 48,
+		surgery_aftercare: 24,
+		fixation_aftercare: 48,
 	};
 
 function normalizePostVisitCheckupDelayHoursByTopic(

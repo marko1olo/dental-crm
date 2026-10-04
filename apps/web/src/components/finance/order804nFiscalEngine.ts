@@ -54,6 +54,8 @@ export interface Order804nFiscalReceiptItem {
 	readonly quantityMeasure: Ffd12QuantityMeasure;
 	readonly taxDeductionCategory: "1" | "2"; // 1 = стандартное лечение (лимит 150к), 2 = дорогостоящее (имплантация/хирургия, без лимита)
 	readonly stageKind?: string | undefined;
+	readonly stageNumber?: number | undefined;
+	readonly phase?: number | undefined;
 	readonly stageCategoryTitle?: string | undefined;
 	readonly markingCode?: string | undefined;
 	readonly isMarkedItem?: boolean | undefined;

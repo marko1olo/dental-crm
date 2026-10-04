@@ -11,6 +11,7 @@ import type { DentalArchCurve } from "../dentalCurveEngine";
 export interface CbctPanoramicFdiRibbonProps {
 	readonly activeToothFdi?: string | number | undefined;
 	readonly onSelectTooth: (toothFdi: number | string) => void;
+	readonly onSwitchJaw?: ((jaw: "mandible" | "maxilla") => void) | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly archCurve?: DentalArchCurve | undefined;
 	readonly className?: string | undefined;
@@ -25,6 +26,7 @@ const MANDIBULAR_TEETH_LEFT = [31, 32, 33, 34, 35, 36, 37, 38] as const;
 export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 	activeToothFdi,
 	onSelectTooth,
+	onSwitchJaw,
 	onClose,
 	archCurve,
 	className = "",
@@ -55,6 +57,16 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 	const rightTeeth = effectiveJaw === "maxilla" ? MAXILLARY_TEETH_RIGHT : MANDIBULAR_TEETH_RIGHT;
 	const leftTeeth = effectiveJaw === "maxilla" ? MAXILLARY_TEETH_LEFT : MANDIBULAR_TEETH_LEFT;
 
+	const handleToothClick = (tooth: number) => {
+		const isMax = (tooth >= 11 && tooth <= 18) || (tooth >= 21 && tooth <= 28);
+		const targetJaw: "mandible" | "maxilla" = isMax ? "maxilla" : "mandible";
+		if (targetJaw !== activeJaw) {
+			setActiveJaw(targetJaw);
+			onSwitchJaw?.(targetJaw);
+		}
+		onSelectTooth(tooth);
+	};
+
 	return (
 		<div
 			className={`flex items-center justify-between gap-1.5 px-2 py-1 bg-zinc-950/95 border-b border-purple-500/40 backdrop-blur-md select-none z-20 text-xs shadow-md ${className}`}
@@ -70,7 +82,10 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 				<div className="inline-flex rounded-md p-0.5 bg-zinc-900 border border-zinc-800">
 					<button
 						type="button"
-						onClick={() => setActiveJaw("mandible")}
+						onClick={() => {
+							setActiveJaw("mandible");
+							onSwitchJaw?.("mandible");
+						}}
 						className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
 							effectiveJaw === "mandible"
 								? "bg-purple-950/70 text-purple-200 border border-purple-500/50 shadow-xs"
@@ -83,7 +98,10 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 					</button>
 					<button
 						type="button"
-						onClick={() => setActiveJaw("maxilla")}
+						onClick={() => {
+							setActiveJaw("maxilla");
+							onSwitchJaw?.("maxilla");
+						}}
 						className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
 							effectiveJaw === "maxilla"
 								? "bg-purple-950/70 text-purple-200 border border-purple-500/50 shadow-xs"
@@ -109,7 +127,7 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
-									onSelectTooth(tooth);
+									handleToothClick(tooth);
 								}}
 								className={`min-w-[26px] h-7 px-1 rounded flex items-center justify-center text-[11px] font-mono font-bold transition-all cursor-pointer relative ${
 									isSelected
@@ -140,7 +158,7 @@ export const CbctPanoramicFdiRibbon: React.FC<CbctPanoramicFdiRibbonProps> = ({
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
-									onSelectTooth(tooth);
+									handleToothClick(tooth);
 								}}
 								className={`min-w-[26px] h-7 px-1 rounded flex items-center justify-center text-[11px] font-mono font-bold transition-all cursor-pointer relative ${
 									isSelected

@@ -111,5 +111,95 @@ describe("VisitSurgeryProtocolTab (Surgical Inline Protocol - Outpatient Mandate
 			"Must display initial write-off button text",
 		);
 	});
+
+	it("renders VisitSurgeryExtractionBar with 1-click uncomplicated norm, complexity and hemostasis chips", async () => {
+		const { VisitSurgeryExtractionBar } = await import("../../visit/surgery/VisitSurgeryExtractionBar");
+		const html = renderToString(
+			<VisitSurgeryExtractionBar
+				effectiveTooth={38}
+				patientName="Иванов Петр"
+				doctorName="Др. Соколов"
+				onApplyProtocolText={() => {}}
+			/>,
+		);
+
+		assert.ok(html.includes("visit-surgery-extraction-bar"), "Must render extraction bar");
+		assert.ok(html.includes("btn-uncomplicated-extraction-norm"), "Must have 1-click uncomplicated norm button");
+		assert.ok(html.includes("btn-copy-post-op-memo"), "Must have patient post-op memo button");
+		assert.ok(html.includes("btn-extraction-complexity-simple"), "Must have simple complexity button");
+		assert.ok(html.includes("btn-extraction-complexity-complex"), "Must have complex complexity button");
+		assert.ok(html.includes("btn-extraction-complexity-impacted_dystopic"), "Must have impacted complexity button");
+		assert.ok(html.includes("btn-hemostasis-alvogyl"), "Must have Alvogyl chip");
+		assert.ok(html.includes("btn-hemostasis-hemostatic_sponge"), "Must have collagen sponge chip");
+		assert.ok(html.includes("btn-hemostasis-vicryl_suture"), "Must have Vicryl suture chip");
+		assert.ok(html.includes("btn-hemostasis-tampon"), "Must have 20-min tampon chip");
+	});
+
+	it("renders VisitSurgerySinusGbrBar with graft selection, membrane options, and titanium pins", async () => {
+		const { VisitSurgerySinusGbrBar } = await import("../../visit/surgery/VisitSurgerySinusGbrBar");
+		const html = renderToString(
+			<VisitSurgerySinusGbrBar
+				effectiveTooth={16}
+				isClosedSinus={false}
+				onApplyProtocolText={() => {}}
+			/>,
+		);
+
+		assert.ok(html.includes("visit-surgery-sinus-gbr-bar"), "Must render sinus GBR bar");
+		assert.ok(html.includes("btn-uncomplicated-gbr-norm"), "Must have 1-click GBR norm button");
+		assert.ok(html.includes("Bio-Oss 0.5г"), "Must have Bio-Oss graft option");
+		assert.ok(html.includes("Cerabone"), "Must have Cerabone graft option");
+		assert.ok(html.includes("SureOss"), "Must have SureOss allograft option");
+		assert.ok(html.includes("Аутокость"), "Must have autograft option");
+		assert.ok(html.includes("Bio-Gide 25×25"), "Must have Bio-Gide membrane option");
+		assert.ok(html.includes("Jason"), "Must have Jason membrane option");
+		assert.ok(html.includes("Cytoplast"), "Must have Cytoplast membrane option");
+		assert.ok(html.includes("btn-toggle-titanium-pins"), "Must have titanium pins toggle");
+	});
+
+	it("renders VisitSurgeryImplantBar with extended brands (Nobel, Ankylos, MIS, MegaGen) and custom brand option (Mandate 8z)", async () => {
+		const { VisitSurgeryImplantBar } = await import("../../visit/surgery/VisitSurgeryImplantBar");
+		const html = renderToString(
+			<VisitSurgeryImplantBar
+				implantBrand="Dentium"
+				setImplantBrand={() => {}}
+				implantDiameter={4.0}
+				setImplantDiameter={() => {}}
+				implantLength={10.0}
+				setImplantLength={() => {}}
+				implantTorque={35}
+				setImplantTorque={() => {}}
+				implantIsq={72}
+				setImplantIsq={() => {}}
+				implantCap="fdm"
+				setImplantCap={() => {}}
+				implantSuture="Prolene 4-0"
+				setImplantSuture={() => {}}
+				onApplyPreset={() => {}}
+			/>,
+		);
+
+		assert.ok(html.includes("btn-preset-standard-implant-tab"), "Must have standard implant preset button");
+		assert.ok(html.includes("btn-implant-system-Dentium"), "Must have Dentium button");
+		assert.ok(html.includes("btn-implant-system-Osstem"), "Must have Osstem button");
+		assert.ok(html.includes("btn-implant-system-Straumann"), "Must have Straumann button");
+		assert.ok(html.includes("btn-implant-system-Nobel Biocare"), "Must have Nobel Biocare button");
+		assert.ok(html.includes("btn-implant-system-Ankylos"), "Must have Ankylos button");
+		assert.ok(html.includes("btn-implant-system-MIS"), "Must have MIS button");
+		assert.ok(html.includes("btn-implant-system-MegaGen"), "Must have MegaGen button");
+		assert.ok(html.includes("btn-toggle-custom-brand"), "Must have custom brand toggle (Mandate 8z)");
+	});
+
+	it("guarantees zero bird language in surgical and implant cockpit (Mandate 8x/8y)", () => {
+		const html = renderToString(
+			<VisitSurgeryProtocolTab
+				activeTooth={46}
+				patientName="Кузнецов Иван"
+			/>,
+		);
+
+		assert.ok(!html.includes("043/у"), "UI must NOT contain 043/у cipher");
+		assert.ok(!html.includes("043-у"), "UI must NOT contain 043-у cipher");
+	});
 });
 

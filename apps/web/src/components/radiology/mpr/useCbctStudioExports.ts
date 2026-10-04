@@ -19,12 +19,15 @@ import type { RadiologyStudy } from "../types";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import { showToast } from "../../GlobalToast";
 import { exportCleanViewportSnapshot } from "../cbctSnapshotExportMath";
+import type { DentalLabOrderData } from "../../lab/labMath";
 import {
 	exportImplantToTreatmentPlan,
 	exportImplantToDiary043,
 	exportImplantToScheduleDraft,
 	exportPdfImplantReport,
 	addCbctToFinanceAndPlan,
+	addCbctSurgicalToVisitFinance,
+	addCbctServiceToTreatmentPlan,
 	savePersistedCustomPlanItem,
 	updateOdontogramToothToPlannedImplant,
 } from "../ctImplantIntegrationBridge";
@@ -51,6 +54,7 @@ export interface UseCbctStudioExportsProps {
 	readonly mischClassification: MischClassificationResult;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
 	readonly onApplyToDiary043?: ((summary: any) => void) | undefined;
+	readonly onOpenLabOrder?: ((draft: DentalLabOrderData) => void) | undefined;
 	readonly crossSectionCanvasRef?: React.RefObject<HTMLCanvasElement | null> | undefined;
 }
 
@@ -76,6 +80,7 @@ export function useCbctStudioExports({
 	mischClassification,
 	onApplyToPlan,
 	onApplyToDiary043,
+	onOpenLabOrder,
 	crossSectionCanvasRef,
 }: UseCbctStudioExportsProps) {
 	const crossSectionMeasurement = activeCrossSection
@@ -111,6 +116,22 @@ export function useCbctStudioExports({
 			`Плотность кости: Misch ${displayBoneClass} (гребень ${Math.round(huSamplingResult.coronalCrestalHU)} HU, тело ${Math.round(huSamplingResult.trabecularCoreHU)} HU, апекс ${Math.round(huSamplingResult.apicalBaseHU)} HU, среднее ${Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU)} HU). ` +
 			`${nerveStatus}. Протокол: ${mischClassification?.clinicalDrillingRecommendation || displayDrillingProtocol}. Ожидаемый торк: ${displayTorque}.`;
 
+		// 0. Capture slice dataUrl for plan attachment
+		let sliceDataUrl: string | null = null;
+		try {
+			const targetCanvas =
+				crossSectionCanvasRef?.current ||
+				(typeof document !== "undefined"
+					? (document.querySelector('canvas[data-testid="cbct-cross-section-sidebar-canvas"]') as HTMLCanvasElement | null) ||
+					  (document.querySelector('canvas') as HTMLCanvasElement | null)
+					: null);
+			if (targetCanvas) {
+				sliceDataUrl = targetCanvas.toDataURL("image/png");
+			}
+		} catch {
+			// ignore canvas capture failure
+		}
+
 		// 1. Build complete 3-position surgical & prosthetic suite (implant + healing abutment + custom abutment)
 		const suite = buildImplantProstheticSuite(currentImplantSpec, targetTooth, clinicalRationale);
 
@@ -136,6 +157,28 @@ export function useCbctStudioExports({
 			for (const pItem of planItems) {
 				savePersistedCustomPlanItem(patientId, pItem);
 			}
+
+			if (sliceDataUrl) {
+				try {
+					const planAttachment = {
+						id: `plan-cbct-slice-${targetTooth}-${Date.now()}`,
+						patientId,
+						toothNumber: targetTooth,
+						title: `КЛКТ срез для хирургического этапа (зуб #${targetTooth})`,
+						sliceUrl: sliceDataUrl,
+						capturedAt: new Date().toISOString(),
+						implantInfo: `${currentImplantSpec.brandName} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm}`,
+					};
+					const attachKey = `dente_patient_treatment_plan_attachments_${patientId}`;
+					const existingAttachRaw = window.localStorage.getItem(attachKey);
+					const existingAttaches = existingAttachRaw ? JSON.parse(existingAttachRaw) : [];
+					existingAttaches.push(planAttachment);
+					window.localStorage.setItem(attachKey, JSON.stringify(existingAttaches));
+					window.dispatchEvent(new CustomEvent("dente-treatment-plan-attachment-added", { detail: planAttachment }));
+				} catch {
+					// ignore
+				}
+			}
 		}
 
 		// 3. Mark tooth in odontogram
@@ -151,6 +194,7 @@ export function useCbctStudioExports({
 								item: pItem,
 								toothNumber: targetTooth,
 								patientId,
+								sliceDataUrl,
 							},
 						}),
 					);
@@ -167,7 +211,7 @@ export function useCbctStudioExports({
 
 		const totalRub = suite.totalPriceRub.toLocaleString("ru-RU");
 		showToast(
-			`Комплекс имплантации #${targetTooth}: имплантат (${(suite.implantPriceKopecks / 100).toLocaleString("ru-RU")} ₽) + формирователь (${(suite.healingAbutmentPriceKopecks / 100).toLocaleString("ru-RU")} ₽) + абатмент (${(suite.abutmentPriceKopecks / 100).toLocaleString("ru-RU")} ₽) = ${totalRub} ₽ добавлен в смету!`,
+			`Хирургический этап #${targetTooth} со срезом КЛКТ: имплантат (${(suite.implantPriceKopecks / 100).toLocaleString("ru-RU")} ₽) + формирователь + абатмент = ${totalRub} ₽ добавлен в план лечения!`,
 			"success",
 			5000,
 		);
@@ -175,7 +219,7 @@ export function useCbctStudioExports({
 		patientId, activeCrossSection, currentImplantSpec, effectiveRidgeHeightMm,
 		effectiveRidgeWidthMm, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
 		displayTorque, displayDrillingProtocol, huSamplingResult, mischClassification,
-		onApplyToPlan,
+		onApplyToPlan, crossSectionCanvasRef,
 	]);
 
 	const handleExportToSchedule = useCallback(() => {
@@ -315,12 +359,105 @@ export function useCbctStudioExports({
 
 	const handleExportCbctToFinance = useCallback(() => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		addCbctToFinanceAndPlan({
+		addCbctSurgicalToVisitFinance({
+			patientId,
+			toothFdi: targetTooth,
+			implantSpec: currentImplantSpec,
+			ridgeHeightMm: effectiveRidgeHeightMm,
+			ridgeWidthMm: effectiveRidgeWidthMm,
+			doctorName: study?.doctorName,
+		});
+		addCbctServiceToTreatmentPlan({
 			patientId,
 			toothFdi: targetTooth,
 			doctorName: study?.doctorName,
 		});
-	}, [activeCrossSection, patientId, study]);
+	}, [activeCrossSection, currentImplantSpec, effectiveRidgeHeightMm, effectiveRidgeWidthMm, patientId, study]);
+
+	const handleExportToLab = useCallback(() => {
+		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		const isMaxilla = targetTooth < 30;
+		const effectivePatientId = patientId || "cbct-patient";
+
+		let sliceDataUrl: string | null = null;
+		try {
+			const targetCanvas =
+				crossSectionCanvasRef?.current ||
+				(typeof document !== "undefined"
+					? (document.querySelector('canvas[data-testid="cbct-cross-section-sidebar-canvas"]') as HTMLCanvasElement | null) ||
+					  (document.querySelector('canvas') as HTMLCanvasElement | null)
+					: null);
+			if (targetCanvas) {
+				sliceDataUrl = targetCanvas.toDataURL("image/png");
+			}
+		} catch {
+			// ignore canvas capture failure
+		}
+
+		const hStr = typeof effectiveRidgeHeightMm === "number" ? `H=${effectiveRidgeHeightMm.toFixed(1)} мм` : "H: —";
+		const wStr = typeof effectiveRidgeWidthMm === "number" ? `W=${effectiveRidgeWidthMm.toFixed(1)} мм` : "W: —";
+		const nerveStr = displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "не определена";
+		const meanHU = Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU);
+
+		const clinicalNotes =
+			`3D КЛКТ-планирование навигационного хирургического шаблона (зуб #${targetTooth}):\n` +
+			`• Имплантационная система: ${currentImplantSpec.brandName} (Ø${currentImplantSpec.diameterMm} × ${currentImplantSpec.lengthMm} мм, угол наклона: ${implantAngulationDeg.toFixed(1)}°)\n` +
+			`• Костный гребень: ${hStr}, ${wStr}\n` +
+			`• Плотность костной ткани: Misch ${displayBoneClass} (${meanHU} HU)\n` +
+			`• Безопасный зазор до IAN / синуса: ${nerveStr}\n` +
+			`• Хирургический протокол: ${mischClassification?.clinicalDrillingRecommendation || displayDrillingProtocol}\n` +
+			`• Ожидаемый торк: ${displayTorque}`;
+
+		const labDraft: DentalLabOrderData = {
+			id: `lab-cbct-guide-${targetTooth}-${Date.now()}`,
+			patientId: effectivePatientId,
+			patientName: patientDisplayName,
+			doctorId: study?.doctorId ?? null,
+			doctorName: study?.doctorName ?? null,
+			toothFdi: String(targetTooth),
+			selectedTeeth: [targetTooth],
+			jawScope: isMaxilla ? "upper" : "lower",
+			constructionType: "surgical_guide",
+			material: "Биосовместимый фотополимер (Surgical Guide 3D Resin)",
+			impressionType: "cbct_dicom",
+			clinicalNotes,
+			attachedImageUrl: sliceDataUrl,
+			status: "draft",
+			priceRub: 7500,
+			createdAt: new Date().toISOString(),
+		};
+
+		if (typeof window !== "undefined") {
+			try {
+				window.localStorage.setItem("dente_pending_lab_order_draft", JSON.stringify(labDraft));
+				window.dispatchEvent(
+					new CustomEvent("dente-open-lab-order", {
+						detail: labDraft,
+					}),
+				);
+			} catch {
+				// ignore
+			}
+		}
+
+		if (onOpenLabOrder) {
+			onOpenLabOrder(labDraft);
+		}
+
+		showToast(
+			`Наряд ЗТЛ на хирургический навигационный шаблон (зуб #${targetTooth}) сформирован с КЛКТ-данными и срезом!`,
+			"success",
+			4500,
+		);
+
+		return labDraft;
+	}, [
+		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
+		implantAngulationDeg, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
+		displayBoneClass, displayMeanHU, displayNerveClearanceMm, displayTorque,
+		displayDrillingProtocol, huSamplingResult, mischClassification, crossSectionCanvasRef,
+		onOpenLabOrder,
+	]);
 
 	const [isAnonymized, setIsAnonymized] = useState(false);
 
@@ -393,6 +530,7 @@ export function useCbctStudioExports({
 		handleExportToSchedule,
 		handleExportToEmr,
 		handleExportCbctToFinance,
+		handleExportToLab,
 		handleExportPdfReport,
 		handleExport300DpiSnapshot,
 	};

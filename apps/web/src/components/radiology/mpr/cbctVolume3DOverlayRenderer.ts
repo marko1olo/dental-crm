@@ -27,6 +27,7 @@ export interface Volume3DOverlayParams {
 	readonly nervePoints?: readonly Point3D[] | undefined;
 	readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
 	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined;
+	readonly implantsList?: readonly Implant3DWorldProjection[] | undefined;
 	readonly nerveAuditResult?: {
 		readonly isDangerous: boolean;
 		readonly isWarning: boolean;
@@ -108,6 +109,7 @@ export function drawVolume3DOverlay(
 		nervePoints = [],
 		interpolatedNerve3D = [],
 		implant3DWorld = null,
+		implantsList = undefined,
 		nerveAuditResult = null,
 	} = params;
 
@@ -231,13 +233,28 @@ export function drawVolume3DOverlay(
 		}
 	}
 
-	// ─── 3. VIRTUAL IMPLANT FIXTURE IN 3D VOLUME VIEWPORT ───────────────────
-	if (implant3DWorld) {
-		const pEntry = project3DWorldToVolumeScreen(implant3DWorld.entry3D, volume, rotMat, scale, center);
-		const pApex = project3DWorldToVolumeScreen(implant3DWorld.apex3D, volume, rotMat, scale, center);
+	// ─── 3. VIRTUAL IMPLANT FIXTURES IN 3D VOLUME VIEWPORT ─────────────────
+	const rawImplantsList: readonly Implant3DWorldProjection[] =
+		implantsList && implantsList.length > 0
+			? implantsList
+			: implant3DWorld
+				? [implant3DWorld]
+				: [];
 
-		const platRadiusMm = implant3DWorld.platformDiameterMm / 2.0;
-		const apexRadiusMm = implant3DWorld.apexDiameterMm / 2.0;
+	// Mandibular Arch Invariant: strictly eliminate maxillary teeth (FDI 11..28) or zygomatic coordinates (Z > -0.5 mm)
+	const activeImplantsList = rawImplantsList.filter((imp) => {
+		if (imp.targetToothFdi && imp.targetToothFdi < 30) return false;
+		if (imp.entry3D.z > -0.5) return false;
+		return true;
+	});
+
+	for (let impIdx = 0; impIdx < activeImplantsList.length; impIdx++) {
+		const imp = activeImplantsList[impIdx]!;
+		const pEntry = project3DWorldToVolumeScreen(imp.entry3D, volume, rotMat, scale, center);
+		const pApex = project3DWorldToVolumeScreen(imp.apex3D, volume, rotMat, scale, center);
+
+		const platRadiusMm = imp.platformDiameterMm / 2.0;
+		const apexRadiusMm = imp.apexDiameterMm / 2.0;
 		const platRPx = Math.max(2.5, (platRadiusMm / spX) * scale);
 		const apexRPx = Math.max(1.8, (apexRadiusMm / spX) * scale);
 
@@ -247,24 +264,19 @@ export function drawVolume3DOverlay(
 		const perpX = -dy / len;
 		const perpY = dx / len;
 
-		const isDangerous = Boolean(nerveAuditResult?.isDangerous);
-		const isWarning = Boolean(nerveAuditResult?.isWarning);
+		const isDangerous = Boolean(impIdx === 0 && nerveAuditResult?.isDangerous);
+		const isWarning = Boolean(impIdx === 0 && nerveAuditResult?.isWarning);
 
 		const statusStroke = isDangerous ? "#ef4444" : isWarning ? "#f59e0b" : "#10b981";
-		const statusFill = isDangerous
-			? "rgba(239, 68, 68, 0.55)"
-			: isWarning
-				? "rgba(245, 158, 11, 0.45)"
-				: "rgba(16, 185, 129, 0.45)";
 
-		// 3.1 Safety corridor halo (+2.0 mm)
+		// 3.1 Safety corridor halo (+2.0 mm) — subtle surgical guide
 		const haloPlatRPx = platRPx + (2.0 / spX) * scale;
 		const haloApexRPx = apexRPx + (2.0 / spX) * scale;
 
 		ctx.save();
-		ctx.strokeStyle = statusStroke;
-		ctx.lineWidth = 1.2;
-		ctx.setLineDash([3, 2]);
+		ctx.strokeStyle = isDangerous ? "rgba(239, 68, 68, 0.6)" : isWarning ? "rgba(245, 158, 11, 0.5)" : "rgba(16, 185, 129, 0.25)";
+		ctx.lineWidth = 0.8;
+		ctx.setLineDash([2, 3]);
 		ctx.beginPath();
 		ctx.moveTo(pEntry.screenX - perpX * haloPlatRPx, pEntry.screenY - perpY * haloPlatRPx);
 		ctx.lineTo(pEntry.screenX + perpX * haloPlatRPx, pEntry.screenY + perpY * haloPlatRPx);
@@ -274,94 +286,118 @@ export function drawVolume3DOverlay(
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// 3.2 Tapered implant fixture body
-		ctx.fillStyle = statusFill;
-		ctx.strokeStyle = statusStroke;
-		ctx.lineWidth = 1.8;
-		ctx.beginPath();
-		ctx.moveTo(pEntry.screenX - perpX * platRPx, pEntry.screenY - perpY * platRPx);
-		ctx.lineTo(pEntry.screenX + perpX * platRPx, pEntry.screenY + perpY * platRPx);
-		ctx.lineTo(pApex.screenX + perpX * apexRPx, pApex.screenY + perpY * apexRPx);
-		ctx.lineTo(pApex.screenX - perpX * apexRPx, pApex.screenY - perpY * apexRPx);
-		ctx.closePath();
-		ctx.fill();
-		ctx.stroke();
-
-		// 3.3 Centerline axis
-		ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-		ctx.lineWidth = 1.0;
+		// 3.2 Centerline axis — subtle surgical trajectory guide
+		ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+		ctx.lineWidth = 0.75;
+		ctx.setLineDash([3, 3]);
 		ctx.beginPath();
 		ctx.moveTo(pEntry.screenX, pEntry.screenY);
 		ctx.lineTo(pApex.screenX, pApex.screenY);
 		ctx.stroke();
+		ctx.setLineDash([]);
 
-		// 3.4 Platform coronal entry node
-		ctx.fillStyle = "#22d3ee";
+		// 3.3 Platform coronal entry node
+		ctx.fillStyle = "rgba(34, 211, 238, 0.75)";
 		ctx.beginPath();
-		ctx.arc(pEntry.screenX, pEntry.screenY, 3.5, 0, Math.PI * 2);
+		ctx.arc(pEntry.screenX, pEntry.screenY, 2.0, 0, Math.PI * 2);
 		ctx.fill();
 
-		// 3.5 Apex apical node
-		ctx.fillStyle = statusStroke;
+		// 3.4 Apex apical node
+		ctx.fillStyle = isDangerous ? "#ef4444" : isWarning ? "#f59e0b" : "rgba(16, 185, 129, 0.75)";
 		ctx.beginPath();
-		ctx.arc(pApex.screenX, pApex.screenY, 3.5, 0, Math.PI * 2);
+		ctx.arc(pApex.screenX, pApex.screenY, 2.0, 0, Math.PI * 2);
 		ctx.fill();
 
-		// ─── 4. DYNAMIC 3D APEX-TO-NERVE CLEARANCE VECTOR & MEASUREMENT ───────
-		if (nerveCurve.length >= 2) {
-			let closestNervePt: Point3D = nerveCurve[0]!;
-			let minNerveDist = Infinity;
+		// 3.6 Tooth position label badge (#46, #47, etc.)
+		const toothLabel = imp.targetToothFdi ? `#${imp.targetToothFdi}` : `#${46 + impIdx}`;
+		ctx.font = "bold 9px monospace";
+		const badgeW = ctx.measureText(toothLabel).width;
+		const badgeX = pEntry.screenX - badgeW / 2 - 3;
+		const badgeY = pEntry.screenY - 14;
 
-			for (const np of nerveCurve) {
-				const d = Math.hypot(
-					implant3DWorld.apex3D.x - np.x,
-					implant3DWorld.apex3D.y - np.y,
-					implant3DWorld.apex3D.z - np.z,
-				);
-				if (d < minNerveDist) {
-					minNerveDist = d;
-					closestNervePt = np;
-				}
+		ctx.fillStyle = "rgba(9, 9, 11, 0.85)";
+		ctx.strokeStyle = "#10b981";
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		if (typeof ctx.roundRect === "function") {
+			ctx.roundRect(badgeX, badgeY, badgeW + 6, 12, 2);
+		} else {
+			ctx.rect(badgeX, badgeY, badgeW + 6, 12);
+		}
+		ctx.fill();
+		ctx.stroke();
+
+		ctx.fillStyle = "#34d399";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(toothLabel, pEntry.screenX, badgeY + 6);
+
+		ctx.restore();
+	}
+
+	// ─── 4. DYNAMIC 3D APEX-TO-NERVE CLEARANCE VECTOR & MEASUREMENT ───────
+	const primaryTargetImplant =
+		implant3DWorld && (!implant3DWorld.targetToothFdi || implant3DWorld.targetToothFdi >= 30) && implant3DWorld.entry3D.z <= -0.5
+			? implant3DWorld
+			: activeImplantsList[0];
+	if (primaryTargetImplant && nerveCurve.length >= 2) {
+		const isDangerous = Boolean(nerveAuditResult?.isDangerous);
+		const isWarning = Boolean(nerveAuditResult?.isWarning);
+		const statusStroke = isDangerous ? "#ef4444" : isWarning ? "#f59e0b" : "#10b981";
+
+		let closestNervePt: Point3D = nerveCurve[0]!;
+		let minNerveDist = Infinity;
+
+		for (const np of nerveCurve) {
+			const d = Math.hypot(
+				primaryTargetImplant.apex3D.x - np.x,
+				primaryTargetImplant.apex3D.y - np.y,
+				primaryTargetImplant.apex3D.z - np.z,
+			);
+			if (d < minNerveDist) {
+				minNerveDist = d;
+				closestNervePt = np;
 			}
-
-			const netClearance = Math.max(0, minNerveDist - canalRadiusMm);
-			const pClosestNerve = project3DWorldToVolumeScreen(closestNervePt, volume, rotMat, scale, center);
-
-			// Dashed clearance vector line
-			ctx.strokeStyle = statusStroke;
-			ctx.lineWidth = 1.6;
-			ctx.setLineDash([3, 3]);
-			ctx.beginPath();
-			ctx.moveTo(pApex.screenX, pApex.screenY);
-			ctx.lineTo(pClosestNerve.screenX, pClosestNerve.screenY);
-			ctx.stroke();
-			ctx.setLineDash([]);
-
-			// Midpoint measurement badge
-			const midX = (pApex.screenX + pClosestNerve.screenX) / 2.0;
-			const midY = (pApex.screenY + pClosestNerve.screenY) / 2.0;
-			const badgeText = `${netClearance.toFixed(1)} мм`;
-
-			ctx.font = "bold 9.5px monospace";
-			const bw = ctx.measureText(badgeText).width + 8;
-			ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
-			ctx.strokeStyle = statusStroke;
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			if (typeof ctx.roundRect === "function") {
-				ctx.roundRect(midX - bw / 2, midY - 7, bw, 14, 3);
-			} else {
-				ctx.rect(midX - bw / 2, midY - 7, bw, 14);
-			}
-			ctx.fill();
-			ctx.stroke();
-
-			ctx.fillStyle = statusStroke;
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(badgeText, midX, midY);
 		}
 
+		const netClearance = Math.max(0, minNerveDist - canalRadiusMm);
+		const pApex = project3DWorldToVolumeScreen(primaryTargetImplant.apex3D, volume, rotMat, scale, center);
+		const pClosestNerve = project3DWorldToVolumeScreen(closestNervePt, volume, rotMat, scale, center);
+
+		ctx.save();
+		// Dashed clearance vector line
+		ctx.strokeStyle = statusStroke;
+		ctx.lineWidth = 1.6;
+		ctx.setLineDash([3, 3]);
+		ctx.beginPath();
+		ctx.moveTo(pApex.screenX, pApex.screenY);
+		ctx.lineTo(pClosestNerve.screenX, pClosestNerve.screenY);
+		ctx.stroke();
+		ctx.setLineDash([]);
+
+		// Midpoint measurement badge
+		const midX = (pApex.screenX + pClosestNerve.screenX) / 2.0;
+		const midY = (pApex.screenY + pClosestNerve.screenY) / 2.0;
+		const badgeText = `${netClearance.toFixed(1)} мм`;
+
+		ctx.font = "bold 9.5px monospace";
+		const bw = ctx.measureText(badgeText).width + 8;
+		ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+		ctx.strokeStyle = statusStroke;
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		if (typeof ctx.roundRect === "function") {
+			ctx.roundRect(midX - bw / 2, midY - 7, bw, 14, 3);
+		} else {
+			ctx.rect(midX - bw / 2, midY - 7, bw, 14);
+		}
+		ctx.fill();
+		ctx.stroke();
+
+		ctx.fillStyle = statusStroke;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(badgeText, midX, midY);
 		ctx.restore();
 	}
 }

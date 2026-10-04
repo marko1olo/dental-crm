@@ -1,28 +1,6 @@
-import {
-	Camera,
-	Columns2,
-	Columns3,
-	FileText,
-	Grid2X2,
-	Maximize2,
-	Minimize2,
-	MoreHorizontal,
-	Receipt,
-	RotateCcw,
-	Ruler,
-	Sliders,
-	SplitSquareHorizontal,
-	X,
-} from "lucide-react";
+import { Camera, Columns2, Columns3, FileText, Grid2X2, Maximize2, Minimize2, MoreHorizontal, Receipt, RotateCcw, Ruler, Sliders, SplitSquareHorizontal, X } from "lucide-react";
 import React from "react";
-import {
-	BoneDensityMisch,
-	DentalArticulator,
-	DentalImplant,
-	DentalPanoramicArch,
-	DicomCube3D,
-	EndoFileCanal,
-} from "../../icons/DentalIcons";
+import { BoneDensityMisch, DentalArticulator, DentalImplant, DentalLabOrder, DentalPanoramicArch, DicomCube3D, EndoFileCanal } from "../../icons/DentalIcons";
 import {
 	CBCT_HOUNSFIELD_PRESETS,
 	type CbctViewportType,
@@ -48,6 +26,8 @@ export interface CbctHeaderBarProps {
 	readonly handleSelectStudioMode: (mode: StudioMode) => void;
 	readonly handleExportToEmr: () => void;
 	readonly handleExportCbctToFinance?: (() => void) | undefined;
+	readonly handleExportToPlan?: (() => void) | undefined;
+	readonly handleExportToLab?: (() => void) | undefined;
 	readonly isSidebarOpen: boolean;
 	readonly setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly isStudioMenuOpen: boolean;
@@ -102,6 +82,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 		handleSelectStudioMode,
 		handleExportToEmr,
 		handleExportCbctToFinance,
+		handleExportToPlan,
+		handleExportToLab,
 		isSidebarOpen,
 		setIsSidebarOpen,
 		isStudioMenuOpen,
@@ -176,7 +158,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					</h2>
 					<div className="flex items-center gap-1.5 min-w-0">
 						<p
-							className="text-xs font-semibold text-zinc-300 truncate leading-none min-w-0 max-w-[120px] sm:max-w-[200px] lg:max-w-[320px]"
+							className="text-xs font-semibold text-zinc-300 truncate leading-none min-w-0 max-w-[120px] sm:max-w-[180px] lg:max-w-[220px]"
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
 							title={`${patientDisplayName || resolvedPatientName} • ${loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • ${volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}`}
@@ -261,7 +243,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 						<BoneDensityMisch
 							className={`w-3.5 h-3.5 shrink-0 ${isUnsharpActive ? "text-amber-400" : "text-zinc-400"}`}
 						/>
-						<span className="hidden sm:inline">Резкость</span>
+						<span className="hidden 2xl:inline">Резкость</span>
 						<span
 							className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold uppercase tracking-wider ${
 								isUnsharpActive
@@ -270,7 +252,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 							}`}
 							data-testid="cbct-unsharp-hud-badge"
 						>
-							{isUnsharpActive ? "SHARP ON" : "RAW VOXEL"}
+							{isUnsharpActive ? "SHARP" : "RAW"}
 						</span>
 					</button>
 				)}
@@ -346,24 +328,56 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					title="Копировать текущий снимок в буфер обмена для WhatsApp / Telegram (Ctrl+C)"
 				>
 					<Camera className="w-3.5 h-3.5 text-cyan-400" />
-					<span className="hidden sm:inline">В буфер</span>
+					<span className="hidden sm:inline">Буфер</span>
 					<span className="hidden 2xl:inline text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono border border-zinc-700">
 						Ctrl+C
 					</span>
 				</button>
 
-				{/* Кнопка «+ Смета»: мягкий благородный teal без ослепляющего белого */}
+				{/* 3. Кнопка «+ Смета»: мягкий благородный teal без ослепляющего белого */}
 				{handleExportCbctToFinance && (
 					<button
 						type="button"
 						onClick={handleExportCbctToFinance}
-						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 hover:text-teal-200 border border-teal-500/50 shadow-xs transition-colors cursor-pointer"
+						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 hover:text-teal-200 border border-teal-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
 						data-testid="cbct-header-add-finance-btn"
-						title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт визита и смету плана лечения"
+						title="В 1 клик добавить операцию имплантации, костную пластику и КЛКТ в финансовый наряд визита"
 					>
-						<Receipt className="w-3.5 h-3.5" />
-						<span className="hidden 2xl:inline">+ КЛКТ в смету/акт</span>
-						<span className="hidden sm:inline 2xl:hidden">+ Смета</span>
+						<Receipt className="w-3.5 h-3.5 shrink-0" />
+						<span className="hidden 2xl:inline">+ КЛКТ и имплант в смету</span>
+						<span className="inline 2xl:hidden">+ Смета</span>
+					</button>
+				)}
+
+				{/* 4. Кнопка «В план лечения» */}
+				{handleExportToPlan && (
+					<button
+						type="button"
+						onClick={handleExportToPlan}
+						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 hover:text-indigo-200 border border-indigo-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
+						data-testid="cbct-btn-export-plan"
+						id="cbct-btn-export-plan"
+						title="Добавить хирургический этап имплантации со срезом КЛКТ в план лечения"
+					>
+						<FileText className="w-3.5 h-3.5 shrink-0" />
+						<span className="hidden 2xl:inline">В план лечения</span>
+						<span className="inline 2xl:hidden">В план</span>
+					</button>
+				)}
+
+				{/* 5. Кнопка «В ЗТЛ» (Лаборатория) */}
+				{handleExportToLab && (
+					<button
+						type="button"
+						onClick={handleExportToLab}
+						className="px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 hover:text-amber-200 border border-amber-500/50 shadow-xs transition-colors cursor-pointer shrink-0"
+						data-testid="cbct-btn-export-lab"
+						id="cbct-btn-export-lab"
+						title="Сформировать заказ-наряд ЗТЛ на хирургический шаблон с параметрами имплантата и срезом КЛКТ"
+					>
+						<DentalLabOrder className="w-3.5 h-3.5 shrink-0" />
+						<span className="hidden 2xl:inline">В лабораторию (ЗТЛ)</span>
+						<span className="inline 2xl:hidden">В ЗТЛ</span>
 					</button>
 				)}
 
@@ -371,7 +385,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 				<button
 					type="button"
 					onClick={() => setIsSidebarOpen((prev) => !prev)}
-					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors border shadow-xs ${
+					className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors border shadow-xs shrink-0 ${
 						isSidebarOpen
 							? "bg-zinc-900 text-cyan-300 border-cyan-500/60"
 							: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-900"
@@ -384,8 +398,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					<span
 						className={`w-1.5 h-1.5 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-zinc-500"}`}
 					/>
-					<Columns2 className="w-3.5 h-3.5" />
-					<span className="hidden sm:inline">Панель</span>
+					<Columns2 className="w-3.5 h-3.5 shrink-0" />
+					<span className="hidden xl:inline">Панель</span>
 				</button>
 
 				{/* Кнопка «Опции» и меню дополнительных действий */}

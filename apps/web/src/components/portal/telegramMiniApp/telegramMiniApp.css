@@ -1,0 +1,1371 @@
+/* ==========================================================================
+   TELEGRAM WEBAPP MINI APP (DENTE POCKET CLINIC)
+   Мобильный вьювер для Telegram Mini Apps с поддержкой тем Telegram,
+   отступов безопасной зоны (Safe Area) и клинической эргономики Apple HIG.
+   ========================================================================== */
+
+/* Базовые токены для темы */
+:root {
+	--tg-bg: #0f172a;
+	--tg-card-bg: #1e293b;
+	--tg-card-inner: #0f172a;
+	--tg-text: #f8fafc;
+	--tg-text-muted: #94a3b8;
+	--tg-border: rgba(255, 255, 255, 0.12);
+	--tg-accent: #0d9488;
+	--tg-accent-hover: #14b8a6;
+	--tg-accent-text: #ffffff;
+}
+
+/* Светлая тема */
+:root[data-theme="light"],
+html.light,
+html[data-theme="light"] {
+	--tg-bg: #f8fafc;
+	--tg-card-bg: #ffffff;
+	--tg-card-inner: #f1f5f9;
+	--tg-text: #0f172a;
+	--tg-text-muted: #64748b;
+	--tg-border: #e2e8f0;
+	--tg-accent: #0d9488;
+	--tg-accent-hover: #0f766e;
+	--tg-accent-text: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme="dark"]) {
+		--tg-bg: #f8fafc;
+		--tg-card-bg: #ffffff;
+		--tg-card-inner: #f1f5f9;
+		--tg-text: #0f172a;
+		--tg-text-muted: #64748b;
+		--tg-border: #e2e8f0;
+	}
+}
+
+/* Тёмная тема */
+:root[data-theme="dark"],
+html.dark,
+html[data-theme="dark"] {
+	--tg-bg: #0f172a;
+	--tg-card-bg: #1e293b;
+	--tg-card-inner: #0f172a;
+	--tg-text: #f8fafc;
+	--tg-text-muted: #94a3b8;
+	--tg-border: rgba(255, 255, 255, 0.12);
+}
+
+.tg-app-container {
+	min-height: 100vh;
+	min-height: 100dvh;
+	width: 100%;
+	max-width: 480px;
+	margin: 0 auto;
+	background-color: var(--tg-theme-bg-color, var(--tg-bg));
+	color: var(--tg-theme-text-color, var(--tg-text));
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	box-sizing: border-box;
+	padding-top: env(safe-area-inset-top, 0px);
+	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+	overflow-x: clip;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Шапка приложения */
+.tg-app-header {
+	padding: 12px 16px;
+	background-color: var(--tg-theme-secondary-bg-color, var(--tg-card-bg));
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border-bottom: 1px solid var(--tg-border);
+	position: sticky;
+	top: 0;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.tg-app-brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.tg-app-logo {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+	flex-shrink: 0;
+}
+
+.tg-app-title {
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--tg-text);
+}
+
+.tg-app-subtitle {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 1px;
+}
+
+.tg-bonus-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(245, 158, 11, 0.15);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+	color: #d97706;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .tg-bonus-chip,
+html.dark .tg-bonus-chip {
+	color: #fbbf24;
+}
+
+/* Селектор семейного профиля */
+.tg-family-strip {
+	padding: 8px 16px;
+	background-color: var(--tg-card-inner);
+	border-bottom: 1px solid var(--tg-border);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.tg-family-strip::-webkit-scrollbar {
+	display: none;
+}
+
+.tg-family-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 20px;
+	background: var(--tg-card-bg);
+	color: var(--tg-text-muted);
+	border: 1px solid var(--tg-border);
+	cursor: pointer;
+	white-space: nowrap;
+	min-height: 36px;
+	transition: all 0.2s ease;
+}
+
+.tg-family-pill.active {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	border-color: transparent;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+}
+
+/* Навигационный таббар (Fixed Bottom) */
+.tg-bottom-nav {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	max-width: 480px;
+	margin: 0 auto;
+	height: 68px;
+	background-color: var(--tg-card-bg);
+	border-top: 1px solid var(--tg-border);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+	z-index: 50;
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.tg-nav-btn {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	height: 100%;
+	background: none;
+	border: none;
+	color: var(--tg-text-muted);
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 48px;
+	touch-action: manipulation;
+	position: relative;
+}
+
+.tg-nav-btn.active {
+	color: var(--tg-accent);
+}
+
+.tg-nav-btn.active svg {
+	transform: scale(1.1);
+	stroke: var(--tg-accent);
+}
+
+.tg-nav-badge {
+	position: absolute;
+	top: 8px;
+	right: calc(50% - 18px);
+	background: #ef4444;
+	color: #ffffff;
+	font-size: 10px;
+	font-weight: 800;
+	width: 17px;
+	height: 17px;
+	border-radius: 9999px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1.5px solid var(--tg-card-bg);
+}
+
+/* Контент вкладки */
+.tg-tab-content {
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* ==========================================================================
+   ИНТЕРАКТИВНАЯ ЗУБНАЯ ФОРМУЛА (FDI 32 + 20)
+   ========================================================================== */
+
+.tg-tooth-picker-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Переключатель Взрослый / Детский */
+.tg-dentition-toggle {
+	display: flex;
+	gap: 6px;
+	background: var(--tg-card-bg);
+	padding: 4px;
+	border-radius: 14px;
+	border: 1px solid var(--tg-border);
+}
+
+.tg-toggle-chip {
+	flex: 1;
+	padding: 8px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 10px;
+	border: none;
+	background: transparent;
+	color: var(--tg-text-muted);
+	cursor: pointer;
+	text-align: center;
+	transition: all 0.2s ease;
+	min-height: 38px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-toggle-chip.active {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	font-weight: 700;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+/* Квадрантный вид */
+.tg-quadrant-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 18px;
+	padding: 14px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tg-quadrant-tab {
+	padding: 8px 4px;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	border-radius: 10px;
+	color: var(--tg-text-muted);
+	cursor: pointer;
+	text-align: center;
+	transition: all 0.2s ease;
+	min-height: 40px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-quadrant-tab.active {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--tg-accent);
+	color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+}
+
+/* Кнопка зуба (Touch target >= 44x44px, эргономика 52px) */
+.tg-tooth-cell {
+	min-height: 52px;
+	border-radius: 12px;
+	border: 1.5px solid var(--tg-border);
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.tg-tooth-cell:active {
+	transform: scale(0.96);
+}
+
+.tg-tooth-num {
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: -0.3px;
+	color: var(--tg-text);
+}
+
+.tg-tooth-indicator {
+	font-size: 13px;
+	line-height: 1;
+}
+
+.tg-tooth-cell.is-active {
+	border-color: var(--tg-accent);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.4);
+	transform: scale(1.04);
+}
+
+/* Цветовые бейджи жалоб */
+.tg-tooth-cell.has-complaint {
+	border-width: 2px;
+}
+
+.tg-tooth-badge-acute {
+	background: rgba(239, 68, 68, 0.15) !important;
+	border-color: #ef4444 !important;
+	box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+.tg-tooth-badge-fracture {
+	background: rgba(245, 158, 11, 0.15) !important;
+	border-color: #f59e0b !important;
+	box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+.tg-tooth-badge-caries {
+	background: rgba(249, 115, 22, 0.15) !important;
+	border-color: #f97316 !important;
+	box-shadow: 0 0 10px rgba(249, 115, 22, 0.3) !important;
+}
+
+.tg-tooth-badge-temp {
+	background: rgba(6, 182, 212, 0.15) !important;
+	border-color: #06b6d4 !important;
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.3) !important;
+}
+
+.tg-tooth-badge-crown {
+	background: rgba(168, 85, 247, 0.15) !important;
+	border-color: #a855f7 !important;
+	box-shadow: 0 0 10px rgba(168, 85, 247, 0.3) !important;
+}
+
+/* Обзор всей зубной дуги */
+.tg-arch-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 18px;
+	padding: 14px 8px;
+}
+
+.tg-arch-card .tg-tooth-cell {
+	min-width: 42px;
+	min-height: 48px;
+	padding: 2px 4px;
+}
+.tg-arch-card .tg-tooth-num {
+	font-size: 13px;
+}
+
+/* Сводная плашка отмеченных жалоб */
+.tg-complaints-summary {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 18px;
+	padding: 14px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   НАТИВНАЯ ШТОРКА ЖАЛОБ (BOTTOM SHEET DRAWER)
+   ========================================================================== */
+
+.tg-sheet-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	animation: tgFadeIn 0.2s ease-out;
+}
+
+.tg-bottom-sheet {
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	border-top: 1px solid var(--tg-border);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	max-height: 88vh;
+	max-height: 88dvh;
+	overflow-y: auto;
+	padding: 12px 18px calc(env(safe-area-inset-bottom, 0px) + 20px) 18px;
+	box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+	animation: tgSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	max-width: 480px;
+	width: 100%;
+	margin: 0 auto;
+}
+
+@keyframes tgFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes tgSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+.tg-sheet-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--tg-border);
+	margin: 0 auto 12px auto;
+}
+
+.tg-sheet-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--tg-border);
+}
+
+.tg-sheet-body {
+	padding-top: 12px;
+}
+
+.tg-symptom-card {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid var(--tg-border);
+	background: var(--tg-card-inner);
+	color: var(--tg-text);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 48px;
+}
+
+.tg-symptom-card:active {
+	transform: scale(0.98);
+}
+
+.tg-symptom-card.selected {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+}
+
+/* ==========================================================================
+   ОНЛАЙН-ЗАПИСЬ И ВЫБОР ВРАЧА
+   ========================================================================== */
+
+.tg-booking-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.tg-attached-teeth-banner {
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.35);
+	border-radius: 16px;
+	padding: 12px;
+}
+
+.tg-specialist-chip {
+	padding: 10px 12px;
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 14px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+	min-height: 60px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.tg-specialist-chip.selected {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+}
+
+.tg-doctor-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 14px;
+	padding: 12px 14px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	cursor: pointer;
+	transition: border-color 0.2s ease;
+}
+
+.tg-doctor-card.selected {
+	border-color: var(--tg-accent);
+	background: rgba(13, 148, 136, 0.1);
+}
+
+.tg-doctor-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #0d9488, #0284c7);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #ffffff;
+	font-weight: 700;
+	flex-shrink: 0;
+	border: 1px solid var(--tg-border);
+}
+
+/* Сетка временных окон */
+.tg-slots-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+}
+
+.tg-slot-btn {
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--tg-border);
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+	text-align: center;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+}
+
+.tg-slot-btn.selected {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	border-color: transparent;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+
+/* Главная кнопка действия (CTA) */
+.tg-cta-button {
+	width: 100%;
+	min-height: 52px;
+	border-radius: 14px;
+	background-color: var(--tg-accent);
+	color: var(--tg-accent-text);
+	font-size: 15px;
+	font-weight: 700;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+	transition: all 0.18s ease;
+}
+
+.tg-cta-button:active {
+	transform: scale(0.98);
+	opacity: 0.9;
+}
+
+.tg-cta-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+/* Карточка успешного бронирования */
+.tg-booking-success-card {
+	background: var(--tg-card-bg);
+	border: 1px solid rgba(13, 148, 136, 0.4);
+	border-radius: 20px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* ==========================================================================
+   POCKET CLINIC PATIENT PORTAL CABINET (КАБИНЕТ ПАЦИЕНТА)
+   ========================================================================== */
+
+.tg-section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 2px;
+}
+
+.tg-section-title {
+	font-size: 17px;
+	font-weight: 800;
+	color: var(--tg-text);
+	line-height: 1.25;
+	letter-spacing: -0.3px;
+}
+
+.tg-section-desc {
+	font-size: 12px;
+	color: var(--tg-text-muted);
+	margin-top: 3px;
+	line-height: 1.4;
+}
+
+/* Apple Segmented Control */
+.tg-segmented-control {
+	display: flex;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	padding: 4px;
+	border-radius: 14px;
+	gap: 4px;
+}
+
+.tg-segment-btn {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 9px 12px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--tg-text-muted);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	min-height: 40px;
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tg-segment-btn.active {
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] .tg-segment-btn.active,
+html.dark .tg-segment-btn.active {
+	background: var(--tg-card-bg);
+	color: var(--tg-text);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Grouped List Cards (Apple HIG) */
+.tg-card-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.tg-grouped-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	border-radius: 20px;
+	padding: 16px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+	transition: border-color 0.2s ease;
+}
+
+.tg-empty-card {
+	padding: 32px 16px;
+	text-align: center;
+	background: var(--tg-card-bg);
+	border: 1px dashed var(--tg-border);
+	border-radius: 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Карточка визита */
+.tg-appointment-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--tg-border);
+	gap: 8px;
+}
+
+.tg-appointment-datetime {
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--tg-text);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tg-appointment-cabinet {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+}
+
+.tg-status-badge {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.tg-badge-confirmed {
+	background: rgba(13, 148, 136, 0.15);
+	color: #0d9488;
+	border: 1px solid rgba(13, 148, 136, 0.35);
+}
+
+:root[data-theme="dark"] .tg-badge-confirmed,
+html.dark .tg-badge-confirmed {
+	background: rgba(20, 184, 166, 0.2);
+	color: #2dd4bf;
+	border-color: rgba(20, 184, 166, 0.4);
+}
+
+.tg-badge-pending {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+	border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+:root[data-theme="dark"] .tg-badge-pending,
+html.dark .tg-badge-pending {
+	color: #fbbf24;
+}
+
+.tg-badge-completed {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--tg-text-muted);
+	border: 1px solid var(--tg-border);
+}
+
+.tg-appointment-body {
+	padding: 12px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.tg-appointment-procedure {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--tg-text);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.tg-tooth-chip {
+	font-size: 11px;
+	font-weight: 800;
+	background: rgba(13, 148, 136, 0.15);
+	color: #0d9488;
+	padding: 2px 8px;
+	border-radius: 6px;
+	border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+:root[data-theme="dark"] .tg-tooth-chip,
+html.dark .tg-tooth-chip {
+	color: #2dd4bf;
+}
+
+.tg-appointment-doctor {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: var(--tg-card-inner);
+	padding: 8px 12px;
+	border-radius: 12px;
+	border: 1px solid var(--tg-border);
+}
+
+.tg-doctor-circle {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #0d9488, #0284c7);
+	color: #ffffff;
+	font-size: 13px;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.tg-appointment-actions {
+	padding-top: 10px;
+	border-top: 1px solid var(--tg-border);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.tg-confirm-btn {
+	min-height: 48px;
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.tg-confirmed-note {
+	font-size: 12px;
+	font-weight: 600;
+	color: #0d9488;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(13, 148, 136, 0.1);
+	padding: 8px 12px;
+	border-radius: 10px;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+:root[data-theme="dark"] .tg-confirmed-note,
+html.dark .tg-confirmed-note {
+	color: #2dd4bf;
+}
+
+.tg-appointment-sub-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.tg-sub-action-btn {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 40px;
+	padding: 8px 12px;
+	border-radius: 10px;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	color: var(--tg-text);
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: all 0.15s ease;
+}
+
+.tg-sub-action-btn:hover {
+	background: var(--tg-border);
+}
+
+.tg-past-summary {
+	padding-top: 10px;
+	border-top: 1px solid var(--tg-border);
+}
+
+.tg-quick-book-banner {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(2, 132, 199, 0.15) 100%);
+	border: 1px solid rgba(13, 148, 136, 0.35);
+	border-radius: 20px;
+	padding: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.tg-book-accent-btn {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	font-size: 13px;
+	font-weight: 700;
+	border: none;
+	border-radius: 12px;
+	padding: 10px 16px;
+	cursor: pointer;
+	min-height: 44px;
+	white-space: nowrap;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4);
+	transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   СНИМКИ И КТ (DIGITAL RADIOLOGY VIEWER)
+   ========================================================================== */
+
+.tg-scans-carousel {
+	display: flex;
+	gap: 10px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	padding-bottom: 4px;
+}
+
+.tg-scans-carousel::-webkit-scrollbar {
+	display: none;
+}
+
+.tg-scan-card-thumb {
+	flex: 0 0 175px;
+	padding: 10px 12px;
+	background: var(--tg-card-bg);
+	border: 1.5px solid var(--tg-border);
+	border-radius: 16px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	text-align: left;
+	position: relative;
+	transition: all 0.2s ease;
+	min-height: 56px;
+}
+
+.tg-scan-card-thumb.active {
+	border-color: var(--tg-accent);
+	background: rgba(13, 148, 136, 0.12);
+	box-shadow: 0 2px 10px rgba(13, 148, 136, 0.25);
+}
+
+.tg-thumb-icon {
+	font-size: 20px;
+	flex-shrink: 0;
+}
+
+.tg-thumb-info {
+	overflow: hidden;
+	flex: 1;
+}
+
+.tg-thumb-title {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--tg-text);
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	word-break: break-word;
+}
+
+.tg-thumb-date {
+	font-size: 10px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+}
+
+.tg-thumb-active-dot {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--tg-accent);
+}
+
+.tg-viewer-container {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.tg-viewer-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--tg-border);
+}
+
+.tg-viewer-badge {
+	font-size: 11px;
+	font-weight: 700;
+	background: rgba(13, 148, 136, 0.15);
+	color: #0d9488;
+	padding: 3px 8px;
+	border-radius: 6px;
+	border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+:root[data-theme="dark"] .tg-viewer-badge,
+html.dark .tg-viewer-badge {
+	color: #2dd4bf;
+}
+
+.tg-viewer-tool-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 6px 10px;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	border-radius: 8px;
+	color: var(--tg-text);
+	cursor: pointer;
+	min-height: 34px;
+	font-size: 11px;
+	font-weight: 600;
+	transition: all 0.15s ease;
+}
+
+.tg-viewer-tool-btn.active {
+	background: var(--tg-accent);
+	color: var(--tg-accent-text);
+	border-color: transparent;
+}
+
+.tg-canvas-viewport {
+	width: 100%;
+	background: #090d14;
+	border-radius: 16px;
+	overflow: hidden;
+	position: relative;
+	border: 1px solid var(--tg-border);
+	box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.tg-scan-display {
+	width: 100%;
+	transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+	transform-origin: center center;
+}
+
+.tg-scan-display.inverted {
+	filter: invert(1) hue-rotate(180deg) contrast(1.15);
+}
+
+.tg-radiology-svg {
+	display: block;
+}
+
+.tg-viewer-footer {
+	padding-top: 4px;
+}
+
+/* ==========================================================================
+   НАЛОГОВЫЙ ВЫЧЕТ 13% И СПРАВКА КНД 1151156
+   ========================================================================== */
+
+.tg-tax-hero-card {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.18) 0%, rgba(16, 185, 129, 0.12) 100%);
+	border: 1px solid rgba(13, 148, 136, 0.4);
+	border-radius: 22px;
+	padding: 18px;
+	box-shadow: 0 4px 20px rgba(13, 148, 136, 0.15);
+}
+
+.tg-tax-period-tag {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #0d9488;
+}
+
+:root[data-theme="dark"] .tg-tax-period-tag,
+html.dark .tg-tax-period-tag {
+	color: #2dd4bf;
+}
+
+.tg-fns-law-pill {
+	font-size: 10px;
+	font-weight: 700;
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--tg-text-muted);
+	padding: 3px 8px;
+	border-radius: 9999px;
+	border: 1px solid var(--tg-border);
+}
+
+.tg-deduction-result-box {
+	background: var(--tg-card-bg);
+	border: 1px solid rgba(16, 185, 129, 0.35);
+	border-radius: 16px;
+	padding: 14px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.tg-tax-sheet {
+	max-height: 90vh;
+	max-height: 90dvh;
+}
+
+.tg-tax-cert-preview {
+	background: var(--tg-card-inner);
+	border: 1.5px dashed var(--tg-accent);
+	border-radius: 18px;
+	padding: 14px;
+	position: relative;
+}
+
+.tg-cert-stamp-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(16, 185, 129, 0.15);
+	border: 1px solid rgba(16, 185, 129, 0.4);
+	color: #10b981;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 9999px;
+}
+
+/* ==========================================================================
+   ФИНАНСЫ, БОНУСЫ И РЕФЕРАЛЫ
+   ========================================================================== */
+
+.tg-finance-balance-card {
+	background: linear-gradient(135deg, var(--tg-card-bg) 0%, var(--tg-card-inner) 100%);
+	border: 1px solid var(--tg-border);
+	border-radius: 22px;
+	padding: 20px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.tg-referral-card {
+	background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
+	border: 1px solid rgba(245, 158, 11, 0.35);
+	border-radius: 20px;
+	padding: 16px;
+	box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+}
+
+/* ==========================================================================
+   АДАПТИВНАЯ ТИПОГРАФИКА ДЛЯ ШТОРКИ НАЛОГА И КЛИНИЧЕСКИХ КАРТОЧЕК
+   ========================================================================== */
+
+.tg-sheet-title {
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--tg-text);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tg-sheet-subtitle {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+}
+
+.tg-field-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--tg-text);
+	display: block;
+	margin-bottom: 6px;
+}
+
+.tg-field-input {
+	width: 100%;
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	border-radius: 12px;
+	padding: 10px 12px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--tg-text);
+	outline: none;
+	transition: border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.tg-field-input:focus {
+	border-color: var(--tg-accent);
+}
+
+.tg-chip-selector-btn {
+	flex: 1;
+	padding: 10px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 700;
+	border: 1.5px solid var(--tg-border);
+	background: var(--tg-card-inner);
+	color: var(--tg-text-muted);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-chip-selector-btn.active {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: var(--tg-accent);
+	color: var(--tg-accent);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+.tg-service-radio-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 12px;
+	border-radius: 14px;
+	border: 1.5px solid var(--tg-border);
+	background: var(--tg-card-inner);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+.tg-service-radio-card.active {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: var(--tg-accent);
+}
+
+.tg-radio-title {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--tg-text);
+}
+
+.tg-radio-desc {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	margin-top: 2px;
+	line-height: 1.35;
+}
+
+.tg-deduction-summary-box {
+	padding: 12px 14px;
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.35);
+	border-radius: 16px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.tg-doctor-name {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--tg-text);
+}
+
+.tg-doctor-role {
+	font-size: 11px;
+	color: var(--tg-text-muted);
+	margin-top: 1px;
+}
+
+.tg-doctor-notes-box {
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--tg-text);
+	background: var(--tg-card-inner);
+	border: 1px solid var(--tg-border);
+	padding: 12px;
+	border-radius: 14px;
+}
+
+.tg-cert-details-card {
+	background: var(--tg-card-bg);
+	border: 1px solid var(--tg-border);
+	padding: 12px;
+	border-radius: 14px;
+	font-size: 12px;
+	box-sizing: border-box;
+}
+
+

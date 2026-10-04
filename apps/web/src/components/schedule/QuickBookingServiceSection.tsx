@@ -131,7 +131,7 @@ export function QuickBookingServiceSection({
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
             <CheckCircle2 size={13} className="text-[var(--teal)]" />
-            <span>Статус записи (DentalPRO expo26)</span>
+            <span>Статус записи</span>
           </span>
           {appointmentType === "emergency" && (
             <span
@@ -148,7 +148,7 @@ export function QuickBookingServiceSection({
             onClick={() => {
               setStatus("planned");
               if (appointmentType === "emergency") {
-                handleSelectAppointmentType("treatment");
+                handleSelectAppointmentType("secondary");
               }
             }}
             className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
@@ -276,7 +276,7 @@ export function QuickBookingServiceSection({
             onClick={handleFindFreeSlots}
             className="text-xs font-bold text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--teal)]/30 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 transition-all cursor-pointer"
             data-testid="quick-booking-find-slots-btn"
-            title="Интеллектуальный поиск свободных окон (DentalPRO Smart Slot Match)"
+            title="Интеллектуальный поиск свободных окон"
           >
             <Search size={12} className="shrink-0" />
             <span>Найти варианты</span>

@@ -171,7 +171,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 			const watchRes = await watchDesktopDicomFolder("C:\\DenteDICOM\\Incoming", "hotfolder-intake");
 			setIsScanning(false);
 			setLastScanTime("только что");
-			showToast(watchRes?.success ? "Папка автозахвата снимков успешно синхронизирована (DENTE Desktop)" : "Папка автозахвата снимков актуализирована (EzDent-i, Romexis, Sidexis)", "success");
+			showToast(watchRes?.success ? "Папка автозахвата снимков успешно синхронизирована (DENTE Desktop)" : "Папка автозахвата снимков актуализирована (Визиографы, КТ)", "success");
 		} catch {
 			setIsScanning(false);
 			setLastScanTime("только что");
@@ -180,7 +180,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	};
 
 	// Handle Drag and Drop Files
-	const handleDropFile = (file: File) => {
+	const handleDropFile = useCallback((file: File) => {
 		const validation = validateRadiologyUploadFile(file);
 		if (!validation.isValid) {
 			showToast(`Неподдерживаемый формат файла: ${file.name}. Допустимы DICOM (.dcm), TIFF, PNG, JPG, BMP.`, "error");
@@ -257,7 +257,33 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 			reader.onerror = () => showToast(`Ошибка чтения файла: ${file.name}`, "error");
 			reader.readAsDataURL(file);
 		}
-	};
+	}, [patientName, patientCardNumber]);
+
+	// Instant Clipboard Ingestion (Ctrl+V) without USB collision
+	useEffect(() => {
+		if (!isOpen) return;
+		const handlePaste = (e: ClipboardEvent) => {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+				return;
+			}
+			const items = e.clipboardData?.items;
+			if (!items) return;
+			for (let i = 0; i < items.length; i++) {
+				const item = items[i];
+				if (item && item.kind === "file") {
+					const file = item.getAsFile();
+					if (file) {
+						e.preventDefault();
+						handleDropFile(file);
+						showToast("Снимок успешно вставлен из буфера обмена (Ctrl+V)", "success");
+						break;
+					}
+				}
+			}
+		};
+		window.addEventListener("paste", handlePaste);
+		return () => window.removeEventListener("paste", handlePaste);
+	}, [isOpen, handleDropFile]);
 
 	// Filtered files list (supports intelligent fresh (< 15 mins) filter)
 	const filteredItems = useMemo(() => {
@@ -420,7 +446,14 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 						<div className="hfi-header-info">
 							<div className="hfi-header-title-row">
 								<h2 id={`${modalId}-title`} className="hfi-header-title">Папка автозахвата снимков (радиовизиография и ОПТГ)</h2>
-								<span className="hfi-header-badge"><Wifi className="w-3 h-3 text-emerald-400" /><span>Автосканирование активно</span></span>
+								<span
+									className="hfi-header-badge"
+									title="Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"
+									data-testid="hfi-non-conflicting-badge"
+								>
+									<Wifi className="w-3 h-3 text-emerald-400" />
+									<span>Бесконфликтный автозахват (EzDent-i / Romexis)</span>
+								</span>
 							</div>
 							<p className="hfi-header-subtitle">
 								<span>Пациент: <strong className="text-[var(--ink)]">{patientName}</strong></span> · <span>Медкарта: <strong className="text-[var(--ink)]">{patientCardNumber}</strong></span> · <span>Врач: {doctorName}</span>
@@ -447,9 +480,12 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 					<aside className="hfi-left-panel">
 						<div className="hfi-left-header">
 							<div className="hfi-folder-status-bar">
-								<div className="hfi-folder-status-indicator">
+								<div
+									className="hfi-folder-status-indicator"
+									title="Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"
+								>
 									<span className="hfi-status-pulse-dot" />
-									<span>Папка автозахвата ({filteredItems.length} снимков)</span>
+									<span>Папка автозахвата ({filteredItems.length} снимков) · Бесконфликтно</span>
 								</div>
 								<button
 									type="button"
@@ -510,7 +546,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 									<FolderSync className="w-8 h-8 text-teal-400/40" />
 									<p className="font-semibold text-gray-300">В папке пока нет новых снимков (автозахват)</p>
 									<p className="text-[11px] text-gray-500 max-w-[200px]">
-										Экспортируйте снимок из EzDent / Romexis или перетащите файл в область загрузки ниже.
+										Экспортируйте снимок из программы визиографа или перетащите файл в область загрузки ниже.
 									</p>
 								</div>
 							) : (
@@ -722,7 +758,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 							<div className="hfi-protocol-box">
 								<div className="flex items-center justify-between">
 									<label className="hfi-field-label">
-										Протокол описания для медкарты ф. 043/у
+										Протокол описания для медицинской карты
 									</label>
 									<span className="text-[10px] text-teal-400 font-semibold">
 										Авто-шаблон
@@ -750,7 +786,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 								title={!activeItem ? "Выберите или загрузите снимок для прикрепления" : undefined}
 							>
 								<Check className="w-4 h-4" />
-								<span>Принять снимок в карту (ф. 043/у)</span>
+								<span>Принять снимок в медицинскую карту</span>
 							</button>
 
 							<div className="hfi-secondary-actions-row">

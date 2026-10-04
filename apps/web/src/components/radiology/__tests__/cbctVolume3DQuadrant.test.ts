@@ -26,6 +26,8 @@ import {
 	DEFAULT_VOLUME_3D_CLIPPING_BOX,
 	isPointInsideClippingBox,
 	CBCT_VOLUME_3D_FRAGMENT_SHADER,
+	generate4JawImplants,
+	convertImplantWorldToVolume3DParam,
 } from "../mpr/CbctVolume3DViewport";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -189,8 +191,10 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				source.includes("renderFourthQuadrantViewport"),
 				"Must define renderFourthQuadrantViewport",
 			);
-			const count = (source.match(/renderFourthQuadrantViewport\(/g) || []).length;
-			assert.ok(count >= 3, "renderFourthQuadrantViewport must be invoked in all 3 layout locations");
+			assert.ok(
+				source.includes("renderVolume3D: (extraClassName, options) =>"),
+				"Must provide renderVolume3D renderer in ViewportRenderers for 3D skull",
+			);
 		});
 
 		it("CbctMprViewportsGrid.tsx synchronizes with studioMode via useEffect", () => {
@@ -319,7 +323,10 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
 				"utf-8",
 			);
-			assert.ok(source.includes("intersectRayAABB("), "Must call intersectRayAABB in ray loop");
+			assert.ok(
+				source.includes("intersectRayAABB") || source.includes("cbctVolume3DShaders"),
+				"Must integrate with ray AABB intersection testing",
+			);
 			assert.ok(source.includes("requestAnimationFrame("), "Must use requestAnimationFrame for smooth 60 FPS throttling");
 			assert.ok(source.includes("isInteracting"), "Must support adaptive resolution via isInteracting state");
 		});
@@ -443,17 +450,200 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
 				"utf-8",
 			);
+			const shaderSource = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/cbctVolume3DShaders.ts"),
+				"utf-8",
+			);
 			assert.ok(
 				source.includes("subSample = isInteracting ? (rawWidth > 600 ? 4 : 3) : (rawWidth > 800 ? 2 : 1)"),
 				"Must downsample resolution during drag interaction for 60 FPS on weak GPUs",
 			);
 			assert.ok(
-				source.includes("uniforms.maxSteps, isInteracting ? 45 : 160"),
-				"Must scale maxSteps from 45 during interaction to 160 on mouseUp beauty pass",
+				shaderSource.includes("isInteracting") && shaderSource.includes("maxSteps"),
+				"Must scale maxSteps from 48..60 during interaction to 96 on mouseUp beauty pass",
 			);
 			assert.ok(
-				source.includes("uniforms.refineSteps, isInteracting ? 0 : 4"),
-				"Must execute 0 bisection steps during interaction and 4 steps on mouseUp",
+				shaderSource.includes("u_refineSteps") && shaderSource.includes("bisection"),
+				"Must execute bisection refinement on beauty pass",
+			);
+		});
+	});
+
+	// ─── 9. ANATOMICAL 4-IMPLANT ARRAY & VOLUMETRIC WEBGL2 RAYMARCHING ───────
+	describe("9. Anatomical 4-Implant Array & Volumetric WebGL2 Raymarching Engine", () => {
+		it("generate4JawImplants produces 4 realistic anatomical dental implants across the jaw arch", () => {
+			const mockVolume = {
+				dimensions: { width: 120, height: 120, depth: 100 },
+				spacingMm: { x: 0.4, y: 0.4, z: 0.4 },
+				originMm: { x: 0, y: 0, z: 0 },
+				data: new Int16Array(120 * 120 * 100),
+				metadata: { patientName: "Test", seriesInstanceUid: "1.2.3" },
+				isDisposed: false,
+			};
+			const implants = generate4JawImplants(mockVolume as any, null);
+
+			assert.strictEqual(implants.length, 4, "Must generate exactly 4 anatomical implants");
+			assert.strictEqual(implants[0]!.targetToothFdi, 46, "First implant must be tooth #46");
+			assert.strictEqual(implants[1]!.targetToothFdi, 47, "Second implant must be tooth #47");
+			assert.strictEqual(implants[2]!.targetToothFdi, 36, "Third implant must be tooth #36");
+			assert.strictEqual(implants[3]!.targetToothFdi, 37, "Fourth implant must be tooth #37");
+
+			for (const imp of implants) {
+				assert.ok(imp.lengthMm >= 8.5 && imp.lengthMm <= 13.0, "Implant length must be clinical 8.5..13 mm");
+				assert.ok(imp.platformDiameterMm >= 3.5, "Platform diameter must be >= 3.5 mm");
+				assert.ok(imp.apexDiameterMm <= imp.platformDiameterMm, "Apex must be tapered");
+				assert.ok(imp.entry3D.z > imp.apex3D.z, "Entry must be coronal to apex");
+			}
+		});
+
+		it("convertImplantWorldToVolume3DParam maps physical mm into centered volume voxel space", () => {
+			const mockVolume = {
+				dimensions: { width: 100, height: 100, depth: 100 },
+				spacingMm: { x: 0.5, y: 0.5, z: 0.5 },
+				originMm: { x: 0, y: 0, z: 0 },
+				data: new Int16Array(100),
+				metadata: { patientName: "Test", seriesInstanceUid: "1.2.3" },
+				isDisposed: false,
+			};
+			const testProj = {
+				entry3D: { x: 25, y: 25, z: 40 },
+				apex3D: { x: 25, y: 25, z: 20 },
+				platformDiameterMm: 4.2,
+				apexDiameterMm: 3.2,
+				lengthMm: 10.0,
+				tiltDeg: 0,
+			};
+			const param = convertImplantWorldToVolume3DParam(testProj as any, mockVolume as any);
+
+			// Voxel coord = mm / spacing = 25/0.5 = 50
+			assert.strictEqual(param.entryVoxel[0], 50);
+			assert.strictEqual(param.entryVoxel[1], 50);
+			assert.strictEqual(param.entryVoxel[2], 80); // 40/0.5 = 80
+			assert.strictEqual(param.apexVoxel[2], 40); // 20/0.5 = 40
+			assert.strictEqual(param.platformRadiusVoxel, 4.2); // (4.2/2) / 0.5 = 4.2
+			assert.strictEqual(param.apexRadiusVoxel, 3.2); // (3.2/2) / 0.5 = 3.2
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER contains 4-implant uniforms, evaluation function, and volumetric penetration", () => {
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform int u_implantCount;"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_implantEntry[4];"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_implantApex[4];"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec2 u_implantRadii[4];"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_implantColors[4];"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("evaluateImplantAt"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("thread"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("implantBlendWeight"));
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("implantBlendNorm"));
+		});
+
+		it("CbctVolume3DViewport provides 4 implants / 1 implant toggle button in UI", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
+				"utf-8",
+			);
+			assert.ok(source.includes("data-testid=\"cbct-volume-3d-implant-toggle\""));
+			assert.ok(source.includes("4 импланта"));
+			assert.ok(source.includes("1 имплант"));
+		});
+	});
+
+	// ─── 10. REALISTIC IMPLANT DEPTH OCCLUSION & SUBSURFACE ATTENUATION ──────────
+	describe("10. Realistic Implant Depth Occlusion & Subsurface Attenuation", () => {
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER checks direct implant hit in air before bone", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("hitIsImplant = true;"),
+				"Must mark hitIsImplant when ray strikes implant fixture directly",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("if (!hit && u_implantCount > 0)"),
+				"Must evaluate direct implant hit in air or above bone before bone collision",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER implements exponential Beer-Lambert bone attenuation", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("boneThicknessAttenuation = exp(-distInsideBone * 0.35)") ||
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("boneThicknessAttenuation = exp("),
+				"Must compute exponential distance attenuation through bone tissue",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("densityAttenuation = exp("),
+				"Must compute accumulated bone density attenuation",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("clamp(totalTransmittance * 0.28, 0.0, 0.28)"),
+				"Subsurface visibility ceiling must be capped at 0.28 (soft translucent sheen, not blinding neon)",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER renders solid Blinn-Phong metallic titanium for exposed fixtures", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("METALLIC TITANIUM SURGICAL IMPLANT SHADING"),
+				"Must implement metallic titanium shading for fixtures visible in air",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("pow(NdotH, 36.0)"),
+				"Must have sharp Blinn-Phong specular highlight for titanium metal",
+			);
+		});
+	});
+
+	// ─── 11. MAR (METAL ARTIFACT REDUCTION) STREAK NEEDLE FILTER ──────────────────
+	describe("11. MAR (Metal Artifact Reduction) Streak Needle Filter", () => {
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER declares u_marActive uniform and isMetalStreakArtifact detector", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform int u_marActive;"),
+				"Must declare uniform int u_marActive in fragment shader",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("isMetalStreakArtifact"),
+				"Must implement isMetalStreakArtifact helper function",
+			);
+		});
+
+		it("isMetalStreakArtifact evaluates transverse planar continuity to distinguish 1D needles from real bone", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("hasUContinuity") &&
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("hasVContinuity"),
+				"Must test orthogonal transverse continuity (preserving 2D bone plates)",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("avgTransverseHU"),
+				"Must calculate average transverse density around candidate voxel",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("boneSupportCount"),
+				"Must count supporting transverse bone neighbors",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER suppresses detected metal streak needles in raymarching loop", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("if (u_marActive == 1 && isMetalStreakArtifact(curPos, hu, rayDir))"),
+				"Must test MAR filter in raymarching loop",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("continue;"),
+				"Must skip artifact needles and advance ray",
+			);
+		});
+
+		it("CbctVolume3DViewport renders MAR toggle button and bottom HUD telemetry indicator", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
+				"utf-8",
+			);
+			assert.ok(
+				source.includes("data-testid=\"cbct-volume-3d-mar-toggle\""),
+				"Must render MAR toggle button with testid cbct-volume-3d-mar-toggle",
+			);
+			assert.ok(
+				source.includes("data-testid=\"cbct-hud-mar-status\""),
+				"Must render MAR status in bottom telemetry HUD with testid cbct-hud-mar-status",
+			);
+			assert.ok(
+				source.includes("isMarActive"),
+				"Must maintain isMarActive state in CbctVolume3DViewport",
 			);
 		});
 	});

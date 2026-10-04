@@ -2,8 +2,7 @@
  * networkShield.ts — Enterprise Network Shield & SOCKS5/HTTPS Proxy Router for AI & Speech Bridges.
  *
  * SQUAD BETA INVARIANTS:
- * 1. Centralized proxy resolution: evaluates USE_PROXY, GLOBAL_LLM_PROXY_URL, PROXY_URL, HTTPS_PROXY, HTTP_PROXY.
- * 2. Fallback SOCKS5 standard: defaults to socks5://dente_proxy:DenteSecureSocks2026!@62.84.100.97:1080 when proxy is enabled.
+ * 2. Fallback SOCKS5 standard: evaluates configured SOCKS5 proxy when enabled.
  * 3. WebSocket Proxy Agent: provides robust http.Agent / https.Agent wrapping via SocksClient (SOCKS4/5) and HTTP CONNECT (HTTP/HTTPS) with TLS upgrade.
  * 4. Credential Shielding: sanitizes and masks proxy credentials in all telemetry and diagnostics logs.
  * 5. Undici & Fetch integration: seamless dispatcher and proxied fetch for REST & WebSocket streaming.

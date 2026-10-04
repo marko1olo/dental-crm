@@ -4,6 +4,8 @@ import {
 	AlertTriangle,
 	Check,
 	ChevronRight,
+	ChevronDown,
+	Sparkles,
 	FileText,
 	Receipt,
 	ShieldAlert,
@@ -205,8 +207,13 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 		);
 	}
 
-	const isNerveDanger = displayNerveClearanceMm !== null && displayNerveClearanceMm < 2.0;
-	const isNerveWarning = displayNerveClearanceMm !== null && displayNerveClearanceMm >= 2.0 && displayNerveClearanceMm < 3.5;
+	const isNerveDanger =
+		nerveSafetyStatus === "danger" ||
+		(displayNerveClearanceMm !== null && displayNerveClearanceMm < 0.5);
+	const isNerveWarning =
+		!isNerveDanger &&
+		(nerveSafetyStatus === "warning" ||
+			(displayNerveClearanceMm !== null && displayNerveClearanceMm < 2.0));
 	const platformColor = IMPLANT_PLATFORM_COLORS[selectedDiameterMm]?.hex ?? "#10b981";
 
 	return (
@@ -335,31 +342,19 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 
 				{/* Bottom-Right Quadrant: Surgeon Planning Station */}
 				<div
-					className="flex flex-col min-h-0 min-w-0 w-full h-full relative rounded-md overflow-y-auto border border-amber-500/50 bg-zinc-950 p-2.5 gap-2 shadow-xl"
+					className="flex flex-col min-h-0 min-w-0 w-full h-full relative rounded-md overflow-y-auto border border-amber-500/50 bg-zinc-950 p-2 gap-1.5 shadow-xl"
 					data-testid="cbct-implant-surgeon-station-panel"
 				>
-					{/* Header: Title & Nerve Safety Clearance */}
+					{/* Header: Title & Implant Spec */}
 					<div className="flex items-center justify-between border-b border-zinc-800 pb-1.5">
 						<div className="flex items-center gap-1.5">
 							<DentalImplant className="w-4 h-4 text-amber-400" />
 							<h3 className="text-xs font-bold text-zinc-100">Станция хирурга-имплантолога</h3>
 						</div>
-						<div className="flex items-center gap-1">
-							<span
-								className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border ${
-									isNerveDanger
-										? "bg-rose-950/80 text-rose-300 border-rose-500/80 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
-										: isNerveWarning
-											? "bg-amber-950/80 text-amber-300 border-amber-500/80"
-											: "bg-emerald-950/80 text-emerald-300 border-emerald-500/80"
-								}`}
-								data-testid="cbct-implant-nerve-safety-badge"
-							>
-								{isNerveDanger ? <ShieldAlert className="w-3 h-3 text-rose-400" /> : <ShieldCheck className="w-3 h-3 text-emerald-400" />}
-								<span data-testid="cbct-implant-nerve-clearance-badge">
-									Нерв: {displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "—"}
-								</span>
-							</span>
+						<div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono">
+							<span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: platformColor }} />
+							<span className="text-zinc-200 font-bold">{selectedBrand.toUpperCase()}</span>
+							<span className="text-zinc-400">Ø{selectedDiameterMm.toFixed(1)} × L{selectedLengthMm.toFixed(1)} мм</span>
 						</div>
 					</div>
 
@@ -517,217 +512,8 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 						</div>
 					</div>
 
-					{/* 3-Level Ridge Measurement (W2, W4, W6, H) */}
-					<div
-						className="p-2 rounded-lg bg-zinc-900/90 border border-amber-500/30 flex flex-col gap-1.5"
-						data-testid="cbct-zakharov-ridge-automation"
-					>
-						<div className="flex items-center justify-between text-xs">
-							<span className="font-bold text-zinc-300 flex items-center gap-1">
-								<Activity className="w-3.5 h-3.5 text-amber-400" />
-								<span>Морфометрия гребня (W2 / W4 / W6 / H):</span>
-								{!ridgeWidths.isDetected && (
-									<span className="text-[9px] text-zinc-500 font-normal ml-0.5 font-mono" title="Анатомическая модель гребня">
-										(модель)
-									</span>
-								)}
-							</span>
-							<div className="flex items-center gap-1">
-								<button
-									type="button"
-									onClick={() => setEdentulousTooth(26)}
-									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
-										edentulousTooth === 26
-											? "bg-amber-950/70 text-amber-200 border-amber-500/50 shadow-xs"
-											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"
-									}`}
-									data-testid="cbct-ridge-tooth-26-btn"
-								>
-									#26
-								</button>
-								<button
-									type="button"
-									onClick={() => setEdentulousTooth(27)}
-									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
-										edentulousTooth === 27
-											? "bg-amber-950/70 text-amber-200 border-amber-500/50 shadow-xs"
-											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"
-									}`}
-									data-testid="cbct-ridge-tooth-27-btn"
-								>
-									#27
-								</button>
-								{activeCrossSection?.nearestToothFdi && activeCrossSection.nearestToothFdi !== "26" && activeCrossSection.nearestToothFdi !== "27" && (
-									<button
-										type="button"
-										onClick={() => {
-											const num = Number.parseInt(activeCrossSection.nearestToothFdi!, 10);
-											if (!Number.isNaN(num)) setEdentulousTooth(num as any);
-										}}
-										className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border transition-colors cursor-pointer ${
-											edentulousTooth === Number.parseInt(activeCrossSection.nearestToothFdi!, 10)
-												? "bg-amber-950/70 text-amber-200 border-amber-500/50 shadow-xs"
-												: "bg-zinc-800 text-cyan-300 border-cyan-500/40 hover:text-zinc-200"
-										}`}
-										data-testid="cbct-ridge-current-tooth-btn"
-									>
-										#{activeCrossSection.nearestToothFdi}
-									</button>
-								)}
-							</div>
-						</div>
-
-						{/* 4 Chips: H, W2, W4, W6 */}
-						<div className="grid grid-cols-4 gap-1 text-[11px] font-mono text-center" data-testid="cbct-ridge-measurements-badge">
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Доступная высота до канала или синуса">
-								<span className="text-[9px] text-zinc-500 block uppercase">H (высота)</span>
-								<span className="font-bold text-amber-300">{ridgeWidths.h.toFixed(1)} мм</span>
-							</div>
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Ширина гребня на глубине 2 мм ниже вершины">
-								<span className="text-[9px] text-zinc-500 block uppercase">W2 (-2мм)</span>
-								<span className="font-bold text-cyan-300">{ridgeWidths.w2.toFixed(1)} мм</span>
-							</div>
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Ширина гребня на глубине 4 мм ниже вершины" data-testid="cbct-ridge-width-w4">
-								<span className="text-[9px] text-zinc-500 block uppercase">W4 (-4мм)</span>
-								<span className="font-bold text-emerald-300">{ridgeWidths.w4.toFixed(1)} мм</span>
-							</div>
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Базальная ширина на глубине 6 мм ниже вершины">
-								<span className="text-[9px] text-zinc-500 block uppercase">W6 (-6мм)</span>
-								<span className="font-bold text-purple-300">{ridgeWidths.w6.toFixed(1)} мм</span>
-							</div>
-						</div>
-
-						{/* Clinical Adequacy & Protocol Verdict */}
-						<div className="text-[10px] text-zinc-400 flex items-center justify-between pt-0.5">
-							<span className="truncate">
-								{ridgeWidths.w2 < selectedDiameterMm + 3.0 ? (
-									<span className="text-amber-400 font-bold">
-										Дефицит ширины W2 (+{(selectedDiameterMm + 3.0 - ridgeWidths.w2).toFixed(1)} мм НКР)
-									</span>
-								) : ridgeWidths.h < selectedLengthMm + 2.0 ? (
-									<span className="text-rose-400 font-bold">
-										Дефицит высоты H (требуется синус-лифтинг)
-									</span>
-								) : (
-									<span className="text-emerald-400 font-bold">Параметры гребня достаточны</span>
-								)}
-							</span>
-							<div className="flex items-center gap-1">
-								<button
-									type="button"
-									onClick={() => setIsEditing043((prev) => !prev)}
-									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
-										isEditing043
-											? "bg-cyan-950 text-cyan-300 border-cyan-500"
-											: "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
-									}`}
-									data-testid="cbct-ridge-edit-043-toggle-btn"
-								>
-									{isEditing043 ? "Свернуть" : "Текст протокола"}
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										exportZakharovRidgeTo043Emr(edentulousData, resolvedPatient, handleExportToEmr);
-										if (isEditing043 && edited043Text) {
-											try {
-												window.dispatchEvent(
-													new CustomEvent("dente-apply-soap-protocol", {
-														detail: {
-															soap: {
-																statusLocalis: edited043Text,
-																treatmentDescription: "",
-																diagnosisIcd10: "K08.1",
-																diagnosisTooth: String(edentulousTooth),
-															},
-															immediate: true,
-															mode: "smart_append",
-														},
-													}),
-												);
-											} catch {}
-										}
-									}}
-									className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
-									data-testid="cbct-ridge-export-043-btn"
-								>
-									<FileText className="w-3 h-3 text-amber-400" />
-									<span>В медкарту</span>
-								</button>
-							</div>
-						</div>
-
-						{/* Inline Doctor Editor for Form 043/u */}
-						{isEditing043 && (
-							<div className="flex flex-col gap-1 pt-1 border-t border-zinc-800">
-								<div className="flex items-center justify-between text-[10px] text-zinc-400">
-									<span>Редактирование протокола ({resolvedPatient}):</span>
-									<span className="text-zinc-500 font-mono">{edited043Text.length} симв.</span>
-								</div>
-								<textarea
-									value={edited043Text}
-									onChange={(e) => setEdited043Text(e.target.value)}
-									rows={3}
-									className="w-full rounded bg-zinc-950 p-1.5 text-[10px] font-mono text-zinc-200 border border-zinc-700 focus:border-amber-400 focus:outline-none resize-none leading-relaxed"
-									placeholder="Текст клинического протокола для медкарты..."
-									data-testid="cbct-ridge-043-textarea"
-								/>
-							</div>
-						)}
-					</div>
-
-					{/* Carl Misch Bone Quality Profile (D1-D5) */}
-					<div
-						className="p-2 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-1.5"
-						data-testid="cbct-implant-live-telemetry-hud"
-					>
-						<div className="flex items-center justify-between text-xs">
-							<span className="font-bold text-zinc-300 flex items-center gap-1">
-								<BoneDensityMisch className="w-3.5 h-3.5 text-amber-400" />
-								<span>Плотность кости (Misch):</span>
-							</span>
-							<span
-								className="font-mono font-bold text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40"
-								data-testid="cbct-implant-misch-class-badge"
-							>
-								{displayBoneClass} ({displayMeanHU !== null ? `${Math.round(displayMeanHU)} HU` : "—"})
-							</span>
-						</div>
-
-						{/* 3-Zone HU Density Profile (Crest 20% | Core 60% | Apex 20%) */}
-						<div className="grid grid-cols-3 gap-1 pt-0.5 text-[10px]" data-testid="cbct-implant-3zone-density">
-							<div className="flex flex-col bg-zinc-950 rounded px-1.5 py-0.5 border border-zinc-800" title="Кортикальный гребень">
-								<span className="text-zinc-500 text-[9px] uppercase">Гребень 20%</span>
-								<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-crest-hu">
-									{displayMeanHU !== null ? `${Math.round(displayMeanHU * 1.15)} HU` : "—"}
-								</span>
-							</div>
-							<div className="flex flex-col bg-zinc-950 rounded px-1.5 py-0.5 border border-zinc-800" title="Губчатое тело">
-								<span className="text-zinc-500 text-[9px] uppercase">Тело 60%</span>
-								<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-core-hu">
-									{displayMeanHU !== null ? `${Math.round(displayMeanHU * 0.95)} HU` : "—"}
-								</span>
-							</div>
-							<div className="flex flex-col bg-zinc-950 rounded px-1.5 py-0.5 border border-zinc-800" title="Базальный апекс">
-								<span className="text-zinc-500 text-[9px] uppercase">Апекс 20%</span>
-								<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-apex-hu">
-									{displayMeanHU !== null ? `${Math.round(displayMeanHU * 1.05)} HU` : "—"}
-								</span>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 pt-1 border-t border-zinc-800">
-							<div>
-								Торк: <span className="font-mono text-zinc-200 font-bold">{displayTorque}</span>
-							</div>
-							<div>
-								Протокол: <span data-testid="cbct-implant-drilling-protocol" className="font-mono text-zinc-200 font-bold">{displayDrillingProtocol}</span>
-							</div>
-						</div>
-					</div>
-
-					{/* 1-Click Action Buttons for Doctor */}
-					<div className="grid grid-cols-2 gap-1.5 mt-auto pt-1">
+					{/* 1-Click Action Buttons for Doctor (Directly Accessible) */}
+					<div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-zinc-800/80">
 						{handleExportToPlan && (
 							<button
 								type="button"
@@ -754,6 +540,232 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 							</button>
 						)}
 					</div>
+
+					{/* Collapsible Secondary Assistant: Carl Misch + IAN Nerve + Morphometry (Doctor Autonomy Mandate 8e) */}
+					<details
+						className="group rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs transition-all overflow-hidden mt-1"
+						data-testid="cbct-implant-ai-assistant-accordion"
+					>
+						<summary className="flex items-center justify-between p-2 cursor-pointer select-none hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 list-none">
+							<div className="flex items-center gap-1.5 font-medium">
+								<Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+								<span>Клинический ИИ-ассистент</span>
+								<span className="text-[10px] text-zinc-500 font-normal">(опционально)</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-[10px] font-mono text-zinc-400">
+									{displayBoneClass} · {displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "—"}
+								</span>
+								<ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-open:rotate-180 transition-transform shrink-0" />
+							</div>
+						</summary>
+
+						<div className="p-2 pt-1 flex flex-col gap-2 border-t border-zinc-800/60">
+							{/* IAN Nerve Clearance Card (Subtle, Doctor-Autonomy Compliant) */}
+							<div className="flex items-center justify-between p-1.5 rounded bg-zinc-950 border border-zinc-800/80 text-[11px]">
+								<span className="text-zinc-400">Зазор до нижнечелюстного канала (IAN):</span>
+								<span
+									className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 border ${
+										isNerveDanger
+											? "bg-rose-950/60 text-rose-300 border-rose-500/50"
+											: isNerveWarning
+												? "bg-amber-950/60 text-amber-300 border-amber-500/50"
+												: "bg-emerald-950/60 text-emerald-300 border-emerald-500/50"
+									}`}
+									data-testid="cbct-implant-nerve-safety-badge"
+								>
+									{isNerveDanger ? (
+										<ShieldAlert className="w-3 h-3 text-rose-400" />
+									) : isNerveWarning ? (
+										<AlertTriangle className="w-3 h-3 text-amber-400" />
+									) : (
+										<ShieldCheck className="w-3 h-3 text-emerald-400" />
+									)}
+									<span data-testid="cbct-implant-nerve-clearance-badge">
+										Нерв: {displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "—"}
+									</span>
+								</span>
+							</div>
+
+							{/* Carl Misch Bone Quality Profile (D1-D5) */}
+							<div
+								className="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800/80 flex flex-col gap-1.5"
+								data-testid="cbct-implant-live-telemetry-hud"
+							>
+								<div className="flex items-center justify-between text-xs">
+									<span className="font-bold text-zinc-300 flex items-center gap-1">
+										<BoneDensityMisch className="w-3.5 h-3.5 text-amber-400" />
+										<span>Плотность кости (Misch):</span>
+									</span>
+									<span
+										className="font-mono font-bold text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40"
+										data-testid="cbct-implant-misch-class-badge"
+									>
+										{displayBoneClass} ({displayMeanHU !== null ? `${Math.round(displayMeanHU)} HU` : "—"})
+									</span>
+								</div>
+
+								{/* 3-Zone HU Density Profile (Crest 20% | Core 60% | Apex 20%) */}
+								<div className="grid grid-cols-3 gap-1 pt-0.5 text-[10px]" data-testid="cbct-implant-3zone-density">
+									<div className="flex flex-col bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800" title="Кортикальный гребень">
+										<span className="text-zinc-500 text-[9px] uppercase">Гребень 20%</span>
+										<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-crest-hu">
+											{displayMeanHU !== null ? `${Math.round(displayMeanHU * 1.15)} HU` : "—"}
+										</span>
+									</div>
+									<div className="flex flex-col bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800" title="Губчатое тело">
+										<span className="text-zinc-500 text-[9px] uppercase">Тело 60%</span>
+										<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-core-hu">
+											{displayMeanHU !== null ? `${Math.round(displayMeanHU * 0.95)} HU` : "—"}
+										</span>
+									</div>
+									<div className="flex flex-col bg-zinc-900 rounded px-1.5 py-0.5 border border-zinc-800" title="Базальный апекс">
+										<span className="text-zinc-500 text-[9px] uppercase">Апекс 20%</span>
+										<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-apex-hu">
+											{displayMeanHU !== null ? `${Math.round(displayMeanHU * 1.05)} HU` : "—"}
+										</span>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 pt-1 border-t border-zinc-800">
+									<div>
+										Торк: <span className="font-mono text-zinc-200 font-bold">{displayTorque}</span>
+									</div>
+									<div>
+										Протокол: <span data-testid="cbct-implant-drilling-protocol" className="font-mono text-zinc-200 font-bold">{displayDrillingProtocol}</span>
+									</div>
+								</div>
+							</div>
+
+							{/* 3-Level Ridge Measurement (W2, W4, W6, H) */}
+							<div
+								className="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800/80 flex flex-col gap-1.5"
+								data-testid="cbct-zakharov-ridge-automation"
+							>
+								<div className="flex items-center justify-between text-xs">
+									<span className="font-bold text-zinc-300 flex items-center gap-1">
+										<Activity className="w-3.5 h-3.5 text-amber-400" />
+										<span>Морфометрия гребня (W2 / W4 / W6 / H):</span>
+										{!ridgeWidths.isDetected && (
+											<span className="text-[9px] text-zinc-500 font-normal ml-0.5 font-mono" title="Анатомическая модель гребня">
+												(модель)
+											</span>
+										)}
+									</span>
+									<div className="flex items-center gap-1">
+										<button
+											type="button"
+											onClick={() => setEdentulousTooth(26)}
+											className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+												edentulousTooth === 26 ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"
+											}`}
+											data-testid="cbct-ridge-tooth-26-btn"
+										>#26</button>
+										<button
+											type="button"
+											onClick={() => setEdentulousTooth(27)}
+											className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+												edentulousTooth === 27 ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"
+											}`}
+											data-testid="cbct-ridge-tooth-27-btn"
+										>#27</button>
+										{activeCrossSection?.nearestToothFdi && activeCrossSection.nearestToothFdi !== "26" && activeCrossSection.nearestToothFdi !== "27" && (
+											<button
+												type="button"
+												onClick={() => {
+													const num = Number.parseInt(activeCrossSection.nearestToothFdi!, 10);
+													if (!Number.isNaN(num)) setEdentulousTooth(num as any);
+												}}
+												className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border transition-colors cursor-pointer ${
+													edentulousTooth === Number.parseInt(activeCrossSection.nearestToothFdi!, 10) ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-cyan-300 border-cyan-500/40 hover:text-zinc-200"
+												}`}
+												data-testid="cbct-ridge-current-tooth-btn"
+											>#{activeCrossSection.nearestToothFdi}</button>
+										)}
+									</div>
+								</div>
+
+								{/* 4 Chips: H, W2, W4, W6 */}
+								<div className="grid grid-cols-4 gap-1 text-[11px] font-mono text-center" data-testid="cbct-ridge-measurements-badge">
+									<div className="p-1 rounded bg-zinc-900 border border-zinc-800" title="Доступная высота до канала или синуса">
+										<span className="text-[9px] text-zinc-500 block uppercase">H (высота)</span>
+										<span className="font-bold text-amber-300">{ridgeWidths.h.toFixed(1)} мм</span>
+									</div>
+									<div className="p-1 rounded bg-zinc-900 border border-zinc-800" title="Ширина гребня на глубине 2 мм ниже вершины">
+										<span className="text-[9px] text-zinc-500 block uppercase">W2 (-2мм)</span>
+										<span className="font-bold text-cyan-300">{ridgeWidths.w2.toFixed(1)} мм</span>
+									</div>
+									<div className="p-1 rounded bg-zinc-900 border border-zinc-800" title="Ширина гребня на глубине 4 мм ниже вершины" data-testid="cbct-ridge-width-w4">
+										<span className="text-[9px] text-zinc-500 block uppercase">W4 (-4мм)</span>
+										<span className="font-bold text-emerald-300">{ridgeWidths.w4.toFixed(1)} мм</span>
+									</div>
+									<div className="p-1 rounded bg-zinc-900 border border-zinc-800" title="Базальная ширина на глубине 6 мм ниже вершины">
+										<span className="text-[9px] text-zinc-500 block uppercase">W6 (-6мм)</span>
+										<span className="font-bold text-purple-300">{ridgeWidths.w6.toFixed(1)} мм</span>
+									</div>
+								</div>
+
+								{/* Clinical Adequacy & Protocol Verdict */}
+								<div className="text-[10px] text-zinc-400 flex items-center justify-between pt-0.5">
+									<span className="truncate">
+										{ridgeWidths.w2 < selectedDiameterMm + 3.0 ? (
+											<span className="text-amber-400 font-bold">Дефицит ширины W2 (+{(selectedDiameterMm + 3.0 - ridgeWidths.w2).toFixed(1)} мм НКР)</span>
+										) : ridgeWidths.h < selectedLengthMm + 2.0 ? (
+											<span className="text-rose-400 font-bold">Дефицит высоты H (требуется синус-лифтинг)</span>
+										) : (
+											<span className="text-emerald-400 font-bold">Параметры гребня достаточны</span>
+										)}
+									</span>
+									<div className="flex items-center gap-1">
+										<button
+											type="button"
+											onClick={() => setIsEditing043((prev) => !prev)}
+											className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+												isEditing043 ? "bg-cyan-950 text-cyan-300 border-cyan-500" : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+											}`}
+											data-testid="cbct-ridge-edit-043-toggle-btn"
+										>{isEditing043 ? "Свернуть" : "Текст протокола"}</button>
+										<button
+											type="button"
+											onClick={() => {
+												exportZakharovRidgeTo043Emr(edentulousData, resolvedPatient, handleExportToEmr);
+												if (isEditing043 && edited043Text) {
+													try {
+														window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+															detail: { soap: { statusLocalis: edited043Text, treatmentDescription: "", diagnosisIcd10: "K08.1", diagnosisTooth: String(edentulousTooth) }, immediate: true, mode: "smart_append" },
+														}));
+													} catch {}
+												}
+											}}
+											className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+											data-testid="cbct-ridge-export-043-btn"
+										>
+											<FileText className="w-3 h-3 text-amber-400" />
+											<span>В медкарту</span>
+										</button>
+									</div>
+								</div>
+
+								{/* Inline Doctor Editor for Form 043/u */}
+								{isEditing043 && (
+									<div className="flex flex-col gap-1 pt-1 border-t border-zinc-800">
+										<div className="flex items-center justify-between text-[10px] text-zinc-400">
+											<span>Редактирование протокола ({resolvedPatient}):</span>
+											<span className="text-zinc-500 font-mono">{edited043Text.length} симв.</span>
+										</div>
+										<textarea
+											value={edited043Text}
+											onChange={(e) => setEdited043Text(e.target.value)}
+											rows={3}
+											className="w-full rounded bg-zinc-950 p-1.5 text-[10px] font-mono text-zinc-200 border border-zinc-700 focus:border-amber-400 focus:outline-none resize-none leading-relaxed"
+											placeholder="Текст клинического протокола для медкарты..."
+											data-testid="cbct-ridge-043-textarea"
+										/>
+									</div>
+								)}
+							</div>
+						</div>
+					</details>
 				</div>
 			</div>
 		</div>

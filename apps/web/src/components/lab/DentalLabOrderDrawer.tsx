@@ -12,6 +12,8 @@ import {
 	calculateZtlWageFinancials,
 	createDentalLabOrderRecord,
 	toIsoDate,
+	CANONICAL_LAB_WORK_TYPES,
+	getVitaShadeHex,
 } from "./dentalLabOrderEngine";
 import { money } from "../../AppHelpers";
 
@@ -248,24 +250,35 @@ export function DentalLabOrderDrawer({
 							/>
 						</div>
 						<div>
-							<label className="font-semibold block mb-1">Вид конструкции (6 видов):</label>
+							<label className="font-semibold block mb-1">Вид конструкции / наряда ЗТЛ:</label>
 							<select
 								value={formConstruction}
 								onChange={(e) => {
 									const val = e.target.value as DentalLabConstructionType;
 									setFormConstruction(val);
 									const d = DENTAL_LAB_CONSTRUCTIONS[val];
-									setFormPatientPriceRub(d.defaultPatientPriceKopecks / 100);
-									setFormZtlCostRub(d.defaultZtlCostKopecks / 100);
+									if (d) {
+										setFormPatientPriceRub(d.defaultPatientPriceKopecks / 100);
+										setFormZtlCostRub(d.defaultZtlCostKopecks / 100);
+									}
 								}}
 								className="w-full h-8 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none"
 								data-testid="form-construction-select"
 							>
-								{Object.values(DENTAL_LAB_CONSTRUCTIONS).map((c) => (
-									<option key={c.id} value={c.id}>
-										{c.nameRu}
-									</option>
-								))}
+								<optgroup label="Клинические группы (6 основных видов)">
+									{Object.values(DENTAL_LAB_CONSTRUCTIONS).map((c) => (
+										<option key={c.id} value={c.id}>
+											{c.nameRu}
+										</option>
+									))}
+								</optgroup>
+								<optgroup label="Каталог 17 изделий ЗТЛ (DentTechnician)">
+									{CANONICAL_LAB_WORK_TYPES.map((wt) => (
+										<option key={wt.id} value={wt.id}>
+											[{wt.id.toUpperCase()}] {wt.titleRu}
+										</option>
+									))}
+								</optgroup>
 							</select>
 						</div>
 					</div>
@@ -273,8 +286,15 @@ export function DentalLabOrderDrawer({
 					{/* Расцветка VITA, Прозрачность, Культя */}
 					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] space-y-2">
 						<div className="font-bold text-xs text-[var(--ink,#0f172a)] flex items-center justify-between">
-							<span>Расцветка VITA и оптические параметры</span>
-							<span className="font-mono text-teal-700 dark:text-teal-300">{formVitaShade}</span>
+							<span className="flex items-center gap-1.5">
+								<span>Расцветка VITA и оптические параметры</span>
+								<span
+									className="inline-block w-3.5 h-3.5 rounded-full border border-black/20 shadow-2xs"
+									style={{ backgroundColor: getVitaShadeHex(formVitaShade) || "#EBD7BB" }}
+									title={`Эталонный цвет VITA: ${formVitaShade}`}
+								/>
+							</span>
+							<span className="font-mono font-bold text-teal-700 dark:text-teal-300">{formVitaShade}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2">
 							<div>

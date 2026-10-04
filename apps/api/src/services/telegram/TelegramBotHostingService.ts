@@ -24,6 +24,12 @@ import {
 	sendTelegramTextMessage,
 	type TelegramTransportResult,
 } from "../../telegramTransport.js";
+import { TelegramTokenVault } from "./TelegramTokenVault.js";
+import {
+	TelegramBotBillingService,
+	TELEGRAM_BOT_SAAS_TIERS,
+	type TelegramBotSaasTierId,
+} from "./TelegramBotBillingService.js";
 
 export type TelegramBotMeResult = {
 	ok: boolean;
@@ -470,8 +476,11 @@ export class TelegramBotHostingService {
 	}): Promise<{ notifiedCount: number; errors: string[] }> {
 		const errors: string[] = [];
 
-		// 1. Получаем конфигурацию бота для организации
-		let botToken = params.botTokenOverride || process.env.DENTE_TELEGRAM_BOT_TOKEN;
+		// 1. Получаем конфигурацию бота для организации через Token Vault
+		let botToken = params.botTokenOverride
+			? TelegramTokenVault.resolveOperationalToken(params.botTokenOverride, params.organizationId)
+			: process.env.DENTE_TELEGRAM_BOT_TOKEN;
+
 		if (!botToken) {
 			const [config] = await db
 				.select({
@@ -488,8 +497,10 @@ export class TelegramBotHostingService {
 				.limit(1);
 
 			if (config?.tokenSecretRef) {
-				botToken =
-					process.env[config.tokenSecretRef] || config.tokenSecretRef;
+				botToken = TelegramTokenVault.resolveOperationalToken(
+					config.tokenSecretRef,
+					params.organizationId,
+				);
 			}
 		}
 

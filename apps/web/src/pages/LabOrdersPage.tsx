@@ -203,29 +203,81 @@ export function LabOrdersPage() {
 		fetchOrders();
 	}, [fetchOrders, labOrderStatuses]);
 
+	useEffect(() => {
+		const handleOpenFromEvent = (e: Event) => {
+			const detail = (e as CustomEvent<DentalLabOrderData>).detail;
+			let draft = detail;
+			if (!draft && typeof window !== "undefined") {
+				try {
+					const raw = window.localStorage.getItem("dente_pending_lab_order_draft");
+					if (raw) draft = JSON.parse(raw);
+				} catch {
+					// ignore
+				}
+			}
+			if (draft) {
+				setSelectedOrderForEdit(draft);
+				setModalInitialTab("main");
+				setIsModalOpen(true);
+			}
+		};
+		window.addEventListener("dente-open-lab-order", handleOpenFromEvent);
+		try {
+			const raw = typeof window !== "undefined" ? window.localStorage.getItem("dente_pending_lab_order_draft") : null;
+			if (raw) {
+				const draft = JSON.parse(raw);
+				if (draft) {
+					setSelectedOrderForEdit(draft);
+					setModalInitialTab("main");
+					setIsModalOpen(true);
+					window.localStorage.removeItem("dente_pending_lab_order_draft");
+				}
+			}
+		} catch {
+			// ignore
+		}
+		return () => window.removeEventListener("dente-open-lab-order", handleOpenFromEvent);
+	}, []);
+
 	// Канонические 5 клинических этапов для фильтрации реестра ЗТЛ
 	const CANONICAL_STAGE_FILTERS = useMemo(() => [
 		{ id: "all", label: "Все", statuses: [] as string[] },
-		{ id: "impression_scan", label: "Слепок", statuses: ["sent", "impression_scan", "draft"] },
-		{ id: "framework_fitting", label: "Каркас", statuses: ["in_progress", "framework_fitting"] },
-		{ id: "ceramic_layering", label: "Керамика", statuses: ["fitting", "refitting", "ceramic_layering"] },
+		{ id: "impression_scan", label: "Слепок", statuses: ["sent", "sent_to_lab", "impression_scan", "draft"] },
+		{ id: "framework_fitting", label: "Каркас", statuses: ["in_progress", "framework_fitting", "cad_modeling", "milling_casting", "milling_framework"] },
+		{ id: "ceramic_layering", label: "Керамика", statuses: ["fitting", "refitting", "ceramic_layering", "try_in"] },
 		{ id: "ready_in_clinic", label: "Готовая в клинике", statuses: ["ready", "ready_in_clinic", "shipped", "delivered", "received"] },
-		{ id: "patient_fixation", label: "Зафиксировано", statuses: ["completed", "patient_fixation", "delivered_completed"] },
+		{ id: "patient_fixation", label: "Зафиксировано", statuses: ["completed", "patient_fixation", "delivered_completed", "delivered_to_patient", "installed_completed"] },
 	], []);
+
+	// Подсчет количества заказов по каноническим этапам ЗТЛ для Apple HIG Segmented Control
+	const stageCounts = useMemo(() => {
+		const counts: Record<string, number> = {
+			all: orders.length,
+		};
+		for (const f of CANONICAL_STAGE_FILTERS) {
+			if (f.id === "all") continue;
+			counts[f.id] = orders.filter((o) => {
+				const status = o.status || "";
+				const stage = (o as any).stage || (o as any).currentStage || "";
+				const hasStatus = f.statuses.includes(status);
+				const hasStage = f.id === stage || f.statuses.includes(stage);
+				return hasStatus || hasStage;
+			}).length;
+		}
+		return counts;
+	}, [orders, CANONICAL_STAGE_FILTERS]);
 
 	// Filtered Orders List
 	const filteredOrders = useMemo(() => {
 		const matchedFilter = CANONICAL_STAGE_FILTERS.find((f) => f.id === statusFilter);
 
 		return orders.filter((o) => {
-			if (statusFilter !== "all") {
-				if (matchedFilter && matchedFilter.statuses.length > 0) {
-					const hasStatus = matchedFilter.statuses.includes(o.status || "");
-					const hasStage = (o as any).stage === statusFilter || (o as any).currentStage === statusFilter;
-					if (!hasStatus && !hasStage) return false;
-				} else if (o.status !== statusFilter) {
-					return false;
-				}
+			if (statusFilter !== "all" && matchedFilter) {
+				const status = o.status || "";
+				const stage = (o as any).stage || (o as any).currentStage || "";
+				const hasStatus = matchedFilter.statuses.includes(status);
+				const hasStage = matchedFilter.id === stage || matchedFilter.statuses.includes(stage);
+				if (!hasStatus && !hasStage) return false;
 			}
 			if (doctorFilter !== "all" && o.doctorId !== doctorFilter && o.doctorName !== doctorFilter) return false;
 
@@ -539,16 +591,16 @@ export function LabOrdersPage() {
 	};
 
 	return (
-		<div className="p-4 space-y-3 max-w-7xl mx-auto">
+		<div className="w-full max-w-full space-y-2.5 overflow-hidden">
 			{/* ─── ТУЛБАР ЗТЛ: СТРОГО 1 СТРОКА 32-36PX (МАНДАТЫ 8d п. 2, 8p, ЗАКОН ХИКА) ─── */}
-			<div className="h-9 min-h-[36px] flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs">
+			<div className="h-9 min-h-[36px] flex items-center justify-between gap-2 px-2.5 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs text-xs w-full max-w-full overflow-hidden">
 				{/* Left: Brand Icon + Title + Inline Metrics */}
 				<div className="flex items-center gap-2 shrink-0">
 					<FlaskConical className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">
-						ЗТЛ (CAD/CAM)
+						ЗТЛ
 					</span>
-					<div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[11px] text-[var(--muted)] border border-[var(--line)] font-mono">
+					<div className="hidden 2xl:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[11px] text-[var(--muted)] border border-[var(--line)] font-mono">
 						<span>Всего: <strong className="text-[var(--ink)]">{metrics.total}</strong></span>
 						<span>•</span>
 						<span>В работе: <strong className="text-blue-600 dark:text-blue-400">{metrics.inProgress}</strong></span>
@@ -564,22 +616,22 @@ export function LabOrdersPage() {
 				</div>
 
 				{/* Center: Search & Filters */}
-				<div className="flex items-center gap-1.5 flex-1 max-w-xl">
-					<div className="relative flex-1">
+				<div className="flex items-center gap-1.5 flex-1 min-w-0 max-w-md">
+					<div className="relative w-44 sm:w-56 shrink-0">
 						<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
 						<input
 							type="text"
-							placeholder="Поиск (пациент, врач, зуб)..."
+							placeholder="Поиск..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							style={{ paddingLeft: "32px" }}
+							style={{ paddingLeft: "28px" }}
 							className="w-full h-7.5 min-h-[30px] pr-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
 						/>
 					</div>
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0"
+						className="h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0 max-w-[130px]"
 						aria-label="Фильтр по статусу"
 					>
 						<option value="all">Все статусы</option>
@@ -593,7 +645,7 @@ export function LabOrdersPage() {
 					<select
 						value={doctorFilter}
 						onChange={(e) => setDoctorFilter(e.target.value)}
-						className="hidden lg:block h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0"
+						className="hidden 2xl:block h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer shrink-0 max-w-[130px]"
 						aria-label="Фильтр по врачу"
 					>
 						<option value="all">Все врачи</option>
@@ -608,7 +660,7 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={fetchOrders}
-						className="h-7.5 w-7.5 min-h-[30px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
+						className="h-7.5 w-7.5 min-h-[30px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer shrink-0"
 						title="Обновить список"
 					>
 						<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
@@ -617,72 +669,90 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={() => setIsTrackerModalOpen(true)}
-						className="h-7.5 min-h-[30px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-bold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
-						title="Десктопный трекер нарядов ЗТЛ (дедлайны, VITA, себестоимость)"
+						className="h-7.5 min-h-[30px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-semibold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0"
+						title="Десктопный трекер нарядов ЗТЛ"
 						data-testid="lab-orders-open-tracker-btn"
 					>
 						<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-						<span>Трекер ЗТЛ</span>
+						<span>Трекер</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="h-7.5 min-h-[30px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+						style={{ backgroundColor: "#0d9488", color: "#ffffff" }}
+						className="h-7.5 min-h-[30px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="lab-orders-new-order-btn"
 					>
 						<Plus className="w-3.5 h-3.5" />
-						<span>Наряд ЗТЛ</span>
+						<span>+ Наряд</span>
 					</button>
 				</div>
 			</div>
 
-			{/* ─── ПАНЕЛЬ ФИЛЬТРАЦИИ 5 ЭТАПОВ И ПЕРЕКЛЮЧАТЕЛЬ СЕТКИ 32PX (МАНДАТЫ 8d, 8p) ─── */}
-			<div className="flex items-center justify-between gap-2 overflow-x-auto pb-0.5">
-				<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] text-xs shrink-0">
+			{/* ─── ПРЕМИАЛЬНЫЙ APPLE/MAC HIG SEGMENTED CONTROL: 5 ЭТАПОВ И ВИД РЕЕСТРА (МАНДАТЫ 8d, 8p) ─── */}
+			<div className="flex items-center justify-between gap-2 overflow-x-auto py-0.5 w-full max-w-full">
+				<nav
+					className="inline-flex items-center gap-1 p-0.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] shadow-2xs text-xs shrink-0 select-none"
+					aria-label="Фильтры этапов нарядов ЗТЛ"
+				>
 					{CANONICAL_STAGE_FILTERS.map((f) => {
 						const isActive = statusFilter === f.id;
+						const count = stageCounts[f.id] ?? 0;
 						return (
 							<button
 								key={f.id}
 								type="button"
 								onClick={() => setStatusFilter(f.id)}
-								className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+								style={isActive ? { backgroundColor: "#0d9488", color: "#ffffff" } : undefined}
+								className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap inline-flex items-center gap-1.5 ${
 									isActive
-										? "bg-teal-600 text-white shadow-2xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+										? "bg-teal-600 text-white shadow-sm font-bold"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] bg-transparent font-medium"
 								}`}
 								data-testid={`lab-status-filter-${f.id}`}
 							>
 								<span>{f.label}</span>
+								<span
+									className={`inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold rounded-full transition-colors ${
+										isActive
+											? "bg-white/25 text-white"
+											: "bg-[var(--line)] text-[var(--muted)]"
+									}`}
+									style={isActive ? { backgroundColor: "rgba(255, 255, 255, 0.25)", color: "#ffffff" } : undefined}
+								>
+									{count}
+								</span>
 							</button>
 						);
 					})}
-				</div>
+				</nav>
 
-				{/* Переключатель вида: Плотная таблица 32px / Карточки */}
-				<div className="hidden sm:flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] text-xs shrink-0">
+				{/* Переключатель вида: Таблица / Карточки */}
+				<div className="inline-flex items-center gap-1 p-0.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] shadow-2xs text-xs shrink-0 select-none">
 					<button
 						type="button"
 						onClick={() => setViewMode("table")}
-						className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+						style={viewMode === "table" ? { backgroundColor: "#0d9488", color: "#ffffff" } : undefined}
+						className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1 ${
 							viewMode === "table"
-								? "bg-teal-600 text-white shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+								? "bg-teal-600 text-white shadow-sm font-bold"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] bg-transparent font-medium"
 						}`}
 						title="Плотный десктопный реестр (32px)"
 						data-testid="lab-orders-view-table-btn"
 					>
 						<LayoutList className="w-3.5 h-3.5" />
-						<span>Таблица 32px</span>
+						<span>Таблица</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setViewMode("cards")}
-						className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+						style={viewMode === "cards" ? { backgroundColor: "#0d9488", color: "#ffffff" } : undefined}
+						className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1 ${
 							viewMode === "cards"
-								? "bg-teal-600 text-white shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+								? "bg-teal-600 text-white shadow-sm font-bold"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] bg-transparent font-medium"
 						}`}
 						title="Вид карточками"
 						data-testid="lab-orders-view-cards-btn"
@@ -727,19 +797,19 @@ export function LabOrdersPage() {
 				</div>
 			) : viewMode === "table" ? (
 				/* ─── ПЛОТНЫЙ ДЕСКТОПНЫЙ РЕЕСТР: СТРОГО СЕТКА 32PX (МАНДАТЫ 8d п. 2, 8p) ─── */
-				<div className="overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs" data-testid="lab-orders-table-container">
-					<table className="w-full text-left border-collapse" data-testid="lab-orders-dense-table">
+				<div className="w-full max-w-full overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs" data-testid="lab-orders-table-container">
+					<table className="w-full min-w-[900px] text-left border-collapse" data-testid="lab-orders-dense-table">
 						<thead>
 							<tr className="h-8 min-h-[32px] max-h-[32px] bg-[var(--paper-soft)] border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] select-none">
-								<th className="px-3 py-0 whitespace-nowrap">№ Наряда</th>
-								<th className="px-3 py-0 whitespace-nowrap">Пациент</th>
-								<th className="px-2 py-0 whitespace-nowrap text-center">Зуб (FDI)</th>
-								<th className="px-3 py-0 whitespace-nowrap">Конструкция / Материал</th>
-								<th className="px-2 py-0 whitespace-nowrap">Цвет VITA</th>
-								<th className="px-3 py-0 whitespace-nowrap">Статус ЗТЛ</th>
-								<th className="px-3 py-0 whitespace-nowrap">Срок (Дедлайн)</th>
-								<th className="px-3 py-0 whitespace-nowrap font-mono text-right">Себестоимость</th>
-								<th className="px-3 py-0 whitespace-nowrap text-right">Действия</th>
+								<th className="px-2.5 py-0 whitespace-nowrap">№ Наряда</th>
+								<th className="px-2.5 py-0 whitespace-nowrap">Пациент</th>
+								<th className="px-2 py-0 whitespace-nowrap text-center">Зуб</th>
+								<th className="px-2.5 py-0 whitespace-nowrap">Конструкция / Материал</th>
+								<th className="px-2 py-0 whitespace-nowrap">VITA</th>
+								<th className="px-2.5 py-0 whitespace-nowrap">Статус ЗТЛ</th>
+								<th className="px-2.5 py-0 whitespace-nowrap">Срок</th>
+								<th className="px-2.5 py-0 whitespace-nowrap font-mono text-right">Стоимость</th>
+								<th className="px-2.5 py-0 whitespace-nowrap text-right">Действия</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line)]">
@@ -756,15 +826,15 @@ export function LabOrdersPage() {
 										data-testid={`lab-order-table-row-${order.id}`}
 									>
 										{/* 1. Номер наряда */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle">
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle">
 											<span className="font-mono font-bold text-[11px] text-teal-600 dark:text-teal-400">
 												{orderNumDisplay}
 											</span>
 										</td>
 
 										{/* 2. Пациент */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle">
-											<span className="font-bold truncate max-w-[170px] inline-block align-middle" title={order.patientName}>
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle">
+											<span className="font-bold truncate max-w-[140px] inline-block align-middle" title={order.patientName}>
 												{order.patientName || "Пациент"}
 											</span>
 										</td>
@@ -777,15 +847,15 @@ export function LabOrdersPage() {
 										</td>
 
 										{/* 4. Конструкция & Материал */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle">
-											<span className="truncate max-w-[190px] inline-block align-middle text-[11px] text-[var(--ink)]" title={`${order.constructionType || ""} ${order.material || ""}`}>
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle">
+											<span className="truncate max-w-[160px] inline-block align-middle text-[11px] text-[var(--ink)]" title={`${order.constructionType || ""} ${order.material || ""}`}>
 												{formatLabConstructionTitle(order.constructionType, order.material ?? undefined)}
 											</span>
 										</td>
 
 										{/* 5. VITA */}
 										<td className="px-2 py-0 whitespace-nowrap align-middle">
-											<span className="inline-flex items-center gap-1.5 font-bold text-[11px]">
+											<span className="inline-flex items-center gap-1 font-bold text-[11px]">
 												<span
 													className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
 													style={{ backgroundColor: swatchBg }}
@@ -795,19 +865,19 @@ export function LabOrdersPage() {
 										</td>
 
 										{/* 6. Статус */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle">
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle">
 											{getStatusBadge(order.status)}
 										</td>
 
 										{/* 7. Дедлайн */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle">
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle">
 											<span className={`text-[11px] font-mono ${isOverdue ? "text-rose-600 font-bold" : "text-[var(--muted)]"}`}>
 												{order.dueDate ? new Date(order.dueDate).toLocaleDateString("ru-RU") : "—"}
 											</span>
 										</td>
 
 										{/* 8. Себестоимость / Пациент */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle font-mono font-bold text-xs text-right">
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle font-mono font-bold text-xs text-right">
 											{(order as any).isWarrantyRework || order.status === "refitting" || order.priceRub === 0 ? (
 												<span className="text-emerald-600 dark:text-emerald-400 font-bold" title="Гарантийная рекламация: 0 ₽ для пациента">
 													0 ₽ (Гарантия)
@@ -819,30 +889,30 @@ export function LabOrdersPage() {
 											)}
 										</td>
 
-										{/* 9. Действия (строго 28-32px) */}
-										<td className="px-3 py-0 whitespace-nowrap align-middle text-right">
+										{/* 9. Действия (строго 28-32px, компактные надписи без обрезания) */}
+										<td className="px-2.5 py-0 whitespace-nowrap align-middle text-right">
 											<div className="inline-flex items-center gap-1">
 												{isReady ? (
 													<button
 														type="button"
 														onClick={() => handleOpenReadyInClinicPrompt(order)}
-														className="h-7 min-h-[28px] px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
-														title="Работа готова в клинике! Записать пациента на примерку / фиксацию и отправить SMS / WhatsApp"
+														className="h-7 min-h-[28px] px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+														title="Работа готова в клинике! Записать пациента на прием"
 														data-testid={`lab-order-table-schedule-btn-${order.id}`}
 													>
 														<CalendarCheck className="w-3 h-3" />
-														<span>Запись/SMS</span>
+														<span>Запись</span>
 													</button>
 												) : (
 													<button
 														type="button"
 														onClick={() => handleOpenPrintOrder(order)}
-														className="h-7 min-h-[28px] px-2 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+														className="h-7 min-h-[28px] px-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
 														title="Распечатать наряд в зуботехническую лабораторию"
 														data-testid={`lab-order-table-print-btn-${order.id}`}
 													>
 														<Printer className="w-3 h-3" />
-														<span>Печать наряда</span>
+														<span>Печать</span>
 													</button>
 												)}
 

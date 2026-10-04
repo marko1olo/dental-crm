@@ -247,6 +247,9 @@ describe("Dental Hygiene Indices Engine (OHI-S, PMA, KPI Leus)", () => {
 			teethWithFurcationCount: 1,
 			totalMeasuredSitesCount: 192,
 			assessedTeethCount: 32,
+			totalTeethExamined: 32,
+			totalSitesProbed: 192,
+			riskCategory: "moderate" as const,
 		};
 
 		const followUp = {

@@ -357,7 +357,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 
 	describe("6. Statutory 804n Fallbacks & Cross-Referencing (Zero A16.07.000 Mocks)", () => {
 		it("fallback matching yields statutory A16.07.002 code instead of synthetic A16.07.000", () => {
-			const result = matchOrder804nNomenclature("Неизвестная стоматологическая процедура");
+			const result = matchOrder804nNomenclature("Неизвестная стоматологическая процедура", "Неизвестная стоматологическая процедура");
 			assert.notStrictEqual(result.code804n, "A16.07.000", "Synthetic A16.07.000 mock must not be returned");
 			assert.strictEqual(result.code804n, "A16.07.002");
 			assert.strictEqual(result.category, "therapy");

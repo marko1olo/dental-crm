@@ -44,6 +44,7 @@ describe("loadAdditionalServerEnv", () => {
 		delete process.env.VAR3;
 		delete process.env.VAR4;
 
+		process.env.DENTE_ALLOW_TEST_ENV_FILES = "1";
 		process.cwd = () => TEST_DIR;
 	});
 

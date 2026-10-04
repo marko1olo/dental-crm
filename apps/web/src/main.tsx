@@ -33,6 +33,11 @@ const WaitingLoungeSignage = React.lazy(() =>
 		default: m.WaitingLoungeSignage,
 	})),
 );
+const TelegramMiniAppView = React.lazy(() =>
+	import("./components/portal/telegramMiniApp/TelegramMiniAppView").then((m) => ({
+		default: m.TelegramMiniAppView,
+	})),
+);
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -114,7 +119,17 @@ if (typeof Node !== "undefined" && Node.prototype) {
  * своего заказа — статус коронки продолжал жить в телефонных звонках, при том
  * что оба серверных маршрута портала (apps/api/src/routes/lab.ts) давно готовы.
  */
-const publicPortalRoute = publicPortalRouteFromHash(window.location.hash);
+const publicPortalRoute = publicPortalRouteFromHash(
+	typeof window !== "undefined" &&
+		(window.location.pathname === "/tgapp" ||
+			window.location.pathname.startsWith("/tgapp/") ||
+			window.location.pathname === "/portal/tgapp" ||
+			window.location.pathname.startsWith("/portal/tgapp/"))
+		? window.location.pathname + window.location.search
+		: typeof window !== "undefined"
+			? window.location.hash
+			: "",
+);
 // biome-ignore lint/style/noNonNullAssertion: automated suppression
 const appRoot = createRoot(document.getElementById("root")!);
 
@@ -179,6 +194,11 @@ if (publicPortalRoute) {
 								}}
 							/>
 						</div>
+					) : publicPortalRoute.kind === "tgapp" ? (
+						<TelegramMiniAppView
+							organizationId={publicPortalRoute.organizationId ?? null}
+							patientId={publicPortalRoute.patientId ?? null}
+						/>
 					) : publicPortalRoute.kind === "budget" ? (
 						<PatientBudgetSignView token={publicPortalRoute.token} />
 					) : (

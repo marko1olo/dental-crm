@@ -268,7 +268,7 @@ describe("Orthodontic TRG 1-Click Clinical Presets & Autonomy (Mandates 8e, 8k)"
 		);
 	});
 
-	it("renders 1-click 'В карту 043/у' button and triggers Form 043/u export without blocking dialogs", () => {
+	it("renders 1-click 'В медицинскую карту' button and triggers Form 043/u export without blocking dialogs", () => {
 		let insertedText = "";
 		const html = renderToString(
 			createElement(CephalometricAnalysisModal, {
@@ -286,11 +286,11 @@ describe("Orthodontic TRG 1-Click Clinical Presets & Autonomy (Mandates 8e, 8k)"
 		// Button exists in header
 		assert.ok(
 			html.includes('data-testid="btn-insert-ceph-protocol"'),
-			"Contains 'В карту 043/у' button in header",
+			"Contains 'В медицинскую карту' button in header",
 		);
 		assert.ok(
-			html.includes("В карту 043/у"),
-			"Displays 'В карту 043/у' text",
+			html.includes("В медицинскую карту"),
+			"Displays 'В медицинскую карту' text",
 		);
 
 		// In report tab, full action button is rendered
@@ -308,7 +308,7 @@ describe("Orthodontic TRG 1-Click Clinical Presets & Autonomy (Mandates 8e, 8k)"
 			}),
 		);
 		assert.ok(
-			htmlReport.includes("Вставить в ортодонтическую карту Формы 043/у"),
+			htmlReport.includes("Вставить в ортодонтическую карту"),
 			"Displays full action button in report tab",
 		);
 

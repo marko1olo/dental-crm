@@ -11,7 +11,7 @@
  */
 
 import assert from "node:assert";
-import { describe, test, beforeEach } from "node:test";
+import { describe, test, beforeEach, afterEach } from "node:test";
 import {
 	GeminiProviderAdapter,
 	DEFAULT_GEMINI_MODEL_CASCADE,
@@ -31,6 +31,11 @@ import {
 import { createDefaultLlmProvider } from "./copilotService.js";
 import type { ProviderMessage } from "./types.js";
 import type { LlmStreamChunk } from "./omniGatewayTypes.js";
+
+const SYNTHETIC_GEMINI_KEYS = Array.from(
+	{ length: 10 },
+	(_, i) => `AIzaSyFakeSyntheticTestKeyMock${String(i).padStart(3, "0")}abcd`,
+);
 
 function createMockSseResponse(sseChunks: string[], status = 200, statusText = "OK"): Response {
 	const encoder = new TextEncoder();
@@ -52,6 +57,19 @@ function createMockSseResponse(sseChunks: string[], status = 200, statusText = "
 
 describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 	beforeEach(() => {
+		clearSpeechKeyHealthMemoryForTests();
+		resetProviderKeyCooldowns("gemini");
+		process.env.GEMINI_API_KEYS = SYNTHETIC_GEMINI_KEYS.join(",");
+		delete process.env.GEMINI_API_KEY;
+		delete process.env.GOOGLE_API_KEY;
+		delete process.env.GOOGLE_API_KEYS;
+	});
+
+	afterEach(() => {
+		delete process.env.GEMINI_API_KEYS;
+		delete process.env.GEMINI_API_KEY;
+		delete process.env.GOOGLE_API_KEY;
+		delete process.env.GOOGLE_API_KEYS;
 		clearSpeechKeyHealthMemoryForTests();
 		resetProviderKeyCooldowns("gemini");
 	});
@@ -123,10 +141,10 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		assert.ok(candidates.length >= 3, "Need at least 3 keys for swap test");
 
 		const keyAttempts: string[] = [];
-		const mockFetch = async (input: RequestInfo | URL): Promise<Response> => {
+		const mockFetch = async (input: string | URL | Request): Promise<Response> => {
 			const urlStr = String(input);
 			const keyMatch = urlStr.match(/key=([^&]+)/);
-			const apiKey = keyMatch ? decodeURIComponent(keyMatch[1]) : "";
+			const apiKey = keyMatch && keyMatch[1] ? decodeURIComponent(keyMatch[1]) : "";
 			keyAttempts.push(apiKey);
 
 			// First 2 keys return 429 (Resource Exhausted)
@@ -192,10 +210,10 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		const adapter = new GeminiProviderAdapter();
 		const modelsAttempted: string[] = [];
 
-		const mockFetch = async (input: RequestInfo | URL): Promise<Response> => {
+		const mockFetch = async (input: string | URL | Request): Promise<Response> => {
 			const urlStr = String(input);
 			const modelMatch = urlStr.match(/models\/([^:]+):streamGenerateContent/);
-			const model = modelMatch ? modelMatch[1] : "unknown";
+			const model = modelMatch && modelMatch[1] ? modelMatch[1] : "unknown";
 			modelsAttempted.push(model);
 
 			// gemini-3.5-flash-lite returns 503 (The model is overloaded)
@@ -273,7 +291,6 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		const copilotProvider = createDefaultLlmProvider();
 
 		// Simulate all LLM providers throwing errors / offline
-		const previousEnv = { ...process.env };
 		// Clear API keys to simulate zero active external credentials
 		delete process.env.GEMINI_API_KEY;
 		delete process.env.GOOGLE_API_KEY;
@@ -284,33 +301,28 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		delete process.env.OPENAI_API_KEY;
 		delete process.env.OPENAI_API_KEYS;
 
-		try {
-			const events: any[] = [];
-			const stream = copilotProvider.complete({
-				system: "Выбранный зуб (FDI): #46. Активный пациент: (ID: 00000000-0000-7000-8000-000000000001)",
-				messages: [
-					{
-						role: "user",
-						content: "Глубокий кариес 46 зуба, рассчитай 3-tier план лечения",
-					},
-				],
-			});
+		const events: any[] = [];
+		const stream = copilotProvider.complete({
+			system: "Выбранный зуб (FDI): #46. Активный пациент: (ID: 00000000-0000-7000-8000-000000000001)",
+			messages: [
+				{
+					role: "user",
+					content: "Глубокий кариес 46 зуба, рассчитай 3-tier план лечения",
+				},
+			],
+		});
 
-			for await (const event of stream) {
-				events.push(event);
-			}
-
-			// Must yield deterministic plan without crashing or throwing
-			assert.ok(events.length > 0, "SemanticRouter must generate offline fallback events");
-
-			const toolEvent = events.find((e) => e.type === "tool_use");
-			assert.ok(toolEvent, "Must emit tool_use event for treatment plan");
-			assert.strictEqual(toolEvent.name, "clinical.suggest_treatment_plan");
-			assert.strictEqual(toolEvent.input.tooth, 46);
-			assert.strictEqual(toolEvent.input.primaryDiagnosis, "Caries");
-		} finally {
-			// Restore env
-			process.env = previousEnv;
+		for await (const event of stream) {
+			events.push(event);
 		}
+
+		// Must yield deterministic plan without crashing or throwing
+		assert.ok(events.length > 0, "SemanticRouter must generate offline fallback events");
+
+		const toolEvent = events.find((e) => e.type === "tool_use");
+		assert.ok(toolEvent, "Must emit tool_use event for treatment plan");
+		assert.strictEqual(toolEvent.name, "clinical.suggest_treatment_plan");
+		assert.strictEqual(toolEvent.input.tooth, 46);
+		assert.strictEqual(toolEvent.input.primaryDiagnosis, "Caries");
 	});
 });

@@ -1,85 +1,22 @@
 {
   "version": 1,
-  "savedAt": "2026-10-03T09:34:44.792Z",
+  "savedAt": "2026-10-04T18:09:07.247Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020054213,
+      "successes": 10,
+      "lastUsedAt": 1791137347239,
       "lastStatusCode": null,
       "lastError": null
-    },
-    "google_speech:45dd3fb17bd3": {
-      "cooldownUntil": 1791020652485,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1791020052485,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live WS closed abnormally (code: 1008, reason: Policy violation or key invalid)"
-    },
-    "google_speech:542f1132ccf8": {
-      "cooldownUntil": 1791020112528,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1791020052528,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
-    },
-    "google_speech:6c77bd48f901": {
-      "cooldownUntil": 1791020112572,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1791020052572,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
-    },
-    "google_speech:7256ee58f8c6": {
-      "cooldownUntil": 1791020112608,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1791020052608,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
-    },
-    "google_speech:ce349ef84ee9": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020052716,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "google_speech:ee19a8772084": {
-      "cooldownUntil": 1791020112429,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 0,
-      "lastUsedAt": 1791020052429,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live API Error [429]: Quota exceeded for project"
-    },
-    "google_speech:ff1bd86d98d3": {
-      "cooldownUntil": 0,
-      "failures": 1,
-      "consecutiveFailures": 1,
-      "successes": 2,
-      "lastUsedAt": 1791020052667,
-      "lastStatusCode": null,
-      "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
     },
     "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1791020084225,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1791137827246,
+      "failures": 10,
+      "consecutiveFailures": 10,
       "successes": 0,
-      "lastUsedAt": 1791020054225,
+      "lastUsedAt": 1791137347246,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -87,8 +24,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020054197,
+      "successes": 10,
+      "lastUsedAt": 1791137347228,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -96,53 +33,35 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020054159,
+      "successes": 10,
+      "lastUsedAt": 1791137347195,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1791020084190,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1791137827221,
+      "failures": 10,
+      "consecutiveFailures": 10,
       "successes": 0,
-      "lastUsedAt": 1791020054190,
+      "lastUsedAt": 1791137347221,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1791020084205,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1791137827235,
+      "failures": 10,
+      "consecutiveFailures": 10,
       "successes": 0,
-      "lastUsedAt": 1791020054205,
+      "lastUsedAt": 1791137347235,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
-    "groq:83177d60e957": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020045872,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "groq:caf98f576295": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 2,
-      "lastUsedAt": 1791020084791,
-      "lastStatusCode": null,
-      "lastError": null
-    },
     "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1791020114207,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1791138307237,
+      "failures": 9,
+      "consecutiveFailures": 9,
       "successes": 0,
-      "lastUsedAt": 1791020054207,
+      "lastUsedAt": 1791137347237,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -150,8 +69,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020054193,
+      "successes": 10,
+      "lastUsedAt": 1791137347224,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -159,8 +78,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1791020054200,
+      "successes": 10,
+      "lastUsedAt": 1791137347231,
       "lastStatusCode": null,
       "lastError": null
     }

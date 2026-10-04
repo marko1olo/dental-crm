@@ -757,7 +757,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 
 						<div>
 							<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
-								Шаблон графика (StomX / DentalPRO):
+								Шаблон графика:
 							</label>
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
 								{[

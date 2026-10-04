@@ -11,6 +11,7 @@ export const appViews = [
 	"analytics",
 	"communications",
 	"inventory",
+	"lab",
 	"scanner",
 	"leads",
 	"settings",
@@ -30,6 +31,7 @@ export const viewLabels: Record<AppView, string> = {
 	analytics: "Аналитика",
 	communications: "Связь",
 	inventory: "Склад",
+	lab: "Лаборатория",
 	scanner: "Стерилизация",
 	leads: "Обращения",
 	settings: "Настройки",
@@ -47,6 +49,7 @@ export const viewHints: Record<AppView, string> = {
 	analytics: "отчеты и воронки",
 	communications: "сообщения и задачи",
 	inventory: "материалы, остатки и сроки",
+	lab: "наряды ЗТЛ, коронки и слепки",
 	scanner: "журналы ПСО, автоклава, отходов",
 	leads: "звонки и заявки до записи",
 	settings: "клиника, импорт и доступы",
@@ -65,6 +68,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"analytics",
 			"communications",
 			"inventory",
+			"lab",
 			"scanner",
 		];
 	}
@@ -77,6 +81,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"documents",
 			"communications",
 			"inventory",
+			"lab",
 			"scanner",
 		];
 	}
@@ -89,6 +94,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"analytics",
 			"communications",
 			"inventory",
+			"lab",
 			"leads",
 			"settings",
 		];
@@ -100,6 +106,8 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"finance",
 			"analytics",
 			"communications",
+			"inventory",
+			"lab",
 			"leads",
 			"settings",
 		];
@@ -147,8 +155,8 @@ export function viewFromHash(): AppView {
 	const view = parts[0]?.toLowerCase() ?? "";
 	if (view === "sanpin") return "scanner";
 	if (view === "cmo") return "analytics";
-	if (view === "lab") return "inventory";
 	if (view === "telephony") return "communications";
+	if (view === "lab-orders") return "lab";
 	if (view === "radiology" || view === "ct" || view === "cbct") return "imaging";
 	return (appViews as readonly string[]).includes(view)
 		? (view as AppView)

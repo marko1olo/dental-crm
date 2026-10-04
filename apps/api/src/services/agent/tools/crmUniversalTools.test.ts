@@ -98,7 +98,7 @@ describe("1. Patient Management Tools (Mandate 8l & 8e)", () => {
 		assert.strictEqual(result.success, true);
 		assert.strictEqual(result.query, "Смирнов");
 		assert.ok(result.patients.length > 0);
-		assert.ok(result.patients[0].fullName.includes("Смирнов"));
+		assert.ok(result.patients[0]?.fullName.includes("Смирнов"));
 	});
 
 	test("create_patient registers patient with 1-click physiological norm defaults (Mandate 8e)", async () => {
@@ -212,10 +212,10 @@ describe("3. Odontogram & Teeth Chart Tools (Mandate 8l & 8e)", () => {
 
 		assert.strictEqual(result.success, true);
 		assert.strictEqual(result.totalUpdated, 2);
-		assert.ok(result.updatedTeeth[0].fdiFormatted.includes("46"));
-		assert.strictEqual(result.updatedTeeth[0].statusCode, "C");
-		assert.ok(result.updatedTeeth[1].fdiFormatted.includes("26"));
-		assert.strictEqual(result.updatedTeeth[1].statusCode, "Pl");
+		assert.ok(result.updatedTeeth[0]!.fdiFormatted.includes("46"));
+		assert.strictEqual(result.updatedTeeth[0]!.statusCode, "C");
+		assert.ok(result.updatedTeeth[1]!.fdiFormatted.includes("26"));
+		assert.strictEqual(result.updatedTeeth[1]!.statusCode, "Pl");
 	});
 
 	test("get_teeth_chart returns full 32-tooth formula with default norm (Mandate 8e)", async () => {
@@ -226,9 +226,9 @@ describe("3. Odontogram & Teeth Chart Tools (Mandate 8l & 8e)", () => {
 
 		assert.strictEqual(result.success, true);
 		assert.strictEqual(result.totalTeeth, 32);
-		assert.strictEqual(result.teeth[11].state, "Norm");
-		assert.ok(result.teeth[46].fdiFormatted.includes("46"));
-		assert.ok(result.teeth[48].fdiFormatted.includes("48"));
+		assert.strictEqual((result.teeth as any)[11]?.state, "Norm");
+		assert.ok((result.teeth as any)[46]?.fdiFormatted.includes("46"));
+		assert.ok((result.teeth as any)[48]?.fdiFormatted.includes("48"));
 	});
 });
 
@@ -406,8 +406,8 @@ describe("7. Warehouse Inventory & Materials (Mandate 8l & 8n)", () => {
 
 		assert.strictEqual(result.success, true);
 		assert.strictEqual(result.items.length, 3);
-		assert.strictEqual(result.items[0].name, "Артикаин");
-		assert.strictEqual(result.items[0].available, true); // Mandate 8n: supplies available to doctor
+		assert.strictEqual(result.items[0]!.name, "Артикаин");
+		assert.strictEqual(result.items[0]!.available, true); // Mandate 8n: supplies available to doctor
 		assert.strictEqual(result.allAvailable, true); // Mandate 8n: never blocks clinical surgery
 		assert.ok(result.summaryRu.length > 0);
 	});
@@ -457,7 +457,7 @@ describe("8. Dental Lab (ЗТЛ) Tools (Mandate 8l & 8e)", () => {
 
 		assert.strictEqual(result.success, true);
 		assert.ok(result.ordersCount > 0);
-		assert.strictEqual(result.orders[0].orderId, "lab_test_01");
+		assert.strictEqual(result.orders[0]!.orderId, "lab_test_01");
 	});
 });
 

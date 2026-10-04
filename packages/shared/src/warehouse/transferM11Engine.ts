@@ -20,7 +20,7 @@ import { z } from "zod";
 import { type Kopecks, formatKopecksRu } from "../utils/money.js";
 import { generateTransferM11Id } from "../utils/idGenerators.js";
 import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
-import { escapeHtml } from "../communications/messageTemplates.js";
+import { escapeTemplateMacroHtml as escapeHtml } from "../communications/messageTemplates.js";
 
 // ─── 1. STATUS & DATA SCHEMAS ──────────────────────────────────────────────────
 

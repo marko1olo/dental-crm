@@ -104,7 +104,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 							Паспорт имплантата DENTE · Гарантийный сертификат
 						</h4>
 						<span className="text-[11px] font-mono text-[var(--muted)] truncate block">
-							{data.passportId || "IMP-PASSPORT-BLANK"} · Форма 043/у Минздрав РФ
+							{data.passportId || "IMP-PASSPORT-BLANK"} · Медицинская карта пациента
 						</span>
 					</div>
 				</div>

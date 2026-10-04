@@ -311,7 +311,7 @@ export function ChairShiftPopover({
         className="mt-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer min-h-[44px]"
         style={{ minHeight: "44px" }}
         data-testid={`chair-view-substitute-btn-${chair.id}`}
-        title="Быстрая подмена дежурного врача на кресле в 1 клик (StomX Parity)"
+        title="Быстрая подмена дежурного врача на кресле в 1 клик"
       >
         <UserCheck size={14} className="text-amber-500 shrink-0" />
         <span>Подменить врача...</span>

@@ -1,11 +1,8 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import {
   AlertCircle,
-  AlertTriangle,
-  Calendar,
   Check,
   Clock,
-  FlaskConical,
   Search,
   User,
   UserPlus,
@@ -75,94 +72,6 @@ export function AppointmentModalPatientSection({
         appointment.status === "no_show") && (
         <div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
           <WaitlistMatchesBlock appointmentId={appointment.id} compact />
-        </div>
-      )}
-
-      {/* Active Dental Lab Orders & Due Date Sync */}
-      {activeLabOrders.length > 0 && (
-        <div className="space-y-2">
-          {activeLabOrders.map((lo: any) => {
-            const hasDue = Boolean(lo.dueDate);
-            const dueDateObj = hasDue ? new Date(lo.dueDate) : null;
-            const isBeforeLab =
-              dueDateObj &&
-              startsAtLocal &&
-              new Date(startsAtLocal).getTime() < dueDateObj.getTime();
-
-            return (
-              <div
-                key={lo.id}
-                className={`p-2.5 sm:p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-xs transition-all ${
-                  isBeforeLab
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-300"
-                    : "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/20 text-[var(--ink)]"
-                }`}
-              >
-                <div className="space-y-0.5">
-                  <div className="font-bold flex items-center gap-1.5 flex-wrap">
-                    <FlaskConical className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-                    <span>
-                      Наряд ЗТЛ: {lo.material || "Ортопедия"} (Зуб{" "}
-                      {lo.toothFdi || "—"})
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded bg-[var(--paper)] text-[10px] font-bold uppercase border border-[var(--line)]">
-                      {lo.status}
-                    </span>
-                  </div>
-                  {hasDue && (
-                    <div className="text-[11px] text-[var(--muted)]">
-                      Срок готовности:{" "}
-                      <strong className="text-[var(--ink)]">
-                        {dueDateObj?.toLocaleDateString("ru-RU")}
-                      </strong>
-                      {isBeforeLab && (
-                        <span className="text-amber-600 dark:text-amber-400 font-bold ml-1 inline-flex items-center gap-1">
-                          <AlertTriangle size={11} className="shrink-0" />
-                          <span>(прием назначен раньше готовности ЗТЛ)</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {hasDue && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (dueDateObj) {
-                        const year = dueDateObj.getFullYear();
-                        const month = String(
-                          dueDateObj.getMonth() + 1,
-                        ).padStart(2, "0");
-                        const day = String(dueDateObj.getDate()).padStart(
-                          2,
-                          "0",
-                        );
-                        const timePart = startsAtLocal
-                          ? startsAtLocal.slice(11, 16)
-                          : "10:00";
-                        const newStart = `${year}-${month}-${day}T${timePart}`;
-                        setStartsAtLocal(newStart);
-
-                        const [hh, mm] = timePart.split(":").map(Number);
-                        const endHh = String(
-                          Math.min(23, (hh || 10) + 1),
-                        ).padStart(2, "0");
-                        setEndsAtLocal(
-                          `${year}-${month}-${day}T${endHh}:${String(mm || 0).padStart(2, "0")}`,
-                        );
-                      }
-                    }}
-                    className="h-8 min-h-[32px] px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs transition-all"
-                    title="Синхронизировать время приема со сроком готовности наряда ЗТЛ"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    На дату ЗТЛ
-                  </button>
-                )}
-              </div>
-            );
-          })}
         </div>
       )}
 

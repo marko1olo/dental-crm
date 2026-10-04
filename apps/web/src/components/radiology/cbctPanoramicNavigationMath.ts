@@ -251,7 +251,7 @@ export function findCrossSectionAndPositionByFdi(
 			const slice = crossSections[chosenIdx]!;
 			return {
 				crossSectionIdx: chosenIdx,
-				positionMm: { x: slice.centerPointMm.x, y: slice.centerPointMm.y, z: currentZMm },
+				positionMm: { x: slice.centerPointMm.x, y: slice.centerPointMm.y, z: anchor?.zMm ?? currentZMm },
 				nearestToothFdi: slice.nearestToothFdi,
 				found: true,
 			};
@@ -277,7 +277,7 @@ export function findCrossSectionAndPositionByFdi(
 		}
 		return {
 			crossSectionIdx: bestSliceIdx,
-			positionMm: { x: activeAnchor.positionMm.x, y: activeAnchor.positionMm.y, z: currentZMm },
+			positionMm: { x: activeAnchor.positionMm.x, y: activeAnchor.positionMm.y, z: activeAnchor.zMm ?? currentZMm },
 			nearestToothFdi: activeAnchor.toothFdi,
 			found: true,
 		};

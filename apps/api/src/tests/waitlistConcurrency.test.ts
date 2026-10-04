@@ -44,7 +44,7 @@ describe("Waitlist & Hot-Slot Concurrency Protection", () => {
 			assert.throws(
 				() => {
 					updateAppointment(targetAppt.id, {
-						patientId: patients[1]?.id || patients[0].id,
+						patientId: patients[1]?.id ?? patients[0]?.id ?? "00000000-0000-0000-0000-000000000001",
 						status: "planned",
 						expectedCurrentStatus: ["cancelled", "no_show"],
 						reason: "Посадка из листа ожидания (Администратор 2 - опоздал)",

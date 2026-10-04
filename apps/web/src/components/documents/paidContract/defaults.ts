@@ -6,7 +6,12 @@
 
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { calculatePaidContractGrandTotalKopecks } from "./money";
-import type { PaidContractData, PaidContractServiceItem } from "./types";
+import type {
+	PaidContractCustomerRequisites,
+	PaidContractData,
+	PaidContractRepresentativeRequisites,
+	PaidContractServiceItem,
+} from "./types";
 
 let paidContractSequenceCounter = 0;
 
@@ -16,6 +21,7 @@ let paidContractSequenceCounter = 0;
 export function createDefaultPaidContract(params: {
 	contractNumber?: string | undefined;
 	contractDate?: string | undefined;
+	city?: string | undefined;
 	patientFullName?: string | undefined;
 	patientBirthDate?: string | undefined;
 	patientPassport?: string | undefined;
@@ -23,6 +29,7 @@ export function createDefaultPaidContract(params: {
 	patientPhone?: string | undefined;
 	patientSnils?: string | undefined;
 	cardNumber?: string | undefined;
+	directorTitle?: string | undefined;
 	directorFullName?: string | undefined;
 	doctorFullName?: string | undefined;
 	doctorSpecialty?: string | undefined;
@@ -45,6 +52,8 @@ export function createDefaultPaidContract(params: {
 	totalAmountKopecks?: number | undefined;
 	serviceStart?: string | undefined;
 	serviceEndOrCondition?: string | undefined;
+	customer?: Partial<PaidContractCustomerRequisites> | undefined;
+	representative?: Partial<PaidContractRepresentativeRequisites> | undefined;
 }): PaidContractData {
 	const today = params.contractDate || new Date().toISOString().slice(0, 10);
 	const [year, month, day] = today.split("-");
@@ -106,38 +115,53 @@ export function createDefaultPaidContract(params: {
 	return {
 		contractNumber: params.contractNumber || `ДПМУ-${year || "2026"}-001`,
 		contractDate: formattedDate,
-		city: "г. Москва",
+		city: params.city || (isDemo ? "г. Москва" : "«___________»"),
 		clinic: {
 			fullName:
 				params.clinicFullName ||
-				"Общество с ограниченной ответственностью «Денте Стоматология»",
-			shortName: params.clinicShortName || "ООО «Денте»",
-			brandName: "ДЕНТЕ Клиника цифровой стоматологии",
+				(isDemo
+					? "Общество с ограниченной ответственностью «Денте Стоматология»"
+					: "Стоматологическая клиника"),
+			shortName: params.clinicShortName || (isDemo ? "ООО «Денте»" : "Клиника"),
+			brandName: isDemo ? "ДЕНТЕ Клиника цифровой стоматологии" : "",
 			legalAddress:
-				params.clinicLegalAddress || "119048, г. Москва, ул. Усачева, д. 22, стр. 1",
+				params.clinicLegalAddress ||
+				(isDemo
+					? "119048, г. Москва, ул. Усачева, д. 22, стр. 1"
+					: "«________________________________________»"),
 			actualAddress:
 				params.clinicActualAddress ||
 				params.clinicLegalAddress ||
-				"119048, г. Москва, ул. Усачева, д. 22, стр. 1 (Клиника стоматологии)",
-			inn: params.clinicInn || "7704123456",
-			kpp: params.clinicKpp || "770401001",
-			ogrn: params.clinicOgrn || "1207700123456",
+				(isDemo
+					? "119048, г. Москва, ул. Усачева, д. 22, стр. 1 (Клиника стоматологии)"
+					: "«________________________________________»"),
+			inn: params.clinicInn || (isDemo ? "7704123456" : "«______________»"),
+			kpp: params.clinicKpp || (isDemo ? "770401001" : ""),
+			ogrn: params.clinicOgrn || (isDemo ? "1207700123456" : "«________________»"),
 			licenseNumber:
-				params.clinicLicense || "Л041-01137-77/00584930 от 15.10.2021 г.",
-			licenseDate: "15.10.2021",
+				params.clinicLicense ||
+				(isDemo
+					? "Л041-01137-77/00584930 от 15.10.2021 г."
+					: "«________________________________________»"),
+			licenseDate: isDemo ? "15.10.2021" : "«___» _________ _____ г.",
 			licenseIssuer:
-				"Департамент здравоохранения города Москвы (бессрочно)",
+				isDemo
+					? "Департамент здравоохранения города Москвы (бессрочно)"
+					: "«________________________________________»",
 			bankName:
-				params.clinicBankName || "ПАО Сбербанк г. Москва",
-			bik: params.clinicBik || "044525225",
+				params.clinicBankName ||
+				(isDemo ? "ПАО Сбербанк г. Москва" : "«________________________________________»"),
+			bik: params.clinicBik || (isDemo ? "044525225" : "«_________»"),
 			checkingAccount:
-				params.clinicCheckingAccount || "40702810938000012345",
+				params.clinicCheckingAccount ||
+				(isDemo ? "40702810938000012345" : "«____________________»"),
 			correspondentAccount:
-				params.clinicCorrAccount || "30101810400000000225",
-			phone: params.clinicPhone || "+7 (495) 777-22-11",
-			email: "info@dente-clinic.ru",
-			website: "https://dente-clinic.ru",
-			directorTitle: "Генеральный директор",
+				params.clinicCorrAccount ||
+				(isDemo ? "30101810400000000225" : "«____________________»"),
+			phone: params.clinicPhone || (isDemo ? "+7 (495) 777-22-11" : "«____________________»"),
+			email: isDemo ? "info@dente-clinic.ru" : "",
+			website: isDemo ? "https://dente-clinic.ru" : "",
+			directorTitle: params.directorTitle || "Генеральный директор",
 			directorFullName:
 				params.directorFullName ||
 				(isDemo ? "Смирнов Алексей Викторович" : ""),
@@ -160,26 +184,29 @@ export function createDefaultPaidContract(params: {
 			cardNumber: params.cardNumber || "",
 		},
 		customer: {
-			isDifferentFromPatient: false,
-			fullName: "",
-			passportSeries: "",
-			passportNumber: "",
-			passportIssuedBy: "",
-			passportIssuedDate: "",
-			passportDepartmentCode: "",
-			registrationAddress: "",
-			phone: "",
+			isDifferentFromPatient: Boolean(params.customer?.isDifferentFromPatient),
+			fullName: params.customer?.fullName || "",
+			birthDate: params.customer?.birthDate || "",
+			passportSeries: params.customer?.passportSeries || "",
+			passportNumber: params.customer?.passportNumber || "",
+			passportIssuedBy: params.customer?.passportIssuedBy || "",
+			passportIssuedDate: params.customer?.passportIssuedDate || "",
+			passportDepartmentCode: params.customer?.passportDepartmentCode || "",
+			registrationAddress: params.customer?.registrationAddress || "",
+			phone: params.customer?.phone || "",
 		},
 		representative: {
-			hasRepresentative: false,
-			fullName: "",
-			passportSeries: "",
-			passportNumber: "",
-			passportIssuedBy: "",
-			passportIssuedDate: "",
-			passportDepartmentCode: "",
-			basisDocument: "",
-			phone: "",
+			hasRepresentative: Boolean(
+				params.representative?.hasRepresentative ?? params.representative?.fullName,
+			),
+			fullName: params.representative?.fullName || "",
+			passportSeries: params.representative?.passportSeries || "",
+			passportNumber: params.representative?.passportNumber || "",
+			passportIssuedBy: params.representative?.passportIssuedBy || "",
+			passportIssuedDate: params.representative?.passportIssuedDate || "",
+			passportDepartmentCode: params.representative?.passportDepartmentCode || "",
+			basisDocument: params.representative?.basisDocument || "",
+			phone: params.representative?.phone || "",
 		},
 		clinicalReason:
 			params.clinicalReason ||

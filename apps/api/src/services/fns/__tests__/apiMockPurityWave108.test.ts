@@ -25,6 +25,7 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			payer: {
 				fullName: { family: "Сидорова", given: "Анна", patronymic: "Сергеевна" },
 				inn: "770111223344",
+				birthDate: "1990-05-15",
 			},
 			expenses: {
 				code1AmountRub: 15000,

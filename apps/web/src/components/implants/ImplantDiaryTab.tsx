@@ -13,7 +13,7 @@ export const ImplantDiaryTab: React.FC<ImplantDiaryTabProps> = ({ diaryText }) =
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
 					<DentalForm043 size={15} className="text-[var(--teal,#0d9488)]" />
-					<span>Текст протокола для Карты 043/у:</span>
+					<span>Текст протокола для дневника приёма:</span>
 				</span>
 				<button
 					type="button"

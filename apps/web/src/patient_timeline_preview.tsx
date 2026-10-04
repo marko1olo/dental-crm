@@ -19,7 +19,7 @@ import { TreatmentPlansList } from "./components/patients/TreatmentPlansList";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
 import type { TreatmentPlanItem } from "@dental/shared";
 
-const SAMPLE_TREATMENT_PLANS: TreatmentPlanItem[] = [
+const SAMPLE_TREATMENT_PLANS: any[] = [
 	{
 		id: "plan-item-1",
 		organizationId: "00000000-0000-0000-0000-000000000001",

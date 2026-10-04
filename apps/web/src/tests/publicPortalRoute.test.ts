@@ -10,6 +10,8 @@ import {
 	LAB_ORDER_PORTAL_PATH,
 	PATIENT_PORTAL_PATH,
 	PUBLIC_BOOKING_PORTAL_PATH,
+	TGAPP_PORTAL_PATH,
+	TGAPP_SHORT_PATH,
 	buildKioskPortalUrl,
 	buildPatientCabinetPortalUrl,
 	publicPortalRouteFromHash,
@@ -327,3 +329,35 @@ test("main.tsx монтирует MobileSelfCheckinModal для kiosk и PublicB
 		"main.tsx обязан различать маршрут cabinet",
 	);
 });
+
+test("ссылка Telegram WebApp Mini App разбирается в маршрут kind=tgapp", () => {
+	const orgId = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
+	const patientId = "pat-12345";
+
+	assert.deepEqual(publicPortalRouteFromHash(`#${TGAPP_PORTAL_PATH}${orgId}`), {
+		kind: "tgapp",
+		organizationId: orgId,
+		patientId: null,
+	});
+	assert.deepEqual(publicPortalRouteFromHash(`#/tgapp?org=${orgId}&patientId=${patientId}`), {
+		kind: "tgapp",
+		organizationId: orgId,
+		patientId,
+	});
+	assert.deepEqual(publicPortalRouteFromHash("/tgapp"), {
+		kind: "tgapp",
+		organizationId: null,
+		patientId: null,
+	});
+
+	const entry = readSource("main.tsx");
+	assert.ok(
+		entry.includes("<TelegramMiniAppView"),
+		"main.tsx обязан рендерить TelegramMiniAppView для Telegram WebApp",
+	);
+	assert.ok(
+		entry.includes('kind === "tgapp"'),
+		"main.tsx обязан различать маршрут tgapp",
+	);
+});
+

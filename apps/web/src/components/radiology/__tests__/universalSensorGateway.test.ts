@@ -16,6 +16,7 @@ import {
 	SENSOR_VENDOR_PROFILES,
 	KNOWN_TWAIN_DATA_SOURCES,
 	DEFAULT_DICOM_SCP_CONFIG,
+	NON_CONFLICTING_USB_POLICY,
 	autoDetectConnectedSensor,
 	testSensorConnection,
 	lookupSensorByUsbVidPid,
@@ -492,4 +493,61 @@ describe("Universal Multi-Vendor Sensor Gateway Suite", () => {
 			assert.equal(detectRadiologySensorBrand("XpectVision_Photon.dcm"), "Xpect Vision Photon-Counting");
 		});
 	});
+
+	describe("9. Non-Conflicting USB Coexistence Law & Friction-Free Intake", () => {
+		it("enforces NON_CONFLICTING_USB_POLICY invariants and zero USB locking", () => {
+			assert.equal(
+				NON_CONFLICTING_USB_POLICY.notice,
+				"Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB",
+			);
+			assert.equal(NON_CONFLICTING_USB_POLICY.preferredIntake, "hot_folder");
+			assert.equal(
+				NON_CONFLICTING_USB_POLICY.hotFolderStatus,
+				"Ожидание снимка (Hot Folder / Автоподхват)",
+			);
+			assert.ok(NON_CONFLICTING_USB_POLICY.rationale.includes("монопольно захватывают USB-дескриптор"));
+		});
+
+		it("verifies autoDetectConnectedSensor yields non-conflicting hot_folder channel and clear status", async () => {
+			const res = await autoDetectConnectedSensor();
+			assert.equal(res.intakeChannel, "hot_folder");
+			assert.ok(res.statusMessage.includes("Ожидание снимка (Hot Folder / Автоподхват)"));
+			assert.equal(res.nonConflictingNotice, NON_CONFLICTING_USB_POLICY.notice);
+			assert.ok(res.details.includes("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"));
+		});
+
+		it("verifies testSensorConnection returns nonConflictingNotice and instant telemetry", async () => {
+			const status = await testSensorConnection("vatech_ezsensor_hd");
+			assert.equal(status.isReady, true);
+			assert.equal(status.intakeChannel, "hot_folder");
+			assert.equal(status.nonConflictingNotice, NON_CONFLICTING_USB_POLICY.notice);
+		});
+
+		it("verifies DirectRvgSensorTelemetryHeader displays non-conflicting badge and coexistence hint", () => {
+			const headerSrc = readSource("components/radiology/DirectRvgSensorTelemetryHeader.tsx");
+			assert.ok(headerSrc.includes('data-testid="rvg-non-conflicting-badge"'));
+			assert.ok(headerSrc.includes("Hot Folder / TWAIN (Бесконфликтно)"));
+			assert.ok(headerSrc.includes('data-testid="rvg-coexistence-hint"'));
+			assert.ok(headerSrc.includes("Параллельно с EzDent-i / Romexis (без конфликта за USB)"));
+			assert.ok(headerSrc.includes("Ожидание снимка (Hot Folder / Автоподхват)"));
+		});
+
+		it("verifies DirectRvgCaptureModal supports Ctrl+V clipboard paste and coexistence notice", () => {
+			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
+			assert.ok(modalSrc.includes('window.addEventListener("paste", handlePaste)'));
+			assert.ok(modalSrc.includes("Снимок успешно вставлен из буфера обмена (Ctrl+V)"));
+			assert.ok(modalSrc.includes("Ожидание снимка (Hot Folder / Автоподхват)"));
+			assert.ok(modalSrc.includes("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"));
+		});
+
+		it("verifies HotFolderIntakeModal supports non-conflicting badge and Ctrl+V clipboard ingestion", () => {
+			const intakeSrc = readSource("components/radiology/HotFolderIntakeModal.tsx");
+			assert.ok(intakeSrc.includes('data-testid="hfi-non-conflicting-badge"'));
+			assert.ok(intakeSrc.includes("Бесконфликтный автозахват (EzDent-i / Romexis)"));
+			assert.ok(intakeSrc.includes('window.addEventListener("paste", handlePaste)'));
+			assert.ok(intakeSrc.includes("Снимок успешно вставлен из буфера обмена (Ctrl+V)"));
+			assert.ok(intakeSrc.includes("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"));
+		});
+	});
 });
+

@@ -282,4 +282,146 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			"PremiumDocumentPrintSheet patient signature must have standard opening and closing slashes",
 		);
 	});
+
+	test("Mandate 8y & 8z: Absence of Soviet ciphers (Форма 257/у) in PrimaryIntakePackageModal UI", () => {
+		const modalPath = path.join(
+			webSrcDir,
+			"components/documents/PrimaryIntakePackageModal.tsx",
+		);
+		const content = fs.readFileSync(modalPath, "utf-8");
+		assert.ok(
+			!content.includes("Форма 257/у"),
+			"PrimaryIntakePackageModal must not leak Soviet cipher 'Форма 257/у' in user-facing UI",
+		);
+		assert.ok(
+			content.includes("Журнал стерилизации и автоклавирования"),
+			"PrimaryIntakePackageModal must use clear clinical title 'Журнал стерилизации и автоклавирования'",
+		);
+	});
+
+	test("Mandate 8y: PrimaryIntakePackagePrintEngine zero-mock clinic requisites in production", () => {
+		const html = generatePrimaryIntakePackageHtml({
+			clinic: null,
+			patient: { fullName: "Петров Василий" },
+		});
+		assert.ok(
+			!html.includes("7701987654"),
+			"Must not leak mock INN 7701987654 in production primary intake package",
+		);
+		assert.ok(
+			!html.includes("ЛО41-01137-77/00584930"),
+			"Must not leak mock license ЛО41-01137-77/00584930 in production primary intake package",
+		);
+		assert.ok(
+			html.includes("«______________»"),
+			"Must output clean underline for missing clinic INN in production",
+		);
+		assert.ok(
+			html.includes("«________________________________________»"),
+			"Must output clean underline for missing clinic license in production",
+		);
+	});
+
+	test("Mandate 8d & 8e: PrimaryIntakePackagePrintEngine renders Legal Representative across all 4 blanks for minors", () => {
+		const html = generatePrimaryIntakePackageHtml({
+			clinic: {
+				legalName: "ООО Стоматология ДЕНТЕ",
+				inn: "7801234567",
+				licenseNumber: "ЛО-78-01-011223",
+				address: "г. Санкт-Петербург, Невский пр., 1",
+			},
+			patient: {
+				fullName: "Смирнов Миша (7 лет)",
+				birthDate: "2019-06-15",
+				phone: "+7 999 000-11-22",
+				cardNumber: "Д-451",
+			},
+			representative: {
+				fullName: "Смирнова Анна Сергеевна",
+				relationship: "Мать",
+				phone: "+7 999 555-44-33",
+				passportSeries: "40 15",
+				passportNumber: "654321",
+				passportIssuedBy: "ТП №1 УФМС по СПб",
+				passportIssuedDate: "2015-08-20",
+				passportDepartmentCode: "780-001",
+				basisDocument: "Свидетельство о рождении серия I-АК № 123456",
+			},
+			doctorFullName: "Д-р Васильев В. В.",
+		});
+
+		// Бланк 1: Договор возмездного оказания услуг
+		assert.ok(
+			html.includes("Заказчик (Законный представитель):"),
+			"Blank 1 must designate representative as customer",
+		);
+		assert.ok(
+			html.includes("Смирнова Анна Сергеевна"),
+			"Blank 1 must include representative full name",
+		);
+		assert.ok(
+			html.includes("Мать"),
+			"Blank 1 must specify relationship",
+		);
+		assert.ok(
+			html.includes("Свидетельство о рождении серия I-АК № 123456"),
+			"Blank 1 must specify basis document",
+		);
+		assert.ok(
+			html.includes("ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (Мать):"),
+			"Blank 1 signature box must be labeled for legal representative",
+		);
+
+		// Бланк 2: ИДС (Приказ 1051н)
+		assert.ok(
+			html.includes("являясь законным представителем (основание: Свидетельство о рождении"),
+			"Blank 2 must state legal representation basis",
+		);
+		assert.ok(
+			html.includes("Законный представитель (Мать):"),
+			"Blank 2 signature box must be labeled for legal representative",
+		);
+
+		// Бланк 3: 152-ФЗ Согласие на обработку ПДн
+		assert.ok(
+			html.includes("в интересах подопечного даю согласие Оператору"),
+			"Blank 3 must declare consent in interests of ward",
+		);
+		assert.ok(
+			html.includes("Законный представитель (Мать) в интересах несовершеннолетнего:"),
+			"Blank 3 signature must be for representative in interests of minor",
+		);
+
+		// Бланк 4: Анкета о состоянии здоровья
+		assert.ok(
+			html.includes("Представитель: <strong>Смирнова Анна Сергеевна</strong> (Мать)"),
+			"Blank 4 must render representative banner",
+		);
+		assert.ok(
+			html.includes("Заявление законного представителя:"),
+			"Blank 4 must adapt statement for legal representative",
+		);
+	});
+
+	test("Mandate 8y: createDefaultPaidContract zero-mock in production with customer & representative pass-through", () => {
+		const contract = createDefaultPaidContract({
+			patientFullName: "Иванов Ребёнок",
+			representative: {
+				fullName: "Иванова Мама",
+				basisDocument: "Свидетельство о рождении",
+			},
+		});
+
+		assert.ok(
+			!contract.clinic.inn.includes("7704123456"),
+			"createDefaultPaidContract must not leak mock INN 7704123456 in production",
+		);
+		assert.ok(
+			!contract.clinic.licenseNumber.includes("Л041-01137-77/00584930"),
+			"createDefaultPaidContract must not leak mock license in production",
+		);
+		assert.equal(contract.representative.hasRepresentative, true);
+		assert.equal(contract.representative.fullName, "Иванова Мама");
+		assert.equal(contract.representative.basisDocument, "Свидетельство о рождении");
+	});
 });

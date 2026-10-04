@@ -303,7 +303,7 @@ export function mergeMultiToothObjective(
 		if (base.includes(toothMarker)) {
 			const toothRegex = new RegExp(`(?:^|\\n\\n)(${toothMarker}[^\\n]*(?:\\n(?!Зуб \\d+:)[^\\n]*)*)`, "i");
 			const match = base.match(toothRegex);
-			if (match) {
+			if (match && match[1]) {
 				return base.replace(match[1], blockToAdd).trim();
 			}
 		}
@@ -353,7 +353,7 @@ export function mergeMultiToothTreatmentPlan(
 		if (base.includes(toothMarker)) {
 			const toothRegex = new RegExp(`(?:^|\\n\\n)(${toothMarker}[^\\n]*(?:\\n(?!Зуб \\d+:)[^\\n]*)*)`, "i");
 			const match = base.match(toothRegex);
-			if (match) {
+			if (match && match[1]) {
 				return base.replace(match[1], blockToAdd).trim();
 			}
 		}

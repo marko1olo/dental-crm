@@ -134,7 +134,7 @@ const DEMO_PATIENT_STUDIES: ImagingStudy[] = [
 		bindingStatus: "manual_bound",
 		bindingConfidence: 100,
 		sourceKind: "folder_watch",
-		sourceName: "EzDent-i Vatech Station",
+		sourceName: "DENTE Рентген-станция",
 		status: "available",
 		visitId: null,
 		aiSummary: null,
@@ -306,16 +306,16 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 					{/* Фоновый статус автообнаружения DICOM/PACS */}
 					<DicomAutoDetectStatusBadge onStudyBound={loadPatientStudies} />
 
-					{/* Кнопка вызова тактильной матрицы поиска (EzDent-i Снимок 19) */}
+					{/* Кнопка вызова тактильной матрицы поиска */}
 					<button
 						type="button"
 						onClick={() => setShowTactileSearch(true)}
 						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
 						data-testid="btn-patient-tactile-search"
-						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+						title="Тактильная матрица поиска исследований по датам и аппаратам"
 					>
 						<Filter className="w-3.5 h-3.5" />
-						<span>Матрица поиска (Снимок 19)</span>
+						<span>Матрица поиска</span>
 					</button>
 
 					{/* Кнопка загрузки КТ для пациента */}
@@ -463,6 +463,7 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				onReset={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
 				totalStudiesCount={sortedStudies.length}
 				matchedCount={filteredStudies.length}
+				studies={sortedStudies}
 			/>
 		</div>
 	);

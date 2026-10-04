@@ -216,7 +216,7 @@ describe("CBCT UI Dock & Viewport Ruler Hardware Controls", () => {
 			assert.ok(html.includes("Резкость: 100%"));
 		});
 
-		it("renders CbctViewportsRulerOverlay with both W/L and Colormap bars", () => {
+		it("renders CbctViewportsRulerOverlay with clean slice canvas: no floating presets obscuring anatomy", () => {
 			const html = renderToStaticMarkup(
 				React.createElement(CbctViewportsRulerOverlay, {
 					viewportType: "coronal",
@@ -229,8 +229,9 @@ describe("CBCT UI Dock & Viewport Ruler Hardware Controls", () => {
 
 			assert.ok(html.includes('data-testid="cbct-ruler-toolbar-coronal"'));
 			assert.ok(html.includes('data-testid="cbct-viewport-sharpen-btn-coronal"'));
-			assert.ok(html.includes('data-testid="cbct-quick-wl-bar"'));
-			assert.ok(html.includes('data-testid="cbct-quick-colormap-bar"'));
+			// Mandate: slice canvas must be 100% clean from floating preset overlays obscuring anatomy
+			assert.ok(!html.includes('data-testid="cbct-quick-wl-bar"'));
+			assert.ok(!html.includes('data-testid="cbct-quick-colormap-bar"'));
 		});
 	});
 

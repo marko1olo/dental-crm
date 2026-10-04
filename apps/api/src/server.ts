@@ -109,6 +109,7 @@ import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerDoctorPreferencesRoutes } from "./routes/doctorPreferencesRoutes.js";
 import { registerStaffRoutes } from "./routes/staff.js";
+import { registerStaffChatRoutes } from "./routes/staffChat.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSpeechLiveRoutes } from "./routes/speechLive.js";
@@ -120,6 +121,7 @@ import {
 	registerTelegramRoutes,
 	registerTelegramWebhookRoutes,
 } from "./routes/telegram.js";
+import { registerTelegramReferralLoyaltyRoutes } from "./routes/telegramReferralLoyalty.js";
 import {
 	startEgiszQueueWorker,
 	stopEgiszQueueWorker,
@@ -746,6 +748,7 @@ export async function createDenteApiApp(
 	await registerSettingsRoutes(app);
 	await registerDoctorPreferencesRoutes(app);
 	await registerStaffRoutes(app);
+	await registerStaffChatRoutes(app);
 	await registerSpeechRoutes(app);
 	await registerSpeechLiveRoutes(app);
 	void registerSmartImportRoutes(app);
@@ -758,6 +761,7 @@ export async function createDenteApiApp(
 	await registerWebsocketRoutes(app);
 	await registerTelegramRoutes(app);
 	await registerTelegramWebhookRoutes(app);
+	await registerTelegramReferralLoyaltyRoutes(app);
 	await registerVisitRoutes(app);
 	await registerDicomwebRoutes(app);
 	await registerXrayRoutes(app);

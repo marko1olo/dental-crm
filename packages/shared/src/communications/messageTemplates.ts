@@ -215,7 +215,7 @@ export function extractTemplateMacroKeys(templateText: string): string[] {
  * that interpret markup (email HTML bodies, Telegram HTML parse_mode).
  * Strips dangerous ASCII control characters and escapes &, <, >, ", '.
  */
-export function escapeHtml(value: unknown): string {
+function escapeHtml(value: unknown): string {
 	if (value === null || value === undefined) return "";
 	return String(value)
 		.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")

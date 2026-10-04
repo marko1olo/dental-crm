@@ -14,6 +14,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QuickBookingServiceSection } from "../QuickBookingServiceSection";
 import { GridAppointmentHoverHud } from "../GridAppointmentHoverHud";
+import { GridAppointmentCard } from "../GridAppointmentCard";
 import {
   resolveAppointmentClinicalBadges,
   type ClinicalBadgeItem,
@@ -225,5 +226,94 @@ describe("DentalPRO Expo26 Schedule Innovations Suite", () => {
     assert.ok(schiCodes.includes("schi-14"), "Should contain schi-14: pediatric patient");
     assert.ok(schiCodes.includes("schi-15"), "Should contain schi-15: loyalty discount");
     assert.ok(schiCodes.includes("schi-17"), "Should contain schi-17: in chair active");
+  });
+
+  it("5. DentalPRO expo26 Realtime Schedule Bar: renders 1-click stage buttons and live styling across all stages", () => {
+    const baseAppt: Appointment = {
+      id: "appt-bar-1",
+      doctorUserId: "doc-1",
+      chairId: "chair-1",
+      patientId: "pat-1",
+      status: "planned",
+      startsAt: "2026-10-15T10:00:00.000Z",
+      endsAt: "2026-10-15T10:30:00.000Z",
+      reason: "Терапевтический приём",
+      comment: "Пациент просил напомнить",
+      organizationId: "org-1",
+      assistantUserId: null,
+    };
+
+    const patientMap = new Map([
+      ["pat-1", { id: "pat-1", fullName: "Иванов Иван Иванович", phone: "+79991112233" }],
+    ]);
+    const staffMap = new Map([
+      ["doc-1", { id: "doc-1", fullName: "Смирнов А. В.", role: "doctor" }],
+    ]);
+
+    const baseProps = {
+      appointment: baseAppt,
+      chair: { id: "chair-1", name: "Кабинет 1" },
+      effectiveChairs: [{ id: "chair-1", name: "Кабинет 1" }],
+      doctors: [{ id: "doc-1", fullName: "Смирнов А. В." }],
+      patientLookupMap: patientMap,
+      staffLookupMap: staffMap,
+      collisionMap: new Map(),
+      dashboard: mockDashboard,
+      toDateTimeLocalValue: (iso: string) => iso,
+      appointmentLabels: {
+        planned: "Запланирован",
+        confirmed: "Подтвержден",
+        arrived: "Ожидает приёма",
+        in_treatment: "На приёме",
+        completed: "Завершён",
+        cancelled: "Отменен",
+        no_show: "Не явился",
+      },
+      isHovered: false,
+      isStatusPickerOpen: false,
+      isMenuOpen: false,
+      isNearBottom: false,
+      isNearRightEdge: false,
+      onAppointmentClick: () => {},
+      onSelectMobileAppt: () => {},
+      onQuickStatusChange: () => {},
+      onAdjustDuration: () => {},
+      onShiftLateness: () => {},
+      onReassignChair: () => {},
+      onReassignDoctor: () => {},
+      onFreeSlotToWaitlist: () => {},
+      onMouseEnter: () => {},
+      onMouseLeave: () => {},
+      onKeepHovered: () => {},
+      onToggleStatusPicker: () => {},
+      onToggleMenu: () => {},
+      onCloseStatusPicker: () => {},
+      onCloseMenu: () => {},
+    };
+
+    // 1. Stage "planned": кнопка [🛎️ Прибыл]
+    const htmlPlanned = renderToStaticMarkup(<GridAppointmentCard {...baseProps} />);
+    assert.match(htmlPlanned, /data-testid="dentalpro-quick-arrived-appt-bar-1"/);
+    assert.match(htmlPlanned, /Прибыл/);
+
+    // 2. Stage "arrived": янтарная подсветка + кнопка [🪑 В кресло]
+    const apptArrived = { ...baseAppt, status: "arrived" as const };
+    const htmlArrived = renderToStaticMarkup(<GridAppointmentCard {...baseProps} appointment={apptArrived} />);
+    assert.match(htmlArrived, /data-testid="dentalpro-quick-in-chair-appt-bar-1"/);
+    assert.match(htmlArrived, /В кресло/);
+    assert.match(htmlArrived, /border-l-amber-500/);
+
+    // 3. Stage "in_treatment": неоново-зеленый оттенок + бейдж "В кресле" + кнопка [✓ Завершить]
+    const apptTreatment = { ...baseAppt, status: "in_treatment" as const };
+    const htmlTreatment = renderToStaticMarkup(<GridAppointmentCard {...baseProps} appointment={apptTreatment} />);
+    assert.match(htmlTreatment, /data-testid="dentalpro-quick-complete-appt-bar-1"/);
+    assert.match(htmlTreatment, /Завершить/);
+    assert.match(htmlTreatment, /border-l-emerald-500/);
+
+    // 4. Stage "completed": кнопка [💳 Касса]
+    const apptCompleted = { ...baseAppt, status: "completed" as const };
+    const htmlCompleted = renderToStaticMarkup(<GridAppointmentCard {...baseProps} appointment={apptCompleted} />);
+    assert.match(htmlCompleted, /data-testid="dentalpro-quick-pay-appt-bar-1"/);
+    assert.match(htmlCompleted, /Касса/);
   });
 });

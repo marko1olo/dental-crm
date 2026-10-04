@@ -153,23 +153,23 @@ export const PROJECTION_TYPES: Array<{
 }> = [
 	{
 		id: "periapical",
-		label: "Интраоральный прицельный (Периапикальный)",
+		label: "Прицельный",
 		shortLabel: "Прицельный",
-		description: "Отображение верхушки корня, периодонта и периапикальной кости",
+		description: "",
 		typicalExposureSec: 0.08,
 	},
 	{
 		id: "bitewing",
 		label: "Интерпроксимальный (Bite-wing)",
 		shortLabel: "Bite-wing",
-		description: "Коронковые части верхних и нижних зубов для скрытого кариеса",
+		description: "",
 		typicalExposureSec: 0.09,
 	},
 	{
 		id: "occlusal",
-		label: "Окклюзионный (Аксиальный)",
+		label: "Окклюзионный",
 		shortLabel: "Окклюзионный",
-		description: "Поперечный срез альвеолярного отростка и свода челюсти",
+		description: "",
 		typicalExposureSec: 0.12,
 	},
 ];

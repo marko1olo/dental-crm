@@ -323,7 +323,7 @@ export function useChairShiftOperations({
       }
 
       showToast(
-        `График смен кресел применен на ${label} (${mondayIso}..) в 1 клик (StomX Parity)`,
+        `График смен кресел применён на ${label} (${mondayIso}..) в 1 клик`,
         "success",
         3500,
       );
@@ -379,7 +379,7 @@ export function useChairShiftOperations({
     }
 
     showToast(
-      `График смен кресел применен на весь текущий месяц (${monthName}) в 1 клик (StomX Parity)`,
+      `График смен кресел применён на весь текущий месяц (${monthName}) в 1 клик`,
       "success",
       3500,
     );
@@ -423,7 +423,7 @@ export function useChairShiftOperations({
       }
 
       showToast(
-        `Врач ${newDoctorName} подменяет врача на кресле «${chair.name}» (StomX Parity)`,
+        `Врач ${newDoctorName} подменяет врача на кресле «${chair.name}»`,
         "success",
       );
       setIsSubstituteOpen((prev) => ({ ...prev, [chair.id]: false }));
@@ -494,7 +494,7 @@ export function useChairShiftOperations({
     }
 
     showToast(
-      "Выполнена циклическая ротация смен между креслами в 1 клик (StomX Parity)",
+      "Выполнена циклическая ротация смен между креслами в 1 клик",
       "success",
       3500,
     );
@@ -586,7 +586,7 @@ export function useChairShiftOperations({
     }
 
     showToast(
-      "Закрепленные врачи назначены на смены дня в 1 клик (StomX Parity)",
+      "Закреплённые врачи назначены на смены дня в 1 клик",
       "success",
       3500,
     );

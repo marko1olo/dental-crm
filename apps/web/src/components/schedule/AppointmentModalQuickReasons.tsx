@@ -158,7 +158,7 @@ export function AppointmentModalQuickReasons({
       data-testid="appointment-quick-reasons"
     >
       <div className="flex items-center justify-between text-[11px] font-bold text-[var(--muted)]">
-        <span>Причины визита (StomX):</span>
+        <span>Причины визита:</span>
         <span className="text-[10px] uppercase text-[var(--teal)] font-extrabold">
           1-клик выбор
         </span>

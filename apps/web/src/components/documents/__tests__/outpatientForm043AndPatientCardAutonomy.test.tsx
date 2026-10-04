@@ -45,7 +45,7 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 
 	const patientIndexPath = path.resolve(
 		__dirname,
-		"../../patients/index.ts",
+		"../../../../../../packages/shared/src/patients/index.ts",
 	);
 	const patientIndexSource = fs.readFileSync(patientIndexPath, "utf8");
 

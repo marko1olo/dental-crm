@@ -21,6 +21,7 @@ import { DentalMirrorProbe } from "../icons/DentalIcons";
 import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
 import { useDocumentStore } from "../../store/documentStore";
 import { showToast } from "../GlobalToast";
+import "./documentNavigation.css";
 
 export interface PrimaryIntakePackageModalProps {
 	readonly isOpen: boolean;
@@ -131,6 +132,29 @@ export function PrimaryIntakePackageModal({
 
 	const handleBatchPrint = () => {
 		const store = useDocumentStore.getState();
+		const adminProfile = (patient as any)?.administrativeProfile;
+		const repFullName =
+			adminProfile?.legalRepresentativeFullName || store.minorRepresentativeFullName;
+		const representative = repFullName
+			? {
+					fullName: repFullName,
+					relationship:
+						adminProfile?.legalRepresentativeRelationship ||
+						store.minorRepresentativeRelationship ||
+						"Законный представитель",
+					phone:
+						adminProfile?.legalRepresentativePhone ||
+						store.minorRepresentativePhone ||
+						patient?.phone,
+					passport:
+						adminProfile?.legalRepresentativeIdentityDocument ||
+						store.minorRepresentativeIdentityDocument,
+					basisDocument:
+						adminProfile?.legalRepresentativeBasisDocument ||
+						store.minorRepresentativeAuthorityDocument,
+				}
+			: null;
+
 		printPrimaryIntakePackage({
 			patient: patient
 				? {
@@ -146,8 +170,10 @@ export function PrimaryIntakePackageModal({
 						passportIssuedDate: (patient as any)?.administrativeProfile?.passportIssuedDate,
 						passportDepartmentCode: (patient as any)?.administrativeProfile?.passportDepartmentCode,
 						gender: (patient as any)?.gender,
+						cardNumber: (patient as any)?.cardNumber,
 					}
 				: null,
+			representative,
 			clinic: clinicProfileDraft ? {
 				clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
 				legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
@@ -202,6 +228,7 @@ export function PrimaryIntakePackageModal({
 	const handlePrintBlankPackage = () => {
 		printPrimaryIntakePackage({
 			patient: null,
+			representative: null,
 			clinic: clinicProfileDraft ? {
 				clinicName: clinicProfileDraft.clinicName || "Стоматологическая клиника",
 				legalName: clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
@@ -556,10 +583,10 @@ export function PrimaryIntakePackageModal({
 										cursor: "pointer",
 										minHeight: "36px",
 									}}
-									title="Журнал контроля работы стерилизаторов (Форма № 257/у для проверок Роспотребнадзора)"
+									title="Журнал контроля стерилизации и автоклавирования для проверок"
 								>
 									<ShieldCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-									<span>Журнал стерилизации (Форма 257/у)</span>
+									<span>Журнал стерилизации и автоклавирования</span>
 								</button>
 							)}
 							<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "4px 0" }} />

@@ -362,6 +362,8 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 			assert.equal(result, "clinic_isolated_success");
 			assert.equal(attempts, 2);
 			assert.equal(recordedContexts.length, 2);
+			assert.ok(recordedContexts[0]);
+			assert.ok(recordedContexts[1]);
 			assert.equal(recordedContexts[0].tenant, FIXTURE_ORG);
 			assert.equal(recordedContexts[0].org, FIXTURE_ORG);
 			assert.equal(recordedContexts[0].clinic, FIXTURE_CLINIC);

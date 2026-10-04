@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getDoctorSpecialtyTheme } from "./GridAppointmentCard";
+import {
+	getDoctorSpecialtyTheme,
+	resolveAppointmentLabStatus,
+	resolveAppointmentClinicalBadges,
+} from "./GridAppointmentCard";
 
 describe("GridAppointmentCard — IDENT Doctor Specialty Color Coding (WCAG AAA)", () => {
 	it("resolves therapy specialty to blue/indigo pastel classes", () => {
@@ -82,5 +86,88 @@ describe("GridAppointmentCard — IDENT Doctor Specialty Color Coding (WCAG AAA)
 		assert.equal(getDoctorSpecialtyTheme(undefined), null);
 		assert.equal(getDoctorSpecialtyTheme(""), null);
 		assert.equal(getDoctorSpecialtyTheme("unknown_specialty"), null);
+	});
+});
+
+describe("GridAppointmentCard — Связка статуса наряда ЗТЛ с расписанием (ready_in_clinic / overdue / in_lab)", () => {
+	const refDate = new Date("2026-10-15T12:00:00Z");
+
+	it("resolves ready_in_clinic status with green badge (emerald)", () => {
+		const appt: any = {
+			id: "app-1",
+			patientId: "pat-1",
+			reason: "Примерка коронки",
+			labOrder: {
+				orderNumber: "ЗТЛ-771",
+				status: "ready_in_clinic",
+				workType: "Коронка e.MAX",
+				colorVita: "A2",
+			},
+		};
+
+		const labStatus = resolveAppointmentLabStatus(appt, undefined, refDate);
+		assert.ok(labStatus);
+		assert.equal(labStatus.state, "ready_in_clinic");
+		assert.equal(labStatus.shortLabelRu, "В клинике");
+		assert.ok(labStatus.badgeClass.includes("emerald"));
+
+		const badges = resolveAppointmentClinicalBadges(appt, {}, 0, null, labStatus);
+		const labBadge = badges.find((b) => b.id === "lab_order");
+		assert.ok(labBadge, "Lab badge must be present in clinical badges strip");
+		assert.equal(labBadge.labelRu, "В клинике");
+		assert.ok(labBadge.badgeClass.includes("emerald"));
+	});
+
+	it("resolves overdue status with red badge (rose) and overdue days count", () => {
+		const appt: any = {
+			id: "app-2",
+			patientId: "pat-2",
+			reason: "Фиксация моста",
+			labOrder: {
+				orderNumber: "ЗТЛ-772",
+				status: "in_progress",
+				dueDate: "2026-10-11T00:00:00Z", // 4 days overdue relative to 2026-10-15
+				workType: "Мостовидный протез ZrO2",
+			},
+		};
+
+		const labStatus = resolveAppointmentLabStatus(appt, undefined, refDate);
+		assert.ok(labStatus);
+		assert.equal(labStatus.state, "overdue");
+		assert.equal(labStatus.isOverdue, true);
+		assert.equal(labStatus.daysOverdue, 4);
+		assert.ok(labStatus.badgeClass.includes("rose"));
+
+		const badges = resolveAppointmentClinicalBadges(appt, {}, 0, null, labStatus);
+		const labBadge = badges.find((b) => b.id === "lab_order");
+		assert.ok(labBadge);
+		assert.equal(labBadge.labelRu, "ЗТЛ: +4д!");
+		assert.ok(labBadge.badgeClass.includes("rose"));
+	});
+
+	it("resolves in_lab status with yellow badge (amber) when within deadline", () => {
+		const appt: any = {
+			id: "app-3",
+			patientId: "pat-3",
+			reason: "Консультация",
+			labOrder: {
+				orderNumber: "ЗТЛ-773",
+				status: "in_progress",
+				dueDate: "2026-10-25T00:00:00Z",
+				workType: "Коронка цельнолитая",
+			},
+		};
+
+		const labStatus = resolveAppointmentLabStatus(appt, undefined, refDate);
+		assert.ok(labStatus);
+		assert.equal(labStatus.state, "in_lab");
+		assert.equal(labStatus.shortLabelRu, "В ЗТЛ");
+		assert.ok(labStatus.badgeClass.includes("amber"));
+
+		const badges = resolveAppointmentClinicalBadges(appt, {}, 0, null, labStatus);
+		const labBadge = badges.find((b) => b.id === "lab_order");
+		assert.ok(labBadge);
+		assert.equal(labBadge.labelRu, "В ЗТЛ");
+		assert.ok(labBadge.badgeClass.includes("amber"));
 	});
 });

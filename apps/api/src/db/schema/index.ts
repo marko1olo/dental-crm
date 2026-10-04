@@ -21,3 +21,4 @@ export * from "./crm_leak_detector.js";
 export * from "./periodontogram.js";
 export * from "./treatmentConsumables.js";
 export * from "./doctorPreferences.js";
+export * from "./staffChat.js";

@@ -22,4 +22,5 @@ export * from "./ndflXmlGenerator.js";
 export * from "./templateEngine.js";
 export * from "./templateVariablesRegistry.js";
 export * from "./templates/index.js";
+export * from "./professionalA4DocumentEngine.js";
 

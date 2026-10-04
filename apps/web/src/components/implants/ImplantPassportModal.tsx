@@ -221,7 +221,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			// fallback
 		}
 
-		showToast(`Паспорт имплантата #${toothFdi} сохранен и внесен в карту 043/у`, "success");
+		showToast(`Паспорт имплантата #${toothFdi} сохранен и внесен в дневник приёма`, "success");
 		onClose();
 	};
 
@@ -346,7 +346,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						}`}
 						data-testid="implant-tab-diary"
 					>
-						3. В карту 043/у
+						3. В дневник приёма
 					</button>
 					<button
 						type="button"
@@ -459,10 +459,10 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							onClick={handleSaveAndInsertDiary}
 							className="implant-touch-btn bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs flex items-center gap-1.5"
 							data-testid="btn-save-implant-passport btn-passport-insert-diary implant-save-passport-btn implant-insert-diary-btn"
-							title="Сохранить паспорт и внести протокол в карту 043/у"
+							title="Сохранить паспорт и внести протокол в дневник приёма"
 						>
 							<CheckCircle2 size={16} />
-							<span>В карту 043/у</span>
+							<span>В дневник приёма</span>
 						</button>
 					</div>
 				</footer>

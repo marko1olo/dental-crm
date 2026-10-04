@@ -61,6 +61,14 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 		return null;
 	}
 
+	const vw = typeof window !== "undefined" ? window.innerWidth : 1440;
+	const vh = typeof window !== "undefined" ? window.innerHeight : 900;
+	const MENU_WIDTH = 270;
+	const MENU_HEIGHT = 400;
+	const clampedX = Math.max(12, Math.min(vw - MENU_WIDTH - 12, menuConfig.x));
+	const clampedY = Math.max(12, Math.min(vh - MENU_HEIGHT - 12, menuConfig.y));
+	const safeCaretOffset = Math.max(12, Math.min(88, menuConfig.caretOffset));
+
 	return createPortal(
 		<>
 			{/* Backdrop */}
@@ -94,8 +102,8 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 				style={
 					{
 						position: "fixed",
-						left: menuConfig.x,
-						top: menuConfig.y,
+						left: clampedX,
+						top: clampedY,
 						zIndex: 99999,
 					} as React.CSSProperties
 				}
@@ -113,7 +121,7 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 						aria-hidden="true"
 						className="absolute -top-3 text-[var(--odontogram-border,#cbd5e1)] dark:text-zinc-800/50 drop-shadow-md"
 						style={{
-							left: `${menuConfig.caretOffset}%`,
+							left: `${safeCaretOffset}%`,
 							transform: "translateX(-50%)",
 						}}
 						width="24"
@@ -133,7 +141,7 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 						aria-hidden="true"
 						className="absolute -bottom-3 text-[var(--odontogram-border,#cbd5e1)] dark:text-zinc-800/50 drop-shadow-md"
 						style={{
-							left: `${menuConfig.caretOffset}%`,
+							left: `${safeCaretOffset}%`,
 							transform: "translateX(-50%)",
 						}}
 						width="24"
@@ -231,7 +239,7 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 								Анатомическая 2D схема
 							</summary>
 							<div className="flex justify-center p-1">
-								<SurfaceSelector selected={activeSurfaces} onChange={setActiveSurfaces} size={60} />
+								<SurfaceSelector selected={activeSurfaces} onChange={setActiveSurfaces} size={80} />
 							</div>
 						</details>
 					</div>

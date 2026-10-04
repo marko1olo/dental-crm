@@ -456,6 +456,20 @@
       "when": 1787400040000,
       "tag": "0207_imaging_studies_patient_binding_and_ct_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1787400050000,
+      "tag": "0208_hardened_indexes_and_fk_cascades",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1787400060000,
+      "tag": "0209_staff_chat_and_clinic_intercom",
+      "breakpoints": true
     }
   ]
 }

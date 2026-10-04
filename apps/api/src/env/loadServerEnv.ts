@@ -49,8 +49,19 @@ function mergeEnvList(existing: string | undefined, incoming: string): string {
 	return values.join(",");
 }
 
+const BLOCKED_IN_TEST_ENV_PATTERN =
+	/^(GEMINI_|GOOGLE_|GROQ_|OPENAI_|ANTHROPIC_|OPENROUTER_|DEEPSEEK_|DEEPGRAM_|ASSEMBLYAI_|CLOUDFLARE_|AZURE_SPEECH_|HUGGINGFACE_|HF_|YOOKASSA_|DADATA_|WABA_|TELEGRAM_|SMS_|DENTE_SMS_|DENTE_TELEGRAM_)/i;
+
 function applyParsedEnv(parsed: Record<string, string>): void {
+	const isIsolatedTest =
+		process.env.NODE_ENV === "test" &&
+		process.env.DENTE_ALLOW_TEST_ENV_FILES !== "1";
+
 	for (const [name, value] of Object.entries(parsed)) {
+		if (isIsolatedTest && BLOCKED_IN_TEST_ENV_PATTERN.test(name)) {
+			continue;
+		}
+
 		if (mergeableKeyListEnvNames.has(name)) {
 			const mergedValue = mergeEnvList(process.env[name], value);
 			if (mergedValue) process.env[name] = mergedValue;
@@ -64,6 +75,26 @@ function applyParsedEnv(parsed: Record<string, string>): void {
 }
 
 function baseEnvFiles(): string[] {
+	if (process.env.NODE_ENV === "test") {
+		const testCandidates = [
+			path.resolve(process.cwd(), ".env.test"),
+			path.resolve(process.cwd(), "..", "..", ".env.test"),
+		];
+		if (process.env.DENTE_ALLOW_TEST_ENV_FILES === "1") {
+			testCandidates.push(
+				path.resolve(process.cwd(), ".env.local"),
+				path.resolve(process.cwd(), ".env"),
+			);
+		} else {
+			testCandidates.push(
+				path.resolve(process.cwd(), ".env.local"),
+				path.resolve(process.cwd(), ".env"),
+				path.resolve(process.cwd(), "..", "..", ".env.local"),
+				path.resolve(process.cwd(), "..", "..", ".env"),
+			);
+		}
+		return testCandidates;
+	}
 	return [
 		path.resolve(process.cwd(), ".env.local"),
 		path.resolve(process.cwd(), ".env"),

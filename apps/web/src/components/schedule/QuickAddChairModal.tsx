@@ -360,8 +360,8 @@ export function QuickAddChairModal({
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
 								{isEditMode
-									? "Параметры рабочего места и активность (StomX / DentalPRO parity)"
-									: "Быстрое добавление рабочего места (StomX / DentalPRO parity)"}
+									? "Параметры рабочего места и активность"
+									: "Быстрое добавление рабочего места"}
 							</p>
 						</div>
 					</div>
@@ -388,7 +388,7 @@ export function QuickAddChairModal({
 							id="quick-add-chair-archetypes-label"
 							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
 						>
-							1-клик архетипы кресел (StomX / DentalPRO)
+							Архетипы кресел (1 клик)
 						</span>
 						<div
 							className="grid grid-cols-2 sm:grid-cols-3 gap-2"
@@ -535,7 +535,7 @@ export function QuickAddChairModal({
 							htmlFor="quick-add-chair-doctor-select"
 							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
 						>
-							Дежурный / основной врач кресла по умолчанию (StomX / DentalPRO)
+							Дежурный / основной врач кресла по умолчанию
 						</label>
 						<select
 							id="quick-add-chair-doctor-select"
@@ -584,7 +584,7 @@ export function QuickAddChairModal({
 								id="quick-add-chair-color-label"
 								className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
 							>
-								14 аутентичных палитр StomX (цвет кресла)
+								Палитра цвета кресла
 							</span>
 							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">
 								{CHAIR_COLOR_PRESETS.find(

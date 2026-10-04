@@ -58,6 +58,7 @@ export function useRvgGlCanvas(
 					sharpness: filters.sharpness,
 					clahe: filters.clahe,
 					invert: filters.invert,
+					pseudoRelief: Boolean(filters.emboss),
 				});
 			} else {
 				applyCanvasFilters2d();
@@ -80,6 +81,7 @@ export function useRvgGlCanvas(
 				sharpness: filters.sharpness,
 				clahe: filters.clahe,
 				invert: filters.invert,
+				pseudoRelief: Boolean(filters.emboss),
 			});
 		} else {
 			applyCanvasFilters2d();

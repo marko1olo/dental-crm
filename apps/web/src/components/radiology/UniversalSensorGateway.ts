@@ -41,6 +41,7 @@ export type SensorBrandId =
 	| "owandy"
 	| "eighteeth"
 	| "xpect_vision"
+	| "duerr"
 	| "generic";
 
 export type SensorIntakeProtocol =
@@ -294,6 +295,21 @@ export const SENSOR_VENDOR_PROFILES: readonly SensorVendorProfile[] = [
 		],
 		knownVidPids: [
 			{ vid: 0x04b4, pid: 0x00f3, controllerChip: "Cypress FX3 SuperSpeed", description: "Photon-Counting Direct Sensor" },
+		],
+	},
+	{
+		brand: "duerr",
+		name: "Dürr Dental",
+		country: "Германия",
+		defaultDriverType: "hybrid",
+		defaultHotFolders: [
+			"C:\\DBSWin\\Data",
+			"C:\\VistaSoft\\Capture",
+			"C:\\Program Files\\DuerrDental\\VistaSoft\\Import",
+		],
+		knownVidPids: [
+			{ vid: 0x0403, pid: 0x6001, controllerChip: "FTDI FT232R USB UART", description: "Dürr VistaRay 7 Direct USB" },
+			{ vid: 0x0403, pid: 0x6014, controllerChip: "FTDI FT232H Hi-Speed", description: "Dürr VistaIntra USB Bridge" },
 		],
 	},
 ];
@@ -1031,6 +1047,44 @@ export const UNIVERSAL_SENSOR_CATALOG: readonly UniversalSensorModel[] = [
 		isTwainSupported: true,
 		recommendedHotFolder: "C:\\XpectVision\\Scans",
 	},
+
+	// ─── DÜRR DENTAL ───
+	{
+		id: "duerr_vistaray_7_size1",
+		name: "Dürr Dental VistaRay 7 Size 1",
+		brand: "duerr",
+		brandName: "Dürr Dental",
+		resolution: "26.3 lp/mm (19.0 мкм)",
+		pixelSpacing: 0.019,
+		pixelSpacingMicrons: 19.0,
+		opticalResolutionLpMm: 26.3,
+		dimensions: "1580x1050",
+		bitDepth: 14,
+		sensorSize: "Size 1",
+		activeAreaMm: "20x30 mm",
+		technology: "CMOS",
+		isDirectUsbSupported: true,
+		isTwainSupported: true,
+		recommendedHotFolder: "C:\\VistaSoft\\Capture",
+	},
+	{
+		id: "duerr_vistaray_7_size2",
+		name: "Dürr Dental VistaRay 7 Size 2",
+		brand: "duerr",
+		brandName: "Dürr Dental",
+		resolution: "26.3 lp/mm (19.0 мкм)",
+		pixelSpacing: 0.019,
+		pixelSpacingMicrons: 19.0,
+		opticalResolutionLpMm: 26.3,
+		dimensions: "1896x1368",
+		bitDepth: 14,
+		sensorSize: "Size 2",
+		activeAreaMm: "26x36 mm",
+		technology: "CMOS",
+		isDirectUsbSupported: true,
+		isTwainSupported: true,
+		recommendedHotFolder: "C:\\VistaSoft\\Capture",
+	},
 ];
 
 /* ─────────────────────────────────────────────────────────────
@@ -1055,6 +1109,7 @@ export const KNOWN_TWAIN_DATA_SOURCES: readonly TwainDataSourceItem[] = [
 	{ id: "ds_acteon_sopix", name: "Sopix Series TWAIN Data Source", manufacturer: "Acteon Group", productFamily: "Sopix ACE", version: "2.1.8", isDefault: false, protocol: "twain_2_4" },
 	{ id: "ds_woodpecker_isensor", name: "Woodpecker i-Sensor TWAIN", manufacturer: "Guilin Woodpecker", productFamily: "i-Sensor H1/H2", version: "2.4.0", isDefault: false, protocol: "twain_2_4" },
 	{ id: "ds_kavo_gxs700", name: "Gendex GXS-700 TWAIN DS", manufacturer: "KaVo Dental", productFamily: "GXS-700", version: "2.3.1", isDefault: false, protocol: "twain_2_4" },
+	{ id: "ds_duerr_vistaray", name: "Dürr Dental VistaRay TWAIN DS", manufacturer: "Dürr Dental SE", productFamily: "VistaRay / VistaIntra", version: "2.4.0", isDefault: false, protocol: "twain_2_4" },
 	{ id: "ds_dexis_platinum", name: "Dexis Digital TWAIN Source", manufacturer: "Dexis LLC", productFamily: "Platinum / Titanium", version: "2.4.0", isDefault: false, protocol: "twain_2_4" },
 	{ id: "ds_handy_hdr", name: "Handy HDR Series TWAIN", manufacturer: "Handy Dental", productFamily: "HDR-500/600", version: "2.0.4", isDefault: false, protocol: "twain_2_4" },
 	{ id: "ds_owandy_quickvision", name: "Owandy QuickVision TWAIN DS", manufacturer: "Owandy Radiology", productFamily: "Opteo", version: "2.2.5", isDefault: false, protocol: "twain_2_4" },
@@ -1245,6 +1300,15 @@ export const DEFAULT_DICOM_SCP_CONFIG: DicomScpConfig = {
  * 6. SENSOR DETECTION & CONNECTION DIAGNOSTICS (MANDATE 8e)
  * ───────────────────────────────────────────────────────────── */
 
+export const NON_CONFLICTING_USB_POLICY = {
+	notice: "Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB",
+	preferredIntake: "hot_folder" as const,
+	twainBridge: "Подключение через локальный мост TWAIN",
+	hotFolderStatus: "Ожидание снимка (Hot Folder / Автоподхват)",
+	rationale:
+		"Штатные драйверы визиографов в Windows монопольно захватывают USB-дескриптор сенсора. DENTE CRM использует бесконфликтную архитектуру (Hot Folder + TWAIN 2.x DSM bridge + Drag-and-Drop + Clipboard Ctrl+V), исключая аппаратные сбои и конфликты за USB-порт прямо на приёме врача.",
+};
+
 export interface SensorDetectionResult {
 	readonly isDetected: boolean;
 	readonly sensorModelId: string;
@@ -1256,6 +1320,7 @@ export interface SensorDetectionResult {
 	readonly calibratedResolution: string;
 	readonly statusMessage: string;
 	readonly details: string;
+	readonly nonConflictingNotice?: string;
 }
 
 export interface SensorConnectionStatus {
@@ -1267,14 +1332,16 @@ export interface SensorConnectionStatus {
 	readonly calibratedResolution: string;
 	readonly bitDepth: number;
 	readonly temperatureCelsius?: number | undefined;
+	readonly intakeChannel?: SensorIntakeProtocol | undefined;
+	readonly nonConflictingNotice?: string | undefined;
 }
 
 /**
- * Autonomously checks connected hardware (WebUSB, Desktop Bridge, Windows TWAIN DSM, Hot Folder)
- * and selects the active dental sensor without requiring doctor configuration.
+ * Autonomously checks connected hardware (Hot Folder, TWAIN DSM, Desktop Bridge, passive USB presence)
+ * and selects the active dental sensor without requiring doctor configuration or conflicting with vendor drivers.
  */
 export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult> {
-	// 1. Check WebUSB if available in browser
+	// 1. Passive check if device VID/PID is present on bus (without exclusive claim to avoid collision with EzDent-i/CS Imaging)
 	if (typeof navigator !== "undefined" && "usb" in navigator && (navigator as any).usb?.getDevices) {
 		try {
 			const usbDevices = await (navigator as any).usb.getDevices();
@@ -1288,11 +1355,12 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 						sensorModelName: model.name,
 						brand: match.brand,
 						brandName: match.brandName,
-						intakeChannel: "usb_direct",
+						intakeChannel: "hot_folder", // Бесконфликтный приоритет: софт вендора держит USB, CRM подхватывает готовый кадр
 						calibratedPixelSpacingMm: model.pixelSpacing,
 						calibratedResolution: model.resolution,
-						statusMessage: `Обнаружен USB-сенсор: ${model.name} (${match.controllerChip})`,
-						details: `Контроллер: ${match.controllerChip}, активный USB VID: 0x${dev.vendorId.toString(16).toUpperCase()}`,
+						statusMessage: `Ожидание снимка (Hot Folder / Автоподхват) — Обнаружен сенсор: ${model.name}`,
+						details: `Контроллер: ${match.controllerChip}. ${NON_CONFLICTING_USB_POLICY.notice}`,
+						nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
 					};
 				}
 			}
@@ -1301,7 +1369,7 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 		}
 	}
 
-	// 2. Default standard desktop preset: Vatech EzSensor HD with instant TWAIN/HotFolder readiness
+	// 2. Default standard desktop preset: Vatech EzSensor HD with instant HotFolder / TWAIN non-conflicting readiness
 	const defaultSensor = UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === "vatech_ezsensor_hd") || UNIVERSAL_SENSOR_CATALOG[0]!;
 	return {
 		isDetected: true,
@@ -1312,8 +1380,9 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 		intakeChannel: "hot_folder",
 		calibratedPixelSpacingMm: defaultSensor.pixelSpacing,
 		calibratedResolution: defaultSensor.resolution,
-		statusMessage: `Сенсор готов к экспозиции: ${defaultSensor.name} (${defaultSensor.resolution})`,
-		details: `Горячая папка: ${defaultSensor.recommendedHotFolder}, TWAIN 2.x DSM активен`,
+		statusMessage: `Ожидание снимка (Hot Folder / Автоподхват) — Сенсор готов к экспозиции: ${defaultSensor.name} (${defaultSensor.resolution})`,
+		details: `Папка автозахвата: ${defaultSensor.recommendedHotFolder}. ${NON_CONFLICTING_USB_POLICY.notice}`,
+		nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
 	};
 }
 
@@ -1334,6 +1403,8 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 		calibratedResolution: sensor.resolution,
 		bitDepth: sensor.bitDepth,
 		temperatureCelsius: 24.5,
+		intakeChannel: "hot_folder",
+		nonConflictingNotice: NON_CONFLICTING_USB_POLICY.notice,
 	};
 }
 

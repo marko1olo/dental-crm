@@ -781,15 +781,10 @@ export const CbctMprImplantStudioModal: React.FC<
 
 				{isLabOrderModalOpen && labOrderDraft && (
 					<DentalLabOrderModal
-						isOpen={isLabOrderModalOpen}
-						onClose={() => setIsLabOrderModalOpen(false)}
-						initialOrder={labOrderDraft}
-						patientId={patientId}
-						patientName={patientDisplayName}
-						doctorId={study?.doctorId ?? undefined}
-						doctorName={study?.doctorName ?? undefined}
-						initialToothFdi={labOrderDraft.toothFdi ?? undefined}
-						onOrderSaved={() => setIsLabOrderModalOpen(false)}
+						isOpen={isLabOrderModalOpen} onClose={() => setIsLabOrderModalOpen(false)}
+						initialOrder={labOrderDraft} patientId={patientId} patientName={patientDisplayName}
+						doctorId={study?.doctorId ?? undefined} doctorName={study?.doctorName ?? undefined}
+						initialToothFdi={labOrderDraft.toothFdi ?? undefined} onOrderSaved={() => setIsLabOrderModalOpen(false)}
 					/>
 				)}
 			</div>

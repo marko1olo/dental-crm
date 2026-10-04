@@ -69,7 +69,7 @@ describe("EzDent-i Window #4: Consultation Split & 8 Dental Disciplines (Screens
 			assert.equal(ortho?.shortLabelRu, "Ортодонтия");
 		});
 
-		it("contains comprehensive clinical demonstration cases with ICD-10 and offline SVG schematics", () => {
+		it("contains comprehensive clinical demonstration cases with ICD-10 and real medical diagnostic radiographs (Zero SVG tooth cartoons)", () => {
 			assert.ok(CONSULTATION_PATHOLOGY_CATALOG.length >= 8, "Expected at least 8 pathology items");
 
 			for (const item of CONSULTATION_PATHOLOGY_CATALOG) {
@@ -80,7 +80,14 @@ describe("EzDent-i Window #4: Consultation Split & 8 Dental Disciplines (Screens
 				assert.ok(item.stages.length >= 2, `Item ${item.id} must have at least 2 stages`);
 				assert.ok(item.keyEducationalPoints.length >= 1, `Item ${item.id} must have educational points`);
 				assert.ok(item.recommendedTreatmentRu.length > 0, `Item ${item.id} must have recommended treatment`);
-				assert.ok(item.previewSvg.startsWith("data:image/svg+xml"), `Item ${item.id} must have valid SVG data URI`);
+				assert.ok(
+					item.imageUrl.startsWith("/radiology/") || item.imageUrl.endsWith(".jpg") || item.imageUrl.endsWith(".png"),
+					`Item ${item.id} must have valid real clinical X-ray radiograph URL`,
+				);
+				assert.ok(
+					!item.imageUrl.includes("data:image/svg+xml"),
+					`Item ${item.id} must NOT have cartoon SVG teeth!`,
+				);
 			}
 		});
 

@@ -106,7 +106,7 @@ describe("Copilot Fallback Router — CRM Component Knowledge Inquiries (Mandate
 			(e) => e.type === "tool_use" && (e as { name: string }).name === "crm.apply_discount",
 		);
 		assert.strictEqual(toolCalls.length, 1, "Imperative discount command must trigger crm.apply_discount");
-		assert.strictEqual((toolCalls[0] as { input: { discountPercent: number } }).input.discountPercent, 15);
+		assert.strictEqual(((toolCalls[0] as unknown) as { input: { discountPercent: number } }).input.discountPercent, 15);
 	});
 
 	test("Imperative 'Зуб 46 кариес' correctly triggers tooth chart update", async () => {
@@ -115,7 +115,7 @@ describe("Copilot Fallback Router — CRM Component Knowledge Inquiries (Mandate
 			(e) => e.type === "tool_use" && (e as { name: string }).name === "crm.update_teeth_chart",
 		);
 		assert.strictEqual(toolCalls.length, 1, "Imperative tooth status must trigger update_teeth_chart");
-		const updates = (toolCalls[0] as { input: { updates: Array<{ toothNumber: number }> } }).input.updates;
+		const updates = ((toolCalls[0] as unknown) as { input: { updates: Array<{ toothNumber: number }> } }).input.updates;
 		assert.strictEqual(updates[0]?.toothNumber, 46);
 	});
 

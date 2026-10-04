@@ -114,3 +114,21 @@
 	border: 1px solid rgba(13, 148, 136, 0.3);
 }
 
+/* Cephalometric Radiology Cockpit invariants */
+.ceph-workstation-root {
+	background-color: #020617 !important;
+	color: #f8fafc !important;
+	color-scheme: dark;
+}
+
+.ceph-workstation-root [data-testid="btn-insert-ceph-protocol"] {
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+}
+
+.ceph-workstation-root [data-testid="save-consultation-without-ceph-btn"] {
+	background-color: #d97706 !important;
+	color: #ffffff !important;
+}
+
+

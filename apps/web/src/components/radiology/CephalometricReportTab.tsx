@@ -92,7 +92,7 @@ export function CephalometricReportTab({
 					className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer border border-teal-400/40"
 				>
 					<Sparkles size={18} />
-					<span>Вставить в ортодонтическую карту Формы 043/у</span>
+					<span>Вставить в ортодонтическую карту</span>
 				</button>
 				<button
 					type="button"
@@ -349,7 +349,7 @@ export function CephalometricPresetsBar({
 			<div
 				className="hidden md:flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800 shrink-0 mr-1"
 				data-testid="header-ceph-presets-bar"
-				style={{ backgroundColor: "var(--paper, #020617)", borderColor: "var(--line, #1e293b)" }}
+				style={{ backgroundColor: "#020617", borderColor: "#1e293b" }}
 			>
 				<span className="text-[11px] font-bold text-slate-400 px-1.5 whitespace-nowrap">
 					Пресеты:
@@ -400,7 +400,7 @@ export function CephalometricPresetsBar({
 		return (
 			<div
 				className="mb-3.5 p-3 rounded-xl bg-slate-900/95 border border-slate-800 shrink-0 flex flex-col gap-2"
-				style={{ backgroundColor: "var(--paper-panel, #0f172a)", borderColor: "var(--line, #1e293b)" }}
+				style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
 				data-testid="tab1-ceph-presets-toolbar"
 			>
 				<div className="flex items-center justify-between gap-2">
@@ -544,22 +544,22 @@ export function CephalometricLandmarksList({
 									: "bg-slate-900/90 border-slate-700 opacity-90 hover:opacity-100"
 						}`}
 						style={{
-							backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "var(--paper-panel, #0f172a)",
-							borderColor: isTarget ? "var(--teal, #2dd4bf)" : "var(--line, #334155)",
+							backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "#0f172a",
+							borderColor: isTarget ? "#2dd4bf" : "#334155",
 						}}
 					>
 						<div className="flex items-center gap-3 min-w-0">
 							<div
 								className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 text-white shadow-sm"
-								style={{ backgroundColor: isImageLoaded ? lm.color : "var(--muted, #475569)" }}
+								style={{ backgroundColor: isImageLoaded ? lm.color : "#475569" }}
 							>
 								{lm.code}
 							</div>
 							<div className="min-w-0">
-								<div className="text-sm font-bold min-w-0 break-words" style={{ color: "var(--ink, #ffffff)" }}>
+								<div className="text-sm font-bold text-white min-w-0 break-words" style={{ color: "#ffffff" }}>
 									{lm.nameRu}
 								</div>
-								<div className="text-xs font-medium min-w-0 break-words leading-snug" style={{ color: "var(--muted, #cbd5e1)" }}>
+								<div className="text-xs font-medium text-slate-300 min-w-0 break-words leading-snug" style={{ color: "#cbd5e1" }}>
 									{lm.anatomicalDescription}
 								</div>
 							</div>

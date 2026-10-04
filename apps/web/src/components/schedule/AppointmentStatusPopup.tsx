@@ -216,7 +216,7 @@ export function AppointmentHoverHud({
 			{/* 5. Оперативная очередь StomX: 4-кликовое перемещение между этапами (Запланирован -> В клинике -> В кресле -> Завершен) */}
 			<div className="pt-2 border-t border-[var(--line)]">
 				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
-					<span>Очередь смены (StomX 4-Stage Queue)</span>
+					<span>Очередь смены</span>
 					<span className="text-[10px] font-semibold text-[var(--teal,var(--brand-primary))]">
 						{appointmentLabels?.[displayStatus] || displayStatus}
 					</span>

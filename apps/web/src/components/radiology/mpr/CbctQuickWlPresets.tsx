@@ -108,11 +108,11 @@ export const CBCT_QUICK_WL_PRESETS: readonly CbctQuickWlPreset[] = [
 	},
 	{
 		id: "ez3d_bone",
-		label: "Ez3D-i Кость (W5031/L1039)",
-		shortLabel: "Ez3D-i",
+		label: "DENTE Кость (W5031/L1039)",
+		shortLabel: "DENTE",
 		windowWidth: 5031,
 		windowLevel: 1039,
-		descriptionRu: "Клинический стандарт Vatech Ez3D-i (МЕДИКОМ): W5031 / L1039",
+		descriptionRu: "Клинический стандарт костной ткани DENTE: W5031 / L1039",
 		testId: "cbct-quick-wl-ez3d-bone",
 	},
 ] as const;
@@ -163,7 +163,7 @@ export const CbctQuickWlBar: React.FC<CbctQuickWlBarProps> = ({
 						className={`h-6 min-h-[24px] max-h-[24px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
 							isCurrent
 								? "bg-cyan-950/70 text-cyan-200 font-medium border border-cyan-500/50 shadow-xs"
-								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+								: "bg-zinc-900/80 border border-zinc-700/70 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
 						}`}
 						title={preset.descriptionRu}
 						data-testid={preset.testId}
@@ -296,7 +296,7 @@ export const CbctQuickColormapBar: React.FC<CbctQuickColormapBarProps> = ({
 						className={`h-6 min-h-[24px] max-h-[24px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
 							isCurrent
 								? "bg-purple-950/70 text-purple-200 font-medium border border-purple-500/50 shadow-xs"
-								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+								: "bg-zinc-900/80 border border-zinc-700/70 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
 						}`}
 						title={preset.descriptionRu}
 						data-testid={preset.testId}
@@ -319,7 +319,7 @@ export const CbctQuickColormapBar: React.FC<CbctQuickColormapBarProps> = ({
 				className={`h-6 min-h-[24px] max-h-[24px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
 					currentSharpen > 0
 						? "bg-emerald-950/70 text-emerald-200 font-medium border border-emerald-500/50 shadow-xs ring-1 ring-emerald-400/30"
-						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+						: "bg-zinc-900/80 border border-zinc-700/70 text-zinc-300 hover:text-white hover:bg-zinc-800"
 				}`}
 				title={`Резкость балочек кости (Лапласиан): ${currentSharpen <= 0.05 ? "Выкл" : currentSharpen <= 0.55 ? "50%" : "100%"}`}
 				data-testid="cbct-quick-sharpen-toggle"

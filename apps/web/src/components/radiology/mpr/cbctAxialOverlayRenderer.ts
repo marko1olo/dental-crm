@@ -55,8 +55,6 @@ export function drawAxialMprOverlay(
 		isHovered,
 		archCurve,
 		activeCrossSection,
-		crossSections,
-		activeCrossSectionIdx,
 		selectedArchAnchorIdx,
 		hoveredArchAnchorIdx,
 		isDraggingArchAnchor,
@@ -75,18 +73,18 @@ export function drawAxialMprOverlay(
 	ctx.translate(transform.panX, transform.panY);
 	ctx.scale(transform.zoom, transform.zoom);
 
-	// Arch & Scout rays rendering (Vatech Ez3D-i / Romexis style, Mandate 8l)
+	// Arch rendering is strictly restricted to Panoramic/OPTG mode (Mandate 8l)
 	const shouldRenderArch = Boolean(
 		showDentalArch &&
 		archCurve &&
-		(studioMode === "panoramic" || studioMode === "implant")
+		studioMode === "panoramic"
 	);
 
 	if (shouldRenderArch && archCurve) {
 		ctx.save();
-		// Dental arch curve: clinical purple spline (Romexis/Dente canonical, Mandate 8l)
 		ctx.strokeStyle = "rgba(168, 85, 247, 0.85)";
-		ctx.lineWidth = 1.6;
+		ctx.lineWidth = 1.5;
+		ctx.setLineDash([4, 2]);
 		ctx.beginPath();
 		const spline = archCurve.splinePointsMm;
 		for (let i = 0; i < spline.length; i++) {
@@ -96,8 +94,8 @@ export function drawAxialMprOverlay(
 			else ctx.lineTo(v.x, v.y);
 		}
 		ctx.stroke();
+		ctx.setLineDash([]);
 
-		// Control anchors
 		for (const anchor of archCurve.anchors) {
 			const v = worldMmToVoxel(
 				{ x: anchor.positionMm.x, y: anchor.positionMm.y, z: crosshairMm.z },
@@ -108,73 +106,10 @@ export function drawAxialMprOverlay(
 			ctx.arc(v.x, v.y, 2.5, 0, Math.PI * 2);
 			ctx.fill();
 		}
-
-		// Scout transverse slice rays array along dental arch (Ez3D-i Section mode)
-		if (crossSections && crossSections.length > 0) {
-			for (let i = 0; i < crossSections.length; i++) {
-				const cs = crossSections[i]!;
-				const isCurrentActive =
-					(activeCrossSectionIdx !== undefined && i === activeCrossSectionIdx) ||
-					(activeCrossSection && activeCrossSection.distanceAlongArchMm === cs.distanceAlongArchMm);
-
-				const norm2D = cs.normalVector2D;
-				const rayHalfLenMm = (cs.widthMm || 20.0) / 2.0;
-				const rayP1Mm = {
-					x: cs.centerPointMm.x - norm2D.x * rayHalfLenMm,
-					y: cs.centerPointMm.y - norm2D.y * rayHalfLenMm,
-					z: crosshairMm.z,
-				};
-				const rayP2Mm = {
-					x: cs.centerPointMm.x + norm2D.x * rayHalfLenMm,
-					y: cs.centerPointMm.y + norm2D.y * rayHalfLenMm,
-					z: crosshairMm.z,
-				};
-				const v1 = worldMmToVoxel(rayP1Mm, volume);
-				const v2 = worldMmToVoxel(rayP2Mm, volume);
-
-				if (isCurrentActive) {
-					// Vivid Orange Active Ray (Ez3D-i Section 9 signature #D96B27)
-					ctx.strokeStyle = "#D96B27";
-					ctx.lineWidth = 2.4;
-					ctx.beginPath();
-					ctx.moveTo(v1.x, v1.y);
-					ctx.lineTo(v2.x, v2.y);
-					ctx.stroke();
-
-					// Active slice center dot on the arch
-					const vc = worldMmToVoxel({ x: cs.centerPointMm.x, y: cs.centerPointMm.y, z: crosshairMm.z }, volume);
-					ctx.fillStyle = "#D96B27";
-					ctx.beginPath();
-					ctx.arc(vc.x, vc.y, 3.5, 0, Math.PI * 2);
-					ctx.fill();
-
-					// Active slice badge label
-					ctx.font = "bold 9px monospace";
-					ctx.fillStyle = "#ffedd5";
-					ctx.fillText(`${i + 1}`, v2.x + 3, v2.y - 2);
-				} else {
-					// Background transverse rays (10..80 ticks)
-					ctx.strokeStyle = "rgba(249, 115, 22, 0.35)";
-					ctx.lineWidth = 0.8;
-					ctx.beginPath();
-					ctx.moveTo(v1.x, v1.y);
-					ctx.lineTo(v2.x, v2.y);
-					ctx.stroke();
-
-					// Ez3D-i Milestone labels every 10 rays: 10, 20, 30, 40, 50, 60, 70, 80...
-					const sliceNum = i + 1;
-					if (sliceNum % 10 === 0) {
-						ctx.font = "bold 8px monospace";
-						ctx.fillStyle = "rgba(251, 146, 60, 0.8)";
-						ctx.fillText(String(sliceNum), v2.x + 2, v2.y);
-					}
-				}
-			}
-		}
 		ctx.restore();
 	}
 
-	if (activeCrossSection && (studioMode === "panoramic" || studioMode === "implant") && (!crossSections || crossSections.length === 0)) {
+	if (activeCrossSection && (studioMode === "panoramic" || studioMode === "implant")) {
 		const norm2D = activeCrossSection.normalVector2D;
 		const rayHalfLenMm = activeCrossSection.widthMm / 2.0;
 		const rayP1Mm = {
@@ -190,14 +125,12 @@ export function drawAxialMprOverlay(
 		const v1 = worldMmToVoxel(rayP1Mm, volume);
 		const v2 = worldMmToVoxel(rayP2Mm, volume);
 
-		ctx.save();
 		ctx.strokeStyle = ROMEXIS_COLORS.crossSection;
 		ctx.lineWidth = 2.0;
 		ctx.beginPath();
 		ctx.moveTo(v1.x, v1.y);
 		ctx.lineTo(v2.x, v2.y);
 		ctx.stroke();
-		ctx.restore();
 	}
 
 	if (studioMode === "implant" && implant3DWorld) {

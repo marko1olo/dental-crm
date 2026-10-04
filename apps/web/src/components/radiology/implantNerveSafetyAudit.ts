@@ -233,7 +233,7 @@ export function auditMandibularNerveSafety(
 		safetyStatus: status,
 		isDangerous: isDanger,
 		isWarning: isWarning,
-		shouldTriggerAudioAlarm: isDanger,
+		shouldTriggerAudioAlarm: false,
 		closestImplantPoint: segResult.closestPoint,
 		closestNervePoint: { x: closestNerveX, y: closestNerveY },
 		clinicalMessageRu: message,
@@ -366,11 +366,11 @@ export function calculateApexToNerve3DDistance(
 		if (netClearanceWall <= 0) {
 			message = `ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА! Апекс пересекает нерв на ${Math.abs(netClearanceWall).toFixed(1)} мм`;
 		} else {
-			message = `КРИТИЧЕСКИЙ РИСК: сближение апекса с каналом менее 1.5 мм (${netClearanceWall.toFixed(1)} мм)`;
+			message = `КРИТИЧЕСКИЙ РИСК: сближение апекса с каналом менее 1.5 мм (Дистанция до канала: ${netClearanceWall.toFixed(1)} мм)`;
 		}
 	} else if (isWarning) {
 		status = "warning";
-		message = `ВНИМАНИЕ: буфер безопасности менее 2.0 мм (${netClearanceWall.toFixed(1)} мм)`;
+		message = `ВНИМАНИЕ: буфер безопасности менее 2.0 мм (Дистанция до канала: ${netClearanceWall.toFixed(1)} мм)`;
 	} else {
 		status = "safe";
 		message = `БЕЗОПАСНО: запас апекса до стенки канала ${netClearanceWall.toFixed(1)} мм (норма >= 2.0 мм)`;
@@ -384,7 +384,7 @@ export function calculateApexToNerve3DDistance(
 		isDangerous: isDanger,
 		isWarning: isWarning,
 		isSafe: status === "safe",
-		shouldTriggerAudioAlarm: isDanger,
+		shouldTriggerAudioAlarm: false,
 		closestApexPoint: { x: Number(ax.toFixed(2)), y: Number(ay.toFixed(2)), z: Number(az.toFixed(2)) },
 		closestNervePoint: {
 			x: Number(closestPoint.x.toFixed(2)),

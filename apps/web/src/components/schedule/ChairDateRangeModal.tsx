@@ -68,7 +68,7 @@ export function ChairDateRangeModal({
                 Назначить смену на диапазон дат
               </h2>
               <p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
-                Закрепление врача за установкой (StomX / DentalPRO)
+                Закрепление врача за установкой
               </p>
             </div>
           </div>

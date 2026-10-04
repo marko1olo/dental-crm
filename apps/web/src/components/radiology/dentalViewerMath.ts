@@ -210,6 +210,21 @@ export function resolveCalibratedPixelSpacing(
 		}
 		return VATECH_DEVICE_CALIBRATION_PRESETS.pax_reve3d_ceph?.calMmPerPx ?? fallbackMm;
 	}
+	if (norm.includes("duerr") || norm.includes("durr") || norm.includes("vistaray") || norm.includes("vistaintra")) {
+		return 0.0190; // Dürr Dental VistaRay 7 (19.0 µm)
+	}
+	if (norm.includes("carestream") || norm.includes("cs 5100") || norm.includes("cs 5200") || norm.includes("cs 6100") || norm.includes("cs 6200") || norm.includes("rvg 5100") || norm.includes("rvg 5200") || norm.includes("rvg 6100") || norm.includes("rvg 6200")) {
+		return 0.0185; // Carestream RVG 5100/5200/6100/6200 (18.5 µm)
+	}
+	if (norm.includes("fona") || norm.includes("stellaris") || norm.includes("cdrelite")) {
+		return 0.0178; // FONA Stellaris / CDRelite (17.8 µm)
+	}
+	if (norm.includes("woodpecker") || norm.includes("isensor") || norm.includes("i-sensor")) {
+		return 0.0200; // Woodpecker i-Sensor H1/H2 (20.0 µm)
+	}
+	if (norm.includes("planmeca") || norm.includes("prosensor")) {
+		return norm.includes("hd") || norm.includes("15.0") || norm.includes("0.015") ? 0.0150 : 0.0300;
+	}
 	if (norm in DEFAULT_MODALITY_PIXEL_SPACING) {
 		return DEFAULT_MODALITY_PIXEL_SPACING[norm as DentalModalityKey];
 	}
@@ -886,6 +901,15 @@ export interface ViewerAngleMeasurement {
 	color?: string;
 }
 
+export interface ViewerAreaMeasurement {
+	id: string;
+	points: readonly ViewerPoint2D[];
+	areaMm2: number;
+	perimeterMm?: number;
+	label?: string;
+	color?: string;
+}
+
 /**
  * Calculates curved anatomical length (e.g. root canal working length WL)
  * through an arbitrary polyline of points.
@@ -928,6 +952,46 @@ export function calculateViewerAngleDegrees(
 	const radians = Math.acos(cosTheta);
 	const degrees = (radians * 180.0) / Math.PI;
 	return Number(degrees.toFixed(1));
+}
+
+/**
+ * Calculates periapical lesion / cyst contour area in mm² using the Gauss Shoelace formula.
+ * A = 0.5 * |sum_{i=0}^{n-1} (x_i * y_{i+1} - x_{i+1} * y_i)| * (mmPerPixel)^2
+ */
+export function calculateLesionAreaGaussMm2(
+	points: readonly ViewerPoint2D[],
+	mmPerPixel: number,
+): number {
+	if (!points || points.length < 3) return 0;
+	let sum = 0;
+	const n = points.length;
+	for (let i = 0; i < n; i++) {
+		const curr = points[i]!;
+		const next = points[(i + 1) % n]!;
+		sum += curr.x * next.y - next.x * curr.y;
+	}
+	const areaPx2 = 0.5 * Math.abs(sum);
+	const areaMm2 = areaPx2 * mmPerPixel * mmPerPixel;
+	return Number(areaMm2.toFixed(2));
+}
+
+/**
+ * Calculates perimeter of a closed lesion polygon in mm.
+ */
+export function calculatePolygonPerimeterMm(
+	points: readonly ViewerPoint2D[],
+	mmPerPixel: number,
+): number {
+	if (!points || points.length < 2) return 0;
+	let totalPx = 0;
+	const n = points.length;
+	for (let i = 0; i < n; i++) {
+		const curr = points[i]!;
+		const next = points[(i + 1) % n]!;
+		totalPx += Math.hypot(next.x - curr.x, next.y - curr.y);
+	}
+	const totalMm = totalPx * mmPerPixel;
+	return Number(totalMm.toFixed(2));
 }
 
 /**

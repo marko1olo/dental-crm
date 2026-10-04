@@ -128,7 +128,7 @@ export function ScheduleChairHeader({
               borderColor: `${chairPalette.bright_code}50`,
               backgroundColor: "var(--paper)",
             }}
-            title={`Рабочее место StomX: ${chairPalette.nameRu}`}
+            title={`Рабочее место: ${chairPalette.nameRu}`}
             data-testid={`chair-palette-badge-${chair.id}`}
           >
             {chairPalette.nameRu}

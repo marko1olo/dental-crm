@@ -754,24 +754,14 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
-						toothNumber: params.toothFdi,
-						toothCode,
+						toothNumber: params.toothFdi, toothCode, source: "cbct_studio_surgery",
 						services: services.map((s) => ({
-							code: s.code,
-							title: s.title,
-							price: s.priceRub,
-							priceRub: s.priceRub,
-							quantity: 1,
-							toothCode,
-							category: "surgery",
+							code: s.code, title: s.title, price: s.priceRub, priceRub: s.priceRub, quantity: 1, toothCode, category: "surgery",
 						})),
-						source: "cbct_studio_surgery",
 					},
 				}),
 			);
-		} catch {
-			// ignore
-		}
+		} catch { /* ignore */ }
 	}
 
 	showToast(
@@ -779,7 +769,6 @@ export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinancePa
 		"success",
 		5000,
 	);
-
 	return { services, totalRub };
 }
 

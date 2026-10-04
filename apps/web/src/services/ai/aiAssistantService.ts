@@ -25,6 +25,7 @@ import {
 	getActionTitleRu,
 } from "./aiActionDispatcher";
 import { copilotActionRunner } from "./copilotActionRunner";
+import { extractFdiToothFromText } from "../../components/visit/clinicalCatalog/clinicalProtocolsCatalog";
 
 export type AssistantPhase = "idle" | "thinking" | "working" | "responding" | "error";
 
@@ -378,22 +379,48 @@ export class AIAssistantService {
 		const appState = useAppStore.getState();
 		const currentTooth = appState.activeTooth ? Number(appState.activeTooth) : 36;
 
-		// 1. Odontogram / Tooth status update: e.g. "зуб 46 кариес"
-		const toothMatch = userText.match(/(?:зуб\s*#?\s*)?([1-48][1-8])\s*(?:-|—|:)?\s*(кариес|пульпит|периодонтит|пломба|коронка|удал|имплант|здоров)/i);
-		if (toothMatch) {
-			const toothNum = Number(toothMatch[1]);
-			const rawStatus = (toothMatch[2] ?? "").toLowerCase();
-			let diag = "K02.1 Кариес дентина";
-			if (rawStatus.includes("пульпит")) diag = "K04.0 Пульпит острый очаговый";
-			else if (rawStatus.includes("периодонтит")) diag = "K04.4 Острый верхушечный периодонтит";
-			else if (rawStatus.includes("коронк")) diag = "Протезирование коронкой";
-			else if (rawStatus.includes("имплант")) diag = "Имплантация";
-			else if (rawStatus.includes("удал")) diag = "Удаление зуба";
+		// 1. Clinical Protocols Catalog (1 142 SSOT Protocols & IDENT/DentalPRO Parity) & SOAP Diary
+		const isProtocolIntent =
+			lower.includes("протокол") ||
+			lower.includes("шаблон") ||
+			lower.includes("дневник") ||
+			lower.includes("043") ||
+			lower.includes("соап") ||
+			lower.includes("soap") ||
+			lower.includes("заполни") ||
+			lower.includes("поставь") ||
+			lower.includes("кариес") ||
+			lower.includes("пульпит") ||
+			lower.includes("периодонтит") ||
+			lower.includes("эндодонт") ||
+			lower.includes("имплант") ||
+			lower.includes("удал") ||
+			lower.includes("экстракц") ||
+			lower.includes("коронк") ||
+			lower.includes("винир") ||
+			lower.includes("синус") ||
+			lower.includes("гигиен") ||
+			lower.includes("чистк") ||
+			lower.includes("скейлинг") ||
+			lower.includes("отбеливан") ||
+			lower.includes("кюретаж") ||
+			lower.includes("герметизац") ||
+			lower.includes("молочн") ||
+			lower.includes("детск") ||
+			lower.includes("осмотр") ||
+			lower.includes("норма");
 
-			const isDestructive = rawStatus.includes("удал");
-			const callId = `local_${Date.now()}`;
-			const toolName = "update_tooth_status";
-			const args = { tooth: toothNum, status: rawStatus, diagnosis: diag };
+		if (isProtocolIntent) {
+			const detectedTooth = extractFdiToothFromText(userText) ?? currentTooth;
+			const isPureExtraction = (lower.includes("удал") || lower.includes("экстракц")) && !lower.includes("протокол") && !lower.includes("заполни");
+			const isDestructive = isPureExtraction;
+
+			const callId = `local_protocol_${Date.now()}`;
+			const toolName = "apply_clinical_protocol";
+			const args = {
+				query: userText,
+				toothNumber: detectedTooth,
+			};
 
 			const toolCallObj: AssistantToolCall = {
 				callId,
@@ -407,60 +434,37 @@ export class AIAssistantService {
 			msg.toolCalls = [toolCallObj];
 
 			if (isDestructive) {
-				msg.content = `Действие требует подтверждения: удаление зуба ${toothNum}.`;
+				msg.content = `Клиническое действие требует 1-клик подтверждения врача: удаление зуба ${detectedTooth}.`;
 				this.callbacks.onConfirmationRequired?.(toolCallObj);
 			} else {
-				await copilotActionRunner.executeAction({
+				const actionResult = await copilotActionRunner.executeAction({
 					callId,
 					name: toolName,
 					arguments: args,
 					confirmed: true,
 				});
-				msg.content = `Готово! В зубной формуле обновлен статус зуба ${toothNum}: ${diag}. Одонтограмма синхронизирована.`;
+
+				const data = actionResult?.data as Record<string, unknown> | undefined;
+				const procName = String(data?.procedureName || "Клинический протокол");
+				const icd = data?.matchedIcd10 ? ` (МКБ: ${data.matchedIcd10})` : "";
+				const toothSuffix = detectedTooth ? ` для зуба #${detectedTooth}` : "";
+
+				msg.content = actionResult?.message ||
+					`Найден и применён клинический протокол из каталога (1 142): «${procName}»${icd}${toothSuffix}. Дневник приёма и зубная формула синхронизированы.`;
 			}
 
 			this.callbacks.onMessageUpdated?.({ ...msg });
 			return;
 		}
 
-		// 2. Clinical Protocols Catalog (1 142 Protocols & DentalPRO/IDENT Parity) & SOAP Diary
-		if (
-			lower.includes("протокол") ||
-			lower.includes("шаблон") ||
-			lower.includes("дневник") ||
-			lower.includes("043") ||
-			lower.includes("соап") ||
-			lower.includes("soap")
-		) {
-			const callId = `local_protocol_${Date.now()}`;
-			const toolName = "apply_clinical_protocol";
-
-			// Determine specialty or specific query keywords
-			let query = "кариес дентина";
-			if (lower.includes("пульпит")) query = "пульпит";
-			else if (lower.includes("периодонтит")) query = "периодонтит";
-			else if (lower.includes("удален") || lower.includes("экстракц")) query = "удаление зуба";
-			else if (lower.includes("имплант") || lower.includes("имплантац")) query = "имплантация";
-			else if (lower.includes("синус") || lower.includes("костн")) query = "синус-лифтинг";
-			else if (lower.includes("гигиен") || lower.includes("чистк") || lower.includes("air flow")) query = "профессиональная гигиена";
-			else if (lower.includes("отбеливан")) query = "отбеливание";
-			else if (lower.includes("коронк") || lower.includes("винир") || lower.includes("протез")) query = "препарирование коронка";
-			else if (lower.includes("детск") || lower.includes("молочн")) query = "детский";
-			else if (lower.includes("норма") || lower.includes("здоров") || lower.includes("осмотр")) query = "профилактический осмотр";
-			else {
-				// Strip stop words to search catalog
-				const cleaned = lower
-					.replace(/(примени|выбери|заполни|поставь|открой|протокол|шаблон|дневник|карту|043|по|на|для|зуб|зуба|\d{2})/gi, "")
-					.trim();
-				if (cleaned.length > 2) {
-					query = cleaned;
-				}
-			}
-
-			const args = {
-				query,
-				toothNumber: currentTooth,
-			};
+		// 2. Pure telegraphic Odontogram status update (e.g. "зуб 46 здоров", "16 норм")
+		const toothMatch = userText.match(/(?:зуб\s*#?\s*)?([1-48][1-8])\s*(?:-|—|:)?\s*(здоров|норм|idle)/i);
+		if (toothMatch) {
+			const toothNum = Number(toothMatch[1]);
+			const rawStatus = (toothMatch[2] ?? "").toLowerCase();
+			const callId = `local_tooth_${Date.now()}`;
+			const toolName = "update_tooth_status";
+			const args = { tooth: toothNum, status: rawStatus, diagnosis: "Здоров / норма" };
 
 			const toolCallObj: AssistantToolCall = {
 				callId,
@@ -472,15 +476,13 @@ export class AIAssistantService {
 			};
 
 			msg.toolCalls = [toolCallObj];
-			const actionResult = await copilotActionRunner.executeAction({
+			await copilotActionRunner.executeAction({
 				callId,
 				name: toolName,
 				arguments: args,
 				confirmed: true,
 			});
-
-			msg.content = actionResult?.message ||
-				`Применён клинический протокол «${query}» для зуба ${currentTooth}. Дневник приёма и зубная формула обновлены.`;
+			msg.content = `В зубной формуле обновлен статус зуба ${toothNum}: Здоров (норма). Одонтограмма синхронизирована.`;
 			this.callbacks.onMessageUpdated?.({ ...msg });
 			return;
 		}

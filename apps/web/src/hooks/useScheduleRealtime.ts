@@ -1,20 +1,19 @@
 import { useEffect, useRef } from "react";
 import { useWebsocket } from "./useWebsocket";
+import { playIntercomChime } from "../lib/intercomSound";
+import { showToast } from "../components/GlobalToast";
 
 /**
  * Подписка расписания на живые обновления.
- *
- * Маршрут /api/api/appointments раньше не рассылал ничего, хотя эндпоинт
- * живых обновлений так и называется — /api/ws/schedule. Два администратора
- * в расписании не видели действий друг друга до перезагрузки страницы:
- * один освобождал слот, другой продолжал считать его занятым, и наоборот —
- * прямой путь к двойной записи на один слот.
- *
- * События, на которые реагируем: APPOINTMENT_CREATED и APPOINTMENT_UPDATED
- * из routes/schedule.ts, а также APPOINTMENT_CREATED из routes/leads.ts
- * (запись, созданная из заявки).
+ * DentalPRO expo26 Realtime Schedule Bar:
+ * - APPOINTMENT_CREATED, APPOINTMENT_UPDATED
+ * - INTERCOM_PING (пациент в холле, вызов у кресла)
  */
-const SCHEDULE_EVENTS = new Set(["APPOINTMENT_CREATED", "APPOINTMENT_UPDATED"]);
+const SCHEDULE_EVENTS = new Set([
+	"APPOINTMENT_CREATED",
+	"APPOINTMENT_UPDATED",
+	"INTERCOM_PING",
+]);
 
 /** Схлопывание пачки событий в одно обновление. */
 const REFRESH_DEBOUNCE_MS = 600;
@@ -44,6 +43,16 @@ export function useScheduleRealtime(
 
 	useEffect(() => {
 		if (!lastMessage?.type || !SCHEDULE_EVENTS.has(lastMessage.type)) return;
+
+		// DentalPRO expo26 Realtime LAN-интерком: при сигнале о прибытии пациента
+		if (lastMessage.type === "INTERCOM_PING") {
+			const payload = lastMessage.payload as any;
+			if (payload?.preset?.key === "patient_arrived") {
+				playIntercomChime("urgent");
+				showToast(payload?.ping?.content || "Пациент прибыл в холл клиники", "warning");
+			}
+		}
+
 		if (timerRef.current) {
 			clearTimeout(timerRef.current);
 			timerRef.current = null;

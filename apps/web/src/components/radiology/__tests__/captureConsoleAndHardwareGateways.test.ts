@@ -63,29 +63,25 @@ describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СН�
 			expect(labelMap.import).toContain("Импорт");
 		});
 
-		it("verifies DirectRvgCaptureModal renders all 5 capture mode sidebar buttons", () => {
+		it("verifies DirectRvgCaptureModal eliminates sidebar button clutter and provides instant capture", () => {
 			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain('data-testid="rvg-capture-sidebar"');
-			expect(modalSrc).toContain("CAPTURE_SOURCE_MODES.map");
-			expect(modalSrc).toContain('data-testid={`rvg-source-mode-${mode.id}`}');
+			expect(modalSrc).not.toContain('data-testid="rvg-capture-sidebar"');
+			expect(modalSrc).toContain('data-testid="btn-rvg-trigger-empty-capture"');
+			expect(modalSrc).toContain('data-testid="btn-rvg-upload-disk"');
 		});
 
-		it("implements WebRTC getUserMedia live camera streaming and snapshot in io_camera mode", () => {
+		it("verifies DirectRvgCaptureModal supports drag-and-drop file ingestion and disk upload", () => {
 			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain("getUserMedia");
-			expect(modalSrc).toContain("mediaDevices");
-			expect(modalSrc).toContain("videoRef.current");
-			expect(modalSrc).toContain("handleCaptureFromCamera");
-			expect(modalSrc).toContain('data-testid="btn-rvg-trigger-camera-capture"');
-			// Verifies cleanup of camera stream on unmount/mode change
-			expect(modalSrc).toContain("track.stop()");
+			expect(modalSrc).toContain("validateRadiologyUploadFile");
+			expect(modalSrc).toContain("handleViewportDrop");
+			expect(modalSrc).toContain('data-testid="rvg-drop-overlay"');
 		});
 
-		it("implements TWAIN and DSLR triggers with responsive doctor feedback", () => {
+		it("verifies DirectRvgCaptureModal supports instant hardware trigger and Space shortcut", () => {
 			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
-			expect(modalSrc).toContain('data-testid="btn-rvg-trigger-twain-capture"');
-			expect(modalSrc).toContain('data-testid="btn-rvg-trigger-dslr-capture"');
-			expect(modalSrc).toContain("Снимок получен через интерфейс TWAIN");
+			expect(modalSrc).toContain("handleTriggerCapture");
+			expect(modalSrc).toContain('e.code === "Space"');
+			expect(modalSrc).toContain("Снимок успешно получен с датчика RVG");
 		});
 	});
 
@@ -201,4 +197,30 @@ describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СН�
 			expect(modalSrc).toContain('data-testid="hardware-settings-modal-close"');
 		});
 	});
+
+	describe("6. Non-Conflicting USB Hardware Architecture & Coexistence Law", () => {
+		it("ensures zero exclusive USB lock collision and prioritizes non-conflicting hot folder intake", () => {
+			const gatewaySrc = readSource("components/radiology/UniversalSensorGateway.ts");
+			expect(gatewaySrc).toContain("NON_CONFLICTING_USB_POLICY");
+			expect(gatewaySrc).toContain("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB");
+			expect(gatewaySrc).toContain("intakeChannel: \"hot_folder\"");
+			expect(gatewaySrc).toContain("Ожидание снимка (Hot Folder / Автоподхват)");
+		});
+
+		it("verifies DirectRvgCaptureModal renders non-conflicting telemetry and Ctrl+V clipboard integration", () => {
+			const modalSrc = readSource("components/radiology/DirectRvgCaptureModal.tsx");
+			expect(modalSrc).toContain("Ожидание снимка (Hot Folder / Автоподхват)");
+			expect(modalSrc).toContain("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB");
+			expect(modalSrc).toContain('window.addEventListener("paste", handlePaste)');
+			expect(modalSrc).toContain("Снимок успешно вставлен из буфера обмена (Ctrl+V)");
+		});
+
+		it("verifies HotFolderIntakeModal provides non-conflicting badge and instant paste", () => {
+			const intakeSrc = readSource("components/radiology/HotFolderIntakeModal.tsx");
+			expect(intakeSrc).toContain('data-testid="hfi-non-conflicting-badge"');
+			expect(intakeSrc).toContain("Бесконфликтный автозахват (EzDent-i / Romexis)");
+			expect(intakeSrc).toContain('window.addEventListener("paste", handlePaste)');
+		});
+	});
 });
+

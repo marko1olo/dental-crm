@@ -64,8 +64,8 @@ export const RADIOLOGY_MODALITIES: Record<RadiologyModality, RadiologyModalityIn
 	intraoral_rvg: {
 		id: "intraoral_rvg",
 		studyType: "intraoral_radiovisiography",
-		label: "Прицельная радиовизиография (RVG)",
-		shortLabel: "Визиограф",
+		label: "Прицельный снимок",
+		shortLabel: "Снимок",
 		description: "Прицельный снимок 1–3 зубов с максимальным разрешением для контроля эндодонтии",
 		typicalDoseMicrosv: 3.0,
 		typicalDoseMsv: 0.003,

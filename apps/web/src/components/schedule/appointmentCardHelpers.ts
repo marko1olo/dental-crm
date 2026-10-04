@@ -102,9 +102,10 @@ export function getNormalizedAppointmentStatusLabel(
 ): string {
 	if (!status) return "";
 	const s = String(status).toLowerCase();
-	if (s === "in_treatment" || s === "in_progress") return "На приёме";
-	if (s === "arrived") return "Ожидает приёма";
-	if (s === "completed") return "Ожидает оплаты";
+	if (s === "in_treatment" || s === "in_chair" || s === "in_progress") return "🪑 В кресле";
+	if (s === "arrived" || s === "in_clinic" || s === "waiting") return "🛎️ В холле";
+	if (s === "completed") return "✓ Завершён";
+	if (s === "confirmed") return "📞 Подтверждён";
 	if (s === "planned") return "Запланирован";
 	if (labels) {
 		if (labels[s]) return labels[s];
@@ -284,14 +285,14 @@ export function getPatientSomaticAlert(patient?: any): string | null {
  */
 export function getAppointmentStatusBadgeClasses(status: string | undefined | null): string {
 	const s = String(status || "").toLowerCase();
-	if (s === "in_treatment" || s === "in_progress") {
-		return "bg-teal-600 text-white font-bold shadow-xs";
+	if (s === "in_treatment" || s === "in_chair" || s === "in_progress") {
+		return "bg-emerald-600 text-white font-bold shadow-xs";
 	}
-	if (s === "arrived") {
+	if (s === "arrived" || s === "in_clinic" || s === "waiting") {
 		return "bg-amber-500 text-white font-bold shadow-xs";
 	}
 	if (s === "confirmed") {
-		return "bg-emerald-600 text-white font-bold shadow-xs";
+		return "bg-teal-600 text-white font-bold shadow-xs";
 	}
 	if (s === "completed") {
 		return "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 font-semibold";
@@ -304,9 +305,10 @@ export function getAppointmentStatusBadgeClasses(status: string | undefined | nu
 
 /**
  * Resolves container classes for Grid appointment card based on status, theme, collision, and CITO.
- * Unified Studio Clinical HIG architecture:
- * Every card has a solid background var(--paper), 1px border var(--line),
- * and a 3px accent bar on the left corresponding to the status/specialty.
+ * DentalPRO expo26 Realtime Schedule Bar:
+ * - arrived (В холле): янтарный оттенок, border-l-4 border-l-amber-500, ring-1 ring-amber-500/40
+ * - in_chair (В кресле): изумрудно-зеленый оттенок, border-l-4 border-l-emerald-500, ring-1 ring-emerald-500/50
+ * - completed: мягкий благородный статус
  */
 export function getGridAppointmentCardContainerClasses(
 	status: string | undefined | null,
@@ -324,20 +326,20 @@ export function getGridAppointmentCardContainerClasses(
 		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-rose-600 text-[var(--ink)] ring-1 ring-rose-500/50";
 	}
 	if (isAppointmentInChair(status)) {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-[var(--teal,var(--brand-primary))] text-[var(--ink)]";
+		return "bg-emerald-500/[0.08] dark:bg-emerald-500/[0.18] border-[var(--line)] border-l-[4px] border-l-emerald-500 ring-1 ring-emerald-500/50 text-[var(--ink)]";
 	}
 	const s = String(status || "").toLowerCase();
-	if (s === "arrived") {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-amber-500 text-[var(--ink)]";
+	if (s === "arrived" || s === "in_clinic" || s === "waiting") {
+		return "bg-amber-500/[0.08] dark:bg-amber-500/[0.16] border-[var(--line)] border-l-[4px] border-l-amber-500 ring-1 ring-amber-500/40 text-[var(--ink)]";
 	}
 	if (s === "completed") {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-slate-400 text-[var(--muted-strong,var(--ink))]";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-slate-400 text-[var(--muted-strong,var(--ink))] opacity-95";
 	}
 	if (s === "cancelled" || s === "no_show") {
 		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-rose-400 text-[var(--muted)] opacity-75";
 	}
 	if (s === "confirmed") {
-		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-emerald-500 text-[var(--ink)]";
+		return "bg-[var(--paper)] border-[var(--line)] border-l-[3px] border-l-teal-500 text-[var(--ink)]";
 	}
 	// "planned" and any other status:
 	return docTheme
@@ -362,6 +364,17 @@ export function getAppointmentDurationMinutes(
 	if (Number.isNaN(startMs) || Number.isNaN(endMs)) return defaultMinutes;
 	const diffMinutes = Math.round((endMs - startMs) / 60000);
 	return diffMinutes > 0 ? diffMinutes : defaultMinutes;
+}
+
+/**
+ * Calculates elapsed waiting or in-chair minutes for realtime status badge.
+ */
+export function getAppointmentElapsedMinutes(appointment?: { startsAt?: string; status?: string } | null): number {
+	if (!appointment?.startsAt) return 0;
+	const startMs = Date.parse(appointment.startsAt);
+	if (Number.isNaN(startMs)) return 0;
+	const elapsed = Math.round((Date.now() - startMs) / 60000);
+	return Math.max(0, elapsed);
 }
 
 /**

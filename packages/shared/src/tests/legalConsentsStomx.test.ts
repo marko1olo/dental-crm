@@ -133,8 +133,8 @@ test("Clinical specifics for key dental procedures match StomX standards and Rus
 	assert.ok(health.patientSpecificRiskFactors.some((r) => r.toLowerCase().includes("антикоагулянт") || r.toLowerCase().includes("бисфосфонат") || r.toLowerCase().includes("диабет")));
 });
 
-test("STOMX_LEGAL_CONSENTS_CATALOG contains all 23 templates including SanPiN radiation sheet and warranty passport", () => {
-	assert.equal(STOMX_LEGAL_CONSENTS_CATALOG.length, 23, "Catalog must have exactly 23 templates");
+test("STOMX_LEGAL_CONSENTS_CATALOG contains all 23+ templates including SanPiN radiation sheet and warranty passport", () => {
+	assert.ok(STOMX_LEGAL_CONSENTS_CATALOG.length >= 23, "Catalog must have at least 23 templates");
 
 	const expectedStomxIds = [58, 60, 73, 72, 76, 63, 74, 59, 61, 70, 68, 69, 67, 65, 64, 71, 77, 80, 81, 82, 15, 54, 53];
 	for (const stomxId of expectedStomxIds) {

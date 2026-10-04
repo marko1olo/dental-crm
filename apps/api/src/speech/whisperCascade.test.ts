@@ -25,7 +25,9 @@ describe("whisperCascade", () => {
 	});
 
 	afterEach(() => {
-		process.env = originalEnv;
+		for (const name of Object.keys(process.env)) {
+			if (SPEECH_ENV_PATTERN.test(name)) delete process.env[name];
+		}
 		globalThis.fetch = originalFetch;
 	});
 

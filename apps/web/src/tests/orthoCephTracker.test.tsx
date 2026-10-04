@@ -105,7 +105,7 @@ describe("Orthodontic Cephalometric Tracker & Analysis (OrthodonticCephTrackerMo
 
 			assert.ok(html.includes("Цефалометрический трекер ТРГ"));
 			assert.ok(html.includes("PAT-777"));
-			assert.ok(html.includes("В карту 043/у"));
+			assert.ok(html.includes("В медицинскую карту"));
 			assert.ok(html.includes("Точки"));
 			assert.ok(html.includes("Анализ"));
 		});

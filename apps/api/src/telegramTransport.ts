@@ -293,6 +293,328 @@ export async function answerTelegramCallbackQuery(
 }
 
 // ============================================================================
+// IN-PLACE UI & ZERO CHAT LANDFILL ENGINE (Telegram Bot API editMessageText)
+// ============================================================================
+
+export type EditTelegramMessageTextInput = {
+	botToken: string;
+	chatId: string;
+	messageId: number;
+	text: string;
+	replyMarkup?: Record<string, unknown> | null | undefined;
+	timeoutMs?: number | undefined;
+};
+
+export type EditTelegramMessageReplyMarkupInput = {
+	botToken: string;
+	chatId: string;
+	messageId: number;
+	replyMarkup?: Record<string, unknown> | null | undefined;
+	timeoutMs?: number | undefined;
+};
+
+export type GetTelegramFileInput = {
+	botToken: string;
+	fileId: string;
+	timeoutMs?: number | undefined;
+};
+
+export type TelegramFileInfoResult =
+	| {
+			ok: true;
+			fileId: string;
+			fileUniqueId: string;
+			fileSize?: number | undefined;
+			filePath: string;
+	  }
+	| {
+			ok: false;
+			error: string;
+	  };
+
+export type DownloadTelegramFileInput = {
+	botToken: string;
+	filePath: string;
+	timeoutMs?: number | undefined;
+};
+
+export type DownloadTelegramFileResult =
+	| {
+			ok: true;
+			buffer: Buffer;
+			contentType?: string | undefined;
+	  }
+	| {
+			ok: false;
+			error: string;
+	  };
+
+/**
+ * Редактирование существующего сообщения в Telegram (In-Place UI / Zero Chat Landfill).
+ * Защищает от спама новыми сообщениями, обновляя текст и клавиатуру прямо в текущем сообщении.
+ */
+export async function editTelegramMessageText(
+	input: EditTelegramMessageTextInput,
+): Promise<TelegramTransportResult> {
+	// 152-ФЗ / 323-ФЗ: Защита врачебной тайны
+	const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(input.text);
+	if (leakCheck.hasLeak) {
+		return {
+			ok: false,
+			telegramMessageId: null,
+			retryAfterSeconds: null,
+			errorCode: 422,
+			errorClass: "medical_secrecy_violation",
+			details: `152-ФЗ / 323-ФЗ ст. 13: Заблокировано редактирование сообщения в Telegram Bot API из-за риска утечки врачебной тайны (обнаружены термины: ${leakCheck.detectedTerms.join(", ")})`,
+		};
+	}
+
+	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 10_000));
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), timeoutMs);
+	const body: Record<string, unknown> = {
+		chat_id: input.chatId,
+		message_id: input.messageId,
+		text: input.text,
+		link_preview_options: { is_disabled: true },
+	};
+	if (input.replyMarkup) body.reply_markup = input.replyMarkup;
+
+	try {
+		const response = await fetch(
+			`https://api.telegram.org/bot${input.botToken}/editMessageText`,
+			{
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify(body),
+				signal: controller.signal,
+			},
+		);
+		const payload = (await response.json().catch(() => ({}))) as {
+			description?: string;
+			ok?: boolean;
+		};
+
+		if (!response.ok) {
+			const desc = typeof payload?.description === "string" ? payload.description : "";
+			// Telegram возвращает 400 Bad Request если контент не изменился (повторный клик)
+			if (desc.includes("message is not modified")) {
+				return {
+					ok: true,
+					telegramMessageId: input.messageId,
+					retryAfterSeconds: null,
+					errorCode: null,
+					errorClass: null,
+				};
+			}
+
+			return {
+				ok: false,
+				telegramMessageId: null,
+				retryAfterSeconds: retryAfterSecondsFromPayload(payload),
+				errorCode: response.status,
+				errorClass: classifyTelegramError(response.status),
+				details: desc,
+			};
+		}
+
+		return {
+			ok: true,
+			telegramMessageId: input.messageId,
+			retryAfterSeconds: null,
+			errorCode: null,
+			errorClass: null,
+		};
+	} catch (error) {
+		return {
+			ok: false,
+			telegramMessageId: null,
+			retryAfterSeconds: null,
+			errorCode: null,
+			errorClass:
+				error instanceof DOMException && error.name === "AbortError"
+					? "timeout"
+					: "network",
+		};
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
+/**
+ * Редактирование клавиатуры существующего сообщения (editMessageReplyMarkup).
+ */
+export async function editTelegramMessageReplyMarkup(
+	input: EditTelegramMessageReplyMarkupInput,
+): Promise<TelegramTransportResult> {
+	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 10_000));
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), timeoutMs);
+	const body: Record<string, unknown> = {
+		chat_id: input.chatId,
+		message_id: input.messageId,
+	};
+	if (input.replyMarkup) body.reply_markup = input.replyMarkup;
+
+	try {
+		const response = await fetch(
+			`https://api.telegram.org/bot${input.botToken}/editMessageReplyMarkup`,
+			{
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify(body),
+				signal: controller.signal,
+			},
+		);
+		const payload = (await response.json().catch(() => ({}))) as {
+			description?: string;
+			ok?: boolean;
+		};
+
+		if (!response.ok) {
+			const desc = typeof payload?.description === "string" ? payload.description : "";
+			if (desc.includes("message is not modified")) {
+				return {
+					ok: true,
+					telegramMessageId: input.messageId,
+					retryAfterSeconds: null,
+					errorCode: null,
+					errorClass: null,
+				};
+			}
+
+			return {
+				ok: false,
+				telegramMessageId: null,
+				retryAfterSeconds: retryAfterSecondsFromPayload(payload),
+				errorCode: response.status,
+				errorClass: classifyTelegramError(response.status),
+				details: desc,
+			};
+		}
+
+		return {
+			ok: true,
+			telegramMessageId: input.messageId,
+			retryAfterSeconds: null,
+			errorCode: null,
+			errorClass: null,
+		};
+	} catch (error) {
+		return {
+			ok: false,
+			telegramMessageId: null,
+			retryAfterSeconds: null,
+			errorCode: null,
+			errorClass:
+				error instanceof DOMException && error.name === "AbortError"
+					? "timeout"
+					: "network",
+		};
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
+/**
+ * Получение информации о файле в Telegram Bot API (getFile).
+ */
+export async function getTelegramFile(
+	input: GetTelegramFileInput,
+): Promise<TelegramFileInfoResult> {
+	const timeoutMs = Math.max(1000, Math.min(60_000, input.timeoutMs ?? 10_000));
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+	try {
+		const response = await fetch(
+			`https://api.telegram.org/bot${input.botToken}/getFile?file_id=${encodeURIComponent(input.fileId)}`,
+			{
+				method: "GET",
+				signal: controller.signal,
+			},
+		);
+		const data = (await response.json().catch(() => ({}))) as {
+			ok?: boolean;
+			result?: {
+				file_id: string;
+				file_unique_id: string;
+				file_size?: number;
+				file_path?: string;
+			};
+			description?: string;
+		};
+
+		if (!response.ok || !data.ok || !data.result?.file_path) {
+			return {
+				ok: false,
+				error: data.description || `Не удалось получить файл: HTTP ${response.status}`,
+			};
+		}
+
+		return {
+			ok: true,
+			fileId: data.result.file_id,
+			fileUniqueId: data.result.file_unique_id,
+			fileSize: data.result.file_size,
+			filePath: data.result.file_path,
+		};
+	} catch (err: unknown) {
+		return {
+			ok: false,
+			error: err instanceof Error ? err.message : "Сетевая ошибка при получении файла",
+		};
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
+/**
+ * Скачивание файла из Telegram Bot API по полученному file_path.
+ */
+export async function downloadTelegramFile(
+	input: DownloadTelegramFileInput,
+): Promise<DownloadTelegramFileResult> {
+	const timeoutMs = Math.max(1000, Math.min(120_000, input.timeoutMs ?? 30_000));
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+	try {
+		const response = await fetch(
+			`https://api.telegram.org/file/bot${input.botToken}/${input.filePath}`,
+			{
+				method: "GET",
+				signal: controller.signal,
+			},
+		);
+
+		if (!response.ok) {
+			return {
+				ok: false,
+				error: `Не удалось скачать файл: HTTP ${response.status} ${response.statusText}`,
+			};
+		}
+
+		const arrayBuffer = await response.arrayBuffer();
+		const buffer = Buffer.from(arrayBuffer);
+		const contentType = response.headers.get("content-type") || undefined;
+
+		return {
+			ok: true,
+			buffer,
+			contentType,
+		};
+	} catch (err: unknown) {
+		return {
+			ok: false,
+			error: err instanceof Error ? err.message : "Сетевая ошибка при скачивании файла",
+		};
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
+// ============================================================================
 // УВЕДОМЛЕНИЯ О ВИЗИТАХ С ЗАЩИТОЙ ВРАЧЕБНОЙ ТАЙНЫ (152-ФЗ / 323-ФЗ ст. 13)
 // ============================================================================
 

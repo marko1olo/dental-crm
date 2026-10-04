@@ -24,6 +24,7 @@ import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
+import { playIntercomChime } from "../../lib/intercomSound";
 import {
 	formatPatientDisplayFio,
 	formatDoctorShortName,
@@ -40,6 +41,7 @@ import {
 	resolveAppointmentClinicalBadges,
 	resolveAppointmentLabStatus,
 	calculateProportionalCardHeight,
+	getAppointmentElapsedMinutes,
 	type ScheduleDensityMode,
 } from "./appointmentCardHelpers";
 import { GridAppointmentHoverHud } from "./GridAppointmentHoverHud";
@@ -356,10 +358,109 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							>
 								{formatPatientDisplayFio(pName)}
 							</span>
+							{/* DentalPRO Live Status Elapsed Badge */}
+							{(a.status === "arrived" || (a.status as string) === "in_clinic" || (a.status as string) === "waiting") && (
+								<span
+									className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 shrink-0 hidden sm:inline-flex items-center gap-0.5"
+									title="Пациент в холле: время ожидания с момента записи"
+									data-testid={`appointment-live-timer-arrived-${a.id}`}
+								>
+									<span>⏱</span>
+									<span>{getAppointmentElapsedMinutes(a)}м</span>
+								</span>
+							)}
+							{isAppointmentInChair(a.status) && (
+								<span
+									className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 shrink-0 hidden sm:inline-flex items-center gap-1"
+									title="Пациент у кресла: время текущего приёма"
+									data-testid={`appointment-live-timer-chair-${a.id}`}
+								>
+									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+									<span>{getAppointmentElapsedMinutes(a)}м</span>
+								</span>
+							)}
 						</div>
 
-						{/* Right: 1-Click Status Badge + Actions Menu Trigger */}
+						{/* Right: DentalPRO expo26 Realtime Schedule Bar + 1-Click Status Badge + Actions Menu Trigger */}
 						<div className="flex items-center gap-1 shrink-0">
+							{/* DentalPRO 1-Click Stage Transitions */}
+							{onQuickStatusChange && (
+								<div className="flex items-center gap-1 shrink-0" data-testid={`dentalpro-realtime-bar-${a.id}`}>
+									{(a.status === "planned" || a.status === "confirmed") && (
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												onQuickStatusChange(a.id, "arrived");
+												playIntercomChime("urgent");
+												showToast(`🛎️ Пациент ${pName} прибыл в холл клиники`, "info");
+											}}
+											className="h-[22px] min-h-[22px] px-1.5 sm:px-2 py-0 rounded text-[10px] font-extrabold bg-amber-500/15 hover:bg-amber-500 text-amber-800 hover:text-white dark:text-amber-200 dark:hover:text-white border border-amber-500/40 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap shrink-0"
+											title="Пациент пришёл — перевести «В холл» и подать сигнал в интерком"
+											data-testid={`dentalpro-quick-arrived-${a.id}`}
+										>
+											<span className="text-[11px]">🛎️</span>
+											<span className="hidden sm:inline">Прибыл</span>
+										</button>
+									)}
+									{(a.status === "arrived" || (a.status as string) === "in_clinic" || (a.status as string) === "waiting") && (
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												onQuickStatusChange(a.id, "in_treatment");
+												playIntercomChime("normal");
+												if (a.patientId) {
+													usePatientStore.getState().setSelectedPatientId(a.patientId);
+												}
+												showToast(`🪑 Пациент ${pName} приглашен в кресло`, "info");
+											}}
+											className="h-[22px] min-h-[22px] px-1.5 sm:px-2 py-0 rounded text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs whitespace-nowrap shrink-0 animate-pulse"
+											title="Пригласить в кабинет — перевести в статус «В кресле» и начать приём"
+											data-testid={`dentalpro-quick-in-chair-${a.id}`}
+										>
+											<span className="text-[11px]">🪑</span>
+											<span>В кресло</span>
+										</button>
+									)}
+									{isAppointmentInChair(a.status) && (
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												onQuickStatusChange(a.id, "completed");
+												showToast(`✓ Приём ${pName} завершён — направлен на кассу`, "success");
+											}}
+											className="h-[22px] min-h-[22px] px-1.5 sm:px-2 py-0 rounded text-[10px] font-extrabold bg-slate-700 hover:bg-slate-800 text-white border border-slate-600 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap shrink-0"
+											title="Завершить приём у кресла и отправить на оплату"
+											data-testid={`dentalpro-quick-complete-${a.id}`}
+										>
+											<Check size={11} className="stroke-[3]" />
+											<span className="hidden sm:inline">Завершить</span>
+										</button>
+									)}
+									{a.status === "completed" && (
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												if (patObj?.id) {
+													usePatientStore.getState().setSelectedPatientId(patObj.id);
+												}
+												useAppStore.getState().setCurrentView("finance");
+												showToast(`💳 Касса: оплата визита ${pName}`, "info");
+											}}
+											className="h-[22px] min-h-[22px] px-1.5 sm:px-2 py-0 rounded text-[10px] font-extrabold bg-emerald-500/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-200 dark:hover:text-white border border-emerald-500/40 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-2xs whitespace-nowrap shrink-0"
+											title="Перейти к оплате на кассе"
+											data-testid={`dentalpro-quick-pay-${a.id}`}
+										>
+											<CreditCard size={11} />
+											<span className="hidden sm:inline">Касса</span>
+										</button>
+									)}
+								</div>
+							)}
+
 							<div className="relative shrink-0">
 								<button
 									type="button"
@@ -431,6 +532,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											type="button"
 											onClick={() => {
 												onQuickStatusChange(a.id, "arrived");
+												playIntercomChime("urgent");
+												showToast(`🛎️ Пациент ${pName} в холле клиники`, "info");
 												onCloseStatusPicker();
 											}}
 											className={`w-full text-left min-h-[34px] px-2 py-1 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
@@ -441,28 +544,34 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											data-testid={`quick-status-picker-arrived-${a.id}`}
 										>
 											<UserCheck size={13} />
-											<span>Ожидает приёма</span>
+											<span>В холле (ожидает)</span>
 										</button>
 										<button
 											type="button"
 											onClick={() => {
 												onQuickStatusChange(a.id, "in_treatment");
+												playIntercomChime("normal");
+												if (a.patientId) {
+													usePatientStore.getState().setSelectedPatientId(a.patientId);
+												}
+												showToast(`🪑 Пациент ${pName} в кресле`, "info");
 												onCloseStatusPicker();
 											}}
 											className={`w-full text-left min-h-[34px] px-2 py-1 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
 												isAppointmentInChair(a.status)
-													? "bg-[var(--teal,var(--brand-primary))] text-white font-bold"
-													: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]"
+													? "bg-emerald-600 text-white font-bold"
+													: "hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300"
 											}`}
 											data-testid={`quick-status-picker-in-treatment-${a.id}`}
 										>
 											<CalendarCheck size={13} />
-											<span>На приёме</span>
+											<span>В кресле (приём)</span>
 										</button>
 										<button
 											type="button"
 											onClick={() => {
 												onQuickStatusChange(a.id, "completed");
+												showToast(`✓ Приём ${pName} завершён`, "success");
 												onCloseStatusPicker();
 											}}
 											className={`w-full text-left min-h-[34px] px-2 py-1 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer ${
@@ -473,7 +582,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											data-testid={`quick-status-picker-completed-${a.id}`}
 										>
 											<CheckCircle2 size={13} />
-											<span>Ожидает оплаты</span>
+											<span>Завершён</span>
 										</button>
 										<button
 											type="button"

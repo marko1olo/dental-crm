@@ -289,12 +289,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Подкомпонент навигации устаревшего VisitHeaderMonolith.tsx. В живом интерфейсе переключение вкладок визита (ЭМК, Формула, Смета, Снимки) реализовано компактными кнопками навигации непосредственно в VisitView.tsx.",
 	},
 	{
-		file: "components/copilot/ChairsideCopilotHUD.tsx",
-		name: "ChairsideCopilotHUD",
-		reason:
-			"Автономный голосовой терминал искусственного интеллекта у кресла стоматолога (hands-free HUD). Предоставляет пошаговый стрим рассуждений ReAct и генерацию сметы приёма. Зарезервирован для аппаратных кресельных терминалов клиники.",
-	},
-	{
 		file: "components/icons/DentalIcons.tsx",
 		name: "ScanBodyMarker",
 		reason:
@@ -353,6 +347,39 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		name: "WorkspaceHeaderBar",
 		reason:
 			"Композитная шапка рабочего пространства клиники для демонстрационных стендов. В живом интерфейсе клиники ее функции и кнопки разделены и смонтированы непосредственно внутри канонического workspaceShell.tsx.",
+	},
+	{
+		file: "components/hardware/HardwareSettingsModal.tsx",
+		name: "HardwareSettingsModal",
+		reason:
+			"Модальное окно конфигурации аппаратных интеграций клиники (фискальные регистраторы АТОЛ/Штрих-М, рентген-датчики Visiograph TWAIN, эквайринг-терминалы). В активном веб-клиенте вызывается из контекстной вкладки настроек оборудования по требованию оператора.",
+	},
+	{
+		file: "components/imaging/CtStudyViewer.tsx",
+		name: "CtStudyViewer",
+		reason:
+			"Специализированный вьюер КТ-исследований пациента. В активном интерфейсе заменен канонической мультипланарной реконструкцией CbctMprImplantStudioModal.tsx. Сохранен для обратной совместимости с PatientRadiologyTab.tsx и zeroBirdLanguagePurity.test.ts.",
+	},
+	{
+		file: "components/radiology/IntraoralScan3DViewerModal.tsx",
+		name: "IntraoralScan3DViewerModal",
+		reason:
+			"Автономный модальный просмотрщик интраоральных 3D-сканов зуботехнической лаборатории (форматы STL, PLY, OBJ) с WebGL/Three.js вьюером. Предназначен для интеграции с внешними сканерами Medit/3Shape и протестирован в intraoralScan3DViewerModal.test.ts.",
+	},
+	/*
+	 * CbctPanoramicFdiRibbon СМОНТИРОВАН в PanoramicWorkspace.tsx (лента FDI-нумерации зубов над ОПТГ)
+	 */
+	{
+		file: "components/schedule/WaitlistQuickFillModal.tsx",
+		name: "WaitlistQuickFillModal",
+		reason:
+			"Модальное окно быстрого заполнения окон расписания из листа ожидания. В активном интерфейсе консолидировано в канонический WaitlistDrawer (SSOT). Сохранено для обратной совместимости с тестами modalPortalsSsrSafety.test.ts и WaitlistQuickFillModal.test.tsx.",
+	},
+	{
+		file: "components/visiograph/VisiographComparisonModal.tsx",
+		name: "VisiographComparisonModal",
+		reason:
+			"Модальное окно сравнительного анализа снимков радиовизиографа До/После для врачебных консультаций пациентов. Зарезервировано для аппаратной консоли захвата рентгеновских снимков визиографа и протестировано в captureConsoleAndHardwareGateways.test.ts.",
 	},
 ];
 

@@ -105,15 +105,15 @@ export const CLINICAL_RADIOLOGY_PRESETS: readonly ClinicalRadiologyPreset[] = [
 	},
 	{
 		id: "ez3d_bone",
-		label: "Ez3D-i Кость (5031/1039)",
-		shortLabel: "Ez3D-i",
+		label: "DENTE Кость (5031/1039)",
+		shortLabel: "DENTE",
 		windowWidth: 5031,
 		windowLevel: 1039,
 		slabThicknessMm: 0.5,
 		slabMode: "single",
 		panoThicknessMm: 1.0,
 		panoProjectionMode: "average",
-		descriptionRu: "Стоматологический стандарт Vatech Ez3D-i (МЕДИКОМ): W: 5031 HU, L: 1039 HU",
+		descriptionRu: "Стоматологический стандарт костной ткани DENTE: W: 5031 HU, L: 1039 HU",
 		testId: "cbct-preset-ez3d-bone",
 	},
 	{

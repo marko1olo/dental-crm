@@ -83,8 +83,8 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("Межчелюстные эластики"));
 		assert.ok(html.includes("II класс"));
 
-		// Live 043/u Protocol Preview
-		assert.ok(html.includes("ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)"));
+		// Live Protocol Preview
+		assert.ok(html.includes("ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА"));
 		assert.ok(html.includes("1. ЖАЛОБЫ"));
 		assert.ok(html.includes("2. ОБЪЕКТИВНЫЙ СТАТУС"));
 		assert.ok(html.includes("3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ"));
@@ -195,9 +195,10 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("Сет 4 каппы (+28 дн.)"));
 		assert.ok(html.includes("min-h-[44px] min-w-[44px]"));
 
-		// Append to Form 043/u diary button (concise label + full title to prevent text overflow)
+		// Append to diary button (concise label + full title to prevent text overflow, zero bird language)
 		assert.ok(html.includes("data-testid=\"append-attachments-to-soap-btn\""));
-		assert.ok(html.includes("Внести в дневник 043/у"));
+		assert.ok(html.includes("Внести в дневник приёма"));
+		assert.ok(html.includes("Внести в дневник"));
 		assert.ok(html.includes("title=\"Добавить протокол в дневник визита без стирания ранее набранного текста\""));
 
 		// Catalog verification
@@ -558,14 +559,14 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok(html.includes("data-testid=\"angulation-preset-canine_upright-btn\""));
 		});
 
-		it("renders Form 043/u print buttons conforming to Mandate 8e Doctor Autonomy", () => {
+		it("renders print protocol buttons conforming to Mandate 8e Doctor Autonomy and Mandate 8z", () => {
 			const html = renderToString(
 				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
 			);
 			assert.ok(html.includes("data-testid=\"top-print-ortho-protocol-btn\""));
 			assert.ok(html.includes("data-testid=\"print-ortho-protocol-btn\""));
 			assert.ok(html.includes("data-testid=\"bottom-print-protocol-btn\""));
-			assert.ok(html.includes("Печать 043/у"));
+			assert.ok(html.includes("Печать протокола"));
 		});
 
 		it("maps separation elastics to nomenclature 804n code A16.07.048.003", () => {
@@ -644,6 +645,75 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			// Ensure zero disabled buttons exist in the rendered HTML
 			assert.ok(!html.includes("disabled=\"\""));
 			assert.ok(!html.includes("disabled=\"true\""));
+		});
+	});
+
+	describe("Wave 251 Occlusal Anomalies & TMJ Gnathology Inquisitor (Mandates 8e, 8k, 8n, 8z)", () => {
+		it("renders 1-click Occlusal Anomaly Selector Bar with Sagittal, Vertical, and Transversal presets", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			// Container and 1-click norm button
+			assert.ok(html.includes("data-testid=\"ortho-occlusion-anomaly-selector\""));
+			assert.ok(html.includes("data-testid=\"occlusion-norm-1click-btn\""));
+			assert.ok(html.includes("Норма окклюзии"));
+
+			// Sagittal buttons
+			assert.ok(html.includes("data-testid=\"sagittal-norm-btn\""));
+			assert.ok(html.includes("data-testid=\"sagittal-overjet-btn\""));
+			assert.ok(html.includes("data-testid=\"sagittal-reverse-btn\""));
+			assert.ok(html.includes("Норма (1–2 мм)"));
+			assert.ok(html.includes("Оверджет (&gt;2 мм)"));
+			assert.ok(html.includes("Обратный прикус"));
+
+			// Vertical buttons
+			assert.ok(html.includes("data-testid=\"vertical-norm-btn\""));
+			assert.ok(html.includes("data-testid=\"vertical-deep-btn\""));
+			assert.ok(html.includes("data-testid=\"vertical-open-btn\""));
+			assert.ok(html.includes("Норма (1/3)"));
+			assert.ok(html.includes("Глубокий"));
+			assert.ok(html.includes("Открытый"));
+
+			// Transversal buttons
+			assert.ok(html.includes("data-testid=\"transversal-norm-btn\""));
+			assert.ok(html.includes("data-testid=\"transversal-crossbite-btn\""));
+			assert.ok(html.includes("Перекрестный"));
+		});
+
+		it("renders 1-click Gnathology & TMJ Status Selector Bar with norm and pathology chips", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			// Container and 1-click norm button
+			assert.ok(html.includes("data-testid=\"ortho-gnathology-tmj-selector\""));
+			assert.ok(html.includes("data-testid=\"tmj-norm-1click-btn\""));
+			assert.ok(html.includes("Норма ВНЧС"));
+
+			// 5 TMJ status buttons
+			assert.ok(html.includes("data-testid=\"tmj-status-norm-btn\""));
+			assert.ok(html.includes("data-testid=\"tmj-status-clicking-btn\""));
+			assert.ok(html.includes("data-testid=\"tmj-status-pain-btn\""));
+			assert.ok(html.includes("data-testid=\"tmj-status-deviation-btn\""));
+			assert.ok(html.includes("data-testid=\"tmj-status-splint-btn\""));
+
+			assert.ok(html.includes("Щелчок ВНЧС"));
+			assert.ok(html.includes("Боль / пальпация"));
+			assert.ok(html.includes("Девиация"));
+			assert.ok(html.includes("Сплинт-шина"));
+		});
+
+		it("synthesizes occlusal and TMJ diagnostic status in the generated protocol preview", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			// Default norm output in protocol preview
+			assert.ok(html.includes("• Сагиттальное соотношение резцов: норма (физиологический контакт 1–2 мм)."));
+			assert.ok(html.includes("• Вертикальное перекрытие: норма (1/3 высоты коронки, физиологическое)."));
+			assert.ok(html.includes("• Трансверзальное соотношение: норма (правильное щечно-небное перекрытие)."));
+			assert.ok(html.includes("• ВНЧС и гнатология: пальпация суставов безболезненная, девиации нет, суставной шум отсутствует (норма)."));
 		});
 	});
 });

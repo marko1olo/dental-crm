@@ -193,38 +193,39 @@ export interface ShadeSwatchInfo {
 }
 
 export const SHADE_SWATCH_MAP: Record<string, ShadeSwatchInfo> = {
-	// VITA Classical A (Reddish-Brownish)
-	A1: { bg: "#f7f1e7", border: "#dfd2c0", desc: "Светлый красновато-коричневый", group: "Группа A" },
-	A2: { bg: "#efe2d0", border: "#d3c2aa", desc: "Средний естественный", group: "Группа A" },
-	A3: { bg: "#e5d3bc", border: "#c7b296", desc: "Насыщенный дентинный", group: "Группа A" },
-	"A3.5": { bg: "#d9be9f", border: "#b89c7c", desc: "Темный пришеечный", group: "Группа A" },
-	A4: { bg: "#cbaa84", border: "#a6855e", desc: "Интенсивный коричневый", group: "Группа A" },
+	// VITA Classical A (Reddish-Brownish) — exact hex from DentTechnician vita_palette.json
+	A1: { bg: "#F3E2C8", border: "#d8c5a8", desc: "Светлый красновато-коричневый", group: "Группа A" },
+	A2: { bg: "#EBD7BB", border: "#d0bc9e", desc: "Средний естественный", group: "Группа A" },
+	A3: { bg: "#E2CBAE", border: "#c7af91", desc: "Насыщенный дентинный", group: "Группа A" },
+	"A3.5": { bg: "#D8C2A4", border: "#bda585", desc: "Темный пришеечный", group: "Группа A" },
+	A4: { bg: "#CFA98F", border: "#b38c71", desc: "Интенсивный коричневый", group: "Группа A" },
 
-	// VITA Classical B (Yellowish)
-	B1: { bg: "#f6f3e5", border: "#ded7bf", desc: "Светлый желтоватый", group: "Группа B" },
-	B2: { bg: "#eee7d0", border: "#d4caa8", desc: "Средний желтоватый", group: "Группа B" },
-	B3: { bg: "#e5dcba", border: "#c8be93", desc: "Насыщенный желтый", group: "Группа B" },
-	B4: { bg: "#d7cb9e", border: "#b6a877", desc: "Темный желтоватый", group: "Группа B" },
+	// VITA Classical B (Yellowish) — exact hex from DentTechnician vita_palette.json
+	B1: { bg: "#F1E6CF", border: "#d5c9b0", desc: "Светлый желтоватый", group: "Группа B" },
+	B2: { bg: "#E6D9BE", border: "#c9bba0", desc: "Средний желтоватый", group: "Группа B" },
+	B3: { bg: "#DACAAE", border: "#bcae91", desc: "Насыщенный желтый", group: "Группа B" },
+	B4: { bg: "#CDBA9C", border: "#af9d7e", desc: "Темный желтоватый", group: "Группа B" },
 
-	// VITA Classical C (Greyish)
-	C1: { bg: "#ede9e2", border: "#d2ccc3", desc: "Светлый сероватый", group: "Группа C" },
-	C2: { bg: "#ded6cb", border: "#c1b8aa", desc: "Средний серый", group: "Группа C" },
-	C3: { bg: "#cfc5b5", border: "#b0a593", desc: "Насыщенный серый", group: "Группа C" },
-	C4: { bg: "#beaf9d", border: "#9e8e7c", desc: "Темный серо-коричневый", group: "Группа C" },
+	// VITA Classical C (Greyish) — exact hex from DentTechnician vita_palette.json
+	C1: { bg: "#E9DEC6", border: "#ccc0a8", desc: "Светлый сероватый", group: "Группа C" },
+	C2: { bg: "#E0D2B8", border: "#c3b499", desc: "Средний серый", group: "Группа C" },
+	C3: { bg: "#D6C6AA", border: "#b8a78a", desc: "Насыщенный серый", group: "Группа C" },
+	C4: { bg: "#C7B596", border: "#a99778", desc: "Темный серо-коричневый", group: "Группа C" },
 
-	// VITA Classical D (Reddish-Grey)
-	D2: { bg: "#eae4dc", border: "#cdc5ba", desc: "Светлый красно-серый", group: "Группа D" },
-	D3: { bg: "#ddd4c4", border: "#beb4a1", desc: "Средний красно-серый", group: "Группа D" },
-	D4: { bg: "#d0c3af", border: "#aea08a", desc: "Темный красно-серый", group: "Группа D" },
+	// VITA Classical D (Reddish-Grey) — exact hex from DentTechnician vita_palette.json
+	D2: { bg: "#E7DCC6", border: "#cbbea8", desc: "Светлый красно-серый", group: "Группа D" },
+	D3: { bg: "#DACDB5", border: "#bdae95", desc: "Средний красно-серый", group: "Группа D" },
+	D4: { bg: "#CBBCA2", border: "#ad9d82", desc: "Темный красно-серый", group: "Группа D" },
 
-	// Bleach Shades
-	BL1: { bg: "#fdfdfb", border: "#e8e7e1", desc: "Ультра-белый отбеленный (Hollywood)", group: "Bleach" },
-	BL2: { bg: "#faf8f3", border: "#e4e1d7", desc: "Экстра-светлый отбеленный", group: "Bleach" },
-	BL3: { bg: "#f7f4ec", border: "#ded9cc", desc: "Мягкий отбеленный", group: "Bleach" },
-	BL4: { bg: "#f4efe3", border: "#d7d0bf", desc: "Натуральный отбеленный", group: "Bleach" },
+	// Bleach Shades — exact hex from DentTechnician vita_palette.json
+	BL1: { bg: "#FFF7EE", border: "#e2dad0", desc: "Ультра-белый отбеленный (Hollywood)", group: "Bleach" },
+	BL2: { bg: "#FEF1E3", border: "#e1d4c5", desc: "Экстра-светлый отбеленный", group: "Bleach" },
+	BL3: { bg: "#FDEAD6", border: "#dfcbb7", desc: "Мягкий отбеленный", group: "Bleach" },
+	BL4: { bg: "#FBE1C6", border: "#ddc2a6", desc: "Натуральный отбеленный", group: "Bleach" },
 	"0M1": { bg: "#fcfbfa", border: "#e5e3dc", desc: "3D Bleach 0M1", group: "Bleach" },
 	"0M2": { bg: "#f9f7f1", border: "#dfdcd2", desc: "3D Bleach 0M2", group: "Bleach" },
 	"0M3": { bg: "#f6f2e8", border: "#d9d4c5", desc: "3D Bleach 0M3", group: "Bleach" },
+
 
 	// VITA 3D-Master
 	"1M1": { bg: "#f7f2ea", border: "#ded6ca", desc: "L1 Chroma 1", group: "3D Group 1" },

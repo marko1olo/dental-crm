@@ -1,120 +1,24 @@
-# ==============================================================================
-# DENTE DENTAL CRM — CADDY 2 PRODUCTION REVERSE PROXY CONFIGURATION
-# ==============================================================================
-# - Automated TLS certificate provisioning (Let's Encrypt / ZeroSSL)
-# - HTTP/3 QUIC enabled by default with HTTP/2 fallback
-# - Intelligent compression (Zstandard & Gzip)
-# - Security headers: Strict HSTS, CSP, X-Content-Type-Options, frame-ancestors
-# ==============================================================================
-
-{
-    email {$ACME_EMAIL:admin@example.com}
-    admin off
-
-    # Protocols: HTTP/1.1, HTTP/2 and modern HTTP/3 (QUIC over UDP 443)
-    servers {
-        protocols h1 h2 h3
-    }
-}
-
-# ------------------------------------------------------------------------------
-# REUSABLE SECURITY SNIPPETS
-# ------------------------------------------------------------------------------
-(base_security) {
-    header {
-        # Strict-Transport-Security (1 year, all subdomains, preload list eligible)
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-
-        # Prevent MIME type sniffing
-        X-Content-Type-Options "nosniff"
-
-        # Privacy-preserving referrer header
-        Referrer-Policy "strict-origin-when-cross-origin"
-
-        # Restrict dangerous browser features by default
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-
-        # Strip server signature banner
-        -Server
-    }
-}
-
-(compression) {
+{$DOMAIN_NAME:bot.dente-clinic.ru} {
+    # Automatic HTTPS via Let's Encrypt / ZeroSSL
     encode zstd gzip
-}
 
-# ------------------------------------------------------------------------------
-# 1. ONLINE BOOKING WIDGET (САЙТ КЛИНИКИ & TELEGRAM WEBAPP)
-# ------------------------------------------------------------------------------
-booking.{$DOMAIN} {
-    import base_security
-    import compression
-
-    header {
-        # Разрешаем встраивание виджета через <iframe> строго на домене клиники, указанных сайтах и в Telegram WebApp (без опасного wildcard *)
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self' https://{$DOMAIN} https://*.{$DOMAIN} {$ALLOWED_IFRAME_ORIGINS} https://web.telegram.org https://*.telegram.org;"
+    # Telegram Bot Webhook endpoint proxy
+    handle /api/telegram/* {
+        reverse_proxy telegram-bot-api:4000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto https
+        }
     }
 
-    reverse_proxy booking-server:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-    }
-}
-
-# ------------------------------------------------------------------------------
-# 2. PATIENT PERSONAL CABINET (ЛИЧНЫЙ КАБИНЕТ ПАЦИЕНТА PWA)
-# ------------------------------------------------------------------------------
-my.{$DOMAIN} {
-    import base_security
-    import compression
-
-    header {
-        # Личный кабинет запрещено встраивать в чужие фреймы (защита от Clickjacking)
-        X-Frame-Options "DENY"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
+    # Health check probe
+    handle /health {
+        reverse_proxy telegram-bot-api:4000
     }
 
-    reverse_proxy booking-server:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-    }
-}
-
-# ------------------------------------------------------------------------------
-# 3. DENTAL LABORATORY PORTAL (ПОРТАЛ ЗУБОТЕХНИЧЕСКОЙ ЛАБОРАТОРИИ)
-# ------------------------------------------------------------------------------
-lab.{$DOMAIN} {
-    import base_security
-    import compression
-
-    header {
-        X-Frame-Options "SAMEORIGIN"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'self';"
-    }
-
-    reverse_proxy booking-server:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
-    }
-}
-
-# ------------------------------------------------------------------------------
-# 4. CLOUD RELAY & WEBSOCKET TUNNEL (ШЛЮЗ СВЯЗИ С КЛИНИКОЙ)
-# ------------------------------------------------------------------------------
-relay.{$DOMAIN} {
-    import base_security
-
-    # Caddy автоматически поддерживает WebSocket-апгрейд в директиве reverse_proxy
-    reverse_proxy cloud-relay:4000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
+    # Static fallback
+    handle {
+        respond "DENTE Telegram Gateway Active" 200
     }
 }

@@ -88,6 +88,8 @@ export interface UseCbctInteractionHandlersParams {
 	dragImplantPart: string | null; setDragImplantPart: React.Dispatch<React.SetStateAction<string | null>>;
 	crossSectionDragStart: { clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null; setCrossSectionDragStart: React.Dispatch<React.SetStateAction<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>>;
 	handleToggleMaximize: (viewport: CbctViewportType) => void;
+	jawType?: "mandible" | "maxilla";
+	onSwitchJaw?: (newJaw: "mandible" | "maxilla") => void;
 	panoCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	crossSectionCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	axialCanvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -111,6 +113,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		implantEntryDepthMm, setImplantEntryDepthMm, implantAngulationDeg, setImplantAngulationDeg,
 		hoveredImplantPart, setHoveredImplantPart, dragImplantPart, setDragImplantPart,
 		crossSectionDragStart, setCrossSectionDragStart, handleToggleMaximize,
+		jawType, onSwitchJaw,
 		panoCanvasRef, crossSectionCanvasRef, axialCanvasRef, coronalCanvasRef, sagittalCanvasRef,
 	} = params;
 
@@ -141,6 +144,19 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 	}, [activeTool, activeProbe, activeAngle, activeRuler, setActiveProbe, setActiveAngle, setActiveRuler]);
 
 	const handleSelectTooth = useCallback((toothFdi: number | string) => {
+		const num = typeof toothFdi === "number" ? toothFdi : Number.parseInt(String(toothFdi), 10);
+		const isMaxilla = (num >= 11 && num <= 18) || (num >= 21 && num <= 28);
+		const isMandible = (num >= 31 && num <= 38) || (num >= 41 && num <= 48);
+
+		if (isMaxilla && jawType === "mandible" && onSwitchJaw) {
+			onSwitchJaw("maxilla");
+			return;
+		}
+		if (isMandible && jawType === "maxilla" && onSwitchJaw) {
+			onSwitchJaw("mandible");
+			return;
+		}
+
 		const targetZ = archCurve.planeZMm !== undefined ? archCurve.planeZMm : crosshairMm.z;
 		const res = findCrossSectionAndPositionByFdi(toothFdi, crossSections, archCurve, targetZ);
 		if (res.found) {
@@ -148,7 +164,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			setCrosshairMm(res.positionMm);
 			showToast(`Навигация к зубу FDI #${res.nearestToothFdi} (Срез #${res.crossSectionIdx + 1})`, "info");
 		}
-	}, [crossSections, archCurve, crosshairMm.z, setActiveCrossSectionIdx, setCrosshairMm]);
+	}, [crossSections, archCurve, crosshairMm.z, setActiveCrossSectionIdx, setCrosshairMm, jawType, onSwitchJaw]);
 
 	// Curved viewports (panoramic & cross-section) interaction handlers
 	const curvedHandlers = useCbctCurvedViewportHandlers({

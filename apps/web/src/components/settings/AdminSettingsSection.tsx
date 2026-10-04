@@ -49,6 +49,7 @@ export type AdminSubTab =
 	| "staff"
 	| "access"
 	| "messengers"
+	| "telegram"
 	| "templates"
 	| "booking"
 	| "modules"
@@ -357,11 +358,11 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 					</ErrorBoundary>
 				)}
 
-				{activeSubTab === "messengers" && (
+				{(activeSubTab === "messengers" || activeSubTab === "telegram") && (
 					<ErrorBoundary moduleName="Мессенджеры и рассылки">
 						<SettingsMessengersTab
 							props={props}
-							settingsTab="messengers"
+							settingsTab={activeSubTab === "telegram" ? "telegram" : "messengers"}
 						/>
 					</ErrorBoundary>
 				)}

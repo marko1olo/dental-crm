@@ -388,7 +388,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 			}
 
 			showToast(
-				`Врач ${newDoctorName} подменяет врача на кресле «${chair.name}» (StomX Parity)`,
+				`Врач ${newDoctorName} подменяет врача на кресле «${chair.name}»`,
 				"success",
 			);
 			return updatedAssignment;
@@ -489,7 +489,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 			}
 
 			showToast(
-				`График смен кресел применен на ${label} (${mondayIso}..) в 1 клик (StomX Parity)`,
+				`График смен кресел применён на ${label} (${mondayIso}..) в 1 клик`,
 				"success",
 				3500,
 			);
@@ -557,7 +557,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		}
 
 		showToast(
-			`График смен кресел применен на весь текущий месяц (${monthName}) в 1 клик (StomX Parity)`,
+			`График смен кресел применён на весь текущий месяц (${monthName}) в 1 клик`,
 			"success",
 			3500,
 		);

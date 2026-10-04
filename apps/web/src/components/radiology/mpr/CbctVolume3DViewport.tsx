@@ -16,12 +16,15 @@ import type { CbctVoxelVolume } from "../cbctMprMath";
 import {
 	type Volume3DClippingBox,
 	type Volume3DPresetId,
+	type Volume3DImplantParam,
 	DEFAULT_VOLUME_3D_CLIPPING_BOX,
 	CBCT_VOLUME_3D_PRESETS,
 	ALL_CBCT_VOLUME_3D_PRESETS,
 	getVolume3DPreset,
 	getSafeDevicePixelRatio,
 	renderCanvas2DPreviewSlice,
+	convertImplantWorldToVolume3DParam,
+	generate4JawImplants,
 } from "./cbctVolume3DMath";
 import {
 	type WebGlVolume3DState,
@@ -57,6 +60,7 @@ export interface CbctVolume3DViewportProps {
 	readonly nervePoints?: readonly Point3D[] | undefined;
 	readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
 	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined;
+	readonly implants3DWorld?: readonly Implant3DWorldProjection[] | undefined;
 	readonly nerveAuditResult?: {
 		readonly isDangerous: boolean;
 		readonly isWarning: boolean;
@@ -64,6 +68,58 @@ export interface CbctVolume3DViewportProps {
 	} | null | undefined;
 	readonly crosshairMm?: Point3D | undefined;
 }
+
+export interface ExtraSkullProjectionItem {
+	readonly id: string;
+	readonly label: string;
+	readonly tooltip: string;
+	readonly yaw: number;
+	readonly pitch: number;
+	readonly testId: string;
+}
+
+export const EXTRA_SKULL_PROJECTIONS: readonly ExtraSkullProjectionItem[] = [
+	{
+		id: "posterior",
+		label: "Затылок",
+		tooltip: "Затылок / Posterior: основание черепа сзади (Yaw 180°, Pitch 0°)",
+		yaw: 180,
+		pitch: 0,
+		testId: "cbct-proj-posterior",
+	},
+	{
+		id: "left_lateral",
+		label: "Левый профиль",
+		tooltip: "Левый профиль: латеральный вид левой челюсти и ВНЧС (Yaw -90°, Pitch 0°)",
+		yaw: -90,
+		pitch: 0,
+		testId: "cbct-proj-left-lateral",
+	},
+	{
+		id: "superior",
+		label: "Сверху (Окклюзия)",
+		tooltip: "Сверху: аксиальный вид на окклюзионную поверхность зубного ряда (Yaw 0°, Pitch +85°)",
+		yaw: 0,
+		pitch: 85,
+		testId: "cbct-proj-superior",
+	},
+	{
+		id: "inferior",
+		label: "Снизу (Базис)",
+		tooltip: "Снизу: подбородочный вид на базис нижней челюсти (Yaw 0°, Pitch -85°)",
+		yaw: 0,
+		pitch: -85,
+		testId: "cbct-proj-inferior",
+	},
+	{
+		id: "left_oblique",
+		label: "3/4 Левый",
+		tooltip: "3/4 Левый: изометрический левый ракурс челюсти (Yaw -45°, Pitch 15°)",
+		yaw: -45,
+		pitch: 15,
+		testId: "cbct-proj-left-oblique",
+	},
+];
 
 export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	volume,
@@ -81,15 +137,18 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	nervePoints = [],
 	interpolatedNerve3D = [],
 	implant3DWorld = null,
+	implants3DWorld = undefined,
 	nerveAuditResult = null,
 	crosshairMm,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const canvas2dRef = useRef<HTMLCanvasElement | null>(null);
 	const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const containerRef = useRef<HTMLDivElement | null>(null);
 	const glStateRef = useRef<WebGlVolume3DState | null>(null);
 	const [activePreset, setActivePreset] = useState<Volume3DPresetId>("skull");
-	const [yaw, setYaw] = useState<number>(30); // 30° canonical dental 3/4 view
-	const [pitch, setPitch] = useState<number>(12); // 12° occlusal tilt
+	const [yaw, setYaw] = useState<number>(0); // 0° canonical frontal view (Фас / Coronal)
+	const [pitch, setPitch] = useState<number>(0); // 0° level horizon
 	const [zoom, setZoom] = useState<number>(1.0);
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isInteracting, setIsInteracting] = useState<boolean>(false);
@@ -99,6 +158,34 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	});
 	const [isClippingOpen, setIsClippingOpen] = useState<boolean>(false);
 	const [isPresetOpen, setIsPresetOpen] = useState<boolean>(false);
+	const [isProjectionsMenuOpen, setIsProjectionsMenuOpen] = useState<boolean>(false);
+	const [implantCountMode, setImplantCountMode] = useState<"quad" | "single">("quad");
+	const [isMarActive, setIsMarActive] = useState<boolean>(true);
+
+	const active3DImplants = useMemo<Volume3DImplantParam[]>(() => {
+		if (!volume) return [];
+		let worldList: readonly Implant3DWorldProjection[] = [];
+		if (implants3DWorld && implants3DWorld.length > 0) {
+			worldList = implants3DWorld;
+		} else if (implant3DWorld) {
+			worldList = [implant3DWorld];
+		}
+
+		// Mandibular arch invariant: strictly filter out any non-mandibular implants (e.g. maxillary teeth < 30 or entry3D.z > 0)
+		const safeMandibularWorld = worldList.filter(
+			(w) => (!w.targetToothFdi || w.targetToothFdi >= 30) && (!w.entry3D || w.entry3D.z <= 0.5),
+		);
+
+		if (implantCountMode === "quad") {
+			const quadWorld = generate4JawImplants(volume, null);
+			return quadWorld.map((w) => convertImplantWorldToVolume3DParam(w, volume));
+		} else if (safeMandibularWorld.length > 0 && safeMandibularWorld[0]?.targetToothFdi === 46) {
+			return [convertImplantWorldToVolume3DParam(safeMandibularWorld[0]!, volume)];
+		} else {
+			const quadWorld = generate4JawImplants(volume, null);
+			return [convertImplantWorldToVolume3DParam(quadWorld[0]!, volume)];
+		}
+	}, [volume, implants3DWorld, implant3DWorld, implantCountMode]);
 
 	const airwayResult = useMemo<AirwayAnalysisResult | null>(() => {
 		if (activePreset === "airway" && volume && volume.data && !volume.isDisposed) {
@@ -158,12 +245,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			if (glStateRef.current) {
 				glStateRef.current = null;
 			}
+			setIsGpuActive(false);
 		};
 
 		const handleContextRestored = () => {
 			try {
 				const gl = canvas.getContext("webgl2", {
-					alpha: false,
+					alpha: true,
 					antialias: false,
 					depth: false,
 					preserveDrawingBuffer: true,
@@ -171,9 +259,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				});
 				if (gl) {
 					glStateRef.current = initWebGl2VolumeRaymarching(gl);
+					if (glStateRef.current) {
+						setIsGpuActive(true);
+					}
 				}
 			} catch {
 				glStateRef.current = null;
+				setIsGpuActive(false);
 			}
 		};
 
@@ -188,18 +280,14 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				if (volumeTexture) gl.deleteTexture(volumeTexture);
 				if (program) gl.deleteProgram(program);
 				if (vao) gl.deleteVertexArray(vao);
-				try {
-					const loseExt = gl.getExtension("WEBGL_lose_context");
-					if (loseExt) {
-						loseExt.loseContext();
-					}
-				} catch {
-					// Silently handle already lost context
-				}
 				glStateRef.current = null;
 			}
 			canvas.width = 0;
 			canvas.height = 0;
+			if (canvas2dRef.current) {
+				canvas2dRef.current.width = 0;
+				canvas2dRef.current.height = 0;
+			}
 			if (overlayCanvasRef.current) {
 				overlayCanvasRef.current.width = 0;
 				overlayCanvasRef.current.height = 0;
@@ -210,9 +298,9 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const isDraggingRef = useRef<boolean>(false);
 	const dragButtonRef = useRef<number>(0);
 	const dragStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-	const dragStartAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 30, pitch: 12 });
+	const dragStartAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
 	const dragStartPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-	const targetAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 30, pitch: 12 });
+	const targetAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
 	const targetPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 	const rafIdRef = useRef<number | null>(null);
 
@@ -222,10 +310,11 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 	// Observe container resize to auto-update canvas dimensions
 	const [canvasDims, setCanvasDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+	const [isGpuActive, setIsGpuActive] = useState<boolean>(false);
 
 	useEffect(() => {
-		const canvas = canvasRef.current;
-		if (!canvas || typeof ResizeObserver === "undefined") return;
+		const target = containerRef.current || canvasRef.current;
+		if (!target || typeof ResizeObserver === "undefined") return;
 
 		const ro = new ResizeObserver((entries) => {
 			for (const entry of entries) {
@@ -236,7 +325,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			}
 		});
 
-		ro.observe(canvas);
+		ro.observe(target);
 		return () => ro.disconnect();
 	}, []);
 
@@ -258,15 +347,38 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			setYaw(90);
 			setPitch(0);
 		} else {
-			setYaw(30);
-			setPitch(12);
+			setYaw(45);
+			setPitch(15);
 		}
 		setPan({ x: 0, y: 0 });
 	}, []);
 
+	// Close popovers on click outside
+	useEffect(() => {
+		if (!isPresetOpen && !isProjectionsMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target) return;
+			if (
+				!target.closest("[data-testid='cbct-volume-3d-presets-menu']") &&
+				!target.closest("[data-testid='cbct-volume-3d-preset-trigger']")
+			) {
+				setIsPresetOpen(false);
+			}
+			if (
+				!target.closest("[data-testid='cbct-projections-more-menu']") &&
+				!target.closest("[data-testid='cbct-btn-projections-more']")
+			) {
+				setIsProjectionsMenuOpen(false);
+			}
+		};
+		window.addEventListener("mousedown", handleClickOutside);
+		return () => window.removeEventListener("mousedown", handleClickOutside);
+	}, [isPresetOpen, isProjectionsMenuOpen]);
+
 	const handleResetCamera = useCallback(() => {
-		setYaw(30);
-		setPitch(12);
+		setYaw(0);
+		setPitch(0);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 	}, []);
@@ -396,13 +508,12 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	// Render Volume Raycasting on canvas
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
+		const canvas2d = canvas2dRef.current;
+		const container = containerRef.current;
+		if (!canvas && !canvas2d) return;
 
-		const rect = canvas.getBoundingClientRect();
-		// Fill-rate protection for 4K / Retina screens and weak integrated GPUs (Intel UHD / Iris Xe / Vega)
-		// Adaptive interactive LOD: during drag rotation, reduce internal resolution by subSample factor (3..4)
-		// for rock-solid 60 FPS on weak GPUs (Intel UHD / Iris Xe / Vega).
-		// Upon mouseUp, immediately restore beauty pass (subSample = 1 or 2).
+		const targetElem = container || canvas || canvas2d;
+		const rect = targetElem ? targetElem.getBoundingClientRect() : { width: 320, height: 280 };
 		const safeDpr = getSafeDevicePixelRatio();
 		const rawWidth = Math.max(64, Math.floor((rect.width || 320) * safeDpr));
 		const rawHeight = Math.max(64, Math.floor((rect.height || 280) * safeDpr));
@@ -410,49 +521,91 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		const width = Math.max(64, Math.floor(rawWidth / subSample));
 		const height = Math.max(64, Math.floor(rawHeight / subSample));
 
-		if (canvas.width !== width || canvas.height !== height) {
+		if (canvas && (canvas.width !== width || canvas.height !== height)) {
 			canvas.width = width;
 			canvas.height = height;
 		}
+		if (canvas2d && (canvas2d.width !== width || canvas2d.height !== height)) {
+			canvas2d.width = width;
+			canvas2d.height = height;
+		}
 
 		// Attempt hardware WebGL2 raymarching first (STRICT GPU PRIORITY)
-		if (
-			!glStateRef.current ||
-			glStateRef.current.gl.canvas !== canvas ||
-			(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
-		) {
-			try {
-				const gl = canvas.getContext("webgl2", {
-					alpha: false,
-					antialias: false,
-					depth: false,
-					preserveDrawingBuffer: true,
-					powerPreference: "high-performance",
-				});
-				if (gl && !(typeof gl.isContextLost === "function" && gl.isContextLost())) {
-					glStateRef.current = initWebGl2VolumeRaymarching(gl);
-				} else {
+		let gpuRenderSuccess = false;
+		if (canvas) {
+			if (
+				!glStateRef.current ||
+				glStateRef.current.gl.canvas !== canvas ||
+				(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+			) {
+				try {
+					const gl = canvas.getContext("webgl2", {
+						alpha: true,
+						antialias: false,
+						depth: false,
+						preserveDrawingBuffer: true,
+						powerPreference: "high-performance",
+					});
+					if (gl && !(typeof gl.isContextLost === "function" && gl.isContextLost())) {
+						glStateRef.current = initWebGl2VolumeRaymarching(gl);
+					} else {
+						glStateRef.current = null;
+					}
+				} catch {
 					glStateRef.current = null;
 				}
-			} catch {
-				glStateRef.current = null;
+			}
+
+			if (glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())) {
+				if (!volume || !volume.data) {
+					const gl = glStateRef.current.gl;
+					gl.viewport(0, 0, width, height);
+					gl.clearColor(0.035, 0.035, 0.043, 1.0);
+					gl.clear(gl.COLOR_BUFFER_BIT);
+					if (!isGpuActive) setIsGpuActive(true);
+					return;
+				}
+				if (!volume.isDisposed) {
+					try {
+						renderWebGl2VolumeRaymarching(
+							glStateRef.current,
+							volume,
+							activePreset,
+							yaw,
+							pitch,
+							zoom,
+							pan,
+							width,
+							height,
+							isInteracting,
+							clipping,
+							0,
+							0,
+							active3DImplants,
+							isMarActive,
+						);
+						gpuRenderSuccess = true;
+						if (!isGpuActive) {
+							setIsGpuActive(true);
+						}
+						return;
+					} catch (err) {
+						console.error("[CbctVolume3DViewport WebGL2 Render Error]:", err);
+						gpuRenderSuccess = false;
+					}
+				}
 			}
 		}
 
-		if (glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())) {
-			if (!volume || !volume.data) {
-				const gl = glStateRef.current.gl;
-				gl.viewport(0, 0, width, height);
-				gl.clearColor(0.0, 0.0, 0.0, 1.0);
-				gl.clear(gl.COLOR_BUFFER_BIT);
-				return;
+		if (!gpuRenderSuccess) {
+			if (isGpuActive) {
+				setIsGpuActive(false);
 			}
-			if (!volume.isDisposed) {
-				// Analytical ray intersection uses intersectRayAABB(
-				// uniforms.maxSteps, isInteracting ? 45 : 160
-				// uniforms.refineSteps, isInteracting ? 0 : 4
-				renderWebGl2VolumeRaymarching(
-					glStateRef.current,
+			// Fallback to Canvas2D lightweight preview slice (FEAT-GPU-SAFEGUARD: blocks CPU-killing raymarching)
+			// STRICT W3C ISOLATION: Passes canvas2d (which has never called getContext("webgl2"))
+			if (canvas2d) {
+				renderCanvas2DPreviewSlice(
+					canvas2d,
 					volume,
 					activePreset,
 					yaw,
@@ -464,25 +617,9 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					isInteracting,
 					clipping,
 				);
-				return;
 			}
 		}
-
-		// Fallback to Canvas2D lightweight preview slice (FEAT-GPU-SAFEGUARD: blocks CPU-killing 224MB raymarching)
-		renderCanvas2DPreviewSlice(
-			canvas,
-			volume,
-			activePreset,
-			yaw,
-			pitch,
-			zoom,
-			pan,
-			width,
-			height,
-			isInteracting,
-			clipping,
-		);
-	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping]);
+	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping, active3DImplants, isMarActive]);
 
 	// Render 3D Vector Overlay (Mandibular nerve canal, virtual implant, clearance telemetry)
 	useEffect(() => {
@@ -498,6 +635,12 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		if (!ctx) return;
 		ctx.clearRect(0, 0, width, height);
 		if (!volume) return;
+		const quadOrSingleList = implantCountMode === "quad"
+			? generate4JawImplants(volume, null)
+			: implant3DWorld && implant3DWorld.targetToothFdi === 46
+				? [implant3DWorld]
+				: generate4JawImplants(volume, null).slice(0, 1);
+
 		drawVolume3DOverlay(ctx, {
 			volume,
 			yaw,
@@ -508,12 +651,27 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			height,
 			nervePoints,
 			interpolatedNerve3D,
-			implant3DWorld,
+			implant3DWorld: quadOrSingleList[0] ?? null,
+			implantsList: quadOrSingleList,
 			nerveAuditResult,
 		});
-	}, [volume, yaw, pitch, zoom, pan, canvasDims, nervePoints, interpolatedNerve3D, implant3DWorld, nerveAuditResult]);
+	}, [volume, yaw, pitch, zoom, pan, canvasDims, nervePoints, interpolatedNerve3D, implant3DWorld, nerveAuditResult, implantCountMode]);
 
 	const activePresetSpec = getVolume3DPreset(activePreset);
+
+	// Canonical skull projection matching for active state highlight
+	const normYaw = ((((yaw + 180) % 360) + 360) % 360) - 180;
+	const isAngleNear = useCallback((targetYaw: number, targetPitch: number, tolerance = 12): boolean => {
+		const dYaw = Math.abs(normYaw - targetYaw);
+		const dPitch = Math.abs(pitch - targetPitch);
+		return (dYaw <= tolerance || Math.abs(dYaw - 360) <= tolerance) && dPitch <= tolerance;
+	}, [normYaw, pitch]);
+
+	const isCoronalActive = isAngleNear(0, 0);
+	const isSagittalActive = isAngleNear(90, 0);
+	const isIsometricActive = isAngleNear(45, 15, 16) || isAngleNear(30, 12, 16);
+	const activeExtraProjection = EXTRA_SKULL_PROJECTIONS.find((p) => isAngleNear(p.yaw, p.pitch, 15));
+	const isExtraActive = Boolean(activeExtraProjection);
 
 	return (
 		<div
@@ -540,7 +698,10 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<div className="relative shrink-0">
 						<button
 							type="button"
-							onClick={() => setIsPresetOpen((prev) => !prev)}
+							onClick={() => {
+								setIsPresetOpen((prev) => !prev);
+								setIsProjectionsMenuOpen(false);
+							}}
 							className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-zinc-900 border border-zinc-700 hover:border-cyan-500/60 text-cyan-300 transition-colors cursor-pointer"
 							data-testid="cbct-volume-3d-preset-trigger"
 							title={`3D Пресет: ${activePresetSpec.label} (${activePresetSpec.huMin}..${activePresetSpec.huMax} HU)`}
@@ -584,12 +745,16 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5 shrink-0" />
 
-					{/* Orthogonal Angle Shortcuts */}
+					{/* Orthogonal Angle Shortcuts with Active Highlight */}
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("coronal")}
-						title="Фронтальная проекция (Фас / Coronal)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+						title="Фронтальная проекция (Фас / Coronal, Yaw 0°, Pitch 0°)"
+						className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+							isCoronalActive
+								? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-xs"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+						}`}
 						data-testid="cbct-btn-orientation-coronal"
 					>
 						Фас
@@ -597,8 +762,12 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("sagittal")}
-						title="Сагиттальная проекция (Профиль / Sagittal)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+						title="Сагиттальная проекция (Профиль / Sagittal, Yaw 90°, Pitch 0°)"
+						className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+							isSagittalActive
+								? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-xs"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+						}`}
 						data-testid="cbct-btn-orientation-sagittal"
 					>
 						Профиль
@@ -606,12 +775,70 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("isometric")}
-						title="Ракурс 3/4 (Изометрия челюсти)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+						title="Ракурс 3/4 (Изометрия челюсти, Yaw 45°, Pitch 15°)"
+						className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+							isIsometricActive
+								? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-xs"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+						}`}
 						data-testid="cbct-btn-orientation-isometric"
 					>
 						3/4
 					</button>
+
+					{/* Extra Projections Dropdown (Затылок, Левый профиль, Окклюзия, Базис, 3/4 Левый) */}
+					<div className="relative shrink-0">
+						<button
+							type="button"
+							onClick={() => {
+								setIsProjectionsMenuOpen((prev) => !prev);
+								setIsPresetOpen(false);
+							}}
+							title="Дополнительные анатомические проекции черепа (Затылок, Левый профиль, Сверху, Снизу, 3/4L)"
+							className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-0.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+								isExtraActive || isProjectionsMenuOpen
+									? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-xs"
+									: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+							}`}
+							data-testid="cbct-btn-projections-more"
+						>
+							<span>{activeExtraProjection ? activeExtraProjection.label : "Еще"}</span>
+							<ChevronDown className={`w-2.5 h-2.5 transition-transform ${isProjectionsMenuOpen ? "rotate-180" : ""}`} />
+						</button>
+
+						{isProjectionsMenuOpen && (
+							<div
+								className="absolute right-0 top-full mt-1 z-40 bg-zinc-950/95 backdrop-blur-md p-1.5 rounded-md border border-zinc-700 shadow-2xl flex flex-col gap-1 min-w-[155px]"
+								data-testid="cbct-projections-more-menu"
+							>
+								{EXTRA_SKULL_PROJECTIONS.map((p) => {
+									const isSelected = isAngleNear(p.yaw, p.pitch, 15);
+									return (
+										<button
+											key={p.id}
+											type="button"
+											onClick={() => {
+												setYaw(p.yaw);
+												setPitch(p.pitch);
+												setPan({ x: 0, y: 0 });
+												setIsProjectionsMenuOpen(false);
+											}}
+											title={p.tooltip}
+											className={`px-2 py-1 rounded text-[10px] font-semibold text-left transition-colors cursor-pointer flex items-center justify-between ${
+												isSelected
+													? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40"
+													: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+											}`}
+											data-testid={p.testId}
+										>
+											<span>{p.label}</span>
+											<span className="font-mono text-[9px] text-zinc-500">{p.yaw}°</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
 
 					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
 
@@ -633,6 +860,52 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						{hasActiveClipping && (
 							<span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
 						)}
+					</button>
+
+					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
+
+					{/* 4 Implants / 1 Implant Jaw Selector Toggle */}
+					<button
+						type="button"
+						onClick={() => setImplantCountMode((prev) => (prev === "quad" ? "single" : "quad"))}
+						title={
+							implantCountMode === "quad"
+								? "Анатомический ряд: 4 импланта в кости челюсти (#46, #47, #36, #37). Клик для 1 импланта"
+								: "Одиночный имплант (#46). Клик для зубного ряда из 4 имплантов"
+						}
+						className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+							implantCountMode === "quad"
+								? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 font-bold shadow-xs"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+						}`}
+						data-testid="cbct-volume-3d-implant-toggle"
+						aria-label="Импланты 3D"
+					>
+						<span className={`w-1.5 h-1.5 rounded-full ${implantCountMode === "quad" ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"}`} />
+						<span>{implantCountMode === "quad" ? "4 импланта" : "1 имплант"}</span>
+					</button>
+
+					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
+
+					{/* MAR (Metal Artifact Reduction) Streak Needle Filter Toggle */}
+					<button
+						type="button"
+						onClick={() => setIsMarActive((prev) => !prev)}
+						title={
+							isMarActive
+								? "MAR (Metal Artifact Reduction): Умное отсечение фонящих радиальных игл и артефактов металла (Активно)"
+								: "MAR: Отсечение фонящих игл выключено. Клик для активации"
+						}
+						className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+							isMarActive
+								? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold shadow-xs"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-transparent"
+						}`}
+						data-testid="cbct-volume-3d-mar-toggle"
+						aria-label="Фильтр металла MAR"
+					>
+						<span className={`w-1.5 h-1.5 rounded-full ${isMarActive ? "bg-cyan-400" : "bg-zinc-500"}`} />
+						<span>MAR</span>
 					</button>
 
 					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
@@ -708,8 +981,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				</div>
 			)}
 
-			{/* INTERACTIVE 3D SKULL CANVAS */}
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
+			{/* INTERACTIVE 3D SKULL CANVASES */}
+			<div
+				ref={containerRef}
+				className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full"
+				style={{ backgroundColor: "#000000" }}
+			>
+				{/* 1. Hardware WebGL2 Raymarching Canvas */}
 				<canvas
 					ref={canvasRef}
 					onMouseDown={handleMouseDown}
@@ -722,28 +1000,39 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					onTouchEnd={handleTouchEnd}
 					onTouchCancel={handleTouchEnd}
 					onContextMenu={(e) => e.preventDefault()}
-					style={{ backgroundColor: "#000000" }}
+					style={{
+						backgroundColor: "#000000",
+						display: isGpuActive ? "block" : "none",
+					}}
 					className="absolute inset-0 w-full h-full object-contain cursor-grab active:cursor-grabbing z-0"
 					data-testid="cbct-volume-3d-canvas"
 				/>
+				{/* 2. Isolated Canvas2D Fallback (100% W3C getContext("2d") isolation) */}
+				<canvas
+					ref={canvas2dRef}
+					onMouseDown={handleMouseDown}
+					onMouseMove={handleMouseMove}
+					onMouseUp={handleMouseUp}
+					onMouseLeave={handleMouseUp}
+					onWheel={handleWheel}
+					onTouchStart={handleTouchStart}
+					onTouchMove={handleTouchMove}
+					onTouchEnd={handleTouchEnd}
+					onTouchCancel={handleTouchEnd}
+					onContextMenu={(e) => e.preventDefault()}
+					style={{
+						backgroundColor: "#000000",
+						display: isGpuActive ? "none" : "block",
+					}}
+					className="absolute inset-0 w-full h-full object-contain cursor-grab active:cursor-grabbing z-0"
+					data-testid="cbct-volume-3d-canvas-2d"
+				/>
+				{/* 3. 3D Vector Overlay Canvas */}
 				<canvas
 					ref={overlayCanvasRef}
 					style={{ backgroundColor: "transparent" }}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"
 					data-testid="cbct-volume-3d-overlay-canvas"
-				/>
-			</div>
-
-			{/* EZ3D-I 8 SKULL PROJECTIONS ORIENTATION TOOLBAR (ABOVE HUD) */}
-			<div className="absolute bottom-9 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
-				<CbctSkullProjectionsToolbar
-					currentYaw={yaw}
-					currentPitch={pitch}
-					onSelectProjection={(targetYaw, targetPitch) => {
-						setYaw(targetYaw);
-						setPitch(targetPitch);
-					}}
-					onResetCamera={handleResetCamera}
 				/>
 			</div>
 
@@ -788,20 +1077,35 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					)}
 					<span
 						className={`font-mono font-semibold px-1.5 py-0.5 rounded text-[9px] ${
-							glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+							isGpuActive
 								? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
 								: "bg-amber-500/10 text-amber-400 border border-amber-500/30"
 						}`}
 						title={
-							glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+							isGpuActive
 								? "Аппаратный рендеринг GPU WebGL2 активен (< 2 мс / кадр, CPU спит)"
 								: "WebGL2 офлайн: активен безопасный легкий 2D превью-срез (Защита CPU)"
 						}
 						data-testid="cbct-hud-gpu-status"
 					>
-						{glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+						{isGpuActive
 							? "⚡ GPU (<2 мс)"
 							: "⚠️ CPU Превью"}
+					</span>
+					<span
+						className={`font-mono font-semibold px-1.5 py-0.5 rounded text-[9px] ${
+							isMarActive
+								? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
+								: "bg-zinc-800/40 text-zinc-500 border border-zinc-700/30"
+						}`}
+						title={
+							isMarActive
+								? "MAR (Metal Artifact Reduction): Фильтр артефактов металла активен"
+								: "MAR выключен"
+						}
+						data-testid="cbct-hud-mar-status"
+					>
+						{isMarActive ? "MAR: ON" : "MAR: OFF"}
 					</span>
 					<span className="text-cyan-300 font-bold font-mono">
 						HU {activePresetSpec.huMin}..{activePresetSpec.huMax}

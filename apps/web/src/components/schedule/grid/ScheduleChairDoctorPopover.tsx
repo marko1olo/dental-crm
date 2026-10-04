@@ -423,7 +423,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="На весь месяц (1 клик) (StomX Parity)"
+            title="На весь месяц (1 клик)"
             aria-label={`Закрепить врача на кресле ${chair.name} на весь месяц`}
             data-testid={`chair-popover-shift-month-${chair.id}`}
           >
@@ -443,7 +443,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200 cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Быстрая подмена дежурного врача на сегодня (StomX Parity, 1 клик)"
+            title="Быстрая подмена дежурного врача на сегодня (1 клик)"
             aria-label={`Подменить врача на сегодня на кресле ${chair.name}`}
             data-testid={`chair-popover-substitute-${chair.id}`}
           >
@@ -469,7 +469,7 @@ export function ScheduleChairDoctorPopover({
           }}
           className="min-h-[44px] w-full px-2 py-1 rounded-xl text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer transition-all"
           style={{ minHeight: "44px" }}
-          title={`Закрепить врача за креслом «${chair.name}» (StomX Parity)`}
+          title={`Закрепить врача за креслом «${chair.name}»`}
           data-testid={`chair-popover-bind-doctor-${chair.id}`}
         >
           <Pin size={14} className="text-[var(--teal)] shrink-0" />

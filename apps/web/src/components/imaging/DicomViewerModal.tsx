@@ -4,20 +4,7 @@
  * Serves as the single canonical workstation for 2D X-Ray, 3D MPR, and Cross-Sectioning.
  */
 
-import {
-	Activity,
-	Check,
-	CheckCircle2,
-	ChevronDown,
-	FileText,
-	FileUp,
-	Layers,
-	Loader2,
-	Sparkles,
-	UploadCloud,
-	X,
-	Zap,
-} from "lucide-react";
+import { Activity, Check, CheckCircle2, ChevronDown, FileText, FileUp, Layers, Loader2, Sparkles, UploadCloud, X, Zap } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { actionFailureToast } from "../../lib/panelStateText.js";
@@ -28,34 +15,16 @@ import { showToast } from "../GlobalToast.js";
 import { TOOTH_STATE_LABELS } from "../odontogram/ToothChart.js";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
 
-const DicomViewport = React.lazy(() =>
-	import("./DicomViewport.js").then((m) => ({
-		default: m.DicomViewport,
-	}))
-);
+const DicomViewport = React.lazy(() => import("./DicomViewport.js").then((m) => ({ default: m.DicomViewport })));
 import { DicomMprCockpit } from "./DicomMprCockpit.js";
 import { DicomSectioningView } from "./DicomSectioningView.js";
 import { DicomToolboxRibbon } from "./DicomToolboxRibbon.js";
 import { DicomAiFindingsDrawer } from "./DicomAiFindingsDrawer.js";
-import {
-	DEFAULT_DICOM_VIEWPORT_STATE,
-	type CalibratedRulerMeasurement,
-	type DicomViewportState,
-	type ImagingActiveTool,
-} from "./rvgViewerEngine.js";
+import { DEFAULT_DICOM_VIEWPORT_STATE, type CalibratedRulerMeasurement, type DicomViewportState, type ImagingActiveTool } from "./rvgViewerEngine.js";
 import { planVisiographFindings } from "./visiographFindings.js";
-import {
-	RADIOLOGY_STANDARD_PROTOCOLS,
-	applyRadiologyProtocolToForm043,
-} from "../radiology/radiologyProtocols.js";
-import {
-	RadiologyFilmstripDock,
-	type RadiologyFilmstripItem,
-} from "../radiology/RadiologyFilmstripDock.js";
-import {
-	RadiologyQuickFiltersPanel,
-	type RadiologyQuickFilterState,
-} from "../radiology/RadiologyQuickFiltersPanel.js";
+import { RADIOLOGY_STANDARD_PROTOCOLS, applyRadiologyProtocolToForm043 } from "../radiology/radiologyProtocols.js";
+import { RadiologyFilmstripDock, type RadiologyFilmstripItem } from "../radiology/RadiologyFilmstripDock.js";
+import { RadiologyQuickFiltersPanel, type RadiologyQuickFilterState } from "../radiology/RadiologyQuickFiltersPanel.js";
 import { RadiologyCalibratedScaleRuler } from "../radiology/RadiologyCalibratedScaleRuler.js";
 import { RadiologyClinicalHud } from "../radiology/RadiologyClinicalHud.js";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper.js";

@@ -11,6 +11,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { playIntercomChime } from "../../lib/intercomSound";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 
@@ -51,6 +52,7 @@ export function AppointmentCardPrimaryActions({
 					disabled={isQuickStatusUpdating}
 					onClick={(e) => {
 						e.stopPropagation();
+						playIntercomChime("urgent");
 						void handleQuickStatusChange("arrived");
 					}}
 					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
@@ -65,6 +67,7 @@ export function AppointmentCardPrimaryActions({
 					disabled={isQuickStatusUpdating}
 					onClick={(e) => {
 						e.stopPropagation();
+						playIntercomChime("normal");
 						void handleQuickStatusChange("in_treatment");
 						if (appointmentPatient?.id) {
 							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
@@ -95,6 +98,7 @@ export function AppointmentCardPrimaryActions({
 					disabled={isQuickStatusUpdating}
 					onClick={(e) => {
 						e.stopPropagation();
+						playIntercomChime("normal");
 						void handleQuickStatusChange("in_treatment");
 						if (appointmentPatient?.id) {
 							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);

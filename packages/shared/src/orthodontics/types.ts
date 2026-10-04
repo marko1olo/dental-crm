@@ -126,6 +126,11 @@ export interface OrthodonticQuickPreset {
 	anbAngle?: number;
 }
 
+export type SagittalAnomaly = "norm" | "overjet" | "reverse";
+export type VerticalAnomaly = "norm" | "deep" | "open";
+export type TransversalAnomaly = "norm" | "crossbite";
+export type TmjStatus = "norm" | "clicking" | "pain" | "deviation" | "splint";
+
 export interface OrthodonticSoapParams {
 	patientName?: string;
 	dateStr?: string;
@@ -149,4 +154,9 @@ export interface OrthodonticSoapParams {
 	angleClass?: AngleClass;
 	anbClass?: AnbClass;
 	anbAngle?: number;
+	sagittalAnomaly?: SagittalAnomaly;
+	sagittalGapMm?: number;
+	verticalAnomaly?: VerticalAnomaly;
+	transversalAnomaly?: TransversalAnomaly;
+	tmjStatus?: TmjStatus;
 }

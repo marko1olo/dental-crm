@@ -84,8 +84,8 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		assert.ok(html.includes("Дуга улыбки (Smile Arc)"));
 		assert.ok(html.includes("Смещение средней линии В/Ч"));
 
-		// 1-Click Clinical Presets Bar (Mandates 8e, 8k)
-		assert.ok(html.includes("1-клик пресеты 043/у:"));
+		// 1-Click Clinical Presets Bar (Mandates 8e, 8k, 8z)
+		assert.ok(html.includes("1-клик пресеты протоколов:"));
 		assert.ok(html.includes('data-testid="ortho-preset-aligner_bonding_steps_1_5"'));
 		assert.ok(html.includes('data-testid="ortho-preset-aligner_tracking_check"'));
 		assert.ok(html.includes('data-testid="ortho-preset-braces_niti_powerchain_activation"'));
@@ -95,9 +95,9 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 
 		// 1-Click Insert Button & Auto-Save Checkbox in Footer
 		assert.ok(html.includes('data-testid="insert-ortho-protocol-043-btn"'));
-		assert.ok(html.includes("Вставить протокол ортодонтии в дневник 043/у"));
+		assert.ok(html.includes("Вставить протокол ортодонтии в дневник"));
 		assert.ok(html.includes('data-testid="insert-protocol-on-save-checkbox"'));
-		assert.ok(html.includes("Вносить в дневник 043/у при сохранении"));
+		assert.ok(html.includes("Вносить в дневник приёма при сохранении"));
 
 		// No disabled buttons
 		assert.ok(!html.includes("disabled"));

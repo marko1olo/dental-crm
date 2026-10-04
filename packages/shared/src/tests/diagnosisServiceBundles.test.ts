@@ -99,6 +99,7 @@ describe("Canonical Diagnosis Service Bundles & 54-FZ 1-Click Checkout Engine", 
 
 	test("resolveServicePriceAgainstCatalog resolves against live clinic price list with exact 804n code preference", () => {
 		const service = CARIES_DIAGNOSIS_BUNDLE.services[3]; // A16.07.002.010 Пломба световая
+		assert.ok(service);
 		assert.equal(service.code804n, "A16.07.002.010");
 
 		const mockCatalog = [

@@ -45,6 +45,10 @@ export function postVisitCareTopicLabel(
 		orthodontics: "ортодонтическое лечение",
 		periodontology: "пародонтологическое лечение",
 		other: "индивидуальные рекомендации",
+		surgery_aftercare: "уход после хирургического вмешательства",
+		fixation_aftercare: "уход после фиксации ортопедической конструкции",
+		whitening: "клиническое / домашнее отбеливание",
+		retention: "ретенционный период (ретейнеры / каппы)",
 	};
 	return labels[value] ?? value;
 }

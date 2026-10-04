@@ -580,8 +580,8 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 		return (
 			<div className="document-form-container form-043u-wrapper">
 				<DocumentPayloadCard
-					title="Медицинская карта стоматологического пациента"
-					description="Электронная карта стоматологического пациента: зубная формула, анамнез, индексы и протоколы приёмов"
+					title="Медицинская карта приёма"
+					description="Электронная карта стоматологического приёма: зубная формула, анамнез, индексы и протоколы"
 				>
 					<div
 						className="document-form-nav-tabs"

@@ -839,3 +839,9 @@ export const useAppStore = create<AppStore>((set) => ({
 				typeof val === "function" ? val(state.activePatientId) : val,
 		})),
 }));
+
+if (typeof window !== "undefined") {
+	(window as any).__APP_STORE__ = useAppStore;
+	(window as any).__useAppStore = useAppStore;
+}
+

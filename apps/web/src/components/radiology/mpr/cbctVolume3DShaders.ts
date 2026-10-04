@@ -19,6 +19,7 @@ import { downsampleVolumeData } from "../cbctPanoramicReconstructionMath";
 import {
 	type Volume3DClippingBox,
 	type Volume3DPresetId,
+	type Volume3DImplantParam,
 	DEFAULT_VOLUME_3D_CLIPPING_BOX,
 	CBCT_VOLUME_3D_PRESETS,
 	getVolume3DPreset,
@@ -62,13 +63,90 @@ uniform float u_huMax;         // preset huMax
 uniform int u_presetMode;      // 0 = surface (skull, dense_bone, soft_tissue), 1 = mip
 uniform vec3 u_boneColor;      // base bone color (e.g. 240, 225, 200 / 255.0)
 uniform vec3 u_lightDir;       // normalized light direction
-uniform int u_maxSteps;        // 60-140 steps
+uniform int u_maxSteps;        // 60-200 steps
 uniform vec3 u_clipMin;        // normalized [0, 1] clipping box minimum
 uniform vec3 u_clipMax;        // normalized [0, 1] clipping box maximum
 uniform int u_refineSteps;     // 0 during interaction, 4 on mouseUp
 
 uniform int u_renderMode;      // 0 = clinical RGBA color, 1 = Ez3D G-Buffer Object Picking
 uniform float u_objectId;      // Object ID for 0-ms mouse picking (e.g. 1.0=bone, 2.0=nerve, 3.0=implant)
+uniform int u_marActive;       // 1 = Metal Artifact Reduction (MAR) active, 0 = off
+
+// 3D Dental Implants (up to 4 fixtures in alveolar bone)
+uniform int u_implantCount;                  // 0..4
+uniform vec3 u_implantEntry[4];              // Platform entry in volume voxel coordinates
+uniform vec3 u_implantApex[4];               // Apex bottom in volume voxel coordinates
+uniform vec2 u_implantRadii[4];              // (platformRadiusVoxel, apexRadiusVoxel)
+uniform vec3 u_implantColors[4];             // Surgical Emerald / Neon Green RGB
+
+struct ImplantHit {
+    bool isInside;
+    float distToSurface;
+    vec3 normal;
+    vec3 color;
+    float tAlongAxis;
+};
+
+ImplantHit evaluateImplantAt(vec3 pos, int k) {
+    vec3 entry = u_implantEntry[k];
+    vec3 apex = u_implantApex[k];
+    vec2 radii = u_implantRadii[k];
+    vec3 col = u_implantColors[k];
+    
+    vec3 ba = apex - entry;
+    float axisLen = length(ba);
+    if (axisLen < 0.001) {
+        ImplantHit none;
+        none.isInside = false;
+        return none;
+    }
+    vec3 axisDir = ba / axisLen;
+    vec3 pa = pos - entry;
+    float proj = dot(pa, axisDir);
+    float h = proj / axisLen;
+    
+    ImplantHit hit;
+    hit.isInside = false;
+    hit.color = col;
+    hit.tAlongAxis = h;
+    
+    // Check if within axial range with spherical apex cap and platform coronal cap
+    if (h >= -0.04 && h <= 1.05) {
+        float clampedH = clamp(h, 0.0, 1.0);
+        float rAtH = mix(radii.x, radii.y, clampedH);
+        vec3 axisPt = entry + axisDir * (clampedH * axisLen);
+        vec3 radialVec = pos - axisPt;
+        float rDist = length(radialVec);
+        
+        // Realistic helical screw thread profile
+        // Thread pitch ~ 3.2 voxels (~0.8 mm), thread amplitude ~ 0.5 voxels (~0.12 mm)
+        float thread = 0.0;
+        if (h >= 0.06 && h <= 0.94) {
+            float threadPitch = max(1.5, axisLen * 0.08);
+            thread = cos(proj * 6.2831853 / threadPitch) * (radii.x * 0.085);
+        }
+        float effectiveRadius = rAtH + thread;
+        
+        hit.distToSurface = rDist - effectiveRadius;
+        if (hit.distToSurface <= 0.0) {
+            hit.isInside = true;
+            vec3 nRadial = (rDist > 1e-4) ? (radialVec / rDist) : vec3(0.0, 1.0, 0.0);
+            float taperSlope = (radii.y - radii.x) / axisLen;
+            vec3 surfNorm = normalize(nRadial - axisDir * taperSlope);
+            
+            // Platform top cap normal
+            if (h < 0.02) {
+                surfNorm = -axisDir;
+            }
+            // Spherical apex bottom cap normal
+            else if (h > 0.98) {
+                surfNorm = normalize(pos - apex);
+            }
+            hit.normal = surfNorm;
+        }
+    }
+    return hit;
+}
 
 // Analytical Ray-AABB intersection in centered voxel space
 // Box bounds: [-halfDim, halfDim]
@@ -121,6 +199,62 @@ float sampleHUTrilinear(vec3 pos) {
     return mix(c0, c1, f.z);
 }
 
+// Metal Artifact Reduction (MAR): detects 1D high-density streak needles/spikes radiating from metal
+bool isMetalStreakArtifact(vec3 pos, float huVal, vec3 rayDirection) {
+    if (u_marActive == 0) return false;
+    
+    // Only filter high-density candidates that could be streak spikes
+    if (huVal < u_huMin) return false;
+    
+    // Construct two orthonormal basis vectors perpendicular to rayDirection
+    vec3 w = normalize(rayDirection);
+    vec3 up = (abs(w.y) < 0.9) ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 u = normalize(cross(up, w));
+    vec3 v = cross(w, u);
+    
+    // Sampling radius transverse to the ray (1.5 voxels, ~0.6 mm)
+    float r = 1.5;
+    
+    // Sample transverse neighbors around candidate voxel
+    float hUpos = sampleHUTrilinear(pos + u * r);
+    float hUneg = sampleHUTrilinear(pos - u * r);
+    float hVpos = sampleHUTrilinear(pos + v * r);
+    float hVneg = sampleHUTrilinear(pos - v * r);
+    
+    // Real bone is a continuous 2D/3D plate or volume:
+    // It has continuity along at least one transverse axis (U or V)
+    bool hasUContinuity = (hUpos >= u_huMin * 0.70) && (hUneg >= u_huMin * 0.70);
+    bool hasVContinuity = (hVpos >= u_huMin * 0.70) && (hVneg >= u_huMin * 0.70);
+    
+    if (hasUContinuity || hasVContinuity) {
+        return false;
+    }
+    
+    // Check diagonal transverse support
+    float diagR = r * 0.707;
+    float hD1 = sampleHUTrilinear(pos + (u + v) * diagR);
+    float hD2 = sampleHUTrilinear(pos - (u + v) * diagR);
+    if ((hD1 >= u_huMin * 0.70) && (hD2 >= u_huMin * 0.70)) {
+        return false;
+    }
+    
+    // Count how many transverse neighbors have bone density
+    int boneSupportCount = 0;
+    if (hUpos >= u_huMin * 0.65) boneSupportCount++;
+    if (hUneg >= u_huMin * 0.65) boneSupportCount++;
+    if (hVpos >= u_huMin * 0.65) boneSupportCount++;
+    if (hVneg >= u_huMin * 0.65) boneSupportCount++;
+    
+    float avgTransverseHU = (hUpos + hUneg + hVpos + hVneg) * 0.25;
+    
+    // Streak needle condition: isolated in transverse plane, surrounded by air/soft tissue
+    if (boneSupportCount <= 1 && avgTransverseHU < u_huMin * 0.45) {
+        return true;
+    }
+    
+    return false;
+}
+
 void main() {
     float maxDim = max(1.0, max(u_volumeDim.x, max(u_volumeDim.y, u_volumeDim.z)));
     float safeZoom = max(0.01, u_zoom);
@@ -135,33 +269,39 @@ void main() {
     // Camera ray direction (Column 2 of rotation matrix)
     vec3 rayDir = normalize(u_rotMatrix[2]);
     
-    // Ray plane starting point in centered coordinates:
-    // Screen X travels along Column 0, Screen Y travels along Column 1
+    // Screen plane point centered at origin
     vec3 planePt = u_rotMatrix[0] * viewX + u_rotMatrix[1] * viewY;
     
-    vec3 halfDim = u_volumeDim * 0.5;
-    vec2 tHit = intersectAABB(planePt, rayDir, -halfDim, halfDim);
+    // Place camera origin safely outside the volume bounding box opposite to ray direction
+    float boxDiag = maxDim * 1.75;
+    vec3 camOrigin = planePt - rayDir * boxDiag;
     
-    float tNear = max(-maxDim * 1.5, tHit.x);
-    float tFar = min(maxDim * 1.5, tHit.y);
+    vec3 halfDim = u_volumeDim * 0.5;
+    vec2 tHit = intersectAABB(camOrigin, rayDir, -halfDim, halfDim);
+    
+    float tNear = max(0.0, tHit.x);
+    float tFar = min(boxDiag * 2.5, tHit.y);
     
     // If ray misses skull AABB or is NaN, instant discard (render background #09090b or 0 in G-Buffer)
-    if (isnan(tNear) || isnan(tFar) || tNear >= tFar || tFar <= 0.0) {
+    if (isnan(tNear) || isnan(tFar) || tNear >= tFar) {
         fragColor = (u_renderMode == 1) ? vec4(0.0, 0.0, 0.0, 0.0) : vec4(0.035, 0.035, 0.043, 1.0); // #09090b
         return;
     }
     
-    tNear = max(0.0, tNear);
     float rayDist = tFar - tNear;
-    int safeMaxSteps = clamp(u_maxSteps, 1, 256); // clamp(u_maxSteps, 1, 200) baseline expanded to 256 steps
-    float stepSize = max(0.6, rayDist / float(safeMaxSteps));
+    int safeMaxSteps = clamp(u_maxSteps, 1, 200);
+    float stepSize = max(0.4, rayDist / float(safeMaxSteps));
     int actualSteps = int(clamp(ceil(rayDist / stepSize), 1.0, float(safeMaxSteps)));
     float dt = rayDist / float(actualSteps);
     
-    vec3 curPos = planePt + rayDir * tNear + halfDim;
+    vec3 curPos = camOrigin + rayDir * tNear + halfDim;
     vec3 stepVec = rayDir * dt;
     
     bool hit = false;
+    bool hitIsImplant = false;
+    vec3 implantHitColor = vec3(0.0, 1.0, 0.45);
+    float implantBlendWeight = 0.0;
+    vec3 implantBlendNorm = vec3(0.0);
     float maxHU = -1000.0;
     float hitDepth = 0.0;
     vec3 norm = vec3(0.0);
@@ -176,6 +316,26 @@ void main() {
             continue;
         }
 
+        // 1. Direct hit check on implant fixture in open air or above bone
+        if (!hit && u_implantCount > 0) {
+            for (int k = 0; k < 4; k++) {
+                if (k >= u_implantCount) break;
+                ImplantHit impHit = evaluateImplantAt(curPos, k);
+                if (impHit.isInside) {
+                    hit = true;
+                    hitIsImplant = true;
+                    hitDepth = float(i + 1) / float(actualSteps);
+                    norm = impHit.normal;
+                    if (dot(norm, -rayDir) < 0.0) norm = -norm;
+                    implantHitColor = impHit.color;
+                    break;
+                }
+            }
+            if (hitIsImplant) {
+                break; // Stop ray: solid titanium implant reached in air
+            }
+        }
+
         ivec3 vox = ivec3(floor(curPos));
         if (vox.x >= 0 && vox.x < int(u_volumeDim.x) &&
             vox.y >= 0 && vox.y < int(u_volumeDim.y) &&
@@ -185,6 +345,12 @@ void main() {
             float hu = (u_refineSteps > 0)
                 ? sampleHUTrilinear(curPos)
                 : float(texelFetch(u_volume, vox, 0).r);
+            
+            // MAR: Metal Artifact Reduction - skip isolated streak needles/spikes
+            if (u_marActive == 1 && isMetalStreakArtifact(curPos, hu, rayDir)) {
+                curPos += stepVec;
+                continue;
+            }
             
             if (u_presetMode == 1) { // MIP
                 if (hu > maxHU) {
@@ -199,6 +365,7 @@ void main() {
                     : (hu >= u_huMin);
                 if (isHit) {
                     hit = true;
+                    hitIsImplant = false;
                     vec3 hitPos = curPos;
                     // Sub-voxel bisection refinement (4 steps) on mouseUp (u_refineSteps > 0)
                     if (u_refineSteps > 0) {
@@ -216,10 +383,9 @@ void main() {
                     hitDepth = float(i + 1) / float(actualSteps);
                     
                     // Central differences normal computation:
-                    // gx = sample(x+1) - sample(x-1) with continuous trilinear filtering
                     vec3 grad;
                     if (u_refineSteps > 0) {
-                        float eps = 1.0;
+                        float eps = 0.85;
                         float gx = sampleHUTrilinear(hitPos + vec3(eps, 0.0, 0.0)) - sampleHUTrilinear(hitPos - vec3(eps, 0.0, 0.0));
                         float gy = sampleHUTrilinear(hitPos + vec3(0.0, eps, 0.0)) - sampleHUTrilinear(hitPos - vec3(0.0, eps, 0.0));
                         float gz = sampleHUTrilinear(hitPos + vec3(0.0, 0.0, eps)) - sampleHUTrilinear(hitPos - vec3(0.0, 0.0, eps));
@@ -240,6 +406,43 @@ void main() {
                     // Ensure normal faces toward the camera
                     if (dot(norm, -rayDir) < 0.0) {
                         norm = -norm;
+                    }
+
+                    // Volumetric X-Ray Penetration: check if implant sits inside the mandibular alveolar bone along this ray
+                    // Implements realistic Beer-Lambert physical attenuation through cortical/trabecular bone
+                    if (u_implantCount > 0) {
+                        vec3 probePos = hitPos;
+                        float accumulatedBoneDensity = 0.0;
+                        int numProbeSteps = 24;
+                        float probeStepSize = 0.75;
+                        
+                        for (int pStep = 1; pStep <= numProbeSteps; pStep++) {
+                            probePos += stepVec * probeStepSize;
+                            float probeHu = sampleHUTrilinear(probePos);
+                            accumulatedBoneDensity += max(0.0, probeHu - u_huMin);
+                            
+                            for (int k = 0; k < 4; k++) {
+                                if (k >= u_implantCount) break;
+                                ImplantHit deepHit = evaluateImplantAt(probePos, k);
+                                if (deepHit.isInside) {
+                                    float distInsideBone = float(pStep) * probeStepSize;
+                                    // Physics-based exponential bone attenuation:
+                                    // Thin cortical bone (<1.5 mm): subtle translucent glow
+                                    // Deep bone (>3 mm): completely occluded by bone opacity
+                                    float boneThicknessAttenuation = exp(-distInsideBone * 0.35);
+                                    float densityAttenuation = exp(-accumulatedBoneDensity * 0.001);
+                                    float totalTransmittance = boneThicknessAttenuation * densityAttenuation;
+                                    
+                                    // Maximum subsurface weight is 0.28 (soft translucent sheen, never blasting neon)
+                                    implantBlendWeight = clamp(totalTransmittance * 0.28, 0.0, 0.28);
+                                    implantHitColor = deepHit.color;
+                                    implantBlendNorm = deepHit.normal;
+                                    if (dot(implantBlendNorm, -rayDir) < 0.0) implantBlendNorm = -implantBlendNorm;
+                                    break;
+                                }
+                            }
+                            if (implantBlendWeight > 0.0) break;
+                        }
                     }
                     break;
                 }
@@ -274,40 +477,64 @@ void main() {
         vec3 viewDir = -rayDir;
         // Directional key light from upper-front-right relative to camera (Vatech Zeus3D)
         vec3 lightDir = normalize(viewDir * 0.80 + u_rotMatrix[0] * 0.35 + u_rotMatrix[1] * 0.45);
-
-        // Two-sided diffuse response (abs eliminates darkness in maxillary sinuses and mandibular canals)
-        // Formula: fDiff = abs(dot(-lightDir, norm))
-        float NdotL = abs(dot(norm, lightDir));
-
-        // Vatech Ez3D weighting: 25% Ambient Floor + 75% Diffuse Amplitude (OBJShader.fx)
-        float ambient = 0.25;
-        float diffuse = NdotL * 0.75;
-
-        // Blinn-Phong half-vector for enamel specular highlight
         vec3 halfVec = normalize(lightDir + viewDir);
-        float NdotH = max(0.0, abs(dot(norm, halfVec)));
-        float spec = pow(NdotH, 24.0) * 0.12;
 
-        // Cortical plate rim lighting
-        float NdotV = max(0.0, abs(dot(norm, viewDir)));
-        float rim = pow(1.0 - NdotV, 3.0) * 0.10;
+        if (hitIsImplant) {
+            // METALLIC TITANIUM SURGICAL IMPLANT SHADING (Vivid Emerald Neon Green)
+            float NdotL = abs(dot(norm, lightDir));
+            float ambient = 0.35;
+            float diffuse = NdotL * 0.65;
+            float NdotH = max(0.0, dot(norm, halfVec));
+            float spec = pow(NdotH, 36.0) * 0.45;
+            float NdotV = max(0.0, abs(dot(norm, viewDir)));
+            float rim = pow(1.0 - NdotV, 3.0) * 0.25;
 
-        float depthFade = 1.0 - hitDepth * 0.12;
-        // Clinical soft-knee highlight ceiling (strictly <= 178/255 to eliminate enamel blinding burnout)
-        float clinicalCeiling = 178.0 / 255.0;
-
-        vec3 rawLit = u_boneColor * (ambient + diffuse * depthFade + rim) + vec3(0.95, 0.92, 0.88) * spec;
-        vec3 lit = clamp(min(rawLit, vec3(clinicalCeiling)), 0.0, 1.0);
-
-        if (u_renderMode == 1) {
-            // Vatech Ez3D G-Buffer Encoding (OBJShader.fx adaptation for WebGL2):
-            // Channel R: Red color component (lit.r)
-            // Channel G: Green color component (lit.g)
-            // Channel B: u_objectId / 255.0 (Instant 0-ms mouse picking of implants/teeth/canals)
-            // Channel A: hitDepth (Device Space depth v3PosDS.z)
-            fragColor = vec4(lit.r, lit.g, u_objectId / 255.0, hitDepth);
+            vec3 litImplant = implantHitColor * (ambient + diffuse + rim) + vec3(0.85, 1.0, 0.90) * spec;
+            if (u_renderMode == 1) {
+                fragColor = vec4(litImplant.r, litImplant.g, 3.0 / 255.0, hitDepth);
+            } else {
+                fragColor = vec4(clamp(litImplant, 0.0, 1.0), 1.0);
+            }
         } else {
-            fragColor = vec4(lit, 1.0);
+            // Two-sided diffuse response (abs eliminates darkness in maxillary sinuses and mandibular canals)
+            // Formula: fDiff = abs(dot(-lightDir, norm))
+            float NdotL = abs(dot(norm, lightDir));
+
+            // Vatech Ez3D weighting: 25% Ambient Floor + 75% Diffuse Amplitude (OBJShader.fx)
+            float ambient = 0.25;
+            float diffuse = NdotL * 0.75;
+
+            // Blinn-Phong half-vector for enamel specular highlight
+            float NdotH = max(0.0, abs(dot(norm, halfVec)));
+            float spec = pow(NdotH, 24.0) * 0.12;
+
+            // Cortical plate rim lighting
+            float NdotV = max(0.0, abs(dot(norm, viewDir)));
+            float rim = pow(1.0 - NdotV, 3.0) * 0.10;
+
+            float depthFade = 1.0 - hitDepth * 0.12;
+            // Clinical soft-knee highlight ceiling (strictly <= 178/255 to eliminate enamel blinding burnout)
+            float clinicalCeiling = 178.0 / 255.0;
+
+            vec3 rawLit = u_boneColor * (ambient + diffuse * depthFade + rim) + vec3(0.95, 0.92, 0.88) * spec;
+            vec3 lit = clamp(min(rawLit, vec3(clinicalCeiling)), 0.0, 1.0);
+
+            // Subsurface implant glow through alveolar bone:
+            // "в кости то просвечивают слегка, полупрозрачно. реалистично чтобы видно было"
+            if (implantBlendWeight > 0.005) {
+                float impNdotL = abs(dot(implantBlendNorm, lightDir));
+                float impSpec = pow(max(0.0, dot(implantBlendNorm, halfVec)), 28.0) * 0.35;
+                vec3 litImplantInside = implantHitColor * (0.30 + impNdotL * 0.70) + vec3(0.85, 1.0, 0.90) * impSpec;
+                // Soft translucent subsurface blend: anatomical bone dominates with delicate submerged hint
+                lit = mix(lit, lit * 0.75 + litImplantInside * 0.40, implantBlendWeight);
+            }
+
+            if (u_renderMode == 1) {
+                // Vatech Ez3D G-Buffer Encoding (OBJShader.fx adaptation for WebGL2):
+                fragColor = vec4(lit.r, lit.g, u_objectId / 255.0, hitDepth);
+            } else {
+                fragColor = vec4(lit, 1.0);
+            }
         }
     } else {
         if (u_renderMode == 1) {
@@ -344,6 +571,12 @@ export interface WebGlVolume3DState {
 		refineSteps: WebGLUniformLocation | null;
 		renderMode: WebGLUniformLocation | null;
 		objectId: WebGLUniformLocation | null;
+		marActive: WebGLUniformLocation | null;
+		implantCount: WebGLUniformLocation | null;
+		implantEntry: WebGLUniformLocation | null;
+		implantApex: WebGLUniformLocation | null;
+		implantRadii: WebGLUniformLocation | null;
+		implantColors: WebGLUniformLocation | null;
 	};
 }
 
@@ -426,6 +659,12 @@ export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVo
 			refineSteps: gl.getUniformLocation(program, "u_refineSteps"),
 			renderMode: gl.getUniformLocation(program, "u_renderMode"),
 			objectId: gl.getUniformLocation(program, "u_objectId"),
+			marActive: gl.getUniformLocation(program, "u_marActive"),
+			implantCount: gl.getUniformLocation(program, "u_implantCount"),
+			implantEntry: gl.getUniformLocation(program, "u_implantEntry[0]") ?? gl.getUniformLocation(program, "u_implantEntry"),
+			implantApex: gl.getUniformLocation(program, "u_implantApex[0]") ?? gl.getUniformLocation(program, "u_implantApex"),
+			implantRadii: gl.getUniformLocation(program, "u_implantRadii[0]") ?? gl.getUniformLocation(program, "u_implantRadii"),
+			implantColors: gl.getUniformLocation(program, "u_implantColors[0]") ?? gl.getUniformLocation(program, "u_implantColors"),
 		},
 	};
 }
@@ -444,6 +683,8 @@ export function renderWebGl2VolumeRaymarching(
 	clipping: Volume3DClippingBox = DEFAULT_VOLUME_3D_CLIPPING_BOX,
 	renderMode = 0,
 	objectId = 0,
+	implants: readonly Volume3DImplantParam[] = [],
+	marActive = true,
 ): void {
 	const { gl, program, vao, uniforms } = state;
 	const dim = volume.dimensions;
@@ -511,6 +752,8 @@ export function renderWebGl2VolumeRaymarching(
 	const rotMat = computeVolume3DRotationMatrix(yaw, pitch);
 
 	gl.viewport(0, 0, width, height);
+	gl.clearColor(0.035, 0.035, 0.043, 1.0);
+	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.useProgram(program);
 	gl.bindVertexArray(vao);
 
@@ -522,10 +765,11 @@ export function renderWebGl2VolumeRaymarching(
 	gl.uniform3f(uniforms.volumeDim, curDim.width, curDim.height, curDim.depth);
 
 	// Column-major 3x3 matrix for WebGL uniformMatrix3fv
+	// rotMat[0] = Col 0 (Right), rotMat[1] = Col 1 (Up), rotMat[2] = Col 2 (RayDir)
 	const matColMajor = new Float32Array([
-		rotMat[0]![0]!, rotMat[1]![0]!, rotMat[2]![0]!,
-		rotMat[0]![1]!, rotMat[1]![1]!, rotMat[2]![1]!,
-		rotMat[0]![2]!, rotMat[1]![2]!, rotMat[2]![2]!,
+		rotMat[0]![0]!, rotMat[0]![1]!, rotMat[0]![2]!,
+		rotMat[1]![0]!, rotMat[1]![1]!, rotMat[1]![2]!,
+		rotMat[2]![0]!, rotMat[2]![1]!, rotMat[2]![2]!,
 	]);
 	gl.uniformMatrix3fv(uniforms.rotMatrix, false, matColMajor);
 
@@ -566,9 +810,47 @@ export function renderWebGl2VolumeRaymarching(
 		clipping.clipMax[2],
 	);
 	gl.uniform1i(uniforms.refineSteps, isInteracting ? 0 : 4);
-	gl.uniform1i(uniforms.maxSteps, isInteracting ? 64 : 256);
+	gl.uniform1i(uniforms.maxSteps, isInteracting ? 64 : 160);
 	gl.uniform1i(uniforms.renderMode, renderMode);
 	gl.uniform1f(uniforms.objectId, objectId);
+	if (uniforms.marActive) gl.uniform1i(uniforms.marActive, marActive ? 1 : 0);
+
+	// Upload surgical implant volumetric data (up to 4 implants)
+	const count = Math.min(4, Math.max(0, implants.length));
+	gl.uniform1i(uniforms.implantCount, count);
+	if (count > 0) {
+		const entryData = new Float32Array(12);
+		const apexData = new Float32Array(12);
+		const radiiData = new Float32Array(8);
+		const colorsData = new Float32Array(12);
+
+		const scaleX = curDim.width / Math.max(1, dim.width);
+		const scaleY = curDim.height / Math.max(1, dim.height);
+		const scaleZ = curDim.depth / Math.max(1, dim.depth);
+
+		for (let i = 0; i < count; i++) {
+			const imp = implants[i]!;
+			entryData[i * 3 + 0] = imp.entryVoxel[0] * scaleX;
+			entryData[i * 3 + 1] = imp.entryVoxel[1] * scaleY;
+			entryData[i * 3 + 2] = imp.entryVoxel[2] * scaleZ;
+
+			apexData[i * 3 + 0] = imp.apexVoxel[0] * scaleX;
+			apexData[i * 3 + 1] = imp.apexVoxel[1] * scaleY;
+			apexData[i * 3 + 2] = imp.apexVoxel[2] * scaleZ;
+
+			radiiData[i * 2 + 0] = imp.platformRadiusVoxel * scaleX;
+			radiiData[i * 2 + 1] = imp.apexRadiusVoxel * scaleX;
+
+			colorsData[i * 3 + 0] = imp.colorRgb[0];
+			colorsData[i * 3 + 1] = imp.colorRgb[1];
+			colorsData[i * 3 + 2] = imp.colorRgb[2];
+		}
+
+		if (uniforms.implantEntry) gl.uniform3fv(uniforms.implantEntry, entryData);
+		if (uniforms.implantApex) gl.uniform3fv(uniforms.implantApex, apexData);
+		if (uniforms.implantRadii) gl.uniform2fv(uniforms.implantRadii, radiiData);
+		if (uniforms.implantColors) gl.uniform3fv(uniforms.implantColors, colorsData);
+	}
 
 	const tRayStart = typeof performance !== "undefined" ? performance.now() : 0;
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

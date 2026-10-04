@@ -1,0 +1,41 @@
+[Unit]
+Description=DENTE Dental CRM — Autonomous Telegram Bot & Intercom Gateway Service
+Documentation=https://github.com/marko1olo/dental-crm
+After=network.target network-online.target postgresql.service redis.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dental
+Group=dental
+WorkingDirectory=/var/www/dental-crm/apps/api
+
+# Environment variables
+Environment=NODE_ENV=production
+Environment=PORT=4000
+Environment=HOST=0.0.0.0
+Environment=DENTE_TELEGRAM_BOT_MODE=clinic_owned_bot
+
+# Node process launch with production memory allocation
+ExecStart=/usr/bin/node --max-old-space-size=1536 dist/server.js
+
+# Failure recovery & uptime resilience
+Restart=always
+RestartSec=5s
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# Linux process security & file limits
+LimitNOFILE=65536
+MemoryHigh=1536M
+MemoryMax=2048M
+TasksMax=4096
+TimeoutStopSec=20s
+
+# Logging configuration
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dente-telegram-bot
+
+[Install]
+WantedBy=multi-user.target

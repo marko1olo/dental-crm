@@ -27,7 +27,16 @@ async function main() {
     ],
   });
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await ctx.addInitScript(() => {
+      localStorage.setItem("dente_clinic_token", "live-inquisition-clinic-token");
+      localStorage.setItem("dente_staff_token", "live-inquisition-staff-token");
+      localStorage.setItem("dente_active_role", "owner");
+      localStorage.setItem("dente_theme_mode", "dark");
+      localStorage.setItem("dente_active_patient_id", "demo_cbct_patient");
+      localStorage.setItem("dente_tour_completed", "true");
+    });
+    const page = await ctx.newPage();
 
   await page.route("**/api/**", async (route) => {
     return route.fulfill({
@@ -98,6 +107,29 @@ async function main() {
     await page.click('[data-testid="cbct-nav-tab-panorama"]');
     await page.waitForTimeout(2500);
     await take(page, `02_panoramic_optg_50_50_${theme}.png`);
+
+    // 2b. FDI Ribbon tooth 46 click
+    console.log(`[2b] FDI tooth 46 (${theme})...`);
+    const tooth46 = await page.$('button[data-testid="cbct-fdi-tooth-46"]');
+    if (tooth46) {
+      await tooth46.click();
+      await page.waitForTimeout(2000);
+      await take(page, `02b_panoramic_tooth_46_${theme}.png`);
+    }
+
+    // 2c. FDI Ribbon maxilla switch and tooth 16 click
+    console.log(`[2c] FDI tooth 16 maxilla (${theme})...`);
+    const maxillaTab = await page.$('[data-testid="cbct-fdi-tab-maxilla"]');
+    if (maxillaTab) {
+      await maxillaTab.click();
+      await page.waitForTimeout(1000);
+    }
+    const tooth16 = await page.$('button[data-testid="cbct-fdi-tooth-16"]');
+    if (tooth16) {
+      await tooth16.click();
+      await page.waitForTimeout(2000);
+      await take(page, `02c_panoramic_tooth_16_maxilla_${theme}.png`);
+    }
 
     // 3. Implant
     console.log(`[3/5] Implant Studio (${theme})...`);

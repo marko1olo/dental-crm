@@ -8,12 +8,19 @@ import {
 	Bell,
 	Calendar,
 	MessageSquare,
+	Radio,
 	Send,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { CommunicationEventRow } from "./components/communications/CommunicationEventRow";
 import { CommunicationTaskCard } from "./components/communications/CommunicationTaskCard";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
+
+const StaffMessengerPanel = lazy(() =>
+	import("./components/communications/StaffMessengerPanel").then((module) => ({
+		default: module.StaffMessengerPanel,
+	})),
+);
 
 const WhatsAppChatPanel = lazy(() =>
 	import("./components/chat/WhatsAppChatPanel").then((module) => ({
@@ -155,7 +162,7 @@ export function CommunicationsView(
 		communicationNote.trim().length > 0;
 
 	const [activeSection, setActiveSection] = useState<
-		"tasks" | "chat" | "notifications"
+		"tasks" | "chat" | "notifications" | "staff_chat"
 	>("tasks");
 	const [tasksLimit, setTasksLimit] = useState(30);
 	const [journalLimit, setJournalLimit] = useState(40);
@@ -188,7 +195,7 @@ export function CommunicationsView(
 				<h2 title="Центр коммуникаций с пациентами: подтверждения визитов, рассылки, чаты и звонки">
 					Связь с пациентами
 				</h2>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						onClick={() => setIsRecallsHubOpen(true)}
@@ -220,12 +227,12 @@ export function CommunicationsView(
 				</div>
 			</div>
 
-			{/* Sub-navigation tabs: Tasks & Dispatch, WhatsApp Direct Chat, and Notifications Center */}
-			<div className="flex items-center gap-2 mb-5 p-1 bg-[var(--paper-soft,rgba(30,41,59,0.5))] rounded-xl border border-[var(--line,#334155)]">
+			{/* Sub-navigation tabs: Tasks & Dispatch, WhatsApp Direct Chat, Notifications Center, and Staff Messenger */}
+			<div className="flex items-center gap-2 mb-5 p-1 bg-[var(--paper-soft,rgba(30,41,59,0.5))] rounded-xl border border-[var(--line,#334155)] overflow-x-auto">
 				<button
 					type="button"
 					onClick={() => setActiveSection("tasks")}
-					className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 ${
+					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
 						activeSection === "tasks"
 							? "bg-teal-600 text-white shadow-xs"
 							: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -238,7 +245,7 @@ export function CommunicationsView(
 				<button
 					type="button"
 					onClick={() => setActiveSection("chat")}
-					className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 ${
+					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
 						activeSection === "chat"
 							? "bg-teal-600 text-white shadow-xs"
 							: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -251,7 +258,7 @@ export function CommunicationsView(
 				<button
 					type="button"
 					onClick={() => setActiveSection("notifications")}
-					className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 ${
+					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
 						activeSection === "notifications"
 							? "bg-teal-600 text-white shadow-xs"
 							: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -260,7 +267,29 @@ export function CommunicationsView(
 					<Bell size={14} />
 					<span>Центр уведомлений</span>
 				</button>
+
+				<button
+					type="button"
+					onClick={() => setActiveSection("staff_chat")}
+					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
+						activeSection === "staff_chat"
+							? "bg-teal-600 text-white shadow-xs"
+							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+					data-testid="communications-tab-staff-chat"
+				>
+					<Radio size={14} />
+					<span>Чат клиники / Интерком</span>
+				</button>
 			</div>
+
+			{activeSection === "staff_chat" && (
+				<div className="h-[780px] mb-5">
+					<Suspense fallback={null}>
+						<StaffMessengerPanel />
+					</Suspense>
+				</div>
+			)}
 
 			{activeSection === "chat" && (
 				<div className="h-[750px] mb-5">

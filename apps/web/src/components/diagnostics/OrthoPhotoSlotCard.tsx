@@ -124,7 +124,7 @@ export const OrthoPhotoSlotCard: React.FC<OrthoPhotoSlotCardProps> = ({
 				<button
 					type="button"
 					onClick={onTriggerUpload}
-					className="ortho-slot-btn h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer shrink-0"
+					className="ortho-slot-btn ortho-slot-btn-text h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer shrink-0"
 					title={hasPhoto ? "Заменить снимок" : "Загрузить снимок"}
 					data-testid={`upload-btn-${angle.id}`}
 				>

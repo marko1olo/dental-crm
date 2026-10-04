@@ -61,6 +61,7 @@ import type {
 import { updateAppointmentInDb } from "../db/appointmentsQuery.js";
 import { hydrateDomainStateFromDb } from "../db/domainStateHydration.js";
 import {
+	inMemoryDomainState,
 	buildDenteTelegramLinkCodeList,
 	buildDenteTelegramLinkedScheduleReply,
 	buildDenteTelegramOutbox,
@@ -134,7 +135,20 @@ import { TelegramRedFlagDetector } from "../services/telegram/TelegramRedFlagDet
 import { TelegramEmergencyEscalationService } from "../services/telegram/TelegramEmergencyEscalationService.js";
 import { TelegramVoiceIntakeService } from "../services/telegram/TelegramVoiceIntakeService.js";
 import { TelegramPostOpCarePipeline } from "../services/telegram/TelegramPostOpCarePipeline.js";
-import { TelegramReferralLoyaltyService } from "../services/telegram/TelegramReferralLoyaltyService.js";
+import {
+	isDbConnectionError,
+	TelegramReferralLoyaltyService,
+} from "../services/telegram/TelegramReferralLoyaltyService.js";
+import { TelegramStaffCockpitService } from "../services/telegram/TelegramStaffCockpitService.js";
+import { TelegramTokenVault } from "../services/telegram/TelegramTokenVault.js";
+import {
+	TelegramBotBillingService,
+	TELEGRAM_BOT_SAAS_TIERS,
+	type TelegramBotSaasTierId,
+} from "../services/telegram/TelegramBotBillingService.js";
+import { TelegramTreatmentPlanCloserService } from "../services/telegram/TelegramTreatmentPlanCloserService.js";
+import { registerTelegramTreatmentPlanCloserRoutes } from "./telegramTreatmentPlanCloser.js";
+
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -1091,6 +1105,36 @@ async function executeTelegramOutboxSend(
 		};
 	}
 
+	// 1. Определение экстренности сообщения (CITO)
+	const isCitoEmergency =
+		prepared.item.templateKind === "post_visit_checkup" ||
+		/cito|острая боль|экстренн|кровотеч|осложнен|температур|гной|пульпит/i.test(
+			`${prepared.item.title} ${prepared.item.previewText} ${prepared.text}`,
+		);
+
+	// 2. Проверка квоты B2B SaaS тарифа клиники с CITO-исключением
+	const quotaAuth = TelegramBotBillingService.checkQuotaAndAuthorizeSend({
+		organizationId: runtimeResult.runtime.context.organizationId,
+		isCitoEmergency,
+	});
+
+	if (!quotaAuth.allowed) {
+		return {
+			statusCode: 409,
+			body: denteTelegramOutboxSendResponseSchema.parse({
+				status: "blocked",
+				outboxItem: prepared.item,
+				taskId: prepared.item.taskId,
+				eventId: null,
+				telegramMessageId: null,
+				clientMutationId,
+				warnings: [...prepared.warnings, "telegram_quota_limit_exceeded"],
+				retryAfterSeconds: null,
+				blockedReason: "telegram_quota_exceeded",
+			}),
+		};
+	}
+
 	if (input.dryRun) {
 		return {
 			statusCode: 200,
@@ -1221,6 +1265,13 @@ async function executeTelegramOutboxSend(
 		clientMutationId: deliveryClientMutationId,
 		warnings: deliveryWarnings,
 		blockedReason: null,
+	});
+
+	// Фиксация расхода в биллинге клиники
+	TelegramBotBillingService.recordMessageSent({
+		organizationId: runtimeResult.runtime.context.organizationId,
+		isCitoEmergency,
+		messageKind: prepared.item.templateKind,
 	});
 
 	return {
@@ -2019,8 +2070,18 @@ async function hydrateTelegramDomainState(
 	_request: FastifyRequest,
 	organizationId: string,
 ): Promise<DomainState> {
-	const { state } = await hydrateDomainStateFromDb(organizationId);
-	return state;
+	try {
+		const { state } = await hydrateDomainStateFromDb(organizationId);
+		return state;
+	} catch (err) {
+		if (
+			isDbConnectionError(err) &&
+			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
+		) {
+			return inMemoryDomainState;
+		}
+		throw err;
+	}
 }
 
 /**
@@ -3577,11 +3638,7 @@ async function handleWebhook(
 	// расписанию клиники. Без этой загрузки пациент получал бы ответ по
 	// демонстрационным данным. Загрузка идёт ПОСЛЕ проверки секрета, чтобы
 	// посторонний запрос не мог заставить сервер читать базу.
-	return withTenantCtx(runtime.organizationId, async () => {
-		const domainState = await hydrateTelegramDomainState(
-			request,
-			runtime.organizationId,
-		);
+	const executeWebhook = async (domainState: DomainState) => {
 
 		if (settings.mode === "disabled") {
 			return denteTelegramWebhookResponseSchema.parse(
@@ -3754,6 +3811,74 @@ async function handleWebhook(
 					suggestedReplyMarkup: readableTelegramPayload(replyMarkup),
 					suggestedPhotoUrl: null,
 					warnings: referralResult.errorMessage ? [referralResult.errorMessage] : [],
+					event,
+				}),
+			);
+		}
+
+		// Шлюз авторизации персонала клиники по одноразовому QR / deep link: /start staff_auth_...
+		if (
+			messageText &&
+			/^\/start\s+staff_auth_/i.test(messageText.trim()) &&
+			chatId
+		) {
+			const startPayload = messageText.trim().replace(/^\/start\s+/i, "");
+			const fromUser =
+				isRecord(update.message) && isRecord(update.message.from)
+					? (update.message.from as Record<string, unknown>)
+					: undefined;
+			const telegramUser = fromUser
+				? {
+						id: typeof fromUser.id === "number" ? fromUser.id : 0,
+						firstName: String(fromUser.first_name || ""),
+						lastName: typeof fromUser.last_name === "string" ? fromUser.last_name : undefined,
+						username: typeof fromUser.username === "string" ? fromUser.username : undefined,
+					}
+				: undefined;
+
+			const staffAuthResult =
+				await TelegramStaffCockpitService.handleStaffAuthStart({
+					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
+					botConfigId: runtime.botConfigId,
+					chatId,
+					chatFingerprint: chatHash || "",
+					startPayload,
+					telegramUser,
+					crmBaseUrl: runtime.settings.patientPortalBaseUrl ?? undefined,
+				});
+
+			const event = recordDenteTelegramWebhookEvent({
+				updateId: update.update_id,
+				organizationId: runtime.organizationId,
+				botConfigId: runtime.botConfigId,
+				chatFingerprint: chatHash,
+				updateKind,
+				command: "/start",
+				status: staffAuthResult.success ? "processed" : "rejected",
+				action: "telegram_staff_auth_handled",
+				warnings: staffAuthResult.errorMessage ? [staffAuthResult.errorMessage] : [],
+			});
+
+			if (chatId && runtime.botToken) {
+				await sendTelegramTextMessage({
+					botToken: runtime.botToken,
+					chatId,
+					text: staffAuthResult.message,
+					replyMarkup: staffAuthResult.replyMarkup,
+					timeoutMs: 3000,
+				}).catch(() => {});
+			}
+
+			return denteTelegramWebhookResponseSchema.parse(
+				readableTelegramPayload({
+					ok: true,
+					duplicate: false,
+					action: "telegram_staff_auth_handled",
+					suggestedReply: readableTelegramText(staffAuthResult.message),
+					suggestedReplyMarkup: readableTelegramPayload(staffAuthResult.replyMarkup),
+					suggestedPhotoUrl: null,
+					warnings: staffAuthResult.errorMessage ? [staffAuthResult.errorMessage] : [],
 					event,
 				}),
 			);
@@ -3948,6 +4073,56 @@ async function handleWebhook(
 						action: "telegram_intercom_ack_recorded",
 						suggestedReply: readableTelegramText(intercomAckResult.responseText),
 						suggestedReplyMarkup: null,
+						suggestedPhotoUrl: null,
+						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// Мобильный кокпит врача и персонала клиники (Telegram Staff Cockpit)
+		if (callbackData?.startsWith("cockpit:")) {
+			const cockpitCallbackResult =
+				await TelegramStaffCockpitService.handleCockpitCallback({
+					organizationId: runtime.organizationId,
+					chatId: chatId || "",
+					callbackData,
+					chatFingerprint: chatHash ?? "",
+					botToken: runtime.botToken,
+					callbackQueryId,
+				});
+
+			if (cockpitCallbackResult.handled) {
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: `/callback:${callbackData}`,
+					status: cockpitCallbackResult.ok ? "processed" : "rejected",
+					action: "telegram_staff_cockpit_callback_handled",
+					warnings: [],
+				});
+
+				if (chatId && cockpitCallbackResult.responseText) {
+					await sendTelegramTextMessage({
+						botToken: runtime.botToken || "",
+						chatId,
+						text: cockpitCallbackResult.responseText,
+						replyMarkup: cockpitCallbackResult.replyMarkup,
+						timeoutMs: 3000,
+					}).catch(() => {});
+				}
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: "telegram_staff_cockpit_callback_handled",
+						suggestedReply: readableTelegramText(cockpitCallbackResult.responseText),
+						suggestedReplyMarkup: readableTelegramPayload(cockpitCallbackResult.replyMarkup),
 						suggestedPhotoUrl: null,
 						warnings: [],
 						event,
@@ -4247,6 +4422,60 @@ async function handleWebhook(
 				);
 			}
 		}
+
+		// Дожим планов лечения, разбор этапов по зубам и калькулятор рассрочек 0% (Treatment Plan Closer Engine)
+		if (callbackData?.startsWith("closer:")) {
+			const messageId =
+				isRecord(update.callback_query) &&
+				isRecord(update.callback_query.message) &&
+				typeof update.callback_query.message.message_id === "number"
+					? update.callback_query.message.message_id
+					: null;
+
+			const closerResult =
+				await TelegramTreatmentPlanCloserService.handleCallbackQuery({
+					callbackData,
+					callbackQueryId: callbackQueryId ?? "",
+					chatFingerprint: chatHash ?? "",
+					chatId: chatId ?? "",
+					messageId,
+					botToken: runtime.botToken || "",
+					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
+					botConfigId: runtime.botConfigId,
+				});
+
+
+			if (closerResult.handled && closerResult.screen) {
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: `/callback:${callbackData}`,
+					status: "processed",
+					action: closerResult.action,
+					warnings: [],
+				});
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: closerResult.action,
+						suggestedReply: readableTelegramText(closerResult.screen.text),
+						suggestedReplyMarkup: readableTelegramPayload(
+							closerResult.screen.replyMarkup,
+						),
+						suggestedPhotoUrl: null,
+						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
 
 		// Приём фото и медиа-обращений пациентов (Media Intake & Storage)
 		if (updateKind === "photo" && chatId && runtime.botToken) {
@@ -4801,7 +5030,24 @@ async function handleWebhook(
 				event,
 			}),
 		);
-	});
+	};
+	try {
+		return await withTenantCtx(runtime.organizationId, async () => {
+			const domainState = await hydrateTelegramDomainState(
+				request,
+				runtime.organizationId,
+			);
+			return await executeWebhook(domainState);
+		});
+	} catch (err) {
+		if (
+			isDbConnectionError(err) &&
+			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
+		) {
+			return await executeWebhook(inMemoryDomainState);
+		}
+		throw err;
+	}
 }
 
 export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
@@ -5529,6 +5775,88 @@ function registerTelegramPreviewRoutes(
 	);
 }
 
+function registerTelegramBillingRoutes(
+	app: FastifyInstance,
+	telegramControlPlaneRouteOptions: {
+		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+	},
+) {
+	// 1. Каталог B2B SaaS-тарифов сервиса Telegram-ботов
+	app.get(
+		"/api/telegram/billing/plans",
+		telegramControlPlaneRouteOptions,
+		async () => {
+			return {
+				plans: Object.values(TELEGRAM_BOT_SAAS_TIERS),
+				tiers: TELEGRAM_BOT_SAAS_TIERS,
+				defaultPlanId: "free",
+				currency: "RUB",
+			};
+		},
+	);
+
+	// 2. Статистика использования квоты сообщений текущей клиники
+	app.get<{ Querystring: { organizationId?: string } }>(
+		"/api/telegram/billing/usage",
+		telegramControlPlaneRouteOptions,
+		async (request) => {
+			const requestedOrgId = request.query?.organizationId?.trim();
+			const runtimeResult = resolveTelegramRuntimeContext(requestedOrgId);
+			const organizationId = runtimeResult.ok
+				? runtimeResult.context.organizationId
+				: (requestedOrgId || "default");
+
+			const usage = TelegramBotBillingService.getBillingUsage(organizationId);
+			return usage;
+		},
+	);
+
+	// 3. Смена тарифного плана клиники
+	app.post<{
+		Body: {
+			planId: TelegramBotSaasTierId;
+			organizationId?: string;
+		};
+	}>(
+		"/api/telegram/billing/change-plan",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const body = request.body;
+			if (!body || typeof body !== "object") {
+				return reply.code(400).send({
+					error: "TelegramBillingInvalidInput",
+					message: "Необходимо передать тело запроса с параметром planId.",
+				});
+			}
+
+			const targetPlanId = body.planId;
+			if (!targetPlanId || !TELEGRAM_BOT_SAAS_TIERS[targetPlanId]) {
+				return reply.code(400).send({
+					error: "TelegramBillingInvalidPlan",
+					message: `Недопустимый тарифный план '${String(targetPlanId)}'. Доступны: free, pro, enterprise.`,
+				});
+			}
+
+			const requestedOrgId = body.organizationId?.trim();
+			const runtimeResult = resolveTelegramRuntimeContext(requestedOrgId);
+			const organizationId = runtimeResult.ok
+				? runtimeResult.context.organizationId
+				: (requestedOrgId || "default");
+
+			const updated = TelegramBotBillingService.changePlan({
+				organizationId,
+				newPlanId: targetPlanId,
+			});
+
+			return reply.code(200).send({
+				success: true,
+				message: `Тарифный план успешно изменен на ${updated.plan.nameRu}`,
+				usage: updated,
+			});
+		},
+	);
+}
+
 export async function registerTelegramRoutes(app: FastifyInstance) {
 	const telegramControlPlaneRouteOptions = {
 		preHandler: requireTelegramControlPlaneAccess,
@@ -5539,4 +5867,9 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
 	registerTelegramOutboxRoutes(app, telegramControlPlaneRouteOptions);
 	registerTelegramLinkRoutes(app, telegramControlPlaneRouteOptions);
 	registerTelegramPreviewRoutes(app, telegramControlPlaneRouteOptions);
+	registerTelegramBillingRoutes(app, telegramControlPlaneRouteOptions);
+	await registerTelegramTreatmentPlanCloserRoutes(app);
 }
+
+export { registerTelegramTreatmentPlanCloserRoutes } from "./telegramTreatmentPlanCloser.js";
+

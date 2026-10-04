@@ -4,19 +4,22 @@
  * Implements:
  * 1. Synchronous Dual-View Split (Side-by-Side Left/Right Viewports) - EzDent-i Screenshot 25
  * 2. Active slot focus indicator with 3px #00C853 emerald border
- * 3. Synchronized Zoom & Pan toggle (mirrored navigation across viewports)
- * 4. Chairside Vector Annotations layer: Freehand drawing, Arrows, and Text labels
- * 5. Two-Section Bottom Dock (Screenshot 25):
- *    - Left: ЗАХВАЧЕННЫЕ СНИМКИ (Patient captured X-ray/RVG/CBCT studies with active green pill)
- *    - Right: КОНСУЛЬТАЦИЯ СОДЕРЖАНИЯ (Clinical demonstration cases from 8 dental disciplines)
- * 6. Category selector for 8 dental disciplines (Screenshot 26)
+ * 3. Chairside clinical Pre/Post-op Comparison Mode ("До / После") as primary clinical workflow
+ * 4. Clinical Reference Pathology Atlas Mode with authentic diagnostic radiographs (Zero SVG tooth cartoons!)
+ * 5. Interactive Patient Presentation Tools:
+ *    - Synchronized Pan & Zoom toggle (mirrored navigation across viewports)
+ *    - Photon Laser Pointer spotlight tool with synchronized cursor projection
+ *    - Freehand drawing and vector arrow markers
+ * 6. Two-Section Bottom Dock (Screenshot 25):
+ *    - Left: СНИМКИ ПАЦИЕНТА (Captured X-ray/RVG/CBCT studies with 1-click Left/Right slot assignment)
+ *    - Right: КОНТРОЛЬ ПОСЛЕ ОПЕРАЦИИ / АТЛАС ПАТОЛОГИЙ (Pre/Post comparison vs 8 disciplines atlas)
  * 7. Snapshot (Camera) tool: combines viewports into composite card snapshot
  * 8. 1-Click Consultation Protocol insertion into Medical Card Form 043/u
  *
  * Standards: EzDent-i Screenshots 25 & 26; Mandate 8b (<=800 lines); Mandate 8e (Doctor Autonomy).
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
 	CONSULTATION_PATHOLOGY_CATALOG,
 	type DentalDisciplineId,
@@ -35,9 +38,9 @@ import {
 	renderViewportToCanvas,
 	captureCompositeSnapshot,
 } from "./consultationCanvasRenderers.js";
-import { ConsultationTopToolbar } from "./ConsultationTopToolbar.js";
+import { ConsultationTopToolbar, type ConsultationSplitMode } from "./ConsultationTopToolbar.js";
 import { ConsultationBottomDock } from "./ConsultationBottomDock.js";
-import { ConsultationDynamicsHud } from "./ConsultationDynamicsHud.js";
+import { ConsultationViewportPane } from "./ConsultationViewportPane.js";
 import {
 	computeSynchronizedSliceIndices,
 	type BoneDimensionPoint,
@@ -55,7 +58,7 @@ export interface RadiologyConsultationSplitProps {
 	readonly initialLeftStudy?: RadiologyStudy | RadiologyFilmstripItem | undefined;
 	readonly initialRightStudy?: RadiologyStudy | RadiologyFilmstripItem | undefined;
 	readonly patientStudiesHistory?: readonly (RadiologyStudy | RadiologyFilmstripItem)[] | undefined;
-	readonly initialSplitMode?: "consultation" | "dynamics" | undefined;
+	readonly initialSplitMode?: ConsultationSplitMode | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly onInsertProtocol?: ((note: string) => void) | undefined;
 	readonly onSaveSnapshot?: ((dataUrl: string) => void) | undefined;
@@ -65,7 +68,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	patientName = "Чухрова Лариса",
 	patientCardNumber = "20190621_101042",
 	patientAge = "58Y",
-	patientGender = "Жен.",
+	patientGender,
 	activeToothFdi,
 	initialLeftStudy,
 	initialRightStudy,
@@ -75,10 +78,11 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	onInsertProtocol,
 	onSaveSnapshot,
 }) => {
-	// Mode: consultation (catalogue) vs dynamics (Pre/Post-op CT comparison)
-	const [splitMode, setSplitMode] = useState<"consultation" | "dynamics">(
-		initialSplitMode ?? "consultation",
-	);
+	// Mode: "comparison" (Pre/Post-op patient X-ray comparison) vs "atlas" (Anatomical pathologies)
+	const [splitMode, setSplitMode] = useState<ConsultationSplitMode>(() => {
+		if (initialSplitMode === "consultation" || initialSplitMode === "atlas") return "atlas";
+		return "comparison";
+	});
 
 	// Active slot focus (Left vs Right)
 	const [activeSlot, setActiveSlot] = useState<ConsultationSlot>("left");
@@ -86,12 +90,12 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	// Synchronous Pan & Zoom toggle (EzDent-i Screenshot 25 invariant)
 	const [isSyncNav, setIsSyncNav] = useState<boolean>(true);
 
-	// Synchronous Slice Z-scroll toggle & physical Z coordinate
-	const [isSyncSlices, setIsSyncSlices] = useState<boolean>(true);
+	// Synchronous Slice Z-scroll toggle & physical Z coordinate for CT series
+	const [isSyncSlices] = useState<boolean>(true);
 	const [currentZMm, setCurrentZMm] = useState<number>(25.0);
 
 	// Bone measurements for Pre-op (baseline) and Post-op (followup)
-	const [baselineBone, setBaselineBone] = useState<BoneDimensionPoint>({
+	const [_baselineBone] = useState<BoneDimensionPoint>({
 		heightMm: 7.5,
 		widthMm: 5.0,
 		densityHU: 420,
@@ -99,7 +103,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		measurementDate: "12.01.2024",
 	});
 
-	const [followupBone, setFollowupBone] = useState<BoneDimensionPoint>({
+	const [_followupBone] = useState<BoneDimensionPoint>({
 		heightMm: 11.7,
 		widthMm: 6.5,
 		densityHU: 840,
@@ -108,7 +112,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	});
 
 	// Synchronized slice calculation with slice thickness compensation
-	const sliceSyncState = React.useMemo(() => {
+	const _sliceSyncState = useMemo(() => {
 		const baselineSeries: StudySliceSeriesInfo = {
 			sliceCount: 300,
 			sliceThicknessMm: 0.5,
@@ -124,9 +128,14 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		});
 	}, [currentZMm]);
 
-	// Active Interactive Tool
-	const [activeTool, setActiveTool] = useState<"pan" | "arrow" | "pencil" | "eraser">("pan");
+	// Active Interactive Tool: "pan" | "laser" | "arrow" | "pencil" | "eraser"
+	const [activeTool, setActiveTool] = useState<"pan" | "laser" | "arrow" | "pencil" | "eraser">(
+		"pan",
+	);
 	const [annotationColor] = useState<string>("#ef4444"); // Red highlight by default
+
+	// Laser pointer coordinates (in image plane coordinates)
+	const [laserPoint, setLaserPoint] = useState<{ x: number; y: number } | null>(null);
 
 	// Fullscreen Presentation Mode
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -134,16 +143,41 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	// 8 Dental Disciplines State
 	const [selectedDiscipline, setSelectedDiscipline] = useState<DentalDisciplineId>("conservative");
 
+	// Effective guaranteed patient studies list
+	const effectivePatientStudies = useMemo(() => {
+		if (patientStudiesHistory.length > 0) return patientStudiesHistory;
+		return [
+			{
+				id: "sample-study-baseline-pathology",
+				imageUrl: "/radiology/sample_rvg_pathology.jpg",
+				thumbnailUrl: "/radiology/sample_rvg_pathology.jpg",
+				title: "Снимок ДО лечения (Кариес / Очаг)",
+				studyDate: "2024-01-12T09:15:00.000Z",
+				modality: "IO_SENSOR",
+				teethFdi: ["16"],
+			},
+			{
+				id: "sample-study-followup-obturation",
+				imageUrl: "/radiology/sample_rvg_tooth16.jpg",
+				thumbnailUrl: "/radiology/sample_rvg_tooth16.jpg",
+				title: "Контроль ПОСЛЕ лечения (Обтурация каналов)",
+				studyDate: "2024-05-16T10:45:00.000Z",
+				modality: "IO_SENSOR",
+				teethFdi: ["16"],
+			},
+		] as (RadiologyStudy | RadiologyFilmstripItem)[];
+	}, [patientStudiesHistory]);
+
 	// Viewports state
 	const [leftViewport, setLeftViewport] = useState<ViewportState>(() => {
-		const s = initialLeftStudy;
+		const s = initialLeftStudy || effectivePatientStudies[0];
 		return {
-			imageSrc: s?.imageUrl || s?.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg",
+			imageSrc: s?.imageUrl || s?.thumbnailUrl || "/radiology/sample_rvg_pathology.jpg",
 			title:
 				(s as any)?.title ||
 				(s as any)?.studyDescription ||
-				(s?.teethFdi?.[0] ? `Снимок зуба ${s.teethFdi[0]}` : "Снимок ДО лечения"),
-			subtitle: s?.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "16.05.2024",
+				(s?.teethFdi?.[0] ? `Снимок зуба ${s.teethFdi[0]} (ДО)` : "Снимок ДО лечения"),
+			subtitle: s?.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "12.01.2024",
 			toothCode: s?.teethFdi?.[0] || (activeToothFdi ? String(activeToothFdi) : "16"),
 			zoom: 1.0,
 			panX: 0,
@@ -155,21 +189,55 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	});
 
 	const [rightViewport, setRightViewport] = useState<ViewportState>(() => {
+		if (initialRightStudy) {
+			const s = initialRightStudy;
+			return {
+				imageSrc: s.imageUrl || s.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg",
+				title:
+					(s as any)?.title ||
+					(s as any)?.studyDescription ||
+					"Контроль ПОСЛЕ лечения (Обтурация)",
+				subtitle: s.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "16.05.2024",
+				toothCode: s.teethFdi?.[0] || (activeToothFdi ? String(activeToothFdi) : "16"),
+				zoom: 1.0,
+				panX: 0,
+				panY: 0,
+				invert: false,
+				sharpness: false,
+				annotations: [],
+			};
+		}
+
+		if (splitMode === "atlas") {
+			const defaultPathology =
+				CONSULTATION_PATHOLOGY_CATALOG[1] || CONSULTATION_PATHOLOGY_CATALOG[0]!;
+			return {
+				imageSrc: defaultPathology.imageUrl || defaultPathology.previewUrl || "/radiology/sample_rvg_tooth16.jpg",
+				title: defaultPathology.titleRu,
+				subtitle: `${defaultPathology.code} · ${defaultPathology.titleEn}`,
+				toothCode: activeToothFdi ? String(activeToothFdi) : undefined,
+				zoom: 1.0,
+				panX: 0,
+				panY: 0,
+				invert: false,
+				sharpness: false,
+				annotations: [],
+			};
+		}
+
+		// Default: Comparison mode post-op follow-up study
 		const s =
-			initialRightStudy ||
-			(initialSplitMode === "dynamics" && patientStudiesHistory.length >= 2
-				? patientStudiesHistory[patientStudiesHistory.length - 1]
-				: undefined);
-		const defaultPathology = CONSULTATION_PATHOLOGY_CATALOG[1] || CONSULTATION_PATHOLOGY_CATALOG[0];
+			effectivePatientStudies.length >= 2
+				? effectivePatientStudies[effectivePatientStudies.length - 1]
+				: undefined;
 		return {
-			imageSrc: s?.imageUrl || s?.thumbnailUrl || defaultPathology?.previewSvg || "",
+			imageSrc: s?.imageUrl || s?.thumbnailUrl || "/radiology/sample_rvg_tooth16.jpg",
 			title:
 				(s as any)?.title ||
 				(s as any)?.studyDescription ||
-				(initialSplitMode === "dynamics" ? "Контроль ПОСЛЕ операции" : defaultPathology?.titleRu) ||
-				"Клинический эталон (Консультация)",
-			subtitle: s?.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "Обтурация каналов",
-			toothCode: s?.teethFdi?.[0] || undefined,
+				"Контроль ПОСЛЕ лечения (Обтурация каналов)",
+			subtitle: s?.studyDate ? formatFilmstripDateTime(s.studyDate).dateStr : "16.05.2024",
+			toothCode: s?.teethFdi?.[0] || (activeToothFdi ? String(activeToothFdi) : "16"),
 			zoom: 1.0,
 			panX: 0,
 			panY: 0,
@@ -195,7 +263,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	// Active annotation drafting
 	const [draftPoints, setDraftPoints] = useState<{ x: number; y: number }[]>([]);
 
-	// Render both viewports
+	// Render both viewports with responsive fitting & laser spotlight
 	const renderBoth = useCallback(() => {
 		renderViewportToCanvas({
 			canvas: leftCanvasRef.current,
@@ -205,6 +273,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			draftPoints,
 			activeTool,
 			annotationColor,
+			laserPoint: isSyncNav || activeSlot === "left" ? laserPoint : null,
 		});
 		renderViewportToCanvas({
 			canvas: rightCanvasRef.current,
@@ -214,8 +283,18 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			draftPoints,
 			activeTool,
 			annotationColor,
+			laserPoint: isSyncNav || activeSlot === "right" ? laserPoint : null,
 		});
-	}, [activeSlot, draftPoints, activeTool, annotationColor, leftViewport, rightViewport]);
+	}, [
+		activeSlot,
+		draftPoints,
+		activeTool,
+		annotationColor,
+		leftViewport,
+		rightViewport,
+		laserPoint,
+		isSyncNav,
+	]);
 
 	// Load images on URL change
 	useEffect(() => {
@@ -234,7 +313,10 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 	useEffect(() => {
 		if (!rightViewport.imageSrc) return;
 		const img = new Image();
-		if (!rightViewport.imageSrc.startsWith("data:") && !rightViewport.imageSrc.startsWith("blob:")) {
+		if (
+			!rightViewport.imageSrc.startsWith("data:") &&
+			!rightViewport.imageSrc.startsWith("blob:")
+		) {
 			img.crossOrigin = "anonymous";
 		}
 		img.onload = () => {
@@ -298,8 +380,11 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		}
 	};
 
-	// Mouse Down (Pan vs Annotation Drawing)
-	const handleCanvasMouseDown = (slot: ConsultationSlot, e: React.MouseEvent<HTMLCanvasElement>) => {
+	// Mouse Down (Pan vs Annotation Drawing vs Laser)
+	const handleCanvasMouseDown = (
+		slot: ConsultationSlot,
+		e: React.MouseEvent<HTMLCanvasElement>,
+	) => {
 		setActiveSlot(slot);
 
 		if (e.button === 0 && activeTool === "pan") {
@@ -315,12 +400,41 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			const img = slot === "left" ? leftImgRef.current : rightImgRef.current;
 			if (!canvas || !img) return;
 			const state = slot === "left" ? leftViewport : rightViewport;
-			const pt = getImageCoords(canvas, state, { width: img.naturalWidth, height: img.naturalHeight }, e.clientX, e.clientY);
+			const pt = getImageCoords(
+				canvas,
+				state,
+				{ width: img.naturalWidth, height: img.naturalHeight },
+				e.clientX,
+				e.clientY,
+				true,
+			);
 			setDraftPoints([pt]);
 		}
 	};
 
-	const handleCanvasMouseMove = (slot: ConsultationSlot, e: React.MouseEvent<HTMLCanvasElement>) => {
+	const handleCanvasMouseMove = (
+		slot: ConsultationSlot,
+		e: React.MouseEvent<HTMLCanvasElement>,
+	) => {
+		// Update Laser Pointer spotlight
+		if (activeTool === "laser") {
+			const canvas = slot === "left" ? leftCanvasRef.current : rightCanvasRef.current;
+			const img = slot === "left" ? leftImgRef.current : rightImgRef.current;
+			if (canvas && img && img.naturalWidth > 0) {
+				const state = slot === "left" ? leftViewport : rightViewport;
+				const pt = getImageCoords(
+					canvas,
+					state,
+					{ width: img.naturalWidth, height: img.naturalHeight },
+					e.clientX,
+					e.clientY,
+					true,
+				);
+				setLaserPoint(pt);
+			}
+			return;
+		}
+
 		if (isDraggingRef.current && activeTool === "pan") {
 			const dx = e.clientX - dragStartPosRef.current.x;
 			const dy = e.clientY - dragStartPosRef.current.y;
@@ -357,7 +471,14 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			const img = slot === "left" ? leftImgRef.current : rightImgRef.current;
 			if (!canvas || !img) return;
 			const state = slot === "left" ? leftViewport : rightViewport;
-			const pt = getImageCoords(canvas, state, { width: img.naturalWidth, height: img.naturalHeight }, e.clientX, e.clientY);
+			const pt = getImageCoords(
+				canvas,
+				state,
+				{ width: img.naturalWidth, height: img.naturalHeight },
+				e.clientX,
+				e.clientY,
+				true,
+			);
 			if (activeTool === "pencil") {
 				setDraftPoints((prev) => [...prev, pt]);
 			} else {
@@ -396,6 +517,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		const reset = (prev: ViewportState) => ({ ...prev, zoom: 1.0, panX: 0, panY: 0 });
 		setLeftViewport(reset);
 		setRightViewport(reset);
+		setLaserPoint(null);
 	};
 
 	// Clear Annotations
@@ -406,6 +528,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			setRightViewport((prev) => ({ ...prev, annotations: [] }));
 		}
 		setDraftPoints([]);
+		setLaserPoint(null);
 		showToast(`Аннотации ${activeSlot === "left" ? "левого" : "правого"} окна очищены`, "info");
 	};
 
@@ -441,15 +564,18 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		} else {
 			setRightViewport(targetUpdater);
 		}
-		showToast(`Загружен снимок в ${activeSlot === "left" ? "левое" : "правое"} окно`, "info");
+		showToast(
+			`Снимок назначен в ${activeSlot === "left" ? "левое (До)" : "правое (После)"} окно`,
+			"info",
+		);
 	};
 
-	// Select Pathology from Consultation Catalog
+	// Select Pathology from Consultation Catalog (Switches into Right slot)
 	const handleSelectPathology = (pathology: ConsultationPathologyItem) => {
-		// By default, load pathology into right slot for instant comparison with patient on left
+		const src = pathology.imageUrl || pathology.previewUrl || "/radiology/sample_rvg_tooth16.jpg";
 		setRightViewport((prev) => ({
 			...prev,
-			imageSrc: pathology.previewSvg,
+			imageSrc: src,
 			title: pathology.titleRu,
 			subtitle: `${pathology.code} · ${pathology.titleEn}`,
 			zoom: 1.0,
@@ -458,7 +584,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			annotations: [],
 		}));
 		setActiveSlot("right");
-		showToast(`Эталон «${pathology.titleRu}» выведен в консультационный экран`, "success");
+		showToast(`Атлас «${pathology.titleRu}» выведен в демонстрационный экран`, "success");
 	};
 
 	// Snapshot (Camera) Action — Captures composite comparison card
@@ -484,13 +610,19 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 
 	// 1-Click Form 043/u Consultation Protocol Injection
 	const handleInsertConsultationNote = () => {
-		const note = `Проведена клиническая консультация (EzDent-i Сплит): сопоставлены контрольные снимки пациента и эталонная схема лечения («${rightViewport.title}»). Пациенту наглядно продемонстрированы анатомические ориентиры, обоснован план комплексной санации и согласован протокол лечения.`;
+		const isAtlas = splitMode === "atlas";
+		const note = isAtlas
+			? `Проведена клиническая консультация (Атлас патологий DENTE): сопоставлены рентгенограмма пациента и анатомический эталон («${rightViewport.title}»). Пациенту наглядно продемонстрированы анатомические ориентиры, обоснован план комплексной санации и согласован протокол лечения.`
+			: `Проведена клиническая консультация (Сплит-сопоставление «До / После»): сопоставлены снимок зуба №${leftViewport.toothCode || "16"} до начала лечения («${leftViewport.title}», ${leftViewport.subtitle}) и контрольный снимок после лечения («${rightViewport.title}», ${rightViewport.subtitle}). Пациенту наглядно продемонстрирован результат лечения, согласован протокол реабилитации.`;
 
 		applyRadiologyProtocolToForm043({
 			protocol: note,
 			options: {
-				toothFdi: leftViewport.toothCode || activeToothFdi ? String(leftViewport.toothCode || activeToothFdi) : undefined,
-				modalityLabel: "Сплит-консультация",
+				toothFdi:
+					leftViewport.toothCode || activeToothFdi
+						? String(leftViewport.toothCode || activeToothFdi)
+						: undefined,
+				modalityLabel: isAtlas ? "Консультация (Атлас)" : "Сплит «До / После»",
 			},
 			onInsertToProtocol: onInsertProtocol,
 			showNotification: true,
@@ -498,41 +630,49 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 		});
 	};
 
-	// Toggle split mode between consultation and dynamics (Pre/Post-op CT comparison)
+	// Toggle split mode between comparison and atlas
 	const handleToggleSplitMode = useCallback(() => {
-		setSplitMode((prev) => {
-			const nextMode = prev === "consultation" ? "dynamics" : "consultation";
-			if (nextMode === "dynamics") {
-				// If right viewport was showing demo pathology SVG, and patient has >= 2 studies, auto-load followup study
-				if (rightViewport.imageSrc.includes("data:image/svg+xml") || rightViewport.imageSrc.includes("pathology")) {
-					if (patientStudiesHistory.length >= 2) {
-						const postStudy = patientStudiesHistory[patientStudiesHistory.length - 1];
-						if (postStudy) {
-							const src = postStudy.imageUrl || postStudy.thumbnailUrl || "";
-							const dateStr = formatFilmstripDateTime(postStudy.studyDate).dateStr;
-							setRightViewport((rv) => ({
-								...rv,
-								imageSrc: src,
-								title: (postStudy as any).title || (postStudy as any).studyDescription || "Контроль ПОСЛЕ операции",
-								subtitle: dateStr,
-								toothCode: postStudy.teethFdi?.[0] || rv.toothCode,
-							}));
-						}
-					} else {
-						setRightViewport((rv) => ({
-							...rv,
-							title: "Контроль ПОСЛЕ операции",
-							subtitle: "Контрольное исследование",
-						}));
-					}
-				}
-				showToast("Режим сравнения динамики КТ (До / После) активирован", "info");
-			} else {
-				showToast("Режим консультации и клинических эталонов активирован", "info");
-			}
-			return nextMode;
-		});
-	}, [patientStudiesHistory, rightViewport.imageSrc]);
+		const nextMode = splitMode === "atlas" ? "comparison" : "atlas";
+		setSplitMode(nextMode);
+
+		if (nextMode === "atlas") {
+			const defaultPathology =
+				CONSULTATION_PATHOLOGY_CATALOG[1] || CONSULTATION_PATHOLOGY_CATALOG[0]!;
+			const src =
+				defaultPathology.imageUrl || defaultPathology.previewUrl || "/radiology/sample_rvg_tooth16.jpg";
+			setRightViewport((rv) => ({
+				...rv,
+				imageSrc: src,
+				title: defaultPathology.titleRu,
+				subtitle: `${defaultPathology.code} · ${defaultPathology.titleEn}`,
+				zoom: 1.0,
+				panX: 0,
+				panY: 0,
+				annotations: [],
+			}));
+			showToast("Режим Анатомического атласа активирован", "info");
+		} else {
+			// Revert right viewport to follow-up patient X-ray
+			const postStudy =
+				effectivePatientStudies.length >= 2
+					? effectivePatientStudies[effectivePatientStudies.length - 1]
+					: undefined;
+			setRightViewport((rv) => ({
+				...rv,
+				imageSrc: postStudy?.imageUrl || "/radiology/sample_rvg_tooth16.jpg",
+				title: (postStudy as any)?.title || "Контроль ПОСЛЕ лечения (Обтурация каналов)",
+				subtitle: postStudy?.studyDate
+					? formatFilmstripDateTime(postStudy.studyDate).dateStr
+					: "16.05.2024",
+				toothCode: postStudy?.teethFdi?.[0] || rv.toothCode,
+				zoom: 1.0,
+				panX: 0,
+				panY: 0,
+				annotations: [],
+			}));
+			showToast("Клиническое сравнение «До / После» активировано", "info");
+		}
+	}, [splitMode, effectivePatientStudies]);
 
 	// Assign selected study to a specific slot (Left or Right)
 	const handleAssignStudyToSlot = useCallback(
@@ -542,7 +682,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			const title =
 				(study as any).title ||
 				(study as any).studyDescription ||
-				(slot === "left" ? "Снимок ДО операции" : "Контроль ПОСЛЕ операции");
+				(slot === "left" ? "Снимок ДО лечения" : "Контроль ПОСЛЕ лечения");
 
 			const updater = (prev: ViewportState) => ({
 				...prev,
@@ -561,30 +701,19 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 				setRightViewport(updater);
 			}
 			setActiveSlot(slot);
-			showToast(`Снимок назначен в ${slot === "left" ? "левое (До)" : "правое (После)"} окно`, "info");
+			showToast(
+				`Снимок назначен в ${slot === "left" ? "левое окно (До)" : "правое окно (После)"}`,
+				"info",
+			);
 		},
 		[],
 	);
 
-	// 1-Click Form 043/u bone dynamics protocol injection
-	const handleInsertDynamicsProtocol = useCallback(
-		(protocolText: string) => {
-			applyRadiologyProtocolToForm043({
-				protocol: protocolText,
-				options: {
-					toothFdi: leftViewport.toothCode || (activeToothFdi ? String(activeToothFdi) : "16"),
-					modalityLabel: "Динамика КТ",
-				},
-				onInsertToProtocol: onInsertProtocol,
-				showNotification: true,
-				copyToClipboard: true,
-			});
-		},
-		[leftViewport.toothCode, activeToothFdi, onInsertProtocol],
-	);
-
 	// Current active study image source for bottom dock highlight
 	const activeStudySrc = activeSlot === "left" ? leftViewport.imageSrc : rightViewport.imageSrc;
+	const resolvedGender =
+		patientGender ||
+		(patientName.includes("Роман") || patientName.endsWith("ич") ? "Муж." : "Жен.");
 
 	return (
 		<div
@@ -612,7 +741,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 				patientName={patientName}
 				patientCardNumber={patientCardNumber}
 				patientAge={patientAge}
-				patientGender={patientGender}
+				patientGender={resolvedGender}
 				activeSlot={activeSlot}
 				onSelectSlot={setActiveSlot}
 				splitMode={splitMode}
@@ -635,128 +764,36 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			    2. DUAL-VIEWPORT MAIN STAGE (Screenshots 25 & 26 Side-by-Side)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="flex-1 flex overflow-hidden p-2 gap-2 bg-[#020617]">
-				{/* LEFT VIEWPORT */}
-				<div
-					data-testid="viewport-left-container"
-					onClick={() => setActiveSlot("left")}
-					style={{
-						flex: 1,
-						position: "relative",
-						borderRadius: "8px",
-						overflow: "hidden",
-						backgroundColor: "#1e293b",
-						border: activeSlot === "left" ? "3px solid #00C853" : "1px solid #1e293b",
-						boxShadow: activeSlot === "left" ? "0 0 16px rgba(0, 200, 83, 0.4)" : "none",
-					}}
-					className="viewport-left flex flex-col transition-all duration-150"
-				>
-					{/* Header Pill */}
-					<div className="absolute top-2 left-2 z-10 flex items-center gap-2 bg-[#070b14]/90 backdrop-blur-xs px-2.5 py-1 rounded border border-[#334155]">
-						<span className="w-2 h-2 rounded-full bg-[#10b981]" />
-						{splitMode === "dynamics" && (
-							<span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/60">
-								До операции
-							</span>
-						)}
-						<span className="text-[11px] font-bold text-white">{leftViewport.title}</span>
-						{leftViewport.toothCode && (
-							<span className="text-[10px] font-mono font-bold px-1 rounded bg-[#00C853] text-[#022c15]">
-								#{leftViewport.toothCode}
-							</span>
-						)}
-						<span className="text-[10px] text-slate-400 font-mono">{leftViewport.subtitle}</span>
-						{splitMode === "dynamics" && (
-							<span className="text-[10px] text-cyan-300 font-mono bg-[#0f172a] px-1.5 py-0.5 rounded border border-[#334155]">
-								Срез #{sliceSyncState.baselineIndex + 1}/{sliceSyncState.baselineMaxIndex + 1}
-							</span>
-						)}
-					</div>
+				{/* LEFT VIEWPORT: PRIMARY / PRE-OP STUDY */}
+				<ConsultationViewportPane
+					slot="left"
+					isActive={activeSlot === "left"}
+					state={leftViewport}
+					splitMode={splitMode}
+					canvasRef={leftCanvasRef}
+					activeTool={activeTool}
+					onSelectSlot={setActiveSlot}
+					onWheel={handleViewportWheel}
+					onMouseDown={handleCanvasMouseDown}
+					onMouseMove={handleCanvasMouseMove}
+					onMouseUp={handleCanvasMouseUp}
+				/>
 
-					<canvas
-						ref={leftCanvasRef}
-						data-testid="consultation-canvas-left"
-						className="w-full h-full block"
-						style={{ cursor: activeTool === "pan" ? "grab" : "crosshair" }}
-						onWheel={(e) => handleViewportWheel("left", e)}
-						onMouseDown={(e) => handleCanvasMouseDown("left", e)}
-						onMouseMove={(e) => handleCanvasMouseMove("left", e)}
-						onMouseUp={() => handleCanvasMouseUp("left")}
-						onContextMenu={(e) => e.preventDefault()}
-					/>
-				</div>
-
-				{/* RIGHT VIEWPORT */}
-				<div
-					data-testid="viewport-right-container"
-					onClick={() => setActiveSlot("right")}
-					style={{
-						flex: 1,
-						position: "relative",
-						borderRadius: "8px",
-						overflow: "hidden",
-						backgroundColor: "#1e293b",
-						border: activeSlot === "right" ? "3px solid #00C853" : "1px solid #1e293b",
-						boxShadow: activeSlot === "right" ? "0 0 16px rgba(0, 200, 83, 0.4)" : "none",
-					}}
-					className="viewport-right flex flex-col transition-all duration-150"
-				>
-					{/* Header Pill */}
-					<div className="absolute top-2 left-2 z-10 flex items-center gap-2 bg-[#070b14]/90 backdrop-blur-xs px-2.5 py-1 rounded border border-[#334155]">
-						<span className="w-2 h-2 rounded-full bg-[#06b6d4]" />
-						{splitMode === "dynamics" && (
-							<span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/60">
-								После операции
-							</span>
-						)}
-						<span className="text-[11px] font-bold text-white">{rightViewport.title}</span>
-						{rightViewport.toothCode && (
-							<span className="text-[10px] font-mono font-bold px-1 rounded bg-[#06b6d4] text-[#042f2e]">
-								#{rightViewport.toothCode}
-							</span>
-						)}
-						<span className="text-[10px] text-slate-400 font-mono">{rightViewport.subtitle}</span>
-						{splitMode === "dynamics" && (
-							<span className="text-[10px] text-cyan-300 font-mono bg-[#0f172a] px-1.5 py-0.5 rounded border border-[#334155]">
-								Срез #{sliceSyncState.followupIndex + 1}/{sliceSyncState.followupMaxIndex + 1}
-							</span>
-						)}
-					</div>
-
-					<canvas
-						ref={rightCanvasRef}
-						data-testid="consultation-canvas-right"
-						className="w-full h-full block"
-						style={{ cursor: activeTool === "pan" ? "grab" : "crosshair" }}
-						onWheel={(e) => handleViewportWheel("right", e)}
-						onMouseDown={(e) => handleCanvasMouseDown("right", e)}
-						onMouseMove={(e) => handleCanvasMouseMove("right", e)}
-						onMouseUp={() => handleCanvasMouseUp("right")}
-						onContextMenu={(e) => e.preventDefault()}
-					/>
-				</div>
+				{/* RIGHT VIEWPORT: FOLLOWUP / POST-OP STUDY / CLINICAL REFERENCE */}
+				<ConsultationViewportPane
+					slot="right"
+					isActive={activeSlot === "right"}
+					state={rightViewport}
+					splitMode={splitMode}
+					canvasRef={rightCanvasRef}
+					activeTool={activeTool}
+					onSelectSlot={setActiveSlot}
+					onWheel={handleViewportWheel}
+					onMouseDown={handleCanvasMouseDown}
+					onMouseMove={handleCanvasMouseMove}
+					onMouseUp={handleCanvasMouseUp}
+				/>
 			</div>
-
-			{/* ═══════════════════════════════════════════════════════════════════
-			    2b. TREATMENT DYNAMICS BONE GAIN HUD (Rendered when splitMode === "dynamics")
-			    ═══════════════════════════════════════════════════════════════════ */}
-			{splitMode === "dynamics" && (
-				<div className="px-2 pb-1.5 shrink-0">
-					<ConsultationDynamicsHud
-						toothFdi={leftViewport.toothCode || (activeToothFdi ? String(activeToothFdi) : "16")}
-						baselineBone={baselineBone}
-						followupBone={followupBone}
-						onChangeBaselineBone={setBaselineBone}
-						onChangeFollowupBone={setFollowupBone}
-						sliceSyncState={sliceSyncState}
-						isSyncSlices={isSyncSlices}
-						onToggleSyncSlices={() => setIsSyncSlices((prev) => !prev)}
-						onStepSliceZ={handleStepSliceZ}
-						onInsertDynamicsProtocol={handleInsertDynamicsProtocol}
-						baselineStudyDate={leftViewport.subtitle}
-						followupStudyDate={rightViewport.subtitle}
-					/>
-				</div>
-			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
 			    3. TWO-SECTION BOTTOM DOCK (EzDent-i Screenshot 25 Split Filmstrip)
@@ -764,7 +801,7 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			<ConsultationBottomDock
 				activeSlot={activeSlot}
 				activeStudySrc={activeStudySrc}
-				patientStudiesHistory={patientStudiesHistory}
+				patientStudiesHistory={effectivePatientStudies}
 				selectedDiscipline={selectedDiscipline}
 				onSelectDiscipline={setSelectedDiscipline}
 				onSelectCapturedStudy={handleSelectCapturedStudy}

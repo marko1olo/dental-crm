@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  telegram-bot-api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    container_name: dente-telegram-bot-service
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - HOST=0.0.0.0
+      - DATABASE_URL=${DATABASE_URL:-postgresql://dental:dental@postgres:5432/dental_crm}
+      - DENTE_TELEGRAM_BOT_TOKEN=${DENTE_TELEGRAM_BOT_TOKEN}
+      - DENTE_TELEGRAM_WEBHOOK_SECRET=${DENTE_TELEGRAM_WEBHOOK_SECRET}
+      - DENTE_TELEGRAM_CALLBACK_SECRET=${DENTE_TELEGRAM_CALLBACK_SECRET}
+      - DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY=${DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY}
+      - DENTE_TELEGRAM_BOT_MODE=clinic_owned_bot
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/api/telegram/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - dente-network
+    expose:
+      - "4000"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1536M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  caddy-ssl-gateway:
+    image: caddy:2-alpine
+    container_name: dente-telegram-caddy-gateway
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-bot.dente-clinic.ru}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      telegram-bot-api:
+        condition: service_healthy
+    networks:
+      - dente-network
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  dente-network:
+    driver: bridge

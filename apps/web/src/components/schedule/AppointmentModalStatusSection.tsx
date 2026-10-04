@@ -188,7 +188,7 @@ export function AppointmentModalStatusSection({
                   size={13}
                   className="text-rose-600 dark:text-rose-400"
                 />
-                Причина отмены / неявки (StomX 1 клик):
+                Причина отмены / неявки (1 клик):
               </span>
               <span className="text-[10px] text-[var(--muted)] font-normal">
                 Фиксируется в комментарии и таймлайне

@@ -11,7 +11,6 @@
  * 6. Format negotiation: XML (Minzdrav standard), CSV (RFC 4180 with UTF-8 BOM), and A4 HTML.
  * 7. Doctor autonomy & non-blocking execution (Mandates 8e, 8n).
  */
-import "dotenv/config";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
@@ -20,6 +19,7 @@ import {
 	generateDmsRegistryA4Html,
 	generateDmsRegistryCsv,
 	generateDmsRegistryXml,
+	patientAdministrativeProfileSchema,
 	type DmsRegistryClinicInfo,
 	type DmsRegistryData,
 	type DmsRegistryInsuranceCompanyInfo,
@@ -110,11 +110,11 @@ describe("DMS Claims Registry API & Export Engine", () => {
 					birthDate: "1985-06-20",
 					phone: "+79998887766",
 					status: "active",
-					administrativeProfile: {
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						insurancePolicyNumber: "SOGAZ-778899",
 						snils: "123-456-789 00",
 						gender: "male",
-					},
+					}),
 				});
 
 				const todayIso = new Date().toISOString().slice(0, 10);

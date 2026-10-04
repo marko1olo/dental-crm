@@ -464,6 +464,7 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 		const zeroReceipt = FiscalReceiptFactory.buildFfd12Receipt({
 			patientId: "00000000-0000-0000-0000-000000000001",
 			customerContact: "+79991112233",
+			cashierFullName: "Кассир Петрова А.В.",
 			operationType: "income",
 			taxationSystem: "usn_income",
 			totalKopecks: 0,
@@ -478,11 +479,20 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 					priceKopecks: 0,
 					quantity: 1,
 					amountKopecks: 0,
-					paymentSubject: "service",
-					paymentMethod: "full_payment",
+					subject: "service",
+					method: "full_payment",
 					vatRate: "vat_none",
+					measure: "piece",
+					taxDeductionCode: "code_1_standard",
+					medicalServiceCode804n: null,
+					isUpsell: false,
+					requiresAddendum: false,
+					addendumConfirmed: false,
 				},
 			],
+			isCorrection: false,
+			addendumConfirmed: false,
+			taxDeductionSummaryCode: "code_1_standard",
 		});
 
 		const result = await LanKktDriverService.printFiscalReceipt(zeroReceipt);

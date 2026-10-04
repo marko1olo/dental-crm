@@ -27,7 +27,9 @@ import {
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import "./photoProtocol.css";
+if (typeof document !== "undefined") {
+	import("./photoProtocol.css");
+}
 
 import {
 	type OrthodonticClinicalPreset,

@@ -1,0 +1,174 @@
+/* ==========================================================================
+   DENTE CRM — IN-CLINIC STAFF MESSENGER & CHAIRSIDE INTERCOM STYLES
+   Authority: Mandate 8c (Zero Blinding White Spots & Pure Clinical Depth)
+   Mandate 4 (Free natural communication + 1-click chairside intercom)
+   ========================================================================== */
+
+.staff-messenger-container {
+	display: flex;
+	height: 780px;
+	background-color: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="dark"] .staff-messenger-container,
+.dark .staff-messenger-container {
+	background-color: var(--paper-strong, #0f172a);
+	border-color: var(--line, #334155);
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 1px rgba(45, 212, 191, 0.2);
+}
+
+/* ─── Sidebar Channel Buttons ─── */
+.staff-chat-channel-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 9px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	text-align: left;
+	cursor: pointer;
+	min-height: 44px;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+	background-color: transparent;
+	color: var(--ink, #1e293b);
+}
+
+:root[data-theme="dark"] .staff-chat-channel-btn,
+.dark .staff-chat-channel-btn {
+	color: var(--ink, #e2e8f0);
+}
+
+.staff-chat-channel-btn:hover:not(.active) {
+	background-color: rgba(13, 148, 136, 0.08);
+}
+
+:root[data-theme="dark"] .staff-chat-channel-btn:hover:not(.active),
+.dark .staff-chat-channel-btn:hover:not(.active) {
+	background-color: rgba(45, 212, 191, 0.12);
+}
+
+.staff-chat-channel-btn.active {
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	font-weight: 700 !important;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.staff-chat-channel-btn.active * {
+	color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .staff-chat-channel-btn.active,
+.dark .staff-chat-channel-btn.active {
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	box-shadow: 0 0 12px rgba(45, 212, 191, 0.4);
+}
+
+/* ─── Unread Badge ─── */
+.staff-chat-badge {
+	padding: 2px 6px;
+	border-radius: 9999px;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.staff-chat-channel-btn.active .staff-chat-badge {
+	background-color: #ffffff !important;
+	color: #0d9488 !important;
+}
+
+.staff-chat-channel-btn:not(.active) .staff-chat-badge {
+	background-color: #14b8a6 !important;
+	color: #ffffff !important;
+}
+
+/* ─── 1-Click Chairside Intercom Presets Bar ─── */
+.chairside-intercom-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	white-space: nowrap;
+	padding: 8px 16px;
+	background-color: rgba(241, 245, 249, 0.7);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+:root[data-theme="dark"] .chairside-intercom-bar,
+.dark .chairside-intercom-bar {
+	background-color: rgba(15, 23, 42, 0.6);
+	border-bottom-color: var(--line, #334155);
+}
+
+.chairside-intercom-preset-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	min-height: 38px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+	border: 1px solid transparent;
+}
+
+/* ─── Message Bubbles ─── */
+.staff-message-bubble {
+	padding: 12px;
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper, #ffffff);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: all 0.15s ease;
+}
+
+:root[data-theme="dark"] .staff-message-bubble,
+.dark .staff-message-bubble {
+	border-color: var(--line, #334155);
+	background-color: rgba(15, 23, 42, 0.7);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.staff-message-bubble.bubble-ping {
+	background-color: rgba(13, 148, 136, 0.06);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+:root[data-theme="dark"] .staff-message-bubble.bubble-ping,
+.dark .staff-message-bubble.bubble-ping {
+	background-color: rgba(20, 184, 166, 0.1);
+	border-color: rgba(45, 212, 191, 0.35);
+}
+
+.staff-message-bubble.bubble-urgent {
+	background-color: rgba(245, 158, 11, 0.08);
+	border-color: rgba(245, 158, 11, 0.4);
+}
+
+:root[data-theme="dark"] .staff-message-bubble.bubble-urgent,
+.dark .staff-message-bubble.bubble-urgent {
+	background-color: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.45);
+}
+
+.staff-message-bubble.bubble-critical {
+	background-color: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.5);
+}
+
+:root[data-theme="dark"] .staff-message-bubble.bubble-critical,
+.dark .staff-message-bubble.bubble-critical {
+	background-color: rgba(239, 68, 68, 0.16);
+	border-color: rgba(239, 68, 68, 0.55);
+}

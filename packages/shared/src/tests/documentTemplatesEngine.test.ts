@@ -266,7 +266,7 @@ test("IDENT parity: flat patient tokens resolve correctly and format dates/names
 	assert.equal(map["Отчество"], "Владимирович");
 	assert.equal(map["ДатаРождения"], "24 июня 1988");
 	assert.equal(map["ГодРождения"], "1988");
-	assert.ok(Number.parseInt(map["Возраст"], 10) >= 35, "Age must be calculated from birthDate");
+	assert.ok(Number.parseInt(map["Возраст"] ?? "0", 10) >= 35, "Age must be calculated from birthDate");
 	assert.equal(map["Пол"], "Мужской");
 	assert.equal(map["Телефоны"], "+7 (916) 123-45-67");
 	assert.equal(map["МобТелефон"], "+7 (916) 123-45-67");
@@ -284,7 +284,7 @@ test("IDENT parity: flat patient tokens resolve correctly and format dates/names
 	assert.equal(map["НомерКарты"], "МК-2026/042");
 	assert.equal(map["НомерМедкарты"], "МК-2026/042");
 	assert.equal(map["Родитель"], "Кузнецова Марина Сергеевна");
-	assert.ok(map["ДатаПервогоПриема"].includes("2022"));
+	assert.ok(map["ДатаПервогоПриема"]?.includes("2022"));
 	assert.equal(map["ДатаПервогоПриемаЧислом"], "22.03.2022");
 });
 
@@ -302,15 +302,15 @@ test("IDENT parity: money amounts in Russian words and numeric formatting", () =
 
 	assert.equal(map["СуммаЧислом"], "15450.50");
 	assert.ok(
-		map["Сумма"].includes("15") && map["Сумма"].includes("450,50"),
+		map["Сумма"]?.includes("15") && map["Сумма"]?.includes("450,50"),
 		`Expected formatted sum, got: ${map["Сумма"]}`,
 	);
 	assert.ok(
-		map["СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч четыреста пятьдесят рублей"),
+		map["СуммаПрописью"]?.toLowerCase().includes("пятнадцать тысяч четыреста пятьдесят рублей"),
 		`Expected full money words, got: ${map["СуммаПрописью"]}`,
 	);
 	assert.ok(
-		map["СуммаПрописью"].includes("50 копеек"),
+		map["СуммаПрописью"]?.includes("50 копеек"),
 		`Expected 50 kopecks, got: ${map["СуммаПрописью"]}`,
 	);
 	assert.equal(
@@ -318,13 +318,13 @@ test("IDENT parity: money amounts in Russian words and numeric formatting", () =
 		"пятнадцать тысяч четыреста пятьдесят",
 	);
 	assert.ok(
-		map["Счет.Сумма"].includes("15") && map["Счет.Сумма"].includes("450,50"),
+		map["Счет.Сумма"]?.includes("15") && map["Счет.Сумма"]?.includes("450,50"),
 		`Expected formatted account sum, got: ${map["Счет.Сумма"]}`,
 	);
 	assert.equal(map["Счет.СуммаЧислом"], "15450.50");
-	assert.ok(map["Счет.СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч"));
-	assert.ok(map["Договор.СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч"));
-	assert.ok(map["Акт.СуммаПрописью"].toLowerCase().includes("пятнадцать тысяч"));
+	assert.ok(map["Счет.СуммаПрописью"]?.toLowerCase().includes("пятнадцать тысяч"));
+	assert.ok(map["Договор.СуммаПрописью"]?.toLowerCase().includes("пятнадцать тысяч"));
+	assert.ok(map["Акт.СуммаПрописью"]?.toLowerCase().includes("пятнадцать тысяч"));
 });
 
 test("IDENT parity: dental formula transcription and individual tooth tokens", () => {
@@ -350,6 +350,7 @@ test("IDENT parity: dental formula transcription and individual tooth tokens", (
 
 	// Проверка расшифровки формулы
 	const breakdown = map["ЗубнаяФормула.Расшифровка"];
+	assert.ok(breakdown);
 	assert.ok(breakdown.includes("16: кариес"), `Must include 16: кариес in ${breakdown}`);
 	assert.ok(breakdown.includes("21: пломбирован"), `Must include 21: пломбирован in ${breakdown}`);
 	assert.ok(breakdown.includes("36: корень"), `Must include 36: корень in ${breakdown}`);

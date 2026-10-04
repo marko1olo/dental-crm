@@ -34,6 +34,7 @@ import { ScheduleDisconnectedState } from "./components/schedule/view/ScheduleDi
 import { ScheduleViewToolbar } from "./components/schedule/view/ScheduleViewToolbar";
 import { ScheduleViewBody } from "./components/schedule/view/ScheduleViewBody";
 import { ScheduleViewModals } from "./components/schedule/view/ScheduleViewModals";
+import { findPreventiveInspectionCandidates } from "./components/schedule/doctorFreeSlotsEngine";
 import {
   isDemoShowcaseMode,
   getDemoShowcaseAppointments,
@@ -181,6 +182,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const [quickBookingSlot, setQuickBookingSlot] = useState<QuickBookingSlotInfo | null>(null);
   const [modalAppointment, setModalAppointment] = useState<Appointment | null>(null);
   const [doctorFreeSlotsOpen, setDoctorFreeSlotsOpen] = useState(false);
+  const [preventiveInspectionOpen, setPreventiveInspectionOpen] = useState(false);
   const [isQuickAddChairOpen, setIsQuickAddChairOpen] = useState(false);
   const [editingChairData, setEditingChairData] = useState<QuickAddChairData | null>(null);
   const [waitlistQuickFillSlot, setWaitlistQuickFillSlot] = useState<TargetSlotInfo | null>(null);
@@ -189,6 +191,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const [isPatientSearchOpen, setIsPatientSearchOpen] = useState(false);
   const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid" | "chairs">("grid");
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+
+  const preventiveCandidatesCount = useMemo(() => {
+    return findPreventiveInspectionCandidates({
+      patients: dashboard?.patients ?? [],
+      appointments: dashboard?.appointments ?? [],
+      minDaysSinceVisit: 150,
+      referenceDate: scheduleDateFilter || undefined,
+    }).length;
+  }, [dashboard?.patients, dashboard?.appointments, scheduleDateFilter]);
 
   const todayScheduleDate = useCallback(() => {
     const localNow = new Date();
@@ -557,6 +568,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         isSmartAiOpen={isSmartAiOpen}
         setIsSmartAiOpen={setIsSmartAiOpen}
         setDoctorFreeSlotsOpen={setDoctorFreeSlotsOpen}
+        onOpenPreventiveInspection={() => setPreventiveInspectionOpen(true)}
+        preventiveInspectionCount={preventiveCandidatesCount}
         setIsPatientSearchOpen={setIsPatientSearchOpen}
         handleEmergencyCitoBooking={handleEmergencyCitoBooking}
         showShiftAnalytics={showShiftAnalytics}
@@ -755,6 +768,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         setModalAppointment={setModalAppointment}
         doctorFreeSlotsOpen={doctorFreeSlotsOpen}
         setDoctorFreeSlotsOpen={setDoctorFreeSlotsOpen}
+        preventiveInspectionOpen={preventiveInspectionOpen}
+        setPreventiveInspectionOpen={setPreventiveInspectionOpen}
         isRosterModalOpen={isRosterModalOpen}
         setIsRosterModalOpen={setIsRosterModalOpen}
         isQuickAddChairOpen={isQuickAddChairOpen}

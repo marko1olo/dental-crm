@@ -734,10 +734,10 @@ export function VisiographAnalyzer({
 												alignItems: "center",
 												gap: "5px",
 											}}
-											title="Открыть полноэкранный 2D HUD EzDent-i (Снимок 24) со шкалой 5 мм и фильтрами"
+											title="Открыть полноэкранный 2D HUD со шкалой 5 мм и фильтрами"
 										>
 											<Maximize2 size={13} />
-											<span>EzDent-i 2D HUD</span>
+											<span>2D Рентген HUD</span>
 										</button>
 									</div>
 								</div>

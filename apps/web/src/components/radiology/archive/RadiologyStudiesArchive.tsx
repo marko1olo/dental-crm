@@ -129,7 +129,7 @@ export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 		kind: "periapical",
 		toothCode: "36",
 		region: "Моляр н/ч слева",
-		title: "Прицельный снимок RVG зуб 36 (периапикальный)",
+		title: "Прицельный снимок зуб 36 (периапикальный)",
 		modality: "IO",
 		seriesDescription: "Vatech EzSensor Classic 1.5",
 		studyDate: "2026-08-28",
@@ -141,7 +141,7 @@ export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
 		bindingStatus: "auto_bound",
 		bindingConfidence: 94,
 		sourceKind: "folder_watch",
-		sourceName: "EzDent-i Vatech Station",
+		sourceName: "DENTE Рентген-станция",
 		status: "available",
 		visitId: null,
 		aiSummary: null,
@@ -476,7 +476,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 								data-testid="btn-archive-upload-new"
 							>
 								<Plus className="w-3.5 h-3.5 text-teal-500" />
-								<span>Загрузить КТ / RVG</span>
+								<span>Загрузить снимок / КТ</span>
 							</button>
 						)}
 
@@ -517,16 +517,16 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						)}
 					</div>
 
-					{/* Кнопка вызова тактильной матрицы поиска (EzDent-i Снимок 19) */}
+					{/* Кнопка вызова тактильной матрицы поиска */}
 					<button
 						type="button"
 						onClick={() => setShowTactileModal(true)}
 						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
 						data-testid="btn-open-tactile-matrix"
-						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+						title="Тактильная матрица поиска исследований по датам и аппаратам"
 					>
 						<Filter className="w-3.5 h-3.5" />
-						<span>Матрица поиска (Снимок 19)</span>
+						<span>Матрица поиска</span>
 					</button>
 
 					{/* Индикатор активных фильтров тактильной матрицы */}
@@ -690,7 +690,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 							data-testid="filter-modality-rvg"
 						>
 							<Layers className="w-3 h-3" />
-							<span>Прицельные RVG</span>
+							<span>Прицельные снимки</span>
 						</button>
 					</div>
 
@@ -918,14 +918,14 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 										</button>
 									)}
 
-									{/* 1-клик запуск в 2D Сенсоре EzDent-i */}
+									{/* 1-клик запуск в 2D Рентген-просмотрщике */}
 									{onOpenSensorViewer && !isCbct && (
 										<button
 											type="button"
 											onClick={() => onOpenSensorViewer(study)}
 											className="h-8 px-2.5 text-xs font-bold rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
 											data-testid={`btn-open-sensor-${study.id}`}
-											title="Открыть снимок в 2D Сенсоре EzDent-i с калибровкой и фильтрами"
+											title="Открыть снимок в 2D Рентген-просмотрщике с калибровкой и фильтрами"
 										>
 											<Sparkles className="w-3.5 h-3.5 text-emerald-400" />
 											<span>2D Сенсор</span>
@@ -962,7 +962,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 				/>
 			)}
 
-			{/* Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19) */}
+			{/* Чистый фильтр снимков визиографа по датам и визитам */}
 			<RadiologyPatientSearchModal
 				isOpen={showTactileModal}
 				onClose={() => setShowTactileModal(false)}
@@ -971,6 +971,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 				onReset={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
 				totalStudiesCount={studies.length}
 				matchedCount={filteredStudies.length}
+				studies={studies}
 			/>
 		</div>
 	);

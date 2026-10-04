@@ -76,7 +76,7 @@ describe("NetworkShield Proxy & Agent Configuration", () => {
 	});
 
 	it("returns a WebSocket agent when proxy is configured", () => {
-		process.env.GLOBAL_LLM_PROXY_URL = "socks5://dente_proxy:DenteSecureSocks2026!@62.84.100.97:1080";
+		process.env.GLOBAL_LLM_PROXY_URL = "socks5://synthetic_proxy_user:synthetic_proxy_pass@127.0.0.1:1080";
 		const agent = getNetworkShieldWsAgent();
 		assert.ok(agent !== null);
 	});

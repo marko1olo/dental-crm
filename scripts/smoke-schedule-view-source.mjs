@@ -90,6 +90,19 @@ const scheduleQuickActionsSource = existsSync(scheduleQuickActionsFile)
 			),
 		]
 	: [];
+const scheduleCardFiles = [
+	"apps/web/src/components/schedule/AppointmentCardEditor.tsx",
+	"apps/web/src/components/schedule/AppointmentCardPrimaryActions.tsx",
+	"apps/web/src/components/schedule/AppointmentCardContextMenu.tsx",
+	"apps/web/src/components/schedule/AppointmentPaymentBadges.tsx",
+	"apps/web/src/components/schedule/AppointmentStatusPopup.tsx",
+	"apps/web/src/components/schedule/useAppointmentCardState.ts",
+	"apps/web/src/components/schedule/AppointmentCardMemo.ts",
+	"apps/web/src/components/schedule/appointmentCardHelpers.ts",
+];
+const scheduleCardExtractedSources = scheduleCardFiles
+	.filter((f) => existsSync(f))
+	.map((f) => readFileSync(f, "utf8").replace(/\r\n/g, "\n"));
 
 const scheduleSource = [
 	scheduleViewSource,
@@ -100,6 +113,7 @@ const scheduleSource = [
 	...scheduleTimelineSource,
 	...scheduleGridSource,
 	...scheduleQuickActionsSource,
+	...scheduleCardExtractedSources,
 ].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8").replace(
 	/\r\n/g,
@@ -878,7 +892,7 @@ forbidIn(
  * запись и распространить запрет на компоненты. Реестр долга без верхней и нижней
  * границы сам превращается в ложь.
  */
-const LOOSE_DRAFT_TYPING_DEBT = 2;
+const LOOSE_DRAFT_TYPING_DEBT = 1;
 const looseDraftTypingCount = [
 	appointmentCardSource,
 	newAppointmentFormSource,

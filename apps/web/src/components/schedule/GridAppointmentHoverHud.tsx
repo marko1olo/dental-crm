@@ -313,7 +313,10 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
-									useAppStore.getState().setCurrentView("lab-orders");
+									useAppStore.getState().setCurrentView("lab");
+									if (typeof window !== "undefined") {
+										window.location.hash = "#lab";
+									}
 									showToast(`Открыт журнал ЗТЛ: ${labInfo.orderNumber || "Наряд"}`, "info");
 									onMouseLeave();
 								}}
@@ -373,7 +376,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 			{onQuickStatusChange && (
 				<div className="pt-2 border-t border-[var(--line)]">
 					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
-						<span>Очередь смены (StomX 3-Stage Queue)</span>
+						<span>Очередь смены</span>
 						<span className="text-[10px] font-semibold text-[var(--teal,var(--brand-primary))]">
 							{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}
 						</span>

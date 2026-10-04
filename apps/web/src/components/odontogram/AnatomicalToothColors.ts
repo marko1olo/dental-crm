@@ -241,7 +241,6 @@ export const getAnatomicalToothColors = (
 				badgeBg: "rgba(220, 38, 38, 0.15)",
 				badgeText: "#991b1b",
 			};
-		case "Healthy":
 		default:
 			return {
 				fill: "url(#dente-enamel-healthy)",

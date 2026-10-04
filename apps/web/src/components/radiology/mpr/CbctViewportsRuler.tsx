@@ -646,9 +646,6 @@ export const CbctViewportsRulerOverlay: React.FC<CbctViewportsRulerOverlayProps>
 	onClearEndoCanals,
 	onCopyToProtocol,
 }) => {
-	const shouldShowColormapBar =
-		showQuickColormapBar ?? Boolean(onSelectColorMap || onChangeSharpenAmount);
-
 	const displayCanal =
 		activeEndoCanal ?? (endoCanals.length > 0 ? endoCanals[endoCanals.length - 1] : null);
 
@@ -687,26 +684,6 @@ export const CbctViewportsRulerOverlay: React.FC<CbctViewportsRulerOverlayProps>
 					/>
 				</div>
 			)}
-
-			{/* Bottom-Left Quick W/L & Colormap Presets Bar */}
-			<div className="absolute bottom-1.5 left-28 pointer-events-auto flex items-center gap-2 z-20 flex-wrap">
-				{onSelectQuickWlPreset && (
-					<CbctQuickWlBar
-						windowWidth={windowWidth}
-						windowLevel={windowLevel}
-						onSelectPreset={onSelectQuickWlPreset}
-					/>
-				)}
-
-				{shouldShowColormapBar && (
-					<CbctQuickColormapBar
-						colorMap={colorMap}
-						onSelectColorMap={onSelectColorMap}
-						sharpenAmount={sharpenAmount}
-						onChangeSharpenAmount={onChangeSharpenAmount}
-					/>
-				)}
-			</div>
 		</>
 	);
 };

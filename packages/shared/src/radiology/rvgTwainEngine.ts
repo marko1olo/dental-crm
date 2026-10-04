@@ -18,6 +18,8 @@ export type RvgSensorVendor =
 	| "fona"
 	| "woodpecker"
 	| "handy"
+	| "carestream"
+	| "duerr"
 	| "generic_twain";
 
 export type RvgSensorSize = "SIZE_0" | "SIZE_1" | "SIZE_1_5" | "SIZE_2";
@@ -198,6 +200,71 @@ export const KNOWN_RVG_SENSOR_CATALOG: Record<string, RvgSensorSpecification> = 
 		vendorUsbId: { vendorId: 0x04d8, productId: 0x00e0 },
 		defaultWindowWidth: 65535,
 		defaultWindowCenter: 32000,
+	},
+	"carestream_rvg_5100": {
+		vendor: "carestream",
+		modelName: "Carestream RVG 5100 Size 1",
+		sensorSize: "SIZE_1",
+		activeAreaMm: [18.5, 27.75],
+		matrixResolutionPx: [1000, 1500],
+		theoreticalResolutionLpMm: 27.0,
+		pixelPitchMicrons: 18.5,
+		nativeBitDepth: 14,
+		vendorUsbId: { vendorId: 0x1080, productId: 0x0001 },
+		defaultWindowWidth: 16384,
+		defaultWindowCenter: 8192,
+	},
+	"carestream_rvg_5200": {
+		vendor: "carestream",
+		modelName: "Carestream RVG 5200 Size 2",
+		sensorSize: "SIZE_2",
+		activeAreaMm: [25.9, 35.15],
+		matrixResolutionPx: [1400, 1900],
+		theoreticalResolutionLpMm: 27.0,
+		pixelPitchMicrons: 18.5,
+		nativeBitDepth: 14,
+		vendorUsbId: { vendorId: 0x1080, productId: 0x0002 },
+		defaultWindowWidth: 16384,
+		defaultWindowCenter: 8192,
+	},
+	"vatech_ezsensor_1_5": {
+		vendor: "vatech",
+		modelName: "Vatech EzSensor Classic / Soft 1.5",
+		sensorSize: "SIZE_1_5",
+		activeAreaMm: [24.0, 33.0],
+		matrixResolutionPx: [686, 944],
+		theoreticalResolutionLpMm: 14.3,
+		pixelPitchMicrons: 35.0,
+		nativeBitDepth: 12,
+		vendorUsbId: { vendorId: 0x0e8f, productId: 0x1203 },
+		defaultWindowWidth: 4095,
+		defaultWindowCenter: 2048,
+	},
+	"duerr_vistaray_7_size1": {
+		vendor: "duerr",
+		modelName: "Dürr Dental VistaRay 7 Size 1",
+		sensorSize: "SIZE_1",
+		activeAreaMm: [20.0, 30.0],
+		matrixResolutionPx: [1050, 1580],
+		theoreticalResolutionLpMm: 26.3,
+		pixelPitchMicrons: 19.0,
+		nativeBitDepth: 14,
+		vendorUsbId: { vendorId: 0x0403, productId: 0x6001 },
+		defaultWindowWidth: 16384,
+		defaultWindowCenter: 8192,
+	},
+	"duerr_vistaray_7_size2": {
+		vendor: "duerr",
+		modelName: "Dürr Dental VistaRay 7 Size 2",
+		sensorSize: "SIZE_2",
+		activeAreaMm: [26.0, 36.0],
+		matrixResolutionPx: [1368, 1896],
+		theoreticalResolutionLpMm: 26.3,
+		pixelPitchMicrons: 19.0,
+		nativeBitDepth: 14,
+		vendorUsbId: { vendorId: 0x0403, productId: 0x6001 },
+		defaultWindowWidth: 16384,
+		defaultWindowCenter: 8192,
 	},
 };
 

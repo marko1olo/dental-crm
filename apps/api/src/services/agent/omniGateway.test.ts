@@ -670,14 +670,14 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 			const resultText = textChunks.map((c) => (c as any).text).join("");
 			assert.strictEqual(resultText, "Клинический диагноз: Хронический пульпит");
 		} finally {
-			process.env = savedEnv;
+			for (let i = 1; i <= 8; i++) delete process.env[`GEMINI_API_KEY_${i}`];
+			for (let i = 1; i <= 7; i++) delete process.env[`GROQ_API_KEY_${i}`];
 			resetProviderKeyCooldowns("gemini");
 			resetProviderKeyCooldowns("groq");
 		}
 	});
 
 	test("9. KeyPool Exponential Backoff on 429 Rate Limits", () => {
-		const savedEnv = { ...process.env };
 		try {
 			delete process.env.GEMINI_API_KEY;
 			delete process.env.GOOGLE_API_KEY;
@@ -705,15 +705,14 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 			const selectedAfterSuccess = selectProviderKey("gemini", tried);
 			assert.ok(selectedAfterSuccess, "Should select key after reset / success");
 		} finally {
-			process.env = savedEnv;
+			delete process.env.GEMINI_API_KEY_1;
 			resetProviderKeyCooldowns("gemini");
 		}
 	});
 
 	test("10. SOCKS5 & GLOBAL_LLM_PROXY_URL Resolution", () => {
-		const savedEnv = { ...process.env };
 		try {
-			const targetProxy = "socks5://dente_proxy:DenteSecureSocks2026!@62.84.100.97:1080";
+			const targetProxy = "socks5://synthetic_proxy_user:synthetic_proxy_secret@127.0.0.1:1080";
 			process.env.GLOBAL_LLM_PROXY_URL = targetProxy;
 
 			const resolved = getGlobalProxyUrl();
@@ -722,12 +721,12 @@ describe("OmniLlmGateway Circuit Breaker & Failover Suite", () => {
 			const parsed = parseProxyUrl(resolved);
 			assert.ok(parsed, "Must parse SOCKS5 proxy successfully");
 			assert.strictEqual(parsed.protocol, "socks5");
-			assert.strictEqual(parsed.host, "62.84.100.97");
+			assert.strictEqual(parsed.host, "127.0.0.1");
 			assert.strictEqual(parsed.port, 1080);
-			assert.strictEqual(parsed.username, "dente_proxy");
-			assert.strictEqual(parsed.password, "DenteSecureSocks2026!");
+			assert.strictEqual(parsed.username, "synthetic_proxy_user");
+			assert.strictEqual(parsed.password, "synthetic_proxy_secret");
 		} finally {
-			process.env = savedEnv;
+			delete process.env.GLOBAL_LLM_PROXY_URL;
 		}
 	});
 

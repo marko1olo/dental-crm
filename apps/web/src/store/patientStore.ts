@@ -204,4 +204,5 @@ export const usePatientStore = create<PatientStore>((set) => ({
 
 if (typeof window !== "undefined") {
 	(window as unknown as { __PATIENT_STORE__?: typeof usePatientStore }).__PATIENT_STORE__ = usePatientStore;
+	(window as any).__usePatientStore = usePatientStore;
 }

@@ -1,4 +1,3 @@
-import "dotenv/config";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { authTokenSecret, clinicalAdminSecret } from "./security/authSecret.js";
 import {

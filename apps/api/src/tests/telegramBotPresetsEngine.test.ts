@@ -280,7 +280,7 @@ describe("TelegramBotPresetsEngine & Multi-Tenant SaaS Archetypes", () => {
 		it("orchestrates getMe, setMyCommands, setMyDescription, setMyShortDescription and setupWebhook", async () => {
 			const calls: string[] = [];
 
-			globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+			globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
 				const url = String(input);
 				calls.push(url);
 
@@ -312,7 +312,7 @@ describe("TelegramBotPresetsEngine & Multi-Tenant SaaS Archetypes", () => {
 				}
 
 				return new Response(JSON.stringify({ ok: false }), { status: 404 });
-			};
+			}) as unknown as typeof globalThis.fetch;
 
 			const result = await TelegramBotHostingService.applyPresetToBot({
 				organizationId: "00000000-0000-0000-0000-000000000001",

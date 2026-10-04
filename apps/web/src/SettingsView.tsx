@@ -706,7 +706,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						{settingsTab === "marketing" && flags.hasMarketingModule && <SettingsMarketingTab />}
 						{settingsTab === "bpmn" && flags.hasBpmWorkflows && <SettingsBpmnTab />}
 						{settingsTab === "reporting" && flags.hasAnalyticsModule && <SettingsReportingTab />}
-						{settingsTab === "messengers" && (
+						{(settingsTab === "messengers" || settingsTab === "telegram") && (
 							<ErrorBoundary moduleName="Мессенджеры и рассылки">
 								<SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} />
 							</ErrorBoundary>

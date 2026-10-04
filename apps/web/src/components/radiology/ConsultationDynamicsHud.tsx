@@ -310,10 +310,10 @@ export const ConsultationDynamicsHud: React.FC<ConsultationDynamicsHudProps> = (
 						onClick={handleCommitTo043}
 						className="w-full mt-1 px-2.5 py-1 rounded font-bold text-[11px] bg-[#00C853] hover:bg-[#00b048] text-[#022c15] transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md"
 						data-testid="btn-insert-dynamics-protocol"
-						title="Внести подтвержденный протокол остеоинтеграции и прироста кости в Form 043/u"
+						title="Внести подтвержденный протокол остеоинтеграции и прироста кости в медицинскую карту"
 					>
 						<Zap size={12} className="fill-current" />
-						<span>Внести в карту 043/у</span>
+						<span>Внести в карту</span>
 					</button>
 				</div>
 			</div>

@@ -284,7 +284,7 @@ test("1. Парсинг подлинных 16-битных КТ-снимков P
 	assert.strictEqual(barabashFiles.length, 400, "В исследовании Barabash должно быть ровно 400 срезов DICOM");
 
 	// Проверяем первый срез (0000)
-	const slice0000Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFiles[0]));
+	const slice0000Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFiles[0]!));
 	const meta0000 = parseDicomIngestBuffer(slice0000Buf);
 
 	assert.strictEqual(meta0000.patientFullName, "BARABASH SVETLANA VIKTOROVNA", "ФИО пациента");
@@ -302,7 +302,7 @@ test("1. Парсинг подлинных 16-битных КТ-снимков P
 	assert.ok(meta0000.suggestedStudyTitle.includes("КЛКТ"), "Заголовок КЛКТ");
 
 	// Проверяем промежуточный срез (0200) и последний (0399)
-	const slice0200Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFiles[200]));
+	const slice0200Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFiles[200]!));
 	const meta0200 = parseDicomIngestBuffer(slice0200Buf);
 	assert.strictEqual(meta0200.rows, 800);
 	assert.strictEqual(meta0200.columns, 800);
@@ -312,7 +312,7 @@ test("1. Парсинг подлинных 16-битных КТ-снимков P
 	const ivashenkoFiles = (await fs.readdir(IVASHENKO_DIR)).filter((f) => f.endsWith(".dcm")).sort();
 	assert.ok(ivashenkoFiles.length >= 600, "В исследовании Ivashenko должно быть более 600 срезов");
 
-	const ivaSliceBuf = await fs.readFile(path.join(IVASHENKO_DIR, ivashenkoFiles[0]));
+	const ivaSliceBuf = await fs.readFile(path.join(IVASHENKO_DIR, ivashenkoFiles[0]!));
 	const ivaMeta = parseDicomIngestBuffer(ivaSliceBuf);
 
 	assert.strictEqual(ivaMeta.patientFullName, "IVASHENKO VYACHESLAV VASILEVICH");
@@ -407,7 +407,7 @@ test("3. Идемпотентность и защита от повторной 
 	assert.strictEqual(studyAfterFirst.sliceCount, 50, "sliceCount исследования не должен раздуться до 100");
 
 	// 3. Проверка одиночного инжеста через ingestBuffer на дубликате
-	const resSingle = await dicomStudyIngestService.ingestBuffer(buffers[0], {
+	const resSingle = await dicomStudyIngestService.ingestBuffer(buffers[0]!, {
 		organizationId: TEST_ORG_ID,
 	});
 	assert.strictEqual(resSingle.isDuplicate, true, "Флаг isDuplicate должен быть true");
@@ -556,7 +556,7 @@ test("5. Регистрация лучевой нагрузки по СанПи�
 
 	// 3. Регистрируем второе исследование для того же пациента в том же отчетном году (с параметрами DAP томографа Picasso из датасета Ivashenko)
 	const ivaFiles = (await fs.readdir(IVASHENKO_DIR)).filter((f) => f.endsWith(".dcm"));
-	const bufIva = await fs.readFile(path.join(IVASHENKO_DIR, ivaFiles[0]));
+	const bufIva = await fs.readFile(path.join(IVASHENKO_DIR, ivaFiles[0]!));
 	const ivaMeta = parseDicomIngestBuffer(bufIva);
 
 	// Регистрируем в журнале доз того же пациента за тот же отчетный год

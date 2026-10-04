@@ -190,7 +190,8 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 
 		assert.ok(html.includes("implant-passport-actions"), "Must render footer action bar");
 		assert.ok(html.includes("Печать паспорта"), "Must render primary Print passport button");
-		assert.ok(html.includes("В карту 043/у"), "Must render primary Insert into 043/u button");
+		assert.ok(html.includes("В дневник приёма"), "Must render primary Insert into diary button");
+		assert.ok(!html.includes("043/у"), "Must NOT contain Soviet Form 043/u bird language (Mandate 8x/8y)");
 
 		// Count direct action buttons in footer
 		const footerMatch = html.match(/<footer class="implant-passport-actions"[^>]*>([\s\S]*?)<\/footer>/);

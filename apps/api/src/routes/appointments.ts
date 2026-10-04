@@ -16,9 +16,15 @@ import { getRequestIdentity } from "../security/identity.js";
 import {
 	chairs,
 	clinics,
+	patients,
 	users,
 	visits,
 } from "../db/schema.js";
+import {
+	ensureDefaultStaffChannels,
+	getStaffChannelBySlug,
+	insertStaffMessage,
+} from "../db/staffChatQuery.js";
 import { openVisitForAppointmentInDb } from "../db/visitsQuery.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import { triggerSmartGapFiller } from "../services/daemons/smartGapFillerService.js";
@@ -311,9 +317,15 @@ export const updateAppointmentHandler = async (
 			: null;
 
 	if (rawBody) {
-		// Алиас: in_chair -> in_treatment (Мандат 8e / 8n: на приеме в кресле)
-		if (rawBody.status === "in_chair") {
+		// Алиасы статусов (DentalPRO expo26 Realtime Schedule Bar & Мандаты 8e / 8n):
+		if (rawBody.status === "in_chair" || rawBody.status === "in_progress") {
 			rawBody.status = "in_treatment";
+		} else if (rawBody.status === "in_clinic" || rawBody.status === "waiting") {
+			rawBody.status = "arrived";
+		} else if (rawBody.status === "finished" || rawBody.status === "closed") {
+			rawBody.status = "completed";
+		} else if (rawBody.status === "scheduled") {
+			rawBody.status = "planned";
 		}
 		if (!rawBody.doctorUserId && rawBody.doctorId && typeof rawBody.doctorId === "string") {
 			rawBody.doctorUserId = rawBody.doctorId;
@@ -361,10 +373,10 @@ export const updateAppointmentHandler = async (
 		});
 	}
 	try {
-		await updateAppointmentInDb(orgId, params.appointmentId, input);
+		const updatedAppt = await updateAppointmentInDb(orgId, params.appointmentId, input);
+		const identity = getRequestIdentity(request);
 
 		try {
-			const identity = getRequestIdentity(request);
 			const auditAction =
 				input.status === "cancelled"
 					? "appointment_cancel"
@@ -383,6 +395,128 @@ export const updateAppointmentHandler = async (
 				{ err: auditErr, appointmentId: params.appointmentId, orgId },
 				"[appointments] Не удалось записать событие обновления приёма в журнал аудита",
 			);
+		}
+
+		// DentalPRO expo26 Realtime Schedule Bar: при прибытии пациента ("arrived") шлем сигнал в #ресепшен и #интерком-ассистенты
+		if (input.status === "arrived") {
+			try {
+				let patientName = "Пациент";
+				if (updatedAppt.patientId) {
+					const [pat] = await db
+						.select({ fullName: patients.fullName })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.id, updatedAppt.patientId),
+								eq(patients.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (pat?.fullName) patientName = pat.fullName;
+				}
+
+				let doctorName = "Врач";
+				if (updatedAppt.doctorUserId) {
+					const [doc] = await db
+						.select({ fullName: users.fullName })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, updatedAppt.doctorUserId),
+								eq(users.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (doc?.fullName) doctorName = doc.fullName;
+				}
+
+				let chairName = "Кабинет";
+				if (updatedAppt.chairId) {
+					const [ch] = await db
+						.select({ name: chairs.name })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.id, updatedAppt.chairId),
+								eq(chairs.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (ch?.name) chairName = ch.name;
+				}
+
+				await ensureDefaultStaffChannels(orgId);
+
+				const senderName = identity.fullName || "Ресепшен (Регистратура)";
+				const senderRole = identity.role || "admin";
+
+				const targetSlugs = ["reception", "intercom_assistants"];
+				for (const slug of targetSlugs) {
+					const targetChannel = await getStaffChannelBySlug(orgId, slug);
+					if (targetChannel) {
+						const createdMessage = await insertStaffMessage({
+							organizationId: orgId,
+							channelId: targetChannel.id,
+							senderUserId: identity.userId,
+							senderName,
+							senderRole,
+							messageType: "intercom_ping",
+							content: `🛎️ Пациент ${patientName} прибыл в холл клиники и ожидает приёма. Назначен к: ${doctorName} (${chairName}).`,
+							urgency: "urgent",
+							intercomPreset: "patient_arrived",
+							targetAudience: slug === "reception" ? "reception" : "all_assistants",
+							patientAttachment: updatedAppt.patientId
+								? {
+										patientId: updatedAppt.patientId,
+										fullName: patientName,
+										cabinetNumber: chairName,
+										doctorName,
+									}
+								: null,
+							metadata: {
+								appointmentId: params.appointmentId,
+								cabinetNumber: chairName,
+								chairId: updatedAppt.chairId,
+							},
+						});
+
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "STAFF_CHAT_MESSAGE",
+							payload: createdMessage,
+						});
+					}
+				}
+
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "INTERCOM_PING",
+					payload: {
+						ping: {
+							content: `🛎️ Пациент ${patientName} прибыл в холл клиники (${doctorName})`,
+							urgency: "urgent",
+							intercomPreset: "patient_arrived",
+							patientAttachment: {
+								patientId: updatedAppt.patientId,
+								fullName: patientName,
+								cabinetNumber: chairName,
+								doctorName,
+							},
+							createdAt: new Date().toISOString(),
+						},
+						preset: {
+							key: "patient_arrived",
+							label: "Пациент в холле",
+							badge: "🛎️ В холле",
+							urgency: "urgent",
+						},
+						appointmentId: params.appointmentId,
+					},
+				});
+			} catch (intercomErr) {
+				request.log.warn(
+					{ err: intercomErr, appointmentId: params.appointmentId, orgId },
+					"[appointments] Не удалось разослать интерком-сигнал о прибытии пациента",
+				);
+			}
 		}
 
 		if (input.status === "in_treatment") {

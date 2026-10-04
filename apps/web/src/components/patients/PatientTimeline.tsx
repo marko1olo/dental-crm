@@ -387,17 +387,17 @@ export const PatientTimeline: React.FC<PatientTimelineProps> = ({
 					</div>
 				</div>
 
-				{/* 1-Click Launch of Tactile Matrix Modal (EzDent-i Снимок 19) */}
+				{/* 1-Click Launch of Tactile Matrix Modal */}
 				{onOpenTactileSearch && (
 					<button
 						type="button"
 						onClick={onOpenTactileSearch}
 						className="inline-flex items-center gap-1.5 h-7 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs active:scale-95 transition-all cursor-pointer"
 						data-testid="btn-timeline-open-tactile-search"
-						title="Открыть тактильную матрицу поиска в 2 клика (Снимок 19)"
+						title="Открыть тактильную матрицу поиска исследований (Аппарат + Период)"
 					>
 						<Filter className="w-3.5 h-3.5" />
-						<span>Матрица поиска (2 клика)</span>
+						<span>Матрица поиска</span>
 					</button>
 				)}
 			</div>

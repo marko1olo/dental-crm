@@ -275,29 +275,27 @@ export function CephalometricAnalysisModal({
 
 	const modalContent = (
 		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden" role="dialog" aria-modal="true" aria-label="Ортодонтический цефалометрический анализ ТРГ" data-testid="cephalometric-analysis-modal">
-			<div className="relative w-full max-w-7xl max-h-[96vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100" style={{ backgroundColor: "var(--paper, #020617)", color: "var(--ink, #f8fafc)", borderColor: "var(--line, #1e293b)" }}>
-				<header className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/95 shrink-0" style={{ backgroundColor: "var(--paper-panel, #0f172a)", borderColor: "var(--line, #1e293b)" }}>
-					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
-						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
-							<Activity size={22} className="sm:w-6 sm:h-6" />
+			<div className="ceph-workstation-root relative w-full max-w-7xl h-[92vh] max-h-[92vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100" data-theme="dark" style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}>
+				<header className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-900/95 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}>
+					<div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4">
+						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
+							<Activity size={20} className="sm:w-5 sm:h-5" />
 						</div>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-								<h2 className="text-sm sm:text-base md:text-lg font-black tracking-tight text-white m-0 truncate" style={{ color: "var(--ink, #ffffff)", margin: 0 }}>
-									Цефалометрический анализ ТРГ (Телерентгенография)
+						<div>
+							<div className="flex items-center gap-2 flex-wrap">
+								<h2 className="text-sm sm:text-base font-black tracking-tight text-white m-0 whitespace-nowrap" style={{ color: "#ffffff", margin: 0 }} aria-label="Цефалометрический трекер ТРГ">
+									Цефалометрический анализ ТРГ
+									<span className="sr-only">Цефалометрический трекер ТРГ</span>
 								</h2>
-								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shrink-0">
+								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap">
 									Steiner / Tweed / Downs / Ricketts / McNamara
 								</span>
-								<span className="text-xs text-teal-400 font-semibold hidden md:inline">· Цефалометрический трекер ТРГ</span>
 							</div>
-							<p className="text-xs sm:text-sm text-slate-400 m-0 mt-0.5 truncate" style={{ color: "var(--muted, #94a3b8)", margin: 0 }}>
+							<p className="text-xs text-slate-400 m-0 mt-0.5 whitespace-nowrap" style={{ color: "#94a3b8", margin: 0 }}>
 								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Медицинская карта
 							</p>
 						</div>
 					</div>
-
-					<CephalometricPresetsBar variant="header" onApplyPreset={handleApplyPreset} onResetLandmarks={handleResetLandmarks} />
 
 					<div className="flex items-center gap-2 shrink-0">
 						{isVoiceListening && (
@@ -316,11 +314,11 @@ export function CephalometricAnalysisModal({
 									if (!started) showToast("Не удалось запустить микрофон", "warning");
 								}
 							}}
-							className={`min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${isVoiceListening ? "bg-teal-600/30 border-teal-500 text-teal-200 animate-pulse" : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 hover:text-white"}`}
+							className={`min-h-[40px] px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${isVoiceListening ? "bg-teal-600/30 border-teal-500 text-teal-200 animate-pulse" : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 hover:text-white"}`}
 							title="Голосовая диктовка ориентиров цефалометрии"
 							data-testid="ceph-voice-toggle-btn"
 						>
-							{isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
+							{isVoiceListening ? <MicOff size={15} /> : <Mic size={15} />}
 							<span className="hidden sm:inline">{isVoiceListening ? "Стоп голос" : "Голос"}</span>
 						</button>
 
@@ -328,22 +326,24 @@ export function CephalometricAnalysisModal({
 							type="button"
 							onClick={handleInsertToChart}
 							data-testid="btn-insert-ceph-protocol"
-							className="min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-teal-400/50"
+							className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border whitespace-nowrap"
+							style={{ backgroundColor: "#0d9488", color: "#ffffff", borderColor: "rgba(45, 212, 191, 0.4)" }}
 							title="Перенести расчеты цефалометрии в дневник приёма"
 						>
-							<FileText size={16} />
-							<span>В карту 043/у</span>
+							<FileText size={15} />
+							<span>В медицинскую карту</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleSaveConsultationWithoutCeph}
 							data-testid="save-consultation-without-ceph-btn"
-							className="min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-500/50"
+							className="min-h-[40px] px-3.5 py-1.5 rounded-xl text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border whitespace-nowrap"
+							style={{ backgroundColor: "#d97706", color: "#ffffff", borderColor: "rgba(245, 158, 11, 0.5)" }}
 							title="Сохранить консультацию ортодонта в карту без полного расчерчивания ТРГ"
 						>
-							<Save size={16} />
-							<span className="hidden sm:inline">Сохранить консультацию без ТРГ</span>
+							<Save size={15} />
+							<span className="hidden sm:inline">Консультация без ТРГ</span>
 							<span className="sm:hidden">Без ТРГ</span>
 						</button>
 
@@ -352,13 +352,25 @@ export function CephalometricAnalysisModal({
 							onClick={onClose}
 							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
-							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
-							style={{ backgroundColor: "var(--paper-subtle, #1e293b)", color: "var(--ink, #f8fafc)", borderColor: "var(--line, #334155)" }}
+							className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-700"
+							style={{ backgroundColor: "#1e293b", color: "#f8fafc", borderColor: "#334155" }}
 						>
-							<X size={20} />
+							<X size={18} />
 						</button>
 					</div>
 				</header>
+
+				{/* Dedicated Desktop Presets & Diagnostics Strip */}
+				<div className="hidden lg:flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 shrink-0" style={{ backgroundColor: "#0b1220", borderColor: "#1e293b" }}>
+					<CephalometricPresetsBar variant="header" onApplyPreset={handleApplyPreset} onResetLandmarks={handleResetLandmarks} />
+					<div className="text-xs text-slate-400 font-medium flex items-center gap-2">
+						<span className="text-teal-400 font-bold">16 анатомических ориентиров</span>
+						<span>·</span>
+						<span>Steiner (SNA, SNB, ANB)</span>
+						<span>·</span>
+						<span>Tweed / Downs</span>
+					</div>
+				</div>
 
 				<CephalometricMobileNav
 					mobileView={mobileView}
@@ -375,7 +387,7 @@ export function CephalometricAnalysisModal({
 					{/* ── Left Column: Lateral Cephalogram Viewer & Unified HUD Strip (7 Cols) ── */}
 					<div
 						className={`lg:col-span-7 flex-col p-2.5 sm:p-3 bg-slate-950 border-r border-slate-800 shrink-0 lg:overflow-hidden ${mobileView === "canvas" ? "flex flex-1 min-h-[360px]" : "hidden lg:flex"}`}
-						style={{ backgroundColor: "var(--paper, #020617)", color: "var(--ink, #f8fafc)" }}
+						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
 					>
 						<div className="flex-1 min-h-[340px] sm:min-h-[440px] lg:min-h-[620px] flex items-center justify-center relative overflow-hidden">
 							<CephalometricCanvas
@@ -421,7 +433,7 @@ export function CephalometricAnalysisModal({
 					{/* ── Right Column: Interactive Sidebar (5 Cols) ── */}
 					<div
 						className={`lg:col-span-5 flex-col bg-slate-950 border-l border-slate-800 text-slate-100 overflow-hidden ${mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"}`}
-						style={{ backgroundColor: "var(--paper, #020617)", color: "var(--ink, #f8fafc)" }}
+						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
 					>
 						<div className="grid grid-cols-3 border-b border-slate-800 bg-slate-900 px-2 pt-1.5 shrink-0 gap-1 w-full">
 							<button
@@ -430,7 +442,7 @@ export function CephalometricAnalysisModal({
 								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "landmarks" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"}`}
 								title="Ориентиры ТРГ"
 							>
-								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры (Точки: {isImageLoaded ? analysis.placedCount : 0})</span>
+								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры ({isImageLoaded ? analysis.placedCount : 0}/16)</span>
 								<span className="sm:hidden whitespace-nowrap">1. Точки ({isImageLoaded ? analysis.placedCount : 0})</span>
 							</button>
 
@@ -443,8 +455,8 @@ export function CephalometricAnalysisModal({
 								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "metrics" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Расчет углов (Steiner, Tweed, Downs, McNamara)"
 							>
-								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов (Анализ)</span>
-								<span className="sm:hidden whitespace-nowrap">2. Анализ</span>
+								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
+								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
 								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />}
 							</button>
 
@@ -463,11 +475,13 @@ export function CephalometricAnalysisModal({
 						{/* Tab 1: Landmarks List & Placement Guidance */}
 						{activeTab === "landmarks" && (
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
-								<CephalometricPresetsBar variant="tab1" onApplyPreset={handleApplyPreset} onResetLandmarks={handleResetLandmarks} />
+								<div className="lg:hidden mb-3.5">
+									<CephalometricPresetsBar variant="tab1" onApplyPreset={handleApplyPreset} onResetLandmarks={handleResetLandmarks} />
+								</div>
 
-								<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "var(--paper-panel, #0f172a)", borderColor: "var(--line, #334155)" }}>
+								<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}>
 									<div className="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
-										<span className="text-slate-200" style={{ color: "var(--ink, #f8fafc)" }}>Прогресс разметки ТРГ</span>
+										<span className="text-slate-200" style={{ color: "#f8fafc" }}>Прогресс разметки ТРГ</span>
 										<span className="text-teal-400 font-extrabold">{placedPercent}%</span>
 									</div>
 									<div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden">

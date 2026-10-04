@@ -351,14 +351,20 @@
 	width: 20px;
 	height: 20px;
 	border-radius: 50%;
-	background: var(--ink, #0f172a);
-	color: #ffffff;
+	background: #0f172a;
+	color: #ffffff !important;
 	font-size: 10px;
 	font-weight: 800;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
+}
+
+[data-theme="dark"] .ortho-slot-num,
+.dark .ortho-slot-num {
+	background: #334155;
+	color: #ffffff !important;
 }
 
 .ortho-slot-title {
@@ -533,17 +539,23 @@
 }
 
 .ortho-slot-btn {
-	width: 28px;
+	min-width: 28px;
 	height: 28px;
 	border-radius: 6px;
 	border: 1px solid var(--line, #e2e8f0);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
 	transition: all 0.15s ease;
+}
+
+.ortho-slot-btn-text {
+	width: auto !important;
+	padding: 0 10px !important;
+	gap: 6px !important;
 }
 
 .ortho-slot-btn:hover {

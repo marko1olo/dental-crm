@@ -120,15 +120,15 @@ describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timel
 	};
 
 	/* ──────────────────────────────────────────────────────────────────────────
-	   TEST GROUP 1: Tactile Search Matrix (EzDent-i Screenshot 19)
+	   TEST GROUP 1: Visiography Date & Visit Filter (Rebuild Rotten Seeds Law)
 	   ────────────────────────────────────────────────────────────────────────── */
-	it("1. RadiologyPatientSearchModal renders 7 modalities and 7 date buttons in 2 tactile columns", () => {
+	it("1. RadiologyPatientSearchModal renders clean visiography date filters, tabs, and visits list without 7x7 matrix", () => {
 		const html = renderToStaticMarkup(
 			<RadiologyPatientSearchModal
 				isOpen={true}
 				onClose={() => {}}
 				onApply={() => {}}
-				initialFilters={{ mode: "cbct", datePreset: "today" }}
+				initialFilters={{ mode: "periapical", datePreset: "all" }}
 				totalStudiesCount={12}
 				matchedCount={3}
 			/>,
@@ -137,33 +137,31 @@ describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timel
 		// Modal container and header
 		assert.ok(html.includes("tactile-search-modal-backdrop"), "Backdrop exists");
 		assert.ok(html.includes("data-testid=\"tactile-search-modal-dialog\""), "Dialog container exists");
-		assert.ok(html.includes("ПОИСК ПАЦИЕНТА И ИССЛЕДОВАНИЙ"), "Header title correct");
-		assert.ok(html.includes("Тактильный матричный фильтр"), "Header subtitle correct");
+		assert.ok(html.includes("СНИМКИ ВИЗИОГРАФА ПО ДАТАМ И ВИЗИТАМ"), "Header title correct");
+		assert.ok(html.includes("Визиограф RVG"), "Visiography RVG badge present");
 
-		// Modality Column (7 modes)
-		assert.strictEqual(TACTILE_MODES.length, 7, "Exactly 7 modality modes defined");
-		for (const mode of TACTILE_MODES) {
-			assert.ok(
-				html.includes(`data-testid="tactile-mode-${mode.id}"`),
-				`Mode button for ${mode.id} (${mode.label}) rendered`,
-			);
-			assert.ok(html.includes(mode.label), `Label '${mode.label}' present in HTML`);
-		}
+		// Quick date filter tabs
+		assert.ok(html.includes("data-testid=\"tactile-date-all\""), "Tab 'Все снимки' rendered");
+		assert.ok(html.includes("data-testid=\"tactile-date-today\""), "Tab 'Сегодня / Приём' rendered");
+		assert.ok(html.includes("data-testid=\"tactile-date-last_month\""), "Tab '30 дней' rendered");
+		assert.ok(html.includes("data-testid=\"tactile-date-custom\""), "Tab 'Период' rendered");
 
-		// Date Column (7 date presets)
-		assert.strictEqual(TACTILE_DATES.length, 7, "Exactly 7 date presets defined");
-		for (const date of TACTILE_DATES) {
-			assert.ok(
-				html.includes(`data-testid="tactile-date-${date.id}"`),
-				`Date button for ${date.id} (${date.label}) rendered`,
-			);
-			assert.ok(html.includes(date.label), `Label '${date.label}' present in HTML`);
-		}
+		// Quick sub-presets for fast click
+		assert.ok(html.includes("data-testid=\"tactile-date-yesterday\""), "Chip 'Вчера' rendered");
+		assert.ok(html.includes("data-testid=\"tactile-date-3days\""), "Chip '3 дня' rendered");
+		assert.ok(html.includes("data-testid=\"tactile-date-last_week\""), "Chip '7 дней' rendered");
+
+		// Chronological visits list with teeth and RVG shot counts
+		assert.ok(html.includes("data-testid=\"radiology-visits-list\""), "Visits list container rendered");
+		assert.ok(html.includes("03.10.2026"), "Current visit date rendered");
+		assert.ok(html.includes("25.09.2026"), "Previous visit date rendered");
+		assert.ok(html.includes("RVG"), "RVG shot badge rendered");
 
 		// Action buttons: Apply & Reset
 		assert.ok(html.includes("data-testid=\"btn-apply-tactile-search\""), "Apply button rendered");
 		assert.ok(html.includes("data-testid=\"btn-reset-tactile-filters\""), "Reset button rendered");
 		assert.ok(html.includes("data-testid=\"tactile-search-query-input\""), "Query input rendered");
+		assert.ok(html.includes("data-testid=\"btn-search-trigger\""), "Search trigger button rendered");
 	});
 
 	it("2. matchesTactileModality strictly filters apparatus types without bleed", () => {

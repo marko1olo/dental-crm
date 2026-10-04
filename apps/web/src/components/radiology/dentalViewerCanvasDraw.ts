@@ -137,6 +137,93 @@ export function drawCurvedCanal(
 	ctx.restore();
 }
 
+/**
+ * Draws periapical lesion / cyst / defect contour polygon with translucent fill, boundary stroke,
+ * and area badge (Gauss Shoelace formula).
+ */
+export function drawLesionContour(
+	ctx: CanvasRenderingContext2D,
+	points: readonly ViewerPoint2D[],
+	areaMm2: number,
+	perimeterMm?: number,
+	label?: string,
+	color = "#f59e0b",
+	isDraft = false,
+): void {
+	if (!points || points.length === 0) return;
+
+	ctx.save();
+	ctx.strokeStyle = color;
+	ctx.lineWidth = isDraft ? 1.8 : 2.5;
+	if (isDraft) {
+		ctx.setLineDash([4, 4]);
+	} else {
+		ctx.setLineDash([]);
+	}
+
+	// Draw polygon
+	ctx.beginPath();
+	ctx.moveTo(points[0]!.x, points[0]!.y);
+	for (let i = 1; i < points.length; i++) {
+		ctx.lineTo(points[i]!.x, points[i]!.y);
+	}
+	if (!isDraft && points.length >= 3) {
+		ctx.closePath();
+	}
+	ctx.stroke();
+
+	// Translucent fill for closed lesion
+	if (!isDraft && points.length >= 3) {
+		ctx.fillStyle = "rgba(245, 158, 11, 0.20)";
+		ctx.fill();
+	}
+	ctx.setLineDash([]);
+
+	// Draw vertices
+	for (let i = 0; i < points.length; i++) {
+		const pt = points[i]!;
+		ctx.beginPath();
+		ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
+		ctx.fillStyle = color;
+		ctx.fill();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#ffffff";
+		ctx.stroke();
+	}
+
+	// Area badge pill
+	if (points.length >= 3 && areaMm2 > 0) {
+		let cx = 0;
+		let cy = 0;
+		for (const pt of points) {
+			cx += pt.x;
+			cy += pt.y;
+		}
+		cx /= points.length;
+		cy /= points.length;
+
+		const badgeText = label || `${areaMm2.toFixed(1)} мм²`;
+		ctx.font = "bold 13px monospace";
+		const textWidth = ctx.measureText(badgeText).width;
+		const padX = 7;
+
+		ctx.fillStyle = "rgba(2, 6, 23, 0.94)";
+		ctx.strokeStyle = color;
+		ctx.lineWidth = 1.2;
+		ctx.beginPath();
+		ctx.rect(cx - textWidth / 2 - padX, cy - 11, textWidth + padX * 2, 22);
+		ctx.fill();
+		ctx.stroke();
+
+		ctx.fillStyle = "#ffffff";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(badgeText, cx, cy);
+	}
+
+	ctx.restore();
+}
+
 export interface MagnifierOverlayOptions {
 	readonly ctx: CanvasRenderingContext2D;
 	readonly canvasWidth: number;

@@ -36,6 +36,18 @@ export interface PrimaryIntakePackagePrintOptions {
 		cardNumber?: string | null | undefined;
 		gender?: string | null | undefined;
 	} | null | undefined;
+	representative?: {
+		fullName?: string | null | undefined;
+		relationship?: string | null | undefined;
+		phone?: string | null | undefined;
+		passport?: string | null | undefined;
+		passportSeries?: string | null | undefined;
+		passportNumber?: string | null | undefined;
+		passportIssuedBy?: string | null | undefined;
+		passportIssuedDate?: string | null | undefined;
+		passportDepartmentCode?: string | null | undefined;
+		basisDocument?: string | null | undefined;
+	} | null | undefined;
 	clinic?: {
 		legalName?: string | null | undefined;
 		clinicName?: string | null | undefined;
@@ -82,42 +94,71 @@ export function generatePrimaryIntakePackageHtml(
 ): string {
 	const {
 		patient,
+		representative,
 		clinic,
 		doctorFullName,
 		intakeNormApplied = true,
 		questionnaireAnswers,
 	} = options;
 
+	const isDemo = isDemoShowcaseMode();
 	const todayFormatted = new Date().toLocaleDateString("ru-RU", {
 		day: "numeric",
 		month: "long",
 		year: "numeric",
 	}) + " г.";
 
-	// Реквизиты клиники
+	// Реквизиты клиники (zero-mock в боевом режиме, эталонные в демо)
 	const clinicName =
 		escapeHtml(clinic?.legalName || clinic?.fullName || clinic?.clinicName) ||
-		"ООО «Стоматологическая клиника ДЕНТЕ»";
+		(isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "Стоматологическая клиника");
 	const clinicAddress =
 		escapeHtml(clinic?.actualAddress || clinic?.address) ||
-		"г. Москва, ул. Стоматологическая, д. 10";
+		(isDemo ? "г. Москва, ул. Стоматологическая, д. 10" : "«________________________________________»");
 	const clinicCity =
 		escapeHtml(clinic?.city) ||
-		(clinicAddress.includes(",") ? (clinicAddress.split(",")[0]?.trim() || "г. Москва") : "г. Москва");
+		(clinicAddress && !clinicAddress.includes("«") && clinicAddress.includes(",")
+			? clinicAddress.split(",")[0]?.trim() || (isDemo ? "г. Москва" : "«___________»")
+			: (isDemo ? "г. Москва" : "«___________»"));
 	const clinicWebsite =
-		escapeHtml(clinic?.website) || "клиника-денте.рф";
-	const clinicInn = escapeHtml(clinic?.inn) || "7701987654";
-	const clinicKpp = escapeHtml(clinic?.kpp) || "770101001";
-	const clinicOgrn = escapeHtml(clinic?.ogrn) || "1217700123456";
+		escapeHtml(clinic?.website) || (isDemo ? "клиника-денте.рф" : "");
+	const clinicInn = escapeHtml(clinic?.inn) || (isDemo ? "7701987654" : "«______________»");
+	const clinicKpp = escapeHtml(clinic?.kpp) || (isDemo ? "770101001" : "");
+	const clinicOgrn = escapeHtml(clinic?.ogrn) || (isDemo ? "1217700123456" : "«________________»");
 	const clinicLicense =
-		escapeHtml(clinic?.licenseNumber) || "ЛО41-01137-77/00584930";
-	const clinicPhone = escapeHtml(clinic?.phone) || "";
+		escapeHtml(clinic?.licenseNumber) ||
+		(isDemo ? "ЛО41-01137-77/00584930" : "«________________________________________»");
+	const clinicPhone = escapeHtml(clinic?.phone) || (isDemo ? "+7 (495) 123-45-67" : "«____________________»");
 	const dirName = escapeHtml(clinic?.directorFullName);
 	const clinicDirector =
-		dirName || (isDemoShowcaseMode() ? "Иванов И.И." : "");
+		dirName || (isDemo ? "Иванов И.И." : "");
 	const clinicDirectorDecoding = clinicDirector ? ` / ${clinicDirector} /` : "";
 	const clinicDirectorTitle =
 		escapeHtml(clinic?.directorTitle) || "Главный врач";
+
+	// Реквизиты законного представителя (при наличии или лечении несовершеннолетнего)
+	const hasRep = Boolean(representative?.fullName);
+	const repFullName = escapeHtml(representative?.fullName) || "";
+	const repRelation = escapeHtml(representative?.relationship) || "Законный представитель";
+	const repBasis = escapeHtml(representative?.basisDocument) || "свидетельство о рождении / акт опеки ____________________";
+	const repPhone = escapeHtml(representative?.phone) || "____________________";
+	let repPassport = "";
+	if (representative?.passportSeries && representative?.passportNumber) {
+		repPassport = `серия ${escapeHtml(representative.passportSeries)} № ${escapeHtml(representative.passportNumber)}`;
+		if (representative.passportIssuedBy) {
+			repPassport += `, выдан: ${escapeHtml(representative.passportIssuedBy)}`;
+		}
+		if (representative.passportIssuedDate) {
+			repPassport += `, ${formatDateRu(representative.passportIssuedDate)}`;
+		}
+		if (representative.passportDepartmentCode) {
+			repPassport += `, код: ${escapeHtml(representative.passportDepartmentCode)}`;
+		}
+	} else if (representative?.passport) {
+		repPassport = escapeHtml(representative.passport);
+	} else {
+		repPassport = "серия ______ № ________, выдан ____________________________________, код _________";
+	}
 
 	// Реквизиты пациента (с гарантированными подчеркиваниями вместо блокировок)
 	const ptFullName = escapeHtml(patient?.fullName);
@@ -328,7 +369,11 @@ export function generatePrimaryIntakePackageHtml(
 
       <div class="parties-block">
         <strong>Исполнитель:</strong> ${clinicName} в лице ${clinicDirectorTitle} ${clinicDirector}, действующего на основании Устава и лицензии № ${clinicLicense}, с одной стороны, и<br>
-        <strong>Пациент (Потребитель / Заказчик):</strong> <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, документ, удостоверяющий личность: ${ptPassport}, СНИЛС: ${ptSnils}, адрес: ${ptAddress}, тел.: ${ptPhone}, с другой стороны, заключили настоящий Договор о нижеследующем:
+        ${
+					hasRep
+						? `<strong>Заказчик (Законный представитель):</strong> <strong>${repFullName}</strong> (${repRelation}, основание: ${repBasis}), паспорт: ${repPassport}, тел.: ${repPhone}, действующий(-ая) в интересах несовершеннолетнего Пациента: <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, документ: ${ptPassport}, СНИЛС: ${ptSnils}, адрес: ${ptAddress},`
+						: `<strong>Пациент (Потребитель / Заказчик):</strong> <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, документ, удостоверяющий личность: ${ptPassport}, СНИЛС: ${ptSnils}, адрес: ${ptAddress}, тел.: ${ptPhone},`
+				} с другой стороны, заключили настоящий Договор о нижеследующем:
       </div>
 
       <div class="section-title">1. Предмет договора</div>
@@ -361,12 +406,13 @@ export function generatePrimaryIntakePackageHtml(
         <div class="sign-hint">(М.П. / подпись уполномоченного лица)</div>
       </div>
       <div class="sign-box">
-        <strong>ПАЦИЕНТ (ЗАКАЗЧИК):</strong><br>
-        ${ptName}<br>
-        Паспорт: ${ptPassport}<br>
-        Подпись: ________________________${ptSignatureDecoding}<br>
+        <strong>${hasRep ? `ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (${repRelation}):` : "ПАЦИЕНТ (ЗАКАЗЧИК):"}</strong><br>
+        ${hasRep ? repFullName : ptName}<br>
+        Паспорт: ${hasRep ? repPassport : ptPassport}<br>
+        ${hasRep ? `<span style="font-size:7pt; color:#4b5563;">В интересах пациента: ${ptName}</span><br>` : ""}
+        Подпись: ________________________${hasRep ? ` / ${repFullName} /` : ptSignatureDecoding}<br>
         <div class="sign-line"></div>
-        <div class="sign-hint">(личная подпись пациента / расшифровка)</div>
+        <div class="sign-hint">(${hasRep ? "подпись законного представителя" : "личная подпись пациента"} / расшифровка)</div>
       </div>
     </div>
   </div>
@@ -390,7 +436,11 @@ export function generatePrimaryIntakePackageHtml(
       </div>
 
       <div class="parties-block">
-        Я, <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, проживающий(-ая) по адресу: ${ptAddress}, документ, удостоверяющий личность: ${ptPassport}, СНИЛС: ${ptSnils}, телефон: ${ptPhone},<br>
+        ${
+					hasRep
+						? `Я, <strong>${repFullName}</strong> (${repRelation}), документ, удостоверяющий личность: ${repPassport}, телефон: ${repPhone}, являясь законным представителем (основание: ${repBasis}) несовершеннолетнего пациента <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, проживающего(-ей) по адресу: ${ptAddress}, СНИЛС: ${ptSnils},<br>`
+						: `Я, <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, проживающий(-ая) по адресу: ${ptAddress}, документ, удостоверяющий личность: ${ptPassport}, СНИЛС: ${ptSnils}, телефон: ${ptPhone},<br>`
+				}
         настоящим подтверждаю, что при обращении в ${clinicName} проинформирован(-а) о целях, методах оказания медицинской помощи, связанном с ними риске, возможных вариантах медицинского вмешательства, их последствиях и предполагаемых результатах.
       </div>
 
@@ -409,9 +459,9 @@ export function generatePrimaryIntakePackageHtml(
 
     <div class="signatures-row">
       <div class="sign-box">
-        Пациент (законный представитель):<br>
-        <strong>${ptName}</strong><br>
-        Подпись: ________________________<br>
+        ${hasRep ? `Законный представитель (${repRelation}):` : "Пациент (законный представитель):"}<br>
+        <strong>${hasRep ? repFullName : ptName}</strong>${hasRep ? `<br><span style="font-size:7pt; color:#4b5563;">(в интересах несовершеннолетнего: ${ptName})</span>` : ""}<br>
+        Подпись: ________________________${hasRep ? ` / ${repFullName} /` : ptSignatureDecoding}<br>
         <div class="sign-line"></div>
         <div class="sign-hint">(личная подпись / дата: ${todayFormatted})</div>
       </div>
@@ -444,7 +494,11 @@ export function generatePrimaryIntakePackageHtml(
       </div>
 
       <div class="parties-block">
-        Субъект персональных данных: <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, паспорт: ${ptPassport}, СНИЛС: ${ptSnils}, адрес: ${ptAddress}, телефон: ${ptPhone}, свободно, своей волей и в своем интересе дает согласие Оператору — <strong>${clinicName}</strong> (ИНН: ${clinicInn}, адрес: ${clinicAddress}), на обработку своих персональных данных на следующих условиях:
+        ${
+					hasRep
+						? `Я, <strong>${repFullName}</strong> (${repRelation}, основание: ${repBasis}), паспорт: ${repPassport}, проживающий(-ая) по адресу: ${ptAddress}, тел.: ${repPhone}, являясь законным представителем несовершеннолетнего субъекта персональных данных: <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, документ: ${ptPassport}, СНИЛС: ${ptSnils}, свободно, своей волей и в интересах подопечного даю согласие Оператору — <strong>${clinicName}</strong> (ИНН: ${clinicInn}, адрес: ${clinicAddress}), на обработку персональных данных на следующих условиях:`
+						: `Субъект персональных данных: <strong>${ptName}</strong>, дата рождения: ${ptBirthDate}, паспорт: ${ptPassport}, СНИЛС: ${ptSnils}, адрес: ${ptAddress}, телефон: ${ptPhone}, свободно, своей волей и в своем интересе дает согласие Оператору — <strong>${clinicName}</strong> (ИНН: ${clinicInn}, адрес: ${clinicAddress}), на обработку своих персональных данных на следующих условиях:`
+				}
       </div>
 
       <div class="section-title">1. Цели обработки персональных данных</div>
@@ -464,11 +518,11 @@ export function generatePrimaryIntakePackageHtml(
 
     <div class="signatures-row">
       <div class="sign-box" style="grid-column: span 2;">
-        Субъект персональных данных (Пациент / Законный представитель):<br>
-        <strong>${ptName}</strong> · Паспорт: ${ptPassport}<br>
-        Личная подпись: ________________________${ptSignatureDecoding}<br>
+        ${hasRep ? `Законный представитель (${repRelation}) в интересах несовершеннолетнего:` : "Субъект персональных данных (Пациент / Законный представитель):"}<br>
+        <strong>${hasRep ? repFullName : ptName}</strong>${hasRep ? ` (в интересах: ${ptName})` : ""} · Паспорт: ${hasRep ? repPassport : ptPassport}<br>
+        Личная подпись: ________________________${hasRep ? ` / ${repFullName} /` : ptSignatureDecoding}<br>
         <div class="sign-line"></div>
-        <div class="sign-hint">(подпись гражданина / дата: ${todayFormatted})</div>
+        <div class="sign-hint">(${hasRep ? "подпись законного представителя" : "подпись гражданина"} / дата: ${todayFormatted})</div>
       </div>
     </div>
   </div>
@@ -491,10 +545,11 @@ export function generatePrimaryIntakePackageHtml(
         <div class="sheet-subtitle">Обязательное приложение к медицинской карте стоматологического больного (ф. 043/у)</div>
       </div>
 
-      <div class="parties-block" style="display: flex; justify-content: space-between;">
+      <div class="parties-block" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
         <div>Пациент: <strong>${ptName}</strong></div>
         <div>Дата рождения: <strong>${ptBirthDate}</strong></div>
-        <div>Телефон: <strong>${ptPhone}</strong></div>
+        ${hasRep ? `<div>Представитель: <strong>${repFullName}</strong> (${repRelation})</div>` : ""}
+        <div>Телефон: <strong>${hasRep ? repPhone : ptPhone}</strong></div>
       </div>
 
       <table class="data-table">
@@ -570,17 +625,17 @@ export function generatePrimaryIntakePackageHtml(
       </table>
 
       <div style="font-size: 7.8pt; line-height: 1.3; background: #fafafa; border: 1px solid #e5e7eb; padding: 5pt 7pt; border-radius: 3pt; margin-top: 4pt;">
-        <strong>Заявление пациента:</strong> Настоящим подтверждаю, что все указанные мною сведения о состоянии здоровья являются достоверными и исчерпывающими. Обязуюсь своевременно сообщать врачу о любых изменениях самочувствия, назначении новых медикаментов или наступлении беременности.
+        <strong>Заявление ${hasRep ? "законного представителя" : "пациента"}:</strong> Настоящим подтверждаю, что все указанные мною сведения о состоянии здоровья ${hasRep ? "ребенка (подопечного)" : ""} являются достоверными и исчерпывающими. Обязуюсь своевременно сообщать врачу о любых изменениях самочувствия, назначении новых медикаментов или наступлении беременности.
       </div>
     </div>
 
     <div class="signatures-row">
       <div class="sign-box">
-        Пациент (Заказчик):<br>
-        <strong>${ptName}</strong><br>
-        Подпись: ________________________<br>
+        ${hasRep ? `Законный представитель (${repRelation}):` : "Пациент (Заказчик):"}<br>
+        <strong>${hasRep ? repFullName : ptName}</strong><br>
+        Подпись: ________________________${hasRep ? ` / ${repFullName} /` : ptSignatureDecoding}<br>
         <div class="sign-line"></div>
-        <div class="sign-hint">(личная подпись пациента / дата: ${todayFormatted})</div>
+        <div class="sign-hint">(${hasRep ? "подпись законного представителя" : "личная подпись пациента"} / дата: ${todayFormatted})</div>
       </div>
       <div class="sign-box">
         Анкету проверил и принял (врач / регистратор):<br>

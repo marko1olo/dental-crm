@@ -307,6 +307,40 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 			assert.ok(noteClass3.includes("-1.8°"));
 			assert.ok(noteClass3.includes("Скелетный класс III (сагиттальное опережение НЧ / мезиальный базис)"));
 		});
+
+		it("generates complete note with sagittal gap, vertical/transversal anomalies, and TMJ gnathological status", () => {
+			const note = generateOrthodonticSoapNote({
+				bracketSystem: "damon_q2",
+				angleClass: "class_2_div_1",
+				sagittalAnomaly: "overjet",
+				sagittalGapMm: 5.5,
+				verticalAnomaly: "deep",
+				transversalAnomaly: "crossbite",
+				tmjStatus: "clicking",
+			});
+
+			assert.ok(note.includes("Сагиттальная щель (оверджет): 5.5 мм (выраженная сагиттальная щель)"));
+			assert.ok(note.includes("глубокий резцовый прикус (>1/2 высоты коронки)"));
+			assert.ok(note.includes("перекрестный прикус (буккальная/лингвальная дизокклюзия)"));
+			assert.ok(note.includes("ВНЧС и гнатология: суставной щелчок при открывании рта"));
+			assert.equal(RAW_EMOJI_REGEX.test(note), false);
+
+			// Norm test
+			const noteNorm = generateOrthodonticSoapNote({
+				bracketSystem: "damon_q2",
+				angleClass: "class_1",
+				sagittalAnomaly: "norm",
+				verticalAnomaly: "norm",
+				transversalAnomaly: "norm",
+				tmjStatus: "norm",
+			});
+
+			assert.ok(noteNorm.includes("Сагиттальное соотношение резцов: норма (физиологический контакт 1–2 мм)"));
+			assert.ok(noteNorm.includes("Вертикальное перекрытие: норма (1/3 высоты коронки, физиологическое)"));
+			assert.ok(noteNorm.includes("Трансверзальное соотношение: норма (правильное щечно-небное перекрытие)"));
+			assert.ok(noteNorm.includes("пальпация суставов безболезненная, девиации нет, суставной шум отсутствует (норма)"));
+			assert.equal(RAW_EMOJI_REGEX.test(noteNorm), false);
+		});
 	});
 
 	describe("5. ANB Skeletal & Angle Classification Catalogs", () => {

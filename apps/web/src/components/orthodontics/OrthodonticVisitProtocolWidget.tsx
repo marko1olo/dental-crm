@@ -30,13 +30,27 @@ import {
 	type AngleClassOption,
 	WORKHORSE_ARCHWIRES,
 	type WorkhorseArchwireOption,
+	type SagittalAnomaly,
+	type VerticalAnomaly,
+	type TransversalAnomaly,
+	type TmjStatus,
 } from "@dental/shared";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export { ANB_CLASS_OPTIONS, ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
-export type { AnbClass, AnbClassOption, AngleClass, AngleClassOption, WorkhorseArchwireOption };
+export type {
+	AnbClass,
+	AnbClassOption,
+	AngleClass,
+	AngleClassOption,
+	WorkhorseArchwireOption,
+	SagittalAnomaly,
+	VerticalAnomaly,
+	TransversalAnomaly,
+	TmjStatus,
+};
 
 export type OrthodonticStageFilter =
 	| "all"
@@ -564,6 +578,13 @@ export function OrthodonticVisitProtocolWidget({
 	const [anbClass, setAnbClass] = useState<AnbClass>("class_1");
 	const [anbAngle, setAnbAngle] = useState<number>(2.0);
 	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
+
+	// Occlusal & Gnathological Diagnostics State (Mandates 8e, 8k, 8n)
+	const [sagittalAnomaly, setSagittalAnomaly] = useState<SagittalAnomaly>("norm");
+	const [sagittalGapMm, setSagittalGapMm] = useState<number>(2);
+	const [verticalAnomaly, setVerticalAnomaly] = useState<VerticalAnomaly>("norm");
+	const [transversalAnomaly, setTransversalAnomaly] = useState<TransversalAnomaly>("norm");
+	const [tmjStatus, setTmjStatus] = useState<TmjStatus>("norm");
 
 	// 1-Click Photo Protocol State (8 Angles ABO)
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState<boolean>(false);
@@ -1259,6 +1280,44 @@ export function OrthodonticVisitProtocolWidget({
 			? `• Скелетный класс (Steiner ANB): ${anbObj.label} (угол ANB: ${anbAngle.toFixed(1)}°).\n`
 			: `• Скелетный класс (Steiner ANB): I класс (норма, угол ANB: ${anbAngle.toFixed(1)}°).\n`;
 
+		let sagittalText = "";
+		if (sagittalAnomaly === "overjet") {
+			sagittalText = `• Сагиттальная щель (оверджет): ${sagittalGapMm} мм (выраженная сагиттальная щель).\n`;
+		} else if (sagittalAnomaly === "reverse") {
+			sagittalText = "• Сагиттальное соотношение: обратная резцовая окклюзия (мезиальное перекрытие).\n";
+		} else if (sagittalAnomaly === "norm") {
+			sagittalText = "• Сагиттальное соотношение резцов: норма (физиологический контакт 1–2 мм).\n";
+		}
+
+		let verticalText = "";
+		if (verticalAnomaly === "deep") {
+			verticalText = "• Вертикальное перекрытие: глубокий резцовый прикус (>1/2 высоты коронки).\n";
+		} else if (verticalAnomaly === "open") {
+			verticalText = "• Вертикальное соотношение: открытый прикус (вертикальная дизокклюзия во фронтальном отделе).\n";
+		} else if (verticalAnomaly === "norm") {
+			verticalText = "• Вертикальное перекрытие: норма (1/3 высоты коронки, физиологическое).\n";
+		}
+
+		let transversalText = "";
+		if (transversalAnomaly === "crossbite") {
+			transversalText = "• Трансверзальное соотношение: перекрестный прикус (буккальная/лингвальная дизокклюзия).\n";
+		} else if (transversalAnomaly === "norm") {
+			transversalText = "• Трансверзальное соотношение: норма (правильное щечно-небное перекрытие).\n";
+		}
+
+		let tmjText = "";
+		if (tmjStatus === "clicking") {
+			tmjText = "• ВНЧС и гнатология: суставной щелчок при открывании рта, умеренная дискоординация движений.\n";
+		} else if (tmjStatus === "pain") {
+			tmjText = "• ВНЧС и гнатология: болезненность при пальпации латеральных крыловидных мышц и суставных головок.\n";
+		} else if (tmjStatus === "deviation") {
+			tmjText = "• ВНЧС и гнатология: девиация нижней челюсти при максимальном открывании рта.\n";
+		} else if (tmjStatus === "splint") {
+			tmjText = "• ВНЧС и гнатология: проводится сплинт-терапия (окклюзионная шина в центральном соотношении).\n";
+		} else if (tmjStatus === "norm") {
+			tmjText = "• ВНЧС и гнатология: пальпация суставов безболезненная, девиации нет, суставной шум отсутствует (норма).\n";
+		}
+
 		let elasticsText = "Межчелюстная тяга не назначена.";
 		if (elasticScheme !== "none") {
 			elasticsText = `Межчелюстные эластики: ${elasticObj?.label || ""} (${elasticSizeObj?.label || ""}, ${elasticSizeObj?.strength || ""}). Режим ношения: ${elasticWear}.`;
@@ -1317,7 +1376,7 @@ export function OrthodonticVisitProtocolWidget({
 			separationText = "\n• Сепарационные эластики: установлены эластические сепараторы в межзубные промежутки для создания межпроксимального пространства.";
 		}
 
-		return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)
+		return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА
 Дата приёма: ${dateStr}
 Пациент: ${patientName}
 
@@ -1325,7 +1384,7 @@ export function OrthodonticVisitProtocolWidget({
 ${notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
 
 2. ОБЪЕКТИВНЫЙ СТАТУС:
-${angleText}${anbText}• Аппаратура: ${
+${angleText}${anbText}${sagittalText}${verticalText}${transversalText}${tmjText}• Аппаратура: ${
 	bracketSystem === "aligners"
 		? "Ортодонтические элайнеры (каппы с аттачментами)"
 		: bracketSystem === "removable_plate"
@@ -1364,6 +1423,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		angleClass,
 		anbClass,
 		anbAngle,
+		sagittalAnomaly,
+		sagittalGapMm,
+		verticalAnomaly,
+		transversalAnomaly,
+		tmjStatus,
 		isPhotoProtocolCompleted,
 		bracketSlot,
 		bracketSystem,
@@ -1533,7 +1597,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			if (typeof window !== "undefined") {
 				const printWindow = window.open("", "_blank");
 				if (printWindow) {
-					printWindow.document.write(`<!DOCTYPE html><html><head><title>Ортодонтическая карта 043/у — ${patientName}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.5;font-size:13px}h1{font-size:16px;margin:0 0 4px;text-transform:uppercase;font-weight:800}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.stamp{display:inline-block;padding:4px 10px;border:2px solid #059669;color:#059669;font-weight:800;font-size:11px;text-transform:uppercase;border-radius:4px;margin-bottom:12px}pre{white-space:pre-wrap;font-family:inherit;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.footer{margin-top:24px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:8px;display:flex;justify-content:space-between}@media print{body{padding:0}}</style></head><body><div class="stamp">ПОДПИСАНО ВРАЧОМ / ФОРМА 043/у</div><h1>Дневник ортодонтического приёма (Карта 043/у)</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><pre>${generatedProtocol.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>М.П.</span></div><script>window.onload=function(){window.print();};</script></body></html>`);
+					printWindow.document.write(`<!DOCTYPE html><html><head><title>Ортодонтическая медицинская карта — ${patientName}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.5;font-size:13px}h1{font-size:16px;margin:0 0 4px;text-transform:uppercase;font-weight:800}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.stamp{display:inline-block;padding:4px 10px;border:2px solid #059669;color:#059669;font-weight:800;font-size:11px;text-transform:uppercase;border-radius:4px;margin-bottom:12px}pre{white-space:pre-wrap;font-family:inherit;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.footer{margin-top:24px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:8px;display:flex;justify-content:space-between}@media print{body{padding:0}}</style></head><body><div class="stamp">ПОДПИСАНО ВРАЧОМ / МЕДИЦИНСКАЯ КАРТА</div><h1>Дневник ортодонтического приёма</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><pre>${generatedProtocol.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>М.П.</span></div><script>window.onload=function(){window.print();};</script></body></html>`);
 					printWindow.document.close();
 				} else if (typeof window.print === "function") {
 					window.print();
@@ -1717,7 +1781,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 shadow-xs transition-all cursor-pointer"
 							data-testid="top-print-ortho-protocol-btn"
 							title="Распечатать карту (Мандат 8e: печать со штампом в любой момент)"
-							aria-label="Печать 043/у"
+							aria-label="Печать протокола"
 						>
 							<Printer size={16} />
 							<span className="hidden sm:inline">Печать протокола</span>
@@ -2389,7 +2453,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									data-testid="append-attachments-to-soap-btn"
 									className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 									title="Добавить протокол в дневник визита без стирания ранее набранного текста"
-									aria-label="Внести в дневник 043/у"
+									aria-label="Внести в дневник приёма"
 								>
 									<Plus size={15} />
 									<span>Внести в дневник</span>
@@ -2520,6 +2584,240 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
 											<span className={`text-[10px] truncate w-full ${isSelected ? "text-indigo-100" : "text-slate-400"}`}>
 												{opt.id === "class_1" ? "Норма 2° (0°..4°)" : opt.id === "class_2" ? "Дистальный >4°" : "Мезиальный <0°"}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* 0.86 1-Click Occlusal Anomaly Selector Bar (Sagittal, Vertical, Transversal) */}
+						<div
+							data-testid="ortho-occlusion-anomaly-selector"
+							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-1.5">
+								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+									<Layers size={14} className="text-teal-500" />
+									Резцовые и окклюзионные соотношения
+								</span>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											setSagittalAnomaly("norm");
+											setSagittalGapMm(2);
+											setVerticalAnomaly("norm");
+											setTransversalAnomaly("norm");
+											showToast("1-клик норма: Окклюзионные взаимоотношения в норме", "success", 2500);
+										}}
+										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer min-h-[36px]"
+										data-testid="occlusion-norm-1click-btn"
+										title="1 клик: Физиологическая окклюзия резцов и моляров (Норма)"
+									>
+										<CheckCircle2 size={12} />
+										<span>Норма окклюзии</span>
+									</button>
+								</div>
+							</div>
+
+							{/* Sagittal Row */}
+							<div className="flex flex-col gap-1">
+								<div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+									<span>Сагиттальная щель (оверджет):</span>
+									{sagittalAnomaly === "overjet" && (
+										<span className="font-bold text-teal-600 dark:text-teal-400">{sagittalGapMm} мм</span>
+									)}
+								</div>
+								<div className="grid grid-cols-3 gap-1.5">
+									<button
+										type="button"
+										onClick={() => {
+											setSagittalAnomaly("norm");
+											setSagittalGapMm(2);
+										}}
+										data-testid="sagittal-norm-btn"
+										className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
+											sagittalAnomaly === "norm"
+												? "bg-teal-600 text-white border-teal-700 shadow-xs"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										}`}
+									>
+										Норма (1–2 мм)
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setSagittalAnomaly("overjet");
+											setSagittalGapMm(sagittalGapMm <= 2 ? 4 : sagittalGapMm);
+										}}
+										data-testid="sagittal-overjet-btn"
+										className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
+											sagittalAnomaly === "overjet"
+												? "bg-teal-600 text-white border-teal-700 shadow-xs"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										}`}
+									>
+										Оверджет (&gt;2 мм)
+									</button>
+									<button
+										type="button"
+										onClick={() => setSagittalAnomaly("reverse")}
+										data-testid="sagittal-reverse-btn"
+										className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
+											sagittalAnomaly === "reverse"
+												? "bg-teal-600 text-white border-teal-700 shadow-xs"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										}`}
+									>
+										Обратный прикус
+									</button>
+								</div>
+							</div>
+
+							{/* Vertical & Transversal Row */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<div className="flex flex-col gap-1">
+									<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+										Вертикальное перекрытие:
+									</span>
+									<div className="grid grid-cols-3 gap-1">
+										<button
+											type="button"
+											onClick={() => setVerticalAnomaly("norm")}
+											data-testid="vertical-norm-btn"
+											className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+												verticalAnomaly === "norm"
+													? "bg-teal-600 text-white border-teal-700"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+											}`}
+										>
+											Норма (1/3)
+										</button>
+										<button
+											type="button"
+											onClick={() => setVerticalAnomaly("deep")}
+											data-testid="vertical-deep-btn"
+											className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+												verticalAnomaly === "deep"
+													? "bg-teal-600 text-white border-teal-700"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+											}`}
+										>
+											Глубокий
+										</button>
+										<button
+											type="button"
+											onClick={() => setVerticalAnomaly("open")}
+											data-testid="vertical-open-btn"
+											className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+												verticalAnomaly === "open"
+													? "bg-teal-600 text-white border-teal-700"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+											}`}
+										>
+											Открытый
+										</button>
+									</div>
+								</div>
+
+								<div className="flex flex-col gap-1">
+									<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+										Трансверзальное соотношение:
+									</span>
+									<div className="grid grid-cols-2 gap-1">
+										<button
+											type="button"
+											onClick={() => setTransversalAnomaly("norm")}
+											data-testid="transversal-norm-btn"
+											className={`min-h-[38px] px-2 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+												transversalAnomaly === "norm"
+													? "bg-teal-600 text-white border-teal-700"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+											}`}
+										>
+											Норма
+										</button>
+										<button
+											type="button"
+											onClick={() => setTransversalAnomaly("crossbite")}
+											data-testid="transversal-crossbite-btn"
+											className={`min-h-[38px] px-2 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
+												transversalAnomaly === "crossbite"
+													? "bg-teal-600 text-white border-teal-700"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+											}`}
+										>
+											Перекрестный
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* 0.87 1-Click Gnathology & TMJ Status Selector Bar */}
+						<div
+							data-testid="ortho-gnathology-tmj-selector"
+							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-1.5">
+								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+									<DentalArticulator size={14} className="text-amber-500" />
+									Гнатология и статус ВНЧС
+								</span>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											setTmjStatus("norm");
+											showToast("1-клик норма: ВНЧС безболезненный, девиации нет", "success", 2500);
+										}}
+										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer min-h-[36px]"
+										data-testid="tmj-norm-1click-btn"
+										title="1 клик: Пальпация безболезненная, девиации нет, шум отсутствует"
+									>
+										<CheckCircle2 size={12} />
+										<span>Норма ВНЧС</span>
+									</button>
+									<span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+										{tmjStatus === "norm"
+											? "Норма"
+											: tmjStatus === "clicking"
+												? "Щелчки"
+												: tmjStatus === "pain"
+													? "Пальпация +"
+													: tmjStatus === "deviation"
+														? "Девиация"
+														: "Сплинт"}
+									</span>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+								{[
+									{ id: "norm" as const, label: "Норма", desc: "Безболезненно, шума нет" },
+									{ id: "clicking" as const, label: "Щелчок ВНЧС", desc: "Суставной щелчок" },
+									{ id: "pain" as const, label: "Боль / пальпация", desc: "Болезненность пальпации" },
+									{ id: "deviation" as const, label: "Девиация", desc: "Смещение челюсти" },
+									{ id: "splint" as const, label: "Сплинт-шина", desc: "Окклюзионная сплинт-терапия" },
+								].map((opt) => {
+									const isSelected = tmjStatus === opt.id;
+									return (
+										<button
+											key={opt.id}
+											type="button"
+											onClick={() => setTmjStatus(opt.id)}
+											data-testid={`tmj-status-${opt.id}-btn`}
+											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+												isSelected
+													? "bg-amber-600 text-white border-amber-700 font-black shadow-xs ring-1 ring-amber-400"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+											}`}
+											title={opt.desc}
+										>
+											<span className="text-xs font-bold leading-tight">{opt.label}</span>
+											<span className={`text-[10px] truncate w-full ${isSelected ? "text-amber-100" : "text-slate-400"}`}>
+												{opt.desc}
 											</span>
 										</button>
 									);
@@ -3026,7 +3324,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							<div className="flex items-center gap-2">
 								<FileText size={16} className="text-amber-500" />
 								<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] dark:text-slate-200">
-									Дневник приёма (Форма 043/у)
+									Дневник приёма
 								</span>
 							</div>
 
@@ -3037,7 +3335,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
 									data-testid="print-ortho-protocol-btn"
 									title="Распечатать карту"
-									aria-label="Печать 043/у"
+									aria-label="Печать протокола"
 								>
 									<Printer size={13} />
 									<span>Печать протокола</span>
@@ -3060,74 +3358,77 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						</div>
 
 						{/* 1-Click Action Bar */}
-						<div className="flex items-center gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<button
-								type="button"
-								onClick={handleCopyPatientMemo}
-								data-testid="ortho-copy-patient-memo-btn"
-								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
-								title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
-							>
-								<Copy size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span className="hidden sm:inline">Скопировать для пациента</span>
-								<span className="sm:hidden">Памятка</span>
-							</button>
+						<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<div className="grid grid-cols-2 gap-2">
+								<button
+									type="button"
+									onClick={handleCopyPatientMemo}
+									data-testid="ortho-copy-patient-memo-btn"
+									className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+									title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
+								>
+									<Copy size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span className="hidden sm:inline">Скопировать для пациента</span>
+									<span className="sm:hidden">Памятка</span>
+								</button>
 
-							<button
-								type="button"
-								onClick={handlePrintPatientMemo}
-								data-testid="ortho-print-patient-memo-btn"
-								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
-								title="Распечатать памятку пациенту (A4)"
-							>
-								<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span className="hidden sm:inline">Печать памятки (A4)</span>
-								<span className="sm:hidden">Печать A4</span>
-							</button>
+								<button
+									type="button"
+									onClick={handlePrintPatientMemo}
+									data-testid="ortho-print-patient-memo-btn"
+									className="min-h-[48px] px-3 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+									title="Распечатать памятку пациенту (A4)"
+								>
+									<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Печать памятки A4</span>
+								</button>
+							</div>
 
-							<button
-								type="button"
-								onClick={handlePrintOrthodonticCard}
-								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
-								data-testid="bottom-print-protocol-btn"
-								title="Распечатать карту"
-								aria-label="Печать 043/у"
-							>
-								<Printer size={16} />
-								<span className="hidden sm:inline">Печать</span>
-							</button>
+							<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+								<button
+									type="button"
+									onClick={handlePrintOrthodonticCard}
+									className="min-h-[44px] px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+									data-testid="bottom-print-protocol-btn"
+									title="Распечатать карту"
+									aria-label="Печать протокола"
+								>
+									<Printer size={15} />
+									<span>Печать</span>
+								</button>
 
-							<button
-								type="button"
-								onClick={handleAddServicesToInvoice}
-								className="min-h-[48px] px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-								data-testid="bottom-add-services-to-invoice-btn"
-								title="Начислить услуги в чек/смету"
-								aria-label="Начислить услуги в чек/смету"
-							>
-								<Receipt size={16} />
-								<span>Начислить услуги ({calculatedServices804n.length})</span>
-							</button>
+								<button
+									type="button"
+									onClick={handleAddServicesToInvoice}
+									className="min-h-[44px] px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+									data-testid="bottom-add-services-to-invoice-btn"
+									title="Начислить услуги в чек/смету"
+									aria-label="Начислить услуги в чек/смету"
+								>
+									<Receipt size={15} />
+									<span>Услуги ({calculatedServices804n.length})</span>
+								</button>
 
-							<button
-								type="button"
-								onClick={handleApplyToVisitNote}
-								className="flex-1 min-h-[48px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
-								data-testid="bottom-apply-protocol-btn"
-								title="Вставить в карту (1 клик)"
-								aria-label="В медицинскую карту"
-							>
-								<Check size={18} />
-								<span>Вставить в карту (1 клик)</span>
-							</button>
+								<button
+									type="button"
+									onClick={handleApplyToVisitNote}
+									className="flex-1 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+									data-testid="bottom-apply-protocol-btn"
+									title="Вставить в карту (1 клик)"
+									aria-label="В медицинскую карту"
+								>
+									<Check size={16} />
+									<span>Вставить в карту</span>
+								</button>
 
-							<button
-								type="button"
-								onClick={onClose}
-								className="min-h-[48px] px-4 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
-							>
-								Отмена
-							</button>
+								<button
+									type="button"
+									onClick={onClose}
+									className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
+								>
+									Отмена
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>

@@ -52,21 +52,19 @@ describe("speechJsonBodyLimitBytes", () => {
  * providerKeySpecs герметичность не потеряется молча.
  */
 const SPEECH_ENV_PATTERN =
-	/^(DENTAL_SPEECH_|DENTAL_LOCAL_WHISPER_|DENTAL_VOSK_|GROQ_|OPENAI_|DEEPGRAM_|ASSEMBLYAI_|CLOUDFLARE_|AZURE_SPEECH_|GOOGLE_API_KEY|GOOGLE_APPLICATION_CREDENTIALS|HUGGINGFACE_|HF_TOKEN|VOSK_|LOCAL_VOSK_|LOCAL_WHISPER_|WHISPER_CPP_)/;
+	/^(DENTAL_SPEECH_|DENTAL_LOCAL_WHISPER_|DENTAL_VOSK_|GROQ_|OPENAI_|DEEPGRAM_|ASSEMBLYAI_|CLOUDFLARE_|AZURE_SPEECH_|GOOGLE_API_|GEMINI_|GOOGLE_APPLICATION_CREDENTIALS|HUGGINGFACE_|HF_TOKEN|VOSK_|LOCAL_VOSK_|LOCAL_WHISPER_|WHISPER_CPP_)/;
 
 describe("getSpeechGatewayStatus", () => {
-	let originalEnv: NodeJS.ProcessEnv;
-
 	beforeEach(() => {
-		originalEnv = process.env;
-		process.env = { ...originalEnv };
 		for (const name of Object.keys(process.env)) {
 			if (SPEECH_ENV_PATTERN.test(name)) delete process.env[name];
 		}
 	});
 
 	afterEach(() => {
-		process.env = originalEnv;
+		for (const name of Object.keys(process.env)) {
+			if (SPEECH_ENV_PATTERN.test(name)) delete process.env[name];
+		}
 	});
 
 	it("should return default state when no environment variables are set", () => {

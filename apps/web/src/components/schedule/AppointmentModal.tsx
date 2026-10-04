@@ -21,6 +21,7 @@ import { AppointmentModalHeader } from "./AppointmentModalHeader";
 import { AppointmentModalPatientSection } from "./AppointmentModalPatientSection";
 import { AppointmentModalDoctorChairSection } from "./AppointmentModalDoctorChairSection";
 import { AppointmentModalStatusSection } from "./AppointmentModalStatusSection";
+import { AppointmentModalLabSection } from "./AppointmentModalLabSection";
 import type { AppointmentModalProps } from "./AppointmentModalTypes";
 import { useAppointmentModalState } from "./useAppointmentModalState";
 
@@ -339,6 +340,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
               comment={comment}
               handleApplyRefusalReason={handleApplyRefusalReason}
               handleOpenWaitlistForThisSlot={handleOpenWaitlistForThisSlot}
+            />
+
+            {/* Laboratory Orders (ЗТЛ) Section */}
+            <AppointmentModalLabSection
+              appointment={appointment}
+              activeLabOrders={activeLabOrders}
+              startsAtLocal={startsAtLocal}
+              setStartsAtLocal={setStartsAtLocal}
+              setEndsAtLocal={setEndsAtLocal}
+              onClose={onClose}
             />
 
             {/* Reason */}

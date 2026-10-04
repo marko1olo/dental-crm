@@ -44,6 +44,7 @@ export interface RadiologyModuleProps {
 		id?: string | null | undefined;
 		fullName?: string | null | undefined;
 		birthDate?: string | null | undefined;
+		gender?: string | null | undefined;
 		phone?: string | null | undefined;
 		cardNumber?: string | null | undefined;
 		medicalCardNumber?: string | null | undefined;
@@ -178,10 +179,10 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						onClick={() => setShowTactileSearchModal(true)}
 						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
 						data-testid="btn-open-tactile-matrix-modal"
-						title="Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19)"
+						title="Тактильная матрица поиска снимков по датам и аппаратам"
 					>
 						<Filter className="w-3.5 h-3.5" />
-						<span>Матрица поиска (Снимок 19)</span>
+						<span>Матрица поиска</span>
 					</button>
 
 					<button
@@ -228,7 +229,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						onClick={() => setShowConsultationModal(true)}
 						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[#00C853] hover:text-[#00C853] transition-colors"
 						data-testid="btn-open-consultation-split"
-						title="Открыть сплит-экран консультации и библиотеку 8 дисциплин (EzDent-i)"
+						title="Открыть сплит-экран консультации и библиотеку 8 дисциплин"
 					>
 						<SplitSquareHorizontal className="w-3.5 h-3.5 text-[#00C853]" />
 						<span>Консультация (Сплит)</span>
@@ -239,7 +240,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						onClick={() => setShowReportStudioModal(true)}
 						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-emerald-600 hover:text-emerald-600 transition-colors"
 						data-testid="btn-open-report-studio"
-						title="Конструктор отчетов и печать листа А4 / пленки (EzDent-i Отчет)"
+						title="Конструктор отчетов и печать листа А4 / пленки"
 					>
 						<Printer className="w-3.5 h-3.5 text-emerald-600" />
 						<span>Отчет и печать</span>
@@ -250,10 +251,10 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						onClick={() => setShowRvgCaptureModal(true)}
 						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors"
 						data-testid="btn-open-rvg-capture"
-						title="Прямой захват снимка с датчика визиографа"
+						title="Прямой захват снимка с датчика"
 					>
 						<Camera className="w-3.5 h-3.5" />
-						<span>Захват RVG</span>
+						<span>Снимок с датчика</span>
 					</button>
 
 					<button
@@ -411,12 +412,12 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							<div>
 								<div className="flex items-center justify-between mb-2">
 									<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-										Визиография & 2D DICOM
+										Прицельные снимки & 2D
 									</span>
 									<Layers className="w-4 h-4 text-emerald-500" />
 								</div>
 								<h4 className="text-sm font-bold text-[var(--ink)] mb-1">
-									Прицельные снимки RVG
+									Прицельные снимки
 								</h4>
 								<p className="text-xs text-[var(--muted)] mb-3 leading-relaxed">
 									Просмотр снимков за &lt;50мс, аппаратные фильтры контрастности, калиброванная линейка и 1-кликовая фиксация рентген-нормы в медицинскую карту.
@@ -441,11 +442,11 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 								data-testid="btn-open-sensor-study-viewer"
 							>
 								<Sparkles className="w-3.5 h-3.5 text-teal-600" />
-								<span>2D Сенсор EzDent-i</span>
+								<span>2D Рентген-просмотрщик</span>
 							</button>
 						</div>
 
-						{/* Card 4: EzDent-i Consultation & Pathology Split */}
+						{/* Card 4: Clinical Consultation & Pathology Split */}
 						<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between">
 							<div>
 								<div className="flex items-center justify-between mb-2">
@@ -458,7 +459,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 									Сплит-сравнение и 8 дисциплин
 								</h4>
 								<p className="text-xs text-[var(--muted)] mb-3 leading-relaxed">
-									Синхронное сопоставление снимков До/После, векторные стрелки и каталог патологий по 8 стоматологическим дисциплинам EzDent-i для презентации плана лечения.
+									Синхронное сопоставление снимков До/После, векторные стрелки и клинический каталог патологий по 8 стоматологическим дисциплинам для презентации плана лечения.
 								</p>
 							</div>
 							<button
@@ -515,7 +516,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						setSelectedStudyForViewer(null);
 					}}
 					imageSrc={selectedStudyForViewer?.previewUrl || undefined}
-					title={selectedStudyForViewer?.title || "Дентальный снимок (RVG / DICOM)"}
+					title={selectedStudyForViewer?.title || "Дентальный снимок"}
 					patientName={selectedStudyForViewer?.patientFullName || patientName}
 					patientId={selectedStudyForViewer?.patientId || patient?.id || undefined}
 					toothFdiCode={selectedStudyForViewer?.toothCode || undefined}
@@ -572,7 +573,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					patientName={patientName}
 					patientCardNumber={cardNum}
 					patientAge={patient?.birthDate ? undefined : "58Y"}
-					patientGender="Жен."
+					patientGender={patient?.gender === "female" ? "Жен." : "Муж."}
 					clinicName={clinicName || "Стоматологическая клиника DENTE"}
 				/>
 			)}
@@ -611,12 +612,29 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 								? convertImagingStudyToRadiologyStudy(selectedStudyForViewer)
 								: undefined
 						}
+						onInsertProtocol={(note) => {
+							applyRadiologyProtocolToForm043({
+								protocol: {
+									id: "consultation-note",
+									titleRu: "Консультация сплит",
+									shortLabel: "Консультация",
+									text: note,
+									category: "norma",
+								},
+								options: {
+									toothFdi: activeToothFdi ? String(activeToothFdi) : undefined,
+									modalityLabel: "Консультация (Сплит)",
+								},
+								showNotification: true,
+								copyToClipboard: true,
+							});
+						}}
 						onClose={() => setShowConsultationModal(false)}
 					/>
 				</div>
 			)}
 
-			{/* Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19) */}
+			{/* Чистый фильтр снимков визиографа по датам и визитам */}
 			<RadiologyPatientSearchModal
 				isOpen={showTactileSearchModal}
 				onClose={() => setShowTactileSearchModal(false)}

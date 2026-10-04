@@ -30,11 +30,11 @@ export function AppointmentStatusBadgeSelector({
 					: "min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs"
 			} font-bold border transition-colors shrink-0 ${
 				displayStatus === "in_treatment"
-					? "bg-teal-500/20 text-teal-900 dark:text-teal-200 border border-teal-500/60 font-black"
+					? "bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 border border-emerald-500/60 font-black"
 					: displayStatus === "confirmed"
-						? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500"
+						? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500"
 						: displayStatus === "arrived"
-							? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500"
+							? "bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500 font-black"
 							: displayStatus === "completed"
 								? "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 								: displayStatus === "cancelled" || displayStatus === "no_show"
@@ -44,7 +44,7 @@ export function AppointmentStatusBadgeSelector({
 			data-testid={`appointment-status-badge-${appointmentId}`}
 		>
 			{displayStatus === "in_treatment" ? (
-				<span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping shrink-0" aria-hidden="true" />
+				<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" aria-hidden="true" />
 			) : displayStatus === "completed" ? (
 				<Check size={compactMicro ? 11 : 12} className="shrink-0 text-current" aria-hidden="true" />
 			) : (

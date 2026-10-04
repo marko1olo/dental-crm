@@ -14,7 +14,7 @@ export function convertImagingStudyToRadiologyStudy(
 
 	let modality: RadiologyModality = "intraoral_rvg";
 	let studyType: DentalRadiologyStudyType = "intraoral_radiovisiography";
-	let modalityLabel = "Прицельный RVG";
+	let modalityLabel = "Прицельный снимок";
 	let typicalDoseMicrosv = 3.0;
 
 	if (isCbct) {

@@ -268,7 +268,7 @@ export function QuickAddDoctorModal({
 								Добавить врача в расписание
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
-								Быстрое добавление врача и закрепление кресла (StomX / DentalPRO parity)
+								Быстрое добавление врача и закрепление кресла
 							</p>
 						</div>
 					</div>

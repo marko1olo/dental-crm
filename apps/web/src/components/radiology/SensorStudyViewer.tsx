@@ -43,6 +43,7 @@ import {
 	resolveCalibratedPixelSpacing,
 	apply2DSpatialConvolution,
 	calculateCurvedCanalLengthMm,
+	calculateLesionAreaGaussMm2,
 	calculateViewerAngleDegrees,
 	formatHumanStudyDate,
 	formatPatientAge,
@@ -53,10 +54,12 @@ import {
 	type ViewerPoint2D,
 	type ViewerRulerMeasurement,
 	type ViewerCurvedMeasurement,
+	type ViewerAreaMeasurement,
 } from "./dentalViewerMath.js";
 import {
 	drawRuler,
 	drawCurvedCanal,
+	drawLesionContour,
 	drawMagnifierOverlay,
 	renderClinicalExportBlob,
 } from "./dentalViewerCanvasDraw.js";
@@ -178,7 +181,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	const [zoom, setZoom] = useState<number>(1.0);
 	const [panX, setPanX] = useState<number>(0);
 	const [panY, setPanY] = useState<number>(0);
-	const [activeTool, setActiveTool] = useState<"pan" | "ruler" | "curved_canal" | "magnifier">("pan");
+	const [activeTool, setActiveTool] = useState<"pan" | "ruler" | "curved_canal" | "magnifier" | "lesion_contour">("pan");
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [showConsultationSplit, setShowConsultationSplit] = useState<boolean>(false);
 
@@ -200,6 +203,10 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 	// Multi-point curved root canal apex caliper (Working Length)
 	const [curvedCanals, setCurvedCanals] = useState<ViewerCurvedMeasurement[]>([]);
 	const [draftCurvedPoints, setDraftCurvedPoints] = useState<ViewerPoint2D[]>([]);
+
+	// Periapical lesion contour polygons (Gauss Shoelace area mm²)
+	const [lesionContours, setLesionContours] = useState<ViewerAreaMeasurement[]>([]);
+	const [draftLesionPoints, setDraftLesionPoints] = useState<ViewerPoint2D[]>([]);
 
 	// 2.5x Loupe / Magnifier overlay position (screen coordinates)
 	const [magnifierPos, setMagnifierPos] = useState<ViewerPoint2D | null>(null);
@@ -342,6 +349,17 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		if (draftCurvedPoints.length > 0) {
 			const draftLengthMm = calculateCurvedCanalLengthMm(draftCurvedPoints, calibratedMmPerPx);
 			drawCurvedCanal(ctx, draftCurvedPoints, draftLengthMm, `WL: ${draftLengthMm.toFixed(1)} мм (в процессе)`, "#f59e0b", true);
+		}
+
+		// Draw completed periapical lesion contours
+		for (const lesion of lesionContours) {
+			drawLesionContour(ctx, lesion.points, lesion.areaMm2, lesion.perimeterMm, lesion.label, lesion.color);
+		}
+
+		// Draw draft lesion contour in progress
+		if (draftLesionPoints.length > 0) {
+			const draftArea = calculateLesionAreaGaussMm2(draftLesionPoints, calibratedMmPerPx);
+			drawLesionContour(ctx, draftLesionPoints, draftArea, undefined, draftArea > 0 ? `Очаг: ${draftArea.toFixed(1)} мм²` : "Очаг...", "#f59e0b", true);
 		}
 
 		ctx.restore();
@@ -643,6 +661,8 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 			}
 		} else if (activeTool === "curved_canal") {
 			setDraftCurvedPoints((prev) => [...prev, pt]);
+		} else if (activeTool === "lesion_contour") {
+			setDraftLesionPoints((prev) => [...prev, pt]);
 		}
 	};
 
@@ -666,13 +686,35 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 		showToast(`Эндо-канал #${canalIdx}: рабочая длина ${lengthMm.toFixed(1)} мм зафиксирована`, "success");
 	}, [draftCurvedPoints, calibratedMmPerPx, curvedCanals.length]);
 
+	// Finalizes periapical lesion / cyst contour polygon measurement (Gauss Shoelace)
+	const handleFinishLesionContour = useCallback(() => {
+		if (draftLesionPoints.length < 3) {
+			setDraftLesionPoints([]);
+			return;
+		}
+		const areaMm2 = calculateLesionAreaGaussMm2(draftLesionPoints, calibratedMmPerPx);
+		const lesionIdx = lesionContours.length + 1;
+		const newLesion: ViewerAreaMeasurement = {
+			id: `lesion-${Date.now()}`,
+			points: draftLesionPoints,
+			areaMm2,
+			label: `Очаг #${lesionIdx} (${areaMm2.toFixed(1)} мм²)`,
+			color: "#f59e0b",
+		};
+		setLesionContours((prev) => [...prev, newLesion]);
+		setDraftLesionPoints([]);
+		showToast(`Очаг деструкции #${lesionIdx}: площадь ${areaMm2.toFixed(1)} мм² зафиксирована`, "success");
+	}, [draftLesionPoints, calibratedMmPerPx, lesionContours.length]);
+
 	// Clear all measurements
 	const handleClearMeasurements = () => {
 		setMeasurements([]);
 		setCurvedCanals([]);
+		setLesionContours([]);
 		setDraftStart(null);
 		setDraftCurrent(null);
 		setDraftCurvedPoints([]);
+		setDraftLesionPoints([]);
 		showToast("Измерения снимка очищены", "info");
 	};
 
@@ -749,7 +791,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 				{/* Left: Brand Badge & Interactive Tools */}
 				<div className="flex items-center gap-2">
 					<span className="px-2 py-0.5 rounded font-black text-[11px] bg-[#00C853] text-[#022c15] uppercase tracking-wider">
-						EzDent-i 2D
+						DENTE 2D
 					</span>
 
 					{/* Tool Toggle: Pan / Ruler / Curved Canal / Loupe */}
@@ -797,10 +839,22 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 								activeTool === "magnifier" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
 							}`}
 							data-testid="btn-tool-magnifier"
-							title="Интерактивная 2.5x лупа EzDent-i для поиска апексов и трещин"
+							title="Интерактивная 2.5x лупа для поиска микротрещин и апексов"
 						>
 							<Search size={12} />
 							<span>Лупа 2.5x</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTool("lesion_contour")}
+							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+								activeTool === "lesion_contour" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
+							}`}
+							data-testid="btn-tool-lesion"
+							title="Контур периапикального очага / кисты (площадь по формуле Гаусса в мм²)"
+						>
+							<Sparkles size={12} />
+							<span>Очаг (мм²)</span>
 						</button>
 					</div>
 
@@ -817,8 +871,21 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						</button>
 					)}
 
+					{/* Lesion contour in progress confirmation button */}
+					{activeTool === "lesion_contour" && draftLesionPoints.length >= 3 && (
+						<button
+							type="button"
+							onClick={handleFinishLesionContour}
+							className="px-2 py-0.5 rounded bg-[#f59e0b] hover:bg-[#d97706] text-black text-[11px] font-bold cursor-pointer transition-colors"
+							title="Зафиксировать площадь очага деструкции (мм²)"
+							data-testid="btn-finish-lesion"
+						>
+							Готово ({draftLesionPoints.length} тчк, {calculateLesionAreaGaussMm2(draftLesionPoints, calibratedMmPerPx).toFixed(1)} мм²)
+						</button>
+					)}
+
 					{/* Clear measurements if any */}
-					{(measurements.length > 0 || curvedCanals.length > 0) && (
+					{(measurements.length > 0 || curvedCanals.length > 0 || lesionContours.length > 0) && (
 						<button
 							type="button"
 							onClick={handleClearMeasurements}

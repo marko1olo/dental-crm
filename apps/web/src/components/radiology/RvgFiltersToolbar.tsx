@@ -6,6 +6,7 @@ import {
 	ChevronUp,
 	Contrast,
 	Eye,
+	Layers,
 	RotateCcw,
 	RotateCw,
 	Ruler,
@@ -21,6 +22,7 @@ export interface RvgFilterValues {
 	clahe: number; // 0..100 (Contrast Limited Adaptive Histogram Equalization)
 	invert: boolean;
 	denoise: boolean;
+	emboss?: boolean;
 }
 
 export interface RvgFilterPreset {
@@ -120,6 +122,23 @@ export const RVG_FILTER_PRESETS: readonly RvgFilterPreset[] = [
 			clahe: 50,
 			invert: true,
 			denoise: false,
+			emboss: false,
+		},
+	},
+	{
+		id: "emboss",
+		label: "Рельеф / 3D",
+		description: "45° Emboss тиснение для выявления микротрещин корня и скрытых сколов эмали",
+		iconName: "Layers",
+		values: {
+			brightness: 100,
+			contrast: 120,
+			gamma: 1.0,
+			sharpness: 30,
+			clahe: 40,
+			invert: false,
+			denoise: false,
+			emboss: true,
 		},
 	},
 ];
@@ -132,6 +151,7 @@ export const DEFAULT_RVG_FILTERS: RvgFilterValues = {
 	clahe: 0,
 	invert: false,
 	denoise: false,
+	emboss: false,
 };
 
 export interface RvgFiltersToolbarProps {
@@ -163,7 +183,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 	isMeasuring = false,
 	onRotate,
 }) => {
-	const [showFineTuning, setShowFineTuning] = useState<boolean>(layout === "dock");
+	const [showFineTuning, setShowFineTuning] = useState<boolean>(false);
 
 	const handlePresetClick = (preset: RvgFilterPreset) => {
 		if (disabled) return;
@@ -181,7 +201,7 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 		});
 	};
 
-	const handleToggle = (key: "invert" | "denoise") => {
+	const handleToggle = (key: "invert" | "denoise" | "emboss") => {
 		if (disabled) return;
 		onChange({
 			...filters,
@@ -197,13 +217,15 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 		}
 	};
 
-	// Strict 1-Row Hick's Law Toolbar (32-36px: Invert, Contrast, Sharpness, Measurement, Rotate, Reset)
+	// Strict 1-Row Hick's Law Toolbar (32-36px: Invert, Contrast, Sharpness, Emboss, Measurement, Rotate, Reset)
 	const render1RowHickToolbar = () => (
 		<div
-			className="rvg-filters-1row-toolbar flex items-center justify-between gap-1.5 p-1 rounded-lg border border-[var(--line,#334155)] bg-[var(--paper-soft,#1e293b)] h-9 min-h-[34px] max-h-[36px] overflow-x-auto whitespace-nowrap text-xs"
+			className={`rvg-filters-1row-toolbar flex items-center gap-1.5 p-1.5 rounded-lg border border-[var(--line,#334155)] bg-[var(--paper-soft,#1e293b)] text-xs ${
+				layout === "dock" ? "flex-wrap justify-start" : "justify-between h-9 min-h-[34px] max-h-[36px] overflow-x-auto whitespace-nowrap"
+			}`}
 			data-testid="rvg-filters-1row-toolbar"
 		>
-			<div className="flex items-center gap-1.5 shrink-0">
+			<div className={`flex items-center gap-1.5 ${layout === "dock" ? "flex-wrap" : "shrink-0"}`}>
 				{/* 1. Инверсия (Негатив) */}
 				<button
 					type="button"
@@ -258,6 +280,23 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 				>
 					<Sliders className="w-3.5 h-3.5" />
 					<span>Четкость {filters.sharpness > 0 ? `${filters.sharpness}%` : ""}</span>
+				</button>
+
+				{/* 4. Псевдорельеф 3D (Emboss 45°) */}
+				<button
+					type="button"
+					onClick={() => handleToggle("emboss")}
+					disabled={disabled}
+					className={`px-2 py-1 h-7 min-h-[28px] max-h-[30px] rounded text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+						filters.emboss
+							? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm"
+							: "bg-[var(--paper-strong,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+					}`}
+					title="Псевдорельеф 45° (Emboss) для микротрещин корня и эмали"
+					data-testid="rvg-toggle-emboss-btn"
+				>
+					<Layers className="w-3.5 h-3.5" />
+					<span>Рельеф</span>
 				</button>
 
 				{/* 4. Измерение (Линейка) */}
@@ -377,9 +416,14 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 										disabled={disabled}
 										className={`rvg-preset-chip flex items-center justify-center gap-1.5 h-8 min-h-[32px] px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 											isSelected
-												? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm"
-												: "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:bg-[var(--line,#334155)]"
+												? "!bg-[#0d9488] !border-[#14b8a6] !text-white shadow-sm"
+												: "!bg-[#1e293b] !border-[#334155] !text-slate-200 hover:!bg-[#334155]"
 										}`}
+										style={{
+											backgroundColor: isSelected ? "#0d9488" : "#1e293b",
+											color: isSelected ? "#ffffff" : "#e2e8f0",
+											borderColor: isSelected ? "#14b8a6" : "#334155",
+										}}
 										title={preset.description}
 										data-testid={`rvg-preset-${preset.id}`}
 									>
@@ -532,6 +576,21 @@ export const RvgFiltersToolbar: React.FC<RvgFiltersToolbarProps> = ({
 							>
 								<Activity className="w-3.5 h-3.5" />
 								<span>Шумоподавление</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => handleToggle("emboss")}
+								disabled={disabled}
+								className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+									filters.emboss
+										? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm"
+										: "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"
+								}`}
+								data-testid="rvg-toggle-emboss-btn-dock"
+							>
+								<Layers className="w-3.5 h-3.5" />
+								<span>Рельеф (Emboss 3D)</span>
 							</button>
 						</div>
 					</div>

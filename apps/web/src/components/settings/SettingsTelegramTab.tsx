@@ -23,6 +23,7 @@ import type { ChangeEvent, KeyboardEvent } from "react";
 import React, { useState } from "react";
 import { EmptyState } from "../EmptyState";
 import { PatientCabinetModal } from "../portal/patientCabinet/PatientCabinetModal";
+import { TelegramBotStudioSection } from "./telegram/TelegramBotStudioSection";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -360,6 +361,8 @@ export function SettingsTelegramTab({
 	const typedTelegramFeaturePlan = props.telegramFeaturePlan as any | null;
 	return (
 		<section className="telegram-settings" aria-label="Telegram-бот клиники">
+			<TelegramBotStudioSection parentProps={props} />
+
 			<div className="import-copy">
 				<Bot aria-hidden="true" />
 				<div>

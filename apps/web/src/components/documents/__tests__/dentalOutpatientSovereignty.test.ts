@@ -43,11 +43,16 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 
 	test("2. DocumentsView: Форма 025/у исключена из каталога создания документов в пользу 043/у", () => {
 		const docViewPath = path.join(webSrcDir, "DocumentsView.tsx");
+		const navTabsPath = path.join(
+			webSrcDir,
+			"components/documents/DocumentNavTabs.tsx",
+		);
 		const docViewContent = fs.readFileSync(docViewPath, "utf-8");
+		const navTabsContent = fs.readFileSync(navTabsPath, "utf-8");
 
 		// clinicalKinds не должен содержать outpatient_medical_card_025u
-		const clinicalKindsMatch = docViewContent.match(
-			/const clinicalKinds = useMemo\(\s*\(\) =>\s*new Set<DocumentKind>\(\[([\s\S]*?)\]\),/m,
+		const clinicalKindsMatch = navTabsContent.match(
+			/clinical:\s*new Set<DocumentKind>\(\[([\s\S]*?)\]\),/m,
 		);
 		assert.ok(clinicalKindsMatch && clinicalKindsMatch[1], "clinicalKinds должен быть определен");
 		const clinicalKindsStr = clinicalKindsMatch[1]!;
@@ -57,8 +62,8 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 		);
 
 		// certificatesSanpinKinds не должен содержать outpatient_medical_card_025u
-		const certKindsMatch = docViewContent.match(
-			/const certificatesSanpinKinds = useMemo\(\s*\(\) =>\s*new Set<DocumentKind>\(\[([\s\S]*?)\]\),/m,
+		const certKindsMatch = navTabsContent.match(
+			/certificates_sanpin:\s*new Set<DocumentKind>\(\[([\s\S]*?)\]\),/m,
 		);
 		assert.ok(certKindsMatch && certKindsMatch[1], "certificatesSanpinKinds должен быть определен");
 		const certKindsStr = certKindsMatch[1]!;
@@ -111,14 +116,20 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 			webSrcDir,
 			"components/schedule/AppointmentCard.tsx",
 		);
+		const hookPath = path.join(
+			webSrcDir,
+			"components/schedule/useAppointmentCardState.ts",
+		);
 		const cardContent = fs.readFileSync(cardPath, "utf-8");
+		const hookContent = fs.readFileSync(hookPath, "utf-8");
+		const combinedContent = cardContent + "\n" + hookContent;
 
 		// Ошибка "Статус приема заблокирован: по этому приему открыт активный визит" в handleQuickStatusChange устранена
 		assert.ok(
-			!cardContent.includes(
+			!combinedContent.includes(
 				'showToast(\n\t\t\t\t\t"Статус приема заблокирован: по этому приему открыт активный визит"',
 			) &&
-			!cardContent.includes(
+			!combinedContent.includes(
 				'showToast("Статус приема заблокирован: по этому приему открыт активный визит", "error")',
 			),
 			"Грубая блокирующая ошибка в handleQuickStatusChange устранена",
@@ -126,11 +137,11 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 
 		// Вместо ошибки - мягкий переход в активный визит для сохранения протокола
 		assert.ok(
-			cardContent.includes("Переход в активный визит для сохранения протокола и завершения приёма"),
+			combinedContent.includes("Переход в активный визит для сохранения протокола и завершения приёма"),
 			"Врачу показывается информирование о переходе в активный визит для штатного завершения",
 		);
 		assert.ok(
-			cardContent.includes('useAppStore.getState().setCurrentView("visit")'),
+			combinedContent.includes('useAppStore.getState().setCurrentView("visit")'),
 			"Осуществляется переход во вью визита в ЭМК",
 		);
 	});

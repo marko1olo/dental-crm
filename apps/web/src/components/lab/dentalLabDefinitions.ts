@@ -27,6 +27,17 @@ export {
 	type DentalLabOrderData,
 };
 
+export {
+	CANONICAL_LAB_WORK_TYPES,
+	LAB_WORK_TYPES_BY_ID,
+	getLabWorkTypeById,
+	type LabWorkTypeCatalogItem,
+	VITA_CLASSICAL_PLUS_BLEACH_PALETTE,
+	VITA_SHADE_HEX_MAP,
+	getVitaShadeHex,
+	type VitaShadePaletteItem,
+} from "@dental/shared";
+
 
 // ─── 1. ВИДЫ КОНСТРУКЦИЙ ЗТЛ ────────────────────────────────────────────────
 

@@ -42,3 +42,4 @@ export {
 	generateProstheticWarrantyPassport,
 } from "./labOrders.js";
 export * from "./vitaPalette.js";
+export * from "./labScheduleIntegration.js";
