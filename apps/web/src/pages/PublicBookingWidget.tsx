@@ -136,12 +136,12 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	}
 
 	return (
-		<div className="PublicBookingWidget-root min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-3 sm:p-6 md:p-8">
+		<div className="PublicBookingWidget-root min-h-screen relative overflow-hidden flex flex-col items-center justify-start sm:justify-center p-0 sm:p-6 md:p-8">
 			{/* Shared Atmospheric Art Background Layer (Mandates 8p, 8n) */}
 			<AuthArtBackground overlayAlpha={0.4} />
 
 			{/* Верхний переключатель режимов (Запись / Личный кабинет) */}
-			<div className="w-full max-w-2xl mb-4 flex items-center justify-between PublicBookingWidget-glass-nav p-1.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80">
+			<div className="w-full max-w-2xl mb-0 sm:mb-4 flex items-center justify-between PublicBookingWidget-glass-nav p-1 rounded-none sm:rounded-2xl shadow-sm border-x-0 border-t-0 sm:border border-slate-200/80 dark:border-slate-800/80">
 				<button
 					type="button"
 					onClick={() => setActiveMode("booking")}

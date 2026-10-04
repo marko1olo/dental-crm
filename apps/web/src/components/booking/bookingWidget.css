@@ -1616,6 +1616,168 @@
 }
 
 /* ==========================================================================
+   Apple Store HIG Stepper Bar & Natural Thumb Zone Floating Bottom Bar
+   ========================================================================== */
+
+.dbw-stepper-bar {
+	width: 100%;
+	margin-bottom: 20px;
+	padding: 6px;
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-md);
+}
+
+.dbw-stepper-track {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+}
+
+.dbw-stepper-step {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: transparent;
+	border: none;
+	border-radius: var(--dbw-radius-sm);
+	cursor: pointer;
+	color: var(--dbw-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	min-height: 36px;
+}
+
+.dbw-stepper-step.active {
+	color: var(--dbw-primary);
+	font-weight: 700;
+}
+
+.dbw-stepper-num {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	font-size: 0.75rem;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dbw-stepper-line {
+	flex: 1;
+	height: 2px;
+	background: var(--dbw-border);
+	min-width: 6px;
+}
+
+.dbw-step-card {
+	background: var(--dbw-bg);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-lg);
+	padding: 18px 16px;
+	margin-bottom: 16px;
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+/* Floating Bottom Bar (Natural Thumb Zone) */
+.dbw-floating-bottom-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 100;
+	background: rgba(255, 255, 255, 0.95);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--dbw-border);
+	padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+	transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .dbw-floating-bottom-bar,
+.dark .dbw-floating-bottom-bar {
+	background: rgba(15, 23, 42, 0.95);
+	border-top-color: var(--dbw-border);
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+}
+
+@media (min-width: 641px) {
+	.dbw-floating-bottom-bar {
+		position: sticky;
+		margin: 20px -20px -24px -20px;
+		border-radius: 0 0 var(--dbw-radius-lg) var(--dbw-radius-lg);
+	}
+}
+
+.dbw-floating-bar-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	max-width: 640px;
+	margin: 0 auto;
+}
+
+.dbw-floating-bar-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.dbw-floating-summary-service {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--dbw-text-main);
+}
+
+.dbw-floating-summary-meta {
+	font-size: 0.75rem;
+	color: var(--dbw-text-muted);
+}
+
+.dbw-floating-cta-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	background: var(--dbw-primary);
+	color: #ffffff;
+	border: none;
+	border-radius: var(--dbw-radius-md);
+	padding: 12px 20px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	min-height: 48px;
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	touch-action: manipulation;
+}
+
+.dbw-floating-cta-btn:hover {
+	background: var(--dbw-primary-hover);
+	transform: translateY(-1px);
+}
+
+.dbw-floating-cta-btn:active {
+	transform: scale(0.98);
+}
+
+.dbw-floating-cta-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* ==========================================================================
    Responsive queries (Strict 390px Mobile Viewport & TG Mini App, Mandate 8p)
    Header height budget <= 110px strictly observed on mobile
    ========================================================================== */
@@ -1625,7 +1787,10 @@
 		border-radius: 0;
 		border: none;
 		box-shadow: none;
-		max-width: 100%;
+		max-width: 100vw;
+		width: 100%;
+		overflow-x: clip;
+		margin: 0;
 	}
 
 	.dbw-header {
@@ -1656,7 +1821,35 @@
 	}
 
 	.dbw-body {
-		padding: 16px 12px;
+		padding: 12px 10px calc(88px + env(safe-area-inset-bottom)) 10px;
+	}
+
+	.dbw-step-card {
+		padding: 14px 12px;
+		margin-bottom: 12px;
+		border-radius: 16px;
+	}
+
+	.dbw-stepper-bar {
+		margin-bottom: 12px;
+		padding: 4px;
+	}
+
+	.dbw-stepper-title {
+		display: none;
+	}
+
+	.dbw-stepper-step {
+		padding: 4px 6px;
+	}
+
+	.dbw-floating-bottom-bar {
+		margin: 16px -10px calc(-12px - env(safe-area-inset-bottom)) -10px;
+		padding: 10px 14px calc(10px + env(safe-area-inset-bottom)) 14px;
+	}
+
+	.dbw-calendar-container.is-compact {
+		display: none;
 	}
 
 	.dbw-categories-grid {
@@ -1691,8 +1884,10 @@
 	}
 
 	.dbw-day-ribbon-btn {
-		flex: 0 0 68px;
-		min-height: 70px;
+		flex: 0 0 70px;
+		min-width: 70px;
+		min-height: 72px;
+		padding: 6px 4px;
 	}
 
 	.dbw-pass-body {

@@ -11,6 +11,7 @@ export interface BookingDoctorData {
 	avatarUrl?: string | undefined;
 	categoryIds: string[];
 	bio?: string | undefined;
+	nextAvailableSlot?: string | undefined;
 	workDays?: number[] | undefined; // 0 = Sun, 1 = Mon, ..., 6 = Sat
 	workHours?: { startHour: number; endHour: number } | undefined;
 }
@@ -29,6 +30,7 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 	className = "",
 }) => {
 	const initial = doctor.fullName.replace("Д-р ", "").trim()[0] || "В";
+	const nextSlot = doctor.nextAvailableSlot || "Ближайший слот: Сегодня 11:30";
 
 	return (
 		<button
@@ -63,13 +65,16 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 					<div className="dbw-doctor-specialties min-w-0 break-words text-sm font-medium text-slate-600 dark:text-slate-300">
 						{doctor.specialties.join(" • ")}
 					</div>
-					<div className="dbw-doctor-badges flex-wrap">
+					<div className="dbw-doctor-badges flex-wrap gap-1.5">
 						<span className="dbw-badge-rating text-xs font-bold">
 							<Star size={13} fill="#b45309" aria-hidden="true" />{" "}
 							{doctor.rating.toFixed(2)}
 						</span>
 						<span className="dbw-badge-exp text-xs font-semibold">
 							Стаж {doctor.experienceYears} лет
+						</span>
+						<span className="dbw-badge-slot text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-1.5 py-0.5 rounded border border-teal-500/20">
+							{nextSlot}
 						</span>
 						<span className="text-xs font-medium text-slate-500 dark:text-slate-400">
 							({doctor.reviewsCount} отзывов)
