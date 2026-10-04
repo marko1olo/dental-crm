@@ -55,19 +55,9 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 
 	return (
 		<>
-			{/* Панель выбора режима и вкладок (1 строка 32-36px, Hick's Law) */}
-			<div
-				className="consent-toolbar-row"
-				style={{
-					height: "36px",
-					minHeight: "36px",
-					maxHeight: "36px",
-					padding: "0 1rem",
-					flexWrap: "nowrap",
-					overflow: "hidden",
-				}}
-			>
-				<div className="consent-mode-segmented" style={{ height: "28px" }}>
+			{/* Панель выбора режима и вкладок (1 строка 32-36px на ПК, адаптивный скролл на мобиле) */}
+			<div className="consent-toolbar-row">
+				<div className="consent-mode-segmented">
 					<button
 						type="button"
 						className={`consent-mode-btn ${activeMode === "packages" ? "active" : ""}`}
@@ -97,15 +87,6 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 
 				<nav
 					className="consent-tabs-scroll min-w-0"
-					style={{
-						height: "36px",
-						padding: "0",
-						display: "flex",
-						alignItems: "center",
-						overflowX: "auto",
-						borderBottom: "none",
-						flexWrap: "nowrap",
-					}}
 					aria-label={activeMode === "packages" ? "Пакеты согласий" : "Шаблоны согласий"}
 				>
 					{activeMode === "packages"

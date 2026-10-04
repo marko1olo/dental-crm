@@ -598,52 +598,334 @@ html.dark .consent-document-sheet .consent-document-subtitle {
 	outline: 2px solid var(--focus-ring);
 }
 
-@media (max-width: 640px) {
+/* ==========================================================================
+   TOUCH SIGNATURE PAD & CHAIRSIDE ERGONOMICS (APPLE HIG 390x844)
+   ========================================================================== */
+
+.consent-mobile-drag-handle {
+	display: none;
+}
+
+.consent-ios-toggle-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	min-height: 52px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s ease;
+}
+
+.consent-ios-toggle-card:active {
+	background: var(--paper);
+	transform: scale(0.99);
+}
+
+.consent-ios-toggle-card.active {
+	border-color: var(--teal);
+	background: color-mix(in srgb, var(--teal-surface) 60%, var(--paper));
+}
+
+.consent-ios-checkbox {
+	width: 22px;
+	height: 22px;
+	min-width: 22px;
+	min-height: 22px;
+	margin-top: 2px;
+	accent-color: var(--teal, #0d9488);
+	cursor: pointer;
+}
+
+.consent-touch-signature-box {
+	position: relative;
+	width: 100%;
+	min-height: 190px;
+	height: 190px;
+	background: var(--paper-soft);
+	border: 1.5px dashed var(--line-strong, var(--teal));
+	border-radius: 16px;
+	touch-action: none;
+	user-select: none;
+	overflow: hidden;
+	box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.consent-touch-signature-svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+	cursor: crosshair;
+}
+
+.consent-signature-clear-btn {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 10;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	min-height: 36px;
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--paper) 90%, transparent);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	backdrop-filter: blur(8px);
+	transition: all 0.15s ease;
+}
+
+.consent-signature-clear-btn:hover {
+	color: var(--ink);
+	border-color: var(--line-strong);
+	background: var(--paper);
+}
+
+.consent-signature-clear-btn:active {
+	transform: scale(0.96);
+}
+
+/* Floating Bottom Bar (Natural Thumb Zone CTA) */
+.consent-floating-bottom-bar {
+	position: sticky;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.consent-mobile-primary-cta {
+	width: 100%;
+	min-height: 52px;
+	height: 52px;
+	border-radius: 14px;
+	background: var(--emerald, #059669);
+	color: #ffffff;
+	font-size: 16px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+	transition: all 0.15s ease;
+}
+
+.consent-mobile-primary-cta:active:not(:disabled) {
+	transform: scale(0.98);
+	filter: brightness(0.95);
+}
+
+.consent-mobile-primary-cta:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+/* ==========================================================================
+   MOBILE FULL-SCREEN BOTTOM SHEET (APPLE HIG <= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
 	.consent-modal-overlay {
-		padding: 6px;
+		padding: 0;
+		align-items: flex-end;
+		justify-content: stretch;
+		background: rgba(15, 23, 42, 0.7);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		overflow: hidden;
 	}
+
 	.consent-modal-container {
-		max-height: 98vh;
-		height: 98vh;
+		width: 100vw;
+		max-width: 100vw;
+		min-width: 100vw;
+		height: 94dvh;
+		max-height: 94dvh;
+		border-radius: 24px 24px 0 0;
+		border-left: none;
+		border-right: none;
+		border-bottom: none;
+		margin: 0;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+		animation: consentSheetSlideUp 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	@keyframes consentSheetSlideUp {
+		from {
+			transform: translateY(100%);
+		}
+		to {
+			transform: translateY(0);
+		}
+	}
+
+	.consent-mobile-drag-handle {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding-top: 10px;
+		padding-bottom: 6px;
+		width: 100%;
+		cursor: grab;
+	}
+
+	.consent-mobile-drag-handle-bar {
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--line-strong, rgba(148, 163, 184, 0.5));
+	}
+
+	.consent-header {
+		padding: 8px 16px 12px 16px;
+		gap: 0.75rem;
+	}
+
+	.consent-title {
+		font-size: 1.05rem;
+		line-height: 1.25;
+	}
+
+	.consent-close-btn {
+		width: 44px;
+		height: 44px;
+		min-width: 44px;
+		min-height: 44px;
+		border-radius: 50%;
+		background: var(--paper-soft);
+	}
+
+	.consent-modal-body {
+		padding: 12px 16px;
+		gap: 12px;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-y: contain;
+	}
+
+	.consent-touch-signature-box {
+		min-height: 200px;
+		height: 200px;
+	}
+
+	.consent-toolbar-row {
+		display: none; /* На мобильном экран подписи сфокусирован на целевом документе/пакете */
+	}
+
+	.consent-package-banner {
+		padding: 8px 12px;
+		margin-bottom: 4px;
+		gap: 6px;
 		border-radius: 12px;
 	}
-	.consent-header {
-		padding: 10px 14px;
+
+	.consent-package-banner .flex-wrap {
+		display: none; /* Скрываем избыточный десктопный просмотр 4 чипов бланков на телефоне */
 	}
-	.consent-title {
-		font-size: 1rem;
+
+	.consent-package-banner-title {
+		gap: 8px;
 	}
-	.consent-tabs-scroll {
-		padding: 8px 12px;
-	}
-	.consent-modal-body {
-		padding: 12px;
-		gap: 12px;
-	}
+
 	.consent-meta-grid {
-		grid-template-columns: 1fr;
-		padding: 10px;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		padding: 8px 12px;
+		gap: 6px 12px;
+		border-radius: 12px;
+		margin-bottom: 4px;
 	}
-	.consent-method-selector {
-		flex-direction: column;
+
+	.consent-meta-label {
+		font-size: 0.65rem;
 	}
+
+	.consent-meta-value {
+		font-size: 0.8rem;
+	}
+
 	.consent-modal-footer {
-		padding: 10px 14px;
-		flex-direction: column-reverse;
-		align-items: stretch;
-		gap: 8px;
+		display: none; /* На мобиле заменяется на липкий consent-floating-bottom-bar */
 	}
-	.consent-modal-footer > div {
-		width: 100%;
-		display: flex;
-		flex-direction: column-reverse;
-		align-items: stretch;
-		gap: 8px;
-	}
-	.consent-action-btn {
-		width: 100%;
-		min-height: 44px;
-	}
+}
+
+/* DARK MODE HARMONIZATION */
+.consent-touch-signature-svg {
+	color: var(--ink, #0f172a);
+}
+
+.consent-touch-signature-svg path.consent-signature-stroke-path {
+	stroke: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .consent-touch-signature-svg,
+html.dark .consent-touch-signature-svg,
+.dark .consent-touch-signature-svg,
+body.dark-mode .consent-touch-signature-svg {
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .consent-touch-signature-svg path.consent-signature-stroke-path,
+html.dark .consent-touch-signature-svg path.consent-signature-stroke-path,
+.dark .consent-touch-signature-svg path.consent-signature-stroke-path,
+body.dark-mode .consent-touch-signature-svg path.consent-signature-stroke-path {
+	stroke: #f8fafc !important;
+}
+
+[data-theme="dark"] .consent-touch-signature-box,
+html.dark .consent-touch-signature-box,
+.dark .consent-touch-signature-box,
+body.dark-mode .consent-touch-signature-box {
+	background: var(--paper-soft, #1e293b) !important;
+	border-color: var(--line-strong, #334155) !important;
+	box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .consent-ios-toggle-card,
+html.dark .consent-ios-toggle-card,
+.dark .consent-ios-toggle-card,
+body.dark-mode .consent-ios-toggle-card {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .consent-ios-toggle-card.active,
+html.dark .consent-ios-toggle-card.active,
+.dark .consent-ios-toggle-card.active,
+body.dark-mode .consent-ios-toggle-card.active {
+	border-color: var(--teal, #0d9488);
+	background: color-mix(in srgb, var(--teal-surface, #134e4a) 40%, var(--paper, #0f172a));
+}
+
+[data-theme="dark"] .consent-floating-bottom-bar,
+html.dark .consent-floating-bottom-bar,
+.dark .consent-floating-bottom-bar,
+body.dark-mode .consent-floating-bottom-bar {
+	background: color-mix(in srgb, var(--paper-strong, #1e293b) 95%, transparent);
+	border-top-color: var(--line, #334155);
 }
 
 /* ==========================================================================

@@ -619,9 +619,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							</span>
 						</div>
 						<h2 id="consent-modal-title" className="consent-title truncate">
-							{activeMode === "packages"
-								? "Пакет информированных добровольных согласий (ИДС)"
-								: "Информированное добровольное согласие (ИДС)"}
+							{isMobile
+								? (activeMode === "packages" ? "Пакет согласий ИДС (1051н)" : "Согласие на лечение (ИДС)")
+								: (activeMode === "packages"
+									? "Пакет информированных добровольных согласий (ИДС)"
+									: "Информированное добровольное согласие (ИДС)")}
 						</h2>
 					</div>
 					<button

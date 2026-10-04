@@ -157,7 +157,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					onClick={() => setVerificationMethod("tablet_stylus")}
 				>
 					<PenTool size={14} className="shrink-0" />
-					<span className="truncate">Роспись пальцем</span>
+					<span className="whitespace-nowrap">
+						<span className="sm:hidden">Роспись</span>
+						<span className="hidden sm:inline">Роспись пальцем</span>
+					</span>
 				</button>
 
 				<button
@@ -173,7 +176,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					onClick={() => setVerificationMethod("sms_otp")}
 				>
 					<Smartphone size={14} className="shrink-0" />
-					<span className="truncate">Код из СМС</span>
+					<span className="whitespace-nowrap">
+						<span className="sm:hidden">СМС-код</span>
+						<span className="hidden sm:inline">Код из СМС</span>
+					</span>
 				</button>
 
 				<button
@@ -189,7 +195,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					onClick={() => setVerificationMethod("paper_physical")}
 				>
 					<Printer size={14} className="shrink-0" />
-					<span className="truncate">Бумажный бланк</span>
+					<span className="whitespace-nowrap">
+						<span className="sm:hidden">Бумага</span>
+						<span className="hidden sm:inline">Бумажный бланк</span>
+					</span>
 				</button>
 			</div>
 
@@ -315,7 +324,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 											cx={stroke.points[0].x}
 											cy={stroke.points[0].y}
 											r={1.8}
-											fill={stroke.color || strokeColor}
+											fill="currentColor"
 										/>
 									);
 								}
@@ -326,7 +335,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 										key={sIdx}
 										d={d}
 										fill="none"
-										stroke={stroke.color || strokeColor}
+										className="consent-signature-stroke-path"
+										stroke="currentColor"
 										strokeWidth={2.4}
 										strokeLinecap="round"
 										strokeLinejoin="round"

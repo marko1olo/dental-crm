@@ -98,6 +98,7 @@ import {
 	WorkspaceTopbar,
 } from "./workspaceShell";
 import { MobileTabBar } from "./components/layout/MobileTabBar";
+import { InformedConsentModal } from "./components/consents/InformedConsentModal";
 
 const TreatmentPlanModule = lazyWithRetry(() =>
 	import("./components/treatment-plans/TreatmentPlanModule").then((module) => ({
@@ -1109,11 +1110,27 @@ export function App() {
 		},
 	);
 
+	// Mobile Chairside Informed Consent Standalone Launcher (?consent=demo, #consent, #ids)
+	const [isConsentDirectModalOpen, setIsConsentDirectModalOpen] = useState<boolean>(
+		() => {
+			if (typeof window === "undefined") return false;
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			return (
+				search.includes("consent") ||
+				hash.includes("consent") ||
+				hash.includes("ids")
+			);
+		},
+	);
+
 	useEffect(() => {
 		const handleOpenCbct = () => setIsCbctDirectModalOpen(true);
 		const handleOpenTuner = () => setIsCbctTunerOpen(true);
+		const handleOpenConsent = () => setIsConsentDirectModalOpen(true);
 		window.addEventListener("dente:open-cbct-demo", handleOpenCbct);
 		window.addEventListener("dente:open-cbct-tuner", handleOpenTuner);
+		window.addEventListener("dente:open-consent-modal", handleOpenConsent);
 
 		const handleUrlChange = () => {
 			const search = window.location.search || "";
@@ -1130,12 +1147,20 @@ export function App() {
 			) {
 				setIsCbctDirectModalOpen(true);
 			}
+			if (
+				search.includes("consent") ||
+				hash.includes("consent") ||
+				hash.includes("ids")
+			) {
+				setIsConsentDirectModalOpen(true);
+			}
 		};
 		window.addEventListener("popstate", handleUrlChange);
 		window.addEventListener("hashchange", handleUrlChange);
 		return () => {
 			window.removeEventListener("dente:open-cbct-demo", handleOpenCbct);
 			window.removeEventListener("dente:open-cbct-tuner", handleOpenTuner);
+			window.removeEventListener("dente:open-consent-modal", handleOpenConsent);
 			window.removeEventListener("popstate", handleUrlChange);
 			window.removeEventListener("hashchange", handleUrlChange);
 		};
@@ -1434,6 +1459,36 @@ export function App() {
 					autoLoadDemo={true}
 				/>
 			</Suspense>
+		);
+	}
+
+	// MOBILE CHAIRSIDE INFORMED CONSENT STANDALONE LAUNCHER (?consent=demo, #consent, #ids)
+	// Must be rendered at the absolute top for instant chairside finger signing on smartphone/tablet!
+	if (isConsentDirectModalOpen) {
+		return (
+			<InformedConsentModal
+				isOpen={true}
+				onClose={() => {
+					setIsConsentDirectModalOpen(false);
+					const url = new URL(window.location.href);
+					url.searchParams.delete("consent");
+					window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("consent") ? url.hash : ""));
+				}}
+				initialMode="packages"
+				initialPackageKey="PACKAGE_PRIMARY_VISIT"
+				initialVerificationMethod="tablet_stylus"
+				patient={{
+					fullName: "Ковалёв Роман Станиславович",
+					birthDate: "12.04.1988",
+					passport: "45 10 № 884721",
+					phone: "+7 (999) 888-77-66",
+					address: "г. Москва, ул. Арбат, д. 24, кв. 12",
+				}}
+				doctorName="Д-р Воронов Алексей Владимирович"
+				doctorSpecialty="Стоматолог-терапевт"
+				diagnosisIcd="K02.1 Кариес дентина"
+				toothNumbers="3.6"
+			/>
 		);
 	}
 
@@ -3553,6 +3608,31 @@ export function App() {
 							autoLoadDemo={true}
 						/>
 					</Suspense>
+				)}
+				{isConsentDirectModalOpen && (
+					<InformedConsentModal
+						isOpen={true}
+						onClose={() => {
+							setIsConsentDirectModalOpen(false);
+							const url = new URL(window.location.href);
+							url.searchParams.delete("consent");
+							window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("consent") ? url.hash : ""));
+						}}
+						initialMode="packages"
+						initialPackageKey="PACKAGE_PRIMARY_VISIT"
+						initialVerificationMethod="tablet_stylus"
+						patient={{
+							fullName: "Ковалёв Роман Станиславович",
+							birthDate: "12.04.1988",
+							passport: "45 10 № 884721",
+							phone: "+7 (999) 888-77-66",
+							address: "г. Москва, ул. Арбат, д. 24, кв. 12",
+						}}
+						doctorName="Д-р Воронов Алексей Владимирович"
+						doctorSpecialty="Стоматолог-терапевт"
+						diagnosisIcd="K02.1 Кариес дентина"
+						toothNumbers="3.6"
+					/>
 				)}
 				<DoctorPrivacyShield
 					isOpen={isPrivacyShieldActive}
