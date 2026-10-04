@@ -11314,7 +11314,21 @@ html.dark .emk-tab-button,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="night"]
 	.emk-tab-button {
-	color: var(--muted, #94a3b8);
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+html.dark .emk-tab-button:hover,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="dark"]
+	.emk-tab-button:hover,
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+	[data-theme="night"]
+	.emk-tab-button:hover {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+	color: var(--teal-ink, var(--teal));
 }
 
 html.dark .emk-tab-button.active,
@@ -11324,8 +11338,10 @@ html.dark .emk-tab-button.active,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 	[data-theme="night"]
 	.emk-tab-button.active {
-	background: var(--primary-strong, #0d9488);
-	color: #ffffff;
+	background: var(--teal-fill, var(--teal)) !important;
+	border-color: rgba(255, 255, 255, 0.25) !important;
+	color: var(--on-teal, #ffffff) !important;
+	font-weight: 800 !important;
 }
 
 .visit-note-head {
@@ -12220,7 +12236,7 @@ html.dark .visit-note-status-badge.ready,
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .doc-link {
 	align-items: center;
-	background: #e4f0ea;
+	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--teal-dark);

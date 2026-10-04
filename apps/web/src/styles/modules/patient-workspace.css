@@ -363,56 +363,37 @@
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-unified-toolbar {
 	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: nowrap;
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-	gap: 4px;
-	border-bottom: 1px solid var(--line);
-	padding: 2px 0;
+	flex-direction: column;
 	width: 100%;
 	min-width: 0;
-	min-height: 30px;
-}
-
-.emk-tabs-container {
-	display: flex;
-	flex-wrap: nowrap;
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-	gap: 4px;
-	margin: 0;
-	padding: 1px 0;
-	border-bottom: none;
-	min-width: 0;
-	width: 100%;
-	flex-shrink: 0;
-}
-
-.emk-tabs-container button {
-	flex-shrink: 0 !important;
-	white-space: nowrap !important;
-}
-
-.emk-tabs-container::-webkit-scrollbar {
-	display: none;
+	height: auto;
+	min-height: auto;
+	max-height: none;
+	border-radius: 12px;
+	border: 1px solid var(--glass-border);
+	background: var(--paper-strong);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	margin-bottom: 12px;
 }
 
 .emk-tier1-quick-soap-bar {
 	display: flex;
+	flex-direction: row;
 	align-items: center;
+	justify-content: space-between;
 	gap: 6px;
-	flex-wrap: nowrap;
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-	min-width: 0;
 	width: 100%;
-	padding: 2px 0;
+	min-width: 0;
+	max-width: 100%;
+	min-height: 36px;
+	height: 36px;
+	max-height: 36px;
+	padding: 2px 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	box-sizing: border-box;
+	flex-shrink: 0;
 }
 
 .emk-tier1-quick-soap-bar button {
@@ -422,6 +403,35 @@
 }
 
 .emk-tier1-quick-soap-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.emk-tabs-container {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 4px;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	min-height: 36px;
+	height: 36px;
+	max-height: 36px;
+	padding: 2px 6px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	overflow-x: auto;
+	scrollbar-width: none;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+
+.emk-tabs-container button {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+}
+
+.emk-tabs-container::-webkit-scrollbar {
 	display: none;
 }
 
@@ -536,30 +546,35 @@
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tab-button {
-	background: var(--paper-soft);
+	background: var(--paper);
 	border: 1px solid var(--line);
-	color: var(--muted);
+	color: var(--ink);
 	padding: 0 10px;
-	height: 26px;
-	border-radius: 6px;
-	font-size: 11px;
+	height: 28px;
+	border-radius: 8px;
+	font-size: 12px;
 	font-weight: 700;
 	transition: all 0.15s ease;
 	cursor: pointer;
 	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
 }
 
 .emk-tab-button:hover {
 	background: var(--paper-strong);
-	color: var(--ink);
-	border-color: var(--line-strong);
+	color: var(--teal-ink, var(--teal));
+	border-color: var(--teal);
 }
 
 .emk-tab-button.active {
-	background: var(--teal, #0d9488);
-	border-color: var(--teal, #0d9488);
-	color: #ffffff;
-	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
+	background: var(--teal-fill, var(--teal)) !important;
+	border-color: var(--teal) !important;
+	color: var(--on-teal, #ffffff) !important;
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.25) !important;
+	font-weight: 800 !important;
 }
 
 .emk-tab-dot {
@@ -661,9 +676,11 @@
 		overflow-x: auto !important;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
-		padding-right: 4px !important;
-		flex: 1 1 auto !important;
+		padding: 2px 8px !important;
+		width: 100% !important;
 		min-width: 0 !important;
+		max-width: 100% !important;
+		box-sizing: border-box !important;
 	}
 	.emk-tabs-container::-webkit-scrollbar {
 		display: none;
@@ -678,8 +695,11 @@
 		overflow-x: auto !important;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
-		padding-right: 8px !important;
+		padding: 2px 8px !important;
 		width: 100% !important;
+		min-width: 0 !important;
+		max-width: 100% !important;
+		box-sizing: border-box !important;
 	}
 	.emk-tier1-quick-soap-bar button {
 		flex-shrink: 0 !important;
@@ -723,22 +743,26 @@
 		min-height: 30px !important;
 	}
 
-	/* Unified toolbar: strictly 1 compact row 28-32px */
+	/* Unified toolbar: strictly two-tier layout even on short screens (Tier 1: tools, Tier 2: tabs) */
 	.emk-unified-toolbar {
-		gap: 2px !important;
-		padding: 1px 0 !important;
-		margin: 1px 0 !important;
-		flex-direction: row !important;
+		gap: 0 !important;
+		padding: 0 !important;
+		margin: 2px 0 6px 0 !important;
+		flex-direction: column !important;
 		flex-wrap: nowrap !important;
-		overflow-x: auto !important;
-		min-height: 28px !important;
+		height: auto !important;
+		min-height: auto !important;
+		max-height: none !important;
+		width: 100% !important;
 	}
 
 	.emk-tabs-container {
-		padding: 0 !important;
+		padding: 1px 4px !important;
 		gap: 3px !important;
-		width: auto !important;
-		flex: 0 1 auto !important;
+		width: 100% !important;
+		min-height: 26px !important;
+		height: 26px !important;
+		flex-shrink: 0 !important;
 	}
 
 	.emk-tab-button {

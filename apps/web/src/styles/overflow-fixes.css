@@ -251,61 +251,42 @@
 	}
 }
 
-/* --- 8. ЭМК: Единый тулбар ЭМК (Строго 1 строка 30–32px, Мандаты 8c, 8d, 8p) --- */
+/* --- 8. ЭМК: Двухэтажный тулбар ЭМК (Этаж 1: 36px инструменты, Этаж 2: 32px вкладки SOAP; Мандаты 8c, 8d, 8p) --- */
 .emk-unified-toolbar {
 	display: flex !important;
-	flex-direction: row !important;
-	align-items: center !important;
-	justify-content: space-between !important;
-	min-height: 32px !important;
-	height: 32px !important;
-	max-height: 34px !important;
-	padding-top: 0 !important;
-	padding-bottom: 0 !important;
-	padding-left: 4px !important;
-	padding-right: 4px !important;
-	gap: 6px !important;
+	flex-direction: column !important;
+	height: auto !important;
+	min-height: auto !important;
+	max-height: none !important;
 	width: 100% !important;
-	flex-wrap: nowrap !important;
-	overflow-x: auto !important;
-	scrollbar-width: none !important;
-	-webkit-overflow-scrolling: touch !important;
+	min-width: 0 !important;
+	padding: 0 !important;
+	gap: 0 !important;
+	overflow: hidden !important;
+	box-sizing: border-box !important;
 }
 
 .emk-unified-toolbar::-webkit-scrollbar {
 	display: none !important;
 }
 
-.emk-tabs-container {
-	display: flex !important;
-	align-items: center !important;
-	min-height: 28px !important;
-	height: 28px !important;
-	max-height: 30px !important;
-	flex-wrap: nowrap !important;
-	overflow-x: auto !important;
-	scrollbar-width: none !important;
-	flex-shrink: 0 !important;
-	gap: 4px !important;
-}
-
-.emk-tabs-container::-webkit-scrollbar {
-	display: none !important;
-}
-
 .emk-tier1-quick-soap-bar {
 	display: flex !important;
+	flex-direction: row !important;
 	align-items: center !important;
-	min-height: 28px !important;
-	height: 28px !important;
-	max-height: 30px !important;
-	padding-top: 0 !important;
-	padding-bottom: 0 !important;
-	flex-wrap: nowrap !important;
+	justify-content: space-between !important;
+	min-height: 36px !important;
+	height: 36px !important;
+	max-height: 36px !important;
+	padding: 2px 8px !important;
+	gap: 6px !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	max-width: 100% !important;
+	flex-shrink: 0 !important;
+	box-sizing: border-box !important;
 	overflow-x: auto !important;
 	scrollbar-width: none !important;
-	flex-shrink: 0 !important;
-	gap: 4px !important;
 	-webkit-overflow-scrolling: touch !important;
 }
 
@@ -317,6 +298,36 @@
 	flex-shrink: 0 !important;
 	white-space: nowrap !important;
 	min-width: max-content !important;
+}
+
+.emk-tabs-container {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	min-height: 36px !important;
+	height: 36px !important;
+	max-height: 36px !important;
+	padding: 2px 6px !important;
+	gap: 4px !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	max-width: 100% !important;
+	flex-shrink: 0 !important;
+	background: var(--paper-soft) !important;
+	border-top: 1px solid var(--line) !important;
+	overflow-x: auto !important;
+	scrollbar-width: none !important;
+	box-sizing: border-box !important;
+	-webkit-overflow-scrolling: touch !important;
+}
+
+.emk-tabs-container::-webkit-scrollbar {
+	display: none !important;
+}
+
+.emk-tabs-container button {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
 }
 
 .emk-formatting-toolbar {

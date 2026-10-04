@@ -183,36 +183,30 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 	if (!isExpanded && !isListening && !transcript) {
 		return (
 			<div
-				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed inline-flex items-center gap-1.5 select-none shrink-0 ${className}`.trim()}
+				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed inline-flex items-center select-none shrink-0 ${className}`.trim()}
 				data-testid="emk-voice-pilot-hud"
 			>
-				<button
-					type="button"
-					onClick={handleToggleMic}
-					className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0 shadow-2xs"
-					title="Начать диктовку (Ctrl+Space)"
-					aria-label="Начать диктовку"
-				>
-					<Mic size={12} />
-					<span className="hidden sm:inline">Диктовка</span>
-				</button>
-				<span className="text-xs font-bold text-[var(--ink)] hidden 2xl:inline-flex items-center gap-1 shrink-0">
-					<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
-					<span>AI-Пилот</span>
-				</span>
-				<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hidden 2xl:inline shrink-0">
-					Готов
-				</span>
-				<button
-					type="button"
-					onClick={() => setIsExpanded(true)}
-					className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-0.5 shrink-0"
-					title="Развернуть подсказки и пульт AI-Пилота"
-					aria-label="Развернуть пульт AI-Пилота"
-				>
-					<span className="hidden 2xl:inline text-[10px]">Пульт</span>
-					<ChevronDown size={11} />
-				</button>
+				<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all">
+					<button
+						type="button"
+						onClick={handleToggleMic}
+						className="h-7 px-2.5 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
+						title="Начать диктовку (Ctrl+Space)"
+						aria-label="Начать диктовку"
+					>
+						<Mic size={13} className="text-[var(--teal)] shrink-0" />
+						<span className="hidden sm:inline">Диктовка</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setIsExpanded(true)}
+						className="h-7 px-1.5 border-l border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center"
+						title="Развернуть пульт AI-Пилота"
+						aria-label="Развернуть пульт AI-Пилота"
+					>
+						<ChevronDown size={11} />
+					</button>
+				</div>
 			</div>
 		);
 	}

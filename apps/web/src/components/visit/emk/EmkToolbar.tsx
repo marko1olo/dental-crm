@@ -146,23 +146,35 @@ export function EmkToolbar({
 	}, [isExtraMenuOpen]);
 
 	const tabs = [
-		{ id: "all", label: "Все", shortLabel: "Все" },
+		{ id: "all", label: "Все разделы", shortLabel: "Все" },
 		{ id: "complaints", label: "Жалобы & Анамнез", shortLabel: "Жалобы" },
-		{ id: "objectiveStatus", label: "Осмотр & Зубная формула", shortLabel: "Осмотр" },
-		{ id: "diary", label: "Диагноз & Протокол", shortLabel: "Протокол" },
+		{ id: "objectiveStatus", label: "Осмотр & Формула", shortLabel: "Осмотр" },
+		{ id: "diary", label: "Диагноз & Лечение", shortLabel: "Лечение" },
 		{ id: "recommendations", label: "Рекомендации", shortLabel: "Советы" },
 	];
 
 	const isTabFilled = (tabId: string) => {
 		if (tabId === "all") return false;
 		if (tabId === "complaints") {
-			return Boolean(String(noteForm.complaint ?? "").trim() || String(noteForm.anamnesis ?? "").trim());
+			return Boolean(
+				String(noteForm.complaint ?? "").trim() ||
+				String(noteForm.anamnesis ?? "").trim() ||
+				String(noteForm.complaints ?? "").trim()
+			);
 		}
 		if (tabId === "objectiveStatus") {
-			return Boolean(String(noteForm.objectiveStatus ?? "").trim() || String(noteForm.examination ?? "").trim());
+			return Boolean(
+				String(noteForm.objectiveStatus ?? "").trim() ||
+				String(noteForm.examination ?? "").trim() ||
+				String(noteForm.statusLocalis ?? "").trim()
+			);
 		}
 		if (tabId === "diary") {
-			return Boolean(String(noteForm.diagnosis ?? "").trim() || String(noteForm.treatmentPlan ?? "").trim());
+			return Boolean(
+				String(noteForm.diagnosis ?? "").trim() ||
+				String(noteForm.treatmentPlan ?? "").trim() ||
+				String(noteForm.treatmentDescription ?? "").trim()
+			);
 		}
 		if (tabId === "recommendations") {
 			return Boolean(String(noteForm.recommendations ?? "").trim());
@@ -180,16 +192,17 @@ export function EmkToolbar({
 
 	return (
 		<div
-			className="emk-unified-toolbar flex items-center justify-between gap-1.5 sm:gap-2 px-2 h-[38px] min-h-[38px] max-h-[40px] w-full min-w-0 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] shadow-2xs mb-2.5 overflow-hidden"
+			className="emk-unified-toolbar flex flex-col w-full min-w-0 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] shadow-2xs mb-2.5 overflow-hidden"
 			data-testid="emk-unified-toolbar"
 		>
+			{/* СТРОКА 1: Клинические инструменты приёма (Action Toolbar) */}
 			<div
-				className="emk-tier1-quick-soap-bar flex items-center justify-between gap-1.5 sm:gap-2 w-full min-w-0 h-full"
+				className="emk-tier1-quick-soap-bar flex items-center justify-between gap-1.5 sm:gap-2 px-2.5 w-full min-w-0 h-[36px] min-h-[36px] max-h-[36px] box-border"
 				data-testid="emk-tier1-quick-soap-bar"
 			>
-				{/* ЛЕВАЯ ГРУППА: Протоколы 1 142+, Диктовка, Ассистент, Фокус специальности */}
-				<div className="flex items-center gap-1.5 shrink-0 min-w-0">
-					{/* Кнопка прямого вызова Каталога 1 142 протоколов */}
+				{/* ЛЕВАЯ ГРУППА: Каталог протоколов 1 142+, Диктовка, AI Ассистент */}
+				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+					{/* Кнопка вызова Каталога 1 142 протоколов + меню быстрых норм */}
 					{onOpenProtocolsCatalog && (
 						<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all">
 							<button
@@ -207,7 +220,6 @@ export function EmkToolbar({
 								</span>
 							</button>
 
-							{/* Кнопка выпадающего меню быстрых норм */}
 							<button
 								type="button"
 								ref={buttonRef}
@@ -347,52 +359,17 @@ export function EmkToolbar({
 						<Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-500" />
 						<span className="hidden sm:inline">Ассистент</span>
 					</button>
+				</div>
 
-					{/* Интегрированный чип Фокуса специальности */}
+				{/* ПРАВАЯ ГРУППА: Специализированный бланк, Отмена/Повтор, След. визит, Статус автосохранения */}
+				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+					{/* Интегрированный чип Фокуса специальности / Бланка */}
 					{specialtyFocusNode && (
 						<div className="flex items-center shrink-0" data-testid="emk-specialty-focus-chip">
 							{specialtyFocusNode}
 						</div>
 					)}
-				</div>
 
-				{/* ЦЕНТРАЛЬНАЯ ГРУППА: Вкладки разделов приёма (Segmented Navigation) */}
-				<div
-					className="emk-tabs-container inline-flex items-center gap-0.5 p-0.5 bg-[var(--paper-soft)]/60 border border-[var(--line)] rounded-lg shrink-0 overflow-x-auto scrollbar-none"
-					role="tablist"
-					aria-label="Вкладки разделов приема"
-					data-testid="emk-tabs-container"
-				>
-					{tabs.map((tab) => {
-						const isFilled = isTabFilled(tab.id);
-						const isActive = isTabActive(tab.id);
-						return (
-							<button
-								key={tab.id}
-								type="button"
-								role="tab"
-								aria-selected={isActive}
-								className={`emk-tab-button shrink-0 whitespace-nowrap text-xs h-6 px-2.5 py-0 font-bold rounded-md transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation select-none ${
-									isActive
-										? "active bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-2xs font-extrabold"
-										: "text-[var(--ink)] hover:bg-[var(--paper)] hover:text-[var(--teal-ink,var(--teal))]"
-								}`}
-								onClick={() => setActiveEmkTab(tab.id)}
-							>
-								<span>{tab.label}</span>
-								{isFilled && (
-									<span
-										className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "bg-white" : "bg-emerald-500"}`}
-										title="Раздел заполнен"
-									/>
-								)}
-							</button>
-						);
-					})}
-				</div>
-
-				{/* ПРАВАЯ ГРУППА: Отмена/Повтор, След. визит, Статус автосохранения */}
-				<div className="flex items-center gap-1.5 shrink-0 ml-auto">
 					{/* 1-Клик Undo / Redo */}
 					<div className="flex items-center gap-0.5 shrink-0" data-testid="emk-undo-redo-group">
 						<button
@@ -467,6 +444,42 @@ export function EmkToolbar({
 						)}
 					</span>
 				</div>
+			</div>
+
+			{/* СТРОКА 2: Навигационный сегментированный таб-бар Формы 043/у (SOAP Section Tabs) */}
+			<div
+				className="emk-tabs-container flex items-center gap-1 p-1 w-full min-w-0 h-[36px] min-h-[36px] max-h-[36px] bg-[var(--paper-soft)]/70 border-t border-[var(--line)] overflow-x-auto scrollbar-none box-border"
+				role="tablist"
+				aria-label="Вкладки разделов приема"
+				data-testid="emk-tabs-container"
+			>
+				{tabs.map((tab) => {
+					const isFilled = isTabFilled(tab.id);
+					const isActive = isTabActive(tab.id);
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							role="tab"
+							aria-selected={isActive}
+							className={`emk-tab-button flex-1 min-w-[70px] sm:min-w-0 whitespace-nowrap text-xs h-7 px-2 sm:px-3 font-bold rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 touch-manipulation select-none border ${
+								isActive
+									? "active bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)]/40 shadow-xs font-black"
+									: "bg-[var(--paper)]/80 text-[var(--ink)] hover:bg-[var(--paper)] hover:text-[var(--teal-ink,var(--teal))] border-[var(--line)]/60 font-semibold"
+							}`}
+							onClick={() => setActiveEmkTab(tab.id)}
+						>
+							<span className="hidden sm:inline">{tab.label}</span>
+							<span className="sm:hidden">{tab.shortLabel}</span>
+							{isFilled && (
+								<span
+									className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "bg-white shadow-2xs" : "bg-emerald-500 ring-1 ring-emerald-600/30"}`}
+									title="Раздел заполнен"
+								/>
+							)}
+						</button>
+					);
+				})}
 			</div>
 		</div>
 	);

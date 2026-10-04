@@ -39,6 +39,8 @@ import {
 	extractTeethList,
 	resolveAppointmentClinicalBadges,
 	resolveAppointmentLabStatus,
+	calculateProportionalCardHeight,
+	type ScheduleDensityMode,
 } from "./appointmentCardHelpers";
 import { GridAppointmentHoverHud } from "./GridAppointmentHoverHud";
 import { GridAppointmentMenu } from "./GridAppointmentMenu";
@@ -46,6 +48,7 @@ import { GridAppointmentMenu } from "./GridAppointmentMenu";
 export * from "./appointmentCardHelpers";
 
 export interface GridAppointmentCardProps {
+	densityMode?: ScheduleDensityMode;
 	appointment: Appointment;
 	chair: { id: string; name: string };
 	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
@@ -100,11 +103,13 @@ function areGridAppointmentCardPropsEqual(
 	if (prev.appointmentLabels !== next.appointmentLabels) return false;
 	if (prev.timezone !== next.timezone) return false;
 	if (prev.dashboard.clinicSettings !== next.dashboard.clinicSettings) return false;
+	if (prev.densityMode !== next.densityMode) return false;
 	return true;
 }
 
 export const GridAppointmentCard = memo(function GridAppointmentCard(props: GridAppointmentCardProps) {
 	const {
+		densityMode,
 		appointment: a,
 		chair,
 		effectiveChairs,
@@ -169,6 +174,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 			? `${(durationMin / 60).toFixed(durationMin % 60 === 0 ? 0 : 1)} ч`
 			: `${durationMin} мин`;
 
+	const proportionalHeight = calculateProportionalCardHeight(durationMin);
+
 	let patientAgeLabel: string | null = null;
 	if (patObj?.birthDate) {
 		const bDate = new Date(patObj.birthDate);
@@ -184,6 +191,19 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 
 	const teethList = extractTeethList(a);
 	const procedureLabel = a.reason || (a as any).serviceTitle || "Приём";
+
+	const showRow2 =
+		densityMode === "expanded" ||
+		((!densityMode || densityMode === "informative") && durationMin >= 30);
+
+	const showComment =
+		Boolean(a.comment) &&
+		(densityMode === "expanded" ||
+			((!densityMode || densityMode === "informative") && durationMin >= 30));
+
+	const showRow3 =
+		densityMode === "expanded" ||
+		((!densityMode || densityMode === "informative") && durationMin >= 45);
 
 	return (
 		<div
@@ -209,12 +229,29 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 			}}
 			style={
 				isHovered
-					? { zIndex: 50, position: "relative", contain: "none", contentVisibility: "visible" }
-					: { contentVisibility: "auto", containIntrinsicSize: "1px 52px" }
+					? {
+							zIndex: 50,
+							position: "relative",
+							contain: "none",
+							contentVisibility: "visible",
+							minHeight: `${proportionalHeight}px`,
+					  }
+					: {
+							contentVisibility: "auto",
+							containIntrinsicSize: "1px 52px",
+							minHeight: `${proportionalHeight}px`,
+					  }
+			}
+			data-proportional-height={proportionalHeight}
+			data-density={
+				densityMode ||
+				(durationMin <= 20 ? "micro" : durationMin <= 30 ? "compact" : "expanded")
 			}
 			data-hovered={isHovered ? "true" : undefined}
 			className={`appointment-card m-0 mb-0 w-full h-full text-left rounded-lg border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1 transition-all cursor-grab active:cursor-grabbing relative overflow-hidden ${
-				durationMin <= 20 ? "min-h-[28px] p-1.5 px-2" : "min-h-[44px] p-2"
+				densityMode === "compact" || (!densityMode && durationMin <= 20)
+					? "p-1.5 px-2"
+					: "p-2"
 			} ${getGridAppointmentCardContainerClasses(
 				a.status,
 				{ collision: Boolean(collision), isCito, docTheme },
@@ -276,12 +313,19 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				{/* Progressive Vertical Architecture (Studio Clinical HIG) */}
 				<div
 					className="appointment-card-grid-unified w-full h-full min-w-0 flex-1 flex flex-col justify-between gap-1 select-none"
-					data-density={durationMin <= 20 ? "micro" : durationMin <= 30 ? "compact" : "expanded"}
+					data-density={
+						densityMode ||
+						(durationMin <= 20 ? "micro" : durationMin <= 30 ? "compact" : "expanded")
+					}
 				>
 					{/* ROW 1: HEADER (Always present on all cards: Time + Patient FIO on left, Status button + [⋮] on right) */}
 					<div
 						className="appointment-card-row-header flex items-center justify-between gap-1.5 w-full min-w-0"
-						data-testid={durationMin <= 20 ? `appointment-card-grid-micro-${a.id}` : `appointment-card-header-${a.id}`}
+						data-testid={
+							densityMode === "compact" || (!densityMode && durationMin <= 20)
+								? `appointment-card-grid-micro-${a.id}`
+								: `appointment-card-header-${a.id}`
+						}
 					>
 						{/* Left: Time + CITO badge + Patient FIO */}
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
@@ -505,8 +549,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						</div>
 					</div>
 
-					{/* ROW 2: PROCEDURE & TOOTH & SPECIALTY & ZTL (Added for >= 30 min slots) */}
-					{durationMin >= 30 && (
+					{/* ROW 2: PROCEDURE & TOOTH & SPECIALTY & ZTL */}
+					{showRow2 && (
 						<div
 							className="appointment-card-row-procedure flex items-center gap-1.5 flex-wrap w-full min-w-0 text-xs text-[var(--ink)]"
 							data-testid={`appointment-card-procedure-row-${a.id}`}
@@ -582,15 +626,15 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						</div>
 					)}
 
-					{/* Clinical Comment if present (for >= 30m slots when comment exists) */}
-					{durationMin >= 30 && a.comment && (
-						<p className="text-[10px] text-[var(--muted)] line-clamp-1 italic opacity-85 min-w-0" title={a.comment}>
+					{/* Clinical Comment if present */}
+					{showComment && (
+						<p className="text-[10px] text-[var(--muted)] line-clamp-1 italic opacity-85 min-w-0" title={a.comment ?? undefined}>
 							{a.comment}
 						</p>
 					)}
 
-					{/* ROW 3: DOCTOR, PHONE & QUICK ACTION [В приём] (Added for >= 45 min slots) */}
-					{durationMin >= 45 && (
+					{/* ROW 3: DOCTOR, PHONE & QUICK ACTION [В приём] */}
+					{showRow3 && (
 						<div
 							className="appointment-card-row-footer flex items-center justify-between gap-1.5 w-full min-w-0 pt-1 border-t border-[var(--line)]/50 mt-auto"
 							data-testid={`appointment-card-footer-${a.id}`}
