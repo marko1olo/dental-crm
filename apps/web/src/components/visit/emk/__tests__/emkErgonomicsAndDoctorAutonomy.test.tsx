@@ -35,23 +35,17 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 	const financeToolbarPath = path.resolve(__dirname, "../../../finance/FinanceToolbar.tsx");
 	const financeViewPath = path.resolve(__dirname, "../../../../FinanceView.tsx");
 
-	it("1. EmkComplaintsSection hides 14+ complaint & anamnesis template buttons inside collapsed <details>", () => {
+	it("1. EmkComplaintsSection is purged of hardcoded accordion spoilers in favor of clean clinical textareas and Protocols Catalog", () => {
 		const source = fs.readFileSync(complaintsPath, "utf8");
 
-		// Must have <details> containers for templates
+		// Hardcoded junk accordions must NOT exist
 		assert.ok(
-			source.includes("<details") && source.includes("Шаблоны жалоб"),
-			"Complaint chips must be enclosed within a <details> spoiler",
+			!source.includes("Шаблоны жалоб") && !source.includes("Шаблоны анамнеза"),
+			"Hardcoded complaint and anamnesis chip accordions must be completely purged",
 		);
 		assert.ok(
-			source.includes("Шаблоны анамнеза") && source.includes("<details"),
-			"Anamnesis chips must be enclosed within a <details> spoiler",
-		);
-
-		// Must NOT have 'open' attribute on details by default
-		assert.ok(
-			!source.includes("<details open") && !source.includes("<details\n\t\t\t\topen"),
-			"<details> spoilers must NOT be expanded by default",
+			!source.includes("complaintChips") && !source.includes("anamnesisChips"),
+			"Hardcoded chip arrays must not exist in EmkComplaintsSection",
 		);
 
 		// Textareas must remain top-level for immediate typing

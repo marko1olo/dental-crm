@@ -147,13 +147,36 @@ export function EmkToolbar({
 
 	const tabs = [
 		{ id: "all", label: "Все", shortLabel: "Все" },
-		{ id: "complaint", label: "Жалобы", shortLabel: "Жалобы" },
-		{ id: "anamnesis", label: "Анамнез", shortLabel: "Анамнез" },
-		{ id: "objectiveStatus", label: "Статус", shortLabel: "Статус" },
-		{ id: "diagnosis", label: "Диагноз", shortLabel: "Диагноз" },
-		{ id: "treatmentPlan", label: "Лечение", shortLabel: "Лечение" },
-		{ id: "recommendations", label: "Советы", shortLabel: "Советы" },
+		{ id: "complaints", label: "Жалобы & Анамнез", shortLabel: "Жалобы" },
+		{ id: "objectiveStatus", label: "Осмотр & Зубная формула", shortLabel: "Осмотр" },
+		{ id: "diary", label: "Диагноз & Протокол", shortLabel: "Протокол" },
+		{ id: "recommendations", label: "Рекомендации", shortLabel: "Советы" },
 	];
+
+	const isTabFilled = (tabId: string) => {
+		if (tabId === "all") return false;
+		if (tabId === "complaints") {
+			return Boolean(String(noteForm.complaint ?? "").trim() || String(noteForm.anamnesis ?? "").trim());
+		}
+		if (tabId === "objectiveStatus") {
+			return Boolean(String(noteForm.objectiveStatus ?? "").trim() || String(noteForm.examination ?? "").trim());
+		}
+		if (tabId === "diary") {
+			return Boolean(String(noteForm.diagnosis ?? "").trim() || String(noteForm.treatmentPlan ?? "").trim());
+		}
+		if (tabId === "recommendations") {
+			return Boolean(String(noteForm.recommendations ?? "").trim());
+		}
+		return Boolean(String(noteForm[tabId] ?? "").trim().length > 0);
+	};
+
+	const isTabActive = (tabId: string) => {
+		if (activeEmkTab === tabId) return true;
+		if (tabId === "complaints" && (activeEmkTab === "complaint" || activeEmkTab === "anamnesis")) return true;
+		if (tabId === "objectiveStatus" && (activeEmkTab === "status" || activeEmkTab === "objective")) return true;
+		if (tabId === "diary" && (activeEmkTab === "diagnosis" || activeEmkTab === "treatmentPlan" || activeEmkTab === "protocol")) return true;
+		return false;
+	};
 
 	return (
 		<div
@@ -341,8 +364,8 @@ export function EmkToolbar({
 					data-testid="emk-tabs-container"
 				>
 					{tabs.map((tab) => {
-						const isFilled = tab.id !== "all" && String(noteForm[tab.id] ?? "").trim().length > 0;
-						const isActive = activeEmkTab === tab.id;
+						const isFilled = isTabFilled(tab.id);
+						const isActive = isTabActive(tab.id);
 						return (
 							<button
 								key={tab.id}

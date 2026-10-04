@@ -41,6 +41,7 @@ import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { showToast } from "./components/GlobalToast";
 import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
+import { loadStoredTeethData } from "./components/odontogram/odontogramStorage";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
@@ -1822,7 +1823,8 @@ export function App() {
 					{!onboardingDismissed &&
 					!showFullOnboardingGuide &&
 					!isLocalOnboardingDismissed &&
-					currentView !== "visit" ? (
+					currentView !== "visit" &&
+					!(typeof window !== "undefined" && window.location.hash.toLowerCase().includes("visit")) ? (
 						<section
 							className="onboarding-compact-strip"
 							aria-label="Первичная настройка клиники"
@@ -2545,7 +2547,7 @@ export function App() {
 											<TreatmentPlanModule
 												patientId={patientId || "anonymous"}
 												patientName={activePatient?.fullName || "Пациент"}
-												teethData={[]}
+												teethData={(patientId && loadStoredTeethData(patientId)) || []}
 											/>
 										) : (
 											<ClinicalErrorBoundary

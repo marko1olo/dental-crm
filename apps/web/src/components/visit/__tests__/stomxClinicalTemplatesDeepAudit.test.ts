@@ -498,9 +498,9 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 			assert.ok(resolved.treatmentProtocol.includes(arbitraryTpl.name));
 		});
 
-		it("ФАКТ: Каталог пресетов clinicalSoapPresets (44 шт.) и DOCTOR_1CLICK_AUTOPILOT_PRESETS (5 шт.) дополняют StomX", () => {
+		it("ФАКТ: Каталог пресетов clinicalSoapPresets (44 шт.) и DOCTOR_1CLICK_AUTOPILOT_PRESETS (8 шт.) дополняют StomX", () => {
 			assert.strictEqual(CLINICAL_SOAP_PRESETS.length, 44, "44 пресета в clinicalSoapPresets");
-			assert.strictEqual(DOCTOR_1CLICK_AUTOPILOT_PRESETS.length, 5, "5 экспресс-автопилотов в clinicalSoapPresets");
+			assert.strictEqual(DOCTOR_1CLICK_AUTOPILOT_PRESETS.length, 8, "8 экспресс-автопилотов в clinicalSoapPresets");
 			assert.strictEqual(Object.keys(CANONICAL_SOAP_TEMPLATES).length, 18, "18 канонических шаблонов СтАР");
 		});
 	});

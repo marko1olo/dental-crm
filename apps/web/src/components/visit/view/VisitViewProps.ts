@@ -73,6 +73,7 @@ export interface VisitViewProps {
 	formatTime: any;
 	handleApplySomaticNormQuick?: any;
 	handlePolishTranscriptWithAi?: any;
+	onOpenLabOrderModal?: () => void;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	hasVisitTranscriptText: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression

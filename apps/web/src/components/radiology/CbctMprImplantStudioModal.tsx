@@ -36,6 +36,7 @@ import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
 import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
+import { DentalLabOrderModal, type DentalLabOrderData } from "../lab/DentalLabOrderModal";
 // Re-exports for backwards compatibility & wave224 test anchors (data-testid="cbct-empty-volume-dropzone")
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
@@ -58,15 +59,13 @@ export const CbctMprImplantStudioModal: React.FC<
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>(initialViewLayout ?? "quad_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null), [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false), studioMenuRef = useRef<HTMLDivElement | null>(null), [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false), [isComparisonSplitOpen, setIsComparisonSplitOpen] = useState<boolean>(false);
+	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState<boolean>(false), [labOrderDraft, setLabOrderDraft] = useState<DentalLabOrderData | null>(null);
+	const handleOpenLabOrder = useCallback((draft: DentalLabOrderData) => { setLabOrderDraft(draft); setIsLabOrderModalOpen(true); }, []);
 
 	const handleToggleUnsharp = useCallback(() => {
 		setIsUnsharpActive((prev) => {
 			const next = !prev;
-			try {
-				getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0);
-			} catch {
-				/* safe in non-webgl */
-			}
+			try { getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0); } catch { /* safe */ }
 			showToast(next ? "Резкость трабекул: ВКЛ (SHARP ON)" : "Резкость: Исходный воксел (RAW VOXEL)", "info");
 			return next;
 		});
@@ -85,8 +84,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	// Volume state
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(() => {
 		if (initialVolume) return initialVolume;
-		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
-		if (isDemo && typeof window !== "undefined") {
+		if ((isDemoShowcaseMode() || isDemoPatientId(patientId)) && typeof window !== "undefined") {
 			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
 			if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
 		}
@@ -465,10 +463,12 @@ export const CbctMprImplantStudioModal: React.FC<
 				patientId === "demo_cbct_patient" ||
 				isDemoPatientId(patientId) ||
 				(typeof window !== "undefined" &&
-					(window.location.search.includes("cbct=") ||
-						window.location.search.includes("cbct") ||
-						window.location.hash.includes("cbct=") ||
-						window.location.hash.includes("cbct")));
+					Boolean(
+						window.location?.search?.includes("cbct=") ||
+						window.location?.search?.includes("cbct") ||
+						window.location?.hash?.includes("cbct=") ||
+						window.location?.hash?.includes("cbct")
+					));
 			if (isDemoReq) {
 				autoLoadDemoAttemptedRef.current = true;
 				void dicomLoader.handleLoadDemoVolume();
@@ -491,6 +491,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		dragImplantPart, setDragImplantPart, crossSectionDragStart, setCrossSectionDragStart,
 		handleToggleMaximize, panoCanvasRef: panoBaseCanvasRef, crossSectionCanvasRef: crossSectionBaseCanvasRef,
 		axialCanvasRef: axialBaseCanvasRef, coronalCanvasRef: coronalBaseCanvasRef, sagittalCanvasRef: sagittalBaseCanvasRef,
+		jawType, onSwitchJaw: handleSwitchJaw,
 	});
 
 	// Slice renderer hook
@@ -515,20 +516,13 @@ export const CbctMprImplantStudioModal: React.FC<
 		setActivePreset(p);
 		const clinical = CLINICAL_RADIOLOGY_PRESETS.find((pr) => pr.id === p);
 		if (clinical) {
-			setWindowWidth(clinical.windowWidth);
-			setWindowLevel(clinical.windowLevel);
-			setSlabThicknessMm(clinical.slabThicknessMm);
-			setSlabMode(clinical.slabMode);
-			setPanoThicknessMm(clinical.panoThicknessMm);
-			setPanoProjectionMode(clinical.panoProjectionMode);
-			showToast(`Пресет: ${clinical.label}`, "info");
-			return;
+			setWindowWidth(clinical.windowWidth); setWindowLevel(clinical.windowLevel);
+			setSlabThicknessMm(clinical.slabThicknessMm); setSlabMode(clinical.slabMode);
+			setPanoThicknessMm(clinical.panoThicknessMm); setPanoProjectionMode(clinical.panoProjectionMode);
+			showToast(`Пресет: ${clinical.label}`, "info"); return;
 		}
 		const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
-		if (preset) {
-			setWindowWidth(preset.windowWidth);
-			setWindowLevel(preset.windowLevel);
-		}
+		if (preset) { setWindowWidth(preset.windowWidth); setWindowLevel(preset.windowLevel); }
 	}, []);
 
 	const handleSelectClinicalPreset = useCallback((presetId: string) => {
@@ -537,13 +531,13 @@ export const CbctMprImplantStudioModal: React.FC<
 
 	const {
 		handleExportToPlan, handleExportToSchedule, handleExportToEmr,
-		handleExportCbctToFinance, handleExportPdfReport,
+		handleExportCbctToFinance, handleExportToLab, handleExportPdfReport,
 	} = useCbctStudioExports({
 		patientId, patientDisplayName, study, activeCrossSection, activeCaliper,
 		currentImplantSpec, currentImplantPose, currentCanal, implantAngulationDeg,
 		displayBoneClass, displayMeanHU, displayNerveClearanceMm, displayTorque,
 		displayDrillingProtocol, nerveAuditResult, huSamplingResult, mischClassification,
-		onApplyToPlan, onApplyToDiary043,
+		onApplyToPlan, onApplyToDiary043, onOpenLabOrder: handleOpenLabOrder,
 	});
 
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
@@ -672,6 +666,7 @@ export const CbctMprImplantStudioModal: React.FC<
 					modalId={modalId} patientDisplayName={patientDisplayName} resolvedPatientName={patientDisplayName}
 					loadedSliceCount={loadedSliceCount} volume={volume} studioMode={studioMode} handleSelectStudioMode={handleSelectStudioMode}
 					handleExportToEmr={handleExportToEmr} handleExportCbctToFinance={handleExportCbctToFinance}
+					handleExportToPlan={handleExportToPlan} handleExportToLab={handleExportToLab}
 					isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
 					isStudioMenuOpen={isStudioMenuOpen} setIsStudioMenuOpen={setIsStudioMenuOpen} studioMenuRef={studioMenuRef}
 					handleResetAll={handleResetAll} handleAutoDetectArch={handleAutoDetectArch}
@@ -782,6 +777,20 @@ export const CbctMprImplantStudioModal: React.FC<
 							onInsertProtocol={(note) => { onApplyToDiary043?.(note); }}
 						/>
 					</div>
+				)}
+
+				{isLabOrderModalOpen && labOrderDraft && (
+					<DentalLabOrderModal
+						isOpen={isLabOrderModalOpen}
+						onClose={() => setIsLabOrderModalOpen(false)}
+						initialOrder={labOrderDraft}
+						patientId={patientId}
+						patientName={patientDisplayName}
+						doctorId={study?.doctorId ?? undefined}
+						doctorName={study?.doctorName ?? undefined}
+						initialToothFdi={labOrderDraft.toothFdi ?? undefined}
+						onOrderSaved={() => setIsLabOrderModalOpen(false)}
+					/>
 				)}
 			</div>
 		</div>

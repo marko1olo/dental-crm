@@ -18,6 +18,7 @@ import {
 
 export interface EmkDiaryProtocolSectionProps extends EmkSectionProps {
 	onOpenTemplatesModal?: () => void;
+	focusedField?: "diagnosis" | "treatmentPlan" | "recommendations" | undefined;
 }
 
 const EXPRESS_PROTOCOLS: Array<{
@@ -40,6 +41,7 @@ export function EmkDiaryProtocolSection({
 	isLocked,
 	activeTooth,
 	onOpenTemplatesModal,
+	focusedField,
 }: EmkDiaryProtocolSectionProps) {
 	const toothPrefix = activeTooth ? `Зуб ${activeTooth}: ` : "";
 
@@ -254,23 +256,22 @@ export function EmkDiaryProtocolSection({
 		<div className="flex flex-col gap-2.5">
 			{/* 1-клик протоколы у кресла: спокойный тихий аккордеон без серого визуального шума */}
 			<details className="group text-xs transition-all">
-				<summary className="inline-flex items-center gap-1.5 px-1 py-0.5 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors rounded-md hover:bg-[var(--paper-soft)]">
-					<BookOpen size={11} className="text-[var(--teal)] shrink-0" />
-					<span className="font-medium">Экспресс-протоколы у кресла ({EXPRESS_PROTOCOLS.length})</span>
-					<span className="text-[9px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+				<summary className="inline-flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-xs font-semibold text-[var(--muted)] hover:text-[var(--teal)] transition-colors rounded-lg hover:bg-[var(--paper-soft)]">
+					<BookOpen size={12} className="text-[var(--teal)] shrink-0" />
+					<span className="font-medium">Экспресс-протоколы у кресла</span>
 				</summary>
-				<div className="p-2 pt-1.5 border-t border-[var(--glass-border)] grid grid-cols-2 sm:grid-cols-5 gap-1.5 mt-1 bg-[var(--paper-soft)]/40 rounded-lg">
+				<div className="pt-1.5 grid grid-cols-2 sm:grid-cols-5 gap-1.5 mt-1">
 					{EXPRESS_PROTOCOLS.map((proto) => (
 						<button
 							key={proto.key}
 							type="button"
 							data-testid={`btn-emk-express-${proto.key}`}
 							onClick={() => handleApplyExpressProtocol(proto.key)}
-							className={`min-h-[28px] h-7 px-2 py-0.5 rounded-md border text-xs font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
+							className={`min-h-[28px] h-7 px-2.5 py-0.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${proto.color}`}
 							title={`Заполнить полный SOAP: ${proto.label}`}
 						>
 							<span className="font-mono text-[10px] font-bold">{proto.code}</span>
-							<span className="truncate text-[11px]">{proto.shortName}</span>
+							<span className="truncate text-xs">{proto.shortName}</span>
 						</button>
 					))}
 				</div>
@@ -292,36 +293,35 @@ export function EmkDiaryProtocolSection({
 					value={visitNoteForm?.diagnosis || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Код МКБ-10 и клинический развернутый диагноз..."
-					className="w-full min-h-[50px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[60px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 
-				{/* Быстрые чипы МКБ-10: спокойный компактный аккордеон */}
+				{/* Быстрые чипы МКБ-10 */}
 				<details className="group text-xs transition-all mt-0.5">
-					<summary className="inline-flex items-center gap-1.5 px-1 py-0.5 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors rounded-md hover:bg-[var(--paper-soft)]">
-						<BookOpen size={11} className="text-[var(--teal)] shrink-0" />
-						<span className="font-medium">Шаблоны диагнозов МКБ-10 ({icd10Chips.length})</span>
-						<span className="text-[9px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+					<summary className="inline-flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-xs font-semibold text-[var(--muted)] hover:text-[var(--teal)] transition-colors rounded-lg hover:bg-[var(--paper-soft)]">
+						<BookOpen size={12} className="text-[var(--teal)] shrink-0" />
+						<span className="font-medium">Шаблоны диагнозов МКБ-10</span>
 					</summary>
-					<div className="p-2 pt-1.5 border-t border-[var(--glass-border)] flex items-center gap-1.5 flex-wrap mt-1 bg-[var(--paper-soft)]/40 rounded-lg">
+					<div className="pt-1.5 flex items-center gap-1.5 flex-wrap mt-1">
 						{icd10Chips.map((chip, idx) => (
 							<div
 								key={idx}
-								className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs hover:border-[var(--teal)] transition-all"
+								className="inline-flex items-center rounded-full border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden shadow-2xs hover:border-[var(--teal)] transition-all"
 							>
 								<button
 									type="button"
 									onClick={() => handleSelectIcd10(chip, false)}
-									className="px-2 py-0.5 text-[11px] font-medium text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer inline-flex items-center gap-1"
+									className="px-2.5 py-0.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer inline-flex items-center gap-1"
 									title={`${chip.label} (клик: диагноз + умное заполнение пустых разделов)`}
 								>
 									<span className="font-mono font-bold text-[var(--teal)]">{chip.code}</span>
-									<span className="max-w-[150px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
+									<span className="max-w-[180px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
 								</button>
 								<button
 									type="button"
 									data-testid={`btn-auto-soap-${chip.code.replace(".", "_")}`}
 									onClick={() => handleSelectIcd10(chip, true)}
-									className="px-1.5 py-0.5 text-[10px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--muted)] border-l border-[var(--line)] cursor-pointer inline-flex items-center gap-0.5 transition-colors"
+									className="px-2 py-0.5 text-[10px] font-bold bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--muted)] border-l border-[var(--line)] cursor-pointer inline-flex items-center gap-0.5 transition-colors"
 									title={`Заполнить полный клинический SOAP-дневник для ${chip.code} в 1 клик`}
 								>
 									<Sparkles size={10} className="text-[var(--teal)]" />
@@ -345,7 +345,7 @@ export function EmkDiaryProtocolSection({
 							<button
 								type="button"
 								onClick={onOpenTemplatesModal}
-								className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white border border-[var(--line)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+								className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white border border-[var(--line)] transition-colors inline-flex items-center gap-1 cursor-pointer shadow-2xs"
 								data-testid="btn-open-protocols-catalog-diary"
 								title="Открыть полный каталог клинических протоколов (1 142 шаблона)"
 							>
@@ -398,7 +398,7 @@ export function EmkDiaryProtocolSection({
 					value={visitNoteForm?.treatmentPlan || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Подробный протокол вмешательства: препарирование, медикаментозная обработка, пломбировочный материал, полировка, рекомендации..."
-					className="w-full min-h-[80px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[140px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 			</div>
 
@@ -418,28 +418,26 @@ export function EmkDiaryProtocolSection({
 					value={visitNoteForm?.recommendations || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Назначения врача, режим питания, медикаментозная терапия, дата контрольного визита..."
-					className="w-full min-h-[56px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[75px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 
-				{/* Быстрые шаблоны рекомендаций: глубоко спрятаны в свернутый спойлер */}
-				{/* Быстрые шаблоны рекомендаций: спокойный компактный аккордеон */}
+				{/* Быстрые шаблоны рекомендаций */}
 				<details className="group text-xs transition-all mt-0.5">
-					<summary className="inline-flex items-center gap-1.5 px-1 py-0.5 cursor-pointer select-none text-[11px] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors rounded-md hover:bg-[var(--paper-soft)]">
-						<BookOpen size={11} className="text-[var(--teal)] shrink-0" />
-						<span className="font-medium">Шаблоны рекомендаций ({recommendationChips.length})</span>
-						<span className="text-[9px] text-[var(--muted)] group-open:rotate-180 transition-transform">▼</span>
+					<summary className="inline-flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-xs font-semibold text-[var(--muted)] hover:text-[var(--teal)] transition-colors rounded-lg hover:bg-[var(--paper-soft)]">
+						<BookOpen size={12} className="text-[var(--teal)] shrink-0" />
+						<span className="font-medium">Шаблоны рекомендаций</span>
 					</summary>
-					<div className="p-2 pt-1.5 border-t border-[var(--glass-border)] flex items-center gap-1.5 flex-wrap mt-1 bg-[var(--paper-soft)]/40 rounded-lg">
+					<div className="pt-1.5 flex items-center gap-1.5 flex-wrap mt-1">
 						{recommendationChips.map((chip, idx) => (
 							<button
 								key={idx}
 								type="button"
 								onClick={() => handleAddChip("recommendations", chip)}
-								className="px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1"
+								className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs active:scale-95"
 								title={chip}
 							>
-								<PlusCircle size={10} className="text-[var(--muted)]" />
-								<span className="max-w-[220px] truncate">{chip}</span>
+								<PlusCircle size={11} className="text-[var(--muted)]" />
+								<span className="max-w-[280px] truncate">{chip}</span>
 							</button>
 						))}
 					</div>

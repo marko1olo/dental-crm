@@ -92,6 +92,7 @@ import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
 import { EmkVoicePilot } from "./EmkVoicePilot";
 import { useVisitSave } from "./useVisitSave";
+import { useVisitEmkToothSync } from "./useVisitEmkToothSync";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
 import {
@@ -152,6 +153,12 @@ export function VisitEmkTab() {
 	} = appLogic;
 
 	const visitNoteForm = storeVisitNoteForm ?? contextVisitNoteForm ?? {};
+
+	useVisitEmkToothSync({
+		patientId: activePatient?.id,
+		visitNoteForm,
+		updateVisitNoteField,
+	});
 
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
 	const [isSpecialtyDrawerOpen, setIsSpecialtyDrawerOpen] =
@@ -695,37 +702,35 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
-			{/* Секции Формы 043/у */}
-			<div className="space-y-3 mt-2.5">
+			{/* Секции Формы 043/у — Full-Width Clinical Canvas */}
+			<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
 				{activeEmkTab === "all" ? (
-					<>
-						{/* 2-колоночный компактный SOAP-грид (Субъективно + Объективно | Диагноз + Лечение) */}
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-							<div className="space-y-3 min-w-0">
-								<EmkComplaintsSection
-									visitNoteForm={visitNoteForm}
-									updateVisitNoteField={updateVisitNoteField}
-									isLocked={isLocked}
-								/>
-								<EmkObjectiveStatusSection
-									visitNoteForm={visitNoteForm}
-									updateVisitNoteField={updateVisitNoteField}
-									isLocked={isLocked}
-								/>
-							</div>
+					<div className="space-y-4 w-full min-w-0">
+						{/* 1. Жалобы и анамнез (Full-Width) */}
+						<EmkComplaintsSection
+							visitNoteForm={visitNoteForm}
+							updateVisitNoteField={updateVisitNoteField}
+							isLocked={isLocked}
+						/>
 
-							<div className="space-y-3 min-w-0">
-								<EmkDiaryProtocolSection
-									visitNoteForm={visitNoteForm}
-									updateVisitNoteField={updateVisitNoteField}
-									isLocked={isLocked}
-									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
-									onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
-								/>
-							</div>
-						</div>
+						{/* 2. Объективный статус и осмотр (Full-Width) */}
+						<EmkObjectiveStatusSection
+							visitNoteForm={visitNoteForm}
+							updateVisitNoteField={updateVisitNoteField}
+							isLocked={isLocked}
+							activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+						/>
 
-						{/* Специализированные клинические разделы у кресла */}
+						{/* 3. Диагноз, дневник и протокол лечения (Full-Width) */}
+						<EmkDiaryProtocolSection
+							visitNoteForm={visitNoteForm}
+							updateVisitNoteField={updateVisitNoteField}
+							isLocked={isLocked}
+							activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+							onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
+						/>
+
+						{/* 4. Специализированные клинические разделы у кресла */}
 						<EmkAnesthesiaSection
 							visitNoteForm={visitNoteForm}
 							updateVisitNoteField={updateVisitNoteField}
@@ -785,10 +790,13 @@ export function VisitEmkTab() {
 								</div>
 							</details>
 						</div>
-					</>
+					</div>
 				) : (
-					<div className="space-y-3">
-						{(activeEmkTab === "complaint" || activeEmkTab === "anamnesis") && (
+					<div className="space-y-4 w-full min-w-0">
+						{/* Фокусный режим: Жалобы & Анамнез */}
+						{(activeEmkTab === "complaints" ||
+							activeEmkTab === "complaint" ||
+							activeEmkTab === "anamnesis") && (
 							<EmkComplaintsSection
 								visitNoteForm={visitNoteForm}
 								updateVisitNoteField={updateVisitNoteField}
@@ -796,57 +804,16 @@ export function VisitEmkTab() {
 							/>
 						)}
 
-						{activeEmkTab === "objectiveStatus" && (
-							<EmkObjectiveStatusSection
-								visitNoteForm={visitNoteForm}
-								updateVisitNoteField={updateVisitNoteField}
-								isLocked={isLocked}
-							/>
-						)}
-
-						{(activeEmkTab === "diagnosis" ||
-							activeEmkTab === "treatmentPlan" ||
-							activeEmkTab === "recommendations") && (
-							<EmkDiaryProtocolSection
-								visitNoteForm={visitNoteForm}
-								updateVisitNoteField={updateVisitNoteField}
-								isLocked={isLocked}
-								activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
-								onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
-							/>
-						)}
-
-						{activeEmkTab === "diagnosis" && (
-							<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
-								<EgiszMultipleDiagnosesWidget />
-								<details className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent" data-testid="emk-icd10-selector-details">
-									<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
-										<span className="flex items-center gap-1.5">
-											<Tag size={14} className="text-emerald-500" />
-											<span>Клинический классификатор МКБ-10 (Стоматология)</span>
-										</span>
-									</summary>
-									<div className="pt-2">
-										<Icd10ClinicalSelector
-											selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
-											onSelect={(item, tooth) => {
-												const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
-												updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
-											}}
-										/>
-									</div>
-								</details>
-							</div>
-						)}
-
-						{activeEmkTab === "treatmentPlan" && (
-							<>
-								<EmkAnesthesiaSection
+						{/* Фокусный режим: Осмотр & Зубная формула */}
+						{(activeEmkTab === "objectiveStatus" ||
+							activeEmkTab === "status" ||
+							activeEmkTab === "objective") && (
+							<div className="space-y-4 w-full min-w-0">
+								<EmkObjectiveStatusSection
 									visitNoteForm={visitNoteForm}
 									updateVisitNoteField={updateVisitNoteField}
 									isLocked={isLocked}
-									patientAge={activePatient?.age}
-									patientGender={activePatient?.gender}
+									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
 								/>
 								<EmkEndoSection
 									visitNoteForm={visitNoteForm}
@@ -854,12 +821,72 @@ export function VisitEmkTab() {
 									isLocked={isLocked}
 									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
 								/>
-								<EmkServicesSection
+							</div>
+						)}
+
+						{/* Фокусный режим: Диагноз & Протокол */}
+						{(activeEmkTab === "diary" ||
+							activeEmkTab === "diagnosis" ||
+							activeEmkTab === "treatmentPlan" ||
+							activeEmkTab === "protocol") && (
+							<div className="space-y-4 w-full min-w-0">
+								<EmkDiaryProtocolSection
 									visitNoteForm={visitNoteForm}
 									updateVisitNoteField={updateVisitNoteField}
 									isLocked={isLocked}
+									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 								/>
-							</>
+								<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
+									<EgiszMultipleDiagnosesWidget />
+									<details className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent" data-testid="emk-icd10-selector-details">
+										<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+											<span className="flex items-center gap-1.5">
+												<Tag size={14} className="text-emerald-500" />
+												<span>Клинический классификатор МКБ-10 (Стоматология)</span>
+											</span>
+										</summary>
+										<div className="pt-2">
+											<Icd10ClinicalSelector
+												selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+												onSelect={(item, tooth) => {
+													const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
+													updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
+												}}
+											/>
+										</div>
+									</details>
+								</div>
+								{activeEmkTab === "treatmentPlan" && (
+									<>
+										<EmkAnesthesiaSection
+											visitNoteForm={visitNoteForm}
+											updateVisitNoteField={updateVisitNoteField}
+											isLocked={isLocked}
+											patientAge={activePatient?.age}
+											patientGender={activePatient?.gender}
+										/>
+										<EmkServicesSection
+											visitNoteForm={visitNoteForm}
+											updateVisitNoteField={updateVisitNoteField}
+											isLocked={isLocked}
+										/>
+									</>
+								)}
+							</div>
+						)}
+
+						{/* Фокусный режим: Рекомендации */}
+						{activeEmkTab === "recommendations" && (
+							<div className="space-y-4 w-full min-w-0">
+								<EmkDiaryProtocolSection
+									visitNoteForm={visitNoteForm}
+									updateVisitNoteField={updateVisitNoteField}
+									isLocked={isLocked}
+									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
+								/>
+							</div>
 						)}
 					</div>
 				)}

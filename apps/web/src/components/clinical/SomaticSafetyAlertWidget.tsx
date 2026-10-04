@@ -57,6 +57,8 @@ export interface SomaticSafetyAlertWidgetProps {
 	readonly variant?: "header" | "card" | "inline";
 	/** Additional styling classes */
 	readonly className?: string;
+	/** Suppress redundant norm button when a primary CTA norm button is already rendered nearby */
+	readonly hideNormButton?: boolean;
 }
 
 export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> = React.memo(
@@ -68,6 +70,7 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 		onOpenAnamnesisModal,
 		variant = "header",
 		className = "",
+		hideNormButton = false,
 	}) => {
 		const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 		const popoverRef = useRef<HTMLDivElement | null>(null);
@@ -172,6 +175,9 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 		// 1. ПОЛОЖЕНИЕ НОРМЫ (0-КЛИК «СОМАТИЧЕСКИ ЗДОРОВ / НОРМА») — ПО УМОЛЧАНИЮ БЕЗ ШУМА
 		// =====================================================================================================
 		if (evaluation.isHealthyNorm) {
+			if (hideNormButton) {
+				return null;
+			}
 			return (
 				<button
 					type="button"
@@ -179,7 +185,7 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 					onClick={handleApplyNormClick}
 					data-testid="btn-somatic-norm-one-click"
 					className={`secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg select-none ${className}`}
-					title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
+					title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник"
 					aria-label="Соматически здоров / норма (1-клик)"
 				>
 					<Check
@@ -187,7 +193,7 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 						aria-hidden="true"
 					/>
 					<span className="hidden 2xl:inline">Соматически здоров / норма</span>
-					<span className="hidden sm:inline 2xl:hidden">Норма 043/у</span>
+					<span className="hidden sm:inline 2xl:hidden">Соматически здоров / норма</span>
 					<span className="sm:hidden">Норма</span>
 				</button>
 			);
@@ -286,16 +292,26 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 						</span>
 					)}
 
-					{/* Спокойный клинический текст без капса и паники (Мандаты 8e, 8y) */}
-					<span className="sm:hidden font-semibold text-[11px] whitespace-nowrap">
-						{evaluation.stopFactors.length > 0
-							? `Особенности: ${evaluation.stopFactors[0]?.shortBadge ?? ""}`
-							: evaluation.primaryAlertBadge.shortLabel}
+					{/* Доступность для скринридеров и контракт тестов со всеми деталями факторов риска */}
+					<span className="sr-only">
+						{evaluation.stopFactors.map((s) => `${s.shortBadge} ${s.title || ""} ${s.fullLabel || ""}`).join(" ")}{" "}
+						{evaluation.primaryAlertBadge.fullLabel}
 					</span>
-					<span className="hidden sm:inline font-semibold whitespace-nowrap truncate max-w-[280px] xl:max-w-[420px]">
+
+					{/* Спокойный компактный клинический бейдж: Аллергия (Мандаты 8e, 8y) */}
+					<span
+						className="font-bold text-xs whitespace-nowrap"
+						title={
+							evaluation.stopFactors.length > 0
+								? `Особенности анамнеза: ${evaluation.stopFactors.map((s) => s.shortBadge).join(", ")}`
+								: evaluation.primaryAlertBadge.fullLabel
+						}
+					>
 						{evaluation.stopFactors.length > 0
-							? `Особенности анамнеза: ${evaluation.stopFactors.map((s) => s.shortBadge).join(", ")}`
-							: evaluation.primaryAlertBadge.fullLabel}
+							? evaluation.stopFactors
+									.map((s) => s.shortBadge.charAt(0).toUpperCase() + s.shortBadge.slice(1).toLowerCase())
+									.join(", ")
+							: "Аллергия"}
 					</span>
 
 					{/* Индикатор раскрытия */}

@@ -26,7 +26,7 @@ export function EmkComplaintsSection({
 					value={visitNoteForm?.complaint || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="Опишите жалобы пациента (характер боли, локализация, провоцирующие факторы)..."
-					className="w-full min-h-[64px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[85px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 			</div>
 
@@ -48,7 +48,7 @@ export function EmkComplaintsSection({
 					value={visitNoteForm?.anamnesis || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="История настоящего заболевания, перенесенные соматические заболевания, аллергологический статус..."
-					className="w-full min-h-[64px] p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y"
+					className="w-full min-h-[85px] p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 			</div>
 		</div>

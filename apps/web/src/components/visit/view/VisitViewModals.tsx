@@ -128,14 +128,42 @@ export function VisitViewModals({
 				}}
 				patientId={
 					activePatient?.id ||
+					activePatient?.patientId ||
+					activeAppointment?.patientId ||
 					(typeof dashboard?.activeVisit?.patientId === "string"
 						? dashboard.activeVisit.patientId
 						: undefined)
 				}
-				patientName={activePatient?.fullName}
-				doctorId={activeDoctor?.id}
-				doctorName={activeDoctor?.fullName}
+				patientName={
+					activePatient?.fullName ||
+					activePatient?.name ||
+					activeAppointment?.patientName ||
+					"Пациент"
+				}
+				doctorId={
+					activeDoctor?.id ||
+					activeDoctor?.userId ||
+					activeAppointment?.doctorId ||
+					undefined
+				}
+				doctorName={
+					activeDoctor?.fullName ||
+					activeDoctor?.name ||
+					activeAppointment?.doctorName ||
+					"Лечащий врач"
+				}
 				initialToothFdi={labOrderModalToothNumber ?? undefined}
+				scheduledVisitDate={
+					activeAppointment?.startTime ||
+					activeAppointment?.startAt ||
+					activeAppointment?.date ||
+					undefined
+				}
+				patientChartNumber={
+					activePatient?.medCardNumber ||
+					activePatient?.cardNumber ||
+					undefined
+				}
 				onOrderSaved={(order) => {
 					if (order?.toothFdi && order?.material) {
 						appendToEMKField(

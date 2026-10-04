@@ -13,14 +13,36 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
+import { registerHooks } from "node:module";
+
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Fallback if already registered or unsupported
+	}
+}
+
+const {
 	executePolishTranscriptAutonomy,
 	executeApplySomaticNormAutonomy,
-} from "../../../VisitView";
+} = await import("../../../VisitView");
+
 
 type MockFn = {
 	(...args: any[]): any;
@@ -298,6 +320,33 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(workspaceShellSource).toMatch(/<ClinicControlPill|<NetworkStatusIndicator/);
 		expect(networkIndicatorSource).toContain("shrink-0 flex-shrink-0 whitespace-nowrap");
 	});
+
+	it("14. chairside prosthetics lab order (ЗТЛ) is directly accessible in visit header and more-menu with rich clinical context (Mandates 8e, 8n, 8o)", () => {
+		// VisitView toolbar fast button & more-actions dropdown item
+		expect(visitViewSource).toContain('data-testid="btn-visit-lab-order-fast"');
+		expect(visitViewSource).toContain('data-testid="visit-more-action-lab-order"');
+		expect(visitViewSource).toContain("handleOpenLabOrder");
+		expect(visitViewSource).toContain('"dente-open-lab-order-modal"');
+
+		// VisitHeaderMonolith has matching test-ids and button/dropdown actions
+		const headerMonolithPath = path.resolve(__dirname, "../view/VisitHeaderMonolith.tsx");
+		const headerMonolithSource = fs.readFileSync(headerMonolithPath, "utf8");
+		expect(headerMonolithSource).toContain('data-testid="btn-visit-lab-order-fast"');
+		expect(headerMonolithSource).toContain('data-testid="visit-more-action-lab-order"');
+		expect(headerMonolithSource).toContain("onOpenLabOrderModal");
+
+		// VisitViewModals passes complete patient, doctor, and date context into DentalLabOrderModal
+		const modalsPath = path.resolve(__dirname, "../view/VisitViewModals.tsx");
+		const modalsSource = fs.readFileSync(modalsPath, "utf8");
+		expect(modalsSource).toContain("<DentalLabOrderModal");
+		expect(modalsSource).toContain("patientId={");
+		expect(modalsSource).toContain("patientName={");
+		expect(modalsSource).toContain("doctorId={");
+		expect(modalsSource).toContain("doctorName={");
+		expect(modalsSource).toContain("scheduledVisitDate={");
+		expect(modalsSource).toContain("patientChartNumber={");
+	});
 });
+
 
 

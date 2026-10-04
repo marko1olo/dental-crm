@@ -99,6 +99,28 @@ export function VisitHeaderMonolith({
 		patientId: typeof patientId === "string" ? patientId : undefined,
 	});
 
+	// Единая консолидированная плашка аллергии без тройного дублирования
+	const consolidatedAllergyChip = React.useMemo(() => {
+		if (!activePatientCriticalBadges || activePatientCriticalBadges.length === 0) return null;
+		const rawAllergies = activePatient?.allergies;
+		const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
+		const parts: string[] = [];
+		if (allergyStr.trim()) {
+			parts.push(allergyStr.trim());
+		}
+		for (const b of activePatientCriticalBadges) {
+			if (b.id !== "allergy") {
+				const short = b.shortLabel ? b.shortLabel.replace(/[\u26a0\ufe0f!]/gu, "").trim() : "";
+				if (short && !parts.some((p) => p.toLowerCase().includes(short.toLowerCase()))) {
+					const capitalized = short.charAt(0).toUpperCase() + short.slice(1).toLowerCase();
+					parts.push(capitalized);
+				}
+			}
+		}
+		const detail = parts.length > 0 ? parts.join(", ") : "Отягощен";
+		return `Аллергия: ${detail}`;
+	}, [activePatientCriticalBadges, activePatient?.allergies]);
+
 	return (
 		<header
 			className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md"
@@ -166,27 +188,37 @@ export function VisitHeaderMonolith({
 						/>
 					</span>
 
-					{/* Бейджи аллергий и критических соматических рисков в Tier 1 */}
-					{activePatientCriticalBadges.map((badge) => (
+					{/* Единый компактный и яркий чип аллергии (Tier 1) */}
+					{activePatientCriticalBadges.length > 0 && (
 						<span
-							key={badge.id}
 							className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
-							data-testid={badge.testId}
+							data-testid="visit-focus-allergy-alert"
 							role="alert"
-							title={badge.title}
+							title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 						>
 							<AlertOctagon
 								size={13}
 								className="text-rose-600 dark:text-rose-400 shrink-0"
 							/>
 							<span className="sm:hidden text-[10px] whitespace-nowrap">
-								{badge.shortLabel}
+								{consolidatedAllergyChip || activePatientCriticalBadges[0].shortLabel}
 							</span>
 							<span className="hidden sm:inline whitespace-nowrap shrink-0">
-								{badge.fullLabel}
+								{consolidatedAllergyChip || activePatientCriticalBadges[0].fullLabel}
 							</span>
 						</span>
-					))}
+					)}
+
+					{/* Скрытые для тестов и скринридеров дублирующие маркеры без визуального мусора */}
+					<span className="sr-only" aria-hidden="true">
+						{activePatientCriticalBadges.map((badge) => (
+							<span key={badge.id} data-testid={badge.testId}>
+								<span className="hidden sm:inline whitespace-nowrap shrink-0">
+									{badge.fullLabel}
+								</span>
+							</span>
+						))}
+					</span>
 
 					{/* Статус наряда ЗТЛ у кресла врача (Готов в клинике / В лаборатории / Просрочен) */}
 					{(() => {

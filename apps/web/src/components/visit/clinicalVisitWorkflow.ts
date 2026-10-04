@@ -639,6 +639,7 @@ export const CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[]
 export interface ChairsideSmartProtocolResult {
 	readonly key: ChairsideSmartProtocolKey;
 	readonly icd10: string;
+	readonly code?: string | undefined;
 	readonly title: string;
 	readonly diagnosis: string;
 	readonly complaint: string;
@@ -708,6 +709,7 @@ export function buildChairsideSmartProtocol(
 	return {
 		key,
 		icd10: preset.icd10,
+		code: preset.icd10,
 		title: preset.shortBadge || preset.title,
 		diagnosis,
 		complaint: preset.complaint,

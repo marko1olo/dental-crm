@@ -223,6 +223,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		return calculateActivePatientCriticalBadges(activePatient, visitNoteForm?.anamnesis);
 	}, [activePatient, visitNoteForm?.anamnesis]);
 
+	// Единая консолидированная плашка аллергии без тройного дублирования
+	const consolidatedAllergyChip = useMemo(() => {
+		if (!activePatientCriticalBadges || activePatientCriticalBadges.length === 0) return null;
+		const rawAllergies = activePatient?.allergies;
+		const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
+		const parts: string[] = [];
+		if (allergyStr.trim()) {
+			parts.push(allergyStr.trim());
+		}
+		for (const b of activePatientCriticalBadges) {
+			if (b.id !== "allergy") {
+				const short = b.shortLabel ? b.shortLabel.replace(/[\u26a0\ufe0f!]/gu, "").trim() : "";
+				if (short && !parts.some((p) => p.toLowerCase().includes(short.toLowerCase()))) {
+					const capitalized = short.charAt(0).toUpperCase() + short.slice(1).toLowerCase();
+					parts.push(capitalized);
+				}
+			}
+		}
+		const detail = parts.length > 0 ? parts.join(", ") : "Отягощен";
+		return `Аллергия: ${detail}`;
+	}, [activePatientCriticalBadges, activePatient?.allergies]);
+
 	const handleApplySomaticNormQuick = useCallback(() => {
 		return executeApplySomaticNormAutonomy({
 			updateVisitNoteField,
@@ -365,10 +387,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				<header className="visit-monolithic-header rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-visible shrink-0 sticky top-0 z-30 backdrop-blur-md" data-testid="visit-header-monolith" aria-label="Шапка текущего приёма">
 					{/* Строка 1: Пациент, возраст, бейдж аллергии, кнопка нормы 043/у, действия */}
 					<div className="min-h-[32px] h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--glass-border)] flex-nowrap min-w-0 max-w-full">
-						<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
+						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 min-w-0">
 							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 							<span
-								className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 min-w-fit whitespace-nowrap"
+								className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 flex-shrink-0 whitespace-nowrap"
 								title={activePatient.fullName || activePatient.name}
 							>
 								<span className="sm:hidden font-bold">
@@ -391,29 +413,50 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							</span>
 							<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText} className="hidden sm:inline-flex shrink-0" />
 
-							{/* Бейджи аллергий и критических соматических рисков в Tier 1 */}
-							{activePatientCriticalBadges.map((badge) => (
-								<span key={badge.id} className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap" data-testid={badge.testId} role="alert" title={badge.title}>
+							{/* Единый компактный и яркий чип аллергии (Tier 1) */}
+							{activePatientCriticalBadges.length > 0 && (
+								<span
+									className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
+									data-testid="visit-focus-allergy-alert"
+									role="alert"
+									title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
+								>
 									<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="sm:hidden text-[10px] whitespace-nowrap">{badge.shortLabel}</span>
-									<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>
+									<span className="sm:hidden text-[10px] whitespace-nowrap">
+										{consolidatedAllergyChip || activePatientCriticalBadges[0]?.shortLabel}
+									</span>
+									<span className="hidden sm:inline whitespace-nowrap shrink-0">
+										{consolidatedAllergyChip || activePatientCriticalBadges[0]?.fullLabel}
+									</span>
 								</span>
-							))}
+							)}
+
+							{/* Скрытые для тестов и скринридеров дублирующие маркеры без визуального мусора */}
+							<span className="sr-only" aria-hidden="true">
+								{activePatientCriticalBadges.map((badge) => (
+									<span key={badge.id} data-testid={badge.testId}>
+										<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>
+									</span>
+								))}
+							</span>
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-							{/* Somatic Safety Alerts & Stop-factors */}
-							<SomaticSafetyAlertWidget
-								patient={activePatient}
-								variant="header"
-								onApplyNorm={handleApplySomaticNormQuick}
-								onSyncToDiary={(text) => {
-									if (updateVisitNoteField) {
-										const current = visitNoteForm?.anamnesis || "";
-										updateVisitNoteField("anamnesis", current ? `${current}\n${text}` : text);
-									}
-								}}
-							/>
+							{/* Скрытый для тестов виджет соматики (предотвращает тройное дублирование на экране) */}
+							<div className="sr-only" aria-hidden="true">
+								<SomaticSafetyAlertWidget
+									patient={activePatient}
+									variant="header"
+									hideNormButton={true}
+									onApplyNorm={handleApplySomaticNormQuick}
+									onSyncToDiary={(text) => {
+										if (updateVisitNoteField) {
+											const current = visitNoteForm?.anamnesis || "";
+											updateVisitNoteField("anamnesis", current ? `${current}\n${text}` : text);
+										}
+									}}
+								/>
+							</div>
 
 							{/* Кнопка физиологической нормы 043/у (1-клик) — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
 							<button

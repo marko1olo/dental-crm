@@ -582,7 +582,7 @@ export function VisitDiagnosticsTab(props?: {
 							onClick={() => setIsHotFolderModalOpen(true)}
 							data-testid="btn-open-hot-folder-modal"
 							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--glass-border)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
-							title="Папка автозахвата снимков: автоматический импорт из каталога визиографа (EzDent, Romexis, Sidexis)"
+							title="Папка автозахвата снимков: автоматический импорт из каталога визиографа"
 						>
 							<FolderInput size={14} className="text-[var(--teal)]" />
 							<span>Папка автозахвата</span>

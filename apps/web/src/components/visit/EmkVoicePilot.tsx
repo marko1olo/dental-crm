@@ -196,9 +196,9 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 					<Mic size={12} />
 					<span className="hidden sm:inline">Диктовка</span>
 				</button>
-				<span className="text-xs font-bold text-[var(--ink)] hidden md:inline-flex items-center gap-1 shrink-0">
+				<span className="text-xs font-bold text-[var(--ink)] hidden 2xl:inline-flex items-center gap-1 shrink-0">
 					<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
-					<span className="hidden xl:inline">AI-Пилот</span>
+					<span>AI-Пилот</span>
 				</span>
 				<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hidden 2xl:inline shrink-0">
 					Готов
@@ -210,7 +210,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 					title="Развернуть подсказки и пульт AI-Пилота"
 					aria-label="Развернуть пульт AI-Пилота"
 				>
-					<span className="hidden sm:inline text-[10px]">Пульт</span>
+					<span className="hidden 2xl:inline text-[10px]">Пульт</span>
 					<ChevronDown size={11} />
 				</button>
 			</div>

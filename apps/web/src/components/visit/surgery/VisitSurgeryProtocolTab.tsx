@@ -20,6 +20,7 @@ import {
 	evaluateWarehouseOverdraft,
 	quickDeductSurgicalMaterials,
 	buildStandardImplantationProtocolText,
+	buildStandardExtractionProtocolText,
 	type SurgicalOperationNorm,
 	type StandardImplantationParams,
 } from "../../surgery/surgeryProtocols";
@@ -29,6 +30,9 @@ import {
 	printSurgicalPackage,
 } from "../../documents/surgicalPackagePrintEngine";
 import { useVisitStore } from "../../../store/visitStore";
+import { VisitSurgeryExtractionBar } from "./VisitSurgeryExtractionBar";
+import { VisitSurgerySinusGbrBar } from "./VisitSurgerySinusGbrBar";
+import { VisitSurgeryImplantBar } from "./VisitSurgeryImplantBar";
 import "./visitSurgery.css";
 
 
@@ -128,6 +132,21 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				isq: implantIsq,
 				capType: implantCap,
 				sutureMaterial: implantSuture,
+				postOpXray: true,
+			});
+			setProtocolText(text);
+		} else if (norm.category === "extraction") {
+			const complexity =
+				norm.id === "surgery_extraction_complex"
+					? "complex"
+					: norm.id === "surgery_extraction_atypical"
+						? "impacted_dystopic"
+						: "simple";
+			const text = buildStandardExtractionProtocolText({
+				toothFdi: effectiveTooth,
+				complexity,
+				hemostasis: ["alvogyl", "hemostatic_sponge", "vicryl_suture", "tampon"],
+				sutureMaterial: "Викрил 4-0",
 				postOpXray: true,
 			});
 			setProtocolText(text);
@@ -410,148 +429,39 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				</div>
 			</div>
 
-			{/* 1-Клик Экспресс-имплантация (Мандаты 8e, 8k) */}
-			<div className="p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-				<div className="flex items-center justify-between gap-2 flex-wrap">
-					<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
-						<Sparkles size={15} />
-						<span>1-Клик Пресет имплантации:</span>
-					</div>
-					<button
-						type="button"
-						onClick={() => handleApplyStandardImplantationPreset()}
-						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all"
-						data-testid="btn-preset-standard-implant-tab"
-						title="1-Клик: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
-					>
-						<Zap size={14} className="text-amber-300" />
-						<span>Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, Prolene 4-0, снимок)</span>
-					</button>
-				</div>
-
-				{/* Быстрые параметры в 1 клик */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-					{/* Система */}
-					<div className="space-y-1">
-						<span className="text-[11px] font-bold text-[var(--muted)]">Система:</span>
-						<div className="flex items-center gap-1 flex-wrap">
-							{[
-								{ brand: "Dentium", model: "SuperLine" },
-								{ brand: "Osstem", model: "TS III" },
-								{ brand: "Straumann", model: "BLX" },
-								{ brand: "Astra Tech", model: "EV" },
-							].map((s) => (
-								<button
-									key={s.brand}
-									type="button"
-									onClick={() =>
-										handleApplyStandardImplantationPreset({ brand: s.brand, model: s.model })
-									}
-									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
-										implantBrand === s.brand
-											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
-									}`}
-									data-testid={`btn-implant-system-${s.brand}`}
-								>
-									{s.brand}
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Размер (Ø × длина) */}
-					<div className="space-y-1">
-						<span className="text-[11px] font-bold text-[var(--muted)]">Размер (Ø × Длина):</span>
-						<div className="flex items-center gap-1 flex-wrap">
-							{[
-								{ dia: 3.5, len: 10.0 },
-								{ dia: 4.0, len: 10.0 },
-								{ dia: 4.5, len: 10.0 },
-								{ dia: 4.0, len: 11.5 },
-							].map((sz) => (
-								<button
-									key={`${sz.dia}-${sz.len}`}
-									type="button"
-									onClick={() =>
-										handleApplyStandardImplantationPreset({ diameterMm: sz.dia, lengthMm: sz.len })
-									}
-									className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer touch-manipulation ${
-										implantDiameter === sz.dia && implantLength === sz.len
-											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
-									}`}
-									data-testid={`btn-implant-size-${sz.dia}-${sz.len}`}
-								>
-									{`Ø${sz.dia}×${sz.len}`}
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Торк и ISQ */}
-					<div className="space-y-1">
-						<span className="text-[11px] font-bold text-[var(--muted)]">Стабильность:</span>
-						<div className="flex items-center gap-1 flex-wrap">
-							{[
-								{ torque: 35, isq: 72, label: "35 Н/см (ISQ 72)" },
-								{ torque: 45, isq: 75, label: "45 Н/см (ISQ 75)" },
-							].map((st) => (
-								<button
-									key={st.torque}
-									type="button"
-									onClick={() =>
-										handleApplyStandardImplantationPreset({ torqueNcm: st.torque, isq: st.isq })
-									}
-									className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
-										implantTorque === st.torque
-											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
-									}`}
-									data-testid={`btn-implant-torque-${st.torque}`}
-								>
-									{st.label}
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Заглушка / Швы */}
-					<div className="space-y-1">
-						<span className="text-[11px] font-bold text-[var(--muted)]">Формирователь & Швы:</span>
-						<div className="flex items-center gap-1 flex-wrap">
-							<button
-								type="button"
-								onClick={() =>
-									handleApplyStandardImplantationPreset({ capType: "fdm", sutureMaterial: "Prolene 4-0" })
-								}
-								className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
-									implantCap === "fdm"
-										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
-								}`}
-								data-testid="btn-implant-cap-fdm"
-							>
-								ФДМ · Prolene 4-0
-							</button>
-							<button
-								type="button"
-								onClick={() =>
-									handleApplyStandardImplantationPreset({ capType: "plug", sutureMaterial: "Vicryl 4-0" })
-								}
-								className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
-									implantCap === "plug"
-										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
-										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
-								}`}
-								data-testid="btn-implant-cap-plug"
-							>
-								Заглушка · Vicryl
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
+			{/* Динамический 1-Клик кокпит по категории операции (Мандаты 8e, 8k, 8z) */}
+			{currentNorm.category === "extraction" ? (
+				<VisitSurgeryExtractionBar
+					effectiveTooth={effectiveTooth}
+					patientName={patientName}
+					doctorName={doctorName}
+					onApplyProtocolText={(text) => setProtocolText(text)}
+				/>
+			) : currentNorm.category === "sinus_gbr" ? (
+				<VisitSurgerySinusGbrBar
+					effectiveTooth={effectiveTooth}
+					isClosedSinus={selectedNormId === "surgery_sinus_lift_closed"}
+					onApplyProtocolText={(text) => setProtocolText(text)}
+				/>
+			) : (
+				<VisitSurgeryImplantBar
+					implantBrand={implantBrand}
+					setImplantBrand={setImplantBrand}
+					implantDiameter={implantDiameter}
+					setImplantDiameter={setImplantDiameter}
+					implantLength={implantLength}
+					setImplantLength={setImplantLength}
+					implantTorque={implantTorque}
+					setImplantTorque={setImplantTorque}
+					implantIsq={implantIsq}
+					setImplantIsq={setImplantIsq}
+					implantCap={implantCap}
+					setImplantCap={setImplantCap}
+					implantSuture={implantSuture}
+					setImplantSuture={setImplantSuture}
+					onApplyPreset={handleApplyStandardImplantationPreset}
+				/>
+			)}
 
 			{/* Текст протокола операции */}
 			<div className="space-y-2">

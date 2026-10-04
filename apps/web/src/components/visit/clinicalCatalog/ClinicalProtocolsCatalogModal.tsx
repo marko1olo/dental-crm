@@ -71,6 +71,19 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 			setCanScrollRight(!atEnd);
 		}, []);
 
+		// Закрытие модального окна по Escape
+		useEffect(() => {
+			if (!isOpen) return;
+			const handleKeyDown = (e: KeyboardEvent) => {
+				if (e.key === "Escape") {
+					e.preventDefault();
+					onClose();
+				}
+			};
+			window.addEventListener("keydown", handleKeyDown);
+			return () => window.removeEventListener("keydown", handleKeyDown);
+		}, [isOpen, onClose]);
+
 		useEffect(() => {
 			checkTabScroll();
 			const el = tabsRef.current;
@@ -147,6 +160,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 				aria-modal="true"
 				aria-label="Каталог клинических протоколов и дневников приёма"
 				data-testid="clinical-protocols-catalog-modal"
+				onClick={onClose}
 			>
 				<div
 					className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] rounded-2xl w-full max-w-6xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"

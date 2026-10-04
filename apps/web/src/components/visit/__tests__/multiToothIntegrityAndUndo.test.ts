@@ -10,11 +10,12 @@ import {
 	sanitizeVisitNoteFormFields,
 } from "../../../utils/clinicalTextSanitizer";
 import { useVisitStore } from "../../../store/visitStore";
+import { emptyVisitNoteForm } from "../../../utils/draftDefaults";
 
 describe("Red Team Inquisition: Multi-Tooth Integrity, 1-Click Undo Engine, and Sanitizer", () => {
 	beforeEach(() => {
 		useVisitStore.setState({
-			visitNoteForm: {},
+			visitNoteForm: { ...emptyVisitNoteForm },
 			visitToothStateByCode: {},
 			visitAiDiagnosesByCode: {},
 			visitToothRecordsByCode: {},
@@ -198,21 +199,21 @@ describe("Red Team Inquisition: Multi-Tooth Integrity, 1-Click Undo Engine, and 
 
 			// 0. Base initial state
 			useVisitStore.setState({
-				visitNoteForm: { diagnosis: "Первичный осмотр" },
+				visitNoteForm: { ...emptyVisitNoteForm, diagnosis: "Первичный осмотр" },
 				visitToothStateByCode: { "16": "idle" },
 			});
 			store.pushVisitSnapshot("Начало осмотра");
 
 			// 1. Doctor treats Tooth 16
 			useVisitStore.setState({
-				visitNoteForm: { diagnosis: "[Зуб 16: K02.1 Кариес (MOD)]" },
+				visitNoteForm: { ...emptyVisitNoteForm, diagnosis: "[Зуб 16: K02.1 Кариес (MOD)]" },
 				visitToothStateByCode: { "16": "treatment" },
 			});
 			store.pushVisitSnapshot("Лечение зуба 16");
 
 			// 2. Doctor treats Tooth 17
 			useVisitStore.setState({
-				visitNoteForm: { diagnosis: "[Зуб 16: K02.1 Кариес (MOD)]; [Зуб 17: K04.0 Пульпит]" },
+				visitNoteForm: { ...emptyVisitNoteForm, diagnosis: "[Зуб 16: K02.1 Кариес (MOD)]; [Зуб 17: K04.0 Пульпит]" },
 				visitToothStateByCode: { "16": "treatment", "17": "treatment" },
 			});
 
