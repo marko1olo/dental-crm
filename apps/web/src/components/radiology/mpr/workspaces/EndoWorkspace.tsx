@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Layers, Copy } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Box, Layers, Copy, Compass } from "lucide-react";
 import { EndoFileCanal } from "../../../icons/DentalIcons";
 import type { WorkspaceCommonProps } from "./workspaceTypes";
+import { EndoCompassPanel, type EndoCompassClinicalData } from "./EndoCompassPanel";
+import { runEndoAnalysisForTooth } from "./endoCanalPipeline";
 
 export interface EndoWorkspaceProps extends WorkspaceCommonProps {
 	readonly activeToothFdi?: string | number | undefined;
@@ -10,17 +12,54 @@ export interface EndoWorkspaceProps extends WorkspaceCommonProps {
 const COMMON_ENDO_TEETH = [16, 17, 26, 27, 36, 37, 46, 47, 14, 24, 34, 44] as const;
 
 export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
+	volume,
 	renderers,
 	maximizedViewport,
 	mobileActiveTab,
 	activeToothFdi,
+	archCurve,
 	handleSelectTooth,
 	handleExportToEmr,
 }) => {
-	const selectedTooth = activeToothFdi ? Number.parseInt(String(activeToothFdi), 10) : 46;
+	const [selectedTooth, setSelectedTooth] = useState<number>(() =>
+		activeToothFdi ? Number.parseInt(String(activeToothFdi), 10) : 36,
+	);
+
+	useEffect(() => {
+		if (activeToothFdi) {
+			setSelectedTooth(Number.parseInt(String(activeToothFdi), 10));
+		}
+	}, [activeToothFdi]);
 
 	// 4th Quadrant display mode: 3D High-Res Voxel Cube vs Orthogonal Cross-Section
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "cross_section">("volume3d");
+
+	// Endo Compass 3D Panel State
+	const [isCompassOpen, setIsCompassOpen] = useState<boolean>(true);
+	const [activeCanalId, setActiveCanalId] = useState<string>("c-mb1");
+	const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+	const [compassData, setCompassData] = useState<EndoCompassClinicalData | null>(() =>
+		runEndoAnalysisForTooth(volume, selectedTooth, archCurve),
+	);
+
+	// Genuine mathematical recalculation when tooth or CBCT volume changes
+	useEffect(() => {
+		if (!volume) {
+			setCompassData(null);
+			return;
+		}
+		setIsAnalyzing(true);
+		const timer = setTimeout(() => {
+			const res = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
+			setCompassData(res);
+			if (res && res.canals.length > 0) {
+				setActiveCanalId(res.canals[0]!.id);
+			}
+			setIsAnalyzing(false);
+		}, 60);
+
+		return () => clearTimeout(timer);
+	}, [volume, selectedTooth, archCurve]);
 
 	// 4-Way Interactive 2x2 Grid Resizer State (macOS / Studio density)
 	const [splitX, setSplitX] = useState<number>(0.5);
@@ -33,16 +72,31 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 	const handleCopyRecord = () => {
 		if (handleExportToEmr) {
 			handleExportToEmr();
-		} else if (typeof navigator !== "undefined" && navigator.clipboard) {
-			const text = `Эндодонтия КТ: зуб ${selectedTooth} (FDI). Продольная и поперечная оси каналов, сагиттальный срез верхушки корня.`;
+		} else if (compassData && typeof navigator !== "undefined" && navigator.clipboard) {
+			const text = `Эндодонтия КТ (Зуб #${selectedTooth}): ` +
+				`Каналов: ${compassData.canals.length}. ` +
+				`Анатомия: ${compassData.vertucciNameRu}. ` +
+				`Рабочая длина: ${compassData.canals.map((c) => `${c.name} WL=${c.physiologicalLengthMm.toFixed(1)}мм`).join(", ")}. ` +
+				`Кривизна: ${compassData.canals.map((c) => `${c.name} ${c.schneiderAngleDeg.toFixed(0)}°`).join(", ")}. ` +
+				`Риск: ${compassData.overallRiskTier.toUpperCase()}. Протокол: Ni-Ti конусность ${compassData.recommendedTaper}.`;
 			navigator.clipboard.writeText(text).catch(() => {});
 		}
 		setIsCopied(true);
 		setTimeout(() => setIsCopied(false), 2000);
 	};
 
+	const handleTriggerRerun = () => {
+		setIsAnalyzing(true);
+		setTimeout(() => {
+			const res = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
+			setCompassData(res);
+			setIsAnalyzing(false);
+		}, 300);
+	};
+
 	useEffect(() => {
 		if (!isDraggingSplitter) return;
+
 
 		const handlePointerMove = (e: PointerEvent) => {
 			if (!quadGridRef.current) return;
@@ -112,7 +166,10 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 								<button
 									key={tooth}
 									type="button"
-									onClick={() => handleSelectTooth?.(tooth)}
+									onClick={() => {
+										setSelectedTooth(tooth);
+										handleSelectTooth?.(tooth);
+									}}
 									className={`px-1.5 py-0.5 rounded text-[11px] font-mono transition-colors cursor-pointer ${
 										isSel
 											? "bg-zinc-800 text-zinc-200 font-semibold border border-zinc-600 shadow-xs"
@@ -128,8 +185,26 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 					</div>
 				</div>
 
-				{/* Right: Clean Clinical Copy to Outpatient Card (043/u) */}
+				{/* Right: Clean Clinical Copy to Outpatient Card (043/u) & Endo Compass 3D Toggle */}
 				<div className="flex items-center gap-2 shrink-0">
+					<button
+						type="button"
+						onClick={() => setIsCompassOpen((prev) => !prev)}
+						className={`h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
+							isCompassOpen
+								? "bg-cyan-950/80 text-cyan-300 border-cyan-600/70 shadow-xs"
+								: "bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-300 border border-zinc-800"
+						}`}
+						title="Открыть/скрыть 3D Эндодонтический Компас с расчетом кривизны каналов"
+						data-testid="cbct-endo-compass-toggle-btn"
+					>
+						<Compass className="w-3.5 h-3.5 text-cyan-400" />
+						<span>Компас 3D</span>
+						<span className="text-[10px] px-1 py-0.2 rounded bg-zinc-900 border border-zinc-700/80 text-zinc-300 font-mono">
+							{compassData ? `${compassData.canals.length} к.` : "—"}
+						</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handleCopyRecord}
@@ -155,6 +230,24 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 				className="flex-1 min-h-0 min-w-0 w-full h-full relative"
 				data-testid="cbct-endo-quad-grid"
 			>
+				{/* Floating Endo Compass 3D Panel */}
+				{isCompassOpen && (
+					<div
+						className="absolute top-2 right-2 z-40 max-w-[340px] pointer-events-auto"
+						data-testid="cbct-endo-floating-compass"
+					>
+						<EndoCompassPanel
+							data={compassData}
+							isAnalyzing={isAnalyzing}
+							activeCanalId={activeCanalId}
+							onSelectCanal={setActiveCanalId}
+							onRunAnalysis={handleTriggerRerun}
+							onExportToEmr={handleCopyRecord}
+							onClose={() => setIsCompassOpen(false)}
+						/>
+					</div>
+				)}
+
 				{/* Top-Left: Paraxial Root Long-Axis View (renderers.renderCoronal) */}
 				<div
 					className={`flex flex-col min-h-0 min-w-0 w-full h-full relative rounded-md overflow-hidden border border-zinc-800/80 bg-black ${

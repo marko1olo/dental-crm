@@ -404,4 +404,39 @@ export {
 } from "./boneQualityEngine.js";
 export * as cbctBoneQualityEngine from "./boneQualityEngine.js";
 
+// ── Wave 140: Endo Compass 3D Root Canal Engine (Frangi, FMM & Clinical Metrics) ─
+export * from "./endoCanalFrangiEngine.js";
+export * from "./endoFastMarchingTracer.js";
+export * from "./endoClinicalMetrics.js";
+
+// ── Wave 141: 3D Dental Arch & Tooth Voxel Segmentation Engine ─
+export {
+	darbouxFrameSchema,
+	occlusalProfilePointSchema,
+	arch3DOptionsSchema,
+	arch3DCurveSchema,
+	type DarbouxFrame,
+	type OcclusalProfilePoint,
+	type Arch3DOptions,
+	type Arch3DCurve,
+	catmullRom3D as catmullRom3DArch,
+	catmullRom3DTangent,
+	interpolate3DCurve,
+	resample3DByArcLength,
+	detectOcclusalZProfile,
+	computeDarbouxFrames,
+	build3DArchFromVolumetricData,
+	build3DArchFromControlPoints,
+	findNearestArchFrame,
+	frameAtNormalized,
+	frameAtArcLength,
+	worldToArchCoordinates,
+} from "./cbct3DArchEngine.js";
+export * as cbct3DArchEngine from "./cbct3DArchEngine.js";
+export * from "./toothCrownWatershedEngine.js";
+export * from "./toothFdiAlignmentEngine.js";
+export * from "./toothOrientedBoundingBox.js";
+
+
+
 
