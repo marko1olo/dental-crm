@@ -27,6 +27,9 @@ import {
 	type BookableChair,
 	type BookableDoctor,
 } from "./leadsKanbanTypes";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { LeadsMobileFeedView } from "./LeadsMobileFeedView";
 import "./leadsKanban.css";
 
 // Re-export all kanban types and helpers for backwards compatibility
@@ -61,6 +64,7 @@ export function LeadsKanbanView() {
 	const [creatingPatientLeadId, setCreatingPatientLeadId] = useState<string | null>(null);
 	const { auth, dashboard } = useAppLogicContext();
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+	const isMobile = useIsMobile(768);
 
 	const handleCreatePatientFromLead = async (lead: Lead) => {
 		if (lead.existingPatient) {
@@ -535,6 +539,115 @@ export function LeadsKanbanView() {
 				}}
 			>
 				Загрузка конвейера...
+			</div>
+		);
+	}
+
+	if (isMobile) {
+		return (
+			<div className="leads-mobile-container" style={{ width: "100%", maxWidth: "100vw", overflowX: "clip" }}>
+				{loadError && !isDemoShowcaseMode() ? (
+					<div
+						role="alert"
+						className="m-3 rounded-xl border border-[var(--rust)] bg-[var(--rust-soft)] px-4 py-3 text-[0.8125rem] leading-relaxed text-[var(--rust)]"
+					>
+						<strong>Обращения не загружены.</strong> {loadError}
+						<button
+							type="button"
+							className="secondary-button ml-3 mt-2 inline-flex"
+							onClick={() => fetchLeads()}
+						>
+							Повторить
+						</button>
+					</div>
+				) : null}
+
+				<LeadsMobileFeedView
+					leads={leads}
+					onNewLead={() => openEditModal()}
+					onEditLead={(lead) => openEditModal(lead)}
+					onStatusChange={handleQuickStatusChange}
+					onSchedule={(leadId) => {
+						setConvertingLeadId(leadId);
+						setIsConvertOpen(true);
+					}}
+					onQuickSchedule={handleQuickSchedule}
+					onCreatePatient={handleCreatePatientFromLead}
+					onUpdateLeadDetails={updateLeadDetails}
+					onOpenPatientCard={(patientId) => {
+						usePatientStore.getState().setSelectedPatientId(patientId);
+						useAppStore.getState().setCurrentView("patients");
+						if (typeof window !== "undefined") {
+							window.location.hash = "patients";
+						}
+					}}
+					creatingPatientLeadId={creatingPatientLeadId}
+					onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+					onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
+				/>
+
+				{/* CONVERT MODAL */}
+				<LeadConvertModal
+					isOpen={isConvertOpen}
+					onClose={() => setIsConvertOpen(false)}
+					onSubmit={handleConvertSubmit}
+					staff={staff}
+					chairs={chairs}
+					effectiveStaff={resolveLeadBookingStaff(staff)}
+					effectiveChairs={resolveLeadBookingChairs(chairs)}
+					selectedDoctorId={selectedDoctorId}
+					setSelectedDoctorId={setSelectedDoctorId}
+					selectedChairId={selectedChairId}
+					setSelectedChairId={setSelectedChairId}
+					appointmentDate={appointmentDate}
+					setAppointmentDate={setAppointmentDate}
+					appointmentTime={appointmentTime}
+					setAppointmentTime={setAppointmentTime}
+					isBooking={isBooking}
+					lead={leads.find((l) => l.id === convertingLeadId) || null}
+					cardBg="var(--paper)"
+					colBg="var(--paper-soft)"
+					borderColor="var(--line)"
+				/>
+
+				{/* EDIT / ADD MODAL */}
+				<LeadFormModal
+					isOpen={isEditOpen}
+					onClose={() => setIsEditOpen(false)}
+					editingLeadId={editingLeadId}
+					editForm={editForm}
+					setEditForm={setEditForm}
+					onSubmit={handleEditSubmit}
+					isDeleting={isDeleting}
+					onDelete={() => void handleDeleteLead()}
+					creatingPatientLeadId={creatingPatientLeadId}
+					onCreatePatient={(lead) => void handleCreatePatientFromLead(lead)}
+					leads={leads}
+					cardBg="var(--paper)"
+					colBg="var(--paper-soft)"
+					borderColor="var(--line)"
+				/>
+
+				{/* ANALYTICS FUNNEL MODAL */}
+				{isAnalyticsOpen && (
+					<Suspense fallback={null}>
+						<LeadsFunnelAnalyticsModal
+							isOpen={isAnalyticsOpen}
+							onClose={() => setIsAnalyticsOpen(false)}
+							leads={leads}
+						/>
+					</Suspense>
+				)}
+
+				{/* CRM LEAK DETECTOR MODAL (210 DAYS) */}
+				{isLeakDetectorOpen && (
+					<Suspense fallback={null}>
+						<CrmLeakDetectorModal
+							isOpen={isLeakDetectorOpen}
+							onClose={() => setIsLeakDetectorOpen(false)}
+						/>
+					</Suspense>
+				)}
 			</div>
 		);
 	}

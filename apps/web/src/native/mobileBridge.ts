@@ -60,7 +60,8 @@ export type HapticFeedbackType =
 	| "selection"
 	| "success"
 	| "warning"
-	| "error";
+	| "error"
+	| "impact";
 
 export interface MobilePushNotificationPayload {
 	readonly id?: string | undefined;

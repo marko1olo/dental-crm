@@ -48,6 +48,15 @@
 	border-radius: 10px;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	max-width: 100%;
+}
+
+.marketing-top-tabs::-webkit-scrollbar {
+	display: none;
 }
 
 .marketing-top-tab {
@@ -64,6 +73,8 @@
 	cursor: pointer;
 	transition: all 0.15s ease-out;
 	min-height: 32px;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .marketing-top-tab:hover {

@@ -1,0 +1,479 @@
+/**
+ * leadsMobileFeed.css — Sovereign Mobile Leads CRM & Feed Styles (Apple HIG).
+ *
+ * Governed by Apple HIG, Touch Ergonomics & Anti-Desktop-Squeeze Mandates.
+ * 0px parasitic horizontal drift. Strictly <= 800 lines. UTF-8 without BOM.
+ */
+
+.leads-mobile-feed {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 100vw;
+	overflow-x: clip;
+	box-sizing: border-box;
+	padding: 10px 12px max(24px, env(safe-area-inset-bottom));
+	gap: 12px;
+	color: var(--ink);
+	background: var(--paper-strong);
+	min-height: 100%;
+}
+
+/* ── 1. Mobile Header Row ─────────────────────────────────────────────────── */
+
+.leads-mobile-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--line);
+}
+
+.leads-mobile-header-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.leads-mobile-title {
+	font-size: 1.15rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+	white-space: nowrap;
+}
+
+.leads-mobile-telemetry {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--muted);
+	padding: 2px 6px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.leads-mobile-telemetry-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--ok-fg, #10b981);
+}
+
+.leads-mobile-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.leads-mobile-icon-btn {
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.leads-mobile-icon-btn:active {
+	transform: scale(0.96);
+	background: var(--paper-soft);
+}
+
+.leads-mobile-new-lead-btn {
+	min-height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: var(--teal);
+	color: #ffffff;
+	border: none;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	cursor: pointer;
+	transition: transform 0.15s ease;
+	white-space: nowrap;
+}
+
+.leads-mobile-new-lead-btn:active {
+	transform: scale(0.96);
+}
+
+/* ── 2. Search & Filter Bar ───────────────────────────────────────────────── */
+
+.leads-mobile-search-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.leads-mobile-search-input-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+.leads-mobile-search-input {
+	border: none;
+	outline: none;
+	background: transparent;
+	font-size: 14px;
+	color: var(--ink);
+	width: 100%;
+}
+
+.leads-mobile-search-input::placeholder {
+	color: var(--muted);
+}
+
+/* ── 3. iOS Status Segmented Scroller ─────────────────────────────────────── */
+
+.leads-mobile-segmented-wrap {
+	display: flex;
+	width: 100%;
+	padding: 3px;
+	border-radius: 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	box-sizing: border-box;
+}
+
+.leads-mobile-segmented-scroller {
+	display: flex;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	gap: 4px;
+	width: 100%;
+	padding: 1px;
+}
+
+.leads-mobile-segmented-scroller::-webkit-scrollbar {
+	display: none;
+}
+
+.leads-mobile-seg-btn {
+	min-height: 38px;
+	padding: 6px 12px;
+	border-radius: 10px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.leads-mobile-seg-btn.is-active {
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 700;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.leads-mobile-seg-count {
+	font-size: 11px;
+	font-weight: 700;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background: var(--line);
+	color: var(--ink);
+}
+
+.leads-mobile-seg-btn.is-active .leads-mobile-seg-count {
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+}
+
+/* ── 4. SLA Alert Banner ──────────────────────────────────────────────────── */
+
+.leads-mobile-sla-alert {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-radius: 14px;
+	background: var(--rust-soft, rgba(239, 68, 68, 0.1));
+	border: 1px solid var(--rust, #ef4444);
+	color: var(--rust, #ef4444);
+	gap: 8px;
+	cursor: pointer;
+	animation: slaBreachPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.leads-mobile-sla-alert-text {
+	font-size: 13px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* ── 5. Grouped Inset List of Leads Cards ─────────────────────────────────── */
+
+.leads-mobile-cards-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+
+.leads-mobile-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+	position: relative;
+	overflow: hidden;
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.leads-mobile-card:active {
+	background: var(--paper-soft);
+}
+
+.leads-mobile-card-stripe {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+}
+
+.leads-mobile-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-left: 2px;
+}
+
+.leads-mobile-card-badges {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.leads-mobile-source-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11.5px;
+	font-weight: 600;
+	padding: 2px 7px;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.leads-mobile-sla-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 7px;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.leads-mobile-revenue-badge {
+	font-size: 12.5px;
+	font-weight: 700;
+	color: var(--teal-dark, var(--teal));
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.leads-mobile-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-left: 2px;
+}
+
+.leads-mobile-patient-name {
+	font-size: 15.5px;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+	word-break: break-word;
+}
+
+.leads-mobile-phone-link {
+	font-size: 13.5px;
+	color: var(--muted);
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.leads-mobile-tags-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 2px;
+}
+
+.leads-mobile-tag {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
+	white-space: nowrap;
+}
+
+.leads-mobile-existing-patient {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ok-fg, #10b981);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	padding: 2px 6px;
+	border-radius: 6px;
+	border: 1px solid var(--ok-fg, #10b981);
+}
+
+.leads-mobile-notes-snippet {
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--muted);
+	background: var(--paper-soft);
+	padding: 6px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line-subtle);
+	margin-top: 2px;
+}
+
+/* ── 6. 1-Tap Quick Action Bar (>=44x44px touch targets) ──────────────────── */
+
+.leads-mobile-actions-bar {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+	padding-top: 6px;
+	border-top: 1px solid var(--line-subtle);
+}
+
+.leads-mobile-action-btn {
+	min-height: 44px;
+	border-radius: 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	white-space: nowrap;
+	padding: 0 6px;
+	box-sizing: border-box;
+}
+
+.leads-mobile-action-btn:active {
+	transform: scale(0.96);
+}
+
+.leads-mobile-action-btn--call {
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border-color: var(--teal);
+}
+
+.leads-mobile-action-btn--whatsapp {
+	background: rgba(37, 211, 102, 0.12);
+	color: #128c7e;
+	border-color: rgba(37, 211, 102, 0.4);
+}
+
+.leads-mobile-action-btn--schedule {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line-strong, var(--line));
+}
+
+.leads-mobile-action-btn--schedule:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+/* ── 7. Empty State ───────────────────────────────────────────────────────── */
+
+.leads-mobile-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 16px;
+	text-align: center;
+	background: var(--paper);
+	border-radius: 16px;
+	border: 1px dashed var(--line);
+	gap: 8px;
+	color: var(--muted);
+}
+
+.leads-mobile-empty-title {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+}
+
+.leads-mobile-empty-desc {
+	font-size: 13px;
+	margin: 0;
+	max-width: 280px;
+}
+
+/* Dark mode enhancements */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-mobile-action-btn--whatsapp {
+	color: #25d366;
+	background: rgba(37, 211, 102, 0.18);
+}

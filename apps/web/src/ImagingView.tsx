@@ -25,6 +25,7 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import type { ViewerRulerMeasurement } from "./components/imaging/ShadowAnalystImageSlider";
+import { MobileChairsideRadiologyViewer } from "./components/radiology/MobileChairsideRadiologyViewer.js";
 import { RadiologyModule } from "./components/radiology/RadiologyModule.js";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "./lib/safeLocalStorage";
@@ -1147,15 +1148,84 @@ export function ImagingView(props: ImagingViewProps) {
 			id="imaging"
 			aria-label="Снимки пациента"
 		>
-			<div className="imaging-copy flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2 select-none">
-				<div className="min-w-0 flex-1">
-					<p className="eyebrow text-xs text-[var(--muted)] m-0">Снимки пациента</p>
-					<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate" title="Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте">
-						<span className="sm:hidden">Снимки и КТ</span>
-						<span className="hidden sm:inline">Прицельные, ОПТГ, ТРГ, КТ и фото</span>
-					</h2>
-				</div>
-				<div className="imaging-actions flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto scrollbar-none py-0.5">
+			{/* Shared Hidden File & Camera Inputs for both Mobile and Desktop */}
+			<input
+				ref={attachBrowserDirectoryInputRef}
+				data-testid="imaging-browser-local-folder-input"
+				type="file"
+				multiple
+				style={{ display: "none" }}
+				onChange={(event) =>
+					void handleBrowserDirectoryInputChange(event.target.files)
+				}
+			/>
+			<input
+				ref={browserImagingFilesInputRef}
+				data-testid="imaging-browser-local-files-input"
+				type="file"
+				multiple
+				style={{ display: "none" }}
+				accept={browserImagingFileInputAccept}
+				onChange={(event) => {
+					const input = event.currentTarget;
+					void Promise.resolve(
+						handleBrowserDirectoryInputChange(input.files),
+					).finally(() => {
+						input.value = "";
+					});
+				}}
+			/>
+			<input
+				ref={cameraCaptureInputRef}
+				data-testid="imaging-camera-capture-input"
+				type="file"
+				accept="image/*"
+				capture="environment"
+				style={{ display: "none" }}
+				onChange={handleCameraPhotoCapture}
+			/>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    1. MOBILE CHAIRSIDE RADIOLOGY VIEWER (<768px, Apple HIG)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			<div className="block md:hidden w-full h-full min-h-[500px]">
+				<MobileChairsideRadiologyViewer
+					selectedImagingStudy={selectedImagingStudy}
+					activeImagingStudies={activeImagingStudies ?? []}
+					activePatient={activePatient}
+					onSelectStudy={(studyId) => {
+						if (setSelectedImagingStudyId) {
+							setSelectedImagingStudyId(studyId);
+						}
+					}}
+					effectivePreviewUrl={effectivePreviewUrl}
+					isPreviewLoading={isPreviewLoading}
+					previewLoadError={previewLoadError}
+					selectedStudyHasFile={selectedStudyHasFile}
+					imagingKindLabels={imagingKindLabels}
+					onCaptureCamera={() => cameraCaptureInputRef.current?.click()}
+					onPickFiles={pickBrowserImagingFiles}
+					onAnalyzeAI={handleAnalyzeAI}
+					isAnalyzingAI={isAnalyzingAI}
+					onOpenCbctStudio={() => setIsCbctStudioOpen(true)}
+					onOpenPanoramic={() => setIsPanoramicWindowOpen(true)}
+					onOpenRadiologyModule={() => setIsRadiologyModuleOpen(true)}
+				/>
+			</div>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    2. DESKTOP WORKSPACE (>=768px, Dense Clinical Cockpit 32–36px)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			<div className="hidden md:flex md:flex-col gap-3.5 w-full">
+				<div className="imaging-copy flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2 select-none">
+					<div className="min-w-0 flex-1">
+						<p className="eyebrow text-xs text-[var(--muted)] m-0">Снимки пациента</p>
+						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate" title="Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте">
+							<span className="sm:hidden">Снимки и КТ</span>
+							<span className="hidden sm:inline">Прицельные, ОПТГ, ТРГ, КТ и фото</span>
+						</h2>
+					</div>
+					<div className="imaging-actions flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto scrollbar-none py-0.5">
 					<input
 						ref={attachBrowserDirectoryInputRef}
 						data-testid="imaging-browser-local-folder-input"
@@ -1628,7 +1698,7 @@ export function ImagingView(props: ImagingViewProps) {
 														КЛКТ 3D: {selectedImagingStudy?.title || (localImageIds?.length > 0 ? `Серия срезов (${localImageIds.length})` : "Томограмма 3D")}
 													</strong>
 													<span className="px-2 py-0.5 text-[11px] font-medium rounded bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shrink-0">
-														PACS WADO-RS
+														Архив КЛКТ 3D
 													</span>
 												</div>
 												<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
@@ -1665,7 +1735,7 @@ export function ImagingView(props: ImagingViewProps) {
 													onClick={() => handleLoadFromDicomweb()}
 													disabled={isDicomwebLoading}
 													className="px-3 py-2 text-xs font-semibold rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 flex-1 sm:flex-none"
-													title="Запросить метаданные и срезы через WADO-RS"
+													title="Запросить срезы из архива КЛКТ 3D"
 												>
 													<RefreshCw size={14} className={`shrink-0 ${isDicomwebLoading ? "animate-spin" : ""}`} />
 													<span>{isDicomwebLoading ? (dicomwebLoadProgress ?? "Загрузка...") : "Загрузить из PACS"}</span>
@@ -3242,6 +3312,7 @@ export function ImagingView(props: ImagingViewProps) {
 					</div>
 				</section>
 			) : null}
+			</div>
 
 			{isCbctStudioOpen && (
 				<Suspense fallback={<div className="cbct-studio-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 text-cyan-400 text-xs font-mono">Загрузка Romexis 3D Студии...</div>}>

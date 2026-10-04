@@ -4,6 +4,8 @@ import {
 	readDenteStaffToken,
 } from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
+import { isDemoShowcaseMode } from "../lib/demoMode";
+import { getDemoShowcaseLeads } from "../components/leads/leadsDemoPresets";
 
 export type LeadStatus =
 	| "new"
@@ -150,7 +152,7 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
 }
 
 export const useLeadsStore = create<LeadsState>((set, get) => ({
-	leads: [],
+	leads: isDemoShowcaseMode() ? getDemoShowcaseLeads() : [],
 	isLoading: false,
 	error: null,
 	fetchLeads: async () => {
@@ -159,6 +161,17 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			const res = await fetch(`${API_URL}/leads`, {
 				headers: authHeaders(),
 			});
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data) && (data.length > 0 || !isDemoShowcaseMode())) {
+					set({ leads: data, isLoading: false });
+					return;
+				}
+			}
+			if (isDemoShowcaseMode()) {
+				set({ leads: getDemoShowcaseLeads(), isLoading: false });
+				return;
+			}
 			if (!res.ok) {
 				throw new Error(
 					await leadsFailureMessage(
@@ -170,6 +183,10 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			const data = await res.json();
 			set({ leads: data, isLoading: false });
 		} catch (e: unknown) {
+			if (isDemoShowcaseMode()) {
+				set({ leads: getDemoShowcaseLeads(), isLoading: false, error: null });
+				return;
+			}
 			const message =
 				e instanceof Error && e.message
 					? e.message

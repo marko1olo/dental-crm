@@ -1066,6 +1066,10 @@ export function App() {
 				setCurrentView("documents");
 			} else if (route === "lab") {
 				setCurrentView("lab");
+			} else if (route === "leads") {
+				setCurrentView("leads");
+			} else if (route === "marketing") {
+				setCurrentView("marketing");
 			}
 		};
 		handleDirectHashRoutes();
