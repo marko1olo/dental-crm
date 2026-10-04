@@ -401,7 +401,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 						orderId={`CHK-${patientId.slice(0, 8)}`}
 						onPaymentComplete={() => {
 							showToast(
-								`Чек на сумму ${liveGrossTotalRub.toLocaleString("ru-RU")} ₽ успешно фискализирован (54-ФЗ)`,
+								`Чек на сумму ${liveGrossTotalRub.toLocaleString("ru-RU")} ₽ успешно пробит`,
 								"success",
 							);
 							setIsFastCheckoutOpen(false);

@@ -131,6 +131,11 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	});
 	const currentQuadrant = controlledQuadrant ?? localQuadrant;
 
+	const [mobileDisplayMode, setMobileDisplayMode] = useState<"quadrant" | "carousel">("quadrant");
+	const [carouselTooth, setCarouselTooth] = useState<number>(() => {
+		return selectedTeeth.length > 0 ? selectedTeeth[0]! : (isPediatricEffective ? 55 : 16);
+	});
+
 	const handleSelectQuadrant = (q: OdontogramQuadrantId) => {
 		setLocalQuadrant(q);
 		if (onQuadrantChange) onQuadrantChange(q);
@@ -362,6 +367,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					currentState: toothDataMap.get(num)?.state ?? "Healthy",
 				});
 			}
+			setCarouselTooth(num);
 		},
 		[onToothClick, onSurfacesChange, toothDataMap, useSurfaces],
 	);
@@ -393,6 +399,8 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				handleMarkMolarsMissing={handleMarkMolarsMissing}
 				handleMarkFrontIntact={handleMarkFrontIntact}
 				handleSelectQuadrant={handleSelectQuadrant}
+				mobileDisplayMode={mobileDisplayMode}
+				onToggleMobileDisplayMode={setMobileDisplayMode}
 			/>
 
 			<ToothArchGrid
@@ -417,6 +425,24 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				handleToothClick={handleToothClick}
 				onQuickStateChange={onQuickStateChange}
 				onResorptionChange={onResorptionChange}
+				mobileDisplayMode={mobileDisplayMode}
+				carouselTooth={carouselTooth}
+				onSelectCarouselTooth={(num) => {
+					setCarouselTooth(num);
+				}}
+				onOpenStatusSheet={(num, rect) => {
+					setLocalRadialData({
+						toothNumber: num,
+						anchorRect: {
+							x: rect?.left ?? (typeof window !== "undefined" ? window.innerWidth / 2 : 195),
+							y: rect?.top ?? (typeof window !== "undefined" ? window.innerHeight / 2 : 400),
+							width: rect?.width || 120,
+							height: rect?.height || 140,
+						},
+						currentState: toothDataMap.get(num)?.state ?? "Healthy",
+					});
+				}}
+				onSurfacesChange={onSurfacesChange}
 			/>
 
 			{localRadialData && (

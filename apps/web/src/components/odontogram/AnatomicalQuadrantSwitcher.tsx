@@ -20,6 +20,8 @@ export interface AnatomicalQuadrantSwitcherProps {
 	isPediatricEffective: boolean;
 	isMixedEffective: boolean;
 	showWisdomTeeth?: boolean;
+	mobileDisplayMode?: "quadrant" | "carousel" | undefined;
+	onToggleMobileDisplayMode?: ((mode: "quadrant" | "carousel") => void) | undefined;
 }
 
 export const AnatomicalQuadrantSwitcher: React.FC<AnatomicalQuadrantSwitcherProps> = ({
@@ -28,6 +30,8 @@ export const AnatomicalQuadrantSwitcher: React.FC<AnatomicalQuadrantSwitcherProp
 	isPediatricEffective,
 	isMixedEffective,
 	showWisdomTeeth = true,
+	mobileDisplayMode = "quadrant",
+	onToggleMobileDisplayMode,
 }) => {
 	const allTeethCount = isMixedEffective
 		? "24"
@@ -50,6 +54,8 @@ export const AnatomicalQuadrantSwitcher: React.FC<AnatomicalQuadrantSwitcherProp
 					isPediatricEffective={isPediatricEffective}
 					isMixedEffective={isMixedEffective}
 					showAllOption={true}
+					mobileDisplayMode={mobileDisplayMode}
+					onToggleMobileDisplayMode={onToggleMobileDisplayMode}
 				/>
 			</div>
 
@@ -178,6 +184,8 @@ export interface QuadrantFocusedHeaderProps {
 	onSelectQuadrant: (q: OdontogramQuadrantId) => void;
 	isPediatricEffective: boolean;
 	isMixedEffective?: boolean;
+	mobileDisplayMode?: "quadrant" | "carousel" | undefined;
+	onToggleMobileDisplayMode?: ((mode: "quadrant" | "carousel") => void) | undefined;
 }
 
 export const QuadrantFocusedHeader: React.FC<QuadrantFocusedHeaderProps> = ({
@@ -185,6 +193,8 @@ export const QuadrantFocusedHeader: React.FC<QuadrantFocusedHeaderProps> = ({
 	onSelectQuadrant,
 	isPediatricEffective,
 	isMixedEffective = false,
+	mobileDisplayMode = "quadrant",
+	onToggleMobileDisplayMode,
 }) => {
 	return (
 		<div className="w-full flex flex-col gap-2 mb-2 items-center">
@@ -196,6 +206,8 @@ export const QuadrantFocusedHeader: React.FC<QuadrantFocusedHeaderProps> = ({
 					isPediatricEffective={isPediatricEffective}
 					isMixedEffective={isMixedEffective}
 					showAllOption={true}
+					mobileDisplayMode={mobileDisplayMode}
+					onToggleMobileDisplayMode={onToggleMobileDisplayMode}
 				/>
 			</div>
 

@@ -29,6 +29,8 @@ export interface ToothChartToolbarProps {
 	handleMarkMolarsMissing: () => void;
 	handleMarkFrontIntact: () => void;
 	handleSelectQuadrant: (q: OdontogramQuadrantId) => void;
+	mobileDisplayMode?: "quadrant" | "carousel" | undefined;
+	onToggleMobileDisplayMode?: ((mode: "quadrant" | "carousel") => void) | undefined;
 }
 
 export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
@@ -45,6 +47,8 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 	handleMarkMolarsMissing,
 	handleMarkFrontIntact,
 	handleSelectQuadrant,
+	mobileDisplayMode,
+	onToggleMobileDisplayMode,
 }) => {
 	return (
 		<div className="tooth-chart-toolbar-wrapper w-full flex flex-col gap-1 mb-1">
@@ -57,6 +61,8 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						isPediatricEffective={isPediatricEffective}
 						isMixedEffective={isMixedEffective}
 						showAllOption={true}
+						mobileDisplayMode={mobileDisplayMode}
+						onToggleMobileDisplayMode={onToggleMobileDisplayMode}
 					/>
 				</div>
 			)}

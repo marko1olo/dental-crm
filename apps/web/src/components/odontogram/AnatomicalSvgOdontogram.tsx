@@ -79,6 +79,8 @@ import {
 	QuadrantFocusedHeader,
 } from "./AnatomicalQuadrantSwitcher";
 import { AnatomicalDualArchView } from "./AnatomicalDualArchView";
+import { ToothCarouselFocus } from "./chart/ToothCarouselFocus";
+import { MobileQuadrantTabs } from "./MobileQuadrantTabs";
 
 // Re-export tooth wrapper and helper submodules for complete backward compatibility
 export {
@@ -118,12 +120,15 @@ export interface AnatomicalSvgOdontogramProps {
 	globalTreatments?: GlobalTreatmentItem[] | undefined;
 	onGlobalTreatmentsChange?: ((items: GlobalTreatmentItem[]) => void) | undefined;
 	className?: string | undefined;
+	mobileDisplayMode?: "quadrant" | "carousel" | undefined;
+	onToggleMobileDisplayMode?: ((mode: "quadrant" | "carousel") => void) | undefined;
 }
 
 export function areAnatomicalSvgOdontogramPropsEqual(
 	prev: AnatomicalSvgOdontogramProps,
 	next: AnatomicalSvgOdontogramProps,
 ): boolean {
+	if (prev.mobileDisplayMode !== next.mobileDisplayMode) return false;
 	if (prev.pediatricMode !== next.pediatricMode) return false;
 	if (prev.mixedDentition !== next.mixedDentition) return false;
 	if (prev.dentitionMode !== next.dentitionMode) return false;
@@ -228,6 +233,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	globalTreatments,
 	onGlobalTreatmentsChange,
 	className = "",
+	mobileDisplayMode: propsMobileDisplayMode,
+	onToggleMobileDisplayMode,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
@@ -236,6 +243,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	const [hoveredArch, setHoveredArch] = useState<"upper" | "lower" | null>(null);
 	const [internalGlobals, setInternalGlobals] = useState<GlobalTreatmentItem[]>([]);
 	const currentGlobals = globalTreatments ?? internalGlobals;
+
+	const [localMobileDisplayMode, setLocalMobileDisplayMode] = useState<"quadrant" | "carousel">("quadrant");
+	const effectiveMobileDisplayMode = propsMobileDisplayMode ?? localMobileDisplayMode;
+	const handleToggleMobileDisplayMode = onToggleMobileDisplayMode ?? setLocalMobileDisplayMode;
+	const [carouselTooth, setCarouselTooth] = useState<number | null>(null);
 
 	const teethDataMap = useMemo(() => {
 		const map = new Map<number, ToothData>();
@@ -538,11 +550,49 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 					isPediatricEffective={isPediatricEffective}
 					isMixedEffective={isMixedEffective}
 					showWisdomTeeth={showWisdomTeeth}
+					mobileDisplayMode={effectiveMobileDisplayMode}
+					onToggleMobileDisplayMode={handleToggleMobileDisplayMode}
 				/>
 			)}
 
 			<div className="tooth-chart-arch-container" ref={archContainerRef}>
-				{isQuadrantView ? (
+				{effectiveMobileDisplayMode === "carousel" ? (
+					<div className="w-full flex flex-col gap-2">
+						<div className="w-full sm:hidden">
+							<MobileQuadrantTabs
+								currentQuadrant={currentQuadrant}
+								onSelectQuadrant={handleSelectQuadrant}
+								isPediatricEffective={isPediatricEffective}
+								isMixedEffective={isMixedEffective}
+								showAllOption={true}
+								mobileDisplayMode={effectiveMobileDisplayMode}
+								onToggleMobileDisplayMode={handleToggleMobileDisplayMode}
+							/>
+						</div>
+						<ToothCarouselFocus
+							toothNumber={
+								carouselTooth ??
+								(selectedTeeth && selectedTeeth.length > 0
+									? selectedTeeth[0]!
+									: (activeQuadrantTeeth[0] || (isPediatricEffective ? 55 : 16)))
+							}
+							toothDataMap={teethDataMap}
+							isPediatricEffective={isPediatricEffective}
+							pediatricMode={pediatricMode}
+							onSelectTooth={(num) => {
+								setCarouselTooth(num);
+							}}
+							onOpenStatusSheet={(num, rect) => {
+								onToothClick(num, rect ?? ({} as any));
+							}}
+							onQuickStateChange={onQuickStateChange}
+							showPulpAndCanals={showPulpAndCanals}
+							showPeriapicalHalos={showPeriapicalHalos}
+							showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+							useSurfaces={useSurfaces}
+						/>
+					</div>
+				) : isQuadrantView ? (
 					/* Focused Single Quadrant Large Mobile View (8 teeth with touch hit targets >= 48x48px) */
 					<div
 						className="tooth-chart-arch-wrapper quadrant-view-wrapper"
@@ -559,6 +609,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							onSelectQuadrant={handleSelectQuadrant}
 							isPediatricEffective={isPediatricEffective}
 							isMixedEffective={isMixedEffective}
+							mobileDisplayMode={effectiveMobileDisplayMode}
+							onToggleMobileDisplayMode={handleToggleMobileDisplayMode}
 						/>
 
 						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row ${

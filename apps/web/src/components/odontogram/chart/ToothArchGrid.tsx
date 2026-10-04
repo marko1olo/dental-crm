@@ -12,6 +12,7 @@ import {
 	getQuadrantTitle,
 } from "./toothChartTypes";
 import { ToothSVG } from "./ToothSvg";
+import { ToothCarouselFocus } from "./ToothCarouselFocus";
 
 export interface ToothArchGridProps {
 	archContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -35,6 +36,11 @@ export interface ToothArchGridProps {
 	handleToothClick: (e: React.MouseEvent, num: number, surface?: string) => void;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
+	mobileDisplayMode?: "quadrant" | "carousel" | undefined;
+	carouselTooth?: number | undefined;
+	onSelectCarouselTooth?: ((num: number) => void) | undefined;
+	onOpenStatusSheet?: ((num: number, rect?: DOMRect) => void) | undefined;
+	onSurfacesChange?: ((targets: number[], surfaces: readonly string[]) => void) | undefined;
 }
 
 export const ToothArchGrid: React.FC<ToothArchGridProps> = memo(({
@@ -59,9 +65,42 @@ export const ToothArchGrid: React.FC<ToothArchGridProps> = memo(({
 	handleToothClick,
 	onQuickStateChange,
 	onResorptionChange,
+	mobileDisplayMode,
+	carouselTooth,
+	onSelectCarouselTooth,
+	onOpenStatusSheet,
+	onSurfacesChange,
 }) => (
 	<div className="tooth-chart-arch-container" ref={archContainerRef}>
-		{isQuadrantView ? (
+		{mobileDisplayMode === "carousel" ? (
+			<ToothCarouselFocus
+				toothNumber={
+					carouselTooth ??
+					(selectedTeeth.length > 0
+						? selectedTeeth[0]!
+						: (activeQuadrantTeeth[0] || (isPediatricEffective ? 55 : 16)))
+				}
+				toothDataMap={toothDataMap}
+				isPediatricEffective={isPediatricEffective}
+				pediatricMode={pediatricMode}
+				onSelectTooth={(num) => {
+					onSelectCarouselTooth?.(num);
+				}}
+				onOpenStatusSheet={(num, rect) => {
+					if (onOpenStatusSheet) {
+						onOpenStatusSheet(num, rect);
+					} else {
+						handleToothClick({} as any, num);
+					}
+				}}
+				onQuickStateChange={onQuickStateChange}
+				onSurfacesChange={onSurfacesChange}
+				showPulpAndCanals={showPulpAndCanals}
+				showPeriapicalHalos={showPeriapicalHalos}
+				showPeriodontalBoneLoss={showPeriodontalBoneLoss}
+				useSurfaces={useSurfaces}
+			/>
+		) : isQuadrantView ? (
 			/* Focused Single Quadrant Large Mobile View */
 			<div
 				className="tooth-chart-arch-wrapper quadrant-view-wrapper w-full max-w-full"
@@ -148,9 +187,8 @@ export const ToothArchGrid: React.FC<ToothArchGridProps> = memo(({
 		) : (
 			/* Full Dual-Arch View */
 			<div
-				className="tooth-chart-arch-wrapper"
+				className="tooth-chart-arch-wrapper w-full max-w-full overflow-x-auto"
 				style={{
-					minWidth: "max-content",
 					margin: "0 auto",
 					position: "relative",
 				}}
