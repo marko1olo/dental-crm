@@ -377,6 +377,25 @@ export function calculateAppointmentSpan(
 	return Math.max(1, Math.round(duration / step));
 }
 
+export type ScheduleDensityMode = "compact" | "informative" | "expanded";
+
+/**
+ * Calculates proportional appointment card height strictly based on durationMinutes.
+ * Scale:
+ * - 15 min = 38px (base unit)
+ * - 20 min = 51px
+ * - 30 min = 76px (2x base)
+ * - 45 min = 114px (3x base)
+ * - 60 min = 152px (4x base)
+ * - 90 min = 228px (6x base)
+ * - 120 min = 304px (8x base)
+ * Formula: Math.max(38, Math.round((Math.max(15, durationMinutes || 30) / 15) * 38))
+ */
+export function calculateProportionalCardHeight(durationMinutes: number): number {
+	const validMinutes = Math.max(15, durationMinutes || 30);
+	return Math.max(38, Math.round((validMinutes / 15) * 38));
+}
+
 /**
  * Calculates monolithic appointment card height in pixels corresponding to duration:
  * height = durationMinutes * (baseSlotHeightPx / slotStepMinutes).

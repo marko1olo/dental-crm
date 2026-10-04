@@ -1,9 +1,12 @@
 import React from "react";
 import {
+  AlignJustify,
   Calendar,
   CalendarRange,
   Copy,
   Layers,
+  LayoutGrid,
+  Maximize2,
   MoreVertical,
   Pin,
   Plus,
@@ -25,8 +28,11 @@ import {
 } from "./ScheduleGrid";
 import type { QuickAddChairData } from "./QuickAddChairModal";
 import { ChairShiftPopover } from "./ChairShiftPopover";
+import { useScheduleDensity, type ScheduleDensityMode } from "./useScheduleState";
 
 export interface ChairScheduleToolbarProps {
+  densityMode?: ScheduleDensityMode;
+  onDensityChange?: ((mode: ScheduleDensityMode) => void) | undefined;
   chairs: ScheduleChair[];
   isSoloDoctor: boolean;
   rawBranches: any[];
@@ -71,6 +77,8 @@ export interface ChairScheduleToolbarProps {
 }
 
 export function ChairScheduleToolbar({
+  densityMode: propDensityMode,
+  onDensityChange,
   chairs,
   isSoloDoctor,
   rawBranches,
@@ -113,6 +121,15 @@ export function ChairScheduleToolbar({
   onOpenPreventiveInspection,
   preventiveInspectionCount,
 }: ChairScheduleToolbarProps) {
+  const { densityMode: storeDensityMode, setDensityMode: storeSetDensityMode } = useScheduleDensity();
+  const currentDensity = propDensityMode ?? storeDensityMode;
+  const setDensity = (mode: ScheduleDensityMode) => {
+    if (onDensityChange) {
+      onDensityChange(mode);
+    }
+    storeSetDensityMode(mode);
+  };
+
   const [isMoreMenuOpen, setIsMoreMenuOpen] = React.useState(false);
   const moreMenuRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -379,6 +396,60 @@ export function ChairScheduleToolbar({
 
       {/* Right: Actions — Compact 1-Row Toolbar (Hick's Law, Apple HIG, Mandate 8d, 8p) */}
       <div className="flex items-center gap-1.5 shrink-0 select-none flex-nowrap">
+        {/* 3-State Schedule Density Mode Switcher (Hick's Law / Clinical HIG) */}
+        <div
+          className="inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] h-7 min-h-[28px] max-h-[28px] shrink-0 select-none"
+          data-testid="schedule-density-switcher"
+          role="group"
+          aria-label="Режим отображения карточек расписания"
+        >
+          <button
+            type="button"
+            onClick={() => setDensity("compact")}
+            className={`h-6 px-2 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+              currentDensity === "compact"
+                ? "bg-[var(--teal-soft)] text-[var(--teal)] shadow-2xs border border-[var(--teal)]/40 font-bold"
+                : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] border border-transparent"
+            }`}
+            title="Компактный режим: 1-строчный минимализм"
+            data-testid="btn-density-compact"
+            aria-pressed={currentDensity === "compact"}
+          >
+            <AlignJustify size={11} className="shrink-0" />
+            <span className="hidden sm:inline">Компактный</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDensity("informative")}
+            className={`h-6 px-2 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+              currentDensity === "informative"
+                ? "bg-[var(--teal-soft)] text-[var(--teal)] shadow-2xs border border-[var(--teal)]/40 font-bold"
+                : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] border border-transparent"
+            }`}
+            title="Информативный режим (по умолчанию): 2-3 строки с процедурой и зубом"
+            data-testid="btn-density-informative"
+            aria-pressed={currentDensity === "informative"}
+          >
+            <LayoutGrid size={11} className="shrink-0" />
+            <span className="hidden sm:inline">Информативный</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDensity("expanded")}
+            className={`h-6 px-2 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+              currentDensity === "expanded"
+                ? "bg-[var(--teal-soft)] text-[var(--teal)] shadow-2xs border border-[var(--teal)]/40 font-bold"
+                : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] border border-transparent"
+            }`}
+            title="Развернутый режим: полный блок с контактами и кнопкой «В приём»"
+            data-testid="btn-density-expanded"
+            aria-pressed={currentDensity === "expanded"}
+          >
+            <Maximize2 size={11} className="shrink-0" />
+            <span className="hidden sm:inline">Развернутый</span>
+          </button>
+        </div>
+
         {/* Dropdown Menu for Batch Shift Actions (Hick's Law: 1 trigger button instead of 7-button fence) */}
         <div className="relative">
           <button

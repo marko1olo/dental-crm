@@ -16,8 +16,10 @@ import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
+import { useScheduleDensity, type ScheduleDensityMode } from "../useScheduleState";
 
 export interface ScheduleAppointmentTrackProps {
+  densityMode?: ScheduleDensityMode;
   timeSlots: string[];
   gridStep: 15 | 30 | 60;
   effectiveChairs: Array<any>;
@@ -88,6 +90,7 @@ const DEFAULT_EMPTY_SLOT_CELL_DATA = {
 
 export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
   const {
+    densityMode: propDensityMode,
     timeSlots,
     gridStep,
     effectiveChairs,
@@ -131,6 +134,10 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
     onSlotClick,
     emergencyReserveSlots,
   } = props;
+
+  const { densityMode: storedDensityMode } = useScheduleDensity();
+  const effectiveDensityMode = propDensityMode ?? storedDensityMode;
+  const baseSlotHeightPx = Math.max(38, Math.round(((gridStep || 15) / 15) * 38));
 
   const renderedApptIds = new Set<string>();
 
@@ -316,6 +323,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
   ) => (
     <GridAppointmentCard
       key={a.id}
+      densityMode={effectiveDensityMode}
       appointment={a}
       chair={chair}
       effectiveChairs={effectiveChairs}
@@ -394,6 +402,9 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
       );
       const clampedSpan = Math.min(maxSpan, slotsList.length - hIndex);
 
+      const isCellHovered = cellAppointments.some(
+        (a) => hoveredApptId === a.id,
+      );
       return (
         <div
           key={`occupied-${chair.id}-${hour}`}
@@ -401,7 +412,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           style={{
             gridColumn: colIndex,
             gridRow: `${rowIndex} / span ${clampedSpan}`,
-            zIndex: 10,
+            zIndex: isCellHovered ? 40 : 10,
             ["--slot-position" as any]: hIndex,
             ["--slot-size" as any]: clampedSpan,
             ["--slot-step" as any]: gridStep,
@@ -495,6 +506,9 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
       );
       const clampedSpan = Math.min(maxSpan, slotsList.length - hIndex);
 
+      const isContinuingHovered = unrenderedContinuing.some(
+        (a) => hoveredApptId === a.id,
+      );
       return (
         <div
           key={`continuing-start-${chair.id}-${hour}`}
@@ -502,7 +516,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
           style={{
             gridColumn: colIndex,
             gridRow: `${rowIndex} / span ${clampedSpan}`,
-            zIndex: 10,
+            zIndex: isContinuingHovered ? 40 : 10,
             ["--slot-position" as any]: hIndex,
             ["--slot-size" as any]: clampedSpan,
             ["--slot-step" as any]: gridStep,
@@ -679,14 +693,14 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             className="schedule-grid-container grid min-w-full"
             style={{
               gridTemplateColumns: "clamp(64px, 5vw, 84px) 1fr",
-              gridTemplateRows: `repeat(${morningSlots.length}, minmax(38px, auto))`,
+              gridTemplateRows: `repeat(${morningSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
             }}
           >
             {morningSlots.map((hour, hIndex) => (
               <div
                 key={`morning-time-${hour}`}
-                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center min-h-[38px]"
-                style={{ gridColumn: 1, gridRow: hIndex + 1 }}
+                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
+                style={{ gridColumn: 1, gridRow: hIndex + 1, minHeight: `${baseSlotHeightPx}px` }}
               >
                 {hour}
               </div>
@@ -712,14 +726,14 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             className="schedule-grid-container grid min-w-full"
             style={{
               gridTemplateColumns: "clamp(64px, 5vw, 84px) 1fr",
-              gridTemplateRows: `repeat(${eveningSlots.length}, minmax(38px, auto))`,
+              gridTemplateRows: `repeat(${eveningSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
             }}
           >
             {eveningSlots.map((hour, hIndex) => (
               <div
                 key={`evening-time-${hour}`}
-                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center min-h-[38px]"
-                style={{ gridColumn: 1, gridRow: hIndex + 1 }}
+                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
+                style={{ gridColumn: 1, gridRow: hIndex + 1, minHeight: `${baseSlotHeightPx}px` }}
               >
                 {hour}
               </div>
@@ -743,17 +757,18 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             ? `${Math.max(260, 72 + effectiveChairs.length * 220)}px`
             : undefined,
         gridTemplateColumns: `clamp(112px, 10vw, 150px) repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
-        gridTemplateRows: `repeat(${timeSlots.length}, minmax(52px, auto))`,
+        gridTemplateRows: `repeat(${timeSlots.length}, minmax(${baseSlotHeightPx}px, auto))`,
       }}
     >
       {/* 1. Time Column Labels (Column 1) */}
       {timeSlots.map((hour, hIndex) => (
         <div
           key={`time-${hour}`}
-          className="schedule-time-label px-1.5 sm:px-2 py-1 sm:py-1.5 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center min-h-[52px]"
+          className="schedule-time-label px-1.5 sm:px-2 py-1 sm:py-1.5 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center"
           style={{
             gridColumn: 1,
             gridRow: hIndex + 1,
+            minHeight: `${baseSlotHeightPx}px`,
           }}
         >
           {hour}

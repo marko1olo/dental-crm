@@ -27,7 +27,10 @@ import { AppointmentCardContextMenu } from "./AppointmentCardContextMenu";
 import { AppointmentCardEditor } from "./AppointmentCardEditor";
 import { areAppointmentCardPropsEqual } from "./AppointmentCardMemo";
 import { useAppointmentCardState } from "./useAppointmentCardState";
-import { formatDoctorShortName } from "./appointmentCardHelpers";
+import {
+	formatDoctorShortName,
+	calculateProportionalCardHeight,
+} from "./appointmentCardHelpers";
 import type { AppointmentCardProps } from "./AppointmentCardTypes";
 
 export * from "./AppointmentCardTypes";
@@ -177,9 +180,20 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 			: undefined) ?? null;
 	const appointmentHandoffNoteId = `appointment-handoff-note-${appointment?.id ?? ""}`;
 
-	const isMicroDensity = durationMinutes <= 20;
-	const isTwoLineMode = durationMinutes > 20 && durationMinutes < 60;
-	const isFullExpanded = durationMinutes >= 60;
+	const densityMode = props.densityMode;
+	const isMicroDensity =
+		densityMode === "compact" ||
+		(!densityMode && durationMinutes <= 20) ||
+		(densityMode === "informative" && durationMinutes <= 20);
+	const isTwoLineMode =
+		(!densityMode && durationMinutes > 20 && durationMinutes < 60) ||
+		(densityMode === "informative" && durationMinutes > 20 && durationMinutes < 60);
+	const isFullExpanded =
+		densityMode === "expanded" ||
+		(!densityMode && durationMinutes >= 60) ||
+		(densityMode === "informative" && durationMinutes >= 60);
+
+	const proportionalHeight = calculateProportionalCardHeight(durationMinutes);
 
 	return (
 		<div className="timeline-node min-w-0 max-w-full" key={appointment.id}>
@@ -193,6 +207,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 					data-appointment-id={appointment.id}
 					data-duration-minutes={durationMinutes}
 					data-density={isMicroDensity ? "micro" : isTwoLineMode ? "compact-2line" : "expanded"}
+					data-proportional-height={proportionalHeight}
 					data-multi-hour-block={isMultiHour ? "true" : "false"}
 					data-slot-span={slotSpan}
 					tabIndex={0}
@@ -245,6 +260,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 						color: "var(--ink)",
 						minWidth: 0,
 						maxWidth: "100%",
+						minHeight: `${proportionalHeight}px`,
 						boxSizing: "border-box",
 						contentVisibility: "auto",
 						containIntrinsicSize: isMicroDensity ? "1px 32px" : "1px 48px",

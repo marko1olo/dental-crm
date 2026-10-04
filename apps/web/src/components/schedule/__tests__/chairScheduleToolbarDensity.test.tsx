@@ -71,4 +71,16 @@ describe("ChairScheduleToolbar 1-line 36px & Responsive More Menu (Mandate 8p)",
     assert.ok(html.includes('data-testid="btn-chair-view-add-doctor"'), "btn-chair-view-add-doctor must exist");
     assert.ok(html.includes('data-testid="chair-toolbar-find-slots-btn"'), "chair-toolbar-find-slots-btn must exist");
   });
+
+  it("renders 3 density modes switcher in 1-line toolbar", () => {
+    const html = renderToStaticMarkup(React.createElement(ChairScheduleToolbar, defaultProps));
+
+    assert.ok(html.includes('data-testid="schedule-density-switcher"'), "Density switcher container must exist");
+    assert.ok(html.includes('data-testid="btn-density-compact"'), "Compact mode button must exist");
+    assert.ok(html.includes('data-testid="btn-density-informative"'), "Informative mode button must exist");
+    assert.ok(html.includes('data-testid="btn-density-expanded"'), "Expanded mode button must exist");
+    assert.ok(html.includes("Компактный"), "Text 'Компактный' must be present");
+    assert.ok(html.includes("Информативный"), "Text 'Информативный' must be present");
+    assert.ok(html.includes("Развернутый"), "Text 'Развернутый' must be present");
+  });
 });

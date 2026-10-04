@@ -4,8 +4,10 @@ import type {
 	Dashboard,
 	ScheduleSuggestion,
 } from "@dental/shared";
+import type { ScheduleDensityMode } from "./appointmentCardHelpers";
 
 export type AppointmentCardProps = {
+	densityMode?: ScheduleDensityMode;
 	appointment: Appointment;
 	dashboard: Dashboard;
 	visibleScheduleSuggestions: ScheduleSuggestion[];
@@ -55,4 +57,5 @@ export type AppointmentCardProps = {
 	useManualSelects: boolean;
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	onOpenVisit?: () => void;
+	onOpenWaitlistForSlot?: ((slot: any) => void) | undefined;
 };

@@ -132,4 +132,39 @@ describe("AppointmentCard Adaptive Density Modes (15m, 30-45m, 60m+)", () => {
 		assert.ok(html.includes("appointment-card-header"), "Должен содержать полный заголовок");
 		assert.ok(html.includes("chip-reason"), "Должен содержать чип причины");
 	});
+
+	it("proportional heights strictly match duration formula (15m=38px, 20m=51px, 30m=76px, 60m=152px)", () => {
+		const props15 = createProps("2026-10-04T09:00:00.000Z", "2026-10-04T09:15:00.000Z");
+		const html15 = renderToStaticMarkup(React.createElement(AppointmentCard, props15));
+		assert.ok(html15.includes('data-proportional-height="38"'), "15 мин должно быть 38px");
+		assert.ok(html15.includes("min-height:38px") || html15.includes("min-height: 38px"), "15 мин minHeight = 38px");
+
+		const props20 = createProps("2026-10-04T09:00:00.000Z", "2026-10-04T09:20:00.000Z");
+		const html20 = renderToStaticMarkup(React.createElement(AppointmentCard, props20));
+		assert.ok(html20.includes('data-proportional-height="51"'), "20 мин должно быть 51px");
+
+		const props30 = createProps("2026-10-04T09:00:00.000Z", "2026-10-04T09:30:00.000Z");
+		const html30 = renderToStaticMarkup(React.createElement(AppointmentCard, props30));
+		assert.ok(html30.includes('data-proportional-height="76"'), "30 мин должно быть 76px (2x)");
+		assert.ok(html30.includes("min-height:76px") || html30.includes("min-height: 76px"), "30 мин minHeight = 76px");
+
+		const props60 = createProps("2026-10-04T09:00:00.000Z", "2026-10-04T10:00:00.000Z");
+		const html60 = renderToStaticMarkup(React.createElement(AppointmentCard, props60));
+		assert.ok(html60.includes('data-proportional-height="152"'), "60 мин должно быть 152px (4x)");
+		assert.ok(html60.includes("min-height:152px") || html60.includes("min-height: 152px"), "60 мин minHeight = 152px");
+	});
+
+	it("densityMode override: 'compact' forces 1-line mode even on 60-min appointment", () => {
+		const props = { ...createProps("2026-10-04T09:00:00.000Z", "2026-10-04T10:00:00.000Z"), densityMode: "compact" as const };
+		const html = renderToStaticMarkup(React.createElement(AppointmentCard, props));
+		assert.ok(html.includes('data-density="micro"'), "Должен форсировать micro density");
+		assert.ok(html.includes('data-testid="appointment-card-micro-row"'), "Должен рендерить 1-строчный micro-row");
+	});
+
+	it("densityMode override: 'expanded' forces full block even on 15-min appointment", () => {
+		const props = { ...createProps("2026-10-04T09:00:00.000Z", "2026-10-04T09:15:00.000Z"), densityMode: "expanded" as const };
+		const html = renderToStaticMarkup(React.createElement(AppointmentCard, props));
+		assert.ok(html.includes('data-density="expanded"'), "Должен форсировать expanded density");
+		assert.ok(html.includes('data-testid="appointment-card-expanded"'), "Должен рендерить expanded контейнер");
+	});
 });
