@@ -396,13 +396,15 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	// Hub pinned directly to tooth center with safety margin against screen borders
 	const hubX = Math.max(50, Math.min(vw - 50, rawCenterX));
 	const hubY = Math.max(190, Math.min(vh - 210, rawCenterY));
-	const subAnchorX = layoutMode === "right-wing" ? hubX + 215 : hubX - 215;
+	const subAnchorX = layoutMode === "right-wing"
+		? Math.max(225, Math.min(vw - 225, hubX + 215))
+		: Math.max(225, Math.min(vw - 225, hubX - 215));
 
 	// Clamp menu center to prevent edge clipping while staying true to the tooth position
 	const radius = 120;
-	const minMarginX = Math.min(200, vw / 2);
-	const minMarginTop = 200;
-	const minMarginBottom = 200;
+	const minMarginX = Math.min(240, vw / 2);
+	const minMarginTop = 190;
+	const minMarginBottom = 190;
 	const centerX = Math.max(minMarginX, Math.min(rawCenterX, vw - minMarginX));
 	const centerY = Math.max(minMarginTop, Math.min(rawCenterY, vh - minMarginBottom));
 
@@ -1504,7 +1506,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					<div className="radial-wing-columns-wrapper absolute inset-0 pointer-events-none">
 						{/* Column 1: Hot Path */}
 						{wingCol1Items.map((item, rowIdx) => {
-							const colX = layoutMode === "right-wing" ? hubX + 138 : hubX - 138;
+							const colX = layoutMode === "right-wing" ? subAnchorX - 75 : subAnchorX + 75;
 							const rowY = hubY + (rowIdx - 2) * 50;
 							const isCurrent = currentState === item.state;
 
@@ -1551,7 +1553,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 						{/* Column 2: Specialized */}
 						{wingCol2Items.map((item, rowIdx) => {
-							const colX = layoutMode === "right-wing" ? hubX + 288 : hubX - 288;
+							const colX = layoutMode === "right-wing" ? subAnchorX + 75 : subAnchorX - 75;
 							const rowY = hubY + (rowIdx - 2) * 50;
 							const isCurrent = currentState === item.state;
 
@@ -1602,7 +1604,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						className="absolute flex flex-col items-center gap-1.5 pointer-events-auto bg-[var(--odontogram-paper)]/95 backdrop-blur-xl px-3.5 py-1.5 rounded-2xl border border-[var(--odontogram-border)] shadow-xl z-20"
 						style={{
 							left: `${subAnchorX}px`,
-							top: `${hubY - 175}px`,
+							top: `${Math.max(16, hubY - 175)}px`,
 							transform: "translate(-50%, 0)",
 						}}
 					>
@@ -1674,7 +1676,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 							style={{
 								left: `${subAnchorX}px`,
-								top: `${hubY + 145}px`,
+								top: `${Math.min(vh - 55, hubY + 145)}px`,
 								transform: "translate(-50%, 0)",
 							}}
 						>

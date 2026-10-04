@@ -18,6 +18,15 @@ import type {
 	NerveSafetyAuditResult,
 	AlveolarRidgeEnvelope,
 } from "./implantSafetyEngine";
+
+export type {
+	ImplantBrandKey,
+	VirtualImplantSpec,
+	CrossSectionImplantPose,
+	MandibularCanalCrossSection,
+	NerveSafetyAuditResult,
+	AlveolarRidgeEnvelope,
+};
 import { generateForm043CbctDiary, auditAlveolarBoneContainment } from "./implantSafetyEngine";
 import type { AlveolarRidgeCaliperMeasurement } from "./cbctCaliperNerveMath";
 import type { HUZoneSampling, MischClassificationResult } from "./boneDensityMischMath";
@@ -67,19 +76,12 @@ export interface QuickScheduleDraftPayload {
 }
 
 const BRAND_LABELS: Record<ImplantBrandKey, string> = {
-	straumann: "Straumann (Швейцария)",
-	nobel_biocare: "Nobel Biocare (Швеция/США)",
-	osstem: "Osstem TS III (Южная Корея)",
-	dentium: "Dentium SuperLine (Южная Корея)",
-	mis: "MIS V3/Seven (Израиль)",
+	straumann: "Straumann (Швейцария)", nobel_biocare: "Nobel Biocare (Швеция/США)",
+	osstem: "Osstem TS III (Южная Корея)", dentium: "Dentium SuperLine (Южная Корея)", mis: "MIS V3/Seven (Израиль)",
 };
 
 const DEFAULT_IMPLANT_PRICES_RUB: Record<ImplantBrandKey, number> = {
-	straumann: 48000,
-	nobel_biocare: 45000,
-	osstem: 24000,
-	dentium: 26000,
-	mis: 22000,
+	straumann: 48000, nobel_biocare: 45000, osstem: 24000, dentium: 26000, mis: 22000,
 };
 
 const STORAGE_PREFIX = "dente_custom_plan_items_";
@@ -147,18 +149,14 @@ export function buildImplantDiarySoapEntry(params: CtImplantBridgeParams): Impla
 	const ridgeLocalis =
 		hasW2 && hasW6 && hasH
 			? `морфометрия альвеолярного гребня: ширина W2 (на 2 мм апикальнее вершины) = ${params.ridgeW2Mm!.toFixed(1)} мм, базальная ширина W6 (на 6 мм) = ${params.ridgeW6Mm!.toFixed(1)} мм, высота кости H = ${params.ridgeHeightMm!.toFixed(1)} мм`
-			: hasH && hasW
-				? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
-				: hasH
-					? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина не измерялась (—)`
-					: hasW
-						? `высота альвеолярного гребня не измерялась (—), ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
-						: "замеры альвеолярного гребня штангенциркулем не проводились (—)";
+			: hasH && hasW ? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
+			: hasH ? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина не измерялась (—)`
+			: hasW ? `высота альвеолярного гребня не измерялась (—), ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
+			: "замеры альвеолярного гребня штангенциркулем не проводились (—)";
 
-	const nerveLocalis =
-		params.nerveClearanceMm !== null
-			? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм.`
-			: "дистанция до нижнечелюстного канала не измерялась (—) (Канал не размечен).";
+	const nerveLocalis = params.nerveClearanceMm !== null
+		? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм.`
+		: "дистанция до нижнечелюстного канала не измерялась (—) (Канал не размечен).";
 
 	const sinusLiftPart = params.sinusLiftRecommendation ? ` Рекомендации по костной пластике: ${params.sinusLiftRecommendation}` : "";
 
@@ -178,12 +176,7 @@ export function buildImplantDiarySoapEntry(params: CtImplantBridgeParams): Impla
 		(params.sinusLiftRecommendation ? `5. Костная пластика: ${params.sinusLiftRecommendation}\n6.` : "5.") +
 		` Рекомендована установка формирователя десны / винта-заглушки с последующей интеграцией 3-4 мес.`;
 
-	return {
-		statusLocalis,
-		treatmentDescription,
-		diagnosisIcd10: "K08.1",
-		diagnosisTooth: String(params.toothFdi),
-	};
+	return { statusLocalis, treatmentDescription, diagnosisIcd10: "K08.1", diagnosisTooth: String(params.toothFdi) };
 }
 
 /**
@@ -433,21 +426,16 @@ export function exportPdfImplantReport(params: ExportPdfReportParams): void {
 		effectiveRidgeHeightMm = cal.heightMm;
 		effectiveRidgeWidthMm = cal.crestWidthMm;
 		derivedEnvelope = {
-			crestPoint: cal.crestPoint,
-			basePoint: cal.basePoint,
+			crestPoint: cal.crestPoint, basePoint: cal.basePoint,
 			buccalCrestPoint: cal.crestWidthLeft ?? { x: cal.crestPoint.x - cal.crestWidthMm / 2, y: cal.crestPoint.y },
 			lingualCrestPoint: cal.crestWidthRight ?? { x: cal.crestPoint.x + cal.crestWidthMm / 2, y: cal.crestPoint.y },
-			ridgeWidthMm: cal.crestWidthMm,
-			ridgeHeightMm: cal.heightMm,
+			ridgeWidthMm: cal.crestWidthMm, ridgeHeightMm: cal.heightMm,
 		};
 	} else if (!derivedEnvelope && effectiveRidgeHeightMm !== null && effectiveRidgeWidthMm !== null) {
 		derivedEnvelope = {
-			crestPoint: { x: 0, y: 0 },
-			basePoint: { x: 0, y: effectiveRidgeHeightMm },
-			buccalCrestPoint: { x: -effectiveRidgeWidthMm / 2, y: 0 },
-			lingualCrestPoint: { x: effectiveRidgeWidthMm / 2, y: 0 },
-			ridgeWidthMm: effectiveRidgeWidthMm,
-			ridgeHeightMm: effectiveRidgeHeightMm,
+			crestPoint: { x: 0, y: 0 }, basePoint: { x: 0, y: effectiveRidgeHeightMm },
+			buccalCrestPoint: { x: -effectiveRidgeWidthMm / 2, y: 0 }, lingualCrestPoint: { x: effectiveRidgeWidthMm / 2, y: 0 },
+			ridgeWidthMm: effectiveRidgeWidthMm, ridgeHeightMm: effectiveRidgeHeightMm,
 		};
 	}
 
@@ -539,15 +527,10 @@ export function addCbctServiceToVisitFinanceAct(params: AddCbctToFinanceParams =
 			setVisitNoteForm((prev) => {
 				const line = `[${STATUTORY_CBCT_804N.code804n}] ${STATUTORY_CBCT_804N.statutoryTitle804n}${toothSuffix} — ${priceRub.toLocaleString("ru-RU")} ₽`;
 				const prevPlan = (prev.treatmentPlan || "").trim();
-				return {
-					...prev,
-					treatmentPlan: prevPlan ? `${prevPlan}\n${line}` : line,
-				};
+				return { ...prev, treatmentPlan: prevPlan ? `${prevPlan}\n${line}` : line };
 			});
 		}
-	} catch {
-		// ignore
-	}
+	} catch { /* ignore */ }
 
 	// 2. Акт выполненных работ useDocumentStore
 	try {
@@ -556,13 +539,10 @@ export function addCbctServiceToVisitFinanceAct(params: AddCbctToFinanceParams =
 			const actLine = `${STATUTORY_CBCT_804N.code804n} ${STATUTORY_CBCT_804N.statutoryTitle804n}${toothSuffix} — ${priceRub.toLocaleString("ru-RU")} ₽`;
 			const prevSummary = (docState.completedActServicesSummary || "").trim();
 			docState.setCompletedActServicesSummary(prevSummary ? `${prevSummary}\n${actLine}` : actLine);
-
 			const currentTotal = Number.parseFloat((docState.completedActTotalRub || "0").replace(/[^\d.-]/g, "")) || 0;
 			docState.setCompletedActTotalRub(String(currentTotal + priceRub));
 		}
-	} catch {
-		// ignore
-	}
+	} catch { /* ignore */ }
 
 	// 3. CustomEvent 'dente-add-services-to-invoice'
 	if (typeof window !== "undefined") {
@@ -674,8 +654,137 @@ export function addCbctServiceToTreatmentPlan(params: AddCbctToFinanceParams = {
 	return planItem;
 }
 
+export interface AddCbctSurgicalToFinanceParams {
+	readonly patientId?: string | undefined;
+	readonly toothFdi: number;
+	readonly implantSpec: VirtualImplantSpec;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly ridgeWidthMm?: number | null | undefined;
+	readonly sinusLiftRecommendation?: string | null | undefined;
+	readonly doctorName?: string | undefined;
+}
+
+export interface SurgicalFinanceExportResult {
+	readonly services: ReadonlyArray<{ code: string; title: string; priceRub: number }>;
+	readonly totalRub: number;
+}
+
 /**
- * 11. Комбинированное добавление услуги КЛКТ (A06.07.012) в 1 клик
+ * 11. Добавление полного хирургического пакета (имплантация + костная пластика/синус-лифтинг + КЛКТ)
+ * в финансовый наряд визита (смета визита) и акт выполненных работ (1-клик, Мандаты 8e, 8n).
+ */
+export function addCbctSurgicalToVisitFinance(params: AddCbctSurgicalToFinanceParams): SurgicalFinanceExportResult {
+	const brandTitle = getImplantBrandTitle(params.implantSpec.brand);
+	const diamStr = params.implantSpec.diameterMm.toFixed(1);
+	const lenStr = params.implantSpec.lengthMm.toFixed(1);
+	const toothCode = String(params.toothFdi);
+	const toothSuffix = ` (область зуба #${toothCode})`;
+
+	const implantPrice = DEFAULT_IMPLANT_PRICES_RUB[params.implantSpec.brand] ?? 26000;
+	const cbctPrice = STATUTORY_CBCT_804N.basePriceRub;
+	const abutmentPrice = 5500;
+
+	const services: Array<{ code: string; title: string; priceRub: number }> = [
+		{
+			code: STATUTORY_CBCT_804N.code804n,
+			title: `${STATUTORY_CBCT_804N.statutoryTitle804n}${toothSuffix}`,
+			priceRub: cbctPrice,
+		},
+		{
+			code: "A16.07.054.001",
+			title: `Внутрикостная дентальная имплантация: ${brandTitle} (Ø${diamStr} × ${lenStr} мм)${toothSuffix}`,
+			priceRub: implantPrice,
+		},
+	];
+
+	// Оценка необходимости костной пластики / синус-лифтинга по КЛКТ замерам
+	const isMaxillaSinus = params.toothFdi >= 14 && params.toothFdi <= 27;
+	const h = typeof params.ridgeHeightMm === "number" ? params.ridgeHeightMm : null;
+	const w = typeof params.ridgeWidthMm === "number" ? params.ridgeWidthMm : null;
+
+	if (isMaxillaSinus && h !== null && h < 5.0) {
+		services.push(
+			{ code: "A16.07.041.001", title: `Открытый синус-лифтинг с латеральным костным окном${toothSuffix}`, priceRub: 32000 },
+			{ code: "A16.07.041", title: `Костная пластика: биоматериал Geistlich Bio-Oss (1.0 г)${toothSuffix}`, priceRub: 18000 },
+		);
+	} else if (isMaxillaSinus && h !== null && h < 10.0) {
+		services.push(
+			{ code: "A16.07.041.002", title: `Закрытый транскрестальный синус-лифтинг${toothSuffix}`, priceRub: 18000 },
+			{ code: "A16.07.041", title: `Костная пластика: биоматериал Geistlich Bio-Oss (0.5 см³)${toothSuffix}`, priceRub: 15000 },
+		);
+	} else if (w !== null && w < 5.5) {
+		services.push({ code: "A16.07.041", title: `Направленная костная регенерация (НКР) альвеолярного гребня Bio-Oss${toothSuffix}`, priceRub: 16000 });
+	}
+
+	services.push({
+		code: "A16.07.054.002",
+		title: `Установка титанового формирователя десны Healing Abutment${toothSuffix}`,
+		priceRub: abutmentPrice,
+	});
+
+	const totalRub = services.reduce((acc, s) => acc + s.priceRub, 0);
+
+	// 1. Дневник приёма useVisitStore (Форма 043/у)
+	try {
+		const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+		if (typeof setVisitNoteForm === "function") {
+			setVisitNoteForm((prev) => {
+				const lines = services.map((s) => `[${s.code}] ${s.title} — ${s.priceRub.toLocaleString("ru-RU")} ₽`).join("\n");
+				const prevPlan = (prev.treatmentPlan || "").trim();
+				return { ...prev, treatmentPlan: prevPlan ? `${prevPlan}\n${lines}` : lines };
+			});
+		}
+	} catch { /* ignore */ }
+
+	// 2. Акт выполненных работ useDocumentStore
+	try {
+		const docState = useDocumentStore.getState();
+		if (docState && typeof docState.setCompletedActServicesSummary === "function") {
+			const actLines = services.map((s) => `${s.code} ${s.title} — ${s.priceRub.toLocaleString("ru-RU")} ₽`).join("\n");
+			const prevSummary = (docState.completedActServicesSummary || "").trim();
+			docState.setCompletedActServicesSummary(prevSummary ? `${prevSummary}\n${actLines}` : actLines);
+			const currentTotal = Number.parseFloat((docState.completedActTotalRub || "0").replace(/[^\d.-]/g, "")) || 0;
+			docState.setCompletedActTotalRub(String(currentTotal + totalRub));
+		}
+	} catch { /* ignore */ }
+
+	// 3. CustomEvent 'dente-add-services-to-invoice'
+	if (typeof window !== "undefined") {
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						toothNumber: params.toothFdi,
+						toothCode,
+						services: services.map((s) => ({
+							code: s.code,
+							title: s.title,
+							price: s.priceRub,
+							priceRub: s.priceRub,
+							quantity: 1,
+							toothCode,
+							category: "surgery",
+						})),
+						source: "cbct_studio_surgery",
+					},
+				}),
+			);
+		} catch {
+			// ignore
+		}
+	}
+
+	showToast(
+		`Операция имплантации #${params.toothFdi} (${brandTitle}) и костная пластика (${totalRub.toLocaleString("ru-RU")} ₽) добавлены в смету визита!`,
+		"success",
+		5000,
+	);
+
+	return { services, totalRub };
+}
+
+/**
+ * 12. Комбинированное добавление услуги КЛКТ (A06.07.012) в 1 клик
  * одновременно в финансовый акт визита И в смету плана лечения (Мандаты 8e, 8n).
  */
 export function addCbctToFinanceAndPlan(params: AddCbctToFinanceParams = {}): {
@@ -693,4 +802,5 @@ export function addCbctToFinanceAndPlan(params: AddCbctToFinanceParams = {}): {
 
 	return { actService, planItem };
 }
+
 

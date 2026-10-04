@@ -36,6 +36,11 @@ import {
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import { ToothMolar, ToothDeciduous } from "../../icons/DentalIcons";
+import {
+	generateSoapFromOdontogramFinding,
+	type OdontogramFindingInput,
+} from "../../../lib/clinicalProtocols043";
+import { useVisitStore } from "../../../store/visitStore";
 
 export interface PatientDentalFormulaTabProps {
 	readonly patientId: string;
@@ -215,6 +220,50 @@ export const PatientDentalFormulaTab: React.FC<PatientDentalFormulaTabProps> = R
 				setTeethData(updated);
 				saveStoredTeethData(patientId, updated);
 				setLastSavedTime(new Date().toLocaleTimeString("ru-RU"));
+
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-odontogram-update", {
+							detail: {
+								patientId,
+								teethData: updated,
+								updatedToothNumbers: targets,
+								state: nextState,
+								surfaces: nextSurfaces,
+							},
+						}),
+					);
+
+					const normState = String(nextState || "").toLowerCase();
+					if (normState !== "healthy" && normState !== "" && normState !== "0") {
+						for (const num of targets) {
+							const finding: OdontogramFindingInput = {
+								toothNumber: num,
+								state: nextState,
+								surfaces: nextSurfaces && nextSurfaces.length > 0 ? nextSurfaces : undefined,
+							};
+							const soap = generateSoapFromOdontogramFinding(finding);
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										finding,
+										soap,
+										mode: "smart_append",
+										immediate: true,
+									},
+								}),
+							);
+							const uiState = normState.includes("missing") || normState.includes("extract") ? "missing" : "treatment";
+							useVisitStore.getState().setVisitToothRecord(String(num), {
+								toothNumber: num,
+								state: uiState,
+								diagnosis: soap.diagnosisIcd10Label || soap.diagnosisTooth,
+								diagnosisIcd10: soap.diagnosisIcd10,
+								treatmentPlan: soap.treatmentDescription,
+							});
+						}
+					}
+				}
 
 				if (targets.length === 1 && onApplyFindingToDiary) {
 					onApplyFindingToDiary(targets[0]!, nextState, nextSurfaces);

@@ -1440,11 +1440,11 @@ export function generateSoapFromOdontogramStates(
 	states: readonly {
 		toothNumber: number;
 		state: string;
-		surfaces?: readonly string[] | null;
-		subType?: string;
-		pocketDepthMm?: number;
-		icd10Override?: string;
-		notes?: string;
+		surfaces?: readonly string[] | null | undefined;
+		subType?: string | undefined;
+		pocketDepthMm?: number | undefined;
+		icd10Override?: string | undefined;
+		notes?: string | undefined;
 	}[],
 ): Partial<DiaryState> {
 	const nonHealthy = states.filter((s) => {
