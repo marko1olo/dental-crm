@@ -29,6 +29,8 @@ import {
 	denteTelegramWebhookUpdateSchema,
 	type UpdateDenteTelegramBotSettingsInput,
 	updateDenteTelegramBotSettingsSchema,
+	type TelegramBotPresetId,
+	type PostOpSurveyInput,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
@@ -105,6 +107,7 @@ import {
 } from "../telegram/chatLinks.js";
 import {
 	answerTelegramCallbackQuery,
+	editTelegramMessageText,
 	type SendTelegramPhotoMessageInput,
 	type SendTelegramTextMessageInput,
 	sendTelegramPhotoMessage,
@@ -117,6 +120,12 @@ import {
 	repairMojibakeText,
 } from "../text/repairMojibake.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { TelegramBotHostingService } from "../services/telegram/TelegramBotHostingService.js";
+import { TelegramInteractiveTriageService } from "../services/telegram/TelegramInteractiveTriageService.js";
+import {
+	TELEGRAM_BOT_PRESETS,
+	TelegramBotPresetsEngine,
+} from "../services/telegram/TelegramBotPresets.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -2452,12 +2461,17 @@ function safeCommandKeyboard(
 	const contact = [
 		{ text: "Позвать администратора", callback_data: "dente:contact" },
 	];
+	const triage = [
+		{ text: "🩺 Что вас беспокоит? (Опросник)", callback_data: "triage:root" },
+		{ text: "🧮 Калькулятор цен", callback_data: "triage:calc:root" },
+	];
 	const privacy = [
 		{ text: "Конфиденциальность", callback_data: "dente:privacy" },
 	];
 	const home = mainMenuTelegramRow();
 	if (mode === "appointment_callback") {
 		const rows = [
+			triage,
 			[...schedule, ...documents],
 			[...contact, ...privacy],
 			home,
@@ -2467,6 +2481,7 @@ function safeCommandKeyboard(
 	}
 	if (mode === "linked") {
 		const rows = [
+			triage,
 			[...schedule, ...documents],
 			[...care, ...contact],
 			home,
@@ -2478,6 +2493,7 @@ function safeCommandKeyboard(
 	if (mode === "rejected") {
 		return {
 			inline_keyboard: [
+				triage,
 				[{ text: "Получить QR в клинике", callback_data: "dente:clinic" }],
 				[...documents, ...care],
 				contact,
@@ -2491,6 +2507,7 @@ function safeCommandKeyboard(
 			inline_keyboard: [
 				portal,
 				maps,
+				triage,
 				[...schedule, ...contact],
 				[
 					{ text: "Помощь", callback_data: "dente:help" },
@@ -2507,6 +2524,7 @@ function safeCommandKeyboard(
 					{ text: "Что умеет бот", callback_data: "dente:help" },
 					{ text: "Подключение", callback_data: "dente:clinic" },
 				],
+				triage,
 				[...schedule, ...documents],
 				care,
 				home,
@@ -2517,6 +2535,7 @@ function safeCommandKeyboard(
 
 	return {
 		inline_keyboard: [
+			triage,
 			[
 				{ text: "Подключить клинику", callback_data: "dente:clinic" },
 				{ text: "Конфиденциальность", callback_data: "dente:privacy" },
@@ -2722,6 +2741,8 @@ function careTopicReplyFor(
 		periodontology:
 			"После пародонтологии: аккуратно очищайте десны по схеме врача, не пропускайте назначенные средства и контроль. Если кровоточивость, отек, боль или неприятный запах усиливаются, нажмите администратора.",
 	};
+	const clinicalInstruction = TelegramBotHostingService.getClinicalCareInstruction(topic);
+	const textBody = clinicalInstruction.text || texts[topic];
 	const rows = [
 		portal,
 		[
@@ -2731,7 +2752,7 @@ function careTopicReplyFor(
 		mainMenuTelegramRow(),
 	].filter((row) => row.length);
 	return {
-		text: [texts[topic], requestResult?.text].filter(Boolean).join("\n\n"),
+		text: [textBody, requestResult?.text].filter(Boolean).join("\n\n"),
 		replyMarkup: rows.length
 			? { inline_keyboard: rows }
 			: safeCommandKeyboard(settings, "help"),
@@ -2958,6 +2979,88 @@ function freeTextReplyFor(
 		])
 	) {
 		return contactRequestReplyFor(settings, chatFingerprintValue, scope);
+	}
+	if (freeTextIncludes(text, ["опросник", "триаж", "беспокоит", "симптом"])) {
+		const screen = TelegramInteractiveTriageService.getRootTriageScreen();
+		return {
+			text: screen.text,
+			replyMarkup: screen.replyMarkup,
+			photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
+		};
+	}
+	if (
+		freeTextIncludes(text, [
+			"калькулятор",
+			"стоимост",
+			"сколько стоит",
+			"прайс",
+			"цена",
+			"цены",
+			"расчет",
+		])
+	) {
+		const screen = TelegramInteractiveTriageService.getCalculatorRootScreen();
+		return {
+			text: screen.text,
+			replyMarkup: screen.replyMarkup,
+			photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
+		};
+	}
+	if (
+		freeTextIncludes(text, [
+			"пульсир",
+			"острая боль",
+			"отек",
+			"флегмон",
+			"раздуло",
+			"cito",
+		])
+	) {
+		const screen = TelegramInteractiveTriageService.getEmergencyScreen();
+		return {
+			text: screen.text,
+			replyMarkup: screen.replyMarkup,
+			photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
+		};
+	}
+	if (
+		freeTextIncludes(text, [
+			"откололся",
+			"скол",
+			"выпала пломба",
+			"пломба выпала",
+		])
+	) {
+		const screen = TelegramInteractiveTriageService.getBrokenToothScreen();
+		return {
+			text: screen.text,
+			replyMarkup: screen.replyMarkup,
+			photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
+		};
+	}
+	if (freeTextIncludes(text, ["винир", "элайнер", "отбеливан", "улыбк"])) {
+		const screen = TelegramInteractiveTriageService.getAestheticScreen();
+		return {
+			text: screen.text,
+			replyMarkup: screen.replyMarkup,
+			photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
+		};
+	}
+	if (
+		freeTextIncludes(text, [
+			"ребенок",
+			"ребёнок",
+			"боится врача",
+			"детей",
+			"детск",
+		])
+	) {
+		const screen = TelegramInteractiveTriageService.getKidsScreen();
+		return {
+			text: screen.text,
+			replyMarkup: screen.replyMarkup,
+			photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
+		};
 	}
 	if (freeTextIncludes(text, ["отзыв", "оцен", "рейтинг"]))
 		return reviewReplyFor(settings);
@@ -3517,6 +3620,417 @@ async function handleWebhook(
 			botConfigId: runtime.botConfigId,
 			state: domainState,
 		});
+
+		// Двусторонний Ack-loop Интеркома персонала в Telegram
+		if (callbackData?.startsWith("intercom_ack:")) {
+			const intercomAckResult =
+				await TelegramBotHostingService.handleIntercomAckCallback({
+					organizationId: runtime.organizationId,
+					callbackData,
+					chatFingerprint: chatHash ?? "",
+					botToken: runtime.botToken,
+					callbackQueryId,
+				});
+
+			if (intercomAckResult.handled) {
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: `/callback:${callbackData}`,
+					status: intercomAckResult.ok ? "processed" : "rejected",
+					action: "telegram_intercom_ack_recorded",
+					warnings: [],
+				});
+
+				// Отправляем ответ на сообщение в личный чат сотрудника
+				if (chatId) {
+					await sendTelegramTextMessage({
+						botToken: runtime.botToken || "",
+						chatId,
+						text: intercomAckResult.responseText,
+						timeoutMs: 3000,
+					});
+				}
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: "telegram_intercom_ack_recorded",
+						suggestedReply: readableTelegramText(intercomAckResult.responseText),
+						suggestedReplyMarkup: null,
+						suggestedPhotoUrl: null,
+						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// In-Place навигация по экранам выбранного архетипа бота (Zero Chat Landfill / Dvachbot Engine)
+		if (callbackData?.startsWith("preset_nav:")) {
+			const parts = callbackData.split(":");
+			const presetId = parts[1] as TelegramBotPresetId;
+			const screenId = parts[2] || "main";
+
+			const messageId =
+				isRecord(update.callback_query) &&
+				isRecord(update.callback_query.message) &&
+				typeof update.callback_query.message.message_id === "number"
+					? update.callback_query.message.message_id
+					: null;
+
+			if (presetId in TELEGRAM_BOT_PRESETS) {
+				const resolvedScreen = TelegramBotPresetsEngine.resolveScreen(
+					presetId,
+					screenId,
+				);
+
+				if (callbackQueryId && runtime.botToken) {
+					void answerTelegramCallbackQuery({
+						botToken: runtime.botToken,
+						callbackQueryId,
+					}).catch(() => {});
+				}
+
+				const activeBotToken = runtime.botToken;
+				const activeChatId = chatId;
+				if (messageId && activeChatId && activeBotToken) {
+					await editTelegramMessageText({
+						botToken: activeBotToken,
+						chatId: activeChatId,
+						messageId,
+						text: resolvedScreen.text,
+						replyMarkup: resolvedScreen.replyMarkup,
+					}).catch(async (editErr) => {
+						// Если сообщение устарело или нельзя отредактировать — fallback на отправку нового
+						request.log.warn({ editErr }, "Failed to edit message in preset_nav, fallback to send");
+						await sendTelegramTextMessage({
+							botToken: activeBotToken,
+							chatId: activeChatId,
+							text: resolvedScreen.text,
+							replyMarkup: resolvedScreen.replyMarkup,
+						}).catch(() => {});
+					});
+				}
+
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: `/callback:${callbackData}`,
+					status: "processed",
+					action: "telegram_preset_nav_handled",
+					warnings: [],
+				});
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: "telegram_preset_nav_handled",
+						suggestedReply: readableTelegramText(resolvedScreen.text),
+						suggestedReplyMarkup: readableTelegramPayload(resolvedScreen.replyMarkup),
+						suggestedPhotoUrl: null,
+						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// Автоматизированный послеоперационный опрос (Post-op Recovery Survey)
+		if (callbackData?.startsWith("postop:")) {
+			const parts = callbackData.split(":");
+			let day: 1 | 3 = 1;
+			let score = 1;
+
+			if (parts[1] === "day1" || parts[1] === "1") {
+				day = 1;
+			} else if (parts[1] === "day3" || parts[1] === "3") {
+				day = 3;
+			}
+
+			const rawScore = parts[2] === "score" ? parts[3] : parts[2];
+			const parsedScore = rawScore ? parseInt(rawScore, 10) : NaN;
+			if (!isNaN(parsedScore)) {
+				score = Math.max(1, Math.min(5, parsedScore));
+			}
+
+			const messageId =
+				isRecord(update.callback_query) &&
+				isRecord(update.callback_query.message) &&
+				typeof update.callback_query.message.message_id === "number"
+					? update.callback_query.message.message_id
+					: null;
+
+			const surveyResult = TelegramBotPresetsEngine.evaluatePostOpSurvey({
+				day,
+				painScore: score,
+			});
+
+			if (callbackQueryId && runtime.botToken) {
+				void answerTelegramCallbackQuery({
+					botToken: runtime.botToken,
+					callbackQueryId,
+					text: surveyResult.isCriticalAlert
+						? "⚠️ Срочный сигнал передан дежурному врачу!"
+						: "Спасибо за ответ!",
+				}).catch(() => {});
+			}
+
+			if (surveyResult.isCriticalAlert && surveyResult.alertDoctorText) {
+				try {
+					await withTenantCtx(runtime.organizationId, async (tx) => {
+						await tx.insert(messengerInboundEvents).values({
+							organizationId: runtime.organizationId,
+							channel: "telegram" as const,
+							externalId: `tg_postop_${update.update_id}`,
+							externalChatId: chatId || chatHash || `tg_${update.update_id}`,
+							messageText: surveyResult.alertDoctorText,
+							eventKind: "message" as const,
+							rawPayload: {
+								type: "postop_critical_alert",
+								chatId,
+								chatHash,
+								day,
+								painScore: score,
+								alertText: surveyResult.alertDoctorText,
+							},
+						});
+					});
+					void processInboundEvents().catch(() => {});
+				} catch (alertErr) {
+					request.log.error({ alertErr }, "Failed to record postop critical alert");
+				}
+			}
+
+			const screenMarkup = {
+				inline_keyboard: [
+					[
+						{ text: "👤 Связаться с клиникой", callback_data: "triage:human_request" },
+						{ text: "🏠 Главное меню", callback_data: "dente:start" },
+					],
+				],
+			};
+
+			const activeBotToken = runtime.botToken;
+			const activeChatId = chatId;
+			if (messageId && activeChatId && activeBotToken) {
+				await editTelegramMessageText({
+					botToken: activeBotToken,
+					chatId: activeChatId,
+					messageId,
+					text: surveyResult.patientMessage,
+					replyMarkup: screenMarkup,
+				}).catch(async () => {
+					await sendTelegramTextMessage({
+						botToken: activeBotToken,
+						chatId: activeChatId,
+						text: surveyResult.patientMessage,
+						replyMarkup: screenMarkup,
+					}).catch(() => {});
+				});
+			}
+
+			const event = recordDenteTelegramWebhookEvent({
+				updateId: update.update_id,
+				organizationId: runtime.organizationId,
+				botConfigId: runtime.botConfigId,
+				chatFingerprint: chatHash,
+				updateKind,
+				command: `/callback:${callbackData}`,
+				status: "processed",
+				action: "telegram_postop_survey_handled",
+				warnings: surveyResult.isCriticalAlert && surveyResult.alertDoctorText ? [surveyResult.alertDoctorText] : [],
+			});
+
+			return denteTelegramWebhookResponseSchema.parse(
+				readableTelegramPayload({
+					ok: true,
+					duplicate: false,
+					action: "telegram_postop_survey_handled",
+					suggestedReply: readableTelegramText(surveyResult.patientMessage),
+					suggestedReplyMarkup: readableTelegramPayload(screenMarkup),
+					suggestedPhotoUrl: null,
+					warnings: surveyResult.isCriticalAlert && surveyResult.alertDoctorText ? [surveyResult.alertDoctorText] : [],
+					event,
+				}),
+			);
+		}
+
+		// Интерактивный клинический триаж симптомов, калькулятор лечения и режим перехвата (In-Place UI / Dvachbot Engine)
+		if (callbackData?.startsWith("triage:")) {
+			const messageId =
+				isRecord(update.callback_query) &&
+				isRecord(update.callback_query.message) &&
+				typeof update.callback_query.message.message_id === "number"
+					? update.callback_query.message.message_id
+					: null;
+
+			const triageResult =
+				await TelegramInteractiveTriageService.handleCallbackQuery({
+					callbackData,
+					callbackQueryId,
+					chatFingerprint: chatHash ?? "",
+					chatId: chatId ?? "",
+					messageId,
+					botToken: runtime.botToken || "",
+					organizationId: runtime.organizationId,
+					clinicId: runtime.clinicId,
+					botConfigId: runtime.botConfigId,
+				});
+
+			if (triageResult.handled && triageResult.screen) {
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: `/callback:${callbackData}`,
+					status: "processed",
+					action: "telegram_interactive_triage_handled",
+					warnings: [],
+				});
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: "telegram_interactive_triage_handled",
+						suggestedReply: readableTelegramText(triageResult.screen.text),
+						suggestedReplyMarkup: readableTelegramPayload(
+							triageResult.screen.replyMarkup,
+						),
+						suggestedPhotoUrl: null,
+						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// Приём фото и медиа-обращений пациентов (Media Intake & Storage)
+		if (updateKind === "photo" && chatId && runtime.botToken) {
+			const message = isRecord(update.message) ? update.message : null;
+			const photos = Array.isArray(message?.photo) ? message.photo : [];
+			const bestPhoto = photos[photos.length - 1];
+			const fileId =
+				isRecord(bestPhoto) && typeof bestPhoto.file_id === "string"
+					? bestPhoto.file_id
+					: null;
+
+			if (fileId) {
+				const photoResult =
+					await TelegramInteractiveTriageService.handlePhotoIntake({
+						botToken: runtime.botToken,
+						organizationId: runtime.organizationId,
+						clinicId: runtime.clinicId,
+						botConfigId: runtime.botConfigId,
+						chatId,
+						fileId,
+						caption: stringFromUnknown(message?.caption),
+						updateId: update.update_id,
+					});
+
+				const event = recordDenteTelegramWebhookEvent({
+					updateId: update.update_id,
+					organizationId: runtime.organizationId,
+					botConfigId: runtime.botConfigId,
+					chatFingerprint: chatHash,
+					updateKind,
+					command: null,
+					status: photoResult.ok ? "processed" : "rejected",
+					action: "telegram_patient_photo_received",
+					warnings: [],
+				});
+
+				if (chatId) {
+					await sendTelegramTextMessage({
+						botToken: runtime.botToken,
+						chatId,
+						text: photoResult.responseScreen.text,
+						replyMarkup: photoResult.responseScreen.replyMarkup,
+					});
+				}
+
+				return denteTelegramWebhookResponseSchema.parse(
+					readableTelegramPayload({
+						ok: true,
+						duplicate: false,
+						action: "telegram_patient_photo_received",
+						suggestedReply: readableTelegramText(photoResult.responseScreen.text),
+						suggestedReplyMarkup: readableTelegramPayload(
+							photoResult.responseScreen.replyMarkup,
+						),
+						suggestedPhotoUrl: null,
+						warnings: [],
+						event,
+					}),
+				);
+			}
+		}
+
+		// Режим перехвата диалога человеком (Human Live Chat Takeover)
+		if (
+			chatHash &&
+			TelegramInteractiveTriageService.isChatInHumanMode(
+				chatHash,
+				runtime.organizationId,
+				runtime.botConfigId,
+			) &&
+			messageText &&
+			!command
+		) {
+			const event = recordDenteTelegramWebhookEvent({
+				updateId: update.update_id,
+				organizationId: runtime.organizationId,
+				botConfigId: runtime.botConfigId,
+				chatFingerprint: chatHash,
+				updateKind,
+				command: null,
+				status: "processed",
+				action: "telegram_human_mode_patient_message",
+				warnings: [],
+			});
+
+			try {
+				await withTenantCtx(runtime.organizationId, async (tx) => {
+					await tx.insert(messengerInboundEvents).values({
+						organizationId: runtime.organizationId,
+						channel: "telegram" as const,
+						externalId: `tg_${update.update_id}`,
+						externalChatId: chatId || chatHash,
+						messageText,
+						eventKind: "message" as const,
+						rawPayload: update as Record<string, unknown>,
+					});
+				});
+				void processInboundEvents().catch(() => {});
+			} catch (humanErr) {
+				request.log.warn({ humanErr }, "Failed to record human_mode message");
+			}
+
+			return denteTelegramWebhookResponseSchema.parse(
+				readableTelegramPayload({
+					ok: true,
+					duplicate: false,
+					action: "telegram_human_mode_patient_message",
+					suggestedReply: null,
+					suggestedReplyMarkup: null,
+					suggestedPhotoUrl: null,
+					warnings: [],
+					event,
+				}),
+			);
+		}
+
 		if (
 			appointmentCallbackResult.handled &&
 			appointmentCallbackResult.ok &&
@@ -3851,6 +4365,225 @@ function registerTelegramStatusRoutes(
 		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 	},
 ) {
+	/**
+	 * Healthcheck эндпоинт для VPS хостинга, systemd, Caddy и Docker-compose мониторинга.
+	 */
+	app.get("/api/telegram/health", async () => {
+		const settings = getDenteTelegramBotSettings();
+		const runtimeResult = resolveTelegramRuntimeContext();
+		const isReady = runtimeResult.ok && settings.mode !== "disabled";
+		return {
+			status: isReady ? "healthy" : "degraded",
+			mode: settings.mode,
+			tokenConfigured: runtimeResult.ok ? runtimeResult.context.tokenConfigured : false,
+			webhookReady: runtimeResult.ok ? runtimeResult.context.webhookReady : false,
+			botUsername: runtimeResult.ok ? runtimeResult.context.botUsername : null,
+			timestamp: new Date().toISOString(),
+			service: "dente-telegram-bot-hosting",
+			version: "2.4.0",
+		};
+	});
+
+	/**
+	 * Проверка токена Telegram-бота через getMe.
+	 */
+	app.post<{ Body: { token: string } }>(
+		"/api/telegram/bot/verify",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const token = request.body?.token?.trim();
+			if (!token) {
+				return reply.code(400).send({
+					ok: false,
+					error: "TokenRequired",
+					message: "Не указан токен Telegram бота.",
+				});
+			}
+			const result = await TelegramBotHostingService.verifyBotToken(token);
+			return reply.code(result.ok ? 200 : 400).send(result);
+		},
+	);
+
+	/**
+	 * Регистрация и настройка Webhook для бота через setWebhook.
+	 */
+	app.post<{ Body: { token: string; webhookUrl: string; secretToken?: string } }>(
+		"/api/telegram/bot/setup-webhook",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const { token, webhookUrl, secretToken } = request.body || {};
+			if (!token || !webhookUrl) {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationFailed",
+					message: "Требуются token и webhookUrl.",
+				});
+			}
+			const result = await TelegramBotHostingService.setupWebhook({
+				botToken: token,
+				webhookUrl,
+				secretToken: secretToken || null,
+			});
+			return reply.code(result.ok ? 200 : 502).send(result);
+		},
+	);
+
+	/**
+	 * Каталог 5 клинических пресетов ботов (DENTE Bot Archetypes).
+	 */
+	app.get(
+		"/api/telegram/presets",
+		telegramControlPlaneRouteOptions,
+		async () => {
+			return {
+				ok: true,
+				presets: TelegramBotPresetsEngine.listPresets(),
+			};
+		},
+	);
+
+	/**
+	 * Получить метаданные и экраны конкретного пресета бота.
+	 */
+	app.get<{ Params: { presetId: string } }>(
+		"/api/telegram/presets/:presetId",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const presetId = request.params.presetId as TelegramBotPresetId;
+			if (!(presetId in TELEGRAM_BOT_PRESETS)) {
+				return reply.code(404).send({
+					ok: false,
+					error: "PresetNotFound",
+					message: `Пресет с ID "${request.params.presetId}" не найден в каталоге.`,
+				});
+			}
+			const preset = TelegramBotPresetsEngine.getPreset(presetId);
+			return {
+				ok: true,
+				preset,
+			};
+		},
+	);
+
+	/**
+	 * Пошаговая инструкция онбординга @BotFather для главврача / администратора клиники.
+	 */
+	app.get<{ Querystring: { presetId?: string } }>(
+		"/api/telegram/onboarding-guide",
+		telegramControlPlaneRouteOptions,
+		async (request) => {
+			const presetId = (request.query?.presetId as TelegramBotPresetId) || "universal_clinic";
+			const guideMarkdown = TelegramBotPresetsEngine.getBotFatherGuideMarkdown(presetId);
+			return {
+				ok: true,
+				presetId,
+				guideMarkdown,
+			};
+		},
+	);
+
+	/**
+	 * Автоматическое применение пресета к Telegram-боту клиники:
+	 * 1. Проверяет токен (getMe)
+	 * 2. Устанавливает команды пресета (setMyCommands)
+	 * 3. Устанавливает описание (setMyDescription)
+	 * 4. Устанавливает краткое описание (setMyShortDescription)
+	 * 5. Настраивает Webhook при наличии webhookUrl
+	 */
+	app.post<{
+		Body: {
+			organizationId?: string;
+			presetId: string;
+			botToken: string;
+			webhookUrl?: string;
+			secretToken?: string;
+		};
+	}>(
+		"/api/telegram/bot/apply-preset",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const { presetId, botToken, webhookUrl, secretToken } = request.body || {};
+			if (!botToken?.trim() || !presetId?.trim()) {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationFailed",
+					message: "Необходимо передать botToken и presetId.",
+				});
+			}
+
+			const targetPresetId = presetId as TelegramBotPresetId;
+			if (!(targetPresetId in TELEGRAM_BOT_PRESETS)) {
+				return reply.code(400).send({
+					ok: false,
+					error: "InvalidPreset",
+					message: `Неизвестный архетип бота: ${presetId}. Доступные: ${Object.keys(TELEGRAM_BOT_PRESETS).join(", ")}.`,
+				});
+			}
+
+			const runtimeResult = resolveTelegramRuntimeContext();
+			const organizationId =
+				request.body?.organizationId ||
+				(runtimeResult.ok ? runtimeResult.context.organizationId : "default");
+
+			const result = await TelegramBotHostingService.applyPresetToBot({
+				organizationId,
+				presetId: targetPresetId,
+				botToken: botToken.trim(),
+				webhookUrl: webhookUrl?.trim() || null,
+				secretToken: secretToken?.trim() || null,
+			});
+
+			return reply.code(result.ok ? 200 : 400).send(result);
+		},
+	);
+
+	/**
+	 * Клиническая оценка послеоперационного опроса (Day 1 / Day 3).
+	 * При выявлении критических симптомов (боль >= 4, температура >38°C, кровотечение)
+	 * формирует срочный алерт врачу.
+	 */
+	app.post<{
+		Body: {
+			day: number;
+			painScore: number;
+			hasFever?: boolean;
+			hasHeavyBleeding?: boolean;
+			hasSevereSwelling?: boolean;
+			patientId?: string;
+			organizationId?: string;
+		};
+	}>(
+		"/api/telegram/surveys/evaluate-post-op",
+		telegramControlPlaneRouteOptions,
+		async (request, reply) => {
+			const body = request.body;
+			if (!body || (body.day !== 1 && body.day !== 3) || typeof body.painScore !== "number") {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationFailed",
+					message: "Требуются day (1 или 3) и painScore (от 1 до 5).",
+				});
+			}
+
+			const surveyInput: PostOpSurveyInput = {
+				day: body.day as 1 | 3,
+				painScore: Math.max(1, Math.min(5, Math.round(body.painScore))),
+				hasFever: Boolean(body.hasFever),
+				hasHeavyBleeding: Boolean(body.hasHeavyBleeding),
+				hasSevereSwelling: Boolean(body.hasSevereSwelling),
+			};
+			if (body.patientId) surveyInput.patientId = body.patientId;
+			if (body.organizationId) surveyInput.organizationId = body.organizationId;
+
+			const result = TelegramBotPresetsEngine.evaluatePostOpSurvey(surveyInput);
+			return reply.send({
+				ok: true,
+				survey: surveyInput,
+				evaluation: result,
+			});
+		},
+	);
+
 	app.get(
 		"/api/telegram/status",
 		telegramControlPlaneRouteOptions,

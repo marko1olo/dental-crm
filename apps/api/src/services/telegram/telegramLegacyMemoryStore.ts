@@ -106,6 +106,8 @@ const defaultPostVisitCheckupDelayHoursByTopic = {
 	orthodontics: 72,
 	periodontology: 72,
 	other: 48,
+	surgery_aftercare: 24,
+	fixation_aftercare: 48,
 };
 
 export const inMemoryPatients: Patient[] = [
@@ -382,6 +384,8 @@ export const denteTelegramBotSettings: DenteTelegramBotSettings = {
 		orthodontics: 72,
 		periodontology: 72,
 		other: 48,
+		surgery_aftercare: 24,
+		fixation_aftercare: 48,
 	},
 	allowVoiceIntake: false,
 	staffEscalationChannel: null,
