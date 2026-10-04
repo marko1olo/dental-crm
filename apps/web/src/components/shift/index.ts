@@ -25,3 +25,10 @@ export {
 	DoctorMobileShiftModal as DoctorShiftModal,
 	type DoctorMobileShiftModalProps as DoctorShiftModalProps,
 } from "../doctor-portal";
+
+export {
+	MobileShiftCockpit,
+	type MobileShiftCockpitProps,
+	type MobileShiftConsumableItem,
+	type MobileShiftAppointmentSummary,
+} from "./MobileShiftCockpit";

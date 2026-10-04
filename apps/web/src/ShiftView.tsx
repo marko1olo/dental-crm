@@ -27,8 +27,11 @@ import { TodayQueueBoard } from "./components/schedule/TodayQueueBoard";
 import {
 	DoctorShiftCloseModal,
 	DoctorShiftControlBar,
+	MobileShiftCockpit,
+	type MobileShiftAppointmentSummary,
 	ShiftCallout,
 } from "./components/shift";
+import { useIsMobile } from "./hooks/useIsMobile";
 import { DoctorKickoffWidget } from "./components/dashboard/DoctorKickoffWidget";
 import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
@@ -98,6 +101,7 @@ export type ShiftViewProps = {
 	recommendedActionPriorityLabels?: Record<string, string>;
 	staffRoleLabels?: Record<string, string>;
 	dashboard?: Dashboard;
+	forceMobile?: boolean;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	activeQueueRole?: any;
 	setError?: (err: unknown) => void;
@@ -127,7 +131,10 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		setError,
 		mostLoadedResource,
 		setSelectedPatientId,
+		forceMobile,
 	} = props;
+	const isMobileHook = useIsMobile(768);
+	const isMobile = forceMobile ?? isMobileHook;
 	const patientsById = useMemo(() => {
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const index = new Map<string, any>();
@@ -661,6 +668,140 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 			},
 		);
 	};
+
+	const mobileAppointments = useMemo((): readonly MobileShiftAppointmentSummary[] => {
+		return todayAppointments.map((app: any) => {
+			const statusKeyRaw = String(
+				app.status || app.appointmentStatus || app.state || "",
+			).toLowerCase();
+			let statusKey: "in_chair" | "waiting" | "payment" | "completed" = "waiting";
+			let statusLabel = "Ожидает приёма";
+
+			if (["in_chair", "in_treatment", "in_progress"].includes(statusKeyRaw)) {
+				statusKey = "in_chair";
+				statusLabel = "В кресле";
+			} else if (["completed", "done"].includes(statusKeyRaw)) {
+				statusKey = "completed";
+				statusLabel = "Завершён";
+			} else if (["payment", "billing", "checkout"].includes(statusKeyRaw)) {
+				statusKey = "payment";
+				statusLabel = "Ожидает оплаты";
+			}
+
+			const patient =
+				patientsById.get(app.patientId) ??
+				(app.patientId === currentPatient?.id ? currentPatient : null);
+			const patientName =
+				patient?.fullName || app.patientFullName || "Пациент";
+
+			const cost =
+				Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) ||
+				0;
+
+			return {
+				id: String(app.id),
+				patientId: String(app.patientId || ""),
+				patientName,
+				timeStart: formatClockTime(app.startsAt),
+				timeEnd: formatClockTime(app.endsAt ?? app.startsAt),
+				serviceTitle: String(
+					app.reason ||
+						app.treatmentDescription ||
+						app.serviceTitle ||
+						"Приём врача-стоматолога",
+				),
+				statusKey,
+				statusLabel,
+				priceRub: cost,
+			};
+		});
+	}, [todayAppointments, patientsById, currentPatient]);
+
+	if (isMobile) {
+		return (
+			<div
+				className="mobile-shift-cockpit-view-wrapper"
+				style={{ width: "100%", maxWidth: "100vw", overflowX: "clip" }}
+				data-testid="shift-view-mobile"
+			>
+				<MobileShiftCockpit
+					isShiftOpen={isShiftOpen}
+					onToggleShift={handleToggleShift}
+					shiftNumber={dashboard?.shiftNumber ?? 104}
+					doctorName={
+						dashboard?.activeDoctor?.fullName ||
+						staffById.get(inChairAppointment?.doctorUserId)?.fullName ||
+						"Лечащий врач"
+					}
+					doctorSpecialty={
+						dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт"
+					}
+					cabinetName={
+						inChairAppointment?.cabinetName ||
+						inChairAppointment?.room ||
+						"Кабинет №1"
+					}
+					shiftOpenedAtIso={
+						dashboard?.shiftOpenedAt || `${todayIso}T08:30:00.000Z`
+					}
+					totalAppointmentsCount={shiftStats.totalAppointments}
+					completedCount={shiftStats.completedCount}
+					inChairCount={shiftStats.inProgressCount}
+					totalRevenueRub={shiftStats.totalRevenueRub}
+					cashInDrawerRub={Math.round(shiftStats.totalRevenueRub * 0.45)}
+					cardSumRub={Math.round(shiftStats.totalRevenueRub * 0.35)}
+					sbpSumRub={Math.round(shiftStats.totalRevenueRub * 0.2)}
+					doctorCommissionPct={shiftStats.doctorCommissionPct}
+					estimatedDoctorPayoutRub={shiftStats.estimatedDoctorPayoutRub}
+					appointments={mobileAppointments}
+					onSelectAppointment={(appId) => {
+						if (typeof (props as any).onSelectAppointment === "function") {
+							(props as any).onSelectAppointment(appId);
+						}
+					}}
+					onOpenPatientEmk={(patientId) => {
+						if (typeof setSelectedPatientId === "function") {
+							setSelectedPatientId(patientId);
+						}
+						window.location.hash = "emk";
+					}}
+					onOpenCashCheckout={(patientId) => {
+						if (typeof setSelectedPatientId === "function") {
+							setSelectedPatientId(patientId);
+						}
+						window.location.hash = "invoices";
+					}}
+				/>
+				{isPayrollModalOpen && (
+					<DoctorPayrollModal
+						isOpen={isPayrollModalOpen}
+						onClose={() => setIsPayrollModalOpen(false)}
+						clinicName={dashboard?.clinicName}
+						doctorsList={shiftDoctorsList}
+						initialDoctorId={shiftActiveDoctorId}
+						initialServices={shiftCompletedServices}
+						initialPeriodStart={todayIso}
+						initialPeriodEnd={todayIso}
+						initialBasePercentage={30}
+						useClinicalCategoryRates={true}
+					/>
+				)}
+				{isShiftCloseModalOpen && (
+					<DoctorShiftCloseModal
+						isOpen={isShiftCloseModalOpen}
+						onClose={() => setIsShiftCloseModalOpen(false)}
+						onConfirmClose={handleConfirmCloseShift}
+						doctorFullName={
+							staffById.get(inChairAppointment?.doctorUserId)?.fullName ||
+							"Лечащий врач"
+						}
+						shiftStats={shiftStats}
+						clinicName={dashboard?.clinicName}
+					/>
+				)}
+			</div>
+		);
+	}
 
 	return (
 		<div className="shift-view-scroll-container min-w-0">

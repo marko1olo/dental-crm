@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { parseUtmFromUrl } from "@dental/shared";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import { BookingConfirmationView } from "./BookingConfirmationView";
@@ -9,6 +10,12 @@ import { BookingDoctorsSection } from "./BookingDoctorsSection";
 import { BookingHeader } from "./BookingHeader";
 import { BookingSlotPicker, type BookingSlotItem, type CalendarDayItem } from "./BookingSlotPicker";
 import { BookingSlotsSection } from "./BookingSlotsSection";
+import {
+	BookingCategoriesSection,
+	CANONICAL_BOOKING_CATEGORIES,
+	type BookingCategoryOption,
+} from "./BookingCategoriesSection";
+import { DEFAULT_DOCTORS_LIST } from "./publicBookingEngine";
 import { useBookingAvailability } from "./useBookingAvailability";
 import {
 	type BookingConfirmationData,
@@ -43,6 +50,8 @@ export { BookingSlotsSection } from "./BookingSlotsSection";
 export { BookingDoctorCard, BookingAnyDoctorCard } from "./BookingDoctorCard";
 export { BookingSlotPicker } from "./BookingSlotPicker";
 export { BookingConfirmationView } from "./BookingConfirmationView";
+export { BookingCategoriesSection, CANONICAL_BOOKING_CATEGORIES } from "./BookingCategoriesSection";
+export type { BookingCategoryOption } from "./BookingCategoriesSection";
 
 // Backwards-compatible exports from pure engine
 export type {
@@ -163,10 +172,48 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 		selectedDoctorId,
 	});
 
-	// Active doctors list (customDoctors prop takes priority if provided)
+	// Service Category state (Step 1)
+	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+		() => initialCategoryId || "therapy",
+	);
+
+	const selectedCategory: BookingCategoryOption = useMemo(() => {
+		if (selectedCategoryId) {
+			const found = CANONICAL_BOOKING_CATEGORIES.find(
+				(c) => c.id === selectedCategoryId,
+			);
+			if (found) return found;
+		}
+		return CANONICAL_BOOKING_CATEGORIES[0]!;
+	}, [selectedCategoryId]);
+
+	// Active doctors list (customDoctors prop takes priority, then backend loaded, then default canonical doctors)
 	const activeDoctors: BookingDoctorData[] = useMemo(() => {
-		if (customDoctors && customDoctors.length > 0) return customDoctors;
-		return loadedDoctors;
+		if (customDoctors && customDoctors.length > 0) {
+			return (customDoctors as any[]).map((doc) => ({
+				id: doc.id,
+				fullName: doc.fullName,
+				specialties: doc.specialties,
+				experienceYears: doc.experienceYears ?? 5,
+				rating: doc.rating ?? 5.0,
+				reviewsCount: doc.reviewsCount ?? 0,
+				categoryIds: doc.categoryIds ?? ["all"],
+				avatarUrl: doc.avatarUrl,
+				bio: doc.bio,
+			}));
+		}
+		if (loadedDoctors && loadedDoctors.length > 0) return loadedDoctors;
+		return DEFAULT_DOCTORS_LIST.map((doc) => ({
+			id: doc.id,
+			fullName: doc.fullName,
+			specialties: doc.specialties,
+			experienceYears: doc.experienceYears ?? 5,
+			rating: doc.rating ?? 5.0,
+			reviewsCount: doc.reviewsCount ?? 0,
+			categoryIds: doc.categoryIds ?? ["all"],
+			avatarUrl: doc.avatarUrl,
+			bio: (doc as any).bio,
+		}));
 	}, [customDoctors, loadedDoctors]);
 
 	// Solo doctor status (Mandate 8n Solo Doctor Sovereignty)
@@ -603,70 +650,197 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 				{/* ================================================================ */}
 				{step !== 5 && !confirmationData && (
 					<div className="dbw-streamlined-flow">
-						{/* Doctor Header: Solo Doctor or Doctor Choice (Mandate 8n) */}
-						<BookingDoctorsSection
-							isSoloDoctor={isSoloDoctor}
-							selectedDoctor={selectedDoctor}
-							activeDoctors={activeDoctors}
-							selectedDoctorId={selectedDoctorId}
-							onSelectDoctorId={(id) => setSelectedDoctorId(id)}
-						/>
+						{/* Apple Store HIG Segmented Step Indicator */}
+						<nav
+							className="dbw-stepper-bar"
+							aria-label="Этапы онлайн-записи"
+						>
+							<div className="dbw-stepper-track">
+								<button
+									type="button"
+									onClick={() => {
+										document.getElementById("dbw-step-categories")?.scrollIntoView({ behavior: "smooth" });
+									}}
+									className="dbw-stepper-step active"
+								>
+									<span className="dbw-stepper-num">1</span>
+									<span className="dbw-stepper-title">Услуга</span>
+								</button>
+								<div className="dbw-stepper-line" />
+								<button
+									type="button"
+									onClick={() => {
+										document.getElementById("dbw-step-doctor")?.scrollIntoView({ behavior: "smooth" });
+									}}
+									className="dbw-stepper-step active"
+								>
+									<span className="dbw-stepper-num">2</span>
+									<span className="dbw-stepper-title">Врач</span>
+								</button>
+								<div className="dbw-stepper-line" />
+								<button
+									type="button"
+									onClick={() => {
+										document.getElementById("dbw-step-slots")?.scrollIntoView({ behavior: "smooth" });
+									}}
+									className="dbw-stepper-step active"
+								>
+									<span className="dbw-stepper-num">3</span>
+									<span className="dbw-stepper-title">Дата и время</span>
+								</button>
+								<div className="dbw-stepper-line" />
+								<button
+									type="button"
+									onClick={() => {
+										document.getElementById("dbw-step-contacts")?.scrollIntoView({ behavior: "smooth" });
+									}}
+									className="dbw-stepper-step active"
+								>
+									<span className="dbw-stepper-num">4</span>
+									<span className="dbw-stepper-title">Контакты</span>
+								</button>
+							</div>
+						</nav>
 
-						{/* Click 1: Date & Time slot picker with ribbon and period chips */}
-						<BookingSlotsSection
-							selectedDate={selectedDate}
-							onSelectDate={(date) => {
-								setSelectedDate(date);
-								setSelectedSlot(null);
-								setSlotError(null);
-							}}
-							calendarMonth={calendarMonth}
-							onPrevMonth={handlePrevMonth}
-							onNextMonth={handleNextMonth}
-							calendarDays={calendarDays}
-							monthLabel={monthLabel}
-							slots={slots}
-							selectedSlot={selectedSlot}
-							onSelectSlot={(slot) => {
-								setSelectedSlot(slot);
-								setSlotError(null);
-							}}
-							slotsLoading={slotsLoading}
-							slotError={slotError}
-							onNextStep={() => {
-								if (!selectedSlot && slots.length > 0) {
-									setSelectedSlot(slots[0] || null);
-								}
-								handleStepChange(4);
-							}}
-						/>
+						{/* Step 1: Service Category Selection */}
+						<div id="dbw-step-categories" className="dbw-step-card">
+							<BookingCategoriesSection
+								selectedCategoryId={selectedCategoryId}
+								onSelectCategory={(cat) => {
+									setSelectedCategoryId(cat.id);
+								}}
+							/>
+						</div>
 
-						{/* Click 2: Patient Name, Phone, and Book Button */}
-						<BookingContactsSection
-							isTelegramContext={isTelegramContext}
-							patientName={patientName}
-							setPatientName={setPatientName}
-							patientPhone={patientPhone}
-							handlePhoneChange={handlePhoneChange}
-							patientComment={patientComment}
-							setPatientComment={setPatientComment}
-							hasAgreedToPrivacy={hasAgreedToPrivacy}
-							setHasAgreedToPrivacy={setHasAgreedToPrivacy}
-							showSmsVerification={showSmsVerification}
-							smsCodeSent={smsCodeSent}
-							enteredSmsCode={enteredSmsCode}
-							setEnteredSmsCode={setEnteredSmsCode}
-							isSmsVerified={isSmsVerified}
-							smsResendCountdown={smsResendCountdown}
-							smsError={smsError}
-							handleSendSmsCode={handleSendSmsCode}
-							handleVerifySmsCode={handleVerifySmsCode}
-							handleTelegramShareContact={handleTelegramShareContact}
-							submitError={submitError}
-							setSubmitError={setSubmitError}
-							isSubmitting={isSubmitting}
-							onSubmit={handleFinalSubmit}
-						/>
+						{/* Step 2: Doctor Header: Solo Doctor or Doctor Choice (Mandate 8n) */}
+						<div id="dbw-step-doctor" className="dbw-step-card">
+							<BookingDoctorsSection
+								isSoloDoctor={isSoloDoctor}
+								selectedDoctor={selectedDoctor}
+								activeDoctors={activeDoctors}
+								selectedDoctorId={selectedDoctorId}
+								onSelectDoctorId={(id) => setSelectedDoctorId(id)}
+							/>
+						</div>
+
+						{/* Step 3: Date & Time slot picker with ribbon and period chips */}
+						<div id="dbw-step-slots" className="dbw-step-card">
+							<BookingSlotsSection
+								selectedDate={selectedDate}
+								onSelectDate={(date) => {
+									setSelectedDate(date);
+									setSelectedSlot(null);
+									setSlotError(null);
+								}}
+								calendarMonth={calendarMonth}
+								onPrevMonth={handlePrevMonth}
+								onNextMonth={handleNextMonth}
+								calendarDays={calendarDays}
+								monthLabel={monthLabel}
+								slots={slots}
+								selectedSlot={selectedSlot}
+								onSelectSlot={(slot) => {
+									setSelectedSlot(slot);
+									setSlotError(null);
+								}}
+								slotsLoading={slotsLoading}
+								slotError={slotError}
+								onNextStep={() => {
+									if (!selectedSlot && slots.length > 0) {
+										setSelectedSlot(slots[0] || null);
+									}
+									handleStepChange(4);
+									document.getElementById("dbw-step-contacts")?.scrollIntoView({ behavior: "smooth" });
+								}}
+							/>
+						</div>
+
+						{/* Step 4: Patient Name, Phone, and Book Button */}
+						<div id="dbw-step-contacts" className="dbw-step-card">
+							<BookingContactsSection
+								isTelegramContext={isTelegramContext}
+								patientName={patientName}
+								setPatientName={setPatientName}
+								patientPhone={patientPhone}
+								handlePhoneChange={handlePhoneChange}
+								patientComment={patientComment}
+								setPatientComment={setPatientComment}
+								hasAgreedToPrivacy={hasAgreedToPrivacy}
+								setHasAgreedToPrivacy={setHasAgreedToPrivacy}
+								showSmsVerification={showSmsVerification}
+								smsCodeSent={smsCodeSent}
+								enteredSmsCode={enteredSmsCode}
+								setEnteredSmsCode={setEnteredSmsCode}
+								isSmsVerified={isSmsVerified}
+								smsResendCountdown={smsResendCountdown}
+								smsError={smsError}
+								handleSendSmsCode={handleSendSmsCode}
+								handleVerifySmsCode={handleVerifySmsCode}
+								handleTelegramShareContact={handleTelegramShareContact}
+								submitError={submitError}
+								setSubmitError={setSubmitError}
+								isSubmitting={isSubmitting}
+								onSubmit={handleFinalSubmit}
+							/>
+						</div>
+
+						{/* Sticky Floating Bottom Bar in Natural Thumb Zone */}
+						<aside
+							className="dbw-floating-bottom-bar"
+							aria-label="Быстрое действие записи"
+							data-testid="floating-bottom-bar"
+						>
+							<div className="dbw-floating-bar-inner">
+								<div className="dbw-floating-bar-summary min-w-0 flex-1">
+									<div className="dbw-floating-summary-service truncate text-xs font-bold text-slate-900 dark:text-slate-100">
+										{selectedCategory.title}
+									</div>
+									<div className="dbw-floating-summary-meta text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+										<span className="font-semibold text-teal-600 dark:text-teal-400">
+											{selectedCategory.priceLabel}
+										</span>
+										<span>•</span>
+										<span>
+											{selectedSlot
+												? `${formatRussianDate(selectedDate)} в ${selectedSlot.time}`
+												: "Выберите время"}
+										</span>
+									</div>
+								</div>
+
+								<button
+									type="button"
+									onClick={(e) => {
+										if (!patientName.trim()) {
+											const nameInput = document.getElementById("patient-name-input");
+											nameInput?.focus();
+											nameInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+											return;
+										}
+										if (!patientPhone.trim()) {
+											const phoneInput = document.getElementById("patient-phone-input");
+											phoneInput?.focus();
+											phoneInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+											return;
+										}
+										handleFinalSubmit(e);
+									}}
+									disabled={isSubmitting}
+									className="dbw-floating-cta-btn shrink-0"
+									data-testid="floating-primary-cta"
+									aria-label="Записаться на приём"
+								>
+									{isSubmitting ? (
+										<span>Оформление...</span>
+									) : (
+										<>
+											<span>Записаться на приём</span>
+											<ArrowRight size={16} />
+										</>
+									)}
+								</button>
+							</div>
+						</aside>
 					</div>
 				)}
 
