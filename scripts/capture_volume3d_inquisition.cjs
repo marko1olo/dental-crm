@@ -64,8 +64,26 @@ async function main() {
       });
     });
 
-    console.log("Navigating to http://127.0.0.1:5173/?cbct=demo...");
-    await page.goto("http://127.0.0.1:5173/?cbct=demo", { waitUntil: "domcontentloaded", timeout: 30000 });
+    for (let i = 0; i < 5; i++) {
+      try {
+        console.log(`Navigating to http://127.0.0.1:5173/?cbct=demo (attempt ${i + 1})...`);
+        await page.goto("http://127.0.0.1:5173/?cbct=demo", { waitUntil: "domcontentloaded", timeout: 30000 });
+        break;
+      } catch (e) {
+        console.log("Goto error:", e.message, "retrying in 2s...");
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+    await page.waitForTimeout(2000);
+
+    let modal = await page.$('[data-testid="cbct-studio-modal"]');
+    if (!modal) {
+      console.log("Dispatching dente:open-cbct-demo event...");
+      await page.evaluate(() => {
+        window.dispatchEvent(new CustomEvent("dente:open-cbct-demo"));
+      });
+      await page.waitForTimeout(1000);
+    }
 
     console.log("Waiting for modal...");
     await page.waitForSelector('[data-testid="cbct-studio-modal"]', { timeout: 30000 });

@@ -831,7 +831,7 @@ export const MobilePatientProfileWorkspace: React.FC<
 			</nav>
 
 			{/* ─── 6. TAB CONTENT PANELS ─── */}
-			<main className="px-3.5 flex flex-col gap-3" data-testid="mobile-tab-content-panel">
+			<main className="px-3.5 flex flex-col gap-3 pb-24" data-testid="mobile-tab-content-panel">
 				{/* ── TAB 1: МЕДКАРТА & ДАННЫЕ ── */}
 				{activeTab === "card" && (
 					<div className="flex flex-col gap-3" data-testid="mobile-panel-card">

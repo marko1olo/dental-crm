@@ -5,6 +5,7 @@ import {
 	Calendar,
 	Check,
 	ChevronDown,
+	Printer,
 	Redo2,
 	ShieldCheck,
 	Sparkles,
@@ -53,6 +54,7 @@ export function EmkToolbar({
 	onScheduleNextVisit = () => {},
 	onScheduleNext,
 	onOpenConsent,
+	onPrint043,
 	hasUnsavedChanges = false,
 	voicePilotNode,
 	specialtyFocusNode,
@@ -216,6 +218,24 @@ export function EmkToolbar({
 			>
 				{/* ЛЕВАЯ ГРУППА: Каталог протоколов 1 142+, Диктовка, AI Ассистент */}
 				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+					{/* 1-Тап кнопка физиологической нормы у кресла (Мандат 8e) */}
+					{Boolean(onApplyNorm || onApplyPhysiologicalNorm) && (
+						<button
+							type="button"
+							data-testid="btn-chairside-physiological-norm"
+							onClick={() => {
+								if (onApplyNorm) onApplyNorm();
+								else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
+							}}
+							className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs active:scale-[0.98] shrink-0"
+							title="Заполнить физиологическую норму осмотра и анамнеза в 1 клик (Z01.2)"
+						>
+							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span className="hidden sm:inline">✓ Соматически здоров / Норма</span>
+							<span className="sm:hidden">✓ Норма</span>
+						</button>
+					)}
+
 					{/* Кнопка вызова Каталога 1 142 протоколов + меню быстрых норм */}
 					{onOpenProtocolsCatalog && (
 						<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all h-8 min-h-[32px] max-h-[32px]">
@@ -347,6 +367,21 @@ export function EmkToolbar({
 									<span>Согласие пациента (ИДС)</span>
 								</button>
 							)}
+
+							{onPrint043 && (
+								<button
+									type="button"
+									data-testid="btn-print-043u-toolbar"
+									onClick={() => {
+										onPrint043();
+										setIsExtraMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+								>
+									<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Печать Формы 043/у</span>
+								</button>
+							)}
 						</div>,
 						document.body
 					)}
@@ -436,6 +471,21 @@ export function EmkToolbar({
 						<span className="hidden sm:inline">След. визит</span>
 						<span className="sm:hidden">+5д</span>
 					</button>
+
+					{/* 1-Клик печать Формы 043/у (Мандат 8e) */}
+					{onPrint043 && (
+						<button
+							type="button"
+							onClick={onPrint043}
+							className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+							data-testid="btn-toolbar-print-043u"
+							title="Печать медицинской карты Форма 043/у"
+							aria-label="Печать медицинской карты Форма 043/у"
+						>
+							<Printer size={13} className="shrink-0 text-teal-600 dark:text-teal-400" />
+							<span className="hidden sm:inline">043/у</span>
+						</button>
+					)}
 
 					{/* Статус сохранения (Гарантия отсутствия обрезки текста) */}
 					<span

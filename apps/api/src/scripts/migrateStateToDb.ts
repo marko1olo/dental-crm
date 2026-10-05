@@ -60,6 +60,7 @@ import type {
 	Payment,
 	StaffMember,
 } from "@dental/shared";
+import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 
@@ -459,13 +460,18 @@ async function seed(): Promise<void> {
 		const staffIds = new Set(staffRows.map((staff) => staff.id));
 
 		console.log(`Кресла: ${chairs.length}`);
-		const chairRows = chairs.map((chair) => ({
-			id: chair.id,
-			organizationId,
-			clinicId: DEFAULT_CLINIC_ID,
-			name: chair.name,
-			isActive: chair.active,
-		}));
+		const chairIdMap = new Map<string, string>();
+		const chairRows = chairs.map((chair) => {
+			const validId = UUID_PATTERN.test(chair.id) ? chair.id : randomUUID();
+			chairIdMap.set(chair.id, validId);
+			return {
+				id: validId,
+				organizationId,
+				clinicId: DEFAULT_CLINIC_ID,
+				name: chair.name,
+				isActive: chair.active,
+			};
+		});
 		for (const chunk of chunkArray(chairRows, CHUNK_SIZE)) {
 			await tx.insert(schema.chairs).values(chunk).onConflictDoNothing();
 		}
@@ -494,21 +500,29 @@ async function seed(): Promise<void> {
 		const appointmentRows = keepResolvable(
 			appointments,
 			"appointments",
-			(appointment) =>
-				(appointment.patientId === null ||
-					patientIds.has(appointment.patientId)) &&
-				(appointment.doctorUserId === null ||
-					staffIds.has(appointment.doctorUserId)) &&
-				(!appointment.assistantUserId ||
-					staffIds.has(appointment.assistantUserId)) &&
-				(appointment.chairId === null || chairIds.has(appointment.chairId)),
+			(appointment) => {
+				const resolvedChairId = appointment.chairId
+					? (chairIdMap.get(appointment.chairId) ?? appointment.chairId)
+					: null;
+				return (
+					(appointment.patientId === null ||
+						patientIds.has(appointment.patientId)) &&
+					(appointment.doctorUserId === null ||
+						staffIds.has(appointment.doctorUserId)) &&
+					(!appointment.assistantUserId ||
+						staffIds.has(appointment.assistantUserId)) &&
+					(resolvedChairId === null || chairIds.has(resolvedChairId))
+				);
+			},
 		).map((appointment) => ({
 			id: appointment.id,
 			organizationId,
 			patientId: appointment.patientId,
 			doctorUserId: appointment.doctorUserId,
 			assistantUserId: appointment.assistantUserId,
-			chairId: appointment.chairId,
+			chairId: appointment.chairId
+				? (chairIdMap.get(appointment.chairId) ?? appointment.chairId)
+				: null,
 			status: appointment.status,
 			startsAt: new Date(appointment.startsAt),
 			endsAt: new Date(appointment.endsAt),

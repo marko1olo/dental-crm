@@ -1,0 +1,28 @@
+{
+  "task": "Vatech EzDent-i Window #4: Split-Screen Consultation & 8 Dental Disciplines (Screenshot 25 & 26)",
+  "status": "COMPLETED",
+  "invariants": {
+    "mandate_8b_line_limit": "PASSED (all files <= 580 lines, target <= 800 lines)",
+    "mandate_8t_no_tsc": "PASSED (strict ban observed, only targeted runner used)",
+    "mandate_8e_doctor_autonomy": "PASSED (1-click Form 043/u injection, single-row 34-36px toolbar)",
+    "encoding": "PASSED (UTF-8, 7269 files clean)"
+  },
+  "delivered_components": [
+    "apps/web/src/components/radiology/ConsultationPathologyLibrary.ts",
+    "apps/web/src/components/radiology/consultationCanvasRenderers.ts",
+    "apps/web/src/components/radiology/ConsultationTopToolbar.tsx",
+    "apps/web/src/components/radiology/ConsultationBottomDock.tsx",
+    "apps/web/src/components/radiology/RadiologyConsultationSplit.tsx",
+    "apps/web/src/components/radiology/__tests__/radiologyConsultationSplit.test.ts"
+  ],
+  "integrated_call_sites": [
+    "apps/web/src/components/radiology/RadiologyModule.tsx",
+    "apps/web/src/components/radiology/SensorStudyViewer.tsx",
+    "apps/web/src/components/visiograph/VisiographComparisonModal.tsx"
+  ],
+  "test_results": {
+    "consultation_split_tests": "11/11 PASS (Exit Code 0)",
+    "total_radiology_suite_tests": "32/32 PASS (Exit Code 0)",
+    "encoding_check": "7269/7269 PASS (0 errors)"
+  }
+}

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte, ilike, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
 import type { DbTransaction } from "../services/inventory/fefoStockService.js";
 import {
 	type FefoDeductionResult,
@@ -53,6 +53,7 @@ export interface GoodsReceiptInvoiceResult {
 
 export interface StockBatchesQueryOptions {
 	itemId?: string | null | undefined;
+	itemIds?: string[] | undefined;
 	status?: "active" | "depleted" | "expired" | "quarantine" | "all" | undefined;
 	warehouseId?: string | null | undefined;
 	limit?: number | undefined;
@@ -105,7 +106,9 @@ export const inventoryQuery = {
 	) {
 		const conditions = [eq(stockBatches.organizationId, organizationId)];
 
-		if (options.itemId) {
+		if (options.itemIds && options.itemIds.length > 0) {
+			conditions.push(inArray(stockBatches.inventoryItemId, options.itemIds));
+		} else if (options.itemId) {
 			conditions.push(eq(stockBatches.inventoryItemId, options.itemId));
 		}
 		if (options.status && options.status !== "all") {
@@ -195,6 +198,69 @@ export const inventoryQuery = {
 	},
 
 	/**
+	 * Пакетное получение актуальных остатков и количества активных партий по набору ID материалов.
+	 * Ликвидирует N+1 запросов при отображении складской номенклатуры и калькуляции нарядов.
+	 */
+	async getStockBalancesByItemIds(
+		organizationId: string,
+		itemIds: string[],
+		executor: DbTransaction = db,
+	): Promise<
+		Map<
+			string,
+			{
+				totalRemainingQty: number;
+				activeBatchesCount: number;
+				nearestExpirationDate: string | null;
+			}
+		>
+	> {
+		const resultMap = new Map<
+			string,
+			{
+				totalRemainingQty: number;
+				activeBatchesCount: number;
+				nearestExpirationDate: string | null;
+			}
+		>();
+		if (!itemIds || itemIds.length === 0) return resultMap;
+
+		const uniqueIds = Array.from(
+			new Set(
+				itemIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0),
+			),
+		);
+		if (uniqueIds.length === 0) return resultMap;
+
+		const rows = await executor
+			.select({
+				inventoryItemId: stockBatches.inventoryItemId,
+				totalRemaining: sql<string>`COALESCE(SUM(${stockBatches.remainingQty}::numeric), 0)`,
+				batchesCount: sql<number>`COUNT(*)::int`,
+				minExpDate: sql<string | null>`MIN(${stockBatches.expirationDate})`,
+			})
+			.from(stockBatches)
+			.where(
+				and(
+					eq(stockBatches.organizationId, organizationId),
+					inArray(stockBatches.inventoryItemId, uniqueIds),
+					eq(stockBatches.status, "active"),
+				),
+			)
+			.groupBy(stockBatches.inventoryItemId);
+
+		for (const r of rows) {
+			resultMap.set(r.inventoryItemId, {
+				totalRemainingQty: Number(r.totalRemaining) || 0,
+				activeBatchesCount: r.batchesCount || 0,
+				nearestExpirationDate: r.minExpDate || null,
+			});
+		}
+
+		return resultMap;
+	},
+
+	/**
 	 * Оприходование единичной партии (делегирование в FefoStockService).
 	 */
 	async receiveBatch(
@@ -234,6 +300,59 @@ export const inventoryQuery = {
 		let totalQuantity = 0;
 		let totalCostRub = 0;
 
+		// Пакетная предварительная загрузка существующих номенклатурных позиций (устранение N+1)
+		const requestedItemIds = Array.from(
+			new Set(
+				items
+					.map((l) => l.inventoryItemId)
+					.filter((id): id is string => typeof id === "string" && id.trim().length > 0),
+			),
+		);
+		const requestedNames = Array.from(
+			new Set(
+				items
+					.map((l) => l.name?.trim().toLowerCase())
+					.filter((n): n is string => typeof n === "string" && n.length > 0),
+			),
+		);
+
+		const preloadedById = new Map<string, typeof inventoryItems.$inferSelect>();
+		const preloadedByName = new Map<string, typeof inventoryItems.$inferSelect>();
+
+		if (requestedItemIds.length > 0) {
+			const foundById = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, organizationId),
+						inArray(inventoryItems.id, requestedItemIds),
+					),
+				)
+				.for("update");
+			for (const it of foundById) {
+				preloadedById.set(it.id, it);
+				preloadedByName.set(it.name.toLowerCase().trim(), it);
+			}
+		}
+
+		if (requestedNames.length > 0) {
+			const foundByName = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, organizationId),
+						sql`lower(${inventoryItems.name}) = ANY(${requestedNames})`,
+					),
+				)
+				.for("update");
+			for (const it of foundByName) {
+				preloadedById.set(it.id, it);
+				preloadedByName.set(it.name.toLowerCase().trim(), it);
+			}
+		}
+
 		for (const line of items) {
 			if (line.quantity <= 0) {
 				continue;
@@ -241,36 +360,14 @@ export const inventoryQuery = {
 
 			let itemRecord: typeof inventoryItems.$inferSelect | undefined;
 
-			// 1. Поиск по inventoryItemId
+			// 1. Поиск по inventoryItemId из предзагруженного кэша
 			if (line.inventoryItemId) {
-				const [existing] = await tx
-					.select()
-					.from(inventoryItems)
-					.where(
-						and(
-							eq(inventoryItems.id, line.inventoryItemId),
-							eq(inventoryItems.organizationId, organizationId),
-						),
-					)
-					.limit(1)
-					.for("update");
-				itemRecord = existing;
+				itemRecord = preloadedById.get(line.inventoryItemId);
 			}
 
 			// 2. Поиск по имени, если ID не передан или не найден
 			if (!itemRecord && line.name?.trim()) {
-				const [existingByName] = await tx
-					.select()
-					.from(inventoryItems)
-					.where(
-						and(
-							eq(inventoryItems.organizationId, organizationId),
-							ilike(inventoryItems.name, line.name.trim()),
-						),
-					)
-					.limit(1)
-					.for("update");
-				itemRecord = existingByName;
+				itemRecord = preloadedByName.get(line.name.trim().toLowerCase());
 			}
 
 			const unitPrice =
@@ -298,6 +395,8 @@ export const inventoryQuery = {
 					throw new Error(`Не удалось создать карточку для материала «${itemName}».`);
 				}
 				itemRecord = createdItem;
+				preloadedById.set(createdItem.id, createdItem);
+				preloadedByName.set(createdItem.name.toLowerCase().trim(), createdItem);
 			}
 
 			// 4. Оприходование партии в stock_batches через FefoStockService

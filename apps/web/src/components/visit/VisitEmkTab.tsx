@@ -290,6 +290,10 @@ export function VisitEmkTab() {
 			.pushVisitSnapshot("Заполнение физиологической нормой (Z01.2)");
 
 		updateVisitNoteField(
+			"complaint",
+			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
+		);
+		updateVisitNoteField(
 			"complaints",
 			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
 		);
@@ -489,6 +493,11 @@ export function VisitEmkTab() {
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
 		try {
+			await flushSoloPendingSave();
+			if (acceptDraftToVisit) {
+				await acceptDraftToVisit();
+			}
+
 			const finalDiary = {
 				complaint: visitNoteForm?.complaint || "Жалоб нет",
 				anamnesis:
@@ -533,6 +542,7 @@ export function VisitEmkTab() {
 			});
 
 			setCompletionResult(result);
+			setIsSbpQrModalOpen(true);
 			showToast("Приём завершён! Смета и чек сформированы", "success", 4000);
 		} catch (err) {
 			logger.error("[VisitEmkTab] Ошибка завершения приёма:", err);
@@ -540,7 +550,7 @@ export function VisitEmkTab() {
 		} finally {
 			setIsCompletingVisit(false);
 		}
-	}, [visitNoteForm, openVisitId, activePatient, dashboard]);
+	}, [visitNoteForm, openVisitId, activePatient, dashboard, flushSoloPendingSave, acceptDraftToVisit]);
 
 	const totalNetRub = completionResult?.totalNetRub ?? 0;
 	const receiptNumber = completionResult?.receiptNumber ?? "00001";
@@ -771,9 +781,13 @@ export function VisitEmkTab() {
 						</Suspense>
 
 						<EmkServicesSection
+							visitId={openVisitId}
 							visitNoteForm={visitNoteForm}
 							updateVisitNoteField={updateVisitNoteField}
 							isLocked={isLocked}
+							activePatient={activePatient}
+							activeDoctorName={dashboard?.activeDoctor?.fullName}
+							clinicLegalName={dashboard?.activeDoctor?.clinicName || "ООО «ДЕНТЕ»"}
 						/>
 
 						<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
@@ -1040,9 +1054,13 @@ export function VisitEmkTab() {
 											patientGender={activePatient?.gender}
 										/>
 										<EmkServicesSection
+											visitId={openVisitId}
 											visitNoteForm={visitNoteForm}
 											updateVisitNoteField={updateVisitNoteField}
 											isLocked={isLocked}
+											activePatient={activePatient}
+											activeDoctorName={dashboard?.activeDoctor?.fullName}
+											clinicLegalName={dashboard?.activeDoctor?.clinicName || "ООО «ДЕНТЕ»"}
 										/>
 									</>
 								)}
@@ -1123,6 +1141,19 @@ export function VisitEmkTab() {
 					<Check size={16} className="shrink-0" />
 					<span>Завершить приём</span>
 				</button>
+
+				{completionResult && (
+					<button
+						type="button"
+						onClick={() => setIsSbpQrModalOpen(true)}
+						className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/40 hover:bg-[var(--ok-fg)]/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+						data-testid="btn-reopen-sbp-qr"
+						title="Показать чек и QR-код СБП для оплаты"
+					>
+						<QrCode size={16} className="shrink-0" />
+						<span>СБП QR и чек ({completionResult.receiptNumber})</span>
+					</button>
+				)}
 			</div>
 
 			{/* Мобильный плавающий бар действия у кресла (Apple HIG Thumb Zone, blur(20px), safe-area) */}
@@ -1210,7 +1241,8 @@ export function VisitEmkTab() {
 			{/* Окно оплаты по СБП QR (Мандаты 8d, 8e) */}
 			{isSbpQrModalOpen && completionResult && (
 				<div
-					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-150"
+					style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
 					role="dialog"
 					aria-modal="true"
 					aria-labelledby="sbp-qr-modal-title"

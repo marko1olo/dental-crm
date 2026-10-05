@@ -118,6 +118,16 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Prevent telephony patient drawer from occluding or stacking when schedule modal or drawer is active */
+body:has([data-testid="appointment-modal"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="quick-booking-drawer"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="waitlist-drawer"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="doctor-free-slots-modal"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="patient-search-modal"]) .dnt-telephony-patient-drawer,
+body:has([data-testid="preventive-inspection-modal"]) .dnt-telephony-patient-drawer {
+	display: none !important;
+}
+
 @keyframes dnt-slide-in-right {
 	0% {
 		transform: translateX(100%);

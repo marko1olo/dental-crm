@@ -3,7 +3,7 @@
  * расчетов по Штайнеру, Твиду, Wits и компонента OrthodonticCephTrackerModal.
  */
 
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";

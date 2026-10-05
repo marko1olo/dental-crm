@@ -213,7 +213,7 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 			<div
 				className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 rounded-xl border text-xs"
 				style={{
-					background: "black/[0.02] dark:bg-white/[0.02]",
+					background: "var(--paper-subtle, rgba(0, 0, 0, 0.02))",
 					borderColor: "var(--line, #e2e8f0)",
 				}}
 			>
@@ -229,11 +229,11 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 					</strong>
 				</div>
 				<div>
-					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Матрица</span>
+					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Размер кадра</span>
 					<strong className="block font-semibold">{dimensions || "—"}</strong>
 				</div>
 				<div>
-					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Воксель</span>
+					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Размер вокселя</span>
 					<strong className="block font-semibold">{voxelSpacing || "—"}</strong>
 				</div>
 			</div>

@@ -83,8 +83,8 @@ async function loadVoxelVolume(cfg: PatientBenchmarkConfig): Promise<CbctVoxelVo
 function slabToRgbaArray(slab: AxialMIPSlab, wl = 525, ww = 4025): Uint8ClampedArray {
 	const count = slab.width * slab.height;
 	const rgba = new Uint8ClampedArray(count * 4);
-	// Canonical user contrast preset (W: 4025, L: 525, Gamma: 1.50, Air: -500 HU, Soft-Knee: false):
-	const lut = generate16BitLut(ww, wl, false, 1.50, { airCutoffHU: -500, enabled: false });
+	// Canonical user contrast preset with Soft-Knee (W: 4025, L: 525, Gamma: 1.50, Air: -500 HU, PeakEnamel: 218):
+	const lut = generate16BitLut(ww, wl, false, 1.50, { airCutoffHU: -500, peakEnamel: 218, enabled: true });
 
 	for (let i = 0; i < count; i++) {
 		const hu = slab.data[i] ?? -1000;
@@ -127,6 +127,12 @@ async function renderDualJawScreenshot(
 		molarThicknessMm: 20.0,
 	});
 
+	// Determine optimal anatomical Z height and bounds
+	const zSpanMm = vol.dimensions.depth * (vol.spacingMm.z || 0.25);
+	const isSectional = zSpanMm <= 60.0;
+	const optgHeightMm = isSectional ? Math.min(38.0, zSpanMm * 0.95) : Math.min(72.0, zSpanMm * 0.95);
+	const optgCenterZMm = (mandible.zMm + maxilla.zMm) / 2;
+
 	// Reconstruct canonical clinical panorama along the detected dental arch with 1.0 mm layer (user canonical DENTE)
 	const activeArchForPano = mandible.arch.curve.splinePointsMm.length > 0 ? mandible.arch.curve : maxilla.arch.curve;
 	const panoRes = reconstructPanoramicView(vol, activeArchForPano, {
@@ -134,11 +140,12 @@ async function renderDualJawScreenshot(
 		windowLevel: 525,
 		gamma: 1.50,
 		airCutoffHU: -500,
-		useSoftKnee: false,
+		useSoftKnee: true,
 		projectionMode: "average",
 		focalTroughThicknessMm: 1.0,
-		heightMm: 72.0,
-		softKnee: { airCutoffHU: -500, enabled: false },
+		heightMm: optgHeightMm,
+		centerZMm: optgCenterZMm,
+		softKnee: { airCutoffHU: -500, peakEnamel: 218, enabled: true },
 	});
 
 	// Separate upper and lower tooth markers for anatomical dual-jaw ribbon display
@@ -148,13 +155,14 @@ async function renderDualJawScreenshot(
 				windowLevel: 525,
 				gamma: 1.50,
 				airCutoffHU: -500,
-				useSoftKnee: false,
+				useSoftKnee: true,
 				projectionMode: "average",
 				focalTroughThicknessMm: 1.0,
-				heightMm: 72.0,
+				heightMm: optgHeightMm,
+				centerZMm: optgCenterZMm,
 				widthPx: panoRes.widthPx,
 				heightPx: panoRes.heightPx,
-				softKnee: { airCutoffHU: -500, enabled: false },
+				softKnee: { airCutoffHU: -500, peakEnamel: 218, enabled: true },
 		  }).toothMarkersOnPano.filter((m) => (m.isUpper ?? true) && maxilla.arch.presentTeethFdi.includes(m.toothFdi))
 		: [];
 
@@ -321,8 +329,8 @@ async function renderDualJawScreenshot(
 			align-items: center;
 			justify-content: center;
 			padding: 8px;
-			min-height: 320px;
-			height: 340px;
+			min-height: 260px;
+			height: 290px;
 		}
 		.pano-card {
 			grid-column: span 2;
@@ -336,10 +344,12 @@ async function renderDualJawScreenshot(
 			border-radius: 4px;
 		}
 		#panoCanvas {
-			max-height: 320px;
+			width: auto;
 			max-width: 100%;
 			height: auto;
+			max-height: 270px;
 			object-fit: contain;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 		}
 		.panel-footer {
 			padding: 8px 14px;
@@ -427,12 +437,12 @@ async function renderDualJawScreenshot(
 				</div>
 				<div class="panel-meta">
 					<span>Окно W/L: 4025/525 (Канонический DENTE HU), Gamma 1.50, Air -500, Slab 1.0 мм</span>
-					<span>Слой ОПТГ: 1.0 мм • Soft-Knee: ВЫКЛ</span>
+					<span>Слой ОПТГ: 1.0 мм • Soft-Knee: ВКЛ (пик эмали 218 HU, полутон без пересвета)</span>
 					<span>Канонический дентальный контраст DENTE</span>
 				</div>
 			</div>
 			<div class="canvas-wrapper-pano">
-				<canvas id="panoCanvas" width="${renderPayload.pano.w}" height="${renderPayload.pano.h}"></canvas>
+				<canvas id="panoCanvas" width="${renderPayload.pano.w}" height="${renderPayload.pano.h}" style="aspect-ratio: ${renderPayload.pano.w} / ${renderPayload.pano.h};"></canvas>
 			</div>
 			<div class="panel-footer">
 				<div>Сплайн дуги: 0 щечного расхождения • Реконструкция строго по центроидам бусин эмали</div>
@@ -511,8 +521,8 @@ async function renderDualJawScreenshot(
 				const b2 = badgeItems[i + 1];
 				const dist = Math.hypot(b2.px - b1.px, b2.py - b1.py);
 				const dx = Math.abs(b2.px - b1.px);
-				const minClearance = (b1.bw + b2.bw) / 2 + 3;
-				if (dx < minClearance || dist < 22) {
+				const minClearance = (b1.bw + b2.bw) / 2 + 5;
+				if (dx < minClearance || dist < 26) {
 					b2.staggerLevel = (b1.staggerLevel + 1) % 3;
 				}
 			}

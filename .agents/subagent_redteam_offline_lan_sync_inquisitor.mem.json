@@ -1,0 +1,59 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: OFFLINE ENGINE, LAN DISCOVERY & SYNC CONFLICT RESOLUTION",
+  "status": "completed",
+  "constitution_read": true,
+  "completed_steps": [
+    "Full read of core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Deep reconnaissance of offline queue outbox, LAN P2P dispatcher, WebSocket broker, CRDT sync engine, and quiet telemetry",
+    "Uncovered and eliminated critical silent data loss bug in useOfflineStore.syncOutbox",
+    "Eliminated hardcoded '0 в очереди' mocks and synthetic /api/health ping in ClinicControlPill (Header.tsx)",
+    "Hardened LanP2PDispatcher and WebSocket broker with strict branchId isolation to prevent cross-cabinet and cross-branch alert leakage",
+    "Enforced Apple HIG Quiet Telemetry on NetworkStatusIndicator eliminating screaming visual clutter",
+    "Ran isolated verification gates: check:encoding, check:css-tokens, and targeted unit test suite"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-OFFLINE-01",
+      "severity": "CRITICAL_DATA_LOSS",
+      "location": "apps/web/src/store/offlineStore.ts:148-177",
+      "description": "syncOutbox without custom executor defaulted success=true and immediately called clearSyncedOfflineMutations, permanently dropping unsynced doctor mutations without sending them to the gateway.",
+      "resolution": "Fixed: wired syncOutbox to delegate to OfflineSyncService.getInstance().drainOutbox() when executor is omitted, ensuring seamless batch push to /api/sync/gateway."
+    },
+    {
+      "id": "DEFECT-HEADER-02",
+      "severity": "HIGH_SYNTHETIC_MOCK",
+      "location": "apps/web/src/components/Header.tsx:351,611",
+      "description": "ClinicControlPill displayed hardcoded '0 в очереди' in both header capsule title and popover, and handleManualSync merely pinged /api/health without draining pending offline mutations.",
+      "resolution": "Fixed: connected ClinicControlPill to useOfflineStore reactive metrics, live pendingMutationCount, and real drainOutbox via syncOutbox with latency calibration."
+    },
+    {
+      "id": "DEFECT-LAN-ISOLATION-03",
+      "severity": "HIGH_DATA_LEAK",
+      "location": "apps/web/src/services/offline/lanP2PDispatcher.ts, apps/api/src/services/websocketBroker.ts, packages/shared/src/sync/mesh.ts",
+      "description": "Cross-branch event leakage: chair status, assistant CITO emergency calls, and cashier invoices lacked branchId filtering, allowing alerts from Branch 2 to spill into Branch 1.",
+      "resolution": "Fixed: added branchId to LanP2PDispatcherConfig, LanP2PDispatcherStatus, lanP2PMessageSchema, WebSocket ClientConn, and broadcastToOrganization; filtered out mismatched branch messages."
+    },
+    {
+      "id": "DEFECT-QUIET-TELEMETRY-04",
+      "severity": "MEDIUM_CLINICAL_ERGONOMICS",
+      "location": "apps/web/src/components/sync/NetworkStatusIndicator.tsx",
+      "description": "Loud indicator text in header strip risked clinician distraction.",
+      "resolution": "Fixed: verified and hardened compact mode enforcing 8px subtle status dot and accessible aria-label without bulky text ovals."
+    }
+  ],
+  "verification_results": {
+    "encoding": "PASSED (7167 files)",
+    "css_tokens": "PASSED (164 css files, 0 unresolved tokens)",
+    "targeted_unit_tests": [
+      "apps/web/src/tests/offlineMutationQueue.test.ts: 15/15 passed",
+      "apps/web/src/services/offline/__tests__/lanP2PDispatcher.test.ts: 7/7 passed",
+      "packages/shared/src/sync/__tests__/crdtSyncEngine.test.ts: 22/22 passed",
+      "apps/api/src/tests/websocketBroker.test.ts: 6/6 passed",
+      "apps/api/src/__tests__/websocketPresenceAndDuplex.test.ts: 3/3 passed",
+      "apps/web/src/components/sync/__tests__/NetworkStatusIndicator.test.tsx: 5/5 passed",
+      "apps/web/src/components/__tests__/Header.test.ts: 5/5 passed"
+    ],
+    "cbct_dicom_radiology_touched": false
+  }
+}

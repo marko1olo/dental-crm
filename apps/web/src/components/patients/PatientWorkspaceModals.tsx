@@ -15,6 +15,7 @@ import {
 	type DuplicateCandidate,
 } from "../../lib/patientDuplicatesApi";
 import { showToast } from "../GlobalToast";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import type { DmsGuaranteeLetter } from "../insurance/DmsGuaranteeLetterModal";
 
 const DmsGuaranteeLetterModal = React.lazy(() =>
@@ -446,10 +447,184 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 		const isEffectivePhotoProtocolOpen = propPhotoProtocolOpen ?? internalPhotoProtocolOpen;
 		const isEffectiveOrthoPhotoModalOpen = propOrthoPhotoModalOpen ?? internalOrthoPhotoModalOpen;
 
+		// ИНВАРИАНТ 2: Patient Workspace Exclusivity
+		// Вычисление единственной активной модалки карточки пациента.
+		// 3D КЛКТ имеет абсолютный приоритет как полноэкранная клиническая студия.
+		const effectiveActiveModal = React.useMemo<string | null>(() => {
+			if (isCbctModalOpen) return "cbct_implant_studio";
+			if (isDmsLetterOpen) return "dms_letter";
+			if (isDmsRegistryOpen) return "dms_registry";
+			if (isLoyaltyModalOpen) return "loyalty";
+			if (isMergeOpen) return "duplicate_merge";
+			if (isEffectivePhotoProtocolOpen) return "photo_protocol";
+			if (isEffectiveOrthoPhotoModalOpen) return "ortho_photo";
+			return null;
+		}, [
+			isCbctModalOpen,
+			isDmsLetterOpen,
+			isDmsRegistryOpen,
+			isLoyaltyModalOpen,
+			isMergeOpen,
+			isEffectivePhotoProtocolOpen,
+			isEffectiveOrthoPhotoModalOpen,
+		]);
+
+		// Взаимное исключение модалок пациента (Мандаты 8b, 8e)
+		useEffect(() => {
+			if (!effectiveActiveModal) {
+				const current = useUiSurfaceStore.getState().primaryModal?.id;
+				if (
+					current === "cbct_implant_studio" ||
+					current === "dms_letter" ||
+					current === "dms_registry" ||
+					current === "loyalty" ||
+					current === "duplicate_merge" ||
+					current === "photo_protocol" ||
+					current === "ortho_photo"
+				) {
+					useUiSurfaceStore.getState().closePrimaryModal();
+				}
+				return;
+			}
+
+			useUiSurfaceStore.getState().openPrimaryModal(effectiveActiveModal as any);
+
+			// Автоматическое закрытие конкурирующих модалок в состоянии
+			if (effectiveActiveModal === "cbct_implant_studio") {
+				if (isDmsLetterOpen) setIsDmsLetterOpen(false);
+				if (isDmsRegistryOpen) setIsDmsRegistryOpen(false);
+				if (isLoyaltyModalOpen) setIsLoyaltyModalOpen(false);
+				if (isMergeOpen) closeMergeModal();
+				if (isEffectivePhotoProtocolOpen) {
+					setInternalPhotoProtocolOpen(false);
+					propSetIsPhotoProtocolOpen?.(false);
+				}
+				if (isEffectiveOrthoPhotoModalOpen) {
+					setInternalOrthoPhotoModalOpen(false);
+					propSetIsOrthoPhotoModalOpen?.(false);
+				}
+			} else if (effectiveActiveModal === "dms_letter") {
+				if (isCbctModalOpen) setIsCbctModalOpen(false);
+				if (isDmsRegistryOpen) setIsDmsRegistryOpen(false);
+				if (isLoyaltyModalOpen) setIsLoyaltyModalOpen(false);
+				if (isMergeOpen) closeMergeModal();
+				if (isEffectivePhotoProtocolOpen) {
+					setInternalPhotoProtocolOpen(false);
+					propSetIsPhotoProtocolOpen?.(false);
+				}
+				if (isEffectiveOrthoPhotoModalOpen) {
+					setInternalOrthoPhotoModalOpen(false);
+					propSetIsOrthoPhotoModalOpen?.(false);
+				}
+			} else if (effectiveActiveModal === "dms_registry") {
+				if (isCbctModalOpen) setIsCbctModalOpen(false);
+				if (isDmsLetterOpen) setIsDmsLetterOpen(false);
+				if (isLoyaltyModalOpen) setIsLoyaltyModalOpen(false);
+				if (isMergeOpen) closeMergeModal();
+				if (isEffectivePhotoProtocolOpen) {
+					setInternalPhotoProtocolOpen(false);
+					propSetIsPhotoProtocolOpen?.(false);
+				}
+				if (isEffectiveOrthoPhotoModalOpen) {
+					setInternalOrthoPhotoModalOpen(false);
+					propSetIsOrthoPhotoModalOpen?.(false);
+				}
+			} else if (effectiveActiveModal === "loyalty") {
+				if (isCbctModalOpen) setIsCbctModalOpen(false);
+				if (isDmsLetterOpen) setIsDmsLetterOpen(false);
+				if (isDmsRegistryOpen) setIsDmsRegistryOpen(false);
+				if (isMergeOpen) closeMergeModal();
+				if (isEffectivePhotoProtocolOpen) {
+					setInternalPhotoProtocolOpen(false);
+					propSetIsPhotoProtocolOpen?.(false);
+				}
+				if (isEffectiveOrthoPhotoModalOpen) {
+					setInternalOrthoPhotoModalOpen(false);
+					propSetIsOrthoPhotoModalOpen?.(false);
+				}
+			} else if (effectiveActiveModal === "duplicate_merge") {
+				if (isCbctModalOpen) setIsCbctModalOpen(false);
+				if (isDmsLetterOpen) setIsDmsLetterOpen(false);
+				if (isDmsRegistryOpen) setIsDmsRegistryOpen(false);
+				if (isLoyaltyModalOpen) setIsLoyaltyModalOpen(false);
+				if (isEffectivePhotoProtocolOpen) {
+					setInternalPhotoProtocolOpen(false);
+					propSetIsPhotoProtocolOpen?.(false);
+				}
+				if (isEffectiveOrthoPhotoModalOpen) {
+					setInternalOrthoPhotoModalOpen(false);
+					propSetIsOrthoPhotoModalOpen?.(false);
+				}
+			} else if (effectiveActiveModal === "photo_protocol") {
+				if (isCbctModalOpen) setIsCbctModalOpen(false);
+				if (isDmsLetterOpen) setIsDmsLetterOpen(false);
+				if (isDmsRegistryOpen) setIsDmsRegistryOpen(false);
+				if (isLoyaltyModalOpen) setIsLoyaltyModalOpen(false);
+				if (isMergeOpen) closeMergeModal();
+				if (isEffectiveOrthoPhotoModalOpen) {
+					setInternalOrthoPhotoModalOpen(false);
+					propSetIsOrthoPhotoModalOpen?.(false);
+				}
+			} else if (effectiveActiveModal === "ortho_photo") {
+				if (isCbctModalOpen) setIsCbctModalOpen(false);
+				if (isDmsLetterOpen) setIsDmsLetterOpen(false);
+				if (isDmsRegistryOpen) setIsDmsRegistryOpen(false);
+				if (isLoyaltyModalOpen) setIsLoyaltyModalOpen(false);
+				if (isMergeOpen) closeMergeModal();
+				if (isEffectivePhotoProtocolOpen) {
+					setInternalPhotoProtocolOpen(false);
+					propSetIsPhotoProtocolOpen?.(false);
+				}
+			}
+		}, [
+			effectiveActiveModal,
+			isCbctModalOpen,
+			isDmsLetterOpen,
+			isDmsRegistryOpen,
+			isLoyaltyModalOpen,
+			isMergeOpen,
+			isEffectivePhotoProtocolOpen,
+			isEffectiveOrthoPhotoModalOpen,
+			setIsCbctModalOpen,
+			setIsDmsLetterOpen,
+			setIsDmsRegistryOpen,
+			setIsLoyaltyModalOpen,
+			closeMergeModal,
+			propSetIsPhotoProtocolOpen,
+			propSetIsOrthoPhotoModalOpen,
+		]);
+
+		// Закрытие всех модалок по внешнему событию dente:close-all-surfaces
+		useEffect(() => {
+			const handleCloseAll = () => {
+				setIsCbctModalOpen(false);
+				setIsDmsLetterOpen(false);
+				setIsDmsRegistryOpen(false);
+				setIsLoyaltyModalOpen(false);
+				closeMergeModal();
+				setInternalPhotoProtocolOpen(false);
+				propSetIsPhotoProtocolOpen?.(false);
+				setInternalOrthoPhotoModalOpen(false);
+				propSetIsOrthoPhotoModalOpen?.(false);
+			};
+			window.addEventListener("dente:close-all-surfaces", handleCloseAll);
+			return () => {
+				window.removeEventListener("dente:close-all-surfaces", handleCloseAll);
+			};
+		}, [
+			setIsCbctModalOpen,
+			setIsDmsLetterOpen,
+			setIsDmsRegistryOpen,
+			setIsLoyaltyModalOpen,
+			closeMergeModal,
+			propSetIsPhotoProtocolOpen,
+			propSetIsOrthoPhotoModalOpen,
+		]);
+
 		return (
 			<>
 				{/* 3D CBCT / CT Studio Modal */}
-				{isCbctModalOpen && (
+				{effectiveActiveModal === "cbct_implant_studio" && isCbctModalOpen && (
 					<Suspense
 						fallback={
 							<div
@@ -462,18 +637,24 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 					>
 						<CbctMprImplantStudioModal
 							isOpen={isCbctModalOpen}
-							onClose={() => setIsCbctModalOpen(false)}
+							onClose={() => {
+								setIsCbctModalOpen(false);
+								useUiSurfaceStore.getState().closePrimaryModal("cbct_implant_studio");
+							}}
 							patientName={patientName || undefined}
 						/>
 					</Suspense>
 				)}
 
 				{/* DMS Guarantee Letter Modal */}
-				{isDmsLetterOpen && (
+				{effectiveActiveModal === "dms_letter" && isDmsLetterOpen && (
 					<Suspense fallback={null}>
 						<DmsGuaranteeLetterModal
 							isOpen={isDmsLetterOpen}
-							onClose={() => setIsDmsLetterOpen(false)}
+							onClose={() => {
+								setIsDmsLetterOpen(false);
+								useUiSurfaceStore.getState().closePrimaryModal("dms_letter");
+							}}
 							patient={{
 								id: patientId,
 								fullName: patientName || "",
@@ -484,11 +665,14 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 				)}
 
 				{/* DMS Registry Export Modal */}
-				{isDmsRegistryOpen && (
+				{effectiveActiveModal === "dms_registry" && isDmsRegistryOpen && (
 					<Suspense fallback={null}>
 						<DmsRegistryExportModal
 							isOpen={isDmsRegistryOpen}
-							onClose={() => setIsDmsRegistryOpen(false)}
+							onClose={() => {
+								setIsDmsRegistryOpen(false);
+								useUiSurfaceStore.getState().closePrimaryModal("dms_registry");
+							}}
 							patientId={patientId}
 							patientName={patientName || undefined}
 						/>
@@ -496,11 +680,14 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 				)}
 
 				{/* Loyalty & Gift Certificate Modal */}
-				{isLoyaltyModalOpen && (
+				{effectiveActiveModal === "loyalty" && isLoyaltyModalOpen && (
 					<Suspense fallback={null}>
 						<LoyaltyProgramModal
 							isOpen={isLoyaltyModalOpen}
-							onClose={() => setIsLoyaltyModalOpen(false)}
+							onClose={() => {
+								setIsLoyaltyModalOpen(false);
+								useUiSurfaceStore.getState().closePrimaryModal("loyalty");
+							}}
 							patientId={patientId}
 							patientName={patientName || undefined}
 							medicalCardNumber={
@@ -513,10 +700,13 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 				)}
 
 				{/* 1-Click Patient Duplicate Non-Destructive Merge Modal */}
-				{isMergeOpen && (
+				{effectiveActiveModal === "duplicate_merge" && isMergeOpen && (
 					<PatientDuplicateMergeModal
 						isOpen={isMergeOpen}
-						onClose={closeMergeModal}
+						onClose={() => {
+							closeMergeModal();
+							useUiSurfaceStore.getState().closePrimaryModal("duplicate_merge");
+						}}
 						patientId={patientId}
 						patientName={patientName}
 						duplicatePatient={duplicatePatient ?? eventDuplicateData}
@@ -525,13 +715,14 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 				)}
 
 				{/* Clinical Dental Photo Protocol & Before/After Studio Modal */}
-				{isEffectivePhotoProtocolOpen && (
+				{effectiveActiveModal === "photo_protocol" && isEffectivePhotoProtocolOpen && (
 					<Suspense fallback={null}>
 						<ClinicalPhotoProtocolModal
 							isOpen={isEffectivePhotoProtocolOpen}
 							onClose={() => {
 								setInternalPhotoProtocolOpen(false);
 								propSetIsPhotoProtocolOpen?.(false);
+								useUiSurfaceStore.getState().closePrimaryModal("photo_protocol");
 							}}
 							patientId={patientId}
 							patientName={patientName || undefined}
@@ -542,13 +733,14 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 				)}
 
 				{/* Orthodontic 8-Angle Photo Protocol Modal */}
-				{isEffectiveOrthoPhotoModalOpen && (
+				{effectiveActiveModal === "ortho_photo" && isEffectiveOrthoPhotoModalOpen && (
 					<Suspense fallback={null}>
 						<OrthodonticPhotoProtocolModal
 							isOpen={isEffectiveOrthoPhotoModalOpen}
 							onClose={() => {
 								setInternalOrthoPhotoModalOpen(false);
 								propSetIsOrthoPhotoModalOpen?.(false);
+								useUiSurfaceStore.getState().closePrimaryModal("ortho_photo");
 							}}
 							patientId={patientId}
 							patientName={patientName || undefined}

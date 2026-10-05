@@ -1,287 +1,190 @@
+/**
+ * scripts/capture_mobile_chairside_visit_proofs.cjs
+ * Red Team Inquisitor Screenshot Capture for Mobile Chairside Visit & EHR 043/y
+ * Viewport: iPhone 14/15/16 (390x844, scale factor 2, touch enabled)
+ */
+
 const { chromium } = require("playwright");
+const { spawn } = require("node:child_process");
+const http = require("node:http");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const todayDate = new Date().toISOString().split("T")[0];
+const outputDirs = [
+  path.resolve(__dirname, "../apps/web/public/screenshots/mobile_chairside_visit"),
+  path.resolve(__dirname, "../docs/screenshots/inquisition_live"),
+];
 
-const mockDashboard = {
-  activeDoctor: {
-    id: "doc-1",
-    fullName: "Д-р Воронов Алексей Владимирович",
-    role: "owner",
-    specialties: ["therapist", "orthopedist"],
-    active: true,
-  },
-  activePatient: {
-    id: "pat-1",
-    organizationId: "00000000-0000-0000-0000-000000000001",
-    fullName: "Ковалёв Роман Станиславович",
-    status: "active",
-    birthDate: "1988-04-12",
-    phone: "+7 (999) 888-77-66",
-    allergies: ["Лидокаин"],
-    notes: "Бронхиальная астма, аллергия на лидокаин",
-    createdAt: `${todayDate}T08:00:00.000Z`,
-    updatedAt: `${todayDate}T08:00:00.000Z`,
-  },
-  activeAppointment: {
-    id: "app-2",
-    organizationId: "00000000-0000-0000-0000-000000000001",
-    patientId: "pat-1",
-    doctorUserId: "doc-1",
-    doctorId: "doc-1",
-    chairId: "chair-1",
-    startTime: `${todayDate}T10:00:00.000Z`,
-    endTime: `${todayDate}T11:00:00.000Z`,
-    durationMinutes: 60,
-    status: "in_treatment",
-    paymentStatus: "partially_paid",
-    serviceType: "Лечение кариеса 36",
-    totalCost: 14500,
-    paidAmount: 5000,
-    patientName: "Ковалёв Роман Станиславович",
-    patientPhone: "+7 (999) 888-77-66",
-    complaint: "Острая ночная боль в области моляра 36",
-    createdAt: `${todayDate}T08:00:00.000Z`,
-    updatedAt: `${todayDate}T08:00:00.000Z`,
-  },
-  activeVisit: {
-    id: "app-2",
-    patientId: "pat-1",
-    doctorId: "doc-1",
-    status: "in_treatment",
-    diagnosisTooth: 36,
-  },
-  settings: {
-    clinic: {
-      name: "Стоматология ДЕНТЕ Премиум",
-      scheduleConfig: {
-        workdayStart: "08:00",
-        workdayEnd: "21:00",
-        appointmentBufferMinutes: 10,
-      },
-      timezone: "Europe/Moscow",
-      phone: "+7 (495) 123-45-67",
-      address: "Москва, Столярный переулок, 14",
-    },
-    staff: [
-      {
-        id: "doc-1",
-        organizationId: "00000000-0000-0000-0000-000000000001",
-        fullName: "Д-р Воронов Алексей Владимирович",
-        role: "owner",
-        specialties: ["therapist", "orthopedist"],
-        active: true,
-      },
-    ],
-    chairs: [
-      {
-        id: "chair-1",
-        organizationId: "00000000-0000-0000-0000-000000000001",
-        name: "Кабинет 1 (Терапия)",
-        room: "1",
-        defaultDoctorId: "doc-1",
-        active: true,
-      },
-    ],
-  },
-  patients: [
-    {
-      id: "pat-1",
-      organizationId: "00000000-0000-0000-0000-000000000001",
-      fullName: "Ковалёв Роман Станиславович",
-      status: "active",
-      birthDate: "1988-04-12",
-      phone: "+7 (999) 888-77-66",
-      allergies: ["Лидокаин"],
-      notes: "Бронхиальная астма, аллергия на лидокаин",
-      createdAt: `${todayDate}T08:00:00.000Z`,
-      updatedAt: `${todayDate}T08:00:00.000Z`,
-    },
-  ],
-  appointments: [
-    {
-      id: "app-2",
-      organizationId: "00000000-0000-0000-0000-000000000001",
-      patientId: "pat-1",
-      doctorUserId: "doc-1",
-      doctorId: "doc-1",
-      chairId: "chair-1",
-      startTime: `${todayDate}T10:00:00.000Z`,
-      endTime: `${todayDate}T11:00:00.000Z`,
-      durationMinutes: 60,
-      status: "in_treatment",
-      paymentStatus: "partially_paid",
-      serviceType: "Лечение кариеса 36",
-      totalCost: 14500,
-      paidAmount: 5000,
-      patientName: "Ковалёв Роман Станиславович",
-      patientPhone: "+7 (999) 888-77-66",
-      complaint: "Острая ночная боль в области моляра 36",
-      createdAt: `${todayDate}T08:00:00.000Z`,
-      updatedAt: `${todayDate}T08:00:00.000Z`,
-    },
-  ],
-};
-
-async function runCapture() {
-  const targetDirs = [
-    path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live"),
-    "C:/Users/Admin/.gemini/antigravity/brain/bbed6651-df44-48c5-9ec6-06c68c2fcd08",
-    "C:/Users/Admin/.gemini/antigravity/brain/beb92312-c6d7-426d-a438-12dcad022abc",
-  ];
-  for (const d of targetDirs) {
-    if (!fs.existsSync(d)) {
-      fs.mkdirSync(d, { recursive: true });
-    }
+for (const dir of outputDirs) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-  const outDir = targetDirs[0];
+}
 
-  console.log("[Playwright] Launching Chrome executable for mobile 390x844...");
+function checkPort(port, host = "127.0.0.1") {
+  return new Promise((resolve) => {
+    const req = http.get(`http://${host}:${port}/`, () => {
+      resolve(true);
+    });
+    req.on("error", () => resolve(false));
+    req.setTimeout(1000, () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+async function waitForServer(url, timeoutMs = 25000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const ok = await new Promise((res) => {
+        const req = http.get(url, (response) => {
+          res(response.statusCode >= 200 && response.statusCode < 400);
+        });
+        req.on("error", () => res(false));
+        req.setTimeout(1000, () => {
+          req.destroy();
+          res(false);
+        });
+      });
+      if (ok) return true;
+    } catch {
+      // retry
+    }
+    await new Promise((r) => setTimeout(r, 600));
+  }
+  throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`);
+}
+
+async function captureScreenshot(page, filename) {
+  try {
+    await page.evaluate(() => {
+      const sw = document.querySelector(".mobile-dev-switcher");
+      if (sw) sw.style.display = "none";
+    });
+  } catch {
+    // ignore
+  }
+  const primaryPath = path.join(outputDirs[0], filename);
+  await page.screenshot({ path: primaryPath, fullPage: false });
+  for (let i = 1; i < outputDirs.length; i++) {
+    fs.copyFileSync(primaryPath, path.join(outputDirs[i], filename));
+  }
+  const sizeKb = (fs.statSync(primaryPath).size / 1024).toFixed(1);
+  console.log(`[CAPTURED] ${filename} (${sizeKb} KB) -> ${primaryPath}`);
+  return primaryPath;
+}
+
+async function main() {
+  console.log("=== STARTING MOBILE CHAIRSIDE VISIT 390x844 SCREENSHOT PIPELINE ===");
+
+  let viteProcess = null;
+  const isViteLive = await checkPort(5173);
+
+  if (!isViteLive) {
+    console.log(">>> Vite server is not running on 5173. Spawning Vite dev server...");
+    const viteBin = path.resolve(__dirname, "../node_modules/vite/bin/vite.js");
+    const webDir = path.resolve(__dirname, "../apps/web");
+
+    viteProcess = spawn("node", [viteBin, "--host", "127.0.0.1", "--port", "5173"], {
+      cwd: webDir,
+      stdio: "inherit",
+      shell: true,
+    });
+
+    await waitForServer("http://127.0.0.1:5173/mobile_hig_preview.html");
+    console.log(">>> Vite dev server ready on http://127.0.0.1:5173/");
+  } else {
+    console.log(">>> Detected existing Vite server on port 5173.");
+  }
+
+  const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: fs.existsSync(chromePath) ? chromePath : undefined,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
   });
 
-  async function setupPageRoutes(page) {
-    await page.route("**/api/**", async (route) => {
-      const url = route.request().url();
-      if (url.includes("/src/")) return route.continue();
-      if (url.includes("/api/dashboard")) {
-        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard) });
-      }
-      if (url.includes("/api/auth/user/me") || url.includes("/api/auth/session")) {
-        return route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            user: { id: "doc-1", fullName: "Д-р Воронов Алексей Владимирович", role: "owner", active: true },
-          }),
-        });
-      }
-      if (url.includes("/api/auth/staff/unlock")) {
-        return route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true, token: "live-staff-token", user: { id: "doc-1", fullName: "Д-р Воронов Алексей Владимирович", role: "owner" } }),
-        });
-      }
-      if (url.includes("/api/schedule")) {
-        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard.appointments) });
-      }
-      if (url.includes("/api/patients")) {
-        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard.patients) });
-      }
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(url.includes("list") || url.includes("status") ? [] : {}) });
-    });
-  }
-
-  async function applyTheme(page, theme) {
-    await page.evaluate((th) => {
-      localStorage.setItem("dente_theme_mode", th);
-      if (window.__useThemeStore) {
-        window.__useThemeStore.getState().setThemeMode(th);
-      }
-      document.documentElement.setAttribute("data-theme", th);
-      const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(th);
-      document.documentElement.classList.toggle("dark", isDark);
-      document.documentElement.classList.toggle("light", !isDark);
-      document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    }, theme);
-    await page.waitForTimeout(600);
-  }
-
-  async function takeProof(page, fileName, description) {
-    const targetFile = path.join(outDir, fileName);
-    await page.waitForTimeout(800);
-    await page.screenshot({ path: targetFile, fullPage: false });
-
-    for (const d of targetDirs) {
-      const dest = path.join(d, fileName);
-      if (dest !== targetFile) {
-        try { fs.copyFileSync(targetFile, dest); } catch (e) {}
-      }
-    }
-
-    const stats = fs.statSync(targetFile);
-    console.log(`[Captured] ${fileName} (${description}): ${stats.size} bytes (${(stats.size / 1024).toFixed(1)} KB)`);
-  }
-
-  const mobileContext = await browser.newContext({
+  const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true,
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
   });
 
-  await mobileContext.addInitScript(() => {
-    localStorage.setItem("dente_clinic_token", "live-inquisition-clinic-token");
-    localStorage.setItem("dente_staff_token", "live-inquisition-staff-token");
-    localStorage.setItem("dente_active_role", "owner");
-    localStorage.setItem("dente_theme_mode", "light");
-    localStorage.setItem("dente_onboarding_completed", "true");
-    localStorage.setItem("dente_tour_completed", "true");
-    localStorage.setItem("dente_tour_dismissed", "true");
-    localStorage.setItem(
-      "dente_ui_preferences_v1",
-      JSON.stringify({ onboardingDismissed: true, onboardingStep: "done", version: 1 })
-    );
-    localStorage.setItem(
-      "dental-crm:onboarding:v1",
-      JSON.stringify({ dismissed: true, step: "done", completed: true, version: 1 })
-    );
-    localStorage.setItem(
-      "dental-crm:web-ui-preferences:v1",
-      JSON.stringify({ version: 1, uiLanguage: "ru", selectedWorkspaceRole: "owner", selectedPatientId: "pat-1", onboardingDismissed: true, onboardingStep: "done" })
-    );
-    localStorage.setItem(
-      "dente-workspace-profile",
-      JSON.stringify({
-        state: {
-          clinicName: "Стоматология ДЕНТЕ Премиум",
-          currentDoctor: { id: "doc-1", fullName: "Д-р Воронов А. В.", role: "owner" },
-          flags: { disableTour: true },
-        },
-      })
-    );
-  });
+  const page = await context.newPage();
 
-  const page = await mobileContext.newPage();
-  await setupPageRoutes(page);
+  try {
+    // 1. Mobile Light: Шаг 1 (Жалобы, Top HUD, 52px кнопка нормы, SmartMic)
+    console.log(">>> Capturing Mobile Light (Chairside Step 1)...");
+    await page.goto("http://127.0.0.1:5173/mobile_hig_preview.html?screen=chairside&theme=light", {
+      waitUntil: "networkidle",
+      timeout: 20000,
+    });
+    await page.waitForTimeout(1000);
+    await captureScreenshot(page, "proof_mobile_chairside_visit_light.png");
 
-  console.log("Loading http://127.0.0.1:5173/#visit...");
-  await page.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForTimeout(2000);
+    // 2. Mobile Dark: Шаг 1 в тёмной теме
+    console.log(">>> Capturing Mobile Dark (Chairside Step 1)...");
+    await page.goto("http://127.0.0.1:5173/mobile_hig_preview.html?screen=chairside&theme=dark", {
+      waitUntil: "networkidle",
+      timeout: 20000,
+    });
+    await page.waitForTimeout(1000);
+    await captureScreenshot(page, "proof_mobile_chairside_visit_dark.png");
 
-  // Remove any tour overlay if present
-  await page.evaluate(() => {
-    document.querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone').forEach((el) => el.remove());
-  });
+    // 3. Mobile Light: Шаг 2 (Осмотр и зубная формула по квадрантам)
+    console.log(">>> Capturing Mobile Light (Chairside Step 2 — Quadrant FDI)...");
+    await page.goto("http://127.0.0.1:5173/mobile_hig_preview.html?screen=chairside&theme=light", {
+      waitUntil: "networkidle",
+      timeout: 20000,
+    });
+    await page.waitForTimeout(600);
+    // Клик на таб 2. Осмотр
+    const step2Btn = page.locator('[data-testid="mobile-chairside-workspace-step-exam"]');
+    if (await step2Btn.count()) {
+      await step2Btn.click();
+      await page.waitForTimeout(600);
+    }
+    await captureScreenshot(page, "proof_mobile_chairside_exam_quadrants_light.png");
 
-  // Ensure visit view is shown
-  await page.evaluate(() => {
-    window.location.hash = "visit";
-    const visitTab = document.querySelector('[data-testid="visit-subtab-emk"]') || document.querySelector('button[role="tab"]');
-    if (visitTab) visitTab.click();
-  });
-  await page.waitForTimeout(1500);
+    // 4. Mobile Light: Шаг 5 (Итог и Чек 54-ФЗ)
+    console.log(">>> Capturing Mobile Light (Chairside Step 5 — Billing & 54-FZ)...");
+    const step5Btn = page.locator('[data-testid="mobile-chairside-workspace-step-checkout"]');
+    if (await step5Btn.count()) {
+      await step5Btn.click();
+      await page.waitForTimeout(600);
+    }
+    await captureScreenshot(page, "proof_mobile_chairside_checkout_billing_light.png");
 
-  // 1. Proof Mobile Chairside Visit Light (390x844)
-  console.log("[Theme] Applying Light theme...");
-  await applyTheme(page, "light");
-  await takeProof(page, "proof_mobile_visit_chairside_light.png", "Mobile Chairside Visit Light 390x844");
+    // 5. Mobile Dark: Шаг 5 (Итог и Чек в тёмной теме)
+    console.log(">>> Capturing Mobile Dark (Chairside Step 5 — Billing & 54-FZ)...");
+    await page.goto("http://127.0.0.1:5173/mobile_hig_preview.html?screen=chairside&theme=dark", {
+      waitUntil: "networkidle",
+      timeout: 20000,
+    });
+    await page.waitForTimeout(600);
+    const step5DarkBtn = page.locator('[data-testid="mobile-chairside-workspace-step-checkout"]');
+    if (await step5DarkBtn.count()) {
+      await step5DarkBtn.click();
+      await page.waitForTimeout(600);
+    }
+    await captureScreenshot(page, "proof_mobile_chairside_checkout_billing_dark.png");
 
-  // 2. Proof Mobile Chairside Visit Dark (390x844)
-  console.log("[Theme] Applying Dark theme...");
-  await applyTheme(page, "dark");
-  await takeProof(page, "proof_mobile_visit_chairside_dark.png", "Mobile Chairside Visit Dark 390x844");
-
-  await browser.close();
-  console.log("[SUCCESS] Mobile visual proof capture complete!");
+    console.log("=== ALL 5 CHAIRSIDE PROOF SCREENSHOTS CAPTURED SUCCESSFULLY ===");
+  } finally {
+    await browser.close();
+    if (viteProcess) {
+      console.log(">>> Terminating spawned Vite process...");
+      viteProcess.kill();
+    }
+  }
 }
 
-runCapture().catch((err) => {
-  console.error("Capture failed:", err);
+main().catch((err) => {
+  console.error("FATAL ERROR in capture pipeline:", err);
   process.exit(1);
 });

@@ -1362,7 +1362,7 @@ export function parseUnstructuredPriceText(rawText: string): readonly ParsedPric
 			} else {
 				category = 'therapy';
 				specialty = 'therapist';
-				finalCode = 'A16.07.000';
+				finalCode = 'A16.07.002';
 				confidence = 'fallback';
 			}
 		}

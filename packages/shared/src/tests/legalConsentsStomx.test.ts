@@ -483,6 +483,6 @@ test("RED TEAM INQUISITOR: informedConsentEngine strictly prevents fake mock sig
 		serverTimestampIso: "2026-10-04T10:00:00.000Z",
 	});
 	assert.equal(backdatedRecord.isBackdated, true, "Signatures older than 300s drift must be flagged as backdated");
-	assert.ok(backdatedRecord.auditNotes.some((n: string) => n.includes("задним числом")));
+	assert.ok(backdatedRecord.auditNotes?.some((n: string) => n.includes("задним числом")));
 });
 

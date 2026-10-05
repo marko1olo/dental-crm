@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Box, Layers, Copy, Compass } from "lucide-react";
+import { Box, Layers, Copy, Compass, Check, FilePlus } from "lucide-react";
 import { EndoFileCanal } from "../../../icons/DentalIcons";
 import type { WorkspaceCommonProps } from "./workspaceTypes";
 import { EndoCompassPanel, type EndoCompassClinicalData } from "./EndoCompassPanel";
-import { runEndoAnalysisForTooth } from "./endoCanalPipeline";
+import { runEndoAnalysisForTooth, runEndoAnalysisForToothAsync } from "./endoCanalPipeline";
+import {
+	exportEndoToDiary043,
+	exportEndoToTreatmentPlan,
+} from "../../endoClinicalIntegrationBridge";
 
 export interface EndoWorkspaceProps extends WorkspaceCommonProps {
 	readonly activeToothFdi?: string | number | undefined;
@@ -18,48 +22,42 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 	mobileActiveTab,
 	activeToothFdi,
 	archCurve,
+	patientId,
+	patientDisplayName,
 	handleSelectTooth,
 	handleExportToEmr,
+	handleExportToPlan,
 }) => {
 	const [selectedTooth, setSelectedTooth] = useState<number>(() =>
 		activeToothFdi ? Number.parseInt(String(activeToothFdi), 10) : 36,
 	);
 
+	const prevPropToothRef = useRef<string | number | undefined>(activeToothFdi);
 	useEffect(() => {
-		if (activeToothFdi) {
-			setSelectedTooth(Number.parseInt(String(activeToothFdi), 10));
+		if (activeToothFdi !== undefined && activeToothFdi !== prevPropToothRef.current) {
+			prevPropToothRef.current = activeToothFdi;
+			const parsed = Number.parseInt(String(activeToothFdi), 10);
+			if (!Number.isNaN(parsed) && parsed > 0) {
+				setSelectedTooth(parsed);
+			}
 		}
 	}, [activeToothFdi]);
 
 	// 4th Quadrant display mode: 3D High-Res Voxel Cube vs Orthogonal Cross-Section
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "cross_section">("volume3d");
 
-	// Endo Compass 3D Panel State
-	const [isCompassOpen, setIsCompassOpen] = useState<boolean>(true);
+	// Endo Compass 3D Panel State: closed by default to guarantee clean unobstructed 4-quadrant diagnostic viewing
+	const [isCompassOpen, setIsCompassOpen] = useState<boolean>(false);
 	const [activeCanalId, setActiveCanalId] = useState<string>("c-mb1");
 	const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-	const [compassData, setCompassData] = useState<EndoCompassClinicalData | null>(() =>
-		runEndoAnalysisForTooth(volume, selectedTooth, archCurve),
-	);
+	// Start in safe slice inspection mode without claiming premature fake computed channels
+	const [compassData, setCompassData] = useState<EndoCompassClinicalData | null>(null);
 
-	// Genuine mathematical recalculation when tooth or CBCT volume changes
+	// Tooth or volume change returns to safe slice inspection mode (channels computed in isolated worker on demand)
 	useEffect(() => {
-		if (!volume) {
-			setCompassData(null);
-			return;
-		}
-		setIsAnalyzing(true);
-		const timer = setTimeout(() => {
-			const res = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
-			setCompassData(res);
-			if (res && res.canals.length > 0) {
-				setActiveCanalId(res.canals[0]!.id);
-			}
-			setIsAnalyzing(false);
-		}, 60);
-
-		return () => clearTimeout(timer);
-	}, [volume, selectedTooth, archCurve]);
+		setCompassData(null);
+		setIsAnalyzing(false);
+	}, [selectedTooth, volume]);
 
 	// 4-Way Interactive 2x2 Grid Resizer State (macOS / Studio density)
 	const [splitX, setSplitX] = useState<number>(0.5);
@@ -68,35 +66,70 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 	const quadGridRef = useRef<HTMLDivElement | null>(null);
 
 	const [isCopied, setIsCopied] = useState<boolean>(false);
+	const [isPlanAdded, setIsPlanAdded] = useState<boolean>(false);
 
-	const handleCopyRecord = () => {
+	const handleExportEmrAction = () => {
 		if (handleExportToEmr) {
 			handleExportToEmr();
-		} else if (compassData && typeof navigator !== "undefined" && navigator.clipboard) {
-			const text = `Эндодонтия КТ (Зуб #${selectedTooth}): ` +
-				`Каналов: ${compassData.canals.length}. ` +
-				`Анатомия: ${compassData.vertucciNameRu}. ` +
-				`Рабочая длина: ${compassData.canals.map((c) => `${c.name} WL=${c.physiologicalLengthMm.toFixed(1)}мм`).join(", ")}. ` +
-				`Кривизна: ${compassData.canals.map((c) => `${c.name} ${c.schneiderAngleDeg.toFixed(0)}°`).join(", ")}. ` +
-				`Риск: ${compassData.overallRiskTier.toUpperCase()}. Протокол: Ni-Ti конусность ${compassData.recommendedTaper}.`;
-			navigator.clipboard.writeText(text).catch(() => {});
+		}
+		if (compassData) {
+			exportEndoToDiary043({
+				clinicalData: compassData,
+				toothFdi: selectedTooth,
+				patientId,
+				patientDisplayName,
+			});
 		}
 		setIsCopied(true);
 		setTimeout(() => setIsCopied(false), 2000);
 	};
 
-	const handleTriggerRerun = () => {
+	const handleExportPlanAction = () => {
+		if (handleExportToPlan) {
+			handleExportToPlan();
+		}
+		if (compassData) {
+			exportEndoToTreatmentPlan({
+				clinicalData: compassData,
+				toothFdi: selectedTooth,
+				patientId,
+				patientDisplayName,
+			});
+		}
+		setIsPlanAdded(true);
+		setTimeout(() => setIsPlanAdded(false), 2000);
+	};
+
+	const handleTriggerRerun = async () => {
 		setIsAnalyzing(true);
-		setTimeout(() => {
-			const res = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
-			setCompassData(res);
+		try {
+			const res = await runEndoAnalysisForToothAsync(volume, selectedTooth, archCurve);
+			if (res) {
+				setCompassData(res.clinicalData);
+				if (res.clinicalData.canals.length > 0) {
+					setActiveCanalId(res.clinicalData.canals[0]!.id);
+				}
+			} else {
+				const syncRes = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
+				setCompassData(syncRes);
+				if (syncRes && syncRes.canals.length > 0) {
+					setActiveCanalId(syncRes.canals[0]!.id);
+				}
+			}
+		} catch (err) {
+			console.warn("[EndoWorkspace] Async analysis failed, using sync fallback:", err);
+			const syncRes = runEndoAnalysisForTooth(volume, selectedTooth, archCurve);
+			setCompassData(syncRes);
+			if (syncRes && syncRes.canals.length > 0) {
+				setActiveCanalId(syncRes.canals[0]!.id);
+			}
+		} finally {
 			setIsAnalyzing(false);
-		}, 300);
+		}
 	};
 
 	useEffect(() => {
 		if (!isDraggingSplitter) return;
-
 
 		const handlePointerMove = (e: PointerEvent) => {
 			if (!quadGridRef.current) return;
@@ -119,9 +152,13 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 
 		window.addEventListener("pointermove", handlePointerMove);
 		window.addEventListener("pointerup", handlePointerUp);
+		window.addEventListener("pointercancel", handlePointerUp);
+		window.addEventListener("blur", handlePointerUp);
 		return () => {
 			window.removeEventListener("pointermove", handlePointerMove);
 			window.removeEventListener("pointerup", handlePointerUp);
+			window.removeEventListener("pointercancel", handlePointerUp);
+			window.removeEventListener("blur", handlePointerUp);
 		};
 	}, [isDraggingSplitter]);
 
@@ -154,6 +191,15 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 						<span className="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300 font-mono text-[11px] border border-zinc-800">
 							Зуб {selectedTooth}
 						</span>
+					</div>
+
+					{/* Clinical Safe Slice Mode Indicator */}
+					<div
+						className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900/90 border border-zinc-800 text-[11px] text-zinc-300 shrink-0"
+						data-testid="cbct-endo-safe-mode-badge"
+					>
+						<span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+						<span>Безопасный режим просмотра срезов зуба</span>
 					</div>
 
 					<div className="h-3.5 w-px bg-zinc-800 shrink-0" />
@@ -195,25 +241,36 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 								? "bg-cyan-950/80 text-cyan-300 border-cyan-600/70 shadow-xs"
 								: "bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-300 border border-zinc-800"
 						}`}
-						title="Открыть/скрыть 3D Эндодонтический Компас с расчетом кривизны каналов"
+						title="Открыть/скрыть 3D Эндодонтический Компас (фоновый воркер-расчет)"
 						data-testid="cbct-endo-compass-toggle-btn"
 					>
 						<Compass className="w-3.5 h-3.5 text-cyan-400" />
 						<span>Компас 3D</span>
 						<span className="text-[10px] px-1 py-0.2 rounded bg-zinc-900 border border-zinc-700/80 text-zinc-300 font-mono">
-							{compassData ? `${compassData.canals.length} к.` : "—"}
+							{compassData ? `${compassData.canals.length} к.` : "Воркер"}
 						</span>
 					</button>
 
 					<button
 						type="button"
-						onClick={handleCopyRecord}
-						className="h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-300 border border-zinc-800 transition-colors cursor-pointer"
-						title="Скопировать данные срезов эндодонтии выбранного зуба в медицинскую карту пациента"
+						onClick={handleExportPlanAction}
+						className="h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 hover:text-emerald-200 border border-emerald-700/60 transition-colors cursor-pointer"
+						title="Добавить услуги эндодонтии в план лечения пациента (Приказ 804н)"
+						data-testid="cbct-endo-export-plan-btn"
+					>
+						{isPlanAdded ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <FilePlus className="w-3.5 h-3.5 text-emerald-400" />}
+						<span>{isPlanAdded ? "В плане" : "+ В план"}</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleExportEmrAction}
+						className="h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 bg-cyan-950/70 hover:bg-cyan-900 text-cyan-300 hover:text-cyan-200 border border-cyan-700/60 transition-colors cursor-pointer"
+						title="Перенести данные срезов эндодонтии в медицинскую карту пациента Form 043/u"
 						data-testid="cbct-endo-copy-emr-btn"
 					>
-						<Copy className="w-3.5 h-3.5 text-zinc-400" />
-						<span>{isCopied ? "Скопировано" : "В медкарту"}</span>
+						{isCopied ? <Check className="w-3.5 h-3.5 text-cyan-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
+						<span>{isCopied ? "Перенесено" : "В 043/у"}</span>
 					</button>
 				</div>
 			</div>
@@ -242,7 +299,8 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 							activeCanalId={activeCanalId}
 							onSelectCanal={setActiveCanalId}
 							onRunAnalysis={handleTriggerRerun}
-							onExportToEmr={handleCopyRecord}
+							onExportToEmr={handleExportEmrAction}
+							onExportToPlan={handleExportPlanAction}
 							onClose={() => setIsCompassOpen(false)}
 						/>
 					</div>

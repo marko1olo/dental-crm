@@ -207,8 +207,8 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 				</div>
 			)}
 
-			{/* Footer Actions (Fixed Sticky Bar — Fitts's Law) */}
-			<div className="sticky bottom-0 z-50 p-3 sm:py-2.5 sm:px-4 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between sm:justify-end flex-wrap gap-2.5 shrink-0 shadow-lg">
+			{/* Footer Actions (Fixed Sticky Bar — Apple HIG Floating Bottom Bar) */}
+			<div className="sticky bottom-0 z-50 p-3 sm:py-2.5 sm:px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[var(--line)] bg-[var(--paper,#ffffff)]/95 backdrop-blur-md flex items-center justify-between sm:justify-end flex-wrap gap-2.5 shrink-0 shadow-lg">
 				<div className="text-xs text-[var(--muted)] mr-auto hidden sm:block min-w-0 truncate">
 					Касса и чеки •{" "}
 					{patientPhone
@@ -356,10 +356,10 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						data-testid="btn-autonomous-terminal-checkout"
 						onClick={() => void onAcceptPaymentOfflineFallback()}
 						disabled={isPrinting}
-						className="min-h-[44px] sm:min-h-[40px] sm:h-10 px-3 sm:px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98 transition-all truncate"
+						className="min-h-[48px] sm:min-h-[40px] sm:h-10 px-3 sm:px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98 transition-all truncate"
 						title="Принять оплату через автономный терминал без блокировки: чек ставится в очередь отложенной печати (Мандаты 8e, 8n)"
 					>
-						<WifiOff size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
 						<span className="truncate">Оплата через автономный терминал (без ККТ)</span>
 					</button>
 					<button
@@ -380,16 +380,16 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						onClick={() => void onExecutePayment()}
 						disabled={isPrinting}
 						title={isPrinting ? "Идет печать кассового чека..." : undefined}
-						className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] sm:h-10 px-3 sm:px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98 min-w-0"
+						className="w-full sm:w-auto min-h-[52px] sm:min-h-[40px] sm:h-10 px-4 sm:px-6 rounded-2xl sm:rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-base sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl transition-all cursor-pointer select-none active:scale-98 min-w-0"
 					>
 						{isPrinting ? (
 							<>
-								<Printer className="w-4 h-4 animate-spin shrink-0" />
+								<Printer className="w-5 h-5 animate-spin shrink-0" />
 								<span className="truncate">Печать кассового чека...</span>
 							</>
 						) : (
 							<>
-								<Check className="w-4 h-4 shrink-0" />
+								<Check className="w-5 h-5 shrink-0" />
 								<span className="truncate">
 									{targetBillKop === 0
 										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"

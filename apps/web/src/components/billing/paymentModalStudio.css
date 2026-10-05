@@ -1131,6 +1131,10 @@
 	}
 
 	/* Primary Action in Natural Thumb Zone (Floating Bottom Bar) */
+	.payment-modal .space-y-4 {
+		padding-bottom: 24px !important;
+	}
+
 	.mobile-sticky-checkout-bar {
 		position: sticky;
 		bottom: 0;

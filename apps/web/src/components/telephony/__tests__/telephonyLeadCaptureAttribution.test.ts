@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test, { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach, test } from "vitest";
 import {
 	resolveCallAdvertisingAttribution,
 	captureLeadFromIncomingCall,

@@ -149,6 +149,12 @@ export const stockBatches = pgTable(
 			t.inventoryItemId,
 			t.expirationDate,
 		),
+		stockBatchesOrgItemStatusExpIdx: index("stock_batches_org_item_status_exp_idx").on(
+			t.organizationId,
+			t.inventoryItemId,
+			t.status,
+			t.expirationDate,
+		),
 		warehouseIdx: index("stock_batches_warehouse_idx").on(t.warehouseId),
 	}),
 );

@@ -19,6 +19,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import type { ClinicAutoclaveDevice } from "./AutoclaveEquipmentModal";
 
@@ -989,7 +990,7 @@ export function AutoclaveRegisterTable({
 			{/* =========================================================================
 			    APPLE HIG MOBILE BOTTOM SHEET 1: Toolbar Actions
 			    ========================================================================= */}
-			{isMobileToolbarSheetOpen && (
+			{isMobileToolbarSheetOpen && typeof document !== "undefined" && createPortal(
 				<div
 					className="sanpin-bottom-sheet-backdrop"
 					onClick={() => setIsMobileToolbarSheetOpen(false)}
@@ -1134,13 +1135,14 @@ export function AutoclaveRegisterTable({
 							Закрыть
 						</button>
 					</div>
-				</div>
+				</div>,
+				document.body
 			)}
 
 			{/* =========================================================================
 			    APPLE HIG MOBILE BOTTOM SHEET 2: Specific Cycle Card Actions
 			    ========================================================================= */}
-			{selectedLogForSheet && (
+			{selectedLogForSheet && typeof document !== "undefined" && createPortal(
 				<div
 					className="sanpin-bottom-sheet-backdrop"
 					onClick={() => setSelectedLogForSheet(null)}
@@ -1249,7 +1251,8 @@ export function AutoclaveRegisterTable({
 							Закрыть
 						</button>
 					</div>
-				</div>
+				</div>,
+				document.body
 			)}
 		</div>
 	);

@@ -37,6 +37,8 @@ import {
 } from "./telegramBotPresets";
 import { downloadBotSourceZip } from "./botZipGenerator";
 import type { BotChannelType } from "./TelegramPhoneSimulator";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { showToast } from "../../GlobalToast";
 
 export interface BotOnboardingWizardProps {
 	initialStep?: 1 | 2 | 3 | 4;
@@ -150,8 +152,8 @@ export function BotOnboardingWizard({
 	const [isLaunching, setIsLaunching] = useState<boolean>(false);
 	const [liveNotice, setLiveNotice] = useState<string | null>(null);
 
-	// Leads & Messages log mock data
-	const recentLeads = [
+	// Leads & Messages log mock fallback & live data
+	const defaultLeads = [
 		{
 			id: "lead-1",
 			patientName: "Волкова Екатерина С.",
@@ -194,6 +196,45 @@ export function BotOnboardingWizard({
 		},
 	];
 
+	const [liveLeads, setLiveLeads] = useState(defaultLeads);
+
+	React.useEffect(() => {
+		let isMounted = true;
+		const loadLiveInbox = async () => {
+			try {
+				const res = await fetch("/api/bots/inbox", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					if (Array.isArray(data.conversations) && data.conversations.length > 0 && isMounted) {
+						setLiveLeads(
+							data.conversations.map((c: any, idx: number) => ({
+								id: c.key || `lead-${idx}`,
+								patientName: c.patientName,
+								phone: c.phone || c.senderId,
+								action: `Диалог ${c.channel.toUpperCase()}`,
+								detail: c.lastMessage || "Новое сообщение",
+								status: c.isIntercepted ? "inquiry" : "confirmed",
+								statusLabel: c.isIntercepted ? "Оператор" : "Отвечает бот",
+								time: new Date(c.lastMessageAt).toLocaleTimeString("ru-RU", {
+									hour: "2-digit",
+									minute: "2-digit",
+								}),
+							})),
+						);
+					}
+				}
+			} catch {
+				// Keep fallback
+			}
+		};
+		loadLiveInbox();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	// Accessibility IDs
 	const tokenInputId = useId();
 	const clinicNameId = useId();
@@ -216,7 +257,7 @@ export function BotOnboardingWizard({
 
 		try {
 			if (activeChannel === "telegram") {
-				const response = await fetch("/api/telegram/bot/verify-token", {
+				const response = await fetch("/api/telegram/bot/verify", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ token: trimmed }),
@@ -260,30 +301,50 @@ export function BotOnboardingWizard({
 		}, 600);
 	};
 
-	// 1-Click Launch handler
+	// 1-Click Launch handler (Persisting to PostgreSQL via POST /api/bots/configs)
 	const handleLaunchLiveBot = async () => {
 		setIsLaunching(true);
-		setLiveNotice("Регистрируем вебхук в защищенном облаке DENTE...");
+		setLiveNotice("Регистрируем конфигурацию и вебхук в защищенном облаке DENTE...");
 
-		if (typeof parentProps?.setTelegramBotTokenDraft === "function" && botTokenInput.trim()) {
-			parentProps.setTelegramBotTokenDraft(botTokenInput.trim());
-		}
-		if (typeof parentProps?.markTelegramSettingsDirty === "function") {
-			parentProps.markTelegramSettingsDirty();
-		}
-		if (typeof parentProps?.saveTelegramSettings === "function") {
-			try {
-				await parentProps.saveTelegramSettings();
-			} catch {
-				// Handled gracefully in background
+		try {
+			const enabledPluginsList = [
+				pluginBooking && "online_booking",
+				pluginReminders && "service_reminders",
+				pluginReviews && "review_collection",
+				pluginPriceFaq && "price_faq",
+				pluginAdminChat && "admin_chat",
+			].filter(Boolean);
+
+			const res = await fetch("/api/bots/configs", {
+				method: "POST",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					channel: activeChannel,
+					botConfigId: "default",
+					token: botTokenInput.trim() || undefined,
+					isActive: true,
+					enabledPlugins: enabledPluginsList,
+				}),
+			});
+
+			if (res.ok) {
+				setIsBotRunningLive(true);
+				setLiveNotice(
+					`🎉 Бот ${activeChannel.toUpperCase()} успешно активирован в БД DENTE и слушает вебхук 24/7!`,
+				);
+				showToast(`Бот ${activeChannel.toUpperCase()} сохранён в базе и запущен!`, "success");
+			} else {
+				const errData = await res.json().catch(() => ({}));
+				setLiveNotice(errData.message || "Ошибка сохранения настроек бота.");
 			}
-		}
-
-		setTimeout(() => {
+		} catch (err) {
+			setLiveNotice("Сетевая ошибка при регистрации бота.");
+		} finally {
 			setIsLaunching(false);
-			setIsBotRunningLive(true);
-			setLiveNotice("🎉 Бот успешно запущен в облаке DENTE и принимает сообщения пациентов 24/7!");
-		}, 800);
+		}
 	};
 
 	// ZIP Download handler
@@ -1051,7 +1112,7 @@ export function BotOnboardingWizard({
 									</tr>
 								</thead>
 								<tbody>
-									{recentLeads.map((lead) => (
+									{liveLeads.map((lead) => (
 										<tr key={lead.id}>
 											<td>
 												<div className="font-semibold text-xs text-slate-900 dark:text-slate-100">

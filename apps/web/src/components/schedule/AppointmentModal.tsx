@@ -24,6 +24,7 @@ import { AppointmentModalStatusSection } from "./AppointmentModalStatusSection";
 import { AppointmentModalLabSection } from "./AppointmentModalLabSection";
 import type { AppointmentModalProps } from "./AppointmentModalTypes";
 import { useAppointmentModalState } from "./useAppointmentModalState";
+import "./schedule.css";
 
 export {
   resolveChairDutyDoctor,
@@ -157,7 +158,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       data-testid="appointment-modal"
       role="dialog"
       aria-modal="true"
@@ -170,7 +171,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
         aria-label="Закрыть модальное окно"
       />
 
-      <div className="relative w-full max-w-2xl bg-[var(--paper)] border-t sm:border border-[var(--line-strong)] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90dvh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom sm:animate-scale-in">
+      <div
+        data-testid="appointment-modal-container"
+        className="relative w-full max-w-3xl bg-[var(--paper)] border-t sm:border border-[var(--line-strong)] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90dvh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom sm:animate-scale-in"
+      >
         {/* Mobile Tactile Drag Handle */}
         <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
         {/* Header: Strict 1-row clinical toolbar (32-36px, Mandate 8p, 8c) */}
@@ -251,23 +255,6 @@ export function AppointmentModal(props: AppointmentModalProps) {
               </div>
               <span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
                 CITO
-              </span>
-            </div>
-          )}
-
-          {/* Readiness score bar */}
-          {readiness && (
-            <div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${readiness.state === "ready" ? "bg-emerald-500" : readiness.state === "needs_attention" ? "bg-amber-500" : "bg-rose-500"}`}
-                />
-                <span className="text-xs font-semibold text-[var(--ink)]">
-                  Готовность: {readiness.nextAction}
-                </span>
-              </div>
-              <span className="text-xs font-bold text-[var(--teal)]">
-                {readiness.score}%
               </span>
             </div>
           )}
@@ -424,13 +411,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
               </span>
             ) : !patientId && !isTechnicalBreak && !isInlineNewPatient ? (
               <span
-                className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5"
+                className="text-teal-600 dark:text-teal-400 font-medium flex items-center gap-1.5"
                 data-testid="appointment-modal-inline-helper"
               >
-                <AlertCircle size={13} className="shrink-0" />
+                <Check size={13} className="shrink-0 text-emerald-500" />
                 <span>
-                  Укажите пациента из списка или создайте во вкладке «+ Новый
-                  пациент»
+                  Экспресс-запись: выберите пациента, нажмите «+ Аноним» или просто сохраните
                 </span>
               </span>
             ) : isInlineNewPatient &&
@@ -474,7 +460,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="h-9 px-4 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-bold transition-colors cursor-pointer shrink-0"
+              className="appointment-modal-cta-cancel h-11 px-5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] text-[var(--ink)] text-sm font-bold transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs"
             >
               Отмена
             </button>
@@ -482,16 +468,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
               type="button"
               onClick={(e) => handleSave(e)}
               disabled={isSaving}
-              className={`flex-1 h-9 px-5 text-[var(--on-teal)] font-extrabold rounded-lg text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+              className={`appointment-modal-cta-save flex-1 h-11 px-6 font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
                 collision.isCitoOverbooking || isCito
-                  ? "bg-rose-600 hover:bg-rose-700 text-white"
+                  ? "!bg-rose-600 hover:!bg-rose-700 !text-white shadow-rose-500/25"
                   : collision.hasCollision
-                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                    : "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95"
+                    ? "!bg-amber-600 hover:!bg-amber-700 !text-white shadow-amber-500/25"
+                    : "!bg-[var(--teal)] hover:brightness-105 active:brightness-95 !text-white shadow-teal-500/20"
               }`}
               data-testid="appointment-modal-save-btn"
             >
-              <Check size={16} />
+              <Check size={18} className="stroke-[2.5]" />
               <span>
                 {isSaving
                   ? "Сохраняю…"

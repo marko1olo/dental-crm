@@ -219,7 +219,7 @@ export function PatientSearchModal({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 pb-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-[60] flex items-start justify-center pt-16 px-4 pb-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Мгновенный поиск пациента"

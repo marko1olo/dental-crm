@@ -343,7 +343,12 @@ export async function registerPublicAppointmentActionRoutes(
 					const [patient] = await db
 						.select({ fullName: patients.fullName })
 						.from(patients)
-						.where(eq(patients.id, appointment.patientId))
+						.where(
+							and(
+								eq(patients.id, appointment.patientId),
+								eq(patients.organizationId, payload.organizationId),
+							),
+						)
 						.limit(1);
 
 					await db.insert(communicationTasks).values({
@@ -443,7 +448,12 @@ export async function registerPublicAppointmentActionRoutes(
 				const [patient] = await db
 					.select({ fullName: patients.fullName })
 					.from(patients)
-					.where(eq(patients.id, appointment.patientId))
+					.where(
+						and(
+							eq(patients.id, appointment.patientId),
+							eq(patients.organizationId, payload.organizationId),
+						),
+					)
 					.limit(1);
 
 				await db.insert(communicationTasks).values({

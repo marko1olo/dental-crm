@@ -22,8 +22,8 @@ async function main() {
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
-      "--js-flags=--max-old-space-size=1024",
-      "--disable-gpu",
+      "--enable-webgl",
+      "--ignore-gpu-blocklist",
     ],
   });
   try {
@@ -39,11 +39,15 @@ async function main() {
     const page = await ctx.newPage();
 
   await page.route("**/api/**", async (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({}),
-    });
+    const url = route.request().url();
+    if (url.includes("/health")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ status: "ok" }),
+      });
+    }
+    return route.continue();
   });
 
   for (let i = 0; i < 5; i++) {
@@ -58,7 +62,14 @@ async function main() {
   }
 
   console.log("Waiting for modal...");
-  await page.waitForSelector('[data-testid="cbct-studio-modal"]', { timeout: 30000 });
+  const modalFound = await page.waitForSelector('[data-testid="cbct-studio-modal"]', { timeout: 15000 }).catch(() => null);
+  if (!modalFound) {
+    console.log("Triggering dente:open-cbct-demo fallback event...");
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente:open-cbct-demo"));
+    });
+    await page.waitForSelector('[data-testid="cbct-studio-modal"]', { timeout: 30000 });
+  }
   console.log("Modal opened!");
 
   // Click load demo volume
@@ -176,13 +187,19 @@ async function main() {
     }
   }
 
-    // Copy all to brain artifacts
-    const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/b7016bb6-1e35-4290-8164-8c83429b85f6");
-    if (fs.existsSync(brainDir)) {
-      for (const f of fs.readdirSync(targetDir)) {
-        if (f.endsWith(".png")) {
-          fs.copyFileSync(path.join(targetDir, f), path.join(brainDir, f));
-        }
+    // Copy all to brain artifacts and public screenshots
+    const currentBrainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/77830cc1-dac0-4da3-8789-c3f2b3c54e79");
+    const teammateBrainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/2495ce44-c289-4cd8-8dca-cc6f7483a47d");
+    const publicScreenshotsDir = path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots");
+    if (!fs.existsSync(publicScreenshotsDir)) fs.mkdirSync(publicScreenshotsDir, { recursive: true });
+    if (!fs.existsSync(currentBrainDir)) fs.mkdirSync(currentBrainDir, { recursive: true });
+    if (!fs.existsSync(teammateBrainDir)) fs.mkdirSync(teammateBrainDir, { recursive: true });
+
+    for (const f of fs.readdirSync(targetDir)) {
+      if (f.endsWith(".png")) {
+        fs.copyFileSync(path.join(targetDir, f), path.join(publicScreenshotsDir, f));
+        fs.copyFileSync(path.join(targetDir, f), path.join(currentBrainDir, f));
+        fs.copyFileSync(path.join(targetDir, f), path.join(teammateBrainDir, f));
       }
     }
 

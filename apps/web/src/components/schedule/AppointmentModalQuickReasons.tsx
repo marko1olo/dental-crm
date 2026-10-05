@@ -170,16 +170,16 @@ export function AppointmentModalQuickReasons({
             type="button"
             data-testid={`chip-reason-${(preset as any).shortLabel || preset.label}`}
             onClick={() => onApplyReasonPreset(preset)}
-            className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+            className={`min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95 ${
               preset.tone === "emergency"
-                ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20 shadow-xs"
-                : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+                ? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40 hover:bg-rose-500/25 ring-1 ring-rose-500/20"
+                : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line-strong)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal)]"
             }`}
             title={preset.reason}
           >
             <span>{preset.label}</span>
             {preset.tone === "emergency" && (
-              <span className="px-1 py-0.2 rounded bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider">
+              <span className="px-1.5 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider">
                 CITO
               </span>
             )}
@@ -187,7 +187,7 @@ export function AppointmentModalQuickReasons({
         ))}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] font-bold text-amber-800 dark:text-amber-300 pt-1.5 border-t border-[var(--line)]/50">
+      <div className="flex items-center justify-between text-[11px] font-bold text-amber-800 dark:text-amber-300 pt-2 border-t border-[var(--line)]/50">
         <span>
           Технические блокировки расписания врача (без пациента):
         </span>
@@ -205,7 +205,7 @@ export function AppointmentModalQuickReasons({
             type="button"
             data-testid={`chip-block-${(preset as any).shortLabel || preset.label}`}
             onClick={() => onApplyTechnicalBreakPreset(preset)}
-            className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5"
+            className="min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-3 rounded-xl border border-amber-500/35 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs active:scale-95"
             title={preset.comment}
           >
             <Clock

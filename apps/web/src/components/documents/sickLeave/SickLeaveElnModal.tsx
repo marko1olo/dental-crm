@@ -51,6 +51,7 @@ import {
 	SINGLE_DOCTOR_MAX_DAYS
 } from "./sickLeaveElnEngine";
 import { showToast } from "../../GlobalToast";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import "./sickLeaveEln.css";
 
 export interface SickLeaveElnModalProps {
@@ -131,10 +132,10 @@ export function SickLeaveElnModal({
 			closingCode: '31',
 			workResumeDate: initDates.workResumeDate,
 			isVkRequired: false,
-			organizationName: DEFAULT_CLINIC_NAME,
-			organizationOgrn: DEFAULT_CLINIC_OGRN,
-			organizationAddress: DEFAULT_CLINIC_ADDRESS,
-			medicalLicenceNumber: DEFAULT_CLINIC_LICENCE
+			organizationName: isDemoShowcaseMode() ? DEFAULT_CLINIC_NAME : "",
+			organizationOgrn: isDemoShowcaseMode() ? DEFAULT_CLINIC_OGRN : "",
+			organizationAddress: isDemoShowcaseMode() ? DEFAULT_CLINIC_ADDRESS : "",
+			medicalLicenceNumber: isDemoShowcaseMode() ? DEFAULT_CLINIC_LICENCE : ""
 		};
 	});
 

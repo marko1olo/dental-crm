@@ -38,7 +38,7 @@
 11. **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Клинические протоколы 043/у, номенклатура 804н, формуляр анестезии.
 12. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Финансы в копейках, касса 54-ФЗ без ИНН физлиц, семейные балансы.
 13. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — PDF-генерация, штамп ЧЕРНОВИК, форма 043/у, справки НДФЛ КНД 1151156.
-14. **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учет, 1-клик списание карпул медсестрой, мягкий овердрафт.
+14. **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учет, 1-клик списание расходников, мягкий овердрафт.
 15. **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Телефония UIS/Mango/Zadarma, тихий режим для врача, портал пациента.
 16. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — WhatsApp WABA, Telegram Bot, VK MAX.
 17. **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Команды компиляции, typecheck, pre-commit гейты и E2E смоук-тесты.

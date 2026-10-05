@@ -1,6 +1,7 @@
 /* patients-redesign.css - Premium, clean UX for Patients tab using DENTE CSS Variables */
 @import "./modules/patients.css";
 @import "./modules/mobile-patients-list.css";
+@import "./modules/mobile-patient-profile.css";
 
 .patients-panel {
 	display: flex;

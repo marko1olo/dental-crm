@@ -827,6 +827,42 @@ export const denteMaxBotConfigs = pgTable(
 	}),
 );
 
+// Dente VK Community bot configs
+export const denteVkBotConfigs = pgTable(
+	"dente_vk_bot_configs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		clinicId: uuid("clinic_id").references(() => clinics.id),
+		botConfigId: text("bot_config_id").notNull().default("default"),
+		groupId: text("group_id"),
+		groupToken: text("group_token"),
+		tokenSecretRef: text("token_secret_ref"),
+		secretKey: text("secret_key"),
+		confirmationCode: text("confirmation_code"),
+		webhookUrl: text("webhook_url"),
+		isEnabled: boolean("is_enabled").notNull().default(false),
+		isActive: boolean("is_active").notNull().default(false),
+		enabledFeaturesJson: jsonb("enabled_features_json"),
+		staffRoutingJson: jsonb("staff_routing_json"),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("dente_vk_bot_configs_organizationId_idx").on(
+			t.organizationId,
+		),
+		uniqueOrgBotConfig: unique("dente_vk_bot_configs_org_config_unique").on(
+			t.organizationId,
+			t.botConfigId,
+		),
+	}),
+);
+
 // Dente WhatsApp bot configs (WABA / WhatsApp settings)
 export const denteWhatsappBotConfigs = pgTable(
 	"dente_whatsapp_bot_configs",
@@ -842,6 +878,9 @@ export const denteWhatsappBotConfigs = pgTable(
 		tokenSecretRef: text("token_secret_ref"),
 		// Webhook verification token for Meta WABA challenge
 		webhookVerifyToken: text("webhook_verify_token"),
+		provider: text("provider").notNull().default("cloud_api"),
+		greenApiInstanceId: text("green_api_instance_id"),
+		greenApiToken: text("green_api_token"),
 		isEnabled: boolean("is_enabled").notNull().default(false),
 		// Alias — some routes use isActive instead of isEnabled
 		isActive: boolean("is_active").notNull().default(false),

@@ -105,6 +105,10 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	const [isSbpModalOpen, setIsSbpModalOpen] = useState<boolean>(false);
 	const [currentSbpInvoice, setCurrentSbpInvoice] = useState<SbpPaymentInvoice | null>(null);
 
+	// Перехват диалога у бота (Operator Takeover)
+	const [interceptedPatients, setInterceptedPatients] = useState<Record<string, boolean>>({});
+	const isCurrentPatientIntercepted = Boolean(interceptedPatients[selectedPatientId]);
+
 	// Текущий выбранный контакт
 	const selectedContact = useMemo(() => {
 		return contacts.find((c) => c.id === selectedPatientId) || contacts[0]!;
@@ -344,6 +348,33 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 		setActiveTab("chat");
 	};
 
+	// Перехват диалога у Telegram/VK бота оператором
+	const handleTakeoverChat = () => {
+		setInterceptedPatients((prev) => ({
+			...prev,
+			[selectedPatientId]: true,
+		}));
+
+		const takeoverMsg: OmnichannelMessage = {
+			id: `msg-takeover-${Date.now()}`,
+			patientId: selectedPatientId,
+			channel: inputChannel,
+			direction: "outbound",
+			senderName: "Дежурный оператор",
+			senderType: "clinic_staff",
+			timestamp: new Date().toISOString(),
+			body: "👩‍💼 Оператор клиники подключился к диалогу. Бот переведён в спящий режим. Чем я могу вам помочь?",
+			status: "delivered",
+		};
+
+		setMessagesByPatient((prev) => ({
+			...prev,
+			[selectedPatientId]: [...(prev[selectedPatientId] || []), takeoverMsg],
+		}));
+		onSendMessage?.(takeoverMsg);
+		showToast("Диалог успешно перехвачен оператором клиники", "success");
+	};
+
 	return (
 		<div
 			className="omnichannel-modal-overlay"
@@ -536,6 +567,28 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 											<button type="button" className={`hub-filter-btn ${channelFilter === "telegram" ? "active" : ""}`} onClick={() => setChannelFilter("telegram")}>Telegram</button>
 											<button type="button" className={`hub-filter-btn ${channelFilter === "sms" ? "active" : ""}`} onClick={() => setChannelFilter("sms")}>SMS</button>
 										</div>
+
+										{/* Кнопка перехвата диалога у Telegram/VK бота (Operator Takeover) */}
+										{!isCurrentPatientIntercepted ? (
+											<button
+												type="button"
+												className="hub-btn-takeover min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 hover:bg-amber-500/25 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+												onClick={handleTakeoverChat}
+												title="Отключить Telegram/VK бота и перехватить диалог оператором"
+												data-testid="btn-takeover-chat"
+											>
+												<UserCheck size={15} className="text-amber-600 dark:text-amber-400" />
+												<span>Перехватить диалог</span>
+											</button>
+										) : (
+											<span
+												className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 border border-emerald-500/40 text-emerald-800 dark:text-emerald-200 inline-flex items-center gap-1.5"
+												data-testid="badge-operator-active"
+											>
+												<ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400" />
+												<span>Оператор на линии</span>
+											</span>
+										)}
 
 										{/* 1-клик счет СБП */}
 										<button

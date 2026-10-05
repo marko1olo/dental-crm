@@ -99,12 +99,12 @@ export function LabOrderCard({
 				<div className="p-2.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs space-y-1 text-[var(--ink)]">
 					<div className="flex justify-between">
 						<span className="text-[var(--muted)]">Материал:</span>
-						<span className="font-semibold">{order.material || "Цирконий"}</span>
+						<span className="font-semibold">{order.material || "Не указан"}</span>
 					</div>
 					<div className="flex justify-between">
 						<span className="text-[var(--muted)]">Цвет VITA:</span>
 						<span className="font-bold text-teal-600 dark:text-teal-400 font-mono">
-							{order.colorVita || "A2"}
+							{order.colorVita || "—"}
 						</span>
 					</div>
 					{order.dueDate && (

@@ -1,0 +1,46 @@
+{
+  "agent": "subagent_redteam_insurance_dms_registry_inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "mandate_0_rule_reading_complete",
+    "reconnaissance_codebase_dms_insurance",
+    "inspect_schema_and_db_models",
+    "inspect_api_routes_and_services",
+    "inspect_web_components_and_modals",
+    "audit_defects_and_mocks",
+    "implement_ssot_types_and_split_logic",
+    "implement_backend_endpoints_and_db_sync",
+    "wire_frontend_dms_guarantee_letters_registry_split",
+    "verify_encoding_and_css_tokens",
+    "targeted_unit_tests",
+    "sync_documentation",
+    "final_inquisition_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Database schema dms_guarantee_letters and insurance_contracts in apps/api/src/db/schema/clinical.ts are fully operational with PostgreSQL 18.",
+    "API endpoints in apps/api/src/routes/insurance.ts handle guarantee letters, usage recording with atomic ACID locks, split calculation, quick attach and monthly claim registry generation (JSON, XML, CSV).",
+    "Shared math packages in packages/shared/src/insurance/ guarantee integer kopecks arithmetic, Russian insurer directory, and statutory A4 bilateral acceptance acts.",
+    "Payment execution in usePaymentExecution.ts and billingQuery.ts correctly coordinates 54-FZ Tag 1217 counter-provision and patient co-pay split."
+  ],
+  "defects": [
+    {
+      "id": "DEF-01-MOCK-CHIEF-ACCOUNTANT",
+      "severity": "medium",
+      "description": "Hardcoded synthetic accountant 'Иванова Е.В.' in apps/web/src/components/insurance/DmsRegistryExportModal.tsx and apps/api/src/routes/insurance.ts",
+      "status": "fixed"
+    },
+    {
+      "id": "DEF-02-54FZ-DMS-FISCAL-EXEMPTION",
+      "severity": "high",
+      "description": "100% corporate DMS payments were queued into consumer fiscalReceiptQueue as electronic card payments in billingQuery.ts, violating 54-FZ Art. 2 Cl. 9 and Mandate 8e",
+      "status": "fixed"
+    },
+    {
+      "id": "DEF-03-CHAIRSIDE-DMS-LINKAGE",
+      "severity": "high",
+      "description": "VisitServiceBillingWidget did not load or forward active patient DMS guarantee letter and remaining coverage limit to PaymentModal, preventing 1-click DMS split at chairside",
+      "status": "fixed"
+    }
+  ]
+}

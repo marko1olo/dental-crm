@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -8,11 +8,15 @@ import {
 import { db } from "../db/client.js";
 import {
 	clinics,
+	communicationEvents,
+	crmLeads,
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
 	denteVkBotConfigs,
 	denteWhatsappBotConfigs,
+	messengerInboundEvents,
 	organizations,
+	patients,
 } from "../db/schema.js";
 import { BotSourceExporter } from "../services/bots/BotSourceExporter.js";
 import { OmnichannelBotEngine, omnichannelBotEngine } from "../services/bots/OmnichannelBotEngine.js";
@@ -671,5 +675,449 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		}
 
 		return reply.code(200).send({ ok: true });
+	});
+
+	/**
+	 * GET /api/bots/inbox
+	 * Список активных диалогов во всех мессенджерах (Telegram, VK, WhatsApp, MAX)
+	 * с бейджами каналов, статусом перехвата оператором и привязкой к лидам/пациентам.
+	 */
+	app.get("/api/bots/inbox", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "bots inbox read");
+		if (!orgId) return;
+
+		// 1. Получаем входящие события мессенджеров за последнее время
+		const inboundEvents = await db
+			.select()
+			.from(messengerInboundEvents)
+			.where(eq(messengerInboundEvents.organizationId, orgId))
+			.orderBy(desc(messengerInboundEvents.createdAt))
+			.limit(200);
+
+		// 2. Получаем исходящие события коммуникаций
+		const outboundEvents = await db
+			.select()
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.organizationId, orgId),
+					inArray(communicationEvents.channel, ["telegram", "vk", "whatsapp", "max"]),
+				),
+			)
+			.orderBy(desc(communicationEvents.createdAt))
+			.limit(200);
+
+		// 3. Получаем список пациентов клиники с привязками к чатам
+		const clinicPatients = await db
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				notes: patients.notes,
+			})
+			.from(patients)
+			.where(eq(patients.organizationId, orgId))
+			.limit(300);
+
+		const patientMap = new Map<string, (typeof clinicPatients)[0]>();
+		for (const p of clinicPatients) {
+			patientMap.set(p.id, p);
+		}
+
+		// 4. Получаем список лидов клиники
+		const leads = await db
+			.select({
+				id: crmLeads.id,
+				name: crmLeads.name,
+				patientName: crmLeads.patientName,
+				phone: crmLeads.phone,
+				source: crmLeads.source,
+				status: crmLeads.status,
+				notes: crmLeads.notes,
+			})
+			.from(crmLeads)
+			.where(eq(crmLeads.organizationId, orgId))
+			.limit(300);
+
+		// Агрегируем диалоги по ключу: `${channel}:${senderId}`
+		interface InboxConversation {
+			key: string;
+			channel: BotChannel;
+			senderId: string;
+			senderName: string;
+			patientId: string | null;
+			patientName: string;
+			phone: string | null;
+			lastMessage: string;
+			lastMessageAt: string;
+			lastMessageDirection: "inbound" | "outbound";
+			unreadCount: number;
+			isIntercepted: boolean;
+			interceptedBy: string | null;
+			leadId: string | null;
+			leadStatus: string | null;
+		}
+
+		const convMap = new Map<string, InboxConversation>();
+
+		for (const evt of inboundEvents) {
+			const channel = (evt.channel as BotChannel) || "telegram";
+			const senderId = evt.externalChatId;
+			const key = `${channel}:${senderId}`;
+
+			// Ищем пациента
+			const rawPayload = (evt.rawPayload as Record<string, any>) || {};
+			const senderName =
+				rawPayload.user_name ||
+				[rawPayload.from?.first_name, rawPayload.from?.last_name].filter(Boolean).join(" ") ||
+				rawPayload.senderData?.senderName ||
+				null;
+
+			let matchedPatient = evt.patientId ? patientMap.get(evt.patientId) : undefined;
+			if (!matchedPatient) {
+				matchedPatient = clinicPatients.find(
+					(p) =>
+						(p.notes && p.notes.includes(`${channel}:${senderId}`)) ||
+						(p.phone && senderId.includes(p.phone.replace(/\D/g, "").slice(-10))),
+				);
+			}
+
+			// Ищем лид
+			const matchedLead = leads.find(
+				(l) =>
+					(l.notes && l.notes.includes(`${channel}:${senderId}`)) ||
+					(l.phone && senderId.includes(l.phone.replace(/\D/g, "").slice(-10))),
+			);
+
+			const interceptInfo = omnichannelBotEngine.getChatInterceptInfo(channel, orgId, senderId);
+
+			if (!convMap.has(key)) {
+				convMap.set(key, {
+					key,
+					channel,
+					senderId,
+					senderName: senderName || matchedPatient?.fullName || `${channel.toUpperCase()} Пациент`,
+					patientId: matchedPatient?.id || null,
+					patientName: matchedPatient?.fullName || senderName || `${channel.toUpperCase()} Пациент`,
+					phone: matchedPatient?.phone || matchedLead?.phone || null,
+					lastMessage: evt.messageText || "[Сообщение]",
+					lastMessageAt: (evt.createdAt || new Date()).toISOString(),
+					lastMessageDirection: "inbound",
+					unreadCount: 1,
+					isIntercepted: interceptInfo.isIntercepted,
+					interceptedBy: interceptInfo.interceptedBy,
+					leadId: matchedLead?.id || null,
+					leadStatus: matchedLead?.status || null,
+				});
+			} else {
+				const current = convMap.get(key)!;
+				current.unreadCount++;
+				if (new Date(evt.createdAt).getTime() > new Date(current.lastMessageAt).getTime()) {
+					current.lastMessage = evt.messageText || "[Сообщение]";
+					current.lastMessageAt = evt.createdAt.toISOString();
+					current.lastMessageDirection = "inbound";
+				}
+			}
+		}
+
+		// Учитываем также исходящие сообщения в последнем сообщении
+		for (const out of outboundEvents) {
+			const channel = out.channel as BotChannel;
+			const p = patientMap.get(out.patientId);
+			if (!p) continue;
+
+			const match = p.notes?.match(new RegExp(`${channel}:([a-zA-Z0-9_-]+)`));
+			const senderId = match ? match[1] : p.phone ? p.phone.replace(/\D/g, "") : null;
+			if (!senderId) continue;
+
+			const key = `${channel}:${senderId}`;
+			const interceptInfo = omnichannelBotEngine.getChatInterceptInfo(channel, orgId, senderId);
+
+			if (!convMap.has(key)) {
+				convMap.set(key, {
+					key,
+					channel,
+					senderId,
+					senderName: p.fullName,
+					patientId: p.id,
+					patientName: p.fullName,
+					phone: p.phone,
+					lastMessage: out.message,
+					lastMessageAt: (out.createdAt || new Date()).toISOString(),
+					lastMessageDirection: "outbound",
+					unreadCount: 0,
+					isIntercepted: interceptInfo.isIntercepted,
+					interceptedBy: interceptInfo.interceptedBy,
+					leadId: null,
+					leadStatus: null,
+				});
+			} else {
+				const current = convMap.get(key)!;
+				if (new Date(out.createdAt).getTime() > new Date(current.lastMessageAt).getTime()) {
+					current.lastMessage = out.message;
+					current.lastMessageAt = out.createdAt.toISOString();
+					current.lastMessageDirection = "outbound";
+				}
+			}
+		}
+
+		// Сортируем диалоги по времени последнего сообщения
+		const conversations = Array.from(convMap.values()).sort(
+			(a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
+		);
+
+		return reply.send({ conversations });
+	});
+
+	/**
+	 * GET /api/bots/inbox/:senderId/messages
+	 * Полная хронологическая история переписки для выбранного контакта.
+	 */
+	app.get<{
+		Params: { senderId: string };
+		Querystring: { channel?: string };
+	}>("/api/bots/inbox/:senderId/messages", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "bots inbox messages read");
+		if (!orgId) return;
+
+		const { senderId } = request.params;
+		const channel = (request.query?.channel as BotChannel) || "telegram";
+
+		// 1. Входящие сообщения
+		const inbounds = await db
+			.select()
+			.from(messengerInboundEvents)
+			.where(
+				and(
+					eq(messengerInboundEvents.organizationId, orgId),
+					eq(messengerInboundEvents.externalChatId, senderId),
+				),
+			)
+			.orderBy(desc(messengerInboundEvents.createdAt))
+			.limit(100);
+
+		// 2. Ищем пациента для получения исходящих ответов
+		const phoneDigits = senderId.replace(/\D/g, "");
+		const matchedPatients = await db
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					phoneDigits.length >= 10
+						? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
+						: ilike(patients.notes, `%${channel}:${senderId}%`),
+				),
+			)
+			.limit(1);
+
+		const patient = matchedPatients[0] || null;
+
+		let outbounds: (typeof communicationEvents.$inferSelect)[] = [];
+		if (patient) {
+			outbounds = await db
+				.select()
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, orgId),
+						eq(communicationEvents.patientId, patient.id),
+					),
+				)
+				.orderBy(desc(communicationEvents.createdAt))
+				.limit(100);
+		}
+
+		// 3. Формируем единый упорядоченный таймлайн
+		interface ChatMessageItem {
+			id: string;
+			channel: string;
+			senderId: string;
+			direction: "inbound" | "outbound";
+			sender: "patient" | "bot" | "operator";
+			senderName: string;
+			text: string;
+			createdAt: string;
+		}
+
+		const messages: ChatMessageItem[] = [];
+
+		for (const ib of inbounds) {
+			const raw = (ib.rawPayload as Record<string, any>) || {};
+			const name =
+				raw.user_name ||
+				[raw.from?.first_name, raw.from?.last_name].filter(Boolean).join(" ") ||
+				patient?.fullName ||
+				"Пациент";
+
+			messages.push({
+				id: ib.id,
+				channel: ib.channel,
+				senderId: ib.externalChatId,
+				direction: "inbound",
+				sender: "patient",
+				senderName: name,
+				text: ib.messageText || "",
+				createdAt: (ib.createdAt || new Date()).toISOString(),
+			});
+		}
+
+		for (const ob of outbounds) {
+			const isOperator = Boolean(ob.actorUserId);
+			messages.push({
+				id: ob.id,
+				channel: ob.channel,
+				senderId,
+				direction: "outbound",
+				sender: isOperator ? "operator" : "bot",
+				senderName: isOperator ? "Оператор" : "🤖 Ассистент DENTE",
+				text: ob.message,
+				createdAt: (ob.createdAt || new Date()).toISOString(),
+			});
+		}
+
+		messages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+		const intercept = omnichannelBotEngine.getChatInterceptInfo(channel, orgId, senderId);
+
+		return reply.send({
+			messages,
+			patient: patient
+				? {
+						id: patient.id,
+						fullName: patient.fullName,
+						phone: patient.phone,
+					}
+				: null,
+			intercept,
+		});
+	});
+
+	/**
+	 * POST /api/bots/send-message
+	 * Отправка сообщения оператором пациенту с проверкой 152/323-ФЗ и фиксацией в БД.
+	 */
+	app.post("/api/bots/send-message", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "bots send message");
+		if (!orgId) return;
+
+		const schema = z.object({
+			channel: z.enum(["telegram", "vk", "whatsapp", "max"]),
+			senderId: z.string().trim().min(1),
+			message: z.string().trim().min(1),
+			operatorName: z.string().trim().optional(),
+		});
+
+		const parse = schema.safeParse(request.body);
+		if (!parse.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры сообщения оператора.",
+				details: parse.error.format(),
+			});
+		}
+
+		const body = parse.data;
+		const operatorName = body.operatorName || (request as any).user?.name || "Оператор клиники";
+
+		const result = await omnichannelBotEngine.sendOperatorMessage({
+			channel: body.channel,
+			organizationId: orgId,
+			senderId: body.senderId,
+			message: body.message,
+			operatorName,
+		});
+
+		if (!result.ok) {
+			return reply.code(400).send({
+				error: "SendMessageFailed",
+				message: result.error || "Ошибка отправки сообщения.",
+			});
+		}
+
+		// Автоматически перехватываем чат, чтобы бот не перебивал оператора
+		omnichannelBotEngine.takeoverChat(body.channel, orgId, body.senderId, operatorName);
+
+		return reply.send({ ok: true, messageId: result.messageId });
+	});
+
+	/**
+	 * POST /api/bots/chats/:senderId/takeover
+	 * Перехват диалога оператором (ставит автоответчик бота на паузу).
+	 */
+	app.post<{
+		Params: { senderId: string };
+		Body: { channel: BotChannel; operatorName?: string };
+	}>("/api/bots/chats/:senderId/takeover", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "bots takeover");
+		if (!orgId) return;
+
+		const { senderId } = request.params;
+		const channel = (request.body?.channel as BotChannel) || "telegram";
+		const operatorName = request.body?.operatorName || (request as any).user?.name || "Оператор клиники";
+
+		const result = omnichannelBotEngine.takeoverChat(channel, orgId, senderId, operatorName);
+		return reply.send(result);
+	});
+
+	/**
+	 * POST /api/bots/chats/:senderId/release
+	 * Возврат диалога боту (снимает паузу с автоответчика).
+	 */
+	app.post<{
+		Params: { senderId: string };
+		Body: { channel: BotChannel };
+	}>("/api/bots/chats/:senderId/release", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "bots release");
+		if (!orgId) return;
+
+		const { senderId } = request.params;
+		const channel = (request.body?.channel as BotChannel) || "telegram";
+
+		const result = omnichannelBotEngine.releaseChat(channel, orgId, senderId);
+		return reply.send(result);
+	});
+
+	/**
+	 * POST /api/bots/test-incoming
+	 * Симуляция входящего сообщения (для тестов, отладки и телефона-симулятора).
+	 * Сохраняет сообщение в БД, создает лида/пациента и запускает логику бота.
+	 */
+	app.post("/api/bots/test-incoming", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "bots test incoming");
+		if (!orgId) return;
+
+		const schema = z.object({
+			channel: z.enum(["telegram", "vk", "whatsapp", "max"]).default("telegram"),
+			senderId: z.string().trim().default(() => `test-${Date.now()}`),
+			senderName: z.string().trim().default("Тестовый Пациент"),
+			text: z.string().trim().default("Здравствуйте! Хочу записаться на прием"),
+			payload: z.string().trim().nullable().optional(),
+		});
+
+		const parse = schema.safeParse(request.body || {});
+		if (!parse.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры тестового сообщения.",
+			});
+		}
+
+		const data = parse.data;
+		const inbound: BotInboundMessage = {
+			channel: data.channel,
+			organizationId: orgId,
+			botConfigId: "default",
+			senderId: data.senderId,
+			senderName: data.senderName,
+			messageId: `sim-${Date.now()}`,
+			text: data.text,
+			payload: data.payload || null,
+			timestamp: Date.now(),
+			rawEvent: { simulated: true, ...data },
+		};
+
+		const result = await omnichannelBotEngine.dispatchInboundMessage(inbound);
+		return reply.send({ ok: true, result });
 	});
 }

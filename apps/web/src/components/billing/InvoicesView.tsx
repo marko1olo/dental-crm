@@ -15,6 +15,7 @@
 
 import { rubToKopecks } from "@dental/shared";
 import {
+	Banknote,
 	CreditCard,
 	Plus,
 	Printer,
@@ -35,6 +36,7 @@ const PaymentModal = lazy(() =>
 	import("./PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
 );
 import { CashboxShiftModal } from "../finance/CashboxShiftModal.js";
+import { CashRegisterDrawer } from "./CashRegisterDrawer.js";
 import { CashReceiptPrintModal } from "../finance/CashReceiptPrintModal.js";
 import { PaymentSplitModal } from "../finance/PaymentSplitModal.js";
 import { PatientInstallmentsModal } from "./PatientInstallmentsModal.js";
@@ -107,6 +109,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 	const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState<boolean>(false);
 	const [isShiftModalOpen, setIsShiftModalOpen] = useState<boolean>(false);
+	const [isRegisterDrawerOpen, setIsRegisterDrawerOpen] = useState<boolean>(false);
 	const [activeSplitInvoice, setActiveSplitInvoice] =
 		useState<BillingInvoice | null>(null);
 	const [receiptToPrint, setReceiptToPrint] =
@@ -597,6 +600,17 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
 					<button
 						type="button"
+						onClick={() => setIsRegisterDrawerOpen(true)}
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-teal-500/40 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
+						data-testid="btn-cash-drawer-open"
+						title="Денежный ящик, телеметрия смены и чеки (1 клик)"
+					>
+						<Banknote size={14} className="text-teal-600 dark:text-teal-400" />
+						<span className="hidden md:inline">Ящик кассы</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsShiftModalOpen(true)}
 						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-cashbox-shift-open"
@@ -846,6 +860,23 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					onClose={() => setIsShiftModalOpen(false)}
 					clinicLegalName={clinicLegalName}
 					cashierFullName={currentDoctorName}
+				/>
+			)}
+
+			{isRegisterDrawerOpen && (
+				<CashRegisterDrawer
+					isOpen={isRegisterDrawerOpen}
+					onClose={() => setIsRegisterDrawerOpen(false)}
+					cashierFullName={currentDoctorName}
+					clinicLegalName={clinicLegalName}
+					invoices={invoices}
+					onOpenPaymentModal={() => {
+						if (invoices.length > 0 && invoices[0]) {
+							setActivePaymentInvoice(invoices[0]);
+						} else {
+							setIsCreateModalOpen(true);
+						}
+					}}
 				/>
 			)}
 

@@ -1,0 +1,28 @@
+{
+  "subagent": "redteam_ez3d_volume_shaders_inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read constitutional documents: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md",
+    "Survey target files in C:\\Ez3D2009 (OBJShader.fx, Zeus3D.dll, head.x, skullocc.x, CubeUI*.bmp, Zeus3D_Ceph.ini, TomoEnhance_ECT.dll)",
+    "Survey local webgl / 3d components in apps/web/src/components/radiology",
+    "Step 1: Dissect OBJShader.fx (Direct3D 9 HLSL volume/mesh shader, techniques, lighting, transfer functions, G-buffer packing)",
+    "Step 2: Dissect head.x and skullocc.x (DirectX .X mesh format, polycount, coordinate system, anatomical orientation, MSZIP decompression)",
+    "Step 3: Dissect CubeUI0.bmp .. CubeUI5.bmp (Cube orientation textures, projection directions, SVG mapping)",
+    "Step 4: Dissect Zeus3D.dll and TomoEnhance_ECT.dll (PE exports, RTTI classes, raycasting & slicing pipeline, wavelets, IPP)",
+    "Step 5: Dissect Zeus3D_Ceph.ini and ExceptGPU.ini (Cephalometric projections, hardware constraints, CLAHE, MRUM)",
+    "Step 6: Comparative audit with apps/web/src/components/radiology/mpr/webgl/ and cbctVolume3DShaders.ts",
+    "Step 7: Synthesize production-ready WebGL2 / GLSL 300 es shaders and transfer function math",
+    "Step 8: Author docs/vatech_research/05_EZ3D_VOLUME_SHADERS_AND_RAYCASTING.md",
+    "Step 9: Report to orchestrator via send_message"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "objshader_fx": "Direct3D 9 Shader Model 3.0. Object-space lighting, two-sided diffuse abs(dot(-L, N)), Ambient=0.25, Diffuse=0.75. G-Buffer packing R: (iR + iB*256), G: iG, B: g_fObjID, A: v3PosDS.z depth for hybrid volume-mesh occlusion.",
+    "head_x": "xof 0302txt 0032. 14,501 vertices, 27,500 faces. Span X=192.7mm, Y=234.5mm, Z=272.6mm centered at (0,0,0). Diffuse RGBA(0.753, 0.753, 0.753, 1.0), Specular 8.0, Emissive 0.024.",
+    "skullocc_x": "xof 0303bzip0032. MSZIP compressed binary. 31,076 vertices, 93,228 faces. 32 teeth in occlusion. Embedded EffectInstance.",
+    "cube_ui": "64x64 24bpp BMPs. CubeUI0=A (Anterior), CubeUI1=P (Posterior), CubeUI2=L (Left), CubeUI3=R (Right), CubeUI4=F (Foot/Inferior), CubeUI5=H (Head/Superior). Text #054A6E on black #000000.",
+    "zeus3d": "Synthetic cephalogram engine. CLAHE (4x4, slope 1.8..2.0), MRUM (r1=9, r2=13, lambda=5..6), Gauss 7x7 sigma=1, Gamma=2.0, LUT [0, 0.95].",
+    "tomoenhance_ect": "Tomo_ImgPro multiscale pyramid decomposition and Intel IPP ippiFilterLowpass_16s_C1R.",
+    "canalcore": "2-seed Dijkstra / Fast Marching mandibular nerve canal tracing."
+  }
+}

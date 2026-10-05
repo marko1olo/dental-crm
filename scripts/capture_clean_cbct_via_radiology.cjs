@@ -75,6 +75,7 @@ const mockDashboard = {
 const targetDirs = [
   path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/cbct_departments"),
   path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/427def17-4b4d-4fe8-adfd-59b7f7177a50"),
   path.resolve("C:/Users/Admin/.gemini/antigravity/brain/77830cc1-dac0-4da3-8789-c3f2b3c54e79"),
 ];
 
@@ -152,9 +153,6 @@ async function applyTheme(page, theme) {
   console.log(`[THEME] Applying ${theme}...`);
   await page.evaluate((th) => {
     localStorage.setItem("dente_theme_mode", th);
-    if (window.__useThemeStore) {
-      window.__useThemeStore.getState().setThemeMode(th);
-    }
     document.documentElement.setAttribute("data-theme", th);
     document.body.setAttribute("data-theme", th);
     const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(th);
@@ -164,7 +162,7 @@ async function applyTheme(page, theme) {
     document.body.classList.toggle("light", !isDark);
     document.documentElement.style.colorScheme = isDark ? "dark" : "light";
   }, theme);
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(500);
 }
 
 async function takeScreen(page, fileName, description) {
@@ -172,7 +170,7 @@ async function takeScreen(page, fileName, description) {
   if (fs.existsSync(p1)) {
     try { fs.unlinkSync(p1); } catch {}
   }
-  await page.screenshot({ path: p1, fullPage: false, animations: "disabled", timeout: 35000 });
+  await page.screenshot({ path: p1, fullPage: false, timeout: 20000 });
   for (let i = 1; i < targetDirs.length; i++) {
     fs.copyFileSync(p1, path.join(targetDirs[i], fileName));
   }
@@ -191,7 +189,7 @@ async function main() {
   try {
     const ctx = await browser.newContext({
       viewport: { width: 1440, height: 900 },
-      deviceScaleFactor: 2,
+      deviceScaleFactor: 1,
     });
     await addAuthInitScript(ctx);
     const page = await ctx.newPage();
@@ -259,38 +257,34 @@ async function main() {
 
       await applyTheme(page, theme);
 
-      // 1. Отдел 1: MPR Quad
-      console.log(`Capturing Department 1: MPR Quad (${theme})...`);
-      const mprTab = await page.waitForSelector(
-        '[data-testid="cbct-nav-tab-mpr-3d"]',
+      // Отдел 3: Эндодонтический Компас 3D
+      console.log(`Capturing Department 3: Endo Compass 3D (${theme})...`);
+      const endoTab = await page.waitForSelector(
+        '[data-testid="cbct-nav-tab-endo"]',
         { timeout: 15000 }
       );
-      await mprTab.click();
+      await endoTab.click({ force: true });
       await page.waitForTimeout(2000);
 
-      const collapseBtn = await page.$(
-        '[data-testid="btn-viewport-collapse-volume3d"], [data-collapse-testid="btn-viewport-collapse-volume3d"], button[title*="Свернуть в сетку"]'
-      );
-      if (collapseBtn) {
-        await collapseBtn.click();
-        await page.waitForTimeout(1000);
-      }
-
-      await takeScreen(page, `01_mpr_quad_${theme}.png`, `Отдел 1: MPR Quad 4 квадранта (${theme})`);
-
-      // 2. Отдел 2: Панорама ОПТГ 50/50
-      console.log(`Capturing Department 2: Panoramic ОПТГ 50/50 (${theme})...`);
-      const panoTab = await page.waitForSelector(
-        '[data-testid="cbct-nav-tab-panorama"]',
+      // Verify Endo Compass panel is rendered
+      await page.waitForSelector(
+        '[data-testid="endo-compass-panel"], [data-testid="cbct-endo-floating-compass"]',
         { timeout: 15000 }
-      );
-      await panoTab.click();
-      await page.waitForTimeout(3000);
+      ).catch(() => {});
 
-      await takeScreen(page, `02_panoramic_optg_50_50_${theme}.png`, `Отдел 2: Панорама ОПТГ 50/50 (${theme})`);
+      await takeScreen(page, `01_endo_compass_workspace_${theme}.png`, `Отдел 3: Эндодонтический Компас 3D (Зуб 36, ${theme})`);
+
+      const tooth16Btn = await page.$(
+        '[data-testid="cbct-endo-tooth-btn-16"], button:has-text("16")'
+      );
+      if (tooth16Btn) {
+        await tooth16Btn.click({ force: true });
+        await page.waitForTimeout(1500);
+        await takeScreen(page, `02_endo_compass_tooth_16_mb2_${theme}.png`, `Эндодонтический Компас 3D (Зуб 16 с MB2, ${theme})`);
+      }
     }
 
-    console.log("\n>>> SUCCESS: ALL 4 CLEAN CBCT SCREENSHOTS CAPTURED! <<<");
+    console.log("\n>>> SUCCESS: ALL CBCT AND ENDO COMPASS SCREENSHOTS CAPTURED! <<<");
   } finally {
     await browser.close();
     console.log("Browser cleanly closed.");

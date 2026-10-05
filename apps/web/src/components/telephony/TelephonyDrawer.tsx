@@ -29,6 +29,7 @@ import {
 	type IncomingCallPayload,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { showToast } from "../GlobalToast";
 import { IncomingCallEmptyDrawer } from "./IncomingCallEmptyDrawer";
 import { TelephonyDialerModal } from "./TelephonyDialerModal";
@@ -66,6 +67,10 @@ export function TelephonyDrawer({
 	const isDrawerOpen = propIsOpen !== undefined ? propIsOpen : storeIsOpen;
 	const handleClose = propOnClose || closeCallDrawer;
 	const currentCall = propCall !== undefined ? propCall : activeCall;
+	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);
+	const isFullScreenStudioActive = useUiSurfaceStore(
+		(s) => s.isFullScreenStudioActive,
+	);
 
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
@@ -100,6 +105,15 @@ export function TelephonyDrawer({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isDrawerOpen, handleClose]);
 
+	// Координация поверхностей: регистрация активной шторки телефонии
+	useEffect(() => {
+		if (isDrawerOpen && !hasPrimaryModal && !isFullScreenStudioActive) {
+			useUiSurfaceStore.getState().openDrawer("telephony");
+		} else if (useUiSurfaceStore.getState().activeDrawer === "telephony") {
+			useUiSurfaceStore.getState().closeDrawer("telephony");
+		}
+	}, [isDrawerOpen, hasPrimaryModal, isFullScreenStudioActive]);
+
 	const callData = useIncomingCallData(currentCall, dashboard, () => {});
 	const {
 		resolvedPatient,
@@ -116,7 +130,13 @@ export function TelephonyDrawer({
 		isKnownPatient,
 	} = callData;
 
-	if (typeof document === "undefined" || !isDrawerOpen) return null;
+	if (
+		typeof document === "undefined" ||
+		!isDrawerOpen ||
+		hasPrimaryModal ||
+		isFullScreenStudioActive
+	)
+		return null;
 
 	// Fallback empty view when no call is active (delegated per Mandate 8b)
 	if (!currentCall) {

@@ -26,14 +26,21 @@ function OnboardingPresetsPreviewApp() {
 	const tourRole = (params.get("role") || "doctor") as "doctor" | "admin" | "director";
 
 	useEffect(() => {
-		const resolved = resolveTheme(rawTheme, false);
-		applyThemeToRoot(document.documentElement, resolved);
-		const isDark = rawTheme === "dark";
-		document.documentElement.classList.toggle("dark", isDark);
-		document.documentElement.classList.toggle("light", !isDark);
-		document.documentElement.setAttribute("data-theme", rawTheme);
-		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-		document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen p-4 md:p-6`;
+		const updateTheme = () => {
+			const currentTheme = (document.documentElement.getAttribute("data-theme") || rawTheme) as ThemeMode;
+			const resolved = resolveTheme(currentTheme, false);
+			applyThemeToRoot(document.documentElement, resolved);
+			const isDark = currentTheme === "dark";
+			document.documentElement.classList.toggle("dark", isDark);
+			document.documentElement.classList.toggle("light", !isDark);
+			document.documentElement.setAttribute("data-theme", currentTheme);
+			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+			document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen p-4 md:p-6`;
+		};
+		updateTheme();
+		const observer = new MutationObserver(updateTheme);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+		return () => observer.disconnect();
 	}, [rawTheme]);
 
 	useEffect(() => {

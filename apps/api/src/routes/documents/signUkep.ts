@@ -262,7 +262,12 @@ export async function register(app: FastifyInstance) {
 							issuedSnapshotSha256: written.sha256,
 							storagePath: written.snapshotPath,
 						})
-						.where(eq(generatedDocuments.id, doc.id));
+						.where(
+							and(
+								eq(generatedDocuments.id, doc.id),
+								eq(generatedDocuments.organizationId, orgId),
+							),
+						);
 				}
 			}
 

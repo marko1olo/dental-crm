@@ -820,7 +820,7 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 				priceRub: z.number().nonnegative("Цена не может быть отрицательной"),
 				durationMinutes: z.number().int().positive().default(30),
 				suggestedAction: z
-					.enum(["create_new", "update_existing", "identical"])
+					.enum(["create_new", "update_existing", "link_existing", "identical"])
 					.default("create_new"),
 				matchedExistingServiceId: z.string().nullable().optional(),
 				isApproved: z.boolean().default(true),
@@ -935,6 +935,8 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 				}
 			} else if (rawContent || rawText) {
 				scanInput = rawContent || rawText || "";
+			} else if (commit && approvedItems && approvedItems.length > 0) {
+				scanInput = "";
 			} else {
 				return reply.code(400).send({
 					error: "PricelistValidationError",
@@ -949,10 +951,26 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 					) as Partial<ColumnMappingConfig>)
 				: undefined;
 
-			const scanResult = scanPriceList(scanInput, {
-				customMapping: cleanedMapping,
-				existingCatalog,
-			});
+			const scanResult = scanInput
+				? scanPriceList(scanInput, {
+						customMapping: cleanedMapping,
+						existingCatalog,
+					})
+				: {
+						success: true,
+						totalLines: approvedItems?.length ?? 0,
+						detectedFormat: "approved_items",
+						items: [],
+						stats: {
+							total: approvedItems?.length ?? 0,
+							validCount: approvedItems?.length ?? 0,
+							errorCount: 0,
+							exactCodeMatches: 0,
+							keywordMatches: 0,
+							fallbacks: 0,
+							averageConfidence: 1,
+						},
+					};
 
 			if (!commit) {
 				return reply.code(200).send({
@@ -995,7 +1013,8 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 
 						if (
 							(collisionStrategy === "update_existing" ||
-								item.suggestedAction === "update_existing") &&
+								item.suggestedAction === "update_existing" ||
+								item.suggestedAction === "link_existing") &&
 							item.matchedExistingServiceId
 						) {
 							await updateServiceCatalogItemInDb(

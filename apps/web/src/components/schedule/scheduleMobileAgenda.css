@@ -173,7 +173,8 @@
   align-items: center;
   gap: 6px;
   overflow-x: auto;
-  padding: 0 12px;
+  padding: 4px 12px;
+  min-height: 48px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
@@ -185,6 +186,7 @@
 
 .schedule-mobile-filter-chip {
   min-height: 44px;
+  height: 44px;
   padding: 0 14px;
   border-radius: 12px;
   font-size: 13px;
@@ -218,7 +220,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 12px calc(56px + env(safe-area-inset-bottom, 0px) + 80px) 12px;
+  padding: 12px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -476,37 +478,46 @@
   transform: scale(0.97);
 }
 
-/* Floating Bottom Action Pill (Natural Thumb Zone) */
+/* Floating Bottom Action Bar (Apple HIG Natural Thumb Zone) */
 .schedule-mobile-bottom-bar {
   position: fixed;
-  bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
-  right: 16px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 40;
   display: flex;
   align-items: center;
+  padding: 10px 16px max(12px, env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--paper, #ffffff) 88%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line, #e2e8f0);
+  box-sizing: border-box;
 }
 
 .schedule-mobile-primary-action-btn {
-  height: 48px;
-  min-height: 48px;
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
   padding: 0 20px;
-  border-radius: 24px;
+  border-radius: 16px;
   background: var(--teal, #0d9488);
   color: #ffffff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 18px rgba(13, 148, 136, 0.45);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
   transition: transform 0.1s ease, opacity 0.15s ease;
 }
 
 .schedule-mobile-primary-action-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
   opacity: 0.92;
 }
 
@@ -524,6 +535,6 @@
 
 [data-theme="dark"] .schedule-mobile-bottom-bar,
 .dark .schedule-mobile-bottom-bar {
-  background: color-mix(in srgb, var(--paper-strong, #0f172a) 92%, transparent);
-  border-color: var(--line, #1e293b);
+  background: color-mix(in srgb, var(--paper-strong, #0f172a) 90%, transparent);
+  border-top-color: var(--line, #1e293b);
 }

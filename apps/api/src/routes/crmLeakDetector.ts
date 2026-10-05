@@ -226,7 +226,7 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 					? await tx
 							.select({ id: users.id, name: users.fullName, specialties: users.specialties })
 							.from(users)
-							.where(inArray(users.id, doctorIds))
+							.where(and(eq(users.organizationId, orgId), inArray(users.id, doctorIds)))
 					: [];
 			const doctorMap = new Map(doctors.map((d) => [d.id, d]));
 
@@ -310,7 +310,12 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 								aiReactivationSuggestion: script,
 								updatedAt: now,
 							})
-							.where(eq(crmLeakDetectorLeads.id, existing.id));
+							.where(
+								and(
+									eq(crmLeakDetectorLeads.id, existing.id),
+									eq(crmLeakDetectorLeads.organizationId, orgId),
+								),
+							);
 						updatedCount++;
 					}
 				} else {
@@ -368,7 +373,12 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 						(identity as { name?: string }).name || identity.userId || "Администратор",
 					updatedAt: new Date(),
 				})
-				.where(eq(crmLeakDetectorLeads.id, id))
+				.where(
+					and(
+						eq(crmLeakDetectorLeads.id, id),
+						eq(crmLeakDetectorLeads.organizationId, orgId),
+					),
+				)
 				.returning();
 
 			if (!updated) {
@@ -423,7 +433,12 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 					lastContactNotes: body.notes,
 					updatedAt: new Date(),
 				})
-				.where(eq(crmLeakDetectorLeads.id, id))
+				.where(
+					and(
+						eq(crmLeakDetectorLeads.id, id),
+						eq(crmLeakDetectorLeads.organizationId, orgId),
+					),
+				)
 				.returning();
 
 			if (!updated) {
@@ -475,7 +490,12 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 					declineComment: body.declineComment || null,
 					updatedAt: new Date(),
 				})
-				.where(eq(crmLeakDetectorLeads.id, id))
+				.where(
+					and(
+						eq(crmLeakDetectorLeads.id, id),
+						eq(crmLeakDetectorLeads.organizationId, orgId),
+					),
+				)
 				.returning();
 
 			if (!updated) {
@@ -545,7 +565,12 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 					assignedAdminName: (identity as { name?: string }).name || identity.userId || lead.assignedAdminName || "Администратор",
 					updatedAt: new Date(),
 				})
-				.where(eq(crmLeakDetectorLeads.id, id))
+				.where(
+					and(
+						eq(crmLeakDetectorLeads.id, id),
+						eq(crmLeakDetectorLeads.organizationId, orgId),
+					),
+				)
 				.returning();
 
 			if (!updatedLead) {

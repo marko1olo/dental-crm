@@ -1,0 +1,47 @@
+{
+  "role": "Red Team Inquisitor — Batch Excel/CSV Price List Import, Auto-mapping & Deduplication",
+  "status": "completed",
+  "current_step": "final_inquisition_and_reporting",
+  "completed_steps": [
+    "read_constitution_and_rules",
+    "deep_codebase_reconnaissance",
+    "identify_orphans_duplicates_mocks",
+    "design_consolidated_architecture",
+    "implement_shared_and_api_import_engine",
+    "implement_or_fix_web_ui_flow",
+    "add_thorough_unit_tests",
+    "run_verification_gates",
+    "final_inquisition_and_reporting"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "flaws_detected_and_fixed": [
+      "SYNTHETIC_MOCK_PURGED: Eradicated fake code generation 'A16.07.999.xxx' in apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts:821. Replaced with genuine statutory Minzdrav 804n nomenclature mappings.",
+      "N_PLUS_ONE_ELIMINATED: Eradicated client-side loop fetching '/api/settings/catalog' item-by-item in SettingsPricesAiImportSection.tsx. Replaced with single ACID batch endpoint POST /api/pricelist/batch-import in Drizzle transaction.",
+      "PAGE_RELOAD_HACK_REMOVED: Replaced window.location.reload() with reactive dashboard invalidation via onImportSuccess callback.",
+      "VENDOR_FORMAT_SUPPORT: Implemented universal auto-detection for IDENT, DentalPRO, iStom, 1C:Медицина, and generic solo-doctor Excel/CSV sheets in packages/shared/src/clinical/pricelistBatchImport.ts.",
+      "EXCEL_PREVIEW_AND_MAPPING: Built 10-row live preview table with column mapping selectors and collision strategy options (update_existing, skip_duplicates, create_new).",
+      "DUAL_PANE_DIFF_INTEGRATION: Re-connected orphan PriceListMappingDiffView directly into SettingsPricesAiImportSection for 1-click inspection.",
+      "BROKEN_TEST_RESTORED: Migrated apps/web/src/components/pricing/__tests__/priceListMappingDiffView.test.tsx from missing vitest to native node:test with CSS stub (10/10 passing)."
+    ],
+    "verification_gates": {
+      "check_css_tokens": "0 unresolvable CSS tokens across 165 CSS files (14,024 var uses checked). Passed.",
+      "check_encoding": "7,260 files verified, 0 mojibake hits. Passed.",
+      "smoke_api_encoding": "1,850 strings verified, 0 mojibake hits. Passed.",
+      "smoke_web_encoding": "3,125 files verified, 0 mojibake hits. Passed.",
+      "unit_and_route_tests": "60/60 passing tests across shared engine, backend route, ingestion service, and web diff view."
+    }
+  },
+  "modified_files": [
+    "packages/shared/src/clinical/pricelistBatchImport.ts",
+    "packages/shared/src/clinical/index.ts",
+    "packages/shared/src/tests/pricelistBatchImportEngine.test.ts",
+    "apps/api/src/routes/pricelist.ts",
+    "apps/api/src/tests/routes/pricelistBatchImportRoute.test.ts",
+    "apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts",
+    "apps/web/src/components/settings/SettingsPricesAiImportSection.tsx",
+    "apps/web/src/components/settings/SettingsPricesTab.tsx",
+    "apps/web/src/components/settings/SettingsPricesTab.css",
+    "apps/web/src/components/pricing/__tests__/priceListMappingDiffView.test.tsx"
+  ]
+}

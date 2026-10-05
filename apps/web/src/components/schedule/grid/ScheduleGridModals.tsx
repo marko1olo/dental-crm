@@ -5,6 +5,7 @@ import { QuickAddChairModal, type QuickAddChairData } from "../QuickAddChairModa
 import { QuickAddDoctorModal, type QuickAddDoctorData } from "../QuickAddDoctorModal";
 import { WaitlistDrawer, type TargetSlotInfo } from "../WaitlistDrawer";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 
 export interface ScheduleGridModalsProps {
   assigningChairId: string | null;
@@ -56,6 +57,26 @@ export function ScheduleGridModals({
   waitlistDrawerSlot,
   setWaitlistDrawerSlot,
 }: ScheduleGridModalsProps) {
+  // Координация шторки листа ожидания сетки с uiSurfaceStore (Мандаты 8b, 8e)
+  React.useEffect(() => {
+    if (waitlistDrawerSlot) {
+      useUiSurfaceStore.getState().openDrawer("waitlist");
+    } else if (useUiSurfaceStore.getState().activeDrawer === "waitlist") {
+      useUiSurfaceStore.getState().closeDrawer("waitlist");
+    }
+  }, [waitlistDrawerSlot]);
+
+  // Подписка на внешние изменения: если открывается модалка или другая шторка, закрываем локальный waitlist
+  React.useEffect(() => {
+    const unsub = useUiSurfaceStore.subscribe((state) => {
+      if (waitlistDrawerSlot) {
+        if (state.hasPrimaryModal || (state.activeDrawer && state.activeDrawer !== "waitlist")) {
+          setWaitlistDrawerSlot(null);
+        }
+      }
+    });
+    return unsub;
+  }, [waitlistDrawerSlot, setWaitlistDrawerSlot]);
   return (
     <>
       {/* 1-Click Chair-to-Doctor Shift Allocation Modal */}
@@ -185,11 +206,15 @@ export function ScheduleGridModals({
       {waitlistDrawerSlot && (
         <WaitlistDrawer
           isOpen={Boolean(waitlistDrawerSlot)}
-          onClose={() => setWaitlistDrawerSlot(null)}
+          onClose={() => {
+            setWaitlistDrawerSlot(null);
+            useUiSurfaceStore.getState().closeDrawer("waitlist");
+          }}
           targetSlot={waitlistDrawerSlot}
           dashboard={dashboard}
           onAppointmentCreated={() => {
             setWaitlistDrawerSlot(null);
+            useUiSurfaceStore.getState().closeDrawer("waitlist");
           }}
         />
       )}

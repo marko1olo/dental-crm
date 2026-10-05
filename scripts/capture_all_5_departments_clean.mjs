@@ -17,10 +17,13 @@ const BROWSER_CANDIDATES = [
 const CHROME_PATH = BROWSER_CANDIDATES.find((p) => p && existsSync(p)) || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/cbct_departments");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/b7016bb6-1e35-4290-8164-8c83429b85f6");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/427def17-4b4d-4fe8-adfd-59b7f7177a50");
+const SUBAGENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/b36b11d2-6adf-48f9-8341-ec798abe11e7");
+const PUBLIC_DIR = path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots");
 
-if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
-if (!existsSync(BRAIN_DIR)) mkdirSync(BRAIN_DIR, { recursive: true });
+for (const d of [OUT_DIR, BRAIN_DIR, SUBAGENT_BRAIN_DIR, PUBLIC_DIR]) {
+	if (!existsSync(d)) mkdirSync(d, { recursive: true });
+}
 
 const mockDashboard = {
 	clinicName: "Стоматология ДЕНТЕ Премиум",
@@ -237,31 +240,35 @@ async function main() {
 			});
 		}
 
-		const modal = page.locator("[data-testid='cbct-studio-modal']");
+		const modal = page.locator("[data-testid='cbct-studio-modal']").first();
 		await modal.waitFor({ state: "visible", timeout: 20000 });
 		console.log("[UI AUDIT] CbctMprImplantStudioModal mounted successfully.");
 
 		// Load Demo Volume via native 'cbct-btn-load-demo-empty' button
 		console.log("Clicking 'cbct-btn-load-demo-empty' to trigger native 312 slices loader...");
-		const loadDemoBtn = page.locator("[data-testid='cbct-btn-load-demo-empty']");
+		const loadDemoBtn = modal.locator("[data-testid='cbct-btn-load-demo-empty']").first();
 		await loadDemoBtn.waitFor({ state: "visible", timeout: 15000 });
 		await loadDemoBtn.click({ force: true });
 		console.log("Clicked 'Демо-исследование' button. Waiting for dropzone to detach/hide...");
 
 		// Wait until dropzone is hidden (meaning volume has mounted into viewports)
-		await page.locator("[data-testid='cbct-empty-volume-dropzone']").waitFor({ state: "hidden", timeout: 45000 });
+		await modal.locator("[data-testid='cbct-empty-volume-dropzone']").first().waitFor({ state: "hidden", timeout: 45000 });
 		console.log("[VOLUME MOUNTED] Real 312 slices volume mounted into viewports!");
 		await page.waitForTimeout(4000);
 
-		// Helper to save screenshot to both dirs
+		// Helper to save screenshot to all dirs
 		async function saveScreenshot(fileName, description) {
 			const pOut = path.join(OUT_DIR, fileName);
 			const pBrain = path.join(BRAIN_DIR, fileName);
+			const pSubagent = path.join(SUBAGENT_BRAIN_DIR, fileName);
+			const pPublic = path.join(PUBLIC_DIR, fileName);
 			if (existsSync(pOut)) {
 				try { unlinkSync(pOut); } catch {}
 			}
-			await page.screenshot({ path: pOut, fullPage: false });
+			await page.screenshot({ path: pOut, fullPage: false, animations: "allow" });
 			copyFileSync(pOut, pBrain);
+			copyFileSync(pOut, pSubagent);
+			copyFileSync(pOut, pPublic);
 			const sizeKb = (statSync(pOut).size / 1024).toFixed(1);
 			console.log(`[CAPTURED] ${fileName} (${sizeKb} KB) - ${description}`);
 			return { fileName, pOut, pBrain, sizeKb };

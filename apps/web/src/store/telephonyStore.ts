@@ -621,3 +621,7 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 
 	clearHistory: () => set({ callHistory: [] }),
 }));
+
+if (typeof window !== "undefined") {
+	(window as unknown as { __denteTelephonyStore?: typeof useTelephonyStore }).__denteTelephonyStore = useTelephonyStore;
+}

@@ -9,6 +9,7 @@ import {
 	getCachedClinicDashboard,
 	setOfflineAutonomyMode,
 } from "../../lib/offlineStorage";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export interface DashboardLoaderLogicProps {
 	authRef: { current: any };
@@ -75,7 +76,7 @@ export function useDashboardLoaderLogic({
 					status === 403 ||
 					(err instanceof Error &&
 						/401|403|Требуется авторизация|Сессия истекла/i.test(err.message));
-				if (isAuthError) {
+				if (isAuthError && !isDemoShowcaseMode()) {
 					setAccessUnlockRequired(true);
 					setAccessUnlockMessage(
 						"Сессия истекла. Войдите в кабинет клиники заново.",

@@ -1,0 +1,51 @@
+{
+  "task": "Omnichannel Bot Live Operator Desk (Telegram, VK, WhatsApp, MAX)",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T17:45:00+04:00",
+  "components": {
+    "engine": "apps/api/src/services/bots/OmnichannelBotEngine.ts",
+    "routes": "apps/api/src/routes/omnichannelBots.ts",
+    "tests": [
+      "apps/api/src/tests/omnichannelBotLiveOperator.test.ts",
+      "apps/api/src/tests/omnichannelBotEngine.test.ts"
+    ],
+    "webComponents": [
+      "apps/web/src/components/chat/OmnichannelOperatorDesk.tsx",
+      "apps/web/src/CommunicationsView.tsx",
+      "apps/web/src/components/communications/MobileCommunicationsMessenger.tsx",
+      "apps/web/src/components/settings/telegram/BotOnboardingWizard.tsx"
+    ],
+    "captureScript": "scripts/capture_operator_desk.mjs"
+  },
+  "verification": {
+    "typecheckApi": "PASS (0 errors)",
+    "typecheckWeb": "PASS (0 errors)",
+    "unitTests": "17/17 PASS (100%)",
+    "screenshots": [
+      {
+        "file": "screenshots/omnichannel_operator_pc_light.png",
+        "sizeBytes": 254122,
+        "md5": "5500e6d10f875f0295f9d3218f5b839f",
+        "status": "VERIFIED_CLEAN"
+      },
+      {
+        "file": "screenshots/omnichannel_operator_pc_dark.png",
+        "sizeBytes": 235811,
+        "md5": "f39c912a4ae086ec3e62f6fc7dbfae5f",
+        "status": "VERIFIED_CLEAN"
+      },
+      {
+        "file": "screenshots/omnichannel_operator_mobile_light.png",
+        "sizeBytes": 235000,
+        "md5": "acdc86e28623787e5124f32b3972eaa1",
+        "status": "VERIFIED_CLEAN"
+      },
+      {
+        "file": "screenshots/omnichannel_operator_mobile_dark.png",
+        "sizeBytes": 238672,
+        "md5": "ccc36807ac6a3865e66c17a9c7ce9663",
+        "status": "VERIFIED_CLEAN"
+      }
+    ]
+  }
+}

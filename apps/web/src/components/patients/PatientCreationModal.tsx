@@ -816,7 +816,7 @@ export function PatientCreationModal({
 									setNewPatientName(event.target.value)
 								}
 								onKeyDown={handleQuickCreateKeyDown}
-								placeholder="Иванов Иван Иванович"
+								placeholder="Фамилия Имя Отчество"
 								className={`create-patient-input ${validationResult.errors.fullName ? "border-rose-500" : ""}`}
 								aria-invalid={!!validationResult.errors.fullName}
 							/>

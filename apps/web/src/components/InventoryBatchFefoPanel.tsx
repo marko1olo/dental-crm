@@ -188,7 +188,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 						data-testid="fefo-filter-warning"
 					>
 						<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-						<span>Срочный отпуск (&lt; 30 дн):</span>
+						<span>FEFO отпуск (&lt; 30 дн):</span>
 						<strong className="font-mono text-amber-600 dark:text-amber-400">{stats.warningCount}</strong>
 					</button>
 

@@ -402,7 +402,7 @@ export const LeadMobileBottomSheet = ({
 							if (onQuickSchedule) {
 								onQuickSchedule(lead.id);
 							} else if (onSchedule) {
-								onSchedule(lead.id);
+								(onSchedule as (id: string) => void)(lead.id);
 							}
 						}}
 						className="w-full min-h-[50px] rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer"

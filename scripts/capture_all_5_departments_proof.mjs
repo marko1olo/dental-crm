@@ -16,7 +16,7 @@
  * - 05_volume3d_viewport_light.png / dark.png
  */
 
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, statSync, copyFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -620,6 +620,22 @@ async function main() {
 		for (const c of captured) {
 			console.log("-", c);
 		}
+
+		const publicScreenshotsDir = path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots");
+		const currentBrainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/77830cc1-dac0-4da3-8789-c3f2b3c54e79");
+		const teammateBrainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/2495ce44-c289-4cd8-8dca-cc6f7483a47d");
+		if (!existsSync(publicScreenshotsDir)) mkdirSync(publicScreenshotsDir, { recursive: true });
+		if (!existsSync(currentBrainDir)) mkdirSync(currentBrainDir, { recursive: true });
+		if (!existsSync(teammateBrainDir)) mkdirSync(teammateBrainDir, { recursive: true });
+
+		for (const f of readdirSync(OUT_DIR)) {
+			if (f.endsWith(".png")) {
+				copyFileSync(path.join(OUT_DIR, f), path.join(publicScreenshotsDir, f));
+				copyFileSync(path.join(OUT_DIR, f), path.join(currentBrainDir, f));
+				copyFileSync(path.join(OUT_DIR, f), path.join(teammateBrainDir, f));
+			}
+		}
+		console.log(">>> ALL SCREENSHOTS COPIED TO APPS/WEB/PUBLIC/SCREENSHOTS AND BRAIN! <<<");
 	} catch (err) {
 		console.error("[Execution Error]:", err);
 		process.exit(1);

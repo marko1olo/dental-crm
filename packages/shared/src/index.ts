@@ -57,6 +57,7 @@ export * from "./legal/index.js";
 export * from "./documents/index.js";
 export * from "./toothCanalsAndBilling804n.js";
 export * from "./clinical/index.js";
+export * from "./pricelist/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./egisz/index.js";
@@ -6377,6 +6378,23 @@ export {
 	patientFieldRequirementsSchema,
 	type PatientFieldRequirements,
 };
+
+export const sovereignScalePresetIdSchema = z.enum([
+	"solo_doctor",
+	"standard_clinic",
+	"network_center",
+]);
+export type SovereignScalePresetId = z.infer<
+	typeof sovereignScalePresetIdSchema
+>;
+
+export const applyClinicScalePresetSchema = z.object({
+	preset: sovereignScalePresetIdSchema,
+	confirmResetExtraChairs: z.boolean().optional(),
+});
+export type ApplyClinicScalePresetInput = z.infer<
+	typeof applyClinicScalePresetSchema
+>;
 
 export const updateClinicModeSchema = z.object({
 	mode: clinicModeSchema,

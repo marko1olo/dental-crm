@@ -61,6 +61,7 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 	const registeredCount = records.filter((r) => r.status === "registered" || r.status === "accepted_by_egisz").length;
 	const errorCount = records.filter((r) => r.status === "error" || r.status === "rejected_by_egisz").length;
 	const draftCount = records.filter((r) => r.status === "draft").length;
+	const selectedRecord = records.find((r) => r.id === selectedJournalId);
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -68,10 +69,10 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
 				<div>
 					<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "var(--ink)" }}>
-						Журнал отправки медицинских документов в Минздрав
+						Журнал медицинских документов РЭМД ЕГИСЗ
 					</h3>
 					<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-						Реестр электронных медицинских карт и протоколов приёма
+						Реестр СЭМД 043/у (протоколы консультаций и вмешательств)
 					</p>
 				</div>
 				<div style={{ display: "flex", gap: "0.5rem" }}>
@@ -125,7 +126,7 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
 				<div style={{ padding: "0.875rem", borderRadius: "8px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)" }}>
 					<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--success)", textTransform: "uppercase" }}>
-						Зарегистрировано в Минздраве
+						Зарегистрировано в РЭМД
 					</div>
 					<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--success)", marginTop: "0.25rem" }}>
 						{registeredCount}
@@ -190,18 +191,23 @@ export const EgiszJournalTab: React.FC<EgiszJournalTabProps> = ({
 			</div>
 
 			{/* Error Remediation Hint Card */}
-			<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--danger)", fontSize: "0.875rem" }}>
-					<AlertCircle size={18} />
-					Ошибка валидации СНИЛС врача
+			{(selectedRecord?.validationError || journalFilter === "error" || selectedRecord?.status === "error" || selectedRecord?.status === "rejected_by_egisz") && (
+				<div style={{ padding: "1rem", borderRadius: "8px", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--danger)", fontSize: "0.875rem" }}>
+						<AlertCircle size={18} />
+						Ошибка валидации РЭМД: {selectedRecord?.validationError?.errorCode || "ERR_FRMR_SNILS_NOT_FOUND"}
+					</div>
+					<div style={{ fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.25rem" }}>
+						{selectedRecord?.validationError?.errorMessage || "СНИЛС врача (112-233-445 00) не найден в Федеральном регистре медицинских работников (ФРМР)."}
+					</div>
+					<div style={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.35rem" }}>
+						Инструкция по устранению ошибки:
+					</div>
+					<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
+						{selectedRecord?.validationError?.actionableHint || "Проверьте правильность ввода СНИЛС врача в справочнике сотрудников клиники. Врач должен быть зарегистрирован в подсистеме ФРМР ЕГИСЗ Минздрава РФ с подтвержденной специальностью."}
+					</p>
 				</div>
-				<div style={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--ink)", marginTop: "0.35rem" }}>
-					Инструкция по устранению ошибки:
-				</div>
-				<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem", lineHeight: 1.5 }}>
-					Проверьте правильность ввода СНИЛС врача в справочнике сотрудников клиники.
-				</p>
-			</div>
+			)}
 
 			{/* Documents Table */}
 			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", overflow: "hidden", background: "var(--paper)" }}>

@@ -88,13 +88,13 @@ export function AppointmentModalHeader({
           <button
             type="button"
             onClick={onConvertToCito}
-            className="h-8 min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-3 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            className="h-8.5 min-h-[44px] sm:min-h-[34px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
             title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании"
             data-testid="convert-to-cito-btn"
           >
             <Zap
               size={14}
-              className="text-rose-600 dark:text-rose-400 shrink-0"
+              className="text-rose-600 dark:text-rose-400 shrink-0 fill-current"
             />
             <span className="hidden sm:inline">
               Перевести в CITO (Острая боль)
@@ -103,7 +103,7 @@ export function AppointmentModalHeader({
           </button>
         ) : (
           <div
-            className="h-8 min-h-[32px] px-2.5 rounded-lg border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs font-black flex items-center gap-1 shrink-0 animate-pulse"
+            className="h-8.5 min-h-[34px] px-3 rounded-xl border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs font-black flex items-center gap-1.5 shrink-0 animate-pulse shadow-2xs"
             title="Экстренный прием CITO"
             data-testid="appointment-cito-active-badge"
           >
@@ -136,7 +136,7 @@ export function AppointmentModalHeader({
             );
             showToast("Печать бланка договора со строками (_____)", "info");
           }}
-          className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          className="h-8.5 min-h-[34px] px-2.5 sm:px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
           title="Распечатать бумажный договор с пропусками для подписи (1 клик)"
           data-testid="appointment-modal-print-blank-contract-btn"
         >
@@ -168,7 +168,7 @@ export function AppointmentModalHeader({
             );
             showToast("Печать бланка согласия (ИДС)", "info");
           }}
-          className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          className="h-8.5 min-h-[34px] px-2.5 sm:px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
           title="Распечатать бланк информированного добровольного согласия (1 клик)"
           data-testid="appointment-modal-print-blank-consent-btn"
         >
@@ -192,7 +192,7 @@ export function AppointmentModalHeader({
                 "info",
               );
             }}
-            className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            className="h-8.5 min-h-[34px] px-3 sm:px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
             title="Принять оплату через кассу (1 клик)"
             data-testid="appointment-modal-pay-btn"
           >
@@ -212,7 +212,7 @@ export function AppointmentModalHeader({
           <button
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+            className="h-8.5 min-h-[34px] px-2.5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
             title="Дополнительные действия (печать согласий, повтор записи)"
             aria-label="Дополнительные действия"
             data-testid="appointment-modal-more-actions-btn"

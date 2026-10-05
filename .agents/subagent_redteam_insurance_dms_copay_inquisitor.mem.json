@@ -1,0 +1,44 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: INSURANCE DMS, GUARANTEE LETTERS & CO-PAY SPLIT",
+  "status": "completed",
+  "phase": "finished",
+  "completed_steps": [
+    "Rule 0: Read all mandatory constitution files (core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Reconnaissance: Located existing DMS, insurance contracts, guarantee letters, co-pay split checkout, registry export in frontend and backend",
+    "Adversarial Audit: Identified 10 critical bugs/mocks/gaps across shared math, API validation/insertion, cashbox operations, checkout modal, and split calculator",
+    "Self-Fixing Implementation: Fixed splitPayment line-item distribution, Zod schemas, billingQuery split insertion & Decree 659 OMS confusion, guarantee letter auto-debiting, cashbox remainder operations, checkout modal DMS tender & fast combo chips, and calculator 1-click apply button",
+    "Verification: Executed targeted tests (splitPaymentEngine 10/10, dmsFranchiseEngine 21/21, insuranceRegistry 8/8, dmsModalsAndRegistry 11/11, dmsInsurance 15/15, insuranceBody 5/5, dmsGuaranteePersistence 1/1, dmsCashierAndCardIntegration 6/6), checked encoding (7237 files clean), and verified CSS tokens (0 unresolved)",
+    "Reporting: Sent verbatim inquisition report to caller beb92312-c6d7-426d-a438-12dcad022abc"
+  ],
+  "pending_steps": [],
+  "defects_found": [
+    "Defect 1 (Shared Math): packages/shared/src/finance/splitPayment.ts allocateSplitPaymentAcrossItems hardcoded dmsKopecks: 0 and lumped Tag 1217 counter-provision entirely into certificates",
+    "Defect 2 (Zod Schema): packages/shared/src/index.ts dmsGuaranteeLetterCreateSchema.id strictly enforced UUID, crashing on frontend draft IDs",
+    "Defect 3 (Payment Schema): packages/shared/src/index.ts createPaymentSchema lacked dmsAmountKopecks, dmsAmountRub, and guaranteeLetterId",
+    "Defect 4 (Backend Decree 659 Conflation): apps/api/src/db/billingQuery.ts conflated commercial voluntary DMS with state mandatory OMS, blocking valid DMS payments when policy length !== 16",
+    "Defect 5 (Backend Split Insertion & Disconnection): apps/api/src/db/billingQuery.ts only supported cash + card split; DMS tender was dropped into fallback card or failed parity check, and guarantee letter usedAmountRub was never updated",
+    "Defect 6 (Backend Route Insert): apps/api/src/routes/insurance.ts passed client string IDs directly into postgres UUID columns without validation",
+    "Defect 7 (Test Environment & Schema Order): apps/api/src/tests/routes/insuranceRegistry.test.ts lacked dotenv and databaseReady guards, and routes attempted DB queries before input schema validation",
+    "Defect 8 (Cashbox Operations): apps/web/src/components/finance/cashboxOperations.ts lacked DMS in TenderAllocationTarget and MultiTenderStateRub, blocking 1-click remainder to DMS",
+    "Defect 9 (Frontend Checkout Disconnection): apps/web/src/components/finance/modal/payment/ (PaymentSplitView, usePaymentTendersAndSbp, usePaymentExecution, PaymentModal) had no native Tag 1217 DMS input or auto-balancing DMS chips",
+    "Defect 10 (Calculator Disconnection): apps/web/src/components/insurance/DmsBillSplitCalculatorSection.tsx had no callback or CTA to transfer calculated co-pay splits directly into cashier checkout"
+  ],
+  "fixed_files": [
+    "packages/shared/src/finance/splitPayment.ts",
+    "packages/shared/src/tests/splitPaymentEngine.test.ts",
+    "packages/shared/src/index.ts",
+    "apps/api/src/db/billingQuery.ts",
+    "apps/api/src/routes/insurance.ts",
+    "apps/api/src/tests/routes/insuranceRegistry.test.ts",
+    "apps/api/src/tests/routes/insuranceBody.test.ts",
+    "apps/web/src/components/finance/cashboxOperations.ts",
+    "apps/web/src/components/finance/modal/payment/PaymentSplitView.tsx",
+    "apps/web/src/components/finance/modal/payment/usePaymentTendersAndSbp.ts",
+    "apps/web/src/components/finance/modal/payment/usePaymentExecution.ts",
+    "apps/web/src/components/finance/modal/payment/paymentModalTypes.ts",
+    "apps/web/src/components/finance/modal/payment/usePaymentModalLogic.ts",
+    "apps/web/src/components/finance/PaymentModal.tsx",
+    "apps/web/src/components/insurance/DmsBillSplitCalculatorSection.tsx",
+    "apps/web/src/components/insurance/dmsCashierAndCardIntegration.test.ts"
+  ]
+}

@@ -1241,9 +1241,16 @@ export function useVisitLogic({
 	);
 
 	const updateVisitNoteField = useCallback(
-		(field: VisitNoteField, value: string) => {
+		(field: VisitNoteField | string, value: string) => {
 			visitDraftUserEditedRef.current = true;
-			setVisitNoteForm((current) => ({ ...current, [field]: value }));
+			const canonicalKey = field === "complaints" ? "complaint" : field;
+			const pluralKey = field === "complaint" ? "complaints" : field;
+			setVisitNoteForm((current) => ({
+				...current,
+				[field]: value,
+				[canonicalKey]: value,
+				[pluralKey]: value,
+			}));
 		},
 		[visitDraftUserEditedRef, setVisitNoteForm],
 	);

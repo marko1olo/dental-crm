@@ -411,7 +411,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 										</div>
 									</div>
 
-									{/* 4-Stage Progress Bar: [ Слепок ✓ ] -> [ Каркас ✓ ] -> [ Керамика ● ] -> [ Сдача ] */}
+									{/* 4-Stage Progress Bar: [ Слепок (Готово) ] -> [ Каркас (Готово) ] -> [ Керамика (Текущий) ] -> [ Сдача ] */}
 									<div className="mobile-lab-progress-track">
 										{/* Background connector line */}
 										<div className="mobile-lab-stage-connector">

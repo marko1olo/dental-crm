@@ -1,0 +1,20 @@
+{
+  "role": "subagent_redteam_dental_lab_inquisitor",
+  "domain": "Зуботехническая лаборатория (ЗТЛ), наряды-заказы, расцветка VITA, ортопедия, рекламации",
+  "status": "in_progress",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md completely"
+  ],
+  "pending_steps": [
+    "Reconnaissance with fd/rg on dental lab, lab orders, VITA shades, prosthetics in web, api, shared",
+    "Identify orphans (unmounted modals/screens/drawers)",
+    "Identify duplicates (competing order generators, duplicate lab status types, parallel calculators)",
+    "Identify mockups/stubs (fake lab statuses, hardcoded technician names, fake factories, float prices)",
+    "Audit ergonomics and Mandate 8x/8y (plain Russian language, 2-click lab order flow)",
+    "Self-fix all detected defects cleanly in code",
+    "Run targeted tests and linters (check-encoding, check-css-tokens, targeted tests)",
+    "Update documentation (BACKLOG.md, FEATURES_REGISTRY.md, etc.)",
+    "Transmit comprehensive verbatim report to parent via send_message"
+  ],
+  "findings": []
+}

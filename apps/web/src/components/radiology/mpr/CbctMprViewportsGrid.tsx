@@ -32,6 +32,7 @@ export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
 	readonly mobileActiveTab: string;
 	readonly patientDisplayName?: string | undefined;
+	readonly patientId?: string | undefined;
 	readonly onSelectMobileTab?: ((tab: "axial" | "coronal" | "sagittal" | "panoramic" | "planner") => void) | undefined;
 	readonly hoveredViewport?: CbctViewportType | null | undefined;
 	readonly onHoverViewport?: ((v: CbctViewportType | null) => void) | undefined;
@@ -115,7 +116,7 @@ export interface CbctMprViewportsGridProps {
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
-	isSidebarOpen, mobileActiveTab, patientDisplayName, onSelectMobileTab, hoveredViewport, onHoverViewport,
+	isSidebarOpen, mobileActiveTab, patientDisplayName, patientId, onSelectMobileTab, hoveredViewport, onHoverViewport,
 	showEdgeRulers = false, volume, dicomLoadingStatus, dicomProgress, maximizedViewport,
 	viewLayout, studioMode, onSelectStudioMode, folderInputRef, zipInputRef,
 	handleDicomFilesChange, onLoadDemoVolume, activeViewport, setActiveViewport, handleToggleMaximize,
@@ -735,6 +736,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			) : studioMode === "endo" ? (
 				<EndoWorkspace
 					volume={volume}
+					archCurve={archCurve}
 					renderers={renderers}
 					activeViewport={activeViewport}
 					setActiveViewport={setActiveViewport}
@@ -754,6 +756,9 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onSelectTool={onSelectTool}
 					rulers={rulers}
 					onClearRulers={onClearRulers}
+					patientId={patientId}
+					handleExportToEmr={handleExportToEmr}
+					handleExportToPlan={handleExportToPlan}
 				/>
 			) : studioMode === "implant" ? (
 				<ImplantWorkspace

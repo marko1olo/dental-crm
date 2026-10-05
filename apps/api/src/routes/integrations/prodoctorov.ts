@@ -218,7 +218,12 @@ async function syncProdoctorovExportStatus(
 					...update,
 					lastSyncedAt: now,
 				})
-				.where(eq(prodoctorovSyncExports.id, existing.id));
+				.where(
+					and(
+						eq(prodoctorovSyncExports.id, existing.id),
+						eq(prodoctorovSyncExports.organizationId, organizationId),
+					),
+				);
 		} else {
 			await tx.insert(prodoctorovSyncExports).values({
 				organizationId,
@@ -890,7 +895,12 @@ ${offersXml}
 							status: "cancelled",
 							comment: sql`concat(coalesce(${appointments.comment}, ''), ' [Отменено через ПроДокторов / МедФлекс]')`,
 						})
-						.where(eq(appointments.id, targetAppointment.id));
+						.where(
+							and(
+								eq(appointments.id, targetAppointment.id),
+								eq(appointments.organizationId, organizationId),
+							),
+						);
 
 					await tx.insert(externalScheduleActionLogs).values({
 						organizationId,

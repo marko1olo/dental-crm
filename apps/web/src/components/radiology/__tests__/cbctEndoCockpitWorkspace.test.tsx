@@ -163,4 +163,31 @@ describe("CBCT Endo 4-Quadrant Diagnostic Cockpit (Zero Mocks)", () => {
 		assert.ok(html.includes("CORONAL_SLICE"));
 		assert.ok(!html.includes('data-testid="cbct-endo-crossaxial-viewport"'));
 	});
+
+	it("6. Displays honest clinical safe slice inspection mode and isolated worker status", () => {
+		const renderers = createMockRenderers();
+		const html = renderToStaticMarkup(
+			<EndoWorkspace
+				volume={null}
+				renderers={renderers}
+				activeViewport="coronal"
+				setActiveViewport={() => {}}
+				maximizedViewport={null}
+				handleToggleMaximize={() => {}}
+				mobileActiveTab="coronal"
+				activeToothFdi={36}
+			/>,
+		);
+
+		// Verified honest safe slice mode badge
+		assert.ok(html.includes('data-testid="cbct-endo-safe-mode-badge"'));
+		assert.ok(html.includes("Безопасный режим просмотра срезов зуба"));
+
+		// Verified toggle button contains honest worker badge
+		assert.ok(html.includes('data-testid="cbct-endo-compass-toggle-btn"'));
+		assert.ok(html.includes("Воркер"));
+
+		// By default floating compass is closed to guarantee unobstructed view of cross-axial viewport
+		assert.ok(!html.includes('data-testid="cbct-endo-floating-compass"'));
+	});
 });

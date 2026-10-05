@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DENTE CRM — Галерея визуального аудита Red Team (5 контуров)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --teal: #0d9488;
+      --teal-light: #2dd4bf;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    header {
+      max-width: 1440px;
+      margin: 0 auto 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+    }
+    h1 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    p.subtitle { color: var(--muted); font-size: 14px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(13, 148, 136, 0.2);
+      color: var(--teal-light);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      margin-left: 8px;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: var(--teal);
+      border-color: var(--teal-light);
+      color: #fff;
+    }
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      overflow: hidden;
+    }
+    .section-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-card p.desc {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+    .screenshot-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .screenshot-box .title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .screenshot-box img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+      cursor: zoom-in;
+      transition: transform 0.2s;
+    }
+    .screenshot-box img:hover {
+      transform: scale(1.01);
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .tag.light { background: #e2e8f0; color: #0f172a; }
+    .tag.dark { background: #334155; color: #f8fafc; }
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      cursor: zoom-out;
+    }
+    .lightbox img {
+      max-width: 95vw;
+      max-height: 95vh;
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DENTE CRM — Галерея визуального аудита Red Team <span class="badge">100% ПРОВЕРЕНО VISION</span></h1>
+    <p class="subtitle">5 нетипичных клинических и финансовых контуров. Разрешение 1440×900, реальные браузерные скриншоты без мокапов и потемкинских деревень.</p>
+  </header>
+
+  <div class="container">
+    <!-- 1. ТЕЛЕФОНИЯ -->
+    <div class="section-card" id="telephony">
+      <h2>1. Телефония: HUD входящего звонка, 1-клик запись & CallAudioPlayer <span class="badge">128 PASS</span></h2>
+      <p class="desc">Dynamic Island капсула входящего звонка, поиск пациента из базы в O(1), статус баланса, соматические аллергии, раскрывающийся аккордеон быстрой записи (Острая боль / Консультация / Плановый) и аудиоплеер разговора со скоростями 1x-2x и AI STT расшифровкой.</p>
+      <div class="grid-2">
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Всплывающий HUD звонка и быстрые слоты</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/telephony_flow/incoming_call_popup_light.png" alt="Telephony Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Всплывающий HUD звонка и быстрые слоты</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/telephony_flow/incoming_call_popup_dark.png" alt="Telephony Dark" onclick="openLightbox(this.src)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ЗТЛ -->
+    <div class="section-card" id="lab">
+      <h2>2. Зуботехническая лаборатория (ЗТЛ), расцветка VITA & рекламации 0 ₽ <span class="badge">161 PASS</span></h2>
+      <p class="desc">Наряд ЗТЛ по FDI с общечелюстными каппами/сплинтами, диоксид циркония Katana ML / Prettau, E.max, металлокерамика, временные PMMA, расцветка VITA Classical/3D Master, культя ND1-ND9, фоторегистрация эталона, канбан-доска в 5 колонок в 1 ряд и гарантийные переделки 0 ₽.</p>
+      <div class="grid-2">
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Заказ-наряд ЗТЛ и автономия врача</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/lab_orders_flow/lab_order_modal_light.png" alt="Lab Order Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Канбан-доска ЗТЛ (5 колонок + Рекламации 0 ₽)</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/lab_orders_flow/lab_kanban_dark.png" alt="Lab Kanban Dark" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box" style="grid-column: span 2;">
+          <div class="title"><span>☀️ Расцветка VITA, культя ND2 и фоторегистрация эталона цвета</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/lab_orders_flow/lab_order_shades_photo_light.png" alt="Lab Shades Photo" onclick="openLightbox(this.src)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ТРГ ЦЕФАЛОМЕТРИЯ -->
+    <div class="section-card" id="ortho">
+      <h2>3. Ортодонтия: ТРГ боковая цефалометрия & форма 043/у <span class="badge">66 PASS</span></h2>
+      <p class="desc">Интерактивный SVG-оверлей поверх реального бокового рентгена ТРГ (L CEPH ID: 457890), 16 анатомических ориентиров, расчет плоскостей, углы Steiner (SNA, SNB, ANB), Tweed (FMA), Jacobson Wits, Downs, Ricketts, 1-клик экспорт в амбулаторную карту.</p>
+      <div class="grid-2">
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Анализ боковой ТРГ и спектр углов Штайнера</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/ortho_flow/ceph_trg_analysis_light.png" alt="TRG Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Анализ боковой ТРГ и спектр углов Штайнера</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/ortho_flow/ceph_trg_analysis_dark.png" alt="TRG Dark" onclick="openLightbox(this.src)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ДМС СТРАХОВАНИЕ -->
+    <div class="section-card" id="dms">
+      <h2>4. ДМС страхование, гарантийные письма, франшиза & сплит 54-ФЗ <span class="badge">36 PASS</span></h2>
+      <p class="desc">Карточка гарантийного письма ДМС (лимиты, СОГАЗ/Ингосстрах/Альфа), исключения программ, точный расчет сплита счета визита по франшизе (4 360 ₽ ДМС + 27 090 ₽ Пациент = 31 450 ₽ с 0 коп дрейфа) и смешанная оплата 54-ФЗ.</p>
+      <div class="grid-2">
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Калькулятор сплита счета ДМС и франшизы 20%</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/insurance_flow/dms_guarantee_split_light.png" alt="DMS Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Калькулятор сплита счета ДМС и франшизы 20%</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/insurance_flow/dms_guarantee_split_dark.png" alt="DMS Dark" onclick="openLightbox(this.src)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. ЕГИСЗ РЭМД 947Н -->
+    <div class="section-card" id="egisz">
+      <h2>5. ЕГИСЗ СЭМД Приказ 947н, КриптоПро & Журнал РЭМД <span class="badge">72 PASS</span></h2>
+      <p class="desc">Формирование структурированных электронных документов HL7 CDA R2 XML (СЭМД 101, 102, 105, 302, 303), двойная УКЭП врача и клиники через плагин КриптоПро с синим штампом ГОСТ Р 7.0.97-2016, журнал документов с диагностикой ошибок и пакетным экспортом ZIP.</p>
+      <div class="grid-2">
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Студия подписания СЭМД УКЭП (Приказ 947н)</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/egisz_flow/egisz_remd_hub_light.png" alt="EGISZ Hub Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Журнал медицинских документов РЭМД ЕГИСЗ</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/egisz_flow/egisz_journal_registry_dark.png" alt="EGISZ Journal Dark" onclick="openLightbox(this.src)">
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. КООРДИНАЦИЯ СОСТОЯНИЙ: КЛИНИЧЕСКИЙ ПРИЁМ & КАРТОЧКА ПАЦИЕНТА -->
+    <div class="section-card" id="clinical-coordination">
+      <h2>6. Координация состояний: Приём врача & Карточка пациента <span class="badge">9/9 PASS</span></h2>
+      <p class="desc">Полное соблюдение инвариантов эксклюзивных поверхностей (Single Modal Invariant): наряд ЗТЛ и гарантийное письмо ДМС открываются в чистом фокусе без паразитных шторок, наслоений телефонии или кликджекинга. Стерильная зона врача (Мандат 8e).</p>
+      <div class="grid-2">
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Заказ-наряд ЗТЛ в приёме врача (Light)</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/clinical_flow/visit_lab_order_modal_light.png" alt="Visit Lab Order Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Заказ-наряд ЗТЛ в приёме врача (Dark)</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/clinical_flow/visit_lab_order_modal_dark.png" alt="Visit Lab Order Dark" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>☀️ Гарантийное письмо ДМС в карточке пациента (Light)</span><span class="tag light">Light 1440×900</span></div>
+          <img src="/screenshots/clinical_flow/patient_dms_letter_modal_light.png" alt="Patient DMS Letter Light" onclick="openLightbox(this.src)">
+        </div>
+        <div class="screenshot-box">
+          <div class="title"><span>🌙 Гарантийное письмо ДМС в карточке пациента (Dark)</span><span class="tag dark">Dark 1440×900</span></div>
+          <img src="/screenshots/clinical_flow/patient_dms_letter_modal_dark.png" alt="Patient DMS Letter Dark" onclick="openLightbox(this.src)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Full size">
+  </div>
+
+  <script>
+    function openLightbox(src) {
+      const lb = document.getElementById('lightbox');
+      const img = document.getElementById('lightbox-img');
+      img.src = src;
+      lb.style.display = 'flex';
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

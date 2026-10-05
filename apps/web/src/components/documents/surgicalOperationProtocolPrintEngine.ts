@@ -13,6 +13,7 @@
  */
 
 import { escapeHtml, formatDateRu } from "./documentPrintFormatters";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export interface SurgicalOperationProtocolPrintOptions {
 
@@ -99,15 +100,17 @@ export function generateSurgicalOperationProtocolHtml(
 				year: "numeric",
 			}) + " г.";
 
+	const isDemo = isDemoShowcaseMode();
 	const clinicName =
 		escapeHtml(clinic?.legalName || clinic?.fullName || clinic?.clinicName) ||
-		"ООО «Стоматологическая клиника ДЕНТЕ»";
+		(isDemo ? "ООО «Стоматологическая клиника ДЕНТЕ»" : "«________________________________________»");
 	const clinicAddress =
 		escapeHtml(clinic?.actualAddress || clinic?.address) ||
-		"г. Москва, ул. Стоматологическая, д. 10";
+		(isDemo ? "г. Москва, ул. Стоматологическая, д. 10" : "«________________________________________»");
 	const clinicLicense =
-		escapeHtml(clinic?.licenseNumber) || "ЛО41-01137-77/00584930";
-	const clinicInn = escapeHtml(clinic?.inn) || "7701987654";
+		escapeHtml(clinic?.licenseNumber) ||
+		(isDemo ? "ЛО41-01137-77/00584930" : "«________________________________________»");
+	const clinicInn = escapeHtml(clinic?.inn) || (isDemo ? "7701987654" : "«______________»");
 
 	const ptName =
 		escapeHtml(patient?.fullName) || "________________________________________";

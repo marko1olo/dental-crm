@@ -22,6 +22,7 @@ import {
 	Database,
 	DollarSign,
 	FileText,
+	GraduationCap,
 	HardDrive,
 	HardDriveDownload,
 	Layers,
@@ -40,6 +41,7 @@ import {
 	Users,
 	Wand2,
 } from "lucide-react";
+import { startInteractiveTour } from "./components/tutorial/InteractiveGuideTour";
 import "./styles/modules/settings.css";
 import "./styles/modules/mobile-settings.css";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -125,6 +127,7 @@ const OWNER_TABS = new Set<string>([
 	"imports",
 	"audit",
 	"sources",
+	"deep-clinical",
 ]);
 
 export interface SettingsViewProps {
@@ -513,6 +516,25 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 							>
 								<ClipboardCheck size={16} className="text-[var(--teal)] shrink-0" />
 								<span>Мастер первого запуска</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setIsMoreActionsOpen(false);
+									const currentRole =
+										activeStaffUser?.role === "admin" || activeStaffUser?.role === "receptionist"
+											? "admin"
+											: activeStaffUser?.role === "director" || activeStaffUser?.role === "owner"
+												? "director"
+												: "doctor";
+									startInteractiveTour(currentRole);
+								}}
+								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+								role="menuitem"
+								data-testid="btn-start-interactive-tour-menuitem"
+							>
+								<GraduationCap size={16} className="text-[var(--teal)] shrink-0" />
+								<span>Интерактивный тур обучения</span>
 							</button>
 						</div>
 					)}

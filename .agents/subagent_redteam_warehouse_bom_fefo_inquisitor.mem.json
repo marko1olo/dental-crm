@@ -1,0 +1,39 @@
+{
+  "role": "RED TEAM INQUISITOR - WAREHOUSE BOM & FEFO EXPIRY",
+  "status": "COMPLETED",
+  "started_at": "2026-10-03T12:30:00Z",
+  "completed_at": "2026-10-03T12:40:00Z",
+  "completed_steps": [
+    "Read mandatory rules: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md in full",
+    "Reconnaissance across packages/shared, apps/api, and apps/web for BOM, FEFO, and TORG-16 write-off acts",
+    "Identified critical violation of Mandates 8s and 8za: duplicate divergent implementations of generateTorg16Html in apps/web",
+    "Consolidated canonical statutory ТОРГ-16 engine into packages/shared/src/warehouse/torg16ActEngine.ts (ОКУД 0330216)",
+    "Re-exported canonical engine via packages/shared/src/warehouse/index.ts and @dental/shared",
+    "Created exhaustive unit test suite packages/shared/src/tests/torg16ActEngine.test.ts (6/6 tests passing)",
+    "Refactored apps/web/src/components/inventory/warehouseInventoryPrintForms.ts to delegate to canonical engine",
+    "Refactored apps/web/src/components/inventory/writeoff/clinicalWriteoffPrintForms.ts to delegate to canonical engine",
+    "Audited frontend UI panels (MaterialBomsSettingsPanel, InventoryBatchFefoPanel, WarehouseInventoryAuditModal) and confirmed zero-mocks / live DB connection",
+    "Executed verification gates: check-encoding (0 errors), check-css-tokens (0 errors)",
+    "Executed targeted unit test suites (97 unit tests passing across shared, api, and web)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Duplicate ТОРГ-16 Generator: warehouseInventoryPrintForms.ts and clinicalWriteoffPrintForms.ts had copy-pasted, diverging implementations of ТОРГ-16 with duplicate HTML strings and no shared authority.",
+    "Missing XSS sanitation: raw string concatenation in print forms lacked rigorous escaping.",
+    "Zero-mocks check: PostgreSQL 18 schema (inventory_items, stock_batches, procedure_material_rules, inventory_transactions) and backend routes (/api/inventory/:organizationId/rules, /api/inventory/batches/expiring) are fully live and operational."
+  ],
+  "defects_fixed": [
+    {
+      "id": "TORG16_DUPLICATE_CONSOLIDATION",
+      "severity": "CRITICAL",
+      "description": "Consolidated duplicate ТОРГ-16 statutory generators into canonical packages/shared/src/warehouse/torg16ActEngine.ts",
+      "files_changed": [
+        "packages/shared/src/warehouse/torg16ActEngine.ts",
+        "packages/shared/src/warehouse/index.ts",
+        "packages/shared/src/tests/torg16ActEngine.test.ts",
+        "apps/web/src/components/inventory/warehouseInventoryPrintForms.ts",
+        "apps/web/src/components/inventory/writeoff/clinicalWriteoffPrintForms.ts"
+      ]
+    }
+  ]
+}

@@ -952,7 +952,12 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					status: "failed",
 					updatedAt: new Date(),
 				})
-				.where(eq(sberbankTransactions.id, lockedTx.id));
+				.where(
+					and(
+						eq(sberbankTransactions.id, lockedTx.id),
+						eq(sberbankTransactions.organizationId, lockedTx.organizationId),
+					),
+				);
 
 			return reply.status(200).send({
 				success: true,

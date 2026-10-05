@@ -5,7 +5,7 @@
  * and emojis according to Supreme Law: THE HAMMER (Mandates 8a–8q).
  */
 
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";

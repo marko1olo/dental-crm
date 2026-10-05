@@ -833,7 +833,12 @@ export async function autoBindUnassignedStudies(
 					bindingConfidence: matchResult.confidence,
 					aiSummary: `Автопривязано к пациенту: ${matchResult.patientFullName} (${matchResult.matchMethod}). ${matchResult.matchDetails}`,
 				})
-				.where(eq(schema.imagingStudies.id, study.id));
+				.where(
+					and(
+						eq(schema.imagingStudies.id, study.id),
+						eq(schema.imagingStudies.organizationId, organizationId),
+					),
+				);
 		} else if (matchResult.status === "pending_review") {
 			summary.pendingReview++;
 			await db
@@ -844,7 +849,12 @@ export async function autoBindUnassignedStudies(
 					bindingConfidence: matchResult.confidence,
 					aiSummary: `Требует подтверждения врача: кандидат ${matchResult.patientFullName ?? "не определен"} (${matchResult.confidence}%). ${matchResult.matchDetails}`,
 				})
-				.where(eq(schema.imagingStudies.id, study.id));
+				.where(
+					and(
+						eq(schema.imagingStudies.id, study.id),
+						eq(schema.imagingStudies.organizationId, organizationId),
+					),
+				);
 		} else {
 			summary.unassigned++;
 			newStatus = "unassigned";

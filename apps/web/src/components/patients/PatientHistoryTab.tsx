@@ -1087,7 +1087,7 @@ export const PatientHistoryTab: React.FC<PatientHistoryTabProps> = React.memo(
 															title="Сформировать медицинскую выписку из карты"
 														>
 															<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-															<span>Медицинская выписка</span>
+															<span>Выписка из карты</span>
 														</button>
 
 														<button

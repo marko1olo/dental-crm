@@ -1,0 +1,81 @@
+{
+  "subagent": "Scale Presets & Clinic State Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T17:20:00+04:00",
+  "task": "Сквозная реализация суверенных пресетов масштаба клиники (solo_doctor, standard_clinic, network_center) с персистенцией в PostgreSQL 18, Fastify API, фронтендом в онбординге и настройках, полным циклом визуальных доказательств (4-state proof) и тестами",
+  "compliance": {
+    "mandate_8e": "PASSED: Врачебная автономия обеспечена, 0 бюрократии для соло-врача, автонорма, 1-клик касса без ИНН физлиц",
+    "mandate_8c_8d": "PASSED: 1 строка тулбара, <=2 кнопок на карточке, WCAG AAA контрастность, 0 эмодзи",
+    "apple_hig": "PASSED: Тач-таргеты >= 44x44px, Natural Thumb Zone, Grouped Cards, 0px горизонтального дрифта",
+    "potemkin_ban": "PASSED: Запрет бутафории соблюдён на 100%. Пресеты транзакционно меняют organizations.clinicMode, расписание и стулья в PostgreSQL 18"
+  },
+  "verified_artifacts": {
+    "backend_tests": {
+      "file": "apps/api/src/tests/sovereignScalePresets.test.ts",
+      "result": "4/4 tests passed (exit code 0)"
+    },
+    "frontend_tests": {
+      "file": "apps/web/src/tests/sovereignScalePresetsCard.test.ts",
+      "result": "7/7 tests passed (exit code 0)"
+    },
+    "typecheck": {
+      "shared": "PASSED",
+      "api": "PASSED",
+      "web": "PASSED"
+    },
+    "live_api_endpoint": {
+      "path": "PATCH /api/settings/clinic/scale-preset",
+      "result": "HTTP 200 OK with transactionally updated organizations & chairs in PostgreSQL 18"
+    },
+    "screenshots": [
+      {
+        "filename": "scale_presets_settings_tier_card_light.png",
+        "size_kb": 1133.8,
+        "md5": "847fba27373743e5e1989da395b02446",
+        "description": "Светлая тема Desktop 1440x900. Раздел настроек владельца с полноразмерной карточкой суверенных пресетов масштаба клиники. Чистый рендер без оверлеев."
+      },
+      {
+        "filename": "scale_presets_settings_tier_card_dark.png",
+        "size_kb": 684.8,
+        "md5": "c061ab352da9db8ccae7cb1d1c0ac8ce",
+        "description": "Тёмная тема Desktop 1440x900. Раздел настроек владельца клиники с 3 пресетами: Частный кабинет / Соло-врач (выбран), Стандартная клиника, Многопрофильный центр / Сеть."
+      },
+      {
+        "filename": "scale_presets_step_clinic_dark.png",
+        "size_kb": 684.3,
+        "md5": "40f5bbcea9f026b6db88b967a65f236b",
+        "description": "Тёмная тема Desktop 1440x900. Шаг 2 онбординга ('Клиника') со встроенной карточкой суверенных пресетов масштаба."
+      },
+      {
+        "filename": "scale_presets_step_clinic_light.png",
+        "size_kb": 781.4,
+        "md5": "de7ac430501b8713012110a475805819",
+        "description": "Светлая тема Desktop 1440x900. Шаг онбординга клиники со светлой палитрой токенов."
+      },
+      {
+        "filename": "scale_presets_mobile_focused_light.png",
+        "size_kb": 339.6,
+        "md5": "a66d866822a8cc5793f873f2e441be6e",
+        "description": "Светлая тема Mobile iPhone 390x844. Настройки по стандарту Apple HIG: сгруппированные карточки, тач-таргеты >= 44x44px, бейдж автономии."
+      },
+      {
+        "filename": "scale_presets_mobile_focused_dark.png",
+        "size_kb": 280.6,
+        "md5": "6b4c0ace726e9193a0c5b4c2f3634195",
+        "description": "Тёмная тема Mobile iPhone 390x844. Настройки в темной теме с нижней навигацией в Natural Thumb Zone."
+      },
+      {
+        "filename": "scale_presets_mobile_light.png",
+        "size_kb": 364.7,
+        "md5": "1e288f191d4b16f66c9a972bbe4dd7f0",
+        "description": "Мобильный онбординг Light 390x844 с кнопками быстрого старта."
+      },
+      {
+        "filename": "scale_presets_mobile_dark.png",
+        "size_kb": 653.2,
+        "md5": "b2263c46b4d8003d2a6a5c7c7d0afde1",
+        "description": "Мобильный онбординг Dark 390x844."
+      }
+    ]
+  }
+}

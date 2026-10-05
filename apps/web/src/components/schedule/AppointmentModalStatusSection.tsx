@@ -5,6 +5,7 @@ import {
 import {
   AlertTriangle,
   CalendarCheck,
+  Check,
   CheckCircle2,
   Clock,
   UserCheck,
@@ -56,79 +57,103 @@ export function AppointmentModalStatusSection({
         <button
           type="button"
           onClick={() => setStatus("planned")}
-          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`appointment-modal-status-chip appointment-modal-status-chip--planned ${status === "planned" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "planned"
-              ? "bg-[var(--teal)] text-white font-bold border-[var(--teal)]"
-              : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+              ? "!bg-amber-500 !text-white font-extrabold !border-amber-500 shadow-sm ring-2 ring-amber-500/30"
+              : "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 hover:border-amber-500/50"
           }`}
           data-testid="modal-status-btn-planned"
         >
-          <Clock size={12} className="shrink-0" />
+          {status === "planned" ? (
+            <Check size={12} className="stroke-[3] shrink-0" />
+          ) : (
+            <Clock size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+          )}
           <span className="whitespace-nowrap leading-none">Ожидает</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("confirmed")}
-          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`appointment-modal-status-chip appointment-modal-status-chip--confirmed ${status === "confirmed" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "confirmed"
-              ? "bg-emerald-600 text-white font-bold border-emerald-600"
-              : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+              ? "!bg-emerald-600 !text-white font-extrabold !border-emerald-600 shadow-sm ring-2 ring-emerald-600/30"
+              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-500/20 hover:border-emerald-500/50"
           }`}
           data-testid="modal-status-btn-confirmed"
         >
-          <UserCheck size={12} className="shrink-0" />
+          {status === "confirmed" ? (
+            <Check size={12} className="stroke-[3] shrink-0" />
+          ) : (
+            <UserCheck size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+          )}
           <span className="whitespace-nowrap leading-none">Подтвержден</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("arrived")}
-          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`appointment-modal-status-chip appointment-modal-status-chip--arrived ${status === "arrived" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "arrived"
-              ? "bg-emerald-600 text-white font-bold border-emerald-600"
-              : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+              ? "!bg-amber-600 !text-white font-extrabold !border-amber-600 shadow-sm ring-2 ring-amber-600/30"
+              : "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 hover:border-amber-500/50"
           }`}
           data-testid="modal-status-btn-arrived"
         >
-          <UserCheck size={12} className="shrink-0" />
+          {status === "arrived" ? (
+            <Check size={12} className="stroke-[3] shrink-0" />
+          ) : (
+            <UserCheck size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+          )}
           <span className="whitespace-nowrap leading-none">В холле</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("in_treatment")}
-          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`appointment-modal-status-chip appointment-modal-status-chip--in_treatment ${status === "in_treatment" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "in_treatment"
-              ? "bg-cyan-600 text-white font-bold border-cyan-600"
-              : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+              ? "!bg-[var(--teal)] !text-white font-extrabold !border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]/30"
+              : "border-teal-500/30 bg-teal-500/10 text-teal-900 dark:text-teal-200 hover:bg-teal-500/20 hover:border-teal-500/50"
           }`}
           data-testid="modal-status-btn-in_treatment"
         >
-          <CalendarCheck size={12} className="shrink-0" />
+          {status === "in_treatment" ? (
+            <Check size={12} className="stroke-[3] shrink-0" />
+          ) : (
+            <CalendarCheck size={12} className="shrink-0 text-teal-600 dark:text-teal-400" />
+          )}
           <span className="whitespace-nowrap leading-none">В кресле</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("completed")}
-          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`appointment-modal-status-chip appointment-modal-status-chip--completed ${status === "completed" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "completed"
-              ? "bg-slate-700 text-white font-bold border-slate-700"
-              : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+              ? "!bg-slate-700 !text-white font-extrabold !border-slate-700 shadow-sm ring-2 ring-slate-700/30"
+              : "border-slate-500/30 bg-slate-500/10 text-slate-800 dark:text-slate-200 hover:bg-slate-500/20 hover:border-slate-500/50"
           }`}
           data-testid="modal-status-btn-completed"
         >
-          <CheckCircle2 size={12} className="shrink-0" />
+          {status === "completed" ? (
+            <Check size={12} className="stroke-[3] shrink-0" />
+          ) : (
+            <CheckCircle2 size={12} className="shrink-0 text-slate-600 dark:text-slate-400" />
+          )}
           <span className="whitespace-nowrap leading-none">Завершен</span>
         </button>
         <button
           type="button"
           onClick={() => setStatus("no_show")}
-          className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+          className={`appointment-modal-status-chip appointment-modal-status-chip--no_show ${status === "no_show" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "no_show"
-              ? "bg-rose-600 text-white font-bold border-rose-600"
-              : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+              ? "!bg-rose-600 !text-white font-extrabold !border-rose-600 shadow-sm ring-2 ring-rose-600/30"
+              : "border-rose-500/30 bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 hover:border-rose-500/50"
           }`}
           data-testid="modal-status-btn-no_show"
         >
-          <UserX size={12} className="shrink-0" />
+          {status === "no_show" ? (
+            <Check size={12} className="stroke-[3] shrink-0" />
+          ) : (
+            <UserX size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+          )}
           <span className="whitespace-nowrap leading-none">Неявка</span>
         </button>
       </div>
@@ -149,7 +174,7 @@ export function AppointmentModalStatusSection({
             );
           }
         }}
-        className="w-full px-2.5 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1"
+        className="w-full px-3 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1.5 cursor-pointer"
         data-testid="select-appointment-status"
       >
         {(

@@ -1,0 +1,26 @@
+{
+  "role": "RED TEAM ИНКВИЗИТОР №1: DENTAL LAB ORDERS & REMAKES CONTOUR LEAD",
+  "status": "completed",
+  "completed_steps": [
+    "Read all mandatory constitutional documents: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md, frontend.md, GEMINI.md",
+    "Identified failing test in dentalLabMarketCatalogInquisitor.test.ts due to checkmark unicode character in MobileLabOrdersTimeline.tsx line 414 and relative path issue when running from apps/web",
+    "Fixed MobileLabOrdersTimeline.tsx line 414 and made test path resolution robust across cwd variants",
+    "Verified dentalLabMarketCatalogInquisitor.test.ts passes 100% (5/5) from both monorepo root and apps/web",
+    "Wired clinical photo attachment into DentalLabShadePicker, DentalLabShadeSelector, useDentalLabOrderForm, and DentalLabOrderModal with photo file input, sample reference, and thumbnail card",
+    "Connected DentalLabOrderModal, DentalLabOrdersKanbanBoard, and DentalLabOrdersHubModal with FDI tooth selection (11-48/51-85), jaw-wide scopes (upper, lower, both), materials (Katana ML ZrO2, IPS e.max, Metal-ceramic, temporary PMMA), VITA Classical & 3D-Master palettes, 3-zone stratification, Natural Die stump shades (ND1-ND9), and 0 RUB warranty remakes",
+    "Enforced Mandate 8b file length limit strictly < 800 lines across all lab files (dentalLabOrderEngine.ts reduced to 794 lines, warehouseAcceptanceFefoAudit.test.ts 18/18 PASS)",
+    "Fixed layout jump-scroll caused by input autoFocus in DentalLabRestorationTab.tsx, ensuring express presets are 100% visible on modal open",
+    "Enhanced dentalLabWorkflow.css to display all 5 clinical stages (draft, sent_to_lab, fitting_scheduled, installed_completed, warranty_rework) in a single desktop row",
+    "Ran full lab test suite: 161 tests across 55 test suites, 100% PASSING",
+    "Captured 1440x900 screenshots (Light & Dark) into apps/web/public/screenshots/lab_orders_flow/ and copied to brain directory: lab_order_modal_light.png, lab_order_modal_dark.png, lab_order_shades_light.png, lab_order_shades_photo_light.png, lab_order_shades_dark.png, lab_order_shades_photo_dark.png, lab_kanban_light.png, lab_kanban_dark.png",
+    "Personally inspected all screenshots via view_file vision, audited against the 7 deadly sins of UI (0 cartoon emojis, 0 text clipping, 0 white flashes, clean Miller's Law controls)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Monorepo uses node:test runner with tsx stub (apps/web/package.json line 10) passing 161/161 tests cleanly",
+    "All lab and orthopedics files are strictly < 800 lines compliant with Mandate 8b",
+    "Zero cartoon emojis across all lab components compliant with Mandate 8d",
+    "Warranty rework accurately computes 0 RUB liability for patient upon lab defect",
+    "Doctor clinical autonomy 1-click override banner operates without blocking gates"
+  ]
+}

@@ -20,6 +20,7 @@ import type { TreatmentPlanActPrintData } from "./TreatmentPlanCompletedActPrint
 import type { ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
 import type { InvoiceServiceItem } from "../finance/invoiceEngine";
 import { showToast } from "../GlobalToast";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
 // Lazy-loaded specialized studio modals (Split bundles, instant modal open)
 const TreatmentPlanComparatorModal = lazy(() =>
@@ -277,14 +278,96 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 	onApplyChairsideBundlePlan,
 	onApplyChairsideBundleInvoice,
 }) => {
+	// Единый селектор активной модалки плана лечения (Single Active Modal Invariant)
+	const effectiveActiveModal = React.useMemo<string | null>(() => {
+		if (isSignModalOpen) return "tp_signature";
+		if (isFiscalModalOpen) return "tp_fiscal";
+		if (isInstallmentModalOpen) return "tp_installment";
+		if (isInvoiceModalOpen) return "tp_invoice";
+		if (isLabOrderModalOpen) return "tp_lab_order";
+		if (isActPrintOpen) return "tp_act_print";
+		if (isContractPrintOpen) return "tp_contract_print";
+		if (isPriceValidatorModalOpen) return "tp_price_validator";
+		if (isStagePaymentModalOpen) return "tp_stage_payment";
+		if (isPresenterModalOpen) return "tp_presenter";
+		if (isComparatorModalOpen) return "tp_comparator";
+		if (isCuratorModalOpen) return "tp_curator";
+		if (isChairsideBundlesModalOpen) return "tp_bundles";
+		return null;
+	}, [
+		isSignModalOpen,
+		isFiscalModalOpen,
+		isInstallmentModalOpen,
+		isInvoiceModalOpen,
+		isLabOrderModalOpen,
+		isActPrintOpen,
+		isContractPrintOpen,
+		isPriceValidatorModalOpen,
+		isStagePaymentModalOpen,
+		isPresenterModalOpen,
+		isComparatorModalOpen,
+		isCuratorModalOpen,
+		isChairsideBundlesModalOpen,
+	]);
+
+	React.useEffect(() => {
+		if (!effectiveActiveModal) {
+			const current = useUiSurfaceStore.getState().primaryModal?.id;
+			if (current?.startsWith("tp_")) {
+				useUiSurfaceStore.getState().closePrimaryModal();
+			}
+			return;
+		}
+		useUiSurfaceStore.getState().openPrimaryModal(effectiveActiveModal as any);
+	}, [effectiveActiveModal]);
+
+	React.useEffect(() => {
+		const handleCloseAll = () => {
+			onCloseComparator();
+			onCloseStagePayment();
+			onClosePriceValidator();
+			onCloseSignModal();
+			onCloseContractPrint();
+			onCloseActPrint();
+			onCloseFiscal();
+			onCloseLabOrder();
+			onCloseInvoice();
+			onCloseInstallment();
+			onClosePresenter();
+			onCloseCurator();
+			onCloseChairsideBundles();
+		};
+		window.addEventListener("dente:close-all-surfaces", handleCloseAll);
+		return () => {
+			window.removeEventListener("dente:close-all-surfaces", handleCloseAll);
+		};
+	}, [
+		onCloseComparator,
+		onCloseStagePayment,
+		onClosePriceValidator,
+		onCloseSignModal,
+		onCloseContractPrint,
+		onCloseActPrint,
+		onCloseFiscal,
+		onCloseLabOrder,
+		onCloseInvoice,
+		onCloseInstallment,
+		onClosePresenter,
+		onCloseCurator,
+		onCloseChairsideBundles,
+	]);
+
 	return (
 		<>
 			{/* 3-Tier Multi-Variant Presentation Studio Modal */}
-			{isComparatorModalOpen && (
+			{effectiveActiveModal === "tp_comparator" && isComparatorModalOpen && (
 				<Suspense fallback={null}>
 					<TreatmentPlanComparatorModal
 						isOpen={isComparatorModalOpen}
-						onClose={onCloseComparator}
+						onClose={() => {
+							onCloseComparator();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_comparator");
+						}}
 						patientName={patientName}
 						doctorName={doctorFullName}
 						clinicName={clinicName}
@@ -326,11 +409,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Stage Payment & Escrow Studio Modal */}
-			{isStagePaymentModalOpen && (
+			{effectiveActiveModal === "tp_stage_payment" && isStagePaymentModalOpen && (
 				<Suspense fallback={null}>
 					<StagePaymentPlanModal
 						isOpen={isStagePaymentModalOpen}
-						onClose={onCloseStagePayment}
+						onClose={() => {
+							onCloseStagePayment();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_stage_payment");
+						}}
 						patientName={patientName}
 						patientId={patientId}
 						planTitle={currentTier.title}
@@ -341,11 +427,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Price & Star Protocols Validator Modal */}
-			{isPriceValidatorModalOpen && (
+			{effectiveActiveModal === "tp_price_validator" && isPriceValidatorModalOpen && (
 				<Suspense fallback={null}>
 					<TreatmentPlanPriceValidatorModal
 						isOpen={isPriceValidatorModalOpen}
-						onClose={onClosePriceValidator}
+						onClose={() => {
+							onClosePriceValidator();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_price_validator");
+						}}
 						planPayload={validationPayload}
 						stages={stages}
 						catalogPricelist={(catalog as any) || []}
@@ -368,7 +457,7 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Digital Signature Modal */}
-			{isSignModalOpen && (
+			{effectiveActiveModal === "tp_signature" && isSignModalOpen && (
 				<Suspense fallback={null}>
 					<TreatmentPlanSignatureModal
 						isOpen={isSignModalOpen}
@@ -377,14 +466,17 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 						patientId={patientId}
 						doctorFullName={doctorFullName}
 						clinicName={clinicName}
-						onClose={onCloseSignModal}
+						onClose={() => {
+							onCloseSignModal();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_signature");
+						}}
 						onSignedSuccess={onSignedSuccess}
 					/>
 				</Suspense>
 			)}
 
 			{/* Contract and Plan Specification Printable Modal */}
-			{isContractPrintOpen && (
+			{effectiveActiveModal === "tp_contract_print" && isContractPrintOpen && (
 				<Suspense fallback={null}>
 					<TreatmentPlanContractPrint
 						isOpen={isContractPrintOpen}
@@ -400,13 +492,16 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 						discountPercent={discountPercent}
 						bonusPointsDeductedRub={loyaltyDeduction.appliedBonusRub}
 						planAgeDays={planAgeDays}
-						onClose={onCloseContractPrint}
+						onClose={() => {
+							onCloseContractPrint();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_contract_print");
+						}}
 					/>
 				</Suspense>
 			)}
 
 			{/* Completed Works Act and Material Write-off Modal */}
-			{isActPrintOpen && completedActData && (
+			{effectiveActiveModal === "tp_act_print" && isActPrintOpen && completedActData && (
 				<Suspense fallback={null}>
 					<TreatmentPlanCompletedActPrint
 						isOpen={isActPrintOpen}
@@ -414,6 +509,7 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 						onClose={() => {
 							onCloseActPrint();
 							onSelectActStage(null);
+							useUiSurfaceStore.getState().closePrimaryModal("tp_act_print");
 						}}
 						onConfirmExecuteWriteOff={onConfirmExecuteWriteOff}
 						isExecuting={isExecutingWriteOff}
@@ -422,7 +518,7 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* 54-FZ Fiscal Receipt & Split Payment Modal */}
-			{isFiscalModalOpen && (
+			{effectiveActiveModal === "tp_fiscal" && isFiscalModalOpen && (
 				<Suspense fallback={null}>
 					<FiscalReceipt54FzModal
 						isOpen={isFiscalModalOpen}
@@ -433,7 +529,10 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 						patientDepositRub={patientDepositRub}
 						cashierFullName={doctorFullName}
 						clinicName={clinicName}
-						onClose={onCloseFiscal}
+						onClose={() => {
+							onCloseFiscal();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_fiscal");
+						}}
 						onReceiptFiscalized={(receiptNum) => {
 							showToast(`Чек №${receiptNum} сохранен в истории оплат`, "success");
 						}}
@@ -442,11 +541,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Statutory Lab Work Order & Tracking Studio Modal */}
-			{isLabOrderModalOpen && (
+			{effectiveActiveModal === "tp_lab_order" && isLabOrderModalOpen && (
 				<Suspense fallback={null}>
 					<LabWorkOrderModal
 						isOpen={isLabOrderModalOpen}
-						onClose={onCloseLabOrder}
+						onClose={() => {
+							onCloseLabOrder();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_lab_order");
+						}}
 						patientId={patientId}
 						patientName={patientName}
 						patientChartNumber={patientChartNumber || `К-${patientId.slice(0, 5)}`}
@@ -496,11 +598,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Fast Invoice & Work Order Generation Modal (Feature #41 PriceGuard) */}
-			{isInvoiceModalOpen && (
+			{effectiveActiveModal === "tp_invoice" && isInvoiceModalOpen && (
 				<Suspense fallback={null}>
 					<InvoiceGenerationModal
 						isOpen={isInvoiceModalOpen}
-						onClose={onCloseInvoice}
+						onClose={() => {
+							onCloseInvoice();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_invoice");
+						}}
 						patientId={patientId}
 						patientName={patientName}
 						patientPhone={patientPhone}
@@ -548,13 +653,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Bank Installment QR Financing Modal */}
-			{isInstallmentModalOpen && selectedInstallmentStage && (
+			{effectiveActiveModal === "tp_installment" && isInstallmentModalOpen && selectedInstallmentStage && (
 				<Suspense fallback={null}>
 					<BankInstallmentQrModal
 						isOpen={isInstallmentModalOpen}
 						onClose={() => {
 							onCloseInstallment();
 							onSelectInstallmentStage(null);
+							useUiSurfaceStore.getState().closePrimaryModal("tp_installment");
 						}}
 						stageTitle={`Этап №${selectedInstallmentStage.stageNumber}: ${selectedInstallmentStage.title}`}
 						stageNumber={selectedInstallmentStage.stageNumber}
@@ -577,11 +683,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* AI Audit & 3-Tier Chairside Presenter Modal */}
-			{isPresenterModalOpen && (
+			{effectiveActiveModal === "tp_presenter" && isPresenterModalOpen && (
 				<Suspense fallback={null}>
 					<TreatmentPlanPresenterModal
 						isOpen={isPresenterModalOpen}
-						onClose={onClosePresenter}
+						onClose={() => {
+							onClosePresenter();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_presenter");
+						}}
 						patientId={patientId}
 						patientName={patientName}
 						patientPhone={patientPhone}
@@ -614,11 +723,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Curator Plan Assignment Modal */}
-			{isCuratorModalOpen && (
+			{effectiveActiveModal === "tp_curator" && isCuratorModalOpen && (
 				<Suspense fallback={null}>
 					<CuratorPlanAssignmentModal
 						isOpen={isCuratorModalOpen}
-						onClose={onCloseCurator}
+						onClose={() => {
+							onCloseCurator();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_curator");
+						}}
 						patientId={patientId}
 						patientName={patientName}
 						treatmentPlanId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
@@ -633,11 +745,14 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 			)}
 
 			{/* Chairside Clinical Service Bundles 804n Modal */}
-			{isChairsideBundlesModalOpen && (
+			{effectiveActiveModal === "tp_bundles" && isChairsideBundlesModalOpen && (
 				<Suspense fallback={null}>
 					<ClinicalServiceBundlesModal
 						isOpen={isChairsideBundlesModalOpen}
-						onClose={onCloseChairsideBundles}
+						onClose={() => {
+							onCloseChairsideBundles();
+							useUiSurfaceStore.getState().closePrimaryModal("tp_bundles");
+						}}
 						initialToothNumber={orthopedicTeeth[0] || 16}
 						patientId={patientId}
 						patientName={patientName}

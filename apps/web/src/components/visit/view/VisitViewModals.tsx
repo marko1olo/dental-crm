@@ -12,6 +12,7 @@ import { WarrantyPassportModal } from "../../warranty/WarrantyPassportModal";
 import { DoctorMobileShiftModal } from "../../doctor-portal/DoctorMobileShiftModal";
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
 import { showToast } from "../../GlobalToast";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 
 export interface VisitViewModalsProps {
 	endoModalToothNumber: string | null;
@@ -95,15 +96,166 @@ export function VisitViewModals({
 	visitNoteForm,
 	activeAppointment,
 }: VisitViewModalsProps) {
+	// Вычисление единственной активной клинической модалки (ИНВАРИАНТ 1: Clinical Visit Exclusivity)
+	// Экстренная помощь (emergency_rescue) имеет абсолютный клинический приоритет при анафилаксии/шоке.
+	const effectiveActiveModal = React.useMemo<string | null>(() => {
+		if (isEmergencyModalOpen) return "emergency_rescue";
+		if (isLabOrderModalOpen) return "lab_order";
+		if (isEndoModalOpen) return "endo_canal";
+		if (isStagePaymentModalOpen) return "stage_payment";
+		if (isPriceValidatorModalOpen) return "price_validator";
+		if (isVoiceDictationModalOpen) return "voice_dictation";
+		if (isWarrantyModalOpen) return "warranty_passport";
+		if (isDoctorShiftModalOpen) return "doctor_mobile_shift";
+		if (isInformedConsentModalOpen) return "informed_consent";
+		return null;
+	}, [
+		isEmergencyModalOpen,
+		isLabOrderModalOpen,
+		isEndoModalOpen,
+		isStagePaymentModalOpen,
+		isPriceValidatorModalOpen,
+		isVoiceDictationModalOpen,
+		isWarrantyModalOpen,
+		isDoctorShiftModalOpen,
+		isInformedConsentModalOpen,
+	]);
+
+	// Взаимное исключение модалок приёма врача (Мандаты 8b, 8e):
+	// При открытии любой клинической модалки все остальные конкурирующие модалки принудительно закрываются.
+	React.useEffect(() => {
+		if (!effectiveActiveModal) {
+			const current = useUiSurfaceStore.getState().primaryModal?.id;
+			if (
+				current === "lab_order" ||
+				current === "endo_canal" ||
+				current === "stage_payment" ||
+				current === "price_validator" ||
+				current === "emergency_rescue" ||
+				current === "voice_dictation" ||
+				current === "warranty_passport" ||
+				current === "doctor_mobile_shift" ||
+				current === "informed_consent"
+			) {
+				useUiSurfaceStore.getState().closePrimaryModal();
+			}
+			return;
+		}
+
+		useUiSurfaceStore.getState().openPrimaryModal(effectiveActiveModal as any);
+
+		// Автоматическое закрытие конкурирующих флагов состояний родителя
+		if (effectiveActiveModal === "emergency_rescue") {
+			if (isLabOrderModalOpen) setIsLabOrderModalOpen(false);
+			if (isEndoModalOpen) setIsEndoModalOpen(false);
+			if (isStagePaymentModalOpen) setIsStagePaymentModalOpen(false);
+			if (isPriceValidatorModalOpen) setIsPriceValidatorModalOpen(false);
+			if (isVoiceDictationModalOpen) setIsVoiceDictationModalOpen(false);
+			if (isWarrantyModalOpen) setIsWarrantyModalOpen(false);
+			if (isDoctorShiftModalOpen) setIsDoctorShiftModalOpen(false);
+			if (isInformedConsentModalOpen) setIsInformedConsentModalOpen(false);
+		} else if (effectiveActiveModal === "lab_order") {
+			if (isEndoModalOpen) setIsEndoModalOpen(false);
+			if (isStagePaymentModalOpen) setIsStagePaymentModalOpen(false);
+			if (isPriceValidatorModalOpen) setIsPriceValidatorModalOpen(false);
+			if (isVoiceDictationModalOpen) setIsVoiceDictationModalOpen(false);
+			if (isWarrantyModalOpen) setIsWarrantyModalOpen(false);
+			if (isDoctorShiftModalOpen) setIsDoctorShiftModalOpen(false);
+			if (isInformedConsentModalOpen) setIsInformedConsentModalOpen(false);
+		} else if (effectiveActiveModal === "endo_canal") {
+			if (isLabOrderModalOpen) setIsLabOrderModalOpen(false);
+			if (isStagePaymentModalOpen) setIsStagePaymentModalOpen(false);
+			if (isPriceValidatorModalOpen) setIsPriceValidatorModalOpen(false);
+			if (isVoiceDictationModalOpen) setIsVoiceDictationModalOpen(false);
+			if (isWarrantyModalOpen) setIsWarrantyModalOpen(false);
+			if (isDoctorShiftModalOpen) setIsDoctorShiftModalOpen(false);
+			if (isInformedConsentModalOpen) setIsInformedConsentModalOpen(false);
+		} else if (effectiveActiveModal === "stage_payment") {
+			if (isLabOrderModalOpen) setIsLabOrderModalOpen(false);
+			if (isEndoModalOpen) setIsEndoModalOpen(false);
+			if (isPriceValidatorModalOpen) setIsPriceValidatorModalOpen(false);
+			if (isVoiceDictationModalOpen) setIsVoiceDictationModalOpen(false);
+			if (isWarrantyModalOpen) setIsWarrantyModalOpen(false);
+			if (isDoctorShiftModalOpen) setIsDoctorShiftModalOpen(false);
+			if (isInformedConsentModalOpen) setIsInformedConsentModalOpen(false);
+		} else if (effectiveActiveModal === "warranty_passport") {
+			if (isLabOrderModalOpen) setIsLabOrderModalOpen(false);
+			if (isEndoModalOpen) setIsEndoModalOpen(false);
+			if (isStagePaymentModalOpen) setIsStagePaymentModalOpen(false);
+			if (isPriceValidatorModalOpen) setIsPriceValidatorModalOpen(false);
+			if (isVoiceDictationModalOpen) setIsVoiceDictationModalOpen(false);
+			if (isDoctorShiftModalOpen) setIsDoctorShiftModalOpen(false);
+			if (isInformedConsentModalOpen) setIsInformedConsentModalOpen(false);
+		} else if (effectiveActiveModal === "informed_consent") {
+			if (isLabOrderModalOpen) setIsLabOrderModalOpen(false);
+			if (isEndoModalOpen) setIsEndoModalOpen(false);
+			if (isStagePaymentModalOpen) setIsStagePaymentModalOpen(false);
+			if (isPriceValidatorModalOpen) setIsPriceValidatorModalOpen(false);
+			if (isVoiceDictationModalOpen) setIsVoiceDictationModalOpen(false);
+			if (isWarrantyModalOpen) setIsWarrantyModalOpen(false);
+			if (isDoctorShiftModalOpen) setIsDoctorShiftModalOpen(false);
+		}
+	}, [
+		effectiveActiveModal,
+		isEmergencyModalOpen,
+		isLabOrderModalOpen,
+		isEndoModalOpen,
+		isStagePaymentModalOpen,
+		isPriceValidatorModalOpen,
+		isVoiceDictationModalOpen,
+		isWarrantyModalOpen,
+		isDoctorShiftModalOpen,
+		isInformedConsentModalOpen,
+		setIsEmergencyModalOpen,
+		setIsLabOrderModalOpen,
+		setIsEndoModalOpen,
+		setIsStagePaymentModalOpen,
+		setIsPriceValidatorModalOpen,
+		setIsVoiceDictationModalOpen,
+		setIsWarrantyModalOpen,
+		setIsDoctorShiftModalOpen,
+		setIsInformedConsentModalOpen,
+	]);
+
+	// Закрытие всех модалок по внешнему событию dente:close-all-surfaces
+	React.useEffect(() => {
+		const handleCloseAll = () => {
+			setIsLabOrderModalOpen(false);
+			setIsEndoModalOpen(false);
+			setIsStagePaymentModalOpen(false);
+			setIsPriceValidatorModalOpen(false);
+			setIsEmergencyModalOpen(false);
+			setIsVoiceDictationModalOpen(false);
+			setIsWarrantyModalOpen(false);
+			setIsDoctorShiftModalOpen(false);
+			setIsInformedConsentModalOpen(false);
+		};
+		window.addEventListener("dente:close-all-surfaces", handleCloseAll);
+		return () => {
+			window.removeEventListener("dente:close-all-surfaces", handleCloseAll);
+		};
+	}, [
+		setIsLabOrderModalOpen,
+		setIsEndoModalOpen,
+		setIsStagePaymentModalOpen,
+		setIsPriceValidatorModalOpen,
+		setIsEmergencyModalOpen,
+		setIsVoiceDictationModalOpen,
+		setIsWarrantyModalOpen,
+		setIsDoctorShiftModalOpen,
+		setIsInformedConsentModalOpen,
+	]);
+
 	return (
 		<>
 			{/* Endodontic Root Canal Log Modal */}
-			{endoModalToothNumber && (
+			{effectiveActiveModal === "endo_canal" && endoModalToothNumber && (
 				<EndoCanalLogModal
 					isOpen={isEndoModalOpen}
 					onClose={() => {
 						setIsEndoModalOpen(false);
 						setEndoModalToothNumber(null);
+						useUiSurfaceStore.getState().closePrimaryModal("endo_canal");
 					}}
 					toothNumber={Number(endoModalToothNumber)}
 					toothState={endoModalToothState}
@@ -120,74 +272,85 @@ export function VisitViewModals({
 			)}
 
 			{/* Dental Lab Order Modal (ЗТЛ) */}
-			<DentalLabOrderModal
-				isOpen={isLabOrderModalOpen}
-				onClose={() => {
-					setIsLabOrderModalOpen(false);
-					setLabOrderModalToothNumber(null);
-				}}
-				patientId={
-					activePatient?.id ||
-					activePatient?.patientId ||
-					activeAppointment?.patientId ||
-					(typeof dashboard?.activeVisit?.patientId === "string"
-						? dashboard.activeVisit.patientId
-						: undefined)
-				}
-				patientName={
-					activePatient?.fullName ||
-					activePatient?.name ||
-					activeAppointment?.patientName ||
-					"Пациент"
-				}
-				doctorId={
-					activeDoctor?.id ||
-					activeDoctor?.userId ||
-					activeAppointment?.doctorId ||
-					undefined
-				}
-				doctorName={
-					activeDoctor?.fullName ||
-					activeDoctor?.name ||
-					activeAppointment?.doctorName ||
-					"Лечащий врач"
-				}
-				initialToothFdi={labOrderModalToothNumber ?? undefined}
-				scheduledVisitDate={
-					activeAppointment?.startTime ||
-					activeAppointment?.startAt ||
-					activeAppointment?.date ||
-					undefined
-				}
-				patientChartNumber={
-					activePatient?.medCardNumber ||
-					activePatient?.cardNumber ||
-					undefined
-				}
-				onOrderSaved={(order) => {
-					if (order?.toothFdi && order?.material) {
-						appendToEMKField(
-							"treatmentPlan",
-							`Оформлен наряд ЗТЛ на зуб ${order.toothFdi} (${order.material}, цвет ${order.colorVita || "A2"}).`,
-						);
+			{effectiveActiveModal === "lab_order" && (
+				<DentalLabOrderModal
+					isOpen={isLabOrderModalOpen}
+					onClose={() => {
+						setIsLabOrderModalOpen(false);
+						setLabOrderModalToothNumber(null);
+						useUiSurfaceStore.getState().closePrimaryModal("lab_order");
+					}}
+					patientId={
+						activePatient?.id ||
+						activePatient?.patientId ||
+						activeAppointment?.patientId ||
+						(typeof dashboard?.activeVisit?.patientId === "string"
+							? dashboard.activeVisit.patientId
+							: undefined)
 					}
-				}}
-			/>
+					patientName={
+						activePatient?.fullName ||
+						activePatient?.name ||
+						activeAppointment?.patientName ||
+						"Пациент"
+					}
+					doctorId={
+						activeDoctor?.id ||
+						activeDoctor?.userId ||
+						activeAppointment?.doctorId ||
+						undefined
+					}
+					doctorName={
+						activeDoctor?.fullName ||
+						activeDoctor?.name ||
+						activeAppointment?.doctorName ||
+						"Лечащий врач"
+					}
+					initialToothFdi={labOrderModalToothNumber ?? undefined}
+					scheduledVisitDate={
+						activeAppointment?.startTime ||
+						activeAppointment?.startAt ||
+						activeAppointment?.date ||
+						undefined
+					}
+					patientChartNumber={
+						activePatient?.medCardNumber ||
+						activePatient?.cardNumber ||
+						undefined
+					}
+					onOrderSaved={(order) => {
+						if (order?.toothFdi && order?.material) {
+							appendToEMKField(
+								"treatmentPlan",
+								`Оформлен наряд ЗТЛ на зуб ${order.toothFdi} (${order.material}, цвет ${order.colorVita || "A2"}).`,
+							);
+						}
+					}}
+				/>
+			)}
 
 			{/* Stage Payment & Milestone Escrow Modal */}
-			<StagePaymentPlanModal
-				isOpen={isStagePaymentModalOpen}
-				onClose={() => setIsStagePaymentModalOpen(false)}
-				patientId={activePatient?.id}
-				patientName={activePatient?.fullName}
-				doctorFullName={activeDoctor?.fullName}
-			/>
+			{effectiveActiveModal === "stage_payment" && (
+				<StagePaymentPlanModal
+					isOpen={isStagePaymentModalOpen}
+					onClose={() => {
+						setIsStagePaymentModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("stage_payment");
+					}}
+					patientId={activePatient?.id}
+					patientName={activePatient?.fullName}
+					doctorFullName={activeDoctor?.fullName}
+				/>
+			)}
 
 			{/* Treatment Plan Price Lock & Pricelist Validator Modal */}
-			{isPriceValidatorModalOpen && (
+			{effectiveActiveModal === "price_validator" && isPriceValidatorModalOpen && (
 				<TreatmentPlanPriceValidatorModal
 					isOpen={isPriceValidatorModalOpen}
-					onClose={() => setIsPriceValidatorModalOpen(false)}
+					onClose={() => {
+						setIsPriceValidatorModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("price_validator");
+					}}
 					planPayload={priceValidatorPlanPayload}
 					catalogPricelist={priceValidatorCatalogList}
 					onExportWorkOrder={(exportData) => {
@@ -214,68 +377,65 @@ export function VisitViewModals({
 			)}
 
 			{/* Emergency Rescue / Anaphylaxis Anti-Shock Modal (Мандаты 8c, 8e) */}
-			<EmergencyRescueModal
-				isOpen={isEmergencyModalOpen}
-				onClose={() => setIsEmergencyModalOpen(false)}
-				onApplyToDiary={(protocolText) => {
-					appendToEMKField("diary", protocolText);
-					showToast(
-						"Протокол оказания экстренной помощи внесён в дневник приёма",
-						"warning",
-					);
-				}}
-				initialPatientName={activePatient?.fullName || ""}
-				initialPatientAgeYears={
-					patientAge
-						? Number.parseInt(patientAge, 10) || undefined
-						: undefined
-				}
-				doctorFullName={
-					activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"
-				}
-				medCardNumber={
-					activePatient?.medCardNumber ||
-					activePatient?.cardNumber ||
-					activePatient?.id ||
-					""
-				}
-				clinicName={
-					dashboard?.organization?.name || "Стоматологическая клиника"
-				}
-			/>
+			{effectiveActiveModal === "emergency_rescue" && (
+				<EmergencyRescueModal
+					isOpen={isEmergencyModalOpen}
+					onClose={() => {
+						setIsEmergencyModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("emergency_rescue");
+					}}
+					onApplyToDiary={(protocolText) => {
+						appendToEMKField("diary", protocolText);
+						showToast(
+							"Протокол оказания экстренной помощи внесён в дневник приёма",
+							"warning",
+						);
+					}}
+					initialPatientName={activePatient?.fullName || ""}
+					initialPatientAgeYears={
+						patientAge
+							? Number.parseInt(patientAge, 10) || undefined
+							: undefined
+					}
+					doctorFullName={
+						activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"
+					}
+					medCardNumber={
+						activePatient?.medCardNumber ||
+						activePatient?.cardNumber ||
+						activePatient?.id ||
+						""
+					}
+					clinicName={
+						dashboard?.organization?.name || "Стоматологическая клиника"
+					}
+				/>
+			)}
 
 			{/* AI Voice Dictation Assistant Modal */}
-			<VoiceDictationAssistantModal
-				isOpen={isVoiceDictationModalOpen}
-				onClose={() => setIsVoiceDictationModalOpen(false)}
-				activeToothNumber={
-					selectedToothForMenu?.code
-						? Number.parseInt(selectedToothForMenu.code, 10) || null
-						: null
-				}
-				onApplySoapNote={(soap) => {
-					if (soap.subjective) appendToEMKField("complaints", soap.subjective);
-					if (soap.objective)
-						appendToEMKField("objectiveInspection", soap.objective);
-					if (soap.assessment) appendToEMKField("diagnosis", soap.assessment);
-					if (soap.plan) appendToEMKField("treatmentPlan", soap.plan);
-					if (soap.recommendations)
-						appendToEMKField("recommendations", soap.recommendations);
-					showToast("SOAP-запись внесена в медицинскую карту", "success");
-				}}
-				onApplyCommand={(cmd: DictationCommand) => {
-					if (cmd.toothNumber && cmd.clinicalStatus) {
-						setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
+			{effectiveActiveModal === "voice_dictation" && (
+				<VoiceDictationAssistantModal
+					isOpen={isVoiceDictationModalOpen}
+					onClose={() => {
+						setIsVoiceDictationModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("voice_dictation");
+					}}
+					activeToothNumber={
+						selectedToothForMenu?.code
+							? Number.parseInt(selectedToothForMenu.code, 10) || null
+							: null
 					}
-					if (cmd.soapText || cmd.summary) {
-						appendToEMKField(
-							"objectiveInspection",
-							cmd.soapText || cmd.summary,
-						);
-					}
-				}}
-				onApplyAllCommands={(cmds: DictationCommand[]) => {
-					for (const cmd of cmds) {
+					onApplySoapNote={(soap) => {
+						if (soap.subjective) appendToEMKField("complaints", soap.subjective);
+						if (soap.objective)
+							appendToEMKField("objectiveInspection", soap.objective);
+						if (soap.assessment) appendToEMKField("diagnosis", soap.assessment);
+						if (soap.plan) appendToEMKField("treatmentPlan", soap.plan);
+						if (soap.recommendations)
+							appendToEMKField("recommendations", soap.recommendations);
+						showToast("SOAP-запись внесена в медицинскую карту", "success");
+					}}
+					onApplyCommand={(cmd: DictationCommand) => {
 						if (cmd.toothNumber && cmd.clinicalStatus) {
 							setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
 						}
@@ -285,110 +445,138 @@ export function VisitViewModals({
 								cmd.soapText || cmd.summary,
 							);
 						}
-					}
-					showToast(`Применено команд: ${cmds.length}`, "success");
-				}}
-			/>
+					}}
+					onApplyAllCommands={(cmds: DictationCommand[]) => {
+						for (const cmd of cmds) {
+							if (cmd.toothNumber && cmd.clinicalStatus) {
+								setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
+							}
+							if (cmd.soapText || cmd.summary) {
+								appendToEMKField(
+									"objectiveInspection",
+									cmd.soapText || cmd.summary,
+								);
+							}
+						}
+						showToast(`Применено команд: ${cmds.length}`, "success");
+					}}
+				/>
+			)}
 
 			{/* Warranty Passport Modal */}
-			<WarrantyPassportModal
-				isOpen={isWarrantyModalOpen}
-				onClose={() => setIsWarrantyModalOpen(false)}
-				patient={
-					activePatient
-						? {
-								id: activePatient.id,
-								fullName: activePatient.fullName,
-								birthDate: activePatient.birthDate,
-								phone: activePatient.phone,
-							}
-						: null
-				}
-				doctorName={activeDoctor?.fullName}
-				clinicName={
-					(
-						dashboard as {
-							clinicSettings?: { profile?: { brandName?: string } };
-						} | null
-					)?.clinicSettings?.profile?.brandName ||
-					dashboard?.organization?.name ||
-					"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-				}
-				initialDiagnosis={
-					visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
-				}
-				onCertificateIssued={(passport: any) => {
-					appendToEMKField(
-						"recommendations",
-						`Оформлен гарантийный паспорт № ${passport.passportNumber || passport.certificateId} (гарантия ${passport.warrantyMonths} мес. до ${passport.warrantyUntilDate}).`,
-					);
-					showToast("Гарантийный паспорт оформлен", "success");
-				}}
-			/>
+			{effectiveActiveModal === "warranty_passport" && (
+				<WarrantyPassportModal
+					isOpen={isWarrantyModalOpen}
+					onClose={() => {
+						setIsWarrantyModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("warranty_passport");
+					}}
+					patient={
+						activePatient
+							? {
+									id: activePatient.id,
+									fullName: activePatient.fullName,
+									birthDate: activePatient.birthDate,
+									phone: activePatient.phone,
+								}
+							: null
+					}
+					doctorName={activeDoctor?.fullName}
+					clinicName={
+						(
+							dashboard as {
+								clinicSettings?: { profile?: { brandName?: string } };
+							} | null
+						)?.clinicSettings?.profile?.brandName ||
+						dashboard?.organization?.name ||
+						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					}
+					initialDiagnosis={
+						visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
+					}
+					onCertificateIssued={(passport: any) => {
+						appendToEMKField(
+							"recommendations",
+							`Оформлен гарантийный паспорт № ${passport.passportNumber || passport.certificateId} (гарантия ${passport.warrantyMonths} мес. до ${passport.warrantyUntilDate}).`,
+						);
+						showToast("Гарантийный паспорт оформлен", "success");
+					}}
+				/>
+			)}
 
 			{/* Doctor Mobile Shift Modal */}
-			<DoctorMobileShiftModal
-				isOpen={isDoctorShiftModalOpen}
-				onClose={() => setIsDoctorShiftModalOpen(false)}
-				initialDoctorId={activeDoctor?.id}
-				initialDoctorName={activeDoctor?.fullName}
-			/>
+			{effectiveActiveModal === "doctor_mobile_shift" && (
+				<DoctorMobileShiftModal
+					isOpen={isDoctorShiftModalOpen}
+					onClose={() => {
+						setIsDoctorShiftModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("doctor_mobile_shift");
+					}}
+					initialDoctorId={activeDoctor?.id}
+					initialDoctorName={activeDoctor?.fullName}
+				/>
+			)}
 
 			{/* Informed Consent Modal */}
-			<InformedConsentModal
-				isOpen={isInformedConsentModalOpen}
-				onClose={() => setIsInformedConsentModalOpen(false)}
-				patient={
-					activePatient
-						? {
-								fullName: activePatient.fullName || activePatient.name,
-								birthDate: activePatient.birthDate,
-							}
-						: null
-				}
-				doctorName={activeDoctor?.fullName || activeDoctor?.name}
-				clinicName={
-					(
-						dashboard as {
-							clinicSettings?: { profile?: { brandName?: string } };
-						} | null
-					)?.clinicSettings?.profile?.brandName ||
-					dashboard?.organization?.name ||
-					"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-				}
-				licenseNumber={
-					(
-						dashboard as {
-							clinicSettings?: { profile?: { medicalLicenseNumber?: string } };
-						} | null
-					)?.clinicSettings?.profile?.medicalLicenseNumber ||
-					"ЛО41-01137-77/00368421"
-				}
-				diagnosisIcd={
-					visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
-				}
-				toothNumbers={
-					typeof selectedToothForMenu === "number"
-						? String(selectedToothForMenu)
-						: undefined
-				}
-				isSigned={
-					activeAppointment?.status === "completed" ||
-					activeAppointment?.status === "signed" ||
-					visitNoteForm?.status === "signed"
-				}
-				status={activeAppointment?.status}
-				onConsentConfirmed={(payload) => {
-					appendToEMKField(
-						"recommendations",
-						`Пациент ознакомлен и подписал ${payload.consentType} (${payload.intervention}, область: ${payload.toothOrArea || "по плану"}).`,
-					);
-					showToast(
-						"Информированное согласие прикреплено к протоколу приёма",
-						"success",
-					);
-				}}
-			/>
+			{effectiveActiveModal === "informed_consent" && (
+				<InformedConsentModal
+					isOpen={isInformedConsentModalOpen}
+					onClose={() => {
+						setIsInformedConsentModalOpen(false);
+						useUiSurfaceStore.getState().closePrimaryModal("informed_consent");
+					}}
+					patient={
+						activePatient
+							? {
+									fullName: activePatient.fullName || activePatient.name,
+									birthDate: activePatient.birthDate,
+								}
+							: null
+					}
+					doctorName={activeDoctor?.fullName || activeDoctor?.name}
+					clinicName={
+						(
+							dashboard as {
+								clinicSettings?: { profile?: { brandName?: string } };
+							} | null
+						)?.clinicSettings?.profile?.brandName ||
+						dashboard?.organization?.name ||
+						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					}
+					licenseNumber={
+						(
+							dashboard as {
+								clinicSettings?: { profile?: { medicalLicenseNumber?: string } };
+							} | null
+						)?.clinicSettings?.profile?.medicalLicenseNumber ||
+						"ЛО41-01137-77/00368421"
+					}
+					diagnosisIcd={
+						visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
+					}
+					toothNumbers={
+						typeof selectedToothForMenu === "number"
+							? String(selectedToothForMenu)
+							: undefined
+					}
+					isSigned={
+						activeAppointment?.status === "completed" ||
+						activeAppointment?.status === "signed" ||
+						visitNoteForm?.status === "signed"
+					}
+					status={activeAppointment?.status}
+					onConsentConfirmed={(payload) => {
+						appendToEMKField(
+							"recommendations",
+							`Пациент ознакомлен и подписал ${payload.consentType} (${payload.intervention}, область: ${payload.toothOrArea || "по плану"}).`,
+						);
+						showToast(
+							"Информированное согласие прикреплено к протоколу приёма",
+							"success",
+						);
+					}}
+				/>
+			)}
 		</>
 	);
 }

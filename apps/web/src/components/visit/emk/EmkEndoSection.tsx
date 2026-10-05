@@ -1,8 +1,9 @@
 import React from "react";
-import { ChevronDown, FileText, Zap } from "lucide-react";
+import { ChevronDown, FileText, Zap, Compass, Sparkles } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import { formatEndoProtocolQuickSnippet } from "../../../lib/clinicalProtocols043";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
+import { loadPersistedEndoCanals } from "../../radiology/endoClinicalIntegrationBridge";
 
 export interface EmkEndoSectionProps extends EmkSectionProps {
 	onOpenEndoModal?: () => void;
@@ -22,6 +23,29 @@ export function EmkEndoSection({
 	const [endoTaper, setEndoTaper] = React.useState<string>(".06");
 	const [endoSealer, setEndoSealer] = React.useState<string>("AH Plus");
 	const [endoObturation, setEndoObturation] = React.useState<string>("Латеральная компакция");
+	const [cbct3dCanals, setCbct3dCanals] = React.useState<any[] | null>(null);
+
+	const targetToothNum = React.useMemo(() => {
+		const parsed = Number(activeTooth);
+		return Number.isNaN(parsed) || parsed <= 0 ? 16 : parsed;
+	}, [activeTooth]);
+
+	React.useEffect(() => {
+		const checkPersisted = () => {
+			const persisted = loadPersistedEndoCanals(visitNoteForm?.patientId, targetToothNum);
+			setCbct3dCanals(persisted);
+		};
+		checkPersisted();
+
+		const handleUpdate = (e: Event) => {
+			const custom = e as CustomEvent<{ toothFdi?: number; canals?: any[] }>;
+			if (!custom.detail?.toothFdi || custom.detail.toothFdi === targetToothNum) {
+				checkPersisted();
+			}
+		};
+		window.addEventListener("dente-endo-canals-updated", handleUpdate);
+		return () => window.removeEventListener("dente-endo-canals-updated", handleUpdate);
+	}, [targetToothNum, visitNoteForm?.patientId]);
 
 	const canalsList = [
 		{ key: "MB1", name: "МБ-1 (MB1)", ref: "Щечный бугор", defWl: 21.5, defMaf: "#25", defTaper: ".06" },
@@ -102,6 +126,37 @@ export function EmkEndoSection({
 						</button>
 					)}
 				</div>
+
+				{cbct3dCanals && cbct3dCanals.length > 0 && (
+					<div
+						className="p-2.5 rounded-lg bg-cyan-950/40 border border-cyan-800/60 flex items-center justify-between gap-2 text-xs text-cyan-200"
+						data-testid="emk-cbct-3d-channels-banner"
+					>
+						<div className="flex items-center gap-2 font-medium">
+							<Compass className="w-4 h-4 text-cyan-400 shrink-0" />
+							<span>
+								Обнаружен расчет 3D КЛКТ Компаса ({cbct3dCanals.length} к. для зуба #{targetToothNum})
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => {
+								const first = cbct3dCanals[0];
+								if (first) {
+									setSelectedEndoCanalKey(first.canalName);
+									if (first.workingLengthMm) setEndoWorkingLengthMm(Number(first.workingLengthMm));
+									if (first.taper) setEndoTaper(first.taper);
+									if (first.masterApicalFile) setEndoMasterFile(first.masterApicalFile);
+									showToast(`Параметры канала ${first.canalName} (WL=${first.workingLengthMm} мм) подгружены из 3D КЛКТ!`, "success");
+								}
+							}}
+							className="px-2.5 py-1 rounded bg-cyan-800 hover:bg-cyan-700 text-cyan-100 font-semibold border border-cyan-600 transition-colors cursor-pointer shrink-0 text-xs"
+							data-testid="emk-apply-cbct-channel-btn"
+						>
+							Загрузить 3D WL
+						</button>
+					</div>
+				)}
 
 				{/* 1. Выбор анатомического корневого канала */}
 				<div className="space-y-1.5">

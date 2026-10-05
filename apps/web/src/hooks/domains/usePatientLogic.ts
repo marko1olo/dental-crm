@@ -160,12 +160,13 @@ export function usePatientLogic({
 					: [];
 		if (rawPatients.length === 0) return null;
 		return (
+			(selectedPatientId ? findPatient(rawPatients, selectedPatientId) : null) ??
 			findPatient(rawPatients, dashboard?.activeVisit?.patientId) ??
 			rawPatients.find((patient) => patient.status === "active") ??
 			rawPatients[0] ??
 			null
 		);
-	}, [dashboard]);
+	}, [dashboard, selectedPatientId]);
 
 	/**
 	 * Пациент открытого приёма — и только он. `activePatient` выше при

@@ -1,0 +1,56 @@
+{
+  "task": "CBCT MPR 50/50 Parity Splitter & Universal 100% Fullscreen Viewport Maximization",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-03T12:39:30+04:00",
+  "completed_steps": [
+    "Read all clipped constitutional rule files per Law #0",
+    "Inspected PanoramicWorkspace, PanoramicCrossSectionGrid, CbctViewportHud, CbctVolume3DViewport, MprQuadWorkspace, useCbctKeyboardShortcuts, and CbctMprImplantStudioModal",
+    "Eliminated 38%/62% hardcode in PanoramicWorkspace and implemented interactive 50/50 parity splitter (default 0.50, range 0.35..0.75, double-click reset)",
+    "Set pano_top mode to generous 50% height for Panorama OPG (min-h-[48%] max-h-[52%])",
+    "Standardized 100% fullscreen maximize button testids (btn-viewport-expand-... and btn-viewport-collapse-...) across all 6 clinical viewports (axial, coronal, sagittal, panoramic, cross_section, volume3d)",
+    "Added visible expand/collapse button in top-right toolbars of Panorama OPG and 3x3 Cross-Sections Grid",
+    "Added onDoubleClick maximization trigger across Scout Axial, Panorama OPG, 3x3 Cross-Sections, Coronal, Sagittal, and 3D Volume containers",
+    "Wired Escape key in useCbctKeyboardShortcuts to restore maximized viewport to normal grid without closing studio modal",
+    "Fixed Q4 maximize renderer in MprQuadWorkspace to renderVolume3D",
+    "Added comprehensive unit test suites 9 and 10 in cbctMprErgonomics.test.ts",
+    "Verified all 28 tests pass in cbctMprErgonomics.test.ts and all 70 tests pass in sibling suites (98 tests total, 0 failures)"
+  ],
+  "verified_viewports": [
+    {
+      "viewport": "axial",
+      "expand_testid": "btn-viewport-expand-axial",
+      "collapse_testid": "btn-viewport-collapse-axial",
+      "double_click": true
+    },
+    {
+      "viewport": "panoramic",
+      "expand_testid": "btn-viewport-expand-panoramic",
+      "collapse_testid": "btn-viewport-collapse-panoramic",
+      "double_click": true
+    },
+    {
+      "viewport": "cross_section",
+      "expand_testid": "btn-viewport-expand-cross_section",
+      "collapse_testid": "btn-viewport-collapse-cross_section",
+      "double_click": true
+    },
+    {
+      "viewport": "coronal",
+      "expand_testid": "btn-viewport-expand-coronal",
+      "collapse_testid": "btn-viewport-collapse-coronal",
+      "double_click": true
+    },
+    {
+      "viewport": "sagittal",
+      "expand_testid": "btn-viewport-expand-sagittal",
+      "collapse_testid": "btn-viewport-collapse-sagittal",
+      "double_click": true
+    },
+    {
+      "viewport": "volume3d",
+      "expand_testid": "btn-viewport-expand-volume3d",
+      "collapse_testid": "btn-viewport-collapse-volume3d",
+      "double_click": true
+    }
+  ]
+}

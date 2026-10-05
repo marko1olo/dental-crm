@@ -15,6 +15,7 @@ import {
 	staffRoleSchema,
 	uiPreferencesInputSchema,
 	uiPreferencesSchema,
+	applyClinicScalePresetSchema,
 	updateChairWorkingHoursSchema,
 	updateClinicModeSchema,
 	updateClinicProfileSchema,
@@ -55,6 +56,7 @@ import {
 	UiPreferencesConcurrentSaveError,
 	updateChairProfileInDb,
 	updateChairWorkingHoursInDb,
+	applyClinicScalePresetInDb,
 	updateClinicModeInDb,
 	updateClinicProfileInDb,
 	updateStaffCredentialsInDb,
@@ -72,6 +74,7 @@ import { requirePermission } from "../security/permissions.js";
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { withSuperuserBypass } from "../db/rls.js";
 
 /**
  * Правка карточки сотрудника: PUT /api/settings/staff/:staffId.
@@ -340,6 +343,8 @@ const uiPreferencesConcurrentSaveMessage =
 	"Обновите страницу настроек и повторите правку.";
 const clinicModeValidationMessage =
 	"Режим клиники не сохранен: выберите допустимый режим работы клиники.";
+const clinicScalePresetValidationMessage =
+	"Пресет масштаба не применен: выберите допустимый пресет работы клиники.";
 const clinicProfileValidationMessage =
 	"Профиль клиники не сохранен: проверьте название, реквизиты, лицензию, часовой пояс и рабочий график.";
 const staffCreateValidationMessage =
@@ -904,10 +909,12 @@ async function requireSettingsAccess(
 	}
 
 	// Фолбэк для однокликовой установки MVP: единственная организация в базе.
-	const orgs = await db
-		.select({ id: schema.organizations.id })
-		.from(schema.organizations)
-		.limit(2);
+	const orgs = await withSuperuserBypass(async (tx) =>
+		tx
+			.select({ id: schema.organizations.id })
+			.from(schema.organizations)
+			.limit(2),
+	);
 	if (orgs.length > 1) {
 		reply.code(401).send({
 			error: "AuthRequired",
@@ -1023,6 +1030,34 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 		const settings = await getClinicSettingsFromDb(orgId);
 		return clinicSettingsSchema.parse(settings);
 	});
+
+	const handleApplyScalePreset = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const input = parseSettingsPayload(
+			applyClinicScalePresetSchema,
+			request.body,
+		);
+		if (!input) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: clinicScalePresetValidationMessage,
+			};
+		}
+		const settings = await applyClinicScalePresetInDb(
+			orgId,
+			input.preset,
+			input.confirmResetExtraChairs,
+		);
+		return clinicSettingsSchema.parse(settings);
+	};
+
+	app.patch("/api/settings/clinic/scale-preset", handleApplyScalePreset);
+	app.post("/api/settings/clinic/scale-preset", handleApplyScalePreset);
 
 	app.put("/api/settings/clinic/profile", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);

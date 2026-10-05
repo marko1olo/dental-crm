@@ -1,4 +1,4 @@
-import { BellRing, MessageCircle } from "lucide-react";
+import { BellRing, MessageCircle, Sparkles } from "lucide-react";
 import { useState } from "react";
 import "./SettingsMessengersTab.css";
 
@@ -9,6 +9,7 @@ import { ReminderCadenceConfigPanel } from "./ReminderCadenceConfigPanel.js";
 import { SettingsMessageTemplatesTab } from "./SettingsMessageTemplatesTab.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
+import { BotStudioModal } from "./telegram/BotStudioModal.js";
 
 interface StaffOption {
 	id: string;
@@ -62,6 +63,7 @@ export function SettingsMessengersTab({
 	const [activeMessenger, setActiveMessenger] = useState<MessengerTabId>(
 		settingsTab === "telegram" ? "telegram" : "cadence",
 	);
+	const [isBotStudioOpen, setIsBotStudioOpen] = useState<boolean>(false);
 
 	if (settingsTab !== "messengers" && settingsTab !== "telegram") return null;
 
@@ -70,16 +72,26 @@ export function SettingsMessengersTab({
 
 	return (
 		<section className="messengers-settings" aria-label="Мессенджеры клиники">
-			<div className="import-copy">
-				<MessageCircle aria-hidden="true" />
-				<div>
-					<p className="eyebrow">Мессенджеры и каденции</p>
-					<h2>Уведомления и мессенджеры клиники</h2>
-					<p>
-						Настройка цепочек напоминаний пациентам (24ч до визита, 2ч с навигацией, 24ч после операции)
-						и шлюзов доставки через WhatsApp Business, Telegram, MAX (1C) и SMS.
-					</p>
+			<div className="import-copy flex justify-between items-start flex-wrap gap-4">
+				<div className="flex gap-4">
+					<MessageCircle aria-hidden="true" />
+					<div>
+						<p className="eyebrow">Мессенджеры и каденции</p>
+						<h2>Уведомления и мессенджеры клиники</h2>
+						<p>
+							Настройка цепочек напоминаний пациентам (24ч до визита, 2ч с навигацией, 24ч после операции)
+							и шлюзов доставки через WhatsApp Business, Telegram, MAX (1C) и SMS.
+						</p>
+					</div>
 				</div>
+				<button
+					type="button"
+					onClick={() => setIsBotStudioOpen(true)}
+					className="primary-button compact-button inline-flex items-center gap-1.5 shrink-0 self-start mt-1"
+				>
+					<Sparkles size={14} />
+					<span>🚀 Мастер запуска бота в 2 клика</span>
+				</button>
 			</div>
 
 			<div
@@ -224,6 +236,19 @@ export function SettingsMessengersTab({
 					<SettingsMessageTemplatesTab />
 				</div>
 			)}
+
+			<BotStudioModal
+				isOpen={isBotStudioOpen}
+				onClose={() => setIsBotStudioOpen(false)}
+				parentProps={mergedBag}
+				initialChannel={
+					activeMessenger === "whatsapp"
+						? "whatsapp"
+						: activeMessenger === "max"
+							? "max"
+							: "telegram"
+				}
+			/>
 		</section>
 	);
 }

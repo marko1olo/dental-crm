@@ -86,6 +86,10 @@ export const payments = pgTable(
 				table.organizationId,
 				table.paidAt,
 			),
+			idxPaymentsOrgCreatedDesc: index("idx_payments_org_created_desc").on(
+				table.organizationId,
+				table.createdAt.desc(),
+			),
 			idxPaymentsOrgPatient: index("idx_payments_org_patient").on(
 				table.organizationId,
 				table.patientId,

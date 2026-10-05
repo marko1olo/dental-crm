@@ -275,7 +275,7 @@ export function CephalometricAnalysisModal({
 
 	const modalContent = (
 		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden" role="dialog" aria-modal="true" aria-label="Ортодонтический цефалометрический анализ ТРГ" data-testid="cephalometric-analysis-modal">
-			<div className="ceph-workstation-root relative w-full max-w-7xl h-[92vh] max-h-[92vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100" data-theme="dark" style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}>
+			<div className="ceph-workstation-root relative w-full max-w-[1410px] h-[92vh] max-h-[92vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100" data-theme="dark" style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}>
 				<header className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-900/95 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}>
 					<div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4">
 						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
@@ -589,24 +589,24 @@ export function CephalometricAnalysisModal({
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
 								<CephalometricPresetsBar variant="tab2" onApplyPreset={handleApplyPreset} onResetLandmarks={handleResetLandmarks} />
 
-								<div className="mb-4 p-4 rounded-xl bg-teal-950/70 border border-teal-500/40 shadow-sm">
-									<div className="text-xs font-black text-teal-400 uppercase tracking-wider">Клиническое резюме анализа</div>
-									<div className="text-base font-black text-white mt-1 min-w-0 break-words">{analysis.diagnosis.skeletalClassRu}</div>
-									<div className="text-sm text-slate-300 mt-1.5 leading-relaxed min-w-0 break-words">{analysis.diagnosis.summaryRu}</div>
+								<div className="mb-4 p-4 rounded-xl bg-teal-950/80 border border-teal-500/50 shadow-sm" style={{ backgroundColor: "#042f2e", borderColor: "rgba(20, 184, 166, 0.5)" }}>
+									<div className="text-xs font-black uppercase tracking-wider" style={{ color: "#2dd4bf" }}>Клиническое резюме анализа</div>
+									<div className="text-base font-black mt-1 min-w-0 break-words" style={{ color: "#ffffff" }}>{analysis.diagnosis.skeletalClassRu}</div>
+									<div className="text-sm mt-1.5 leading-relaxed min-w-0 break-words" style={{ color: "#cbd5e1" }}>{analysis.diagnosis.summaryRu}</div>
 								</div>
 
 								{/* Core Cephalometric Angles Hero Showcase */}
 								<div className="mb-4 space-y-2">
-									<div className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center justify-between">
+									<div className="text-xs font-black uppercase tracking-wider flex items-center justify-between" style={{ color: "#cbd5e1" }}>
 										<span>Ключевые углы Штайнера (Steiner Core)</span>
-										<span className="text-[10px] text-teal-400 font-normal">Мандат 8e / Ортодонтия</span>
+										<span className="text-[10px] font-normal" style={{ color: "#2dd4bf" }}>Мандат 8e / Ортодонтия</span>
 									</div>
 									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-										{renderHeroCard("SNA", "SNA (ВЧ)", "82° ± 2°")}
-										{renderHeroCard("SNB", "SNB (НЧ)", "80° ± 2°")}
-										{renderHeroCard("ANB", "ANB (Класс)", "2° ± 2°")}
-										{renderHeroCard("1-NA", "1 to NA", "22°±2° / 4±1")}
-										{renderHeroCard("1-NB", "1 to NB", "25°±2° / 4±1")}
+										{renderHeroCard("SNA", "SNA", "82° ± 2°")}
+										{renderHeroCard("SNB", "SNB", "80° ± 2°")}
+										{renderHeroCard("ANB", "ANB", "2° ± 2°")}
+										{renderHeroCard("1-NA", "1-NA", "22° / 4мм")}
+										{renderHeroCard("1-NB", "1-NB", "25° / 4мм")}
 									</div>
 								</div>
 

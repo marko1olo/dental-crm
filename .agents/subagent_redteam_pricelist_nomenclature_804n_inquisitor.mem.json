@@ -1,0 +1,54 @@
+{
+  "role": "Red Team Inquisitor — Nomenclature 804n & Pricelist",
+  "status": "completed",
+  "started_at": "2026-10-03T12:00:00Z",
+  "completed_at": "2026-10-03T12:15:00Z",
+  "completed_steps": [
+    "Read all truncated rule files: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md",
+    "Reconnaissance of 804n nomenclature and pricelist in @dental/shared, apps/api, apps/web",
+    "Identify orphans, duplicates, mocks, floating point money bugs, missing price tiers, consumer board print form",
+    "Inspect nomenclature validation and 804n code coverage (A16.07, A11.07, A06.07, B01.065, B01.066)",
+    "Harden and fix code defects in shared, api, and web components",
+    "Implement/verify canonical 804n validator & classifier service in @dental/shared",
+    "Verify dual-naming, price categories (base, premium, promo, night/weekend), consumer corner export",
+    "Run verification gates: check-encoding, check-css-tokens, targeted tests (120/120 passed)",
+    "Draft verbatim inquisitor report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "high",
+      "issue": "Missing 'night_weekend' price tier in PriceTierKind and pricing engines",
+      "fix": "Added 'night_weekend' (+30% with rounding to 50 RUB) across presets, engine, batch markup, CSV export/import, and UI segmented control"
+    },
+    {
+      "severity": "high",
+      "issue": "Missing dedicated 'Уголок потребителя' (Consumer Corner Stand) printable export with statutory compliance (ст. 149 НК РФ, Закон РФ № 2300-1, Постановление № 736)",
+      "fix": "Extended generatePrintablePricelistHtml with isConsumerCornerStand mode, INN/OGRN, supervisory bodies notices, and added dedicated 'Стенд 804н' button in modal"
+    },
+    {
+      "severity": "high",
+      "issue": "ServicePricelistManagerModal was invoked without initialItems in SettingsPricesTab.tsx, ignoring live clinic catalog",
+      "fix": "Mapped typedServiceCatalog to ServicePricelistItem[] and passed as initialItems with refreshDashboard() trigger on save"
+    },
+    {
+      "severity": "medium",
+      "issue": "Failing test in baseline804nPricelistSuite.test.ts due to missing '804н' substring in empty catalog seed button",
+      "fix": "Updated button text to 'Заполнить рекомендованный прейскурант 804н (30 базовых услуг)' - test now 100% green"
+    },
+    {
+      "severity": "medium",
+      "issue": "Canonical 804n validator and category detector were missing from @dental/shared export",
+      "fix": "Exported ORDER_804N_CODE_REGEX, isValidOrder804nCode, detectOrder804nCategory, Order804nNomenclatureCategory from toothCanalsAndBilling804n.ts and tested in shared test suite"
+    }
+  ],
+  "modified_files": [
+    "apps/web/src/components/catalog/pricelist/servicePricelistPresets.ts",
+    "apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts",
+    "apps/web/src/components/catalog/pricelist/ServicePricelistManagerModal.tsx",
+    "apps/web/src/components/settings/SettingsPricesTab.tsx",
+    "packages/shared/src/toothCanalsAndBilling804n.ts",
+    "packages/shared/src/tests/toothCanalsAndBilling804n.test.ts",
+    "apps/web/src/tests/servicePricelist.test.ts"
+  ]
+}

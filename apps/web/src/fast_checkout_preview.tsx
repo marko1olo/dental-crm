@@ -14,6 +14,7 @@ import "./styles/touch-targets.css";
 import "./styles/modules/mobile-touch.css";
 import "./styles/overflow-fixes.css";
 import "./components/billing/paymentModalStudio.css";
+import "./components/payments/checkout/fastCheckout.css";
 
 import { FastCheckoutModal } from "./components/finance/FastCheckoutModal";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
@@ -24,9 +25,16 @@ function FastCheckoutPreviewApp() {
 	const [isOpen, setIsOpen] = useState(true);
 
 	useEffect(() => {
-		const resolved = resolveTheme(rawTheme, false);
-		applyThemeToRoot(document.documentElement, resolved);
-		document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen`;
+		const updateTheme = () => {
+			const currentTheme = (document.documentElement.getAttribute("data-theme") || rawTheme) as ThemeMode;
+			const resolved = resolveTheme(currentTheme, false);
+			applyThemeToRoot(document.documentElement, resolved);
+			document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen`;
+		};
+		updateTheme();
+		const observer = new MutationObserver(updateTheme);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+		return () => observer.disconnect();
 	}, [rawTheme]);
 
 	return (
@@ -41,8 +49,8 @@ function FastCheckoutPreviewApp() {
 			</div>
 
 			<FastCheckoutModal
-				isOpen={isOpen}
-				onClose={() => setIsOpen(false)}
+				isOpen={true}
+				onClose={() => setIsOpen(true)}
 				patientId="pat-101"
 				visitId="vis-101"
 				patientName="Иванова Екатерина Сергеевна"

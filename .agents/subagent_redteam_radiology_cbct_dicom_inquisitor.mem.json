@@ -1,0 +1,67 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: RADIOLOGY, CBCT 3D SLICES, RVG & DICOM PIPELINE",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read all core rules, frontend, engineering, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Deep reconnaissance across all DICOM, CBCT, RVG, radiology components, stores, routes, and services",
+    "Identify synthetic mock leaks, unconditional sample image fallbacks, demo patient leaks in HUD telemetry and search modals",
+    "Surgically fixed identified issues across RadiologyStudiesArchive, StudyPatientBindControlModal, SensorStudyViewer, RadiologyClinicalHud, DicomViewerModal, cbctMprMath",
+    "Run machine verification gates: check-encoding.mjs (7230 files ok), check-css-tokens.mjs (0 unresolved), and 8 isolated test suites (89 tests passing, 0 failures)",
+    "Report verbatim findings and verified fixes back to parent"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "RadiologyStudiesArchive.tsx had unconditional fallback to DEMO_ARCHIVE_STUDIES in fetchAllStudies and auto-binding catch blocks",
+    "SensorStudyViewer.tsx defaulted activeImageUrl to /radiology/sample_rvg_tooth16.jpg unconditionally and hardcoded default patient telemetry ('Чухрова Лариса')",
+    "RadiologyClinicalHud.tsx hardcoded default patient telemetry ('Чухрова Лариса', '20190621_101042', '01.01.1968') without checking demo showcase mode",
+    "StudyPatientBindControlModal.tsx fell back to DEMO_FALLBACK_PATIENTS during patient search and named offline variables 'mockUpdated'",
+    "DicomViewerModal.tsx passed hardcoded 'Чухрова Лариса' and demo telemetry to RadiologyClinicalHud unconditionally",
+    "cbctMprMath.ts had legacy header comment claiming procedural voxel volume generation instead of true 16-bit DICOM pipeline"
+  ],
+  "defects_fixed": [
+    {
+      "file": "apps/web/src/components/radiology/archive/RadiologyStudiesArchive.tsx",
+      "defect": "Unconditional fallback to DEMO_ARCHIVE_STUDIES on API failure/empty data and demo auto-binding in production",
+      "resolution": "Guarded DEMO_ARCHIVE_STUDIES and auto-binding mock fallback behind isDemoShowcaseMode(); fails closed with error toast in production"
+    },
+    {
+      "file": "apps/web/src/components/radiology/archive/StudyPatientBindControlModal.tsx",
+      "defect": "Patient search leaked DEMO_FALLBACK_PATIENTS in production; offline bindings used 'mockUpdated' variables",
+      "resolution": "Guarded DEMO_FALLBACK_PATIENTS behind isDemoShowcaseMode(); renamed variables to fallbackUpdated and added production failure handling"
+    },
+    {
+      "file": "apps/web/src/components/radiology/SensorStudyViewer.tsx",
+      "defect": "Defaulted activeImageUrl to sample RVG unconditionally and hardcoded default patient props ('Чухрова Лариса')",
+      "resolution": "Removed default demo patient props, guarded sample RVG behind isDemoShowcaseMode() || isDemoPatientId(), and added sensor-viewer-empty-placeholder for real patients without scans"
+    },
+    {
+      "file": "apps/web/src/components/radiology/RadiologyClinicalHud.tsx",
+      "defect": "Hardcoded default demo telemetry ('Чухрова Лариса', '20190621_101042', '01.01.1968') unconditionally",
+      "resolution": "Imported isDemoShowcaseMode() and computed effective fields, displaying '—' in production when patient info is absent"
+    },
+    {
+      "file": "apps/web/src/components/imaging/DicomViewerModal.tsx",
+      "defect": "Passed 'Чухрова Лариса' and demo telemetry to RadiologyClinicalHud unconditionally",
+      "resolution": "Guarded fallback patient telemetry behind isDemoShowcaseMode()"
+    },
+    {
+      "file": "apps/web/src/components/radiology/cbctMprMath.ts",
+      "defect": "Stale header comment referencing procedural voxel generation",
+      "resolution": "Updated capability #6 to reflect true 16-bit DICOM voxel pipeline with memory-safe volume lifecycle and GPU WebGL2 acceleration"
+    }
+  ],
+  "verification": {
+    "encoding": "7230 files checked, 0 errors",
+    "css_tokens": "165 files checked, 0 unresolved tokens",
+    "test_suites": [
+      "apps/web/src/tests/radiologyClinicalAutonomyAndDemoIsolation.test.ts (9/9 pass)",
+      "apps/web/src/components/radiology/__tests__/radiologyAndPhotoMockPurity.test.ts (4/4 pass)",
+      "apps/web/src/components/radiology/__tests__/sensorStudyViewerAndFilmstrip.test.ts (15/15 pass)",
+      "apps/web/src/components/radiology/__tests__/radiologyErgonomics.test.ts (14/14 pass)",
+      "apps/web/src/components/radiology/__tests__/hotFolderIntake.test.ts (14/14 pass)",
+      "apps/web/src/components/radiology/__tests__/cbctMprMemoryAndPeriodontitisInquisition.test.ts (7/7 pass)",
+      "apps/web/src/components/radiology/__tests__/dicomGuardrails.test.ts (10/10 pass)",
+      "apps/web/src/components/radiology/__tests__/radiologyViewerProtocols.test.ts (16/16 pass)"
+    ]
+  }
+}

@@ -379,7 +379,7 @@ export function MobileDocumentsHub({
 							{effectiveDocuments.length}
 						</span>
 					</h2>
-					<div className="text-[12px] text-[var(--muted)] truncate">
+					<div className="text-[12px] text-[var(--muted)] leading-tight break-words mt-0.5">
 						{activePatient ? `Пациент: ${activePatient.fullName}` : "Все пациенты клиники"}
 					</div>
 				</div>
@@ -558,10 +558,10 @@ export function MobileDocumentsHub({
 									<div className="flex items-center gap-3 min-w-0 pr-2">
 										{renderDocItemIcon(doc)}
 										<div className="min-w-0">
-											<div className="text-[14.5px] font-semibold text-[var(--ink)] truncate tracking-tight">
+											<div className="text-[14.5px] font-semibold text-[var(--ink)] line-clamp-2 leading-snug break-words tracking-tight">
 												{docLabel}
 											</div>
-											<div className="text-[12px] text-[var(--muted)] flex items-center gap-1.5 truncate mt-0.5">
+											<div className="text-[12px] text-[var(--muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
 												<span>{formatDate(doc.issuedAt || (doc as any).createdAt)}</span>
 												{doc.totalAmountRub != null && doc.totalAmountRub > 0 && (
 													<>

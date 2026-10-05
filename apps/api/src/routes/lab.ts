@@ -278,7 +278,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/clinical/dental-lab/presets", async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 
 		return reply.status(200).send({
 			presets: CANONICAL_DENTAL_LAB_PRESETS,
@@ -525,7 +525,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			reply,
 			"lab orders read",
 		);
-		if (!orgId) return;
+		if (!orgId) return reply;
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Наряды ЗТЛ содержат формулу зубов и клинические заметки (врачебная тайна)
 		const identity = getRequestIdentity(request);

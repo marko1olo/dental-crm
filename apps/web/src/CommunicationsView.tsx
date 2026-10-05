@@ -6,6 +6,7 @@ import type {
 } from "@dental/shared";
 import {
 	Bell,
+	Bot,
 	Calendar,
 	MessageSquare,
 	Radio,
@@ -17,6 +18,12 @@ import { MobileCommunicationsMessenger } from "./components/communications/Mobil
 import { CommunicationEventRow } from "./components/communications/CommunicationEventRow";
 import { CommunicationTaskCard } from "./components/communications/CommunicationTaskCard";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
+
+const OmnichannelOperatorDesk = lazy(() =>
+	import("./components/chat/OmnichannelOperatorDesk").then((module) => ({
+		default: module.OmnichannelOperatorDesk,
+	})),
+);
 
 const StaffMessengerPanel = lazy(() =>
 	import("./components/communications/StaffMessengerPanel").then((module) => ({
@@ -164,7 +171,7 @@ export function CommunicationsView(
 		communicationNote.trim().length > 0;
 
 	const [activeSection, setActiveSection] = useState<
-		"tasks" | "chat" | "notifications" | "staff_chat"
+		"tasks" | "chat" | "notifications" | "staff_chat" | "bot_inbox"
 	>("tasks");
 	const [tasksLimit, setTasksLimit] = useState(30);
 	const [journalLimit, setJournalLimit] = useState(40);
@@ -304,6 +311,20 @@ export function CommunicationsView(
 
 				<button
 					type="button"
+					onClick={() => setActiveSection("bot_inbox")}
+					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
+						activeSection === "bot_inbox"
+							? "bg-teal-600 text-white shadow-xs"
+							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+					data-testid="communications-tab-bot-inbox"
+				>
+					<Bot size={14} />
+					<span>Пульт ботов (TG/VK/WA/MAX)</span>
+				</button>
+
+				<button
+					type="button"
 					onClick={() => setActiveSection("notifications")}
 					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
 						activeSection === "notifications"
@@ -329,6 +350,14 @@ export function CommunicationsView(
 					<span>Чат клиники / Интерком</span>
 				</button>
 			</div>
+
+			{activeSection === "bot_inbox" && (
+				<div className="mb-5">
+					<Suspense fallback={null}>
+						<OmnichannelOperatorDesk />
+					</Suspense>
+				</div>
+			)}
 
 			{activeSection === "staff_chat" && (
 				<div className="h-[780px] mb-5">

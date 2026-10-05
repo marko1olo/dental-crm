@@ -666,7 +666,12 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 					cmoUserId: identity.userId || null,
 					verifiedAt: isFinished ? new Date() : null,
 				})
-				.where(eq(outpatientVerifications.id, existing.id))
+				.where(
+					and(
+						eq(outpatientVerifications.id, existing.id),
+						eq(outpatientVerifications.organizationId, orgId),
+					),
+				)
 				.returning();
 
 			// Синхронизируем статус контроля качества в таблице visits
@@ -675,7 +680,12 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 				.set({
 					qualityControlStatus: bodyParsed.data.status,
 				})
-				.where(eq(visits.id, existing.visitId));
+				.where(
+					and(
+						eq(visits.id, existing.visitId),
+						eq(visits.organizationId, orgId),
+					),
+				);
 
 			return reply.send({
 				success: true,

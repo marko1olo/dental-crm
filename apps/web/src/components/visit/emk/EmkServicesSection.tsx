@@ -10,6 +10,7 @@ import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import { showToast } from "../../GlobalToast";
 
 export interface EmkServicesSectionProps extends EmkSectionProps {
+	visitId?: string | undefined;
 	onOpenPriceSearchModal?: (() => void) | undefined;
 	activePatient?: {
 		id?: string;
@@ -22,6 +23,7 @@ export interface EmkServicesSectionProps extends EmkSectionProps {
 }
 
 export function EmkServicesSection({
+	visitId,
 	visitNoteForm,
 	updateVisitNoteField,
 	isLocked,
@@ -201,6 +203,7 @@ export function EmkServicesSection({
 
 			<div className="mt-2">
 				<VisitServiceBillingWidget
+					visitId={visitId || visitNoteForm?.visitId}
 					patientId={activePatient?.id}
 					patientName={activePatient?.fullName}
 					patientPhone={activePatient?.phone}

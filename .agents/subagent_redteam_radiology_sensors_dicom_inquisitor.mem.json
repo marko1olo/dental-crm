@@ -1,0 +1,66 @@
+{
+  "status": "completed",
+  "domain": "Radiology, Sensors, DICOM & Diagnostics",
+  "completed_steps": [
+    "Read supreme constitution and agent rules: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md in full",
+    "Audit sensor calibration presets & pixel pitch (Vatech EzSensor 1.5/Soft HR, Carestream CS 5100/5200, Fona, Dürr Dental VistaRay 7)",
+    "Audit diagnostic canvas & filters (inversion, sharpness, contrast, 45° pseudo-relief emboss, gamma-correction)",
+    "Audit measurements on image (calibrated straight ruler, endodontic WL along curved canal, protractor/angle, periapical lesion area in mm² with Gauss formula)",
+    "Audit 3D/MPR multiplanar CT viewer (Axial, Sagittal, Coronal, panoramic CPR slice, Misch bone density D1..D5 HU without academic bloat)",
+    "Audit Doctor Autonomy (instant opening <50ms, silent background mSv dose accounting without popups)",
+    "Check for procedural synthetic dioramas vs real pixels/DICOM",
+    "Audit file line counts and modular structures",
+    "Check bird language (Mandate 8y/8z), UTF-8 encoding & CSS tokens",
+    "Run targeted domain tests and fix all discovered defects"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-RAD-01",
+      "severity": "CRITICAL",
+      "component": "packages/shared/src/radiology/rvgTwainEngine.ts",
+      "description": "RvgSensorVendor and KNOWN_RVG_SENSOR_CATALOG lacked Dürr Dental and Carestream vendor keys, as well as specific sensor models (carestream_rvg_5100, carestream_rvg_5200, vatech_ezsensor_1_5, duerr_vistaray_7_size1, duerr_vistaray_7_size2).",
+      "resolution": "Added 'carestream' and 'duerr' to RvgSensorVendor, and registered all missing sensor specifications with exact pixel pitch (18.5 µm, 19.0 µm, 35.0 µm) and USB VID/PID in KNOWN_RVG_SENSOR_CATALOG."
+    },
+    {
+      "id": "DEFECT-RAD-02",
+      "severity": "CRITICAL",
+      "component": "apps/web/src/components/radiology/UniversalSensorGateway.ts",
+      "description": "SensorBrandId and SENSOR_VENDOR_PROFILES completely lacked Dürr Dental. VistaRay 7 and VistaSoft/DBSWin hot folder pathways were missing.",
+      "resolution": "Added 'duerr' to SensorBrandId, registered Dürr Dental vendor profile with C:\\DBSWin\\Data and C:\\VistaSoft\\Capture default hot folders, added duerr_vistaray_7_size1/size2 (19.0 µm, 26.3 lp/mm) to UNIVERSAL_SENSOR_CATALOG, and registered ds_duerr_vistaray in KNOWN_TWAIN_DATA_SOURCES."
+    },
+    {
+      "id": "DEFECT-RAD-03",
+      "severity": "CRITICAL",
+      "component": "apps/web/src/components/radiology/dentalViewerMath.ts",
+      "description": "ViewerAreaMeasurement interface and Gauss Shoelace formula for calculating periapical lesion/cyst area in mm² were absent. resolveCalibratedPixelSpacing lacked branch resolution for Dürr Dental, Carestream, Fona, Woodpecker, and Planmeca.",
+      "resolution": "Implemented ViewerAreaMeasurement, calculateLesionAreaGaussMm2 (Gauss shoelace formula: A = 0.5 * |sum(x_i*y_{i+1} - x_{i+1}*y_i)| * mmPerPixel²), calculatePolygonPerimeterMm, and expanded resolveCalibratedPixelSpacing with ground-truth pixel pitches for all major dental sensor brands."
+    },
+    {
+      "id": "DEFECT-RAD-04",
+      "severity": "HIGH",
+      "component": "apps/web/src/components/radiology/dentalViewerCanvasDraw.ts",
+      "description": "Lacked canvas rendering function for closed periapical lesion contours with translucent fill and area badge.",
+      "resolution": "Implemented drawLesionContour with 20% amber translucent fill, crisp boundary stroke, vertex ticks, and centered area badge in mm²."
+    },
+    {
+      "id": "DEFECT-RAD-05",
+      "severity": "HIGH",
+      "component": "apps/web/src/components/radiology/RvgFiltersToolbar.tsx & useRvgGlCanvas.ts",
+      "description": "WebGL shader had u_pseudoRelief bump-mapping, but RvgFiltersToolbar lacked emboss toggle and preset, and useRvgGlCanvas did not pass pseudoRelief to WebGL uniform renderer.",
+      "resolution": "Added emboss?: boolean to RvgFilterValues and DEFAULT_RVG_FILTERS, added 'emboss' (Рельеф / 3D) preset, added emboss toggle buttons in 1-row Hick toolbar and fine-tuning dock, and wired pseudoRelief: Boolean(filters.emboss) into useRvgGlCanvas."
+    },
+    {
+      "id": "DEFECT-RAD-06",
+      "severity": "HIGH",
+      "component": "apps/web/src/components/radiology/SensorStudyViewer.tsx",
+      "description": "Viewer lacked lesion_contour measurement tool, area badge display, and finish lesion action.",
+      "resolution": "Added lesion_contour to activeTool, added lesionContours and draftLesionPoints state, added handleFinishLesionContour callback, wired drawLesionContour into renderScene, and added 'Очаг (мм²)' button in toolbar."
+    }
+  ],
+  "verification": {
+    "sensorStudyClinicalToolsTest": "10/10 passed (4.78ms, Exit Code 0)",
+    "cbctDomain3MeasurementsNerveTest": "21/21 passed (8.15ms, Exit Code 0)",
+    "sharedFormsRadiologyReferralTest": "4/4 passed (3.99ms, Exit Code 0)"
+  }
+}

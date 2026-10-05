@@ -288,7 +288,7 @@ export function AutoclaveLog257Modal({
 						</div>
 						<div className="autoclave-log-title-text">
 							<h2>Журнал автоклава (стерилизация инструментов)</h2>
-							<p>Паровой (Класс B) и воздушный методы • Контроль параметров</p>
+							<p>Журнал работы стерилизаторов (Форма № 257/у) • СанПиН 3.3686-21 • Паровой (Класс B) и воздушный методы</p>
 						</div>
 					</div>
 
@@ -319,7 +319,7 @@ export function AutoclaveLog257Modal({
 						onClick={() => setActiveTab("journal_257")}
 					>
 						<FileText size={16} />
-						Реестр циклов ({records.length})
+						Реестр Журнала 257/у ({records.length})
 					</button>
 				</div>
 

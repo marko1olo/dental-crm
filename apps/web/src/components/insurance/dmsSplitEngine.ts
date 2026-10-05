@@ -178,6 +178,13 @@ export function formatCurrencyRub(rublesOrKopecks: number, isKopecks = false): s
 }
 
 /**
+ * Прямое форматирование копеек в рубли (например: 450000 -> "4 500,00 ₽")
+ */
+export function formatCurrencyKopecks(kopecks: number): string {
+	return formatCurrencyRub(kopecks, true);
+}
+
+/**
  * Нормализация номера зуба (FDI: 11..48, 51..85)
  */
 export function normalizeToothFdi(tooth: string | undefined): string | undefined {
@@ -265,11 +272,11 @@ export function calculateDmsCoPaymentSplit(
 		let isExcluded = false;
 		let exclusionReason = "";
 
-		if (policy) {
+		if (policy || (guaranteeLetter?.programExclusions && guaranteeLetter.programExclusions.length > 0)) {
 			const exclCheck = isServiceExcludedByDmsRules(
 				item.serviceCode,
 				item.serviceName,
-				policy.program,
+				policy?.program ?? "base",
 				{
 					lastHygieneDate: options.lastHygieneDate,
 					currentVisitDate: options.visitDate,
@@ -351,14 +358,19 @@ export function calculateDmsCoPaymentSplit(
 			continue;
 		}
 
-		// 4. Расчет франшизы (если задана в полисе)
+		// 4. Расчет франшизы (если задана в полисе или гарантийном письме)
 		let franchiseDeductionKopecks = 0;
-		if (policy) {
-			if (policy.franchiseType === "percent" && policy.franchisePercent) {
-				franchiseDeductionKopecks = Math.round((rawLineTotalKopecks * policy.franchisePercent) / 100);
-			} else if (policy.franchiseType === "fixed" && policy.franchiseFixedKopecks) {
-				franchiseDeductionKopecks = Math.min(rawLineTotalKopecks, policy.franchiseFixedKopecks);
-			}
+		const fType = policy?.franchiseType ?? guaranteeLetter?.franchiseType ?? "percent";
+		const fPercent = policy?.franchisePercent ?? guaranteeLetter?.franchisePercent ?? guaranteeLetter?.franchisePct ?? 0;
+		const fFixedKop =
+			policy?.franchiseFixedKopecks ??
+			guaranteeLetter?.franchiseFixedKopecks ??
+			(guaranteeLetter?.franchiseFixedRub ? Math.round(guaranteeLetter.franchiseFixedRub * 100) : 0);
+
+		if (fType === "percent" && fPercent > 0) {
+			franchiseDeductionKopecks = Math.round((rawLineTotalKopecks * fPercent) / 100);
+		} else if ((fType === "fixed" || (fType as string) === "fixed_rub" || (fType as string) === "fixed_kopecks") && fFixedKop > 0) {
+			franchiseDeductionKopecks = Math.min(rawLineTotalKopecks, fFixedKop);
 		}
 
 		// Сумма, претендующая на покрытие ДМС после франшизы
@@ -375,7 +387,7 @@ export function calculateDmsCoPaymentSplit(
 
 			if (franchiseDeductionKopecks > 0) {
 				status = "co_payment";
-				splitReason = `Сооплата пациентом франшизы ${policy?.franchisePercent || ""}% (${formatCurrencyRub(franchiseDeductionKopecks, true)})`;
+				splitReason = `Сооплата пациентом франшизы ${fPercent > 0 ? `${fPercent}%` : ""}${fFixedKop > 0 ? `${formatCurrencyRub(fFixedKop, true)}` : ""} (${formatCurrencyRub(franchiseDeductionKopecks, true)})`;
 			}
 		} else if (availableLetterLimitKopecks > 0) {
 			// Частичное покрытие (исчерпание лимита ГП)

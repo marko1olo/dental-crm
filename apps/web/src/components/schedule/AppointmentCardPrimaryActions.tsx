@@ -69,8 +69,9 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						playIntercomChime("normal");
 						void handleQuickStatusChange("in_treatment");
-						if (appointmentPatient?.id) {
-							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+						const pid = appointmentPatient?.id || appointment.patientId;
+						if (pid) {
+							usePatientStore.getState().setSelectedPatientId(pid);
 						}
 						if (onOpenVisit) {
 							onOpenVisit();
@@ -100,8 +101,9 @@ export function AppointmentCardPrimaryActions({
 						e.stopPropagation();
 						playIntercomChime("normal");
 						void handleQuickStatusChange("in_treatment");
-						if (appointmentPatient?.id) {
-							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+						const pid = appointmentPatient?.id || appointment.patientId;
+						if (pid) {
+							usePatientStore.getState().setSelectedPatientId(pid);
 						}
 						if (onOpenVisit) {
 							onOpenVisit();
@@ -156,8 +158,9 @@ export function AppointmentCardPrimaryActions({
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
-						if (appointmentPatient?.id) {
-							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+						const pid = appointmentPatient?.id || appointment.patientId;
+						if (pid) {
+							usePatientStore.getState().setSelectedPatientId(pid);
 						}
 						useAppStore.getState().setCurrentView("visit");
 						showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
@@ -180,8 +183,9 @@ export function AppointmentCardPrimaryActions({
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
-						if (appointmentPatient?.id) {
-							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+						const pid = appointmentPatient?.id || appointment.patientId;
+						if (pid) {
+							usePatientStore.getState().setSelectedPatientId(pid);
 						}
 						useAppStore.getState().setCurrentView("finance");
 						showToast(`Касса: расчёт ${appointmentPatientName}`, "info");

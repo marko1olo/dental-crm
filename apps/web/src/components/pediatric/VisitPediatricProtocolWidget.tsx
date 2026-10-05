@@ -1136,7 +1136,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 	return (
 		<section
 			aria-label="Протокол детского стоматологического приёма в медицинской карте"
-			className={`pediatric-protocol-widget rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 shadow-xs transition ${className}`.trim()}
+			className={`pediatric-protocol-widget rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3.5 sm:p-5 pb-36 md:pb-5 shadow-xs transition ${className}`.trim()}
 			data-testid="pediatric-protocol-widget"
 		>
 			{/* ═════════════════════════════════════════════════════════════════════ */}
@@ -1753,7 +1753,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			{/* МОБИЛЬНЫЙ FLOATING BOTTOM BAR (APPLE HIG: THUMB ZONE & PRIMARY CTA >= 52px) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div
-				className="md:hidden sticky bottom-0 -mx-3.5 sm:-mx-5 -mb-3.5 sm:-mb-5 mt-4 z-20 backdrop-blur-xl bg-[var(--paper,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex flex-col gap-2"
+				className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-2"
 				data-testid="pediatric-mobile-bottom-bar"
 			>
 				{/* Верхняя строка мобильного бара: сводка диагноза + зуба */}
@@ -1770,13 +1770,18 @@ export const VisitPediatricProtocolWidget: React.FC<
 				<button
 					type="button"
 					onClick={handleInsertToForm043}
-					className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-teal-600 px-4 text-sm font-extrabold text-white shadow-md transition hover:bg-teal-700 active:scale-[0.98] cursor-pointer touch-manipulation select-none"
+					className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-extrabold shadow-md transition active:scale-[0.98] cursor-pointer touch-manipulation select-none"
+					style={{
+						backgroundColor: "var(--accent, #0d9488)",
+						color: "#ffffff",
+						boxShadow: "0 4px 14px rgba(13, 148, 136, 0.4)",
+					}}
 					data-testid="pediatric-mobile-btn-apply"
-					title="Внести протокол в медицинскую карту (043/у)"
-					aria-label="Внести в 043/у"
+					title="Внести протокол в медицинскую карту"
+					aria-label="Внести в карту"
 				>
-					<FileText className="h-5 w-5 shrink-0" />
-					<span>Внести протокол в карту</span>
+					<FileText className="h-5 w-5 shrink-0 text-white" />
+					<span className="text-white">Внести протокол в карту</span>
 				</button>
 
 				{/* Быстрые вторичные действия в зоне большого пальца: плитки >= 44x44px */}
@@ -1784,7 +1789,12 @@ export const VisitPediatricProtocolWidget: React.FC<
 					<button
 						type="button"
 						onClick={handleAddServicesToInvoice}
-						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50/80 px-2 text-xs font-bold text-teal-800 transition active:scale-95 dark:border-teal-800/60 dark:bg-teal-950/40 dark:text-teal-300 cursor-pointer touch-manipulation select-none"
+						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
+						style={{
+							backgroundColor: "var(--paper, #ffffff)",
+							borderColor: "var(--line, #e2e8f0)",
+							color: "var(--ink, #0f172a)",
+						}}
 						data-testid="pediatric-mobile-btn-invoice"
 						title="Добавить услуги в смету"
 					>
@@ -1795,7 +1805,12 @@ export const VisitPediatricProtocolWidget: React.FC<
 					<button
 						type="button"
 						onClick={() => setIsMemoModalOpen(true)}
-						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50/80 px-2 text-xs font-bold text-purple-900 transition active:scale-95 dark:border-purple-800/60 dark:bg-purple-950/40 dark:text-purple-200 cursor-pointer touch-manipulation select-none"
+						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
+						style={{
+							backgroundColor: "var(--paper, #ffffff)",
+							borderColor: "var(--line, #e2e8f0)",
+							color: "var(--ink, #0f172a)",
+						}}
 						data-testid="pediatric-mobile-btn-memo"
 						title="Печать памятки родителям"
 					>
@@ -1806,7 +1821,12 @@ export const VisitPediatricProtocolWidget: React.FC<
 					<button
 						type="button"
 						onClick={() => setIsDiplomaModalOpen(true)}
-						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50/80 px-2 text-xs font-bold text-amber-900 transition active:scale-95 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 cursor-pointer touch-manipulation select-none"
+						className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
+						style={{
+							backgroundColor: "var(--paper, #ffffff)",
+							borderColor: "var(--line, #e2e8f0)",
+							color: "var(--ink, #0f172a)",
+						}}
 						data-testid="pediatric-mobile-btn-diploma"
 						title="Печать диплома за храбрость"
 					>

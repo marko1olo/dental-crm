@@ -1,0 +1,54 @@
+{
+  "subagent_id": "subagent_redteam_legal_consents_1051n_inquisitor",
+  "domain": "Primary Patient Intake Package, Statutory Consents (1051n, 152-FZ, 736), Minor Legal Representation (Art. 64 Family Code RF), Digital Signatures & Zero-Mock Pure Production Layouts",
+  "status": "completed",
+  "completed_steps": [
+    "Full Law №0 reading of HAMMER constitution, AGENTS.md, GEMINI.md, core.md, frontend.md",
+    "Deep reconnaissance of legal intake package codebase, paid contract engine, minor representative forms, consent signing panel",
+    "Baseline test execution: shared legal contracts suite passing (2878 tests)",
+    "Defect Discovery: Exterminated hardcoded Moscow mock credentials (fake INN 7701987654 / 7704123456, fake license ЛО41-01137-77/00584930) in production mode in primaryIntakePackagePrintEngine.ts and paidContract/defaults.ts",
+    "Defect Discovery: Exterminated bureaucratic Soviet cipher 'Форма 257/у' in PrimaryIntakePackageModal.tsx per Mandate 8z",
+    "Feature & Compliance: Full Legal Representative (ст. 64 СК РФ) integration across all 4 primary intake blanks (Contract 736, Consent 1051n, 152-FZ, Questionnaire ф. 043/у) and paid contract defaults",
+    "Fixed missing documentNavigation.css import in PrimaryIntakePackageModal.tsx and DocumentsView.tsx ensuring modal centering & backdrop styling",
+    "Added 4 comprehensive adversarial unit tests in contractsAndPrescriptionsMockPurity.test.ts",
+    "Aligned dentalOutpatientSovereignty.test.ts and wave115BloatExtermination.test.ts with AST decomposition architecture",
+    "Verified all 8 document test suites (105/105 passed, 0 failures)",
+    "Captured and personally inspected 7 real visual screenshots in PC Light & Dark modes and statutory A4 print blanks via view_file",
+    "Verified check-encoding: 7330 files scanned, 0 errors"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "zero_mock_compliance": "Real clinics outside demo mode render clean underlines «____________________» for missing clinic requisites instead of fake Moscow licenses/INNs, preventing legal liability (Mandate 8y).",
+    "minor_representation": "Pediatric patients now have full legal representation with parent/guardian requisites, relationship, basis document (birth certificate / guardianship decree), and dedicated signature blocks across all 4 blanks (Art. 64 Family Code RF & Art. 20 323-FZ).",
+    "mandate_8z_sanpin_ui": "Visible UI in PrimaryIntakePackageModal now uses 'Журнал стерилизации и автоклавирования' without Soviet form ciphers.",
+    "modal_centering_fix": "Importing documentNavigation.css directly into PrimaryIntakePackageModal.tsx and DocumentsView.tsx fixed uncentered layout and dark backdrop styling."
+  },
+  "file_metrics": {
+    "apps/web/src/components/documents/PrimaryIntakePackageModal.tsx": "626 lines (< 800 limit)",
+    "apps/web/src/DocumentsView.tsx": "764 lines (< 800 limit)",
+    "apps/web/src/components/documents/forms/MedicalCardExtract003vuForm.tsx": "170 lines (< 800 limit)",
+    "apps/web/src/components/documents/__tests__/dentalOutpatientSovereignty.test.ts": "144 lines (< 800 limit)"
+  },
+  "visual_proofs": [
+    "docs/screenshots/legal_consents_proofs/primary_intake_modal_desktop_light.png",
+    "docs/screenshots/legal_consents_proofs/primary_intake_modal_desktop_dark.png",
+    "docs/screenshots/legal_consents_proofs/statutory_blank_1_contract736_minor_representative.png",
+    "docs/screenshots/legal_consents_proofs/statutory_blank_2_ids1051n_minor_representative.png",
+    "docs/screenshots/legal_consents_proofs/statutory_blank_3_consent152fz_minor_representative.png",
+    "docs/screenshots/legal_consents_proofs/statutory_blank_4_questionnaire043u_minor_representative.png",
+    "docs/screenshots/legal_consents_proofs/statutory_blank_zero_mock_clean_underlines.png"
+  ],
+  "test_results": {
+    "contractsAndPrescriptionsMockPurity": "23/23 passed",
+    "dentalOutpatientSovereignty": "4/4 passed",
+    "documentPackages": "9/9 passed",
+    "fnsNdflXmlEngine": "6/6 passed",
+    "paidContractEngine": "22/22 passed",
+    "statutoryBlockersAndRules": "4/4 passed",
+    "taxCertificateAndPrescriptionZeroMock": "33/33 passed",
+    "wave115BloatExtermination": "4/4 passed",
+    "total_documents_passed": 105,
+    "total_documents_failed": 0,
+    "encoding_check": "7330 files clean"
+  }
+}

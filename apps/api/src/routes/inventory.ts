@@ -1853,6 +1853,59 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				let totalQuantity = 0;
 				let overdraftResolvedCount = 0;
 
+				// Пакетная предварительная загрузка номенклатуры (устранение N+1)
+				const requestedItemIds = Array.from(
+					new Set(
+						data.items
+							.map((i) => i.inventoryItemId)
+							.filter((id): id is string => typeof id === "string" && id.trim().length > 0),
+					),
+				);
+				const requestedNames = Array.from(
+					new Set(
+						data.items
+							.map((i) => i.name?.trim().toLowerCase())
+							.filter((n): n is string => typeof n === "string" && n.length > 0),
+					),
+				);
+
+				const preloadedById = new Map<string, typeof inventoryItems.$inferSelect>();
+				const preloadedByName = new Map<string, typeof inventoryItems.$inferSelect>();
+
+				if (requestedItemIds.length > 0) {
+					const foundById = await tx
+						.select()
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.organizationId, targetOrgId),
+								inArray(inventoryItems.id, requestedItemIds),
+							),
+						)
+						.for("update");
+					for (const it of foundById) {
+						preloadedById.set(it.id, it);
+						preloadedByName.set(it.name.toLowerCase().trim(), it);
+					}
+				}
+
+				if (requestedNames.length > 0) {
+					const foundByName = await tx
+						.select()
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.organizationId, targetOrgId),
+								sql`lower(${inventoryItems.name}) = ANY(${requestedNames})`,
+							),
+						)
+						.for("update");
+					for (const it of foundByName) {
+						preloadedById.set(it.id, it);
+						preloadedByName.set(it.name.toLowerCase().trim(), it);
+					}
+				}
+
 				for (const item of data.items) {
 					totalQuantity += item.quantity;
 					const pricePerUnitRub =
@@ -1874,37 +1927,16 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					totalCostKopecks += itemTotalKopecks;
 					totalVatKopecks += itemVatKopecks;
 
-					// 1. Поиск или создание карточки номенклатуры
+					// 1. Поиск или создание карточки номенклатуры из кэша
 					let targetItemId = item.inventoryItemId;
 					let existingItem: typeof inventoryItems.$inferSelect | undefined;
 
 					if (targetItemId) {
-						const [found] = await tx
-							.select()
-							.from(inventoryItems)
-							.where(
-								and(
-									eq(inventoryItems.id, targetItemId),
-									eq(inventoryItems.organizationId, targetOrgId),
-								),
-							)
-							.for("update");
-						existingItem = found;
+						existingItem = preloadedById.get(targetItemId);
 					}
 
-					if (!existingItem) {
-						const [foundByName] = await tx
-							.select()
-							.from(inventoryItems)
-							.where(
-								and(
-									eq(inventoryItems.organizationId, targetOrgId),
-									sql`lower(${inventoryItems.name}) = lower(${item.name.trim()})`,
-								),
-							)
-							.limit(1)
-							.for("update");
-						existingItem = foundByName;
+					if (!existingItem && item.name?.trim()) {
+						existingItem = preloadedByName.get(item.name.trim().toLowerCase());
 					}
 
 					if (!existingItem) {
@@ -1935,6 +1967,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 						throw new Error(`Не удалось создать материал "${item.name}"`);
 					}
 					targetItemId = existingItem.id;
+					preloadedById.set(existingItem.id, existingItem);
+					preloadedByName.set(existingItem.name.toLowerCase().trim(), existingItem);
 
 					// 2. Ликвидация мягкого овердрафта (Мандат 8n):
 					const currentStock = Number(
@@ -2342,6 +2376,80 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			request,
 			reply,
 			"inventory deduct",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(targetOrgId, request.body, request, reply);
+	});
+
+	// POST /:organizationId/write-off — Пакетное списание со склада
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/write-off", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory write-off",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(organizationId, request.body, request, reply);
+	});
+
+	// POST /write-off — Списание со склада (без orgId в URL)
+	server.post("/write-off", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory write-off",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(targetOrgId, request.body, request, reply);
+	});
+
+	// POST /:organizationId/transactions — Складская транзакция (списание)
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/transactions", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory transactions",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(organizationId, request.body, request, reply);
+	});
+
+	// POST /transactions — Складская транзакция (без orgId в URL)
+	server.post("/transactions", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory transactions",
 		);
 		if (!resolvedOrgId) return;
 

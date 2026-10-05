@@ -535,7 +535,12 @@ export async function registerFiscalReceiptRoutes(
 						await tx
 							.update(sberbankTransactions)
 							.set({ status: "paid", updatedAt: new Date() })
-							.where(eq(sberbankTransactions.id, sbTx.id));
+							.where(
+								and(
+									eq(sberbankTransactions.id, sbTx.id),
+									eq(sberbankTransactions.organizationId, orgId),
+								),
+							);
 						isPaid = true;
 						paidAtIso = new Date().toISOString();
 					}
@@ -602,7 +607,12 @@ export async function registerFiscalReceiptRoutes(
 						await tx
 							.update(patientInvoices)
 							.set({ status: "paid", paidAt: new Date() })
-							.where(eq(patientInvoices.id, inv.id));
+							.where(
+								and(
+									eq(patientInvoices.id, inv.id),
+									eq(patientInvoices.organizationId, orgId),
+								),
+							);
 						isPaid = true;
 						paidAtIso = new Date().toISOString();
 					}
@@ -817,7 +827,7 @@ export async function registerFiscalReceiptRoutes(
 	 * Enforces composite Idempotency-Key (<uuid>#<sha256(payload)>) to guarantee strictly single execution in PostgreSQL.
 	 * If KKT is offline or out of paper, buffers receipt in fiscal_receipt_queue without blocking checkout.
 	 */
-	app.post("/api/fiscal/receipts", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleFiscalReceipt = async (request: FastifyRequest, reply: FastifyReply) => {
 		const ctx = await requireClinicalMutationContext(request, reply, "fiscal receipt create");
 		if (!ctx) return;
 		const orgId = ctx.organizationId;
@@ -1178,13 +1188,16 @@ export async function registerFiscalReceiptRoutes(
 				hardwareWarning: isOffline ? printResult.errorMessage : null,
 			});
 		});
-	});
+	};
+
+	app.post("/api/fiscal/receipts", handleFiscalReceipt);
+	app.post("/api/finance/receipts", handleFiscalReceipt);
 
 	/**
 	 * POST /api/fiscal/refund
 	 * Issues 54-FZ Return Receipt (Tag 1054 = 2, income_return) with composite Idempotency-Key.
 	 */
-	app.post("/api/fiscal/refund", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleFiscalRefund = async (request: FastifyRequest, reply: FastifyReply) => {
 		const ctx = await requireClinicalMutationContext(request, reply, "fiscal refund create");
 		if (!ctx) return;
 		const orgId = ctx.organizationId;
@@ -1297,13 +1310,23 @@ export async function registerFiscalReceiptRoutes(
 							await tx
 								.update(payments)
 								.set({ status: "refunded" })
-								.where(eq(payments.id, validPaymentId));
+								.where(
+									and(
+										eq(payments.id, validPaymentId),
+										eq(payments.organizationId, orgId),
+									),
+								);
 						} else {
 							const remainingKop = Math.max(0, origKop - data.totalRefundKopecks);
 							await tx
 								.update(payments)
 								.set({ amountRub: kopecksToRub(remainingKop) })
-								.where(eq(payments.id, validPaymentId));
+								.where(
+									and(
+										eq(payments.id, validPaymentId),
+										eq(payments.organizationId, orgId),
+									),
+								);
 						}
 					}
 				}
@@ -1401,13 +1424,23 @@ export async function registerFiscalReceiptRoutes(
 						await tx
 							.update(payments)
 							.set({ status: "refunded" })
-							.where(eq(payments.id, validPaymentId));
+							.where(
+								and(
+									eq(payments.id, validPaymentId),
+									eq(payments.organizationId, orgId),
+								),
+							);
 					} else {
 						const remainingKop = Math.max(0, origKop - data.totalRefundKopecks);
 						await tx
 							.update(payments)
 							.set({ amountRub: kopecksToRub(remainingKop) })
-							.where(eq(payments.id, validPaymentId));
+							.where(
+								and(
+									eq(payments.id, validPaymentId),
+									eq(payments.organizationId, orgId),
+								),
+							);
 					}
 				}
 			}
@@ -1441,7 +1474,10 @@ export async function registerFiscalReceiptRoutes(
 				totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
 			});
 		});
-	});
+	};
+
+	app.post("/api/fiscal/refund", handleFiscalRefund);
+	app.post("/api/finance/refund", handleFiscalRefund);
 
 	/**
 	 * GET /api/fiscal/queue

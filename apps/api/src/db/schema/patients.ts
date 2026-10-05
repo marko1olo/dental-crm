@@ -64,6 +64,14 @@ export const patients = pgTable(
 				table.organizationId,
 				table.createdAt,
 			),
+			idxPatientsOrgCreatedDesc: index("idx_patients_org_created_desc").on(
+				table.organizationId,
+				table.createdAt.desc(),
+			),
+			idxPatientsSearchTsvGin: index("idx_patients_search_tsv_gin").using(
+				"gin",
+				sql`to_tsvector('russian', coalesce(${table.fullName}, '') || ' ' || coalesce(${table.phone}, ''))`,
+			),
 			idxPatientsOrgPhone: index("idx_patients_org_phone").on(
 				table.organizationId,
 				table.phone,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Sparkles, Layers, Sliders } from "lucide-react";
+import { Check, Sparkles, Layers, Sliders, Camera, Trash2, CheckCircle2 } from "lucide-react";
 import { ToothShadeGuide } from "../icons/DentalIcons";
 import {
 	VITA_CLASSICAL_SHADES,
@@ -38,6 +38,8 @@ export interface DentalLabShadeSelectorProps {
 	setCalcifications: (c: boolean) => void;
 	opalescence?: boolean;
 	setOpalescence?: (o: boolean) => void;
+	attachedImageUrl?: string | null;
+	setAttachedImageUrl?: (url: string | null) => void;
 }
 
 export function DentalLabShadeSelector({
@@ -65,6 +67,8 @@ export function DentalLabShadeSelector({
 	setCalcifications,
 	opalescence,
 	setOpalescence,
+	attachedImageUrl,
+	setAttachedImageUrl,
 }: DentalLabShadeSelectorProps) {
 	const currentPrimaryShade =
 		shadeSystem === "3d_master"
@@ -700,6 +704,90 @@ export function DentalLabShadeSelector({
 						)}
 					</div>
 				</div>
+			</div>
+
+			{/* ─── CLINICAL PHOTO ATTACHMENT WITH SHADE GUIDE (Mandates 8a, 8e) ─── */}
+			<div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+				<div className="flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<Camera size={14} className="text-teal-600 dark:text-teal-400" />
+						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+							Клиническая фоторегистрация эталона цвета (с расцветкой у зуба)
+						</span>
+					</div>
+					{attachedImageUrl && (
+						<span className="text-[11px] font-bold text-teal-600 dark:text-teal-400 inline-flex items-center gap-1">
+							<CheckCircle2 size={12} />
+							<span>Фото эталона прикреплено</span>
+						</span>
+					)}
+				</div>
+
+				{attachedImageUrl ? (
+					<div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+						<div className="w-14 h-14 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 shrink-0">
+							<img
+								src={attachedImageUrl}
+								alt="Клиническое фото эталона VITA"
+								className="w-full h-full object-cover"
+							/>
+						</div>
+						<div className="flex-1 min-w-0">
+							<div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+								{attachedImageUrl.split("/").pop()}
+							</div>
+							<div className="text-[10px] text-slate-500 dark:text-slate-400">
+								Ориентир цвета: VITA {currentPrimaryShade}
+							</div>
+							{setAttachedImageUrl && (
+								<button
+									type="button"
+									onClick={() => setAttachedImageUrl(null)}
+									className="text-[11px] font-bold text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 mt-1 cursor-pointer"
+									data-testid="remove-shade-selector-photo-btn"
+								>
+									<Trash2 size={12} />
+									<span>Удалить снимок</span>
+								</button>
+							)}
+						</div>
+					</div>
+				) : (
+					<div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800/40">
+						<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+							Прикрепите фото расцветки VITA {currentPrimaryShade} в полости рта у соседнего зуба
+						</span>
+						<div className="flex items-center gap-2 shrink-0">
+							<label className="min-h-[36px] px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer">
+								<Camera size={13} />
+								<span>Загрузить фото</span>
+								<input
+									type="file"
+									accept="image/jpeg,image/png,image/webp"
+									className="hidden"
+									data-testid="shade-selector-file-input"
+									onChange={(e) => {
+										const file = e.target.files?.[0];
+										if (!file) return;
+										const reader = new FileReader();
+										reader.onload = (ev) => typeof ev.target?.result === "string" && setAttachedImageUrl?.(ev.target.result);
+										reader.readAsDataURL(file);
+									}}
+								/>
+							</label>
+							{setAttachedImageUrl && (
+								<button
+									type="button"
+									onClick={() => setAttachedImageUrl(`photos/vita_${currentPrimaryShade.toLowerCase()}_clinical_guide.jpg`)}
+									className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+									data-testid="shade-selector-sample-photo-btn"
+								>
+									Образец
+								</button>
+							)}
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

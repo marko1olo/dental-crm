@@ -108,17 +108,17 @@ export function AppointmentModalLabSection({
 	if (items.length === 0) {
 		return (
 			<div
-				className="sm:col-span-2 p-2.5 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-between gap-2 text-xs text-[var(--muted)]"
+				className="sm:col-span-2 py-2 px-3 rounded-xl border border-dashed border-[var(--line-strong)] bg-[var(--paper-soft)]/40 flex items-center justify-between gap-2 text-xs text-[var(--muted)] shadow-2xs"
 				data-testid="appointment-modal-lab-empty"
 			>
 				<div className="flex items-center gap-2 min-w-0">
-					<FlaskConical size={14} className="text-[var(--muted)] shrink-0" />
-					<span className="truncate">Заказ в лабораторию (ЗТЛ): наряд не прикреплен</span>
+					<FlaskConical size={13} className="text-[var(--muted)] shrink-0" />
+					<span className="truncate">Лаборатория (ЗТЛ): наряд не прикреплен</span>
 				</div>
 				<button
 					type="button"
 					onClick={() => handleNavigateToLab()}
-					className="text-xs font-bold text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer shrink-0"
+					className="h-7 px-2.5 rounded-lg border border-[var(--teal)]/30 bg-[var(--teal-soft)] text-xs font-bold text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white inline-flex items-center gap-1 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
 					data-testid="appointment-modal-create-lab-order-btn"
 					title="Перейти в реестр лаборатории для оформления наряда"
 				>

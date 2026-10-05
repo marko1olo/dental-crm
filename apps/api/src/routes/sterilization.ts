@@ -1000,7 +1000,12 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				.set({
 					status: "unsealed",
 				})
-				.where(eq(sterilizationLogs.id, existingLog[0].id));
+				.where(
+					and(
+						eq(sterilizationLogs.id, existingLog[0].id),
+						eq(sterilizationLogs.organizationId, organizationId),
+					),
+				);
 		}
 
 		return reply.send(

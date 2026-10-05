@@ -54,6 +54,7 @@ import {
 	patients,
 } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { OmnichannelTokenVault } from "../services/bots/OmnichannelTokenVault.js";
 import {
 	normalizeWhatsappRecipient,
 	readWhatsappCredentials,
@@ -68,9 +69,12 @@ export { isWebhookPath, registerWhatsappWebhookRoutes };
 
 const updateWhatsappConfigSchema = z.object({
 	phoneNumberId: z.string().trim().max(64).nullable().optional(),
-	// Raw access token — hashed and stored as tokenSecretRef, never returned
+	// Raw access token — encrypted with AES-256-GCM via OmnichannelTokenVault
 	accessToken: z.string().trim().max(512).optional(),
 	webhookVerifyToken: z.string().trim().max(128).nullable().optional(),
+	provider: z.enum(["cloud_api", "green_api"]).optional(),
+	greenApiInstanceId: z.string().trim().max(128).nullable().optional(),
+	greenApiToken: z.string().trim().max(512).nullable().optional(),
 	enabledFeatures: z.array(z.string()).optional(),
 	staffRouting: z
 		.object({
@@ -196,14 +200,39 @@ export async function registerWhatsappRoutes(
 			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
 			.limit(1);
 
+		let encryptedToken: string | null = null;
+		if (input.accessToken) {
+			encryptedToken = OmnichannelTokenVault.isEncrypted(input.accessToken)
+				? input.accessToken
+				: OmnichannelTokenVault.encrypt(input.accessToken, orgId);
+		}
+
+		let encryptedGreenToken: string | null = null;
+		if (input.greenApiToken) {
+			encryptedGreenToken = OmnichannelTokenVault.isEncrypted(input.greenApiToken)
+				? input.greenApiToken
+				: OmnichannelTokenVault.encrypt(input.greenApiToken, orgId);
+		}
+
 		if (existing) {
 			const updateValues: Partial<typeof denteWhatsappBotConfigs.$inferInsert> =
 				{ updatedAt: now };
 
 			if (input.phoneNumberId !== undefined)
 				updateValues.phoneNumberId = input.phoneNumberId;
-			if (input.accessToken)
-				updateValues.tokenSecretRef = maskToken(input.accessToken);
+			if (encryptedToken) {
+				updateValues.accessToken = encryptedToken;
+				updateValues.tokenSecretRef = encryptedToken;
+			}
+			if (encryptedGreenToken) {
+				updateValues.greenApiToken = encryptedGreenToken;
+			}
+			if (input.provider !== undefined) {
+				updateValues.provider = input.provider;
+			}
+			if (input.greenApiInstanceId !== undefined) {
+				updateValues.greenApiInstanceId = input.greenApiInstanceId;
+			}
 			if (input.webhookVerifyToken !== undefined)
 				updateValues.webhookVerifyToken = input.webhookVerifyToken;
 			if (input.enabledFeatures !== undefined)
@@ -222,7 +251,11 @@ export async function registerWhatsappRoutes(
 			await db.insert(denteWhatsappBotConfigs).values({
 				organizationId: orgId,
 				phoneNumberId: input.phoneNumberId ?? null,
-				tokenSecretRef: input.accessToken ? maskToken(input.accessToken) : null,
+				provider: input.provider ?? "cloud_api",
+				greenApiInstanceId: input.greenApiInstanceId ?? null,
+				greenApiToken: encryptedGreenToken,
+				accessToken: encryptedToken,
+				tokenSecretRef: encryptedToken,
 				webhookVerifyToken: input.webhookVerifyToken ?? null,
 				enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
 				staffRoutingJson: JSON.stringify(
@@ -345,7 +378,7 @@ export async function registerWhatsappRoutes(
 		// проекте не было вообще. Администратор видел «отправлено», в истории
 		// коммуникаций появлялась запись, а пациент не получал ничего — для
 		// напоминания о приёме это хуже явной ошибки.
-		const credentials = readWhatsappCredentials(config);
+		const credentials = readWhatsappCredentials({ ...config, organizationId: orgId });
 		if (!credentials) {
 			reply.code(400);
 			return {

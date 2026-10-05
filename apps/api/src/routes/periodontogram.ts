@@ -650,7 +650,12 @@ export async function registerPeriodontogramRoutes(app: FastifyInstance) {
 					notes,
 					updatedAt: new Date(),
 				})
-				.where(eq(periodontogramSnapshots.id, id))
+				.where(
+					and(
+						eq(periodontogramSnapshots.id, id),
+						eq(periodontogramSnapshots.organizationId, orgId),
+					),
+				)
 				.returning();
 
 			return reply.send({
@@ -716,7 +721,12 @@ export async function registerPeriodontogramRoutes(app: FastifyInstance) {
 			// CASCADE on foreign keys automatically deletes teeth and sites
 			await db
 				.delete(periodontogramSnapshots)
-				.where(eq(periodontogramSnapshots.id, id));
+				.where(
+					and(
+						eq(periodontogramSnapshots.id, id),
+						eq(periodontogramSnapshots.organizationId, orgId),
+					),
+				);
 
 			return reply.code(204).send();
 		},

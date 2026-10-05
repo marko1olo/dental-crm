@@ -1,16 +1,25 @@
 import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	communicationEvents,
+	crmLeads,
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
+	denteVkBotConfigs,
 	denteWhatsappBotConfigs,
 	messengerInboundEvents,
 	patients,
 } from "../../db/schema.js";
 import { wsBroker } from "../websocketBroker.js";
+import { MessageTemplateEngine } from "../communications/MessageTemplateEngine.js";
+import { sendTelegramTextMessage } from "../../telegramTransport.js";
+import {
+	sendWhatsappTextMessage,
+	readWhatsappCredentials,
+	normalizeWhatsappRecipient,
+} from "../../whatsappTransport.js";
 import { OmnichannelTokenVault } from "./OmnichannelTokenVault.js";
 import { OnlineBookingPlugin } from "./plugins/OnlineBookingPlugin.js";
 import { PriceFaqPlugin } from "./plugins/PriceFaqPlugin.js";
@@ -70,6 +79,10 @@ class TokenBucket {
 export class OmnichannelBotEngine {
 	private readonly runtimes = new Map<string, OmnichannelBotRuntime>();
 	private readonly rateLimiters = new Map<string, TokenBucket>();
+	private readonly interceptedChats = new Map<
+		string,
+		{ interceptedAt: Date; operatorName: string; expiresAt?: Date }
+	>();
 	private readonly plugins: BotPlugin[] = [
 		new ServiceReminderPlugin(),
 		new OnlineBookingPlugin(),
@@ -88,6 +101,253 @@ export class OmnichannelBotEngine {
 
 	public registerPlugin(plugin: BotPlugin): void {
 		this.plugins.unshift(plugin);
+	}
+
+	public isChatIntercepted(channel: BotChannel, organizationId: string, senderId: string): boolean {
+		const key = `${channel}:${organizationId}:${senderId}`;
+		const entry = this.interceptedChats.get(key);
+		if (!entry) return false;
+		if (entry.expiresAt && entry.expiresAt.getTime() < Date.now()) {
+			this.interceptedChats.delete(key);
+			return false;
+		}
+		return true;
+	}
+
+	public takeoverChat(
+		channel: BotChannel,
+		organizationId: string,
+		senderId: string,
+		operatorName = "Оператор",
+	): { success: boolean; chatId: string; interceptedBy: string } {
+		const key = `${channel}:${organizationId}:${senderId}`;
+		this.interceptedChats.set(key, {
+			interceptedAt: new Date(),
+			operatorName,
+			expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour takeover
+		});
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "INBOX_CHAT_TAKEOVER",
+			payload: { channel, senderId, interceptedBy: operatorName },
+		});
+
+		return { success: true, chatId: key, interceptedBy: operatorName };
+	}
+
+	public releaseChat(
+		channel: BotChannel,
+		organizationId: string,
+		senderId: string,
+	): { success: boolean; chatId: string } {
+		const key = `${channel}:${organizationId}:${senderId}`;
+		this.interceptedChats.delete(key);
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "INBOX_CHAT_RELEASED",
+			payload: { channel, senderId },
+		});
+
+		return { success: true, chatId: key };
+	}
+
+	public getChatInterceptInfo(channel: BotChannel, organizationId: string, senderId: string) {
+		const key = `${channel}:${organizationId}:${senderId}`;
+		const entry = this.interceptedChats.get(key);
+		if (!entry) return { isIntercepted: false, interceptedBy: null };
+		if (entry.expiresAt && entry.expiresAt.getTime() < Date.now()) {
+			this.interceptedChats.delete(key);
+			return { isIntercepted: false, interceptedBy: null };
+		}
+		return { isIntercepted: true, interceptedBy: entry.operatorName };
+	}
+
+	public listInterceptedChats(organizationId: string): Array<{
+		channel: BotChannel;
+		senderId: string;
+		interceptedBy: string;
+		interceptedAt: Date;
+	}> {
+		const result: Array<{
+			channel: BotChannel;
+			senderId: string;
+			interceptedBy: string;
+			interceptedAt: Date;
+		}> = [];
+
+		const now = Date.now();
+		for (const [key, entry] of this.interceptedChats.entries()) {
+			if (entry.expiresAt && entry.expiresAt.getTime() < now) {
+				this.interceptedChats.delete(key);
+				continue;
+			}
+			const parts = key.split(":");
+			if (parts.length >= 3 && parts[1] === organizationId) {
+				result.push({
+					channel: parts[0] as BotChannel,
+					senderId: parts.slice(2).join(":"),
+					interceptedBy: entry.operatorName,
+					interceptedAt: entry.interceptedAt,
+				});
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Отправка сообщения оператора пациенту с проверкой врачебной тайны и записью в БД.
+	 */
+	public async sendOperatorMessage(params: {
+		channel: BotChannel;
+		organizationId: string;
+		senderId: string;
+		message: string;
+		operatorName?: string | undefined;
+	}): Promise<{ ok: boolean; messageId?: string | null | undefined; error?: string | undefined }> {
+		const trimmed = params.message.trim();
+		if (!trimmed) {
+			return { ok: false, error: "Текст сообщения не может быть пустым." };
+		}
+
+		// 152-ФЗ / 323-ФЗ ст. 13: Аппаратная защита врачебной тайны
+		const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(trimmed);
+		if (secrecy.hasLeak) {
+			return {
+				ok: false,
+				error: `Отправка заблокирована по 152-ФЗ и 323-ФЗ ст. 13 (врачебная тайна): ${secrecy.reasons.join("; ")}`,
+			};
+		}
+
+		return await withTenantCtx(params.organizationId, async (tx) => {
+			const phoneDigits = params.senderId.replace(/\D/g, "");
+			let patientId: string | null = null;
+			let patientName = `Пациент ${params.channel.toUpperCase()}`;
+
+			const existingPatients = await tx
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, params.organizationId),
+						phoneDigits.length >= 10
+							? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
+							: ilike(patients.notes, `%${params.channel}:${params.senderId}%`),
+					),
+				)
+				.limit(1);
+
+			if (existingPatients.length > 0 && existingPatients[0]) {
+				patientId = existingPatients[0].id;
+				patientName = existingPatients[0].fullName;
+			} else {
+				const [created] = await tx
+					.insert(patients)
+					.values({
+						organizationId: params.organizationId,
+						fullName: `${params.channel.toUpperCase()} Пациент (${params.senderId.slice(-4)})`,
+						phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
+						notes: `Создан для диалога ${params.channel.toUpperCase()}:${params.senderId}`,
+						status: "active",
+					})
+					.returning({ id: patients.id, fullName: patients.fullName });
+				if (created) {
+					patientId = created.id;
+					patientName = created.fullName;
+				}
+			}
+
+			if (!patientId) {
+				return { ok: false, error: "Не удалось привязать пациента к диалогу" };
+			}
+
+			// Персистентность исходящего сообщения в communicationEvents
+			const [outboundEvent] = await tx
+				.insert(communicationEvents)
+				.values({
+					organizationId: params.organizationId,
+					patientId,
+					channel: params.channel,
+					direction: "outbound",
+					status: "sent",
+					message: trimmed,
+				})
+				.returning();
+
+			let providerMessageId: string | null = null;
+			try {
+				if (params.channel === "telegram") {
+					const [tgConfig] = await tx
+						.select()
+						.from(denteTelegramBotConfigs)
+						.where(eq(denteTelegramBotConfigs.organizationId, params.organizationId))
+						.limit(1);
+
+					if (tgConfig?.tokenSecretRef) {
+						let botToken = tgConfig.tokenSecretRef;
+						if (OmnichannelTokenVault.isEncrypted(botToken)) {
+							botToken = OmnichannelTokenVault.decrypt(botToken, params.organizationId);
+						}
+						const sendRes = await sendTelegramTextMessage({
+							botToken,
+							chatId: params.senderId,
+							text: trimmed,
+						});
+						if (sendRes.ok && sendRes.telegramMessageId) {
+							providerMessageId = String(sendRes.telegramMessageId);
+						}
+					}
+				} else if (params.channel === "whatsapp") {
+					const [waConfig] = await tx
+						.select()
+						.from(denteWhatsappBotConfigs)
+						.where(eq(denteWhatsappBotConfigs.organizationId, params.organizationId))
+						.limit(1);
+
+					const creds = waConfig
+						? readWhatsappCredentials({ ...waConfig, organizationId: params.organizationId })
+						: null;
+					const toPhone = normalizeWhatsappRecipient(params.senderId);
+					if (creds && toPhone) {
+						const sendRes = await sendWhatsappTextMessage({
+							...creds,
+							toPhoneE164: toPhone,
+							text: trimmed,
+						});
+						if (sendRes.ok && sendRes.providerMessageId) {
+							providerMessageId = sendRes.providerMessageId;
+						}
+					}
+				}
+			} catch (transportErr) {
+				console.warn(
+					`[OmnichannelBotEngine] Transport send notification (offline/test mode active):`,
+					transportErr,
+				);
+			}
+
+			// Оповещение CRM операторов по WebSocket
+			wsBroker.broadcastToOrganization(params.organizationId, {
+				type: "INBOX_NEW_MESSAGE",
+				payload: {
+					id: outboundEvent?.id || `msg-${Date.now()}`,
+					channel: params.channel,
+					senderId: params.senderId,
+					patientId,
+					patientName,
+					text: trimmed,
+					direction: "outbound",
+					sender: "operator",
+					operatorName: params.operatorName || "Оператор",
+					createdAt: (outboundEvent?.createdAt || new Date()).toISOString(),
+				},
+			});
+
+			return {
+				ok: true,
+				messageId: outboundEvent?.id || providerMessageId || null,
+			};
+		});
 	}
 
 	/**
@@ -154,7 +414,11 @@ export class OmnichannelBotEngine {
 		return this.runtimes.get(botId);
 	}
 
-	public getBotByChannel(channel: BotChannel, organizationId: string, botConfigId = "default"): OmnichannelBotRuntime | undefined {
+	public getBotByChannel(
+		channel: BotChannel,
+		organizationId: string,
+		botConfigId = "default",
+	): OmnichannelBotRuntime | undefined {
 		const botId = `${channel}:${organizationId}:${botConfigId}`;
 		return this.runtimes.get(botId);
 	}
@@ -209,9 +473,15 @@ export class OmnichannelBotEngine {
 			let executedReply: BotReply | null = null;
 			let handledPluginName: string | undefined;
 
-			// Логируем входящее сообщение в unified inbound log
+			const isIntercepted = this.isChatIntercepted(msg.channel, msg.organizationId, msg.senderId);
+
+			// Сквозная фиксация входящего события в БД CRM (PostgreSQL)
+			let savedPatientId: string | null = null;
+			let savedPatientName = msg.senderName || `${msg.channel.toUpperCase()} Пациент`;
+
 			try {
 				await withTenantCtx(msg.organizationId, async (tx) => {
+					// 1. Unified inbound log
 					await tx.insert(messengerInboundEvents).values({
 						organizationId: msg.organizationId,
 						channel: msg.channel === "max" ? "max" : msg.channel,
@@ -221,12 +491,121 @@ export class OmnichannelBotEngine {
 						eventKind: "message",
 						rawPayload: msg.rawEvent || {},
 					});
+
+					// 2. Связка с пациентом клиники
+					const phoneDigits = msg.senderId.replace(/\D/g, "");
+					const existingPatients = await tx
+						.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, msg.organizationId),
+								phoneDigits.length >= 10
+									? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
+									: ilike(patients.notes, `%${msg.channel}:${msg.senderId}%`),
+							),
+						)
+						.limit(1);
+
+					if (existingPatients.length > 0 && existingPatients[0]) {
+						savedPatientId = existingPatients[0].id;
+						savedPatientName = existingPatients[0].fullName;
+					} else {
+						const [created] = await tx
+							.insert(patients)
+							.values({
+								organizationId: msg.organizationId,
+								fullName:
+									msg.senderName ||
+									`${msg.channel.toUpperCase()} Пациент (${msg.senderId.slice(-4)})`,
+								phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
+								notes: `Создан ботом ${msg.channel.toUpperCase()}. Чат: ${msg.channel}:${msg.senderId}`,
+								status: "active",
+							})
+							.returning({ id: patients.id, fullName: patients.fullName });
+						if (created) {
+							savedPatientId = created.id;
+							savedPatientName = created.fullName;
+						}
+					}
+
+					// 3. Создание / обновление входящего лида в crmLeads
+					if (savedPatientId) {
+						const existingLead = await tx
+							.select({ id: crmLeads.id })
+							.from(crmLeads)
+							.where(
+								and(
+									eq(crmLeads.organizationId, msg.organizationId),
+									ilike(crmLeads.notes, `%${msg.channel}:${msg.senderId}%`),
+								),
+							)
+							.limit(1);
+
+						if (existingLead.length > 0 && existingLead[0]) {
+							await tx
+								.update(crmLeads)
+								.set({
+									lastContactedAt: new Date(),
+									notes: `Сообщение в ${msg.channel.toUpperCase()}: ${msg.text || msg.payload || ""}`,
+								})
+								.where(eq(crmLeads.id, existingLead[0].id));
+						} else {
+							await tx.insert(crmLeads).values({
+								organizationId: msg.organizationId,
+								name: savedPatientName,
+								patientName: savedPatientName,
+								phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
+								source: `bot_${msg.channel}`,
+								status: "new",
+								notes: `Диалог ${msg.channel.toUpperCase()}:${msg.senderId}: ${msg.text || msg.payload || ""}`,
+								clinicalTags: [`bot_${msg.channel}`],
+							});
+						}
+
+						// 4. Запись входящего сообщения в communicationEvents
+						const [inboundEvt] = await tx
+							.insert(communicationEvents)
+							.values({
+								organizationId: msg.organizationId,
+								patientId: savedPatientId,
+								channel: msg.channel,
+								direction: "inbound",
+								status: "delivered",
+								message: msg.text || (msg.payload ? `[Кнопка: ${msg.payload}]` : ""),
+							})
+							.returning();
+
+						// WebSocket уведомление в CRM
+						wsBroker.broadcastToOrganization(msg.organizationId, {
+							type: "INBOX_NEW_MESSAGE",
+							payload: {
+								id: inboundEvt?.id || `inbound-${Date.now()}`,
+								channel: msg.channel,
+								senderId: msg.senderId,
+								patientId: savedPatientId,
+								patientName: savedPatientName,
+								text: msg.text || (msg.payload ? `[Кнопка: ${msg.payload}]` : ""),
+								direction: "inbound",
+								isIntercepted,
+								createdAt: new Date().toISOString(),
+							},
+						});
+					}
 				});
 			} catch (dbErr) {
-				// Audit log warning without dropping the message or breaking multiplexer
 				console.warn(
-					`[OmnichannelBotEngine] Inbound event persistence skipped: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`,
+					`[OmnichannelBotEngine] CRM persistence notice: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`,
 				);
+			}
+
+			// Если диалог перехвачен оператором клиники — автоответчик бота встает на паузу!
+			if (isIntercepted) {
+				return {
+					ok: true,
+					handledByPlugin: "human_operator_intercepted",
+					reply: null,
+				};
 			}
 
 			// Прогон по цепочке активных плагинов
@@ -264,6 +643,43 @@ export class OmnichannelBotEngine {
 					actionExecuted: "default_menu_presented",
 				};
 				handledPluginName = "default_responder";
+			}
+
+			// Фиксируем автоответ бота в communicationEvents
+			if (savedPatientId && executedReply) {
+				try {
+					await withTenantCtx(msg.organizationId, async (tx) => {
+						const [botEvt] = await tx
+							.insert(communicationEvents)
+							.values({
+								organizationId: msg.organizationId,
+								patientId: savedPatientId!,
+								channel: msg.channel,
+								direction: "outbound",
+								status: "sent",
+								message: executedReply!.text,
+							})
+							.returning();
+
+						wsBroker.broadcastToOrganization(msg.organizationId, {
+							type: "INBOX_NEW_MESSAGE",
+							payload: {
+								id: botEvt?.id || `bot-${Date.now()}`,
+								channel: msg.channel,
+								senderId: msg.senderId,
+								patientId: savedPatientId,
+								patientName: savedPatientName,
+								text: executedReply!.text,
+								direction: "outbound",
+								sender: "bot",
+								actionExecuted: executedReply!.actionExecuted,
+								createdAt: new Date().toISOString(),
+							},
+						});
+					});
+				} catch (botEvtErr) {
+					console.warn(`[OmnichannelBotEngine] Bot reply persistence warning:`, botEvtErr);
+				}
 			}
 
 			const latency = Number((performance.now() - startTime).toFixed(2));

@@ -57,6 +57,7 @@ import {
 	searchClinicalGuides,
 } from "../help";
 import { GuidanceCheatSheet } from "../guidance/GuidanceCheatSheet";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
 export interface HelpDrawerProps {
 	readonly isOpen: boolean;
@@ -126,7 +127,20 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 		}
 	}, [filteredGuides, activeTab]);
 
-	if (!isOpen) return null;
+	const isFullScreenStudioActive = useUiSurfaceStore(
+		(s) => s.isFullScreenStudioActive,
+	);
+	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);
+
+	useEffect(() => {
+		if (isOpen && !isFullScreenStudioActive && !hasPrimaryModal) {
+			useUiSurfaceStore.getState().openDrawer("help");
+		} else if (useUiSurfaceStore.getState().activeDrawer === "help") {
+			useUiSurfaceStore.getState().closeDrawer("help");
+		}
+	}, [isOpen, isFullScreenStudioActive, hasPrimaryModal]);
+
+	if (!isOpen || isFullScreenStudioActive) return null;
 
 	const handlePrint = () => {
 		if (typeof window !== "undefined") {

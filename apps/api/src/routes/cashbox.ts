@@ -273,7 +273,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					? await tx
 							.select()
 							.from(cashBoxes)
-							.where(inArray(cashBoxes.id, boxIds))
+							.where(and(eq(cashBoxes.organizationId, orgId), inArray(cashBoxes.id, boxIds)))
 					: [];
 			const boxMap = new Map(boxes.map((b) => [b.id, b]));
 
@@ -311,7 +311,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 						},
 						updatedAt: now,
 					})
-					.where(eq(cashBoxShifts.id, shift.id))
+					.where(and(eq(cashBoxShifts.id, shift.id), eq(cashBoxShifts.organizationId, orgId)))
 					.returning();
 
 				if (updatedShift) {

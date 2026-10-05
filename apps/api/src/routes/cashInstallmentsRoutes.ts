@@ -490,7 +490,12 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			const tranches = await tx
 				.select()
 				.from(installmentTranches)
-				.where(eq(installmentTranches.contractId, contract.contract.id))
+				.where(
+					and(
+						eq(installmentTranches.contractId, contract.contract.id),
+						eq(installmentTranches.organizationId, orgId),
+					),
+				)
 				.orderBy(installmentTranches.trancheNumber);
 
 			return {

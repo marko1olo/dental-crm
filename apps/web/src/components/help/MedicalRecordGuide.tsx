@@ -140,10 +140,10 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 									setTimeout(() => setIsPrintedDemo(false), 3000);
 								}}
 								className="px-2.5 py-1 rounded bg-[var(--paper)] border border-[var(--line)] hover:border-teal-500 text-[var(--ink)] text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-								title="Печать карты пациента 043/у (F12)"
+								title="Печать карты пациента (F12)"
 							>
 								<Printer size={13} className="text-teal-500" />
-								<span>Печать 043/у (F12)</span>
+								<span>Печать карты (F12)</span>
 							</button>
 						</div>
 					</div>

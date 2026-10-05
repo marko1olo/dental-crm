@@ -84,9 +84,12 @@ describe("Dental Lab Market Catalog & Mandate Invariants Inquisitor", () => {
 	});
 
 	it("3. Mandate 8b: All lab and orthopedics files strictly <= 800 lines of code", () => {
+		const baseDir = fs.existsSync(path.resolve(process.cwd(), "apps/web"))
+			? path.resolve(process.cwd(), "apps/web")
+			: process.cwd();
 		const directories = [
-			path.resolve(process.cwd(), "apps/web/src/components/lab"),
-			path.resolve(process.cwd(), "apps/web/src/components/orthopedics"),
+			path.resolve(baseDir, "src/components/lab"),
+			path.resolve(baseDir, "src/components/orthopedics"),
 		];
 
 		const oversizedFiles: Array<{ file: string; lines: number }> = [];
@@ -120,9 +123,12 @@ describe("Dental Lab Market Catalog & Mandate Invariants Inquisitor", () => {
 
 	it("4. Mandate 8d: Zero cartoon emojis across all lab and orthopedics components", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		const baseDir = fs.existsSync(path.resolve(process.cwd(), "apps/web"))
+			? path.resolve(process.cwd(), "apps/web")
+			: process.cwd();
 		const directories = [
-			path.resolve(process.cwd(), "apps/web/src/components/lab"),
-			path.resolve(process.cwd(), "apps/web/src/components/orthopedics"),
+			path.resolve(baseDir, "src/components/lab"),
+			path.resolve(baseDir, "src/components/orthopedics"),
 		];
 
 		const emojiViolations: Array<{ file: string; line: number; match: string }> = [];

@@ -51,7 +51,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Sella turcica",
 		anatomicalDescription: "Турецкое седло (центр гипофизарной ямки)",
 		category: "cranial",
-		color: "#06b6d4", // cyan
+		color: "#38bdf8", // PACS Sky Blue
 	},
 	{
 		key: "N",
@@ -60,7 +60,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Nasion",
 		anatomicalDescription: "Лобно-носовой шов (передняя точка сочленения)",
 		category: "cranial",
-		color: "#06b6d4",
+		color: "#38bdf8",
 	},
 	{
 		key: "Or",
@@ -69,7 +69,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Orbitale",
 		anatomicalDescription: "Орбитале (нижний край глазницы, ориентир FH)",
 		category: "cranial",
-		color: "#0284c7", // light blue
+		color: "#38bdf8",
 	},
 	{
 		key: "Po",
@@ -78,7 +78,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Porion",
 		anatomicalDescription: "Порион (верхний край слухового прохода, ориентир FH)",
 		category: "cranial",
-		color: "#0284c7",
+		color: "#38bdf8",
 	},
 	{
 		key: "ANS",
@@ -87,7 +87,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Spina nasalis anterior",
 		anatomicalDescription: "Передняя носовая ость (вершина костного выступа)",
 		category: "maxillary",
-		color: "#10b981", // emerald
+		color: "#38bdf8",
 	},
 	{
 		key: "PNS",
@@ -96,7 +96,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Spina nasalis posterior",
 		anatomicalDescription: "Задняя носовая ость (дистальный край твердого нёба)",
 		category: "maxillary",
-		color: "#10b981",
+		color: "#38bdf8",
 	},
 	{
 		key: "A",
@@ -105,7 +105,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Subspinale",
 		anatomicalDescription: "Точка А (наибольшая вогнутость апикального базиса ВЧ)",
 		category: "maxillary",
-		color: "#10b981",
+		color: "#38bdf8",
 	},
 	{
 		key: "B",
@@ -114,7 +114,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Supramentale",
 		anatomicalDescription: "Точка В (наибольшая вогнутость апикального базиса НЧ)",
 		category: "mandibular",
-		color: "#f59e0b", // amber
+		color: "#38bdf8",
 	},
 	{
 		key: "Pog",
@@ -123,7 +123,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Pogonion",
 		anatomicalDescription: "Погонион (наиболее передняя точка подбородка)",
 		category: "mandibular",
-		color: "#f59e0b",
+		color: "#38bdf8",
 	},
 	{
 		key: "Gn",
@@ -132,7 +132,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Gnathion",
 		anatomicalDescription: "Гнатион (передне-нижняя точка контура симфиза)",
 		category: "mandibular",
-		color: "#f59e0b",
+		color: "#38bdf8",
 	},
 	{
 		key: "Me",
@@ -141,7 +141,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Menton",
 		anatomicalDescription: "Ментон (самая нижняя точка подбородочного симфиза)",
 		category: "mandibular",
-		color: "#f59e0b",
+		color: "#38bdf8",
 	},
 	{
 		key: "Go",
@@ -150,7 +150,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Gonion",
 		anatomicalDescription: "Гонион (вершина угла нижней челюсти)",
 		category: "mandibular",
-		color: "#f59e0b",
+		color: "#38bdf8",
 	},
 	{
 		key: "U1t",
@@ -159,7 +159,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Incisor superior incisal",
 		anatomicalDescription: "Режущий край центрального резца верхней челюсти",
 		category: "dental",
-		color: "#ec4899", // pink
+		color: "#22c55e", // High-contrast Dolphin Emerald
 	},
 	{
 		key: "U1a",
@@ -168,7 +168,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Incisor superior apical",
 		anatomicalDescription: "Верхушка корня центрального резца верхней челюсти",
 		category: "dental",
-		color: "#ec4899",
+		color: "#22c55e",
 	},
 	{
 		key: "L1t",
@@ -177,7 +177,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Incisor inferior incisal",
 		anatomicalDescription: "Режущий край центрального резца нижней челюсти",
 		category: "dental",
-		color: "#8b5cf6", // purple
+		color: "#22c55e",
 	},
 	{
 		key: "L1a",
@@ -186,7 +186,7 @@ export const CEPHALOMETRIC_LANDMARKS: LandmarkDefinition[] = [
 		latinName: "Incisor inferior apical",
 		anatomicalDescription: "Верхушка корня центрального резца нижней челюсти",
 		category: "dental",
-		color: "#8b5cf6",
+		color: "#22c55e",
 	},
 ];
 

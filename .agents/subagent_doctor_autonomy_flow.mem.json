@@ -1,0 +1,145 @@
+{
+  "subagent_id": "doctor_autonomy_flow_inquisitor",
+  "role": "Red Team Inquisitor клинической эргономики, скорости приёма и автономии врача у кресла (Doctor Chairside Flow Inquisitor)",
+  "status": "COMPLETED",
+  "last_updated": "2026-10-05T17:01:00+04:00",
+  "verdict": "[ПРОВЕРЕНО: ЧИСТО]",
+  "mandates_enforced": [
+    "Mandate 8e (Doctor & Staff Autonomy, Zero Bureaucracy, 1-Click Norm, Non-blocking Save/Finish, 54-FZ Optional INN)",
+    "Mandate 8d (Burden of Proof & Zero Cartoon Emojis)",
+    "Mandate 8f (100% Factual Honesty & Anti-Hallucination)",
+    "Apple iOS HIG & Touch Ergonomics (>=44x44px touch targets, Floating Bottom Bar, Thumb Zone)"
+  ],
+  "areas_audited_and_verified": {
+    "schedule_express_booking": {
+      "status": "PASS",
+      "booking_duration_seconds": "<= 5s",
+      "patient_section_express_buttons": [
+        "data-testid='appointment-modal-cito-express-btn'",
+        "data-testid='appointment-modal-anonymous-express-btn'"
+      ],
+      "no_mandatory_assistant_or_branch": true,
+      "auto_patient_creation_on_empty_save": true,
+      "legacy_blocking_error_eradicated": "setError('Укажите пациента') completely removed"
+    },
+    "emk_chairside_flow": {
+      "status": "PASS",
+      "physiological_norm_1_click": {
+        "button_id": "btn-chairside-physiological-norm",
+        "label": "✓ Соматически здоров / Норма",
+        "icon": "ShieldCheck",
+        "target_icd10": "Z01.2"
+      },
+      "finish_visit_button": {
+        "is_disabled_by_secondary_fields": false,
+        "is_disabled_by_temperature_or_pulse": false,
+        "disabled_condition": "only disabled={isCompletingVisit} during in-flight network request"
+      },
+      "debounced_autosave": {
+        "status": "active",
+        "debounce_window_ms": 600,
+        "safeguards": ["visibilitychange", "pagehide", "unmount"]
+      }
+    },
+    "cashbox_54fz_and_discounts": {
+      "status": "PASS",
+      "physical_person_inn_requirement": "Strictly optional per Article 4.7 № 54-FZ (isValid: true, isRequired: false)",
+      "legal_entity_ip_inn": "Required (10 digits for legal entity, 12 digits for IP)",
+      "discounts_and_warranty_freedom": {
+        "warranty_100_preset": "Valid at 0 ₽ without chief doctor master-passwords",
+        "split_payment_methods": ["bank_card", "cash", "sbp_qr", "patient_deposit", "loyalty_points", "dms_insurance"]
+      }
+    },
+    "mobile_touch_ergonomics": {
+      "status": "PASS",
+      "touch_targets": ">= 44x44px across all buttons and inputs",
+      "dental_formula": "Q1-Q4 quadrant selector with large 44x56px buttons (no 16-tooth squish)",
+      "action_bars": "Floating Bottom Bar in Natural Thumb Zone with backdrop-filter: blur(20px)"
+    }
+  },
+  "automated_tests": {
+    "test_file": "apps/web/src/tests/doctorAutonomyChairsideFlow.test.ts",
+    "test_framework": "node:test via npx tsx --test",
+    "total_tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "duration_ms": 1832
+  },
+  "compiler_status": {
+    "typecheck_command": "npm run typecheck -w @dental/web",
+    "exit_code": 0,
+    "errors": 0
+  },
+  "visual_proofs": [
+    {
+      "filename": "01_schedule_express_booking_pc_light.png",
+      "resolution": "1440x900",
+      "theme": "light",
+      "size_bytes": 91375,
+      "verified_pixels": "Modal opened with '+ Аноним / Острая боль', CITO active banner, optional assistant, enabled save button"
+    },
+    {
+      "filename": "02_schedule_express_booking_pc_dark.png",
+      "resolution": "1440x900",
+      "theme": "dark",
+      "size_bytes": 89013,
+      "verified_pixels": "Dark medical theme, high WCAG contrast, ruby CITO banner, crisp text"
+    },
+    {
+      "filename": "03_emk_physiological_norm_pc_light.png",
+      "resolution": "1440x900",
+      "theme": "light",
+      "size_bytes": 61194,
+      "verified_pixels": "Form 043/u EMK workspace with green 1-click '✓ Соматически здоров / Норма' button, autosave indicator, enabled finish CTA"
+    },
+    {
+      "filename": "04_emk_physiological_norm_pc_dark.png",
+      "resolution": "1440x900",
+      "theme": "dark",
+      "size_bytes": 60310,
+      "verified_pixels": "Dark clinical EMK view, autosave debounced 600ms badge, zero glare"
+    },
+    {
+      "filename": "05_mobile_chairside_visit_light.png",
+      "resolution": "390x844",
+      "theme": "light",
+      "size_bytes": 213694,
+      "verified_pixels": "Mobile chairside visit with 52px solid green physiological norm CTA, touch targets >= 44x44px, Floating Bottom Bar in Thumb Zone"
+    },
+    {
+      "filename": "06_mobile_chairside_visit_dark.png",
+      "resolution": "390x844",
+      "theme": "dark",
+      "size_bytes": 213992,
+      "verified_pixels": "Mobile OLED dark mode, 44x44px touch ergonomics, allergy badge, thumb zone next button"
+    },
+    {
+      "filename": "07_fast_checkout_54fz_pc_light.png",
+      "resolution": "1440x900",
+      "theme": "light",
+      "size_bytes": 94225,
+      "verified_pixels": "Fast checkout modal showing banner '✓ Для пациентов-физлиц ИНН не требуется', 1-click presets including '100% Гарантия (0 ₽)'"
+    },
+    {
+      "filename": "08_fast_checkout_54fz_pc_dark.png",
+      "resolution": "1440x900",
+      "theme": "dark",
+      "size_bytes": 92768,
+      "verified_pixels": "Dark POS ledger with multi-tender split methods, non-blocking check creation"
+    },
+    {
+      "filename": "09_mobile_fast_checkout_light.png",
+      "resolution": "390x844",
+      "theme": "light",
+      "size_bytes": 166837,
+      "verified_pixels": "Mobile POS drawer with 32px hero amount, zero INN friction, 52px pay CTA"
+    },
+    {
+      "filename": "10_mobile_fast_checkout_dark.png",
+      "resolution": "390x844",
+      "theme": "dark",
+      "size_bytes": 164421,
+      "verified_pixels": "Mobile POS dark drawer with high contrast buttons and offline terminal fallback"
+    }
+  ]
+}

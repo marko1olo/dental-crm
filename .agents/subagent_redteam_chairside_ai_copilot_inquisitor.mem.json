@@ -1,0 +1,72 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: CHAIRSIDE AI CLINICAL COPILOT & LLM TOOL CALLING",
+  "status": "completed",
+  "current_step": "reporting",
+  "completed_steps": [
+    "law_0_mandatory_reading_complete",
+    "reconnaissance_ai_copilot_files",
+    "deep_audit_defects_and_mocks",
+    "surgical_fixes_and_wiring",
+    "mandate_8ab_autonomous_multipurpose_intents",
+    "targeted_tests_and_encoding_check",
+    "verbatim_inquisition_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "Empty procedure extraction in voice dictation parser",
+      "severity": "CRITICAL",
+      "file": "apps/api/src/services/agent/tools/voiceDictationParser.ts",
+      "fix": "Implemented extractProcedures with 13 clinical regex patterns (restoration, cavity prep, rubberdam, canals, obturation, anesthesia, extraction, hygiene/Air-Flow, impressions, crowns, implants, sutures, polishing)."
+    },
+    {
+      "defect": "Cyrillic regex word boundary trap and warehouse query hijacking",
+      "severity": "CRITICAL",
+      "file": "apps/api/src/services/agent/copilotFallbackRouter.ts",
+      "fix": "Fixed bug where 'расписание' triggered warehouse deduction because 'расписание' contained 'списани'. Fixed JavaScript ASCII \\b failure on Russian words by replacing with Cyrillic whitespace/end-of-string patterns."
+    },
+    {
+      "defect": "Static FAQ documentation search hijacking live operational doctor inquiries",
+      "severity": "CRITICAL",
+      "file": "apps/api/src/services/agent/copilotFallbackRouter.ts",
+      "fix": "Differentiated isHowToQuestion from isLiveOperationalQuery so live questions ('Кто следующий?', 'Что делали на прошлом приёме?', 'Какой остаток депозита?', 'Какая выручка?') route directly to clinical and financial CRM tools."
+    },
+    {
+      "defect": "Missing 1-click clinical billing action in frontend dispatcher",
+      "severity": "HIGH",
+      "file": "apps/web/src/services/ai/aiActionDispatcher.ts",
+      "fix": "Implemented add_procedure_to_invoice / add_service_to_invoice with dente:invoice-service-added event dispatch."
+    },
+    {
+      "defect": "Pharma-nagging and blocking terminology in chairside copilot cards and HUD",
+      "severity": "HIGH",
+      "files": [
+        "apps/web/src/components/copilot/CopilotGenerativeCards.tsx",
+        "apps/web/src/components/copilot/ChairsideCopilotHUD.tsx",
+        "apps/web/src/components/copilot/CopilotActionConfirm.tsx"
+      ],
+      "fix": "Replaced 'Блокировка DDI / Аллергии', 'Критический риск' and 'DDI Safe' with non-blocking clinical warning badge '⚠️ Предупреждение об аллергии / анамнезе', 'Внимание (анамнез)' and 'Совместимо'."
+    },
+    {
+      "defect": "Soviet bureaucratic ciphers in clinician UI chips and empty states",
+      "severity": "MEDIUM",
+      "files": [
+        "apps/web/src/components/copilot/CopilotChatPanel.tsx",
+        "apps/web/src/components/copilot/CopilotSuggestions.tsx",
+        "apps/web/src/services/ai/aiActionDispatcher.ts"
+      ],
+      "fix": "Replaced 'дневник 043/у' with 'дневник приёма', '54-ФЗ' with 'Касса и фискальные чеки', 'КНД 1151156' with 'Справка для налогового вычета'."
+    }
+  ],
+  "verification_suite": {
+    "voiceDictationParser_tests": "PASS (4/4)",
+    "copilotFallbackRouter_tests": "PASS (9/9)",
+    "autonomousDenteAgent_tests": "PASS (23/23)",
+    "aiActionDispatcher_tests": "PASS (7/7)",
+    "copilotActionRunner_tests": "PASS (3/3)",
+    "voiceClinicalCommands_tests": "PASS (26/26)",
+    "encoding_gate": "PASS (7232 files, 0 defects)",
+    "css_tokens_gate": "PASS (165 CSS files, 0 unresolved tokens)",
+    "total_unit_tests_passing": 72
+  }
+}

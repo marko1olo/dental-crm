@@ -21,6 +21,7 @@ import {
 	resolvePatientUpcomingAppointment,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { showToast } from "../GlobalToast";
 import { captureLeadFromIncomingCall, resolveCallAdvertisingAttribution } from "./telephonyAttribution";
 import { TelephonyDialerPad } from "./TelephonyDialerPad";
@@ -549,6 +550,14 @@ export function TelephonyFloatingWidget({
 	const isDoctorChairsideMode =
 		selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
 	if (isDoctorChairsideMode) {
+		return null;
+	}
+
+	const isFullScreenStudioActive = useUiSurfaceStore(
+		(s) => s.isFullScreenStudioActive,
+	);
+	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);
+	if (isFullScreenStudioActive || hasPrimaryModal) {
 		return null;
 	}
 

@@ -16,21 +16,32 @@ import "./styles/overflow-fixes.css";
 import "./components/settings/telegram/TelegramBotStudio.css";
 
 import { TelegramBotStudioSection } from "./components/settings/telegram/TelegramBotStudioSection";
+import { BotStudioModal } from "./components/settings/telegram/BotStudioModal";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
 
 function TelegramStudioPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
 	const rawTheme = (params.get("theme") || "light") as ThemeMode;
+	const initialStep = (parseInt(params.get("step") || "1", 10) || 1) as 1 | 2 | 3 | 4;
+	const channel = (params.get("channel") || "telegram") as any;
+	const [isModalOpen, setIsModalOpen] = React.useState(params.get("modal") === "true");
 
 	useEffect(() => {
-		const resolved = resolveTheme(rawTheme, false);
-		applyThemeToRoot(document.documentElement, resolved);
-		const isDark = rawTheme === "dark";
-		document.documentElement.classList.toggle("dark", isDark);
-		document.documentElement.classList.toggle("light", !isDark);
-		document.documentElement.setAttribute("data-theme", rawTheme);
-		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-		document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen p-4 md:p-6`;
+		const updateTheme = () => {
+			const currentTheme = (document.documentElement.getAttribute("data-theme") || rawTheme) as ThemeMode;
+			const resolved = resolveTheme(currentTheme, false);
+			applyThemeToRoot(document.documentElement, resolved);
+			const isDark = currentTheme === "dark";
+			document.documentElement.classList.toggle("dark", isDark);
+			document.documentElement.classList.toggle("light", !isDark);
+			document.documentElement.setAttribute("data-theme", currentTheme);
+			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+			document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen p-4 md:p-6`;
+		};
+		updateTheme();
+		const observer = new MutationObserver(updateTheme);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+		return () => observer.disconnect();
 	}, [rawTheme]);
 
 	const mockProps = {
@@ -56,7 +67,17 @@ function TelegramStudioPreviewApp() {
 
 	return (
 		<div className="max-w-[1400px] mx-auto w-full">
-			<TelegramBotStudioSection parentProps={mockProps} />
+			<TelegramBotStudioSection
+				parentProps={mockProps}
+				initialWizardStep={initialStep}
+				initialChannel={channel}
+			/>
+			<BotStudioModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				initialChannel={channel}
+				parentProps={mockProps}
+			/>
 		</div>
 	);
 }

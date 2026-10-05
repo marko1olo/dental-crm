@@ -10,6 +10,7 @@ import type {
   QuickBookingSlotInfo,
 } from "./QuickBookingDrawerTypes";
 import { useQuickBookingDrawerState } from "./useQuickBookingDrawerState";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
 export { resolveChairDutyDoctor };
 export type { QuickBookingDrawerProps, QuickBookingSlotInfo };
@@ -107,7 +108,10 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
     }
   };
 
-  if (!isOpen) return null;
+  const isFullScreenStudioActive = useUiSurfaceStore(
+    (s) => s.isFullScreenStudioActive,
+  );
+  if (!isOpen || isFullScreenStudioActive) return null;
 
   const drawerElement = (
     <div

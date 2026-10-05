@@ -58,7 +58,7 @@ type SpeechScopeValidation =
 	| { ok: true; patientId: string | null; visitId: string | null }
 	| {
 			ok: false;
-			statusCode: 400 | 404 | 409;
+			statusCode: 400 | 401 | 404 | 409;
 			error: "SpeechClinicalScopeError";
 			message: string;
 	  };
@@ -94,7 +94,7 @@ function normalizeScopeId(value: string | null | undefined): string | null {
 }
 
 function speechScopeFailure(
-	statusCode: 400 | 404 | 409,
+	statusCode: 400 | 401 | 404 | 409,
 	message: string,
 ): SpeechScopeValidation {
 	return { ok: false, statusCode, error: "SpeechClinicalScopeError", message };
@@ -159,15 +159,20 @@ async function validateSpeechClinicalScope(
 		);
 	}
 
+	if (!callerOrganizationId) {
+		return speechScopeFailure(
+			400,
+			"Не указана организация клиники для проверки контекста диктовки.",
+		);
+	}
+
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let patient: any = null;
 	if (requestedPatientId) {
-		const patientScope = callerOrganizationId
-			? and(
-					eq(patients.id, requestedPatientId),
-					eq(patients.organizationId, callerOrganizationId),
-				)
-			: eq(patients.id, requestedPatientId);
+		const patientScope = and(
+			eq(patients.id, requestedPatientId),
+			eq(patients.organizationId, callerOrganizationId),
+		);
 		const [found] = await db
 			.select()
 			.from(patients)
@@ -181,12 +186,10 @@ async function validateSpeechClinicalScope(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	let visit: any = null;
 	if (requestedVisitId) {
-		const visitScope = callerOrganizationId
-			? and(
-					eq(visits.id, requestedVisitId),
-					eq(visits.organizationId, callerOrganizationId),
-				)
-			: eq(visits.id, requestedVisitId);
+		const visitScope = and(
+			eq(visits.id, requestedVisitId),
+			eq(visits.organizationId, callerOrganizationId),
+		);
 		const [found] = await db.select().from(visits).where(visitScope).limit(1);
 		visit = found ?? null;
 		if (!visit) return speechScopeFailure(404, "Прием для диктовки не найден.");

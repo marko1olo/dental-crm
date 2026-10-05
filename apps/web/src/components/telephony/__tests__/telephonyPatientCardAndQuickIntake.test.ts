@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test from "node:test";
+import { describe, it } from "vitest";
 import {
 	resolvePatientActiveTreatmentPlan,
 	resolvePatientSomaticAlerts,
@@ -14,7 +14,7 @@ import type {
 	TreatmentPlanScenario,
 } from "@dental/shared";
 
-test("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d, 8e, 8n, 8p)", async (t) => {
+describe("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d, 8e, 8n, 8p)", () => {
 	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
 		? path.resolve(process.cwd(), "apps/web/src")
 		: path.resolve(process.cwd(), "src");
@@ -24,7 +24,7 @@ test("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d
 	const popupSource = fs.readFileSync(popupPath, "utf-8");
 	const drawerSource = fs.readFileSync(drawerPath, "utf-8");
 
-	await t.test("1. Existing Patient: 1-Click Card Access Without Resetting Active Form 043/u Visit (Doctor Autonomy)", () => {
+	it("1. Existing Patient: 1-Click Card Access Without Resetting Active Form 043/u Visit (Doctor Autonomy)", () => {
 		// Drawer toggle retains doctor context
 		assert.ok(
 			popupSource.includes("const handleToggleCardDrawer = () => {"),
@@ -46,7 +46,7 @@ test("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d
 		);
 	});
 
-	await t.test("2. Existing Patient: Instant Somatic Status (Allergies & Contraindications)", () => {
+	it("2. Existing Patient: Instant Somatic Status (Allergies & Contraindications)", () => {
 		const samplePatient: Partial<Patient> = {
 			id: "pat-101",
 			fullName: "Иванов Иван Иванович",
@@ -86,7 +86,7 @@ test("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d
 		);
 	});
 
-	await t.test("3. Existing Patient: Instant Active Treatment Plan Resolution & Progress Bar", () => {
+	it("3. Existing Patient: Instant Active Treatment Plan Resolution & Progress Bar", () => {
 		const patientId = "pat-202";
 		const mockScenarios: Partial<TreatmentPlanScenario>[] = [
 			{
@@ -155,7 +155,7 @@ test("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d
 		);
 	});
 
-	await t.test("4. New Patient: 1-Click Fast Intake Without Bureaucratic Red Tape (SNILS/Passport/INN Free)", () => {
+	it("4. New Patient: 1-Click Fast Intake Without Bureaucratic Red Tape (SNILS/Passport/INN Free)", () => {
 		// Verify handleQuickCreatePatient payload in IncomingCallPopup
 		assert.ok(
 			popupSource.includes("const targetName = entered.trim() || `Пациент ${formattedPhone}`;"),
@@ -191,7 +191,7 @@ test("Telephony + Patient Registry & Fast Clinical Intake Suite (Mandates 8b, 8d
 		);
 	});
 
-	await t.test("5. Empty State / No Plan Safe Handling", () => {
+	it("5. Empty State / No Plan Safe Handling", () => {
 		const emptySummary = resolvePatientActiveTreatmentPlan("unknown-patient-999", [], []);
 		assert.equal(emptySummary.hasActivePlan, false);
 		assert.equal(emptySummary.totalCostRub, 0);

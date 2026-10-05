@@ -79,6 +79,7 @@ import {
 	getInactivityTimeoutMs,
 } from "./components/auth/DoctorPrivacyShield";
 import { usePerspectiveStore } from "./store/perspectiveStore";
+import { useUiSurfaceStore } from "./store/uiSurfaceStore";
 import { useAppLogic } from "./useAppLogic";
 import { useOmniPlatform } from "./hooks/useOmniPlatform";
 import { useDesktopShortcuts } from "./hooks/useDesktopShortcuts";
@@ -190,6 +191,11 @@ const CbctMprImplantStudioModal = lazyWithRetry(() =>
 		default: module.CbctMprImplantStudioModal,
 	})),
 );
+const CephalometricAnalysisModal = lazyWithRetry(() =>
+	import("./components/orthodontics/CephalometricAnalysisModal").then((module) => ({
+		default: module.CephalometricAnalysisModal,
+	})),
+);
 const CbctTunerPlayground = lazyWithRetry(() =>
 	import("./components/radiology/tuner/CbctTunerPlayground").then((module) => ({
 		default: module.CbctTunerPlayground,
@@ -254,6 +260,11 @@ const VoiceAssistantUI = lazyWithRetry(() =>
 const A2hsPromptModal = lazyWithRetry(() =>
 	import("./pwa/A2hsPromptModal").then((module) => ({
 		default: module.A2hsPromptModal,
+	})),
+);
+const EgiszRemdHubModal = lazyWithRetry(() =>
+	import("./components/egisz/EgiszRemdHubModal").then((module) => ({
+		default: module.EgiszRemdHubModal,
 	})),
 );
 function _speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
@@ -1060,12 +1071,14 @@ export function App() {
 				setCurrentView("scanner");
 			} else if (route === "cmo" || route === "payout" || route === "payouts") {
 				setCurrentView("analytics");
-			} else if (route === "telephony") {
+			} else if (route === "telephony" || route === "communications" || route === "bots") {
 				setCurrentView("communications");
 			} else if (route === "documents") {
 				setCurrentView("documents");
 			} else if (route === "lab") {
 				setCurrentView("lab");
+			} else if (route === "inventory" || route === "warehouse") {
+				setCurrentView("inventory");
 			} else if (route === "leads") {
 				setCurrentView("leads");
 			} else if (route === "marketing") {
@@ -1132,13 +1145,49 @@ export function App() {
 		},
 	);
 
+	// Orthodontic TRG Cephalometric Analysis Standalone Launcher (?ceph=demo, ?trg=demo, #ceph, #trg)
+	const [isCephDirectModalOpen, setIsCephDirectModalOpen] = useState<boolean>(
+		() => {
+			if (typeof window === "undefined") return false;
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			return (
+				search.includes("ceph") ||
+				search.includes("trg") ||
+				hash.includes("ceph") ||
+				hash.includes("trg")
+			);
+		},
+	);
+
+	// EGISZ REMD & Order 947n CDA R2 XML Hub Launcher (?egisz=demo, ?remd=demo, #egisz, #remd, #semd)
+	const [isEgiszRemdModalOpen, setIsEgiszRemdModalOpen] = useState<boolean>(
+		() => {
+			if (typeof window === "undefined") return false;
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			return (
+				search.includes("egisz") ||
+				search.includes("remd") ||
+				search.includes("semd") ||
+				hash.includes("egisz") ||
+				hash.includes("remd") ||
+				hash.includes("semd")
+			);
+		},
+	);
+
 	useEffect(() => {
 		const handleOpenCbct = () => setIsCbctDirectModalOpen(true);
 		const handleOpenTuner = () => setIsCbctTunerOpen(true);
 		const handleOpenConsent = () => setIsConsentDirectModalOpen(true);
+		const handleOpenCeph = () => setIsCephDirectModalOpen(true);
+		const handleOpenEgisz = () => setIsEgiszRemdModalOpen(true);
 		window.addEventListener("dente:open-cbct-demo", handleOpenCbct);
 		window.addEventListener("dente:open-cbct-tuner", handleOpenTuner);
 		window.addEventListener("dente:open-consent-modal", handleOpenConsent);
+		window.addEventListener("dente:open-ceph-demo", handleOpenCeph);
+		window.addEventListener("dente:open-egisz-remd", handleOpenEgisz);
 
 		const handleUrlChange = () => {
 			const search = window.location.search || "";
@@ -1162,6 +1211,24 @@ export function App() {
 			) {
 				setIsConsentDirectModalOpen(true);
 			}
+			if (
+				search.includes("ceph") ||
+				search.includes("trg") ||
+				hash.includes("ceph") ||
+				hash.includes("trg")
+			) {
+				setIsCephDirectModalOpen(true);
+			}
+			if (
+				search.includes("egisz") ||
+				search.includes("remd") ||
+				search.includes("semd") ||
+				hash.includes("egisz") ||
+				hash.includes("remd") ||
+				hash.includes("semd")
+			) {
+				setIsEgiszRemdModalOpen(true);
+			}
 		};
 		window.addEventListener("popstate", handleUrlChange);
 		window.addEventListener("hashchange", handleUrlChange);
@@ -1169,10 +1236,12 @@ export function App() {
 			window.removeEventListener("dente:open-cbct-demo", handleOpenCbct);
 			window.removeEventListener("dente:open-cbct-tuner", handleOpenTuner);
 			window.removeEventListener("dente:open-consent-modal", handleOpenConsent);
+			window.removeEventListener("dente:open-ceph-demo", handleOpenCeph);
 			window.removeEventListener("popstate", handleUrlChange);
 			window.removeEventListener("hashchange", handleUrlChange);
 		};
 	}, []);
+
 	// 152-FZ Doctor Privacy Shield (Lockscreen)
 	const [isPrivacyShieldActive, setIsPrivacyShieldActive] = useState<boolean>(
 		() => {
@@ -1181,6 +1250,51 @@ export function App() {
 			);
 		},
 	);
+
+	// Синхронизация прямых полноэкранных клинических студий с uiSurfaceStore (Инвариант 3)
+	useEffect(() => {
+		if (isCbctDirectModalOpen) {
+			useUiSurfaceStore.getState().openPrimaryModal("cbct_implant_studio");
+		} else if (isCephDirectModalOpen) {
+			useUiSurfaceStore.getState().openPrimaryModal("cephalometric_trg");
+		} else if (isEgiszRemdModalOpen) {
+			useUiSurfaceStore.getState().openPrimaryModal("egisz_remd_hub");
+		} else if (isPrivacyShieldActive) {
+			useUiSurfaceStore.getState().openPrimaryModal("privacy_shield");
+		} else if (isConsentDirectModalOpen) {
+			useUiSurfaceStore.getState().openPrimaryModal("informed_consent");
+		} else {
+			const current = useUiSurfaceStore.getState().primaryModal?.id;
+			if (
+				current === "cbct_implant_studio" ||
+				current === "cephalometric_trg" ||
+				current === "egisz_remd_hub" ||
+				current === "privacy_shield" ||
+				current === "informed_consent"
+			) {
+				useUiSurfaceStore.getState().closePrimaryModal();
+			}
+		}
+	}, [
+		isCbctDirectModalOpen,
+		isCephDirectModalOpen,
+		isEgiszRemdModalOpen,
+		isPrivacyShieldActive,
+		isConsentDirectModalOpen,
+	]);
+
+	useEffect(() => {
+		const handleCloseAllSurfaces = () => {
+			setIsCbctDirectModalOpen(false);
+			setIsCephDirectModalOpen(false);
+			setIsEgiszRemdModalOpen(false);
+			setIsConsentDirectModalOpen(false);
+		};
+		window.addEventListener("dente:close-all-surfaces", handleCloseAllSurfaces);
+		return () => {
+			window.removeEventListener("dente:close-all-surfaces", handleCloseAllSurfaces);
+		};
+	}, []);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(() => {
 		const cached = getCachedActiveStaffUser();
@@ -1497,6 +1611,51 @@ export function App() {
 				diagnosisIcd="K02.1 Кариес дентина"
 				toothNumbers="3.6"
 			/>
+		);
+	}
+
+	// ORTHODONTIC CEPHALOMETRIC TRG STANDALONE LAUNCHER (?ceph=demo, ?trg=demo, #ceph, #trg)
+	// Must be rendered at the absolute top for instant orthodontic TRG analysis!
+	if (isCephDirectModalOpen) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка цефалометрического анализа ТРГ..." />}>
+				<CephalometricAnalysisModal
+					isOpen={true}
+					onClose={() => {
+						setIsCephDirectModalOpen(false);
+						const url = new URL(window.location.href);
+						url.searchParams.delete("ceph");
+						url.searchParams.delete("trg");
+						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("ceph") && !url.hash.includes("trg") ? url.hash : ""));
+					}}
+					patientName="Смирнова Екатерина Андреевна (ТРГ боковая)"
+					patientId="demo_ceph_patient"
+					initialImageUrl="/radiology/sample_trg_cephalogram.jpg"
+					initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as ("landmarks" | "metrics" | "report") | null) ?? "metrics"}
+				/>
+			</Suspense>
+		);
+	}
+
+	// EGISZ REMD & ORDER 947N CDA R2 XML STANDALONE LAUNCHER (?egisz=demo, ?remd=demo, #egisz, #remd)
+	// Must be rendered at the absolute top for instant clinical EGISZ signing and journal access!
+	if (isEgiszRemdModalOpen) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка хаба ЕГИСЗ РЭМД..." />}>
+				<EgiszRemdHubModal
+					isOpen={true}
+					onClose={() => {
+						setIsEgiszRemdModalOpen(false);
+						const url = new URL(window.location.href);
+						url.searchParams.delete("egisz");
+						url.searchParams.delete("remd");
+						url.searchParams.delete("semd");
+						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("egisz") && !url.hash.includes("remd") ? url.hash : ""));
+					}}
+					initialDocType="cda_semd"
+					initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as any) ?? "signature"}
+				/>
+			</Suspense>
 		);
 	}
 
@@ -3643,6 +3802,23 @@ export function App() {
 						diagnosisIcd="K02.1 Кариес дентина"
 						toothNumbers="3.6"
 					/>
+				)}
+				{isEgiszRemdModalOpen && (
+					<Suspense fallback={null}>
+						<EgiszRemdHubModal
+							isOpen={true}
+							onClose={() => {
+								setIsEgiszRemdModalOpen(false);
+								const url = new URL(window.location.href);
+								url.searchParams.delete("egisz");
+								url.searchParams.delete("remd");
+								url.searchParams.delete("semd");
+								window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("egisz") && !url.hash.includes("remd") ? url.hash : ""));
+							}}
+							initialDocType="cda_semd"
+							initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as any) ?? "signature"}
+						/>
+					</Suspense>
 				)}
 				<DoctorPrivacyShield
 					isOpen={isPrivacyShieldActive}

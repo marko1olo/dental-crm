@@ -1,0 +1,56 @@
+{
+  "subagent": "subagent_redteam_database_queries_inquisitor",
+  "conversationId": "efcd5abb-1aa7-4805-937e-a7c523a75d10",
+  "parentId": "9ea21f87-962f-4962-8237-a01bee2ebf13",
+  "role": "Red Team Inquisitor & Self-Fixing Engineer for Database Access Layer & Drizzle ORM Queries",
+  "domain": "Database Access Layer (apps/api/src/db/*Query.ts, Drizzle ORM, SQL queries, multi-tenant isolation, mock eradication)",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Full read of Rule 0 files (core.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DATABASE.md, GEMINI.md)",
+    "Reconnaissance of all 31 query files in apps/api/src/db/*Query.ts and related route files",
+    "AST & pattern analysis for orphan query functions, duplicated Drizzle queries, and dead code",
+    "Defect #1 Fix: Connected orphan query getClinicalRules to new GET /api/clinical/rules route in apps/api/src/routes/clinical.ts with 152-FZ / 323-FZ read guard and organizationId isolation",
+    "Defect #2 Fix: Consolidated duplicate warehouse queries into inventoryQuery SSOT in apps/api/src/routes/warehouse.ts and apps/api/src/routes/surgery/index.ts",
+    "Defect #3 Fix: Purged dead legacy function archivePatientInDb from apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts, unifying with PatientArchiveReasonService.archivePatient",
+    "Defect #4 Fix: Cleaned up redundant alias in apps/api/src/db/appointmentsQuery.ts, aligning lockAppointmentResources and acquireHierarchyLocks",
+    "Created targeted test suite apps/api/src/tests/routes/clinicalRulesGet.test.ts (3/3 pass)",
+    "Created targeted test suite apps/api/src/tests/routes/warehouseStockEndpoint.test.ts (4/4 pass)",
+    "Verified all 39 targeted tests pass: clinicalRulesGet (3/3), clinicalRuleDelete (8/8), clinicalQuery (2/2), inventoryQuery (4/4), patientArchiveReasons323Fz (6/6), surgeryRoutes (6/6), warehouseSoftOverdraftAndTechCardInquisitor (6/6), warehouseStockEndpoint (4/4)",
+    "Verified check:encoding on 7134 files (0 warnings/errors)"
+  ],
+  "findings": [
+    {
+      "id": "DEFECT-DB-01",
+      "severity": "CRITICAL",
+      "description": "getClinicalRules(organizationId) in apps/api/src/db/clinicalQuery.ts was completely orphaned from the HTTP API. The clinical route had evaluate, create, update, and delete, but no GET endpoint to fetch rules for the clinic UI.",
+      "resolution": "Implemented GET /api/clinical/rules in apps/api/src/routes/clinical.ts, secured with requireClinicalReadAccess and strict organizationId tenant scoping.",
+      "proof": "apps/api/src/tests/routes/clinicalRulesGet.test.ts passes (3/3 tests)."
+    },
+    {
+      "id": "DEFECT-DB-02",
+      "severity": "HIGH",
+      "description": "inventoryQuery module in apps/api/src/db/inventoryQuery.ts was ignored by routes while apps/api/src/routes/warehouse.ts and apps/api/src/routes/surgery/index.ts duplicated raw Drizzle queries against inventoryItems.",
+      "resolution": "Replaced duplicate raw queries in warehouse.ts (/stock endpoints) and surgery/index.ts (materials overdraft status) with canonical inventoryQuery.getInventoryItems(organizationId).",
+      "proof": "apps/api/src/tests/routes/warehouseStockEndpoint.test.ts (4/4 pass) and warehouseSoftOverdraftAndTechCardInquisitor.test.ts (6/6 pass)."
+    },
+    {
+      "id": "DEFECT-DB-03",
+      "severity": "MEDIUM",
+      "description": "Dead legacy function archivePatientInDb in apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts had zero callers across routes and services, superseded by PatientArchiveReasonService.archivePatient.",
+      "resolution": "Purged archivePatientInDb from patientArchiveReasonsAndBlacklistsQuery.ts.",
+      "proof": "patientArchiveReasons323Fz.test.ts passes (6/6 pass)."
+    },
+    {
+      "id": "DEFECT-DB-04",
+      "severity": "LOW",
+      "description": "appointmentsQuery.ts exported acquireHierarchyLocks and re-exported it as lockAppointmentResources alias, but internal callers used lockAppointmentResources.",
+      "resolution": "Aligned definition to export async function lockAppointmentResources and preserved backward-compatible alias export const acquireHierarchyLocks.",
+      "proof": "All appointment and surgery tests pass without regression."
+    }
+  ],
+  "verification": {
+    "encoding": "PASSED (7134 files checked)",
+    "targeted_tests_passed": 39,
+    "targeted_tests_failed": 0
+  }
+}

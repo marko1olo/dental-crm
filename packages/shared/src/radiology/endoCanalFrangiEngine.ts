@@ -142,7 +142,7 @@ export function isDentinHU(hu: number, thresholds: DentinThresholds = DEFAULT_DE
  * Validates whether a voxel HU belongs to the uncalcified pulp/canal lumen range (< 650 HU).
  */
 export function isCanalLumenHU(hu: number, thresholds: DentinThresholds = DEFAULT_DENTIN_THRESHOLDS): boolean {
-	return hu <= thresholds.maxLumenHU && hu >= -1000;
+	return hu <= thresholds.maxLumenHU && hu >= -400;
 }
 
 /**
@@ -679,6 +679,35 @@ export function computeMultiscaleFrangiVolume(
 
 	const sliceStride = dims.width * dims.height;
 
+	// Dilate dentin mask by 2 voxels (0.5mm) to bound genuine internal pulp canal lumens
+	// and eliminate tens of thousands of useless convolutions on empty air outside the tooth
+	const nearDentinMask = new Uint8Array(totalVoxels);
+	for (let z = minZ; z <= maxZ; z++) {
+		const zOffset = z * sliceStride;
+		for (let y = minY; y <= maxY; y++) {
+			const yOffset = zOffset + y * dims.width;
+			for (let x = minX; x <= maxX; x++) {
+				if (dentinMask[yOffset + x] === 1) {
+					for (let dz = -2; dz <= 2; dz++) {
+						const nz = z + dz;
+						if (nz < minZ || nz > maxZ) continue;
+						const nzOffset = nz * sliceStride;
+						for (let dy = -2; dy <= 2; dy++) {
+							const ny = y + dy;
+							if (ny < minY || ny > maxY) continue;
+							const nyOffset = nzOffset + ny * dims.width;
+							for (let dx = -2; dx <= 2; dx++) {
+								const nx = x + dx;
+								if (nx < minX || nx > maxX) continue;
+								nearDentinMask[nyOffset + nx] = 1;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	for (let z = minZ; z <= maxZ; z++) {
 		const zOffset = z * sliceStride;
 		for (let y = minY; y <= maxY; y++) {
@@ -688,7 +717,9 @@ export function computeMultiscaleFrangiVolume(
 
 				// Only compute if within dentin envelope or immediate lumen neighborhood
 				if (dentinMask[idx] === 0) {
-					// Check if adjacent to dentin (canal lumen inside root)
+					if (nearDentinMask[idx] === 0) {
+						continue;
+					}
 					const hu = volume.data[idx] ?? -1000;
 					if (!isCanalLumenHU(hu, thresholds)) {
 						continue;

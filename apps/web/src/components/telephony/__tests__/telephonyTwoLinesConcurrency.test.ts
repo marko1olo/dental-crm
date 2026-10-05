@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test from "node:test";
+import { describe, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import {
 	formatPhoneDisplay,
@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const telephonyDir = path.resolve(__dirname, "..");
 
-test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
+describe("Telephony Two-Line Concurrency & Store State Invariants", () => {
 	// Reset store before test
 	useTelephonyStore.setState({
 		activeCall: null,
@@ -25,7 +25,7 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 		line2: { lineId: 2, call: null, state: "idle", durationSeconds: 0, isMuted: false },
 	});
 
-	await t.test("1. Routing concurrent calls across line 1 and line 2", () => {
+	it("1. Routing concurrent calls across line 1 and line 2", () => {
 		const store = useTelephonyStore.getState();
 
 		// Trigger Call 1
@@ -94,7 +94,7 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 		assert.equal(afterEnd1.line1.state, "idle");
 	});
 
-	await t.test("2. History matching updates item by callId rather than index 0", () => {
+	it("2. History matching updates item by callId rather than index 0", () => {
 		useTelephonyStore.setState({
 			callHistory: [
 				{
@@ -135,7 +135,7 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 		assert.equal(history[1]?.status, "answered");
 	});
 
-	await t.test("3. Rapid duplicate ringing event suppression within 2 seconds", () => {
+	it("3. Rapid duplicate ringing event suppression within 2 seconds", () => {
 		useTelephonyStore.setState({
 			callHistory: [],
 			line1: { lineId: 1, call: null, state: "idle", durationSeconds: 0, isMuted: false },
@@ -158,7 +158,7 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 		assert.equal(useTelephonyStore.getState().callHistory.length, 1);
 	});
 
-	await t.test("4. Phone formatting and fuzzy matching invariants", () => {
+	it("4. Phone formatting and fuzzy matching invariants", () => {
 		assert.equal(normalizePhoneDigits("+7 (916) 123-45-67"), "79161234567");
 		assert.equal(fuzzyMatchPhone("+7 (916) 123-45-67", "89161234567"), true);
 		assert.equal(fuzzyMatchPhone("9161234567", "79161234567"), true);
@@ -168,7 +168,7 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 		assert.equal(formatPhoneDisplay("89161234567"), "+7 (916) 123-45-67");
 	});
 
-	await t.test("5. Anti-Matryoshka two-line UI contracts in IncomingCallPopup and TelephonyWidgetHeader", () => {
+	it("5. Anti-Matryoshka two-line UI contracts in IncomingCallPopup and TelephonyWidgetHeader", () => {
 		const popupSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallPopup.tsx"), "utf-8");
 		const headerSource = fs.readFileSync(path.join(telephonyDir, "TelephonyWidgetHeader.tsx"), "utf-8");
 		const moreMenuSource = fs.readFileSync(path.join(telephonyDir, "IncomingCallBadgeMoreMenu.tsx"), "utf-8");
@@ -200,7 +200,7 @@ test("Telephony Two-Line Concurrency & Store State Invariants", async (t) => {
 		);
 	});
 
-	await t.test("6. Solo-doctor sovereignty: 1-click callback 15m scheduling calculation", () => {
+	it("6. Solo-doctor sovereignty: 1-click callback 15m scheduling calculation", () => {
 		useTelephonyStore.setState({
 			callHistory: [],
 			activeCall: null,

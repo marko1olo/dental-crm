@@ -341,6 +341,8 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							setCalcifications={form.setCalcifications}
 							opalescence={form.opalescence}
 							setOpalescence={form.setOpalescence}
+							attachedImageUrl={form.attachedImageUrl}
+							setAttachedImageUrl={form.setAttachedImageUrl}
 						/>
 					)}
 

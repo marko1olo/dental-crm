@@ -54,14 +54,20 @@ function createStaffHeaders(
 		{ organizationId, userId, role, fullName },
 		authTokenSecret(),
 	);
+	const clinicToken = signToken(
+		{ organizationId, clinicId: CLINIC_ID },
+		authTokenSecret(),
+	);
 	return {
 		"x-dente-staff-token": token,
+		"x-dente-clinic-token": clinicToken,
 		"content-type": "application/json",
 	};
 }
 
 describe("DentalPRO expo26 Realtime Schedule Bar & Intercom Rails", () => {
 	it("processes status transitions and automatically triggers intercom broadcast on patient arrival", async () => {
+		process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS = "1";
 		const app = createTenantTestApp();
 		await registerAppointmentsRoutes(app);
 		await registerStaffChatRoutes(app);

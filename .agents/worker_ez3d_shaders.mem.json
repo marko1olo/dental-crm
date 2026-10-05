@@ -1,0 +1,23 @@
+{
+  "agent": "Red Team Инженер №8 — Внедрение 3D шейдеров и объемного рендера EZ3D",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely",
+    "Read AGENTS.md completely",
+    "Read docs/vatech_research/05_EZ3D_VOLUME_SHADERS_AND_RAYCASTING.md completely",
+    "Inspected target source files in apps/web/src/components/radiology/mpr/",
+    "Implemented two-sided diffuse shading (0.25 ambient + 0.75 * abs(dot(-lightDir, normal))) * Color into cbctVolume3DShaders.ts with enamel ceiling safeguard <= 178/255",
+    "Implemented G-buffer ObjectID packing technique (u_renderMode, u_objectId, decodeEz3dGBufferPixel, pickVolume3DObjectAtPixel) for 0-ms hardware picking",
+    "Implemented Ez3D bone and soft tissue presets (ez3d_bone HU 350..2200, ez3d_soft_tissue HU -150..350) into cbctVolume3DMath.ts",
+    "Updated renderCanvas2DPreviewSlice with Ez3D two-sided diffuse weighting (0.25 + 0.75 * norm)",
+    "Synchronized skull projection buttons and canonical angles in CbctSkullProjectionsToolbar.tsx (A: 0,0; P: 180,0; L: -90,0; R: 90,0; F: 0,-85; H: 0,85) with Ez3D codes and medical palette #054A6E",
+    "Authored and verified targeted unit test suite apps/web/src/components/radiology/__tests__/cbctEz3dShadersAndProjections.test.ts (13/13 passing)",
+    "Verified full regression suite: cbctEz3dShadersAndProjections, cbctVolume3DTorture, cbctVolume3DQuadrant, cbctGpuRaymarchingInquisition (73/73 tests passing, 0 failing)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Ez3D two-sided diffuse model (abs(dot(norm, lightDir))) successfully illuminates concave structures like maxillary sinuses and mandibular canals without cavity blackout.",
+    "G-Buffer packing encodes ObjectID in channel B and depth in channel A, allowing 0-ms GPU-accelerated raycast picking of implants, mandibular canal, and segmented teeth without CPU BVH tree traversal.",
+    "Skull projection toolbar now strictly follows Vatech Ez3D CubeUI convention (A, P, L, R, F, H, 3/4R, 3/4L) with exact pitch/yaw angles and clinical palette styling."
+  ]
+}

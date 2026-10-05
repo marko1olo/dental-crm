@@ -1,0 +1,58 @@
+{
+  "role": "RED TEAM INQUISITOR: SCHEDULE, APPOINTMENTS GRID & WAITING LIST",
+  "status": "COMPLETED",
+  "started_at": "2026-10-03T16:25:00Z",
+  "completed_at": "2026-10-03T16:49:00Z",
+  "completed_steps": [
+    "Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md completely (Rule 0)",
+    "Analyzed previous memory files and established Red Team Inquisitor mission",
+    "Reconnaissance of schedule components and waiting list (apps/web/src/components/schedule, apps/web/src/ScheduleView.tsx)",
+    "Audit 1: Viewport height & toolbar budget <= 160-180px, quiet telemetry (Mandate 8p) - CONFIRMED PASSED (ScheduleFilterStrip 36px, overflow popover)",
+    "Audit 2: Multi-hour long appointments continuous block rendering without continuation row clutter ('Приём продолжается') - CONFIRMED PASSED (row span calculation in ScheduleAppointmentTrack)",
+    "Audit 3: Fast 5-second booking (Mandates 8e/8n) - optional assistant, phone/name autocomplete, 0 blocking mandatory fields - CONFIRMED PASSED",
+    "Audit 4: Waiting list (1-click auto-matching on cancel/reschedule, SSOT integration) - CONFIRMED PASSED (waitlistCancellationEngine, WaitlistQuickFillModal)",
+    "Audit 5: Plain Russian clinical UX vs bureaucratic bird language (Mandates 8x, 8y, 8z) - RECTIFIED (purged competitor strings StomX/DentalPRO and Soviet code 1051н across 16 files)",
+    "Audit 6: Anti-monolith file limits (>800 lines check) & modular structure",
+    "Audit 7: Static gates (check:encoding: 7334 files clean, check:css-tokens: 0 unresolvable tokens, smoke-schedule-view-source: passed)",
+    "Audit 8: Targeted unit tests for schedule domain (scheduleGridLongAppointments: 18/18, scheduleFastBookingInquisitorWave51: 7/7, waitlistCancellation: 15/15, WaitlistQuickFillModal: 11/11, dentalProExpo26Innovations: 4/4, ScheduleFilterStrip: 11/11)",
+    "Final Verbatim Adversarial Inquisition Report and send_message to parent"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "domain": "UI_COPY_PURITY",
+      "summary": "Purged 18 competitor leakages (StomX, DentalPRO) and Soviet regulatory codes (1051н) from visible titles, badges, and user toasts",
+      "files_fixed": [
+        "apps/web/src/components/schedule/ScheduleFilterStrip.tsx",
+        "apps/web/src/components/schedule/ChairScheduleToolbar.tsx",
+        "apps/web/src/components/schedule/ChairShiftPopover.tsx",
+        "apps/web/src/components/schedule/QuickAddChairModal.tsx",
+        "apps/web/src/components/schedule/QuickAddDoctorModal.tsx",
+        "apps/web/src/components/schedule/QuickBookingServiceSection.tsx",
+        "apps/web/src/components/schedule/useChairShiftOperations.ts",
+        "apps/web/src/components/schedule/useSchedule.ts",
+        "apps/web/src/components/schedule/grid/ScheduleChairDoctorPopover.tsx",
+        "apps/web/src/components/schedule/grid/ScheduleChairHeader.tsx",
+        "apps/web/src/components/schedule/grid/ScheduleGridFooter.tsx",
+        "apps/web/src/components/schedule/AppointmentCardContextMenu.tsx",
+        "apps/web/src/components/schedule/AppointmentModalStatusSection.tsx",
+        "apps/web/src/components/schedule/ChairDateRangeModal.tsx",
+        "apps/web/src/components/schedule/DoctorChairScheduleModal.tsx",
+        "apps/web/src/components/schedule/appointmentCardHelpers.ts",
+        "apps/web/src/components/schedule/AppointmentModalQuickReasons.tsx",
+        "apps/web/src/components/schedule/AppointmentStatusPopup.tsx",
+        "apps/web/src/components/schedule/GridAppointmentHoverHud.tsx"
+      ]
+    },
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "domain": "SMOKE_GUARD_HEALTH",
+      "summary": "Fixed scripts/smoke-schedule-view-source.mjs to account for decomposed AppointmentCard modules and unwrapped multiline string assertion in AppointmentCardEditor.tsx",
+      "files_fixed": [
+        "scripts/smoke-schedule-view-source.mjs",
+        "apps/web/src/components/schedule/AppointmentCardEditor.tsx"
+      ]
+    }
+  ]
+}

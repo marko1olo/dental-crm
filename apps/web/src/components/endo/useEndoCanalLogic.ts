@@ -23,8 +23,9 @@ import {
 import { sanitizeCanalsForSubmission, renderIsoColorBadge } from "./endoCanalHelpers";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
+import { loadPersistedEndoCanals } from "../radiology/endoClinicalIntegrationBridge";
+import { useVisitStore } from "../../store/visitStore";
 
 export interface UseEndoCanalLogicProps {
 	readonly isOpen: boolean;
@@ -166,11 +167,23 @@ export function useEndoCanalLogic({
 						if (data.clinicalData.rotarySystem) setRotarySystem(data.clinicalData.rotarySystem);
 						if (data.clinicalData.radiologyControl) setRadiologyControl(data.clinicalData.radiologyControl);
 					} else {
-						setCanals(getDefaultCanalsForTooth(activeTooth));
+						const cbctCanals = loadPersistedEndoCanals(patientId, activeTooth);
+						if (cbctCanals && cbctCanals.length > 0) {
+							setCanals(cbctCanals.map((c) => ({ ...c })));
+						} else {
+							setCanals(getDefaultCanalsForTooth(activeTooth));
+						}
 					}
 				})
 				.catch(() => {
-					if (!cancelled) setCanals(getDefaultCanalsForTooth(activeTooth));
+					if (!cancelled) {
+						const cbctCanals = loadPersistedEndoCanals(patientId, activeTooth);
+						if (cbctCanals && cbctCanals.length > 0) {
+							setCanals(cbctCanals.map((c) => ({ ...c })));
+						} else {
+							setCanals(getDefaultCanalsForTooth(activeTooth));
+						}
+					}
 				})
 				.finally(() => {
 					if (!cancelled) setIsLoadingFromDb(false);
@@ -181,7 +194,12 @@ export function useEndoCanalLogic({
 			};
 		}
 
-		setCanals(getDefaultCanalsForTooth(activeTooth));
+		const cbctCanals = loadPersistedEndoCanals(patientId, activeTooth);
+		if (cbctCanals && cbctCanals.length > 0) {
+			setCanals(cbctCanals.map((c) => ({ ...c })));
+		} else {
+			setCanals(getDefaultCanalsForTooth(activeTooth));
+		}
 		if (initialIrrigation) setIrrigation(initialIrrigation);
 		if (initialRotarySystem) setRotarySystem(initialRotarySystem);
 		if (initialRadiologyControl) setRadiologyControl(initialRadiologyControl);
@@ -232,6 +250,32 @@ export function useEndoCanalLogic({
 		window.addEventListener("dente-endo-wl-measured", handleMeasuredWl);
 		return () =>
 			window.removeEventListener("dente-endo-wl-measured", handleMeasuredWl);
+	}, [isOpen, activeTooth]);
+
+	// Listen for 3D computed canals from CBCT Endo Compass / Web Worker
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleEndoCanalsUpdated = (e: Event) => {
+			const customEvent = e as CustomEvent<{
+				toothFdi?: number;
+				patientId?: string;
+				canals?: EndoCanalData[];
+			}>;
+			const { toothFdi, canals: updatedCanals } = customEvent.detail || {};
+			if (toothFdi && toothFdi !== activeTooth) return;
+			if (updatedCanals && updatedCanals.length > 0) {
+				setCanals(updatedCanals.map((c) => ({ ...c })));
+				showToast(
+					`Параметры каналов зуба #${activeTooth} синхронизированы с 3D КЛКТ Компасом!`,
+					"success",
+				);
+			}
+		};
+
+		window.addEventListener("dente-endo-canals-updated", handleEndoCanalsUpdated);
+		return () =>
+			window.removeEventListener("dente-endo-canals-updated", handleEndoCanalsUpdated);
 	}, [isOpen, activeTooth]);
 
 	// ESC to close

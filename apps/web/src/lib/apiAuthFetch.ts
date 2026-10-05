@@ -301,6 +301,23 @@ export function installApiAuthFetch(): void {
 			headers.set(STAFF_TOKEN_HEADER, staffToken);
 		}
 
+		// Поддержка тотипотентности и идемпотентности (X-Idempotency-Key)
+		if (!headers.has("x-idempotency-key")) {
+			if (headers.has("idempotency-key")) {
+				headers.set("X-Idempotency-Key", headers.get("idempotency-key")!);
+			} else if (init?.body && typeof init.body === "string" && (method === "POST" || method === "PUT" || method === "PATCH")) {
+				try {
+					const parsed = JSON.parse(init.body);
+					const idem = parsed?.idempotencyKey || parsed?.clientMutationId;
+					if (typeof idem === "string" && idem.trim()) {
+						headers.set("X-Idempotency-Key", idem.trim());
+					}
+				} catch {
+					// Body is not JSON, ignore
+				}
+			}
+		}
+
 		const requestInput = input instanceof Request && !init ? new Request(input, { headers }) : input;
 		const requestInit = input instanceof Request && !init ? undefined : { ...(init ?? {}), headers };
 

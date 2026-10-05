@@ -26,6 +26,8 @@ import {
 import { useOnboardingStore } from "../../store/onboardingStore";
 import { useWorkspaceProfileStore, saveWorkspaceFlags } from "../../hooks/useWorkspaceProfile";
 import { useDeepClinicalSettingsStore } from "../../store/deepClinicalSettingsStore";
+import { useSettingsStore } from "../../store/settingsStore";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export type SovereignPresetId = "solo_doctor" | "standard_clinic" | "network_center";
@@ -108,28 +110,58 @@ export const SOVEREIGN_PRESETS: readonly SovereignPresetDefinition[] = [
 export interface SovereignScalePresetsCardProps {
 	onPresetApplied?: (presetId: SovereignPresetId) => void;
 	compactMode?: boolean;
+	hideHeader?: boolean;
 }
 
 export function SovereignScalePresetsCard({
 	onPresetApplied,
 	compactMode = false,
+	hideHeader = false,
 }: SovereignScalePresetsCardProps) {
 	const { profile, setOperationalMode, updateProfile, chairs, schedule, updateSchedule } =
 		useOnboardingStore();
 	const [activeApplyingId, setActiveApplyingId] = useState<SovereignPresetId | null>(null);
+	const [confirmingPreset, setConfirmingPreset] = useState<SovereignPresetDefinition | null>(null);
+
+	const storedClinicMode = useSettingsStore((s) => s.clinicMode);
 
 	const activePresetId: SovereignPresetId =
-		profile.mode === "solo_doctor" || profile.mode === "one_chair"
+		profile.mode === "solo_doctor" || profile.mode === "one_chair" || storedClinicMode === "solo_doctor" || storedClinicMode === "one_chair"
 			? "solo_doctor"
-			: profile.mode === "small_clinic"
-				? "standard_clinic"
-				: "network_center";
+			: profile.mode === "network_clinic" || storedClinicMode === "network_clinic"
+				? "network_center"
+				: "standard_clinic";
 
-	const handleApplyPreset = async (presetId: SovereignPresetId) => {
+	const executeApplyPreset = async (presetId: SovereignPresetId) => {
 		setActiveApplyingId(presetId);
 		try {
+			// 1. Сетевой вызов PATCH /api/settings/clinic/scale-preset (персистентное сохранение в PostgreSQL 18)
+			try {
+				const response = await fetch("/api/settings/clinic/scale-preset", {
+					method: "PATCH",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						preset: presetId,
+						confirmResetExtraChairs: true,
+					}),
+				});
+				if (!response.ok) {
+					console.warn(
+						`[ScalePreset] Server returned status ${response.status}. Falling back to client-side sync.`,
+					);
+				}
+			} catch (netErr) {
+				console.warn(
+					"[ScalePreset] Network request failed. Updating local operational stores.",
+					netErr,
+				);
+			}
+
+			// 2. Адаптация клиентских сторов в соответствии с выбранным масштабом
 			if (presetId === "solo_doctor") {
-				// 1. Setup store mode and defaults
+				useSettingsStore.getState().setClinicMode("solo_doctor");
 				setOperationalMode("solo_doctor");
 				const fallback = profile.clinicName?.trim() || "Кабинет доктора";
 				updateProfile({
@@ -142,7 +174,6 @@ export function SovereignScalePresetsCard({
 					defaultVisitMinutes: 30,
 				});
 
-				// 2. Feature flags for Solo Doctor (Zero bureaucracy, Mandate 8n)
 				await saveWorkspaceFlags({
 					hasAssistants: false,
 					hasMultipleChairs: false,
@@ -164,12 +195,10 @@ export function SovereignScalePresetsCard({
 					workspacePreset: "solo_therapist",
 				});
 
-				// 3. Deep clinical preset
 				useDeepClinicalSettingsStore.getState().applyPreset("solo");
-
-				showToast("Пресет «Соло-врач / Частный кабинет» успешно применён! Сетевой шум скрыт.", "success");
+				showToast("Пресет «Соло-врач / Частный кабинет» успешно применён! 1 кресло, сетевой шум скрыт.", "success");
 			} else if (presetId === "standard_clinic") {
-				// 1. Standard clinic
+				useSettingsStore.getState().setClinicMode("small_clinic");
 				setOperationalMode("small_clinic");
 				const fallback = profile.clinicName?.trim() || "Стоматологическая клиника";
 				updateProfile({
@@ -177,12 +206,11 @@ export function SovereignScalePresetsCard({
 					mode: "small_clinic",
 				});
 				updateSchedule({
-					workdayStart: "09:00",
-					workdayEnd: "20:00",
+					workdayStart: "08:30",
+					workdayEnd: "20:30",
 					defaultVisitMinutes: 45,
 				});
 
-				// 2. Feature flags for Standard Clinic
 				await saveWorkspaceFlags({
 					hasAssistants: true,
 					hasMultipleChairs: true,
@@ -203,12 +231,10 @@ export function SovereignScalePresetsCard({
 					workspacePreset: "family_clinic",
 				});
 
-				// 3. Deep clinical preset
 				useDeepClinicalSettingsStore.getState().applyPreset("standard");
-
-				showToast("Пресет «Стандартная клиника (2–5 кресел)» успешно применён!", "success");
+				showToast("Пресет «Стандартная клиника (2–5 кресел)» успешно применён! 3 кресла активированы.", "success");
 			} else {
-				// 1. Network / Center
+				useSettingsStore.getState().setClinicMode("network_clinic");
 				setOperationalMode("network_clinic");
 				const fallback = profile.clinicName?.trim() || "Стоматологический центр";
 				updateProfile({
@@ -221,7 +247,6 @@ export function SovereignScalePresetsCard({
 					defaultVisitMinutes: 60,
 				});
 
-				// 2. Feature flags for Network
 				await saveWorkspaceFlags({
 					hasAssistants: true,
 					hasMultipleChairs: true,
@@ -246,41 +271,52 @@ export function SovereignScalePresetsCard({
 					workspacePreset: "enterprise",
 				});
 
-				// 3. Deep clinical preset
 				useDeepClinicalSettingsStore.getState().applyPreset("network");
-
-				showToast("Пресет «Многопрофильный центр / Сеть» успешно применён!", "success");
+				showToast("Пресет «Многопрофильный центр / Сеть» успешно применён! 5 кресел и все модули активированы.", "success");
 			}
 
 			onPresetApplied?.(presetId);
 		} catch (err) {
+			console.error("[ScalePreset] Error applying preset:", err);
 			showToast("Пресет сохранён в локальном профиле", "info");
 			onPresetApplied?.(presetId);
 		} finally {
 			setActiveApplyingId(null);
+			setConfirmingPreset(null);
 		}
+	};
+
+	const handleCardClick = (preset: SovereignPresetDefinition) => {
+		if (preset.id === activePresetId) {
+			showToast(`Пресет «${preset.title}» уже активен в вашей клинике`, "info");
+			return;
+		}
+		// Открываем диалог подтверждения перед применением пресета
+		setConfirmingPreset(preset);
 	};
 
 	return (
 		<div className="sovereign-presets-wrapper my-3" data-testid="sovereign-presets-card">
-			<div className="flex items-center justify-between gap-3 mb-3">
-				<div className="flex items-center gap-2">
-					<div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
-						<Sparkles size={16} aria-hidden="true" />
-					</div>
-					<div>
-						<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
-							Экспресс-старт в 3 клика
-							<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300">
-								Готовые пресеты
-							</span>
-						</h4>
-						<p className="m-0 text-xs text-[var(--muted)]">
-							Один клик преднастраивает кресла, расписание, кассу и протоколы ЭМК под масштаб вашей клиники
-						</p>
+			{!hideHeader && (
+				<div className="flex items-center justify-between gap-3 mb-3">
+					<div className="flex items-center gap-2">
+						<div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+							<Sparkles size={16} aria-hidden="true" />
+						</div>
+						<div>
+							<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
+								Экспресс-старт в 3 клика
+								<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300">
+									Готовые пресеты
+								</span>
+							</h4>
+							<p className="m-0 text-xs text-[var(--muted)]">
+								Один клик преднастраивает кресла, расписание, кассу и протоколы ЭМК под масштаб вашей клиники
+							</p>
+						</div>
 					</div>
 				</div>
-			</div>
+			)}
 
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 				{SOVEREIGN_PRESETS.map((preset) => {
@@ -297,7 +333,7 @@ export function SovereignScalePresetsCard({
 									? "border-teal-500 bg-teal-500/10 dark:bg-teal-500/15 shadow-sm ring-2 ring-teal-500/40"
 									: "border-slate-200 dark:border-slate-800 bg-[var(--paper)] hover:border-teal-500/50 hover:bg-[var(--line)]/30 shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
 							}`}
-							onClick={() => void handleApplyPreset(preset.id)}
+							onClick={() => handleCardClick(preset)}
 							disabled={isApplying}
 							data-testid={`preset-card-${preset.id}`}
 						>
@@ -360,6 +396,86 @@ export function SovereignScalePresetsCard({
 					);
 				})}
 			</div>
+
+			{/* Диалог подтверждения смены масштаба клиники (Мандат 8e / 8n) */}
+			{confirmingPreset && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+					data-testid="scale-preset-confirm-modal"
+				>
+					<div
+						className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150"
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="confirm-scale-preset-title"
+					>
+						<div className="flex items-start gap-3">
+							<div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+								<confirmingPreset.icon size={22} aria-hidden="true" />
+							</div>
+							<div className="flex-1">
+								<h3
+									id="confirm-scale-preset-title"
+									className="m-0 text-base font-bold text-[var(--ink)] leading-snug"
+								>
+									Применить пресет «{confirmingPreset.title}»?
+								</h3>
+								<p className="m-0 mt-1 text-xs text-[var(--muted)]">
+									{confirmingPreset.recommendationText}
+								</p>
+							</div>
+						</div>
+
+						<div className="p-3 rounded-xl bg-[var(--line)]/30 border border-[var(--line)] space-y-2">
+							<div className="text-xs font-semibold text-[var(--ink)] flex items-center justify-between">
+								<span>Оптимизация кресел:</span>
+								<span className="text-teal-600 dark:text-teal-400 font-bold">
+									{confirmingPreset.chairsCountText}
+								</span>
+							</div>
+							<ul className="text-xs text-[var(--muted)] space-y-1.5 pl-0 list-none m-0">
+								{confirmingPreset.features.slice(0, 3).map((f, i) => (
+									<li key={i} className="flex items-center gap-2">
+										<CheckCircle2 size={13} className="text-teal-600 shrink-0" aria-hidden="true" />
+										<span>{f}</span>
+									</li>
+								))}
+							</ul>
+						</div>
+
+						<div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+							<button
+								type="button"
+								onClick={() => setConfirmingPreset(null)}
+								disabled={activeApplyingId !== null}
+								className="px-4 py-2 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)]/50 transition-colors cursor-pointer"
+								data-testid="cancel-preset-modal-btn"
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								onClick={() => void executeApplyPreset(confirmingPreset.id)}
+								disabled={activeApplyingId !== null}
+								className="px-4 py-2 rounded-xl text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+								data-testid="confirm-preset-modal-btn"
+							>
+								{activeApplyingId === confirmingPreset.id ? (
+									<>
+										<Clock size={14} className="animate-spin" aria-hidden="true" />
+										Применение...
+									</>
+								) : (
+									<>
+										<Check size={14} aria-hidden="true" />
+										Применить пресет
+									</>
+								)}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

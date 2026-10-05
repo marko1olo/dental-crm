@@ -71,6 +71,11 @@ export const appointments = pgTable(
 				table.startsAt,
 				table.endsAt,
 			),
+			idxAppointmentsOrgDoctorTime: index("idx_appointments_org_doctor_time").on(
+				table.organizationId,
+				table.doctorUserId,
+				table.startsAt,
+			),
 			idxAppointmentsOrgStatus: index("idx_appointments_org_status").on(
 				table.organizationId,
 				table.status,

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test from "node:test";
+import { describe, it } from "vitest";
 
-test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)", async (t) => {
+describe("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)", () => {
 	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
 		? path.resolve(process.cwd(), "apps/web/src")
 		: path.resolve(process.cwd(), "src");
@@ -19,7 +19,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 	const popupSource = fs.readFileSync(popupPath, "utf-8");
 	const widgetSource = fs.readFileSync(widgetPath, "utf-8");
 
-	await t.test(
+	it(
 		"1. Doctor Sterile Zone & Draft Immunity (Mandate 8e p. 6)",
 		() => {
 			// Doctor view/mode suppression in IncomingCallPopup
@@ -44,7 +44,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		},
 	);
 
-	await t.test(
+	it(
 		"2. Miller's Law: Strictly <= 2 Primary Direct Buttons on IncomingCallPopup Badge (Mandate 8d & 8p)",
 		() => {
 			// Check primary action buttons
@@ -63,7 +63,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		},
 	);
 
-	await t.test(
+	it(
 		"3. Miller's Law: Strictly <= 2 Primary Direct Buttons on TelephonyFloatingWidget (Mandate 8d & 8p)",
 		() => {
 			// Check primary action buttons in widget
@@ -86,7 +86,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		},
 	);
 
-	await t.test(
+	it(
 		"4. Solo-Doctor & Reception Autonomy: 1-Click Booking without Mandatory Assistant (Mandates 8e & 8n)",
 		() => {
 			// assistantUserId must be empty string in appointment draft
@@ -101,7 +101,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		},
 	);
 
-	await t.test("5. Dark Mode Hygiene & Design Token Integrity", () => {
+	it("5. Dark Mode Hygiene & Design Token Integrity", () => {
 		// Zero toxic hardcoded bg-white
 		assert.ok(
 			!popupSource.includes('bg-white"'),
@@ -113,7 +113,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		);
 	});
 
-	await t.test(
+	it(
 		"6. Non-modal Dynamic Island & Zero Dark Backdrops (macOS HIG & Mandates 8c, 8e)",
 		() => {
 			// Non-modal ambient container with pointer-events-none to prevent blocking screen
@@ -132,7 +132,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		},
 	);
 
-	await t.test(
+	it(
 		"7. Zero AudioContext / Oscillator Procedural Simulators (Mandates 8k, 8s)",
 		() => {
 			assert.ok(
@@ -148,7 +148,7 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 		},
 	);
 
-	await t.test(
+	it(
 		"8. Odontogram Working Zone Protection & Doctor Immunity (Mandates 8e, 8p)",
 		() => {
 			// workspaceShell prevents mounting telephony during doctor mode / visit

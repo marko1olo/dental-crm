@@ -613,18 +613,37 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
 
     const isTechBreak = isTechnicalBreakAppointment({ reason, comment });
     if (!effectivePatientId && !isTechBreak) {
-      if (isCito || isCitoAppointment({ reason, comment })) {
+      if (
+        isCito ||
+        isCitoAppointment({ reason, comment }) ||
+        (reason ?? "").toLowerCase().includes("острая боль") ||
+        (comment ?? "").toLowerCase().includes("острая боль")
+      ) {
         const created = await handleCreateInlinePatient({
           fullName: "Пациент с острой болью (CITO)",
         });
         if (created?.id) {
           effectivePatientId = created.id;
         }
+      } else if (patientSearchQuery.trim()) {
+        const q = patientSearchQuery.trim();
+        const isPhone = /^[0-9+()-\s]+$/.test(q);
+        const created = await handleCreateInlinePatient({
+          fullName: isPhone ? `Пациент (${q})` : q,
+          phone: isPhone ? q : null,
+        });
+        if (created?.id) {
+          effectivePatientId = created.id;
+        }
       } else {
-        setError(
-          "Укажите пациента: выберите из списка или создайте во вкладке «+ Новый пациент»",
-        );
-        return;
+        // МАНДАТ 8e: нулевые барьеры — если врач/администратор в цейтноте сохраняет запись без выбора пациента,
+        // автоматически создаём первичную экспресс-карточку, исключая блокировку приёма!
+        const created = await handleCreateInlinePatient({
+          fullName: "Первичный пациент (Экспресс-запись)",
+        });
+        if (created?.id) {
+          effectivePatientId = created.id;
+        }
       }
     }
 

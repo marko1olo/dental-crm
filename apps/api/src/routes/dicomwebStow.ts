@@ -663,7 +663,12 @@ export function registerDicomwebStowRoutes(app: FastifyInstance) {
 								? `${parsed.columns}x${parsed.rows}`
 								: undefined,
 					})
-					.where(eq(schema.imagingStudies.id, study.id));
+					.where(
+						and(
+							eq(schema.imagingStudies.id, study.id),
+							eq(schema.imagingStudies.organizationId, organizationId),
+						),
+					);
 			}
 
 			// 2. Series
@@ -736,7 +741,12 @@ export function registerDicomwebStowRoutes(app: FastifyInstance) {
 						rows: parsed.rows,
 						columns: parsed.columns,
 					})
-					.where(eq(schema.imagingInstances.id, instance.id));
+					.where(
+						and(
+							eq(schema.imagingInstances.id, instance.id),
+							eq(schema.imagingInstances.organizationId, organizationId),
+						),
+					);
 			}
 
 			return {

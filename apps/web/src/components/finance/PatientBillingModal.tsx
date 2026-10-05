@@ -173,7 +173,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 
 	const resolvedClinicName = propClinicName || clinicProfile?.clinicName || "Стоматологическая клиника ДЕНТЕ", resolvedLegalName = propClinicLegalName || clinicProfile?.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
 	const resolvedInn = propClinicInn || clinicProfile?.inn || "7707083893", resolvedKpp = propClinicKpp || clinicProfile?.kpp || "770101001";
-	const resolvedOgrn = propClinicOgrn || clinicProfile?.ogrn || "1027700132195", resolvedLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "ЛО41-01137-77/00368421";
+	const resolvedOgrn = propClinicOgrn || clinicProfile?.ogrn || "", resolvedLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "";
 	const resolvedLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "12.10.2021", resolvedAddress = propClinicAddress || clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
 	const resolvedPhone = propClinicPhone || clinicProfile?.phone || "+7 (495) 789-01-23", resolvedChiefDoctor = propChiefDoctorName || (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "Смирнов Александр Владимирович";
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");

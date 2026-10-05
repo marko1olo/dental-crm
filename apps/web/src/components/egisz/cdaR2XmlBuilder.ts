@@ -755,6 +755,10 @@ export function generateGostSignatureStampHtml(params: {
 		<span style="font-weight: bold; min-width: 75px;">Владелец:</span>
 		<span>${escapeXml(params.signerName)}</span>
 	</div>
+	<div style="display: flex; gap: 6px; margin-bottom: 2px;">
+		<span style="font-weight: bold; min-width: 75px;">Стандарт:</span>
+		<span>ГОСТ Р 34.10-2012</span>
+	</div>
 	${params.orgName ? `
 	<div style="display: flex; gap: 6px; margin-bottom: 2px;">
 		<span style="font-weight: bold; min-width: 75px;">Организация:</span>

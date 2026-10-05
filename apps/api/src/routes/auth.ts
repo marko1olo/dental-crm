@@ -1711,8 +1711,17 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			// Демо-вход пользователя при отсутствии в базе
 			if (!user) {
 				if (isDemoUserLogin) {
+					const isDoctorLogin = loginIdentifier === "doctor@clinic.com";
 					const anyUserLookup = await readUnderBypass((tx) =>
-						tx.select().from(users).limit(1),
+						tx
+							.select()
+							.from(users)
+							.where(
+								isDoctorLogin
+									? or(eq(users.role, "doctor"), eq(users.role, "owner"))
+									: or(eq(users.role, "admin"), eq(users.role, "owner")),
+							)
+							.limit(1),
 					);
 					const dbUser = anyUserLookup.row;
 					if (dbUser) {

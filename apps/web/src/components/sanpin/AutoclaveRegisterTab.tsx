@@ -7,6 +7,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	DEFAULT_DOM_CHUNK_STEP,
 	DEFAULT_DOM_PAGE_SIZE,
@@ -18,6 +19,7 @@ import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
 import {
 	AutoclaveEquipmentModal,
 	type ClinicAutoclaveDevice,
+	DEFAULT_CLINIC_DEVICES,
 	loadSavedClinicAutoclaves,
 	saveClinicAutoclaves,
 } from "./AutoclaveEquipmentModal";
@@ -29,8 +31,88 @@ import {
 import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { AutoclaveRegisterTable } from "./AutoclaveRegisterTable";
 
+export const DEFAULT_SHOWCASE_STERILIZATION_LOGS: SterilizationLogRecord[] = [
+	{
+		id: "550e8400-e29b-41d4-a716-446655440001",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		deviceName: "Melag Vacuklav 23 B+ (ЦСО №1)",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AUTO-01",
+		serialNumber: "MEL-2024-9812",
+		cycleNumber: 3,
+		itemsDescription: "Хирургические наборы имплантации (лотки, элеваторы, кюреты), наконечники",
+		packagingType: "kraft_heat_sealed",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class6_emulating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "STER-2026-003",
+		expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
+		operatorName: "Иванова А. С. (Медсестра ЦСО)",
+		notes: "ЭЦП проверена. Цикл без замечаний, тест вакуума пройден.",
+		timestamp: new Date().toISOString(),
+		createdAt: new Date().toISOString(),
+	},
+	{
+		id: "550e8400-e29b-41d4-a716-446655440002",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		deviceName: "Melag Vacuklav 23 B+ (ЦСО №1)",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AUTO-01",
+		serialNumber: "MEL-2024-9812",
+		cycleNumber: 2,
+		itemsDescription: "Терапевтический смотровой набор (зеркала, зонды, пинцеты, гладилки)",
+		packagingType: "kraft_self_adhesive",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "STER-2026-002",
+		expiresAt: new Date(Date.now() + 50 * 86400000).toISOString(),
+		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
+		operatorName: "Иванова А. С. (Медсестра ЦСО)",
+		notes: "ЭЦП проверена. Норма 100%.",
+		timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+		createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+	},
+	{
+		id: "550e8400-e29b-41d4-a716-446655440003",
+		organizationId: "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+		deviceName: "W&H Lina 17 (Австрия)",
+		sterilizerType: "autoclave_steam",
+		autoclaveId: "AUTO-02",
+		serialNumber: "WH-2023-4410",
+		cycleNumber: 1,
+		itemsDescription: "Ортодонтические щипцы, позиционеры, зеркала для фотопротокола",
+		packagingType: "kraft_heat_sealed",
+		temperatureCelsius: 134,
+		pressureBar: 2.1,
+		durationMin: 5,
+		indicatorType: "class5_integrating",
+		passedIndicator: true,
+		biologicalTestResult: "not_conducted",
+		status: "passed",
+		barcode: "STER-2026-001",
+		expiresAt: new Date(Date.now() + 365 * 86400000).toISOString(),
+		operatorId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
+		operatorName: "Иванова А. С. (Медсестра ЦСО)",
+		notes: "Утренний контрольный цикл смены.",
+		timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+		createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+	},
+];
+
 export function AutoclaveRegisterTab() {
-	const [logs, setLogs] = useState<SterilizationLogRecord[]>([]);
+	const [logs, setLogs] = useState<SterilizationLogRecord[]>(() =>
+		isDemoShowcaseMode() ? DEFAULT_SHOWCASE_STERILIZATION_LOGS : []
+	);
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
@@ -43,7 +125,12 @@ export function AutoclaveRegisterTab() {
 		cycleNumber?: number | undefined;
 		operatorName?: string | undefined;
 	}>({});
-	const [clinicDevices, setClinicDevices] = useState<ClinicAutoclaveDevice[]>(() => loadSavedClinicAutoclaves());
+	const [clinicDevices, setClinicDevices] = useState<ClinicAutoclaveDevice[]>(() => {
+		const saved = loadSavedClinicAutoclaves();
+		if (saved.length > 0) return saved;
+		if (isDemoShowcaseMode()) return DEFAULT_CLINIC_DEVICES;
+		return [];
+	});
 	const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
 	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
 
@@ -60,13 +147,27 @@ export function AutoclaveRegisterTab() {
 			});
 			if (res.ok) {
 				const data = await res.json();
-				setLogs(Array.isArray(data) ? data : []);
+				if (Array.isArray(data) && data.length > 0) {
+					setLogs(data);
+				} else if (isDemoShowcaseMode()) {
+					setLogs(DEFAULT_SHOWCASE_STERILIZATION_LOGS);
+				} else {
+					setLogs([]);
+				}
 			} else {
-				setLogs([]);
+				if (isDemoShowcaseMode()) {
+					setLogs(DEFAULT_SHOWCASE_STERILIZATION_LOGS);
+				} else {
+					setLogs([]);
+				}
 			}
 		} catch (err) {
 			console.error("Failed to load sterilization logs", err);
-			setLogs([]);
+			if (isDemoShowcaseMode()) {
+				setLogs(DEFAULT_SHOWCASE_STERILIZATION_LOGS);
+			} else {
+				setLogs([]);
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -85,7 +186,7 @@ export function AutoclaveRegisterTab() {
 
 			if (res && res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data)) {
+				if (Array.isArray(data) && data.length > 0) {
 					const mapped: ClinicAutoclaveDevice[] = data.map((d: any) => ({
 						id: d.id,
 						brandModelRu: d.brandModel || d.name,
@@ -107,7 +208,14 @@ export function AutoclaveRegisterTab() {
 		} catch (e) {
 			console.error("Failed to load sterilizer devices", e);
 		}
-		setClinicDevices(loadSavedClinicAutoclaves());
+		const saved = loadSavedClinicAutoclaves();
+		if (saved.length > 0) {
+			setClinicDevices(saved);
+		} else if (isDemoShowcaseMode()) {
+			setClinicDevices(DEFAULT_CLINIC_DEVICES);
+		} else {
+			setClinicDevices([]);
+		}
 	};
 
 	const [isLoggingBatch, setIsLoggingBatch] = useState(false);

@@ -1,0 +1,57 @@
+{
+  "agent": "subagent_multitenancy",
+  "role": "Red Team Inquisitor Multi-Tenancy & Database Security",
+  "status": "COMPLETED",
+  "started_at": "2026-10-04T22:30:00Z",
+  "completed_at": "2026-10-05T10:10:00Z",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Read DATABASE.md",
+    "Audit all schemas in packages/shared/src/database/schema/ and apps/api/src/db/schema/ (212 pgTable definitions across 20 domain schemas scanned)",
+    "Identify orphan tables lacking clinic_id/organization_id tenant columns (197 tables tenant-keyed, 15 justified: 1 root organizations, 7 global catalogs, 7 child cascaded tables)",
+    "Audit SQL queries in apps/api/src/routes/ and repositories for cross-tenant data leaks",
+    "Eliminate raw SQL queries and queries missing tenant isolation where clause across 18 route files",
+    "Implement/verify tenant isolation automated tests in apps/api/src/tests/multiTenantIsolationInquisition.test.ts (8/8 pass)",
+    "Check TypeScript compilation gates (@dental/shared, @dental/api typecheck, @dental/api typecheck:tests all Exit Code 0)",
+    "Compile full Inquisitor report and send message to parent"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL_FIXED",
+      "scope": "apps/api/src/routes/documentTemplates.ts",
+      "description": "Removed firstOrg fallback in /render (401/404 fail-closed); enforced tenant isolation across templates, patients, visits, appointments, payments, and users lookups."
+    },
+    {
+      "severity": "CRITICAL_FIXED",
+      "scope": "apps/api/src/routes/crmLeakDetector.ts",
+      "description": "Enforced eq(users.organizationId, orgId) on doctor check and eq(crmLeakDetectorLeads.organizationId, orgId) across all 4 lead mutation routes and batch sync."
+    },
+    {
+      "severity": "CRITICAL_FIXED",
+      "scope": "apps/api/src/routes/cashInstallmentsRoutes.ts",
+      "description": "Enforced eq(installmentTranches.organizationId, orgId) in tranche lookup for installment contract details."
+    },
+    {
+      "severity": "CRITICAL_FIXED",
+      "scope": "apps/api/src/routes/periodontogram.ts",
+      "description": "Enforced eq(periodontogramSnapshots.organizationId, orgId) in snapshot close and discard delete mutations."
+    },
+    {
+      "severity": "HIGH_FIXED",
+      "scope": "apps/api/src/routes/portal.ts",
+      "description": "Enforced organizationId filter on doctor/chair checkins, patientConsents, sberbankTransactions, and patientInvoices."
+    },
+    {
+      "severity": "HIGH_FIXED",
+      "scope": "apps/api/src/routes/speech.ts",
+      "description": "Enforced callerOrganizationId fail-closed (status 400 when missing) and restricted patientScope / visitScope to callerOrganizationId."
+    },
+    {
+      "severity": "HIGH_FIXED",
+      "scope": "apps/api/src/routes/cashbox.ts, sanpin.ts, sterilization.ts, outpatient.ts, fiscalReceiptRoutes.ts, lanNetwork.ts, signUkep.ts, dicomwebStow.ts, patientFioBindingEngine.ts, sberbank.ts, prodoctorov.ts, publicAppointmentActions.ts",
+      "description": "Hardened all mutation and lookup queries with explicit organizationId gating."
+    }
+  ]
+}

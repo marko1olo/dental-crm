@@ -1,12 +1,15 @@
 import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	communicationEvents,
+	denteVkBotConfigs,
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
+import { omnichannelBotEngine } from "../services/bots/OmnichannelBotEngine.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 type VkWebhookBody = {
@@ -54,14 +57,25 @@ export async function registerVkRoutes(server: FastifyInstance) {
 
 		// VK Callback API Server Confirmation
 		if (body.type === "confirmation") {
-			// БЫЛО: публичный дефолт "8a12b45f" — кто угодно мог подтвердить
-			// чужой сервер приёма событий VK.
-			const confirmationToken = process.env.VK_CONFIRMATION_TOKEN?.trim();
+			let confirmationToken: string | undefined;
+			try {
+				const [cfg] = await db
+					.select({ confirmationCode: denteVkBotConfigs.confirmationCode })
+					.from(denteVkBotConfigs)
+					.where(eq(denteVkBotConfigs.organizationId, organizationId))
+					.limit(1);
+				if (cfg?.confirmationCode) {
+					confirmationToken = cfg.confirmationCode;
+				}
+			} catch {
+				// fallback to env
+			}
+
 			if (!confirmationToken) {
-				// Имя переменной окружения ушло из тела ответа в журнал сервера:
-				// маршрут публичный, и называть в его ответе внутренние настройки
-				// значит выдавать их первому, кто постучится. Тому, кто настраивает
-				// приём событий, имя нужно — но он читает журнал сервера.
+				confirmationToken = process.env.VK_CONFIRMATION_TOKEN?.trim();
+			}
+
+			if (!confirmationToken) {
 				request.log.error(
 					{ requiredEnv: ["VK_CONFIRMATION_TOKEN"] },
 					"Подтверждение сервера событий ВКонтакте отклонено: токен подтверждения не задан в окружении сервера",
@@ -205,6 +219,21 @@ export async function registerVkRoutes(server: FastifyInstance) {
 					});
 				}
 			});
+
+			try {
+				await omnichannelBotEngine.dispatchInboundMessage({
+					channel: "vk",
+					organizationId,
+					botConfigId: "default",
+					senderId: vkId,
+					messageId: externalId,
+					text,
+					timestamp: Date.now(),
+					rawEvent: body as Record<string, unknown>,
+				});
+			} catch {
+				// Don't fail webhook on bot auto-reply
+			}
 		}
 
 		return "ok"; // VK requires exact string "ok" to acknowledge message_new

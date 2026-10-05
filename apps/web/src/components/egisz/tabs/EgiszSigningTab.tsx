@@ -85,14 +85,14 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 			<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 					<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-						Подписание карты электронной подписью врача
+						Подписание СЭМД УКЭП (Приказ Минздрава № 947н)
 					</div>
 					<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "var(--primary-strong)" }}>
 						КриптоПро CSP
 					</span>
 				</div>
 				<div style={{ fontSize: "0.8125rem", color: "var(--muted)", marginBottom: "1rem" }}>
-					Подписание усиленной квалифицированной электронной подписью (УКЭП)
+					Подписание усиленной квалифицированной электронной подписью (УКЭП ГОСТ Р 34.10-2012 / 63-ФЗ)
 				</div>
 
 				{/* View Submodes */}
@@ -111,7 +111,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							cursor: "pointer",
 						}}
 					>
-						Печатный бланк медицинской карты
+						Печатный бланк СЭМД ф. 043/у
 					</button>
 					<button
 						type="button"
@@ -127,7 +127,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							cursor: "pointer",
 						}}
 					>
-						Электронный формат (XML)
+						HL7 CDA R2 XML
 					</button>
 				</div>
 
@@ -153,7 +153,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Key size={16} />
-							Подписать электронной подписью
+							Подписать УКЭП врача
 						</button>
 						<button
 							type="button"
@@ -174,7 +174,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Send size={16} />
-							Отправить в Минздрав
+							Отправить в РЭМД ЕГИСЗ
 						</button>
 						<button
 							type="button"
@@ -220,7 +220,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 							}}
 						>
 							<Building2 size={14} />
-							Подписать подписью клиники
+							Подписать УКЭП организации
 						</button>
 						<button
 							type="button"
@@ -413,7 +413,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Key size={18} />
-								{isSigning ? "Выполняется подписание..." : "Подписать электронной подписью"}
+								{isSigning ? "Выполняется подписание..." : "Подписать УКЭП врача"}
 							</button>
 							<button
 								type="button"
@@ -479,7 +479,7 @@ export const EgiszSigningTab: React.FC<EgiszSigningTabProps> = ({
 								}}
 							>
 								<Building2 size={14} />
-								{isSigning ? "Подписание..." : "Подписать подписью клиники"}
+								{isSigning ? "Подписание..." : "Подписать УКЭП организации"}
 							</button>
 							<label
 								style={{

@@ -1,0 +1,79 @@
+{
+  "subagent": "redteam_potemkin_legal_fiscal_lab_inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-04T22:36:00Z",
+  "completed_at": "2026-10-04T23:37:00Z",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in full",
+    "Inventoried codebase for documents, consents, fiscal/KKT, and dental lab modules",
+    "Audited and eradicated Potemkin villages across legal document print engines and 1051n consents",
+    "Isolated synthetic requisites (INN/OGRN/License) behind isDemoShowcaseMode() with honest blank lines in production",
+    "Purged synthetic test SMS OTP code displays from production signing panel",
+    "Exterminated synthetic 804n code A16.07.000 across pricing, catalog, visit workflows and replaced with statutory A16.07.002",
+    "Fixed initial KKT state in fast checkout logic to honest uninitialized state",
+    "Enforced genuine VITA shade badges and eliminated synthetic fallbacks in Dental Lab (LabOrdersPage, LabOrderCard, MobileLabOrdersTimeline)",
+    "Fixed pre-existing @dental/api type errors in billingQuery.ts (operationType and fpd alignment)",
+    "Fixed mobile ellipsis truncation in MobileDocumentsHub and MobileDocumentPreviewSheet",
+    "Executed machine verification gates: check:encoding (7642 files, 0 errors), typecheck -w @dental/web (0 errors), typecheck -w @dental/api (0 errors)",
+    "Executed unit test suites: fastCheckout.test.ts (15 passed), kktZeroMockFiscalPipeline.test.ts (12 passed), zeroBirdLanguagePurity.test.ts (17 passed), mobileDocumentsHub.test.tsx (2 passed)",
+    "Captured and personally inspected 4-state visual proof (PC Light/Dark 1440x900, Mobile Light/Dark 390x844) via view_file with zero parasitic horizontal drift"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "category": "legal_documents",
+      "severity": "CRITICAL",
+      "description": "Hardcoded synthetic clinic requisites (ООО «ДЕНТЕ Премиум», fake INN 7701234567, fake OGRN, fake license Л041-01137-77/00345678) were injected into printed contracts, surgical protocols, and 1051n consents instead of authentic tenant clinic data.",
+      "resolution": "Isolated all synthetic fallback requisites behind isDemoShowcaseMode(); in production, statutory fill-in blanks («________________________________________», «______________») are enforced."
+    },
+    {
+      "category": "sms_pep_signing",
+      "severity": "CRITICAL",
+      "description": "ConsentSigningPanel displayed generated test SMS OTP code directly in an alert banner to bypass patient SMS input.",
+      "resolution": "Guarded OTP display alert behind isDemoShowcaseMode(). In production, honest 'СМС с 4-значным кодом подтверждения отправлено' is displayed without revealing the secret OTP."
+    },
+    {
+      "category": "fiscal_804n_nomenclature",
+      "severity": "CRITICAL",
+      "description": "Non-statutory synthetic 804n code 'A16.07.000' was used across service pricelist engines, visit workflows, and receipt previews.",
+      "resolution": "Replaced with canonical statutory 804n code 'A16.07.002' (Восстановление зуба пломбой) across catalog, pricing, settings, and receipt pipelines."
+    },
+    {
+      "category": "dental_lab_ztl",
+      "severity": "HIGH",
+      "description": "Lab order components used hardcoded fallbacks ('A2', 'Цирконий', 'Не указан') instead of honest missing state or genuine VITA shade badges.",
+      "resolution": "Enforced strict VITA shade rendering with color swatches only when colorVita is defined, else honest em-dash '—'."
+    },
+    {
+      "category": "api_billing_query",
+      "severity": "HIGH",
+      "description": "Type mismatch in apps/api/src/db/billingQuery.ts: fiscalReceipt.operationType widened to string and access to non-existent fiscalSign caused compilation failure.",
+      "resolution": "Imported FiscalReceiptDetails, aligned operationType enum, used fpd instead of fiscalSign, and strictly typed finalFiscalReceipt."
+    },
+    {
+      "category": "mobile_hig_ergonomics",
+      "severity": "MEDIUM",
+      "description": "MobileDocumentsHub and MobileDocumentPreviewSheet truncated Russian patient names and document titles with mid-word ellipses ('Налоговы...', 'Сергее...').",
+      "resolution": "Replaced single-line truncate with line-clamp-2 leading-snug break-words and natural line wrapping."
+    }
+  ],
+  "verification": {
+    "encoding": "PASSED (7642 files checked, 0 errors)",
+    "typecheck_web": "PASSED (0 errors)",
+    "typecheck_api": "PASSED (0 errors)",
+    "unit_tests": "PASSED (fastCheckout, kktZeroMockFiscalPipeline, zeroBirdLanguagePurity, mobileDocumentsHub)",
+    "visual_proof_inspected": [
+      "proof_pc_documents_light.png",
+      "proof_pc_documents_dark.png",
+      "proof_pc_lab_orders_light.png",
+      "proof_pc_lab_orders_dark.png",
+      "proof_mobile_documents_hub_light.png",
+      "proof_mobile_documents_hub_dark.png",
+      "proof_mobile_documents_sheet_dark.png",
+      "proof_mobile_lab_orders_light.png",
+      "proof_mobile_lab_orders_dark.png",
+      "proof_payment_modal_light.png",
+      "proof_payment_modal_dark.png"
+    ]
+  }
+}

@@ -19,6 +19,7 @@ import { PatientSearchModal } from "../PatientSearchModal";
 import { TomorrowRemindersModal } from "../TomorrowRemindersModal";
 import { usePatientStore } from "../../../store/patientStore";
 import { useAppStore } from "../../../store/appStore";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 
 export interface ScheduleViewModalsProps {
   quickBookingOpen: boolean;
@@ -147,11 +148,145 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
     showToast,
   } = props;
 
+  // Координация поверхностей: взаимное исключение между шторками и модалками (Мандаты 8b, 8e)
+  // 1. AppointmentModal (Primary Modal)
+  React.useEffect(() => {
+    if (modalAppointment !== null) {
+      useUiSurfaceStore.getState().openPrimaryModal("appointment_modal", { appointmentId: modalAppointment.id });
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+      if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "appointment_modal") {
+      useUiSurfaceStore.getState().closePrimaryModal("appointment_modal");
+    }
+  }, [modalAppointment, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen, waitlistQuickFillSlot, setWaitlistQuickFillSlot]);
+
+  // 2. DoctorFreeSlotsModal
+  React.useEffect(() => {
+    if (doctorFreeSlotsOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("doctor_free_slots");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+      if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "doctor_free_slots") {
+      useUiSurfaceStore.getState().closePrimaryModal("doctor_free_slots");
+    }
+  }, [doctorFreeSlotsOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen, waitlistQuickFillSlot, setWaitlistQuickFillSlot]);
+
+  // 3. PatientSearchModal
+  React.useEffect(() => {
+    if (isPatientSearchOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("patient_search");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+      if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "patient_search") {
+      useUiSurfaceStore.getState().closePrimaryModal("patient_search");
+    }
+  }, [isPatientSearchOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen, waitlistQuickFillSlot, setWaitlistQuickFillSlot]);
+
+  // 4. PreventiveInspectionModal
+  React.useEffect(() => {
+    if (preventiveInspectionOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("preventive_inspection");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+      if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "preventive_inspection") {
+      useUiSurfaceStore.getState().closePrimaryModal("preventive_inspection");
+    }
+  }, [preventiveInspectionOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen, waitlistQuickFillSlot, setWaitlistQuickFillSlot]);
+
+  // 5. Other dialogs
+  React.useEffect(() => {
+    if (isRosterModalOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("roster_modal");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "roster_modal") {
+      useUiSurfaceStore.getState().closePrimaryModal("roster_modal");
+    }
+  }, [isRosterModalOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen]);
+
+  React.useEffect(() => {
+    if (isQuickAddChairOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("quick_add_chair");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "quick_add_chair") {
+      useUiSurfaceStore.getState().closePrimaryModal("quick_add_chair");
+    }
+  }, [isQuickAddChairOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen]);
+
+  React.useEffect(() => {
+    if (isCalendarSyncModalOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("calendar_sync");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "calendar_sync") {
+      useUiSurfaceStore.getState().closePrimaryModal("calendar_sync");
+    }
+  }, [isCalendarSyncModalOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen]);
+
+  React.useEffect(() => {
+    if (isTomorrowRemindersOpen) {
+      useUiSurfaceStore.getState().openPrimaryModal("tomorrow_reminders");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+      if (waitlistOpen) setWaitlistOpen(false);
+    } else if (useUiSurfaceStore.getState().primaryModal?.id === "tomorrow_reminders") {
+      useUiSurfaceStore.getState().closePrimaryModal("tomorrow_reminders");
+    }
+  }, [isTomorrowRemindersOpen, quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen]);
+
+  // 6. Drawers coordination: QuickBookingDrawer vs WaitlistDrawer
+  React.useEffect(() => {
+    if (quickBookingOpen) {
+      useUiSurfaceStore.getState().openDrawer("quick_booking");
+      if (waitlistOpen) setWaitlistOpen(false);
+      if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
+    } else if (useUiSurfaceStore.getState().activeDrawer === "quick_booking") {
+      useUiSurfaceStore.getState().closeDrawer("quick_booking");
+    }
+  }, [quickBookingOpen, waitlistOpen, setWaitlistOpen, waitlistQuickFillSlot, setWaitlistQuickFillSlot]);
+
+  React.useEffect(() => {
+    const isWaitlistActive = waitlistOpen || waitlistQuickFillSlot !== null;
+    if (isWaitlistActive) {
+      useUiSurfaceStore.getState().openDrawer("waitlist");
+      if (quickBookingOpen) setQuickBookingOpen(false);
+    } else if (useUiSurfaceStore.getState().activeDrawer === "waitlist") {
+      useUiSurfaceStore.getState().closeDrawer("waitlist");
+    }
+  }, [waitlistOpen, waitlistQuickFillSlot, quickBookingOpen, setQuickBookingOpen]);
+
+  // 7. Подписка на внешние изменения uiSurfaceStore (синхронизация с глобальной шиной и телефонией)
+  React.useEffect(() => {
+    const unsub = useUiSurfaceStore.subscribe((state) => {
+      if (state.hasPrimaryModal) {
+        if (quickBookingOpen) setQuickBookingOpen(false);
+        if (waitlistOpen) setWaitlistOpen(false);
+        if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
+      } else if (state.activeDrawer) {
+        if (state.activeDrawer !== "quick_booking" && quickBookingOpen) {
+          setQuickBookingOpen(false);
+        }
+        if (state.activeDrawer !== "waitlist" && (waitlistOpen || waitlistQuickFillSlot !== null)) {
+          setWaitlistOpen(false);
+          setWaitlistQuickFillSlot(null);
+        }
+      }
+    });
+    return unsub;
+  }, [quickBookingOpen, setQuickBookingOpen, waitlistOpen, setWaitlistOpen, waitlistQuickFillSlot, setWaitlistQuickFillSlot]);
+
   return (
     <>
       <QuickBookingDrawer
         isOpen={quickBookingOpen}
-        onClose={() => setQuickBookingOpen(false)}
+        onClose={() => {
+          setQuickBookingOpen(false);
+          useUiSurfaceStore.getState().closeDrawer("quick_booking");
+        }}
         initialSlot={quickBookingSlot}
         dashboard={dashboard as any}
         auth={auth}
@@ -164,7 +299,10 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         isOpen={modalAppointment !== null}
         appointment={modalAppointment}
         dashboard={dashboard as any}
-        onClose={() => setModalAppointment(null)}
+        onClose={() => {
+          setModalAppointment(null);
+          useUiSurfaceStore.getState().closePrimaryModal("appointment_modal");
+        }}
         onSave={async (appointmentId, draft) => {
           for (const [key, value] of Object.entries(draft)) {
             updateAppointmentScheduleDraft(appointmentId, key, value);
@@ -186,10 +324,17 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
 
       <DoctorFreeSlotsModal
         isOpen={doctorFreeSlotsOpen}
-        onClose={() => setDoctorFreeSlotsOpen(false)}
+        onClose={() => {
+          setDoctorFreeSlotsOpen(false);
+          useUiSurfaceStore.getState().closePrimaryModal("doctor_free_slots");
+        }}
         dashboard={dashboard as any}
         initialDoctorId={scheduleDoctorFilterId}
         onSelectSlot={(slot) => {
+          setDoctorFreeSlotsOpen(false);
+          useUiSurfaceStore.getState().transitionModalToDrawer("doctor_free_slots", "quick_booking");
+          if (waitlistOpen) setWaitlistOpen(false);
+          if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
           setQuickBookingSlot({
             dateKey: slot.date,
             startTime: slot.startTime,
@@ -205,10 +350,16 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       {preventiveInspectionOpen !== undefined && setPreventiveInspectionOpen && (
         <PreventiveInspectionModal
           isOpen={preventiveInspectionOpen}
-          onClose={() => setPreventiveInspectionOpen(false)}
+          onClose={() => {
+            setPreventiveInspectionOpen(false);
+            useUiSurfaceStore.getState().closePrimaryModal("preventive_inspection");
+          }}
           dashboard={dashboard as any}
           onBookPatient={(candidate) => {
             setPreventiveInspectionOpen(false);
+            useUiSurfaceStore.getState().transitionModalToDrawer("preventive_inspection", "quick_booking");
+            if (waitlistOpen) setWaitlistOpen(false);
+            if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
             setQuickBookingSlot({
               patientId: candidate.patientId,
               patientName: candidate.patientFullName,
@@ -330,6 +481,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         onClose={() => {
           setWaitlistOpen(false);
           setWaitlistQuickFillSlot(null);
+          useUiSurfaceStore.getState().closeDrawer("waitlist");
         }}
         targetSlot={waitlistQuickFillSlot}
         updateNewAppointmentDraft={updateNewAppointmentDraft}
@@ -380,9 +532,15 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       <PatientSearchModal
         isOpen={isPatientSearchOpen}
         patients={dashboard?.patients ?? []}
-        onClose={() => setIsPatientSearchOpen(false)}
+        onClose={() => {
+          setIsPatientSearchOpen(false);
+          useUiSurfaceStore.getState().closePrimaryModal("patient_search");
+        }}
         onSelectPatientForBooking={(patient) => {
           setIsPatientSearchOpen(false);
+          useUiSurfaceStore.getState().transitionModalToDrawer("patient_search", "quick_booking");
+          if (waitlistOpen) setWaitlistOpen(false);
+          if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
           setQuickBookingSlot({
             dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
             doctorUserId: scheduleDoctorFilterId || null,
@@ -395,11 +553,15 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         }}
         onOpenPatientCard={(patientId) => {
           setIsPatientSearchOpen(false);
+          useUiSurfaceStore.getState().closePrimaryModal("patient_search");
           usePatientStore.getState().setSelectedPatientId(patientId);
           useAppStore.getState().setCurrentView("patients");
         }}
         onQuickBookNewPatient={(patient) => {
           setIsPatientSearchOpen(false);
+          useUiSurfaceStore.getState().transitionModalToDrawer("patient_search", "quick_booking");
+          if (waitlistOpen) setWaitlistOpen(false);
+          if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
           setQuickBookingSlot({
             dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
             doctorUserId: scheduleDoctorFilterId || null,

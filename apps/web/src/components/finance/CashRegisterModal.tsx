@@ -212,6 +212,12 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		try {
 			if (onOpenShift) {
 				await onOpenShift();
+			} else {
+				await fetch("/api/fiscal/shift/open", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ cashierFullName }),
+				}).catch(() => null);
 			}
 			setLocalIsShiftOpen(true);
 			StaffActionAuditService.logShiftOpen({
@@ -226,7 +232,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		} finally {
 			setIsProcessing(false);
 		}
-	}, [isProcessing, onOpenShift, shiftNumber, cashInDrawerKopecks]);
+	}, [isProcessing, onOpenShift, cashierFullName, shiftNumber, cashInDrawerKopecks]);
 
 	const handleCloseShiftAction = useCallback(async () => {
 		if (isProcessing) return;
@@ -234,6 +240,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		try {
 			if (onCloseShift) {
 				await onCloseShift(reportSummary);
+			} else {
+				await fetch("/api/fiscal/shift/close", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						cashierFullName,
+						countedCashRub: countedCash ?? cashInDrawerRub,
+						incomeCashRub: reportSummary.incomeCashRub,
+						incomeElectronicRub: reportSummary.incomeElectronicRub,
+						netRevenueRub: reportSummary.netRevenueRub,
+						isBalanced: differenceRub === 0 || differenceRub === null,
+					}),
+				}).catch(() => null);
 			}
 			setLocalIsShiftOpen(false);
 			StaffActionAuditService.logShiftClose({
@@ -253,7 +272,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		} finally {
 			setIsProcessing(false);
 		}
-	}, [isProcessing, onCloseShift, reportSummary, shiftNumber, onClose]);
+	}, [isProcessing, onCloseShift, reportSummary, cashierFullName, countedCash, cashInDrawerRub, differenceRub, shiftNumber, onClose]);
 
 	const handlePrintXReportAction = useCallback(async () => {
 		if (isProcessing) return;
@@ -265,6 +284,12 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		try {
 			if (onPrintXReport) {
 				await onPrintXReport();
+			} else {
+				await fetch("/api/cash/x-report", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ cashierFullName, shiftNumber }),
+				}).catch(() => null);
 			}
 			StaffActionAuditService.logDocumentPrint({
 				documentType: "x_report",
@@ -280,7 +305,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		} finally {
 			setIsProcessing(false);
 		}
-	}, [isProcessing, isShiftActive, onPrintXReport, netRevenueRub, shiftNumber, cashierFullName]);
+	}, [isProcessing, isShiftActive, onPrintXReport, cashierFullName, shiftNumber, netRevenueRub]);
 
 	const handleCopyTape = useCallback(async () => {
 		await navigator.clipboard.writeText(receiptTapeText);

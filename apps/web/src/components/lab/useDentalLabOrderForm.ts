@@ -95,6 +95,7 @@ export function useDentalLabOrderForm({
 	const [mamelons, setMamelons] = useState<boolean>(false);
 	const [calcifications, setCalcifications] = useState<boolean>(false);
 	const [opalescence, setOpalescence] = useState<boolean>(false);
+	const [attachedImageUrl, setAttachedImageUrl] = useState<string | null>(initialOrder?.attachedImageUrl || null);
 
 	// Occlusal Specs
 	const [occlusalScheme, setOcclusalScheme] = useState<string>("mutually_protected");
@@ -203,6 +204,7 @@ export function useDentalLabOrderForm({
 			setPriceRubInput(initialOrder.priceRub != null ? String(initialOrder.priceRub) : "15000");
 			setClinicSharePct(initialOrder.clinicSharePct ?? 50);
 			setDoctorSharePct(initialOrder.doctorSharePct ?? 50);
+			setAttachedImageUrl(initialOrder.attachedImageUrl || null);
 			setSecureToken(initialOrder.secureToken || crypto.randomUUID());
 		} else {
 			setFormPatientId(patientId || "");
@@ -212,6 +214,7 @@ export function useDentalLabOrderForm({
 			setMamelons(false);
 			setCalcifications(false);
 			setOpalescence(false);
+			setAttachedImageUrl(null);
 			setScheduledVisitDate(propScheduledVisitDate ? propScheduledVisitDate.slice(0, 10) : "");
 			if (initialTeeth && initialTeeth.length > 0) {
 				const parsed = initialTeeth
@@ -415,6 +418,7 @@ export function useDentalLabOrderForm({
 				dueDate: dueDate ? new Date(dueDate).toISOString() : null,
 				clinicalNotes: `• ${comprehensiveNotes}`,
 				priceRub: totalLabPriceRub,
+				attachedImageUrl: attachedImageUrl || null,
 			};
 
 			const url = initialOrder?.id
@@ -514,6 +518,7 @@ export function useDentalLabOrderForm({
 				clinicSharePct,
 				doctorSharePct,
 				doctorDeductionRub: doctorAmountRub,
+				attachedImageUrl: attachedImageUrl || null,
 			};
 
 			if (onOrderSaved) {
@@ -740,6 +745,8 @@ export function useDentalLabOrderForm({
 		setCalcifications,
 		opalescence,
 		setOpalescence,
+		attachedImageUrl,
+		setAttachedImageUrl,
 		occlusalScheme,
 		setOcclusalScheme,
 		contactTightness,

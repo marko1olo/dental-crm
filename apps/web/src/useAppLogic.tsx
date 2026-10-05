@@ -1133,6 +1133,11 @@ export function useAppLogic(): any {
 	const activeAppointment = useMemo(() => {
 		if (!dashboard) return null;
 		return (
+			(selectedPatientId
+				? dashboard.appointments?.find(
+						(appointment) => appointment.patientId === selectedPatientId,
+				  )
+				: null) ??
 			dashboard.appointments?.find(
 				(appointment) =>
 					appointment.id === dashboard?.activeVisit?.appointmentId,
@@ -1140,7 +1145,7 @@ export function useAppLogic(): any {
 			dashboard.appointments?.[0] ??
 			null
 		);
-	}, [dashboard]);
+	}, [dashboard, selectedPatientId]);
 	const activeDoctor = useMemo(() => {
 		if (!dashboard || !activeAppointment) return null;
 		return (

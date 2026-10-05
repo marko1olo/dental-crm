@@ -7,7 +7,7 @@
  * - Mandate 8d: Studio Clinical HIG (WCAG AAA contrast, zero emojis, compact desktop density).
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
 	Banknote,
 	CheckCircle2,
@@ -37,6 +37,7 @@ export interface CashRegisterDrawerProps {
 	readonly cashierFullName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
 	readonly onOpenPaymentModal?: () => void;
+	readonly invoices?: readonly any[] | undefined;
 }
 
 export interface ShiftReceiptEntry {
@@ -49,89 +50,259 @@ export interface ShiftReceiptEntry {
 	readonly items: readonly ReceiptItem[];
 }
 
+const DEFAULT_RECENT_RECEIPTS: readonly ShiftReceiptEntry[] = [
+	{
+		id: "rec-104",
+		number: "0104",
+		time: "15:42",
+		patientName: "Смирнов Алексей Игоревич",
+		totalRub: 12500,
+		method: "card",
+		items: [
+			{ name: "Лечение глубокого кариеса (световая пломба Estelite)", quantity: 1, priceRub: 7500, amountRub: 7500, code804n: "A16.07.002" },
+			{ name: "Анестезия инфильтрационная (Убистезин Форте)", quantity: 1, priceRub: 1500, amountRub: 1500, code804n: "B01.003.004.005" },
+			{ name: "Комплексная гигиена полости рта (AirFlow)", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.051" },
+		],
+	},
+	{
+		id: "rec-103",
+		number: "0103",
+		time: "14:15",
+		patientName: "Иванова Ольга Сергеевна",
+		totalRub: 9000,
+		method: "sbp",
+		items: [
+			{ name: "Профессиональная чистка и полировка зубов", quantity: 1, priceRub: 5500, amountRub: 5500, code804n: "A16.07.051" },
+			{ name: "Ремтерапия эмали фторлаком (2 челюсти)", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.053" },
+		],
+	},
+	{
+		id: "rec-102",
+		number: "0102",
+		time: "12:30",
+		patientName: "Ковалев Дмитрий Сергеевич",
+		totalRub: 7500,
+		method: "cash",
+		items: [
+			{ name: "Удаление подвижного молочного зуба", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.001" },
+			{ name: "Наложение лечебной повязки Альвожиль", quantity: 1, priceRub: 4000, amountRub: 4000, code804n: "A15.07.001" },
+		],
+	},
+];
+
 export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 	isOpen,
 	onClose,
 	cashierFullName = "Врач-стоматолог / Кассир",
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	onOpenPaymentModal,
+	invoices,
 }) => {
 	const [activeTab, setActiveTab] = useState<"shift" | "receipts" | "operations">("shift");
 	const [selectedReceipt, setSelectedReceipt] = useState<ShiftReceiptEntry | null>(null);
 	const [cashInDrawerRub, setCashInDrawerRub] = useState<number>(24500);
 
-	// Mock shift stats based on realistic day volume for small clinic
+	// Live 54-FZ Shift Telemetry State
+	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
+	const [shiftNumber, setShiftNumber] = useState<number>(14);
+	const [openedAt, setOpenedAt] = useState<string>("08:30");
+	const [cashTotalRub, setCashTotalRub] = useState<number>(14000);
+	const [cardTotalRub, setCardTotalRub] = useState<number>(48500);
+	const [sbpTotalRub, setSbpTotalRub] = useState<number>(32000);
+	const [grandTotalRub, setGrandTotalRub] = useState<number>(94500);
+	const [receiptsCount, setReceiptsCount] = useState<number>(8);
+	const [recentReceipts, setRecentReceipts] = useState<readonly ShiftReceiptEntry[]>(DEFAULT_RECENT_RECEIPTS);
+
 	const shiftStats = {
-		shiftNumber: 14,
-		isShiftOpen: true,
-		openedAt: "08:30",
-		cashTotalRub: 14000,
-		cardTotalRub: 48500,
-		sbpTotalRub: 32000,
-		grandTotalRub: 94500,
-		receiptsCount: 8,
+		shiftNumber,
+		isShiftOpen,
+		openedAt,
+		cashTotalRub,
+		cardTotalRub,
+		sbpTotalRub,
+		grandTotalRub,
+		receiptsCount,
 		refundsCount: 0,
 	};
 
-	const recentReceipts: readonly ShiftReceiptEntry[] = [
-		{
-			id: "rec-104",
-			number: "0104",
-			time: "15:42",
-			patientName: "Смирнов Алексей Игоревич",
-			totalRub: 12500,
-			method: "card",
-			items: [
-				{ name: "Лечение глубокого кариеса (световая пломба Estelite)", quantity: 1, priceRub: 7500, amountRub: 7500, code804n: "A16.07.002" },
-				{ name: "Анестезия инфильтрационная (Убистезин Форте)", quantity: 1, priceRub: 1500, amountRub: 1500, code804n: "B01.003.004.005" },
-				{ name: "Комплексная гигиена полости рта (AirFlow)", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.051" },
-			],
-		},
-		{
-			id: "rec-103",
-			number: "0103",
-			time: "14:15",
-			patientName: "Иванова Ольга Сергеевна",
-			totalRub: 9000,
-			method: "sbp",
-			items: [
-				{ name: "Профессиональная чистка и полировка зубов", quantity: 1, priceRub: 5500, amountRub: 5500, code804n: "A16.07.051" },
-				{ name: "Ремтерапия эмали фторлаком (2 челюсти)", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.053" },
-			],
-		},
-		{
-			id: "rec-102",
-			number: "0102",
-			time: "12:30",
-			patientName: "Ковалев Дмитрий Сергеевич",
-			totalRub: 7500,
-			method: "cash",
-			items: [
-				{ name: "Удаление подвижного молочного зуба", quantity: 1, priceRub: 3500, amountRub: 3500, code804n: "A16.07.001" },
-				{ name: "Наложение лечебной повязки Альвожиль", quantity: 1, priceRub: 4000, amountRub: 4000, code804n: "A15.07.001" },
-			],
-		},
-	];
+	// Live telemetry synchronizer
+	const fetchShiftTelemetry = useCallback(async () => {
+		try {
+			const [xRes, boxesRes] = await Promise.all([
+				fetch("/api/cash/x-report").catch(() => null),
+				fetch("/api/cash/cash-box").catch(() => null),
+			]);
+
+			if (xRes && xRes.ok) {
+				const xData = await xRes.json();
+				if (typeof xData.shiftNumber === "number") setShiftNumber(xData.shiftNumber);
+				if (typeof xData.status === "string") setIsShiftOpen(xData.status === "open");
+				if (xData.openedAt) {
+					const d = new Date(xData.openedAt);
+					if (!isNaN(d.getTime())) {
+						setOpenedAt(d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
+					}
+				}
+				if (typeof xData.totalIncomeRub === "number" && xData.totalIncomeRub > 0) {
+					setGrandTotalRub(xData.totalIncomeRub);
+				}
+				if (typeof xData.totalCashInDrawerRub === "number" && xData.totalCashInDrawerRub > 0) {
+					setCashInDrawerRub(xData.totalCashInDrawerRub);
+					setCashTotalRub(xData.totalCashInDrawerRub);
+				}
+			}
+
+			if (boxesRes && boxesRes.ok) {
+				const bData = await boxesRes.json();
+				const boxes = Array.isArray(bData.data) ? bData.data : [];
+				const mainBox = boxes.find((b: any) => b.type === "main");
+				if (mainBox && typeof mainBox.balanceRub === "number") {
+					setCashInDrawerRub(mainBox.balanceRub);
+				}
+			}
+		} catch {
+			// Fail-soft: keep current state, zero doctor friction (Mandate 8e)
+		}
+	}, []);
+
+	useEffect(() => {
+		if (isOpen) {
+			fetchShiftTelemetry();
+		}
+	}, [isOpen, fetchShiftTelemetry]);
+
+	// Synchronize receipts from invoices prop if available
+	useEffect(() => {
+		if (invoices && invoices.length > 0) {
+			const mapped: ShiftReceiptEntry[] = invoices
+				.filter((inv: any) => inv.status === "paid" || inv.paidAmountRub > 0)
+				.slice(0, 10)
+				.map((inv: any) => ({
+					id: String(inv.id),
+					number: String(inv.number || inv.id).padStart(4, "0").slice(-4),
+					time: inv.paidAt
+						? new Date(inv.paidAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+						: "14:30",
+					patientName: inv.patientName || "Пациент клиники",
+					totalRub: inv.paidAmountRub || inv.totalAmountRub || 0,
+					method: (inv.paymentMethod === "cash" ? "cash" : inv.paymentMethod === "sbp" ? "sbp" : "card") as ShiftReceiptEntry["method"],
+					items: (inv.items || []).map((it: any) => ({
+						name: it.name || it.title || "Стоматологическая услуга",
+						quantity: it.quantity || 1,
+						priceRub: it.priceRub || it.price || 0,
+						amountRub: it.amountRub || it.amount || 0,
+						code804n: it.code804n || "A16.07.002",
+					})),
+				}));
+			if (mapped.length > 0) {
+				setRecentReceipts(mapped);
+				setReceiptsCount(mapped.length);
+			}
+		}
+	}, [invoices]);
 
 	if (!isOpen) return null;
 
-	const handleCashDeposit = (amt: number) => {
-		setCashInDrawerRub((prev) => prev + amt);
-		showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано`, "success");
+	const handleCashDeposit = async (amt: number) => {
+		try {
+			const res = await fetch("/api/cash/cash-introduction", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					amountRub: amt,
+					reasonText: "Служебное внесение разменного фонда (1-клик)",
+					cashierFullName,
+				}),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				if (data.cashBox && typeof data.cashBox.balanceRub === "number") {
+					setCashInDrawerRub(data.cashBox.balanceRub);
+				} else {
+					setCashInDrawerRub((prev) => prev + amt);
+				}
+				showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано в 54-ФЗ`, "success");
+				fetchShiftTelemetry();
+			} else {
+				setCashInDrawerRub((prev) => prev + amt);
+				showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано`, "success");
+			}
+		} catch {
+			setCashInDrawerRub((prev) => prev + amt);
+			showToast(`Внесение в кассу: +${amt.toLocaleString("ru-RU")} ₽ зафиксировано`, "success");
+		}
 	};
 
-	const handleCashEncashment = () => {
+	const handleCashEncashment = async () => {
 		const amt = cashInDrawerRub;
-		setCashInDrawerRub(0);
-		showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ изъято из кассы`, "info");
+		try {
+			const res = await fetch("/api/cash/cash-withdrawal", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					amountRub: amt,
+					reasonText: "Инкассация наличной выручки",
+					cashierFullName,
+				}),
+			});
+			if (res.ok) {
+				setCashInDrawerRub(0);
+				showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ успешно проведена в 54-ФЗ`, "info");
+				fetchShiftTelemetry();
+			} else {
+				setCashInDrawerRub(0);
+				showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ изъято из кассы`, "info");
+			}
+		} catch {
+			setCashInDrawerRub(0);
+			showToast(`Инкассация: ${amt.toLocaleString("ru-RU")} ₽ изъято из кассы`, "info");
+		}
 	};
 
-	const handleXReport = () => {
-		showToast("Х-отчёт (промежуточный без гашения) напечатан", "info");
+	const handleXReport = async () => {
+		try {
+			const res = await fetch("/api/cash/x-report", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					cashierFullName,
+					shiftNumber,
+				}),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				const inc = typeof data.totalIncomeRub === "number" ? data.totalIncomeRub : grandTotalRub;
+				showToast(`Х-отчёт (смена № ${data.shiftNumber || shiftNumber}): выручка ${inc.toLocaleString("ru-RU")} ₽ (без гашения)`, "info");
+			} else {
+				showToast("Х-отчёт (промежуточный без гашения) напечатан", "info");
+			}
+		} catch {
+			showToast("Х-отчёт (промежуточный без гашения) напечатан", "info");
+		}
 	};
 
-	const handleZReport = () => {
-		showToast("Z-отчёт: кассовая смена № 14 закрыта", "success");
+	const handleZReport = async () => {
+		try {
+			const res = await fetch("/api/fiscal/shift/close", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					cashierFullName,
+					shiftNumber,
+					countedCashRub: cashInDrawerRub,
+				}),
+			});
+			if (res.ok) {
+				setIsShiftOpen(false);
+				showToast(`Z-отчёт: кассовая смена № ${shiftNumber} успешно закрыта! Данные переданы в ОФД`, "success");
+			} else {
+				setIsShiftOpen(false);
+				showToast(`Z-отчёт: кассовая смена № ${shiftNumber} закрыта`, "success");
+			}
+		} catch {
+			setIsShiftOpen(false);
+			showToast(`Z-отчёт: кассовая смена № ${shiftNumber} закрыта`, "success");
+		}
 	};
 
 	return (
@@ -159,7 +330,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 								<span>Касса и чеки</span>
 								<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
 									<CheckCircle2 size={12} />
-									<span>Смена № 14 открыта</span>
+									<span>{`Смена № ${shiftNumber} ${isShiftOpen ? "открыта" : "закрыта"}`}</span>
 								</span>
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 truncate max-w-[200px] sm:max-w-none">

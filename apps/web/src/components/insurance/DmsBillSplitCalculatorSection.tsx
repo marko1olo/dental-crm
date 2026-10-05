@@ -20,6 +20,7 @@ import {
 import React, { useId, useMemo, useState } from "react";
 import {
 	calculateDmsCoPaymentSplitWithPayment,
+	formatCurrencyKopecks,
 	formatCurrencyRub,
 	kopecksToRubles,
 	rublesToKopecks,
@@ -144,8 +145,8 @@ export function DmsBillSplitCalculatorSection({
 					margin: "0 0 12px 0",
 				}}
 			>
-				Автоматическое распределение позиций текущего визита с учетом лимита письма ({formatCurrencyRub(letter.maxCoverageKopecks ?? 0)}),
-				франшизы ({letter.franchisePercent && letter.franchisePercent > 0 ? `${letter.franchisePercent}%` : `${formatCurrencyRub(letter.franchiseFixedKopecks ?? 0)}`})
+				Автоматическое распределение позиций текущего визита с учетом лимита письма ({formatCurrencyKopecks(letter.maxCoverageKopecks ?? 0)}),
+				франшизы ({letter.franchisePercent && letter.franchisePercent > 0 ? `${letter.franchisePercent}%` : `${formatCurrencyKopecks(letter.franchiseFixedKopecks ?? 0)}`})
 				и исключений страховой программы.
 			</p>
 
@@ -176,7 +177,7 @@ export function DmsBillSplitCalculatorSection({
 						<div className="dms-stat-card">
 							<span className="dms-stat-label">Общая сумма счета</span>
 					<span className="dms-stat-value font-mono">
-						{formatCurrencyRub(splitCalculation.totalBillKopecks)}
+						{formatCurrencyKopecks(splitCalculation.totalBillKopecks)}
 					</span>
 				</div>
 				<div className="dms-stat-card" style={{ borderColor: "rgba(13, 148, 136, 0.4)" }}>
@@ -187,7 +188,7 @@ export function DmsBillSplitCalculatorSection({
 						className="dms-stat-value font-mono"
 						style={{ color: "var(--teal, #0d9488)" }}
 					>
-						{formatCurrencyRub(splitCalculation.dmsCoveredKopecks)}
+						{formatCurrencyKopecks(splitCalculation.dmsCoveredKopecks)}
 					</span>
 				</div>
 				<div className="dms-stat-card" style={{ borderColor: "rgba(217, 119, 6, 0.4)" }}>
@@ -198,13 +199,13 @@ export function DmsBillSplitCalculatorSection({
 						className="dms-stat-value font-mono"
 						style={{ color: "var(--warn-fg, #d97706)" }}
 					>
-						{formatCurrencyRub(splitCalculation.patientTotalKopecks)}
+						{formatCurrencyKopecks(splitCalculation.patientTotalKopecks)}
 					</span>
 				</div>
 				<div className="dms-stat-card">
 					<span className="dms-stat-label">Остаток лимита ГП</span>
 					<span className="dms-stat-value font-mono">
-						{formatCurrencyRub(splitCalculation.remainingLimitKopecks)}
+						{formatCurrencyKopecks(splitCalculation.remainingLimitKopecks)}
 					</span>
 				</div>
 			</div>
@@ -227,7 +228,7 @@ export function DmsBillSplitCalculatorSection({
 						color: "var(--ink, #0f172a)",
 					}}
 				>
-					Способ внесения доплаты пациентом ({formatCurrencyRub(splitCalculation.patientTotalKopecks)}):
+					Способ внесения доплаты пациентом ({formatCurrencyKopecks(splitCalculation.patientTotalKopecks)}):
 				</div>
 
 				<div className="dms-quick-toolbar" style={{ marginBottom: "10px" }}>
@@ -300,7 +301,7 @@ export function DmsBillSplitCalculatorSection({
 								className="dms-input font-mono font-bold flex items-center bg-slate-50 dark:bg-slate-900"
 								style={{ color: "var(--primary, #0284c7)" }}
 							>
-								{paymentSplit ? formatCurrencyRub(paymentSplit.cardKopecks) : "0,00 ₽"}
+								{paymentSplit ? formatCurrencyKopecks(paymentSplit.cardKopecks) : "0,00 ₽"}
 							</div>
 						</div>
 					</div>
@@ -318,11 +319,11 @@ export function DmsBillSplitCalculatorSection({
 						}}
 					>
 						<span>
-							Наличные: <strong>{formatCurrencyRub(paymentSplit.cashKopecks)}</strong>
+							Наличные: <strong>{formatCurrencyKopecks(paymentSplit.cashKopecks)}</strong>
 						</span>
 						<span>&bull;</span>
 						<span>
-							Банковская карта: <strong>{formatCurrencyRub(paymentSplit.cardKopecks)}</strong>
+							Банковская карта: <strong>{formatCurrencyKopecks(paymentSplit.cardKopecks)}</strong>
 						</span>
 						<span>&bull;</span>
 						<span style={{ color: "var(--ok-fg, #059669)", fontWeight: 600 }}>
@@ -357,13 +358,13 @@ export function DmsBillSplitCalculatorSection({
 									<td style={{ fontWeight: 500 }}>{line.serviceName}</td>
 									<td style={{ fontFamily: "monospace" }}>{line.toothNumber || "—"}</td>
 									<td style={{ fontFamily: "monospace", fontWeight: 600 }}>
-										{formatCurrencyRub(line.totalKopecks)}
+										{formatCurrencyKopecks(line.totalKopecks)}
 									</td>
 									<td style={{ fontFamily: "monospace", color: "var(--teal, #0d9488)", fontWeight: 700 }}>
-										{formatCurrencyRub(line.coveredByDmsKopecks ?? line.insuranceCoveredKopecks)}
+										{formatCurrencyKopecks(line.coveredByDmsKopecks ?? line.insuranceCoveredKopecks)}
 									</td>
 									<td style={{ fontFamily: "monospace", color: (line.patientTotalKopecks ?? line.patientOutOfPocketKopecks) > 0 ? "var(--warn-fg, #d97706)" : "inherit", fontWeight: 700 }}>
-										{formatCurrencyRub(line.patientTotalKopecks ?? line.patientOutOfPocketKopecks)}
+										{formatCurrencyKopecks(line.patientTotalKopecks ?? line.patientOutOfPocketKopecks)}
 									</td>
 									<td>
 										{(line.coveredByDmsKopecks ?? line.insuranceCoveredKopecks) > 0 && (line.patientTotalKopecks ?? line.patientOutOfPocketKopecks) === 0 && (
@@ -373,12 +374,12 @@ export function DmsBillSplitCalculatorSection({
 										)}
 										{(line.copayKopecks ?? line.franchiseDeductionKopecks) > 0 && (
 											<span className="dms-badge dms-badge-exhausted" style={{ fontSize: "0.6875rem" }}>
-												Франшиза
+												Франшиза {letter.franchisePercent && letter.franchisePercent > 0 ? `${letter.franchisePercent}%` : ""}
 											</span>
 										)}
-										{(line.patientExcludedKopecks ?? 0) > 0 && (
+										{((line.patientExcludedKopecks ?? 0) > 0 || line.isExcludedByPolicy || (!line.isApprovedByLetter && (line.coveredByDmsKopecks ?? line.insuranceCoveredKopecks) === 0)) && (
 											<span className="dms-badge dms-badge-expired" style={{ fontSize: "0.6875rem" }}>
-												Исключение ДМС
+												{line.isExcludedByPolicy || (line.patientExcludedKopecks ?? 0) > 0 ? "Исключение ДМС" : "Не согласовано ГП"}
 											</span>
 										)}
 										{(line.patientExceededLimitKopecks ?? 0) > 0 && (
@@ -395,13 +396,13 @@ export function DmsBillSplitCalculatorSection({
 						<tr className="dms-table-totals">
 							<td colSpan={3}>ИТОГО К РАСПРЕДЕЛЕНИЮ:</td>
 							<td style={{ fontFamily: "monospace" }}>
-								{formatCurrencyRub(splitCalculation.totalBillKopecks)}
+								{formatCurrencyKopecks(splitCalculation.totalBillKopecks)}
 							</td>
 							<td style={{ fontFamily: "monospace", color: "var(--teal, #0d9488)" }}>
-								{formatCurrencyRub(splitCalculation.dmsCoveredKopecks)}
+								{formatCurrencyKopecks(splitCalculation.dmsCoveredKopecks)}
 							</td>
 							<td style={{ fontFamily: "monospace", color: "var(--warn-fg, #d97706)" }}>
-								{formatCurrencyRub(splitCalculation.patientTotalKopecks)}
+								{formatCurrencyKopecks(splitCalculation.patientTotalKopecks)}
 							</td>
 							<td>
 								<span style={{ fontSize: "0.75rem", color: "var(--ok-fg, #059669)", fontWeight: 600 }}>

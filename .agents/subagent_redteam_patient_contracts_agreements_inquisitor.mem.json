@@ -1,0 +1,49 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: PATIENT CONTRACTS, MEDICAL AGREEMENTS & INFORMED CONSENTS",
+  "status": "COMPLETED_SELF_FIXING_AND_VERIFIED",
+  "completed_steps": [
+    "Read all core rules, frontend rules, engineering rules, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Reconnaissance of all patient contract, agreement, act, informed consent (IDS), and primary package components, routes, templates, and schemas",
+    "Adversarial defect identification (orphaned prescriptionPrintEngine.ts, blank contract 736 Zod validation failures, missing patient birth date in contract body, missing customer signature fallback underlines, missing certificateIssuer in UKEP stamp, .sign-box matching gap in visualSignatureStamp)",
+    "Self-fixing implementation: refactored apps/web/src/components/documents/forms/PrescriptionOrderForm.tsx to import prescriptionPrintEngine.ts with Order 1094n quick chips & statutory validation warnings",
+    "Self-fixing implementation: updated packages/shared/src/documents/formsContractAndConsents.ts for Mandate 8e blank contract/act printing with clean underline fallbacks and zero Zod schema validation errors",
+    "Self-fixing implementation: updated packages/shared/src/crypto/visualSignatureStamp.ts to render certificateIssuer and match both .sig-box and .sign-box / signatures-row in digital signature stamp injection",
+    "Created comprehensive Red Team test suite packages/shared/src/tests/contractsAndSignatureStamps.test.ts (10/10 tests passed)",
+    "Executed isolated unit tests: documentsViewDecomposition.test.ts (93/93 passed, 0 orphans), minzdravDocuments.test.ts (12/12 passed), documentPayloadForms.test.ts (30/30 passed), document test suite (41/41 passed), check-encoding (0 errors)"
+  ],
+  "pending_steps": [
+    "Final reporting via send_message to parent"
+  ],
+  "findings": [
+    {
+      "defect": "Orphan file apps/web/src/components/documents/prescriptionPrintEngine.ts was not imported anywhere, causing failure in documentsViewDecomposition.test.ts",
+      "severity": "HIGH",
+      "fix": "Integrated prescriptionPrintEngine.ts into apps/web/src/components/documents/forms/PrescriptionOrderForm.tsx with canonical statutory MNN drug chips and Order 1094n validation",
+      "verified": true
+    },
+    {
+      "defect": "paidServiceContract736PayloadSchema and actOfCompletedWorksPayloadSchema enforced .min(1) on patientFullName and .min(10) on patientBirthDate, crashing blank contract/act printing with ZodError on receptionist desks (violating Mandate 8e)",
+      "severity": "CRITICAL",
+      "fix": "Relaxed schema to .default('') with clean underline fallbacks (_________________________________) in HTML renderers, allowing seamless blank printing without 403 or validation crashes",
+      "verified": true
+    },
+    {
+      "defect": "renderPaidServiceContract736Html computed patientBirth but omitted it from both the preamble and the Section 6 requisites table",
+      "severity": "MEDIUM",
+      "fix": "Added patientBirth to preamble ('гражданин(ка) ..., дата рождения: ...') and to Section 6 requisites table",
+      "verified": true
+    },
+    {
+      "defect": "renderDigitalSignatureStampHtml accepted certificateIssuer in schema but omitted it from the rendered GOST R 7.0.97-2016 UKEP blue stamp HTML",
+      "severity": "MEDIUM",
+      "fix": "Added 'Кем выдан: <certificateIssuer>' to UKEP digital stamp HTML",
+      "verified": true
+    },
+    {
+      "defect": "injectVisualSignatureStampIntoHtml matched only .sig-box (singular), skipping .sign-box and .signatures-row in primary intake package and custom clinical print sheets",
+      "severity": "HIGH",
+      "fix": "Expanded regexes in visualSignatureStamp.ts to match .sig(?:n)?-box and .signature(?:s)?-row",
+      "verified": true
+    }
+  ]
+}

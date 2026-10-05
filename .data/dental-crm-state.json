@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-09-26T10:20:26.360Z",
+  "savedAt": "2026-10-05T12:28:56.477Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -19,9 +19,9 @@
       "bankDetails": "р/с 40702810000000000000, БИК 043601000, банк ООО «Демо Банк»",
       "signatoryName": "Иванова Марина Сергеевна",
       "signatoryTitle": "индивидуальный предприниматель",
-      "mode": "one_chair",
+      "mode": "network_clinic",
       "timezone": "Europe/Samara",
-      "defaultVisitMinutes": 45,
+      "defaultVisitMinutes": 60,
       "scheduleDefaults": {
         "workdayStart": "09:00",
         "workdayEnd": "18:00",
@@ -34,9 +34,9 @@
         ],
         "appointmentBufferMinutes": 10
       },
-      "networkEnabled": false,
+      "networkEnabled": true,
       "egiszEnabled": false,
-      "updatedAt": "2026-09-26T10:20:10.928Z",
+      "updatedAt": "2026-10-05T12:28:56.418Z",
       "currency": "₽",
       "themeColor": "teal",
       "logoUrl": null,
@@ -47,15 +47,15 @@
       "hasInsuranceCoPay": true,
       "hasInstallments": true,
       "hasOrthodontics": true,
-      "hasGnathology": false,
-      "hasCsoScanner": false,
-      "hasLeadsKanban": false,
-      "hasOmnichannel": false,
+      "hasGnathology": true,
+      "hasCsoScanner": true,
+      "hasLeadsKanban": true,
+      "hasOmnichannel": true,
       "hasTasks": true,
       "hasReclamations": true,
       "workspacePreset": "enterprise",
-      "onboardingCompleted": false,
-      "hasPediatricMode": false,
+      "onboardingCompleted": true,
+      "hasPediatricMode": true,
       "isOmniRole": false,
       "hasPayrollModule": true,
       "hasMarketingModule": true,
@@ -63,7 +63,10 @@
       "hasInventoryModule": true,
       "aiEnableTreatmentPlan": true,
       "aiEnableRecommendations": true,
-      "aiEnableDocuments": true
+      "aiEnableDocuments": true,
+      "hasEngineeringStatus": true,
+      "hasClinicalRules": true,
+      "numberOfDoctors": 10
     },
     "staffMembers": [
       {
@@ -371,6 +374,58 @@
             "end": "18:00"
           }
         ]
+      },
+      {
+        "id": "chair-2-1791203336417",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "name": "Кресло 2",
+        "room": "Кабинет 2",
+        "specialization": "surgeon",
+        "active": true,
+        "hasXraySensor": true,
+        "hasMicroscope": false,
+        "hasSurgeryKit": true,
+        "notes": null,
+        "workingHours": null
+      },
+      {
+        "id": "chair-3-1791203336417",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "name": "Кресло 3",
+        "room": "Кабинет 3",
+        "specialization": "orthopedist",
+        "active": true,
+        "hasXraySensor": true,
+        "hasMicroscope": true,
+        "hasSurgeryKit": false,
+        "notes": null,
+        "workingHours": null
+      },
+      {
+        "id": "chair-4-1791203336418",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "name": "Кресло 4",
+        "room": "Кабинет 4",
+        "specialization": "universal",
+        "active": true,
+        "hasXraySensor": true,
+        "hasMicroscope": true,
+        "hasSurgeryKit": true,
+        "notes": null,
+        "workingHours": null
+      },
+      {
+        "id": "chair-5-1791203336418",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "name": "Кресло 5",
+        "room": "Кабинет 5",
+        "specialization": "universal",
+        "active": true,
+        "hasXraySensor": true,
+        "hasMicroscope": true,
+        "hasSurgeryKit": true,
+        "notes": null,
+        "workingHours": null
       }
     ],
     "appointments": [
@@ -397,7 +452,7 @@
         "status": "planned",
         "startsAt": "2026-05-12T10:30:00+04:00",
         "endsAt": "2026-05-12T11:15:00+04:00",
-        "reason": "Профгигиена",
+        "reason": "Посадка из листа ожидания (Администратор 1)",
         "comment": "После оплаты выдать справку для вычета."
       },
       {
@@ -802,6 +857,86 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "9824665e-decf-4a4f-8d94-d1965383df23",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: network_center.",
+        "createdAt": "2026-10-05T12:28:56.418Z"
+      },
+      {
+        "id": "0132ed62-2541-46bd-b5e9-444920a6b229",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: standard_clinic.",
+        "createdAt": "2026-10-05T12:28:56.417Z"
+      },
+      {
+        "id": "3ef99e0d-1b1a-4e50-8efe-814cbbd59c2a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_scale_preset_applied",
+        "reason": "Применен суверенный пресет масштаба: solo_doctor.",
+        "createdAt": "2026-10-05T12:28:56.415Z"
+      },
+      {
+        "id": "c7f7f473-a125-4a12-8b35-3cb828ccab19",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-03T00:46:21.692Z"
+      },
+      {
+        "id": "1a0e6050-4a82-4a52-9e1f-e09788f2fff3",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-03T00:44:58.759Z"
+      },
+      {
+        "id": "96213e65-6d3c-418f-9cd9-42bdf188e332",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-03T00:44:08.684Z"
+      },
+      {
+        "id": "c6148081-6998-49c7-95a8-4a00eae6b431",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-03T00:36:05.586Z"
+      },
+      {
+        "id": "821d2642-3dea-49e8-a9e4-a88678be5a44",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "appointment",
+        "entityId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "action": "appointment_updated",
+        "reason": "Запись обновлена из расписания: время, пациент, врач, ассистент, кресло или статус.",
+        "createdAt": "2026-10-03T00:34:48.092Z"
+      },
+      {
         "id": "1ab05770-1ee3-4fed-bac1-90779bd7edf8",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -885,7 +1020,9 @@
         "prosthetics": 48,
         "orthodontics": 72,
         "periodontology": 72,
-        "other": 48
+        "other": 48,
+        "surgery_aftercare": 24,
+        "fixation_aftercare": 48
       },
       "allowVoiceIntake": false,
       "staffEscalationChannel": null,
@@ -914,5 +1051,5 @@
       "updatedAt": "2026-09-26T10:20:10.928Z"
     }
   },
-  "checksum": "6822c08193771d20633d79b36d7e2b80b55287093b66dcc4ab6435dd23390023"
+  "checksum": "54d57397826039b61b44daae408905eedcbdfc50f8caf88ff7335376f6cf8f64"
 }

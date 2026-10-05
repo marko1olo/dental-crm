@@ -215,14 +215,14 @@
   - Таблица остатков по кабинетам с цветовой индикацией критического минимума (🔴 кончается).
   - Быстрое списание расходников по штрихкоду сканером.
 - **🟡 Tier 2 (Warm Context / 1 клик / Складские шторки)**:
-  - **ProcedureMaterialDeductionModal** ([`ProcedureMaterialDeductionModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx)): Автоматическое списание материалов по техкарте выполненной услуги с возможностью ручной корректировки медсестрой.
-  - **NurseCarpuleDisposalModal** ([`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx)): Экспресс-списание пустых карпул анестетиков в 1 клик.
+  - **ProcedureMaterialDeductionModal** ([`ProcedureMaterialDeductionModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx)): Автоматическое списание материалов по техкарте выполненной услуги.
+  - **NurseCarpuleDisposalModal** ([`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx)): Экспресс-списание препаратов и медотходов в 1 клик.
 - **🔵 Tier 3 (Cold Backoffice / Кабинетный режим)**:
   - **WarehouseInventoryAuditModal** ([`WarehouseInventoryAuditModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseInventoryAuditModal.tsx)): Проведение инвентаризации с фиксацией излишков и недостач.
   - **MaterialBomsSettingsPanel** ([`MaterialBomsSettingsPanel.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/MaterialBomsSettingsPanel.tsx)): Конструктор технологических карт (Bill of Materials) на стоматологические услуги.
 
 ### Защита от палок в колёса (Mandate 8e)
-- **Списание карпул в 1 клик**: Никаких комиссий из 3 человек для списания использованной анестезии.
+- **Списание ресурсов в 1 клик**: Никаких комиссий из 3 человек для списания использованных препаратов и расходников.
 - **Мягкий овердрафт**: Задержка проведения приходной накладной не блокирует операцию — система выдаёт мягкое предупреждение и фиксирует временный минус в партии.
 
 ---
@@ -230,16 +230,16 @@
 ## 8. СТЕРИЛИЗАЦИЯ И САНПИН (`#inventory -> sterilization`)
 
 ### Назначение и оператор
-Журнал работы автоклавов (форма 257/у), контроль азопирамовых и фенолфталеиновых проб, маркировка крафт-пакетов штрихкодами. Оператор: медсестра ЦСО.
+Журналы стерилизации, контроль качества ПСО, учет дезинфекции и утилизации медотходов. Оператор: тихий бэк-офис клиники (медсестра ЦСО / автопилот).
 
 ### 3-Уровневая декомпозиция
 - **🟢 Tier 1 (Hot Path / 0 кликов)**:
-  - Быстрый сканер крафт-пакетов ([`KraftPackageQuickScanner.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sterilization/KraftPackageQuickScanner.tsx)) у кресла врача: валидация срока годности стерильности за 0.1s.
+  - Дефолтный стерильный лоток по регламенту клиники (Мандат 8v: инструменты стерильны по умолчанию, 0 задержек на приёме).
 - **🟡 Tier 2 (Warm Context / 1 клик / Карточка цикла)**:
   - **AutoclaveCycleModal** ([`AutoclaveCycleModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/autoclave/AutoclaveCycleModal.tsx)): Запуск цикла автоклавирования с выбором режима ($134^\circ\text{C}$ / $121^\circ\text{C}$) и фиксацией химических индикаторов.
 - **🔵 Tier 3 (Cold Backoffice / Кабинетный режим)**:
   - **SterilizationStudioModal** ([`SterilizationStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sterilization/SterilizationStudioModal.tsx), [`SterilizationJournalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sterilization/SterilizationJournalModal.tsx)): Электронный журнал СанПиН 3.3686-21 с экспортом для Роспотребнадзора.
-  - **KraftBarcodeLabelSheet** ([`KraftBarcodeLabelSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx)): Пакетная печать самоклеящихся этикеток со штрихкодом для термопринтера.
+  - **KraftBarcodeLabelSheet** ([`KraftBarcodeLabelSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/autoclave/KraftBarcodeLabelSheet.tsx)): Пакетная печать самоклеящихся этикеток для партий стерилизации.
 
 ---
 
@@ -352,5 +352,5 @@
 | **Зубная формула** | Анатомический вектор FDI 11-48 | Радиальное меню, шторка каналов | Периодонтограмма, КТ-проекция | Запрет перезаписи роботом, цвет пульпы |
 | **Планы лечения** | Дорожная карта, сумма в рублях | 3-Tier сравнение (Сегментный контрол)| Презентатор монитора, транши | Скрытие микро-расходников, >30 дней |
 | **Касса 54-ФЗ** | Статус смены, кнопка оплаты | СБП QR, терминал Сбербанк, кошелек | Z-отчёт, Т-51 зарплата, справка ФНС | Без ИНН для физлиц, комби-оплата |
-| **Склад / СанПиН** | Остатки, штрихкод-сканер | Экспресс-списание карпул анестетика | Инвентаризация, журнал автоклава | Списание в 1 клик, мягкий овердрафт |
+| **Склад / СанПиН** | Остатки, штрихкод-сканер | Экспресс-списание материалов | Инвентаризация, журнал автоклава | Списание в 1 клик, мягкий овердрафт |
 | **Рентген / КЛКТ** | RVG галерея, быстрые фильтры | Прямой захват с датчика <50ms | 3D MPR студия, нерв, импланты | Быстрое открытие, мягкий Dark Mode |

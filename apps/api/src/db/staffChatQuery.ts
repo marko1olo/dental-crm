@@ -12,7 +12,7 @@ import {
 	type StaffChatMessage,
 	type StaffChatUrgency,
 } from "@dental/shared";
-import { and, asc, desc, eq, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { chairs, staffChatChannels, staffChatMessages, users } from "./schema.js";
 
@@ -120,36 +120,55 @@ export async function listStaffChannels(
 
 	// Получаем последнее сообщение и счётчик непрочитанных для каждого канала
 	const result: StaffChatChannel[] = [];
+	const channelIds = rawChannels.map((c) => c.id);
+	const lastMessageByChannel = new Map<string, typeof staffChatMessages.$inferSelect>();
+	const unreadCountByChannel = new Map<string, number>();
 
-	for (const ch of rawChannels) {
-		// Последнее сообщение
-		const [lastMsg] = await db
+	if (channelIds.length > 0) {
+		// 1. Пакетная выборка последних сообщений для всех каналов (устранение N+1)
+		const allMsgs = await db
 			.select()
 			.from(staffChatMessages)
 			.where(
 				and(
 					eq(staffChatMessages.organizationId, organizationId),
-					eq(staffChatMessages.channelId, ch.id),
+					inArray(staffChatMessages.channelId, channelIds),
 				),
 			)
-			.orderBy(desc(staffChatMessages.createdAt))
-			.limit(1);
+			.orderBy(desc(staffChatMessages.createdAt));
 
-		// Счётчик непрочитанных для currentUserId
-		let unreadCount = 0;
+		for (const msg of allMsgs) {
+			if (!lastMessageByChannel.has(msg.channelId)) {
+				lastMessageByChannel.set(msg.channelId, msg);
+			}
+		}
+
+		// 2. Пакетная выборка счётчиков непрочитанных, сгруппированная по channelId (устранение N+1)
 		if (currentUserId) {
-			const countRes = await db
-				.select({ count: sql<number>`count(*)::int` })
+			const unreadRows = await db
+				.select({
+					channelId: staffChatMessages.channelId,
+					count: sql<number>`count(*)::int`,
+				})
 				.from(staffChatMessages)
 				.where(
 					and(
 						eq(staffChatMessages.organizationId, organizationId),
-						eq(staffChatMessages.channelId, ch.id),
+						inArray(staffChatMessages.channelId, channelIds),
 						sql`NOT (${staffChatMessages.readByStaffIds} @> ${JSON.stringify([currentUserId])}::jsonb)`,
 					),
-				);
-			unreadCount = countRes[0]?.count ?? 0;
+				)
+				.groupBy(staffChatMessages.channelId);
+
+			for (const r of unreadRows) {
+				unreadCountByChannel.set(r.channelId, r.count ?? 0);
+			}
 		}
+	}
+
+	for (const ch of rawChannels) {
+		const lastMsg = lastMessageByChannel.get(ch.id) ?? null;
+		const unreadCount = unreadCountByChannel.get(ch.id) ?? 0;
 
 		let name = ch.name;
 		let description = ch.description;

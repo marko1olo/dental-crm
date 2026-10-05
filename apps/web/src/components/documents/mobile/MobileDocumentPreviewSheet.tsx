@@ -255,14 +255,14 @@ export function MobileDocumentPreviewSheet({
 						<div className="grid grid-cols-2 gap-3 text-[13px]">
 							<div>
 								<div className="text-[11px] text-[var(--muted)]">Пациент:</div>
-								<div className="font-semibold text-[var(--ink)] truncate">
+								<div className="font-semibold text-[var(--ink)] break-words leading-tight">
 									{activePatientName || "Пациент клиники"}
 								</div>
 							</div>
 
 							<div>
 								<div className="text-[11px] text-[var(--muted)]">Врач:</div>
-								<div className="font-semibold text-[var(--ink)] truncate">
+								<div className="font-semibold text-[var(--ink)] break-words leading-tight">
 									{activeDoctorName || "Лечащий врач"}
 								</div>
 							</div>

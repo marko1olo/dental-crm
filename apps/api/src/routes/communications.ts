@@ -306,9 +306,9 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 	});
 
 	app.get("/api/communications/inbox", async (request, reply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "communications inbox"))) return;
+		if (!(await requireClinicalReadAccess(request, reply, "communications inbox"))) return reply;
 		const orgId = await requireResolvedOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 
 		// 152-ФЗ / 323-ФЗ ст. 13: Запрет маркетологам на просмотр переписки пациентов
 		const identity = getRequestIdentity(request);

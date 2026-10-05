@@ -1093,7 +1093,12 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					lampStatus: lampLife.status,
 					updatedAt: new Date(),
 				})
-				.where(eq(bactericidalEquipments.id, equipment.id));
+				.where(
+					and(
+						eq(bactericidalEquipments.id, equipment.id),
+						eq(bactericidalEquipments.organizationId, organizationId),
+					),
+				);
 
 			const [inserted] = await tx
 				.insert(bactericidalIrradiatorLogs)
@@ -1183,7 +1188,12 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 						lampStatus: lampLife.status,
 						updatedAt: new Date(),
 					})
-					.where(eq(bactericidalEquipments.id, eqItem.id));
+					.where(
+						and(
+							eq(bactericidalEquipments.id, eqItem.id),
+							eq(bactericidalEquipments.organizationId, organizationId),
+						),
+					);
 
 				const startTime = new Date(`${dateStr}T08:00:00`);
 				const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
@@ -1285,7 +1295,12 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 						lampStatus: lampLife.status,
 						updatedAt: new Date(),
 					})
-					.where(eq(bactericidalEquipments.id, eqItem.id));
+					.where(
+						and(
+							eq(bactericidalEquipments.id, eqItem.id),
+							eq(bactericidalEquipments.organizationId, organizationId),
+						),
+					);
 
 				const startTime = new Date(`${dateStr}T07:30:00`);
 				const endTime = new Date(`${dateStr}T08:00:00`);
@@ -1388,7 +1403,12 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 						lampStatus: lampLife.status,
 						updatedAt: new Date(),
 					})
-					.where(eq(bactericidalEquipments.id, eqItem.id));
+					.where(
+						and(
+							eq(bactericidalEquipments.id, eqItem.id),
+							eq(bactericidalEquipments.organizationId, organizationId),
+						),
+					);
 
 				// 1. Запись непрерывной работы в смену
 				const shiftStart = new Date(`${dateStr}T08:00:00`);

@@ -32,6 +32,8 @@ import {
 	mergeMultiToothTreatmentPlan,
 } from "./utils/clinicalTextSanitizer";
 import "./styles/VisitView.css";
+import { useIsMobile } from "./hooks/useIsMobile";
+import { MobileChairsideVisitWorkspace } from "./components/visit/MobileChairsideVisitWorkspace";
 
 import {
 	type VisitViewProps,
@@ -88,6 +90,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		patientId: activePatient?.id,
 		visitId: activeAppointment?.id,
 	});
+
+	const isMobile = useIsMobile(768);
 
 	const [visitSubViewTab, setVisitSubViewTab] = useState<string>("emk");
 	const [activeQuadrant, setActiveQuadrant] = useState<number | null>(null);
@@ -378,6 +382,35 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 	if (!activePatient) {
 		return <EmptyState title="Пациент не выбран" description="Выберите пациента в расписании или списке для начала приёма." />;
+	}
+
+	if (isMobile) {
+		return (
+			<MobileChairsideVisitWorkspace
+				activePatient={activePatient}
+				activeAppointment={activeAppointment}
+				activeDoctor={activeDoctor}
+				visitNoteForm={visitNoteForm}
+				updateVisitNoteField={updateVisitNoteField}
+				flushPendingVisitSaves={flushPendingVisitSaves}
+				handleApplySomaticNormQuick={handleApplySomaticNormQuick}
+				handleFinishVisitAction={handleFinishVisitAction}
+				handlePrintForm043uFast={handlePrintForm043uFast}
+				handleOpenLabOrder={handleOpenLabOrder}
+				consolidatedAllergyChip={consolidatedAllergyChip}
+				patientAge={patientAge}
+				toothStateByCode={toothStateByCode as Record<string, string>}
+				setToothState={setToothState}
+				onClose={() => {
+					if (typeof (props as any).onCloseVisit === "function") {
+						(props as any).onCloseVisit();
+					} else {
+						window.dispatchEvent(new CustomEvent("dente:navigate-to-schedule"));
+					}
+				}}
+				testId="mobile-chairside-visit-workspace"
+			/>
+		);
 	}
 
 	return (

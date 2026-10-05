@@ -52,6 +52,7 @@ import { ThemeQuickAccessWidget } from "./components/workspace/ThemeQuickAccessW
 import { DoctorQuestHeaderChip } from "./components/workspace/WorkspaceHeaderBar";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { lazyWithRetry } from "./lib/lazyWithRetry";
+import { useUiSurfaceStore } from "./store/uiSurfaceStore";
 import "./styles/modules/sidebar.css";
 import "./styles/workspace.css";
 
@@ -689,12 +690,13 @@ export function WorkspaceTopbar({
 	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
 	const currentView = useAppStore((s) => s.currentView);
+	const isFullScreenStudioActive = useUiSurfaceStore((s) => s.isFullScreenStudioActive);
 	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
 	const isDoctorMode =
 		selectedWorkspaceRole === "doctor" || currentView === "visit";
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
-		(activeCall || isCallDrawerOpen) && !isDoctorMode && !isDndActive,
+		(activeCall || isCallDrawerOpen) && !isDoctorMode && !isDndActive && !isFullScreenStudioActive,
 	);
 
 	// Background telephony WebSocket listener at top shell level
@@ -1136,14 +1138,16 @@ export function WorkspaceTopbar({
 				) : null}
 			</div>
 			{!isDoctorMode ? (
-				<Suspense fallback={null}>
-					{isIncomingCall ? (
-						<LazyIncomingCallPopup />
-					) : (
-						<LazyTelephonyFloatingWidget defaultExpanded={false} />
-					)}
-					<LazyTelephonyDrawer />
-				</Suspense>
+				!isFullScreenStudioActive ? (
+					<Suspense fallback={null}>
+						{isIncomingCall ? (
+							<LazyIncomingCallPopup />
+						) : (
+							<LazyTelephonyFloatingWidget defaultExpanded={false} />
+						)}
+						<LazyTelephonyDrawer />
+					</Suspense>
+				) : null
 			) : null}
 		</header>
 	);

@@ -1,0 +1,93 @@
+{
+  "subagent_id": "subagent_pricelist_native_sync",
+  "task": "Native 804n Pricelist Scanner Integration into SettingsPricesTab",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T17:08:40.000Z",
+  "architecture": {
+    "frontend_tab": "apps/web/src/components/settings/SettingsPricesTab.tsx",
+    "frontend_styles": "apps/web/src/components/settings/SettingsPricesTab.css",
+    "backend_route": "apps/api/src/routes/pricelist.ts",
+    "emk_consumer": "apps/web/src/components/visit/emk/EmkServicesSection.tsx",
+    "diff_view": "apps/web/src/components/settings/imports/PriceListMappingDiffView.tsx"
+  },
+  "verification": {
+    "typecheck_web": "npx tsc -p apps/web/tsconfig.json --noEmit (EXIT 0)",
+    "typecheck_api": "npx tsc -p apps/api/tsconfig.json --noEmit (EXIT 0)",
+    "unit_tests_web": "apps/web/src/tests/settingsPricesNativeImport.test.ts (8/8 PASS)",
+    "unit_tests_props": "apps/web/src/tests/settingsTabsPricelistPropsAreRead.test.ts (29/29 PASS)",
+    "integration_tests_api": "apps/api/src/tests/routes/pricelistScanAndImportRoute.test.ts (5/5 PASS)"
+  },
+  "proofs": [
+    {
+      "id": "proof_pricelist_dropzone_pc_light",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_dropzone_pc_light.png",
+      "viewport": "1440x900",
+      "theme": "light",
+      "inspected": true,
+      "description": "PC Light: 1-line monolithic toolbar with btn-native-pricelist-import, open dropzone banner, file/text switcher, collision strategy selector"
+    },
+    {
+      "id": "proof_pricelist_dropzone_pc_dark",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_dropzone_pc_dark.png",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "inspected": true,
+      "description": "PC Dark: Dark theme with slate borders, zero white bleeds, active dropzone with dashed border"
+    },
+    {
+      "id": "proof_pricelist_diff_pc_dark",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_diff_pc_dark.png",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "inspected": true,
+      "description": "PC Dark Dual-Pane Diff: Left pane raw parsed OCR lines (#1-#5); Right pane statutory 804n matched items with confidence badges, doctor modifiers, and commit CTA"
+    },
+    {
+      "id": "proof_pricelist_diff_pc_light",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_diff_pc_light.png",
+      "viewport": "1440x900",
+      "theme": "light",
+      "inspected": true,
+      "description": "PC Light Dual-Pane Diff: Crisp mint/paper cards, high WCAG contrast, interactive 1-click price adjustments"
+    },
+    {
+      "id": "proof_pricelist_dropzone_mobile_light",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_dropzone_mobile_light.png",
+      "viewport": "390x844",
+      "theme": "light",
+      "inspected": true,
+      "description": "Mobile Light (iPhone 390x844): Full-width search input, teal category pills, mode switcher, zero right-edge overflow"
+    },
+    {
+      "id": "proof_pricelist_dropzone_mobile_dark",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_dropzone_mobile_dark.png",
+      "viewport": "390x844",
+      "theme": "dark",
+      "inspected": true,
+      "description": "Mobile Dark (iPhone 390x844): High contrast teal badges on dark background, zero horizontal drift, safe area insets respected"
+    },
+    {
+      "id": "proof_pricelist_diff_mobile_dark",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_diff_mobile_dark.png",
+      "viewport": "390x844",
+      "theme": "dark",
+      "inspected": true,
+      "description": "Mobile Dark Diff View: Vertical stacked panes, 44x44px doctor modifier touch chips, sticky bottom bar with [✓ Загрузить (5)]"
+    },
+    {
+      "id": "proof_pricelist_diff_mobile_light",
+      "file": "docs/screenshots/inquisition_live/proof_pricelist_diff_mobile_light.png",
+      "viewport": "390x844",
+      "theme": "light",
+      "inspected": true,
+      "description": "Mobile Light Diff View: Crisp light palette, visible 804n statutory matches, no occlusions"
+    }
+  ],
+  "invariants": {
+    "zero_mocks_in_production": true,
+    "acid_commit_to_postgres18": true,
+    "doctor_autonomy_mandate_8e": true,
+    "apple_hig_touch_ergonomics": true,
+    "zero_horizontal_drift": true
+  }
+}

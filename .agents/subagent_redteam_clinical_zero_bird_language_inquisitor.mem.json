@@ -1,0 +1,44 @@
+{
+  "agent_id": "c16373f9-ac09-49d0-8e37-57b832496ab7",
+  "domain": "clinical_zero_bird_language_inquisition",
+  "status": "completed",
+  "constitution_read": true,
+  "completed_steps": [
+    "Read all required constitution and rule files 100%: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md",
+    "Deep reconnaissance of clinical frontend domain across apps/web/src for bureaucratic bird-language (043/у, 1051н, РЭМД, СЭМД, ЕГИСЗ, диспансеризация, санация)",
+    "Identified all visible UI violation locations across patient cards, visit headers, EMR print modals, SOAP editor, autopilot presets, patient memos, safety catalog",
+    "Surgically replaced bureaucratic bird-language with clean, human, professional Russian medical terminology",
+    "Preserved legal small-print requisites (e.g. Form 043/u title in statutory PDF archive) and data model schemas/identifiers",
+    "Executed verification gates: check-encoding.mjs (7300 files OK), check-css-tokens.mjs (0 unresolved variables)",
+    "Expanded and executed humanLanguageToneInquisition.test.ts (20/20 tests passing)",
+    "Executed targeted regression suites: patientCardErgonomics.test.tsx, clinicalSoapProtocols043.test.ts, nurseProofUx.test.ts, doctorClinicalAutopilot1Click.test.ts (all passing, total 98+ tests)",
+    "Audited git diff byte-for-byte to confirm zero collateral damage and zero unintended changes"
+  ],
+  "pending_steps": [],
+  "modified_files": [
+    "apps/web/src/components/visit/diary/VisitDiaryHeaderMoreMenu.tsx",
+    "apps/web/src/components/emr/Form043PrintModal.tsx",
+    "apps/web/src/components/patients/PatientCreationModal.tsx",
+    "apps/web/src/components/patients/patientFieldRequirementsConfig.ts",
+    "apps/web/src/VisitView.tsx",
+    "apps/web/src/components/visit/VisitEmkTab.tsx",
+    "apps/web/src/components/visit/VisitSoapEditor.tsx",
+    "apps/web/src/components/visit/presets/therapyPresets.ts",
+    "apps/web/src/components/visit/presets/autopilotPresets.ts",
+    "apps/web/src/lib/clinicalProtocols043.ts",
+    "apps/web/src/components/patients/clinicalSafetyCatalogData.ts",
+    "apps/web/src/components/patients/patientSafetyEvaluation.ts",
+    "apps/web/src/components/portal/selfCheckin/SomaticQuestionnaireEngine.ts",
+    "apps/web/src/components/visit/consents/Consent1ClickBatchBanner.tsx",
+    "apps/web/src/components/visit/consents/useVisitConsentsLogic.ts",
+    "apps/web/src/components/patients/__tests__/humanLanguageToneInquisition.test.ts",
+    "apps/web/src/components/visit/__tests__/doctorClinicalAutopilot1Click.test.ts"
+  ],
+  "verification_results": {
+    "encoding": "7300 files checked, 0 errors",
+    "css_tokens": "165 css files, 0 unresolved var() tokens",
+    "humanLanguageToneInquisition": "20/20 pass",
+    "clinicalRegressionSuite": "doctorClinicalAutopilot1Click: 16/16 pass, clinicalSoapProtocols043: 82/82 pass, nurseProofUx: pass, patientCardErgonomics: pass",
+    "cpu_protection_observed": "Global typecheck/build avoided per Mandate 8t"
+  }
+}

@@ -26,3 +26,30 @@ export function createMprWorker(options?: MprWorkerClientOptions): Worker | null
 		return null;
 	}
 }
+
+export * from "./endoCanalWorker";
+export * from "./endoWorkerBridge";
+
+export interface EndoCanalWorkerClientOptions {
+	readonly workerUrl?: string | URL;
+}
+
+/**
+ * Безопасная фабрика для создания экземпляра Endo Canal Web Worker.
+ * Проверяет доступность окружения Worker и автоматически конфигурирует модуль.
+ */
+export function createEndoCanalWorker(options?: EndoCanalWorkerClientOptions): Worker | null {
+	if (typeof window === "undefined" || typeof Worker === "undefined") {
+		return null;
+	}
+
+	try {
+		const targetUrl = options?.workerUrl ?? new URL("./endoCanalWorker.ts", import.meta.url);
+		return new Worker(targetUrl, {
+			type: "module",
+		});
+	} catch {
+		return null;
+	}
+}
+

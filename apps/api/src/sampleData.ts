@@ -101,6 +101,7 @@ import type {
 	ScheduleWarning,
 	ServiceCatalogItem,
 	ShiftIntelligence,
+	SovereignScalePresetId,
 	SpeechProvider,
 	SpeechRecordingAssembly,
 	SpeechRecordingRecoveryItem,
@@ -212,7 +213,7 @@ import {
 } from "./services/telegram/telegramLegacyMemoryStore.js";
 export * from "./services/telegram/telegramLegacyMemoryStore.js";
 
-const clinicProfile: ClinicProfile = {
+const clinicProfile: ClinicProfile & Record<string, any> = {
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -6134,6 +6135,163 @@ export function updateClinicMode(mode: ClinicMode): ClinicSettings {
 		entityId: organizationId,
 		action: "clinic_mode_updated",
 		reason: `Режим клиники изменен на ${mode}.`,
+	});
+	return buildClinicSettings();
+}
+
+export function applyClinicScalePreset(
+	preset: SovereignScalePresetId,
+): ClinicSettings {
+	if (preset === "solo_doctor") {
+		clinicProfile.mode = "solo_doctor";
+		clinicProfile.networkEnabled = false;
+		clinicProfile.defaultVisitMinutes = 30;
+		clinicProfile.hasAssistants = false;
+		clinicProfile.hasMultipleChairs = false;
+		clinicProfile.hasDentalLab = false;
+		clinicProfile.hasInsuranceCoPay = false;
+		clinicProfile.hasInstallments = true;
+		clinicProfile.hasOrthodontics = false;
+		clinicProfile.hasTasks = false;
+		clinicProfile.hasReclamations = false;
+		clinicProfile.hasPediatricMode = false;
+		clinicProfile.isOmniRole = true;
+		clinicProfile.workspacePreset = "solo_therapist";
+		clinicProfile.onboardingCompleted = true;
+		clinicProfile.hasPayrollModule = false;
+		clinicProfile.hasMarketingModule = false;
+		clinicProfile.hasAnalyticsModule = false;
+		clinicProfile.hasInventoryModule = false;
+		clinicProfile.hasGnathology = false;
+		clinicProfile.hasCsoScanner = false;
+		clinicProfile.hasLeadsKanban = false;
+		clinicProfile.hasOmnichannel = false;
+		clinicProfile.hasEngineeringStatus = false;
+		clinicProfile.hasClinicalRules = false;
+		clinicProfile.numberOfDoctors = 1;
+
+		if (chairs.length === 0) {
+			chairs.push({
+				id: chairId,
+				organizationId,
+				name: "Основное кресло",
+				room: "Кабинет 1",
+				specialization: "universal",
+				active: true,
+				hasXraySensor: true,
+				hasMicroscope: false,
+				hasSurgeryKit: false,
+				notes: "Основное кресло врача",
+				workingHours: null,
+			});
+		} else {
+			chairs[0]!.active = true;
+			for (let i = 1; i < chairs.length; i++) {
+				chairs[i]!.active = false;
+			}
+		}
+	} else if (preset === "standard_clinic") {
+		clinicProfile.mode = "small_clinic";
+		clinicProfile.networkEnabled = false;
+		clinicProfile.defaultVisitMinutes = 45;
+		clinicProfile.hasAssistants = true;
+		clinicProfile.hasMultipleChairs = true;
+		clinicProfile.hasDentalLab = true;
+		clinicProfile.hasInsuranceCoPay = true;
+		clinicProfile.hasInstallments = true;
+		clinicProfile.hasOrthodontics = true;
+		clinicProfile.hasTasks = true;
+		clinicProfile.hasReclamations = true;
+		clinicProfile.hasPediatricMode = true;
+		clinicProfile.isOmniRole = false;
+		clinicProfile.workspacePreset = "family_clinic";
+		clinicProfile.onboardingCompleted = true;
+		clinicProfile.hasPayrollModule = true;
+		clinicProfile.hasMarketingModule = true;
+		clinicProfile.hasAnalyticsModule = true;
+		clinicProfile.hasInventoryModule = true;
+		clinicProfile.hasGnathology = false;
+		clinicProfile.hasCsoScanner = false;
+		clinicProfile.hasLeadsKanban = false;
+		clinicProfile.hasOmnichannel = true;
+		clinicProfile.hasClinicalRules = true;
+		clinicProfile.numberOfDoctors = 4;
+
+		for (let i = 0; i < Math.min(chairs.length, 3); i++) {
+			chairs[i]!.active = true;
+		}
+		while (chairs.length < 3) {
+			const idx = chairs.length + 1;
+			chairs.push({
+				id: randomUUID(),
+				organizationId,
+				name: `Кресло ${idx}`,
+				room: `Кабинет ${idx}`,
+				specialization:
+					idx === 2 ? "surgeon" : idx === 3 ? "orthopedist" : "therapist",
+				active: true,
+				hasXraySensor: true,
+				hasMicroscope: idx === 3,
+				hasSurgeryKit: idx === 2,
+				notes: null,
+				workingHours: null,
+			});
+		}
+	} else {
+		clinicProfile.mode = "network_clinic";
+		clinicProfile.networkEnabled = true;
+		clinicProfile.defaultVisitMinutes = 60;
+		clinicProfile.hasAssistants = true;
+		clinicProfile.hasMultipleChairs = true;
+		clinicProfile.hasDentalLab = true;
+		clinicProfile.hasInsuranceCoPay = true;
+		clinicProfile.hasInstallments = true;
+		clinicProfile.hasOrthodontics = true;
+		clinicProfile.hasGnathology = true;
+		clinicProfile.hasTasks = true;
+		clinicProfile.hasReclamations = true;
+		clinicProfile.hasPediatricMode = true;
+		clinicProfile.isOmniRole = false;
+		clinicProfile.workspacePreset = "enterprise";
+		clinicProfile.onboardingCompleted = true;
+		clinicProfile.hasPayrollModule = true;
+		clinicProfile.hasMarketingModule = true;
+		clinicProfile.hasAnalyticsModule = true;
+		clinicProfile.hasInventoryModule = true;
+		clinicProfile.hasCsoScanner = true;
+		clinicProfile.hasLeadsKanban = true;
+		clinicProfile.hasOmnichannel = true;
+		clinicProfile.hasClinicalRules = true;
+		clinicProfile.hasEngineeringStatus = true;
+		clinicProfile.numberOfDoctors = 10;
+
+		for (let i = 0; i < Math.min(chairs.length, 5); i++) {
+			chairs[i]!.active = true;
+		}
+		while (chairs.length < 5) {
+			const idx = chairs.length + 1;
+			chairs.push({
+				id: randomUUID(),
+				organizationId,
+				name: `Кресло ${idx}`,
+				room: `Кабинет ${idx}`,
+				specialization: "universal",
+				active: true,
+				hasXraySensor: true,
+				hasMicroscope: true,
+				hasSurgeryKit: true,
+				notes: null,
+				workingHours: null,
+			});
+		}
+	}
+
+	clinicProfile.updatedAt = new Date().toISOString();
+	recordAuditEvent({
+		entityType: "clinic_profile",
+		entityId: organizationId,
+		action: "clinic_scale_preset_applied",
+		reason: `Применен суверенный пресет масштаба: ${preset}.`,
 	});
 	return buildClinicSettings();
 }

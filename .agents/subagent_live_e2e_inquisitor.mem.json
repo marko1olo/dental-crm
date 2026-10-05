@@ -1,0 +1,351 @@
+{
+  "timestamp": "2026-10-05T17:21:00+04:00",
+  "agent_role": "Live E2E Screencap & Quality Inquisitor",
+  "status": "COMPLETED",
+  "typescript_gate": {
+    "web": "Exit Code 0 (npm run typecheck -w @dental/web)",
+    "api": "Exit Code 0 (npm run typecheck -w @dental/api)"
+  },
+  "self_fixed_defects": [
+    {
+      "file": "apps/web/src/components/schedule/AppointmentModalDoctorChairSection.tsx",
+      "lines": "205-207",
+      "severity": "CRITICAL",
+      "description": "Missing 'return (' inside duration quick-select button map broke Vite module compilation with HTTP 500 error overlay."
+    },
+    {
+      "file": "apps/web/src/operator_chat_preview.tsx & apps/web/operator_chat_preview.html",
+      "severity": "HIGH",
+      "description": "Created desktop preview harness for PatientOmnichannelHubModal with live MutationObserver and amber [data-testid='btn-takeover-chat']."
+    },
+    {
+      "file": "apps/web/src/communications_mobile_preview.tsx",
+      "severity": "MEDIUM",
+      "description": "Added MutationObserver for data-theme on documentElement for instant live theme switching."
+    },
+    {
+      "file": "apps/web/src/pricelist_scanner_preview.tsx",
+      "severity": "MEDIUM",
+      "description": "Added MutationObserver for data-theme on documentElement for instant live theme switching."
+    },
+    {
+      "file": "apps/web/src/doctor_autonomy_preview.tsx",
+      "severity": "MEDIUM",
+      "description": "Added MutationObserver for data-theme, mobile-chairside-container class, and data-testid='mobile-chairside-workspace'."
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "01",
+      "filename": "01_bots_settings_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/01_bots_settings_pc_light.png",
+      "size_kb": 216.8,
+      "md5": "ec7129411addcdc3b4996fc19b0abf1d",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 1 (Bots & Operator Console)",
+      "inspected": true,
+      "pixels_description": "Hero banner, 4 wizard steps, TG/VK/WA/MAX cards, live phone simulator on right."
+    },
+    {
+      "id": "02",
+      "filename": "02_bots_settings_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/02_bots_settings_pc_dark.png",
+      "size_kb": 237.7,
+      "md5": "cb7772832376e005d9f0e3efbacd5021",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 1 (Bots & Operator Console)",
+      "inspected": true,
+      "pixels_description": "High-contrast dark theme, crisp borders, dark phone simulator backdrop."
+    },
+    {
+      "id": "03",
+      "filename": "03_operator_chat_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/03_operator_chat_pc_light.png",
+      "size_kb": 111.6,
+      "md5": "b63b1f57979c22bb1664603f7f292aef",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 1 (Bots & Operator Console)",
+      "inspected": true,
+      "pixels_description": "Omnichannel chat center, contacts list, channels filter, amber 'Перехватить диалог' button ([data-testid='btn-takeover-chat']), live chat thread."
+    },
+    {
+      "id": "04",
+      "filename": "04_operator_chat_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/04_operator_chat_pc_dark.png",
+      "size_kb": 109.6,
+      "md5": "447e955cf1cae8dc55a0627bfb9a27e3",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 1 (Bots & Operator Console)",
+      "inspected": true,
+      "pixels_description": "Omnichannel chat center in dark theme, high contrast messages and amber takeover button."
+    },
+    {
+      "id": "05",
+      "filename": "05_operator_chat_mobile_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/05_operator_chat_mobile_light.png",
+      "size_kb": 126.3,
+      "md5": "c2f8136c8f46b29e50de9e0593e19089",
+      "viewport": "390x844",
+      "theme": "light",
+      "scenario": "Scenario 1 (Bots & Operator Console)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 chat thread with patient Барабаш С.В., top takeover banner and button, bottom input and quick templates."
+    },
+    {
+      "id": "06",
+      "filename": "06_operator_chat_mobile_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/06_operator_chat_mobile_dark.png",
+      "size_kb": 124.7,
+      "md5": "da91e4c4de5a0a0977c9aeb172f885a1",
+      "viewport": "390x844",
+      "theme": "dark",
+      "scenario": "Scenario 1 (Bots & Operator Console)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 chat in dark mode with takeover banner and buttons."
+    },
+    {
+      "id": "07",
+      "filename": "07_pricelist_upload_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/07_pricelist_upload_pc_light.png",
+      "size_kb": 58.9,
+      "md5": "f01c4c02d4f54b418e89e998f492d639",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 2 (Price List & 804n Scanner)",
+      "inspected": true,
+      "pixels_description": "Dropzone with Excel/CSV drag area, text paste, and OCR scanner section."
+    },
+    {
+      "id": "08",
+      "filename": "08_pricelist_upload_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/08_pricelist_upload_pc_dark.png",
+      "size_kb": 58.5,
+      "md5": "41d7acafbcd79d4308f7d1cdfaaa6942",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 2 (Price List & 804n Scanner)",
+      "inspected": true,
+      "pixels_description": "Dropzone in dark mode with contrasting dashed border."
+    },
+    {
+      "id": "09",
+      "filename": "09_pricelist_mapping_804n_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/09_pricelist_mapping_804n_pc_light.png",
+      "size_kb": 140.0,
+      "md5": "55d068f9c5285519a3f6adfa62b47287",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 2 (Price List & 804n Scanner)",
+      "inspected": true,
+      "pixels_description": "Dual-pane 804n mapping table with 5 parsed rows, confidence badges (98%, 95%), price delta buttons, action badges."
+    },
+    {
+      "id": "10",
+      "filename": "10_pricelist_mapping_804n_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/10_pricelist_mapping_804n_pc_dark.png",
+      "size_kb": 140.2,
+      "md5": "27dd381cb587934bfb2f7f7a3ba2c849",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 2 (Price List & 804n Scanner)",
+      "inspected": true,
+      "pixels_description": "Dual-pane 804n mapping table in dark mode."
+    },
+    {
+      "id": "11",
+      "filename": "11_pricelist_mapping_804n_mobile_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/11_pricelist_mapping_804n_mobile_light.png",
+      "size_kb": 166.5,
+      "md5": "221e72070972e004130c7de56ab7a2cd",
+      "viewport": "390x844",
+      "theme": "light",
+      "scenario": "Scenario 2 (Price List & 804n Scanner)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 grouped mapping cards, vertical stack, touch +/- buttons, zero horizontal scroll."
+    },
+    {
+      "id": "12",
+      "filename": "12_pricelist_mapping_804n_mobile_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/12_pricelist_mapping_804n_mobile_dark.png",
+      "size_kb": 169.4,
+      "md5": "de275184cc8cd1ec8dabb441db47594f",
+      "viewport": "390x844",
+      "theme": "dark",
+      "scenario": "Scenario 2 (Price List & 804n Scanner)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 mapping cards in dark mode."
+    },
+    {
+      "id": "13",
+      "filename": "13_onboarding_scale_presets_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/13_onboarding_scale_presets_pc_light.png",
+      "size_kb": 88.7,
+      "md5": "c8976c3d62b1e9b9e24e2bf5eef38ab1",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 3 (Sovereign Scale Presets)",
+      "inspected": true,
+      "pixels_description": "3-click scale presets (Solo Doctor 1 chair, Standard 2-5 chairs, Network 5+ chairs), active solo card."
+    },
+    {
+      "id": "14",
+      "filename": "14_onboarding_scale_presets_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/14_onboarding_scale_presets_pc_dark.png",
+      "size_kb": 87.9,
+      "md5": "cdb7d820930c1c2f424508b9fa2dc77e",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 3 (Sovereign Scale Presets)",
+      "inspected": true,
+      "pixels_description": "Scale presets in dark mode with high contrast cards."
+    },
+    {
+      "id": "15",
+      "filename": "15_onboarding_scale_presets_mobile_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/15_onboarding_scale_presets_mobile_light.png",
+      "size_kb": 178.0,
+      "md5": "fb7c34361fd9db4bb6b2a99aea9fd30b",
+      "viewport": "390x844",
+      "theme": "light",
+      "scenario": "Scenario 3 (Sovereign Scale Presets)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 grouped preset cards with active checkmark on Solo Doctor."
+    },
+    {
+      "id": "16",
+      "filename": "16_onboarding_scale_presets_mobile_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/16_onboarding_scale_presets_mobile_dark.png",
+      "size_kb": 180.7,
+      "md5": "b135bd7bbfaf50a2054d0c077b13e927",
+      "viewport": "390x844",
+      "theme": "dark",
+      "scenario": "Scenario 3 (Sovereign Scale Presets)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 preset cards in dark mode."
+    },
+    {
+      "id": "17",
+      "filename": "17_solo_doctor_workspace_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/17_solo_doctor_workspace_pc_light.png",
+      "size_kb": 97.7,
+      "md5": "1e90e58e4c3bcc1e01924c219c416599",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 3 (Sovereign Scale Presets)",
+      "inspected": true,
+      "pixels_description": "Solo-doctor appointment modal (Chair 1, Dr. Воронов, CITO acute pain case, zero assistant requirement, ready to save)."
+    },
+    {
+      "id": "18",
+      "filename": "18_solo_doctor_workspace_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/18_solo_doctor_workspace_pc_dark.png",
+      "size_kb": 92.4,
+      "md5": "bb01bf6025b1fc4e82bf3ed3a0416d91",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 3 (Sovereign Scale Presets)",
+      "inspected": true,
+      "pixels_description": "Solo-doctor appointment modal in dark mode with prominent CITO banner and save button."
+    },
+    {
+      "id": "19",
+      "filename": "19_emk_1click_norm_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/19_emk_1click_norm_pc_light.png",
+      "size_kb": 60.0,
+      "md5": "da1aa48599aa484c0f3ea3a84f69cb8f",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "EMR Form 043/y with clicked '✓ Соматически здоров / Норма', auto-filled SOAP cards (Z01.2), Mandate 8e active save buttons."
+    },
+    {
+      "id": "20",
+      "filename": "20_emk_1click_norm_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/20_emk_1click_norm_pc_dark.png",
+      "size_kb": 58.5,
+      "md5": "2c174d9909b0a314dbbfb94e1221f708",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "EMR Form 043/y in dark mode with 1-click norm applied."
+    },
+    {
+      "id": "21",
+      "filename": "21_emk_1click_norm_mobile_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/21_emk_1click_norm_mobile_light.png",
+      "size_kb": 202.4,
+      "md5": "f859e199d971878cfc2a1a32831ffe08",
+      "viewport": "390x844",
+      "theme": "light",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "Mobile chairside workspace (390x844) with patient card, 52px 1-tap norm button, SmartMic, and sticky bottom bar CTA."
+    },
+    {
+      "id": "22",
+      "filename": "22_emk_1click_norm_mobile_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/22_emk_1click_norm_mobile_dark.png",
+      "size_kb": 199.0,
+      "md5": "478d28da554e028a1da3a30c2af5613d",
+      "viewport": "390x844",
+      "theme": "dark",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "Mobile chairside workspace in dark mode."
+    },
+    {
+      "id": "23",
+      "filename": "23_cashier_fast_checkout_no_inn_pc_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/23_cashier_fast_checkout_no_inn_pc_light.png",
+      "size_kb": 91.0,
+      "md5": "a8c2c888470dfa774c7ba9b4778b30a3",
+      "viewport": "1440x900",
+      "theme": "light",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "Fast Checkout 54-FZ modal with multi-split payment, '✓ Для пациентов-физлиц ИНН не требуется' shield badge, and offline cashier fallback."
+    },
+    {
+      "id": "24",
+      "filename": "24_cashier_fast_checkout_no_inn_pc_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/24_cashier_fast_checkout_no_inn_pc_dark.png",
+      "size_kb": 88.0,
+      "md5": "377c9cda3b819d67baca6f4aadc352ac",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "Fast Checkout 54-FZ modal in dark mode."
+    },
+    {
+      "id": "25",
+      "filename": "25_cashier_fast_checkout_no_inn_mobile_light.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/25_cashier_fast_checkout_no_inn_mobile_light.png",
+      "size_kb": 164.3,
+      "md5": "4ac2fa3f353eb49af2a4aefaf6816806",
+      "viewport": "390x844",
+      "theme": "light",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 Fast Checkout sheet with touch targets >= 44px, total 14 500 ₽, and offline fallback options."
+    },
+    {
+      "id": "26",
+      "filename": "26_cashier_fast_checkout_no_inn_mobile_dark.png",
+      "path": "C:/Clinic_MVP/dental-crm/docs/screenshots/live_e2e_inquisition/26_cashier_fast_checkout_no_inn_mobile_dark.png",
+      "size_kb": 160.1,
+      "md5": "6e47568bbf847a76ef124206d5a68349",
+      "viewport": "390x844",
+      "theme": "dark",
+      "scenario": "Scenario 4 (Doctor Visit & Cashier per Mandate 8e)",
+      "inspected": true,
+      "pixels_description": "Mobile 390x844 Fast Checkout sheet in dark mode."
+    }
+  ]
+}

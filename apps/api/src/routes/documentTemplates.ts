@@ -7,7 +7,7 @@ import {
 	renderDocumentTemplate,
 	type TemplateExecutionContext,
 } from "@dental/shared";
-import { type SQL, and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { type SQL, and, asc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -235,11 +235,15 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 			const conditions: SQL[] = [];
 			if (organizationId) {
 				// Системные шаблоны (organizationId IS NULL) либо шаблоны данной клиники
-				const orgCondition = or(
-					eq(documentTemplates.organizationId, organizationId),
-					sql`${documentTemplates.organizationId} IS NULL`,
+				conditions.push(
+					or(
+						eq(documentTemplates.organizationId, organizationId),
+						isNull(documentTemplates.organizationId),
+					)!,
 				);
-				if (orgCondition) conditions.push(orgCondition);
+			} else {
+				// Если организация не указана, возвращаем только системные шаблоны
+				conditions.push(isNull(documentTemplates.organizationId));
 			}
 
 			if (query.categoryId) {
@@ -334,10 +338,18 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				conditions.push(eq(documentTemplates.systemAlias, identifier));
 			}
 
+			const organizationId = await resolveOrganizationId(request);
+			const tenantFilter = organizationId
+				? or(
+						eq(documentTemplates.organizationId, organizationId),
+						isNull(documentTemplates.organizationId),
+				  )!
+				: isNull(documentTemplates.organizationId);
+
 			const [template] = await db
 				.select()
 				.from(documentTemplates)
-				.where(or(...conditions))
+				.where(and(or(...conditions), tenantFilter))
 				.limit(1);
 
 			if (!template) {
@@ -421,7 +433,33 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 			}
 			const body = parseResult.data;
 
-			// 1. Поиск шаблона
+			// 1. Определение организации (клиники) с fail-closed защитой
+			const organizationId = await resolveOrganizationId(request);
+			if (!organizationId) {
+				return reply.status(401).send({
+					error: "Unauthorized",
+					message: "Не указана организация (tenant) для генерации документа.",
+				});
+			}
+
+			let org: typeof organizations.$inferSelect | undefined;
+			if (UUID_REGEX.test(organizationId)) {
+				const [foundOrg] = await db
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, organizationId))
+					.limit(1);
+				org = foundOrg;
+			}
+
+			if (!org) {
+				return reply.status(404).send({
+					error: "OrganizationNotFound",
+					message: "Организация не найдена в базе данных. Доступ запрещен.",
+				});
+			}
+
+			// 2. Поиск шаблона с учетом изоляции тенанта (системные либо принадлежащие данной клинике)
 			const templateConditions: SQL[] = [];
 			if (UUID_REGEX.test(identifier)) {
 				templateConditions.push(eq(documentTemplates.id, identifier));
@@ -433,10 +471,15 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				templateConditions.push(eq(documentTemplates.systemAlias, identifier));
 			}
 
+			const tenantTemplateFilter = or(
+				eq(documentTemplates.organizationId, org.id),
+				isNull(documentTemplates.organizationId),
+			)!;
+
 			const [templateRecord] = await db
 				.select()
 				.from(documentTemplates)
-				.where(or(...templateConditions))
+				.where(and(or(...templateConditions), tenantTemplateFilter))
 				.limit(1);
 
 			let templateHtml = templateRecord?.contentHtml;
@@ -450,33 +493,6 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 					!isNumeric ? identifier : undefined,
 					templateName,
 				);
-			}
-
-			// 2. Сбор контекста выполнения
-			const organizationId = await resolveOrganizationId(request);
-
-			// Данные клиники
-			let org: typeof organizations.$inferSelect | undefined;
-			if (organizationId && UUID_REGEX.test(organizationId)) {
-				const [foundOrg] = await db
-					.select()
-					.from(organizations)
-					.where(eq(organizations.id, organizationId))
-					.limit(1);
-				org = foundOrg;
-			}
-			if (!org) {
-				const [firstOrg] = await db
-					.select()
-					.from(organizations)
-					.limit(1);
-				org = firstOrg;
-			}
-
-			if (!org) {
-				return reply.status(400).send({
-					error: "Не найдены реквизиты клиники для формирования шаблона документа. Пожалуйста, укажите данные клиники в настройках организации.",
-				});
 			}
 
 			const clinicData = {
@@ -512,7 +528,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				const [patientRecord] = await db
 					.select()
 					.from(patients)
-					.where(eq(patients.id, body.patientId))
+					.where(and(eq(patients.id, body.patientId), eq(patients.organizationId, org.id)))
 					.limit(1);
 
 				if (patientRecord) {
@@ -609,7 +625,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				const [visitRecord] = await db
 					.select()
 					.from(visits)
-					.where(eq(visits.id, body.visitId))
+					.where(and(eq(visits.id, body.visitId), eq(visits.organizationId, org.id)))
 					.limit(1);
 
 				if (visitRecord) {
@@ -648,7 +664,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				const [appRecord] = await db
 					.select()
 					.from(appointments)
-					.where(eq(appointments.id, body.appointmentId))
+					.where(and(eq(appointments.id, body.appointmentId), eq(appointments.organizationId, org.id)))
 					.limit(1);
 
 				if (appRecord) {
@@ -670,7 +686,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				const visitPayments = await db
 					.select()
 					.from(payments)
-					.where(eq(payments.visitId, body.visitId));
+					.where(and(eq(payments.visitId, body.visitId), eq(payments.organizationId, org.id)));
 
 				if (visitPayments.length > 0) {
 					const totalRub = visitPayments.reduce(
@@ -697,7 +713,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				const [docUser] = await db
 					.select()
 					.from(users)
-					.where(eq(users.id, body.doctorId))
+					.where(and(eq(users.id, body.doctorId), eq(users.organizationId, org.id)))
 					.limit(1);
 
 				if (docUser) {
@@ -716,7 +732,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				const [adminUser] = await db
 					.select()
 					.from(users)
-					.where(eq(users.id, body.administratorId))
+					.where(and(eq(users.id, body.administratorId), eq(users.organizationId, org.id)))
 					.limit(1);
 
 				if (adminUser) {

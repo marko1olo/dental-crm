@@ -683,6 +683,7 @@ export function triggerHaptic(type: HapticFeedbackType = "light"): void {
 					navigator.vibrate(15);
 					break;
 				case "medium":
+				case "impact":
 					navigator.vibrate(35);
 					break;
 				case "heavy":

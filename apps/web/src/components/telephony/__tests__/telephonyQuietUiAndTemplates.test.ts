@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test from "node:test";
+import { describe, it } from "vitest";
 import {
 	generateAppointmentConfirmationMessage,
 	generateOrthopedicReadyMessage,
@@ -14,12 +14,12 @@ import {
 // Regular expression to detect unicode emojis
 const EMOJI_REGEX = /[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83E[\uDD00-\uDDFF]/;
 
-test("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8n, 8p)", async (t) => {
+describe("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8n, 8p)", () => {
 	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
 		? path.resolve(process.cwd(), "apps/web/src")
 		: path.resolve(process.cwd(), "src");
 
-	await t.test("1. Patient-Facing WhatsApp / SMS Templates — 100% Emoji-Free (Mandate 8d)", () => {
+	it("1. Patient-Facing WhatsApp / SMS Templates — 100% Emoji-Free (Mandate 8d)", () => {
 		// Confirmation template
 		const confMsg = generateAppointmentConfirmationMessage({
 			patientName: "Алексей Смирнов",
@@ -60,7 +60,7 @@ test("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8
 		assert.ok(urgMsg.includes("срочный приём"), "Must indicate urgent visit");
 	});
 
-	await t.test("2. Orthopedic Ready Templates — 100% Emoji-Free & Natural Clinical Russian (Mandates 8b, 8d)", () => {
+	it("2. Orthopedic Ready Templates — 100% Emoji-Free & Natural Clinical Russian (Mandates 8b, 8d)", () => {
 		// Orthopedic SMS
 		const orthoSms = generateOrthopedicReadyMessage({
 			patientName: "Васильева Елена",
@@ -115,7 +115,7 @@ test("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8
 		assert.ok(labWa.includes("Добрый день, Анна! Рады сообщить"));
 	});
 
-	await t.test("3. Zero Emojis in Telephony and Leads Source Code (Mandate 8d)", () => {
+	it("3. Zero Emojis in Telephony and Leads Source Code (Mandate 8d)", () => {
 		const telephonyDir = path.resolve(srcDir, "components/telephony");
 		const leadsDir = path.resolve(srcDir, "components/leads");
 
@@ -140,7 +140,7 @@ test("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8
 		checkFiles(leadsDir);
 	});
 
-	await t.test("4. Quiet UI: Non-Blocking Translucent Dynamic Island Capsule & Backdrop Blur", () => {
+	it("4. Quiet UI: Non-Blocking Translucent Dynamic Island Capsule & Backdrop Blur", () => {
 		const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
 		const popupSource = fs.readFileSync(popupPath, "utf-8");
 
@@ -169,7 +169,7 @@ test("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8
 		);
 	});
 
-	await t.test("5. Doctor Mode & Form 043/u Sterile Zone Immunity (Mandate 8e)", () => {
+	it("5. Doctor Mode & Form 043/u Sterile Zone Immunity (Mandate 8e)", () => {
 		const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
 		const popupSource = fs.readFileSync(popupPath, "utf-8");
 
@@ -184,7 +184,7 @@ test("Telephony Quiet UI & Communication Templates Suite (Mandates 8b, 8d, 8e, 8
 		);
 	});
 
-	await t.test("6. Miller's Law: Strictly <= 2 Primary Direct Buttons (Mandates 8d & 8p)", () => {
+	it("6. Miller's Law: Strictly <= 2 Primary Direct Buttons (Mandates 8d & 8p)", () => {
 		const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
 		const popupSource = fs.readFileSync(popupPath, "utf-8");
 

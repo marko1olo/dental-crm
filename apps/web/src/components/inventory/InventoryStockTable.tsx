@@ -469,7 +469,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 						<th
 							className="inventory-col-cost"
 							style={{
-								padding: "8px 18px 8px 8px",
+								padding: "8px 12px 8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -477,7 +477,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 135,
+								width: 125,
 								textAlign: "right",
 							}}
 						>
@@ -491,15 +491,15 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 						<th
 							className="inventory-col-actions"
 							style={{
-								padding: "8px 8px",
+								padding: "8px 12px 8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
 								borderBottom: "1px solid var(--line)",
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
-								textAlign: "center",
-								width: 220,
+								textAlign: "right",
+								width: 265,
 								whiteSpace: "nowrap",
 							}}
 						>
@@ -789,7 +789,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 									<td
 										className="inventory-col-cost"
 										style={{
-											padding: "8px 18px 8px 8px",
+											padding: "8px 12px 8px 8px",
 											verticalAlign: "middle",
 											textAlign: "right",
 											whiteSpace: "nowrap",
@@ -811,13 +811,13 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 									<td
 										className="inventory-col-actions"
 										style={{
-											padding: "8px 8px",
+											padding: "8px 12px 8px 8px",
 											verticalAlign: "middle",
-											textAlign: "center",
+											textAlign: "right",
 											whiteSpace: "nowrap",
 										}}
 									>
-										<div className="flex items-center justify-center gap-1 whitespace-nowrap shrink-0">
+										<div className="flex items-center justify-end gap-1 whitespace-nowrap shrink-0">
 											{expiryTraffic.isBlocked ? (
 												/* Красный: блокировка отпуска пациентам + 1-клик Акт утилизации СанПиН 3.3686-21 */
 												<button

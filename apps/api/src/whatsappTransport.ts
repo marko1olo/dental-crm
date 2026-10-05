@@ -21,6 +21,7 @@
  */
 
 import { createHmac } from "node:crypto";
+import { OmnichannelTokenVault } from "./services/bots/OmnichannelTokenVault.js";
 import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
 
 const GRAPH_API_VERSION = "v21.0";
@@ -83,11 +84,21 @@ export function readWhatsappCredentials(config: {
 	phoneNumberId?: string | null;
 	accessToken?: string | null;
 	appSecret?: string | null;
+	organizationId?: string | null;
 }): WhatsappCredentials | null {
 	const phoneNumberId = config.phoneNumberId?.trim();
-	const accessToken = config.accessToken?.trim();
+	let accessToken = config.accessToken?.trim();
 	const appSecret = config.appSecret?.trim() || null;
 	if (!phoneNumberId || !accessToken) return null;
+
+	if (OmnichannelTokenVault.isEncrypted(accessToken) && config.organizationId) {
+		try {
+			accessToken = OmnichannelTokenVault.decrypt(accessToken, config.organizationId);
+		} catch {
+			// fallback to raw value if decryption fails
+		}
+	}
+
 	return { phoneNumberId, accessToken, appSecret };
 }
 

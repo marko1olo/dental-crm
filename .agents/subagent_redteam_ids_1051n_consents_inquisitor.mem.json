@@ -1,0 +1,82 @@
+{
+  "agent_id": "subagent_redteam_ids_1051n_consents_inquisitor",
+  "role": "Red Team Inquisitor & Self-Fixing Engineer: IDS 1051n & Medical Refusals",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Step 0: Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md completely (Zero-Skimming)",
+    "Step 1: Codebase reconnaissance for all IDS, consents, refusals, 1051n files in packages/shared, apps/api, apps/web",
+    "Step 2: Inspect existing shared data models, types, and templates for 1051n consents and statutory refusals",
+    "Step 3: Inspect API routes, controllers, and DB schema for patient consents and refusals",
+    "Step 4: Inspect Web components, print forms, signature pads, modals, visit integration, and document cards",
+    "Step 5: Identify and eliminate critical legal vulnerabilities, orphaned types, broken print preambles, and missing clinical presets",
+    "Step 6: Implement fixes & self-corrections (SSOT in shared, clean API, mounted UI, 1051n standard compliance, doctor autonomy badges, print layout)",
+    "Step 7: Verify with check-encoding.mjs (7260 files 100%), check-css-tokens.mjs (165 files 100%), and targeted test suites (minzdravDocuments, consentSsotEngine, extendedStomxConsents, informedConsentPackageSigning, visitPlanAndConsentAutonomy, wave7InformedConsent, portalConsentsAutonomy, contractsAndSignatureStamps)",
+    "Step 8: Final report and send_message to parent orchestrator"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "critical_legal_defect_1": {
+      "severity": "CRITICAL_LEGAL_VULNERABILITY",
+      "location": "apps/web/src/components/consents/templates/packageAndSinglePrint.ts",
+      "description": "Pre-existing print engine hardcoded 'настоящим даю информированное добровольное согласие лечащему врачу' inside parties-block for ALL printed documents, meaning that when printing a Refusal of Treatment (CONSENT_TREATMENT_REFUSAL) or Refusal of EGISZ (CONSENT_EGISZ_REFUSAL), the preamble contradicted the document body and stated the patient consented to treatment! Fixed with buildPartiesPreambleHtml() dynamically tailoring the preamble to Consent, Treatment Refusal, EGISZ Refusal, or Warranty Passport.",
+      "status": "FIXED"
+    },
+    "critical_legal_defect_2": {
+      "severity": "STATUTORY_COMPLIANCE_GAP",
+      "location": "packages/shared/src/legal/legalContractsAndConsents.ts and packages/shared/src/documents/informedConsent1051n.ts",
+      "description": "Statutory Refusal of Medical Intervention under Order of Minzdrav RF No. 1051n (Annex 2) & 323-FZ Art. 20 Part 3 was missing orthodontics refusal preset and complete A4 print generator with clinic seal (М.П.) and statutory legal watermarks. Fixed: added orthodontics_refusal preset (covering occlusal wear, wedge defects, gum recession, TMJ dysfunction, emergency warning signs) and full generator/renderer generateMedicalInterventionRefusal1051nHtml().",
+      "status": "FIXED"
+    },
+    "api_legal_defect_3": {
+      "severity": "LEGAL_PROTECTION_GAP",
+      "location": "apps/api/src/documents/templates/consentTemplates.ts",
+      "description": "API consentTemplates medicalInterventionRefusal() lacked statutory citation to Order 1051n Annex 2, and legal checklist did not explicitly relieve doctor and clinic of liability for pathological progression caused by the refusal while protecting the patient's right to seek care again. Fixed: added statutory citation and full legal checklist.",
+      "status": "FIXED"
+    },
+    "ui_orphaning_defect_4": {
+      "severity": "ORPHANED_FORM_AND_SIGNING_ISOLATION",
+      "location": "apps/web/src/components/documents/forms/MedicalInterventionRefusalForm.tsx",
+      "description": "MedicalInterventionRefusalForm was an isolated manual form without direct A4 printing of statutory 1051n refusal, without blank paper print, without clipboard summary, without orthodontics preset, and without tablet stylus signing. Fixed: integrated Quick Actions toolbar (Печать А4 Отказ, Чистый бланк, Планшет / стилус, Выжимка), mounted InformedConsentModal for stylus/touch/PDF/A-1b signing, added 5th orthodontic preset, and auto-populated doctor name and date from active visit context.",
+      "status": "FIXED"
+    },
+    "type_mapping_defect_5": {
+      "severity": "BIDIRECTIONAL_TYPE_ASYMMETRY",
+      "location": "apps/web/src/components/visit/consents/visitConsentTypes.ts",
+      "description": "CONSENT_KEY_TO_DOCUMENT_KIND and DOCUMENT_KIND_TO_CONSENT_KEY lacked reverse mappings for CONSENT_TREATMENT_REFUSAL <-> medical_intervention_refusal, warranty passports, and photo protocol. Fixed: full bidirectional mapping harmonized.",
+      "status": "FIXED"
+    },
+    "doctor_autonomy_verification": {
+      "severity": "MANDATE_8E_AUTONOMY",
+      "location": "apps/web/src/components/visit/consents/VisitConsentsTab.tsx, ConsentScopeMismatchBanner.tsx, Consent1ClickBatchBanner.tsx, ConsentItemRow.tsx",
+      "description": "Verified that all visit consent indicators and banners are passive informational warning badges (⚠️) with strictly ZERO disabled attributes on action buttons (Save, Complete Visit, Proceed to Payment). Doctor autonomy is 100% unblocked.",
+      "status": "CONFIRMED_CLEAN"
+    }
+  },
+  "modified_files": [
+    "packages/shared/src/legal/legalContractsAndConsents.ts",
+    "packages/shared/src/documents/informedConsent1051n.ts",
+    "packages/shared/src/tests/minzdravDocuments.test.ts",
+    "apps/api/src/documents/templates/consentTemplates.ts",
+    "apps/web/src/components/consents/templates/packageAndSinglePrint.ts",
+    "apps/web/src/components/visit/consents/visitConsentTypes.ts",
+    "apps/web/src/components/documents/forms/MedicalInterventionRefusalForm.tsx"
+  ],
+  "verification_results": {
+    "check_encoding": "7260 files checked, 0 errors (Exit Code 0)",
+    "check_css_tokens": "165 files checked, 0 unresolved tokens (Exit Code 0)",
+    "targeted_unit_tests": {
+      "minzdravDocuments.test.ts": "14/14 passed",
+      "consentSsotEngine.test.ts": "12/12 passed",
+      "extendedStomxConsents.test.ts": "6/6 passed",
+      "informedConsentPackageSigning.test.ts": "17/17 passed",
+      "visitPlanAndConsentAutonomy.test.ts": "9/9 passed",
+      "informedConsentPaperFirstInquisition.test.tsx": "3/3 passed",
+      "informedConsentVectorPdfA.test.tsx": "2/2 passed",
+      "informedConsentFallbackAutonomy.test.tsx": "5/5 passed",
+      "informedConsentAutonomyWave51.test.tsx": "7/7 passed",
+      "wave7InformedConsentAndPlanTamperAudit.test.ts": "11/11 passed",
+      "portalConsentsAutonomy.test.ts": "2/2 passed",
+      "contractsAndSignatureStamps.test.ts": "10/10 passed"
+    }
+  }
+}

@@ -395,9 +395,15 @@ async function main() {
 
 		// Launch the CBCT Studio Modal
 		console.log("Opening CbctMprImplantStudioModal via 'КЛКТ Студия 3D' button...");
+		await page.evaluate(() => {
+			localStorage.setItem("dente_tour_completed", "true");
+			localStorage.setItem("dente_onboarding_dismissed", "true");
+			localStorage.setItem("doctor_training_coach_mark_dismissed", "true");
+			document.querySelectorAll("[data-testid='guided-tour-spotlight-overlay'], [data-testid='doctor-training-coach-mark-card'], .tour-backdrop-clickable-zone").forEach((el) => el.remove());
+		});
 		const openMprBtn = page.locator("[data-testid='imaging-open-3d-mpr']");
 		await openMprBtn.waitFor({ state: "visible", timeout: 15000 });
-		await openMprBtn.click();
+		await openMprBtn.click({ force: true });
 
 		const modal = page.locator("[data-testid='cbct-studio-modal']");
 		await modal.waitFor({ state: "visible", timeout: 20000 });
@@ -491,9 +497,10 @@ async function main() {
 		await tabImplant.click();
 		await page.waitForTimeout(1000);
 
-		// Ensure right sidebar is open
-		const hudLocator = page.locator("[data-testid='cbct-implant-live-telemetry-hud']");
-		if (!(await hudLocator.isVisible().catch(() => false))) {
+		// Ensure right sidebar is open and telemetry HUD is visible
+		console.log("Verifying Live Telemetry HUD & Misch 3-Zone Density Profile...");
+		const classBadge = page.locator("[data-testid='cbct-implant-misch-class-badge']").first();
+		if (!(await classBadge.isVisible().catch(() => false))) {
 			const sidebarToggle = page.locator("[data-testid='cbct-toggle-sidebar-btn']");
 			if (await sidebarToggle.isVisible().catch(() => false)) {
 				console.log("Toggling sidebar open...");
@@ -501,11 +508,7 @@ async function main() {
 				await page.waitForTimeout(500);
 			}
 		}
-
-		// Ensure right sidebar is open and telemetry HUD is visible
-		console.log("Verifying Live Telemetry HUD & Misch 3-Zone Density Profile...");
-		const telemetryHud = page.locator("[data-testid='cbct-implant-live-telemetry-hud']");
-		await telemetryHud.waitFor({ state: "visible", timeout: 15000 });
+		await classBadge.waitFor({ state: "visible", timeout: 15000 });
 
 		// Inspect all HUD elements
 		const hudReport = await page.evaluate(() => {

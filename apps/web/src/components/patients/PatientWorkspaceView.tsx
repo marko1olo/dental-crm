@@ -40,6 +40,7 @@ import {
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
 const DicomViewerModal = React.lazy(() =>
 	import("../imaging/DicomViewerModal").then((m) => ({
@@ -367,6 +368,27 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				return () => {
 					window.removeEventListener("dente:open-dms-letters", handleOpenDms);
 					window.removeEventListener("dente:open-dms-registry", handleOpenRegistry);
+				};
+			}, []);
+
+			useEffect(() => {
+				if (isDicomModalOpen) {
+					useUiSurfaceStore.getState().openPrimaryModal("dicom_viewer");
+				} else {
+					if (useUiSurfaceStore.getState().primaryModal?.id === "dicom_viewer") {
+						useUiSurfaceStore.getState().closePrimaryModal("dicom_viewer");
+					}
+				}
+			}, [isDicomModalOpen]);
+
+			useEffect(() => {
+				const handleCloseAll = () => {
+					setIsDicomModalOpen(false);
+					setSelectedScanForDicom(null);
+				};
+				window.addEventListener("dente:close-all-surfaces", handleCloseAll);
+				return () => {
+					window.removeEventListener("dente:close-all-surfaces", handleCloseAll);
 				};
 			}, []);
 
@@ -816,7 +838,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									<Shield className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<div className="text-xs">
 										<span className="font-bold text-[var(--ink)]">
-											Защита согласий и сметы (ПП РФ №659 и ст. 16 ЗоЗПП)
+											Защита согласий и плана лечения
 										</span>
 										<p className="text-[11px] text-[var(--muted)] m-0">
 											Все манипуляции фиксируются в плане. Новые позиции требуют
@@ -1077,6 +1099,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								onClose={() => {
 									setIsDicomModalOpen(false);
 									setSelectedScanForDicom(null);
+									useUiSurfaceStore.getState().closePrimaryModal("dicom_viewer");
 								}}
 								imageSrc={selectedScanForDicom?.url}
 								patientName={patientName || undefined}

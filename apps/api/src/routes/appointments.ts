@@ -3,7 +3,7 @@ import {
 	dashboardSchema,
 	updateAppointmentSchema,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	createAppointmentInDb,
@@ -14,9 +14,11 @@ import { db } from "../db/client.js";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
+	appointments,
 	chairs,
 	clinics,
 	patients,
+	staffChatChannels,
 	users,
 	visits,
 } from "../db/schema.js";
@@ -400,50 +402,45 @@ export const updateAppointmentHandler = async (
 		// DentalPRO expo26 Realtime Schedule Bar: при прибытии пациента ("arrived") шлем сигнал в #ресепшен и #интерком-ассистенты
 		if (input.status === "arrived") {
 			try {
-				let patientName = "Пациент";
-				if (updatedAppt.patientId) {
-					const [pat] = await db
-						.select({ fullName: patients.fullName })
-						.from(patients)
-						.where(
-							and(
-								eq(patients.id, updatedAppt.patientId),
-								eq(patients.organizationId, orgId),
-							),
-						)
-						.limit(1);
-					if (pat?.fullName) patientName = pat.fullName;
-				}
+				const [apptMeta] = await db
+					.select({
+						patientName: patients.fullName,
+						doctorName: users.fullName,
+						chairName: chairs.name,
+					})
+					.from(appointments)
+					.leftJoin(
+						patients,
+						and(
+							eq(patients.id, appointments.patientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.leftJoin(
+						users,
+						and(
+							eq(users.id, appointments.doctorUserId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.leftJoin(
+						chairs,
+						and(
+							eq(chairs.id, appointments.chairId),
+							eq(chairs.organizationId, orgId),
+						),
+					)
+					.where(
+						and(
+							eq(appointments.id, params.appointmentId),
+							eq(appointments.organizationId, orgId),
+						),
+					)
+					.limit(1);
 
-				let doctorName = "Врач";
-				if (updatedAppt.doctorUserId) {
-					const [doc] = await db
-						.select({ fullName: users.fullName })
-						.from(users)
-						.where(
-							and(
-								eq(users.id, updatedAppt.doctorUserId),
-								eq(users.organizationId, orgId),
-							),
-						)
-						.limit(1);
-					if (doc?.fullName) doctorName = doc.fullName;
-				}
-
-				let chairName = "Кабинет";
-				if (updatedAppt.chairId) {
-					const [ch] = await db
-						.select({ name: chairs.name })
-						.from(chairs)
-						.where(
-							and(
-								eq(chairs.id, updatedAppt.chairId),
-								eq(chairs.organizationId, orgId),
-							),
-						)
-						.limit(1);
-					if (ch?.name) chairName = ch.name;
-				}
+				const patientName = apptMeta?.patientName || "Пациент";
+				const doctorName = apptMeta?.doctorName || "Врач";
+				const chairName = apptMeta?.chairName || "Кабинет";
 
 				await ensureDefaultStaffChannels(orgId);
 
@@ -451,40 +448,48 @@ export const updateAppointmentHandler = async (
 				const senderRole = identity.role || "admin";
 
 				const targetSlugs = ["reception", "intercom_assistants"];
-				for (const slug of targetSlugs) {
-					const targetChannel = await getStaffChannelBySlug(orgId, slug);
-					if (targetChannel) {
-						const createdMessage = await insertStaffMessage({
-							organizationId: orgId,
-							channelId: targetChannel.id,
-							senderUserId: identity.userId,
-							senderName,
-							senderRole,
-							messageType: "intercom_ping",
-							content: `🛎️ Пациент ${patientName} прибыл в холл клиники и ожидает приёма. Назначен к: ${doctorName} (${chairName}).`,
-							urgency: "urgent",
-							intercomPreset: "patient_arrived",
-							targetAudience: slug === "reception" ? "reception" : "all_assistants",
-							patientAttachment: updatedAppt.patientId
-								? {
-										patientId: updatedAppt.patientId,
-										fullName: patientName,
-										cabinetNumber: chairName,
-										doctorName,
-									}
-								: null,
-							metadata: {
-								appointmentId: params.appointmentId,
-								cabinetNumber: chairName,
-								chairId: updatedAppt.chairId,
-							},
-						});
+				const targetChannels = await db
+					.select()
+					.from(staffChatChannels)
+					.where(
+						and(
+							eq(staffChatChannels.organizationId, orgId),
+							inArray(staffChatChannels.slug, targetSlugs),
+						),
+					);
 
-						wsBroker.broadcastToOrganization(orgId, {
-							type: "STAFF_CHAT_MESSAGE",
-							payload: createdMessage,
-						});
-					}
+				for (const targetChannel of targetChannels) {
+					const slug = targetChannel.slug;
+					const createdMessage = await insertStaffMessage({
+						organizationId: orgId,
+						channelId: targetChannel.id,
+						senderUserId: identity.userId,
+						senderName,
+						senderRole,
+						messageType: "intercom_ping",
+						content: `🛎️ Пациент ${patientName} прибыл в холл клиники и ожидает приёма. Назначен к: ${doctorName} (${chairName}).`,
+						urgency: "urgent",
+						intercomPreset: "patient_arrived",
+						targetAudience: slug === "reception" ? "reception" : "all_assistants",
+						patientAttachment: updatedAppt.patientId
+							? {
+									patientId: updatedAppt.patientId,
+									fullName: patientName,
+									cabinetNumber: chairName,
+									doctorName,
+								}
+							: null,
+						metadata: {
+							appointmentId: params.appointmentId,
+							cabinetNumber: chairName,
+							chairId: updatedAppt.chairId,
+						},
+					});
+
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "STAFF_CHAT_MESSAGE",
+						payload: createdMessage,
+					});
 				}
 
 				wsBroker.broadcastToOrganization(orgId, {

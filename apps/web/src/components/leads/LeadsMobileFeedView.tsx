@@ -209,7 +209,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "new" ? "is-active" : ""}`}
 						data-testid="mobile-tab-new"
 					>
-						<span>⚡ Новые</span>
+						<span>Новые</span>
 						<span className="leads-mobile-seg-count">{counts.new || 0}</span>
 					</button>
 
@@ -221,7 +221,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "contacted" ? "is-active" : ""}`}
 						data-testid="mobile-tab-contacted"
 					>
-						<span>💬 В работе</span>
+						<span>В работе</span>
 						<span className="leads-mobile-seg-count">{counts.contacted || 0}</span>
 					</button>
 
@@ -233,7 +233,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "consult_booked" ? "is-active" : ""}`}
 						data-testid="mobile-tab-consult_booked"
 					>
-						<span>📅 Записаны</span>
+						<span>Записаны</span>
 						<span className="leads-mobile-seg-count">{counts.consult_booked || 0}</span>
 					</button>
 
@@ -245,7 +245,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "showed_up" ? "is-active" : ""}`}
 						data-testid="mobile-tab-showed_up"
 					>
-						<span>✅ Дошли</span>
+						<span>Дошли</span>
 						<span className="leads-mobile-seg-count">{counts.showed_up || 0}</span>
 					</button>
 
@@ -257,7 +257,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "no_answer" ? "is-active" : ""}`}
 						data-testid="mobile-tab-no_answer"
 					>
-						<span>📞 Недозвон</span>
+						<span>Недозвон</span>
 						<span className="leads-mobile-seg-count">{counts.no_answer || 0}</span>
 					</button>
 
@@ -269,7 +269,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "trash" ? "is-active" : ""}`}
 						data-testid="mobile-tab-trash"
 					>
-						<span>🗑️ Отказ</span>
+						<span>Отказ</span>
 						<span className="leads-mobile-seg-count">{counts.trash || 0}</span>
 					</button>
 
@@ -281,7 +281,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						className={`leads-mobile-seg-btn ${activeTab === "all" ? "is-active" : ""}`}
 						data-testid="mobile-tab-all"
 					>
-						<span>🌐 Все</span>
+						<span>Все</span>
 						<span className="leads-mobile-seg-count">{counts.all || 0}</span>
 					</button>
 				</div>

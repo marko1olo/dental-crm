@@ -19,6 +19,7 @@ import { HelpDrawer } from "../common/HelpDrawer";
 import type { ClinicalGuideTab } from "../help";
 import { KnowledgeBaseHubModal } from "../knowledge";
 import { DoctorClinicalTrainingTour } from "../workspace/DoctorClinicalTrainingTour";
+import { InteractiveGuideTour } from "../tutorial/InteractiveGuideTour";
 import { ClinicalGuidanceModal } from "./ClinicalGuidanceModal";
 
 export const ClinicalGuidanceHost: React.FC = React.memo(() => {
@@ -121,6 +122,7 @@ export const ClinicalGuidanceHost: React.FC = React.memo(() => {
 			/>
 
 			<DoctorClinicalTrainingTour />
+			<InteractiveGuideTour />
 		</>
 	);
 });

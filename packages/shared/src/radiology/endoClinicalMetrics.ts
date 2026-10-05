@@ -118,7 +118,9 @@ export const EndoToothClinicalReportSchema = z.object({
 	/** Highest risk tier among all canals in this tooth */
 	overallRiskTier: SchneiderRiskTierSchema,
 	recommendedRotaryTaper: z.enum(["0.02", "0.04", "0.06"]),
+	recommendedTaper: z.enum(["0.02", "0.04", "0.06"]).optional(),
 	reciprocationIndicated: z.boolean(),
+	reciprocatingMotionRecommended: z.boolean().optional(),
 	clinicalSummaryRu: z.string(),
 });
 export type EndoToothClinicalReport = z.infer<typeof EndoToothClinicalReportSchema>;
@@ -708,7 +710,9 @@ export function buildEndoToothClinicalReport(
 		vertucci,
 		overallRiskTier: overallRisk,
 		recommendedRotaryTaper: taper,
+		recommendedTaper: taper,
 		reciprocationIndicated: recip,
+		reciprocatingMotionRecommended: recip,
 		clinicalSummaryRu: summaryRu,
 	};
 }

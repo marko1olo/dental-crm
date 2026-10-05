@@ -445,6 +445,7 @@ describe("Dental Lab 3D Shade & Order Inquisitor — Mandates 8d, 8e, 8k, 8n", (
 					setMamelons={() => {}}
 					calcifications={false}
 					setCalcifications={() => {}}
+					setAttachedImageUrl={() => {}}
 				/>
 			);
 		});
@@ -473,6 +474,10 @@ describe("Dental Lab 3D Shade & Order Inquisitor — Mandates 8d, 8e, 8k, 8n", (
 		assert.ok(findNodeByTestId(container, "translucency-HT"));
 		assert.ok(findNodeByTestId(container, "mamelons-checkbox"));
 		assert.ok(findNodeByTestId(container, "calcifications-checkbox"));
+
+		// Clinical photo attachment with shade guide (Mandates 8a, 8e)
+		assert.ok(findNodeByTestId(container, "shade-selector-file-input"));
+		assert.ok(findNodeByTestId(container, "shade-selector-sample-photo-btn"));
 
 		if (root) {
 			await act(async () => {

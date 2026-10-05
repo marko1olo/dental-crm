@@ -137,6 +137,7 @@ import { registerWaitlistRoutes } from "./routes/waitlist.js";
 import { registerWaitlistMatchRoutes } from "./routes/waitlistMatches.js";
 import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerWhatsappRoutes } from "./routes/whatsapp.js";
+import { registerOmnichannelBotRoutes } from "./routes/omnichannelBots.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerLanNetworkRoutes } from "./routes/lanNetwork.js";
 import { registerXrayRoutes } from "./routes/xray.js";
@@ -176,6 +177,7 @@ import {
 	getHddFastifyLoggerConfig,
 } from "./lib/hddPerformanceConfig.js";
 import { cacheHeadersPlugin } from "./plugins/cacheHeaders.js";
+import { idempotencyPlugin } from "./plugins/idempotencyPlugin.js";
 import { registerRouteNotFoundHandler } from "./utils/routeNotFound.js";
 import { startWatchdog } from "./watchdog.js";
 
@@ -493,6 +495,8 @@ export async function createDenteApiApp(
 			"x-requested-with",
 			"x-correlation-id",
 			"x-request-id",
+			"x-idempotency-key",
+			"idempotency-key",
 		],
 		exposedHeaders: [
 			"retry-after",
@@ -501,6 +505,9 @@ export async function createDenteApiApp(
 			"x-correlation-id",
 			"x-request-id",
 			"etag",
+			"x-idempotency-key",
+			"x-idempotency-status",
+			"x-cache-lookup",
 		],
 		maxAge: 600,
 	});
@@ -510,6 +517,9 @@ export async function createDenteApiApp(
 
 	// HTTP кэширование справочников (ETag, Cache-Control, 304 Not Modified) для медленных HDD
 	await app.register(cacheHeadersPlugin);
+
+	// Защита от двойного списания, повторных транзакций и дедупликация (X-Idempotency-Key)
+	await app.register(idempotencyPlugin);
 
 	await app.register(helmet, {
 		contentSecurityPolicy: false,
@@ -762,6 +772,7 @@ export async function createDenteApiApp(
 	await registerTelegramRoutes(app);
 	await registerTelegramWebhookRoutes(app);
 	await registerTelegramReferralLoyaltyRoutes(app);
+	await registerOmnichannelBotRoutes(app);
 	await registerVisitRoutes(app);
 	await registerDicomwebRoutes(app);
 	await registerXrayRoutes(app);
@@ -963,6 +974,16 @@ export async function startDenteApiServer() {
 		process.exit(1);
 	});
 	process.on("unhandledRejection", (reason, promise) => {
+		if (
+			(reason as any)?.code === "ERR_HTTP_HEADERS_SENT" ||
+			(reason as any)?.message?.includes?.("Cannot set headers after they are sent")
+		) {
+			app.log.error(
+				{ reason, promise },
+				"ERR_HTTP_HEADERS_SENT caught in unhandledRejection; suppressing crash to keep server live",
+			);
+			return;
+		}
 		app.log.fatal(
 			{ reason, promise },
 			"Unhandled Rejection detected. Shutting down...",

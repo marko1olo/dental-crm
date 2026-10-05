@@ -295,7 +295,6 @@ export function DentalLabRestorationTab({
 				</div>
 				<input
 					type="text"
-					autoFocus
 					placeholder="16, 17, 26..."
 					value={manualFdiInput}
 					onChange={(e) => handleManualFdiChange(e.target.value)}

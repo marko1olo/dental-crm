@@ -13,3 +13,4 @@ export * from "./spotlightGeometry";
 export * from "./SpotlightOverlay";
 export * from "./PulsingHaloAnchor";
 export * from "./CoachMarkTooltip";
+export * from "./InteractiveGuideTour";

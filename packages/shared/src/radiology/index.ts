@@ -408,6 +408,7 @@ export * as cbctBoneQualityEngine from "./boneQualityEngine.js";
 export * from "./endoCanalFrangiEngine.js";
 export * from "./endoFastMarchingTracer.js";
 export * from "./endoClinicalMetrics.js";
+export * from "./endoWorkerBridge.js";
 
 // ── Wave 141: 3D Dental Arch & Tooth Voxel Segmentation Engine ─
 export {

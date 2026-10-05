@@ -1,0 +1,84 @@
+{
+  "subagent": "redteam_legal_contracts_152fz_inquisitor",
+  "status": "completed",
+  "mandates": [
+    "8c",
+    "8e",
+    "8l",
+    "8s",
+    "8n",
+    "8m",
+    "8d",
+    "8t",
+    "8u",
+    "8v",
+    "8x",
+    "8z",
+    "8aa",
+    "8ab"
+  ],
+  "domain": "Юридический пакет пациента, Договор платных медуслуг (ПП РФ № 736), Согласие 152-ФЗ, Пакет несовершеннолетнего (ст. 54 ФЗ-323, СК РФ, ст. 185 ГК РФ)",
+  "completed_steps": [
+    "Read 100% core.md",
+    "Read 100% frontend.md",
+    "Read 100% THE_HAMMER_MASTER_PROMPT.md",
+    "Read 100% AGENTS.md",
+    "Read 100% GEMINI.md",
+    "Initialized subagent memory",
+    "Reconnaissance: Located all contract, legal package, 152-FZ, minor representative files across packages/shared, apps/api, apps/web",
+    "Inspected compliance with PP RF 736 (statutory terms, licensing body roszdravnadzor.gov.ru, OMS state guarantee disclosures, zero hidden fees)",
+    "Inspected 152-FZ consents (biometric data art. 11: photo protocol, RVG, OPTG, TRG, 3D CBCT, intraoral scanning; EGISZ REMD/FREMD decree 140, Gosuslugi My Health, 25-year medical archive retention)",
+    "Inspected pediatric package under 323-FZ art. 54, Family Code RF art. 64, Civil Code RF art. 26, 28, 185, 185.1 (proxy authorization for grandparents/nannies)",
+    "Inspected print forms: brought margins to GOST R 7.0.97-2016 (margin: 12-15mm 10mm 12-15mm 20mm with 20mm left margin for medical card binding/hole punch)",
+    "Inspected Reception Primary Intake Package (1-click batch creation & print of 4 forms: Contract, Consent 1051n, 152-FZ Personal Data, Somatic Health Questionnaire)",
+    "Eliminated city hardcodes (removed rigid 'г. Москва', replaced with dynamic {{Клиника.Город}} / clinicCity)",
+    "Implemented clean blank form printing with underlines '________' without 403 or disabled gates (Mandate 8e)",
+    "Fixed MinorLegalRepresentativeConsentForm to pass childDocument, representativeBasis, accompanyingPerson",
+    "Fixed primaryIntakePackagePrintEngine to use GOST 20mm left margin, dynamic city, clinic website, roszdravnadzor.gov.ru, and biometric 152-FZ data",
+    "Verified UTF-8 encoding: node scripts/check-encoding.mjs (7269 files, 0 defects)",
+    "Verified CSS tokens: node scripts/check-css-tokens.mjs (0 blocking issues)",
+    "Created and ran targeted tests: packages/shared/src/tests/legalPackagePp736And152FzAudit.test.ts (5/5 passed)",
+    "Created and ran targeted tests: apps/web/src/tests/primaryIntakePackageAndMinorConsentAudit.test.ts (4/4 passed)",
+    "Ran full legal suite: 60/60 tests passed across shared and web modules with Exit Code 0"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "target": "packages/shared/src/documents/templates/generalAndContracts.ts",
+      "description": "dogovor_na_okazanie_med_uslug_nesovershennoletnego был 3-строчной заглушкой без указания статей СК РФ, 323-ФЗ и разделения законного представителя и ребенка; отсутствовал официальный шаблон доверенности на сопровождающее лицо (ст. 185 ГК РФ) для бабушек и нянь."
+    },
+    {
+      "severity": "CRITICAL",
+      "target": "packages/shared/src/documents/templates/templateStyles.ts & primaryIntakePackagePrintEngine.ts",
+      "description": "Поля печати @page составляли 10-12 мм слева. По ГОСТ Р 7.0.97-2016 для подшивки в амбулаторную карту ф. 043/у левое поле обязано быть не менее 20 мм, иначе текст пробивается дыроколом или скоросшивателем."
+    },
+    {
+      "severity": "HIGH",
+      "target": "packages/shared/src/documents/formsContractAndConsents.ts & primaryIntakePackagePrintEngine.ts",
+      "description": "Хардкод «г. Москва» в шапках договоров клиники; отсутствие ссылки на сайт лицензирующего органа roszdravnadzor.gov.ru по п. 17 ПП РФ № 736; отсутствие отдельного пункта о биометрических ПДн по ст. 11 152-ФЗ (фотопротокол, КЛКТ, рентген)."
+    },
+    {
+      "severity": "MEDIUM",
+      "target": "apps/web/src/components/documents/forms/MinorLegalRepresentativeConsentForm.tsx",
+      "description": "Не передавались реквизиты документа ребенка (свидетельство о рождении) и основания полномочий представителя (ст. 64 СК РФ) в генератор печати ИДС; отсутствовало раздельное поле ввода основания полномочий."
+    }
+  ],
+  "defects_identified": [
+    "Хардкод 'г. Москва' в договорах",
+    "Несоответствие левого поля ГОСТ Р 7.0.97-2016 (менее 20 мм)",
+    "Отсутствие биометрических ПДн (ст. 11 152-ФЗ)",
+    "Отсутствие ссылок на Постановление Правительства РФ № 140 и Госуслуги",
+    "3-строчная заглушка договора на несовершеннолетнего",
+    "Отсутствие бланка доверенности на сопровождающее лицо (ст. 185 ГК РФ)"
+  ],
+  "fixes_applied": [
+    "Внедрен полноразмерный договор на несовершеннолетнего со ссылками на СК РФ, ГК РФ, 323-ФЗ, разделением сторон и уведомлением об ОМС",
+    "Создан официальный шаблон доверенности на сопровождающее лицо (doverennost_na_soprovozhdenie_rebenka)",
+    "В Согласие 152-ФЗ добавлен обязательный пункт о биометрических ПДн (ст. 11 152-ФЗ), ЕГИСЗ (РЭМД по ПП РФ № 140), Госуслугах и сроке хранения 25 лет",
+    "В стилях @page установлен стандарт ГОСТ: левое поле 20 мм под скоросшиватель карты 043/у (margin: 12-15mm 10mm 12-15mm 20mm)",
+    "Устранен хардкод 'г. Москва', введен динамический clinicCity и адрес органа лицензирования roszdravnadzor.gov.ru",
+    "Обновлены MinorLegalRepresentativeConsentForm, primaryIntakePackagePrintEngine и PrimaryIntakePackageModal",
+    "Написаны и успешно пройдены 2 новых сьюта тестов (всего 60/60 тестов в legal suite зеленые)"
+  ]
+}

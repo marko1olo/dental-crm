@@ -1,0 +1,44 @@
+{
+  "agent": "subagent_redteam_doctor_payroll_t51_inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "read_constitution_and_rules_full",
+    "reconnaissance_payroll_and_t51",
+    "inquisition_defects_and_mocks",
+    "consolidate_ssot_payroll_engine",
+    "fix_and_connect_api_and_ui",
+    "verify_kopecks_and_tax_clawback",
+    "verification_gates"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "SSOT consolidation: @dental/shared/payroll now cleanly exports doctorNetSalaryEngine alongside doctorPayrollT51 and formT13TimesheetEngine",
+    "Progressive NDFL 13% / 15% implemented with exact kopeck math and statutory whole-ruble rounding per Art. 224 and Art. 225 p. 6 Tax Code RF",
+    "Clinic overhead consumables (napkins, cotton rolls, saliva ejectors, gloves, masks) are strictly protected and 100% paid by the clinic, preventing unlawful deductions from doctor salaries in DoctorPayoutDashboard and doctorPayrollT51",
+    "Eliminated hardcoded historical month dates ('2026-08-01' / '2026-08-31') in DoctorPayrollModal, replacing them with dynamic current month period helper getDefaultPayrollPeriod() and wire-in from DoctorPayoutDashboard",
+    "All machine verification gates passed: check:encoding (7284 files clean), check:css-tokens (165 CSS files, 0 unresolvable names), and 100% passing tests across unit test suites"
+  ],
+  "defects_catalog": [
+    {
+      "id": "DEF-01",
+      "severity": "CRITICAL",
+      "title": "Clinic overhead consumables deducted from doctor piece-rate pay",
+      "status": "RESOLVED",
+      "fix": "Integrated isGeneralClinicOverheadConsumable into doctorServicesForPayrollModal and doctorPayrollT51 to exempt general clinic consumables and track overheadConsumablesCoveredKop"
+    },
+    {
+      "id": "DEF-02",
+      "severity": "HIGH",
+      "title": "Missing Russian progressive NDFL 15% tax bracket for high earners (> 5,000,000 RUB)",
+      "status": "RESOLVED",
+      "fix": "Implemented calculateProgressiveNdflTax with Art. 225 p. 6 whole-ruble rounding in doctorPayrollT51 and updated payslip/modal/exports"
+    },
+    {
+      "id": "DEF-03",
+      "severity": "MEDIUM",
+      "title": "Hardcoded historical dates in DoctorPayrollModal and disconnect from dashboard period",
+      "status": "RESOLVED",
+      "fix": "Added getDefaultPayrollPeriod() and passed report.period from DoctorPayoutDashboard to DoctorPayrollModal"
+    }
+  ]
+}

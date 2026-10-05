@@ -72,6 +72,7 @@ describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit", () => 
 			path.join(WEB_SRC, "components/inventory/InventoryItemFormModal.tsx"),
 			path.join(WEB_SRC, "components/inventory/InventoryStockAdjustModal.tsx"),
 			path.join(WEB_SRC, "components/inventory/InventoryExternalModals.tsx"),
+			path.join(WEB_SRC, "components/inventory/InventoryTopToolbar.tsx"),
 		];
 
 		for (const file of filesToCheck) {
@@ -92,6 +93,7 @@ describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit", () => 
 		assert.ok(InventoryViewExports.InventoryInboundInvoiceModal, "InventoryInboundInvoiceModal must be re-exported");
 		assert.ok(InventoryViewExports.InventoryServiceUsagePanel, "InventoryServiceUsagePanel must be re-exported");
 		assert.ok(InventoryViewExports.InventoryOperationsMenu, "InventoryOperationsMenu must be re-exported");
+		assert.ok((InventoryViewExports as any).InventoryTopToolbar, "InventoryTopToolbar must be re-exported");
 	});
 
 	it("3. Verifies InventoryBatchFefoPanel renders FEFO batches and traffic lights", () => {

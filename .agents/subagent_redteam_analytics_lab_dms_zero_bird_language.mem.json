@@ -1,0 +1,213 @@
+{
+  "task": "subagent_redteam_analytics_lab_dms_zero_bird_language",
+  "status": "completed",
+  "domain": [
+    "analytics_management_reports",
+    "dental_lab",
+    "dms_insurance",
+    "marketing_campaigns",
+    "patient_portal_kiosk"
+  ],
+  "steps_completed": [
+    "Read Constitution and Rules (THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md)",
+    "Comprehensive reconnaissance across all 5 assigned domains using git grep and git ls-files",
+    "Pinpointed 20 distinct bird-language and Soviet bureaucratic ciphers in visible UI labels, buttons, titles, and placeholders",
+    "Surgically executed self-fixing edits via replace_file_content across 13 files, preserving all internal DTOs, schemas, enums, and API contracts",
+    "Verified UTF-8 encoding integrity across modified files",
+    "Ran targeted test suite: patientCabinetCalendarExport (5/5 pass), dmsModalsAndRegistry (13/13 pass), dentalLabWave243Inquisitor (4/4 pass), dentalLabOrderShade (10/10 pass), patientPortalEndToEndJourney (7/7 pass), patientCabinetAutonomyInquisition (16/16 pass), DoctorShiftRoster (48/48 pass) — 100% GREEN, 0 regressions"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "domain": "marketing_campaigns",
+      "file": "apps/web/src/components/marketing/MarketingCampaignDetail.tsx",
+      "line": 557,
+      "original": "Только пациенты с подтвержденным согласием на уведомления (152-ФЗ и ст. 18 ФЗ «О рекламе»)",
+      "replacement": "Только пациенты с подтвержденным согласием на сервисные и рекламные сообщения"
+    },
+    {
+      "domain": "dental_lab",
+      "file": "apps/web/src/pages/LabOrdersPage.tsx",
+      "lines": [807, 811, 819, 871],
+      "changes": [
+        "title='Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)' -> title='Распечатать наряд в зуботехническую лабораторию'",
+        "<span>ЗТЛ-1</span> -> <span>Печать наряда</span>",
+        "title='Клинический трекер этапов ЗТЛ' -> title='Этапы изготовления в лаборатории'",
+        "<span>Печать наряда ЗТЛ-1</span> -> <span>Печать наряда в лабораторию</span>"
+      ]
+    },
+    {
+      "domain": "dental_lab",
+      "file": "apps/web/src/components/lab/LabOrderCard.tsx",
+      "lines": [176, 190, 201, 327],
+      "changes": [
+        "title='Распечатать официальный наряд технику (А4 / ГОСТ)' -> title='Распечатать наряд в зуботехническую лабораторию'",
+        "title='Сменить этап или статус изготовления работы в ЗТЛ' -> title='Сменить этап или статус изготовления'",
+        "<span>Копировать ссылку ЗТЛ</span> -> <span>Копировать ссылку для техника</span>"
+      ]
+    },
+    {
+      "domain": "dental_lab",
+      "file": "apps/web/src/components/lab/DentalLabPrintBlank.tsx",
+      "lines": [200, 230, 284, 399],
+      "changes": [
+        "Форма № ЗТЛ-1: Наряд-заказ в зуботехническую лабораторию (СтАР / ГОСТ) -> Наряд-заказ в зуботехническую лабораторию",
+        "Наряд-заказ в зуботехническую лабораторию (Форма № ЗТЛ-1) № {gostOrderNumber} -> Наряд-заказ в зуботехническую лабораторию № {gostOrderNumber}",
+        "(152-ФЗ курьерский: ...) -> (Курьерский код: ...)",
+        "Маршрутный лист и клинические этапы ЗТЛ (ГОСТ Р 51087-97) -> Маршрутный лист и этапы изготовления в лаборатории"
+      ]
+    },
+    {
+      "domain": "dental_lab",
+      "file": "apps/web/src/components/lab/labClinicalStages.ts",
+      "lines": [499, 500, 501, 502, 505],
+      "changes": [
+        "FORM_ZTL_1_METADATA metadata strings cleaned from statutory Soviet GOST tags in titleRu, blankHeaderRu, subtitleRu, warrantyGostRu"
+      ]
+    },
+    {
+      "domain": "dms_insurance",
+      "file": "apps/web/src/components/insurance/DmsExclusionsSelectorCard.tsx",
+      "line": 25,
+      "original": "Услуги из отмеченных категорий не покрываются страховщиком и автоматически выставляются в счет пациенту.",
+      "replacement": "Услуги из отмеченных категорий не покрываются страховой компанией и автоматически включаются в счет пациента."
+    },
+    {
+      "domain": "dms_insurance",
+      "file": "apps/web/src/components/insurance/DmsQuickActionBanners.tsx",
+      "line": 113,
+      "original": "(моментальное заполнение страховщика, лимитов и услуг 804н)",
+      "replacement": "(моментальное заполнение страховой компании, лимитов и согласованных услуг)"
+    },
+    {
+      "domain": "dms_insurance",
+      "file": "apps/web/src/components/insurance/dmsExpressPresets.ts",
+      "line": 163,
+      "original": "санация кариеса",
+      "replacement": "лечение кариеса"
+    },
+    {
+      "domain": "dms_insurance",
+      "file": "apps/web/src/components/insurance/DmsRegistryExportModal.tsx",
+      "line": 517,
+      "original": "<th>Страховщик</th>",
+      "replacement": "<th>Страховая компания</th>"
+    },
+    {
+      "domain": "dms_insurance",
+      "file": "apps/web/src/components/settings/insurance/InsuranceContractModal.tsx",
+      "line": 111,
+      "original": "desc: 'Полное покрытие страховщиком'",
+      "replacement": "desc: 'Полное покрытие страховой компанией'"
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientCabinet/tabs/DocumentsTab.tsx",
+      "lines": [413, 452],
+      "changes": [
+        "<span>Печать выписки 043/у</span> -> <span>Печать выписки из медкарты</span>",
+        "выписанные рецепты по форме 107-1/у отобразятся здесь -> назначенные врачом электронные рецепты отобразятся здесь"
+      ]
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientCabinet/tabs/FamilyTab.tsx",
+      "lines": [438, 444],
+      "changes": [
+        "Номер медкарты 043/у (если уже оформлена) -> Номер медицинской карты (если уже оформлена)",
+        "placeholder '043-...' -> placeholder 'Напр. 2026/891'"
+      ]
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx",
+      "line": 148,
+      "original": "индивидуальный план санации",
+      "replacement": "индивидуальный план лечения и оздоровления"
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientFriendlyOdontogramEngine.ts",
+      "lines": [283, 288, 289, 292, 303],
+      "changes": [
+        "Хороший уровень санации -> Хорошее состояние зубов и десен",
+        "Отличный уровень санации -> Отличное здоровье зубов",
+        "Требуется плановая санация -> Рекомендуется плановое лечение",
+        "Индекс санации: X% -> Индекс здоровья зубов: X%"
+      ]
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/PatientFriendlyOdontogram.tsx",
+      "lines": [198, 225],
+      "changes": [
+        "Санация: X% -> Здоровье зубов: X%",
+        "Цель: 100% санация -> Цель: 100% здоровые зубы"
+      ]
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientCabinet/PatientPlanDentalFormula.tsx",
+      "lines": [249, 269, 368],
+      "changes": [
+        "Индекс санации X% -> Здоровье зубов X%",
+        "Санация X% -> Здоровье зубов: X%",
+        "<span>Санированы (X)</span> -> <span>Здоровы / Вылечены (X)</span>"
+      ]
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientCabinet/tabs/OverviewTab.tsx",
+      "line": 567,
+      "original": "Санация: X%",
+      "replacement": "Здоровье зубов: X%"
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/patientPortalPresets.ts",
+      "line": 524,
+      "original": "titleRu: 'Комплексный план санации и ортопедической реабилитации'",
+      "replacement": "titleRu: 'Комплексный план лечения и восстановления улыбки'"
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/scans/PlanBeforeAfterGallery.tsx",
+      "line": 103,
+      "original": "после завершения санации.",
+      "replacement": "после завершения лечения."
+    },
+    {
+      "domain": "patient_portal_kiosk",
+      "file": "apps/web/src/components/portal/scans/PlanThreeTierSelector.tsx",
+      "line": 30,
+      "original": "санация полости рта",
+      "replacement": "оздоровление полости рта"
+    },
+    {
+      "domain": "analytics_management_reports",
+      "file": "apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx",
+      "lines": [231, 646],
+      "changes": [
+        "title='Табель Т-13: Выгрузить табель учёта рабочего времени в CSV для 1C / Excel' -> title='Табель учёта рабочего времени: Выгрузить в CSV для 1C или Excel'",
+        "title='Табель Т-13: Табель учёта рабочего времени' -> title='Табель учёта рабочего времени'"
+      ]
+    },
+    {
+      "domain": "analytics_management_reports",
+      "file": "apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx",
+      "line": 868,
+      "original": "Нет данных для формирования табеля Т-13 (сотрудники не добавлены).",
+      "replacement": "Нет данных для формирования табеля учёта времени (сотрудники не добавлены)."
+    },
+    {
+      "domain": "analytics_management_reports",
+      "file": "apps/web/src/components/payroll/TimesheetT13Modal.tsx",
+      "lines": [486, 490, 499],
+      "changes": [
+        "title='Заполнить рабочие дни по норме ТК РФ ст. 350 (33 ч/нед = 6.6 ч/день)' -> title='Заполнить рабочие дни по норме для врачей-стоматологов (33 ч/нед, 6.6 ч/день)'",
+        "Я/6.6 (ТК РФ) -> 6.6 ч (норма)",
+        "Я/8 -> 8 ч (стандарт)"
+      ]
+    }
+  ]
+}

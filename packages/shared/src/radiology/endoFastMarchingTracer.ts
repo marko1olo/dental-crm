@@ -270,27 +270,51 @@ export function detectCanalOrifices(
 	const maxCount = filter.maxCanalCount ?? 4;
 
 	// Step 1: Find Z-level of coronal pulp chamber and floor of the pulp chamber.
-	// We compute slice-by-slice pulp lumen area within the dentin mask.
+	// We compute slice-by-slice enclosed pulp lumen area within the tooth cross section.
 	const slicePulpCount = new Int32Array(dims.depth);
 	const sliceStride = dims.width * dims.height;
 
 	for (let z = 0; z < dims.depth; z++) {
 		const zOff = z * sliceStride;
 		let pulpCount = 0;
-		for (let i = 0; i < sliceStride; i++) {
-			const idx = zOff + i;
-			const hu = volume.data[idx] ?? -1000;
-			if (isCanalLumenHU(hu) && frangiResult.dentinMask[idx] === 1) {
-				pulpCount++;
+		for (let y = 1; y < dims.height - 1; y++) {
+			const yOff = zOff + y * dims.width;
+			for (let x = 1; x < dims.width - 1; x++) {
+				const idx = yOff + x;
+				const hu = volume.data[idx] ?? -1000;
+				if (isCanalLumenHU(hu)) {
+					// Check if bounded by dentin in X and Y
+					let hasLeft = false;
+					let hasRight = false;
+					let hasUp = false;
+					let hasDown = false;
+					for (let tx = 0; tx < x; tx++) {
+						if (frangiResult.dentinMask[yOff + tx] === 1) { hasLeft = true; break; }
+					}
+					for (let tx = x + 1; tx < dims.width; tx++) {
+						if (frangiResult.dentinMask[yOff + tx] === 1) { hasRight = true; break; }
+					}
+					for (let ty = 0; ty < y; ty++) {
+						if (frangiResult.dentinMask[zOff + ty * dims.width + x] === 1) { hasUp = true; break; }
+					}
+					for (let ty = y + 1; ty < dims.height; ty++) {
+						if (frangiResult.dentinMask[zOff + ty * dims.width + x] === 1) { hasDown = true; break; }
+					}
+					if (hasLeft && hasRight && hasUp && hasDown) {
+						pulpCount++;
+					}
+				}
 			}
 		}
 		slicePulpCount[z] = pulpCount;
 	}
 
-	// Find the peak coronal pulp area
-	let maxPulpSliceZ = 0;
+	// Find the peak coronal pulp area in the coronal portion (z >= 25% of depth)
+	const minCoronalZ = Math.max(1, Math.floor(dims.depth * 0.25));
+	const maxCoronalZ = Math.min(dims.depth - 2, Math.floor(dims.depth * 0.85));
+	let maxPulpSliceZ = minCoronalZ;
 	let maxPulpVoxels = 0;
-	for (let z = 0; z < dims.depth; z++) {
+	for (let z = minCoronalZ; z <= maxCoronalZ; z++) {
 		const count = slicePulpCount[z] ?? 0;
 		if (count > maxPulpVoxels) {
 			maxPulpVoxels = count;
@@ -298,11 +322,14 @@ export function detectCanalOrifices(
 		}
 	}
 
-	// Search for pulpal floor: constriction zone where pulp area narrows down towards roots
-	// Typically within 2-4 mm of max pulp slice
-	const searchZRadius = Math.max(2, Math.ceil(4.0 / Math.max(1e-3, spacing.z)));
+	if (maxPulpVoxels === 0) {
+		maxPulpSliceZ = Math.floor(dims.depth * 0.55);
+	}
+
+	// Search for pulpal floor: orifices funnel from pulp chamber towards roots (z slightly below maxPulpSliceZ)
+	const searchZRadius = Math.max(3, Math.ceil(3.5 / Math.max(1e-3, spacing.z)));
 	const minZ = Math.max(1, maxPulpSliceZ - searchZRadius);
-	const maxZ = Math.min(dims.depth - 2, maxPulpSliceZ + searchZRadius);
+	const maxZ = Math.min(dims.depth - 2, maxPulpSliceZ + Math.ceil(1.5 / Math.max(1e-3, spacing.z)));
 
 	interface Candidate {
 		x: number;
@@ -437,14 +464,14 @@ export function detectApicalForamina(
 	// by comparing dentin cross-section area (apices have smaller cross-section area than crowns)
 	let areaMinZ = 0;
 	let areaMaxZ = 0;
-	const checkDepth = Math.min(5, Math.floor((maxDentinZ - minDentinZ) / 3));
+	const checkDepth = Math.max(4, Math.min(22, Math.floor((maxDentinZ - minDentinZ) * 0.35)));
 
-	for (let z = minDentinZ; z <= minDentinZ + checkDepth; z++) {
+	for (let z = minDentinZ; z <= minDentinZ + Math.min(5, checkDepth); z++) {
 		for (let i = 0; i < sliceStride; i++) {
 			if (frangiResult.dentinMask[z * sliceStride + i] === 1) areaMinZ++;
 		}
 	}
-	for (let z = maxDentinZ - checkDepth; z <= maxDentinZ; z++) {
+	for (let z = maxDentinZ - Math.min(5, checkDepth); z <= maxDentinZ; z++) {
 		for (let i = 0; i < sliceStride; i++) {
 			if (frangiResult.dentinMask[z * sliceStride + i] === 1) areaMaxZ++;
 		}
@@ -476,7 +503,7 @@ export function detectApicalForamina(
 				const tubeness = frangiResult.tubeness[idx] ?? 0;
 
 				// Apex foramen: dentin/pdl junction with lumen
-				if (hu <= 1100 && hu >= -200) {
+				if (hu <= 1100 && hu >= -350) {
 					const distFromTip = apicalIsAtMinZ ? z - minDentinZ : maxDentinZ - z;
 					const score = tubeness * 2.0 + 1.0 / (distFromTip + 1.0);
 					candidates.push({ x, y, z, tubeness, hu, score });
@@ -906,16 +933,43 @@ export function traceCanalCenterlineRK4(
 		return [-gradMm[0] / norm, -gradMm[1] / norm, -gradMm[2] / norm];
 	};
 
-	for (let step = 0; step < maxSteps; step++) {
+	let prevDist = Math.hypot(currentMm[0] - targetMm[0], currentMm[1] - targetMm[1], currentMm[2] - targetMm[2]);
+	let prevT = Infinity;
+	const effectiveTolerance = Math.max(toleranceMm, minSpacingMm * 2.0);
+
+	for (let step = 0; step < Math.min(1000, maxSteps); step++) {
 		const distToOrifice = Math.hypot(
 			currentMm[0] - targetMm[0],
 			currentMm[1] - targetMm[1],
 			currentMm[2] - targetMm[2],
 		);
 
-		if (distToOrifice <= toleranceMm) {
+		// Stop conditions:
+		// 1. Within tolerance (e.g. 0.8-1.0mm)
+		if (distToOrifice <= effectiveTolerance) {
 			break;
 		}
+
+		// 2. Distance starts increasing after approaching near target
+		if (distToOrifice < 2.0 && distToOrifice > prevDist + 0.05) {
+			break;
+		}
+
+		// 3. Arrival time checks: stop if arrival time reaches seed well or ceases decreasing
+		const vox = worldToVoxelContinuous(currentMm, spacing, origin);
+		if (
+			vox[0] >= 0 && vox[0] < dimensions.width - 1 &&
+			vox[1] >= 0 && vox[1] < dimensions.height - 1 &&
+			vox[2] >= 0 && vox[2] < dimensions.depth - 1
+		) {
+			const { T } = evaluateTimeAndGradient(timeField, dimensions, spacing, vox[0], vox[1], vox[2]);
+			if (T <= 0.05 || (step > 10 && T >= prevT - 1e-5)) {
+				break;
+			}
+			prevT = T;
+		}
+
+		prevDist = distToOrifice;
 
 		// RK4 Stage 1
 		const k1 = evalDirection(currentMm);
@@ -961,9 +1015,12 @@ export function traceCanalCenterlineRK4(
 	trajectoryMm.reverse();
 
 	// Ensure exact orifice and apex endpoints are anchored
-	if (trajectoryMm.length > 0) {
+	if (trajectoryMm.length > 1) {
 		trajectoryMm[0] = [targetMm[0], targetMm[1], targetMm[2]];
 		trajectoryMm[trajectoryMm.length - 1] = [apex.worldPositionMm[0], apex.worldPositionMm[1], apex.worldPositionMm[2]];
+	} else if (trajectoryMm.length === 1) {
+		trajectoryMm.push([apex.worldPositionMm[0], apex.worldPositionMm[1], apex.worldPositionMm[2]]);
+		trajectoryMm[0] = [targetMm[0], targetMm[1], targetMm[2]];
 	}
 
 	return trajectoryMm;
@@ -1004,43 +1061,51 @@ export function extractRootCanalSystem(
 	// Step 3: Compute speed map
 	const speedMap = computeSpeedMap(frangiResult, volume, options);
 
-	// Step 4: Run Fast Marching from detected orifices
+	// Step 4: Run Fast Marching and trace canals
 	const strideZ = frangiResult.dimensions.width * frangiResult.dimensions.height;
 	const strideY = frangiResult.dimensions.width;
-	const seedIndices = orifices.map(
-		(o) => o.voxelCoordinates[2] * strideZ + o.voxelCoordinates[1] * strideY + o.voxelCoordinates[0],
-	);
-
-	const timeField = runFastMarching(speedMap, frangiResult.dimensions, frangiResult.spacingMm, seedIndices);
-
-	// Step 5: For each apex, trace back to best corresponding orifice
 	const canals: TracedCanalPath[] = [];
+	const assignedApexIds = new Set<string>();
 
-	for (let i = 0; i < apices.length; i++) {
-		const apex = apices[i]!;
-		// Find closest or lowest arrival-time orifice
-		let bestOrifice = orifices[0]!;
-		let minOrificeDist = Infinity;
+	for (let i = 0; i < orifices.length; i++) {
+		const orifice = orifices[i]!;
+		const seedIdx =
+			orifice.voxelCoordinates[2] * strideZ +
+			orifice.voxelCoordinates[1] * strideY +
+			orifice.voxelCoordinates[0];
 
-		for (const o of orifices) {
-			const d = Math.hypot(
-				apex.worldPositionMm[0] - o.worldPositionMm[0],
-				apex.worldPositionMm[1] - o.worldPositionMm[1],
-				apex.worldPositionMm[2] - o.worldPositionMm[2],
-			);
-			if (d < minOrificeDist) {
-				minOrificeDist = d;
-				bestOrifice = o;
+		// Solve dedicated arrival time field for this orifice
+		const timeField = runFastMarching(speedMap, frangiResult.dimensions, frangiResult.spacingMm, [seedIdx]);
+
+		// Find best matching apex by lowest arrival time (geodesic proximity)
+		let bestApex = apices[0]!;
+		let minArrivalTime = Infinity;
+
+		for (const apex of apices) {
+			const aIdx =
+				apex.voxelCoordinates[2] * strideZ +
+				apex.voxelCoordinates[1] * strideY +
+				apex.voxelCoordinates[0];
+			const t = timeField[aIdx] ?? Infinity;
+
+			// Strongly prefer unassigned apex to avoid duplicates
+			const penalty = assignedApexIds.has(apex.id) ? 1000 : 0;
+			const cost = t + penalty;
+			if (cost < minArrivalTime) {
+				minArrivalTime = cost;
+				bestApex = apex;
 			}
 		}
+
+		assignedApexIds.add(bestApex.id);
 
 		const polylineMm = traceCanalCenterlineRK4(
 			timeField,
 			frangiResult.dimensions,
 			frangiResult.spacingMm,
 			volume.originMm,
-			bestOrifice,
-			apex,
+			orifice,
+			bestApex,
 			options,
 		);
 
@@ -1066,19 +1131,19 @@ export function extractRootCanalSystem(
 		}
 
 		const numPoints = Math.max(1, polylineMm.length);
-		const lastPt = polylineMm[0] ?? bestOrifice.worldPositionMm;
+		const lastPt = polylineMm[0] ?? orifice.worldPositionMm;
 		const reached =
 			Math.hypot(
-				lastPt[0] - bestOrifice.worldPositionMm[0],
-				lastPt[1] - bestOrifice.worldPositionMm[1],
-				lastPt[2] - bestOrifice.worldPositionMm[2],
-			) <= options.arrivalToleranceMm;
+				lastPt[0] - orifice.worldPositionMm[0],
+				lastPt[1] - orifice.worldPositionMm[1],
+				lastPt[2] - orifice.worldPositionMm[2],
+			) <= Math.max(options.arrivalToleranceMm, 1.0);
 
 		canals.push({
 			canalId: `canal_${i + 1}`,
-			canalName: bestOrifice.canalName,
-			orifice: bestOrifice,
-			apicalForamen: apex,
+			canalName: orifice.canalName,
+			orifice,
+			apicalForamen: bestApex,
 			polylineMm,
 			geodesicLengthMm: totalLengthMm,
 			meanTubeness: sumTubeness / numPoints,

@@ -16,7 +16,7 @@ import {
 	type PriceLockResolutionPolicy,
 	validatePlanToInvoice,
 } from "@dental/shared";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -358,7 +358,13 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			const staffList = await db
 				.select({ id: users.id, fullName: users.fullName, pinCodeHash: users.pinCodeHash, role: users.role })
 				.from(users)
-				.where(and(eq(users.organizationId, orgId), eq(users.isActive, true)));
+				.where(
+					and(
+						eq(users.organizationId, orgId),
+						eq(users.isActive, true),
+						isNotNull(users.pinCodeHash),
+					),
+				);
 
 			for (const staff of staffList) {
 				if (staff.pinCodeHash) {

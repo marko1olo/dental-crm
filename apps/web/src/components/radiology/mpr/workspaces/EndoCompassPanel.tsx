@@ -1,5 +1,5 @@
 import React from "react";
-import { Compass, AlertTriangle, CheckCircle, ShieldAlert, Sparkles, Activity } from "lucide-react";
+import { Compass, AlertTriangle, CheckCircle, ShieldAlert, Sparkles, Activity, FilePlus } from "lucide-react";
 
 
 export interface EndoCanalSummaryItem {
@@ -15,7 +15,7 @@ export interface EndoCanalSummaryItem {
 }
 
 export interface EndoCompassClinicalData {
-	readonly toothFdi: number;
+	readonly toothFdi?: number;
 	readonly rootCount: number;
 	readonly canals: readonly EndoCanalSummaryItem[];
 	readonly vertucciType: string;
@@ -23,7 +23,12 @@ export interface EndoCompassClinicalData {
 	readonly overallRiskTier: "low" | "moderate" | "severe";
 	readonly recommendedTaper: string;
 	readonly reciprocatingMotion: boolean;
-	readonly clinicalSummaryRu: string;
+	readonly clinicalSummaryRu?: string;
+	readonly curvedCanalsCount?: number;
+	readonly severeCurvatureCount?: number;
+	readonly hasMb2Canal?: boolean;
+	readonly sApexRiskCount?: number;
+	readonly overallPruettTiers?: readonly string[];
 }
 
 export interface EndoCompassPanelProps {
@@ -33,6 +38,7 @@ export interface EndoCompassPanelProps {
 	readonly onSelectCanal: (canalId: string) => void;
 	readonly onRunAnalysis: () => void;
 	readonly onExportToEmr: () => void;
+	readonly onExportToPlan?: (() => void) | undefined;
 	readonly onClose?: () => void;
 }
 
@@ -43,31 +49,36 @@ export const EndoCompassPanel: React.FC<EndoCompassPanelProps> = ({
 	onSelectCanal,
 	onRunAnalysis,
 	onExportToEmr,
+	onExportToPlan,
 	onClose,
 }) => {
 	if (!data && !isAnalyzing) {
 		return (
 			<div
-				className="flex flex-col items-center justify-center p-4 bg-zinc-950/95 border border-zinc-800 rounded-lg text-center backdrop-blur-md shadow-lg gap-2 text-zinc-300"
+				className="flex flex-col items-center justify-center p-3.5 bg-zinc-950/95 border border-zinc-800 rounded-lg text-center backdrop-blur-md shadow-lg gap-2 text-zinc-300 w-full"
 				data-testid="endo-compass-empty-state"
 			>
-				<div className="w-9 h-9 rounded-full bg-cyan-950/50 border border-cyan-800/60 flex items-center justify-center text-cyan-400">
-					<Compass className="w-5 h-5 text-cyan-400" />
+				<div className="w-8 h-8 rounded-full bg-cyan-950/60 border border-cyan-700/60 flex items-center justify-center text-cyan-400">
+					<Compass className="w-4 h-4 text-cyan-400" />
 				</div>
-				<div className="flex flex-col">
+				<div className="flex flex-col gap-0.5 items-center">
 					<span className="text-xs font-semibold text-zinc-200">Эндодонтический Компас 3D</span>
-					<span className="text-[11px] text-zinc-400 max-w-[240px]">
-						Аналитическая 3D-детекция устьев, апексов и кривизны каналов по вокселям КЛКТ
+					<span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-800/80 text-cyan-300 font-medium my-0.5">
+						<span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+						Безопасный режим просмотра срезов зуба
+					</span>
+					<span className="text-[11px] text-zinc-400 max-w-[280px] leading-tight">
+						Каналы рассчитываются в изолированном воркер-контуре по вокселям КЛКТ без ложных предустановок
 					</span>
 				</div>
 				<button
 					type="button"
 					onClick={onRunAnalysis}
-					className="mt-1 h-7 px-3 rounded text-xs font-medium bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+					className="mt-1 h-7 px-3 rounded text-xs font-medium bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
 					data-testid="endo-compass-start-analysis-btn"
 				>
 					<Sparkles className="w-3.5 h-3.5" />
-					<span>Запустить анализ 3D</span>
+					<span>Запустить расчет в воркере</span>
 				</button>
 			</div>
 		);
@@ -76,13 +87,13 @@ export const EndoCompassPanel: React.FC<EndoCompassPanelProps> = ({
 	if (isAnalyzing) {
 		return (
 			<div
-				className="flex flex-col items-center justify-center p-6 bg-zinc-950/95 border border-zinc-800 rounded-lg text-center backdrop-blur-md shadow-lg gap-3"
+				className="flex flex-col items-center justify-center p-5 bg-zinc-950/95 border border-zinc-800 rounded-lg text-center backdrop-blur-md shadow-lg gap-2.5 w-full"
 				data-testid="endo-compass-loading-state"
 			>
-				<div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
-				<div className="flex flex-col gap-0.5">
-					<span className="text-xs font-medium text-cyan-300">Расчет тензора Гессе и FMM...</span>
-					<span className="text-[10px] text-zinc-400">Фильтр Франги (0.35-0.6 мм) • Уравнение Эйконала</span>
+				<div className="w-7 h-7 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+				<div className="flex flex-col gap-0.5 items-center">
+					<span className="text-xs font-medium text-cyan-300">Каналы рассчитываются в изолированном воркер-контуре...</span>
+					<span className="text-[10px] text-zinc-400">Фильтр Франги и уравнение Эйконала • Безопасный режим</span>
 				</div>
 			</div>
 		);
@@ -221,27 +232,41 @@ export const EndoCompassPanel: React.FC<EndoCompassPanelProps> = ({
 				})()
 			)}
 
-			{/* Actions: Re-Run & Export to Form 043/u */}
-			<div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/80">
+			{/* Actions: Re-Run & Export to Form 043/u & Treatment Plan */}
+			<div className="flex items-center justify-between gap-1.5 pt-1 border-t border-zinc-800/80">
 				<button
 					type="button"
 					onClick={onRunAnalysis}
-					className="px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-zinc-200 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 transition-colors cursor-pointer"
+					className="px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-zinc-200 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 transition-colors cursor-pointer shrink-0"
 					title="Пересчитать устья и каналы"
 					data-testid="endo-compass-rerun-btn"
 				>
 					Пересчет
 				</button>
-				<button
-					type="button"
-					onClick={onExportToEmr}
-					className="px-2.5 py-1 rounded text-[11px] font-medium bg-cyan-700 hover:bg-cyan-600 text-white border border-cyan-600 flex items-center gap-1 transition-colors cursor-pointer"
-					title="Перенести данные в электронную медкарту Form 043/u"
-					data-testid="endo-compass-export-emr-btn"
-				>
-					<Activity className="w-3 h-3" />
-					<span>В протокол 043/у</span>
-				</button>
+				<div className="flex items-center gap-1.5 shrink-0">
+					{onExportToPlan && (
+						<button
+							type="button"
+							onClick={onExportToPlan}
+							className="px-2 py-1 rounded text-[11px] font-medium bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 border border-emerald-600/70 flex items-center gap-1 transition-colors cursor-pointer"
+							title="Добавить услуги эндодонтии в план лечения пациента (Приказ 804н)"
+							data-testid="endo-compass-export-plan-btn"
+						>
+							<FilePlus className="w-3 h-3 text-emerald-300" />
+							<span>+ В план</span>
+						</button>
+					)}
+					<button
+						type="button"
+						onClick={onExportToEmr}
+						className="px-2 py-1 rounded text-[11px] font-medium bg-cyan-700 hover:bg-cyan-600 text-white border border-cyan-600 flex items-center gap-1 transition-colors cursor-pointer"
+						title="Перенести данные в электронную медкарту Form 043/u"
+						data-testid="endo-compass-export-emr-btn"
+					>
+						<Activity className="w-3 h-3 text-cyan-200" />
+						<span>В 043/у</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	);

@@ -165,7 +165,7 @@ export function AppointmentModalDoctorChairSection({
               }
             }
           }}
-          className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] font-medium"
         />
       </div>
 
@@ -178,7 +178,7 @@ export function AppointmentModalDoctorChairSection({
           type="datetime-local"
           value={endsAtLocal}
           onChange={(e) => setEndsAtLocal(e.target.value)}
-          className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] font-medium"
         />
       </div>
 
@@ -202,26 +202,29 @@ export function AppointmentModalDoctorChairSection({
           className="flex items-center gap-1.5 flex-wrap"
           data-testid="appointment-quick-durations"
         >
-          {[15, 30, 45, 60, 90, 120].map((mins) => (
-            <button
-              key={mins}
-              type="button"
-              onClick={() => applyDuration(mins)}
-              className={`h-7 sm:h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                currentDurationMinutes === mins
-                  ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
-                  : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
-              }`}
-            >
-              {mins < 60
-                ? `${mins} мин`
-                : mins === 60
-                  ? "1 час"
-                  : mins === 90
-                    ? "1.5 ч"
-                    : "2 часа"}
-            </button>
-          ))}
+          {[15, 30, 45, 60, 90, 120].map((mins) => {
+            const isSelected = currentDurationMinutes === mins;
+            return (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => applyDuration(mins)}
+                className={`appointment-modal-duration-chip ${isSelected ? "active" : ""} h-8 sm:h-8.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
+                  isSelected
+                    ? "!bg-[var(--teal)] !text-white !border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]/25 font-bold"
+                    : "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--paper-subtle)] hover:border-[var(--teal)] hover:text-[var(--teal)]"
+                }`}
+              >
+                {mins < 60
+                  ? `${mins} мин`
+                  : mins === 60
+                    ? "1 час"
+                    : mins === 90
+                      ? "1.5 ч"
+                      : "2 часа"}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -318,7 +321,7 @@ export function AppointmentModalDoctorChairSection({
               }
             }
           }}
-          className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
           data-testid="select-appointment-doctor"
         >
           <option value="">-- Выберите врача --</option>
@@ -330,7 +333,7 @@ export function AppointmentModalDoctorChairSection({
         </select>
         {dutyDoc && (
           <div
-            className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
+            className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/25 shadow-2xs"
             data-testid="duty-doctor-badge"
           >
             <UserCheck
@@ -348,7 +351,7 @@ export function AppointmentModalDoctorChairSection({
           dutyDoc.id &&
           doctorUserId !== dutyDoc.id && (
             <div
-              className="mt-1 p-2 rounded-lg text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-1.5"
+              className="mt-1 p-2 rounded-xl text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-1.5"
               data-testid="duty-doctor-override-note"
             >
               <AlertTriangle
@@ -379,7 +382,7 @@ export function AppointmentModalDoctorChairSection({
           <select
             value={assistantUserId || ""}
             onChange={(e) => setAssistantUserId(e.target.value || null)}
-            className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+            className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
             data-testid="select-appointment-assistant"
           >
             <option value="">-- Без ассистента (соло-приём) --</option>
@@ -417,7 +420,7 @@ export function AppointmentModalDoctorChairSection({
               }
             }
           }}
-          className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
           data-testid="select-appointment-chair"
         >
           {chairs.length === 0 ? (

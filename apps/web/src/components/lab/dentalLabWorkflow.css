@@ -327,17 +327,23 @@
 .ztl-kanban-board {
 	flex: 1;
 	display: grid;
-	grid-template-columns: repeat(4, minmax(260px, 1fr));
-	gap: 14px;
-	padding: 16px 20px;
+	grid-template-columns: repeat(5, minmax(220px, 1fr));
+	gap: 12px;
+	padding: 16px;
 	overflow-x: auto;
-	overflow-y: hidden;
 	background: var(--paper-soft);
+}
+
+@media (max-width: 1280px) {
+	.ztl-kanban-board {
+		grid-template-columns: repeat(3, minmax(240px, 1fr));
+		overflow-y: auto;
+	}
 }
 
 @media (max-width: 1024px) {
 	.ztl-kanban-board {
-		grid-template-columns: repeat(2, minmax(260px, 1fr));
+		grid-template-columns: repeat(2, minmax(240px, 1fr));
 		overflow-y: auto;
 	}
 }

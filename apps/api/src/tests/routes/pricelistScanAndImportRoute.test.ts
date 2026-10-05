@@ -183,4 +183,32 @@ describe("POST /api/pricelist/scan-and-import Route & Integration Engine", () =>
 		// When DENTAL_STATE_PERSISTENCE=off, endpoint gracefully reports ServiceCatalogStorageDisabled (503) or success
 		assert.ok(response.statusCode === 200 || response.statusCode === 503);
 	});
+
+	it("5. Commit mode with approvedItems and link_existing action succeeds without raw payload", async () => {
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/pricelist/scan-and-import",
+			headers: {
+				"x-organization-id": testOrgId,
+			},
+			payload: {
+				commit: true,
+				collisionStrategy: "update_existing",
+				approvedItems: [
+					{
+						cleanedTitle: "Удаление ретинированного зуба мудрости",
+						code804n: "A16.07.024",
+						category: "surgery",
+						specialty: "surgeon",
+						priceRub: 7500,
+						suggestedAction: "link_existing",
+						matchedExistingServiceId: "srv-exist-01",
+						isApproved: true,
+					},
+				],
+			},
+		});
+
+		assert.ok(response.statusCode === 200 || response.statusCode === 503);
+	});
 });

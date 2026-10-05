@@ -17,6 +17,7 @@ import { formatKopecksToRubAndKop } from "../documents/paidContract/money";
 import {
 	maskRussianPhone as canonicalMaskRussianPhone,
 } from "../../utils/formatters";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA CONTRACTS & INTERFACES
@@ -1236,14 +1237,26 @@ export function createChairsideConsentPackage(
 	const packageId = params.packageId || "CSP-" + Date.now().toString(36).toUpperCase() + "-" + generateSecurePackageSuffix();
 	const createdAt = new Date().toISOString();
 
+	const isDemo = isDemoShowcaseMode();
 	const clinic: ChairsideClinicProfile = {
-		...DEFAULT_CHAIRSIDE_CLINIC,
+		...(isDemo
+			? DEFAULT_CHAIRSIDE_CLINIC
+			: {
+					legalName: "«________________________________________»",
+					brandName: "«________________________________________»",
+					ogrn: "«________________»",
+					inn: "«______________»",
+					address: "«________________________________________»",
+					licenseNumber: "«________________________________________»",
+					licenseDate: "«____» ________ 20___ г.",
+					licenseIssuer: "«________________________________________»",
+				}),
 		...(params.clinic || {}),
 	};
 
 	const clinicalContext: ChairsideClinicalContext = {
-		diagnosisIcd: params.clinicalContext?.diagnosisIcd || "K02.1 Кариес дентина",
-		teeth: params.clinicalContext?.teeth || ["16"],
+		diagnosisIcd: params.clinicalContext?.diagnosisIcd || (isDemo ? "K02.1 Кариес дентина" : ""),
+		teeth: params.clinicalContext?.teeth || (isDemo ? ["16"] : []),
 		anamnesisAllergies: params.clinicalContext?.anamnesisAllergies,
 		specialNotes: params.clinicalContext?.specialNotes,
 	};

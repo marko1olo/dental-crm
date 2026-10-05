@@ -1,0 +1,57 @@
+{
+  "role": "Database Performance & N+1 Inquisitor",
+  "status": "COMPLETED",
+  "step": "VERIFIED_AND_REPORTED",
+  "completed_steps": [
+    "Step 0: Mandatory full reading of THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DATABASE.md, core.md, GEMINI.md completed without skimming.",
+    "Step 1: Compound indices added to Drizzle schemas (appointments, patients, payments, stock_batches).",
+    "Step 2: Migration 0211_performance_compound_indexes.sql created and executed in PostgreSQL 18.",
+    "Step 3: Elimination of N+1 queries in appointments, staff chat, inventory receipt/waybill, and invoice admin pin checks.",
+    "Step 4: Verification passed: npm run typecheck -w @dental/api (Exit Code 0), npm run check:encoding (7767 files, 0 errors).",
+    "Step 5: Targeted tests executed and passed (scheduleRealtimeIntercomIntegration, warehouseStockEndpoint, inventoryAutoDeduct, inventoryExpirationDate, invoiceKeepsItsAmount)."
+  ],
+  "pending_steps": [],
+  "findings": {
+    "compound_indexes_added": [
+      "idx_appointments_org_doctor_time: appointments(organization_id, doctor_user_id, starts_at)",
+      "idx_appointments_org_time: appointments(organization_id, starts_at, ends_at) [already present in 0180]",
+      "idx_patients_org_created_desc: patients(organization_id, created_at DESC)",
+      "idx_patients_search_tsv_gin: patients USING gin(to_tsvector('russian', coalesce(full_name, '') || ' ' || coalesce(phone, '')))",
+      "idx_payments_org_created_desc: payments(organization_id, created_at DESC)",
+      "idx_payments_org_status: payments(organization_id, status) [already present in 0180]",
+      "idx_stock_batches_org_item_status_exp: stock_batches(organization_id, inventory_item_id, status, expiration_date)"
+    ],
+    "n_plus_one_eliminations": [
+      {
+        "module": "apps/api/src/routes/appointments.ts",
+        "route": "PATCH /api/appointments/:appointmentId",
+        "optimization": "Replaced 3 sequential single queries for patient, doctor, and chair plus a loop of channel lookups with a single LEFT JOIN appointments query and batched inArray staffChatChannels lookup. Reduced from 4+N queries to 2 queries."
+      },
+      {
+        "module": "apps/api/src/db/staffChatQuery.ts",
+        "method": "listStaffChannels",
+        "optimization": "Replaced 2N sequential per-channel queries (last message + unread count) with 2 batched queries across channelIds using inArray and SQL groupBy. Reduced from 1+2N queries to 3 queries flat."
+      },
+      {
+        "module": "apps/api/src/db/inventoryQuery.ts & apps/api/src/routes/inventory.ts",
+        "methods": "receiveGoodsReceiptInvoice & POST /api/inventory/acceptance-waybill",
+        "optimization": "Replaced per-item SELECT ... FOR UPDATE loop with single batched inArray query preloaded into Map<string, InventoryItem>. Added batch helper getStockBalancesByItemIds and itemIds option to getStockBatches. Reduced from 2N queries to 2 queries."
+      },
+      {
+        "module": "apps/api/src/routes/invoices.ts",
+        "route": "POST /api/invoices/:invoiceId/admin-pin-override",
+        "optimization": "Added isNotNull(users.pinCodeHash) filter directly to SQL query instead of filtering users in memory."
+      }
+    ],
+    "test_verification": {
+      "scheduleRealtimeIntercomIntegration.test.ts": "PASSED (1/1)",
+      "warehouseStockEndpoint.test.ts": "PASSED (9/9)",
+      "inventoryAutoDeduct.test.ts": "PASSED (3/3)",
+      "inventoryExpirationDate.test.ts": "PASSED (4/4)",
+      "invoiceKeepsItsAmount.test.ts": "PASSED (5/5)",
+      "typecheck": "PASSED (tsc exit 0)",
+      "check:encoding": "PASSED (7767 files 0 errors)"
+    }
+  },
+  "timestamp": "2026-10-05T10:00:00Z"
+}

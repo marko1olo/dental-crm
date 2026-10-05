@@ -23,6 +23,10 @@ import { calculateSplineLength3DMm, interpolateNerveSpline3D, project3DNerveToCr
 import { type HUZoneSampling, type MischClassificationResult, classifyMischBoneQuality } from "./boneDensityMischMath";
 import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
 import { showToast } from "../GlobalToast";
+import {
+	exportEndoToDiary043,
+	exportEndoToTreatmentPlan,
+} from "./endoClinicalIntegrationBridge";
 import { useCbctStudioExports } from "./mpr/useCbctStudioExports";
 import { type StudioMode, type ViewLayoutMode, type CbctMprImplantStudioModalProps, DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getDefaultViewportTransforms } from "./mpr/cbctStudioTypes";
 import { CbctHeaderBar } from "./mpr/CbctHeaderBar";
@@ -530,8 +534,12 @@ export const CbctMprImplantStudioModal: React.FC<
 	}, [handleSelectPreset]);
 
 	const {
-		handleExportToPlan, handleExportToSchedule, handleExportToEmr,
-		handleExportCbctToFinance, handleExportToLab, handleExportPdfReport,
+		handleExportToPlan: handleImplantExportToPlan,
+		handleExportToSchedule,
+		handleExportToEmr: handleImplantExportToEmr,
+		handleExportCbctToFinance,
+		handleExportToLab,
+		handleExportPdfReport,
 	} = useCbctStudioExports({
 		patientId, patientDisplayName, study, activeCrossSection, activeCaliper,
 		currentImplantSpec, currentImplantPose, currentCanal, implantAngulationDeg,
@@ -539,6 +547,64 @@ export const CbctMprImplantStudioModal: React.FC<
 		displayDrillingProtocol, nerveAuditResult, huSamplingResult, mischClassification,
 		onApplyToPlan, onApplyToDiary043, onOpenLabOrder: handleOpenLabOrder,
 	});
+
+	const handleExportToEmr = useCallback(() => {
+		if (studioMode === "endo") {
+			const toothFdi = activeCrossSection?.nearestToothFdi ? Number(activeCrossSection.nearestToothFdi) : 36;
+			const exported = exportEndoToDiary043({
+				patientId,
+				patientDisplayName: patientName,
+				toothFdi,
+				clinicalData: {
+					toothFdi,
+					vertucciType: "I",
+					vertucciNameRu: "Тип I (1-1)",
+					rootCount: 2,
+					canals: [],
+					overallRiskTier: "moderate",
+					recommendedTaper: "0.04",
+					reciprocatingMotion: false,
+					clinicalSummaryRu: "Стандартный эндодонтический доступ",
+				},
+			});
+			if (onApplyToDiary043) {
+				onApplyToDiary043(`${exported.statusLocalis}\n\n${exported.treatmentDescription}`);
+			}
+			showToast(`Эндодонтический протокол 043/у (зуб #${toothFdi}) перенесен в карту`, "success");
+			return;
+		}
+		handleImplantExportToEmr();
+	}, [studioMode, activeCrossSection, patientId, patientName, onApplyToDiary043, handleImplantExportToEmr]);
+
+	const handleExportToPlan = useCallback(() => {
+		if (studioMode === "endo") {
+			const toothFdi = activeCrossSection?.nearestToothFdi ? Number(activeCrossSection.nearestToothFdi) : 36;
+			const exportedItems = exportEndoToTreatmentPlan({
+				patientId,
+				patientDisplayName: patientName,
+				toothFdi,
+				clinicalData: {
+					toothFdi,
+					vertucciType: "I",
+					vertucciNameRu: "Тип I (1-1)",
+					rootCount: 2,
+					canals: [],
+					overallRiskTier: "moderate",
+					recommendedTaper: "0.04",
+					reciprocatingMotion: false,
+					clinicalSummaryRu: "Стандартный эндодонтический доступ",
+				},
+			});
+			if (onApplyToPlan) {
+				for (const it of exportedItems) {
+					onApplyToPlan(it);
+				}
+			}
+			showToast(`Эндодонтические услуги 804н (зуб #${toothFdi}) добавлены в план лечения`, "success");
+			return;
+		}
+		handleImplantExportToPlan();
+	}, [studioMode, activeCrossSection, patientId, patientDisplayName, onApplyToPlan, handleImplantExportToPlan]);
 
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -702,7 +768,7 @@ export const CbctMprImplantStudioModal: React.FC<
 					/>
 
 					<CbctMprViewportsGrid
-						isSidebarOpen={isSidebarOpen} mobileActiveTab={mobileActiveTab} patientDisplayName={patientDisplayName} onSelectMobileTab={setMobileActiveTab}
+						isSidebarOpen={isSidebarOpen} mobileActiveTab={mobileActiveTab} patientDisplayName={patientDisplayName} patientId={patientId} onSelectMobileTab={setMobileActiveTab}
 						volume={volume} dicomLoadingStatus={dicomLoader.dicomLoadingStatus} dicomProgress={dicomLoader.dicomProgress}
 						maximizedViewport={maximizedViewport} viewLayout={viewLayout} studioMode={studioMode} onSelectStudioMode={handleSelectStudioMode}
 						folderInputRef={dicomLoader.folderInputRef} zipInputRef={dicomLoader.zipInputRef} handleDicomFilesChange={dicomLoader.handleDicomFilesChange}

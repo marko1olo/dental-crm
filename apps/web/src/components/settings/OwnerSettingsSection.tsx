@@ -52,6 +52,8 @@ import { SettingsReportingTab } from "./SettingsReportingTab";
 import { SettingsSourcesTab } from "./SettingsSourcesTab";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
 import { OwnerPriceList804nSection } from "./owner/OwnerPriceList804nSection";
+import { DeepClinicalSettingsSection } from "./DeepClinicalSettingsSection";
+import { SovereignScalePresetsCard } from "../onboarding/SovereignScalePresetsCard";
 
 export type OwnerSubTab =
 	| "clinic"
@@ -63,7 +65,8 @@ export type OwnerSubTab =
 	| "imports"
 	| "backup"
 	| "audit"
-	| "sources";
+	| "sources"
+	| "deep-clinical";
 
 export interface OwnerSettingsSectionProps {
 	// biome-ignore lint/suspicious/noExplicitAny: props bag
@@ -139,6 +142,12 @@ const OWNER_TABS: Array<{
 		label: "Источники снимков и КТ",
 		description: "DICOM, PACS-сервер, сетевые хранилища снимков",
 		icon: Database,
+	},
+	{
+		id: "deep-clinical",
+		label: "Клинические протоколы и автономия",
+		description: "ЭМК, ИДС 1051н, нормы списаний, интерком и 54-ФЗ автономия",
+		icon: Sparkles,
 	},
 ];
 
@@ -254,81 +263,25 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				</div>
 			</div>
 
-			{/* Scale Sovereignty Preset Bar (Mandate 8s) */}
-			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-						<Scale size={14} className="text-amber-600" />
-						Масштаб клиники и формат работы:
-					</span>
-					<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
-						Интерфейс мгновенно адаптирует сложность под формат клиники
-					</span>
-				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-					<button
-						type="button"
-						onClick={() => handleScaleChange("solo_doctor")}
-						className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-							currentClinicMode === "solo_doctor" || currentClinicMode === "one_chair"
-								? "bg-amber-500/15 border-amber-500/50 shadow-xs ring-1 ring-amber-500/30 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-amber-400"
-						}`}
-						data-testid="scale-preset-solo"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Одиночный врач-арендатор</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${currentClinicMode === "solo_doctor" ? "bg-amber-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								1 кресло
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1.5">
-							0 лишней бюрократии, 1 клик чекаут, без обязательных ассистентов
-						</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleScaleChange("small_clinic")}
-						className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-							currentClinicMode === "small_clinic"
-								? "bg-teal-500/15 border-teal-500/50 shadow-xs ring-1 ring-teal-500/30 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-teal-400"
-						}`}
-						data-testid="scale-preset-small"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Небольшая клиника</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${currentClinicMode === "small_clinic" ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								2–4 кресла
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1.5">
-							Удобное разделение смен, онлайн-касса, общая картотека, склад
-						</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => handleScaleChange("network_clinic")}
-						className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-							currentClinicMode === "network_clinic"
-								? "bg-purple-500/15 border-purple-500/50 shadow-xs ring-1 ring-purple-500/30 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-purple-400"
-						}`}
-						data-testid="scale-preset-network"
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Сетевая клиника</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${currentClinicMode === "network_clinic" ? "bg-purple-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								Сеть филиалов
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1.5">
-							Единая база пациентов, мульти-филиальные отчеты, центральный склад
-						</span>
-					</button>
-				</div>
+			{/* Scale Sovereignty Presets (Mandate 8s & 8n: Doctor Autonomy & Database-Backed Presets) */}
+			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+				<SovereignScalePresetsCard
+					compactMode={false}
+					hideHeader={false}
+					onPresetApplied={(presetId) => {
+						const targetMode: ClinicMode =
+							presetId === "solo_doctor"
+								? "solo_doctor"
+								: presetId === "standard_clinic"
+									? "small_clinic"
+									: "network_clinic";
+						if (appLogic?.changeClinicMode) {
+							appLogic.changeClinicMode(targetMode);
+						} else if (props?.changeClinicMode) {
+							props.changeClinicMode(targetMode);
+						}
+					}}
+				/>
 			</div>
 
 			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px) */}
@@ -511,6 +464,12 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				{activeSubTab === "sources" && (
 					<ErrorBoundary moduleName="Источники снимков и КТ">
 						<SettingsSourcesTab />
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "deep-clinical" && (
+					<ErrorBoundary moduleName="Клинические протоколы и автономия">
+						<DeepClinicalSettingsSection />
 					</ErrorBoundary>
 				)}
 			</div>

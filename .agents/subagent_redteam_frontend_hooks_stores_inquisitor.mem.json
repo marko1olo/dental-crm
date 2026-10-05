@@ -1,0 +1,35 @@
+{
+  "role": "Red Team Inquisitor: Frontend Hooks, Stores & Client State",
+  "status": "completed",
+  "phase": "verified",
+  "completed_steps": [
+    "Law 0: Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md completely",
+    "AST & pattern census of 2919 web source files, 55 hook files, 20 store files, 168 hooks",
+    "Identified orphan & duplicate stores: uiStore.ts (100% orphan store, dead chunk in vite.config.ts, duplicate UiLanguage)",
+    "Identified orphan domain hooks: useDashboardLoaderLogic.ts (duplicate inline implementation in useAppLogic.tsx), useSanpinScheduleSyncLogic.ts (unwired from UI), useDebounce.ts (0 callers), useOfflinePatientSync (0 callers)",
+    "Fixed uiStore.ts orphan: re-exported UiLanguage from @dental/shared, deprecated useUiStore, imported UiLanguage in AppConstants.ts from shared, removed ui-store manualChunk from vite.config.ts",
+    "Wired useDashboardLoaderLogic into useAppLogic.tsx: resolved circular dependency with auth via authRef, eliminated 93 lines of duplicate inline logic, wired speech/persistence refs",
+    "Connected useSanpinScheduleSyncLogic to RetroactiveBatchTab.tsx: enabled 1-click schedule load synchronization & CSV export",
+    "Connected useDebounce to useQuickBookingPatientSearch.ts: eliminated keystroke search thrashing on weak laptops",
+    "Connected useOfflinePatientSync to PatientCabinetModal.tsx: added real-time offline status indicator and background sync queue HUD",
+    "Added unit tests for useSafeTimeout, useSafeInterval, useSafeObjectUrl in useMemoryLeakGuard.test.ts",
+    "Machine verification: check-encoding (7137 files clean), check-css-tokens (13965 vars clean), 100% passing targeted tests"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "orphans_resolved": [
+      "uiStore.ts (dead manualChunk eliminated, UiLanguage re-exported from @dental/shared)",
+      "useDashboardLoaderLogic.ts (wired into useAppLogic.tsx, duplicate purged)",
+      "useSanpinScheduleSyncLogic.ts (wired into RetroactiveBatchTab.tsx with CSV export)",
+      "useDebounce.ts (wired into useQuickBookingPatientSearch.ts)",
+      "useOfflinePatientSync (wired into PatientCabinetModal.tsx header HUD)"
+    ],
+    "test_results": {
+      "check_encoding": "PASSED (7137 files)",
+      "check_css_tokens": "PASSED (13965 usages, 0 errors)",
+      "useMemoryLeakGuard_test": "PASSED (7 tests, 100%)",
+      "useSanpinScheduleSyncLogic_test": "PASSED (3 tests, 100%)",
+      "m1AdversarialRemediation_test": "PASSED (12 tests, 100%)"
+    }
+  }
+}

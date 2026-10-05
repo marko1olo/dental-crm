@@ -320,17 +320,17 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 			<div className="egisz-modal-container">
 				{/* HEADER */}
 				<header className="egisz-modal-header">
-					<div className="egisz-header-titles" style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
-						<div className="egisz-header-icon" style={{ flexShrink: 0 }}>
+					<div className="egisz-header-left">
+						<div className="egisz-header-icon-badge teal">
 							<ShieldCheck size={24} />
 						</div>
-						<div style={{ minWidth: 0 }}>
-							<div className="egisz-main-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-								Электронные медкарты и справки для налоговой — Отправка в Минздрав
-								<span className="egisz-moh-badge egisz-badge-teal" style={{ marginLeft: "0.5rem", fontSize: "0.75rem", padding: "0.15rem 0.45rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
+						<div className="egisz-header-title-group">
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>ЕГИСЗ РЭМД и справки ФНС</h2>
+								<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
 							</div>
-							<div className="egisz-sub-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-								Электронные медицинские карты и протоколы приёма • Справки для налогового вычета (13%)
+							<div className="egisz-modal-subtitle" style={{ fontSize: "0.75rem", margin: 0 }}>
+								Электронные карты 043/у (Приказ 947н) и справки КНД 1151156
 							</div>
 						</div>
 					</div>

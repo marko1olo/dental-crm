@@ -867,3 +867,30 @@
 	background: var(--teal);
 	transition: width 0.3s ease;
 }
+
+@media (max-width: 640px) {
+	.pricelist-studio-container {
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+	}
+
+	.pricelist-section-card {
+		padding: 12px;
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+		box-sizing: border-box;
+	}
+
+	.pricelist-search-wrapper {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.pricelist-search-wrapper input {
+		width: 100% !important;
+		box-sizing: border-box;
+	}
+}
+

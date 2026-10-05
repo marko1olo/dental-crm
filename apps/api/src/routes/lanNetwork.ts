@@ -11,7 +11,7 @@
 import * as crypto from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
 import { users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
@@ -353,7 +353,12 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 					return tx
 						.select({ id: users.id, fullName: users.fullName, role: users.role })
 						.from(users)
-						.where(eq(users.id, payload.staffUserId!))
+						.where(
+							and(
+								eq(users.id, payload.staffUserId!),
+								eq(users.organizationId, orgId),
+							),
+						)
 						.limit(1);
 				});
 				if (user) matchedUser = user;
@@ -364,7 +369,12 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 					return tx
 						.select({ id: users.id, fullName: users.fullName, role: users.role })
 						.from(users)
-						.where(eq(users.role, role === "assistant" ? "assistant" : "doctor"))
+						.where(
+							and(
+								eq(users.role, role === "assistant" ? "assistant" : "doctor"),
+								eq(users.organizationId, orgId),
+							),
+						)
 						.limit(1);
 				});
 				if (fallbackUser) matchedUser = fallbackUser;

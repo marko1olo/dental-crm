@@ -195,8 +195,184 @@
 		overflow-x: clip !important;
 		max-width: 100vw !important;
 	}
-	.schedule-grid-container {
-		overflow-x: clip !important;
-		max-width: 100vw !important;
-	}
 }
+
+/* ─── 5. APPOINTMENT MODAL APPLE HIG TACTILE CONTROLS ─── */
+.appointment-modal-duration-chip {
+	height: 34px !important;
+	padding: 0 12px !important;
+	border-radius: 12px !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	border: 1px solid var(--line-strong) !important;
+	background-color: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.appointment-modal-duration-chip:hover {
+	border-color: var(--teal) !important;
+	color: var(--teal) !important;
+	background-color: var(--paper-subtle, var(--paper)) !important;
+}
+
+.appointment-modal-duration-chip:active {
+	transform: scale(0.96) !important;
+}
+
+.appointment-modal-duration-chip.active {
+	background-color: var(--teal) !important;
+	color: #ffffff !important;
+	border-color: var(--teal) !important;
+	font-weight: 800 !important;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35) !important;
+}
+
+.appointment-modal-status-chip {
+	height: 36px !important;
+	padding: 0 12px !important;
+	border-radius: 12px !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.appointment-modal-status-chip:active {
+	transform: scale(0.96) !important;
+}
+
+/* Status variants */
+.appointment-modal-status-chip--planned {
+	border: 1px solid rgba(245, 158, 11, 0.35) !important;
+	background-color: rgba(245, 158, 11, 0.08) !important;
+	color: #d97706 !important;
+}
+.appointment-modal-status-chip--planned.active {
+	background-color: #f59e0b !important;
+	color: #ffffff !important;
+	border-color: #f59e0b !important;
+	box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+}
+
+.appointment-modal-status-chip--confirmed {
+	border: 1px solid rgba(16, 185, 129, 0.35) !important;
+	background-color: rgba(16, 185, 129, 0.08) !important;
+	color: #059669 !important;
+}
+.appointment-modal-status-chip--confirmed.active {
+	background-color: #10b981 !important;
+	color: #ffffff !important;
+	border-color: #10b981 !important;
+	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+}
+
+.appointment-modal-status-chip--arrived {
+	border: 1px solid rgba(245, 158, 11, 0.35) !important;
+	background-color: rgba(245, 158, 11, 0.08) !important;
+	color: #d97706 !important;
+}
+.appointment-modal-status-chip--arrived.active {
+	background-color: #f59e0b !important;
+	color: #ffffff !important;
+	border-color: #f59e0b !important;
+	box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+}
+
+.appointment-modal-status-chip--in_treatment {
+	border: 1px solid rgba(13, 148, 136, 0.35) !important;
+	background-color: rgba(13, 148, 136, 0.08) !important;
+	color: #0d9488 !important;
+}
+.appointment-modal-status-chip--in_treatment.active {
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border-color: #0d9488 !important;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.4) !important;
+}
+
+.appointment-modal-status-chip--completed {
+	border: 1px solid var(--line-strong) !important;
+	background-color: var(--paper-soft) !important;
+	color: var(--ink) !important;
+}
+.appointment-modal-status-chip--completed.active {
+	background-color: #475569 !important;
+	color: #ffffff !important;
+	border-color: #475569 !important;
+	box-shadow: 0 2px 8px rgba(71, 85, 105, 0.4) !important;
+}
+
+.appointment-modal-status-chip--no_show {
+	border: 1px solid rgba(244, 63, 94, 0.35) !important;
+	background-color: rgba(244, 63, 94, 0.08) !important;
+	color: #e11d48 !important;
+}
+.appointment-modal-status-chip--no_show.active {
+	background-color: #f43f5e !important;
+	color: #ffffff !important;
+	border-color: #f43f5e !important;
+	box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4) !important;
+}
+
+.appointment-modal-cta-save {
+	height: 44px !important;
+	padding: 0 24px !important;
+	border-radius: 12px !important;
+	font-size: 14px !important;
+	font-weight: 800 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 8px !important;
+	background-color: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	cursor: pointer !important;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.appointment-modal-cta-save:hover {
+	filter: brightness(1.08) !important;
+	box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45) !important;
+}
+
+.appointment-modal-cta-save:active {
+	transform: scale(0.97) !important;
+}
+
+.appointment-modal-cta-cancel {
+	height: 44px !important;
+	padding: 0 20px !important;
+	border-radius: 12px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	border: 1px solid var(--line-strong) !important;
+	background-color: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.appointment-modal-cta-cancel:hover {
+	background-color: var(--paper-subtle, var(--paper)) !important;
+}
+
+.appointment-modal-cta-cancel:active {
+	transform: scale(0.97) !important;
+}
+

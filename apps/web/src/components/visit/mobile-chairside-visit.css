@@ -1,0 +1,744 @@
+/**
+ * apps/web/src/components/visit/mobile-chairside-visit.css
+ * DENTE Dental CRM — Sovereign Mobile Chairside Visit Workspace (Apple iOS HIG)
+ *
+ * Invariants:
+ * 1. 0px Horizontal Drift: overflow-x: clip, max-width: 100vw, box-sizing: border-box
+ * 2. Natural Thumb Zone: Floating Bottom Bar with 20px blur and safe-area-inset-bottom
+ * 3. Glove-Friendly Touch Targets: all interactive controls >= 44x44px
+ * 4. Apple Health Grouped Cards: 16px radius, 1px var(--line), 1px var(--line-subtle) separators
+ * 5. Full Dark/Light Palette Consistency with zero blinding white spots in dark mode
+ */
+
+/* ─── 1. ROOT VIEWPORT CONTAINER ─── */
+.mobile-chairside-container {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  overflow-x: clip;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-soft, #f8fafc);
+  color: var(--ink, #0f172a);
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ─── 2. TOP HUD (COMPACT 1-ROW PATIENT BAR) ─── */
+.mobile-chairside-hud {
+  position: sticky;
+  top: 0;
+  z-index: 45;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--paper, #ffffff) 94%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  padding-top: max(8px, env(safe-area-inset-top, 8px));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-chairside-hud-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  padding: 4px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-chairside-hud-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 12px 6px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-chairside-patient-title-box {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.mobile-chairside-patient-name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink, #0f172a);
+  letter-spacing: -0.015em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.mobile-chairside-patient-subtext {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted, #64748b);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-chairside-timer-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.mobile-chairside-phone-link {
+  color: var(--teal, #0d9488);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 20px;
+}
+
+.mobile-chairside-phone-link:active {
+  opacity: 0.7;
+}
+
+/* Pulsing Red Allergy Badge */
+.mobile-chairside-allergy-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(225, 29, 72, 0.12);
+  color: #e11d48;
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  animation: mobileAllergyPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  white-space: nowrap;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
+@keyframes mobileAllergyPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.05);
+  }
+}
+
+.mobile-chairside-hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mobile-chairside-icon-btn {
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--paper-soft, #f1f5f9);
+  color: var(--ink, #0f172a);
+  border: 1px solid var(--line-subtle, #e2e8f0);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.mobile-chairside-icon-btn:active {
+  transform: scale(0.92);
+  background: var(--line-subtle, #e2e8f0);
+}
+
+/* ─── 3. SEGMENTED STEP PROGRESS BAR (5 STEPS) ─── */
+.mobile-chairside-steps-container {
+  width: 100%;
+  padding: 6px 12px 10px 12px;
+  background: color-mix(in srgb, var(--paper, #ffffff) 95%, transparent);
+  border-bottom: 1px solid var(--line-subtle, #e2e8f0);
+  box-sizing: border-box;
+}
+
+.mobile-chairside-steps-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0;
+  box-sizing: border-box;
+}
+
+.mobile-chairside-steps-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-chairside-step-chip {
+  min-height: 38px;
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--paper, #ffffff);
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.mobile-chairside-step-chip.is-active {
+  background: var(--teal, #0d9488);
+  color: #ffffff;
+  border-color: var(--teal, #0d9488);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
+}
+
+.mobile-chairside-step-chip.is-completed:not(.is-active) {
+  background: color-mix(in srgb, var(--teal, #0d9488) 12%, transparent);
+  color: var(--teal, #0d9488);
+  border-color: color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
+}
+
+.mobile-chairside-step-chip:active {
+  transform: scale(0.95);
+}
+
+/* ─── 4. MAIN CONTENT SCROLLER ─── */
+.mobile-chairside-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+  padding-bottom: 120px; /* Safe space for floating bottom bar */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  max-width: 100vw;
+}
+
+/* ─── 5. 52PX ONE-TAP SOMATIC NORM BUTTON ─── */
+.mobile-chairside-norm-btn {
+  width: 100%;
+  min-height: 52px;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  box-sizing: border-box;
+}
+
+.mobile-chairside-norm-btn:active {
+  transform: scale(0.97);
+  filter: brightness(0.95);
+}
+
+.mobile-chairside-norm-btn.is-applied {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* ─── 6. SMART MICROPHONE (FULL-WIDTH VOICE BAR) ─── */
+.mobile-smart-mic-card {
+  width: 100%;
+  border-radius: 16px;
+  background: var(--paper, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  padding: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.mobile-smart-mic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mobile-smart-mic-btn {
+  min-height: 48px;
+  flex: 1;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+
+.mobile-smart-mic-btn.is-idle {
+  background: color-mix(in srgb, var(--teal, #0d9488) 12%, transparent);
+  color: var(--teal, #0d9488);
+  border-color: color-mix(in srgb, var(--teal, #0d9488) 25%, transparent);
+}
+
+.mobile-smart-mic-btn.is-listening {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #be123c;
+  animation: mobileMicPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes mobileMicPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(225, 29, 72, 0.1);
+  }
+}
+
+.mobile-smart-mic-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 16px 4px 2px;
+  box-sizing: border-box;
+}
+
+.mobile-smart-mic-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-smart-mic-chip {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--paper-soft, #f8fafc);
+  color: var(--ink, #0f172a);
+  border: 1px solid var(--line, #e2e8f0);
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.mobile-smart-mic-chip:active {
+  background: var(--line-subtle, #e2e8f0);
+  transform: scale(0.96);
+}
+
+/* ─── 7. GROUPED CLINICAL PROTOCOL CARDS ─── */
+.mobile-chairside-grouped-card {
+  width: 100%;
+  border-radius: 16px;
+  background: var(--paper, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.mobile-chairside-card-title {
+  padding: 12px 16px 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted, #64748b);
+  border-bottom: 1px solid var(--line-subtle, #f1f5f9);
+}
+
+.mobile-chairside-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.45;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  color: var(--ink, #0f172a);
+  resize: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.mobile-chairside-textarea:focus {
+  background: color-mix(in srgb, var(--paper-soft, #f8fafc) 60%, transparent);
+}
+
+.mobile-chairside-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line-subtle, #f1f5f9);
+  cursor: pointer;
+  background: var(--paper, #ffffff);
+  transition: background-color 0.15s ease;
+}
+
+.mobile-chairside-row-item:active {
+  background: var(--paper-soft, #f1f5f9);
+}
+
+/* ─── 8. QUADRANT TEETH SELECTOR (MOBILE FDI) ─── */
+.mobile-quadrant-tabs {
+  display: flex;
+  width: 100%;
+  background: var(--paper-soft, #f1f5f9);
+  padding: 4px;
+  border-radius: 14px;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.mobile-quadrant-tab {
+  flex: 1;
+  min-height: 38px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mobile-quadrant-tab.is-active {
+  background: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+.mobile-teeth-grid-8 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.mobile-tooth-tile {
+  min-height: 60px;
+  border-radius: 14px;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--paper, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.mobile-tooth-tile:active {
+  transform: scale(0.93);
+}
+
+.mobile-tooth-tile.is-selected {
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 2px var(--teal, #0d9488);
+  background: color-mix(in srgb, var(--teal, #0d9488) 8%, transparent);
+}
+
+.mobile-tooth-number {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
+}
+
+.mobile-tooth-status-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* ─── 9. STEP 5: BILLING & CHECKOUT ─── */
+.mobile-billing-hero-card {
+  width: 100%;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--paper, #ffffff) 0%, var(--paper-soft, #f8fafc) 100%);
+  border: 1px solid var(--line, #e2e8f0);
+  padding: 20px 16px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mobile-billing-total-amount {
+  font-size: 36px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink, #0f172a);
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+}
+
+.mobile-quick-services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mobile-quick-service-btn {
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.mobile-quick-service-btn:active {
+  background: var(--paper-soft, #f1f5f9);
+}
+
+.mobile-quick-service-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  line-height: 1.2;
+  white-space: normal;
+  text-align: left;
+}
+
+.mobile-quick-service-price {
+  font-size: 11px;
+  color: var(--teal, #0d9488);
+  font-weight: 700;
+}
+
+/* ─── 10. FLOATING BOTTOM BAR (NATURAL THUMB ZONE) ─── */
+.mobile-chairside-floating-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--paper-strong, #ffffff) 92%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line, #e2e8f0);
+  padding: 10px 16px max(14px, env(safe-area-inset-bottom, 14px));
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-chairside-primary-cta {
+  flex: 1;
+  min-height: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  background: linear-gradient(135deg, var(--teal, #0d9488) 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+}
+
+.mobile-chairside-primary-cta:active {
+  transform: scale(0.97);
+  filter: brightness(0.95);
+}
+
+.mobile-chairside-secondary-cta {
+  min-width: 52px;
+  min-height: 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-soft, #f1f5f9);
+  border: 1px solid var(--line, #e2e8f0);
+  color: var(--ink, #0f172a);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.mobile-chairside-secondary-cta:active {
+  transform: scale(0.93);
+}
+
+/* ─── 11. DARK MODE PURGE OF BLINDING SPOTS ─── */
+[data-theme="dark"] .mobile-chairside-container,
+.dark .mobile-chairside-container {
+  background: #090d16;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .mobile-chairside-hud,
+.dark .mobile-chairside-hud {
+  background: rgba(15, 23, 42, 0.88);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .mobile-chairside-steps-container,
+.dark .mobile-chairside-steps-container {
+  background: rgba(15, 23, 42, 0.85);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .mobile-chairside-step-chip,
+.dark .mobile-chairside-step-chip {
+  background: #131c2e;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .mobile-chairside-step-chip.is-active,
+.dark .mobile-chairside-step-chip.is-active {
+  background: var(--teal, #0d9488);
+  color: #ffffff;
+  border-color: var(--teal, #0d9488);
+}
+
+[data-theme="dark"] .mobile-smart-mic-card,
+[data-theme="dark"] .mobile-chairside-grouped-card,
+[data-theme="dark"] .mobile-billing-hero-card,
+[data-theme="dark"] .mobile-tooth-tile,
+[data-theme="dark"] .mobile-quick-service-btn,
+.dark .mobile-smart-mic-card,
+.dark .mobile-chairside-grouped-card,
+.dark .mobile-billing-hero-card,
+.dark .mobile-tooth-tile,
+.dark .mobile-quick-service-btn {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-chairside-card-title,
+.dark .mobile-chairside-card-title {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .mobile-chairside-row-item,
+.dark .mobile-chairside-row-item {
+  background: #0f172a;
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .mobile-chairside-row-item:active,
+.dark .mobile-chairside-row-item:active {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .mobile-quadrant-tabs,
+.dark .mobile-quadrant-tabs {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .mobile-quadrant-tab.is-active,
+.dark .mobile-quadrant-tab.is-active {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-chairside-floating-bar,
+.dark .mobile-chairside-floating-bar {
+  background: rgba(15, 23, 42, 0.92);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .mobile-chairside-secondary-cta,
+[data-theme="dark"] .mobile-chairside-icon-btn,
+.dark .mobile-chairside-secondary-cta,
+.dark .mobile-chairside-icon-btn {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}

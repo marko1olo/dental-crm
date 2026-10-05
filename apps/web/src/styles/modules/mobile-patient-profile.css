@@ -201,19 +201,27 @@
 	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
 }
 
-/* Floating Bottom Action Bar */
+/* Floating Bottom Action Bar (Apple HIG Natural Thumb Zone) */
 .mobile-profile-floating-bar {
 	position: fixed;
-	bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+	bottom: 0;
 	left: 0;
 	right: 0;
 	z-index: 900;
-	background: var(--paper-strong, var(--paper));
-	border-top: 1px solid var(--line);
-	padding: 8px 14px;
+	background: color-mix(in srgb, var(--paper, #ffffff) 88%, transparent);
+	border-top: 1px solid var(--line, #e2e8f0);
+	padding: 10px 16px max(12px, env(safe-area-inset-bottom, 0px));
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-	backdrop-filter: blur(16px);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .mobile-profile-floating-bar,
+.dark .mobile-profile-floating-bar {
+	background: color-mix(in srgb, var(--paper-strong, #0f172a) 90%, transparent);
+	border-top-color: var(--line, #1e293b);
 }

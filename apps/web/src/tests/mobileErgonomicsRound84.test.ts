@@ -27,15 +27,25 @@ test("Round 84: Mobile Adaptability (375px-414px) & Touch-First Ergonomics Suite
 	await t.test("2. ScheduleGrid contains >= 48px touch targets for quick status toggles and actions", () => {
 		const scheduleGridPath = path.resolve(process.cwd(), "src/components/schedule/ScheduleGrid.tsx");
 		const scheduleGridSrc = fs.readFileSync(scheduleGridPath, "utf-8");
+		const scheduleAgendaPath = fs.existsSync(path.resolve(process.cwd(), "src/components/schedule/mobile/ScheduleMobileAgendaView.tsx"))
+			? path.resolve(process.cwd(), "src/components/schedule/mobile/ScheduleMobileAgendaView.tsx")
+			: path.resolve(process.cwd(), "src/components/schedule/ScheduleMobileAgendaView.tsx");
+		const scheduleAgendaSrc = fs.readFileSync(scheduleAgendaPath, "utf-8");
+		const scheduleTrackPath = path.resolve(process.cwd(), "src/components/schedule/grid/ScheduleAppointmentTrack.tsx");
+		const scheduleTrackSrc = fs.readFileSync(scheduleTrackPath, "utf-8");
 
-		// Quick status buttons have touch-friendly targets (>= 44px per Apple HIG / Mandate 8c)
+		// ScheduleGrid routes to dedicated sovereign mobile agenda view
+		assert.ok(scheduleGridSrc.includes("ScheduleMobileAgendaView"), "ScheduleGrid must route to ScheduleMobileAgendaView");
+
+		// Mobile agenda buttons have touch-friendly targets (>= 44px per Apple HIG / Mandate 8c)
 		assert.ok(
-			scheduleGridSrc.includes("min-h-[48px] min-w-[48px]") ||
-				scheduleGridSrc.includes("min-h-[44px] min-w-[44px]"),
-			"ScheduleGrid must have touch target buttons",
+			scheduleAgendaSrc.includes("schedule-mobile-primary-action-btn") ||
+				scheduleAgendaSrc.includes("min-h-[44px]") ||
+				scheduleAgendaSrc.includes("schedule-mobile-nav-btn"),
+			"ScheduleMobileAgendaView must have touch target buttons",
 		);
 		assert.ok(
-			scheduleGridSrc.includes("schedule-empty-slot-btn") && scheduleGridSrc.includes("border border-dashed"),
+			scheduleTrackSrc.includes("schedule-empty-slot-btn") && scheduleTrackSrc.includes("border border-dashed"),
 			"Empty slot button must have schedule-empty-slot-btn with dashed border",
 		);
 	});

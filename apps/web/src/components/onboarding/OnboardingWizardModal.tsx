@@ -26,6 +26,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { RapidLaunchWizard } from "./RapidLaunchWizard";
+import { SovereignScalePresetsCard } from "./SovereignScalePresetsCard";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import { showToast } from "../GlobalToast";
 
@@ -570,6 +571,7 @@ export function OnboardingWizardModal({
 					<ShieldCheck aria-hidden="true" /> Реквизиты
 				</button>
 			</section>
+
 			<fieldset
 				className="onboarding-step-list"
 				aria-label="Шаги знакомства"
@@ -675,25 +677,25 @@ export function OnboardingWizardModal({
 							перенастройки интерфейса.
 						</p>
 					</div>
-					<fieldset
-						className="mode-grid form-span-2"
-						aria-label="Режим клиники"
-						style={{ border: "none", padding: 0, margin: 0 }}
-					>
-						<legend className="sr-only">Режим клиники</legend>
-						{(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode) => (
-							<button
-								className={`mode-card ${dashboard?.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
-								key={mode}
-								type="button"
-								aria-pressed={dashboard?.clinicSettings?.profile?.mode === mode}
-								onClick={() => changeClinicMode(mode)}
-							>
-								<strong>{clinicModeLabels[mode].title}</strong>
-								<span>{clinicModeLabels[mode].detail}</span>
-							</button>
-						))}
-					</fieldset>
+					<div className="form-span-2 mb-2">
+						<SovereignScalePresetsCard
+							compactMode={false}
+							hideHeader={false}
+							onPresetApplied={(presetId) => {
+								const targetMode: ClinicMode =
+									presetId === "solo_doctor"
+										? "solo_doctor"
+										: presetId === "standard_clinic"
+											? "small_clinic"
+											: "network_clinic";
+								changeClinicMode(targetMode);
+								updateClinicProfileDraft(
+									"defaultVisitMinutes",
+									presetId === "solo_doctor" ? 30 : presetId === "standard_clinic" ? 45 : 60,
+								);
+							}}
+						/>
+					</div>
 					<div className="onboarding-form-grid">
 						<label>
 							Название клиники

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import type {
 	Appointment,
 	InsuranceContract,
@@ -730,10 +730,9 @@ describe("Telephony & Reception Live Hub Suite", () => {
 		});
 
 		test("CallAudioPlayer.tsx enforces zero-mock fallback and desktop clinical density", () => {
-			const playerPath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/telephony/CallAudioPlayer.tsx",
-			);
+			const playerPath = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/telephony/CallAudioPlayer.tsx"))
+				? path.resolve(process.cwd(), "apps/web/src/components/telephony/CallAudioPlayer.tsx")
+				: path.resolve(process.cwd(), "src/components/telephony/CallAudioPlayer.tsx");
 			const source = fs.readFileSync(playerPath, "utf-8");
 
 			// Zero-mock fallback when recording is missing/empty

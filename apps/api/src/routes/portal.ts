@@ -1223,7 +1223,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const [doc] = await db
 				.select({ fullName: users.fullName })
 				.from(users)
-				.where(eq(users.id, appointment.doctorUserId))
+				.where(
+					and(
+						eq(users.id, appointment.doctorUserId),
+						eq(users.organizationId, organizationId),
+					),
+				)
 				.limit(1);
 			if (doc?.fullName) {
 				doctorName = doc.fullName;
@@ -1234,7 +1239,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const [chair] = await db
 				.select({ name: chairs.name })
 				.from(chairs)
-				.where(eq(chairs.id, appointment.chairId))
+				.where(
+					and(
+						eq(chairs.id, appointment.chairId),
+						eq(chairs.organizationId, organizationId),
+					),
+				)
 				.limit(1);
 			if (chair?.name) {
 				cabinetName = chair.name;
@@ -2078,7 +2088,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 				await db
 					.update(patientConsents)
 					.set({ grantedAt: now, revokedAt: null })
-					.where(eq(patientConsents.id, existing[0].id));
+					.where(
+						and(
+							eq(patientConsents.id, existing[0].id),
+							eq(patientConsents.organizationId, auth.organizationId),
+						),
+					);
 			} else {
 				await db.insert(patientConsents).values({
 					organizationId: auth.organizationId,
@@ -3140,7 +3155,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 								await db
 									.update(sberbankTransactions)
 									.set({ status: "success", updatedAt: new Date() })
-									.where(eq(sberbankTransactions.id, sberTx.id));
+									.where(
+										and(
+											eq(sberbankTransactions.id, sberTx.id),
+											eq(sberbankTransactions.organizationId, auth.organizationId),
+										),
+									);
 							}
 						}
 					} catch (bankErr) {
@@ -3167,7 +3187,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 					status: "paid",
 					paidAt: now,
 				})
-				.where(eq(patientInvoices.id, inv.id));
+				.where(
+					and(
+						eq(patientInvoices.id, inv.id),
+						eq(patientInvoices.organizationId, auth.organizationId),
+					),
+				);
 
 			// 4. Insert payment record into payments table
 			const [insertedPayment] = await db

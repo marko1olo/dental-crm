@@ -13,6 +13,7 @@ import {
 	openWhatsAppChat,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { showToast } from "../GlobalToast";
 import {
 	IncomingCallQuickBooking,
@@ -61,6 +62,20 @@ export function resolveTelephonyWsUrl(): string {
 	return "ws://localhost:4100/api/ws/schedule";
 }
 
+function formatShortCallerName(name: string): string {
+	const parts = name.trim().split(/\s+/);
+	const p0 = parts[0];
+	const p1 = parts[1];
+	const p2 = parts[2];
+	if (p0 && p1 && p2 && p1[0] && p2[0]) {
+		return `${p0} ${p1[0]}.${p2[0]}.`;
+	}
+	if (p0 && p1 && p1[0]) {
+		return `${p0} ${p1[0]}.`;
+	}
+	return name;
+}
+
 export function IncomingCallPopup() {
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 	const answerCall = useTelephonyStore((s) => s.answerCall);
@@ -98,11 +113,15 @@ export function IncomingCallPopup() {
 	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background (Mandates 8e, 8n - zero disruption to Form 043/u drafts or autosave)
 	const isDoctorMode =
 		selectedWorkspaceRole === "doctor" || currentView === "visit";
+	const isFullScreenStudioActive = useUiSurfaceStore(
+		(s) => s.isFullScreenStudioActive,
+	);
 	const isDndActive = agentState === "dnd";
 	const isConnected = useTelephonyStore((s) => s.isWsConnected);
 
 	const [smsCopied, setSmsCopied] = useState(false);
 	const [isExpanded, setIsExpanded] = useState(false);
+	const isPopupExpanded = isExpanded && !isCallDrawerOpen;
 	const [newPatientNameInput, setNewPatientNameInput] = useState("");
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
@@ -398,23 +417,8 @@ export function IncomingCallPopup() {
 
 	// Absolute doctor immunity and DND suppression: zero popup disruption (Mandate 8e)
 	if (isDoctorMode || isDndActive) return null;
-	if (isDoctorMode) return null;
-	if (!isCallDrawerOpen) {
-		if (!activeCall || isDoctorMode || isDndActive) return null;
-	}
-	if (!activeCall && !isCallDrawerOpen) return null;
-
-	if (isCallDrawerOpen && !currentCall) {
-		return createPortal(
-			<IncomingCallEmptyDrawer
-				isOpen={isCallDrawerOpen}
-				onClose={closeCallDrawer}
-				isConnected={isConnected}
-			/>,
-			document.body,
-		);
-	}
-
+	if (!activeCall || isDoctorMode || isDndActive) return null;
+	if (isFullScreenStudioActive) return null;
 	if (!currentCall) return null;
 
 	const isCallAnswered = activeCall
@@ -436,25 +440,33 @@ export function IncomingCallPopup() {
 					style={{ zIndex: 9990 }}
 					data-testid="incoming-call-badge-container"
 				>
-					{!isExpanded ? (
+					{!isPopupExpanded ? (
 						/* Compact Telephony Capsule (0-occlusion, non-blocking) */
 						<section
-							className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 p-1.5 sm:p-2 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100%-24px)]"
+							className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 h-9 max-h-[36px] px-3 py-1 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100%-24px)]"
 							aria-label="Входящий звонок телефонии (компактный режим)"
 							data-testid="incoming-call-capsule"
 						>
-							<span className="relative flex h-3 w-3 ml-1.5 shrink-0">
+							<span className="relative flex h-2.5 w-2.5 ml-0.5 shrink-0">
 								<span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCallAnswered ? "bg-teal-400" : "bg-emerald-400"}`} />
-								<span className={`relative inline-flex rounded-full h-3 w-3 ${isCallAnswered ? "bg-teal-500" : "bg-emerald-500"}`} />
+								<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isCallAnswered ? "bg-teal-500" : "bg-emerald-500"}`} />
 							</span>
 							<div className="flex items-center gap-1.5 min-w-0">
-								<span className="text-xs font-black text-[var(--ink,#0f172a)] truncate max-w-[130px] sm:max-w-[190px]" title={callerName}>{callerName}</span>
-								<span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden md:inline shrink-0">{formattedPhone}</span>
+								<span className="text-xs font-black text-[var(--ink,#0f172a)] truncate max-w-[200px] sm:max-w-[280px]" title={callerName}>
+									{isCallAnswered
+										? `РАЗГОВОР ${formatDurationTimer(elapsedSeconds)} • ${formatShortCallerName(callerName)}`
+										: callerName}
+								</span>
+								{!isCallAnswered && (
+									<span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden md:inline shrink-0">{formattedPhone}</span>
+								)}
 							</div>
-							<span className="font-mono text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1 bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] px-2 py-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
-								<Clock size={11} />
-								{formatDurationTimer(elapsedSeconds)}
-							</span>
+							{!isCallAnswered && (
+								<span className="font-mono text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1 bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] px-2 py-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
+									<Clock size={11} />
+									{formatDurationTimer(elapsedSeconds)}
+								</span>
+							)}
 							<div className="flex items-center gap-1 shrink-0">
 								{secondaryLine?.call && secondaryLine.state === "ringing" && (
 									<button
@@ -508,7 +520,17 @@ export function IncomingCallPopup() {
 										<span>Завершить</span>
 									</button>
 								)}
-								<button type="button" onClick={() => setIsExpanded(true)} className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1 rounded-full hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors cursor-pointer" title="Развернуть карточку звонка" aria-label="Развернуть звонок" data-testid="capsule-expand-btn">
+								<button
+									type="button"
+									onClick={() => {
+										closeCallDrawer();
+										setIsExpanded(true);
+									}}
+									className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1 rounded-full hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors cursor-pointer"
+									title="Развернуть карточку звонка"
+									aria-label="Развернуть звонок"
+									data-testid="capsule-expand-btn"
+								>
 									<ChevronDown size={16} />
 								</button>
 								<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer" title="Скрыть бейдж" aria-label="Скрыть звонок">
@@ -741,55 +763,6 @@ export function IncomingCallPopup() {
 					)}
 				</div>
 			)}
-
-			{/* Patient Side Drawer (Slide-Over on right edge, ZERO unmounting of active 043/u visit diary) */}
-			<IncomingCallPatientDrawer
-				isOpen={isCallDrawerOpen}
-				onClose={closeCallDrawer}
-				currentCall={currentCall}
-				callerName={callerName}
-				formattedPhone={formattedPhone}
-				initials={initials}
-				avatarColors={avatarColors}
-				isKnownPatient={isKnownPatient}
-				patientCategory={patientCategory}
-				resolvedPatient={resolvedPatient}
-				financialSummary={financialSummary}
-				somaticAlerts={somaticAlerts}
-				upcomingAppointment={upcomingAppointment}
-				lastVisitSummary={lastVisitSummary}
-				callAttribution={callAttribution}
-				isCapturingLead={isCapturingLead}
-				onCaptureLead={handleCaptureLead}
-				onSendWhatsApp={handleSendWhatsAppConfirmation}
-				onCopySms={handleCopySmsConfirmation}
-				smsCopied={smsCopied}
-				showQuickBooking={showQuickBooking}
-				onToggleQuickBooking={() => setShowQuickBooking((p) => !p)}
-				onQuickBook={handleQuickBook}
-				quickSlots={quickSlots}
-				onOpenFullPatientView={handleOpenFullPatientView}
-				isCallAnswered={isCallAnswered}
-				showTransferPanel={showTransferPanel}
-				onToggleTransferPanel={() => setShowTransferPanel((p) => !p)}
-				transferType={transferType}
-				onSelectTransferType={setTransferType}
-				onStartTransfer={(ext, type) => {
-					startCallTransfer(ext, type);
-					showToast(`Перевод звонка на ${ext} (${type === "blind" ? "Слепой" : "С консультацией"})`, "info");
-				}}
-				showOutcomePanel={showOutcomePanel}
-				onToggleOutcomePanel={() => setShowOutcomePanel((p) => !p)}
-				onRecordOutcome={(outcome) => {
-					recordCallOutcome(outcome);
-					closeCallDrawer();
-					showToast("Исход зафиксирован", "success");
-				}}
-				newPatientNameInput={newPatientNameInput}
-				onChangeNewPatientNameInput={setNewPatientNameInput}
-				isCreatingPatient={isCreatingPatient}
-				onQuickCreatePatient={() => handleQuickCreatePatient()}
-			/>
 		</>,
 		document.body,
 	);

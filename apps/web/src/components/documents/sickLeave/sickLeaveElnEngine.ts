@@ -15,6 +15,7 @@ import {
 	REGIME_VIOLATION_CODES
 } from './sickLeaveElnPresets';
 import { generateQrCodeSvg } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 
 export const SINGLE_DOCTOR_MAX_DAYS = 15;
 export const FELDSHER_MAX_DAYS = 10;
@@ -434,10 +435,10 @@ ${form.vkProtocol.memberFios.map((m) => `      <eln:MemberFio>${escapeXml(m)}</e
     <eln:DiagnosisDescription>${escapeXml(form.diagnosisText)}</eln:DiagnosisDescription>
   </eln:Header>
   <eln:MedicalOrganization>
-    <eln:Ogrn>${escapeXml(form.organizationOgrn || DEFAULT_CLINIC_OGRN)}</eln:Ogrn>
-    <eln:Name>${escapeXml(form.organizationName || DEFAULT_CLINIC_NAME)}</eln:Name>
-    <eln:Address>${escapeXml(form.organizationAddress || DEFAULT_CLINIC_ADDRESS)}</eln:Address>
-    <eln:LicenceNumber>${escapeXml(form.medicalLicenceNumber || DEFAULT_CLINIC_LICENCE)}</eln:LicenceNumber>
+    <eln:Ogrn>${escapeXml(form.organizationOgrn || (isDemoShowcaseMode() ? DEFAULT_CLINIC_OGRN : ""))}</eln:Ogrn>
+    <eln:Name>${escapeXml(form.organizationName || (isDemoShowcaseMode() ? DEFAULT_CLINIC_NAME : ""))}</eln:Name>
+    <eln:Address>${escapeXml(form.organizationAddress || (isDemoShowcaseMode() ? DEFAULT_CLINIC_ADDRESS : ""))}</eln:Address>
+    <eln:LicenceNumber>${escapeXml(form.medicalLicenceNumber || (isDemoShowcaseMode() ? DEFAULT_CLINIC_LICENCE : ""))}</eln:LicenceNumber>
   </eln:MedicalOrganization>
   <eln:Patient>
     <eln:Fio>${escapeXml(patient.patientFio)}</eln:Fio>
@@ -478,10 +479,10 @@ export function generateElnJsonPayload(form: SickLeaveFormState, patient: SickLe
 		isDuplicate: form.isDuplicate,
 		prevElnNumber: form.prevElnNumber || null,
 		medicalOrganization: {
-			name: form.organizationName || DEFAULT_CLINIC_NAME,
-			ogrn: form.organizationOgrn || DEFAULT_CLINIC_OGRN,
-			address: form.organizationAddress || DEFAULT_CLINIC_ADDRESS,
-			licence: form.medicalLicenceNumber || DEFAULT_CLINIC_LICENCE
+			name: form.organizationName || (isDemoShowcaseMode() ? DEFAULT_CLINIC_NAME : ""),
+			ogrn: form.organizationOgrn || (isDemoShowcaseMode() ? DEFAULT_CLINIC_OGRN : ""),
+			address: form.organizationAddress || (isDemoShowcaseMode() ? DEFAULT_CLINIC_ADDRESS : ""),
+			licence: form.medicalLicenceNumber || (isDemoShowcaseMode() ? DEFAULT_CLINIC_LICENCE : "")
 		},
 		patient: {
 			fio: patient.patientFio,
@@ -757,8 +758,8 @@ export function generateSickLeavePatientMemoHtml(form: SickLeaveFormState, patie
   <div class="memo-container">
     <div class="memo-header">
       <div>
-        <div class="org-title">${escapeXml(form.organizationName || DEFAULT_CLINIC_NAME)}</div>
-        <div class="org-sub">ОГРН: ${escapeXml(form.organizationOgrn || DEFAULT_CLINIC_OGRN)} | Лицензия: ${escapeXml(form.medicalLicenceNumber || DEFAULT_CLINIC_LICENCE)}</div>
+        <div class="org-title">${escapeXml(form.organizationName || (isDemoShowcaseMode() ? DEFAULT_CLINIC_NAME : "«________________________________________»"))}</div>
+        <div class="org-sub">ОГРН: ${escapeXml(form.organizationOgrn || (isDemoShowcaseMode() ? DEFAULT_CLINIC_OGRN : "«________________»"))} | Лицензия: ${escapeXml(form.medicalLicenceNumber || (isDemoShowcaseMode() ? DEFAULT_CLINIC_LICENCE : "«________________________________________»"))}</div>
       </div>
       <div class="eln-badge">
         № ${escapeXml(form.elnNumber)}

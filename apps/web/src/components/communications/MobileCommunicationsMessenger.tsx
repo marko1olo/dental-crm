@@ -17,6 +17,7 @@ import type { CommunicationTaskOutcome, Dashboard } from "@dental/shared";
 import {
 	AlertCircle,
 	ArrowLeft,
+	Bot,
 	Calendar,
 	Check,
 	CheckCheck,
@@ -32,6 +33,7 @@ import {
 	Shield,
 	Sparkles,
 	User,
+	UserCheck,
 	X,
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -41,6 +43,7 @@ import { buildQuickTemplates, type QuickTemplateItem } from "../chat/whatsAppCha
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { CommunicationTaskCard } from "./CommunicationTaskCard";
 import { CommunicationEventRow } from "./CommunicationEventRow";
+import { OmnichannelOperatorDesk } from "../chat/OmnichannelOperatorDesk";
 import "./mobileCommunicationsMessenger.css";
 
 export interface MobilePatientDialogSummary {
@@ -120,8 +123,8 @@ export const MobileCommunicationsMessenger: React.FC<MobileCommunicationsMesseng
 	formatDateTime = (val: string) => new Date(val).toLocaleString("ru-RU"),
 	initialPatientId = null,
 }) => {
-	// Top tabs: Dialogs (Chats), Tasks (Calls / Actions), Journal
-	const [activeSection, setActiveSection] = useState<"dialogs" | "tasks" | "journal">("dialogs");
+	// Top tabs: Dialogs (Chats), Tasks (Calls / Actions), Journal, Bots (Omnichannel Desk)
+	const [activeSection, setActiveSection] = useState<"dialogs" | "tasks" | "journal" | "bots">("dialogs");
 
 	// Channel filter in Dialogs list
 	const [channelFilter, setChannelFilter] = useState<"all" | "whatsapp" | "telegram" | "sms">("all");
@@ -141,6 +144,26 @@ export const MobileCommunicationsMessenger: React.FC<MobileCommunicationsMesseng
 	const [inputText, setInputText] = useState("");
 	const [activeChannel, setActiveChannel] = useState<"whatsapp" | "telegram" | "sms">("whatsapp");
 	const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+
+	// Перехват диалога у Telegram/VK бота (Operator Takeover)
+	const [interceptedDialogs, setInterceptedDialogs] = useState<Record<string, boolean>>({});
+	const isCurrentMobileIntercepted = Boolean(selectedPatientId && interceptedDialogs[selectedPatientId]);
+
+	const handleMobileTakeoverChat = () => {
+		if (!selectedPatientId) return;
+		setInterceptedDialogs((prev) => ({ ...prev, [selectedPatientId]: true }));
+		const takeoverMsg: MobileChatMessageItem = {
+			id: `mobile-takeover-${Date.now()}`,
+			patientId: selectedPatientId,
+			text: "👩‍💼 Оператор клиники подключился к диалогу. Бот переведён в спящий режим. Чем я могу вам помочь?",
+			direction: "outbound",
+			channel: activeChannel,
+			timestamp: new Date().toISOString(),
+			status: "delivered",
+		};
+		setChatMessages((prev) => [...prev, takeoverMsg]);
+		showToast("Диалог успешно перехвачен оператором", "success");
+	};
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -581,6 +604,16 @@ export const MobileCommunicationsMessenger: React.FC<MobileCommunicationsMesseng
 						<FileText size={15} />
 						<span>Журнал ({communicationEvents.length})</span>
 					</button>
+
+					<button
+						type="button"
+						className={`mobile-segment-tab ${activeSection === "bots" ? "active" : ""}`}
+						onClick={() => setActiveSection("bots")}
+						data-testid="tab-mobile-bots"
+					>
+						<Bot size={15} />
+						<span>Боты</span>
+					</button>
 				</nav>
 			</header>
 
@@ -804,6 +837,15 @@ export const MobileCommunicationsMessenger: React.FC<MobileCommunicationsMesseng
 			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
+			   VIEW 4: ПУЛЬТ БОТОВ (OMNICHANNEL BOT OPERATOR DESK)
+			   ═══════════════════════════════════════════════════════════════════ */}
+			{activeSection === "bots" && (
+				<main className="p-2 pb-24" data-testid="mobile-bots-operator-section">
+					<OmnichannelOperatorDesk />
+				</main>
+			)}
+
+			{/* ═══════════════════════════════════════════════════════════════════
 			   FULLSCREEN CHAT ROOM (iMessage / Telegram per Apple HIG)
 			   ═══════════════════════════════════════════════════════════════════ */}
 			{selectedPatientId && activePatient && (
@@ -856,6 +898,18 @@ export const MobileCommunicationsMessenger: React.FC<MobileCommunicationsMesseng
 						</div>
 
 						<div className="mobile-chat-top-actions">
+							{/* Кнопка перехвата диалога у Telegram/VK бота */}
+							<button
+								type="button"
+								className={`mobile-touch-btn ${isCurrentMobileIntercepted ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}
+								onClick={handleMobileTakeoverChat}
+								aria-label="Перехватить диалог"
+								title={isCurrentMobileIntercepted ? "Оператор на линии" : "Перехватить диалог у бота"}
+								data-testid="btn-mobile-chat-takeover"
+							>
+								{isCurrentMobileIntercepted ? <Shield size={18} /> : <UserCheck size={18} />}
+							</button>
+
 							{/* Direct Phone Call Button */}
 							{activePatient.phone && (
 								<a
@@ -872,6 +926,27 @@ export const MobileCommunicationsMessenger: React.FC<MobileCommunicationsMesseng
 
 					{/* ─── Messages Feed ─── */}
 					<div className="mobile-chat-messages-area" data-testid="mobile-chat-messages-area">
+						{/* Баннер перехвата диалога, если диалог ещё у бота */}
+						{!isCurrentMobileIntercepted && (
+							<div
+								className="mx-3 mt-2 mb-1 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-200"
+								data-testid="mobile-chat-bot-banner"
+							>
+								<div className="flex items-center gap-1.5 min-w-0">
+									<Bot size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									<span className="truncate">Диалог ведёт Telegram / VK бот</span>
+								</div>
+								<button
+									type="button"
+									onClick={handleMobileTakeoverChat}
+									className="shrink-0 px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shadow-xs cursor-pointer"
+									data-testid="btn-mobile-banner-takeover"
+								>
+									Перехватить
+								</button>
+							</div>
+						)}
+
 						<div className="mobile-chat-date-separator">Сегодня</div>
 
 						{chatMessages.map((msg) => {

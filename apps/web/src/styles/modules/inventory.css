@@ -105,9 +105,9 @@
 }
 
 .inventory-col-cost {
-	width: 85px;
-	min-width: 80px;
-	max-width: 90px;
+	width: 110px;
+	min-width: 100px;
+	max-width: 120px;
 	text-align: right;
 }
 
@@ -130,9 +130,9 @@
 }
 
 .inventory-col-actions {
-	width: 160px;
-	min-width: 155px;
-	max-width: 165px;
+	width: 250px;
+	min-width: 230px;
+	max-width: 270px;
 	text-align: right;
 }
 

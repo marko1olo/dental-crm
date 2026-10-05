@@ -126,42 +126,42 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 						<button
 							type="button"
 							onClick={() => onSelectMethod("bank_card")}
-							className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
+							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 								activeMethod === "bank_card"
 									? "border-blue-600 bg-blue-500/15 text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-blue-500/30"
 									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="simple-card-btn"
 						>
-							<CreditCard size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+							<CreditCard size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />
 							<span className="truncate">Картой</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => onSelectMethod("cash")}
-							className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
+							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 								activeMethod === "cash"
 									? "border-emerald-600 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-xs ring-1 ring-emerald-500/30"
 									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="simple-cash-btn"
 						>
-							<Banknote size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<Banknote size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span className="truncate">Наличными</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => onSelectMethod("sbp_qr")}
-							className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
+							className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 								activeMethod === "sbp_qr"
 									? "border-teal-600 bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-xs ring-1 ring-teal-500/30"
 									: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="simple-sbp-btn"
 						>
-							<QrCode size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<QrCode size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 							<span className="truncate">СБП QR</span>
 						</button>
 
@@ -169,7 +169,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 							<button
 								type="button"
 								onClick={() => onSelectMethod("patient_deposit")}
-								className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
+								className={`min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
 									activeMethod === "patient_deposit"
 										? "border-amber-600 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs ring-1 ring-amber-500/30"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
@@ -177,7 +177,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								data-testid="simple-deposit-btn"
 								title={`Списать с депозита пациента (${totalAvailableDeposit.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 							>
-								<Coins size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<Coins size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
 								<span className="truncate">Депозит</span>
 							</button>
 						)}
@@ -186,11 +186,11 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 							<button
 								type="button"
 								onClick={onSwitchToSplitMode}
-								className="h-9 px-3 rounded-xl border border-dashed border-teal-500/60 bg-teal-500/5 hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1.5 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95"
+								className="min-h-[50px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border border-dashed border-teal-500/60 bg-teal-500/5 hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center gap-1.5 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95"
 								data-testid="simple-split-toggle-btn"
 								title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)"
 							>
-								<Layers size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<Layers size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="truncate">Сплит</span>
 							</button>
 						)}
@@ -205,7 +205,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 									type="button"
 									onClick={() => onSelectMethod(m.id)}
 									className={
-										"h-8 sm:h-8.5 px-3 rounded-lg border flex items-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 whitespace-nowrap shrink-0 " +
+										"min-h-[44px] sm:h-8.5 px-3 rounded-xl border flex items-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 whitespace-nowrap shrink-0 " +
 										(isSelected
 											? "border-teal-600 bg-teal-600 text-white shadow-xs"
 											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]")
@@ -573,11 +573,11 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 					</div>
 
 					{/* Direct Denomination Buttons (Без сдачи, 1 000, 2 000, 5 000, 10 000) */}
-					<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+					<div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
 						<button
 							type="button"
 							onClick={() => setCashTenderedRub(cashAmountRub > 0 ? cashAmountRub : targetBillRub)}
-							className="min-h-[44px] min-w-0 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate"
+							className="min-h-[48px] min-w-0 px-2.5 rounded-xl border-2 border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-black text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate shadow-xs flex items-center justify-center"
 							data-testid="btn-cash-exact"
 							title="Внесено ровно без сдачи"
 						>
@@ -588,7 +588,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								key={rub}
 								type="button"
 								onClick={() => setCashTenderedRub(rub)}
-								className="min-h-[44px] min-w-0 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold font-mono text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate"
+								className="min-h-[48px] min-w-0 px-2.5 rounded-xl border-2 border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-sm font-black font-mono text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer transition-all active:scale-95 truncate shadow-xs flex items-center justify-center"
 								data-testid={`btn-cash-${rub}`}
 							>
 								{rub.toLocaleString("ru-RU")} ₽

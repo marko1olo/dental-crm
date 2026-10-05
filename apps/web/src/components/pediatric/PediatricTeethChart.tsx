@@ -179,10 +179,10 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 
 	const mobileQuadrantsMeta = useMemo(
 		() => [
-			{ key: "q5" as const, labelRu: "Q5 Вверх-Право", shortLabelRu: "Q5 Вверх-Пр", jawRu: "Верхняя челюсть (справа)", teeth: quadrant5Teeth },
-			{ key: "q6" as const, labelRu: "Q6 Вверх-Лево", shortLabelRu: "Q6 Вверх-Лев", jawRu: "Верхняя челюсть (слева)", teeth: quadrant6Teeth },
-			{ key: "q7" as const, labelRu: "Q7 Низ-Лево", shortLabelRu: "Q7 Низ-Лев", jawRu: "Нижняя челюсть (слева)", teeth: quadrant7Teeth },
-			{ key: "q8" as const, labelRu: "Q8 Низ-Право", shortLabelRu: "Q8 Низ-Пр", jawRu: "Нижняя челюсть (справа)", teeth: quadrant8Teeth },
+			{ key: "q5" as const, labelRu: "Q5 Верх-Право", shortLabelRu: "Q5 В/П", jawRu: "Верхняя челюсть (справа)", teeth: quadrant5Teeth },
+			{ key: "q6" as const, labelRu: "Q6 Верх-Лево", shortLabelRu: "Q6 В/Л", jawRu: "Верхняя челюсть (слева)", teeth: quadrant6Teeth },
+			{ key: "q7" as const, labelRu: "Q7 Низ-Лево", shortLabelRu: "Q7 Н/Л", jawRu: "Нижняя челюсть (слева)", teeth: quadrant7Teeth },
+			{ key: "q8" as const, labelRu: "Q8 Низ-Право", shortLabelRu: "Q8 Н/П", jawRu: "Нижняя челюсть (справа)", teeth: quadrant8Teeth },
 		],
 		[quadrant5Teeth, quadrant6Teeth, quadrant7Teeth, quadrant8Teeth],
 	);
@@ -313,7 +313,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 					<div
 						role="group"
 						aria-label="Режим детского прикуса"
-						className="inline-flex rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-0.5"
+						className="inline-flex rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-0.5 gap-1"
 						data-testid="pediatric-dentition-mode-toggle"
 					>
 						<button
@@ -321,9 +321,13 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							onClick={() => onModeChange?.("primary")}
 							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 								!isMixed
-									? "bg-teal-600 text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "shadow-xs"
+									: "hover:text-[var(--ink,#0f172a)]"
 							}`}
+							style={{
+								backgroundColor: !isMixed ? "var(--accent, #0d9488)" : "transparent",
+								color: !isMixed ? "#ffffff" : "var(--muted, #64748b)",
+							}}
 							data-testid="mode-primary-btn"
 							title="Только 20 молочных зубов (51–55, 61–65, 71–75, 81–85)"
 						>
@@ -334,9 +338,13 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							onClick={() => onModeChange?.("mixed")}
 							className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 								isMixed
-									? "bg-sky-600 text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "shadow-xs"
+									: "hover:text-[var(--ink,#0f172a)]"
 							}`}
+							style={{
+								backgroundColor: isMixed ? "#0284c7" : "transparent",
+								color: isMixed ? "#ffffff" : "var(--muted, #64748b)",
+							}}
 							data-testid="mode-mixed-btn"
 							title="Сменный прикус: молочные + постоянные первые моляры 16, 26, 36, 46"
 						>
@@ -398,15 +406,23 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 										onSelectTooth(firstTooth);
 									}
 								}}
-								className={`min-h-[44px] h-[44px] px-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98] ${
+								className={`min-h-[44px] h-[44px] px-2 rounded-xl border text-[11px] font-bold transition flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98] ${
 									isQActive
-										? "bg-teal-600 text-white border-teal-600 shadow-sm"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+										? "shadow-sm"
+										: "hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
+								style={{
+									backgroundColor: isQActive ? "var(--accent, #0d9488)" : "var(--paper, #ffffff)",
+									color: isQActive ? "#ffffff" : "var(--ink, #0f172a)",
+									borderColor: isQActive ? "var(--accent, #0d9488)" : "var(--line, #e2e8f0)",
+								}}
 								data-testid={`pediatric-quadrant-btn-${q.key}`}
 							>
-								<span className="truncate">{q.labelRu}</span>
-								<span className="text-[10px] font-mono opacity-80 shrink-0 ml-1">
+								<span className="whitespace-nowrap">{q.labelRu}</span>
+								<span
+									className="text-[10px] font-mono shrink-0 ml-1"
+									style={{ color: isQActive ? "rgba(255, 255, 255, 0.9)" : "var(--muted, #64748b)" }}
+								>
 									({q.teeth.length} з.)
 								</span>
 							</button>
@@ -495,7 +511,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							Зуб {activeTooth}:
 						</span>
 						{onToothFindingChange && (
-							<div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-1" data-testid="active-tooth-findings-group">
+							<div className="flex flex-wrap items-center gap-1.5 sm:gap-1" data-testid="active-tooth-findings-group">
 								{(
 									[
 										{ id: "Healthy", label: "Здоров" },
@@ -513,11 +529,16 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 											key={st.id}
 											type="button"
 											onClick={() => onToothFindingChange(activeTooth, st.id)}
-											className={`min-h-[44px] sm:min-h-0 sm:h-6 px-2 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-bold border transition cursor-pointer select-none active:scale-95 flex items-center justify-center ${
+											className={`min-h-[44px] sm:min-h-0 sm:h-6 px-2.5 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-bold border transition cursor-pointer select-none active:scale-95 flex items-center justify-center shrink-0 ${
 												isCurrent
-													? "bg-teal-600 text-white border-teal-600 shadow-xs"
-													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+													? "shadow-xs"
+													: "hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
+											style={{
+												backgroundColor: isCurrent ? "var(--accent, #0d9488)" : "var(--paper, #ffffff)",
+												color: isCurrent ? "#ffffff" : "var(--ink, #0f172a)",
+												borderColor: isCurrent ? "var(--accent, #0d9488)" : "var(--line, #e2e8f0)",
+											}}
 											data-testid={`active-tooth-finding-${st.id}`}
 										>
 											{st.label}
@@ -599,9 +620,14 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 											onClick={() => onResorptionChange(activeTooth, r)}
 											className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-6 px-2 sm:px-1.5 rounded-xl sm:rounded text-xs sm:text-[10px] font-mono font-bold border transition cursor-pointer select-none active:scale-95 flex items-center justify-center ${
 												isCurrent
-													? "bg-rose-600 text-white border-rose-600 shadow-xs"
-													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+													? "shadow-xs"
+													: "hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
+											style={{
+												backgroundColor: isCurrent ? "#e11d48" : "var(--paper, #ffffff)",
+												color: isCurrent ? "#ffffff" : "var(--ink, #0f172a)",
+												borderColor: isCurrent ? "#e11d48" : "var(--line, #e2e8f0)",
+											}}
 											title={`Резорбция ${r}%: ${RESORPTION_STAGE_DEFINITIONS[r]?.descriptionRu}`}
 											data-testid={`active-tooth-resorption-${r}`}
 										>

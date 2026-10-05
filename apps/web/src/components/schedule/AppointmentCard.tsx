@@ -214,8 +214,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 					onKeyDown={handleCardKeyDown}
 					onDoubleClick={(e) => {
 						e.stopPropagation();
-						if (appointmentPatient?.id) {
-							usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+						const pid = appointmentPatient?.id || appointment.patientId;
+						if (pid) {
+							usePatientStore.getState().setSelectedPatientId(pid);
 							if (onOpenVisit) {
 								onOpenVisit();
 							} else {
@@ -311,8 +312,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 									title={`Пациент: ${appointmentPatientName}${appointmentDoctor?.fullName ? ` · Врач: ${appointmentDoctor.fullName}` : ""}`}
 									onDoubleClick={(e) => {
 										e.stopPropagation();
-										if (appointmentPatient?.id) {
-											usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+										const pid = appointmentPatient?.id || appointment.patientId;
+										if (pid) {
+											usePatientStore.getState().setSelectedPatientId(pid);
 											if (onOpenVisit) {
 												onOpenVisit();
 											} else {
@@ -419,8 +421,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 										title={`Пациент: ${appointmentPatientName}${appointmentDoctor?.fullName ? ` · Врач: ${appointmentDoctor.fullName}` : ""}`}
 										onDoubleClick={(e) => {
 											e.stopPropagation();
-											if (appointmentPatient?.id) {
-												usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+											const pid = appointmentPatient?.id || appointment.patientId;
+											if (pid) {
+												usePatientStore.getState().setSelectedPatientId(pid);
 												if (onOpenVisit) {
 													onOpenVisit();
 												} else {

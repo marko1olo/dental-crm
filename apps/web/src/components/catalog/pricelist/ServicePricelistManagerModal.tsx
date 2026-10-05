@@ -258,7 +258,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			const newItemId = `srv-custom-${Date.now()}`;
 			const newItem: ServicePricelistItem = {
 				id: newItemId,
-				code804n: formCode804n.trim().toUpperCase() || 'A16.07.000',
+				code804n: formCode804n.trim().toUpperCase() || 'A16.07.002',
 				commercialTitle: formCommercialTitle.trim(),
 				statutoryTitle804n: formStatutoryTitle.trim() || formCommercialTitle.trim(),
 				category: formCategory,
@@ -483,7 +483,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 						: Date.now().toString(36);
 					const newItem: ServicePricelistItem = {
 						id: `srv-ingested-${Date.now()}-${idSuffix}`,
-						code804n: item.code804n || 'A16.07.000',
+						code804n: item.code804n || 'A16.07.002',
 						commercialTitle: item.cleanedTitle,
 						statutoryTitle804n: item.statutoryTitle804n || item.cleanedTitle,
 						category: (item.category as Order804nCategory) || 'therapy',

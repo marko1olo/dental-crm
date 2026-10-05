@@ -1,0 +1,2 @@
+page.$: Target page, context or browser has been closed
+    at main (C:\Clinic_MVP\dental-crm\scripts\diagnose_cbct_url.cjs:67:28)

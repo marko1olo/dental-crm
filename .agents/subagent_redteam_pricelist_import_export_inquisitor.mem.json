@@ -1,0 +1,79 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: PRICELIST IMPORT/EXPORT, 804n NOMENCLATURE & 1C COMMERCEML",
+  "status": "COMPLETED",
+  "started_at": "2026-10-03T03:37:00Z",
+  "completed_at": "2026-10-03T03:48:45Z",
+  "completed_steps": [
+    "Read Core Rules (core.md)",
+    "Read Frontend Rules (frontend.md)",
+    "Read Engineering Rules (engineering.md)",
+    "Read AGENTS.md Constitution",
+    "Read GEMINI.md Shim",
+    "Read THE_HAMMER_MASTER_PROMPT.md Supreme Law",
+    "Reconnaissance across apps/api, apps/web, packages/shared for pricelist, import/export, 804n, 1C CommerceML",
+    "Inquisition & Defect Cataloging (parsers, upsert/deduplication, kopecks math, mass repricing, BOM export, orphan components)",
+    "Self-Fixing Implementation & Surgical Refactoring",
+    "Targeted Unit Tests Verification (node --import tsx --test)",
+    "Gate verification (check-encoding, check-css-tokens)",
+    "Final Verbatim Defect & Verification Report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-1",
+      "severity": "CRITICAL",
+      "summary": "Failing test and kopeck truncation in CSV Export/Import",
+      "location": "apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts:625, 861, 872",
+      "description": "Header 'Код услуги' instead of statutory 'Код 804н' broke tests and Excel templates. Math.round(basePriceRub) stripped kopecks for items with non-integer prices like 1500.50.",
+      "fixed": true
+    },
+    {
+      "id": "DEFECT-2",
+      "severity": "CRITICAL",
+      "summary": "Frontend CSV Export math truncation and missing canonical basePriceRub reading",
+      "location": "apps/web/src/components/settings/SettingsPricesTab.tsx:211",
+      "description": "Export used Math.round(((s as any).priceRub ?? ((s as any).priceKopecks ? (s as any).priceKopecks / 100 : 0))) ignoring canonical s.basePriceRub and stripping fractional kopecks.",
+      "fixed": true
+    },
+    {
+      "id": "DEFECT-3",
+      "severity": "HIGH",
+      "summary": "Missing REST Pricelist Export API with UTF-8 BOM and Excel semicolons",
+      "location": "apps/api/src/routes/pricelist.ts, apps/api/src/routes/export.ts",
+      "description": "Backend lacked GET /api/pricelist/export and GET /api/export/pricelist. Exporting only worked in browser blobs.",
+      "fixed": true
+    },
+    {
+      "id": "DEFECT-4",
+      "severity": "HIGH",
+      "summary": "Missing Batch Repricing Engine (ACID Transaction & Exact Kopeck Rounding)",
+      "location": "apps/api/src/routes/pricelist.ts, apps/api/src/db/pricelistQuery.ts",
+      "description": "Clinic lacked server-side mechanism for batch price modification (+X%, fixed delta, round_10, round_50, round_100, none).",
+      "fixed": true
+    },
+    {
+      "id": "DEFECT-5",
+      "severity": "HIGH",
+      "summary": "Synthetic A16.07.000 mock in 804n nomenclature ingestion fallback",
+      "location": "apps/api/src/services/ai/priceListIngestionService.ts:1040, apps/api/src/routes/pricelist.ts:481",
+      "description": "Fallback returned non-statutory mock A16.07.000, violating zero-mocks law. Fixed to statutory Order 804n code A16.07.002.",
+      "fixed": true
+    },
+    {
+      "id": "DEFECT-6",
+      "severity": "HIGH",
+      "summary": "Duplicate generation on repeated rows and hardcoded duration in catalog sync",
+      "location": "apps/web/src/components/settings/catalogSyncHelper.ts",
+      "description": "In-memory cache wasn't updated on record creation, causing identical CSV rows to create duplicates. Title matching wasn't normalized for quotes and cyrillic ё. Duration was hardcoded to 30 min.",
+      "fixed": true
+    },
+    {
+      "id": "DEFECT-7",
+      "severity": "MEDIUM",
+      "summary": "Missing UTF-8 BOM in leads and patients CSV exports",
+      "location": "apps/api/src/routes/export.ts:157",
+      "description": "CSV exports lacked \\uFEFF BOM, causing cyrillic character corruption (mojibake) in Russian Excel on Windows.",
+      "fixed": true
+    }
+  ]
+}

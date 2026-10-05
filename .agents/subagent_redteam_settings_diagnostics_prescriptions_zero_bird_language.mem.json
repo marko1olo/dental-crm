@@ -1,0 +1,135 @@
+{
+  "subagent": "redteam_settings_diagnostics_prescriptions_zero_bird_language",
+  "domain": [
+    "settings (organization, branches, rooms, chairs, schedules, legal)",
+    "staff settings (doctor profiles, access rights, roles, standards, licenses, certificates)",
+    "catalog & pricelist (nomenclature, grouping, import/export, service search)",
+    "diagnostics & imaging (visiograph, x-ray, cbct/dicom viewer, calibration, ruler, 3d, perio chart)",
+    "prescriptions & anesthesia (medications directory, dosages, anesthesia calculator, patient memos)"
+  ],
+  "started_at": "2026-10-03T13:43:00Z",
+  "completed_at": "2026-10-03T14:37:00Z",
+  "status": "completed",
+  "completed_steps": [
+    "Step 0: Read core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md in full",
+    "Step 1: Deep systemic reconnaissance across settings, pricelist, visiograph, radiology, perio, anesthesia",
+    "Step 2: Identified all visible UI instances of bureaucratic bird-language ('043/у', '804н', '107-1/у', 'ФСТЭК', etc.)",
+    "Step 3: Surgical replacements performed across 13 target files preserving all DTOs/enums/types",
+    "Step 4: Ran check-encoding.mjs verifying clean UTF-8 without BOM",
+    "Step 5: Executed targeted domain test suites (44 settings tests, 17 doctor preference tests, 26 hardware tests, 10 visiograph tests, 38 perio tests, 25 pediatric anesthesia tests, 38 pricelist tests — 100% PASS)",
+    "Step 6: Verified Mandate 8b line limits and Mandate 8d zero cartoon emojis"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "file": "apps/web/src/components/settings/SettingsClinicTab.tsx",
+      "defect": "Bureaucratic cipher 'Классический ГОСТ 043/у' in odontogram selector",
+      "fix": "Replaced with 'Классическая табличная зубная формула'"
+    },
+    {
+      "file": "apps/web/src/components/settings/StaffSecurityTab.tsx",
+      "defect": "Bureaucratic cipher 'ФСТЭК' in password security panel",
+      "fix": "Replaced with 'Смена пароля и оценка стойкости'"
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsPricesAiImportSection.tsx",
+      "defect": "Repetitive bureaucratic references to '804н' in user-facing import dialog and column dropdown",
+      "fix": "Replaced with clean clinical services catalog terms ('Официальный код услуги (Номенклатура)', 'Сопоставление с каталогом услуг')"
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsPricesTab.tsx",
+      "defect": "Internal prompt rule leak '(Мандаты 8e, 8n)' and 'прейскурант 804н' in empty state button",
+      "fix": "Replaced with 'Заполнить базовый прейскурант (30 услуг)' and purged mandate leak"
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsProtocolsEditForm.tsx",
+      "defect": "Form 043/u cipher across protocol constructor and ICD-10 labels",
+      "fix": "Replaced with clean clinical protocol terminology"
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsProtocolsTab.tsx",
+      "defect": "'медкарты 043/у' in protocols tab subtitle",
+      "fix": "Replaced with 'медкарты'"
+    },
+    {
+      "file": "apps/web/src/components/settings/ReminderCadenceConfigPanel.tsx",
+      "defect": "Bureaucratic badge 'Форма 043/у'",
+      "fix": "Replaced with clinical badge 'Контроль приёма'"
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsMessageTemplatesTab.tsx",
+      "defect": "'Опрос 043/у (самочувствие)' scenario label",
+      "fix": "Replaced with 'Контроль самочувствия после приёма'"
+    },
+    {
+      "file": "apps/web/src/components/settings/doctor/DoctorPrescriptions107Section.tsx",
+      "defect": "'Формы 107-1/у' cipher in header and preview banner",
+      "fix": "Replaced with 'Шаблоны рецептурных бланков' and 'Рецептурный бланк:'"
+    },
+    {
+      "file": "apps/web/src/components/settings/DoctorClinicalPreferencesSection.tsx",
+      "defect": "'Форма 043/у' and 'Бланк 107-1/у' in section titles and facsimile description",
+      "fix": "Sanitized to clean clinical titles and 'распечатки медицинской карты'"
+    },
+    {
+      "file": "apps/web/src/components/visiograph/VisiographLegalWatermark.ts",
+      "defect": "Watermark canvas text 'Медицинская карта 043/у'",
+      "fix": "Replaced with 'Медицинская карта пациента'"
+    },
+    {
+      "file": "apps/web/src/components/visiograph/VisiographExportService.ts",
+      "defect": "Toasts and error outcomes mentioning 'амбулаторной карте 043/у'",
+      "fix": "Replaced with 'медицинской карте'"
+    },
+    {
+      "file": "apps/web/src/components/visiograph/VisiographLegalPrintProtocol.ts",
+      "defect": "Print protocol conclusion mentioning '(043/у)'",
+      "fix": "Replaced with 'медицинскую карту пациента'"
+    },
+    {
+      "file": "apps/web/src/components/radiology/zakharovRidgeAutomation.ts",
+      "defect": "Toast mentioning 'Протокол 043/у'",
+      "fix": "Replaced with 'Протокол обследования'"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/CbctViewportsRuler.tsx",
+      "defect": "Tooltip mentioning '(Форма 043/у)'",
+      "fix": "Sanitized to 'Скопировать замер в протокол эндодонтии'"
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/workspaces/EndoWorkspace.tsx",
+      "defect": "Tooltip mentioning '(Форма 043/у)'",
+      "fix": "Sanitized to 'Скопировать данные срезов эндодонтии выбранного зуба в медицинскую карту пациента'"
+    },
+    {
+      "file": "apps/web/src/components/perio/chart/PerioExpressBanner.tsx",
+      "defect": "Button and tooltip mentioning '043/у'",
+      "fix": "Sanitized to 'Внести в дневник' and 'Внесено в медкарту!'"
+    },
+    {
+      "file": "apps/web/src/components/perio/chart/PerioToolbar.tsx",
+      "defect": "Header, tooltips and insert button mentioning '043/у'",
+      "fix": "Sanitized to clean clinical titles and 'Внести в дневник'"
+    },
+    {
+      "file": "apps/web/src/components/perio/chart/PerioArchGrid.tsx",
+      "defect": "Header mentioning 'для Формы 043/у'",
+      "fix": "Sanitized to '6 точек зондирования (углублённый осмотр по требованию)'"
+    },
+    {
+      "file": "apps/web/src/components/perio/chart/perioPresets.ts",
+      "defect": "Toast mentioning 'дневник 043/у'",
+      "fix": "Sanitized to 'дневник приёма'"
+    },
+    {
+      "file": "apps/web/src/components/perio/chart/usePerioChartLogic.ts",
+      "defect": "Toasts mentioning 'дневник 043/у' and 'пародонтограммы 043/у'",
+      "fix": "Sanitized to 'дневник приёма' and 'пародонтограммы'"
+    },
+    {
+      "file": "apps/web/src/components/pediatric/PediatricAnesthesiaCalculator.tsx",
+      "defect": "Toasts, button, and tooltip mentioning '043/у'",
+      "fix": "Sanitized to 'Внести анестезию в дневник' and 'Зафиксировано в медкарте'"
+    }
+  ]
+}

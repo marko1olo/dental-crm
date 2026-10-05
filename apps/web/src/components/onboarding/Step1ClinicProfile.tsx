@@ -14,7 +14,7 @@ import {
 	Users,
 } from "lucide-react";
 import { useOnboardingStore } from "../../store/onboardingStore";
-
+import { SovereignScalePresetsCard } from "./SovereignScalePresetsCard";
 import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 
 /**
@@ -91,6 +91,8 @@ export function Step1ClinicProfile() {
 					Для соло-врача автоматически отключается сетевой шум и лишние согласования.
 				</p>
 			</div>
+
+			<SovereignScalePresetsCard />
 
 			<div className="step-section">
 				<label className="section-label" id="operational-mode-label">

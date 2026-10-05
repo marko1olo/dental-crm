@@ -1,0 +1,25 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: DENTA CLINICAL & DIAGNOSTIC INTELLIGENCE",
+  "status": "completed",
+  "phase": "finished",
+  "completed_steps": [
+    "Constitution and Mandates 100% full reading completed (core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Audited AI prompts for warehouse auto-deduction leaks; enforced Mandate 8aa across doctorAutonomyPrompt.ts and denteClinicalConstitution.ts (zero inventory thoughts for AI, backend auto-deducts silently via tech cards)",
+    "Audited clinicalTools.ts; removed hardcoded commercial brands (Straumann, Osstem, Zeiss, Katana) per Mandate 8z; unlocked doctor discount freedom up to 100% per Mandate 8e",
+    "Engineered and registered 5 new Drizzle/PostgreSQL 18 production tools per Mandate 8ab (get_daily_patients, get_doctor_shifts, get_doctor_earnings, get_tooth_history, get_family_deposit_balance)",
+    "Exported all 5 tools via crmPatientScheduleTools, crmClinicalOdontogramTools, crmFinanceInventoryLabTools and registered in CRM_UNIVERSAL_TOOLS (total 31 live database tools)",
+    "Expanded test coverage in crmUniversalTools.test.ts (Suite 11 with 5 tests for Mandate 8ab tools, updated expectedTools count from 22 to 31; all 33 tests passing)",
+    "Integrated live clinical/schedule/earnings/tooth/family fallback handlers into frontend aiAssistantService.ts",
+    "Verified all target unit test suites: crmUniversalTools.test.ts (33/33 pass), clinicalTools.test.ts (15/15 pass), contextTools.test.ts (6/6 pass), voiceDictationParser.test.ts (4/4 pass)",
+    "Passed encoding verification gate (scripts/check-encoding.mjs: 7240 files clean)",
+    "Passed CSS tokens gate (scripts/check-css-tokens.mjs: 0 errors)",
+    "Git diff self-audit performed with zero dead code or console spam"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "AI context previously suffered from warehouse distraction (mentioning auto-deduction of carpules and materials). Mandate 8aa completely purges this distraction — warehouse deductions are 100% automated on the server backend by tech cards of rendered services without human or AI intervention.",
+    "suggestTreatmentPlanSchema previously capped doctor discounts at 50%, violating doctor autonomy (Mandate 8e). Expanded to max(100) allowing 100% discounts for warranty reworks and clinic staff.",
+    "suggestTreatmentPlanTool had hardcoded vendor materials (Straumann BLX, Carl Zeiss, Katana HTML Plus, WaveOne Gold), creating procedural fraud risk. Replaced with generalized clinical protocol standards and dynamic note overrides.",
+    "DENTA assistant lacked direct tools for daily schedule, shifts, piecework earnings, tooth history, and family deposits. All 5 tools are now implemented, tested with 100% real Drizzle ORM schemas, and registered in universal tool registries."
+  ]
+}
