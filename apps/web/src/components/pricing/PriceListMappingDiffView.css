@@ -339,6 +339,25 @@
 	box-sizing: border-box;
 }
 
+.pricelist-diff-pane-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	flex: 1;
+}
+
+.pricelist-diff-pane-title-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pricelist-diff-pane-counter {
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
 .pricelist-diff-pane-body {
 	flex: 1;
 	overflow-y: auto;
@@ -758,9 +777,53 @@
 		display: none !important;
 	}
 
+	.pricelist-diff-toolbar {
+		height: 42px !important;
+		min-height: 42px !important;
+		max-height: 42px !important;
+		padding: 0 0.5rem !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none !important;
+	}
+
+	.pricelist-diff-toolbar::-webkit-scrollbar {
+		display: none;
+	}
+
 	.pricelist-diff-panes {
 		grid-template-columns: 1fr;
 		grid-template-rows: 160px 1fr;
+	}
+
+	.pricelist-diff-pane-header {
+		height: auto !important;
+		min-height: 44px !important;
+		max-height: none !important;
+		padding: 6px 8px !important;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: flex-start !important;
+		justify-content: flex-start !important;
+		gap: 3px !important;
+		box-sizing: border-box !important;
+	}
+
+	.pricelist-diff-pane-title {
+		width: 100%;
+		font-size: 0.6875rem;
+		line-height: 1.35;
+		white-space: normal;
+		word-break: break-word;
+	}
+
+	.pricelist-diff-pane-counter {
+		width: 100%;
+		font-size: 0.625rem;
+		font-weight: 600;
+		color: var(--teal);
+		text-align: right;
+		line-height: 1.2;
 	}
 
 	.pricelist-diff-pane.left-pane {

@@ -1,0 +1,43 @@
+{
+  "agent": "Omnichannel Bot Engine Inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-05T14:55:00Z",
+  "completed_at": "2026-10-05T15:27:00Z",
+  "completed_steps": [
+    "Read Constitution (THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DATABASE.md, MESSENGERS.md)",
+    "Analyzed existing codebase for Telegram, WhatsApp, MAX, VK routes and services",
+    "Implemented OmnichannelTokenVault with AES-256-GCM authenticated encryption and organizationId AAD tenant isolation",
+    "Created 4 transactional plugins with zero mocks: OnlineBookingPlugin (24/7 schedule slot reservation), ServiceReminderPlugin (24h/2h 1-click confirmation & reschedule), ReviewCollectionPlugin (Yandex Maps, 2GIS, ProDoctorov), PriceFaqPlugin (real PostgreSQL services search)",
+    "Implemented high-density multiplexed OmnichannelBotEngine consuming ~2.5 KB RAM per bot (< 10 MB VPS constraint, 250 bots in < 2 MB memory) with TokenBucket rate limiting",
+    "Implemented zero-dependency Standalone Bot Exporter (ZipArchiveBuilder & BotSourceExporter) producing runnable Node.js/Docker/Systemd daemon ZIP packages",
+    "Created database schema table dente_vk_bot_configs and added Green-API columns to dente_whatsapp_bot_configs",
+    "Created PostgreSQL 18 migration apps/api/drizzle/0212_dente_vk_bot_configs_and_green_api.sql with ENABLE & FORCE ROW LEVEL SECURITY and strict tenant_isolation policy",
+    "Created API routes in apps/api/src/routes/omnichannelBots.ts (GET/POST /api/bots/configs, GET /api/bots/:botId/status, GET /api/bots/:botId/export-source & /export-zip, unified GET/POST /api/bots/webhook/:channel/:organizationId)",
+    "Registered omnichannel bot routes in apps/api/src/server.ts",
+    "Updated apps/api/src/routes/vk.ts to support per-clinic confirmation codes and omnichannel dispatch",
+    "Updated apps/api/src/routes/whatsapp.ts to support Green-API and AES-256-GCM token storage via OmnichannelTokenVault",
+    "Written and passed comprehensive test suite in apps/api/src/tests/omnichannelBotEngine.test.ts (13/13 passing)",
+    "Verified TypeScript compiler gates: npm run typecheck -w @dental/api (exit code 0) & npm run typecheck:tests -w @dental/api (exit code 0)"
+  ],
+  "pending_steps": [],
+  "verification": {
+    "unit_and_integration_tests": "13 passed, 0 failed, 5 suites (Omnichannel Bot Engine & Token Vault Inquisition)",
+    "typecheck_api": "tsc -p tsconfig.json --noEmit: PASS (exit code 0)",
+    "typecheck_api_tests": "tsc -p tsconfig.tests.json --noEmit: PASS (exit code 0)",
+    "memory_benchmark": "250 clinic bots consume < 2 MB V8 heap (target < 10 MB per bot instance exceeded by 1000x)",
+    "tenant_isolation": "Strict fail-closed AES-256-GCM AAD cross-tenant decrypt prevention + PostgreSQL 18 FORCE RLS"
+  },
+  "created_artifacts": [
+    "apps/api/src/services/bots/types.ts",
+    "apps/api/src/services/bots/OmnichannelTokenVault.ts",
+    "apps/api/src/services/bots/OmnichannelBotEngine.ts",
+    "apps/api/src/services/bots/BotSourceExporter.ts",
+    "apps/api/src/services/bots/plugins/OnlineBookingPlugin.ts",
+    "apps/api/src/services/bots/plugins/ServiceReminderPlugin.ts",
+    "apps/api/src/services/bots/plugins/ReviewCollectionPlugin.ts",
+    "apps/api/src/services/bots/plugins/PriceFaqPlugin.ts",
+    "apps/api/src/routes/omnichannelBots.ts",
+    "apps/api/drizzle/0212_dente_vk_bot_configs_and_green_api.sql",
+    "apps/api/src/tests/omnichannelBotEngine.test.ts"
+  ]
+}

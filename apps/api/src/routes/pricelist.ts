@@ -6,6 +6,9 @@ import {
 	analyzeTabularPricelist,
 	type ColumnMappingConfig,
 	type PricelistCollisionStrategy,
+	scanPriceList,
+	type ScannedPriceItem,
+	type ScannedPricelistResult,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -793,6 +796,259 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 				selectedSheetIndex: Math.min(selectedSheetIndex, sheets.length - 1),
 				analysis,
 			});
+		},
+	);
+
+	/**
+	 * POST /api/pricelist/scan-and-import
+	 * Интеллектуальный мультиформатный сканер прейскурантов и семантический матчер 804н
+	 * с режимами preview (commit: false) и транзакционным сохранением в БД (commit: true).
+	 */
+	app.post(
+		"/api/pricelist/scan-and-import",
+		{
+			bodyLimit: 20 * 1024 * 1024,
+		},
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const scanAndImportItemSchema = z.object({
+				id: z.string().optional(),
+				cleanedTitle: z.string().min(1, "Наименование услуги не может быть пустым"),
+				code: z.string().optional(),
+				code804n: z.string().default("A16.07.002"),
+				category: z.string().default("therapy"),
+				specialty: z.string().default("therapist"),
+				priceRub: z.number().nonnegative("Цена не может быть отрицательной"),
+				durationMinutes: z.number().int().positive().default(30),
+				suggestedAction: z
+					.enum(["create_new", "update_existing", "identical"])
+					.default("create_new"),
+				matchedExistingServiceId: z.string().nullable().optional(),
+				isApproved: z.boolean().default(true),
+			});
+
+			const pricelistScanAndImportRequestSchema = z.object({
+				fileBase64: z.string().optional(),
+				rawContent: z.string().optional(),
+				rawText: z.string().optional(),
+				filename: z.string().optional().default("pricelist.txt"),
+				selectedSheetIndex: z.number().int().min(0).default(0),
+				customMapping: z
+					.object({
+						codeCol: z.number().int().min(0).optional(),
+						order804nCol: z.number().int().min(0).optional(),
+						titleCol: z.number().int().min(0).optional(),
+						categoryCol: z.number().int().min(0).optional(),
+						specialtyCol: z.number().int().min(0).optional(),
+						priceCol: z.number().int().min(0).optional(),
+						costCol: z.number().int().min(0).optional(),
+						durationCol: z.number().int().min(0).optional(),
+						warrantyCol: z.number().int().min(0).optional(),
+					})
+					.optional(),
+				collisionStrategy: z
+					.enum(["update_existing", "skip_duplicates", "create_new"])
+					.default("update_existing"),
+				commit: z.boolean().default(false),
+				approvedItems: z.array(scanAndImportItemSchema).optional(),
+			});
+
+			const parseResult = pricelistScanAndImportRequestSchema.safeParse(request.body ?? {});
+			if (!parseResult.success) {
+				return reply.code(400).send({
+					error: "PricelistValidationError",
+					message: "Некорректный формат запроса на сканирование прейскуранта.",
+					issues: parseResult.error.issues,
+				});
+			}
+
+			const {
+				fileBase64,
+				rawContent,
+				rawText,
+				filename,
+				selectedSheetIndex,
+				customMapping,
+				collisionStrategy,
+				commit,
+				approvedItems,
+			} = parseResult.data;
+
+			if (commit) {
+				if (
+					!(await requireClinicalMutationAccess(
+						request,
+						reply,
+						"pricelist scan and import commit",
+					))
+				) {
+					return;
+				}
+			} else {
+				if (
+					!(await requireClinicalReadAccess(
+						request,
+						reply,
+						"pricelist scan and import preview",
+					))
+				) {
+					return;
+				}
+			}
+
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"pricelist scan and import",
+			);
+			if (!orgId) return;
+
+			let scanInput: string | string[][] = "";
+
+			if (fileBase64) {
+				try {
+					const buffer = Buffer.from(fileBase64, "base64");
+					const lowerName = (filename || "").toLowerCase();
+
+					if (
+						lowerName.endsWith(".xlsx") ||
+						lowerName.endsWith(".ods") ||
+						looksLikeZipContainer(buffer)
+					) {
+						const isOds = lowerName.endsWith(".ods");
+						const parsedBook = isOds ? parseOds(buffer) : parseXlsx(buffer);
+						if (parsedBook.sheets.length > 0) {
+							const sheetIdx = Math.min(
+								selectedSheetIndex,
+								parsedBook.sheets.length - 1,
+							);
+							scanInput = parsedBook.sheets[sheetIdx]?.rows ?? [];
+						}
+					} else {
+						scanInput = buffer.toString("utf8");
+					}
+				} catch (err: unknown) {
+					request.log.error({ err }, "Ошибка при разборе файла прейскуранта");
+					return reply.code(400).send({
+						error: "SpreadsheetParseError",
+						message: `Не удалось разобрать файл книги прейскуранта: ${err instanceof Error ? err.message : "ошибка чтения"}`,
+					});
+				}
+			} else if (rawContent || rawText) {
+				scanInput = rawContent || rawText || "";
+			} else {
+				return reply.code(400).send({
+					error: "PricelistValidationError",
+					message: "Передайте файл (fileBase64) или текст (rawContent / rawText).",
+				});
+			}
+
+			const existingCatalog = await getServiceCatalogForOrganization(orgId);
+			const cleanedMapping: Partial<ColumnMappingConfig> | undefined = customMapping
+				? (Object.fromEntries(
+						Object.entries(customMapping).filter(([, v]) => v !== undefined),
+					) as Partial<ColumnMappingConfig>)
+				: undefined;
+
+			const scanResult = scanPriceList(scanInput, {
+				customMapping: cleanedMapping,
+				existingCatalog,
+			});
+
+			if (!commit) {
+				return reply.code(200).send({
+					success: scanResult.success,
+					scanResult,
+				});
+			}
+
+			// COMMIT MODE: Persist in ACID transaction
+			const itemsToCommit =
+				approvedItems && approvedItems.length > 0
+					? approvedItems.filter((i) => i.isApproved)
+					: scanResult.items.filter(
+							(i) => i.validationStatus === "valid" && i.isApproved,
+						);
+
+			let createdCount = 0;
+			let updatedCount = 0;
+			let skippedCount = 0;
+
+			try {
+				await db.transaction(async () => {
+					for (const item of itemsToCommit) {
+						const category = normalizeCategory(item.category);
+						const specialty = normalizeSpecialty(item.specialty);
+						const statutoryCode =
+							item.code804n && item.code804n.trim().length > 0
+								? item.code804n.trim()
+								: STATUTORY_CATEGORY_CODES[category] || "A16.07.002";
+						const durationMinutes =
+							item.durationMinutes || STATUTORY_CATEGORY_DURATIONS[category] || 30;
+
+						if (
+							collisionStrategy === "skip_duplicates" &&
+							item.matchedExistingServiceId
+						) {
+							skippedCount++;
+							continue;
+						}
+
+						if (
+							(collisionStrategy === "update_existing" ||
+								item.suggestedAction === "update_existing") &&
+							item.matchedExistingServiceId
+						) {
+							await updateServiceCatalogItemInDb(
+								orgId,
+								item.matchedExistingServiceId,
+								{
+									code: statutoryCode,
+									title: item.cleanedTitle,
+									basePriceRub: item.priceRub,
+									category,
+									specialty,
+									durationMinutes,
+								},
+							);
+							updatedCount++;
+						} else {
+							await createServiceCatalogItemInDb(orgId, {
+								code: statutoryCode,
+								title: item.cleanedTitle,
+								category,
+								specialty,
+								basePriceRub: item.priceRub,
+								durationMinutes,
+								taxDeductible: true,
+								active: true,
+							});
+							createdCount++;
+						}
+					}
+				});
+
+				return reply.code(200).send({
+					success: true,
+					committedCount: createdCount + updatedCount,
+					createdCount,
+					updatedCount,
+					skippedCount,
+					scanResult,
+				});
+			} catch (error) {
+				if (error instanceof ServiceCatalogStorageDisabledError) {
+					return reply.code(503).send({
+						error: "ServiceCatalogStorageDisabled",
+						message:
+							"Хранилище прейскуранта отключено: настройте постоянную базу данных для сохранения услуг.",
+					});
+				}
+				request.log.error({ err: error }, "Ошибка при транзакционной фиксации прейскуранта");
+				return reply.code(500).send({
+					error: "PricelistCommitTransactionError",
+					message: (error as Error).message || "Ошибка транзакционного импорта прейскуранта",
+				});
+			}
 		},
 	);
 

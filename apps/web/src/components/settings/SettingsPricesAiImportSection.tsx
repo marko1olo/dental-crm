@@ -31,6 +31,7 @@ import {
 	type SettingsAccessHeaders,
 	staffMutationHeaders,
 } from "./staffMutationRequest";
+import "./SettingsPricesTab.css";
 
 export interface SettingsPricesAiImportSectionProps {
 	readonly pricelistSourceKindLabels?: Record<string, string> | undefined;

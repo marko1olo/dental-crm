@@ -545,11 +545,11 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 				{/* Left Pane: Original Unstructured Document with Synchronized Scroll */}
 				<section className="pricelist-diff-pane left-pane" aria-label="Исходный документ">
 					<header className="pricelist-diff-pane-header">
-						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-							<FileText size={13} />
-							<span>1. Исходная строка старого документа</span>
+						<div className="pricelist-diff-pane-title">
+							<FileText size={13} style={{ flexShrink: 0 }} />
+							<span className="pricelist-diff-pane-title-text">1. Исходная строка старого документа</span>
 						</div>
-						<span>{`${filteredItems.length} строк`}</span>
+						<span className="pricelist-diff-pane-counter">{`${filteredItems.length} строк`}</span>
 					</header>
 
 					<div
@@ -584,11 +584,13 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 				{/* Right Pane: Statutory Nomenclature Mapping & Actions with Synchronized Scroll */}
 				<section className="pricelist-diff-pane right-pane" aria-label="Сопоставление с номенклатурой услуг">
 					<header className="pricelist-diff-pane-header">
-						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-							<ShieldCheck size={13} style={{ color: 'var(--ok-fg)' }} />
-							<span>2. Распознанное наименование, код услуги, цена и действие</span>
+						<div className="pricelist-diff-pane-title">
+							<ShieldCheck size={13} style={{ color: 'var(--ok-fg)', flexShrink: 0 }} />
+							<span className="pricelist-diff-pane-title-text" title="2. Распознанное наименование, код услуги, цена и действие">
+								2. Распознанное наименование, код услуги, цена и действие
+							</span>
 						</div>
-						<span>
+						<span className="pricelist-diff-pane-counter">
 							{`Выбрано к загрузке: ${items.filter((i) => i.isApproved).length} из ${items.length}`}
 						</span>
 					</header>
