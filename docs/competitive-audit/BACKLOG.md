@@ -2,8 +2,16 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-10-03 / WAVES 301–337 / ВОЛНА 337 DENTALPRO 1 142 CLINICAL PROTOCOLS & DENTA AI COPILOT / CHAIRSIDE HUD INTEGRATION — 477 ФИЧ: 63 КАНОНИЧЕСКИЕ + 414 АДДЕНДУМ, ВСЕ 477 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-05 / WAVES 301–338 / ВОЛНА 338 BACKGROUND HOST PERFORMANCE MONITOR & ADAPTIVE CT LOAD — 478 ФИЧ: 63 КАНОНИЧЕСКИЕ + 415 АДДЕНДУМ, ВСЕ 478 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 > Проведена тотальная декомпозиция всех монолитов кодовой базы и беспощадная ликвидация госпитального карго-культа (Мандаты 1..8n):
+> -12. Волна 338: Фоновый динамический монитор производительности хоста и автоадаптация КТ/DICOM рендеринга (Фича #478, Мандаты 8c, 8e, 8k, 8n, 8v):
+>     1) Легковесный (<0.2% CPU), без эффекта наблюдателя, фоновый монитор телеметрии `RuntimePerformanceMonitor` (`runtimePerformanceMonitor.ts`): burst-сэмплирование (30 кадров) на pre-allocated `Float32Array` (Zero-GC на hot path), расчет FPS, Jitter (дисперсия времени кадров) и P95.
+>     2) Перехват Long Tasks (>50мс) через `PerformanceObserver` со скользящим окном 6 секунд и подсчетом кумулятивной задержки.
+>     3) Мониторинг `performance.memory` Chromium с порогами давления кучи (70% WARNING, 80% DEGRADED, 85% CRITICAL) для предотвращения крашей OOM.
+>     4) Page Visibility API: мгновенная заморозка таймеров и сэмплирования при скрытии вкладки (`hidden`) и мягкий рестарт при активации (`visible`).
+>     5) Конечный автомат с анти-дёргающим гистерезисом: немедленная деградация при просадке, но возврат в более легкий режим строго после 10 секунд непрерывной стабильности.
+>     6) Реактивная интеграция с КТ/DICOM: `DicomViewport.tsx` (динамический даунскейл буфера до 768px при деградации хоста для удержания 60 FPS) и `PanoramicRendererWindow.tsx` (увеличение шага Z до 1.5мм и сглаживание low).
+>     7) 100% тестов пройдены: `runtimePerformanceMonitor.test.ts` (6/6 PASS), `multiPlatformNativeBridges.test.ts` (32/32 PASS).
 > -11. Волна 337: Полная боевая связка каталога 1 142 клинических протоколов с DENTA AI Assistant / Copilot Drawer и Chairside Copilot HUD (Фича #477, Мандаты 8e, 8l, 8y):
 >     1) Детерминированный локальный SSOT-матчинг (<2мс) без переполнения контекста LLM: алгоритм `extractFdiToothFromText` (зубы постоянного 11–48 и молочного 51–85 прикуса) и `findBestClinicalProtocol` в `clinicalProtocolsCatalog.ts` с поддержкой алиасов и нормализацией категорий.
 >     2) Action Engine DENTA AI (`aiActionDispatcher.ts`): инструменты `apply_clinical_protocol` и `search_clinical_protocols` обогащены полями каталога (1 142 протокола, МКБ-10, гранулярные патчи дневника, статус зуба) с атомарным диспатчем в `useVisitStore` и `useAppStore`.

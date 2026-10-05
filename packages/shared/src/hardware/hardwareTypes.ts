@@ -222,3 +222,44 @@ export interface TestPrintResult {
 	readonly targetSummary: string;
 	readonly error?: string | undefined;
 }
+
+// ============================================================================
+// 7. DYNAMIC RUNTIME TELEMETRY & LOAD STATE
+// ============================================================================
+
+export const dynamicLoadStateSchema = z.enum([
+	"HEALTHY",
+	"WARNING",
+	"DEGRADED",
+	"CRITICAL",
+]);
+export type DynamicLoadState = z.infer<typeof dynamicLoadStateSchema>;
+
+export interface DynamicPerformanceMetrics {
+	readonly instantFps: number;
+	readonly averageFps: number;
+	readonly minFps: number;
+	readonly maxFps: number;
+	readonly jitterMs: number;
+	readonly p95FrameTimeMs: number;
+	readonly sampleCount: number;
+	readonly longTaskCount: number;
+	readonly totalLongTaskDurationMs: number;
+	readonly maxLongTaskDurationMs: number;
+	readonly memoryPressureRatio: number | null;
+	readonly usedHeapMb: number | null;
+	readonly heapLimitMb: number | null;
+	readonly isTabVisible: boolean;
+}
+
+export interface DynamicPerformanceSnapshot {
+	readonly timestamp: number;
+	readonly state: DynamicLoadState;
+	readonly previousState: DynamicLoadState;
+	readonly stateChangedAt: number;
+	readonly metrics: DynamicPerformanceMetrics;
+	readonly isThrottlingRecommended: boolean;
+	readonly downscaleFactor: number;
+	readonly targetFpsCap: number;
+	readonly recommendedBlurDisabled: boolean;
+}

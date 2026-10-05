@@ -38,6 +38,19 @@ import {
 	type OmniPlatformInfo,
 } from "../lib/omniPlatformAdapter";
 import { getDeviceFormFactor } from "../native/mobileBridge";
+import {
+	getDynamicPerformanceSnapshot,
+	subscribeToPerformanceStateChange,
+	useDynamicPerformanceState,
+	type DynamicLoadState,
+	type DynamicPerformanceSnapshot,
+} from "./telemetry/runtimePerformanceMonitor.js";
+import {
+	getHardwareProfile,
+	isLowSpecDevice as isLowSpecCanonical,
+	applyHardwareProfileToRoot,
+} from "../lib/hardwareCapabilities";
+
 
 export type RuntimeDevicePlatform = "desktop" | "android" | "pwa" | "web";
 
@@ -105,6 +118,7 @@ export function isLowSpecHardware(): boolean {
 		const el = document.documentElement;
 		if (
 			el.getAttribute("data-low-spec") === "true" ||
+			el.getAttribute("data-hardware-tier") === "potato" ||
 			el.getAttribute("data-hardware-tier") === "low" ||
 			el.getAttribute("data-perf") === "low" ||
 			el.classList.contains("low-spec-mode") ||
@@ -113,72 +127,38 @@ export function isLowSpecHardware(): boolean {
 			return true;
 		}
 		if (
+			el.getAttribute("data-hardware-tier") === "balanced" ||
+			el.getAttribute("data-hardware-tier") === "ultra" ||
 			el.getAttribute("data-hardware-tier") === "high" ||
-			el.getAttribute("data-perf") === "high"
+			el.getAttribute("data-perf") === "high" ||
+			el.getAttribute("data-perf") === "ultra" ||
+			el.getAttribute("data-perf") === "balanced"
 		) {
 			return false;
 		}
 	}
 
-	// 2. Check query string or localStorage manual overrides
-	if (typeof window !== "undefined") {
-		try {
-			if (window.location?.search) {
-				const params = new URLSearchParams(window.location.search);
-				const urlFlag = params.get("lowspec") ?? params.get("low-spec");
-				if (urlFlag === "1" || urlFlag === "true") return true;
-				if (urlFlag === "0" || urlFlag === "false") return false;
-			}
-		} catch {
-			// Ignore URL parse errors
-		}
-		try {
-			const stored = window.localStorage?.getItem("dente:low-spec-mode");
-			if (stored === "true" || stored === "1") return true;
-			if (stored === "false" || stored === "0") return false;
-		} catch {
-			// Ignore localStorage access errors
-		}
-	}
-
-	// 3. Navigator hardware checks
-	if (typeof navigator !== "undefined") {
-		// Memory (GB) — Chromium Device Memory API
-		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
-		if (typeof navMem === "number" && navMem <= 4) {
-			return true;
-		}
-
-		// CPU cores (hardwareConcurrency) — <= 4 cores typical for Celeron / older laptop
-		const cores = navigator.hardwareConcurrency;
-		if (typeof cores === "number" && cores > 0 && cores <= 4) {
-			return true;
-		}
-
-		// Save-Data network flag
-		const navConn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-		if (navConn?.saveData === true) {
-			return true;
-		}
-		if (navConn?.effectiveType === "slow-2g" || navConn?.effectiveType === "2g" || navConn?.effectiveType === "3g") {
-			return true;
-		}
-	}
-
-	return false;
+	// 2. Delegate directly to canonical hardware profiler
+	return isLowSpecCanonical();
 }
 
 /**
  * Classifies runtime hardware into resource tiers:
- * - "low": Celeron / dual-core, <= 4GB RAM, 5400 RPM HDD, battery saver
- * - "medium": 4-6 cores, 6-8GB RAM (mid-range office PC)
- * - "high": >= 8 cores, >= 8GB RAM (modern doctor workstation)
+ * - "low": Celeron / dual-core, <= 4GB RAM, 5400 RPM HDD, battery saver ("potato" or "low")
+ * - "medium": 4-6 cores, 6-8GB RAM (mid-range office PC, "balanced")
+ * - "high": >= 8 cores, >= 8GB RAM (modern doctor workstation, "ultra")
  */
 export function getHardwareResourceTier(): HardwareResourceTier {
 	if (typeof document !== "undefined" && document.documentElement) {
 		const tier = document.documentElement.getAttribute("data-hardware-tier");
-		if (tier === "low" || tier === "medium" || tier === "high") {
-			return tier;
+		if (tier === "potato" || tier === "low") {
+			return "low";
+		}
+		if (tier === "balanced" || tier === "medium") {
+			return "medium";
+		}
+		if (tier === "ultra" || tier === "high") {
+			return "high";
 		}
 	}
 
@@ -186,22 +166,13 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 		return "low";
 	}
 
-	if (typeof navigator !== "undefined") {
-		const cores = navigator.hardwareConcurrency;
-		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
-
-		const hasHighCores = typeof cores === "number" && cores >= 8;
-		const hasHighMem = typeof navMem === "number" ? navMem >= 8 : true;
-
-		if (hasHighCores && hasHighMem) {
-			return "high";
-		}
-
-		if ((typeof cores === "number" && cores >= 6) || (typeof navMem === "number" && navMem >= 6)) {
-			return "medium";
-		}
+	const profile = getHardwareProfile();
+	if (profile.tier === "potato" || profile.tier === "low") {
+		return "low";
 	}
-
+	if (profile.tier === "balanced") {
+		return "medium";
+	}
 	return "high";
 }
 
@@ -264,6 +235,44 @@ export function applyLowSpecOptimizationsToDom(forcedLow?: boolean): void {
 		root.classList.remove("low-spec-perf");
 	}
 }
+
+
+/**
+ * Returns the active real-time dynamic host performance state:
+ * - "HEALTHY": Smooth 60 FPS, no long tasks, optimal memory.
+ * - "WARNING": Microstutters / light frame drops, modest throttling recommended.
+ * - "DEGRADED": High CPU/GPU load, CT downscaling recommended to keep UI fluid.
+ * - "CRITICAL": Severe lag / impending OOM crash, aggressive downscaling enforced.
+ */
+export function getDynamicPerformanceState(): DynamicLoadState {
+	return getDynamicPerformanceSnapshot().state;
+}
+
+/**
+ * Returns true if the host machine is currently under heavy load (DEGRADED or CRITICAL),
+ * requiring reduction in visual effects (blur, animations) and CT texture resolution.
+ */
+export function isHostUnderHeavyLoad(): boolean {
+	const state = getDynamicPerformanceState();
+	return state === "DEGRADED" || state === "CRITICAL";
+}
+
+/**
+ * Calculates adaptive downscale multiplier (0.4 .. 1.0) for DICOM / CT slices and 3D MPR buffers.
+ * Combines static hardware resource tier with real-time dynamic host telemetry (Mandates 8c, 8e, 8k, 8n).
+ */
+export function getAdaptiveDicomDownscaleFactor(): number {
+	const snapshot = getDynamicPerformanceSnapshot();
+	const profile = getHardwareProfile();
+	const staticFactor =
+		profile.tier === "potato"
+			? 0.5
+			: profile.tier === "low"
+				? 0.75
+				: 1.0;
+	return Math.min(staticFactor, snapshot.downscaleFactor);
+}
+
 
 /**
  * Returns exact clinical control dimensions based on active pointer.
@@ -619,16 +628,23 @@ export function getDeviceDiagnosticReport(): Record<string, unknown> {
 		safeAreaInsets: info.safeArea,
 		isLowSpec: isLowSpecHardware(),
 		hardwareTier: getHardwareResourceTier(),
+		canonicalTier: getHardwareProfile().tier,
+		hardwareScore: getHardwareProfile().score,
+		gpuType: getHardwareProfile().gpuType,
+		hardwareProfile: getHardwareProfile(),
 		isHighPerformance: isHighPerformanceWorkstation(),
+		dynamicPerformance: getDynamicPerformanceSnapshot(),
 		cores: typeof navigator !== "undefined" ? (navigator.hardwareConcurrency ?? null) : null,
 		deviceMemoryGb: typeof navigator !== "undefined" ? ((navigator as unknown as { deviceMemory?: number }).deviceMemory ?? null) : null,
 		shouldVirtualizeAggressively: shouldVirtualizeListsAggressively(),
 		adaptivePollingInterval10s: getAdaptivePollingIntervalMs(10_000),
+		adaptiveDicomDownscaleFactor: getAdaptiveDicomDownscaleFactor(),
 		userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "ssr",
 		screenWidth: typeof window !== "undefined" ? window.innerWidth : 0,
 		screenHeight: typeof window !== "undefined" ? window.innerHeight : 0,
 		devicePixelRatio: typeof window !== "undefined" ? window.devicePixelRatio : 1,
 	};
+
 }
 
 export {
@@ -637,5 +653,17 @@ export {
 	PHONE_TOUCH_ERGONOMICS,
 	DOCTOR_HOTKEYS,
 	syncPlatformDomAttributes,
+	subscribeToPerformanceStateChange,
+	useDynamicPerformanceState,
+	getDynamicPerformanceSnapshot,
+	getHardwareProfile,
+	useHardwareProfile,
+	useHardwareTier,
+	useHardwareAdaptiveSettings,
+	onHardwareProfileChange,
+	subscribeToHardwareProfile,
+	setHardwareTierOverride,
+	getHardwareTierOverride,
 };
+
 

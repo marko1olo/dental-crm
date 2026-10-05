@@ -32,7 +32,11 @@ import {
 	type DicomViewportState,
 	type Point2D,
 } from "./rvgViewerEngine.js";
-import { isLowSpecHardware } from "../../utils/deviceDetection.js";
+import {
+	isLowSpecHardware,
+	isHostUnderHeavyLoad,
+	getAdaptiveDicomDownscaleFactor,
+} from "../../utils/deviceDetection.js";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 
 export interface DicomViewportProps {
@@ -129,15 +133,19 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			filteredCanvasRef.current = offscreen;
 		}
 
-		// Low-Spec Laptop Optimization (Mandates 8c, 8e, 8k, 8n)
-		// On tier "low" (Intel HD Graphics, Celeron/i3, 4GB RAM), downscale intermediate buffer
-		// to max 1024px to save 80% RAM and avoid GC pressure
-		// On tier "high", maintain 100% native resolution
+		// Adaptive Hardware & Host Load Optimization (Mandates 8c, 8e, 8k, 8n)
+		// Considers both static hardware tier and real-time host telemetry (FPS, Long Tasks, Memory).
+		// When host is under load (degraded/critical), downscales intermediate buffer to keep 60 FPS
 		const isLowSpec = isLowSpecHardware();
+		const isHeavyLoad = isHostUnderHeavyLoad();
+		const downscaleFactor = getAdaptiveDicomDownscaleFactor();
 		let targetWidth = img.width;
 		let targetHeight = img.height;
-		if (isLowSpec && (targetWidth > 1024 || targetHeight > 1024)) {
-			const scale = 1024 / Math.max(targetWidth, targetHeight);
+		const maxDimension = isHeavyLoad ? 768 : isLowSpec ? 1024 : 2048;
+		const effectiveMax = Math.round(maxDimension * downscaleFactor);
+
+		if (targetWidth > effectiveMax || targetHeight > effectiveMax) {
+			const scale = effectiveMax / Math.max(targetWidth, targetHeight);
 			targetWidth = Math.max(1, Math.round(targetWidth * scale));
 			targetHeight = Math.max(1, Math.round(targetHeight * scale));
 		}
@@ -148,7 +156,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		if (!offCtx) return;
 
 		offCtx.imageSmoothingEnabled = true;
-		offCtx.imageSmoothingQuality = isLowSpec ? "low" : "high";
+		offCtx.imageSmoothingQuality = (isLowSpec || isHeavyLoad) ? "low" : "high";
 		offCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
 		try {
 			const imgData = offCtx.getImageData(0, 0, targetWidth, targetHeight);
