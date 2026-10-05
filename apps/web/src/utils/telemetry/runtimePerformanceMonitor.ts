@@ -186,7 +186,7 @@ export class RuntimePerformanceMonitor {
 		this.isRunning = true;
 
 		// 1. Setup visibility listener
-		if (typeof document !== "undefined") {
+		if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
 			this.isTabVisible = document.visibilityState !== "hidden";
 			this.visibilityListener = () => {
 				const visible = document.visibilityState !== "hidden";
@@ -194,6 +194,7 @@ export class RuntimePerformanceMonitor {
 			};
 			document.addEventListener("visibilitychange", this.visibilityListener);
 		}
+
 
 		// 2. Setup PerformanceObserver for Long Tasks
 		if (this.options.enableLongTasks && typeof PerformanceObserver !== "undefined") {
@@ -230,7 +231,11 @@ export class RuntimePerformanceMonitor {
 
 		this.cancelPendingTimers();
 
-		if (this.visibilityListener && typeof document !== "undefined") {
+		if (
+			this.visibilityListener &&
+			typeof document !== "undefined" &&
+			typeof document.removeEventListener === "function"
+		) {
 			document.removeEventListener("visibilitychange", this.visibilityListener);
 			this.visibilityListener = null;
 		}

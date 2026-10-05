@@ -49,6 +49,13 @@ import {
 	getHardwareProfile,
 	isLowSpecDevice as isLowSpecCanonical,
 	applyHardwareProfileToRoot,
+	useHardwareProfile,
+	useHardwareTier,
+	useHardwareAdaptiveSettings,
+	onHardwareProfileChange,
+	subscribeToHardwareProfile,
+	setHardwareTierOverride,
+	getHardwareTierOverride,
 } from "../lib/hardwareCapabilities";
 
 
@@ -120,6 +127,8 @@ export function isLowSpecHardware(): boolean {
 			el.getAttribute("data-low-spec") === "true" ||
 			el.getAttribute("data-hardware-tier") === "potato" ||
 			el.getAttribute("data-hardware-tier") === "low" ||
+			el.getAttribute("data-perf-tier") === "potato" ||
+			el.getAttribute("data-perf-tier") === "low" ||
 			el.getAttribute("data-perf") === "low" ||
 			el.classList.contains("low-spec-mode") ||
 			el.classList.contains("low-spec-perf")
@@ -130,6 +139,9 @@ export function isLowSpecHardware(): boolean {
 			el.getAttribute("data-hardware-tier") === "balanced" ||
 			el.getAttribute("data-hardware-tier") === "ultra" ||
 			el.getAttribute("data-hardware-tier") === "high" ||
+			el.getAttribute("data-perf-tier") === "balanced" ||
+			el.getAttribute("data-perf-tier") === "ultra" ||
+			el.getAttribute("data-perf-tier") === "high" ||
 			el.getAttribute("data-perf") === "high" ||
 			el.getAttribute("data-perf") === "ultra" ||
 			el.getAttribute("data-perf") === "balanced"
@@ -138,7 +150,29 @@ export function isLowSpecHardware(): boolean {
 		}
 	}
 
-	// 2. Delegate directly to canonical hardware profiler
+	// 2. Explicit navigator checks (for node test mocks & real browser APIs)
+	if (typeof navigator !== "undefined") {
+		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+		const cores = navigator.hardwareConcurrency;
+		if (typeof navMem === "number" && navMem <= 4) {
+			return true;
+		}
+		if (typeof cores === "number" && cores > 0 && cores <= 4) {
+			return true;
+		}
+		const navConn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+		if (navConn?.saveData === true) {
+			return true;
+		}
+		if (navConn?.effectiveType === "slow-2g" || navConn?.effectiveType === "2g" || navConn?.effectiveType === "3g") {
+			return true;
+		}
+		if (typeof cores === "number" && cores >= 6 && (typeof navMem !== "number" || navMem >= 6)) {
+			return false;
+		}
+	}
+
+	// 3. Delegate to canonical hardware profiler
 	return isLowSpecCanonical();
 }
 
@@ -164,6 +198,22 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 
 	if (isLowSpecHardware()) {
 		return "low";
+	}
+
+	if (typeof navigator !== "undefined") {
+		const cores = navigator.hardwareConcurrency;
+		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+
+		const hasHighCores = typeof cores === "number" && cores >= 8;
+		const hasHighMem = typeof navMem === "number" ? navMem >= 8 : true;
+
+		if (hasHighCores && hasHighMem) {
+			return "high";
+		}
+
+		if ((typeof cores === "number" && cores >= 6) || (typeof navMem === "number" && navMem >= 6)) {
+			return "medium";
+		}
 	}
 
 	const profile = getHardwareProfile();
