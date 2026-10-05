@@ -106,17 +106,22 @@ function stubTransaction(options: {
 	lockedPatients?: Array<{ id: string }>;
 	insertedRows?: unknown[];
 }) {
-	const calls = { select: 0, insert: 0 };
+	const calls = { select: 0, insert: 0, update: 0 };
 	const tx = {
 		select: () => {
 			calls.select += 1;
 			return {
 				from: () => ({
-					where: () => ({
-						for: () => ({
-							limit: async () => options.lockedPatients ?? [{ id: "pat-123" }],
-						}),
-					}),
+					where: () => {
+						const res = Object.assign(Promise.resolve([]), {
+							for: () => ({
+								limit: async () => options.lockedPatients ?? [{ id: "pat-123" }],
+							}),
+							limit: async () => [],
+						});
+						return res;
+					},
+					limit: async () => [],
 				}),
 			};
 		},
@@ -124,6 +129,14 @@ function stubTransaction(options: {
 			calls.insert += 1;
 			return {
 				values: () => ({ returning: async () => options.insertedRows ?? [] }),
+			};
+		},
+		update: () => {
+			calls.update += 1;
+			return {
+				set: () => ({
+					where: async () => [],
+				}),
 			};
 		},
 		execute: async () => [],
@@ -150,7 +163,8 @@ describe("createPaymentInDb", () => {
 
 		assert.strictEqual(result.id, "pay-123");
 		assert.strictEqual(result.amountRub, 1000);
-		assert.strictEqual(calls.insert, 1);
+		// 1 запись в payments + 1 запись в fiscalReceiptQueue по 54-ФЗ
+		assert.strictEqual(calls.insert, 2);
 		// Блокировка обязана быть взята до вставки.
 		assert.ok(calls.select >= 1);
 	});
@@ -219,8 +233,8 @@ describe("createPaymentInDb", () => {
 		});
 
 		assert.strictEqual(result.amountRub, 4000);
-		// Должно быть ровно 2 вставки: наличная и безналичная части
-		assert.strictEqual(calls.insert, 2);
+		// Ровно 3 вставки: наличная и безналичная части в payments + 1 запись в fiscalReceiptQueue
+		assert.strictEqual(calls.insert, 3);
 	});
 
 	test("отклоняет смешанную оплату, если сумма частей не совпадает с общей суммой", async () => {
@@ -237,5 +251,58 @@ describe("createPaymentInDb", () => {
 				}),
 			/не совпадает с общей суммой/,
 		);
+	});
+
+	test("при полной оплате визита переводит визит в signed, прием в completed и услуги в completed", async () => {
+		const updateSets: Array<{ values: any }> = [];
+		const tx = {
+			select: () => ({
+				from: () => ({
+					where: () => {
+						const res = Object.assign(Promise.resolve([]), {
+							for: () => ({
+								limit: async () => [
+									{
+										id: "vis-123",
+										patientId: "pat-123",
+										appointmentId: "appt-123",
+										status: "draft",
+									},
+								],
+							}),
+							limit: async () => [],
+						});
+						return res;
+					},
+					limit: async () => [],
+				}),
+			}),
+			insert: () => ({
+				values: () => ({ returning: async () => [mockPaymentData] }),
+			}),
+			update: () => ({
+				set: (values: any) => {
+					updateSets.push({ values });
+					return {
+						where: async () => [],
+					};
+				},
+			}),
+			execute: async () => [],
+		};
+		mock.method(db, "transaction", async (cb: (t: unknown) => unknown) => cb(tx));
+
+		const result = await createPaymentInDb("org-123", {
+			patientId: "pat-123",
+			visitId: "vis-123",
+			amountRub: 1000,
+			method: "card",
+		});
+
+		assert.strictEqual(result.id, "pay-123");
+		const signedVisitUpdate = updateSets.find((u) => u.values.status === "signed");
+		const completedApptUpdate = updateSets.find((u) => u.values.status === "completed");
+		assert.ok(signedVisitUpdate, "Визит должен быть переведен в статус signed");
+		assert.ok(completedApptUpdate, "Связанная запись расписания должна быть переведена в completed");
 	});
 });

@@ -711,6 +711,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				<PaymentModal
 					isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)}
 					patientId={patientId} patientName={patientName} patientPhone={patientPhone}
+					visitId={visitId}
 					amountRub={totals.totalDueRub} patientDepositRub={patientDepositRub}
 					patientFamilyBalanceRub={patientFamilyBalanceRub} cashierName={cashierName || doctorName}
 					doctorName={doctorName} clinicLegalName={clinicLegalName}

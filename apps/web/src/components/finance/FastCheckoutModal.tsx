@@ -37,6 +37,7 @@ export interface FastCheckoutModalProps {
 	readonly totalBillRub?: number | undefined;
 	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
 	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientEmail?: string | undefined;
@@ -198,6 +199,25 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 
 				{/* Body Content */}
 				<div className="p-3 sm:p-4 pb-28 sm:pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
+					{/* Mobile Hero Amount Panel (Apple HIG / POS Chairside 32-36px bold font-mono) */}
+					<div className="sm:hidden p-3.5 rounded-2xl bg-gradient-to-b from-teal-500/15 to-teal-500/5 border border-teal-500/30 text-center shadow-xs space-y-1">
+						<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 block">
+							Итого к оплате
+						</span>
+						<div className="text-3xl font-black font-mono tracking-tight text-[var(--ink,#0f172a)] leading-tight">
+							{(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+						</div>
+						<div className="text-xs text-[var(--muted,#64748b)] truncate flex items-center justify-center gap-1.5 pt-0.5">
+							<span className="font-semibold text-[var(--ink,#0f172a)] truncate">{patientName || "Пациент"}</span>
+							{orderId && <span>• Заказ #{orderId}</span>}
+							{discountCalc.discountRub > 0 && (
+								<span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200">
+									Скидка -{discountCalc.discountRub.toLocaleString("ru-RU")} ₽
+								</span>
+							)}
+						</div>
+					</div>
+
 					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
 					<div className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
 						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">

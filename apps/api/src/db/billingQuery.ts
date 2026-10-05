@@ -1,5 +1,6 @@
 import {
 	type CreatePaymentInput,
+	type FiscalReceiptDetails,
 	formatKopecksRu,
 	formatKopecksToRubles,
 	type Kopecks,
@@ -552,12 +553,23 @@ export async function createPaymentInDb(
 			}
 		}
 
+		let lockedVisit:
+			| {
+					id: string;
+					patientId: string;
+					appointmentId: string | null;
+					status: "draft" | "signed" | "voided";
+			  }
+			| undefined;
+		let remainingVisitKopecks = 0;
+
 		// 2. Validate and check remaining balance for visitId
 		if (input.visitId) {
-			const [lockedVisit] = await tx
+			const [foundVisit] = await tx
 				.select({
 					id: schema.visits.id,
 					patientId: schema.visits.patientId,
+					appointmentId: schema.visits.appointmentId,
 					status: schema.visits.status,
 				})
 				.from(schema.visits)
@@ -570,13 +582,14 @@ export async function createPaymentInDb(
 				.for("update")
 				.limit(1);
 
-			if (!lockedVisit) {
+			if (!foundVisit) {
 				throw new Error(`Прием ${input.visitId} не найден.`);
 			}
 
-			if (lockedVisit.patientId !== input.patientId) {
+			if (foundVisit.patientId !== input.patientId) {
 				throw new Error("Прием оплаты относится к другому пациенту.");
 			}
+			lockedVisit = foundVisit;
 
 			// Calculate charged amount from non-cancelled treatment items
 			const activeTreatmentItems = await tx
@@ -626,7 +639,7 @@ export async function createPaymentInDb(
 					),
 				);
 
-				const remainingVisitKopecks = Math.max(
+				remainingVisitKopecks = Math.max(
 					0,
 					chargedVisitKopecks - paidVisitKopecks,
 				);
@@ -996,6 +1009,59 @@ export async function createPaymentInDb(
 				);
 		}
 
+		// Автоматический перевод визита в signed и связанной записи в completed при полной оплате или 100% гарантии
+		if (input.visitId && lockedVisit) {
+			const isVisitFullySettled =
+				isWarrantyOrFullDiscount ||
+				incomingPaymentKopecks >= remainingVisitKopecks;
+
+			if (isVisitFullySettled) {
+				if (lockedVisit.status === "draft") {
+					await tx
+						.update(schema.visits)
+						.set({
+							status: "signed",
+							signedAt: new Date(),
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(schema.visits.id, input.visitId),
+								eq(schema.visits.organizationId, organizationId),
+							),
+						);
+				}
+
+				if (lockedVisit.appointmentId) {
+					await tx
+						.update(schema.appointments)
+						.set({
+							status: "completed",
+						})
+						.where(
+							and(
+								eq(schema.appointments.id, lockedVisit.appointmentId),
+								eq(schema.appointments.organizationId, organizationId),
+							),
+						);
+				}
+
+				await tx
+					.update(schema.treatmentItems)
+					.set({
+						status: "completed",
+					})
+					.where(
+						and(
+							eq(schema.treatmentItems.organizationId, organizationId),
+							eq(schema.treatmentItems.visitId, input.visitId),
+							ne(schema.treatmentItems.status, "completed"),
+							ne(schema.treatmentItems.status, "cancelled"),
+						),
+					);
+			}
+		}
+
 		// Поиск открытой смены кассы и целевого счета кассы (Мандаты 8e, 8n)
 		const [activeShift] = await tx
 			.select()
@@ -1033,7 +1099,7 @@ export async function createPaymentInDb(
 
 		// Генерация подлинного последовательного номера ФД и ФПД (54-ФЗ)
 		let effectiveFdNumber = input.fiscalReceiptNumber;
-		let effectiveFiscalSign = input.fiscalReceipt?.fiscalSign;
+		let effectiveFiscalSign = input.fiscalReceipt?.fpd;
 		const shiftNum = activeShift?.shiftNumber ?? 1;
 
 		if (!effectiveFdNumber && !isWarrantyOrFullDiscount && incomingPaymentKopecks > 0) {
@@ -1056,19 +1122,23 @@ export async function createPaymentInDb(
 		}
 
 		const effectiveReceiptIssuedAt = input.fiscalReceiptIssuedAt || new Date().toISOString();
-		const finalFiscalReceipt = {
-			fiscalDocumentNumber: effectiveFdNumber || null,
-			fiscalSign: effectiveFiscalSign || null,
-			shiftNumber: shiftNum,
-			fnSerial: targetCashBox?.kkmSerialNumber || "9960440300123456",
-			kktRegNumber: targetCashBox?.kkmModel || "0001234567012345",
-			operationType: "income",
-			issuedAt: effectiveReceiptIssuedAt,
-			...(input.fiscalReceipt || {}),
-		};
+		const finalFiscalReceipt: FiscalReceiptDetails | null = (effectiveFdNumber || input.fiscalReceipt)
+			? {
+					fn: input.fiscalReceipt?.fn ?? targetCashBox?.kkmSerialNumber ?? "9960440300123456",
+					fd: effectiveFdNumber || input.fiscalReceipt?.fd || null,
+					fpd: effectiveFiscalSign || input.fiscalReceipt?.fpd || null,
+					cashierName: input.fiscalReceipt?.cashierName ?? input.payerFullName ?? "Кассир",
+					receiptUrl: input.fiscalReceipt?.receiptUrl ?? input.fiscalReceiptUrl ?? null,
+					operationType: input.fiscalReceipt?.operationType ?? "income",
+					calculationMethod: input.fiscalReceipt?.calculationMethod ?? null,
+					calculationSubject: input.fiscalReceipt?.calculationSubject ?? null,
+					quantityMeasure: input.fiscalReceipt?.quantityMeasure ?? null,
+					advancePaymentRub: input.fiscalReceipt?.advancePaymentRub ?? null,
+				}
+			: (primaryPayment.fiscalReceipt ?? null);
 
 		// Обновляем платеж реальными фискальными реквизитами в БД
-		if (effectiveFdNumber) {
+		if (effectiveFdNumber && finalFiscalReceipt) {
 			await tx
 				.update(schema.payments)
 				.set({

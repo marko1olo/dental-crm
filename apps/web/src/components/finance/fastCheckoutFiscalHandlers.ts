@@ -35,6 +35,7 @@ export interface FiscalExecutionParams {
 	buyerName: string;
 	isElectronicReceiptOnly: boolean;
 	patientId?: string | undefined;
+	visitId?: string | undefined;
 	patientPhone?: string | undefined;
 	patientEmail?: string | undefined;
 	orderId: string;
@@ -85,6 +86,7 @@ export async function executeFiscalPayment(
 		buyerName,
 		isElectronicReceiptOnly,
 		patientId,
+		visitId,
 		patientPhone,
 		patientEmail,
 		orderId,
@@ -236,8 +238,8 @@ export async function executeFiscalPayment(
 		? "insurance"
 		: "card";
 
-	const recordCrmPayment = async (noteSuffix = "") => {
-		if (!patientId) return;
+	const recordCrmPayment = async (noteSuffix = ""): Promise<{ fiscalReceiptNumber?: string } | null> => {
+		if (!patientId) return null;
 		try {
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
@@ -245,11 +247,12 @@ export async function executeFiscalPayment(
 			});
 
 			if (typeof fetch === "function") {
-				await fetch("/api/billing/payments", {
+				const response = await fetch("/api/billing/payments", {
 					method: "POST",
 					headers,
 					body: JSON.stringify({
 						patientId,
+						visitId: visitId || undefined,
 						amountRub: effectiveTotalRub,
 						method: targetBillKop === 0 ? "warranty" : (isSplitPayment ? "split" : primaryMethod),
 						cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
@@ -263,11 +266,18 @@ export async function executeFiscalPayment(
 					}),
 				}).catch((fetchErr) => {
 					console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
+					return null;
 				});
+
+				if (response && response.ok) {
+					const data = (await response.json().catch(() => null)) as { fiscalReceiptNumber?: string } | null;
+					return data;
+				}
 			}
 		} catch (crmErr) {
 			console.warn("[FastCheckoutModal] Failed to record payment in CRM:", crmErr);
 		}
+		return null;
 	};
 
 	const payload = generate54FzFiscalPayload(
@@ -385,6 +395,11 @@ export async function executeFiscalPayment(
 			taxationSystem: "usn_income_expense",
 		});
 
+		const crmPaymentRecord = await recordCrmPayment();
+		const fdSuffix = crmPaymentRecord?.fiscalReceiptNumber
+			? ` (${crmPaymentRecord.fiscalReceiptNumber})`
+			: "";
+
 		if (!printResult.success || printResult.status === "hardware_offline") {
 			FiscalReceiptQueueManager.enqueueReceipt(
 				{
@@ -413,7 +428,7 @@ export async function executeFiscalPayment(
 			);
 			setIsOfflineBuffered(true);
 			showToast(
-				"ККТ временно офлайн: чек помещён в буфер отложенной фискализации. Пациент отпущен без задержек!",
+				`ККТ временно офлайн: чек${fdSuffix} помещён в буфер отложенной фискализации. Пациент отпущен без задержек!`,
 				"warning"
 			);
 
@@ -423,19 +438,20 @@ export async function executeFiscalPayment(
 		} else {
 			if (isElectronicReceiptOnly) {
 				showToast(
-					`Электронный чек отправлен на ${patientPhone || patientEmail || "контакт пациента"} (бумага сэкономлена)!`,
+					`Электронный чек${fdSuffix} отправлен на ${patientPhone || patientEmail || "контакт пациента"} (бумага сэкономлена)!`,
 					"success"
 				);
 			} else {
-				showToast("Кассовый чек успешно напечатан!", "success");
+				showToast(
+					`Кассовый чек${fdSuffix} успешно напечатан на сумму ${targetBillRub.toLocaleString("ru-RU")} ₽!`,
+					"success"
+				);
 			}
 
 			if (onPaymentComplete) {
 				onPaymentComplete(payload);
 			}
 		}
-
-		await recordCrmPayment();
 
 		setTimeout(() => {
 			setIsPrinting(false);
@@ -498,6 +514,7 @@ export interface ManualCardTerminalParams {
 	targetBillRub: number;
 	overrideAmountRub?: number | undefined;
 	patientId?: string | undefined;
+	visitId?: string | undefined;
 	patientPhone?: string | undefined;
 	patientEmail?: string | undefined;
 	effectiveCashierFullName: string;
@@ -521,6 +538,7 @@ export async function executeManualCardTerminalConfirm(
 		targetBillRub,
 		overrideAmountRub,
 		patientId,
+		visitId,
 		patientPhone,
 		patientEmail,
 		effectiveCashierFullName,
@@ -586,6 +604,7 @@ export async function executeManualCardTerminalConfirm(
 				headers,
 				body: JSON.stringify({
 					patientId,
+					visitId: visitId || undefined,
 					amountRub,
 					method: "card",
 					clientMutationId: compositeIdempotencyKey,

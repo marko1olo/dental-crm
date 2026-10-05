@@ -39,6 +39,7 @@ export interface UseFastCheckoutLogicProps {
 	readonly totalBillRub?: number | undefined;
 	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
 	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientEmail?: string | undefined;
@@ -62,6 +63,7 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 		initialPaymentMethod,
 		initialSimpleCashierMode,
 		patientId,
+		visitId,
 		patientPhone = "",
 		patientEmail = "",
 		patientDepositRub = 0,
@@ -138,9 +140,9 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 		readonly error?: string | undefined;
 		readonly isChecking: boolean;
 	}>({
-		online: true,
-		paperOk: true,
-		isChecking: false,
+		online: false,
+		paperOk: false,
+		isChecking: Boolean(isOpen),
 	});
 
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
@@ -262,15 +264,15 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 	useEffect(() => {
 		if (!isOpen) return;
 
-		setCardAmountRub(0);
-		setCashAmountRub(0);
-		setSbpAmountRub(0);
-		setDepositAmountRub(0);
-		setLoyaltyAmountRub(0);
-		setDmsAmountRub(0);
-		setCashTenderedRub(0);
-
 		if (stagePaymentMode === "advance_offset_tag1215") {
+			setCardAmountRub(0);
+			setCashAmountRub(0);
+			setSbpAmountRub(0);
+			setDepositAmountRub(0);
+			setLoyaltyAmountRub(0);
+			setDmsAmountRub(0);
+			setCashTenderedRub(0);
+
 			const offsetRub = stageCalc.advanceOffsetTag1215Kop / 100;
 			const reqRub = stageCalc.requiredAmountKop / 100;
 			setDepositAmountRub(offsetRub);
@@ -287,7 +289,15 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 			} else {
 				setCardAmountRub(reqRub);
 			}
-		} else {
+		} else if (isSimpleCashierMode) {
+			setCardAmountRub(0);
+			setCashAmountRub(0);
+			setSbpAmountRub(0);
+			setDepositAmountRub(0);
+			setLoyaltyAmountRub(0);
+			setDmsAmountRub(0);
+			setCashTenderedRub(0);
+
 			if (activeMethod === "cash") {
 				setCashAmountRub(targetBillRub);
 				setCashTenderedRub(targetBillRub);
@@ -302,12 +312,37 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 			} else {
 				setCardAmountRub(targetBillRub);
 			}
+		} else {
+			// Split Mode: preserve allocated tenders and only initialize if all are empty
+			const totalAllocated =
+				cardAmountRub +
+				cashAmountRub +
+				sbpAmountRub +
+				depositAmountRub +
+				loyaltyAmountRub +
+				dmsAmountRub;
+			if (totalAllocated === 0 && targetBillRub > 0) {
+				if (activeMethod === "cash") {
+					setCashAmountRub(targetBillRub);
+					setCashTenderedRub(targetBillRub);
+				} else if (activeMethod === "sbp_qr") {
+					setSbpAmountRub(targetBillRub);
+				} else if (activeMethod === "patient_deposit") {
+					setDepositAmountRub(targetBillRub);
+				} else if (activeMethod === "loyalty_points") {
+					setLoyaltyAmountRub(targetBillRub);
+				} else if (activeMethod === "dms_insurance") {
+					setDmsAmountRub(targetBillRub);
+				} else {
+					setCardAmountRub(targetBillRub);
+				}
+			}
 		}
 	}, [
 		isOpen,
 		targetBillKop,
 		targetBillRub,
-		activeMethod,
+		isSimpleCashierMode,
 		stagePaymentMode,
 		stageCalc.advanceOffsetTag1215Kop,
 		stageCalc.requiredAmountKop,
@@ -554,6 +589,7 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 				buyerName,
 				isElectronicReceiptOnly,
 				patientId,
+				visitId,
 				patientPhone,
 				patientEmail,
 				orderId,
@@ -654,6 +690,7 @@ export function useFastCheckoutLogic(props: UseFastCheckoutLogicProps) {
 			targetBillRub,
 			overrideAmountRub,
 			patientId,
+			visitId,
 			patientPhone,
 			patientEmail,
 			effectiveCashierFullName,
