@@ -624,19 +624,15 @@ export function SettingsPricesTab() {
 
 			{activeTab === "catalog" && (
 				<section className="pricelist-section-card">
-					{/* Category Quick Filter Strip */}
-					<div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none border-b border-[var(--line)]">
+					{/* Category Quick Filter Strip — Canonical Apple-style Filter Chips (Mandate 8zf) */}
+					<div className="dente-filter-chips overflow-x-auto pb-2 mb-3 scrollbar-none border-b border-[var(--line)]">
 						{CATEGORY_TABS.map((cat) => (
 							<button
 								key={cat.id}
 								type="button"
 								onClick={() => setSelectedCategoryFilter(cat.id)}
-								className="min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-all whitespace-nowrap shrink-0"
-								style={
-									selectedCategoryFilter === cat.id
-										? { background: "var(--teal)", color: "#ffffff", fontWeight: 700 }
-										: { background: "var(--paper-soft)", color: "var(--ink)", border: "1px solid var(--line)" }
-								}
+								className={`dente-filter-chip ${selectedCategoryFilter === cat.id ? "active" : ""}`}
+								data-active={selectedCategoryFilter === cat.id ? "true" : undefined}
 							>
 								{cat.label}
 							</button>
@@ -645,26 +641,25 @@ export function SettingsPricesTab() {
 
 					{/* STRICTLY 1 COMPACT MONOLITHIC 36px TOOLBAR ROW (Mandates 8c, 8d, 8p) */}
 					<div className="pricelist-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 overflow-visible sm:overflow-hidden shrink-0 select-none">
-						{/* Left: Search input */}
-						<div className="pricelist-search-wrapper flex items-center min-w-0 w-full sm:w-auto flex-1 max-w-full sm:max-w-xs relative">
-							<Search size={14} className="absolute left-2.5 text-[var(--muted)] shrink-0 pointer-events-none" />
+						{/* Left: Canonical Dente Search Input (Zero overlap with search icon!) */}
+						<div className="dente-search-wrap pricelist-search-wrapper flex items-center min-w-0 w-full sm:w-auto flex-1 max-w-full sm:max-w-xs relative">
+							<Search size={14} className="dente-search-icon" />
 							<input
 								type="text"
 								placeholder="Поиск по услугам или коду..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								className="w-full min-h-[32px] h-7 sm:h-8 pl-8 pr-9 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all"
-								style={{ paddingRight: "36px" }}
+								className="dente-search-input"
 							/>
 							{searchQuery && (
 								<button
 									type="button"
 									onClick={() => setSearchQuery("")}
-									className="absolute right-2 p-0.5 rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									className="dente-search-clear"
 									title="Очистить поиск"
 									aria-label="Очистить поиск"
 								>
-									<X size={12} />
+									<X size={13} />
 								</button>
 							)}
 						</div>
@@ -676,10 +671,10 @@ export function SettingsPricesTab() {
 								<button
 									type="button"
 									onClick={() => setIs804nCodesMenuOpen((prev) => !prev)}
-									className={`min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
+									className={`secondary-button shrink-0 ${
 										is804nCodesMenuOpen || (searchQuery && searchQuery.startsWith("A"))
-											? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border-[var(--teal)] font-bold"
-											: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
+											? "active"
+											: ""
 									}`}
 									title="Выбрать типовую услугу из официального справочника"
 									aria-expanded={is804nCodesMenuOpen}
@@ -752,11 +747,11 @@ export function SettingsPricesTab() {
 							</div>
 						</div>
 
-						{/* Right: Actions */}
+						{/* Right: Actions with Standardized Dente Button Styles */}
 						<div className="flex items-center gap-1.5 shrink-0 ml-auto sm:ml-0">
 							<button
 								type="button"
-								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
+								className="secondary-button shrink-0"
 								onClick={handleExportCsv}
 								data-testid="export-pricelist-csv-btn"
 								title="Экспортировать прайс-лист в Excel CSV (RFC 4180)"
@@ -767,10 +762,8 @@ export function SettingsPricesTab() {
 							</button>
 							<button
 								type="button"
-								className={`secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 ${
-									isNativeScannerDropzoneOpen
-										? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border-[var(--teal)] font-bold shadow-xs"
-										: "border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
+								className={`secondary-button shrink-0 ${
+									isNativeScannerDropzoneOpen ? "active" : ""
 								}`}
 								onClick={() => setIsNativeScannerDropzoneOpen((prev) => !prev)}
 								data-testid="btn-native-pricelist-import"
@@ -783,7 +776,7 @@ export function SettingsPricesTab() {
 							</button>
 							<button
 								type="button"
-								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
+								className="secondary-button shrink-0"
 								onClick={() => setIsServicePricelistModalOpen(true)}
 								data-testid="open-service-pricelist-modal-btn"
 								title="Справочник услуг и прайс-лист клиники"
@@ -794,7 +787,7 @@ export function SettingsPricesTab() {
 							</button>
 							<button
 								type="button"
-								className="primary-button min-h-[32px] h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+								className="primary-button shrink-0"
 								onClick={() => {
 									setEditServiceForm(NEW_SERVICE_TEMPLATE);
 									setPriceRubInput("");
@@ -803,7 +796,7 @@ export function SettingsPricesTab() {
 								}}
 							>
 								<Plus size={15} className="shrink-0" />
-								<span className="hidden sm:inline">Добавить услугу</span>
+								<span className="hidden sm:inline">Новая услуга</span>
 								<span className="sm:hidden">Услуга</span>
 							</button>
 						</div>
@@ -1054,6 +1047,7 @@ export function SettingsPricesTab() {
 										<button
 											type="button"
 											data-testid="pricelist-seed-baseline-804n-btn"
+											title="Заполнить рекомендованный прейскурант 804н (30 базовых услуг)"
 											disabled={isSeedingBaseline}
 											onClick={() => handleSeedBaseline804n(false)}
 											className="primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"

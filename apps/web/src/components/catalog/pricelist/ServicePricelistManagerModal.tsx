@@ -3,68 +3,41 @@
  *
  * Provides complete statutory Russian dental catalog management:
  * - Order 804n nomenclature tree with A16.07/B01.065/A06.07 codes.
- * - Price Tier Matrix (Standard, VIP, DMS, Promo).
+ * - Price Tier Matrix (Standard, VIP, DMS, Promo, Night/Weekend).
  * - Inline price editing and 1-click batch markups (+5%, +10%, rounding).
  * - Unit margin & lab/material cost profitability indicators.
  * - RFC 4180 CSV Import/Export with UTF-8 BOM.
  * - 1-Click Official Printable A4 Clinic Pricelist (ст. 149 НК РФ, НДС 0%).
  */
 
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-	AlertCircle,
-	ArrowUpDown,
 	Check,
 	CheckCircle2,
-	Copy,
 	Download,
-	Edit3,
-	FileSpreadsheet,
-	Filter,
 	Layers,
-	MoreHorizontal,
 	Plus,
 	Printer,
-	RefreshCw,
-	Search,
 	ShieldCheck,
-	Sparkles,
-	Trash2,
 	Upload,
 	X,
 } from 'lucide-react';
 import { sliceDomList } from '../../../utils/domVirtualizationHelper';
 import { getOptimizedTiming } from '../../../utils/lowSpecHddOptimizer';
 import {
-	PriceListMappingDiffView,
-	type IngestedMappingItem,
-} from '../../pricing/PriceListMappingDiffView';
-import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
-import {
 	applyBatchPriceMarkup,
-	calculateServiceProfitability,
-	calculateTierPrice,
-	detectCategoryFrom804nCode,
-	exportPricelistToCsv,
 	formatRubles,
 	generatePrintablePricelistHtml,
-	importPricelistFromCsv,
-	isValidOrder804nCode,
-	parseUnstructuredPriceText,
-	proposalToPricelistItem,
 	rublesToKopecks,
 	searchPricelistItems,
 	sortPricelistItems,
-	type ParsedPriceProposal,
 	type PriceRoundingMode,
 	type PricelistSortDirection,
 	type PricelistSortField,
 } from './servicePricelistEngine';
 import {
-	CATEGORY_LABELS,
 	PRICE_TIER_LABELS,
-	SPECIALTY_LABELS,
 	STATUTORY_ORDER_804N_PRESETS,
 	STATUTORY_VAT_EXEMPTION_NOTE,
 	type DoctorSpecialty,
@@ -72,6 +45,14 @@ import {
 	type PriceTierKind,
 	type ServicePricelistItem,
 } from './servicePricelistPresets';
+import { PricelistCategorySidebar } from './PricelistCategorySidebar';
+import { PricelistServiceFormModal } from './PricelistServiceFormModal';
+import {
+	PricelistImportExportModal,
+	downloadPricelistCsv,
+} from './PricelistImportExportModal';
+import { PricelistFiltersAndBatchBar } from './PricelistFiltersAndBatchBar';
+import { PricelistDataTable } from './PricelistDataTable';
 
 export interface ServicePricelistManagerModalProps {
 	readonly isOpen: boolean;
@@ -127,25 +108,13 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		}
 	}, [isOpen, initialItems]);
 
-	// Add/Edit Service Modal State
+	// Subcomponent Modals State
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<ServicePricelistItem | null>(null);
-	const [formCode804n, setFormCode804n] = useState('');
-	const [formCommercialTitle, setFormCommercialTitle] = useState('');
-	const [formStatutoryTitle, setFormStatutoryTitle] = useState('');
-	const [formCategory, setFormCategory] = useState<Order804nCategory>('therapy');
-	const [formSpecialty, setFormSpecialty] = useState<DoctorSpecialty>('therapist');
-	const [formPriceRub, setFormPriceRub] = useState<string>('0');
-	const [formMaterialCostRub, setFormMaterialCostRub] = useState<string>('0');
-	const [formLabCostRub, setFormLabCostRub] = useState<string>('0');
-	const [formDurationMin, setFormDurationMin] = useState<number>(30);
-	const [formIcd10, setFormIcd10] = useState<string>('');
-
-	// Secondary Action Menu Row ID
-	const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
+	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 	const [isBatchBarOpen, setIsBatchBarOpen] = useState(false);
 
-	// Sorting State (Mandate 8c)
+	// Sorting State
 	const [sortField, setSortField] = useState<PricelistSortField>('code');
 	const [sortDirection, setSortDirection] = useState<PricelistSortDirection>('asc');
 
@@ -153,34 +122,16 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	const [editingPriceCellId, setEditingPriceCellId] = useState<string | null>(null);
 	const [editingPriceBuffer, setEditingPriceBuffer] = useState<string>('');
 
-	// Import Modal Mode: 'smart_text' | 'csv'
-	const [importMode, setImportMode] = useState<'smart_text' | 'csv'>('smart_text');
-	const [smartTextInput, setSmartTextInput] = useState('');
-	const [parsedProposals, setParsedProposals] = useState<readonly ParsedPriceProposal[]>([]);
-	const [ingestedMappingItems, setIngestedMappingItems] = useState<readonly IngestedMappingItem[]>([]);
-	const [isIngestingApi, setIsIngestingApi] = useState(false);
-
-	// CSV Import Modal State
-	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-	const [csvInputText, setCsvInputText] = useState('');
-	const [importErrors, setImportErrors] = useState<string[]>([]);
-	const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
-
 	// Batch Markup State
-	const [batchPercent, setBatchPercent] = useState<number>(5);
-	const [batchRounding, setBatchRounding] = useState<PriceRoundingMode>('round_100');
+	const [batchRounding] = useState<PriceRoundingMode>('round_100');
 
 	// Notification Toast
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
 	const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const importTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	const searchInputId = useId();
 
 	useEffect(() => {
 		return () => {
 			if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-			if (importTimerRef.current) clearTimeout(importTimerRef.current);
 		};
 	}, []);
 
@@ -195,88 +146,23 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 	const openAddModal = () => {
 		setEditingItem(null);
-		setFormCode804n('');
-		setFormCommercialTitle('');
-		setFormStatutoryTitle('');
-		setFormCategory('therapy');
-		setFormSpecialty('therapist');
-		setFormPriceRub('');
-		setFormMaterialCostRub('0');
-		setFormLabCostRub('0');
-		setFormDurationMin(30);
-		setFormIcd10('');
 		setIsEditModalOpen(true);
 	};
 
 	const openEditModal = (item: ServicePricelistItem) => {
 		setEditingItem(item);
-		setFormCode804n(item.code804n || '');
-		setFormCommercialTitle(item.commercialTitle);
-		setFormStatutoryTitle(item.statutoryTitle804n);
-		setFormCategory(item.category);
-		setFormSpecialty(item.specialty);
-		setFormPriceRub(String(item.basePriceRub));
-		setFormMaterialCostRub(String(item.materialCostRub ?? 0));
-		setFormLabCostRub(String(item.labCostRub ?? 0));
-		setFormDurationMin(item.estimatedDurationMin);
-		setFormIcd10(item.icd10Indications.join(', '));
 		setIsEditModalOpen(true);
 	};
 
-	const handleSaveItemForm = (e: React.FormEvent) => {
-		e.preventDefault();
-		const parsedPrice = parseFloat(formPriceRub.replace(',', '.')) || 0;
-		const matCost = parseFloat(formMaterialCostRub.replace(',', '.')) || 0;
-		const labCost = parseFloat(formLabCostRub.replace(',', '.')) || 0;
-		const icdArray = formIcd10
-			.split(',')
-			.map((s) => s.trim().toUpperCase())
-			.filter(Boolean);
-
+	const handleSaveItem = (savedItem: ServicePricelistItem) => {
 		if (editingItem) {
 			setItems((prev) =>
-				prev.map((it) => {
-					if (it.id !== editingItem.id) return it;
-					return {
-						...it,
-						code804n: formCode804n.trim().toUpperCase(),
-						commercialTitle: formCommercialTitle.trim() || formStatutoryTitle.trim(),
-						statutoryTitle804n: formStatutoryTitle.trim() || formCommercialTitle.trim(),
-						category: formCategory,
-						specialty: formSpecialty,
-						basePriceRub: parsedPrice,
-						basePriceKopecks: rublesToKopecks(parsedPrice),
-						materialCostRub: matCost,
-						labCostRub: labCost,
-						estimatedDurationMin: formDurationMin,
-						icd10Indications: icdArray,
-					};
-				}),
+				prev.map((it) => (it.id === savedItem.id ? savedItem : it)),
 			);
-			showToast(`Услуга «${formCommercialTitle}» обновлена`);
+			showToast(`Услуга «${savedItem.commercialTitle}» обновлена`);
 		} else {
-			const newItemId = `srv-custom-${Date.now()}`;
-			const newItem: ServicePricelistItem = {
-				id: newItemId,
-				code804n: formCode804n.trim().toUpperCase() || 'A16.07.002',
-				commercialTitle: formCommercialTitle.trim(),
-				statutoryTitle804n: formStatutoryTitle.trim() || formCommercialTitle.trim(),
-				category: formCategory,
-				specialty: formSpecialty,
-				basePriceRub: parsedPrice,
-				basePriceKopecks: rublesToKopecks(parsedPrice),
-				materialCostRub: matCost,
-				labCostRub: labCost,
-				estimatedDurationMin: formDurationMin,
-				icd10Indications: icdArray,
-				vatRate: 0,
-				vatExemptionArticle: 'пп. 2 п. 2 ст. 149 НК РФ',
-				isActive: true,
-				isArchived: false,
-				tags: [],
-			};
-			setItems((prev) => [newItem, ...prev]);
-			showToast(`Услуга «${formCommercialTitle}» добавлена в прейскурант`);
+			setItems((prev) => [savedItem, ...prev]);
+			showToast(`Услуга «${savedItem.commercialTitle}» добавлена в прейскурант`);
 		}
 		setIsEditModalOpen(false);
 	};
@@ -288,18 +174,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			commercialTitle: `${item.commercialTitle} (копия)`,
 		};
 		setItems((prev) => [dup, ...prev]);
-		setOpenMenuRowId(null);
 		showToast(`Создан дубликат: ${dup.commercialTitle}`);
-	};
-
-	const handleToggleArchiveItem = (itemId: string) => {
-		setItems((prev) =>
-			prev.map((it) =>
-				it.id === itemId ? { ...it, isArchived: !it.isArchived, isActive: it.isArchived } : it,
-			),
-		);
-		setOpenMenuRowId(null);
-		showToast('Статус услуги изменен');
 	};
 
 	const handleSetZeroWarrantyPrice = (itemId: string) => {
@@ -314,13 +189,11 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				};
 			}),
 		);
-		setOpenMenuRowId(null);
 		showToast('Установлена гарантийная цена (0 ₽)');
 	};
 
 	const handleDeleteItem = (itemId: string) => {
 		setItems((prev) => prev.filter((it) => it.id !== itemId));
-		setOpenMenuRowId(null);
 		showToast('Услуга удалена из прейскуранта');
 	};
 
@@ -344,30 +217,28 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		}
 	};
 
-	// Quick 1-click delta price modifier (+100 ₽, +500 ₽, -500 ₽)
-	const handleModifyPriceDelta = (itemId: string, deltaRub: number) => {
+	// Inline Price Change Handler
+	const handleInlinePriceChange = (itemId: string, newPriceRub: number) => {
+		if (Number.isNaN(newPriceRub) || newPriceRub < 0) return;
 		setItems((prev) =>
 			prev.map((item) => {
 				if (item.id !== itemId) return item;
-				const current = calculateTierPrice(item.basePriceRub, activeTier, item.tierPrices?.[activeTier]);
-				const nextPrice = Math.max(0, current + deltaRub);
 				if (activeTier === 'standard') {
 					return {
 						...item,
-						basePriceRub: nextPrice,
-						basePriceKopecks: rublesToKopecks(nextPrice),
+						basePriceRub: newPriceRub,
+						basePriceKopecks: rublesToKopecks(newPriceRub),
 					};
 				}
 				return {
 					...item,
 					tierPrices: {
 						...(item.tierPrices || {}),
-						[activeTier]: nextPrice,
+						[activeTier]: newPriceRub,
 					},
 				};
 			}),
 		);
-		showToast(`Цена обновлена (${deltaRub > 0 ? `+${deltaRub}` : deltaRub} ₽)`);
 	};
 
 	// Commit inline text input on blur or Enter
@@ -379,159 +250,6 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			showToast(`Цена обновлена: ${formatRubles(parsed)}`);
 		}
 		setEditingPriceCellId(null);
-	};
-
-	// Ingestion Handler for 804n Mapping Diff
-	const handleIngestPriceList = async (contentToParse: string, sourceType: 'text' | 'csv' = 'text') => {
-		const text = contentToParse.trim();
-		if (!text) {
-			setIngestedMappingItems([]);
-			setParsedProposals([]);
-			return;
-		}
-
-		setIsIngestingApi(true);
-		try {
-			const res = await fetch('/api/pricelist/ingest', {
-				method: 'POST',
-				headers: denteAdminSecretRequestHeaders({ 'Content-Type': 'application/json' }, adminSecret),
-				body: JSON.stringify({
-					rawContent: text,
-					sourceType,
-				}),
-			});
-
-			if (res.ok) {
-				const data = await res.json();
-				if (data.success && Array.isArray(data.proposals) && data.proposals.length > 0) {
-					setIngestedMappingItems(data.proposals);
-					setIsIngestingApi(false);
-					return;
-				}
-			}
-		} catch {
-			// Fallback to local heuristic engine below
-		}
-
-		// Fallback to local heuristic engine
-		const localProposals = parseUnstructuredPriceText(text);
-		setParsedProposals(localProposals);
-		const mapped = localProposals.map((p, idx): IngestedMappingItem => {
-			const existingMatch = items.find(
-				(it) =>
-					it.code804n === p.detectedCode804n ||
-					it.commercialTitle.toLowerCase() === p.commercialTitle.toLowerCase(),
-			);
-			return {
-				id: `local-ingest-${idx}-${Date.now()}`,
-				sourceLineNumber: idx + 1,
-				rawLine: p.commercialTitle + (p.priceRub ? ` ${p.priceRub} руб` : ''),
-				cleanedTitle: p.commercialTitle,
-				code804n: p.detectedCode804n,
-				statutoryTitle804n: existingMatch?.statutoryTitle804n || p.statutoryTitle804n || p.commercialTitle,
-				category: p.suggestedCategory,
-				specialty: p.suggestedSpecialty,
-				priceRub: p.priceRub,
-				priceKopecks: rublesToKopecks(p.priceRub),
-				confidence:
-					p.confidence === 'exact_code'
-						? 0.98
-						: p.confidence === 'keyword_match'
-							? 0.85
-							: 0.65,
-				confidenceKind:
-					p.confidence === 'exact_code'
-						? 'exact_code'
-						: p.confidence === 'keyword_match'
-							? 'high_keyword'
-							: 'low_keyword',
-				matchedExistingServiceId: existingMatch?.id ?? null,
-				matchedExistingTitle: existingMatch?.commercialTitle ?? null,
-				matchedExistingPriceRub: existingMatch?.basePriceRub ?? null,
-				suggestedAction: existingMatch
-					? existingMatch.basePriceRub === p.priceRub
-						? 'identical'
-						: 'update_existing'
-					: 'create_new',
-				isApproved: true,
-			};
-		});
-		setIngestedMappingItems(mapped);
-		setIsIngestingApi(false);
-	};
-
-	const handleApplyIngestedMapping = (approved: readonly IngestedMappingItem[]) => {
-		if (approved.length === 0) return;
-
-		setItems((prev) => {
-			const existingMap = new Map(prev.map((i) => [i.id, i]));
-			const addedList: ServicePricelistItem[] = [];
-
-			for (const item of approved) {
-				if (item.matchedExistingServiceId && existingMap.has(item.matchedExistingServiceId)) {
-					const cur = existingMap.get(item.matchedExistingServiceId)!;
-					existingMap.set(item.matchedExistingServiceId, {
-						...cur,
-						code804n: item.code804n || cur.code804n,
-						commercialTitle: item.cleanedTitle || cur.commercialTitle,
-						basePriceRub: item.priceRub,
-						basePriceKopecks: item.priceKopecks || rublesToKopecks(item.priceRub),
-					});
-				} else {
-					const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-						? crypto.randomUUID().slice(0, 8)
-						: Date.now().toString(36);
-					const newItem: ServicePricelistItem = {
-						id: `srv-ingested-${Date.now()}-${idSuffix}`,
-						code804n: item.code804n || 'A16.07.002',
-						commercialTitle: item.cleanedTitle,
-						statutoryTitle804n: item.statutoryTitle804n || item.cleanedTitle,
-						category: (item.category as Order804nCategory) || 'therapy',
-						specialty: (item.specialty as DoctorSpecialty) || 'therapist',
-						basePriceRub: item.priceRub,
-						basePriceKopecks: item.priceKopecks || rublesToKopecks(item.priceRub),
-						estimatedDurationMin: 30,
-						icd10Indications: [],
-						vatRate: 0,
-						vatExemptionArticle: 'пп. 2 п. 2 ст. 149 НК РФ',
-						isActive: true,
-						isArchived: false,
-						tags: ['импорт_804н'],
-					};
-					addedList.push(newItem);
-				}
-			}
-
-			return [...addedList, ...Array.from(existingMap.values())];
-		});
-
-		showToast(`Успешно добавлено / обновлено ${approved.length} позиций в каталог услуг`);
-		setIsImportModalOpen(false);
-		setIngestedMappingItems([]);
-		setSmartTextInput('');
-	};
-
-	// Smart Unstructured Text Parser Handlers
-	const handleParseSmartText = (text: string) => {
-		setSmartTextInput(text);
-		if (!text.trim()) {
-			setParsedProposals([]);
-			setIngestedMappingItems([]);
-			return;
-		}
-		const proposals = parseUnstructuredPriceText(text);
-		setParsedProposals(proposals);
-	};
-
-	const handleApplySmartProposals = () => {
-		if (parsedProposals.length === 0) return;
-		const newItems = parsedProposals.map(proposalToPricelistItem);
-		setItems((prev) => [...newItems, ...prev]);
-		showToast(`Успешно добавлено ${newItems.length} позиций из умного парсера`);
-		setIsImportModalOpen(false);
-		setSmartTextInput('');
-		setParsedProposals([]);
-		setIngestedMappingItems([]);
 	};
 
 	// DOM Virtualization & Chunking (Mandate 8c, 8n - Wave 252 Low-Spec Protection)
@@ -557,30 +275,6 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	}, [items]);
 
 	if (!isOpen) return null;
-
-	// Inline Price Change Handler
-	const handleInlinePriceChange = (itemId: string, newPriceRub: number) => {
-		if (Number.isNaN(newPriceRub) || newPriceRub < 0) return;
-		setItems((prev) =>
-			prev.map((item) => {
-				if (item.id !== itemId) return item;
-				if (activeTier === 'standard') {
-					return {
-						...item,
-						basePriceRub: newPriceRub,
-						basePriceKopecks: rublesToKopecks(newPriceRub),
-					};
-				}
-				return {
-					...item,
-					tierPrices: {
-						...(item.tierPrices || {}),
-						[activeTier]: newPriceRub,
-					},
-				};
-			}),
-		);
-	};
 
 	// 1-Click Batch Markup
 	const handleApplyBatchMarkup = (percent: number, rounding: PriceRoundingMode) => {
@@ -613,67 +307,8 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 	// Export to CSV Download
 	const handleExportCsv = () => {
-		const csvContent = exportPricelistToCsv(items, { delimiter: ';' });
-		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.setAttribute('href', url);
-		link.setAttribute('download', `DENTE_Pricelist_804n_${new Date().toISOString().slice(0, 10)}.csv`);
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
+		downloadPricelistCsv(items);
 		showToast('Прейскурант успешно экспортирован в CSV (Excel UTF-8 BOM)');
-	};
-
-	// Import from CSV
-	const handleImportCsv = () => {
-		setImportErrors([]);
-		setImportSuccessCount(null);
-		if (!csvInputText.trim()) {
-			setImportErrors(['Вставьте текст CSV или выберите файл']);
-			return;
-		}
-
-		const result = importPricelistFromCsv(csvInputText);
-		if (result.invalidRows.length > 0 && result.validItems.length === 0) {
-			setImportErrors(result.invalidRows.map((e) => `Строка ${e.rowIndex}: ${e.error}`));
-			return;
-		}
-
-		if (result.validItems.length > 0) {
-			// Merge with existing items (by 804n code or append)
-			const existingMap = new Map(items.map((i) => [i.code804n, i]));
-			for (const imported of result.validItems) {
-				existingMap.set(imported.code804n, imported);
-			}
-			const merged = Array.from(existingMap.values());
-			setItems(merged);
-			setImportSuccessCount(result.validItems.length);
-			showToast(`Импортировано ${result.validItems.length} позиций прейскуранта`);
-			if (importTimerRef.current) clearTimeout(importTimerRef.current);
-			importTimerRef.current = setTimeout(() => {
-				importTimerRef.current = null;
-				setIsImportModalOpen(false);
-				setCsvInputText('');
-			}, 1200);
-		}
-	};
-
-	// CSV File Drop/Select
-	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = (evt) => {
-			const text = evt.target?.result as string;
-			if (text) {
-				setCsvInputText(text);
-				setSmartTextInput(text);
-				handleIngestPriceList(text, file.name.endsWith('.csv') ? 'csv' : 'text');
-			}
-		};
-		reader.readAsText(file, 'utf-8');
 	};
 
 	// 1-Click Print A4 Pricelist
@@ -739,10 +374,6 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		showToast('Каталог услуг и прейскурант успешно сохранены');
 		onClose();
 	};
-
-	if (!isOpen) {
-		return null;
-	}
 
 	const modalContent = (
 		<div className="pricelist-modal-overlay" role="dialog" aria-modal="true">
@@ -839,162 +470,22 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 					</div>
 				</header>
 
-				{/* 1-Row Professional Clinical Toolbar (32-36px height) — Mandates 8d & 8p */}
-				<div
-					className="pricelist-toolbar"
-					style={{
-						padding: '0.25rem 1rem',
-						gap: '0.5rem',
-						display: 'flex',
-						alignItems: 'center',
-						minHeight: '36px',
-						height: '36px',
-						flexWrap: 'nowrap',
-						overflowX: 'auto',
-					}}
-				>
-					{/* Search */}
-					<div className="pricelist-search-box" style={{ maxWidth: '320px', minWidth: '220px' }}>
-						<Search size={15} className="pricelist-search-icon" />
-						<input
-							id={searchInputId}
-							type="text"
-							className="pricelist-search-input"
-							style={{ height: '34px', fontSize: '0.8125rem', padding: '0 2rem 0 2rem' }}
-							placeholder="Поиск по коду услуги, названию..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-						/>
-						{searchTerm && (
-							<button
-								type="button"
-								className="pricelist-search-clear"
-								onClick={() => setSearchTerm('')}
-							>
-								<X size={13} />
-							</button>
-						)}
-					</div>
-
-					{/* 1-Click Fast Service Selector Dropdown (Zero-Row Bloat) */}
-					<select
-						className="pricelist-search-input"
-						style={{ height: '34px', padding: '0 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
-						value={searchTerm}
-						onChange={(e) => {
-							setSearchTerm(e.target.value);
-							setSelectedCategory('all');
-						}}
-						title="Мгновенный выбор популярной услуги"
-					>
-						<option value="">Быстрый выбор услуги...</option>
-						<option value="A16.07.002">A16.07.002 Кариес</option>
-						<option value="A16.07.008">A16.07.008 Пульпит</option>
-						<option value="A11.07.012">A11.07.012 Анестезия</option>
-						<option value="A06.07.003">A06.07.003 Снимок</option>
-						<option value="A16.07.054">A16.07.054 Имплантация</option>
-						<option value="A16.07.004">A16.07.004 Коронка</option>
-						<option value="A16.07.001">A16.07.001 Удаление</option>
-						<option value="A16.07.051">A16.07.051 Гигиена</option>
-					</select>
-
-					{/* Price Tier Segmented Control (34px) */}
-					<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
-						<button
-							type="button"
-							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
-							className={`tier-segment-btn ${activeTier === 'standard' ? 'active' : ''}`}
-							onClick={() => setActiveTier('standard')}
-						>
-							Основной
-						</button>
-						<button
-							type="button"
-							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
-							className={`tier-segment-btn ${activeTier === 'vip' ? 'active' : ''}`}
-							onClick={() => setActiveTier('vip')}
-						>
-							VIP (+20%)
-						</button>
-						<button
-							type="button"
-							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
-							className={`tier-segment-btn ${activeTier === 'dms' ? 'active' : ''}`}
-							onClick={() => setActiveTier('dms')}
-						>
-							ДМС
-						</button>
-						<button
-							type="button"
-							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
-							className={`tier-segment-btn ${activeTier === 'promo' ? 'active' : ''}`}
-							onClick={() => setActiveTier('promo')}
-						>
-							Промо
-						</button>
-						<button
-							type="button"
-							style={{ minHeight: '30px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
-							className={`tier-segment-btn ${activeTier === 'night_weekend' ? 'active' : ''}`}
-							onClick={() => setActiveTier('night_weekend')}
-							title="Тариф в ночные часы и праздничные/выходные дни (+30%)"
-						>
-							Ночной (+30%)
-						</button>
-					</div>
-
-					{/* Specialty Filter */}
-					<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-						<Filter size={14} style={{ color: 'var(--muted)' }} />
-						<select
-							className="pricelist-search-input"
-							style={{ height: '34px', padding: '0 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
-							value={selectedSpecialty}
-							onChange={(e) => setSelectedSpecialty(e.target.value as DoctorSpecialty | 'all')}
-						>
-							<option value="all">Все специальности</option>
-							{Object.entries(SPECIALTY_LABELS).map(([specKey, specLabel]) => (
-								<option key={specKey} value={specKey}>
-									{specLabel}
-								</option>
-							))}
-						</select>
-					</div>
-
-					{/* Batch Markup Toggle button */}
-					<button
-						type="button"
-						className={`pricelist-btn ${isBatchBarOpen ? 'pricelist-btn-primary' : ''}`}
-						style={{ minHeight: '34px', height: '34px', padding: '0 0.625rem', fontSize: '0.75rem', gap: '0.375rem', marginLeft: 'auto' }}
-						onClick={() => setIsBatchBarOpen((prev) => !prev)}
-						title="Пакетная индексация цен (+5%, +10%, гарантия, округление)"
-					>
-						<Sparkles size={14} />
-						<span>Индексация</span>
-					</button>
-				</div>
-
-				{/* Collapsible Batch Markup Strip (Only when toggled) */}
-				{isBatchBarOpen && (
-					<div className="pricelist-batch-bar" style={{ padding: '0.375rem 1.25rem' }}>
-						<div className="batch-bar-left">
-							<Sparkles size={14} style={{ color: 'var(--brand-500)' }} />
-							<span style={{ fontSize: '0.75rem' }}>Пакетная индексация ({PRICE_TIER_LABELS[activeTier]}):</span>
-						</div>
-
-						<div className="batch-bar-actions">
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(5, batchRounding)}>+5%</button>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(10, batchRounding)}>+10%</button>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(15, batchRounding)}>+15%</button>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(-10, batchRounding)}>-10% (Скидка)</button>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(-50, batchRounding)} title="Скидка 50%">-50%</button>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchMarkup(-100, batchRounding)} title="100% скидка на гарантийные переделки">-100% (Гарантия)</button>
-							<span style={{ color: 'var(--line)', margin: '0 0.25rem' }}>|</span>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchRounding('round_100')}>До 100 ₽</button>
-							<button type="button" className="batch-quick-btn" onClick={() => handleApplyBatchRounding('round_500')}>До 500 ₽</button>
-						</div>
-					</div>
-				)}
+				{/* 1-Row Clinical Toolbar & Collapsible Batch Markup */}
+				<PricelistFiltersAndBatchBar
+					searchTerm={searchTerm}
+					onSearchChange={setSearchTerm}
+					selectedCategory={selectedCategory}
+					onCategoryChange={setSelectedCategory}
+					selectedSpecialty={selectedSpecialty}
+					onSpecialtyChange={setSelectedSpecialty}
+					activeTier={activeTier}
+					onTierChange={setActiveTier}
+					isBatchBarOpen={isBatchBarOpen}
+					onToggleBatchBar={() => setIsBatchBarOpen((prev) => !prev)}
+					batchRounding={batchRounding}
+					onApplyBatchMarkup={handleApplyBatchMarkup}
+					onApplyBatchRounding={handleApplyBatchRounding}
+				/>
 
 				{/* Toast Message */}
 				{toastMessage && (
@@ -1023,290 +514,50 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				{/* Main Split Layout */}
 				<div className="pricelist-main-layout">
 					{/* Category Sidebar */}
-					<nav className="pricelist-category-sidebar">
-						<button
-							type="button"
-							className={`category-nav-btn ${selectedCategory === 'all' ? 'active' : ''}`}
-							onClick={() => setSelectedCategory('all')}
-						>
-							<span>Все разделы</span>
-							<span className="category-nav-count">{categoryCounts.all || 0}</span>
-						</button>
-
-						{(Object.keys(CATEGORY_LABELS) as Order804nCategory[]).map((catKey) => {
-							const count = categoryCounts[catKey] || 0;
-							if (count === 0 && selectedCategory !== catKey) return null;
-							return (
-								<button
-									key={catKey}
-									type="button"
-									className={`category-nav-btn ${selectedCategory === catKey ? 'active' : ''}`}
-									onClick={() => setSelectedCategory(catKey)}
-								>
-									<span>{CATEGORY_LABELS[catKey]}</span>
-									<span className="category-nav-count">{count}</span>
-								</button>
-							);
-						})}
-					</nav>
+					<PricelistCategorySidebar
+						selectedCategory={selectedCategory}
+						onSelectCategory={setSelectedCategory}
+						categoryCounts={categoryCounts}
+					/>
 
 					{/* Data Table */}
-					<div className="pricelist-table-container">
-						<table className="pricelist-data-table">
-							<thead>
-								<tr>
-									<th style={{ width: '40px' }}>
-										<input
-											type="checkbox"
-											checked={
-												filteredItems.length > 0 &&
-												filteredItems.every((i) => selectedItemIds.has(i.id))
-											}
-											onChange={(e) => {
-												if (e.target.checked) {
-													setSelectedItemIds(new Set(filteredItems.map((i) => i.id)));
-												} else {
-													setSelectedItemIds(new Set());
-												}
-											}}
-										/>
-									</th>
-									<th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleToggleSort('code')}>
-										<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-											<span>Код услуги</span>
-											<ArrowUpDown size={12} style={{ opacity: sortField === 'code' ? 1 : 0.35 }} />
-										</div>
-									</th>
-									<th style={{ cursor: 'pointer' }} onClick={() => handleToggleSort('title')}>
-										<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-											<span>Наименование медицинской услуги</span>
-											<ArrowUpDown size={12} style={{ opacity: sortField === 'title' ? 1 : 0.35 }} />
-										</div>
-									</th>
-									<th style={{ width: '130px' }}>Специальность</th>
-									<th style={{ width: '130px', textAlign: 'right', cursor: 'pointer' }} onClick={() => handleToggleSort('price')}>
-										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-											<span>Цена ({activeTier === 'standard' ? 'Руб.' : activeTier.toUpperCase()})</span>
-											<ArrowUpDown size={12} style={{ opacity: sortField === 'price' ? 1 : 0.35 }} />
-										</div>
-									</th>
-									<th style={{ width: '90px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleToggleSort('margin')}>
-										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-											<span>Маржа %</span>
-											<ArrowUpDown size={12} style={{ opacity: sortField === 'margin' ? 1 : 0.35 }} />
-										</div>
-									</th>
-									<th style={{ width: '90px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleToggleSort('duration')}>
-										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-											<span>Время</span>
-											<ArrowUpDown size={12} style={{ opacity: sortField === 'duration' ? 1 : 0.35 }} />
-										</div>
-									</th>
-									<th style={{ width: '90px', textAlign: 'center' }}>Действия</th>
-								</tr>
-							</thead>
-							<tbody>
-								{pricelistSlice.visibleItems.map((item) => {
-									const prof = calculateServiceProfitability(item, activeTier);
-									const currentPrice = calculateTierPrice(
-										item.basePriceRub,
-										activeTier,
-										item.tierPrices?.[activeTier],
-									);
-									const isSelected = selectedItemIds.has(item.id);
-
-									return (
-										<tr
-											key={item.id}
-											style={{
-												background: isSelected ? 'rgba(59, 130, 246, 0.05)' : undefined,
-												contain: 'content',
-												contentVisibility: 'auto',
-												containIntrinsicSize: '1px 64px',
-											}}
-										>
-											<td>
-												<input
-													type="checkbox"
-													checked={isSelected}
-													onChange={(e) => {
-														const next = new Set(selectedItemIds);
-														if (e.target.checked) next.add(item.id);
-														else next.delete(item.id);
-														setSelectedItemIds(next);
-													}}
-												/>
-											</td>
-											<td>
-												<span className="pricelist-code-pill">{item.code804n}</span>
-											</td>
-											<td>
-												<div className="service-title-cell">
-													<div
-														className="service-commercial-name"
-														style={{ cursor: 'pointer' }}
-														onClick={() => openEditModal(item)}
-														title="Кликните для редактирования карточки услуги"
-													>
-														{item.commercialTitle}
-													</div>
-													<div className="service-statutory-name">{item.statutoryTitle804n}</div>
-													{item.icd10Indications.length > 0 && (
-														<div className="service-meta-tags">
-															{item.icd10Indications.map((icd) => (
-																<span key={icd} className="service-icd-pill">
-																	{icd}
-																</span>
-															))}
-														</div>
-													)}
-												</div>
-											</td>
-											<td>
-												<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-													{SPECIALTY_LABELS[item.specialty] ?? item.specialty}
-												</span>
-											</td>
-											<td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-												<div className="price-edit-container" style={{ justifyContent: 'flex-end', gap: '3px' }}>
-													{editingPriceCellId === item.id ? (
-														<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-															<input
-																type="text"
-																inputMode="numeric"
-																className="price-input-quick"
-																style={{ width: '85px', fontWeight: 600, textAlign: 'right', height: '28px', padding: '0 4px' }}
-																autoFocus
-																value={editingPriceBuffer}
-																onChange={(e) => setEditingPriceBuffer(e.target.value.replace(/[^\d]/g, ''))}
-																onKeyDown={(e) => {
-																	if (e.key === 'Enter') {
-																		handleCommitInlinePrice(item.id, editingPriceBuffer);
-																	} else if (e.key === 'Escape') {
-																		setEditingPriceCellId(null);
-																	}
-																}}
-																onBlur={() => handleCommitInlinePrice(item.id, editingPriceBuffer)}
-															/>
-															<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>₽</span>
-														</div>
-													) : (
-														<button
-															type="button"
-															onClick={() => {
-																setEditingPriceCellId(item.id);
-																setEditingPriceBuffer(String(currentPrice));
-															}}
-															title="Кликните для ввода цены с клавиатуры"
-															style={{
-																background: 'transparent',
-																border: '1px solid transparent',
-																borderRadius: '4px',
-																padding: '2px 4px',
-																cursor: 'pointer',
-																fontWeight: 600,
-																fontSize: '0.8125rem',
-																color: 'var(--ink)',
-																display: 'inline-flex',
-																alignItems: 'center',
-																gap: '3px',
-															}}
-														>
-															<span>{formatRubles(currentPrice)}</span>
-															<Edit3 size={11} style={{ opacity: 0.4 }} />
-														</button>
-													)}
-
-													{/* Clean 0 ₽ (Гарантия) 1-Click Toggle per Mandates 8c, 8e */}
-													<button
-														type="button"
-														className={`batch-quick-btn ${currentPrice === 0 ? 'active' : ''}`}
-														style={{
-															padding: '0 5px',
-															fontSize: '0.6875rem',
-															height: '22px',
-															minWidth: '28px',
-															color: currentPrice === 0 ? 'var(--ok-fg, #10b981)' : undefined,
-															borderColor: currentPrice === 0 ? 'rgba(16, 185, 129, 0.4)' : undefined,
-															background: currentPrice === 0 ? 'rgba(16, 185, 129, 0.12)' : undefined,
-														}}
-														onClick={() => handleSetZeroWarrantyPrice(item.id)}
-														title="Установить 0 ₽ (Гарантийная переделка / бесплатная услуга по Мандату 8e)"
-													>
-														0 ₽
-													</button>
-												</div>
-											</td>
-											<td style={{ textAlign: 'center' }}>
-												<span className={`margin-badge ${prof.level}`}>
-													{prof.marginPercent}%
-												</span>
-											</td>
-											<td style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--muted)' }}>
-												{item.estimatedDurationMin} мин
-											</td>
-											<td style={{ textAlign: 'center', width: '90px', whiteSpace: 'nowrap' }}>
-												<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-													<button
-														type="button"
-														className="pricelist-btn pricelist-btn-icon"
-														style={{ width: '26px', height: '26px', padding: 0 }}
-														onClick={() => openEditModal(item)}
-														title="Редактировать карточку услуги"
-													>
-														<Edit3 size={13} />
-													</button>
-													<button
-														type="button"
-														className="pricelist-btn pricelist-btn-icon"
-														style={{ width: '26px', height: '26px', padding: 0 }}
-														onClick={() => handleDuplicateItem(item)}
-														title="Создать копию услуги"
-													>
-														<Copy size={13} />
-													</button>
-													<button
-														type="button"
-														className="pricelist-btn pricelist-btn-icon"
-														style={{ width: '26px', height: '26px', padding: 0, color: 'var(--alert-fg, #ef4444)' }}
-														onClick={() => handleDeleteItem(item.id)}
-														title="Удалить услугу"
-													>
-														<Trash2 size={13} />
-													</button>
-												</div>
-											</td>
-										</tr>
-									);
-								})}
-
-								{pricelistSlice.hasMore && (
-									<tr>
-										<td colSpan={8} style={{ textAlign: 'center', padding: '0.75rem' }}>
-											<button
-												type="button"
-												className="pricelist-btn btn-pricelist-show-more"
-												onClick={() => setDisplayLimit((prev) => prev + 40)}
-												style={{ margin: '0 auto', fontSize: '0.8125rem', height: '32px' }}
-												title="Подгрузить следующие позиции прейскуранта"
-											>
-												<span>Показать ещё 40 услуг (осталось {pricelistSlice.remainingCount})</span>
-											</button>
-										</td>
-									</tr>
-								)}
-
-								{filteredItems.length === 0 && (
-									<tr>
-										<td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>
-											<AlertCircle size={32} style={{ margin: '0 auto 0.5rem', opacity: 0.5 }} />
-											<div>Позиции по запросу не найдены</div>
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
+					<PricelistDataTable
+						filteredCount={filteredItems.length}
+						visibleItems={pricelistSlice.visibleItems}
+						hasMore={pricelistSlice.hasMore}
+						remainingCount={pricelistSlice.remainingCount}
+						onShowMore={() => setDisplayLimit((prev) => prev + 40)}
+						selectedItemIds={selectedItemIds}
+						onToggleSelectAll={(checked) => {
+							if (checked) {
+								setSelectedItemIds(new Set(filteredItems.map((i) => i.id)));
+							} else {
+								setSelectedItemIds(new Set());
+							}
+						}}
+						onToggleSelectItem={(id, checked) => {
+							const next = new Set(selectedItemIds);
+							if (checked) next.add(id);
+							else next.delete(id);
+							setSelectedItemIds(next);
+						}}
+						sortField={sortField}
+						onToggleSort={handleToggleSort}
+						activeTier={activeTier}
+						editingPriceCellId={editingPriceCellId}
+						editingPriceBuffer={editingPriceBuffer}
+						onStartEditPrice={(id, currentPrice) => {
+							setEditingPriceCellId(id);
+							setEditingPriceBuffer(String(currentPrice));
+						}}
+						onPriceBufferChange={(val) => setEditingPriceBuffer(val)}
+						onCommitPrice={handleCommitInlinePrice}
+						onCancelEditPrice={() => setEditingPriceCellId(null)}
+						onSetZeroWarrantyPrice={handleSetZeroWarrantyPrice}
+						onEditItem={openEditModal}
+						onDuplicateItem={handleDuplicateItem}
+						onDeleteItem={handleDeleteItem}
+					/>
 				</div>
 
 				{/* Footer Bar */}
@@ -1324,467 +575,25 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				</footer>
 			</div>
 
-			{/* Multi-Format Import Modal (Smart Text & CSV with 804n Mapping Diff View) */}
-			{isImportModalOpen && (
-				<div className="csv-import-modal" role="dialog" aria-modal="true">
-					<div
-						className="csv-import-container"
-						style={{
-							maxWidth: ingestedMappingItems.length > 0 ? '1180px' : '780px',
-							width: '95%',
-							height: ingestedMappingItems.length > 0 ? '88vh' : 'auto',
-							display: 'flex',
-							flexDirection: 'column',
-							transition: 'max-width 0.2s ease',
-						}}
-					>
-						<header className="pricelist-modal-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', gap: '0.5rem', flexWrap: 'nowrap' }}>
-							<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
-								<div className="pricelist-header-title" style={{ fontSize: '1rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
-									{ingestedMappingItems.length > 0 ? 'Сопоставление услуг' : 'Импорт прейскуранта'}
-								</div>
-								{/* Segmented Mode Selector */}
-								{ingestedMappingItems.length === 0 && (
-									<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
-										<button
-											type="button"
-											className={`tier-segment-btn ${importMode === 'smart_text' ? 'active' : ''}`}
-											style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
-											onClick={() => setImportMode('smart_text')}
-										>
-											<Sparkles size={13} />
-											<span>Умный текст (Word / PDF / Скан)</span>
-										</button>
-										<button
-											type="button"
-											className={`tier-segment-btn ${importMode === 'csv' ? 'active' : ''}`}
-											style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
-											onClick={() => setImportMode('csv')}
-										>
-											<FileSpreadsheet size={13} />
-											<span>CSV / Excel</span>
-										</button>
-									</div>
-								)}
-								{ingestedMappingItems.length > 0 && (
-									<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginLeft: 'auto', flexShrink: 0 }}>
-										<span className="pricelist-statutory-badge hide-on-mobile">
-											<ShieldCheck size={13} />
-											<span>Справочник услуг</span>
-										</span>
-										<button
-											type="button"
-											className="pricelist-btn"
-											style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem', whiteSpace: 'nowrap' }}
-											onClick={() => setIngestedMappingItems([])}
-											title="Вернуться к редактированию исходного текста"
-										>
-											<span>Назад</span>
-										</button>
-									</div>
-								)}
-							</div>
-							<button
-								type="button"
-								className="pricelist-btn pricelist-btn-icon"
-								style={{ flexShrink: 0, marginLeft: '0.25rem' }}
-								onClick={() => {
-									setIsImportModalOpen(false);
-									setIngestedMappingItems([]);
-								}}
-								aria-label="Закрыть"
-							>
-								<X size={18} />
-							</button>
-						</header>
+			{/* Subcomponent: Multi-Format Import Modal (Smart Text, CSV with 804n Mapping Diff View) */}
+			<PricelistImportExportModal
+				isOpen={isImportModalOpen}
+				onClose={() => setIsImportModalOpen(false)}
+				items={items}
+				onApplyImported={(mergedItems, message) => {
+					setItems(mergedItems);
+					showToast(message);
+				}}
+				adminSecret={adminSecret}
+			/>
 
-						{ingestedMappingItems.length > 0 ? (
-							<div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-								<PriceListMappingDiffView
-									items={ingestedMappingItems}
-									onItemsChange={setIngestedMappingItems}
-									onAcceptAll={() => {
-										setIngestedMappingItems((prev) => prev.map((i) => ({ ...i, isApproved: true })));
-									}}
-									onApply={handleApplyIngestedMapping}
-									onCancel={() => setIngestedMappingItems([])}
-									existingCatalog={items.map((it) => ({
-										id: it.id,
-										code: it.code804n,
-										title: it.commercialTitle,
-										basePriceRub: it.basePriceRub,
-									}))}
-									isLoading={isIngestingApi}
-								/>
-							</div>
-						) : (
-							<>
-								<div className="csv-import-body">
-									{importMode === 'smart_text' ? (
-										<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-											<div style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
-												Вставьте скопированный текст из старого прейскуранта клиники, выгрузки Word или распознанного PDF.
-												Алгоритм автоматически выделит цены, очистит наименования и сопоставит услуги с каталогом услуг.
-											</div>
-
-											<textarea
-												className="pricelist-search-input"
-												style={{ height: '140px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem', lineHeight: '1.4' }}
-												placeholder={`Пример строк для вставки:\nA16.07.002.001 Наложение световой пломбы 4 500 руб\nЛечение глубокого кариеса - 3500\nУдаление зуба мудрости сложное 5 200 ₽\nУстановка имплантата Straumann SLA 38000\nКоронка из диоксида циркония 18000 руб\nАнестезия Убистезин 700 р`}
-												value={smartTextInput}
-												onChange={(e) => {
-													setSmartTextInput(e.target.value);
-													handleParseSmartText(e.target.value);
-												}}
-											/>
-
-											<label className="csv-dropzone" style={{ padding: '0.75rem', marginTop: '0.25rem' }}>
-												<FileSpreadsheet size={24} style={{ color: 'var(--brand-500)' }} />
-												<div style={{ fontSize: '0.75rem', fontWeight: 600 }}>Загрузить файл прейскуранта (TXT, CSV, PDF выгрузка)</div>
-												<input
-													type="file"
-													accept=".txt,.csv,.doc,.docx"
-													style={{ display: 'none' }}
-													onChange={handleFileUpload}
-												/>
-											</label>
-										</div>
-									) : (
-										<div>
-											<label className="csv-dropzone">
-												<FileSpreadsheet size={36} style={{ color: 'var(--brand-500)' }} />
-												<div style={{ fontWeight: 600 }}>Выберите или перетащите CSV-файл прейскуранта</div>
-												<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-													Поддерживается разделитель точка с запятой (;) или запятая (,), кодировка UTF-8
-												</div>
-												<input
-													type="file"
-													accept=".csv,.txt"
-													style={{ display: 'none' }}
-													onChange={handleFileUpload}
-												/>
-											</label>
-
-											<div style={{ marginTop: '0.75rem' }}>
-												<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>
-													Или вставьте текст таблицы CSV:
-												</div>
-												<textarea
-													className="pricelist-search-input"
-													style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem' }}
-													placeholder="Код услуги;Коммерческое наименование;Категория;Цена standard..."
-													value={csvInputText}
-													onChange={(e) => setCsvInputText(e.target.value)}
-												/>
-											</div>
-
-											{importErrors.length > 0 && (
-												<div
-													style={{
-														marginTop: '0.5rem',
-														padding: '0.75rem',
-														borderRadius: '6px',
-														background: 'rgba(239, 68, 68, 0.1)',
-														color: 'var(--bad)',
-														fontSize: '0.75rem',
-													}}
-												>
-													<div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Ошибки при разборе CSV:</div>
-													{importErrors.slice(0, 5).map((err, idx) => (
-														<div key={idx}>• {err}</div>
-													))}
-												</div>
-											)}
-										</div>
-									)}
-								</div>
-
-								<footer
-									style={{
-										padding: '0.75rem 1.25rem',
-										borderTop: '1px solid var(--line)',
-										display: 'flex',
-										justifyContent: 'flex-end',
-										gap: '0.5rem',
-									}}
-								>
-									<button
-										type="button"
-										className="pricelist-btn"
-										onClick={() => setIsImportModalOpen(false)}
-									>
-										Отмена
-									</button>
-									{importMode === 'smart_text' ? (
-										<button
-											type="button"
-											className="pricelist-btn pricelist-btn-primary"
-											onClick={() => {
-												if (!smartTextInput.trim()) {
-													showToast('Вставьте текст со старыми ценами или выберите файл');
-													return;
-												}
-												if (isIngestingApi) return;
-												handleIngestPriceList(smartTextInput, 'text');
-											}}
-											title="Запустить распознавание и сопоставление с каталогом услуг"
-										>
-											<Sparkles size={14} />
-											<span>{isIngestingApi ? 'Распознавание...' : 'Распознать и сопоставить'}</span>
-										</button>
-									) : (
-										<div style={{ display: 'flex', gap: '0.5rem' }}>
-											<button
-												type="button"
-												className="pricelist-btn"
-												onClick={() => {
-													if (!csvInputText.trim()) {
-														showToast('Вставьте текст таблицы CSV или выберите файл');
-														return;
-													}
-													if (isIngestingApi) return;
-													handleIngestPriceList(csvInputText, 'csv');
-												}}
-												title="Сопоставить строки CSV с каталогом услуг в двухоконном виде"
-											>
-												<ShieldCheck size={14} />
-												<span>Сопоставить с каталогом</span>
-											</button>
-											<button
-												type="button"
-												className="pricelist-btn pricelist-btn-primary"
-												onClick={handleImportCsv}
-											>
-												Загрузить CSV напрямую
-											</button>
-										</div>
-									)}
-								</footer>
-							</>
-						)}
-					</div>
-				</div>
-			)}
-
-			{/* Add / Edit Service Modal (Mandates 8c, 8e) */}
-			{isEditModalOpen && (
-				<div className="csv-import-modal" role="dialog" aria-modal="true">
-					<div
-						className="csv-import-container"
-						style={{
-							maxWidth: '680px',
-							width: '95%',
-							maxHeight: '90vh',
-							display: 'flex',
-							flexDirection: 'column',
-						}}
-					>
-						<header className="pricelist-modal-header">
-							<div className="pricelist-header-title">
-								{editingItem ? 'Редактирование услуги' : 'Новая услуга в прейскурант'}
-							</div>
-							<button
-								type="button"
-								className="pricelist-btn"
-								style={{ padding: '0.25rem', minHeight: '28px', border: 'none' }}
-								onClick={() => setIsEditModalOpen(false)}
-								aria-label="Закрыть окно"
-							>
-								<X size={16} />
-							</button>
-						</header>
-
-						<form
-							onSubmit={handleSaveItemForm}
-							style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}
-						>
-							<div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-								<div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Код услуги
-										</label>
-										<input
-											type="text"
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem' }}
-											placeholder="A16.07.002"
-											value={formCode804n}
-											onChange={(e) => setFormCode804n(e.target.value)}
-										/>
-									</div>
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Коммерческое название *
-										</label>
-										<input
-											type="text"
-											required
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem' }}
-											placeholder="Восстановление зуба пломбой..."
-											value={formCommercialTitle}
-											onChange={(e) => setFormCommercialTitle(e.target.value)}
-										/>
-									</div>
-								</div>
-
-								<div>
-									<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-										Официальное наименование услуги
-									</label>
-									<input
-										type="text"
-										className="pricelist-search-input"
-										style={{ padding: '0 0.75rem' }}
-										placeholder="Восстановление зуба пломбой I, V, VI класс по Блэку..."
-										value={formStatutoryTitle}
-										onChange={(e) => setFormStatutoryTitle(e.target.value)}
-									/>
-								</div>
-
-								<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Категория услуги
-										</label>
-										<select
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem', cursor: 'pointer' }}
-											value={formCategory}
-											onChange={(e) => setFormCategory(e.target.value as Order804nCategory)}
-										>
-											{Object.entries(CATEGORY_LABELS).map(([catKey, catLabel]) => (
-												<option key={catKey} value={catKey}>
-													{catLabel}
-												</option>
-											))}
-										</select>
-									</div>
-
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Специальность врача
-										</label>
-										<select
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem', cursor: 'pointer' }}
-											value={formSpecialty}
-											onChange={(e) => setFormSpecialty(e.target.value as DoctorSpecialty)}
-										>
-											{Object.entries(SPECIALTY_LABELS).map(([specKey, specLabel]) => (
-												<option key={specKey} value={specKey}>
-													{specLabel}
-												</option>
-											))}
-										</select>
-									</div>
-								</div>
-
-								<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Цена (₽) *
-										</label>
-										<input
-											type="text"
-											required
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem', fontWeight: 700 }}
-											placeholder="0"
-											value={formPriceRub}
-											onChange={(e) => setFormPriceRub(e.target.value)}
-										/>
-									</div>
-
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Материалы (₽)
-										</label>
-										<input
-											type="text"
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem' }}
-											placeholder="0"
-											value={formMaterialCostRub}
-											onChange={(e) => setFormMaterialCostRub(e.target.value)}
-										/>
-									</div>
-
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											ЗТЛ лаб. (₽)
-										</label>
-										<input
-											type="text"
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem' }}
-											placeholder="0"
-											value={formLabCostRub}
-											onChange={(e) => setFormLabCostRub(e.target.value)}
-										/>
-									</div>
-
-									<div>
-										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Длительность (мин)
-										</label>
-										<input
-											type="number"
-											min={5}
-											max={480}
-											step={5}
-											className="pricelist-search-input"
-											style={{ padding: '0 0.75rem' }}
-											value={formDurationMin}
-											onChange={(e) => setFormDurationMin(Number(e.target.value) || 15)}
-										/>
-									</div>
-								</div>
-
-								<div>
-									<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-										Коды МКБ-10 (через запятую)
-									</label>
-									<input
-										type="text"
-										className="pricelist-search-input"
-										style={{ padding: '0 0.75rem' }}
-										placeholder="K02.1, K04.0, K05.1"
-										value={formIcd10}
-										onChange={(e) => setFormIcd10(e.target.value)}
-									/>
-								</div>
-							</div>
-
-							<footer
-								style={{
-									padding: '0.75rem 1.25rem',
-									borderTop: '1px solid var(--line)',
-									display: 'flex',
-									justifyContent: 'flex-end',
-									gap: '0.5rem',
-									background: 'var(--paper)',
-								}}
-							>
-								<button
-									type="button"
-									className="pricelist-btn"
-									onClick={() => setIsEditModalOpen(false)}
-								>
-									Отмена
-								</button>
-								<button
-									type="submit"
-									className="pricelist-btn pricelist-btn-primary"
-								>
-									{editingItem ? 'Сохранить изменения' : 'Добавить услугу'}
-								</button>
-							</footer>
-						</form>
-					</div>
-				</div>
-			)}
+			{/* Subcomponent: Add / Edit Service Modal */}
+			<PricelistServiceFormModal
+				isOpen={isEditModalOpen}
+				editingItem={editingItem}
+				onClose={() => setIsEditModalOpen(false)}
+				onSave={handleSaveItem}
+			/>
 		</div>
 	);
 

@@ -212,7 +212,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 							onClick={handleSetWarrantyZeroPrice}
 							className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer transition-colors shadow-xs"
 							data-testid={`inline-warranty-btn-${item.id}`}
-							title="1-клик: 100% гарантийная переделка (0 ₽)"
+							title="Гарантийная переделка (0 ₽)"
 						>
 							<ShieldCheck size={10} />
 							<span>Гарантия 0 ₽</span>
@@ -223,7 +223,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 								onClick={handleKeepAgreedPrice}
 								className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white hover:bg-teal-700 cursor-pointer transition-colors shadow-xs"
 								data-testid={`inline-keep-agreed-btn-${item.id}`}
-								title="1-клик: Выполнить по согласованной цене плана"
+								title="Выполнить по согласованной цене плана"
 							>
 								<Check size={10} />
 								<span>По плану</span>
@@ -331,7 +331,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 							onClick={handleSetWarrantyZeroPrice}
 							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-colors shadow-xs"
 							data-testid={`full-warranty-btn-${item.id}`}
-							title="1-клик: 100% гарантийная переделка (0 ₽)"
+							title="Гарантийная переделка (0 ₽)"
 						>
 							<ShieldCheck size={13} />
 							<span>Гарантия 0 ₽</span>
@@ -343,7 +343,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 								onClick={handleKeepAgreedPrice}
 								className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-colors shadow-xs"
 								data-testid={`full-keep-agreed-btn-${item.id}`}
-								title="1-клик: Выполнить по согласованной цене плана"
+								title="Выполнить по согласованной цене плана"
 							>
 								<Check size={13} />
 								<span>По согласованной цене</span>
