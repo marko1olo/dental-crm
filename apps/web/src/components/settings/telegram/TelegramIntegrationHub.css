@@ -1,0 +1,647 @@
+/* ==========================================================================
+   TELEGRAM INTEGRATION HUB STYLES
+   Clinic MVP / DENTE Dental CRM
+   Supports both Telegram Bot (BotFather) and Personal Account (MTProto)
+   ========================================================================== */
+
+.telegram-hub-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 100%;
+	margin-bottom: 24px;
+	box-sizing: border-box;
+}
+
+/* --- Главный переключатель вкладок Хаба (Бот vs Личный аккаунт) --- */
+.tg-hub-main-tabs {
+	display: flex;
+	gap: 8px;
+	background: var(--paper-soft, #f8fafc);
+	padding: 6px;
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	width: fit-content;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-main-tabs {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: rgba(51, 65, 85, 0.8);
+}
+
+.tg-hub-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 10px 20px;
+	min-height: 44px;
+	border-radius: 10px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	white-space: nowrap;
+	user-select: none;
+}
+
+.tg-hub-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.03);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-tab-btn:hover {
+	color: #f1f5f9;
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.tg-hub-tab-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	font-weight: 600;
+	border-color: var(--line, #e2e8f0);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-tab-btn.active {
+	background: #1e293b;
+	color: #2dd4bf;
+	border-color: #334155;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Главная карточка содержимого --- */
+.tg-hub-content-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-content-card {
+	background: rgba(30, 41, 59, 0.5);
+	border-color: rgba(51, 65, 85, 0.8);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Статусные баннеры --- */
+.tg-status-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-radius: 12px;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.tg-status-banner.connected {
+	background: rgba(16, 185, 129, 0.08);
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-banner.connected {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.35);
+}
+
+.tg-status-banner.disconnected {
+	background: rgba(245, 158, 11, 0.08);
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-banner.disconnected {
+	background: rgba(245, 158, 11, 0.15);
+	border-color: rgba(245, 158, 11, 0.35);
+}
+
+.tg-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.tg-status-badge.online {
+	color: #059669;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-badge.online {
+	color: #34d399;
+}
+
+.tg-status-badge.offline {
+	color: #d97706;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-badge.offline {
+	color: #fbbf24;
+}
+
+/* Пульсирующая точка статуса */
+.tg-pulse-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	display: inline-block;
+	background: currentColor;
+	position: relative;
+}
+
+.tg-pulse-dot.pulse::after {
+	content: "";
+	position: absolute;
+	top: -3px;
+	left: -3px;
+	right: -3px;
+	bottom: -3px;
+	border-radius: 50%;
+	border: 2px solid currentColor;
+	animation: tg-pulse-anim 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+	opacity: 0.6;
+}
+
+@keyframes tg-pulse-anim {
+	0% {
+		transform: scale(0.9);
+		opacity: 0.8;
+	}
+	70% {
+		transform: scale(1.6);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1.6);
+		opacity: 0;
+	}
+}
+
+/* --- Карточка подключенного бота/аккаунта --- */
+.tg-connected-profile {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.tg-avatar-circle {
+	width: 52px;
+	height: 52px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid var(--paper, #ffffff);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	background: var(--paper-soft, #f1f5f9);
+}
+
+.tg-profile-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.tg-profile-name {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.tg-profile-sub {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted, #64748b);
+}
+
+.tg-profile-link {
+	color: var(--teal, #0d9488);
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-weight: 500;
+}
+
+.tg-profile-link:hover {
+	text-decoration: underline;
+}
+
+/* --- Сетка свойств (Инфо-табличка) --- */
+.tg-info-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 16px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-info-grid {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-info-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.tg-info-label {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.tg-info-value {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--ink, #0f172a);
+	word-break: break-all;
+}
+
+/* --- Форма ввода токена / телефона --- */
+.tg-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.tg-input-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.tg-text-input {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 44px 10px 14px;
+	font-size: 14px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	color: var(--ink, #0f172a);
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-text-input {
+	background: rgba(15, 23, 42, 0.6);
+	border-color: #334155;
+	color: #f1f5f9;
+}
+
+.tg-text-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.tg-input-icon-btn {
+	position: absolute;
+	right: 10px;
+	background: transparent;
+	border: none;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	padding: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	min-height: 32px;
+	min-width: 32px;
+}
+
+.tg-input-icon-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.05);
+}
+
+/* --- Интерактивные кнопки с тач-таргетом >= 44px --- */
+.tg-btn-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 20px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 600;
+	border-radius: 10px;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+.tg-btn-primary:hover:not(:disabled) {
+	background: #0f766e;
+	box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+}
+
+.tg-btn-primary:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.tg-btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 18px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 10px;
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-btn-secondary {
+	background: rgba(30, 41, 59, 0.6);
+	border-color: #334155;
+	color: #f1f5f9;
+}
+
+.tg-btn-secondary:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--muted, #94a3b8);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-btn-secondary:hover:not(:disabled) {
+	background: rgba(51, 65, 85, 0.6);
+}
+
+.tg-btn-danger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 18px;
+	background: transparent;
+	color: #ef4444;
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 10px;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.tg-btn-danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.08);
+	border-color: #ef4444;
+}
+
+/* --- BotFather 3-step Guide --- */
+.tg-guide-box {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-guide-box {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-guide-step {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.tg-step-badge {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.tg-step-text {
+	font-size: 13px;
+	color: var(--ink, #0f172a);
+	line-height: 1.5;
+}
+
+.tg-code-tag {
+	display: inline-block;
+	background: rgba(0, 0, 0, 0.06);
+	padding: 1px 6px;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 12px;
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-code-tag {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.tg-tab-text-mobile {
+	display: none;
+}
+
+.tg-tab-text-desktop {
+	display: inline;
+}
+
+/* --- QR Секция (По QR-коду) --- */
+.tg-qr-layout {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 24px;
+	align-items: center;
+	width: 100%;
+}
+
+.tg-qr-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	padding: 20px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	width: fit-content;
+	margin: 0 auto;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-qr-box {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-qr-white-card {
+	width: 210px;
+	height: 210px;
+	background: #ffffff;
+	padding: 10px;
+	border-radius: 12px;
+	border: 1px solid #cbd5e1;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-qr-white-card svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+/* --- Поля ввода 5-значного кода --- */
+.tg-code-input-row {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	margin: 10px 0;
+}
+
+.tg-digit-input {
+	width: 44px;
+	height: 52px;
+	text-align: center;
+	font-size: 22px;
+	font-weight: 700;
+	background: var(--paper, #ffffff);
+	border: 1.5px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	color: var(--ink, #0f172a);
+	outline: none;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-digit-input {
+	background: rgba(15, 23, 42, 0.8);
+	border-color: #334155;
+	color: #f1f5f9;
+}
+
+.tg-digit-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+}
+
+/* Тестовая плашка для автоподстановки кода */
+.tg-testcode-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(14, 165, 233, 0.1);
+	border: 1px dashed rgba(14, 165, 233, 0.4);
+	color: #0284c7;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	margin-top: 4px;
+	width: fit-content;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-testcode-chip {
+	color: #38bdf8;
+	background: rgba(14, 165, 233, 0.2);
+}
+
+.tg-testcode-chip:hover {
+	background: rgba(14, 165, 233, 0.2);
+}
+
+/* Мобильная адаптация Apple HIG (<= 768px) */
+@media (max-width: 768px) {
+	.tg-tab-text-mobile {
+		display: inline;
+	}
+
+	.tg-tab-text-desktop {
+		display: none;
+	}
+
+	.tg-hub-content-card {
+		padding: 16px;
+		border-radius: 12px;
+	}
+
+	.tg-hub-main-tabs {
+		width: 100%;
+		display: flex;
+		gap: 4px;
+	}
+
+	.tg-hub-tab-btn {
+		flex: 1;
+		padding: 8px 6px;
+		font-size: 12px;
+		gap: 6px;
+		justify-content: center;
+	}
+
+	.tg-status-banner {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	.tg-status-banner > div:last-child {
+		width: 100%;
+		display: flex;
+		gap: 8px;
+	}
+
+	.tg-status-banner .tg-btn-secondary,
+	.tg-status-banner .tg-btn-danger {
+		flex: 1;
+	}
+
+	.tg-qr-layout {
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	.tg-qr-box {
+		width: 100%;
+		box-sizing: border-box;
+	}
+}

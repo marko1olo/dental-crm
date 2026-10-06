@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -135,7 +135,7 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 
 		// Autonomous Presets Panel
 		assert.ok(html.includes("data-testid=\"ortho-quick-presets-panel\""));
-		assert.ok(html.includes("Быстрые клинические пресеты (1 клик)"));
+		assert.ok(html.includes("Клинические пресеты"));
 
 		// 1. Routine activation
 		assert.ok(html.includes("data-testid=\"ortho-preset-routine-activation\""));
@@ -221,7 +221,7 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 
 		// Angle Selector Container
 		assert.ok(html.includes("data-testid=\"ortho-angle-class-selector\""));
-		assert.ok(html.includes("Прикус по Энглю (1-клик фиксация)"));
+		assert.ok(html.includes("Прикус по Энглю"));
 
 		// 4 Angle Class Buttons
 		assert.ok(html.includes("data-testid=\"angle-class-class_1-btn\""));
@@ -251,7 +251,7 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 
 		// Workhorse Archwires Strip Container
 		assert.ok(html.includes("data-testid=\"ortho-workhorse-wires-strip\""));
-		assert.ok(html.includes("Рабочие дуги ортодонта (1 клик)"));
+		assert.ok(html.includes("Рабочие дуги ортодонта"));
 
 		// 4 Standard Archwires
 		assert.ok(html.includes("data-testid=\"quick-wire-niti_014-btn\""));
@@ -608,7 +608,7 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok(html.includes("data-testid=\"ortho-open-photo-protocol-btn\""));
 			assert.ok(html.includes("data-testid=\"ortho-confirm-photos-1click-btn\""));
 			assert.ok(html.includes("Фотопротокол (8 ракурсов ABO)"));
-			assert.ok(html.includes("1-клик подтвердить"));
+			assert.ok(html.includes("Подтвердить"));
 		});
 
 		it("renders 1-click ZTL lab order buttons for aligners, retainers, expansion plates, and splints", () => {
@@ -620,11 +620,11 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok(html.includes("data-testid=\"ortho-preset-retainer-lab-order\""));
 			assert.ok(html.includes("data-testid=\"ortho-preset-plate-lab-order\""));
 			assert.ok(html.includes("data-testid=\"ortho-preset-splint-lab-order\""));
-			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Элайнеры / Каппа)"));
+			assert.ok(html.includes("Наряд ЗТЛ (Элайнеры / Каппа)"));
 			assert.ok(html.includes("шаг 5 из 36"));
-			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Ретейнер / Каппа)"));
-			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Пластинка с винтом)"));
-			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Окклюзионный сплинт)"));
+			assert.ok(html.includes("Наряд ЗТЛ (Ретейнер / Каппа)"));
+			assert.ok(html.includes("Наряд ЗТЛ (Пластинка с винтом)"));
+			assert.ok(html.includes("Наряд ЗТЛ (Окклюзионный сплинт)"));
 			assert.ok(html.includes("миорелаксирующий / шина ВНЧС"));
 		});
 

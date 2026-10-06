@@ -78,7 +78,7 @@ export function OrthodonticMaterialsQuickSelector({
 					</span>
 				</div>
 				<span style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>
-					Топ-выбор в 1 клик
+					Быстрый выбор
 				</span>
 			</div>
 

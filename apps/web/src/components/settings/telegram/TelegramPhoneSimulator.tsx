@@ -15,11 +15,6 @@ import {
 	CheckCheck,
 	Phone,
 	Video,
-	Send,
-	Calendar,
-	Star,
-	HelpCircle,
-	UserCheck,
 } from "lucide-react";
 import type { BotPreset, BotSimulatorScreen } from "./telegramBotPresets";
 
@@ -114,17 +109,17 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		booking: {
 			id: "booking",
 			title: "Онлайн-запись 24/7",
-			text: `📅 Онлайн-запись на приём в «${effectiveTitle}»:\n\n1. Выберите направление или врача\n2. Укажите удобную дату и время\n3. Запись моментально появится в расписании клиники.`,
+			text: `Онлайн-запись на приём в «${effectiveTitle}»:\n\n1. Выберите направление или специалиста\n2. Укажите удобную дату и время\n3. Запись моментально появится в расписании клиники.`,
 			buttons: [
 				[
-					{ text: "🦷 Терапия / Осмотр (Смирнова Е.А.)", action: "action:select_service", isPrimary: true },
+					{ text: "Терапия / Осмотр (Смирнова Е.А.)", action: "action:select_service", isPrimary: true },
 				],
 				[
-					{ text: "✨ Эстетика & Виниры (Барабаш С.В.)", action: "action:select_service" },
-					{ text: "👶 Детский врач (без боли)", action: "action:select_service" },
+					{ text: "Эстетика & Виниры (Барабаш С.В.)", action: "action:select_service" },
+					{ text: "Детское отделение (адаптация)", action: "action:select_service" },
 				],
 				[
-					{ text: "📅 Ближайший слот: Завтра 14:00", action: "action:confirm_slot", isPrimary: true },
+					{ text: "Ближайший слот: Завтра 14:00", action: "action:confirm_slot", isPrimary: true },
 				],
 				[
 					{ text: "« Назад в меню", action: "screen:root" },
@@ -134,14 +129,14 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		reminders: {
 			id: "reminders",
 			title: "Напоминание о приёме",
-			text: `⏰ Напоминание о визите:\n\nЗдравствуйте, Анна! Напоминаем о вашем приёме завтра в 14:00 к врачу Смирновой Е.А. (Терапия, кабинет 2).\n\nКлиника: «${effectiveTitle}»\nПожалуйста, подтвердите визит или перенесите время:`,
+			text: `Напоминание о визите:\n\nЗдравствуйте, Анна! Напоминаем о вашем приёме завтра в 14:00 к врачу Смирновой Е.А. (Терапия, кабинет 2).\n\nКлиника: «${effectiveTitle}»\nПожалуйста, подтвердите визит или перенесите время:`,
 			buttons: [
 				[
-					{ text: "✅ Да, я буду (Подтвердить)", action: "action:confirm_visit", isPrimary: true },
+					{ text: "Да, я буду (Подтвердить)", action: "action:confirm_visit", isPrimary: true },
 				],
 				[
-					{ text: "🔄 Перенести на другой день", action: "action:reschedule" },
-					{ text: "📍 Показать маршрут", action: "action:open_maps" },
+					{ text: "Перенести на другой день", action: "action:reschedule" },
+					{ text: "Показать маршрут", action: "action:open_maps" },
 				],
 				[
 					{ text: "« Назад в меню", action: "screen:root" },
@@ -151,17 +146,17 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		reviews: {
 			id: "reviews",
 			title: "Сбор отзывов и NPS",
-			text: `⭐ Спасибо, что доверили здоровье вашей улыбки клинике «${effectiveTitle}»!\n\nКак прошёл ваш сегодняшний визит? Будем искренне благодарны за оценку на независимых порталах. Это помогает нам становиться лучше!`,
+			text: `Спасибо, что доверили здоровье вашей улыбки клинике «${effectiveTitle}»!\n\nКак прошёл ваш сегодняшний визит? Будем благодарны за оценку на независимых порталах. Это помогает нам становиться лучше!`,
 			buttons: [
 				[
-					{ text: "⭐⭐⭐⭐⭐ Отлично, всё понравилось!", action: "action:rate_5", isPrimary: true },
+					{ text: "Отлично, всё понравилось", action: "action:rate_5", isPrimary: true },
 				],
 				[
-					{ text: "🔴 Яндекс.Карты (Бонус 500 ₽)", action: "action:open_yandex", url: "https://maps.yandex.ru" },
-					{ text: "🟢 2ГИС", action: "action:open_2gis", url: "https://2gis.ru" },
+					{ text: "Яндекс.Карты (Бонус 500 ₽)", action: "action:open_yandex", url: "https://maps.yandex.ru" },
+					{ text: "2ГИС", action: "action:open_2gis", url: "https://2gis.ru" },
 				],
 				[
-					{ text: "🩺 ПроДокторов", action: "action:open_prodoctorov", url: "https://prodoctorov.ru" },
+					{ text: "ПроДокторов", action: "action:open_prodoctorov", url: "https://prodoctorov.ru" },
 				],
 				[
 					{ text: "« Назад в меню", action: "screen:root" },
@@ -171,14 +166,14 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		price_faq: {
 			id: "price_faq",
 			title: "Прейскурант и FAQ",
-			text: `📖 Прейскурант услуг клиники «${effectiveTitle}»:\n\n• Первичный осмотр и КТ — 0 ₽ (по акции)\n• Лечение кариеса с анестезией — от 4 500 ₽\n• Профессиональная гигиена AirFlow — 6 000 ₽\n• Имплантация зуба под ключ — от 35 000 ₽\n\nВсе цены фиксируются в плане лечения без скрытых доплат.`,
+			text: `Прейскурант услуг клиники «${effectiveTitle}»:\n\n• Первичный осмотр и КТ — 0 ₽ (по акции)\n• Лечение кариеса под микроскопом — от 4 500 ₽\n• Профессиональная гигиена AirFlow — 6 000 ₽\n• Имплантация зуба под ключ — от 35 000 ₽\n\nВсе цены фиксируются в плане лечения до начала манипуляций.`,
 			buttons: [
 				[
-					{ text: "📅 Записаться на осмотр", action: "screen:booking", isPrimary: true },
+					{ text: "Записаться на осмотр", action: "screen:booking", isPrimary: true },
 				],
 				[
-					{ text: "💳 Беспроцентная рассрочка 0%", action: "action:installment" },
-					{ text: "🛡️ Гарантия до 10 лет", action: "action:warranty" },
+					{ text: "Поэтапная оплата 0%", action: "action:installment" },
+					{ text: "Гарантия на лечение", action: "action:warranty" },
 				],
 				[
 					{ text: "« Назад в меню", action: "screen:root" },
@@ -188,10 +183,10 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		admin_chat: {
 			id: "admin_chat",
 			title: "Связь с администратором",
-			text: `👩‍💼 Вы переключены на дежурного администратора клиники «${effectiveTitle}».\n\nАдминистратор Анастасия подключилась к диалогу и ответит вам в течение 1–2 минут. Напишите ваш вопрос:`,
+			text: `Вы переключены на дежурного администратора клиники «${effectiveTitle}».\n\nАдминистратор подключилась к диалогу и ответит вам в течение 1–2 минут. Напишите ваш вопрос:`,
 			buttons: [
 				[
-					{ text: "📞 Позвонить на ресепшен прямо сейчас", action: "action:call_concierge", isPrimary: true },
+					{ text: "Позвонить в регистратуру", action: "action:call_concierge", isPrimary: true },
 				],
 				[
 					{ text: "« Назад в главное меню", action: "screen:root" },
@@ -226,7 +221,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		}
 
 		if (isWebApp || action === "action:open_webapp") {
-			showMiniToast("🚀 Открытие WebApp онлайн-записи");
+			showMiniToast("Открытие WebApp онлайн-записи");
 			return;
 		}
 
@@ -241,37 +236,37 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 		}
 
 		if (action === "action:confirm_visit") {
-			showMiniToast("✅ Запись подтверждена! Ждём вас в клинике.");
+			showMiniToast("Запись подтверждена! Ждём вас в клинике.");
 			return;
 		}
 
 		if (action === "action:reschedule") {
 			changeScreen("booking");
-			showMiniToast("📅 Выберите новое удобное время");
+			showMiniToast("Выберите новое удобное время");
 			return;
 		}
 
 		if (action === "action:rate_5") {
-			showMiniToast("❤️ Огромное спасибо за 5 звёзд!");
+			showMiniToast("Благодарим за высокую оценку!");
 			return;
 		}
 
 		if (action === "action:call_cito") {
-			showMiniToast("📞 Вызов дежурного врача...");
+			showMiniToast("Вызов дежурного врача...");
 			return;
 		}
 
 		if (action === "action:call_concierge") {
-			showMiniToast("📞 Соединение с администратором...");
+			showMiniToast("Соединение с администратором...");
 			return;
 		}
 
 		if (action === "action:open_maps") {
-			showMiniToast("📍 Открытие маршрута до клиники...");
+			showMiniToast("Открытие маршрута до клиники...");
 			return;
 		}
 
-		showMiniToast("✓ Команда обработана ботом");
+		showMiniToast("Команда принята ботом");
 	};
 
 	// Channel visual configurations
@@ -401,7 +396,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 								<button
 									type="button"
 									className="tg-header-more-btn"
-									onClick={() => showMiniToast("📞 Видеозвонок клиники")}
+									onClick={() => showMiniToast("Видеозвонок клиники")}
 									title="Видеозвонок"
 								>
 									<Video size={16} />
@@ -409,7 +404,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 								<button
 									type="button"
 									className="tg-header-more-btn"
-									onClick={() => showMiniToast("📞 Звонок в клинику")}
+									onClick={() => showMiniToast("Звонок в клинику")}
 									title="Аудиозвонок"
 								>
 									<Phone size={15} />
@@ -535,7 +530,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 						<button
 							type="button"
 							className="tg-input-icon-btn"
-							onClick={() => showMiniToast("Прикрепление фото / снимков")}
+							onClick={() => showMiniToast("Прикрепление документов / файлов")}
 							title="Вложения"
 						>
 							<Paperclip size={17} />
@@ -545,7 +540,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 					<button
 						type="button"
 						className="tg-mic-btn"
-						onClick={() => showMiniToast("🎤 Голосовое сообщение: распознается ИИ-ассистентом DENTE")}
+						onClick={() => showMiniToast("Голосовое сообщение: распознается медицинским ассистентом DENTE")}
 						title="Голосовое сообщение"
 					>
 						<Mic size={18} />

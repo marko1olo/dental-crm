@@ -1,24 +1,4 @@
-import {
-	Activity,
-	Calendar,
-	Camera,
-	Check,
-	CheckCircle2,
-	Copy,
-	FileText,
-	Layers,
-	Plus,
-	Printer,
-	Receipt,
-	RotateCcw,
-	Send,
-	Sliders,
-	ShieldCheck,
-	X,
-	Zap,
-} from "lucide-react";
-import { AlignerTray, BracesBracket, DentalArticulator } from "../icons/DentalIcons";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import {
@@ -35,11 +15,96 @@ import {
 	type TransversalAnomaly,
 	type TmjStatus,
 } from "@dental/shared";
-import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
-import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	OrthoArchwireSelector,
+	ARCHWIRE_MATERIALS,
+	ROUND_SECTIONS,
+	RECT_SECTIONS,
+	TORQUE_PRESETS,
+	ANGULATION_PRESETS,
+	ELASTIC_SCHEMES,
+	ELASTIC_SIZES,
+	type ArchwireMaterial,
+	type ArchwireSection,
+	type TorquePresetOption,
+} from "./OrthoArchwireSelector";
+import {
+	OrthoBracketProtocolSection,
+	BRACKET_SYSTEMS,
+	ALIGNER_ATTACHMENT_PRESETS,
+	type BracketSlot,
+	type AlignerAttachmentPreset,
+} from "./OrthoBracketProtocolSection";
+import {
+	ORTHODONTIC_STAGE_TABS,
+	ORTHO_804N_ACTIONS_MAP,
+	ALIGNER_804N_SERVICES,
+	CLINICAL_ACTIONS,
+	calculateOrthodonticServices804n,
+	formatOrthodonticPatientMemo,
+	getRuDateString,
+	ANTERIOR_TEETH,
+	type OrthodonticStageFilter,
+	type TargetArch,
+	type OrthodonticService804n,
+	type CalculateOrthoServicesParams,
+	type OrthodonticVisitProtocolWidgetProps,
+	type OrthodonticPatientMemoParams,
+} from "./orthoProtocolTypes";
+import { OrthoPhotoAndCephProtocolSection } from "./OrthoPhotoAndCephProtocolSection";
+import { OrthoClinicalPresetsSection } from "./OrthoClinicalPresetsSection";
+import { OrthoDiagnosticsSection } from "./OrthoDiagnosticsSection";
+import { OrthoDentalArchSection } from "./OrthoDentalArchSection";
+import { OrthoProtocolPreviewSection } from "./OrthoProtocolPreviewSection";
+import { synthesizeOrthodonticProtocolText } from "./orthoProtocolSynthesis";
+import {
+	printOrthodonticCard,
+	copyTextToClipboard,
+	printPatientMemoA4,
+} from "./orthoProtocolPrintUtils";
+import { useOrthoClinicalPresets } from "./useOrthoClinicalPresets";
+import { useOrthoProtocolState } from "./useOrthoProtocolState";
+import { OrthoProtocolModalHeader } from "./OrthoProtocolModalHeader";
+import { OrthoClinicalActionsChecklist } from "./OrthoClinicalActionsChecklist";
+import { OrthoControlsColumn } from "./OrthoControlsColumn";
 
-export { ANB_CLASS_OPTIONS, ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
+export {
+	ANB_CLASS_OPTIONS,
+	ANGLE_CLASS_OPTIONS,
+	WORKHORSE_ARCHWIRES,
+	ARCHWIRE_MATERIALS,
+	ROUND_SECTIONS,
+	RECT_SECTIONS,
+	TORQUE_PRESETS,
+	ANGULATION_PRESETS,
+	ELASTIC_SCHEMES,
+	ELASTIC_SIZES,
+	BRACKET_SYSTEMS,
+	ALIGNER_ATTACHMENT_PRESETS,
+	ORTHODONTIC_STAGE_TABS,
+	ORTHO_804N_ACTIONS_MAP,
+	ALIGNER_804N_SERVICES,
+	CLINICAL_ACTIONS,
+	calculateOrthodonticServices804n,
+	formatOrthodonticPatientMemo,
+	OrthoArchwireSelector,
+	OrthoBracketProtocolSection,
+	OrthoPhotoAndCephProtocolSection,
+	OrthoClinicalPresetsSection,
+	OrthoDiagnosticsSection,
+	OrthoDentalArchSection,
+	OrthoProtocolPreviewSection,
+	synthesizeOrthodonticProtocolText,
+	printOrthodonticCard,
+	copyTextToClipboard,
+	printPatientMemoA4,
+	useOrthoClinicalPresets,
+	useOrthoProtocolState,
+	OrthoProtocolModalHeader,
+	OrthoClinicalActionsChecklist,
+	OrthoControlsColumn,
+};
 export type {
 	AnbClass,
 	AnbClassOption,
@@ -50,626 +115,121 @@ export type {
 	VerticalAnomaly,
 	TransversalAnomaly,
 	TmjStatus,
+	ArchwireMaterial,
+	ArchwireSection,
+	TorquePresetOption,
+	BracketSlot,
+	AlignerAttachmentPreset,
+	OrthodonticStageFilter,
+	TargetArch,
+	OrthodonticService804n,
+	CalculateOrthoServicesParams,
+	OrthodonticVisitProtocolWidgetProps,
+	OrthodonticPatientMemoParams,
 };
 
-export type OrthodonticStageFilter =
-	| "all"
-	| "leveling"
-	| "working"
-	| "finishing"
-	| "aligners"
-	| "retention";
-
-export const ORTHODONTIC_STAGE_TABS: Array<{
-	id: OrthodonticStageFilter;
-	label: string;
-	shortLabel: string;
-	desc: string;
-}> = [
-	{ id: "all", label: "Все этапы", shortLabel: "Все", desc: "Полный клинический арсенал" },
-	{ id: "leveling", label: "1. Нивелирование", shortLabel: "Нивелирование", desc: "NiTi .012–.016, фиксация аппаратуры" },
-	{ id: "working", label: "2. Рабочий / Юстировка", shortLabel: "Рабочий", desc: "Сталь SS, чейн, эластики, закрытие промежутков" },
-	{ id: "finishing", label: "3. Детализация & Торк", shortLabel: "Торк & Детализация", desc: "ТМА, расчет торка резцов и ангуляции" },
-	{ id: "aligners", label: "4. Элайнеры & Каппы", shortLabel: "Элайнеры", desc: "Трекер капп 1..N, аттачменты, выдача сетов" },
-	{ id: "retention", label: "5. Снятие & Ретенция", shortLabel: "Ретенция", desc: "Снятие брекетов, ретейнеры, ретенционные каппы" },
-];
-
-export interface TorquePresetOption {
-	id: string;
-	label: string;
-	shortLabel: string;
-	u1Torque: string;
-	l1Torque: string;
-	desc: string;
-}
-
-export const TORQUE_PRESETS: TorquePresetOption[] = [
-	{ id: "mbt", label: "Стандарт MBT (+17° / -6°)", shortLabel: "MBT (+17°/-6°)", u1Torque: "+17°", l1Torque: "-6°", desc: "Универсальный стандарт прописи MBT" },
-	{ id: "damon_std", label: "Стандарт Damon (+12° / -1°)", shortLabel: "Damon Std (+12°/-1°)", u1Torque: "+12°", l1Torque: "-1°", desc: "Стандартный торк резцов Damon Q2 / Clear" },
-	{ id: "damon_high", label: "Высокий High (+17° / +7°)", shortLabel: "High (+17°/+7°)", u1Torque: "+17°", l1Torque: "+7°", desc: "Компенсация ретрузии и потери торка" },
-	{ id: "damon_low", label: "Низкий Low (+2° / -6°)", shortLabel: "Low (+2°/-6°)", u1Torque: "+2°", l1Torque: "-6°", desc: "Предотвращение протрузии при скученности" },
-	{ id: "roth", label: "Классический Roth (+12° / -1°)", shortLabel: "Roth (+12°/-1°)", u1Torque: "+12°", l1Torque: "-1°", desc: "Классическая пропись Рота" },
-];
-
-export const ANGULATION_PRESETS = [
-	{ id: "norm", label: "Норма (резцы 5°, клыки 9°)", shortLabel: "Норма" },
-	{ id: "canine_upright", label: "Вертикализация клыков (7°)", shortLabel: "Вертикализация" },
-];
-
-export type BracketSlot = "0.018" | "0.022";
-export type ArchwireMaterial = "NiTi" | "CuNiTi" | "SS" | "TMA";
-export type ArchwireSection =
-	| ".012"
-	| ".014"
-	| ".016"
-	| ".018"
-	| ".020"
-	| ".014x.025"
-	| ".016x.022"
-	| ".016x.025"
-	| ".017x.025"
-	| ".018x.025"
-	| ".019x.025"
-	| ".021x.025";
-
-export type TargetArch = "upper" | "lower" | "both";
-
-export interface OrthodonticService804n {
-	code: string;
-	nameRu: string;
-	priceRub: number;
-	stageKind: "stage_ortho";
-	toothNumber?: number | undefined;
-	arch?: TargetArch | undefined;
-}
-
-export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticService804n, "stageKind">>> = {
-	wire_change: [
-		{
-			code: "A16.07.048.002",
-			nameRu: "Смена ортодонтической дуги",
-			priceRub: 2500,
-		},
-		{
-			code: "A16.07.048",
-			nameRu: "Коррекция прикуса с использованием брекет-системы",
-			priceRub: 1500,
-		},
-	],
-	ligature_change: [
-		{
-			code: "A16.07.048",
-			nameRu: "Активация элементов брекет-системы / смена лигатур",
-			priceRub: 1500,
-		},
-	],
-	rebracket: [
-		{
-			code: "A16.07.048.001",
-			nameRu: "Фиксация одного брекета / замка",
-			priceRub: 1200,
-		},
-	],
-	ipr: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Сепарация зубов",
-			priceRub: 800,
-		},
-	],
-	separation: [
-		{
-			code: "A16.07.048.003",
-			nameRu: "Установка сепарационных эластиков / сепарация",
-			priceRub: 800,
-		},
-	],
-	plate_activation: [
-		{
-			code: "A16.07.047",
-			nameRu: "Коррекция съемного ортодонтического аппарата",
-			priceRub: 1000,
-		},
-	],
-	expansion_screw_activation: [
-		{
-			code: "A16.07.047.001",
-			nameRu: "Активация расширяющего винта пластинки",
-			priceRub: 800,
-		},
-	],
-	debonding: [
-		{
-			code: "A16.07.049",
-			nameRu: "Снятие несъемного ортодонтического аппарата",
-			priceRub: 5000,
-		},
-		{
-			code: "A16.07.050",
-			nameRu: "Фиксация несъемного ретейнера",
-			priceRub: 4000,
-		},
-	],
-};
-
-export const ALIGNER_804N_SERVICES: Array<Omit<OrthodonticService804n, "stageKind">> = [
-	{
-		code: "A16.07.046",
-		nameRu: "Ортодонтическая коррекция с применением элайнеров",
-		priceRub: 3000,
-	},
-	{
-		code: "A16.07.046.001",
-		nameRu: "Фиксация композитных аттачментов элайнеров",
-		priceRub: 2000,
-	},
-];
-
-export interface CalculateOrthoServicesParams {
-	selectedActions?: string[] | undefined;
-	bracketSystem?: string | undefined;
-	activeAttachmentPreset?: string | null | undefined;
-	selectedTooth?: number | null | undefined;
-	isAttachmentsOnly?: boolean | undefined;
-	targetArch?: TargetArch | undefined;
-}
-
-export function calculateOrthodonticServices804n(
-	params: CalculateOrthoServicesParams,
-): OrthodonticService804n[] {
-	if (params.isAttachmentsOnly) {
-		return ALIGNER_804N_SERVICES.map((s) => ({
-			...s,
-			stageKind: "stage_ortho",
-			toothNumber: params.selectedTooth ?? undefined,
-		}));
+// ACID Backend Synchronization for Archwires and Ligatures
+function syncOrthoBackendActions(
+	patientId: string,
+	selectedActions: string[],
+	archwireMaterial: string,
+	archwireSection: string,
+	targetArch: string,
+	notes: string,
+	powerChainType: string,
+	powerChainSpan: string,
+) {
+	const headers = {
+		"Content-Type": "application/json",
+		...denteAdminSecretRequestHeaders(),
+	};
+	if (selectedActions.includes("wire_change")) {
+		fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/archwire-change`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				material: archwireMaterial,
+				section: archwireSection,
+				arch: targetArch,
+				note: notes,
+			}),
+		}).catch((err) => {
+			console.warn("[Orthodontics] Archwire change backend sync error:", err);
+		});
 	}
-
-	const rawServices: OrthodonticService804n[] = [];
-
-	const isAligners = params.bracketSystem === "aligners" || Boolean(params.activeAttachmentPreset);
-	if (isAligners) {
-		for (const s of ALIGNER_804N_SERVICES) {
-			rawServices.push({
-				...s,
-				stageKind: "stage_ortho",
-				toothNumber: params.selectedTooth ?? undefined,
-			});
-		}
+	if (selectedActions.includes("ligature_change")) {
+		fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/ligatures-activate`, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				powerChain: powerChainType === "short",
+				powerChainSpan,
+				note: notes,
+			}),
+		}).catch((err) => {
+			console.warn("[Orthodontics] Ligatures activation backend sync error:", err);
+		});
 	}
-
-	const actions = params.selectedActions || [];
-	for (const actionId of actions) {
-		const mapped = ORTHO_804N_ACTIONS_MAP[actionId];
-		if (mapped) {
-			for (const item of mapped) {
-				if (actionId === "wire_change" && item.code === "A16.07.048.002") {
-					if (params.targetArch === "both") {
-						rawServices.push({
-							...item,
-							nameRu: "Смена ортодонтической дуги (ВЧ)",
-							stageKind: "stage_ortho",
-							arch: "upper",
-						});
-						rawServices.push({
-							...item,
-							nameRu: "Смена ортодонтической дуги (НЧ)",
-							stageKind: "stage_ortho",
-							arch: "lower",
-						});
-					} else if (params.targetArch === "upper" || params.targetArch === "lower") {
-						const label = params.targetArch === "upper" ? " (ВЧ)" : " (НЧ)";
-						rawServices.push({
-							...item,
-							nameRu: `${item.nameRu}${label}`,
-							stageKind: "stage_ortho",
-							arch: params.targetArch,
-						});
-					} else {
-						rawServices.push({
-							...item,
-							stageKind: "stage_ortho",
-						});
-					}
-				} else {
-					rawServices.push({
-						...item,
-						stageKind: "stage_ortho",
-						toothNumber:
-							actionId === "rebracket" && params.selectedTooth
-								? params.selectedTooth
-								: undefined,
-					});
-				}
-			}
-		}
-	}
-
-	// Deduplicate by composite key (code + arch + toothNumber) so identical services aren't duplicated,
-	// but separate jaw treatments (e.g. upper and lower archwire changes) are preserved with exact kopeck pricing
-	const servicesMap = new Map<string, OrthodonticService804n>();
-	for (const s of rawServices) {
-		const key = `${s.code}_${s.arch || ""}_${s.toothNumber || ""}`;
-		if (!servicesMap.has(key)) {
-			servicesMap.set(key, s);
-		}
-	}
-
-	return Array.from(servicesMap.values());
 }
 
-export interface OrthodonticVisitProtocolWidgetProps {
-	isOpen: boolean;
-	onClose: () => void;
-	patientId?: string | undefined;
-	patientName?: string | undefined;
-	readonly clinicName?: string | undefined; // Дефолт: 'Стоматологическая клиника DENTE'
-	readonly clinicPhone?: string | undefined;
-	readonly doctorName?: string | undefined; // Дефолт: 'Лечащий врач-ортодонт'
-	selectedTooth?: number | null;
-	onSelectTooth?: (toothNumber: number) => void;
-	currentAligner?: number | undefined;
-	totalAligners?: number | undefined;
-	currentAlignerUpper?: number | undefined;
-	currentAlignerLower?: number | undefined;
-	totalAlignersUpper?: number | undefined;
-	totalAlignersLower?: number | undefined;
-	onIssueAlignerSet?: ((count: number, days: number) => void) | undefined;
-	onAddToInvoice?: ((services: OrthodonticService804n[]) => void) | undefined;
-}
+export function OrthodonticVisitProtocolWidget(props: OrthodonticVisitProtocolWidgetProps) {
+	const {
+		isOpen,
+		onClose,
+		patientId,
+		patientName = "Пациент",
+		clinicName = "Стоматологическая клиника DENTE",
+		clinicPhone = "",
+		doctorName = "Лечащий врач-ортодонт",
+		selectedTooth = null,
+		onSelectTooth,
+		onIssueAlignerSet,
+		onAddToInvoice,
+	} = props;
 
-const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
-const LOWER_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
-const ANTERIOR_TEETH = [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33];
+	const state = useOrthoProtocolState(props);
+	const {
+		bracketSlot, setBracketSlot,
+		bracketSystem, setBracketSystem,
+		archwireMaterial, setArchwireMaterial,
+		archwireSection, setArchwireSection,
+		targetArch, setTargetArch,
+		elasticScheme, setElasticScheme,
+		elasticSize, setElasticSize,
+		elasticWear,
+		selectedActions, setSelectedActions,
+		selectedTeeth, setSelectedTeeth,
+		powerChainSpan, powerChainType,
+		notes, setNotes,
+		activePreset, setActivePreset,
+		activeAttachmentPreset, setActiveAttachmentPreset,
+		alignerSetIssued, setAlignerSetIssued,
+		angleClass, setAngleClass,
+		anbClass, setAnbClass,
+		anbAngle, setAnbAngle,
+		plateActivationTurns, setPlateActivationTurns,
+		sagittalAnomaly, setSagittalAnomaly,
+		sagittalGapMm, setSagittalGapMm,
+		verticalAnomaly, setVerticalAnomaly,
+		transversalAnomaly, setTransversalAnomaly,
+		tmjStatus, setTmjStatus,
+		isPhotoProtocolOpen, setIsPhotoProtocolOpen,
+		isPhotoProtocolCompleted, setIsPhotoProtocolCompleted,
+		isCephModalOpen, setIsCephModalOpen,
+		stageFilter, setStageFilter,
+		torquePreset, setTorquePreset,
+		angulationPreset, setAngulationPreset,
+		isSplitArchAligners, setIsSplitArchAligners,
+		alignerStep, setAlignerStep,
+		alignerTotal, setAlignerTotal,
+		alignerStepUpper, setAlignerStepUpper,
+		alignerTotalUpper, setAlignerTotalUpper,
+		alignerStepLower, setAlignerStepLower,
+		alignerTotalLower, setAlignerTotalLower,
+		alignerDaysPerStep, setAlignerDaysPerStep,
+	} = state;
 
-export const BRACKET_SYSTEMS = [
-	{ id: "damon_q2", label: "Damon Q2", desc: "Металл · Пассивное самолигирование" },
-	{ id: "damon_clear", label: "Damon Clear", desc: "Сапфир / керамика · Эстетические" },
-	{ id: "empower", label: "Empower", desc: "Интерактивное самолигирование" },
-	{ id: "mini_diamond", label: "Mini Diamond", desc: "Лигатурные классические" },
-	{ id: "pitts21", label: "Pitts 21", desc: "Квадратный паз .021" },
-	{ id: "aligners", label: "Элайнеры", desc: "Прозрачные каппы с аттачментами" },
-	{ id: "removable_plate", label: "Пластинка с винтом", desc: "Съемный пластиночный аппарат с расширяющим винтом" },
-];
-
-export const ARCHWIRE_MATERIALS: Array<{ id: ArchwireMaterial; label: string; desc: string; badge: string }> = [
-	{ id: "NiTi", label: "NiTi SuperElastic", desc: "Никель-титан · Первичное нивелирование", badge: "NiTi" },
-	{ id: "CuNiTi", label: "CuNiTi 27°C / 35°C", desc: "Медь-никель-титан · Термоактивная", badge: "CuNiTi" },
-	{ id: "SS", label: "SS (Stainless Steel)", desc: "Медицинская сталь · Закрытие промежутков", badge: "SS" },
-	{ id: "TMA", label: "TMA (Beta-Titanium)", desc: "Бета-титан · Юстировка и финишные торки", badge: "TMA" },
-];
-
-export const ROUND_SECTIONS: ArchwireSection[] = [".012", ".014", ".016", ".018", ".020"];
-export const RECT_SECTIONS: ArchwireSection[] = [
-	".014x.025",
-	".016x.022",
-	".016x.025",
-	".017x.025",
-	".018x.025",
-	".019x.025",
-	".021x.025",
-];
-
-export const ELASTIC_SCHEMES = [
-	{ id: "none", label: "Без эластиков", desc: "Межчелюстная тяга не назначена" },
-	{ id: "class_ii", label: "II класс (дистализирующая)", desc: "Клык ВЧ — 6 зуб НЧ" },
-	{ id: "class_iii", label: "III класс (мезиализирующая)", desc: "6 зуб ВЧ — клык НЧ" },
-	{ id: "vertical_box", label: "Вертикальные (коробчатые)", desc: "Устранение открытого прикуса" },
-	{ id: "cross", label: "Перекрестные (Cross-bite)", desc: "Устранение перекрестной окклюзии" },
-	{ id: "asymmetric", label: "Асимметричные", desc: "Коррекция косметического центра" },
-];
-
-export const ELASTIC_SIZES = [
-	{ id: "fox_3_16", label: "3/16\" 3.5 oz (Лиса)", strength: "Light" },
-	{ id: "rabbit_3_16", label: "3/16\" 4.5 oz (Кролик)", strength: "Medium" },
-	{ id: "kangaroo_1_4", label: "1/4\" 4.5 oz (Кенгуру)", strength: "Medium" },
-	{ id: "buffalo_1_4", label: "1/4\" 6.0 oz (Буйвол)", strength: "Heavy" },
-	{ id: "bear_5_16", label: "5/16\" 6.0 oz (Медведь)", strength: "Heavy" },
-	{ id: "monkey_3_8", label: "3/8\" 4.5 oz (Обезьяна)", strength: "Medium" },
-];
-
-export const CLINICAL_ACTIONS = [
-	{ id: "wire_change", label: "Смена дуги + активация замков" },
-	{ id: "ligature_change", label: "Смена эластических лигатур" },
-	{ id: "power_chain", label: "Установка цепочки Power Chain" },
-	{ id: "rebracket", label: "Переклейка отклеившегося брекета" },
-	{ id: "ipr", label: "Сепарация эмали (IPR)" },
-	{ id: "separation", label: "Сепарационные эластики (сепараторы)" },
-	{ id: "plate_activation", label: "Активация дуги и кламмеров пластинки" },
-	{ id: "expansion_screw_activation", label: "Раскрутка расширяющего винта (1/4 об. = 0.25 мм)" },
-	{ id: "debonding", label: "Снятие аппаратуры + ретейнер" },
-];
-
-export interface AlignerAttachmentPreset {
-	id: string;
-	label: string;
-	shortLabel: string;
-	teeth: number[];
-	description: string;
-}
-
-export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
-	{
-		id: "standard",
-		label: "Стандартные аттачменты: клыки и премоляры (15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45)",
-		shortLabel: "Стандартные (клыки и премоляры)",
-		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
-		description:
-			"Фиксация композитных аттачментов по переносному шаблону на зубы 15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45. Подготовка эмали: механическая очистка пастой без фтора, протравливание 37% гелем ортофосфорной кислоты 30 сек, смывание, высушивание. Внесение адгезивной системы, фотополимеризация. Заполнение шаблона микрогибридным композитом, позиционирование на зубной ряд, фотополимеризация каждого зуба по 20 сек. Шаблон снят, удаление излишков композита твердосплавными финирами, финишная полировка. Припасован сет элайнеров №1: адаптация плотная, ретенция надежная.",
-	},
-	{
-		id: "intact",
-		label: "Аттачменты интактны, сколов нет",
-		shortLabel: "Аттачменты интактны, сколов нет",
-		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
-		description:
-			"Контрольный осмотр элайнеров. Композитные аттачменты на верхней и нижней челюстях визуально и инструментально интактны: сколов, дефектов фиксации и отклеек не выявлено. Элайнеры прилегают плотно по всему периметру, ретенция оптимальная, щелей между краем каппы и режущими краями зубов нет. Трекинг перемещения зубов полностью соответствует утвержденному виртуальному 3D-сетапу.",
-	},
-	{
-		id: "refixation",
-		label: "Повторная фиксация аттачмента (замена)",
-		shortLabel: "Повторная фиксация аттачмента (замена)",
-		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
-		description:
-			"Обнаружен скол / отклейка композитного аттачмента. Проведено механическое удаление остатков старого композита, очистка поверхности эмали. Протравливание 37% ортофосфорной кислотой, адгезивный протокол, повторная фиксация аттачмента по шаблону из композитного материала, фотополимеризация. Проверка посадки элайнера: фиксация и ретенция восстановлены.",
-	},
-	{
-		id: "debonding",
-		label: "Снятие аттачментов и полировка (финиш)",
-		shortLabel: "Снятие аттачментов и полировка (финиш)",
-		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
-		description:
-			"Завершение элайнер-терапии. Атравматичное сошлифовывание композитных аттачментов специальными твердосплавными финирами на пониженных оборотах с водяным охлаждением без повреждения эмали. Финишная полировка пастами и дисками до зеркального блеска, глубокое фторирование эмали. Выданы ретенционные каппы / сняты оттиски для ретейнеров.",
-	},
-];
-
-export interface OrthodonticPatientMemoParams {
-	clinicName: string;
-	clinicPhone?: string | undefined;
-	doctorName: string;
-	patientName: string;
-	visitDate?: string | undefined;
-	bracketSystem: string;
-	archwireMaterial?: string | undefined;
-	archwireSection?: string | undefined;
-	targetArch?: string | undefined;
-	elasticScheme?: string | undefined;
-	elasticSize?: string | undefined;
-	elasticWear?: string | undefined;
-	isAligners?: boolean | undefined;
-	currentAligner?: number | undefined;
-	totalAligners?: number | undefined;
-	currentAlignerUpper?: number | undefined;
-	currentAlignerLower?: number | undefined;
-	totalAlignersUpper?: number | undefined;
-	totalAlignersLower?: number | undefined;
-	notes?: string | undefined;
-}
-
-function getRuDateString(d: Date = new Date()): string {
-	const day = String(d.getDate()).padStart(2, "0");
-	const month = String(d.getMonth() + 1).padStart(2, "0");
-	const year = d.getFullYear();
-	return `${day}.${month}.${year}`;
-}
-
-export function formatOrthodonticPatientMemo(
-	params: OrthodonticPatientMemoParams,
-): string {
-	const clinicName = params.clinicName || "Стоматологическая клиника DENTE";
-	const clinicPhone = params.clinicPhone || "";
-	const doctorName = params.doctorName || "Лечащий врач-ортодонт";
-	const patientName = params.patientName || "Пациент";
-	const visitDate = params.visitDate || getRuDateString();
-
-	const isAligners = Boolean(
-		params.isAligners || params.bracketSystem === "aligners",
-	);
-
-	const systemObj = BRACKET_SYSTEMS.find((b) => b.id === params.bracketSystem);
-	let systemName = isAligners
-		? "Элайнеры"
-		: (systemObj ? systemObj.label : params.bracketSystem || "Damon Q2");
-	if (!systemName) {
-		systemName = "Damon Q2";
-	}
-
-	let apparatusDetails = "";
-	if (isAligners) {
-		if (params.currentAlignerUpper && params.currentAlignerLower) {
-			const curU = params.currentAlignerUpper;
-			const totalU = params.totalAlignersUpper || params.totalAligners || "—";
-			const curL = params.currentAlignerLower;
-			const totalL = params.totalAlignersLower || params.totalAligners || "—";
-			apparatusDetails = `Текущий этап: ВЧ Каппа №${curU} из ${totalU}, НЧ Каппа №${curL} из ${totalL}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
-		} else {
-			const cur = params.currentAligner || 1;
-			const total = params.totalAligners || "—";
-			apparatusDetails = `Текущий этап: Каппа №${cur} из ${total}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
-		}
-	} else {
-		const arch =
-			params.targetArch === "upper"
-				? "верхняя челюсть"
-				: params.targetArch === "lower"
-					? "нижняя челюсть"
-					: "обе челюсти";
-		const mat = params.archwireMaterial || "CuNiTi";
-		const sec = params.archwireSection || ".016";
-		apparatusDetails = `Установленная дуга: ${mat} ${sec} (${arch})\n`;
-	}
-
-	let elasticsBlock = "";
-	if (params.elasticScheme && params.elasticScheme !== "none") {
-		const schemeObj = ELASTIC_SCHEMES.find((e) => e.id === params.elasticScheme);
-		const schemeLabel = schemeObj ? schemeObj.label : params.elasticScheme;
-
-		const sizeObj = ELASTIC_SIZES.find((s) => s.id === params.elasticSize);
-		const sizeLabel = sizeObj
-			? `${sizeObj.label} (${sizeObj.strength})`
-			: (params.elasticSize || "3/16\" Medium");
-
-		const wearMode = params.elasticWear || "22 часа/сутки";
-
-		elasticsBlock = `Схема межчелюстных эластиков (тяг):\n- Направление: ${schemeLabel}\n- Размер/сила: ${sizeLabel}\n- Режим ношения: ${wearMode} (смена на свежие 2 раза в день)\n`;
-	}
-
-	return `Ортодонтические рекомендации после приёма (клиника «${clinicName}»):
-Пациент: ${patientName}
-Лечащий врач: ${doctorName}
-Дата приёма: ${visitDate}
-Аппаратура: ${systemName}
-${apparatusDetails}${elasticsBlock}Памятка пациенту:
-1. Первые 2-3 дня возможна умеренная чувствительность зубов при накусывании (физиологическая норма перемещения зубов).
-2. Эластики снимаются только во время еды и чистки зубов. При обрыве эластика надеть новый из упаковки.
-3. При натирании щеки или губы нанесите защитный ортодонтический воск на выступающий элемент.
-4. При отклейке брекета, утере кнопки или дискомфорте от дуги немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.
-Следующий контрольный визит: через 4–6 недель.`;
-}
-
-export function OrthodonticVisitProtocolWidget({
-	isOpen,
-	onClose,
-	patientId,
-	patientName = "Пациент",
-	clinicName = "Стоматологическая клиника DENTE",
-	clinicPhone = "",
-	doctorName = "Лечащий врач-ортодонт",
-	selectedTooth = null,
-	onSelectTooth,
-	currentAligner,
-	totalAligners,
-	currentAlignerUpper,
-	currentAlignerLower,
-	totalAlignersUpper,
-	totalAlignersLower,
-	onIssueAlignerSet,
-	onAddToInvoice,
-}: OrthodonticVisitProtocolWidgetProps) {
-	// State
-	const [bracketSlot, setBracketSlot] = useState<BracketSlot>("0.022");
-	const [bracketSystem, setBracketSystem] = useState<string>("damon_q2");
-	const [archwireMaterial, setArchwireMaterial] = useState<ArchwireMaterial>("CuNiTi");
-	const [archwireSection, setArchwireSection] = useState<ArchwireSection>(".016");
-	const [targetArch, setTargetArch] = useState<TargetArch>("both");
-	const [elasticScheme, setElasticScheme] = useState<string>("class_ii");
-	const [elasticSize, setElasticSize] = useState<string>("kangaroo_1_4");
-	const [elasticWear, setElasticWear] = useState<string>("22 часа/сутки");
-	const [selectedActions, setSelectedActions] = useState<string[]>(["wire_change"]);
-	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([
-		16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26,
-		46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36,
-	]);
-	const [powerChainSpan, _setPowerChainSpan] = useState<string>("13-23");
-	const [powerChainType, _setPowerChainType] = useState<string>("short");
-	const [notes, setNotes] = useState<string>("Пациент жалоб не предъявляет. Гигиена удовлетворительная.");
-
-	// 1-Click Autonomous Clinical Presets State
-	const [activePreset, setActivePreset] = useState<
-		"activation" | "wire_change" | "bonding" | "debonding" | null
-	>(null);
-
-	// Aligner & Attachments Express State
-	const [activeAttachmentPreset, setActiveAttachmentPreset] = useState<string | null>(null);
-	const [alignerSetIssued, setAlignerSetIssued] = useState<{ count: number; days: number } | null>(null);
-
-	// Angle & ANB Sagittal Skeletal Classification State (1-Click Autonomy)
-	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
-	const [anbClass, setAnbClass] = useState<AnbClass>("class_1");
-	const [anbAngle, setAnbAngle] = useState<number>(2.0);
-	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
-
-	// Occlusal & Gnathological Diagnostics State (Mandates 8e, 8k, 8n)
-	const [sagittalAnomaly, setSagittalAnomaly] = useState<SagittalAnomaly>("norm");
-	const [sagittalGapMm, setSagittalGapMm] = useState<number>(2);
-	const [verticalAnomaly, setVerticalAnomaly] = useState<VerticalAnomaly>("norm");
-	const [transversalAnomaly, setTransversalAnomaly] = useState<TransversalAnomaly>("norm");
-	const [tmjStatus, setTmjStatus] = useState<TmjStatus>("norm");
-
-	// 1-Click Photo Protocol State (8 Angles ABO)
-	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState<boolean>(false);
-	const [isPhotoProtocolCompleted, setIsPhotoProtocolCompleted] = useState<boolean>(false);
-
-	// 1-Click Cephalometric TRG Analysis Modal State (Steiner / Tweed / Downs)
-	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
-
-	// Hick's Law: Orthodontic Stages Filter Bar State (32–36px)
-	const [stageFilter, setStageFilter] = useState<OrthodonticStageFilter>("all");
-
-	// Torque & Angulation 1-Click Calculation State (Mandate 8k)
-	const [torquePreset, setTorquePreset] = useState<string>("damon_std");
-	const [angulationPreset, setAngulationPreset] = useState<string>("norm");
-
-	// Aligner Tray Tracker 1..N State (Mandates 8e, 8k, 8n)
-	const [isSplitArchAligners, setIsSplitArchAligners] = useState<boolean>(
-		Boolean(
-			(currentAlignerUpper !== undefined && currentAlignerLower !== undefined) ||
-				(totalAlignersUpper !== undefined && totalAlignersLower !== undefined),
-		),
-	);
-	const [alignerStep, setAlignerStep] = useState<number>(currentAligner || 1);
-	const [alignerTotal, setAlignerTotal] = useState<number>(totalAligners || 36);
-	const [alignerStepUpper, setAlignerStepUpper] = useState<number>(
-		currentAlignerUpper || currentAligner || 1,
-	);
-	const [alignerTotalUpper, setAlignerTotalUpper] = useState<number>(
-		totalAlignersUpper || totalAligners || 36,
-	);
-	const [alignerStepLower, setAlignerStepLower] = useState<number>(
-		currentAlignerLower || currentAligner || 1,
-	);
-	const [alignerTotalLower, setAlignerTotalLower] = useState<number>(
-		totalAlignersLower || totalAligners || 36,
-	);
-	const [alignerDaysPerStep, setAlignerDaysPerStep] = useState<number>(14);
-
-	useEffect(() => {
-		if (currentAligner !== undefined && currentAligner > 0) {
-			setAlignerStep(currentAligner);
-			if (!isSplitArchAligners) {
-				setAlignerStepUpper(currentAligner);
-				setAlignerStepLower(currentAligner);
-			}
-		}
-	}, [currentAligner, isSplitArchAligners]);
-
-	useEffect(() => {
-		if (totalAligners !== undefined && totalAligners > 0) {
-			setAlignerTotal(totalAligners);
-			if (!isSplitArchAligners) {
-				setAlignerTotalUpper(totalAligners);
-				setAlignerTotalLower(totalAligners);
-			}
-		}
-	}, [totalAligners, isSplitArchAligners]);
-
-	useEffect(() => {
-		if (currentAlignerUpper !== undefined && currentAlignerUpper > 0) {
-			setAlignerStepUpper(currentAlignerUpper);
-			setIsSplitArchAligners(true);
-		}
-	}, [currentAlignerUpper]);
-
-	useEffect(() => {
-		if (currentAlignerLower !== undefined && currentAlignerLower > 0) {
-			setAlignerStepLower(currentAlignerLower);
-			setIsSplitArchAligners(true);
-		}
-	}, [currentAlignerLower]);
-
-	useEffect(() => {
-		if (totalAlignersUpper !== undefined && totalAlignersUpper > 0) {
-			setAlignerTotalUpper(totalAlignersUpper);
-		}
-	}, [totalAlignersUpper]);
-
-	useEffect(() => {
-		if (totalAlignersLower !== undefined && totalAlignersLower > 0) {
-			setAlignerTotalLower(totalAlignersLower);
-		}
-	}, [totalAlignersLower]);
-
-	// Live synchronization with PostgreSQL 18 orthodontic progress (Mandates 8e, 8k, 8n)
+	// Live synchronization with PostgreSQL 18 orthodontic progress
 	useEffect(() => {
 		if (!isOpen || !patientId) return;
 		const activePid = patientId;
@@ -703,7 +263,7 @@ export function OrthodonticVisitProtocolWidget({
 					else if (data.archwire.includes("SS")) setArchwireMaterial("SS");
 					else if (data.archwire.includes("TMA")) setArchwireMaterial("TMA");
 				}
-			} catch (e) {
+			} catch (_e) {
 				// Silently fall back to props/presets
 			}
 		}
@@ -712,7 +272,33 @@ export function OrthodonticVisitProtocolWidget({
 		return () => {
 			cancelled = true;
 		};
-	}, [isOpen, patientId]);
+	}, [isOpen, patientId, setAlignerDaysPerStep, setAlignerStep, setAlignerStepLower, setAlignerStepUpper, setAlignerTotal, setAlignerTotalLower, setAlignerTotalUpper, setArchwireMaterial]);
+
+	// Clinical Presets & Lab Orders Custom Hook
+	const presets = useOrthoClinicalPresets({
+		patientName,
+		selectedTeeth,
+		isSplitArchAligners,
+		alignerStep,
+		alignerTotal,
+		alignerStepUpper,
+		alignerTotalUpper,
+		alignerStepLower,
+		alignerTotalLower,
+		targetArch,
+		setActivePreset,
+		setTargetArch,
+		setSelectedTeeth,
+		setBracketSlot,
+		setBracketSystem,
+		setArchwireMaterial,
+		setArchwireSection,
+		setSelectedActions,
+		setElasticScheme,
+		setElasticSize,
+		setElasticWear: state.setElasticWear,
+		setNotes,
+	});
 
 	const handleSelectBracketSystem = useCallback(
 		(newSystem: string) => {
@@ -734,7 +320,7 @@ export function OrthodonticVisitProtocolWidget({
 				}
 			}
 		},
-		[torquePreset, activeAttachmentPreset],
+		[torquePreset, activeAttachmentPreset, setBracketSystem, setBracketSlot, setTorquePreset, setStageFilter, setActiveAttachmentPreset],
 	);
 
 	const nextAlignerDateStr = useMemo(() => {
@@ -757,30 +343,92 @@ export function OrthodonticVisitProtocolWidget({
 			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 				navigator.clipboard.writeText(reminderText).catch(() => {});
 			}
-			showToast(
-				`Напоминание о смене каппы (${nextAlignerDateStr}) скопировано для мессенджера`,
-				"success",
-				4000,
-			);
+			showToast(`Напоминание о смене каппы (${nextAlignerDateStr}) скопировано для мессенджера`, "success", 4000);
 		} catch {
 			showToast("Напоминание скопировано", "success");
 		}
-	}, [
-		patientName,
-		clinicName,
-		isSplitArchAligners,
-		alignerStep,
-		alignerTotal,
-		alignerStepUpper,
-		alignerTotalUpper,
-		alignerStepLower,
-		alignerTotalLower,
-		nextAlignerDateStr,
-		clinicPhone,
-		doctorName,
-	]);
+	}, [patientName, clinicName, isSplitArchAligners, alignerStep, alignerTotal, alignerStepUpper, alignerTotalUpper, alignerStepLower, alignerTotalLower, nextAlignerDateStr, clinicPhone, doctorName]);
 
-	// Debounced autosave (Mandate 8e: protection against data loss without modal prompts)
+	const handleSelectAttachmentPreset = (presetId: string) => {
+		const preset = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === presetId);
+		if (!preset) return;
+		setActiveAttachmentPreset(presetId);
+		setActivePreset(null);
+		setBracketSystem("aligners");
+		setTargetArch("both");
+		if (preset.teeth && preset.teeth.length > 0) setSelectedTeeth([...preset.teeth]);
+		setNotes(preset.description);
+		showToast(`${preset.shortLabel} выбран`, "info");
+	};
+
+	const handleIssueAlignerSetFromWidget = (count: number, days: number) => {
+		setAlignerSetIssued({ count, days });
+		setAlignerStep((prev) => Math.min(alignerTotal, prev + count));
+		onIssueAlignerSet?.(count, days);
+
+		if (patientId) {
+			fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/aligners/issue-set`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				body: JSON.stringify({ alignerCount: count, wearDaysPerAligner: days, totalAligners: alignerTotal }),
+			}).catch((err) => {
+				console.warn("[Orthodontics] Aligner set issuance backend sync error:", err);
+			});
+		}
+		showToast(`Сдан сет элайнеров (${count} каппы на ${days} дн., режим 22 ч/сутки)`, "success");
+	};
+
+	const handleApplyAttachmentsProtocol = useCallback(() => {
+		const currentPreset = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset) || ALIGNER_ATTACHMENT_PRESETS[0];
+		const textToAppend = currentPreset?.description || "Композитные аттачменты элайнеров зафиксированы/проверены по протоколу.";
+		const alignerServices = calculateOrthodonticServices804n({ bracketSystem: "aligners", activeAttachmentPreset: activeAttachmentPreset || "standard", isAttachmentsOnly: true, selectedTooth: selectedTooth ?? undefined });
+
+		try {
+			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+			if (setVisitNoteForm) {
+				setVisitNoteForm((prev) => ({
+					...prev,
+					objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n[Аттачменты элайнеров]\n${textToAppend}` : `[Аттачменты элайнеров]\n${textToAppend}`,
+					treatmentPlan: prev.treatmentPlan ? `${prev.treatmentPlan}\n\n[Ортодонтия] Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}` : `[Ортодонтия] Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}.`,
+				}));
+			}
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+					detail: { protocolText: `[Аттачменты элайнеров]\n${textToAppend}`, title: "Аттачменты элайнеров", soap: { objective: textToAppend, plan: `Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}` }, mode: "smart_append", immediate: true },
+				}));
+				window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+					detail: { services: alignerServices, toothNumber: selectedTooth ?? undefined, stageKind: "stage_ortho" },
+				}));
+			}
+			onAddToInvoice?.(alignerServices);
+			if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(textToAppend).catch(() => {});
+			const codesList = alignerServices.map((s) => s.code).join(", ");
+			showToast(`Аттачменты внесены в дневник приёма и ${alignerServices.length} услуг (${codesList}) начислены в смету!`, "success");
+		} catch (_err) {
+			showToast("Протокол скопирован в буфер обмена", "info");
+			if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(textToAppend).catch(() => {});
+		}
+	}, [activeAttachmentPreset, selectedTooth, onAddToInvoice]);
+
+	const handleSelectArch = (arch: TargetArch) => {
+		setActivePreset(null);
+		setTargetArch(arch);
+		if (arch === "upper") setSelectedTeeth([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27]);
+		else if (arch === "lower") setSelectedTeeth([47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37]);
+		else setSelectedTeeth([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37]);
+	};
+
+	const handleToggleTooth = (tooth: number) => {
+		setSelectedTeeth((prev) => prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth].sort((a, b) => a - b));
+		onSelectTooth?.(tooth);
+	};
+
+	const handleToggleAction = (actionId: string) => {
+		setSelectedActions((prev) => prev.includes(actionId) ? prev.filter((a) => a !== actionId) : [...prev, actionId]);
+	};
+
+	// Debounced autosave
 	const isWidgetMountedRef = useRef(false);
 	useEffect(() => {
 		if (!isOpen) return;
@@ -794,672 +442,99 @@ export function OrthodonticVisitProtocolWidget({
 				if (setVisitNoteForm && notes) {
 					setVisitNoteForm((prev) => ({
 						...prev,
-						treatmentPlan: prev.treatmentPlan?.includes(notes)
-							? prev.treatmentPlan
-							: prev.treatmentPlan
-								? `${prev.treatmentPlan}\n\n[Ортодонтия] ${notes}`
-								: `[Ортодонтия] ${notes}`,
+						treatmentPlan: prev.treatmentPlan?.includes(notes) ? prev.treatmentPlan : prev.treatmentPlan ? `${prev.treatmentPlan}\n\n[Ортодонтия] ${notes}` : `[Ортодонтия] ${notes}`,
 					}));
 				}
-			} catch {
-				// ignore
-			}
+			} catch {}
 		}, 800);
 		return () => clearTimeout(timer);
 	}, [isOpen, notes]);
 
-	// Canonical 804n services calculation
-	const calculatedServices804n = useMemo(() => {
-		return calculateOrthodonticServices804n({
-			selectedActions,
-			bracketSystem,
-			activeAttachmentPreset,
-			selectedTooth,
-			targetArch,
-		});
-	}, [selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth, targetArch]);
-
-	// 1-Click explicit add to invoice/estimate
-	const handleAddServicesToInvoice = useCallback(() => {
-		if (calculatedServices804n.length === 0) {
-			showToast("Нет выбранных ортодонтических манипуляций для начисления", "info");
-			return;
-		}
-
-		onAddToInvoice?.(calculatedServices804n);
-
-		try {
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							services: calculatedServices804n,
-							toothNumber: selectedTooth ?? undefined,
-							stageKind: "stage_ortho",
-						},
-					}),
-				);
-			}
-		} catch (err) {
-			console.warn("dente-add-services-to-invoice dispatch error:", err);
-		}
-
-		const totalRub = calculatedServices804n.reduce((acc, s) => acc + s.priceRub, 0);
-		const codesStr = calculatedServices804n.map((s) => s.code).join(", ");
-		showToast(
-			`Начислено ${calculatedServices804n.length} услуг (${codesStr}) на сумму ${totalRub} ₽`,
-			"success",
-			3500,
-		);
-	}, [calculatedServices804n, selectedTooth, onAddToInvoice]);
-
-	// 1-Click Fast Workhorse Archwire Handler
 	const handleSelectWorkhorseArchwire = (wire: WorkhorseArchwireOption) => {
 		setActivePreset(null);
 		setArchwireMaterial(wire.material);
 		setArchwireSection(wire.section);
-		if (!selectedActions.includes("wire_change")) {
-			setSelectedActions((prev) => [...prev, "wire_change"]);
-		}
+		if (!selectedActions.includes("wire_change")) setSelectedActions((prev) => [...prev, "wire_change"]);
 		showToast(`Установлена рабочая дуга ${wire.label}`, "info");
 	};
 
-	// 1-Click Elastic Size Handler (Mandate 8e: zero dead disabled buttons)
 	const handleElasticSizeInteraction = useCallback(() => {
 		if (elasticScheme === "none") {
 			setElasticScheme("class_ii");
 			showToast("Схема эластиков: установлен «Класс II (по умолчанию)»", "info");
 		}
-	}, [elasticScheme]);
+	}, [elasticScheme, setElasticScheme]);
 
-	// Fast 1-Click Preset Handlers
-	const handlePresetActivation = () => {
-		setActivePreset("activation");
-		setTargetArch("both");
-		setSelectedTeeth([
-			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
-			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
-		]);
-		setBracketSlot("0.022");
-		setBracketSystem("damon_q2");
-		setArchwireMaterial("CuNiTi");
-		setArchwireSection(".016");
-		setSelectedActions(["ligature_change"]);
-		setElasticScheme("class_ii");
-		setElasticSize("kangaroo_1_4");
-		setElasticWear("22 часа/сутки");
-		setNotes(
-			"Плановый визит по графику ортодонтического лечения. Дуги сохранены без деформаций. Выполнена замена эластических лигатур, активация замков брекетов. Межчелюстная тяга скорректирована. Жалоб на острую боль и отклейку брекетов нет. Гигиена полости рта удовлетворительная.",
-		);
-		showToast("Пресет: Плановая активация применен", "info");
-	};
-
-	const handlePresetWireChange = () => {
-		setActivePreset("wire_change");
-		setTargetArch("both");
-		setSelectedTeeth([
-			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
-			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
-		]);
-		setBracketSlot("0.022");
-		setBracketSystem("damon_q2");
-		setArchwireMaterial("NiTi");
-		setArchwireSection(".016");
-		setSelectedActions(["wire_change", "ligature_change"]);
-		setElasticScheme("none");
-		setNotes(
-			"Плановая смена дуг на этапе нивелирования и юстировки. Установлены новые круглые никель-титановые дуги NiTi: верхняя челюсть .016\", нижняя челюсть .014\". Концы дуг подогнуты и зашлифованы, травма слизистой оболочки исключена. Замки закрыты со щелчком. Аппаратура стабильна.",
-		);
-		showToast("Пресет: Смена дуг (NiTi верх .016 / низ .014) применен", "info");
-	};
-
-	const handlePresetBonding = () => {
-		setActivePreset("bonding");
-		setTargetArch("upper");
-		setSelectedTeeth([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27]);
-		setBracketSlot("0.022");
-		setBracketSystem("damon_q2");
-		setArchwireMaterial("NiTi");
-		setArchwireSection(".014");
-		setSelectedActions(["wire_change"]);
-		setElasticScheme("none");
-		setNotes(
-			"Первичная прямая фиксация несъемной вестибулярной брекет-системы на верхнюю челюсть (сегменты 17-27). Протравливание эмали 37% ортофосфорной кислотой (30 сек), тщательное смывание, высушивание. Нанесение праймера, позиционирование брекетов по индивидуальной высоте, фотополимеризация. Введена первичная нивелирующая дуга NiTi .014\". Концы дуг отожжены и подогнуты. Проведен подробный инструктаж по уходу за брекетами и гигиене полости рта, выдан защитный воск.",
-		);
-		showToast("Пресет: Фиксация брекет-системы (ВЧ) применен", "info");
-	};
-
-	const handlePresetDebonding = () => {
-		setActivePreset("debonding");
-		setTargetArch("both");
-		setSelectedTeeth(ANTERIOR_TEETH);
-		setBracketSlot("0.022");
-		setBracketSystem("damon_q2");
-		setSelectedActions(["debonding"]);
-		setElasticScheme("none");
-		setNotes(
-			"Окончание активного периода ортодонтического лечения. Атравматичное снятие брекет-системы специальными щипцами. Механическое удаление остатков композита твердосплавными финирами без повреждения эмали, полировка вестибулярных поверхностей. Фиксация несъемного проволочного ретейнера (флекс-дуга 0.0175\") на текучий композит в сегментах 13-23 и 33-43. Сняты оттиски/сканы для изготовления ретенционных капп. Окклюзия стабильна.",
-		);
-		showToast("Пресет: Снятие брекетов + ретейнер применен", "info");
-	};
-
-	const handlePresetAlignerLabOrder = () => {
-		setActivePreset(null);
-		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
-		const teethList =
-			selectedTeeth.length > 0
-				? selectedTeeth.map(String)
-				: ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "37", "36", "35", "34", "33", "32", "31", "41", "42", "43", "44", "45", "46", "47"];
-
-		const stepInfo = isSplitArchAligners
-			? `ВЧ: каппа ${alignerStepUpper} из ${alignerTotalUpper}, НЧ: каппа ${alignerStepLower} из ${alignerTotalLower}`
-			: `каппа ${alignerStep} из ${alignerTotal}`;
-
-		const labOrderPayload = {
-			orderNumber,
-			createdAt: new Date().toISOString(),
-			teeth: teethList,
-			jawScope: targetArch === "upper" ? "upper" : targetArch === "lower" ? "lower" : "both",
-			constructionType: "aligner_nightguard",
-			prostheticTypeId: "orthodontic_aligners_set",
-			material: "aligner_polyurethane_duran",
-			doctorNotes: `1-клик наряд ЗТЛ на элайнеры (${stepInfo}). Пациент: ${patientName}. Этап: ортодонтическая коррекция. Срок: 5-7 раб. дней. Без бюрократических блокировок (Мандат 8e).`,
-			overrideActive: true,
-			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок и ожидания согласований",
-		};
-
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", {
-					detail: labOrderPayload,
-				}),
-			);
-		}
-
-		setNotes(
-			`Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров (${stepInfo}). Сформирован наряд ЗТЛ №${orderNumber} (материал: полиуретан Duran / Zendura). План лечения активен без бюрократических согласований (Мандат 8e).`,
-		);
-		showToast(`Наряд ЗТЛ №${orderNumber} на комплект элайнеров (${stepInfo}) успешно отправлен!`, "success", 4000);
-	};
-
-	const handlePresetRetainerLabOrder = () => {
-		setActivePreset(null);
-		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
-		const teethList =
-			selectedTeeth.length > 0
-				? selectedTeeth.map(String)
-				: ["13", "12", "11", "21", "22", "23", "33", "32", "31", "41", "42", "43"];
-
-		const labOrderPayload = {
-			orderNumber,
-			createdAt: new Date().toISOString(),
-			teeth: teethList,
-			jawScope: targetArch === "upper" ? "upper" : targetArch === "lower" ? "lower" : "both",
-			constructionType: "splint_nightguard",
-			prostheticTypeId: "orthodontic_retention_splint",
-			material: "aligner_polyurethane_duran",
-			doctorNotes: `1-клик наряд ЗТЛ на ретенционный аппарат (ретенционная каппа / несъемный проволочный ретейнер). Пациент: ${patientName}. Мандат 8e: немедленная отправка в лабораторию.`,
-			overrideActive: true,
-			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок",
-		};
-
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", {
-					detail: labOrderPayload,
-				}),
-			);
-		}
-
-		setNotes(
-			`Сняты оттиски/сканы для изготовления ретенционного аппарата (ретенционная каппа / проволочный ретейнер). Сформирован наряд ЗТЛ №${orderNumber}. Ретенционный период начат (Мандат 8e).`,
-		);
-		showToast(`Наряд ЗТЛ №${orderNumber} на ретенционный аппарат отправлен!`, "success", 4000);
-	};
-
-	const handlePresetPlateLabOrder = () => {
-		setActivePreset(null);
-		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
-		const teethList =
-			selectedTeeth.length > 0
-				? selectedTeeth.map(String)
-				: ["16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26"];
-
-		const labOrderPayload = {
-			orderNumber,
-			createdAt: new Date().toISOString(),
-			teeth: teethList,
-			jawScope: targetArch === "lower" ? "lower" : "upper",
-			constructionType: "removable_plates",
-			prostheticTypeId: "orthodontic_expansion_plate",
-			material: "orthodontic_acrylic_leocryl",
-			doctorNotes: `1-клик наряд ЗТЛ на съемный пластиночный аппарат с расширяющим винтом Бертони/Хааса. Пациент: ${patientName}. Мандат 8e: немедленная отправка в лабораторию.`,
-			overrideActive: true,
-			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок",
-		};
-
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", {
-					detail: labOrderPayload,
-				}),
-			);
-		}
-
-		setNotes(
-			`Сняты анатомические оттиски для изготовления съемного пластиночного аппарата с расширяющим винтом. Сформирован наряд ЗТЛ №${orderNumber} (материал: акрил Leocryl). Мандат 8e: отправка без бюрократических задержек.`,
-		);
-		showToast(`Наряд ЗТЛ №${orderNumber} на расширяющую пластинку отправлен!`, "success", 4000);
-	};
-
-	const handlePresetSplintLabOrder = () => {
-		setActivePreset(null);
-		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
-		const teethList =
-			selectedTeeth.length > 0
-				? selectedTeeth.map(String)
-				: ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "37", "36", "35", "34", "33", "32", "31", "41", "42", "43", "44", "45", "46", "47"];
-
-		const labOrderPayload = {
-			orderNumber,
-			createdAt: new Date().toISOString(),
-			teeth: teethList,
-			jawScope: targetArch === "upper" ? "upper" : targetArch === "lower" ? "lower" : "both",
-			constructionType: "splint_nightguard",
-			prostheticTypeId: "orthodontic_tmj_splint",
-			material: "aligner_polyurethane_duran",
-			doctorNotes: `1-клик наряд ЗТЛ на окклюзионный сплинт / шину ВНЧС (миорелаксирующая / стабилизирующая шина). Пациент: ${patientName}. Этап: сплинт-терапия / депрограммация ВНЧС. Срок: 3-5 раб. дней. Без бюрократических блокировок (Мандат 8e).`,
-			overrideActive: true,
-			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок и ожидания согласований",
-		};
-
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", {
-					detail: labOrderPayload,
-				}),
-			);
-		}
-
-		setNotes(
-			`Сняты высокоточные оптические сканы/оттиски и регистрат центрального соотношения для изготовления окклюзионного сплита/шины ВНЧС (миорелаксирующий депрограмматор). Сформирован наряд ЗТЛ №${orderNumber} (материал: полиуретан Duran / фрезерованный акрил). Мандат 8e: отправка без бюрократических задержек.`,
-		);
-		showToast(`Наряд ЗТЛ №${orderNumber} на окклюзионный сплинт (шина ВНЧС) успешно отправлен!`, "success", 4000);
-	};
-
-	// Aligner Attachments 1-Click Handlers (Mandates 8e, 8k, 8n)
-	const handleSelectAttachmentPreset = (presetId: string) => {
-		const preset = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === presetId);
-		if (!preset) return;
-		setActiveAttachmentPreset(presetId);
-		setActivePreset(null);
-		setBracketSystem("aligners");
-		setTargetArch("both");
-		if (preset.teeth && preset.teeth.length > 0) {
-			setSelectedTeeth(preset.teeth);
-		}
-		setNotes(preset.description);
-		showToast(`${preset.shortLabel} выбран`, "info");
-	};
-
-	const handleIssueAlignerSetFromWidget = (count: number, days: number) => {
-		setAlignerSetIssued({ count, days });
-		setAlignerStep((prev) => Math.min(alignerTotal, prev + count));
-		onIssueAlignerSet?.(count, days);
-
-		// Persist aligner issuance to PostgreSQL 18 backend (Mandates 8e, 8k, 8n)
-		if (patientId) {
-			fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/aligners/issue-set`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					alignerCount: count,
-					wearDaysPerAligner: days,
-					totalAligners: alignerTotal,
-				}),
-			}).catch((err) => {
-				console.warn("[Orthodontics] Aligner set issuance backend sync error:", err);
-			});
-		}
-
-		const issueSummary = `Сдан сет элайнеров (${count} каппы на ${days} дн., режим 22 ч/сутки)`;
-		showToast(`${issueSummary}`, "success");
-	};
-
-	const handleApplyAttachmentsProtocol = useCallback(() => {
-		const currentPreset =
-			ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset) ||
-			ALIGNER_ATTACHMENT_PRESETS[0];
-		const textToAppend =
-			currentPreset?.description ||
-			"Композитные аттачменты элайнеров зафиксированы/проверены по протоколу.";
-
-		const alignerServices = calculateOrthodonticServices804n({
-			bracketSystem: "aligners",
-			activeAttachmentPreset: activeAttachmentPreset || "standard",
-			isAttachmentsOnly: true,
-			selectedTooth: selectedTooth ?? undefined,
-		});
-
-		try {
-			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
-			if (setVisitNoteForm) {
-				setVisitNoteForm((prev) => {
-					const prevObjective = prev.objectiveStatus || "";
-					const newObjective = prevObjective
-						? `${prevObjective}\n\n[Аттачменты элайнеров]\n${textToAppend}`
-						: `[Аттачменты элайнеров]\n${textToAppend}`;
-
-					const prevPlan = prev.treatmentPlan || "";
-					const newPlan = prevPlan
-						? `${prevPlan}\n\n[Ортодонтия] Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}`
-						: `[Ортодонтия] Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}.`;
-
-					return {
-						...prev,
-						objectiveStatus: newObjective,
-						treatmentPlan: newPlan,
-					};
-				});
-			}
-
-			// Reactive event for SOAP note editors
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente-apply-soap-protocol", {
-						detail: {
-							protocolText: `[Аттачменты элайнеров]\n${textToAppend}`,
-							title: "Аттачменты элайнеров",
-							soap: {
-								objective: textToAppend,
-								plan: `Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}`,
-							},
-							mode: "smart_append",
-							immediate: true,
-						},
-					}),
-				);
-
-				// Auto-dispatch services to invoice
-				window.dispatchEvent(
-					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							services: alignerServices,
-							toothNumber: selectedTooth ?? undefined,
-							stageKind: "stage_ortho",
-						},
-					}),
-				);
-			}
-
-			onAddToInvoice?.(alignerServices);
-
-			if (navigator?.clipboard?.writeText) {
-				navigator.clipboard.writeText(textToAppend).catch(() => {});
-			}
-
-			const codesList = alignerServices.map((s) => s.code).join(", ");
-			showToast(
-				`Аттачменты внесены в дневник приёма и ${alignerServices.length} услуг (${codesList}) начислены в смету!`,
-				"success",
-			);
-		} catch (_err) {
-			showToast("Протокол скопирован в буфер обмена", "info");
-			if (navigator?.clipboard?.writeText) {
-				navigator.clipboard.writeText(textToAppend).catch(() => {});
-			}
-		}
-	}, [activeAttachmentPreset, selectedTooth, onAddToInvoice]);
-
-	const handleAppendAttachmentsToSoapNote = handleApplyAttachmentsProtocol;
-
-	// Quick Arch Selectors
-	const handleSelectArch = (arch: TargetArch) => {
-		setActivePreset(null);
-		setTargetArch(arch);
-		if (arch === "upper") {
-			setSelectedTeeth([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27]);
-		} else if (arch === "lower") {
-			setSelectedTeeth([47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37]);
-		} else {
-			setSelectedTeeth([
-				17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
-				47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
-			]);
-		}
-	};
-
-	const handleToggleTooth = (tooth: number) => {
-		setSelectedTeeth((prev) =>
-			prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth].sort((a, b) => a - b),
-		);
-		onSelectTooth?.(tooth);
-	};
-
-	const handleToggleAction = (actionId: string) => {
-		setSelectedActions((prev) =>
-			prev.includes(actionId) ? prev.filter((a) => a !== actionId) : [...prev, actionId],
-		);
-	};
+	const calculatedServices804n = useMemo(() => {
+		return calculateOrthodonticServices804n({ selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth, targetArch });
+	}, [selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth, targetArch]);
 
 	// Protocol Text Synthesis (SOAP Form 043/u)
 	const generatedProtocol = useMemo(() => {
-		const dateStr = new Date().toLocaleDateString("ru-RU");
-		const systemObj = BRACKET_SYSTEMS.find((b) => b.id === bracketSystem);
-		const materialObj = ARCHWIRE_MATERIALS.find((m) => m.id === archwireMaterial);
-		const elasticObj = ELASTIC_SCHEMES.find((e) => e.id === elasticScheme);
-		const elasticSizeObj = ELASTIC_SIZES.find((s) => s.id === elasticSize);
+		return synthesizeOrthodonticProtocolText({
+			patientName,
+			notes,
+			angleClass,
+			anbClass,
+			anbAngle,
+			sagittalAnomaly,
+			sagittalGapMm,
+			verticalAnomaly,
+			transversalAnomaly,
+			tmjStatus,
+			isPhotoProtocolCompleted,
+			bracketSlot,
+			bracketSystem,
+			archwireMaterial,
+			archwireSection,
+			targetArch,
+			elasticScheme,
+			elasticSize,
+			elasticWear,
+			selectedActions,
+			selectedTeeth,
+			powerChainSpan,
+			powerChainType,
+			activePreset,
+			activeAttachmentPreset,
+			alignerSetIssued,
+			plateActivationTurns,
+			torquePreset,
+			angulationPreset,
+			isSplitArchAligners,
+			alignerStep,
+			alignerTotal,
+			alignerStepUpper,
+			alignerTotalUpper,
+			alignerStepLower,
+			alignerTotalLower,
+			alignerProgressPercent,
+			nextAlignerDateStr,
+			alignerDaysPerStep,
+		});
+	}, [patientName, notes, angleClass, anbClass, anbAngle, sagittalAnomaly, sagittalGapMm, verticalAnomaly, transversalAnomaly, tmjStatus, isPhotoProtocolCompleted, bracketSlot, bracketSystem, archwireMaterial, archwireSection, targetArch, elasticScheme, elasticSize, elasticWear, selectedActions, selectedTeeth, powerChainSpan, powerChainType, activePreset, activeAttachmentPreset, alignerSetIssued, plateActivationTurns, torquePreset, angulationPreset, isSplitArchAligners, alignerStep, alignerTotal, alignerStepUpper, alignerTotalUpper, alignerStepLower, alignerTotalLower, alignerProgressPercent, nextAlignerDateStr, alignerDaysPerStep]);
 
-		const archLabel =
-			targetArch === "upper"
-				? "Верхняя челюсть (ВЧ)"
-				: targetArch === "lower"
-					? "Нижняя челюсть (НЧ)"
-					: "Верхняя и нижняя челюсти (ВЧ + НЧ)";
-
-		const teethListStr =
-			selectedTeeth.length > 0
-				? selectedTeeth.join(", ")
-				: "аппаратура не активирована";
-
-		const actionsListStr = selectedActions
-			.map((aId) => CLINICAL_ACTIONS.find((a) => a.id === aId)?.label)
-			.filter(Boolean)
-			.join("; ");
-
-		const angleObj = ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass);
-		const angleText = angleObj
-			? `• Прикус (классификация Энгля): ${angleObj.label}.\n`
-			: "• Прикус (классификация Энгля): I класс по Энглю (нейтральный прикус).\n";
-
-		const anbObj = ANB_CLASS_OPTIONS.find((a) => a.id === anbClass);
-		const anbText = anbObj
-			? `• Скелетный класс (Steiner ANB): ${anbObj.label} (угол ANB: ${anbAngle.toFixed(1)}°).\n`
-			: `• Скелетный класс (Steiner ANB): I класс (норма, угол ANB: ${anbAngle.toFixed(1)}°).\n`;
-
-		let sagittalText = "";
-		if (sagittalAnomaly === "overjet") {
-			sagittalText = `• Сагиттальная щель (оверджет): ${sagittalGapMm} мм (выраженная сагиттальная щель).\n`;
-		} else if (sagittalAnomaly === "reverse") {
-			sagittalText = "• Сагиттальное соотношение: обратная резцовая окклюзия (мезиальное перекрытие).\n";
-		} else if (sagittalAnomaly === "norm") {
-			sagittalText = "• Сагиттальное соотношение резцов: норма (физиологический контакт 1–2 мм).\n";
+	const handleAddServicesToInvoice = useCallback(() => {
+		if (calculatedServices804n.length === 0) {
+			showToast("Нет выбранных ортодонтических манипуляций для начисления", "info");
+			return;
 		}
-
-		let verticalText = "";
-		if (verticalAnomaly === "deep") {
-			verticalText = "• Вертикальное перекрытие: глубокий резцовый прикус (>1/2 высоты коронки).\n";
-		} else if (verticalAnomaly === "open") {
-			verticalText = "• Вертикальное соотношение: открытый прикус (вертикальная дизокклюзия во фронтальном отделе).\n";
-		} else if (verticalAnomaly === "norm") {
-			verticalText = "• Вертикальное перекрытие: норма (1/3 высоты коронки, физиологическое).\n";
+		onAddToInvoice?.(calculatedServices804n);
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+					detail: { services: calculatedServices804n, toothNumber: selectedTooth ?? undefined, stageKind: "stage_ortho" },
+				}));
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
 		}
+		const totalRub = calculatedServices804n.reduce((acc, s) => acc + s.priceRub, 0);
+		const codesStr = calculatedServices804n.map((s) => s.code).join(", ");
+		showToast(`Начислено ${calculatedServices804n.length} услуг (${codesStr}) на сумму ${totalRub} ₽`, "success", 3500);
+	}, [calculatedServices804n, selectedTooth, onAddToInvoice]);
 
-		let transversalText = "";
-		if (transversalAnomaly === "crossbite") {
-			transversalText = "• Трансверзальное соотношение: перекрестный прикус (буккальная/лингвальная дизокклюзия).\n";
-		} else if (transversalAnomaly === "norm") {
-			transversalText = "• Трансверзальное соотношение: норма (правильное щечно-небное перекрытие).\n";
-		}
-
-		let tmjText = "";
-		if (tmjStatus === "clicking") {
-			tmjText = "• ВНЧС и гнатология: суставной щелчок при открывании рта, умеренная дискоординация движений.\n";
-		} else if (tmjStatus === "pain") {
-			tmjText = "• ВНЧС и гнатология: болезненность при пальпации латеральных крыловидных мышц и суставных головок.\n";
-		} else if (tmjStatus === "deviation") {
-			tmjText = "• ВНЧС и гнатология: девиация нижней челюсти при максимальном открывании рта.\n";
-		} else if (tmjStatus === "splint") {
-			tmjText = "• ВНЧС и гнатология: проводится сплинт-терапия (окклюзионная шина в центральном соотношении).\n";
-		} else if (tmjStatus === "norm") {
-			tmjText = "• ВНЧС и гнатология: пальпация суставов безболезненная, девиации нет, суставной шум отсутствует (норма).\n";
-		}
-
-		let elasticsText = "Межчелюстная тяга не назначена.";
-		if (elasticScheme !== "none") {
-			elasticsText = `Межчелюстные эластики: ${elasticObj?.label || ""} (${elasticSizeObj?.label || ""}, ${elasticSizeObj?.strength || ""}). Режим ношения: ${elasticWear}.`;
-		}
-
-		let powerChainText = "";
-		if (selectedActions.includes("power_chain")) {
-			powerChainText = `\nУстановлена эластическая цепочка Power Chain (${powerChainType === "short" ? "короткий шаг" : powerChainType === "long" ? "длинный шаг" : "сплошная"}) в сегменте ${powerChainSpan}.`;
-		}
-
-		let attachmentText = "";
-		const currentAttachmentObj = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset);
-		if (currentAttachmentObj) {
-			attachmentText = `• Аттачменты элайнеров: ${currentAttachmentObj.description}`;
-		}
-
-		let alignerSetText = "";
-		if (alignerSetIssued) {
-			alignerSetText = `• Выдача элайнеров: выдан следующий сет капп (+${alignerSetIssued.days} дн., ${alignerSetIssued.count} каппы). Режим ношения: 22 ч/сутки.`;
-		}
-
-		let plateText = "";
-		if (bracketSystem === "removable_plate") {
-			plateText = `• Состояние аппарата: съемная пластинка с расширяющим винтом на ${archLabel}. Фиксация стабильна, кламмеры и вестибулярная дуга адаптированы. Раскрутка винта: ${plateActivationTurns}/4 оборота (${(plateActivationTurns * 0.25).toFixed(2)} мм).`;
-		}
-
-		let archwireText = `• Текущая дуга: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}".`;
-		if (bracketSystem === "aligners" || activeAttachmentPreset) {
-			archwireText = "• Состояние аппаратуры: прозрачные каппы (элайнеры), фиксация на аттачментах плотная, окклюзионных помех нет.";
-		} else if (bracketSystem === "removable_plate") {
-			archwireText = plateText;
-		} else if (selectedActions.includes("debonding")) {
-			archwireText = "• Состояние аппаратуры: брекет-система снята. Зафиксирован несъемный проволочный ретейнер в сегментах 13-23 и 33-43.";
-		} else if (activePreset === "wire_change" || notes.includes("верхняя челюсть .016\", нижняя челюсть .014\"")) {
-			archwireText = "• Установленные дуги: ВЧ — NiTi .016\", НЧ — NiTi .014\" (круглые нивелирующие, норма).";
-		} else if (activePreset === "activation") {
-			archwireText = `• Текущие дуги: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}" (дуги сохранены без деформаций, активация замков).`;
-		}
-
-		let torqueAngulationText = "";
-		const torqueObj = TORQUE_PRESETS.find((t) => t.id === torquePreset);
-		const angulationObj = ANGULATION_PRESETS.find((a) => a.id === angulationPreset);
-		if (torqueObj) {
-			torqueAngulationText = `• Торк и ангуляция: пропись ${torqueObj.label}, ангуляция резцов/клыков: ${angulationObj?.label || "норма"}. Контроль мезио-дистального наклона и инклинации выполнен.`;
-		}
-
-		let alignerTrackerText = "";
-		if (bracketSystem === "aligners" || activeAttachmentPreset) {
-			alignerTrackerText = isSplitArchAligners
-				? `• Трекер элайнеров: ВЧ Каппа №${alignerStepUpper} из ${alignerTotalUpper} (${alignerTotalUpper > 0 ? Math.round((alignerStepUpper / alignerTotalUpper) * 100) : 0}%), НЧ Каппа №${alignerStepLower} из ${alignerTotalLower} (${alignerTotalLower > 0 ? Math.round((alignerStepLower / alignerTotalLower) * 100) : 0}%). Режим ношения: 22 ч/сутки. Следующая смена: ${nextAlignerDateStr} (каждые ${alignerDaysPerStep} дн.).`
-				: `• Трекер элайнеров: Каппа №${alignerStep} из ${alignerTotal} (${alignerProgressPercent}% курса завершено). Режим ношения: 22 ч/сутки. Следующая смена: ${nextAlignerDateStr} (каждые ${alignerDaysPerStep} дн.).`;
-		}
-
-		let separationText = "";
-		if (selectedActions.includes("separation")) {
-			separationText = "\n• Сепарационные эластики: установлены эластические сепараторы в межзубные промежутки для создания межпроксимального пространства.";
-		}
-
-		return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА
-Дата приёма: ${dateStr}
-Пациент: ${patientName}
-
-1. ЖАЛОБЫ:
-${notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
-
-2. ОБЪЕКТИВНЫЙ СТАТУС:
-${angleText}${anbText}${sagittalText}${verticalText}${transversalText}${tmjText}• Аппаратура: ${
-	bracketSystem === "aligners"
-		? "Ортодонтические элайнеры (каппы с аттачментами)"
-		: bracketSystem === "removable_plate"
-			? "Съемный пластиночный аппарат с расширяющим винтом"
-			: `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`
-}.
-• Зона фиксации/активации (зубы): ${teethListStr}.
-${attachmentText ? `${attachmentText}\n` : ""}${alignerTrackerText ? `${alignerTrackerText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}${separationText}
-${torqueAngulationText ? `${torqueAngulationText}\n` : ""}• Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
-• Фотопротокол: ${isPhotoProtocolCompleted ? "выполнен (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)" : "опционален (Мандат 8e: отсутствие фото не блокирует приём)"}.
-
-3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
-• Выполненные манипуляции: ${actionsListStr || (activeAttachmentPreset ? currentAttachmentObj?.shortLabel : "Активация аппаратуры")}.${powerChainText}
-${currentAttachmentObj ? `• ${currentAttachmentObj.description}\n` : ""}${alignerSetIssued ? `• Сдан сет элайнеров на ${alignerSetIssued.days} дн. (смена капп каждые ${Math.round(alignerSetIssued.days / alignerSetIssued.count)} дней).\n` : ""}• ${elasticsText}
-• Антисептическая обработка полости рта (0.05% раствор хлоргексидина).
-• Коррекция элементов аппаратуры выполнена в полном объеме.
-
-4. РЕКОМЕНДАЦИИ И НАЗНАЧЕНИЯ:
-${bracketSystem === "aligners" || activeAttachmentPreset
-	? `• Ношение элайнеров строго не менее 20–22 часов в сутки (снимать только во время приёма пищи и чистки зубов).
-• Использование чувисов (жевательных валиков) для плотной посадки капп на зубах.
-• Хранение элайнеров в специальном вентилируемом боксе, промывание прохладной водой.
-• Следующий плановый приём: через ${alignerSetIssued ? `${Math.round(alignerSetIssued.days / 7)} недель` : "4–6 недель"}.`
-	: bracketSystem === "removable_plate"
-		? `• Ношение пластинки строго 20–22 часа в сутки (снимать во время еды и контактного спорта).
-• Активация расширяющего винта ключом строго по схеме (1 раз в 7 дней на 1/4 оборота по стрелке).
-• Хранение в сухом вентилируемом контейнере, ежедневная механическая чистка зубной щеткой и мылом.
-• Следующий контрольный приём: через 4 недели.`
-		: `• Строгое соблюдение гигиены (ортодонтическая щетка, монопучок, ершики, ирригатор).
-• Использование ортодонтического защитного воска при натирании.
-• Исключить из рациона твердую, волокнистую и липкую пищу.
-• Следующий плановый приём: через 4–6 недель.`}`;
-	}, [
-		patientName,
-		notes,
-		angleClass,
-		anbClass,
-		anbAngle,
-		sagittalAnomaly,
-		sagittalGapMm,
-		verticalAnomaly,
-		transversalAnomaly,
-		tmjStatus,
-		isPhotoProtocolCompleted,
-		bracketSlot,
-		bracketSystem,
-		archwireMaterial,
-		archwireSection,
-		targetArch,
-		elasticScheme,
-		elasticSize,
-		elasticWear,
-		selectedActions,
-		selectedTeeth,
-		powerChainSpan,
-		powerChainType,
-		activePreset,
-		activeAttachmentPreset,
-		alignerSetIssued,
-		plateActivationTurns,
-		torquePreset,
-		angulationPreset,
-		isSplitArchAligners,
-		alignerStep,
-		alignerTotal,
-		alignerStepUpper,
-		alignerTotalUpper,
-		alignerStepLower,
-		alignerTotalLower,
-		alignerProgressPercent,
-		nextAlignerDateStr,
-		alignerDaysPerStep,
-	]);
-
-	// Apply to Form 043/u and auto-dispatch to invoice
+	// Apply to Form 043/u and invoice
 	const handleApplyToVisitNote = useCallback(() => {
 		const currentAttachmentObj = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset);
 		const servicesToDispatch = calculatedServices804n;
@@ -1468,174 +543,58 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
 			if (setVisitNoteForm) {
+				const planSummary = activeAttachmentPreset
+					? `Элайнеры: ${isSplitArchAligners ? `ВЧ Каппа №${alignerStepUpper}/${alignerTotalUpper}, НЧ Каппа №${alignerStepLower}/${alignerTotalLower}` : `Каппа №${alignerStep}/${alignerTotal}`} (${currentAttachmentObj?.shortLabel || "аттачменты"})`
+					: bracketSystem === "removable_plate"
+						? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)`
+						: `Дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "Damon Std"}, ${elasticScheme !== "none" ? "эластики" : "активация"}`;
+
 				setVisitNoteForm((prev) => ({
 					...prev,
-					complaint: prev.complaint
-						? `${prev.complaint}\n\n[Ортодонтия] ${notes}`
-						: `Плановый ортодонтический приём. ${notes}`,
-					objectiveStatus: prev.objectiveStatus
-						? `${prev.objectiveStatus}\n\n${generatedProtocol}`
-						: generatedProtocol,
-					treatmentPlan: prev.treatmentPlan
-						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: ${isSplitArchAligners ? `ВЧ Каппа №${alignerStepUpper}/${alignerTotalUpper}, НЧ Каппа №${alignerStepLower}/${alignerTotalLower}` : `Каппа №${alignerStep}/${alignerTotal}`} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)` : `Дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "Damon Std"}, ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
-						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры: ${isSplitArchAligners ? `ВЧ Каппа №${alignerStepUpper}/${alignerTotalUpper}, НЧ Каппа №${alignerStepLower}/${alignerTotalLower}` : `Каппа №${alignerStep}/${alignerTotal}`} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `пластинка с расширяющим винтом (${plateActivationTurns}/4 об.)` : `дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "Damon Std"}, ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
+					complaint: prev.complaint ? `${prev.complaint}\n\n[Ортодонтия] ${notes}` : `Плановый ортодонтический приём. ${notes}`,
+					objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${generatedProtocol}` : generatedProtocol,
+					treatmentPlan: prev.treatmentPlan ? `${prev.treatmentPlan}\n\n[Ортодонтия] ${planSummary}` : `Ортодонтическое лечение: ${planSummary}.`,
 				}));
 			}
 
-			// Reactive event for SOAP note editors
 			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente-apply-soap-protocol", {
-						detail: {
-							protocolText: generatedProtocol,
-							title: "Ортодонтический протокол (брекеты & дуги)",
-							angleClass,
-						},
-					}),
-				);
-
-				// Auto-dispatch services to invoice
+				window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+					detail: { protocolText: generatedProtocol, title: "Ортодонтический протокол (брекеты & дуги)", angleClass },
+				}));
 				if (servicesToDispatch.length > 0) {
-					window.dispatchEvent(
-						new CustomEvent("dente-add-services-to-invoice", {
-							detail: {
-								services: servicesToDispatch,
-								toothNumber: selectedTooth ?? undefined,
-								stageKind: "stage_ortho",
-							},
-						}),
-					);
+					window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+						detail: { services: servicesToDispatch, toothNumber: selectedTooth ?? undefined, stageKind: "stage_ortho" },
+					}));
 				}
 			}
 
-			if (servicesToDispatch.length > 0) {
-				onAddToInvoice?.(servicesToDispatch);
-			}
-
-			// Copy to clipboard silently
-			if (navigator?.clipboard?.writeText) {
-				navigator.clipboard.writeText(generatedProtocol).catch(() => {});
-			}
+			if (servicesToDispatch.length > 0) onAddToInvoice?.(servicesToDispatch);
+			if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(generatedProtocol).catch(() => {});
 
 			const codesStr = servicesToDispatch.map((s) => s.code).join(", ");
-			showToast(
-				servicesToDispatch.length > 0
-					? `Протокол сохранен в карту и ${servicesToDispatch.length} услуг (${codesStr}) добавлены в смету!`
-					: "Ортодонтический протокол сохранен в медицинскую карту!",
-				"success",
-			);
+			showToast(servicesToDispatch.length > 0 ? `Протокол сохранен в карту и ${servicesToDispatch.length} услуг (${codesStr}) добавлены в смету!` : "Ортодонтический протокол сохранен в медицинскую карту!", "success");
 
-			// Persist clinical actions to PostgreSQL 18 (Mandates 8e, 8k, 8n)
 			if (patientId) {
-				const headers = {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				};
-				if (selectedActions.includes("wire_change")) {
-					fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/archwire-change`, {
-						method: "POST",
-						headers,
-						body: JSON.stringify({
-							material: archwireMaterial,
-							section: archwireSection,
-							arch: targetArch,
-							note: notes,
-						}),
-					}).catch((err) => {
-						console.warn("[Orthodontics] Archwire change backend sync error:", err);
-					});
-				}
-				if (selectedActions.includes("ligature_change")) {
-					fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/ligatures-activate`, {
-						method: "POST",
-						headers,
-						body: JSON.stringify({
-							powerChain: powerChainType === "short",
-							powerChainSpan,
-							note: notes,
-						}),
-					}).catch((err) => {
-						console.warn("[Orthodontics] Ligatures activation backend sync error:", err);
-					});
-				}
+				syncOrthoBackendActions(patientId, selectedActions, archwireMaterial, archwireSection, targetArch, notes, powerChainType, powerChainSpan);
 			}
 
 			onClose();
 		} catch (_err) {
 			showToast("Протокол скопирован в буфер обмена", "info");
-			if (navigator?.clipboard?.writeText) {
-				navigator.clipboard.writeText(generatedProtocol).catch(() => {});
-			}
+			if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(generatedProtocol).catch(() => {});
 		}
-	}, [
-		calculatedServices804n,
-		activeAttachmentPreset,
-		notes,
-		generatedProtocol,
-		bracketSystem,
-		plateActivationTurns,
-		archwireMaterial,
-		archwireSection,
-		elasticScheme,
-		angleClass,
-		selectedTooth,
-		torquePreset,
-		isSplitArchAligners,
-		alignerStep,
-		alignerTotal,
-		alignerStepUpper,
-		alignerTotalUpper,
-		alignerStepLower,
-		alignerTotalLower,
-		onAddToInvoice,
-		onClose,
-	]);
+	}, [activeAttachmentPreset, calculatedServices804n, torquePreset, isSplitArchAligners, alignerStepUpper, alignerTotalUpper, alignerStepLower, alignerTotalLower, alignerStep, alignerTotal, bracketSystem, plateActivationTurns, archwireMaterial, archwireSection, elasticScheme, notes, generatedProtocol, angleClass, selectedTooth, onAddToInvoice, patientId, selectedActions, targetArch, powerChainType, powerChainSpan, onClose]);
 
-	// 1-Click Print Form 043/u (Mandates 8e, 8k)
+	// Print Form 043/u & Patient Memo
 	const handlePrintOrthodonticCard = useCallback(() => {
-		try {
-			if (typeof window !== "undefined") {
-				const printWindow = window.open("", "_blank");
-				if (printWindow) {
-					printWindow.document.write(`<!DOCTYPE html><html><head><title>Ортодонтическая медицинская карта — ${patientName}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.5;font-size:13px}h1{font-size:16px;margin:0 0 4px;text-transform:uppercase;font-weight:800}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.stamp{display:inline-block;padding:4px 10px;border:2px solid #059669;color:#059669;font-weight:800;font-size:11px;text-transform:uppercase;border-radius:4px;margin-bottom:12px}pre{white-space:pre-wrap;font-family:inherit;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.footer{margin-top:24px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:8px;display:flex;justify-content:space-between}@media print{body{padding:0}}</style></head><body><div class="stamp">ПОДПИСАНО ВРАЧОМ / МЕДИЦИНСКАЯ КАРТА</div><h1>Дневник ортодонтического приёма</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><pre>${generatedProtocol.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>М.П.</span></div><script>window.onload=function(){window.print();};</script></body></html>`);
-					printWindow.document.close();
-				} else if (typeof window.print === "function") {
-					window.print();
-				}
-			}
-			showToast("Отправлено на печать: Ортодонтическая карта", "info");
-		} catch (err) {
-			console.warn("Print error:", err);
-			if (typeof window !== "undefined" && typeof window.print === "function") {
-				window.print();
-			}
-		}
+		printOrthodonticCard({ patientName, clinicName, doctorName, generatedProtocol });
 	}, [clinicName, doctorName, patientName, generatedProtocol]);
 
-	const handleCopyClipboard = () => {
-		if (navigator?.clipboard?.writeText) {
-			navigator.clipboard.writeText(generatedProtocol).then(() => {
-				showToast("Протокол скопирован в буфер обмена", "success");
-			}).catch(() => {
-				showToast("Не удалось скопировать", "error");
-			});
-		}
-	};
+	const handleCopyClipboard = () => copyTextToClipboard(generatedProtocol, "Протокол скопирован в буфер обмена");
 
-	// 1-Click Copy Patient Memo for Messengers (Wave 53 / Feature 240)
 	const handleCopyPatientMemo = useCallback(() => {
 		const text = formatOrthodonticPatientMemo({
-			clinicName,
-			clinicPhone,
-			doctorName,
-			patientName,
-			bracketSystem,
-			archwireMaterial,
-			archwireSection,
-			targetArch,
-			elasticScheme,
-			elasticSize,
-			elasticWear,
+			clinicName, clinicPhone, doctorName, patientName, bracketSystem, archwireMaterial, archwireSection, targetArch, elasticScheme, elasticSize, elasticWear,
 			isAligners: bracketSystem === "aligners" || Boolean(activeAttachmentPreset),
 			currentAligner: isSplitArchAligners ? undefined : alignerStep,
 			totalAligners: isSplitArchAligners ? undefined : alignerTotal,
@@ -1645,58 +604,12 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			totalAlignersLower: isSplitArchAligners ? alignerTotalLower : undefined,
 			notes,
 		});
+		copyTextToClipboard(text, "Памятка пациенту по эластикам и уходу скопирована для мессенджера");
+	}, [clinicName, clinicPhone, doctorName, patientName, bracketSystem, archwireMaterial, archwireSection, targetArch, elasticScheme, elasticSize, elasticWear, activeAttachmentPreset, isSplitArchAligners, alignerStep, alignerTotal, alignerStepUpper, alignerTotalUpper, alignerStepLower, alignerTotalLower, notes]);
 
-		try {
-			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-				navigator.clipboard.writeText(text).catch(() => {});
-			}
-			showToast(
-				"Памятка пациенту по эластикам и уходу скопирована для мессенджера",
-				"success",
-			);
-		} catch (_err) {
-			showToast(
-				"Памятка пациенту по эластикам и уходу скопирована для мессенджера",
-				"success",
-			);
-		}
-	}, [
-		clinicName,
-		clinicPhone,
-		doctorName,
-		patientName,
-		bracketSystem,
-		archwireMaterial,
-		archwireSection,
-		targetArch,
-		elasticScheme,
-		elasticSize,
-		elasticWear,
-		activeAttachmentPreset,
-		isSplitArchAligners,
-		alignerStep,
-		alignerTotal,
-		alignerStepUpper,
-		alignerTotalUpper,
-		alignerStepLower,
-		alignerTotalLower,
-		notes,
-	]);
-
-	// 1-Click Print Patient Memo A4 (Mandate 8e, 8k: clean typography, 0 emojis)
 	const handlePrintPatientMemo = useCallback(() => {
-		const text = formatOrthodonticPatientMemo({
-			clinicName,
-			clinicPhone,
-			doctorName,
-			patientName,
-			bracketSystem,
-			archwireMaterial,
-			archwireSection,
-			targetArch,
-			elasticScheme,
-			elasticSize,
-			elasticWear,
+		const memoText = formatOrthodonticPatientMemo({
+			clinicName, clinicPhone, doctorName, patientName, bracketSystem, archwireMaterial, archwireSection, targetArch, elasticScheme, elasticSize, elasticWear,
 			isAligners: bracketSystem === "aligners" || Boolean(activeAttachmentPreset),
 			currentAligner: isSplitArchAligners ? undefined : alignerStep,
 			totalAligners: isSplitArchAligners ? undefined : alignerTotal,
@@ -1706,46 +619,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			totalAlignersLower: isSplitArchAligners ? alignerTotalLower : undefined,
 			notes,
 		});
-
-		try {
-			if (typeof window !== "undefined") {
-				const printWindow = window.open("", "_blank");
-				if (printWindow) {
-					printWindow.document.write(`<!DOCTYPE html><html><head><title>Памятка пациенту — ${patientName}</title><style>@page{size:A4;margin:15mm}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.6;font-size:13px}h1{font-size:16px;margin:0 0 6px;text-transform:uppercase;font-weight:800;color:#0f172a}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.memo-box{white-space:pre-wrap;font-family:inherit;font-size:13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;line-height:1.7}.footer{margin-top:28px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:10px;display:flex;justify-content:space-between}@media print{body{padding:0}.memo-box{background:#fff;border:none;padding:0}}</style></head><body><h1>Ортодонтические рекомендации пациенту</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><div class="memo-box">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>Тел.: ${clinicPhone || "—"}</span></div><script>window.onload=function(){window.print();};</script></body></html>`);
-					printWindow.document.close();
-				} else if (typeof window.print === "function") {
-					window.print();
-				}
-			}
-			showToast("Памятка пациенту отправлена на печать (A4)", "info");
-		} catch (err) {
-			console.warn("Print memo error:", err);
-			if (typeof window !== "undefined" && typeof window.print === "function") {
-				window.print();
-			}
-		}
-	}, [
-		clinicName,
-		clinicPhone,
-		doctorName,
-		patientName,
-		bracketSystem,
-		archwireMaterial,
-		archwireSection,
-		targetArch,
-		elasticScheme,
-		elasticSize,
-		elasticWear,
-		activeAttachmentPreset,
-		isSplitArchAligners,
-		alignerStep,
-		alignerTotal,
-		alignerStepUpper,
-		alignerTotalUpper,
-		alignerStepLower,
-		alignerTotalLower,
-		notes,
-	]);
+		printPatientMemoA4({ patientName, clinicName, doctorName, clinicPhone, memoText });
+	}, [clinicName, clinicPhone, doctorName, patientName, bracketSystem, archwireMaterial, archwireSection, targetArch, elasticScheme, elasticSize, elasticWear, activeAttachmentPreset, isSplitArchAligners, alignerStep, alignerTotal, alignerStepUpper, alignerTotalUpper, alignerStepLower, alignerTotalLower, notes]);
 
 	if (!isOpen) return null;
 
@@ -1758,1709 +633,158 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			data-testid="orthodontic-visit-protocol-widget"
 		>
 			<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
-				{/* Modal Header */}
-				<div className="flex items-center justify-between px-4 py-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
-					<div className="flex items-center gap-2.5">
-						<div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
-							<BracesBracket size={18} />
-						</div>
-						<div>
-							<h2 id="ortho-protocol-title" className="text-base font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
-								Ортодонтический протокол приёма
-							</h2>
-							<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 m-0">
-								1-клик выбор брекетов, дуг, сечений и эластиков · {patientName}
-							</p>
-						</div>
-					</div>
+				{/* Top Modal Header */}
+				<OrthoProtocolModalHeader
+					patientName={patientName}
+					onPrintOrthodonticCard={handlePrintOrthodonticCard}
+					onAddServicesToInvoice={handleAddServicesToInvoice}
+					onApplyToVisitNote={handleApplyToVisitNote}
+					onClose={onClose}
+					calculatedServicesCount={calculatedServices804n.length}
+				/>
 
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={handlePrintOrthodonticCard}
-							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 shadow-xs transition-all cursor-pointer"
-							data-testid="top-print-ortho-protocol-btn"
-							title="Распечатать карту (Мандат 8e: печать со штампом в любой момент)"
-							aria-label="Печать протокола"
-						>
-							<Printer size={16} />
-							<span className="hidden sm:inline">Печать протокола</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleAddServicesToInvoice}
-							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-							data-testid="add-ortho-services-to-invoice-btn"
-							title="Начислить услуги в чек/смету визита (1 клик)"
-							aria-label="Начислить услуги в чек/смету"
-						>
-							<Receipt size={16} />
-							<span>Начислить услуги в чек</span>
-							<span
-								className="px-1.5 py-0.5 rounded-full text-[11px] font-black bg-white/20 text-white min-w-[20px] text-center"
-								data-testid="ortho-services-count-badge"
-							>
-								{calculatedServices804n.length}
-							</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleApplyToVisitNote}
-							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-							data-testid="apply-to-form-043-btn"
-							title="Вставить протокол в карту и начислить услуги"
-							aria-label="В медицинскую карту"
-						>
-							<CheckCircle2 size={16} />
-							<span>В карту</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
-							aria-label="Закрыть"
-							data-testid="close-ortho-protocol-btn"
-						>
-							<X size={18} />
-						</button>
-					</div>
-				</div>
-
-				{/* Modal Body: 2 Columns (Controls + Live Protocol Preview) */}
+				{/* Modal Body: 2 Columns */}
 				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto">
-					{/* Left Column: 1-Click Fast Ortho Controls */}
-					<div className="lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto">
-						{/* 0. Hick's Law: Orthodontic Stages Filter Bar (32–36px) */}
-						<div
-							data-testid="ortho-stages-toolbar"
-							className="min-h-[36px] h-9 p-0.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700/60 flex items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0"
-						>
-							{ORTHODONTIC_STAGE_TABS.map((stage) => {
-								const isSelected = stageFilter === stage.id;
-								return (
-									<button
-										key={stage.id}
-										type="button"
-										onClick={() => {
-											setStageFilter(stage.id);
-											if (stage.id === "aligners") {
-												setBracketSystem("aligners");
-											} else if (stage.id === "leveling") {
-												setArchwireMaterial("NiTi");
-												setArchwireSection(".014");
-											} else if (stage.id === "working") {
-												setArchwireMaterial("SS");
-												setArchwireSection(".019x.025");
-											} else if (stage.id === "finishing") {
-												setArchwireMaterial("TMA");
-												setArchwireSection(".017x.025");
-											} else if (stage.id === "retention") {
-												if (!selectedActions.includes("debonding")) {
-													setSelectedActions((prev) => [...prev, "debonding"]);
-												}
-											}
-										}}
-										data-testid={`ortho-stage-tab-${stage.id}`}
-										className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 ${
-											isSelected
-												? "bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-transparent"
-										}`}
-										title={stage.desc}
-									>
-										<span>{stage.label}</span>
-									</button>
-								);
-							})}
-						</div>
+					{/* Left Column: Ortho Controls */}
+					<OrthoControlsColumn
+						stageFilter={stageFilter}
+						setStageFilter={setStageFilter}
+						setBracketSystem={setBracketSystem}
+						setArchwireMaterial={setArchwireMaterial}
+						setArchwireSection={setArchwireSection}
+						selectedActions={selectedActions}
+						setSelectedActions={setSelectedActions}
+						isPhotoProtocolOpen={isPhotoProtocolOpen}
+						setIsPhotoProtocolOpen={setIsPhotoProtocolOpen}
+						isPhotoProtocolCompleted={isPhotoProtocolCompleted}
+						onTogglePhotoProtocolCompleted={() => {
+							setIsPhotoProtocolCompleted((prev) => !prev);
+							showToast(!isPhotoProtocolCompleted ? "Фотопротокол зафиксирован (8 ракурсов ABO подтверждены)" : "Статус фотопротокола сброшен", "info", 2500);
+						}}
+						isCephModalOpen={isCephModalOpen}
+						setIsCephModalOpen={setIsCephModalOpen}
+						anbClass={anbClass}
+						setAnbClass={setAnbClass}
+						anbAngle={anbAngle}
+						setAnbAngle={setAnbAngle}
+						onSetAnbNorm={() => {
+							setAnbClass("class_1");
+							setAnbAngle(2.0);
+							showToast("Норма: Скелетный класс I (ANB 2.0°)", "success", 2500);
+						}}
+						patientId={patientId}
+						patientName={patientName}
+						doctorName={doctorName}
+						clinicName={clinicName}
+						onInsertCephToProtocol={(protocolText) => {
+							setNotes((prev) => (prev ? `${prev}\n\n${protocolText}` : protocolText));
+							setIsCephModalOpen(false);
+							showToast("ТРГ цефалометрический протокол добавлен в дневник", "success", 3000);
+						}}
+						activePreset={activePreset}
+						onPresetActivation={presets.handlePresetActivation}
+						onPresetWireChange={presets.handlePresetWireChange}
+						onPresetBonding={presets.handlePresetBonding}
+						onPresetDebonding={presets.handlePresetDebonding}
+						onPresetAlignerLabOrder={presets.handlePresetAlignerLabOrder}
+						onPresetRetainerLabOrder={presets.handlePresetRetainerLabOrder}
+						onPresetPlateLabOrder={presets.handlePresetPlateLabOrder}
+						onPresetSplintLabOrder={presets.handlePresetSplintLabOrder}
+						alignerStep={alignerStep}
+						alignerTotal={alignerTotal}
+						angleClass={angleClass}
+						setAngleClass={setAngleClass}
+						onSetAngleClassNorm={() => {
+							setAngleClass("class_1");
+							setAnbClass("class_1");
+							setAnbAngle(2.0);
+							setElasticScheme("none");
+							setNotes("Скелетный класс I по Энглю и Steiner (ANB 2.0°), соотношение моляров и клыков нейтральное. Патологии смыкания не выявлено (физиологическая норма).");
+							showToast("Норма: Скелетный класс I / Физиологический прикус", "success", 2500);
+						}}
+						sagittalAnomaly={sagittalAnomaly}
+						setSagittalAnomaly={setSagittalAnomaly}
+						sagittalGapMm={sagittalGapMm}
+						setSagittalGapMm={setSagittalGapMm}
+						verticalAnomaly={verticalAnomaly}
+						setVerticalAnomaly={setVerticalAnomaly}
+						transversalAnomaly={transversalAnomaly}
+						setTransversalAnomaly={setTransversalAnomaly}
+						onSetOcclusionNorm={() => {
+							setSagittalAnomaly("norm");
+							setSagittalGapMm(2);
+							setVerticalAnomaly("norm");
+							setTransversalAnomaly("norm");
+							showToast("Норма: Окклюзионные взаимоотношения в норме", "success", 2500);
+						}}
+						tmjStatus={tmjStatus}
+						setTmjStatus={setTmjStatus}
+						onSetTmjNorm={() => {
+							setTmjStatus("norm");
+							showToast("Норма: ВНЧС безболезненный, девиации нет", "success", 2500);
+						}}
+						targetArch={targetArch}
+						onSelectArch={handleSelectArch}
+						selectedTeeth={selectedTeeth}
+						onToggleTooth={handleToggleTooth}
+						setSelectedTeeth={setSelectedTeeth}
+						bracketSlot={bracketSlot}
+						setBracketSlot={setBracketSlot}
+						bracketSystem={bracketSystem}
+						onSelectBracketSystem={handleSelectBracketSystem}
+						plateActivationTurns={plateActivationTurns}
+						setPlateActivationTurns={setPlateActivationTurns}
+						activeAttachmentPreset={activeAttachmentPreset}
+						onSelectAttachmentPreset={handleSelectAttachmentPreset}
+						isSplitArchAligners={isSplitArchAligners}
+						setIsSplitArchAligners={setIsSplitArchAligners}
+						setAlignerStep={setAlignerStep}
+						setAlignerTotal={setAlignerTotal}
+						alignerStepUpper={alignerStepUpper}
+						setAlignerStepUpper={setAlignerStepUpper}
+						alignerTotalUpper={alignerTotalUpper}
+						setAlignerTotalUpper={setAlignerTotalUpper}
+						alignerStepLower={alignerStepLower}
+						setAlignerStepLower={setAlignerStepLower}
+						alignerTotalLower={alignerTotalLower}
+						setAlignerTotalLower={setAlignerTotalLower}
+						alignerDaysPerStep={alignerDaysPerStep}
+						setAlignerDaysPerStep={setAlignerDaysPerStep}
+						nextAlignerDateStr={nextAlignerDateStr}
+						alignerProgressPercent={alignerProgressPercent}
+						onSendAlignerReminder={handleSendAlignerReminder}
+						onIssueAlignerSet={handleIssueAlignerSetFromWidget}
+						onApplyAttachmentsProtocol={handleApplyAttachmentsProtocol}
+						alignerSetIssuedCount={alignerSetIssued?.count}
+						archwireMaterial={archwireMaterial}
+						archwireSection={archwireSection}
+						onSelectWorkhorseArchwire={handleSelectWorkhorseArchwire}
+						torquePreset={torquePreset}
+						setTorquePreset={setTorquePreset}
+						angulationPreset={angulationPreset}
+						setAngulationPreset={setAngulationPreset}
+						elasticScheme={elasticScheme}
+						setElasticScheme={setElasticScheme}
+						elasticSize={elasticSize}
+						setElasticSize={setElasticSize}
+						onElasticSizeInteraction={handleElasticSizeInteraction}
+						onToggleAction={handleToggleAction}
+					/>
 
-						{/* Mandate 8e: Doctor Autonomy & Photo Protocol Optionality Banner */}
-						<div
-							data-testid="photo-protocol-optional-badge"
-							className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs flex-wrap gap-2"
-						>
-							<div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-200 font-bold text-[11px]">
-								<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Автономия врача: фотопротокол опционален (отсутствие фото не блокирует приём)</span>
-							</div>
-							<div className="flex items-center gap-2 flex-wrap">
-								<button
-									type="button"
-									onClick={() => setIsPhotoProtocolOpen(true)}
-									data-testid="ortho-open-photo-protocol-btn"
-									className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700 hover:bg-teal-50 dark:hover:bg-slate-800 cursor-pointer min-h-[32px] transition-colors"
-									title="Открыть фотопротокол ортодонтии (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)"
-								>
-									<Camera size={13} className="text-teal-600 dark:text-teal-400" />
-									<span>{isPhotoProtocolCompleted ? "Фотопротокол (8/8)" : "Фотопротокол (8 ракурсов ABO)"}</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsPhotoProtocolCompleted((prev) => !prev);
-										showToast(
-											!isPhotoProtocolCompleted
-												? "1-клик: Фотопротокол зафиксирован (8 ракурсов ABO подтверждены)"
-												: "Статус фотопротокола сброшен",
-											"info",
-											2500,
-										);
-									}}
-									data-testid="ortho-confirm-photos-1click-btn"
-									className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer min-h-[32px] transition-colors ${
-										isPhotoProtocolCompleted
-											? "bg-teal-600 text-white border-teal-700"
-											: "bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800 hover:bg-teal-100"
-									}`}
-									title="1-клик экспресс-подтверждение съемки фотопротокола"
-								>
-									<Check size={12} />
-									<span>{isPhotoProtocolCompleted ? "Снято" : "1-клик подтвердить"}</span>
-								</button>
-								<span className="text-[10px] text-teal-700 dark:text-teal-300 font-mono font-medium">
-									Мандат 8e / 0 disabled кнопок
-								</span>
-							</div>
-						</div>
-
-						{/* 0. Autonomous 1-Click Clinical Presets Panel */}
-						<div
-							data-testid="ortho-quick-presets-panel"
-							className="bg-amber-500/10 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-500/30 flex flex-col gap-2.5"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1">
-								<span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-									<Zap size={14} className="text-amber-600 dark:text-amber-400 fill-amber-500" />
-									Быстрые клинические пресеты (1 клик)
-								</span>
-								<span className="text-[11px] font-bold text-amber-700/80 dark:text-amber-400/80">
-									Мгновенное заполнение параметров и дневника приёма
-								</span>
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-								<button
-									type="button"
-									onClick={handlePresetActivation}
-									data-testid="ortho-preset-routine-activation"
-									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-										activePreset === "activation"
-											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
-											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
-									}`}
-								>
-									<div
-										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-											activePreset === "activation"
-												? "bg-white/20 text-white"
-												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-										}`}
-									>
-										<RotateCcw size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight">
-											1-клик: Плановая активация
-										</div>
-										<div
-											className={`text-[10px] truncate ${
-												activePreset === "activation"
-													? "text-amber-100"
-													: "text-slate-500 dark:text-slate-400"
-											}`}
-										>
-											(смена лигатур / эластиков, дуги сохранены)
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetWireChange}
-									data-testid="ortho-preset-wire-change"
-									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-										activePreset === "wire_change"
-											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
-											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
-									}`}
-								>
-									<div
-										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-											activePreset === "wire_change"
-												? "bg-white/20 text-white"
-												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-										}`}
-									>
-										<Zap size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight">
-											1-клик: Смена дуг
-										</div>
-										<div
-											className={`text-[10px] truncate ${
-												activePreset === "wire_change"
-													? "text-amber-100"
-													: "text-slate-500 dark:text-slate-400"
-											}`}
-										>
-											(NiTi верх 0.016 / низ 0.014, норма)
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetBonding}
-									data-testid="ortho-preset-bracket-bonding"
-									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-										activePreset === "bonding"
-											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
-											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
-									}`}
-								>
-									<div
-										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-											activePreset === "bonding"
-												? "bg-white/20 text-white"
-												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-										}`}
-									>
-										<BracesBracket size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight">
-											1-клик: Фиксация брекет-системы
-										</div>
-										<div
-											className={`text-[10px] truncate ${
-												activePreset === "bonding"
-													? "text-amber-100"
-													: "text-slate-500 dark:text-slate-400"
-											}`}
-										>
-											(1 челюсть)
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetDebonding}
-									data-testid="ortho-preset-debonding-retainer"
-									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-										activePreset === "debonding"
-											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
-											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
-									}`}
-								>
-									<div
-										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-											activePreset === "debonding"
-												? "bg-white/20 text-white"
-												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-										}`}
-									>
-										<CheckCircle2 size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight">
-											1-клик: Снятие брекет-системы
-										</div>
-										<div
-											className={`text-[10px] truncate ${
-												activePreset === "debonding"
-													? "text-amber-100"
-													: "text-slate-500 dark:text-slate-400"
-											}`}
-										>
-											(+ установка несъемного ретейнера)
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetAlignerLabOrder}
-									data-testid="ortho-preset-aligner-lab-order"
-									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
-								>
-									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
-										<AlignerTray size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
-											1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
-										</div>
-										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											{`(шаг ${alignerStep} из ${alignerTotal}, срок 5-7 дней)`}
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetRetainerLabOrder}
-									data-testid="ortho-preset-retainer-lab-order"
-									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
-								>
-									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
-										<CheckCircle2 size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
-											1-клик: Наряд ЗТЛ (Ретейнер / Каппа)
-										</div>
-										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											(ретенционная каппа / дуга)
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetPlateLabOrder}
-									data-testid="ortho-preset-plate-lab-order"
-									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
-								>
-									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
-										<Layers size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
-											1-клик: Наряд ЗТЛ (Пластинка с винтом)
-										</div>
-										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											(расширяющий аппарат Хааса / Бертони)
-										</div>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePresetSplintLabOrder}
-									data-testid="ortho-preset-splint-lab-order"
-									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
-								>
-									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
-										<DentalArticulator size={14} />
-									</div>
-									<div className="min-w-0 flex-1">
-										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
-											1-клик: Наряд ЗТЛ (Окклюзионный сплинт)
-										</div>
-										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											(миорелаксирующий / шина ВНЧС)
-										</div>
-									</div>
-								</button>
-							</div>
-
-							<div className="flex items-center gap-2 p-2.5 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs">
-								<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span className="text-[11px] font-bold text-teal-900 dark:text-teal-200">
-									Мандат 8e: Истечение 30 дней плана НЕ БЛОКИРУЕТ ортодонтические манипуляции, заказ капп/элайнеров в ЗТЛ или оплату.
-								</span>
-							</div>
-						</div>
-
-						{/* 0.5 Express-Block: Aligner Attachments & Delivery (Mandates 8e, 8k, 8n) */}
-						<div
-							data-testid="aligner-attachments-express-block"
-							className="bg-indigo-50/70 dark:bg-indigo-950/30 p-3.5 rounded-xl border border-indigo-200/80 dark:border-indigo-800/50 flex flex-col gap-2.5"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1">
-								<span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-									<AlignerTray size={14} className="text-indigo-600 dark:text-indigo-400" />
-									Аттачменты элайнеров
-								</span>
-								<span className="text-[11px] font-bold text-indigo-700/80 dark:text-indigo-400/80">
-									Экспресс-фиксация & контроль (1 клик)
-								</span>
-							</div>
-
-							{/* 4 Quick Presets */}
-							<div className="grid grid-cols-1 gap-1.5">
-								{ALIGNER_ATTACHMENT_PRESETS.map((preset) => {
-									const isSelected = activeAttachmentPreset === preset.id;
-									return (
-										<button
-											key={preset.id}
-											type="button"
-											onClick={() => handleSelectAttachmentPreset(preset.id)}
-											data-testid={`preset-${preset.id}-attachments`}
-											className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
-												isSelected
-													? "bg-indigo-600 text-white border-indigo-700 shadow-sm font-black ring-2 ring-indigo-400"
-													: "bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-900 hover:border-indigo-400 text-slate-800 dark:text-slate-100"
-											}`}
-										>
-											<div
-												className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-													isSelected
-														? "bg-white/20 text-white"
-														: "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300"
-												}`}
-											>
-												<Zap size={13} />
-											</div>
-											<div className="min-w-0 flex-1">
-												<div className="text-xs font-bold leading-tight">
-													{preset.label}
-												</div>
-												<div
-													className={`text-[10px] line-clamp-1 mt-0.5 ${
-														isSelected
-															? "text-indigo-100"
-															: "text-slate-500 dark:text-slate-400"
-													}`}
-												>
-													{preset.description}
-												</div>
-											</div>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* 1-Click Aligner Tray Tracker 1..N with Patient Reminder (Mandates 8e, 8k) */}
-							<div
-								data-testid="aligner-tray-tracker"
-								className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/90 border border-indigo-200 dark:border-indigo-800 flex flex-col gap-2"
-							>
-								<div className="flex items-center justify-between flex-wrap gap-1.5">
-									<span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-										<Calendar size={14} className="text-indigo-600 dark:text-indigo-400" />
-										Трекер смены капп элайнеров {isSplitArchAligners ? `(ВЧ 1..${alignerTotalUpper}, НЧ 1..${alignerTotalLower})` : `(1..${alignerTotal})`}
-									</span>
-									<div className="flex items-center gap-1.5">
-										<button
-											type="button"
-											onClick={() => setIsSplitArchAligners((prev) => !prev)}
-											data-testid="aligner-split-arch-toggle"
-											className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 cursor-pointer transition-all"
-											title="Переключить между единым сетом и раздельным учетом капп верхней/нижней челюстей"
-										>
-											{isSplitArchAligners ? "Раздельные челюсти (ВЧ / НЧ)" : "Единый сет"}
-										</button>
-										<span
-											className="px-2 py-0.5 rounded-md text-[11px] font-black bg-indigo-600 text-white shadow-xs"
-											data-testid="aligner-tray-badge"
-										>
-											{isSplitArchAligners
-												? `ВЧ №${alignerStepUpper} / НЧ №${alignerStepLower}`
-												: `Каппа №${alignerStep} из ${alignerTotal}`}
-										</span>
-										<span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
-											({alignerProgressPercent}%)
-										</span>
-									</div>
-								</div>
-
-								{/* Progress bar */}
-								<div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-									<div
-										data-testid="aligner-tray-progress-bar"
-										className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-										style={{ width: `${alignerProgressPercent}%` }}
-									/>
-								</div>
-
-								{/* Stepper, date, reminder (Miller's Law: 1-2 direct actions) */}
-								{!isSplitArchAligners ? (
-									<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
-										<div className="flex items-center gap-1 flex-wrap">
-											<button
-												type="button"
-												onClick={() => {
-													const next = Math.max(1, alignerStep - 1);
-													setAlignerStep(next);
-													setAlignerStepUpper(next);
-													setAlignerStepLower(next);
-												}}
-												data-testid="aligner-prev-tray-btn"
-												className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
-												title="Предыдущая каппа (-1)"
-											>
-												-1
-											</button>
-											<span className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[56px] text-center">
-												№ {alignerStep}
-											</span>
-											<button
-												type="button"
-												onClick={() => {
-													const next = Math.min(alignerTotal, alignerStep + 1);
-													setAlignerStep(next);
-													setAlignerStepUpper(next);
-													setAlignerStepLower(next);
-												}}
-												data-testid="aligner-next-tray-btn"
-												className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
-												title="Следующая каппа (+1)"
-											>
-												+1
-											</button>
-											<button
-												type="button"
-												onClick={() => setAlignerDaysPerStep((prev) => (prev === 7 ? 10 : prev === 10 ? 14 : 7))}
-												data-testid="aligner-days-toggle-btn"
-												className="text-[11px] font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300 ml-1 cursor-pointer underline decoration-dotted transition-colors"
-												title="Нажмите для переключения интервала смены: 7, 10 или 14 дней"
-											>
-												Смена: {nextAlignerDateStr} (+{alignerDaysPerStep} дн.)
-											</button>
-										</div>
-
-										<button
-											type="button"
-											onClick={handleSendAlignerReminder}
-											data-testid="aligner-send-reminder-btn"
-											className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-											title="Скопировать напоминание о смене каппы для отправки пациенту в WhatsApp/Telegram"
-										>
-											<Send size={13} />
-											<span>Напомнить о смене</span>
-										</button>
-									</div>
-								) : (
-									<div className="flex flex-col gap-2 pt-0.5">
-										<div className="flex items-center justify-between gap-2 flex-wrap">
-											{/* Upper arch stepper */}
-											<div className="flex items-center gap-1.5 flex-wrap">
-												<span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 w-8 shrink-0">ВЧ:</span>
-												<button
-													type="button"
-													onClick={() => setAlignerStepUpper((prev) => Math.max(1, prev - 1))}
-													data-testid="aligner-upper-prev-tray-btn"
-													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
-													title="Предыдущая каппа ВЧ (-1)"
-												>
-													-1
-												</button>
-												<span
-													data-testid="aligner-upper-tray-badge"
-													className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[48px] text-center"
-												>
-													№ {alignerStepUpper}/{alignerTotalUpper}
-												</span>
-												<button
-													type="button"
-													onClick={() => setAlignerStepUpper((prev) => Math.min(alignerTotalUpper, prev + 1))}
-													data-testid="aligner-upper-next-tray-btn"
-													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
-													title="Следующая каппа ВЧ (+1)"
-												>
-													+1
-												</button>
-											</div>
-
-											{/* Lower arch stepper */}
-											<div className="flex items-center gap-1.5 flex-wrap">
-												<span className="text-xs font-bold text-teal-900 dark:text-teal-200 w-8 shrink-0">НЧ:</span>
-												<button
-													type="button"
-													onClick={() => setAlignerStepLower((prev) => Math.max(1, prev - 1))}
-													data-testid="aligner-lower-prev-tray-btn"
-													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-300 font-black text-xs hover:bg-teal-50 cursor-pointer flex items-center justify-center transition-all"
-													title="Предыдущая каппа НЧ (-1)"
-												>
-													-1
-												</button>
-												<span
-													data-testid="aligner-lower-tray-badge"
-													className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[48px] text-center"
-												>
-													№ {alignerStepLower}/{alignerTotalLower}
-												</span>
-												<button
-													type="button"
-													onClick={() => setAlignerStepLower((prev) => Math.min(alignerTotalLower, prev + 1))}
-													data-testid="aligner-lower-next-tray-btn"
-													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-300 font-black text-xs hover:bg-teal-50 cursor-pointer flex items-center justify-center transition-all"
-													title="Следующая каппа НЧ (+1)"
-												>
-													+1
-												</button>
-											</div>
-										</div>
-
-										<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
-											<button
-												type="button"
-												onClick={() => setAlignerDaysPerStep((prev) => (prev === 7 ? 10 : prev === 10 ? 14 : 7))}
-												data-testid="aligner-days-toggle-split-btn"
-												className="text-[11px] font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300 cursor-pointer underline decoration-dotted transition-colors"
-												title="Нажмите для переключения интервала смены: 7, 10 или 14 дней"
-											>
-												Смена: {nextAlignerDateStr} (+{alignerDaysPerStep} дн.)
-											</button>
-											<button
-												type="button"
-												onClick={handleSendAlignerReminder}
-												data-testid="aligner-send-reminder-btn"
-												className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-												title="Скопировать напоминание о смене каппы для отправки пациенту в WhatsApp/Telegram"
-											>
-												<Send size={13} />
-												<span>Напомнить о смене</span>
-											</button>
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* Quick Set Delivery & Append Button */}
-							<div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-indigo-200/50 dark:border-indigo-800/40">
-								<div className="flex items-center gap-1.5 flex-wrap">
-									<button
-										type="button"
-										onClick={() => handleIssueAlignerSetFromWidget(2, 14)}
-										data-testid="widget-issue-set-2-aligners-btn"
-										className={`min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-											alignerSetIssued?.count === 2
-												? "bg-teal-600 text-white border-teal-700"
-												: "bg-white dark:bg-slate-900 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50"
-										}`}
-										title="Выдать следующий сет из 2 капп на 14 дней"
-									>
-										<Zap size={13} />
-										<span>Сет 2 каппы (+14 дн.)</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => handleIssueAlignerSetFromWidget(4, 28)}
-										data-testid="widget-issue-set-4-aligners-btn"
-										className={`min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
-											alignerSetIssued?.count === 4
-												? "bg-teal-600 text-white border-teal-700"
-												: "bg-white dark:bg-slate-900 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50"
-										}`}
-										title="Выдать следующий сет из 4 капп на 28 дней"
-									>
-										<Zap size={13} />
-										<span>Сет 4 каппы (+28 дн.)</span>
-									</button>
-								</div>
-
-								<button
-									type="button"
-									onClick={handleAppendAttachmentsToSoapNote}
-									data-testid="append-attachments-to-soap-btn"
-									className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-									title="Добавить протокол в дневник визита без стирания ранее набранного текста"
-									aria-label="Внести в дневник приёма"
-								>
-									<Plus size={15} />
-									<span>Внести в дневник</span>
-								</button>
-							</div>
-						</div>
-
-						{/* 0.8 1-Click Angle Malocclusion Classification Bar (I, II/1, II/2, III) */}
-						<div
-							data-testid="ortho-angle-class-selector"
-							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1.5">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<Activity size={14} className="text-blue-500" />
-									Прикус по Энглю (1-клик фиксация)
-								</span>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setAngleClass("class_1");
-											setAnbClass("class_1");
-											setAnbAngle(2.0);
-											setElasticScheme("none");
-											setNotes("Скелетный класс I по Энглю и Steiner (ANB 2.0°), соотношение моляров и клыков нейтральное. Патологии смыкания не выявлено (физиологическая норма).");
-											showToast("1-клик норма: Скелетный класс I / Физиологический прикус", "success", 2500);
-										}}
-										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer min-h-[36px]"
-										data-testid="angle-class-norm-1click-btn"
-										title="1 клик: Класс I по Энглю / Физиологический прикус (Норма СтАР)"
-									>
-										<CheckCircle2 size={12} />
-										<span>Норма (Класс I)</span>
-									</button>
-									<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-										{ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass)?.shortLabel}
-									</span>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-								{ANGLE_CLASS_OPTIONS.map((opt) => {
-									const isSelected = angleClass === opt.id;
-									return (
-										<button
-											key={opt.id}
-											type="button"
-											onClick={() => setAngleClass(opt.id)}
-											data-testid={`angle-class-${opt.id}-btn`}
-											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
-												isSelected
-													? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-											}`}
-											title={opt.desc}
-										>
-											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
-											<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
-												{opt.id === "class_1" ? "Нейтральный" : opt.id === "class_2_div_1" ? "Протрузия" : opt.id === "class_2_div_2" ? "Ретрузия" : "Мезиальный"}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* 0.85 1-Click Steiner ANB Sagittal Skeletal Classification Bar (I, II, III) */}
-						<div
-							data-testid="ortho-anb-class-selector"
-							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1.5">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<Activity size={14} className="text-indigo-500" />
-									Скелетный класс по Steiner (угол ANB)
-								</span>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setAnbClass("class_1");
-											setAnbAngle(2.0);
-											showToast("1-клик норма: Скелетный класс I (ANB 2.0°)", "success", 2500);
-										}}
-										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 cursor-pointer min-h-[36px]"
-										data-testid="anb-class-norm-1click-btn"
-										title="1 клик: Скелетный класс I по Steiner (норма ANB 2° ± 2°)"
-									>
-										<CheckCircle2 size={12} />
-										<span>Норма (ANB I: 2.0°)</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => setIsCephModalOpen(true)}
-										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-slate-800 cursor-pointer min-h-[36px]"
-										data-testid="ortho-open-ceph-analysis-btn"
-										title="Открыть боковую ТРГ цефалометрию (расчет углов Steiner, Tweed, Downs, Ricketts)"
-									>
-										<Sliders size={12} className="text-indigo-600 dark:text-indigo-400" />
-										<span>ТРГ-анализ (Steiner)</span>
-									</button>
-									<span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
-										{ANB_CLASS_OPTIONS.find((a) => a.id === anbClass)?.shortLabel} ({anbAngle.toFixed(1)}°)
-									</span>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-								{ANB_CLASS_OPTIONS.map((opt) => {
-									const isSelected = anbClass === opt.id;
-									return (
-										<button
-											key={opt.id}
-											type="button"
-											onClick={() => {
-												setAnbClass(opt.id);
-												setAnbAngle(opt.typicalDegrees);
-											}}
-											data-testid={`anb-class-${opt.id}-btn`}
-											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
-												isSelected
-													? "bg-indigo-600 text-white border-indigo-700 font-black shadow-xs ring-1 ring-indigo-400"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-											}`}
-											title={opt.desc}
-										>
-											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
-											<span className={`text-[10px] truncate w-full ${isSelected ? "text-indigo-100" : "text-slate-400"}`}>
-												{opt.id === "class_1" ? "Норма 2° (0°..4°)" : opt.id === "class_2" ? "Дистальный >4°" : "Мезиальный <0°"}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* 0.86 1-Click Occlusal Anomaly Selector Bar (Sagittal, Vertical, Transversal) */}
-						<div
-							data-testid="ortho-occlusion-anomaly-selector"
-							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1.5">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<Layers size={14} className="text-teal-500" />
-									Резцовые и окклюзионные соотношения
-								</span>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setSagittalAnomaly("norm");
-											setSagittalGapMm(2);
-											setVerticalAnomaly("norm");
-											setTransversalAnomaly("norm");
-											showToast("1-клик норма: Окклюзионные взаимоотношения в норме", "success", 2500);
-										}}
-										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer min-h-[36px]"
-										data-testid="occlusion-norm-1click-btn"
-										title="1 клик: Физиологическая окклюзия резцов и моляров (Норма)"
-									>
-										<CheckCircle2 size={12} />
-										<span>Норма окклюзии</span>
-									</button>
-								</div>
-							</div>
-
-							{/* Sagittal Row */}
-							<div className="flex flex-col gap-1">
-								<div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-									<span>Сагиттальная щель (оверджет):</span>
-									{sagittalAnomaly === "overjet" && (
-										<span className="font-bold text-teal-600 dark:text-teal-400">{sagittalGapMm} мм</span>
-									)}
-								</div>
-								<div className="grid grid-cols-3 gap-1.5">
-									<button
-										type="button"
-										onClick={() => {
-											setSagittalAnomaly("norm");
-											setSagittalGapMm(2);
-										}}
-										data-testid="sagittal-norm-btn"
-										className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
-											sagittalAnomaly === "norm"
-												? "bg-teal-600 text-white border-teal-700 shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-										}`}
-									>
-										Норма (1–2 мм)
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setSagittalAnomaly("overjet");
-											setSagittalGapMm(sagittalGapMm <= 2 ? 4 : sagittalGapMm);
-										}}
-										data-testid="sagittal-overjet-btn"
-										className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
-											sagittalAnomaly === "overjet"
-												? "bg-teal-600 text-white border-teal-700 shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-										}`}
-									>
-										Оверджет (&gt;2 мм)
-									</button>
-									<button
-										type="button"
-										onClick={() => setSagittalAnomaly("reverse")}
-										data-testid="sagittal-reverse-btn"
-										className={`min-h-[40px] px-2 py-1 rounded-lg border text-center text-xs font-bold transition-all cursor-pointer ${
-											sagittalAnomaly === "reverse"
-												? "bg-teal-600 text-white border-teal-700 shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-										}`}
-									>
-										Обратный прикус
-									</button>
-								</div>
-							</div>
-
-							{/* Vertical & Transversal Row */}
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-								<div className="flex flex-col gap-1">
-									<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-										Вертикальное перекрытие:
-									</span>
-									<div className="grid grid-cols-3 gap-1">
-										<button
-											type="button"
-											onClick={() => setVerticalAnomaly("norm")}
-											data-testid="vertical-norm-btn"
-											className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
-												verticalAnomaly === "norm"
-													? "bg-teal-600 text-white border-teal-700"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-											}`}
-										>
-											Норма (1/3)
-										</button>
-										<button
-											type="button"
-											onClick={() => setVerticalAnomaly("deep")}
-											data-testid="vertical-deep-btn"
-											className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
-												verticalAnomaly === "deep"
-													? "bg-teal-600 text-white border-teal-700"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-											}`}
-										>
-											Глубокий
-										</button>
-										<button
-											type="button"
-											onClick={() => setVerticalAnomaly("open")}
-											data-testid="vertical-open-btn"
-											className={`min-h-[38px] px-1.5 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
-												verticalAnomaly === "open"
-													? "bg-teal-600 text-white border-teal-700"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-											}`}
-										>
-											Открытый
-										</button>
-									</div>
-								</div>
-
-								<div className="flex flex-col gap-1">
-									<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-										Трансверзальное соотношение:
-									</span>
-									<div className="grid grid-cols-2 gap-1">
-										<button
-											type="button"
-											onClick={() => setTransversalAnomaly("norm")}
-											data-testid="transversal-norm-btn"
-											className={`min-h-[38px] px-2 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
-												transversalAnomaly === "norm"
-													? "bg-teal-600 text-white border-teal-700"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-											}`}
-										>
-											Норма
-										</button>
-										<button
-											type="button"
-											onClick={() => setTransversalAnomaly("crossbite")}
-											data-testid="transversal-crossbite-btn"
-											className={`min-h-[38px] px-2 py-1 rounded-lg border text-center text-[11px] font-bold transition-all cursor-pointer ${
-												transversalAnomaly === "crossbite"
-													? "bg-teal-600 text-white border-teal-700"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-											}`}
-										>
-											Перекрестный
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* 0.87 1-Click Gnathology & TMJ Status Selector Bar */}
-						<div
-							data-testid="ortho-gnathology-tmj-selector"
-							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1.5">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<DentalArticulator size={14} className="text-amber-500" />
-									Гнатология и статус ВНЧС
-								</span>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setTmjStatus("norm");
-											showToast("1-клик норма: ВНЧС безболезненный, девиации нет", "success", 2500);
-										}}
-										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer min-h-[36px]"
-										data-testid="tmj-norm-1click-btn"
-										title="1 клик: Пальпация безболезненная, девиации нет, шум отсутствует"
-									>
-										<CheckCircle2 size={12} />
-										<span>Норма ВНЧС</span>
-									</button>
-									<span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
-										{tmjStatus === "norm"
-											? "Норма"
-											: tmjStatus === "clicking"
-												? "Щелчки"
-												: tmjStatus === "pain"
-													? "Пальпация +"
-													: tmjStatus === "deviation"
-														? "Девиация"
-														: "Сплинт"}
-									</span>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-								{[
-									{ id: "norm" as const, label: "Норма", desc: "Безболезненно, шума нет" },
-									{ id: "clicking" as const, label: "Щелчок ВНЧС", desc: "Суставной щелчок" },
-									{ id: "pain" as const, label: "Боль / пальпация", desc: "Болезненность пальпации" },
-									{ id: "deviation" as const, label: "Девиация", desc: "Смещение челюсти" },
-									{ id: "splint" as const, label: "Сплинт-шина", desc: "Окклюзионная сплинт-терапия" },
-								].map((opt) => {
-									const isSelected = tmjStatus === opt.id;
-									return (
-										<button
-											key={opt.id}
-											type="button"
-											onClick={() => setTmjStatus(opt.id)}
-											data-testid={`tmj-status-${opt.id}-btn`}
-											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
-												isSelected
-													? "bg-amber-600 text-white border-amber-700 font-black shadow-xs ring-1 ring-amber-400"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-											}`}
-											title={opt.desc}
-										>
-											<span className="text-xs font-bold leading-tight">{opt.label}</span>
-											<span className={`text-[10px] truncate w-full ${isSelected ? "text-amber-100" : "text-slate-400"}`}>
-												{opt.desc}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* 1. Dental Arch Quick Presets & Formula */}
-						<div className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/50 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<div className="flex items-center justify-between mb-2">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<BracesBracket size={14} />
-									Зубная формула (активация)
-								</span>
-								<div className="flex items-center gap-1">
-									<button
-										type="button"
-										onClick={() => handleSelectArch("upper")}
-										className={`px-2 py-1 text-[11px] font-bold rounded-md border transition-all cursor-pointer ${
-											targetArch === "upper"
-												? "bg-blue-500 text-white border-blue-600"
-												: "bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700"
-										}`}
-									>
-										Вся ВЧ
-									</button>
-									<button
-										type="button"
-										onClick={() => handleSelectArch("lower")}
-										className={`px-2 py-1 text-[11px] font-bold rounded-md border transition-all cursor-pointer ${
-											targetArch === "lower"
-												? "bg-blue-500 text-white border-blue-600"
-												: "bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700"
-										}`}
-									>
-										Вся НЧ
-									</button>
-									<button
-										type="button"
-										onClick={() => handleSelectArch("both")}
-										className={`px-2 py-1 text-[11px] font-bold rounded-md border transition-all cursor-pointer ${
-											targetArch === "both"
-												? "bg-blue-500 text-white border-blue-600"
-												: "bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700"
-										}`}
-									>
-										Обе челюсти
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedTeeth(ANTERIOR_TEETH)}
-										className="px-2 py-1 text-[11px] font-bold rounded-md border bg-white dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 cursor-pointer"
-									>
-										Фронт
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedTeeth([])}
-										className="p-1 rounded-md text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
-										title="Сбросить выбор"
-									>
-										<RotateCcw size={14} />
-									</button>
-								</div>
-							</div>
-
-							{/* FDI Formula Buttons */}
-							<div className="flex flex-col gap-1">
-								{/* Upper Arch (18-11 | 21-28) */}
-								<div className="flex items-center justify-center gap-0.5 overflow-x-auto py-1">
-									{UPPER_TEETH.map((tooth, idx) => {
-										const isSelected = selectedTeeth.includes(tooth);
-										const isMidline = idx === 7;
-										return (
-											<React.Fragment key={tooth}>
-												<button
-													type="button"
-													onClick={() => handleToggleTooth(tooth)}
-													className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
-														isSelected
-															? "bg-blue-600 text-white shadow-xs font-black"
-															: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400"
-													}`}
-													title={`Зуб ${tooth}`}
-												>
-													{tooth}
-												</button>
-												{isMidline && <div className="w-1.5 h-7 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
-											</React.Fragment>
-										);
-									})}
-								</div>
-
-								{/* Lower Arch (48-41 | 31-38) */}
-								<div className="flex items-center justify-center gap-0.5 overflow-x-auto py-1">
-									{LOWER_TEETH.map((tooth, idx) => {
-										const isSelected = selectedTeeth.includes(tooth);
-										const isMidline = idx === 7;
-										return (
-											<React.Fragment key={tooth}>
-												<button
-													type="button"
-													onClick={() => handleToggleTooth(tooth)}
-													className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
-														isSelected
-															? "bg-blue-600 text-white shadow-xs font-black"
-															: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400"
-													}`}
-													title={`Зуб ${tooth}`}
-												>
-													{tooth}
-												</button>
-												{isMidline && <div className="w-1.5 h-7 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
-											</React.Fragment>
-										);
-									})}
-								</div>
-							</div>
-						</div>
-
-						{/* 2. Brackets Slot & System */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-							{/* Slot Selection */}
-							<div>
-								<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
-									Паз брекетов (Slot)
-								</span>
-								<div className="grid grid-cols-2 gap-2">
-									<button
-										type="button"
-										onClick={() => setBracketSlot("0.018")}
-										className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border flex flex-col items-center justify-center transition-all cursor-pointer ${
-											bracketSlot === "0.018"
-												? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 font-black shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-										}`}
-									>
-										<span className="text-sm">0.018"</span>
-										<span className="text-[10px] text-slate-500">Низкое трение</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => setBracketSlot("0.022")}
-										className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border flex flex-col items-center justify-center transition-all cursor-pointer ${
-											bracketSlot === "0.022"
-												? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 font-black shadow-xs"
-												: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-										}`}
-									>
-										<span className="text-sm">0.022"</span>
-										<span className="text-[10px] text-slate-500">Стандарт (MBT/Damon)</span>
-									</button>
-								</div>
-							</div>
-
-							{/* Bracket System */}
-							<div>
-								<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
-									Брекет-система
-								</span>
-								<select
-									aria-label="Выбор брекет-системы"
-									value={bracketSystem}
-									onChange={(e) => handleSelectBracketSystem(e.target.value)}
-									className="w-full min-h-[44px] px-3 py-2 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none focus:border-amber-500 cursor-pointer"
-								>
-									{BRACKET_SYSTEMS.map((s) => (
-										<option key={s.id} value={s.id}>
-											{s.label} ({s.desc})
-										</option>
-									))}
-								</select>
-							</div>
-						</div>
-
-						{/* 2.5 Removable Plate Expansion Screw Controls */}
-						{bracketSystem === "removable_plate" && (
-							<div
-								data-testid="ortho-screw-activation-controls"
-								className="p-3 rounded-xl bg-orange-500/10 dark:bg-orange-950/30 border border-orange-500/30 flex flex-col gap-2"
-							>
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-black uppercase tracking-wider text-orange-800 dark:text-orange-300 flex items-center gap-1.5">
-										<RotateCcw size={14} className="text-orange-600 dark:text-orange-400" />
-										Расширяющий винт пластинки
-									</span>
-									<span className="text-[11px] font-bold text-orange-700 dark:text-orange-300">
-										{plateActivationTurns}/4 об. ({(plateActivationTurns * 0.25).toFixed(2)} мм)
-									</span>
-								</div>
-								<div className="flex items-center gap-2">
-									{[1, 2, 3, 4].map((turns) => (
-										<button
-											key={turns}
-											type="button"
-											onClick={() => {
-												setPlateActivationTurns(turns);
-												if (!selectedActions.includes("expansion_screw_activation")) {
-													setSelectedActions((prev) => [...prev, "expansion_screw_activation"]);
-												}
-											}}
-											data-testid={`screw-turns-${turns}-btn`}
-											className={`min-h-[44px] flex-1 px-2 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-												plateActivationTurns === turns
-													? "bg-orange-500 text-white border-orange-600 font-black shadow-xs"
-													: "bg-white dark:bg-slate-900 border-orange-200 dark:border-orange-800 text-slate-700 dark:text-slate-300 hover:bg-orange-50"
-											}`}
-										>
-											{turns}/4 об. ({(turns * 0.25).toFixed(2)} мм)
-										</button>
-									))}
-								</div>
-							</div>
-						)}
-
-						{/* 3. Archwire Material (NiTi / CuNiTi / SS / TMA) */}
-						<div>
-							<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
-								Материал дуги
-							</span>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-								{ARCHWIRE_MATERIALS.map((mat) => {
-									const isSelected = archwireMaterial === mat.id;
-									return (
-										<button
-											key={mat.id}
-											type="button"
-											onClick={() => setArchwireMaterial(mat.id)}
-											className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-bold border flex flex-col items-center justify-center transition-all cursor-pointer ${
-												isSelected
-													? "bg-teal-500/20 border-teal-500 text-teal-800 dark:text-teal-300 font-black shadow-xs"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-											}`}
-										>
-											<span className="text-sm">{mat.badge}</span>
-											<span className="text-[10px] text-slate-500 truncate w-full text-center">
-												{mat.id === "NiTi" ? "Нивелирование" : mat.id === "CuNiTi" ? "Термо" : mat.id === "SS" ? "Сталь" : "Бета-титан"}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* 4. Archwire Section (Round / Rectangular) */}
-						<div>
-							<div className="flex items-center justify-between mb-1.5">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400">
-									Сечение дуги
-								</span>
-								<span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
-									Выбрано: {archwireSection}"
-								</span>
-							</div>
-
-							<div className="flex flex-col gap-2">
-								{/* Round sections */}
-								<div className="flex items-center gap-1.5 flex-wrap">
-									<span className="text-[11px] font-bold text-slate-400 w-16 shrink-0">Круглые:</span>
-									{ROUND_SECTIONS.map((sec) => {
-										const isSelected = archwireSection === sec;
-										return (
-											<button
-												key={sec}
-												type="button"
-												onClick={() => setArchwireSection(sec)}
-												className={`min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-													isSelected
-														? "bg-amber-500 text-white border-amber-600 font-black shadow-xs"
-														: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
-												}`}
-											>
-												{sec}"
-											</button>
-										);
-									})}
-								</div>
-
-								{/* Rectangular sections */}
-								<div className="flex items-center gap-1.5 flex-wrap">
-									<span className="text-[11px] font-bold text-slate-400 w-16 shrink-0">Прямоуг.:</span>
-									{RECT_SECTIONS.map((sec) => {
-										const isSelected = archwireSection === sec;
-										return (
-											<button
-												key={sec}
-												type="button"
-												onClick={() => setArchwireSection(sec)}
-												className={`min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-													isSelected
-														? "bg-amber-500 text-white border-amber-600 font-black shadow-xs"
-														: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
-												}`}
-											>
-												{sec}"
-											</button>
-										);
-									})}
-								</div>
-
-								{/* Canonical Workhorse Archwires Strip (1-click fast wires) */}
-								<div
-									data-testid="ortho-workhorse-wires-strip"
-									className="mt-2 p-2.5 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-1.5"
-								>
-									<div className="flex items-center justify-between">
-										<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1">
-											<Zap size={13} className="text-teal-600 dark:text-teal-400" />
-											Рабочие дуги ортодонта (1 клик)
-										</span>
-										<span className="text-[10px] text-teal-700/80 dark:text-teal-400/80 font-bold">
-											Мгновенный выбор материала и сечения
-										</span>
-									</div>
-
-									<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-										{WORKHORSE_ARCHWIRES.map((wire) => {
-											const isSelected = archwireMaterial === wire.material && archwireSection === wire.section;
-											return (
-												<button
-													key={wire.id}
-													type="button"
-													onClick={() => handleSelectWorkhorseArchwire(wire)}
-													data-testid={`quick-wire-${wire.id}-btn`}
-													className={`min-h-[44px] px-2 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
-														isSelected
-															? "bg-teal-600 text-white border-teal-700 font-black shadow-xs ring-1 ring-teal-400"
-															: "bg-white dark:bg-slate-900 border-teal-300/60 dark:border-teal-800 hover:border-teal-500 text-slate-800 dark:text-slate-100"
-													}`}
-													title={wire.desc}
-												>
-													<span className="text-xs font-bold leading-tight truncate w-full">{wire.label}</span>
-													<span className={`text-[10px] truncate w-full ${isSelected ? "text-teal-100" : "text-slate-500 dark:text-slate-400"}`}>
-														{wire.material === "SS" ? "Рабочая сталь" : "Нивелирование"}
-													</span>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* 4.5 1-Click Torque and Angulation Calculation Panel (Mandate 8k) */}
-						<div
-							data-testid="ortho-torque-angulation-panel"
-							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5"
-						>
-							<div className="flex items-center justify-between flex-wrap gap-1.5">
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<Sliders size={14} className="text-blue-500" />
-									Расчет торка и ангуляции (1 клик)
-								</span>
-								<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-									{TORQUE_PRESETS.find((t) => t.id === torquePreset)?.shortLabel}
-								</span>
-							</div>
-
-							{/* 4 Torque Presets with 1-click selection (Miller's Law <= 2 per group) */}
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-								{TORQUE_PRESETS.map((tOpt) => {
-									const isSelected = torquePreset === tOpt.id;
-									return (
-										<button
-											key={tOpt.id}
-											type="button"
-											onClick={() => {
-												setTorquePreset(tOpt.id);
-												showToast(`Выбран торк: ${tOpt.label}`, "info");
-											}}
-											data-testid={`torque-preset-${tOpt.id}-btn`}
-											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
-												isSelected
-													? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-											}`}
-											title={tOpt.desc}
-										>
-											<span className="text-xs font-bold leading-tight truncate w-full">{tOpt.shortLabel}</span>
-											<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
-												ВЧ {tOpt.u1Torque} / НЧ {tOpt.l1Torque}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* Angulation selector */}
-							<div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800/60">
-								<span className="text-[11px] font-bold text-slate-500">
-									Ангуляция резцов/клыков:
-								</span>
-								<div className="flex items-center gap-1.5">
-									{ANGULATION_PRESETS.map((aOpt) => {
-										const isSelected = angulationPreset === aOpt.id;
-										return (
-											<button
-												key={aOpt.id}
-												type="button"
-												onClick={() => setAngulationPreset(aOpt.id)}
-												data-testid={`angulation-preset-${aOpt.id}-btn`}
-												className={`h-7 px-2 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-													isSelected
-														? "bg-blue-600 text-white border-blue-700 font-black shadow-xs"
-														: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
-												}`}
-											>
-												{aOpt.shortLabel}
-											</button>
-										);
-									})}
-								</div>
-							</div>
-						</div>
-
-						{/* 5. Intermaxillary Elastics */}
-						<div className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5">
-							<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-								<Zap size={14} className="text-purple-500" />
-								Межчелюстные эластики (тяга)
-							</span>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-								<div>
-									<label htmlFor="elastic-scheme-select" className="block text-[11px] font-bold text-slate-500 mb-1">
-										Схема фиксации
-									</label>
-									<select
-										id="elastic-scheme-select"
-										aria-label="Схема эластиков"
-										value={elasticScheme}
-										onChange={(e) => setElasticScheme(e.target.value)}
-										className="w-full min-h-[38px] px-2.5 py-1 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
-									>
-										{ELASTIC_SCHEMES.map((e) => (
-											<option key={e.id} value={e.id}>
-												{e.label}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div>
-									<label htmlFor="elastic-size-select" className="block text-[11px] font-bold text-slate-500 mb-1">
-										Размер и сила (калибр)
-									</label>
-									<select
-										id="elastic-size-select"
-										aria-label="Размер эластиков"
-										disabled={false}
-										value={elasticSize}
-										onClick={handleElasticSizeInteraction}
-										onFocus={handleElasticSizeInteraction}
-										onChange={(e) => {
-											handleElasticSizeInteraction();
-											setElasticSize(e.target.value);
-										}}
-										className="w-full min-h-[38px] px-2.5 py-1 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
-									>
-										{ELASTIC_SIZES.map((s) => (
-											<option key={s.id} value={s.id}>
-												{s.label} ({s.strength})
-											</option>
-										))}
-									</select>
-								</div>
-							</div>
-						</div>
-
-						{/* 6. Clinical Actions Checklist */}
-						<div>
-							<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
-								Манипуляции приёма
-							</span>
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-								{CLINICAL_ACTIONS.map((action) => {
-									const isChecked = selectedActions.includes(action.id);
-									return (
-										<label
-											key={action.id}
-											className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none ${
-												isChecked
-													? "bg-blue-50 dark:bg-blue-900/20 border-blue-400 text-blue-900 dark:text-blue-300"
-													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-											}`}
-										>
-											<input
-												type="checkbox"
-												checked={isChecked}
-												onChange={() => handleToggleAction(action.id)}
-												className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-											/>
-											<span>{action.label}</span>
-										</label>
-									);
-								})}
-							</div>
-						</div>
-					</div>
-
-					{/* Right Column: Live Form 043/u Protocol Preview & Quick Copy */}
-					<div className="lg:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-[var(--surface,#f8fafc)]/60 dark:bg-slate-900/60 overflow-y-auto">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<FileText size={16} className="text-amber-500" />
-								<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] dark:text-slate-200">
-									Дневник приёма
-								</span>
-							</div>
-
-							<div className="flex items-center gap-1.5">
-								<button
-									type="button"
-									onClick={handlePrintOrthodonticCard}
-									className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-									data-testid="print-ortho-protocol-btn"
-									title="Распечатать карту"
-									aria-label="Печать протокола"
-								>
-									<Printer size={13} />
-									<span>Печать протокола</span>
-								</button>
-								<button
-									type="button"
-									onClick={handleCopyClipboard}
-									className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-									title="Скопировать протокол в буфер"
-								>
-									<Copy size={13} />
-									<span>Копировать</span>
-								</button>
-							</div>
-						</div>
-
-						{/* Preformatted Protocol Text Box */}
-						<div className="flex-1 min-h-[300px] max-h-[460px] p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text shadow-inner">
-							{generatedProtocol}
-						</div>
-
-						{/* 1-Click Action Bar */}
-						<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<div className="grid grid-cols-2 gap-2">
-								<button
-									type="button"
-									onClick={handleCopyPatientMemo}
-									data-testid="ortho-copy-patient-memo-btn"
-									className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-									title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
-								>
-									<Copy size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span className="hidden sm:inline">Скопировать для пациента</span>
-									<span className="sm:hidden">Памятка</span>
-								</button>
-
-								<button
-									type="button"
-									onClick={handlePrintPatientMemo}
-									data-testid="ortho-print-patient-memo-btn"
-									className="min-h-[48px] px-3 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-									title="Распечатать памятку пациенту (A4)"
-								>
-									<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Печать памятки A4</span>
-								</button>
-							</div>
-
-							<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-								<button
-									type="button"
-									onClick={handlePrintOrthodonticCard}
-									className="min-h-[44px] px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-									data-testid="bottom-print-protocol-btn"
-									title="Распечатать карту"
-									aria-label="Печать протокола"
-								>
-									<Printer size={15} />
-									<span>Печать</span>
-								</button>
-
-								<button
-									type="button"
-									onClick={handleAddServicesToInvoice}
-									className="min-h-[44px] px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-									data-testid="bottom-add-services-to-invoice-btn"
-									title="Начислить услуги в чек/смету"
-									aria-label="Начислить услуги в чек/смету"
-								>
-									<Receipt size={15} />
-									<span>Услуги ({calculatedServices804n.length})</span>
-								</button>
-
-								<button
-									type="button"
-									onClick={handleApplyToVisitNote}
-									className="flex-1 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-									data-testid="bottom-apply-protocol-btn"
-									title="Вставить в карту (1 клик)"
-									aria-label="В медицинскую карту"
-								>
-									<Check size={16} />
-									<span>Вставить в карту</span>
-								</button>
-
-								<button
-									type="button"
-									onClick={onClose}
-									className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
-								>
-									Отмена
-								</button>
-							</div>
-						</div>
-					</div>
+					{/* Right Column: Protocol Preview & Actions (Дневник приёма) */}
+					<OrthoProtocolPreviewSection
+						generatedProtocol={generatedProtocol}
+						onPrintOrthodonticCard={handlePrintOrthodonticCard}
+						onCopyClipboard={handleCopyClipboard}
+						onCopyPatientMemo={handleCopyPatientMemo}
+						onPrintPatientMemo={handlePrintPatientMemo}
+						onAddServicesToInvoice={handleAddServicesToInvoice}
+						onApplyToVisitNote={handleApplyToVisitNote}
+						onClose={onClose}
+						calculatedServicesCount={calculatedServices804n.length}
+					/>
 				</div>
 			</div>
-			{isPhotoProtocolOpen && (
-				<OrthodonticPhotoProtocolModal
-					isOpen={isPhotoProtocolOpen}
-					onClose={() => setIsPhotoProtocolOpen(false)}
-					patientId={patientId || ""}
-					patientName={patientName}
-					doctorName={doctorName}
-					clinicName={clinicName}
-					onSaveSession={() => {
-						setIsPhotoProtocolCompleted(true);
-						setIsPhotoProtocolOpen(false);
-						showToast("Фотопротокол сохранен (8 ракурсов ABO зафиксированы)", "success");
-					}}
-				/>
-			)}
-			{isCephModalOpen && (
-				<CephalometricAnalysisModal
-					isOpen={isCephModalOpen}
-					onClose={() => setIsCephModalOpen(false)}
-					patientId={patientId || ""}
-					patientName={patientName}
-					onInsertToProtocol={(protocolText) => {
-						setNotes((prev) => (prev ? `${prev}\n\n${protocolText}` : protocolText));
-						setIsCephModalOpen(false);
-						showToast("ТРГ цефалометрический протокол добавлен в дневник", "success", 3000);
-					}}
-				/>
-			)}
 		</div>
 	);
 }

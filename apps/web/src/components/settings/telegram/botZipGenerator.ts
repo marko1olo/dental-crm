@@ -217,13 +217,13 @@ DENTE_CRM_WEBHOOK_URL=${serverWebhookUrl}
 CRM_SYNC_SECRET=dente_secret_${Math.random().toString(36).slice(2, 10)}
 `;
 
-	const readme = `# 🦷 ${channelTitle} — Стоматология «${clinicName}»
+	const readme = `# ${channelTitle} — Стоматология «${clinicName}»
 
 Автономный бот для пациентов клиники, экспортированный из **DENTE Bot Studio**.
 
 ---
 
-## 🚀 Быстрый старт на собственном сервере (VPS)
+## Быстрый старт на собственном сервере (VPS)
 
 ### Вариант 1. Запуск через Node.js:
 \`\`\`bash
@@ -248,7 +248,7 @@ docker run -d --name dente-bot --restart always -p 3000:3000 --env-file .env den
 
 ---
 
-## 📦 Включенные модули и плагины:
+## Включенные модули и плагины:
 - **Онлайн-запись 24/7:** ${enabledPlugins.onlineBooking ? "ВКЛЮЧЕНО (Mini App & выбор слотов)" : "Отключено"}
 - **Напоминания о приеме (24ч / 2ч):** ${enabledPlugins.reminders ? "ВКЛЮЧЕНО" : "Отключено"}
 - **Сбор отзывов (Яндекс.Карты, 2ГИС, ПроДокторов):** ${enabledPlugins.reviews ? "ВКЛЮЧЕНО" : "Отключено"}
@@ -257,7 +257,7 @@ docker run -d --name dente-bot --restart always -p 3000:3000 --env-file .env den
 
 ---
 
-## 🔒 152-ФЗ Безопасность данных:
+## 152-ФЗ Безопасность данных:
 Бот не хранит медицинские диагнозы, планы лечения или паспортные данные. Все конфиденциальные операции направляются через защищенный SSL-шлюз DENTE.
 `;
 
@@ -289,9 +289,9 @@ const CLINIC_PHONE = process.env.CLINIC_PHONE || '${clinicPhone}';
 const CLINIC_ADDRESS = process.env.CLINIC_ADDRESS || '${clinicAddress}';
 const WELCOME_TEXT = ${JSON.stringify(welcomeText)};
 
-console.log('🚀 Запуск DENTE Bot для клиники:', CLINIC_NAME);
+console.log('Запуск DENTE Bot для клиники:', CLINIC_NAME);
 console.log('Канал:', '${channel}');
-console.log('Плагины:', ${JSON.stringify(enabledPlugins)});
+console.log('Плагины:', \${JSON.stringify(enabledPlugins)});
 
 // Базовый роут проверки здоровья (Healthcheck)
 app.get('/health', (req, res) => {
@@ -307,14 +307,14 @@ app.get('/health', (req, res) => {
 // Роут вебхука от DENTE CRM для отправки напоминаний
 app.post('/webhook/crm-events', (req, res) => {
   const { eventType, patientPhone, message } = req.body;
-  console.log('📩 Получено событие от CRM:', eventType, 'для:', patientPhone);
+  console.log('Получено событие от CRM:', eventType, 'для:', patientPhone);
   
   // Отправка сообщения в мессенджер в зависимости от канала
   res.json({ ok: true, deliveredAt: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
-  console.log(\`✅ Сервер бота слушает порт \${PORT}\`);
+  console.log(\`Сервер бота слушает порт \${PORT}\`);
   console.log('Готов к приему сообщений пациентов 24/7.');
 });
 `;

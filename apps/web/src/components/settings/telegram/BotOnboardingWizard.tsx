@@ -333,7 +333,7 @@ export function BotOnboardingWizard({
 			if (res.ok) {
 				setIsBotRunningLive(true);
 				setLiveNotice(
-					`🎉 Бот ${activeChannel.toUpperCase()} успешно активирован в БД DENTE и слушает вебхук 24/7!`,
+					`Бот ${activeChannel.toUpperCase()} успешно активирован в БД DENTE и слушает вебхук 24/7!`,
 				);
 				showToast(`Бот ${activeChannel.toUpperCase()} сохранён в базе и запущен!`, "success");
 			} else {
@@ -733,9 +733,9 @@ export function BotOnboardingWizard({
 						<span className="bot-field-label">Тон общения виртуального ассистента:</span>
 						<div className="bot-tone-radio-row">
 							{[
-								{ id: "premium" as BotTone, label: "🌟 Премиум & Престиж", hint: "Забота, персональный координатор" },
-								{ id: "caring" as BotTone, label: "👨‍👩‍👧‍👦 Семейный и тёплый", hint: "Адаптационный прием, без боли" },
-								{ id: "concise" as BotTone, label: "🩺 Лаконичный медицинский", hint: "Четкие факты, доказательный подход" },
+								{ id: "premium" as BotTone, label: "Премиум & Престиж", hint: "Забота, персональный координатор" },
+								{ id: "caring" as BotTone, label: "Семейный и тёплый", hint: "Адаптационный прием, без боли" },
+								{ id: "concise" as BotTone, label: "Лаконичный медицинский", hint: "Четкие факты, доказательный подход" },
 							].map((toneItem) => (
 								<label
 									key={toneItem.id}
@@ -1047,7 +1047,7 @@ export function BotOnboardingWizard({
 										{isLaunching
 											? "Подключение..."
 											: isBotRunningLive
-												? "✓ Бот запущен (Перезапустить)"
+												? "Бот запущен (Перезапустить)"
 												: "Запустить бота в облаке DENTE"}
 									</span>
 								</button>
@@ -1077,11 +1077,11 @@ export function BotOnboardingWizard({
 								Активные модули в боте:
 							</span>
 							<div className="bot-summary-tags-row">
-								{pluginBooking && <span className="bot-summary-tag">✓ Онлайн-запись 24/7</span>}
-								{pluginReminders && <span className="bot-summary-tag">✓ Напоминания 24ч/2ч</span>}
-								{pluginReviews && <span className="bot-summary-tag">✓ Отзывы Яндекс/2ГИС</span>}
-								{pluginPriceFaq && <span className="bot-summary-tag">✓ Прейскурант и FAQ</span>}
-								{pluginAdminChat && <span className="bot-summary-tag">✓ Связь с ресепшеном</span>}
+								{pluginBooking && <span className="bot-summary-tag">Онлайн-запись 24/7</span>}
+								{pluginReminders && <span className="bot-summary-tag">Напоминания 24ч/2ч</span>}
+								{pluginReviews && <span className="bot-summary-tag">Отзывы Яндекс/2ГИС</span>}
+								{pluginPriceFaq && <span className="bot-summary-tag">Прейскурант и FAQ</span>}
+								{pluginAdminChat && <span className="bot-summary-tag">Связь с регистратурой</span>}
 							</div>
 						</div>
 					</div>

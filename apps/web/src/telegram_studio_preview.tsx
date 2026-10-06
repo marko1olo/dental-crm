@@ -15,16 +15,12 @@ import "./styles/modules/mobile-touch.css";
 import "./styles/overflow-fixes.css";
 import "./components/settings/telegram/TelegramBotStudio.css";
 
-import { TelegramBotStudioSection } from "./components/settings/telegram/TelegramBotStudioSection";
-import { BotStudioModal } from "./components/settings/telegram/BotStudioModal";
+import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
 
 function TelegramStudioPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
 	const rawTheme = (params.get("theme") || "light") as ThemeMode;
-	const initialStep = (parseInt(params.get("step") || "1", 10) || 1) as 1 | 2 | 3 | 4;
-	const channel = (params.get("channel") || "telegram") as any;
-	const [isModalOpen, setIsModalOpen] = React.useState(params.get("modal") === "true");
 
 	useEffect(() => {
 		const updateTheme = () => {
@@ -53,31 +49,80 @@ function TelegramStudioPreviewApp() {
 			activeChatLinkCount: 4,
 			pendingLinkCodeCount: 1,
 			mode: "clinic_owned_bot",
+			warnings: [],
+			nextActions: [],
+		},
+		telegramFeaturePlan: {
+			enabledFeatures: ["appointment_confirmation", "payment_reminder_notice", "voice_note_intake"],
+			patientSafeActions: ["Подтвердить прием", "Перенести запись", "Оплатить счет"],
+			blockedByDefault: ["ПДн без согласия", "Диагнозы МКБ", "Снимки КЛКТ"],
 		},
 		telegramModeDraft: "clinic_owned_bot",
-		telegramBotUsernameDraft: "smiledent_bot",
+		telegramBotUsernameDraft: "dentecrm_bot",
 		telegramOwnBotUsernameDraft: "smiledent_bot",
+		telegramBotConfigId: "clinic-main",
+		telegramWebhookBaseUrlDraft: "https://crm.dente-clinic.ru",
 		telegramPatientPortalBaseUrlDraft: "https://portal.dente-clinic.ru",
+		telegramWelcomeImageUrlDraft: "https://dente.ru/welcome.jpg",
+		telegramTokenTtlDraft: 15,
+		telegramReminderLeadTimesDraft: "24, 2",
+		telegramReviewRequestDelayDraft: 2,
+		telegramStaffEscalationChannelDraft: "@clinic_admin",
+		telegramPrivacyModeDraft: "no_phi_by_default",
 		telegramMapsUrlDraft: "https://maps.yandex.ru",
+		telegramReviewUrlDraft: "https://prodoctorov.ru",
 		telegramAllowVoiceIntakeDraft: true,
 		telegramEnabledFeaturesDraft: ["voice_note_intake", "appointment_reminder"],
+		typedTelegramFeatureOptions: ["voice_note_intake", "appointment_reminder", "online_booking"],
+		telegramFeatureLabel: (f: string) => f,
+		telegramFeatureHelp: {
+			voice_note_intake: "Прием голосовых аудиосообщений",
+			appointment_reminder: "Напоминание о приеме за 24 часа",
+			online_booking: "Онлайн-запись пациентов",
+		},
+		telegramVisualCardFields: [],
+		telegramVisualCardUrlDrafts: {},
+		typedTelegramPostVisitCheckupDelayDrafts: {},
+		telegramPostVisitCheckupDelayFields: [],
+		typedTelegramLinkStaffOptions: [{ id: "staff-1", fullName: "Смирнова Е.А." }],
+		typedTelegramLinkCodes: [
+			{ id: "c1", subjectType: "patient", subjectId: "p1", codeLast4: "4921", status: "pending", expiresAt: new Date(Date.now() + 3600000).toISOString() },
+		],
+		typedTelegramChatLinks: [
+			{ id: "l1", subjectType: "patient", subjectId: "p1", telegramUsername: "ivanov_patient", linkedAt: new Date().toISOString() },
+		],
+		telegramSubjectName: () => "Иванов Иван Иванович",
+		formatDateTime: (d: string) => "06.10.2026 14:00",
+		telegramHumanMessage: (s: string) => s || "",
+		isTelegramLoading: false,
 		markTelegramSettingsDirty: () => {},
 		setTelegramOwnBotUsernameDraft: () => {},
+		saveTelegramSettings: () => {},
+		telegramSettingsSaveState: "saved",
+		telegramTemplateLabels: {
+			appointment_confirmation: "Подтверждение приема",
+			document_ready_notice: "Готовность документа",
+			payment_reminder_notice: "Вопрос по оплате",
+			recall_notice: "Профосмотр",
+			review_request: "Отзыв о визите",
+			post_visit_instruction_link: "Памятка после приема",
+			post_visit_checkup: "Контроль самочувствия",
+			staff_daily_digest: "Сводка сотруднику",
+		},
+		telegramClassificationLabels: {
+			limited_admin: "Безопасный служебный",
+		},
+		typedTelegramInlineButtonKindLabels: {
+			portal: "Портал",
+			confirm: "Действие",
+		},
+		visibleTelegramOutboxItems: [],
+		filteredTelegramOutboxItems: [],
 	};
 
 	return (
 		<div className="max-w-[1400px] mx-auto w-full">
-			<TelegramBotStudioSection
-				parentProps={mockProps}
-				initialWizardStep={initialStep}
-				initialChannel={channel}
-			/>
-			<BotStudioModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-				initialChannel={channel}
-				parentProps={mockProps}
-			/>
+			<SettingsTelegramTab props={mockProps} settingsTab="telegram" />
 		</div>
 	);
 }
