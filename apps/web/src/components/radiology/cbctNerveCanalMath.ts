@@ -11,8 +11,8 @@
  * Mandate 8b: Декомпозиция монолитов (строго <= 800 строк).
  */
 
-import type { Point2D, Point3D } from './cbctCaliperMeasureMath.js';
-import { calculatePhysicalDistanceMm } from './cbctCaliperMeasureMath.js';
+import type { Point2D, Point3D } from "./cbctCaliperMeasureMath.js";
+import { calculatePhysicalDistanceMm } from "./cbctCaliperMeasureMath.js";
 
 export const MANDIBULAR_NERVE_SAFETY_MARGIN_MM = 2.0;
 export const MANDIBULAR_NERVE_CRITICAL_THRESHOLD_MM = 1.5;
@@ -84,19 +84,19 @@ export function interpolateNerveSpline2D(
 			const t2 = t * t;
 			const t3 = t2 * t;
 
-			const x = 0.5 * (
-				(2 * p1.x) +
-				(-p0.x + p2.x) * t +
-				(2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-				(-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
-			);
+			const x =
+				0.5 *
+				(2 * p1.x +
+					(-p0.x + p2.x) * t +
+					(2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+					(-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
 
-			const y = 0.5 * (
-				(2 * p1.y) +
-				(-p0.y + p2.y) * t +
-				(2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-				(-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
-			);
+			const y =
+				0.5 *
+				(2 * p1.y +
+					(-p0.y + p2.y) * t +
+					(2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+					(-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
 
 			spline.push({
 				x: Number(x.toFixed(3)),
@@ -124,7 +124,13 @@ export function calculateSplineLengthMm(
 	for (let i = 0; i < points.length - 1; i++) {
 		const p1 = points[i]!;
 		const p2 = points[i + 1]!;
-		totalMm += calculatePhysicalDistanceMm(p1, p2, imageWidthPx, imageHeightPx, pixelSpacingMm);
+		totalMm += calculatePhysicalDistanceMm(
+			p1,
+			p2,
+			imageWidthPx,
+			imageHeightPx,
+			pixelSpacingMm,
+		);
 	}
 	return Number(totalMm.toFixed(2));
 }
@@ -150,7 +156,8 @@ export function generateNerveSafetyCorridor2D(
 
 	for (let i = 0; i < splinePoints.length; i++) {
 		const prev = i === 0 ? splinePoints[i]! : splinePoints[i - 1]!;
-		const next = i === splinePoints.length - 1 ? splinePoints[i]! : splinePoints[i + 1]!;
+		const next =
+			i === splinePoints.length - 1 ? splinePoints[i]! : splinePoints[i + 1]!;
 		const curr = splinePoints[i]!;
 
 		const dx = next.x - prev.x;
@@ -264,7 +271,8 @@ export function calculatePointToNerveDistance3D(
 	point: Point3D,
 	nerveSpline: Point3D[],
 ): { distanceMm: number; closestPointIndex: number } {
-	if (nerveSpline.length === 0) return { distanceMm: Infinity, closestPointIndex: -1 };
+	if (nerveSpline.length === 0)
+		return { distanceMm: Infinity, closestPointIndex: -1 };
 	if (nerveSpline.length === 1) {
 		const p0 = nerveSpline[0]!;
 		const dx = point.x - p0.x;
@@ -326,7 +334,8 @@ export function evaluateNerveClearance(
 ): NerveClearanceCheckResult {
 	const dist = Number(distanceMm.toFixed(2));
 	const isDanger = dist < MANDIBULAR_NERVE_CRITICAL_THRESHOLD_MM;
-	const isWarning = dist >= MANDIBULAR_NERVE_CRITICAL_THRESHOLD_MM && dist < safetyMarginMm;
+	const isWarning =
+		dist >= MANDIBULAR_NERVE_CRITICAL_THRESHOLD_MM && dist < safetyMarginMm;
 
 	let safetyStatus: "safe" | "warning" | "danger" = "safe";
 	let messageRu = "";
@@ -369,7 +378,8 @@ export function buildMandibularNerveSpline(params: {
 	const imageWidthPx = params.imageWidthPx ?? 1000;
 	const imageHeightPx = params.imageHeightPx ?? 1000;
 	const pixelSpacingMm = params.pixelSpacingMm ?? 0.1;
-	const safetyMarginMm = params.safetyMarginMm ?? MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
+	const safetyMarginMm =
+		params.safetyMarginMm ?? MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
 	const canalDiameterMm = params.canalDiameterMm ?? 2.8;
 
 	const interpolatedCurve = interpolateNerveSpline2D(params.controlPoints);
@@ -387,11 +397,18 @@ export function buildMandibularNerveSpline(params: {
 		pixelSpacingMm,
 	);
 
-	const sideLabel = params.side === "left" ? "левый" : params.side === "right" ? "правый" : "двусторонний";
+	const sideLabel =
+		params.side === "left"
+			? "левый"
+			: params.side === "right"
+				? "правый"
+				: "двусторонний";
 	const label = params.label || `Нижнечелюстной канал (${sideLabel})`;
 
 	return {
-		id: params.id || `nerve-spline-${Date.now()}-${params.controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
+		id:
+			params.id ||
+			`nerve-spline-${Date.now()}-${params.controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
 		side: params.side || "right",
 		label,
 		controlPoints: params.controlPoints,
@@ -450,7 +467,13 @@ export function interpolateNerveSpline3D(
 	if (controlPoints.length === 0) return [];
 	if (controlPoints.length === 1) {
 		const p0 = controlPoints[0]!;
-		return [{ x: Number(p0.x.toFixed(3)), y: Number(p0.y.toFixed(3)), z: Number(p0.z.toFixed(3)) }];
+		return [
+			{
+				x: Number(p0.x.toFixed(3)),
+				y: Number(p0.y.toFixed(3)),
+				z: Number(p0.z.toFixed(3)),
+			},
+		];
 	}
 	if (controlPoints.length === 2) {
 		const [p0, p1] = controlPoints;
@@ -482,31 +505,17 @@ export function interpolateNerveSpline3D(
 			const t2 = t * t;
 			const t3 = t2 * t;
 
-			const x = 0.5 * (
-				(2 * p1.x) +
-				(-p0.x + p2.x) * t +
-				(2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-				(-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
-			);
-
-			const y = 0.5 * (
-				(2 * p1.y) +
-				(-p0.y + p2.y) * t +
-				(2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-				(-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
-			);
-
-			const z = 0.5 * (
-				(2 * p1.z) +
-				(-p0.z + p2.z) * t +
-				(2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 +
-				(-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3
-			);
+			const cr = (v0: number, v1: number, v2: number, v3: number) =>
+				0.5 *
+				(2 * v1 +
+					(-v0 + v2) * t +
+					(2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 +
+					(-v0 + 3 * v1 - 3 * v2 + v3) * t3);
 
 			spline.push({
-				x: Number(x.toFixed(3)),
-				y: Number(y.toFixed(3)),
-				z: Number(z.toFixed(3)),
+				x: Number(cr(p0.x, p1.x, p2.x, p3.x).toFixed(3)),
+				y: Number(cr(p0.y, p1.y, p2.y, p3.y).toFixed(3)),
+				z: Number(cr(p0.z, p1.z, p2.z, p3.z).toFixed(3)),
 			});
 		}
 	}
@@ -545,7 +554,9 @@ export function calculateSplineLength3DMm(points: Point3D[]): number {
  * - При |Δz| > 3.5 мм линия рисуется пунктиром с низкой прозрачностью
  * - При |Δz| > 6.0 мм полностью гасится (isVisible = false, alpha = 0)
  */
-export function calculateNerveDistanceGating(deltaZMm: number): NerveDistanceGatingResult {
+export function calculateNerveDistanceGating(
+	deltaZMm: number,
+): NerveDistanceGatingResult {
 	const absDeltaZ = Math.abs(deltaZMm);
 	if (absDeltaZ > 6.0) {
 		return {
@@ -556,7 +567,7 @@ export function calculateNerveDistanceGating(deltaZMm: number): NerveDistanceGat
 		};
 	}
 
-	const alpha = Math.exp(-Math.pow(absDeltaZ / 2.0, 2));
+	const alpha = Math.exp(-((absDeltaZ / 2.0) ** 2));
 	const isDashed = absDeltaZ > 3.5;
 
 	return {
@@ -626,7 +637,11 @@ export function hitTestNerveNode3D(
 
 	for (let i = 0; i < nervePoints.length; i++) {
 		const pt = nervePoints[i]!;
-		const dist = Math.hypot(pt.x - pointerMm.x, pt.y - pointerMm.y, pt.z - pointerMm.z);
+		const dist = Math.hypot(
+			pt.x - pointerMm.x,
+			pt.y - pointerMm.y,
+			pt.z - pointerMm.z,
+		);
 		if (dist <= minDistance) {
 			minDistance = dist;
 			closestIdx = i;
@@ -667,11 +682,7 @@ export function hitTestNerveNodeOnAxialSlice(
 /**
  * Построение 3D-структуры трассировки нижнечелюстного нерва
  */
-export function buildMandibularNerve3DSpline(
-	points: readonly Point3D[],
-	subdivisions?: number,
-): MandibularNerve3DSpline;
-export function buildMandibularNerve3DSpline(params: {
+export interface BuildMandibularNerve3DSplineParams {
 	id?: string;
 	side?: "left" | "right" | "both";
 	label?: string;
@@ -679,26 +690,27 @@ export function buildMandibularNerve3DSpline(params: {
 	subdivisionsPerSegment?: number;
 	canalDiameterMm?: number;
 	safetyMarginMm?: number;
-}): MandibularNerve3DSpline;
+}
+
 export function buildMandibularNerve3DSpline(
-	paramsOrPoints:
-		| {
-				id?: string;
-				side?: "left" | "right" | "both";
-				label?: string;
-				controlPoints: readonly Point3D[];
-				subdivisionsPerSegment?: number;
-				canalDiameterMm?: number;
-				safetyMarginMm?: number;
-		  }
-		| readonly Point3D[],
+	points: readonly Point3D[],
+	subdivisions?: number,
+): MandibularNerve3DSpline;
+export function buildMandibularNerve3DSpline(
+	params: BuildMandibularNerve3DSplineParams,
+): MandibularNerve3DSpline;
+export function buildMandibularNerve3DSpline(
+	paramsOrPoints: BuildMandibularNerve3DSplineParams | readonly Point3D[],
 	subdivisions?: number,
 ): MandibularNerve3DSpline {
 	if (Array.isArray(paramsOrPoints)) {
 		const controlPoints = paramsOrPoints as readonly Point3D[];
 		const sideLabel = "правый";
 		const label = `Нижнечелюстной канал 3D (${sideLabel})`;
-		const interpolatedCurve = interpolateNerveSpline3D(controlPoints, subdivisions);
+		const interpolatedCurve = interpolateNerveSpline3D(
+			controlPoints,
+			subdivisions,
+		);
 		const lengthMm = calculateSplineLength3DMm(interpolatedCurve);
 		return {
 			id: `nerve-spline-3d-${Date.now()}-${controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
@@ -712,25 +724,28 @@ export function buildMandibularNerve3DSpline(
 		};
 	}
 
-	const params = paramsOrPoints as {
-		id?: string;
-		side?: "left" | "right" | "both";
-		label?: string;
-		controlPoints: readonly Point3D[];
-		subdivisionsPerSegment?: number;
-		canalDiameterMm?: number;
-		safetyMarginMm?: number;
-	};
+	const params = paramsOrPoints as BuildMandibularNerve3DSplineParams;
 
 	const canalDiameterMm = params.canalDiameterMm ?? 2.8;
-	const safetyMarginMm = params.safetyMarginMm ?? MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
-	const interpolatedCurve = interpolateNerveSpline3D(params.controlPoints, params.subdivisionsPerSegment);
+	const safetyMarginMm =
+		params.safetyMarginMm ?? MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
+	const interpolatedCurve = interpolateNerveSpline3D(
+		params.controlPoints,
+		params.subdivisionsPerSegment,
+	);
 	const lengthMm = calculateSplineLength3DMm(interpolatedCurve);
-	const sideLabel = params.side === "left" ? "левый" : params.side === "right" ? "правый" : "двусторонний";
+	const sideLabel =
+		params.side === "left"
+			? "левый"
+			: params.side === "right"
+				? "правый"
+				: "двусторонний";
 	const label = params.label || `Нижнечелюстной канал 3D (${sideLabel})`;
 
 	return {
-		id: params.id || `nerve-spline-3d-${Date.now()}-${params.controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
+		id:
+			params.id ||
+			`nerve-spline-3d-${Date.now()}-${params.controlPoints.length}-${Math.abs(Math.round(lengthMm * 10)).toString(36)}`,
 		side: params.side || "right",
 		label,
 		controlPoints: params.controlPoints,
@@ -741,13 +756,14 @@ export function buildMandibularNerve3DSpline(
 	};
 }
 
+export * from "./cbctNerveCostShader.js";
+export * from "./cbctNerveWorkerBridge.js";
 export {
-	project3DNerveToPanorama,
+	type Project3DNerveOptions,
 	type Projected3DNervePoint,
 	type Projected3DNerveResult,
-	type Project3DNerveOptions,
+	project3DNerveToPanorama,
 } from "./dentalCurveEngine";
-
 export * from "./fastMarchingNerve.js";
 
 /**

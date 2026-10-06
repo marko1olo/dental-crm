@@ -1,34 +1,19 @@
 /**
  * DENTE CRM — CBCT Mandibular Nerve Canal Semi-Automatic Pathfinder (Fast Marching / Dijkstra)
- * Reverse-engineered from Vatech Ez3D2009 (CanalCore.dll / MNCSeg.dll)
- *
- * Clinical domain:
- * - 2-Seed semi-automatic workflow: mental foramen (Foramen mentale) -> mandibular foramen (Foramen mandibulae)
- * - Sub-volume Bounding Box ROI (+15 voxels padding) for sub-150ms execution
- * - 26-connectivity 3D anisotropic voxel wavefront propagation
- * - Vatech Sigmoid gradient transfer function (alpha = -20.0, beta = 3.0) + HU cost metric
- * - Catmull-Rom 3D spline reconstruction in physical millimeters
- * - Vatech safety thresholds: 3.0 mm warning (Minimal Apical Distance), 1.5 mm danger collision
- *
- * Mandate 8b: Декомпозиция монолитов (строго <= 800 строк).
- * Production-ready: 0% fakes, typed, typed arrays for zero-GC footprint.
+ * Reverse-engineered from Vatech Ez3D2009 (CanalCore.dll / MNCSeg.dll).
+ * 2-Seed workflow (mental -> mandibular foramen), 26-connectivity, Vatech Sigmoid + HU cost metric.
+ * Mandate 8b compliant (strictly <= 800 lines). Zero-GC typed arrays.
  */
 
+import { voxelToWorldMm, worldMmToVoxel } from "./cbctCoordinateMath.js";
 import type { CbctVoxelVolume, Point3D } from "./cbctMprMath.js";
-import { worldMmToVoxel, voxelToWorldMm } from "./cbctCoordinateMath.js";
 
 // ─── VATECH CLINICAL THRESHOLDS & CONSTANTS ──────────────────────────────────
 
-/** Базовый анатомический диаметр канала по стандарту Vatech Ez3D (2.0 мм) */
+/** Анатомические константы и пороги безопасности Vatech Ez3D (CanalCore / MNCSeg) */
 export const VATECH_CANAL_BASE_DIAMETER_MM = 2.0;
-
-/** Цилиндрический коридор безопасности по стандарту Vatech Ez3D (2.0 мм) */
 export const VATECH_CANAL_SAFETY_ZONE_MM = 2.0;
-
-/** Минимальный безопасный отступ апекса имплантата от канала: 3.0 мм (Minimal Apical Distance = 3) */
 export const VATECH_MINIMAL_APICAL_DISTANCE_MM = 3.0;
-
-/** Порог критической коллизии с сосудисто-нервным пучком: 1.5 мм (Danger threshold) */
 export const VATECH_COLLISION_DANGER_MM = 1.5;
 
 // ─── DATA INTERFACES ─────────────────────────────────────────────────────────
@@ -43,9 +28,9 @@ export interface VolumeDimensions3D {
 	readonly width: number;
 	readonly height: number;
 	readonly depth: number;
-	readonly spacingX: number; // мм/воксель
-	readonly spacingY: number; // мм/воксель
-	readonly spacingZ: number; // мм/воксель
+	readonly spacingX: number;
+	readonly spacingY: number;
+	readonly spacingZ: number;
 }
 
 export interface FastMarchingNerveOptions {
@@ -69,6 +54,8 @@ export interface FastMarchingNerveOptions {
 	readonly dangerCollisionThresholdMm?: number;
 	/** Количество промежуточных интерполированных точек на сегмент сплайна */
 	readonly subdivisionsPerSegment?: number;
+	/** Предварительно рассчитанное 3D поле стоимостей (GPU WebGL2/WebGPU или Worker) */
+	readonly precomputedCostField?: Float32Array;
 }
 
 export interface FastMarchingNerveResult {
@@ -293,18 +280,30 @@ export function traceMandibularCanal2Seeds(
 	const maxCanalHU = options?.canalHypodenseMaxHU ?? 350;
 	const alpha = options?.sigmoidAlpha ?? -20.0;
 	const beta = options?.sigmoidBeta ?? 3.0;
-	const defaultDiameterMm = options?.defaultDiameterMm ?? VATECH_CANAL_BASE_DIAMETER_MM;
+	const defaultDiameterMm =
+		options?.defaultDiameterMm ?? VATECH_CANAL_BASE_DIAMETER_MM;
 	const safetyMarginMm = options?.safetyMarginMm ?? VATECH_CANAL_SAFETY_ZONE_MM;
-	const warningApicalDistanceMm = options?.warningApicalDistanceMm ?? VATECH_MINIMAL_APICAL_DISTANCE_MM;
-	const dangerCollisionThresholdMm = options?.dangerCollisionThresholdMm ?? VATECH_COLLISION_DANGER_MM;
+	const warningApicalDistanceMm =
+		options?.warningApicalDistanceMm ?? VATECH_MINIMAL_APICAL_DISTANCE_MM;
+	const dangerCollisionThresholdMm =
+		options?.dangerCollisionThresholdMm ?? VATECH_COLLISION_DANGER_MM;
 
 	// 1. Ограничение субрегиона поиска (Bounding Box ROI) с запасом безопасности 15 вокселей
 	const minX = Math.max(0, Math.min(startVoxel.x, endVoxel.x) - roiPadding);
-	const maxX = Math.min(dims.width - 1, Math.max(startVoxel.x, endVoxel.x) + roiPadding);
+	const maxX = Math.min(
+		dims.width - 1,
+		Math.max(startVoxel.x, endVoxel.x) + roiPadding,
+	);
 	const minY = Math.max(0, Math.min(startVoxel.y, endVoxel.y) - roiPadding);
-	const maxY = Math.min(dims.height - 1, Math.max(startVoxel.y, endVoxel.y) + roiPadding);
+	const maxY = Math.min(
+		dims.height - 1,
+		Math.max(startVoxel.y, endVoxel.y) + roiPadding,
+	);
 	const minZ = Math.max(0, Math.min(startVoxel.z, endVoxel.z) - roiPadding);
-	const maxZ = Math.min(dims.depth - 1, Math.max(startVoxel.z, endVoxel.z) + roiPadding);
+	const maxZ = Math.min(
+		dims.depth - 1,
+		Math.max(startVoxel.z, endVoxel.z) + roiPadding,
+	);
 
 	const roiWidth = maxX - minX + 1;
 	const roiHeight = maxY - minY + 1;
@@ -342,12 +341,17 @@ export function traceMandibularCanal2Seeds(
 	heap.push(startRoiIdx, 0);
 
 	// 26-связная 3D окрестность с физическими длинами шагов в мм
-	const neighbors: { dx: number; dy: number; dz: number; distMm: number }[] = [];
+	const neighbors: { dx: number; dy: number; dz: number; distMm: number }[] =
+		[];
 	for (let dz = -1; dz <= 1; dz++) {
 		for (let dy = -1; dy <= 1; dy++) {
 			for (let dx = -1; dx <= 1; dx++) {
 				if (dx === 0 && dy === 0 && dz === 0) continue;
-				const dMm = Math.hypot(dx * dims.spacingX, dy * dims.spacingY, dz * dims.spacingZ);
+				const dMm = Math.hypot(
+					dx * dims.spacingX,
+					dy * dims.spacingY,
+					dz * dims.spacingZ,
+				);
 				neighbors.push({ dx, dy, dz, distMm: dMm });
 			}
 		}
@@ -374,36 +378,50 @@ export function traceMandibularCanal2Seeds(
 			const nRy = currRy + n.dy;
 			const nRz = currRz + n.dz;
 
-			if (nRx < 0 || nRx >= roiWidth || nRy < 0 || nRy >= roiHeight || nRz < 0 || nRz >= roiDepth) {
+			if (
+				nRx < 0 ||
+				nRx >= roiWidth ||
+				nRy < 0 ||
+				nRy >= roiHeight ||
+				nRz < 0 ||
+				nRz >= roiDepth
+			) {
 				continue;
 			}
 
-			const nGx = nRx + minX;
-			const nGy = nRy + minY;
-			const nGz = nRz + minZ;
-			const globalVolIdx = nGz * sliceStride + nGy * dims.width + nGx;
-			const hu = volumeHU[globalVolIdx] ?? -1000;
-
-			// Расчет градиента и сигмоидной скорости Vatech
-			const gradMag = calculateVoxelGradientMagnitude(
-				volumeHU,
-				dims.width,
-				dims.height,
-				dims.depth,
-				nGx,
-				nGy,
-				nGz,
-				dims.spacingX,
-				dims.spacingY,
-				dims.spacingZ,
-			);
-			const velocity = calculateVatechSigmoidVelocity(gradMag, alpha, beta);
-			const huPenalty = calculateVoxelHuPenalty(hu, minCanalHU, maxCanalHU);
-
-			// Стоимость перехода = физическое расстояние * штраф HU / скорость фронта
-			const stepCost = n.distMm * huPenalty * (1.0 / velocity);
-			const newCost = currCost + stepCost;
 			const nRoiIdx = toRoiIdx(nRx, nRy, nRz);
+			let stepCost: number;
+
+			if (options?.precomputedCostField) {
+				stepCost = n.distMm * options.precomputedCostField[nRoiIdx]!;
+			} else {
+				const nGx = nRx + minX;
+				const nGy = nRy + minY;
+				const nGz = nRz + minZ;
+				const globalVolIdx = nGz * sliceStride + nGy * dims.width + nGx;
+				const hu = volumeHU[globalVolIdx] ?? -1000;
+
+				// Расчет градиента и сигмоидной скорости Vatech
+				const gradMag = calculateVoxelGradientMagnitude(
+					volumeHU,
+					dims.width,
+					dims.height,
+					dims.depth,
+					nGx,
+					nGy,
+					nGz,
+					dims.spacingX,
+					dims.spacingY,
+					dims.spacingZ,
+				);
+				const velocity = calculateVatechSigmoidVelocity(gradMag, alpha, beta);
+				const huPenalty = calculateVoxelHuPenalty(hu, minCanalHU, maxCanalHU);
+
+				// Стоимость перехода = физическое расстояние * штраф HU / скорость фронта
+				stepCost = n.distMm * Math.fround(huPenalty * (1.0 / velocity));
+			}
+
+			const newCost = currCost + stepCost;
 
 			if (newCost < dist[nRoiIdx]!) {
 				dist[nRoiIdx] = newCost;
@@ -427,9 +445,21 @@ export function traceMandibularCanal2Seeds(
 	}
 
 	// Если целевой узел не достигнут связным путем, формируем прямой геометрический путь
-	if (rawVoxelPath.length < 2 || rawVoxelPath[rawVoxelPath.length - 1]?.x !== startVoxel.x) {
+	if (
+		rawVoxelPath.length < 2 ||
+		rawVoxelPath[rawVoxelPath.length - 1]?.x !== startVoxel.x
+	) {
 		rawVoxelPath.length = 0;
-		const steps = Math.max(10, Math.round(Math.hypot(endVoxel.x - startVoxel.x, endVoxel.y - startVoxel.y, endVoxel.z - startVoxel.z)));
+		const steps = Math.max(
+			10,
+			Math.round(
+				Math.hypot(
+					endVoxel.x - startVoxel.x,
+					endVoxel.y - startVoxel.y,
+					endVoxel.z - startVoxel.z,
+				),
+			),
+		);
 		for (let s = 0; s <= steps; s++) {
 			const t = s / steps;
 			rawVoxelPath.push({
@@ -443,33 +473,32 @@ export function traceMandibularCanal2Seeds(
 	}
 
 	// 4. Прореживание воксельного пути для выделения чистых опорных контрольных узлов
+	const toMm = (v: VoxelPoint3D): Point3D => ({
+		x: Number((v.x * dims.spacingX).toFixed(2)),
+		y: Number((v.y * dims.spacingY).toFixed(2)),
+		z: Number((v.z * dims.spacingZ).toFixed(2)),
+	});
 	const controlPointsMm: Point3D[] = [];
 	const stride = Math.max(1, Math.floor(rawVoxelPath.length / 8));
 	for (let i = 0; i < rawVoxelPath.length; i += stride) {
-		const v = rawVoxelPath[i]!;
-		controlPointsMm.push({
-			x: Number((v.x * dims.spacingX).toFixed(2)),
-			y: Number((v.y * dims.spacingY).toFixed(2)),
-			z: Number((v.z * dims.spacingZ).toFixed(2)),
-		});
+		controlPointsMm.push(toMm(rawVoxelPath[i]!));
 	}
-	const lastVox = rawVoxelPath[rawVoxelPath.length - 1]!;
-	const lastMm = {
-		x: Number((lastVox.x * dims.spacingX).toFixed(2)),
-		y: Number((lastVox.y * dims.spacingY).toFixed(2)),
-		z: Number((lastVox.z * dims.spacingZ).toFixed(2)),
-	};
+	const lastMm = toMm(rawVoxelPath[rawVoxelPath.length - 1]!);
+	const tail = controlPointsMm[controlPointsMm.length - 1];
 	if (
-		controlPointsMm.length === 0 ||
-		controlPointsMm[controlPointsMm.length - 1]?.x !== lastMm.x ||
-		controlPointsMm[controlPointsMm.length - 1]?.y !== lastMm.y ||
-		controlPointsMm[controlPointsMm.length - 1]?.z !== lastMm.z
+		!tail ||
+		tail.x !== lastMm.x ||
+		tail.y !== lastMm.y ||
+		tail.z !== lastMm.z
 	) {
 		controlPointsMm.push(lastMm);
 	}
 
 	// 5. Построение сглаженного 3D Catmull-Rom сплайна в физических миллиметрах
-	const physicalSpline = smoothCatmullRom3D(controlPointsMm, options?.subdivisionsPerSegment ?? 6);
+	const physicalSpline = smoothCatmullRom3D(
+		controlPointsMm,
+		options?.subdivisionsPerSegment ?? 6,
+	);
 
 	let totalLengthMm = 0;
 	for (let i = 0; i < physicalSpline.length - 1; i++) {
@@ -489,7 +518,11 @@ export function traceMandibularCanal2Seeds(
 		executionTimeMs,
 		seeds: {
 			mentalForamen: controlPointsMm[0] ?? { x: 0, y: 0, z: 0 },
-			mandibularForamen: controlPointsMm[controlPointsMm.length - 1] ?? { x: 0, y: 0, z: 0 },
+			mandibularForamen: controlPointsMm[controlPointsMm.length - 1] ?? {
+				x: 0,
+				y: 0,
+				z: 0,
+			},
 		},
 		safetyZoneMarginMm: safetyMarginMm,
 		warningApicalDistanceMm,
@@ -587,8 +620,20 @@ export function traceMandibularNerveFastMarching(
 		const sagittalSagMm = Math.sin(t * Math.PI) * -3.5;
 		const coronalCurveMm = Math.sin(t * Math.PI) * 2.0;
 		controlPoints.push({
-			x: Number((startSeedMm.x + (endSeedMm.x - startSeedMm.x) * t + coronalCurveMm).toFixed(2)),
-			y: Number((startSeedMm.y + (endSeedMm.y - startSeedMm.y) * t + sagittalSagMm).toFixed(2)),
+			x: Number(
+				(
+					startSeedMm.x +
+					(endSeedMm.x - startSeedMm.x) * t +
+					coronalCurveMm
+				).toFixed(2),
+			),
+			y: Number(
+				(
+					startSeedMm.y +
+					(endSeedMm.y - startSeedMm.y) * t +
+					sagittalSagMm
+				).toFixed(2),
+			),
 			z: Number((startSeedMm.z + (endSeedMm.z - startSeedMm.z) * t).toFixed(2)),
 		});
 	}
@@ -606,12 +651,15 @@ export function traceMandibularNerveFastMarching(
 		physicalSpline,
 		controlPoints,
 		totalLengthMm: Number(totalLengthMm.toFixed(2)),
-		estimatedDiameterMm: options?.defaultDiameterMm ?? VATECH_CANAL_BASE_DIAMETER_MM,
+		estimatedDiameterMm:
+			options?.defaultDiameterMm ?? VATECH_CANAL_BASE_DIAMETER_MM,
 		executionTimeMs: Number((performance.now() - startTime).toFixed(1)),
 		seeds: { mentalForamen: startSeedMm, mandibularForamen: endSeedMm },
 		safetyZoneMarginMm: options?.safetyMarginMm ?? VATECH_CANAL_SAFETY_ZONE_MM,
-		warningApicalDistanceMm: options?.warningApicalDistanceMm ?? VATECH_MINIMAL_APICAL_DISTANCE_MM,
-		dangerCollisionThresholdMm: options?.dangerCollisionThresholdMm ?? VATECH_COLLISION_DANGER_MM,
+		warningApicalDistanceMm:
+			options?.warningApicalDistanceMm ?? VATECH_MINIMAL_APICAL_DISTANCE_MM,
+		dangerCollisionThresholdMm:
+			options?.dangerCollisionThresholdMm ?? VATECH_COLLISION_DANGER_MM,
 	};
 }
 
@@ -632,16 +680,20 @@ export function evaluateVatechImplantNerveClearance(
 		readonly safetyMarginMm?: number;
 	},
 ): VatechClearanceAuditResult {
-	const warnApical = thresholds?.warningApicalMm ?? VATECH_MINIMAL_APICAL_DISTANCE_MM;
-	const dangerColl = thresholds?.dangerCollisionMm ?? VATECH_COLLISION_DANGER_MM;
-	const safetyMargin = thresholds?.safetyMarginMm ?? VATECH_CANAL_SAFETY_ZONE_MM;
+	const warnApical =
+		thresholds?.warningApicalMm ?? VATECH_MINIMAL_APICAL_DISTANCE_MM;
+	const dangerColl =
+		thresholds?.dangerCollisionMm ?? VATECH_COLLISION_DANGER_MM;
+	const safetyMargin =
+		thresholds?.safetyMarginMm ?? VATECH_CANAL_SAFETY_ZONE_MM;
 
 	const effectiveBody = bodyClearanceMm ?? apicalClearanceMm;
 	const worstClearance = Math.min(apicalClearanceMm, effectiveBody);
 
 	const isDanger = worstClearance < dangerColl;
 	const isWarning =
-		!isDanger && (apicalClearanceMm < warnApical || effectiveBody < safetyMargin);
+		!isDanger &&
+		(apicalClearanceMm < warnApical || effectiveBody < safetyMargin);
 	const isSafe = !isDanger && !isWarning;
 
 	let status: "safe" | "warning" | "danger" = "safe";
@@ -687,17 +739,24 @@ export function smoothCatmullRom3D(
 	subdivisions = 6,
 ): Point3D[] {
 	if (pts.length < 2) return [...pts];
+	const roundPt = (x: number, y: number, z: number): Point3D => ({
+		x: Number(x.toFixed(2)),
+		y: Number(y.toFixed(2)),
+		z: Number(z.toFixed(2)),
+	});
 	if (pts.length === 2) {
 		const [p0, p1] = pts;
 		if (!p0 || !p1) return [];
 		const line: Point3D[] = [];
 		for (let i = 0; i <= subdivisions; i++) {
 			const t = i / subdivisions;
-			line.push({
-				x: Number((p0.x + (p1.x - p0.x) * t).toFixed(2)),
-				y: Number((p0.y + (p1.y - p0.y) * t).toFixed(2)),
-				z: Number((p0.z + (p1.z - p0.z) * t).toFixed(2)),
-			});
+			line.push(
+				roundPt(
+					p0.x + (p1.x - p0.x) * t,
+					p0.y + (p1.y - p0.y) * t,
+					p0.z + (p1.z - p0.z) * t,
+				),
+			);
 		}
 		return line;
 	}
@@ -714,42 +773,23 @@ export function smoothCatmullRom3D(
 		for (let t = 0; t < 1.0; t += step) {
 			const t2 = t * t;
 			const t3 = t2 * t;
-
-			const x =
+			const cr = (v0: number, v1: number, v2: number, v3: number) =>
 				0.5 *
-				(2 * p1.x +
-					(-p0.x + p2.x) * t +
-					(2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-					(-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
-
-			const y =
-				0.5 *
-				(2 * p1.y +
-					(-p0.y + p2.y) * t +
-					(2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-					(-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
-
-			const z =
-				0.5 *
-				(2 * p1.z +
-					(-p0.z + p2.z) * t +
-					(2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 +
-					(-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3);
-
-			result.push({
-				x: Number(x.toFixed(2)),
-				y: Number(y.toFixed(2)),
-				z: Number(z.toFixed(2)),
-			});
+				(2 * v1 +
+					(-v0 + v2) * t +
+					(2 * v0 - 5 * v1 + 4 * v2 - v3) * t2 +
+					(-v0 + 3 * v1 - 3 * v2 + v3) * t3);
+			result.push(
+				roundPt(
+					cr(p0.x, p1.x, p2.x, p3.x),
+					cr(p0.y, p1.y, p2.y, p3.y),
+					cr(p0.z, p1.z, p2.z, p3.z),
+				),
+			);
 		}
 	}
 
 	const last = pts[pts.length - 1]!;
-	result.push({
-		x: Number(last.x.toFixed(2)),
-		y: Number(last.y.toFixed(2)),
-		z: Number(last.z.toFixed(2)),
-	});
-
+	result.push(roundPt(last.x, last.y, last.z));
 	return result;
 }
