@@ -13,6 +13,7 @@ import { DoctorMobileShiftModal } from "../../doctor-portal/DoctorMobileShiftMod
 import { InformedConsentModal } from "../../consents/InformedConsentModal";
 import { showToast } from "../../GlobalToast";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
+import { useVisitStore } from "../../../store/visitStore";
 
 export interface VisitViewModalsProps {
 	endoModalToothNumber: string | null;

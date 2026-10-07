@@ -920,6 +920,20 @@ export function VisitEmkTab() {
 		}
 	}, [visitNoteForm, openVisitId, activePatient, dashboard, flushSoloPendingSave, acceptDraftToVisit]);
 
+	React.useEffect(() => {
+		const handleExternalTrigger = () => {
+			void handleCompleteVisitAndGenerateReceipt();
+		};
+		if (typeof window !== "undefined") {
+			window.addEventListener("dente:trigger-complete-visit", handleExternalTrigger);
+		}
+		return () => {
+			if (typeof window !== "undefined") {
+				window.removeEventListener("dente:trigger-complete-visit", handleExternalTrigger);
+			}
+		};
+	}, [handleCompleteVisitAndGenerateReceipt]);
+
 	const totalNetRub = completionResult?.totalNetRub ?? 0;
 	const receiptNumber = completionResult?.receiptNumber ?? "00001";
 	const patientName = activePatient?.fullName ?? "Пациент";
