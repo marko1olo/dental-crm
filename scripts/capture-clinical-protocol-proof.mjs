@@ -241,10 +241,9 @@ async function main() {
   const page = await context.newPage();
   await setupPageRoutes(page);
 
-  await page.goto("http://127.0.0.1:5173/#visit", { waitUntil: "networkidle", timeout: 30000 }).catch(async () => {
-    await page.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
-  });
-  await page.waitForTimeout(3000);
+  console.log("[Proof] Loading schedule view...");
+  await page.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.waitForTimeout(2500);
 
   // Dismiss any tour or banner
   await page.evaluate(() => {
@@ -255,7 +254,13 @@ async function main() {
   });
   await page.waitForTimeout(500);
 
-  // Switch to Odontogram subtab if available
+  // Navigate to Visit view via hash
+  console.log("[Proof] Navigating to Visit view via hash...");
+  await page.evaluate(() => { window.location.hash = "#visit"; });
+  await page.waitForSelector('[data-testid="visit-subtab-odontogram"]', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+
+  // Switch to Odontogram subtab
   console.log("[Proof] Ensuring Odontogram subtab...");
   await page.evaluate(() => {
     const btn =
@@ -265,10 +270,12 @@ async function main() {
       );
     if (btn) btn.click();
   });
+  await page.waitForSelector('.odontogram-toolbar, .tooth-chart-svg', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(1000);
 
-  // Open Clinical Tooth Modal on Tooth 16 via custom event
-  console.log("[Proof] Dispatching dente-open-tooth-clinical-modal for tooth 16...");
+  // 1. OPEN MODAL IN LIGHT THEME
+  console.log("[Proof] Opening Clinical Tooth Modal on Tooth 16 (Light)...");
+  await setTheme(page, "light");
   await page.evaluate(() => {
     window.dispatchEvent(
       new CustomEvent("dente-open-tooth-clinical-modal", {
@@ -276,25 +283,19 @@ async function main() {
       })
     );
   });
-
-  // Wait for modal to mount
   await page.waitForSelector('._ccm-content', { timeout: 10000 });
 
-  // Explicitly click "Диагностика" tab button if not already active
+  // Ensure "Диагностика" tab
   await page.evaluate(() => {
     const diagBtn = Array.from(document.querySelectorAll("._ccm-tab-btn")).find(
       (b) => b.textContent && b.textContent.includes("Диагностика")
     );
     if (diagBtn) diagBtn.click();
-  });
-
-  await page.waitForSelector('[data-testid="clinical-treatment-protocol-card"]', {
-    timeout: 10000,
+    const card = document.querySelector('[data-testid="clinical-treatment-protocol-card"]');
+    if (card) card.scrollIntoView({ behavior: "instant", block: "center" });
   });
   await page.waitForTimeout(600);
 
-  // 1. Desktop Light: Modal with protocol card
-  await setTheme(page, "light");
   await saveProof(
     page,
     "01_clinical_protocol_tooth_modal_pc_light.png",
@@ -304,17 +305,39 @@ async function main() {
   // Click "+ Добавить протокол лечения в счет визита"
   console.log("[Proof] Clicking + Добавить протокол лечения в счет визита...");
   await page.click('[data-testid="btn-add-clinical-protocol-to-billing"]');
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1000);
 
-  // 2. Desktop Light: With added services in tooth services footer
+  // 2. DESKTOP LIGHT: Toast & Odontogram update
   await saveProof(
     page,
     "02_clinical_protocol_added_pc_light.png",
     "PC Light 1440x900: Treatment Protocol Added (3 services, 6 700 ₽ assigned to tooth 16)"
   );
 
-  // 3. Desktop Dark: Modal in dark theme
+  // 3. DESKTOP DARK: Re-open modal in dark theme
+  console.log("[Proof] Setting Dark Theme and re-opening modal for tooth 16...");
   await setTheme(page, "dark");
+  await page.waitForTimeout(600);
+
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent("dente-open-tooth-clinical-modal", {
+        detail: { toothNumber: 16, code: "16", state: "done" },
+      })
+    );
+  });
+  await page.waitForSelector('._ccm-content', { timeout: 10000 });
+
+  await page.evaluate(() => {
+    const diagBtn = Array.from(document.querySelectorAll("._ccm-tab-btn")).find(
+      (b) => b.textContent && b.textContent.includes("Диагностика")
+    );
+    if (diagBtn) diagBtn.click();
+    const card = document.querySelector('[data-testid="clinical-treatment-protocol-card"]');
+    if (card) card.scrollIntoView({ behavior: "instant", block: "center" });
+  });
+  await page.waitForTimeout(600);
+
   await saveProof(
     page,
     "03_clinical_protocol_tooth_modal_pc_dark.png",
