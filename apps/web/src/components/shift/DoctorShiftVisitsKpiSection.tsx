@@ -99,7 +99,7 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 		>
 			<div className="today-schedule-header">
 				<h3 style={{ color: "var(--ink)" }}>
-					<ClipboardCheck size={16} aria-hidden="true" /> Оперативная сводка смены (StomX)
+					<ClipboardCheck size={16} aria-hidden="true" /> Журнал приёмов за смену
 				</h3>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 					<span className="today-schedule-count">
@@ -118,7 +118,7 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 								gap: "4px",
 							}}
 							onClick={onOpenQueueBoardModal}
-							title="Открыть интерактивную доску очереди StomX и ТВ-табло"
+							title="Открыть интерактивную доску очереди и ТВ-табло"
 							data-testid="btn-open-today-queue-board"
 						>
 							<Monitor size={13} aria-hidden="true" /> Доска очереди
@@ -145,11 +145,11 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 				</div>
 			</div>
 
-			{/* StomX Queue Filter Pills */}
+			{/* Queue Filter Tabs */}
 			<div
 				className="stomx-queue-strip"
 				role="tablist"
-				aria-label="Очереди оперативной сводки"
+				aria-label="Очереди приёмов смены"
 				style={{
 					display: "flex",
 					alignItems: "center",
@@ -163,8 +163,8 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 					[
 						{ id: "all", label: `Все (${todayAppointments.length})`, activeBg: "var(--teal-dark, #0d9488)" },
 						{ id: "in_chair", label: `В кресле (${inChairAppointments.length})`, activeBg: "var(--teal-dark, #0f766e)" },
-						{ id: "waiting", label: `Ожидает приема (${waitingAppointments.length})`, activeBg: "var(--warn-fg, #b45309)" },
-						{ id: "payment", label: `Ожидает оплаты (${awaitingPaymentAppointments.length})`, activeBg: "var(--teal-dark, #0d9488)" },
+						{ id: "waiting", label: `Ожидают (${waitingAppointments.length})`, activeBg: "var(--warn-fg, #b45309)" },
+						{ id: "payment", label: `Оплата (${awaitingPaymentAppointments.length})`, activeBg: "var(--teal-dark, #0d9488)" },
 					] as const
 				).map((pill) => (
 					<button

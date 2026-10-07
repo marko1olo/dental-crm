@@ -51,7 +51,7 @@ export const SCALE_PRESETS: ScalePresetOption[] = [
 		id: "solo_therapist",
 		title: "Одиночный врач",
 		subtitle: "1 кресло / Субаренда кабинета",
-		badge: "Быстрый старт (0 бюрократии)",
+		badge: "Быстрый старт",
 		icon: User,
 		color: "hsl(210 85% 55%)",
 		targetAudience: "Врач на аренде, частный кабинет, приём без ассистента",
@@ -66,7 +66,7 @@ export const SCALE_PRESETS: ScalePresetOption[] = [
 			"Без склада и списаний МДЛП",
 			"Без зарплатных ведомостей",
 			"Без воронки маркетинга и лидов",
-			"Без блокирующих регламентов",
+			"Базовый режим",
 		],
 		customFlags: {
 			hasAssistants: false,

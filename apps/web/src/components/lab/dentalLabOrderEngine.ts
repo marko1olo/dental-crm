@@ -764,4 +764,3 @@ export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 		updatedAt: partial.updatedAt || now,
 	};
 }
-export { getDemoDentalLabOrderRecords, getDemoDentalLabOrderData } from "./dentalLabDemoData";

@@ -1087,7 +1087,7 @@ export function PatientCreationModal({
 									<span>Привязка родителя / опекуна</span>
 								</div>
 								<span className="text-[11px] text-[var(--muted)]">
-									Без бюрократии • Для записи и звонков
+									Быстрое оформление • Для записи и звонков
 								</span>
 							</div>
 

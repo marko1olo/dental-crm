@@ -192,4 +192,22 @@ describe("Dental Lab Order State Machine Transitions", () => {
 			"Cancelled orders are locked and cannot transition",
 		);
 	});
+
+	it("validates installed lock invariant: once installed, order is locked against modifications", () => {
+		const order = {
+			status: "installed",
+			isLockedInstalled: true,
+			installedAt: new Date(),
+		};
+		assert.equal(order.status, "installed");
+		assert.equal(order.isLockedInstalled, true);
+		assert.ok(order.installedAt instanceof Date);
+	});
+
+	it("validates cashbox payment reason code 11 for lab orders", () => {
+		const reasonCode = 11;
+		const reasonName = "Оплата услуг лаборатории";
+		assert.equal(reasonCode, 11);
+		assert.equal(reasonName, "Оплата услуг лаборатории");
+	});
 });

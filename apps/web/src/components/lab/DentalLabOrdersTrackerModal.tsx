@@ -47,13 +47,11 @@ import {
 	getNextLabStatus,
 	canTransitionLabStatus,
 	createDentalLabOrderRecord,
-	getDemoDentalLabOrderRecords,
 	toIsoDate,
 	formatRuDate,
 } from "./dentalLabOrderEngine";
 import { DentalLabOrderDrawer } from "./DentalLabOrderDrawer";
 import { DentalLabTrackerCard } from "./DentalLabTrackerCard";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 
@@ -76,10 +74,8 @@ export function DentalLabOrdersTrackerModal({
 	currentToothNumber,
 	onOrderSaved,
 }: DentalLabOrdersTrackerModalProps) {
-	// Реестр нарядов ЗТЛ (МАНДАТ 8y: в боевом режиме чистый пустой список, в демо витрина)
-	const [orders, setOrders] = useState<DentalLabOrderRecord[]>(() =>
-		isDemoShowcaseMode() ? getDemoDentalLabOrderRecords() : [],
-	);
+	// Реестр нарядов ЗТЛ (загружается с бэкенда при открытии)
+	const [orders, setOrders] = useState<DentalLabOrderRecord[]>([]);
 
 	// Поиск и фильтры
 	const [searchQuery, setSearchQuery] = useState("");
@@ -121,21 +117,17 @@ export function DentalLabOrdersTrackerModal({
 		async function loadLiveOrders() {
 			try {
 				const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
-				const res = await fetch(`/api/clinical/lab-orders${query}`, {
+				const res = await fetch(`/api/dental-lab/orders${query}`, {
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!res.ok) {
-					if (!isDemoShowcaseMode()) {
-						setOrders([]);
-					}
+					setOrders([]);
 					return;
 				}
 				const data = await res.json();
 				if (isCancelled) return;
 				if (!Array.isArray(data) || data.length === 0) {
-					if (!isDemoShowcaseMode()) {
-						setOrders([]);
-					}
+					setOrders([]);
 					return;
 				}
 
@@ -186,9 +178,7 @@ export function DentalLabOrdersTrackerModal({
 
 				setOrders(mapped);
 			} catch (_err) {
-				if (!isDemoShowcaseMode()) {
-					setOrders([]);
-				}
+				setOrders([]);
 			}
 		}
 

@@ -219,7 +219,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 					<div className="flex items-start gap-2">
 						<div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
 						<span>
-							<strong className="text-[var(--ink)]">0-кликовый чекаут физлиц:</strong> Согласно 54-ФЗ, ИНН покупателя-физического лица не является обязательным реквизитом чека. Кассир и врач могут пробивать оплату мгновенно без бюрократических барьеров.
+							<strong className="text-[var(--ink)]">Быстрый расчет пациентов:</strong> Согласно 54-ФЗ, ИНН покупателя-физического лица не является обязательным реквизитом чека. Оплата принимается штатно в оперативном режиме.
 						</span>
 					</div>
 					<div className="flex items-start gap-2">

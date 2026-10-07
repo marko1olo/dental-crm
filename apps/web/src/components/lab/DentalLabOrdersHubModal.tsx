@@ -27,7 +27,6 @@ import {
 	sendOrderToWarrantyRework, getNextLabProductionStage,
 	generateDentalLabOrderA4PrintBlank, exportDentalLabOrdersToCsv,
 } from "./dentalLabWorkflowEngine";
-import { getDemoDentalLabWorkflowOrders } from "./dentalLabDemoData";
 import {
 	LAB_TECHNOLOGICAL_STAGES, LAB_TECHNOLOGICAL_STAGE_ORDER, type LabTechnologicalStageId,
 } from "./orders/labWorkOrderPresets";
@@ -72,12 +71,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	treatmentPlanAgeDays,
 	isPlanExpired,
 }) => {
-	// Состояние реестра нарядов (Мандат 8y: Честный пустой продакшн vs Демо)
+	// Состояние реестра нарядов (Мандат 8y: Честный пустой продакшн vs Демо через живую БД)
 	const [orders, setOrders] = useState<DentalLabWorkflowOrder[]>(() => {
 		if (initialOrders && initialOrders.length > 0) {
 			return [...initialOrders];
 		}
-		return isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : [];
+		return [];
 	});
 
 	// Синхронизация при внешнем изменении initialOrders
@@ -95,12 +94,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		async function loadLabOrders() {
 			try {
 				const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
-				const res = await fetch(`/api/clinical/lab-orders${query}`, {
+				const res = await fetch(`/api/dental-lab/orders${query}`, {
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!res.ok) {
 					if (!cancelled) {
-						setOrders(isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : []);
+						setOrders([]);
 					}
 					return;
 				}
@@ -121,12 +120,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					);
 					setOrders(mapped);
 				} else {
-					setOrders(isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : []);
+					setOrders([]);
 				}
 			} catch (err) {
 				console.warn("[DentalLabOrdersHubModal] Failed to load live lab orders:", err);
 				if (!cancelled) {
-					setOrders(isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : []);
+					setOrders([]);
 				}
 			}
 		}
@@ -263,7 +262,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		return map;
 	}, [filteredOrders]);
 
-	// Перевод заказа на следующий этап
+	// Перевод заказа на следующий этап с синхронизацией в БД через REST API (Мандат 8e, 8b, 8n)
 	const handleAdvanceStage = useCallback((order: DentalLabWorkflowOrder) => {
 		const nextStage = getNextLabProductionStage(order.currentStage);
 		if (!nextStage) return;
@@ -279,12 +278,27 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: переведен в статус «${LAB_WORKFLOW_STATUSES[nextStage].nameRu}»`);
 
+		// Real REST API PATCH request to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
+		fetch(`/api/dental-lab/orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				stage: nextStage,
+				notes: `Плановый перевод на статус ${LAB_WORKFLOW_STATUSES[nextStage].nameRu}`,
+			}),
+		}).catch((err) => {
+			console.warn("[DentalLabOrdersHubModal] Failed to patch stage on server:", err);
+		});
+
 		if (nextStage === "fitting_scheduled") {
 			handleOpenReadyInClinicPrompt(updated);
 		}
 	}, [handleOpenReadyInClinicPrompt, onSaveOrder, showToast]);
 
-	// Перевод на технологический этап ЗТЛ (1..8)
+	// Перевод на технологический этап ЗТЛ (1..8) с сохранением в БД через REST API
 	const handleAdvanceTechStage = useCallback((order: DentalLabWorkflowOrder, targetTechStage?: LabTechnologicalStageId) => {
 		const stages = LAB_TECHNOLOGICAL_STAGE_ORDER;
 		const currentIndex = stages.indexOf(order.techStage || "impression_scan");
@@ -303,12 +317,27 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: этап ЗТЛ обновлен на «${LAB_TECHNOLOGICAL_STAGES[nextTechStage].shortTitleRu}»`);
 
+		// Real REST API PATCH request to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
+		fetch(`/api/dental-lab/orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				stage: nextTechStage,
+				notes: `Переход на технологический этап: ${LAB_TECHNOLOGICAL_STAGES[nextTechStage].nameRu}`,
+			}),
+		}).catch((err) => {
+			console.warn("[DentalLabOrdersHubModal] Failed to patch tech stage on server:", err);
+		});
+
 		if (nextTechStage === "ready_in_clinic") {
 			handleOpenReadyInClinicPrompt(updated);
 		}
 	}, [handleOpenReadyInClinicPrompt, inspectingOrder, onSaveOrder, showToast]);
 
-	// Отправка на гарантийную переделку / рекламацию в ЗТЛ
+	// Отправка на гарантийную переделку / рекламацию в ЗТЛ с записью в БД
 	const handleWarrantyReworkSubmit = useCallback((order: DentalLabWorkflowOrder, reason: string) => {
 		const updated = sendOrderToWarrantyRework(
 			order,
@@ -320,6 +349,22 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: оформлена гарантийная рекламация (0 ₽ для пациента)`);
 		setWarrantyReworkOrder(null);
+
+		// Real REST API PATCH request to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
+		fetch(`/api/dental-lab/orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				stage: "warranty_rework",
+				status: "refitting",
+				notes: `Гарантийная рекламация: ${reason}`,
+			}),
+		}).catch((err) => {
+			console.warn("[DentalLabOrdersHubModal] Failed to patch warranty rework on server:", err);
+		});
 	}, [onSaveOrder, showToast]);
 
 	const handleAttachBitePhoto = useCallback((order: DentalLabWorkflowOrder) => {
@@ -356,6 +401,20 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: ${toastText}`);
 		setActionPrompt(null);
+
+		// Real REST API PATCH request to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
+		fetch(`/api/dental-lab/orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				notes: `${prefix}: ${value}`,
+			}),
+		}).catch((err) => {
+			console.warn("[DentalLabOrdersHubModal] Failed to patch notes on server:", err);
+		});
 	}, [inspectingOrder, onSaveOrder, showToast]);
 
 	const handleRepeatFitting = useCallback((order: DentalLabWorkflowOrder) => {
@@ -363,6 +422,22 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: переведен на повторную примерку`);
+
+		// Real REST API PATCH request to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
+		fetch(`/api/dental-lab/orders/${order.id}`, {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				stage: "fitting_scheduled",
+				status: "refitting",
+				notes: "Назначена повторная клиническая примерка",
+			}),
+		}).catch((err) => {
+			console.warn("[DentalLabOrdersHubModal] Failed to patch repeat fitting on server:", err);
+		});
 	}, [onSaveOrder, showToast]);
 
 	// Создание нового наряда

@@ -90,6 +90,7 @@ import {
 	treatmentPlanItemSchema,
 	type Visit,
 	visitSchema,
+	DEMO_SHOWCASE_ORG_ID,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { DomainState } from "../types/domainState.js";
@@ -536,11 +537,23 @@ async function hydrateFromDatabase(
 	 * прямо в вызывающий, дашборд отказывает 5xx, и это честный ответ «не смогли»
 	 * вместо фабрикованного «клиники нет».
 	 */
-	const organizationRows = await db
+	let organizationRows = await db
 		.select()
 		.from(schema.organizations)
 		.where(eq(schema.organizations.id, organizationId))
 		.limit(1);
+
+	if (organizationRows.length === 0 && organizationId === DEMO_SHOWCASE_ORG_ID) {
+		const { ensureDemoShowcaseTenant } = await import(
+			"../services/demo/deepDemoSeeder.js"
+		);
+		await ensureDemoShowcaseTenant();
+		organizationRows = await db
+			.select()
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, organizationId))
+			.limit(1);
+	}
 
 	/*
 	 * ПОСЛЕДОВАТЕЛЬНОЕ ЧТЕНИЕ, А НЕ Promise.all.

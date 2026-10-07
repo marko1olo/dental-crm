@@ -142,7 +142,7 @@ export const WarehouseOverviewPreviewApp: React.FC = () => {
 							Склад и материальный учет DENTE
 						</h1>
 						<p className="text-[10px] text-[var(--muted,#64748b)] mt-0.5 font-medium">
-							Мандаты 8e (Автономия врача), 8n (Мягкий овердрафт), СанПиН 3.3686-21 (FEFO)
+							Оперативный материальный учет, СанПиН 3.3686-21 (FEFO)
 						</p>
 					</div>
 				</div>

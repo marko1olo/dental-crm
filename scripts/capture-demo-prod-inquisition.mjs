@@ -140,8 +140,9 @@ async function main() {
 		const demoPage = await demoContext.newPage();
 
 		console.log(`Navigating to ${APP_BASE}/?demo=true`);
-		await demoPage.goto(`${APP_BASE}/?demo=true`, { waitUntil: "networkidle" });
-		await wait(2000);
+		await demoPage.goto(`${APP_BASE}/?demo=true`, { waitUntil: "domcontentloaded" });
+		await demoPage.waitForSelector('[data-testid="demo-mode-banner"]', { timeout: 15000 }).catch(() => null);
+		await wait(2500);
 
 		// Проверяем наличие баннера демо-режима
 		const bannerExists = await demoPage.$('[data-testid="demo-mode-banner"]');
@@ -191,8 +192,9 @@ async function main() {
 		}, prodCreds);
 
 		console.log("Navigating to production workspace...");
-		await prodPage.goto(`${APP_BASE}/#schedule`, { waitUntil: "networkidle" });
-		await wait(2500);
+		await prodPage.goto(`${APP_BASE}/#schedule`, { waitUntil: "domcontentloaded" });
+		await prodPage.waitForSelector('#main-content, .workspace-shell', { timeout: 15000 }).catch(() => null);
+		await wait(3000);
 
 		// Проверяем отсутствие баннера демо-режима
 		const prodBannerExists = await prodPage.$('[data-testid="demo-mode-banner"]');

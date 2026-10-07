@@ -36,6 +36,11 @@ import {
 import "./styles/VisitView.css";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { MobileChairsideVisitWorkspace } from "./components/visit/MobileChairsideVisitWorkspace";
+import { VisitPlanStageHandoffBanner } from "./components/visit/VisitPlanStageHandoffBanner";
+import {
+	formatStageItemForBilling,
+	buildStageMedicalDiaryText,
+} from "./components/visit/visitPlanStageHandoff";
 
 import {
 	type VisitViewProps,
@@ -59,7 +64,9 @@ export {
 	executeApplySomaticNormAutonomy,
 	executeApplyHygienePresetAutonomy,
 	executeApplyAnesthesiaPresetAutonomy,
+	VisitPlanStageHandoffBanner,
 };
+export * from "./components/visit/visitPlanStageHandoff";
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	// biome-ignore lint/suspicious/noExplicitAny: app logic fallback
@@ -179,36 +186,23 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			const { stage, items } = detail;
 			const stageItems = items || stage?.items || [];
 			if (stageItems.length > 0) {
-				const itemDescriptions = stageItems
-					.map((it: any) => {
-						const tooth =
-							it.toothNumber || it.toothCode ? ` (зуб #${it.toothNumber || it.toothCode})` : "";
-						return `${it.name || it.title || it.priceId}${tooth}`;
-					})
-					.join(", ");
-
-				const stagePrefix = stage?.title ? `[${stage.title}]: ` : "[Этап плана лечения]: ";
-				updateVisitNoteField("treatmentPlan", `${stagePrefix}${itemDescriptions}`);
+				const stageTitle = stage?.title || (stage?.stageNumber ? `Этап ${stage.stageNumber}` : "План лечения");
+				const diaryText = buildStageMedicalDiaryText(stageTitle, stageItems);
+				updateVisitNoteField("treatmentPlan", diaryText);
 
 				// Перенос каждой услуги в биллинг и счёт приёма у кресла
 				for (const it of stageItems) {
+					const billingItem = formatStageItemForBilling(it);
 					window.dispatchEvent(
 						new CustomEvent("dente-add-billing-item", {
 							detail: {
-								item: {
-									code804n: it.code804n || it.priceId || "A16.07.001",
-									title: it.name || it.title || "Услуга плана лечения",
-									toothCode: it.toothNumber ? String(it.toothNumber) : it.toothCode,
-									quantity: it.quantity || 1,
-									unitPriceRub: Number(it.unitPriceRub ?? it.price ?? 0),
-									discountRub: Number(it.discountRub ?? it.discount ?? 0),
-								},
+								item: billingItem,
 							},
 						}),
 					);
 				}
 				showToast(
-					`Этап «${stage?.title || "План лечения"}» взят в работу визита (${stageItems.length} услуг)`,
+					`Этап «${stageTitle}» взят в работу визита (${stageItems.length} услуг)`,
 					"success",
 					4000,
 				);
@@ -360,7 +354,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			if (!visitNoteForm?.objectiveStatus) updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
 		}
 		if (typeof flushPendingVisitSaves === "function") await flushPendingVisitSaves();
-		showToast("Приём успешно завершён", "success");
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:trigger-complete-visit"));
+		}
 	}, [flushPendingVisitSaves, updateVisitNoteField, visitNoteForm]);
 
 	React.useEffect(() => {
@@ -558,41 +554,48 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="inline sm:hidden text-xs">Норма</span>
 							</button>
 
-							{/* Печать дневника приёма (Мандат 8e) — чистая кнопка-иконка в шапке с тултипом */}
-							<button
-								type="button"
-								onClick={handlePrintForm043uFast}
-								data-testid="btn-visit-fast-print-043u"
-								className="secondary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 w-7 sm:w-8 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
-								title="Печать дневника"
-								aria-label="Печать дневника"
+							{/* Единый кластер быстрой печати документов (Мандат 8e, Apple HIG) */}
+							<div
+								className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 gap-0.5"
+								role="group"
+								aria-label="Быстрая печать документов"
 							>
-								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-							</button>
+								{/* Печать дневника приёма (Мандат 8e) */}
+								<button
+									type="button"
+									onClick={handlePrintForm043uFast}
+									data-testid="btn-visit-fast-print-043u"
+									className="min-h-[26px] sm:min-h-[28px] h-6 sm:h-7 w-6 sm:w-7 p-0 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+									title="Печать дневника (043/у)"
+									aria-label="Печать дневника"
+								>
+									<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+								</button>
 
-							{/* Печать Акта выполненных работ 804н (Мандат 8e) */}
-							<button
-								type="button"
-								onClick={handlePrintCompletedActFast}
-								data-testid="btn-visit-fast-print-act"
-								className="secondary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 w-7 sm:w-8 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 border-blue-500/40 hover:bg-blue-50 dark:hover:bg-blue-950/30 flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
-								title="Печать Акта выполненных работ"
-								aria-label="Печать Акта выполненных работ"
-							>
-								<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
-							</button>
+								{/* Печать Акта выполненных работ 804н (Мандат 8e) */}
+								<button
+									type="button"
+									onClick={handlePrintCompletedActFast}
+									data-testid="btn-visit-fast-print-act"
+									className="min-h-[26px] sm:min-h-[28px] h-6 sm:h-7 w-6 sm:w-7 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+									title="Печать Акта (804н)"
+									aria-label="Печать Акта выполненных работ"
+								>
+									<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+								</button>
 
-							{/* Печать Сметы и плана лечения (Мандат 8e) */}
-							<button
-								type="button"
-								onClick={handlePrintEstimateFast}
-								data-testid="btn-visit-fast-print-estimate"
-								className="secondary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 w-7 sm:w-8 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 border-violet-500/40 hover:bg-violet-50 dark:hover:bg-violet-950/30 flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
-								title="Печать Сметы и плана лечения"
-								aria-label="Печать Сметы и плана лечения"
-							>
-								<Calculator className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
-							</button>
+								{/* Печать Сметы и плана лечения (Мандат 8e) */}
+								<button
+									type="button"
+									onClick={handlePrintEstimateFast}
+									data-testid="btn-visit-fast-print-estimate"
+									className="min-h-[26px] sm:min-h-[28px] h-6 sm:h-7 w-6 sm:w-7 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-[var(--paper-strong)] flex items-center justify-center cursor-pointer shrink-0 rounded-md transition-colors"
+									title="Печать Сметы и плана"
+									aria-label="Печать Сметы и плана лечения"
+								>
+									<Calculator className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
+								</button>
+							</div>
 
 							{/* Наряд ЗТЛ для ортопеда у кресла */}
 							<button
@@ -853,62 +856,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				</ClinicalErrorBoundary>
 
 				{/* ═══ TREATMENT PLAN HANDOFF COCKPIT STRIP (МАНДАТ 8e, 8n) ═══ */}
-				{loadedTreatmentPlan && Array.isArray(loadedTreatmentPlan.items) && loadedTreatmentPlan.items.length > 0 && (
-					<div
-						data-testid="visit-treatment-plan-handoff-banner"
-						className="my-2 p-3 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/5 flex items-center justify-between gap-3 flex-wrap text-xs shadow-2xs"
-						style={{ display: visitSubViewTab === "odontogram" ? "none" : "flex" }}
-					>
-						<div className="flex items-center gap-2.5 min-w-0">
-							<div className="p-1.5 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 shrink-0">
-								<ShieldCheck size={16} />
-							</div>
-							<div className="flex flex-col min-w-0">
-								<div className="flex items-center gap-2 flex-wrap">
-									<span className="font-bold text-xs text-[var(--ink,#0f172a)] truncate">
-										План лечения: {loadedTreatmentPlan.name}
-									</span>
-									<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 border border-[var(--teal,#0d9488)]/30">
-										{loadedTreatmentPlan.status === "Approved"
-											? "Согласован"
-											: loadedTreatmentPlan.status === "Active"
-												? "В работе"
-												: "Черновик"}
-									</span>
-								</div>
-								<span className="text-[11px] text-[var(--muted,#64748b)]">
-									{loadedTreatmentPlan.items.length} запланированных услуг на сумму{" "}
-									{Number(loadedTreatmentPlan.totalPrice || 0).toLocaleString("ru-RU")} ₽
-								</span>
-							</div>
-						</div>
-
-						<button
-							type="button"
-							data-testid="take-stage-to-visit-btn"
-							onClick={() => {
-								window.dispatchEvent(
-									new CustomEvent("dente-take-stage-to-visit", {
-										detail: {
-											stage: {
-												title: loadedTreatmentPlan.name,
-												stageNumber: 1,
-												items: loadedTreatmentPlan.items,
-											},
-											items: loadedTreatmentPlan.items,
-											patientId: activePatient?.id,
-										},
-									}),
-								);
-							}}
-							className="h-8 min-h-[32px] px-3.5 rounded-lg text-xs font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 shrink-0"
-							title="Перенести услуги согласованного этапа плана лечения в текущий визит и счет"
-						>
-							<CheckCircle2 size={14} />
-							<span>Взять этап в работу визита</span>
-						</button>
-					</div>
-				)}
+				<VisitPlanStageHandoffBanner
+					loadedTreatmentPlan={loadedTreatmentPlan}
+					activeAppointment={activeAppointment}
+					activePatient={activePatient}
+					style={{ display: visitSubViewTab === "odontogram" ? "none" : "flex" }}
+				/>
 
 				{/* ═══ NEXT STEP ACTION PANEL ═══ */}
 				<div data-testid="visit-next-step-panel" className="my-3 p-3 bg-[var(--paper-strong)] rounded-xl border border-[var(--glass-border)] flex items-center justify-between gap-3 flex-wrap" style={{ display: visitSubViewTab === "odontogram" ? "none" : "block" }}>

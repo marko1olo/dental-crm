@@ -118,7 +118,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 						type="button"
 						onClick={() => setIsOverflowMenuOpen((prev) => !prev)}
 						className="h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-						title="Дополнительные операции: товарный чек, ручное подтверждение, статья ДДС StomX"
+						title="Дополнительные операции: товарный чек, ручное подтверждение, статья ДДС"
 						data-testid="btn-payment-overflow-menu"
 					>
 						<MoreHorizontal size={15} />
@@ -177,7 +177,7 @@ export const FiscalPaymentDiscountsAndRetail: React.FC<FiscalPaymentDiscountsAnd
 								className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
 							>
 								<Settings2 size={14} className="text-amber-600 shrink-0" />
-								<span>{showStomxSettings ? "Скрыть кассу и ДДС StomX" : "Настроить кассу и ДДС StomX"}</span>
+								<span>{showStomxSettings ? "Скрыть кассу и ДДС" : "Настроить кассу и ДДС"}</span>
 							</button>
 							<button
 								type="button"

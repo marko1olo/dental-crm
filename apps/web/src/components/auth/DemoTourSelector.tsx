@@ -29,6 +29,7 @@ import {
 	DENTE_STAFF_TOKEN_KEY,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { syncAuthTokensFromStorage } from "../../lib/apiAuthFetch";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
@@ -207,6 +208,7 @@ export function DemoTourSelector({
 				DENTE_STAFF_TOKEN_KEY,
 				`demo-showcase-staff-token-${roleOption.id}`,
 			);
+			syncAuthTokensFromStorage();
 
 			cacheActiveStaffUser(userProfile);
 

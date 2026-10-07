@@ -1102,30 +1102,30 @@ export function VisitEmkTab() {
 
 			{/* Секции Формы 043/у — Full-Width Clinical Canvas */}
 			<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
-				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) ═══ */}
+				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) — COMPACT 1-LINE STRIP ═══ */}
 				<div
-					className="chairside-cockpit-pipeline bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-blue-500/10 border border-teal-500/30 rounded-xl p-2 sm:p-2.5 text-xs text-[var(--ink)] flex flex-wrap items-center justify-between gap-2 shadow-2xs"
+					className="chairside-cockpit-pipeline bg-teal-500/5 dark:bg-teal-500/10 border border-teal-500/20 rounded-lg px-2.5 h-7 min-h-[28px] max-h-7 text-xs text-[var(--ink)] flex items-center justify-between gap-2 overflow-x-auto overflow-y-hidden"
 					data-testid="chairside-cockpit-pipeline-banner"
 				>
-					<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 font-medium text-[11px] sm:text-xs">
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-900 dark:text-teal-200 font-bold shrink-0">
-							<Activity size={12} className="text-teal-600 dark:text-teal-400" />
+					<div className="flex items-center gap-1.5 flex-nowrap min-w-0 font-medium text-[11px] shrink truncate">
+						<span className="inline-flex items-center gap-1 text-teal-800 dark:text-teal-300 font-semibold shrink-0">
+							<Activity size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
 							1. Осмотр & Одонтограмма
 						</span>
-						<ChevronRight size={12} className="text-[var(--muted)] shrink-0" />
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold shrink-0">
-							<FileText size={12} className="text-amber-600 dark:text-amber-400" />
-							2. Патология ➔ Дневник приёма
+						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
+						<span className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-300 font-semibold shrink-0">
+							<FileText size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							2. Дневник
 						</span>
-						<ChevronRight size={12} className="text-[var(--muted)] shrink-0" />
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-900 dark:text-blue-200 font-bold shrink-0">
-							<Tag size={12} className="text-blue-600 dark:text-blue-400" />
-							3. Услуги на зуб
+						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
+						<span className="inline-flex items-center gap-1 text-blue-800 dark:text-blue-300 font-semibold shrink-0">
+							<Tag size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
+							3. Услуги
 						</span>
-						<ChevronRight size={12} className="text-[var(--muted)] shrink-0" />
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 font-bold shrink-0">
-							<Receipt size={12} className="text-emerald-600 dark:text-emerald-400" />
-							4. Смета и чек
+						<ChevronRight size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
+						<span className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-semibold shrink-0">
+							<Receipt size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							4. Смета & Чек
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
@@ -1133,10 +1133,10 @@ export function VisitEmkTab() {
 							type="button"
 							onClick={handleApplyPhysiologicalNorm}
 							data-testid="btn-cockpit-quick-norm"
-							className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 cursor-pointer transition-colors"
+							className="px-2 h-5 rounded text-[10px] font-semibold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 cursor-pointer transition-colors"
 							title="Заполнить осмотр физиологической нормой Z01.2"
 						>
-							<Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+							<Check size={11} className="text-emerald-600 dark:text-emerald-400" />
 							<span>Норма (Z01.2)</span>
 						</button>
 						<button
@@ -1144,11 +1144,11 @@ export function VisitEmkTab() {
 							onClick={handleCompleteVisitAndGenerateReceipt}
 							disabled={isCompletingVisit}
 							data-testid="btn-cockpit-quick-complete"
-							className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+							className="px-2 h-5 rounded text-[10px] font-bold bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1 cursor-pointer transition-colors"
 							title="1-клик смета и фискальный чек с СБП QR"
 						>
-							<QrCode size={12} />
-							<span>Смета & Чек СБП</span>
+							<QrCode size={11} />
+							<span>Смета & Чек</span>
 						</button>
 					</div>
 				</div>

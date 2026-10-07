@@ -264,8 +264,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									Зуб FDI #{toothFdi}
 								</span>
 							</h2>
-							<p className="text-xs text-[var(--muted)] truncate" title={`${patientName} · ${doctorName} · Быстрая фиксация без бюрократических замков`}>
-								{patientName} · {doctorName} · Быстрая фиксация без бюрократических замков
+							<p className="text-xs text-[var(--muted)] truncate" title={`${patientName} · ${doctorName} · Протокол установки имплантата`}>
+								{patientName} · {doctorName} · Протокол установки имплантата
 							</p>
 						</div>
 					</div>

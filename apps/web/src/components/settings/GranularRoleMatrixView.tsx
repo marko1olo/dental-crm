@@ -189,7 +189,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							Масштаб практики и режим работы:
 						</span>
 						<p className="text-[11px] text-[var(--muted)] m-0 leading-snug">
-							<strong>Соло-врач (кабинет / аренда):</strong> полный суверенитет над своими пациентами, дневником и кассой (100% автономия без бюрократии).
+							<strong>Соло-врач (кабинет / аренда):</strong> полный доступ к своим пациентам, медицинским картам и кассе.
 							<span className="mx-1.5 hidden sm:inline text-[var(--line)]">•</span>
 							<strong className="block sm:inline mt-0.5 sm:mt-0">Клиника (многопрофильная):</strong> активируется финансовая изоляция (P&L клиники и чужие зарплаты скрыты) и защита клиентской базы (маскирование телефонов, запрет массовой выгрузки базы клиники).
 						</p>

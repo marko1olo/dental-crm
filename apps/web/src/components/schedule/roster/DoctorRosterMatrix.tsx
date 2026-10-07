@@ -1375,7 +1375,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 										marginTop: "0.5rem",
 									}}
 								>
-									Недельное закрепление за креслом (StomX)
+									Недельное закрепление за креслом
 								</div>
 								<div
 									style={{

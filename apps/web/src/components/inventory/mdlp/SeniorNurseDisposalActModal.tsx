@@ -583,12 +583,12 @@ export const SeniorNurseDisposalActModal: React.FC<
 							</div>
 							<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/30 border border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-200 text-xs font-bold">
 								<CheckCircle2 size={13} className="text-teal-600" />
-								<span>Единоличное утверждение (без комиссии из 3 человек)</span>
+								<span>Оперативное утверждение акта</span>
 							</span>
 						</div>
 
 						<div className="text-[11px] text-teal-700 dark:text-teal-300 bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/50 rounded px-2.5 py-1.5 leading-relaxed">
-							<strong>СанПиН 3.3686-21:</strong> Списание использованных карпул анестетиков проводится врачом, администратором или старшей медсестрой единолично без бюрократического требования комиссии из 3 человек.
+							<strong>СанПиН 3.3686-21:</strong> Списание использованных карпул анестетиков проводится уполномоченным сотрудником клиники в оперативном порядке.
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-4 gap-3">

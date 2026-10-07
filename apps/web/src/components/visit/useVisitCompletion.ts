@@ -118,6 +118,8 @@ export interface UseVisitCompletionOptions {
 	doctorName?: string | null | undefined;
 	doctorSpecialty?: string | null | undefined;
 	clinicName?: string | null | undefined;
+	treatmentPlanId?: string | null | undefined;
+	stageNumber?: number | null | undefined;
 	diary?: DiaryState | {
 		anamnesis?: string | null | undefined;
 		statusLocalis?: string | null | undefined;
@@ -311,6 +313,105 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 						});
 					} catch {
 						// Мягкий режим: сбой сети не блокирует работу врача
+					}
+				}
+
+				// ── Закрытие позиций плана лечения (Closed Loop: complete-items) ──
+				if (isUuid(effectivePatientId)) {
+					try {
+						let targetPlanId: string | null =
+							overrideInput?.treatmentPlanId ||
+							options?.treatmentPlanId ||
+							(activeVisit as any)?.treatmentPlanId ||
+							((dashboard as any)?.activeAppointment as any)?.treatmentPlanId ||
+							null;
+
+						const effectiveStage =
+							overrideInput?.stageNumber !== undefined
+								? overrideInput.stageNumber
+								: options?.stageNumber !== undefined
+									? options.stageNumber
+									: (activeVisit as any)?.stageNumber ?? ((dashboard as any)?.activeAppointment as any)?.stageNumber ?? undefined;
+
+						if (!targetPlanId || !isUuid(targetPlanId)) {
+							const plansRes = await fetchWithHandling(
+								`/api/patients/${effectivePatientId}/treatment-plans`,
+								{
+									method: "GET",
+									headers: {
+										...denteAdminSecretRequestHeaders(),
+									},
+								},
+							).catch(() => null);
+
+							const planList = Array.isArray((plansRes as any)?.plans)
+								? (plansRes as any).plans
+								: Array.isArray(plansRes)
+									? (plansRes as any)
+									: [];
+
+							if (planList.length > 0) {
+								if (targetPlanId) {
+									const matched = planList.find(
+										(p: any) =>
+											p.id === targetPlanId ||
+											String(p.planNumber || "").toLowerCase() === String(targetPlanId).toLowerCase() ||
+											String(p.title || "").toLowerCase().includes(String(targetPlanId).toLowerCase()),
+									);
+									if (matched?.id) targetPlanId = matched.id;
+								}
+								if (!targetPlanId || !isUuid(targetPlanId)) {
+									const activePlan =
+										planList.find((p: any) => p.status === "Active" || p.status === "Approved") ||
+										planList.find((p: any) => p.status === "Draft") ||
+										planList[0];
+									if (activePlan?.id) targetPlanId = activePlan.id;
+								}
+							}
+						}
+
+						if (targetPlanId && isUuid(targetPlanId)) {
+							const planItemIds = (effectiveCompletedPlan || [])
+								.map((x: any) => String(x.id || x.itemId || ""))
+								.filter(Boolean);
+
+							await fetchWithHandling(
+								`/api/patients/${effectivePatientId}/treatment-plans/${targetPlanId}/complete-items`,
+								{
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+										...denteAdminSecretRequestHeaders(),
+									},
+									body: JSON.stringify({
+										visitId: isUuid(effectiveVisitId) ? effectiveVisitId : undefined,
+										phase: effectiveStage ? Number(effectiveStage) : undefined,
+										itemIds: planItemIds.length > 0 ? planItemIds : undefined,
+										renderedServices: result.items.map((it) => ({
+											code: it.code,
+											name: it.name,
+											toothNumber: it.toothNumber,
+										})),
+									}),
+								},
+							).catch((planErr) => {
+								logger.warn("[useVisitCompletion] Мягкое фоновое завершение позиций плана лечения:", planErr);
+							});
+
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(
+									new CustomEvent("dente-treatment-plans-reload", {
+										detail: {
+											patientId: effectivePatientId,
+											planId: targetPlanId,
+											visitId: effectiveVisitId,
+										},
+									}),
+								);
+							}
+						}
+					} catch (planLifecycleErr) {
+						logger.warn("[useVisitCompletion] Ошибка в цикле завершения позиций плана лечения:", planLifecycleErr);
 					}
 				}
 

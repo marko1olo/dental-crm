@@ -35,11 +35,6 @@ import { ScheduleViewToolbar } from "./components/schedule/view/ScheduleViewTool
 import { ScheduleViewBody } from "./components/schedule/view/ScheduleViewBody";
 import { ScheduleViewModals } from "./components/schedule/view/ScheduleViewModals";
 import { findPreventiveInspectionCandidates } from "./components/schedule/doctorFreeSlotsEngine";
-import {
-  isDemoShowcaseMode,
-  getDemoShowcaseAppointments,
-  getDemoShowcasePatients,
-} from "./lib/demoMode";
 
 // Zero-downtime re-exports of shifts, drafts, and lock contracts
 export { buildChairDoctorAssignmentsFromShifts, buildChairDoctorAssignmentsByDate } from "./components/schedule/view/scheduleViewShifts";
@@ -236,26 +231,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const clinicToday = todayScheduleDate();
   const currentDateKey = scheduleDateFilter || clinicToday || todayScheduleDate();
 
-  const effectiveSortedAppointments = useMemo(() => {
-    if (sortedAppointments && sortedAppointments.length > 0) return sortedAppointments;
-    if (isDemoShowcaseMode()) {
-      return getDemoShowcaseAppointments(currentDateKey);
-    }
-    return [];
-  }, [sortedAppointments, currentDateKey]);
-
-  const effectiveDashboard = useMemo(() => {
-    if (!dashboard) return dashboard;
-    if (!isDemoShowcaseMode()) return dashboard;
-    const hasAppointments = dashboard.appointments && dashboard.appointments.length > 0;
-    const hasPatients = dashboard.patients && dashboard.patients.length > 0;
-    if (hasAppointments && hasPatients) return dashboard;
-    return {
-      ...dashboard,
-      appointments: hasAppointments ? dashboard.appointments : getDemoShowcaseAppointments(currentDateKey),
-      patients: hasPatients ? dashboard.patients : getDemoShowcasePatients(),
-    };
-  }, [dashboard, currentDateKey]);
+  const effectiveSortedAppointments = sortedAppointments ?? [];
+  const effectiveDashboard = dashboard;
 
   const {
     savedDoctorShifts,
@@ -397,7 +374,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
   const {
     visibleDayGroups,
-    visibleAppointmentCount,
     scheduleOverlapCount,
     shiftQueueCounts,
   } = useScheduleDayQueue({
@@ -494,11 +470,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       aria-label="Короткая сводка смены"
       aria-live="polite"
     >
-      {visibleAppointmentCount > 0 ? (
-        <span className="status-pill status-confirmed shrink-0">
-          Записей: {visibleAppointmentCount}
-        </span>
-      ) : null}
       {activeScheduleFilterLabels.length > 0 ? (
         <>
           <span

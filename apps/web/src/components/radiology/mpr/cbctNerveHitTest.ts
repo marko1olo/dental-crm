@@ -16,7 +16,7 @@ import {
 	slicePxToScreenPx,
 	worldMmToSlicePx,
 } from "../cbctMprMath.js";
-import type { NerveCanalSide } from "./cbctStudioTypes.js";
+import type { NerveCanalSide, NerveTracingMode } from "./cbctStudioTypes.js";
 
 export interface NerveNodeHitResult {
 	readonly index: number;
@@ -84,19 +84,51 @@ export interface NerveStepStatusInfo {
 }
 
 /**
- * Человекочитаемый клинический статус текущего шага 2-кликовой трассировки канала IAN.
+ * Человекочитаемый клинический статус текущего шага трассировки нижнечелюстного нерва.
  */
 export function formatNerveStepStatus(
 	pointCount: number,
 	totalLengthMm = 0,
 	activeSide: NerveCanalSide = "right",
+	tracingMode: NerveTracingMode = "auto",
 ): NerveStepStatusInfo {
-	const sideRu = activeSide === "right" ? "Правый (4.4-4.8)" : "Левый (3.4-3.8)";
+	const sideRu = activeSide === "right" ? "Правый" : "Левый";
 
+	if (tracingMode === "manual") {
+		if (pointCount === 0) {
+			return {
+				step: 1,
+				titleRu: "Ручная разметка: Укажите первую точку",
+				hintRu: `Кликайте по срезам вдоль канала нерва [${sideRu}] для добавления контрольных точек`,
+				badgeClass: "bg-emerald-950/80 text-emerald-300 border-emerald-500/60 animate-pulse",
+				isCompleted: false,
+			};
+		}
+
+		if (pointCount === 1) {
+			return {
+				step: 2,
+				titleRu: "Ручная разметка: 1 узел",
+				hintRu: `Кликните для добавления следующего узла вдоль канала [${sideRu}]`,
+				badgeClass: "bg-amber-950/80 text-amber-300 border-amber-500/60 animate-pulse",
+				isCompleted: false,
+			};
+		}
+
+		return {
+			step: 3,
+			titleRu: `Нижнечелюстной нерв: ${totalLengthMm.toFixed(1)} мм`,
+			hintRu: `Ручная трасса [${sideRu}]: ${pointCount} узлов. Перетащите узел мышью для подгонки`,
+			badgeClass: "bg-cyan-950/80 text-cyan-200 border-cyan-500/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]",
+			isCompleted: true,
+		};
+	}
+
+	// Режим «Авто» (2 клика: ментальное -> нижнечелюстное отверстие)
 	if (pointCount === 0) {
 		return {
 			step: 1,
-			titleRu: "Шаг 1: Укажите подбородочное отверстие (Foramen mentale)",
+			titleRu: "Шаг 1: Укажите ментальное отверстие",
 			hintRu: `Кликните на выходе канала у премоляров [${sideRu}]`,
 			badgeClass: "bg-emerald-950/80 text-emerald-300 border-emerald-500/60 animate-pulse",
 			isCompleted: false,
@@ -106,7 +138,7 @@ export function formatNerveStepStatus(
 	if (pointCount === 1) {
 		return {
 			step: 2,
-			titleRu: "Шаг 2: Укажите нижнечелюстное отверстие (Foramen mandibulae)",
+			titleRu: "Шаг 2: Укажите нижнечелюстное отверстие",
 			hintRu: `Кликните на медиальной стенке ветви челюсти [${sideRu}]`,
 			badgeClass: "bg-amber-950/80 text-amber-300 border-amber-500/60 animate-pulse",
 			isCompleted: false,
@@ -115,7 +147,7 @@ export function formatNerveStepStatus(
 
 	return {
 		step: 3,
-		titleRu: `Канал IAN: ${totalLengthMm.toFixed(1)} мм (Fast Marching Vatech)`,
+		titleRu: `Нижнечелюстной нерв: ${totalLengthMm.toFixed(1)} мм`,
 		hintRu: `Канал [${sideRu}] сегментирован. Перетащите узел для микроподгонки.`,
 		badgeClass: "bg-cyan-950/80 text-cyan-200 border-cyan-500/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]",
 		isCompleted: true,

@@ -36,7 +36,6 @@ import { useAppStore } from "../../store/appStore";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { MobileLabOrdersTimeline } from "../lab/mobile/MobileLabOrdersTimeline";
-import { getDemoDentalLabOrderData } from "../lab/dentalLabOrderEngine";
 import { formatLabOrderTeethOrJaw, SHADE_SWATCH_MAP } from "../lab/labMath";
 import { formatLabConstructionTitle } from "../../pages/LabOrdersPage";
 import { LabOrderCard } from "../lab/LabOrderCard";
@@ -128,38 +127,125 @@ export function DentalLabOrdersView({
 	// Live status updates from store
 	const labOrderStatuses = useAppStore((state: any) => state.labOrderStatuses);
 
+const CANONICAL_DEMO_LAB_ORDERS: DentalLabOrderData[] = [
+	{
+		id: "lab-demo-001",
+		patientId: "pat-1",
+		patientName: "Барабаш Сергей Владимирович",
+		doctorId: "doc-1",
+		doctorName: "Д-р Воронов А. В.",
+		secureToken: "SEC-101",
+		toothFdi: "16",
+		selectedTeeth: [16],
+		constructionType: "crown_zirconia",
+		material: "Диоксид циркония Katana HTML",
+		colorVita: "A2",
+		status: "in_progress",
+		currentStage: "framework_wax_milling",
+		dueDate: new Date(Date.now() + 5 * 86400000).toISOString(),
+		priceRub: 24000,
+		clinicalNotes: "Коронка 16 под цвет соседних зубов. Умеренная прозрачность HT.",
+	},
+	{
+		id: "lab-demo-002",
+		patientId: "pat-2",
+		patientName: "Смирнова Екатерина Васильевна",
+		doctorId: "doc-1",
+		doctorName: "Д-р Воронов А. В.",
+		secureToken: "SEC-102",
+		toothFdi: "21, 22",
+		selectedTeeth: [21, 22],
+		constructionType: "crown_emax",
+		material: "Керамика IPS e.max Press",
+		colorVita: "A1",
+		status: "ready_in_clinic",
+		currentStage: "completed",
+		dueDate: new Date(Date.now() - 86400000).toISOString(),
+		priceRub: 36000,
+		paidFromCashOperationId: "cash-op-demo-102",
+		clinicalNotes: "Коронки 21, 22. Работа готова в клинике, ожидает фиксации.",
+	},
+	{
+		id: "lab-demo-003",
+		patientId: "pat-3",
+		patientName: "Ковалёв Роман Станиславович",
+		doctorId: "doc-1",
+		doctorName: "Д-р Воронов А. В.",
+		secureToken: "SEC-103",
+		toothFdi: "46",
+		selectedTeeth: [46],
+		constructionType: "metal_ceramic",
+		material: "Металлокерамика Ivoclar",
+		colorVita: "A3",
+		status: "delivered_to_patient",
+		currentStage: "completed",
+		dueDate: new Date(Date.now() - 3 * 86400000).toISOString(),
+		priceRub: 18000,
+		isLockedInstalled: true,
+		clinicalNotes: "Коронка 46 сдана и зафиксирована во рту пациента.",
+	},
+	{
+		id: "lab-demo-004",
+		patientId: "pat-4",
+		patientName: "Алексеева Виктория Игоревна",
+		doctorId: "doc-1",
+		doctorName: "Д-р Воронов А. В.",
+		secureToken: "SEC-104",
+		toothFdi: "36",
+		selectedTeeth: [36],
+		constructionType: "crown_zirconia",
+		material: "Диоксид циркония Prettau",
+		colorVita: "A2",
+		status: "refitting",
+		currentStage: "framework_fitting",
+		dueDate: new Date(Date.now() + 3 * 86400000).toISOString(),
+		priceRub: 0,
+		isWarrantyRework: true,
+		clinicalNotes: "Рекламация ЗТЛ: доработка по гарантии клиники (0 ₽ для пациента).",
+	},
+];
+
 	const fetchOrders = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
-			const res = await fetch("/api/clinical/lab-orders", {
+
+			if (isDemoShowcaseMode()) {
+				setOrders(CANONICAL_DEMO_LAB_ORDERS);
+				onOrdersChanged?.(CANONICAL_DEMO_LAB_ORDERS);
+				return;
+			}
+
+			const res = await fetch("/api/dental-lab/orders", {
 				headers: denteAdminSecretRequestHeaders(),
 			});
 
 			if (!res.ok) {
+				if (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"))) {
+					setOrders(CANONICAL_DEMO_LAB_ORDERS);
+					onOrdersChanged?.(CANONICAL_DEMO_LAB_ORDERS);
+					return;
+				}
 				throw new Error(`Ошибка загрузки нарядов ЗТЛ: ${res.status}`);
 			}
 
 			const data = await res.json();
 			const list = Array.isArray(data) ? data : [];
-			if (list.length === 0 && isDemoShowcaseMode()) {
-				const demo = getDemoDentalLabOrderData();
-				setOrders(demo);
-				onOrdersChanged?.(demo);
-			} else {
-				setOrders(list);
-				onOrdersChanged?.(list);
+			if (list.length === 0 && (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true")))) {
+				setOrders(CANONICAL_DEMO_LAB_ORDERS);
+				onOrdersChanged?.(CANONICAL_DEMO_LAB_ORDERS);
+				return;
 			}
+			setOrders(list);
+			onOrdersChanged?.(list);
 		} catch (err: unknown) {
-			if (isDemoShowcaseMode()) {
-				const demo = getDemoDentalLabOrderData();
-				setOrders(demo);
-				onOrdersChanged?.(demo);
-				setError(null);
-			} else {
-				const msg = err instanceof Error ? err.message : "Не удалось загрузить наряды лаборатории";
-				setError(msg);
+			if (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"))) {
+				setOrders(CANONICAL_DEMO_LAB_ORDERS);
+				onOrdersChanged?.(CANONICAL_DEMO_LAB_ORDERS);
+				return;
 			}
+			const msg = err instanceof Error ? err.message : "Не удалось загрузить наряды лаборатории";
+			setError(msg);
 		} finally {
 			setIsLoading(false);
 		}
@@ -352,6 +438,99 @@ export function DentalLabOrdersView({
 		setSelectedOrderForTracking(order);
 		setIsTrackingDrawerOpen(true);
 	};
+
+	const handlePayFromCashbox = useCallback(async (order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		if (!order.id) return;
+		try {
+			if (isDemoShowcaseMode()) {
+				setOrders((prev) =>
+					prev.map((o) =>
+						o.id === order.id
+							? { ...o, paidFromCashOperationId: `demo-cash-op-${Date.now()}` }
+							: o,
+					),
+				);
+				showToast(
+					`Наряд ЗТЛ оплачен из кассы (${order.priceRub?.toLocaleString("ru-RU") || 0} ₽, статья 11: Оплата услуг лаборатории)`,
+					"success",
+					4000,
+				);
+				return;
+			}
+
+			const res = await fetch(`/api/lab-orders/${order.id}/pay`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					amountRub: order.priceRub,
+					notes: `Оплата наряда ЗТЛ по заказу (зуб ${order.toothFdi || "—"})`,
+				}),
+			});
+
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка оплаты наряда из кассы");
+			}
+
+			const result = await res.json();
+			showToast(
+				result.message ||
+					`Наряд ЗТЛ успешно оплачен из кассы (${order.priceRub} ₽, статья 11)`,
+				"success",
+				4000,
+			);
+			void fetchOrders();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось оплатить наряд из кассы";
+			showToast(msg, "error");
+		}
+	}, [fetchOrders]);
+
+	const handleMarkInstalled = useCallback(async (order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		if (!order.id) return;
+		try {
+			if (isDemoShowcaseMode()) {
+				setOrders((prev) =>
+					prev.map((o) => (o.id === order.id ? { ...o, status: "completed" as any } : o)),
+				);
+				showToast(
+					"Конструкция сдана и зафиксирована во рту пациента (наряд заблокирован)",
+					"success",
+					4000,
+				);
+				return;
+			}
+
+			const res = await fetch(`/api/lab-orders/${order.id}/mark-installed`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({}),
+			});
+
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка фиксации установки конструкции");
+			}
+
+			showToast(
+				"Конструкция успешно сдана и зафиксирована во рту пациента",
+				"success",
+				4000,
+			);
+			void fetchOrders();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось зафиксировать установку";
+			showToast(msg, "error");
+		}
+	}, [fetchOrders]);
 
 	const handleAttach3DScan = (order: DentalLabOrderData) => {
 		setOpenMenuOrderId(null);
@@ -879,7 +1058,15 @@ export function DentalLabOrdersView({
 															0 ₽ (Гарантия)
 														</span>
 													) : order.priceRub != null ? (
-														money(order.priceRub)
+														<div className="inline-flex items-center gap-1.5 justify-end">
+															<span>{money(order.priceRub)}</span>
+															{Boolean((order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId) && (
+																<span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+																	<CheckCircle2 className="w-2.5 h-2.5" />
+																	Оплачен
+																</span>
+															)}
+														</div>
 													) : (
 														"—"
 													)}
@@ -937,6 +1124,26 @@ export function DentalLabOrdersView({
 																	className="absolute right-0 top-full mt-1 w-52 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-30 py-1 text-xs text-[var(--ink)] animate-in fade-in-50 duration-100 text-left"
 																	onClick={(e) => e.stopPropagation()}
 																>
+																	{!(order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId && (
+																		<button
+																			type="button"
+																			onClick={() => handlePayFromCashbox(order)}
+																			className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold"
+																		>
+																			<DollarSign className="w-3.5 h-3.5" />
+																			<span>Оплатить из кассы (Ст. 11)</span>
+																		</button>
+																	)}
+																	{order.status !== "installed" && order.status !== "completed" && (
+																		<button
+																			type="button"
+																			onClick={() => handleMarkInstalled(order)}
+																			className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-teal-700 dark:text-teal-400 font-semibold"
+																		>
+																			<CheckCircle2 className="w-3.5 h-3.5" />
+																			<span>Сдать пациенту (Замок)</span>
+																		</button>
+																	)}
 																	<button
 																		type="button"
 																		onClick={() => handleAttach3DScan(order)}
@@ -1031,6 +1238,8 @@ export function DentalLabOrdersView({
 									copyPortalLink={copyPortalLink}
 									getStatusBadge={getStatusBadge}
 									handleOpenReadyInClinicPrompt={handleOpenReadyInClinicPrompt}
+									handlePayFromCashbox={handlePayFromCashbox}
+									handleMarkInstalled={handleMarkInstalled}
 								/>
 							))}
 						</div>

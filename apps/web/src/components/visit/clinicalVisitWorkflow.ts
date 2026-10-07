@@ -47,6 +47,8 @@ export interface ClinicalEstimateItem {
 export interface ClinicalVisitCompletionInput {
 	readonly visitId?: string | undefined;
 	readonly appointmentId?: string | undefined;
+	readonly treatmentPlanId?: string | null | undefined;
+	readonly stageNumber?: number | null | undefined;
 	readonly patientId: string;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;

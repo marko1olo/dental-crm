@@ -55,7 +55,7 @@ export const DoctorClinicalTrainingTour: React.FC<DoctorClinicalTrainingTourProp
 	const [progress, setProgress] = useState<QuestProgressState>(() => loadQuestProgress());
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof forceOpen === "boolean") return forceOpen;
-		return !isTourCompleted();
+		return false;
 	});
 
 	const [targetRect, setTargetRect] = useState<DOMRect | null>(null);

@@ -3,6 +3,8 @@ import {
 	Calculator,
 	ChevronRight,
 	Moon,
+	Radio,
+	Stethoscope,
 	Zap,
 } from "lucide-react";
 import { money } from "../../AppHelpers";
@@ -22,22 +24,40 @@ export interface DoctorShiftControlBarProps {
 	readonly onToggleShift: () => void;
 	readonly onOpenPayrollModal: () => void;
 	readonly shiftStats: DoctorShiftStats;
+	readonly doctorName?: string | null | undefined;
+	readonly cabinetName?: string | undefined;
+	readonly isOffline?: boolean | undefined;
 	readonly className?: string;
 }
 
+function getGreetingTime(): string {
+	const hour = new Date().getHours();
+	if (hour >= 5 && hour < 12) return "Доброе утро";
+	if (hour >= 12 && hour < 18) return "Добрый день";
+	if (hour >= 18 && hour < 23) return "Добрый вечер";
+	return "Доброй ночи";
+}
+
 /**
- * DoctorShiftControlBar — Tier 1 Hot Path cockpit for doctor shifts.
- * Provides 1-click shift admission without 10-checkbox bureaucratic barriers,
- * night overtime indicator (after 21:00) with zero visit blocks, and instant
- * transparent daily piece-rate earnings summary without needing accounting Form T-51.
+ * DoctorShiftHeaderBar (DoctorShiftControlBar) — Unified compact shift cockpit header.
+ * Consolidates greeting, network telemetry, shift admission, key KPIs, and payroll calculation
+ * into a single cohesive, high-density toolbar without dev-jargon or visual clutter.
  */
 export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 	isShiftOpen,
 	onToggleShift,
 	onOpenPayrollModal,
 	shiftStats,
+	doctorName,
+	cabinetName = "Кабинет №1",
+	isOffline = false,
 	className = "",
 }) => {
+	const greeting = getGreetingTime();
+	const cleanDocName = (doctorName || "Барабаш С.В.")
+		.replace(/^(доктор|д-р|врач)\s+/i, "")
+		.trim();
+
 	return (
 		<section
 			className={`doctor-shift-control-bar ${className}`.trim()}
@@ -53,8 +73,9 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				flexDirection: "column",
 				gap: "10px",
 			}}
+			data-testid="doctor-shift-control-bar"
 		>
-			{/* Top Row: Shift Status + 1-Click Toggle + Night Overtime Badge */}
+			{/* Top Line: Greeting, Doctor & Cabinet, Telemetry, and Shift Status Actions */}
 			<div
 				style={{
 					display: "flex",
@@ -64,7 +85,8 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 					flexWrap: "wrap",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+				{/* Left: Doctor Identification & Status Badge */}
+				<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
 					<div
 						style={{
 							width: "32px",
@@ -79,11 +101,13 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 							justifyContent: "center",
 							flexShrink: 0,
 						}}
+						aria-hidden="true"
 					>
-						<Zap size={16} aria-hidden="true" />
+						<Stethoscope size={16} />
 					</div>
+
 					<div style={{ minWidth: 0 }}>
-						<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
 							<h3
 								style={{
 									margin: 0,
@@ -93,21 +117,53 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 									lineHeight: 1.25,
 								}}
 							>
-								{isShiftOpen ? "Рабочая смена врача открыта" : "Смена не открыта"}
+								{greeting}, доктор {cleanDocName} · {cabinetName}
 							</h3>
+
 							<span
 								className={`status-pill ${isShiftOpen ? "status-in_treatment" : "status-pending"}`}
 								style={{ fontSize: "10.5px", fontWeight: 700, padding: "2px 7px" }}
 							>
-								{isShiftOpen ? (
+								{isShiftOpen ? "Рабочая смена врача открыта" : "Смена не открыта"}
+							</span>
+
+							{/* Quiet Telemetry */}
+							<span
+								style={{
+									fontSize: "10.5px",
+									fontWeight: 600,
+									color: "var(--muted)",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+									background: "var(--paper-soft)",
+									padding: "2px 7px",
+									borderRadius: "6px",
+									border: "1px solid var(--line)",
+								}}
+							>
+								{isOffline ? (
 									<>
-										<span className="pulse-dot" aria-hidden="true" />
-										Приём активен (1-клик допуск)
+										<Radio size={11} aria-hidden="true" />
+										<span>Локальная сеть</span>
 									</>
 								) : (
-									"Ожидает открытия"
+									<>
+										<span
+											style={{
+												width: "6px",
+												height: "6px",
+												borderRadius: "50%",
+												background: "var(--ok-fg, #16a34a)",
+												display: "inline-block",
+											}}
+											aria-hidden="true"
+										/>
+										<span>В сети</span>
+									</>
 								)}
 							</span>
+
 							{shiftStats.hasActiveOvertime && (
 								<span
 									className="status-pill"
@@ -122,31 +178,19 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 										gap: "3px",
 									}}
 								>
-									<Moon size={11} /> Ночной овертайм (после 21:00) · Блокировки сняты
+									<Moon size={11} /> Ночной приём
 								</span>
 							)}
 						</div>
-						<p
-							style={{
-								margin: "1px 0 0",
-								fontSize: "11.5px",
-								color: "var(--muted)",
-								lineHeight: 1.3,
-							}}
-							className="truncate max-w-xl hidden sm:block"
-						>
-							{isShiftOpen
-								? "Доступ ко всем приёмам, ЭМК и картам открыт без 10 обязательных чекбоксов. Ночные приёмы сохраняются без выкидываний."
-								: "Нажмите кнопку, чтобы открыть смену врача в 1 клик без бюрократических задержек."}
-						</p>
 					</div>
 				</div>
 
+				{/* Right: Actions */}
 				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 					<button
 						type="button"
 						onClick={onToggleShift}
-						className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+						className={`min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 							isShiftOpen
 								? "bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 								: "bg-teal-600 text-white hover:bg-teal-700 shadow-sm"
@@ -156,11 +200,12 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 						<Zap size={14} />
 						<span>{isShiftOpen ? "Завершить смену" : "Открыть смену"}</span>
 					</button>
+
 					<button
 						type="button"
 						onClick={onOpenPayrollModal}
-						className="min-h-[36px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-						title="Расчет зарплаты врачей (Зарплатный лист): Открыть детальный расчет зарплаты за смену без запроса в бухгалтерию"
+						className="min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+						title="Расчет зарплаты врачей (Зарплатная ведомость): детализированный расчет за смену"
 					>
 						<Calculator size={14} />
 						<span>Расчет зарплаты</span>
@@ -168,182 +213,132 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 				</div>
 			</div>
 
-			{/* Bottom Row: 4 Transparent KPI Metric Cards */}
+			{/* Metric Strip: Compact 1-line KPI tiles */}
 			<div
 				style={{
 					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))",
+					gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))",
 					gap: "8px",
 				}}
 			>
-				{/* Card 1: Patients Seen */}
+				{/* KPI 1: Patients Seen */}
 				<div
 					style={{
-						padding: "8px 12px",
+						padding: "6px 10px",
 						borderRadius: "8px",
 						background: "var(--paper-soft)",
 						border: "1px solid var(--line)",
 						display: "flex",
-						flexDirection: "column",
-						gap: "2px",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "8px",
 						minWidth: 0,
 					}}
 				>
 					<span
 						style={{
-							fontSize: "10.5px",
+							fontSize: "11px",
 							fontWeight: 600,
 							color: "var(--muted)",
-							textTransform: "uppercase",
-							letterSpacing: "0.04em",
+							whiteSpace: "nowrap",
 						}}
 					>
 						Пациенты за смену
 					</span>
-					<div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-						<strong style={{ fontSize: "17px", fontWeight: 800, color: "var(--ink)" }}>
+					<div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
+						<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)" }}>
 							{shiftStats.completedCount}
 						</strong>
-						<span style={{ fontSize: "11.5px", color: "var(--muted)" }}>
-							из {shiftStats.totalAppointments} по плану
+						<span style={{ fontSize: "11px", color: "var(--muted)" }}>
+							из {shiftStats.totalAppointments}
 						</span>
 					</div>
-					<span style={{ fontSize: "10.5px", color: "var(--ink-2)" }} className="truncate">
-						{shiftStats.inProgressCount > 0
-							? `В кресле прямо сейчас: ${shiftStats.inProgressCount}`
-							: "Все запланированные осмотрены"}
-					</span>
 				</div>
 
-				{/* Card 2: Billed Services Revenue */}
+				{/* KPI 2: Billed Services Revenue */}
 				<div
 					style={{
-						padding: "8px 12px",
+						padding: "6px 10px",
 						borderRadius: "8px",
 						background: "var(--paper-soft)",
 						border: "1px solid var(--line)",
 						display: "flex",
-						flexDirection: "column",
-						gap: "2px",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "8px",
 						minWidth: 0,
 					}}
 				>
 					<span
 						style={{
-							fontSize: "10.5px",
+							fontSize: "11px",
 							fontWeight: 600,
 							color: "var(--muted)",
-							textTransform: "uppercase",
-							letterSpacing: "0.04em",
+							whiteSpace: "nowrap",
 						}}
 					>
 						Оказано услуг (касса)
 					</span>
-					<div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-						<strong style={{ fontSize: "17px", fontWeight: 800, color: "var(--ink)" }}>
-							{money(shiftStats.totalRevenueRub)}
-						</strong>
-					</div>
-					<span style={{ fontSize: "10.5px", color: "var(--ink-2)" }} className="truncate">
-						По чекам и актам за сегодня
-					</span>
+					<strong style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)" }}>
+						{money(shiftStats.totalRevenueRub)}
+					</strong>
 				</div>
 
-				{/* Card 3: Doctor's Calculated Shift Commission */}
+				{/* KPI 3: Doctor Calculated Payout */}
 				<div
 					style={{
-						padding: "8px 12px",
+						padding: "6px 10px",
 						borderRadius: "8px",
 						background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
 						border: "1px solid var(--teal-ring, rgba(13, 148, 136, 0.25))",
 						display: "flex",
-						flexDirection: "column",
-						gap: "2px",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "8px",
 						minWidth: 0,
 					}}
 				>
 					<span
 						style={{
-							fontSize: "10.5px",
+							fontSize: "11px",
 							fontWeight: 700,
 							color: "var(--teal-dark, #0f766e)",
-							textTransform: "uppercase",
-							letterSpacing: "0.04em",
+							whiteSpace: "nowrap",
 						}}
 					>
 						Гонорар врача ({shiftStats.doctorCommissionPct}%)
 					</span>
-					<div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
 						<strong
 							style={{
-								fontSize: "17px",
+								fontSize: "14px",
 								fontWeight: 800,
 								color: "var(--teal-dark, #0f766e)",
 							}}
 						>
 							{money(shiftStats.estimatedDoctorPayoutRub)}
 						</strong>
-						<span
+						<button
+							type="button"
+							onClick={onOpenPayrollModal}
 							style={{
-								fontSize: "11px",
+								border: "none",
+								background: "transparent",
 								color: "var(--teal-dark, #0f766e)",
-								opacity: 0.8,
+								padding: "0 2px",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
 							}}
+							title="Открыть зарплатную ведомость"
 						>
-							на руки
-						</span>
+							<ChevronRight size={13} />
+						</button>
 					</div>
-					<span style={{ fontSize: "10.5px", color: "var(--teal-dark, #0f766e)" }} className="truncate">
-						Прозрачный расчёт без ожидания
-					</span>
-				</div>
-
-				{/* Card 4: Action / Details */}
-				<div
-					style={{
-						padding: "8px 12px",
-						borderRadius: "8px",
-						background: "var(--paper-soft)",
-						border: "1px solid var(--line)",
-						display: "flex",
-						flexDirection: "column",
-						justifyContent: "space-between",
-						gap: "4px",
-						minWidth: 0,
-					}}
-				>
-					<span
-						style={{
-							fontSize: "10.5px",
-							fontWeight: 600,
-							color: "var(--muted)",
-							textTransform: "uppercase",
-							letterSpacing: "0.04em",
-						}}
-					>
-						Детализация зарплаты
-					</span>
-					<p
-						style={{
-							margin: 0,
-							fontSize: "11px",
-							color: "var(--muted)",
-							lineHeight: 1.25,
-						}}
-						className="truncate"
-					>
-						Спецификация услуг, вычет и экспорт 1С.
-					</p>
-					<button
-						type="button"
-						onClick={onOpenPayrollModal}
-						className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
-					>
-						<span>Зарплатная ведомость</span>
-						<ChevronRight size={12} />
-					</button>
 				</div>
 			</div>
 		</section>
 	);
 };
+
+export const DoctorShiftHeaderBar = DoctorShiftControlBar;

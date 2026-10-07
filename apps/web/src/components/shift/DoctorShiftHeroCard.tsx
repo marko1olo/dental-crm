@@ -1,6 +1,7 @@
 import React from "react";
 import {
 	Calendar,
+	CalendarPlus,
 	ClipboardCheck,
 	Image as ImageIcon,
 	Phone,
@@ -81,7 +82,7 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 							type="button"
 							onClick={() => onOpenVisit(currentPatient.id)}
 						>
-							<ClipboardCheck aria-hidden="true" /> Открыть карту / Прием
+							<ClipboardCheck aria-hidden="true" /> Открыть приём / ЭМК
 						</button>
 						<button
 							className="secondary-button min-h-[44px] px-3 py-2 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
@@ -219,14 +220,35 @@ export const DoctorShiftHeroCard: React.FC<DoctorShiftHeroCardProps> = ({
 						</div>
 						<div style={{ minWidth: 0 }}>
 							<h3 style={{ margin: 0, fontSize: "13.5px", fontWeight: 700, color: "var(--ink)", lineHeight: 1.25 }}>
-								Сейчас никого нет в кресле
+								Кресло свободно
 							</h3>
 							<p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)", lineHeight: 1.35 }}>
 								{todayAppointmentsCount > 0
 									? "Все приемы на сегодня уже прошли. Откройте расписание, чтобы записать пациента на другой день."
-									: "На сегодня записей нет. Используйте кнопку «Записать пациента» в шапке или откройте расписание."}
+									: "На сегодня запланированных приёмов нет. Можно записать пациента или открыть расписание."}
 							</p>
 						</div>
+					</div>
+
+					<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", paddingTop: "2px" }}>
+						<button
+							type="button"
+							className="primary-button"
+							style={{ fontSize: "12px", padding: "5px 12px", minHeight: "32px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+							onClick={onOpenSchedule}
+						>
+							<CalendarPlus size={14} />
+							<span>+ Записать</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button"
+							style={{ fontSize: "12px", padding: "5px 12px", minHeight: "32px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+							onClick={onOpenSchedule}
+						>
+							<Calendar size={14} />
+							<span>Расписание</span>
+						</button>
 					</div>
 				</div>
 			)}

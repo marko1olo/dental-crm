@@ -362,7 +362,7 @@ export function AppointmentModalDoctorChairSection({
               />
               <div className="space-y-0.5">
                 <span className="font-semibold block">
-                  На кресле дежурит {formatDoctorShortName(dutyDoc.fullName)}. Мандат 8e: запись не блокируется (Запись не блокируется).
+                  На кресле дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись доступна в штатном режиме.
                 </span>
                 <span className="text-[11px] text-[var(--muted)] block">
                   Врач может принять пациента на этой установке.

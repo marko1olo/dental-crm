@@ -364,7 +364,16 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 	// Construct 5 Canonical Stages from input data
 	const roadmapStages: RoadmapStageData[] = useMemo(() => {
 		if (customRoadmapStages && customRoadmapStages.length > 0) {
-			return [...customRoadmapStages];
+			return customRoadmapStages.map((st) => {
+				if (st.status === "completed") {
+					return {
+						...st,
+						remainingRub: 0,
+						remainingKopecks: 0,
+					};
+				}
+				return st;
+			});
 		}
 
 		// Build from standard TreatmentPlanStage[]
@@ -414,7 +423,11 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 				priceRub: it.priceRub || 0,
 				priceKopecks: priceKop,
 				quantity: it.quantity || 1,
-				isCompleted: Boolean((it as unknown as { isCompleted?: boolean }).isCompleted),
+				isCompleted: Boolean(
+					(it as unknown as { isCompleted?: boolean }).isCompleted ||
+					(it as unknown as { status?: string }).status === "completed" ||
+					(it as unknown as { planStatus?: string }).planStatus === "completed",
+				),
 				categoryCode,
 			});
 		}
@@ -434,14 +447,27 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 			const completedKop = procs
 				.filter((p) => p.isCompleted)
 				.reduce((sum, p) => sum + p.priceKopecks * p.quantity, 0);
-			const remainingKop = Math.max(0, totalKop - completedKop);
 
 			let status: "completed" | "in_progress" | "planned" = "planned";
-			if (totalKop > 0 && completedKop >= totalKop) {
+			if (procs.length > 0 && procs.every((p) => p.isCompleted)) {
 				status = "completed";
-			} else if (completedKop > 0) {
+			} else if (totalKop > 0 && completedKop >= totalKop) {
+				status = "completed";
+			} else if (completedKop > 0 || procs.some((p) => p.isCompleted)) {
 				status = "in_progress";
 			}
+
+			// Проверяем статус в исходных stages плана
+			const matchingInputStage = stages.find(
+				(s) =>
+					(s.stageKind as string) === (kind as string) ||
+					s.stageNumber === meta.stageNumber,
+			);
+			if (matchingInputStage?.status === "completed") {
+				status = "completed";
+			}
+
+			const remainingKop = status === "completed" ? 0 : Math.max(0, totalKop - completedKop);
 
 			// Estimated visits: at least 1 visit per 3 procedures or 1
 			const estimatedVisits = Math.max(1, Math.ceil(procs.length / 2));
@@ -638,7 +664,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 										{stage.status === "completed" && (
 											<>
 												<CheckCircle2 className="w-3.5 h-3.5" />
-												<span>Выполнено</span>
+												<span>✓ Этап выполнен</span>
 											</>
 										)}
 										{stage.status === "in_progress" && (
@@ -661,6 +687,42 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 									</button>
 								</div>
 							</div>
+
+							{/* Stage Procedures Progress Indicator */}
+							{stage.procedures.length > 0 && (
+								<div
+									className="roadmap-stage-progress-indicator"
+									data-testid={`stage-progress-${stage.stageNumber}`}
+								>
+									<div className="flex items-center justify-between text-xs mb-1">
+										<span className="font-medium text-[var(--muted,var(--ink-muted))]">
+											Прогресс процедур:
+										</span>
+										<span className="font-semibold text-[var(--ink)]">
+											Выполнено {stage.procedures.filter((p) => p.isCompleted).length} из{" "}
+											{stage.procedures.length} процедур (
+											{Math.round(
+												(stage.procedures.filter((p) => p.isCompleted).length /
+													stage.procedures.length) *
+													100,
+											)}
+											%)
+										</span>
+									</div>
+									<div className="w-full h-1.5 rounded-full bg-[var(--paper-soft,#1e293b)] overflow-hidden border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
+										<div
+											className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+											style={{
+												width: `${Math.round(
+													(stage.procedures.filter((p) => p.isCompleted).length /
+														stage.procedures.length) *
+														100,
+												)}%`,
+											}}
+										/>
+									</div>
+								</div>
+							)}
 
 							{/* Stage Goal Explanation */}
 							<div className="text-xs font-medium text-[var(--muted,var(--ink-muted))] bg-[var(--paper-soft,#1e293b)]/50 p-3 rounded-xl border border-[var(--line-subtle,rgba(255,255,255,0.03))] mb-3 leading-relaxed">
@@ -729,7 +791,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 										stage.procedures.map((proc) => (
 											<div key={proc.id} className="roadmap-proc-row">
 												<div className="flex-1 min-w-0">
-													<div className="roadmap-proc-title">
+													<div className="roadmap-proc-title flex items-center flex-wrap gap-1">
 														{proc.code804n && (
 															<span className="roadmap-proc-code-tag">{proc.code804n}</span>
 														)}
@@ -737,6 +799,11 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 														{proc.toothNumber && (
 															<span className="text-[var(--muted,var(--ink-muted))] text-xs ml-1.5">
 																(зуб {proc.toothNumber})
+															</span>
+														)}
+														{proc.isCompleted && (
+															<span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded ml-1.5">
+																<Check className="w-3 h-3" /> Выполнено
 															</span>
 														)}
 													</div>
@@ -767,9 +834,27 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 									<div className="roadmap-stage-total-sum">
 										{formatKopecksToRubExact(stage.totalKopecks)} ₽
 									</div>
+									{stage.status === "completed" && (
+										<div
+											className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5"
+											data-testid={`stage-remaining-cost-${stage.stageNumber}`}
+										>
+											Остаток к оплате: 0,00 ₽
+										</div>
+									)}
 								</div>
 
-								{stage.status !== "completed" && (
+								{stage.status === "completed" ? (
+									<div
+										className="roadmap-stage-completed-badge"
+										data-testid={`stage-completed-badge-${stage.stageNumber}`}
+									>
+										<CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+										<span>
+											✓ Пройден на приеме {todayRu || new Date().toLocaleDateString("ru-RU")}
+										</span>
+									</div>
+								) : (
 									<button
 										type="button"
 										onClick={() => {

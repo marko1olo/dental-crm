@@ -5,6 +5,8 @@ import {
 	Calendar,
 	CalendarCheck,
 	Camera,
+	CheckCircle2,
+	DollarSign,
 	Layers,
 	Link,
 	MessageSquare,
@@ -34,6 +36,8 @@ export interface LabOrderCardProps {
 	copyPortalLink: (token?: string) => void;
 	getStatusBadge: (status?: string) => React.ReactNode;
 	handleOpenReadyInClinicPrompt?: ((order: DentalLabOrderData) => void) | undefined;
+	handlePayFromCashbox?: ((order: DentalLabOrderData) => void) | undefined;
+	handleMarkInstalled?: ((order: DentalLabOrderData) => void) | undefined;
 }
 
 export function LabOrderCard({
@@ -51,6 +55,8 @@ export function LabOrderCard({
 	copyPortalLink,
 	getStatusBadge,
 	handleOpenReadyInClinicPrompt,
+	handlePayFromCashbox,
+	handleMarkInstalled,
 }: LabOrderCardProps) {
 	return (
 		<div
@@ -150,9 +156,16 @@ export function LabOrderCard({
 			<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2">
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Себестоимость:</span>
-					<span className="text-sm font-black text-[var(--ink)] font-mono">
-						{order.priceRub != null ? money(order.priceRub) : "—"}
-					</span>
+					<div className="flex items-center gap-1.5">
+						<span className="text-sm font-black text-[var(--ink)] font-mono">
+							{order.priceRub != null ? money(order.priceRub) : "—"}
+						</span>
+						{(order as any).paidFromCashOperationId && (
+							<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+								Оплачен
+							</span>
+						)}
+					</div>
 				</div>
 
 				<div className="flex items-center gap-1.5">
@@ -233,6 +246,36 @@ export function LabOrderCard({
 									>
 										<CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
 										<span>Запись на примерку / SMS</span>
+									</button>
+								)}
+								{handlePayFromCashbox && !(order as any).paidFromCashOperationId && (
+									<button
+										type="button"
+										onClick={() => {
+											setOpenMenuOrderId(null);
+											handlePayFromCashbox(order);
+										}}
+										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-2 cursor-pointer"
+										data-testid={`lab-order-card-pay-cashbox-btn-${order.id}`}
+										title="Оплатить услуги ЗТЛ из кассы по статье 11"
+									>
+										<DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+										<span>Оплатить из кассы (Ст. 11)</span>
+									</button>
+								)}
+								{handleMarkInstalled && order.status !== "completed" && (order as any).status !== "installed" && (
+									<button
+										type="button"
+										onClick={() => {
+											setOpenMenuOrderId(null);
+											handleMarkInstalled(order);
+										}}
+										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-blue-500/10 font-bold text-blue-700 dark:text-blue-300 inline-flex items-center gap-2 cursor-pointer"
+										data-testid={`lab-order-card-mark-installed-btn-${order.id}`}
+										title="Сдать конструкцию пациенту и заблокировать наряд"
+									>
+										<CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+										<span>Сдать пациенту (Замок)</span>
 									</button>
 								)}
 								<button

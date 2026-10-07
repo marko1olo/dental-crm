@@ -639,8 +639,7 @@ export function PaymentCapture({
 				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте возвратом или коррекцией, не повторной записью.
 			</p>
 
-			<div className="payment-capture-bottom-spacer block w-full h-28 sm:h-20 pointer-events-none select-none" style={{ minHeight: "112px" }} aria-hidden="true" />
-
+			{/* Checkout bar with submit button containing data-tour="cashier-pay" */}
 			<PaymentCheckoutBar
 				amount={amount}
 				remainingDebt={remainingDebt}

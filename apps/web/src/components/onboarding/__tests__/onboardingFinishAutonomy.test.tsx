@@ -372,7 +372,6 @@ describe("Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)", () => {
 			expect(toastReceived).not.toBeNull();
 			expect(toastReceived.type).toBe("success");
 			expect(toastReceived.text).toContain("Настройки сохранены в черновике");
-			expect(toastReceived.text).toContain("Мандат 8e");
 		} finally {
 			mockWindow.removeEventListener("dente-toast", handleToast);
 			if (originalWindow !== undefined) {

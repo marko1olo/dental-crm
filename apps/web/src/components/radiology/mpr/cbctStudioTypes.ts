@@ -67,6 +67,7 @@ export const CBCT_WORKSPACE_TABS: readonly CbctWorkspaceTabDefinition[] = [
 ] as const;
 
 export type NerveCanalSide = "right" | "left";
+export type NerveTracingMode = "auto" | "manual";
 
 export interface BilateralNerveCanals {
 	readonly right: readonly Point3D[];

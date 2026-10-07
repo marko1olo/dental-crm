@@ -17,7 +17,7 @@ import "./styles/overflow-fixes.css";
 
 import { QuickBookingDrawer } from "./components/schedule/QuickBookingDrawer";
 import type { QuickBookingSlotInfo } from "./components/schedule/QuickBookingDrawerTypes";
-import { applyThemeToRoot, type ThemeMode } from "./lib/themeClasses";
+import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
 
 const mockPatients = [
 	{
@@ -110,7 +110,9 @@ function PreviewApp() {
 		const params = new URLSearchParams(window.location.search);
 		const initialTheme = (params.get("theme") as ThemeMode) || "light";
 		setTheme(initialTheme);
-		applyThemeToRoot(initialTheme);
+		if (typeof document !== "undefined") {
+			applyThemeToRoot(document.documentElement, resolveTheme(initialTheme, false));
+		}
 	}, []);
 
 	return (
@@ -118,7 +120,7 @@ function PreviewApp() {
 			<div className="max-w-4xl mx-auto space-y-4">
 				<div className="flex items-center justify-between p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 					<h1 className="text-lg font-bold">
-						Сквозная связка: Этап плана лечения ➔ Запись в расписание (DentalPRO Parity)
+						Сквозная связка: Этап плана лечения ➔ Запись в расписание
 					</h1>
 					<button
 						type="button"
@@ -140,9 +142,7 @@ function PreviewApp() {
 						chairId: "chair-1",
 						doctorId: "doc-smirnov",
 						doctorName: "Д-р Смирнов А.П.",
-						shiftStart: "09:00",
-						shiftEnd: "15:00",
-						role: "doctor",
+						shiftHours: "09:00 - 15:00",
 					},
 				}}
 			/>

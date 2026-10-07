@@ -13700,3 +13700,4 @@ export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 
 export * from "./knowledge/index.js";
+export * from "./demo/demoConstants.js";

@@ -92,6 +92,10 @@ export interface TreatmentPlanItem {
 	readonly doctorId?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
 	readonly doctorSpecialty?: string | null | undefined;
+	readonly isCompleted?: boolean | undefined;
+	readonly status?: "planned" | "completed" | "in_progress" | string | undefined;
+	readonly completedAtIso?: string | null | undefined;
+	readonly visitId?: string | null | undefined;
 }
 
 export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";

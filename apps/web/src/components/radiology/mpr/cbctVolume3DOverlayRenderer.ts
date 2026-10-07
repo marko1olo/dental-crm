@@ -33,6 +33,7 @@ export interface Volume3DOverlayParams {
 		readonly isWarning: boolean;
 		readonly netClearanceToCanalWallMm: number;
 	} | null | undefined;
+	readonly selectedNerveNodeIdx?: number | null | undefined;
 }
 
 export interface ProjectedScreenPoint {
@@ -111,6 +112,7 @@ export function drawVolume3DOverlay(
 		implant3DWorld = null,
 		implantsList = undefined,
 		nerveAuditResult = null,
+		selectedNerveNodeIdx = null,
 	} = params;
 
 	if (!volume || width <= 0 || height <= 0) return;
@@ -179,14 +181,23 @@ export function drawVolume3DOverlay(
 	}
 
 	// ─── 2. SEED POINTS & CONTROL NODES (MENTAL & MANDIBULAR FORAMINA) ──────
-	if (nervePoints.length > 0) {
-		for (let i = 0; i < nervePoints.length; i++) {
-			const seed = nervePoints[i]!;
-			const p = project3DWorldToVolumeScreen(seed, volume, rotMat, scale, center);
-			const isMental = i === 0;
-			const isMandibular = i === 1;
+	const occupiedBadgeRects: Array<{ x: number; y: number; w: number; h: number }> = [];
 
-			const nodeRadius = Math.max(3.5, canalRadiusPx * 1.2);
+	if (nervePoints.length > 0) {
+		const projectedSeeds = nervePoints.map((seed) =>
+			project3DWorldToVolumeScreen(seed, volume, rotMat, scale, center),
+		);
+
+		for (let i = 0; i < nervePoints.length; i++) {
+			const p = projectedSeeds[i]!;
+			const isMental = i === 0;
+			const isMandibular =
+				nervePoints.length >= 2 && i === nervePoints.length - 1;
+			const isIntermediate = !isMental && !isMandibular;
+
+			const nodeRadius = isIntermediate
+				? Math.max(3.0, canalRadiusPx * 0.95)
+				: Math.max(3.8, canalRadiusPx * 1.25);
 
 			ctx.save();
 			ctx.shadowBlur = 8;
@@ -200,34 +211,71 @@ export function drawVolume3DOverlay(
 			ctx.fill();
 			ctx.stroke();
 
-			// Seed Label Tag
-			const label = isMental
-				? "Seed 1 (F. mentale)"
-				: isMandibular
-					? "Seed 2 (F. mandibulae)"
-					: `Узел ${i + 1}`;
+			// Clinical labels in Russian (Mandate 8e/8i):
+			// Mental foramen -> "Ментальное отв."
+			// Mandibular foramen -> "Мандибулярное отв."
+			// Intermediate nodes -> show badge only if selected or far apart (>= 20px) to prevent messy collisions
+			let showBadge = false;
+			let label = "";
+			let badgeBorder = "#f59e0b";
 
-			ctx.font = "bold 9px monospace";
-			const textW = ctx.measureText(label).width;
-			const tagX = p.screenX - textW / 2 - 4;
-			const tagY = p.screenY - nodeRadius - 14;
-
-			ctx.fillStyle = "rgba(9, 9, 11, 0.85)";
-			ctx.strokeStyle = isMental ? "#38bdf8" : isMandibular ? "#a855f7" : "#f59e0b";
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			if (typeof ctx.roundRect === "function") {
-				ctx.roundRect(tagX, tagY, textW + 8, 13, 3);
+			if (isMental) {
+				showBadge = true;
+				label = "Ментальное отв.";
+				badgeBorder = "#38bdf8";
+			} else if (isMandibular) {
+				showBadge = true;
+				label = "Мандибулярное отв.";
+				badgeBorder = "#a855f7";
 			} else {
-				ctx.rect(tagX, tagY, textW + 8, 13);
+				const isSelected = selectedNerveNodeIdx === i;
+				let isCrowded = false;
+				for (let j = 0; j < projectedSeeds.length; j++) {
+					if (i !== j) {
+						const dist = Math.hypot(
+							p.screenX - projectedSeeds[j]!.screenX,
+							p.screenY - projectedSeeds[j]!.screenY,
+						);
+						if (dist < 18) {
+							isCrowded = true;
+							break;
+						}
+					}
+				}
+				if (isSelected || (!isCrowded && nervePoints.length <= 3)) {
+					showBadge = true;
+					label = `Узел ${i + 1}`;
+					badgeBorder = "#f59e0b";
+				}
 			}
-			ctx.fill();
-			ctx.stroke();
 
-			ctx.fillStyle = "#ffffff";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(label, p.screenX, tagY + 6.5);
+			if (showBadge && label) {
+				ctx.font = "bold 9px monospace";
+				const textW = ctx.measureText(label).width;
+				const badgeW = textW + 8;
+				const badgeH = 13;
+				const tagX = Math.max(4, Math.min(width - badgeW - 4, p.screenX - badgeW / 2));
+				const tagY = Math.max(4, p.screenY - nodeRadius - 15);
+
+				ctx.fillStyle = "rgba(9, 9, 11, 0.88)";
+				ctx.strokeStyle = badgeBorder;
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				if (typeof ctx.roundRect === "function") {
+					ctx.roundRect(tagX, tagY, badgeW, badgeH, 3);
+				} else {
+					ctx.rect(tagX, tagY, badgeW, badgeH);
+				}
+				ctx.fill();
+				ctx.stroke();
+
+				ctx.fillStyle = "#ffffff";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(label, tagX + badgeW / 2, tagY + badgeH / 2);
+
+				occupiedBadgeRects.push({ x: tagX, y: tagY, w: badgeW, h: badgeH });
+			}
 
 			ctx.restore();
 		}
@@ -332,6 +380,8 @@ export function drawVolume3DOverlay(
 		ctx.textBaseline = "middle";
 		ctx.fillText(toothLabel, pEntry.screenX, badgeY + 6);
 
+		occupiedBadgeRects.push({ x: badgeX, y: badgeY, w: badgeW + 6, h: 12 });
+
 		ctx.restore();
 	}
 
@@ -365,7 +415,7 @@ export function drawVolume3DOverlay(
 		const pClosestNerve = project3DWorldToVolumeScreen(closestNervePt, volume, rotMat, scale, center);
 
 		ctx.save();
-		// Dashed clearance vector line
+		// Dashed clearance vector line between apex and canal
 		ctx.strokeStyle = statusStroke;
 		ctx.lineWidth = 1.6;
 		ctx.setLineDash([3, 3]);
@@ -375,26 +425,122 @@ export function drawVolume3DOverlay(
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// Midpoint measurement badge with perpendicular offset to avoid overlapping node labels
+		// Midpoint of vector line
+		const midX = (pApex.screenX + pClosestNerve.screenX) * 0.5;
+		const midY = (pApex.screenY + pClosestNerve.screenY) * 0.5;
+
 		const dx = pClosestNerve.screenX - pApex.screenX;
 		const dy = pClosestNerve.screenY - pApex.screenY;
 		const lineLen = Math.hypot(dx, dy) || 1;
 		const normX = -dy / lineLen;
 		const normY = dx / lineLen;
-		const badgeCenterX = (pApex.screenX + pClosestNerve.screenX) / 2.0 - normX * 16;
-		const badgeCenterY = (pApex.screenY + pClosestNerve.screenY) / 2.0 - normY * 16;
-		const badgeText = `${netClearance.toFixed(1)} мм`;
 
+		const badgeText = `${netClearance.toFixed(1)} мм`;
 		ctx.font = "bold 9.5px monospace";
-		const bw = ctx.measureText(badgeText).width + 8;
-		ctx.fillStyle = "rgba(9, 9, 11, 0.9)";
+		const bw = ctx.measureText(badgeText).width + 10;
+		const bh = 15;
+
+		// Smart Leader / Callout Placement Engine (Collision Avoidance):
+		// Finds free space without overlapping Mandibular / Mental foramina, teeth, or apex
+		const candidateDistances = [28, 42, 56];
+		const candidateDirs: Array<{ x: number; y: number }> = [
+			{ x: -normX, y: -normY },
+			{ x: normX, y: normY },
+			{ x: -normX * 0.8 + normY * 0.6, y: -normY * 0.8 - normX * 0.6 },
+			{ x: -normX * 0.8 - normY * 0.6, y: -normY * 0.8 + normX * 0.6 },
+			{ x: normX * 0.8 + normY * 0.6, y: normY * 0.8 - normX * 0.6 },
+			{ x: normX * 0.8 - normY * 0.6, y: normY * 0.8 + normX * 0.6 },
+			{ x: 0, y: -1 },
+			{ x: 0, y: 1 },
+		];
+
+		const criticalPoints: Array<{ x: number; y: number }> = [
+			{ x: pApex.screenX, y: pApex.screenY },
+			{ x: pClosestNerve.screenX, y: pClosestNerve.screenY },
+		];
+		if (nervePoints.length > 0) {
+			for (const np of nervePoints) {
+				const pt = project3DWorldToVolumeScreen(np, volume, rotMat, scale, center);
+				criticalPoints.push({ x: pt.screenX, y: pt.screenY });
+			}
+		}
+
+		let bestCenter = { x: midX - normX * 28, y: midY - normY * 28 };
+		let lowestPenalty = Infinity;
+
+		for (const dist of candidateDistances) {
+			for (const dir of candidateDirs) {
+				const cx = midX + dir.x * dist;
+				const cy = midY + dir.y * dist;
+				const rect = { x: cx - bw / 2, y: cy - bh / 2, w: bw, h: bh };
+
+				let penalty = dist * 0.4;
+
+				// Viewport margin bounds
+				if (rect.x < 8 || rect.x + rect.w > width - 8) penalty += 5000;
+				if (rect.y < 8 || rect.y + rect.h > height - 8) penalty += 5000;
+
+				// Overlap check against occupied badges (Ментальное/Мандибулярное отв., tooth badges)
+				for (const ob of occupiedBadgeRects) {
+					const overlapX = Math.max(0, Math.min(rect.x + rect.w, ob.x + ob.w) - Math.max(rect.x, ob.x));
+					const overlapY = Math.max(0, Math.min(rect.y + rect.h, ob.y + ob.h) - Math.max(rect.y, ob.y));
+					if (overlapX > 0 && overlapY > 0) {
+						penalty += 10000 + (overlapX * overlapY) * 50;
+					} else {
+						const distBadges = Math.hypot(cx - (ob.x + ob.w / 2), cy - (ob.y + ob.h / 2));
+						if (distBadges < 28) penalty += (28 - distBadges) * 35;
+					}
+				}
+
+				// Distance to critical nodes (apex, canal points)
+				for (const cp of criticalPoints) {
+					const d = Math.hypot(cx - cp.x, cy - cp.y);
+					if (d < 22) {
+						penalty += (22 - d) * 45;
+					}
+				}
+
+				if (penalty < lowestPenalty) {
+					lowestPenalty = penalty;
+					bestCenter = { x: cx, y: cy };
+				}
+			}
+		}
+
+		const badgeRect = {
+			x: bestCenter.x - bw / 2,
+			y: bestCenter.y - bh / 2,
+			w: bw,
+			h: bh,
+		};
+
+		// Leader Callout Line:
+		// Thin pointer line with anchor dot connecting midpoint of clearance vector to badge
+		const anchorX = Math.max(badgeRect.x, Math.min(badgeRect.x + badgeRect.w, midX));
+		const anchorY = Math.max(badgeRect.y, Math.min(badgeRect.y + badgeRect.h, midY));
+
 		ctx.strokeStyle = statusStroke;
-		ctx.lineWidth = 1;
+		ctx.lineWidth = 1.0;
+		ctx.beginPath();
+		ctx.moveTo(midX, midY);
+		ctx.lineTo(anchorX, anchorY);
+		ctx.stroke();
+
+		// Midpoint anchor dot
+		ctx.fillStyle = statusStroke;
+		ctx.beginPath();
+		ctx.arc(midX, midY, 1.8, 0, Math.PI * 2);
+		ctx.fill();
+
+		// Rounded Callout Measurement Badge
+		ctx.fillStyle = "rgba(9, 9, 11, 0.92)";
+		ctx.strokeStyle = statusStroke;
+		ctx.lineWidth = 1.2;
 		ctx.beginPath();
 		if (typeof ctx.roundRect === "function") {
-			ctx.roundRect(badgeCenterX - bw / 2, badgeCenterY - 7, bw, 14, 3);
+			ctx.roundRect(badgeRect.x, badgeRect.y, badgeRect.w, badgeRect.h, 3);
 		} else {
-			ctx.rect(badgeCenterX - bw / 2, badgeCenterY - 7, bw, 14);
+			ctx.rect(badgeRect.x, badgeRect.y, badgeRect.w, badgeRect.h);
 		}
 		ctx.fill();
 		ctx.stroke();
@@ -402,7 +548,8 @@ export function drawVolume3DOverlay(
 		ctx.fillStyle = statusStroke;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillText(badgeText, badgeCenterX, badgeCenterY);
+		ctx.fillText(badgeText, bestCenter.x, bestCenter.y);
+
 		ctx.restore();
 	}
 }

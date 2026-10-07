@@ -135,13 +135,13 @@ export const SOLO_DOCTOR_TRACK_STEPS: readonly QuestStep[] = [
 		description:
 			"Используйте готовые клинические протоколы (терапия, ортопедия, хирургия) или диктуйте голосом. Черновик сохраняется на лету (Ctrl+S). Печать карты, согласий и смет доступна в любой момент без ожидания (F12).",
 		clinicalTip:
-			"Никаких запретов на черновики и согласований начмедов: врач автономен в заполнении карты.",
+			"Черновики дневников сохраняются автоматически с версионным аудитом.",
 		shortcutBadge: "Ctrl+S — автосохранение • F12 — печать карты",
 		targetSelector: '[data-tour="diary-preset"], [data-tour="visit-diary"], #diary-autosave-status',
 		fallbackTargetSelector: 'a[href="#visit"]',
 		viewTarget: "visit",
 		actionLabel: "Открыть дневник приёма",
-		rewardBadge: "+1 к протоколам без бюрократии",
+		rewardBadge: "+1 к оформленным протоколам",
 		arrowDirection: "left",
 		actionTrigger: {
 			type: "keyboard",
@@ -157,7 +157,7 @@ export const SOLO_DOCTOR_TRACK_STEPS: readonly QuestStep[] = [
 		description:
 			"Нажмите F9 для мгновенного чекаута. Оплата принимается в 3 клика: наличные, банковская карта, СБП QR или баланс семьи. По 54-ФЗ ИНН с физических лиц не требуется. Чек формируется с точностью до копейки.",
 		clinicalTip:
-			"Свобода скидок врача (вплоть до 100% на гарантийные переделки) без мастер-паролей.",
+			"Поддержка гарантийных переделок и скидок врача непосредственно в смете.",
 		shortcutBadge: "F9 — быстрый чек • Сплит: нал + карта + семья",
 		targetSelector: '[data-tour="cashier-pay"], [data-tour="fast-cashier"], #cashier-tender-action-btn, [data-testid="payment-submit-button"]',
 		fallbackTargetSelector: 'a[href="#finance"], [data-testid="btn-finance-open-cashbox"]',

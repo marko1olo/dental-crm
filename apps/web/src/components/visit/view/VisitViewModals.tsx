@@ -320,11 +320,61 @@ export function VisitViewModals({
 						undefined
 					}
 					onOrderSaved={(order) => {
-						if (order?.toothFdi && order?.material) {
+						if (!order) return;
+						const targetTeeth =
+							Array.isArray(order.selectedTeeth) && order.selectedTeeth.length > 0
+								? order.selectedTeeth
+								: order.toothFdi
+									? [Number(order.toothFdi)]
+									: [];
+
+						if (targetTeeth.length > 0 && order.material) {
+							const teethLabel = targetTeeth.join(", ");
 							appendToEMKField(
 								"treatmentPlan",
-								`Оформлен наряд ЗТЛ на зуб ${order.toothFdi} (${order.material}, цвет ${order.colorVita || "A2"}).`,
+								`Оформлен наряд ЗТЛ на ${targetTeeth.length > 1 ? `зубы ${teethLabel}` : `зуб ${teethLabel}`} (${order.material}, цвет ${order.colorVita || "A2"}).`,
 							);
+						}
+
+						const unitPrice =
+							order.priceRub && targetTeeth.length > 0
+								? Math.round(order.priceRub / targetTeeth.length)
+								: order.priceRub || 18000;
+
+						for (const tooth of targetTeeth) {
+							if (!tooth) continue;
+							const toothStr = String(tooth);
+							setToothState(toothStr, "crown");
+							useVisitStore.getState().setToothState(toothStr, "crown");
+
+							const serviceTitle = `Восстановление зуба коронкой (${order.constructionType || "ортопедия"}, ${order.material || "ZrO2"}, зуб ${toothStr})`;
+							useVisitStore.getState().addCompletedService({
+								serviceId: `lab-order-${order.id || Date.now()}-${tooth}`,
+								code804n: "A16.07.004",
+								toothNumber: tooth,
+								toothCode: toothStr,
+								name: serviceTitle,
+								priceRub: unitPrice,
+								quantity: 1,
+								category: "Ортопедия",
+							});
+
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(
+									new CustomEvent("dente-add-billing-item", {
+										detail: {
+											item: {
+												code804n: "A16.07.004",
+												title: serviceTitle,
+												toothCode: toothStr,
+												quantity: 1,
+												unitPriceRub: unitPrice,
+												discountRub: 0,
+											},
+										},
+									}),
+								);
+							}
 						}
 					}}
 				/>

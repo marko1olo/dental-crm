@@ -96,9 +96,9 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 			{/* Tax Year & Payer Defaults Selector */}
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				{/* Tax Year Selection */}
-				<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2">
+				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
 							<Calendar size={14} className="text-teal-600" />
 							Налоговый период (Отчетный год):
 						</span>
@@ -109,22 +109,23 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 					<div className="flex gap-2 flex-wrap">
 						{availableYears.map((yr) => {
 							const count = paymentsCountByYear[yr] || 0;
+							const isSelected = Number(selectedYear) === Number(yr);
 							return (
 								<button
 									key={yr}
 									type="button"
 									onClick={() => setSelectedYear(yr)}
 									className={`min-h-[44px] flex-1 min-w-[80px] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-										selectedYear === yr
+										isSelected
 											? "bg-teal-600 text-white shadow-sm"
-											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+											: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-400"
 									}`}
 								>
 									<span>{yr} год</span>
 									{count > 0 && (
 										<span
 											className={`text-[11px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
-												selectedYear === yr
+												isSelected
 													? "bg-white/25 text-white"
 													: "bg-teal-500/15 text-teal-700 dark:text-teal-300"
 											}`}
@@ -139,9 +140,9 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 				</div>
 
 				{/* Relationship Selector */}
-				<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2">
+				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
 							<UserCheck size={14} className="text-teal-600" />
 							Степень родства (Код ФНС):
 						</span>
@@ -156,15 +157,16 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 					<div className="grid grid-cols-2 gap-1.5">
 						{(["patient", "spouse", "parent", "child"] as const).map((r) => {
 							const meta = TAX_DEDUCTION_RELATIONSHIP_MAP[r];
+							const isSelected = payerRelationship === r;
 							return (
 								<button
 									key={r}
 									type="button"
 									onClick={() => setPayerRelationship(r)}
 									className={`min-h-[44px] px-2 rounded-xl text-xs font-bold transition-all truncate cursor-pointer flex items-center justify-center gap-1.5 ${
-										payerRelationship === r
+										isSelected
 											? "bg-teal-600 text-white shadow-sm"
-											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+											: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-400"
 									}`}
 								>
 									<span>Код {meta.code}:</span>
@@ -177,13 +179,13 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 			</div>
 
 			{/* Payer Requisites Fields */}
-			<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-3">
-				<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
+			<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
+				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
 					Реквизиты налогоплательщика (для справки на вычет):
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<div className="space-y-1">
-						<label htmlFor="payer-fullname-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+						<label htmlFor="payer-fullname-input" className="text-xs font-bold text-[var(--ink)]">
 							ФИО плательщика:
 						</label>
 						<input
@@ -191,13 +193,13 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							type="text"
 							value={payerFullName}
 							onChange={(e) => setPayerFullName(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-medium"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-medium text-[var(--ink)]"
 						/>
 					</div>
 
 					<div className="space-y-1">
 						<div className="flex items-center justify-between">
-							<label htmlFor="payer-inn-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+							<label htmlFor="payer-inn-input" className="text-xs font-bold text-[var(--ink)]">
 								ИНН плательщика:
 							</label>
 							{innValidation.isValid ? (
@@ -217,16 +219,16 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							value={payerInn}
 							onChange={(e) => setPayerInn(e.target.value)}
 							placeholder="12 цифр ИНН"
-							className={`w-full min-h-[44px] px-3 rounded-xl border text-xs font-mono font-bold ${
+							className={`w-full min-h-[44px] px-3 rounded-xl border text-xs font-mono font-bold text-[var(--ink)] ${
 								innValidation.isValid
-									? "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)]"
+									? "border-[var(--line)] bg-[var(--paper)]"
 									: "border-rose-500 bg-rose-500/5"
 							}`}
 						/>
 					</div>
 
 					<div className="space-y-1">
-						<label htmlFor="payer-bday-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+						<label htmlFor="payer-bday-input" className="text-xs font-bold text-[var(--ink)]">
 							Дата рождения плательщика:
 						</label>
 						<input
@@ -234,7 +236,7 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							type="date"
 							value={payerBirthDate}
 							onChange={(e) => setPayerBirthDate(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]"
 						/>
 					</div>
 				</div>
@@ -242,7 +244,7 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 				{/* Passport series & number */}
 				<div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
 					<div className="space-y-1">
-						<label htmlFor="passport-series-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+						<label htmlFor="passport-series-input" className="text-xs font-bold text-[var(--ink)]">
 							Серия паспорта РФ:
 						</label>
 						<input
@@ -252,11 +254,11 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							value={passportSeries}
 							onChange={(e) => setPassportSeries(e.target.value.replace(/\D/g, ""))}
 							placeholder="4510"
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono text-[var(--ink)]"
 						/>
 					</div>
 					<div className="space-y-1">
-						<label htmlFor="passport-number-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+						<label htmlFor="passport-number-input" className="text-xs font-bold text-[var(--ink)]">
 							Номер паспорта РФ:
 						</label>
 						<input
@@ -266,11 +268,11 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							value={passportNumber}
 							onChange={(e) => setPassportNumber(e.target.value.replace(/\D/g, ""))}
 							placeholder="123456"
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono text-[var(--ink)]"
 						/>
 					</div>
 					<div className="space-y-1">
-						<label htmlFor="cert-number-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+						<label htmlFor="cert-number-input" className="text-xs font-bold text-[var(--ink)]">
 							Номер справки:
 						</label>
 						<input
@@ -278,11 +280,11 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							type="text"
 							value={certificateNumber}
 							onChange={(e) => setCertificateNumber(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono font-bold"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono font-bold text-[var(--ink)]"
 						/>
 					</div>
 					<div className="space-y-1">
-						<label htmlFor="tax-office-input" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+						<label htmlFor="tax-office-input" className="text-xs font-bold text-[var(--ink)]">
 							Код ИФНС (КодНО):
 						</label>
 						<input
@@ -292,7 +294,7 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 							value={taxOfficeCode}
 							onChange={(e) => setTaxOfficeCode(e.target.value)}
 							placeholder="7701"
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono font-bold"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono font-bold text-[var(--ink)]"
 						/>
 					</div>
 				</div>
@@ -300,15 +302,15 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 
 			{/* Real-Time Calculation Breakdown Card OR Honest Empty State */}
 			{yearPayments.length === 0 ? (
-				<div className="p-6 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-center space-y-3">
+				<div className="p-6 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] text-center space-y-3">
 					<div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
 						<Receipt className="w-6 h-6" />
 					</div>
 					<div className="space-y-1.5 max-w-md mx-auto">
-						<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
+						<h4 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">
 							Нет подтвержденных оплат за {selectedYear} год для формирования справки на вычет
 						</h4>
-						<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
+						<p className="text-xs text-[var(--muted)] m-0 leading-relaxed">
 							{payments.length === 0
 								? "В карточке пациента отсутствуют оплаченные счета. Справка для налогового вычета формируется автоматически при наличии фискальных чеков."
 								: `За ${selectedYear} год оплаченных счетов не найдено. Выберите другой налоговый период выше или закройте окно.`}
@@ -318,7 +320,7 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-slate-500/10 cursor-pointer transition-colors"
+							className="min-h-[44px] px-5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] hover:bg-slate-500/10 cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -326,19 +328,19 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 				</div>
 			) : (
 				<div className="p-4 sm:p-5 rounded-2xl bg-teal-500/5 border border-teal-500/30 space-y-4">
-					<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2.5">
+					<div className="flex items-center justify-between border-b border-[var(--line)] pb-2.5">
 						<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-teal-800 dark:text-teal-200">
 							<Coins size={16} className="text-teal-600" />
 							Расчет сумм вычета по Приказу 824@ за {selectedYear} год:
 						</span>
-						<span className="text-xs text-[var(--muted,#64748b)]">
+						<span className="text-xs text-[var(--muted)]">
 							Чеков за {selectedYear} г.: {targetYearSummary.receiptsCount}
 						</span>
 					</div>
 
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 						{/* Code 01 */}
-						<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+						<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 							<div className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
 								Код 01 (Обычное лечение)
 							</div>
@@ -348,13 +350,13 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 								})}{" "}
 								₽
 							</div>
-							<div className="text-[11px] text-[var(--muted,#64748b)]">
+							<div className="text-[11px] text-[var(--muted)]">
 								Лимит: {targetYearSummary.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ / год
 							</div>
 						</div>
 
 						{/* Code 02 */}
-						<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+						<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-1">
 							<div className="text-[11px] font-bold uppercase text-rose-500">
 								Код 02 (Дорогостоящее)
 							</div>
@@ -364,7 +366,7 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 								})}{" "}
 								₽
 							</div>
-							<div className="text-[11px] text-[var(--muted,#64748b)]">
+							<div className="text-[11px] text-[var(--muted)]">
 								Имплантация / без лимита
 							</div>
 						</div>
@@ -384,16 +386,16 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 					</div>
 
 					{/* QR Verification preview & In-words preview */}
-					<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] flex items-center justify-between gap-4">
+					<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-4">
 						<div className="space-y-1 text-xs">
-							<div className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+							<div className="font-bold text-[var(--ink)] flex items-center gap-1.5">
 								<ShieldCheck size={16} className="text-emerald-600" />
 								Сумма к вычету прописью:
 							</div>
 							<div className="font-serif italic text-slate-700 dark:text-slate-300">
 								{amountToWordsRu(targetYearSummary.totalKopecks)}
 							</div>
-							<div className="text-[11px] text-[var(--muted,#64748b)]">
+							<div className="text-[11px] text-[var(--muted)]">
 								Лицензия клиники: {clinicLicenseNumber} от {clinicLicenseDate} г.
 							</div>
 						</div>

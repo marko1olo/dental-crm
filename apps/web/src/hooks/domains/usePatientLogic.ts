@@ -32,7 +32,6 @@ import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { matchesPatientSearch } from "../../utils/patientSearchUtils";
-import { isDemoShowcaseMode, getDemoShowcasePatients } from "../../lib/demoMode";
 
 /** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
 const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
@@ -152,12 +151,7 @@ export function usePatientLogic({
 		);
 
 	const activePatient = useMemo(() => {
-		const rawPatients: Patient[] =
-			dashboard?.patients && dashboard.patients.length > 0
-				? dashboard.patients
-				: isDemoShowcaseMode()
-					? getDemoShowcasePatients()
-					: [];
+		const rawPatients: Patient[] = dashboard?.patients ?? [];
 		if (rawPatients.length === 0) return null;
 		return (
 			(selectedPatientId ? findPatient(rawPatients, selectedPatientId) : null) ??
@@ -181,22 +175,12 @@ export function usePatientLogic({
 		const visit = dashboard?.activeVisit;
 		if (!visit?.id || visit.id === NIL_VISIT_UUID) return null;
 		if (!visit.patientId || visit.patientId === NIL_VISIT_UUID) return null;
-		const rawPatients: Patient[] =
-			dashboard?.patients && dashboard.patients.length > 0
-				? dashboard.patients
-				: isDemoShowcaseMode()
-					? getDemoShowcasePatients()
-					: [];
+		const rawPatients: Patient[] = dashboard?.patients ?? [];
 		return findPatient(rawPatients, visit.patientId) ?? null;
 	}, [dashboard?.activeVisit, dashboard?.patients]);
 
 	const selectedPatient = useMemo(() => {
-		const rawPatients: Patient[] =
-			dashboard?.patients && dashboard.patients.length > 0
-				? dashboard.patients
-				: isDemoShowcaseMode()
-					? getDemoShowcasePatients()
-					: [];
+		const rawPatients: Patient[] = dashboard?.patients ?? [];
 		if (rawPatients.length === 0) return null;
 		return (
 			(selectedPatientId
@@ -292,12 +276,7 @@ export function usePatientLogic({
 	 * раньше, поэтому выбор пациента по ФИО не меняется.
 	 */
 	const filteredPatients = useMemo(() => {
-		const rawPatients: Patient[] =
-			dashboard?.patients && dashboard.patients.length > 0
-				? dashboard.patients
-				: isDemoShowcaseMode()
-					? getDemoShowcasePatients()
-					: [];
+		const rawPatients: Patient[] = dashboard?.patients ?? [];
 		if (rawPatients.length === 0) return [];
 		if (!query.trim()) return rawPatients;
 		return rawPatients.filter((patient) =>

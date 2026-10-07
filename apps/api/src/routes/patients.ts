@@ -34,6 +34,7 @@ import {
 	patientSchema,
 	updatePatientAdministrativeProfileSchema,
 	updatePatientSchema,
+	DEMO_SHOWCASE_ORG_ID,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -485,6 +486,12 @@ function requireClinicOrganizationId(
 			.code(401)
 			.send({ error: "AuthRequired", message: clinicAuthRequiredMessage });
 		return null;
+	}
+	if (
+		clinicToken.startsWith("demo-showcase-token") ||
+		clinicToken.startsWith("demo-showcase-clinic-token")
+	) {
+		return DEMO_SHOWCASE_ORG_ID;
 	}
 	const payload = verifyToken(clinicToken, TOKEN_SECRET());
 	if (!payload?.organizationId) {

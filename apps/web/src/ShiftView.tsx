@@ -2,6 +2,8 @@ import type { Dashboard } from "@dental/shared";
 import {
 	Calendar,
 	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
 	ClipboardCheck,
 	CreditCard,
 	FileText,
@@ -34,8 +36,6 @@ import {
 	useDoctorShiftData,
 } from "./components/shift";
 import { useIsMobile } from "./hooks/useIsMobile";
-import { DoctorKickoffWidget } from "./components/dashboard/DoctorKickoffWidget";
-import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
 import {
@@ -119,6 +119,8 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 	const [isQueueBoardModalOpen, setIsQueueBoardModalOpen] = useState(false);
 	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
 	const [isShiftCloseModalOpen, setIsShiftCloseModalOpen] = useState(false);
+	const [secondaryTab, setSecondaryTab] = useState<"emk" | "intelligence">("emk");
+	const [isSecondaryExpanded, setIsSecondaryExpanded] = useState<boolean>(false);
 
 	const activeDoctorFullName = useMemo(() => {
 		if (dashboard?.activeDoctor?.fullName) return dashboard.activeDoctor.fullName;
@@ -271,143 +273,186 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 
 	return (
 		<div className="shift-view-scroll-container min-w-0" data-testid="shift-view-desktop">
-			<div className="px-2 pt-2 pb-1 space-y-2">
-				<DoctorKickoffWidget
-					doctorName={dashboard?.activeDoctor?.fullName}
-					appointmentsCount={todayAppointments.length}
-					isShiftOpen={isShiftOpen}
-					onToggleShift={handleToggleShift}
-					onOpenSchedule={() => {
-						window.location.hash = "schedule";
-					}}
-					onOpenCheckout={() => {
-						window.location.hash = "invoices";
-					}}
-				/>
-				<DoctorShiftEarningsWidget
-					doctorId={dashboard?.activeDoctor?.id || "doc-1"}
-					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
-					shiftDateIso={todayIso}
-					compact={true}
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					appointments={todayAppointments as any}
-				/>
-			</div>
-
 			<DoctorShiftControlBar
+				doctorName={activeDoctorFullName}
+				cabinetName={
+					(inChairAppointment as any)?.cabinetName ||
+					(inChairAppointment as any)?.room ||
+					"Кабинет №1"
+				}
 				isShiftOpen={isShiftOpen}
 				onToggleShift={handleToggleShift}
 				onOpenPayrollModal={() => setIsPayrollModalOpen(true)}
 				shiftStats={shiftStats}
 			/>
 
-			<section className="shift-hero" id="shift">
-				<DoctorShiftHeroCard
-					currentPatient={currentPatient}
-					currentPatientHasCallablePhone={currentPatientHasCallablePhone}
-					currentPatientCallablePhone={currentPatientCallablePhone}
-					currentAppointmentReason={currentAppointmentReason}
-					nextAppointment={nextAppointment}
-					nextAppointmentPatient={nextAppointmentPatient}
-					todayAppointmentsCount={todayAppointments.length}
-					formatClockTime={formatClockTime}
-					onOpenVisit={(patientId) => {
-						if (setSelectedPatientId) setSelectedPatientId(patientId);
-						window.location.hash = "visit";
-					}}
-					onOpenImaging={(patientId) => {
-						if (setSelectedPatientId) setSelectedPatientId(patientId);
-						window.location.hash = "imaging";
-					}}
-					onCallPatientError={(msg) => {
-						if (setError) setError(msg);
-					}}
-					onStartNextAppointment={(patientId) => {
-						if (setSelectedPatientId) setSelectedPatientId(patientId);
-						window.location.hash = "visit";
-					}}
-					onOpenSchedule={() => {
-						window.location.hash = "schedule";
-					}}
-				/>
-
-				{/* Субкомпонент: Сводка визитов врача за смену и KPI (StomX оперативная доска) */}
-				<DoctorShiftVisitsKpiSection
-					todayAppointments={todayAppointments}
-					inChairAppointments={inChairAppointments}
-					waitingAppointments={waitingAppointments}
-					awaitingPaymentAppointments={awaitingPaymentAppointments}
-					patientsById={patientsById}
-					staffById={staffById}
-					currentPatient={currentPatient}
-					inChairAppointment={inChairAppointment}
-					manyDoctors={manyDoctors}
-					onSelectPatient={(patientId) => {
-						if (setSelectedPatientId) setSelectedPatientId(patientId);
-					}}
-					onOpenAppointmentEmk={(patientId) => {
-						if (setSelectedPatientId) setSelectedPatientId(patientId);
-						window.location.hash = "visit";
-					}}
-					onOpenCashier={(patientId) => {
-						if (setSelectedPatientId) setSelectedPatientId(patientId);
-						window.location.hash = "finance";
-					}}
-					onOpenQueueBoardModal={() => setIsQueueBoardModalOpen(true)}
-					onOpenSchedule={() => {
-						window.location.hash = "schedule";
-					}}
-				/>
-			</section>
-
-			{/* Субкомпонент 1: Кассовый срез смены и инкассация (Мандат 54-ФЗ) */}
-			<div className="my-3">
-				<DoctorShiftCashSection
-					totalRevenueRub={shiftStats.totalRevenueRub}
-					doctorCommissionPct={shiftStats.doctorCommissionPct}
-					estimatedDoctorPayoutRub={shiftStats.estimatedDoctorPayoutRub}
-					doctorFullName={activeDoctorFullName}
-					clinicName={dashboard?.clinicName ?? ""}
-					onPrintStatement={() => setIsShiftCloseModalOpen(true)}
-				/>
-			</div>
-
-			{/* Субкомпонент 2: Чек-лист передачи кабинета и готовности стерилизации (СанПиН 3.3686-21) */}
-			<div className="my-3">
-				<DoctorCabinetHandoverCard
-					cabinetName={(inChairAppointment as any)?.cabinetName || "Кабинет №1"}
-					doctorFullName={activeDoctorFullName}
-					nextDoctorName="Сменяющий врач"
-				/>
-			</div>
-
+			{/* Двухколоночный эргономичный сплит (1440x900) */}
 			<div
-				className="shift-dashboard-grid"
-				style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}
+				className="shift-cockpit-split-grid grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-4 mt-3"
+				style={{ alignItems: "start" }}
 			>
-				<ShiftTodoListSection
-					visibleRecommendedActions={visibleRecommendedActions}
-					recommendedActionPriorityLabels={recommendedActionPriorityLabels}
-					patientsById={patientsById}
-					onRunRecommendedAction={runRecommendedAction}
-				/>
+				{/* Левая колонка (~62%): Кресло пациента + Журнал приёмов за смену */}
+				<div className="space-y-4 min-w-0" data-testid="shift-left-column">
+					<DoctorShiftHeroCard
+						currentPatient={currentPatient}
+						currentPatientHasCallablePhone={currentPatientHasCallablePhone}
+						currentPatientCallablePhone={currentPatientCallablePhone}
+						currentAppointmentReason={currentAppointmentReason}
+						nextAppointment={nextAppointment}
+						nextAppointmentPatient={nextAppointmentPatient}
+						todayAppointmentsCount={todayAppointments.length}
+						formatClockTime={formatClockTime}
+						onOpenVisit={(patientId) => {
+							if (setSelectedPatientId) setSelectedPatientId(patientId);
+							window.location.hash = "visit";
+						}}
+						onOpenImaging={(patientId) => {
+							if (setSelectedPatientId) setSelectedPatientId(patientId);
+							window.location.hash = "imaging";
+						}}
+						onCallPatientError={(msg) => {
+							if (setError) setError(msg);
+						}}
+						onStartNextAppointment={(patientId) => {
+							if (setSelectedPatientId) setSelectedPatientId(patientId);
+							window.location.hash = "visit";
+						}}
+						onOpenSchedule={() => {
+							window.location.hash = "schedule";
+						}}
+					/>
 
-				<section
-					className="shift-emk-control"
-					style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", boxShadow: "var(--shadow-1)" }}
-				>
-					<EmkControlBoard dashboard={dashboard} />
-				</section>
+					{/* Журнал приёмов за смену */}
+					<DoctorShiftVisitsKpiSection
+						todayAppointments={todayAppointments}
+						inChairAppointments={inChairAppointments}
+						waitingAppointments={waitingAppointments}
+						awaitingPaymentAppointments={awaitingPaymentAppointments}
+						patientsById={patientsById}
+						staffById={staffById}
+						currentPatient={currentPatient}
+						inChairAppointment={inChairAppointment}
+						manyDoctors={manyDoctors}
+						onSelectPatient={(patientId) => {
+							if (setSelectedPatientId) setSelectedPatientId(patientId);
+						}}
+						onOpenAppointmentEmk={(patientId) => {
+							if (setSelectedPatientId) setSelectedPatientId(patientId);
+							window.location.hash = "visit";
+						}}
+						onOpenCashier={(patientId) => {
+							if (setSelectedPatientId) setSelectedPatientId(patientId);
+							window.location.hash = "finance";
+						}}
+						onOpenQueueBoardModal={() => setIsQueueBoardModalOpen(true)}
+						onOpenSchedule={() => {
+							window.location.hash = "schedule";
+						}}
+					/>
+				</div>
 
-				{/* Субкомпонент: Операционный контроль смены (modeFit, загрузка, задачи по ролям) */}
-				<ShiftIntelligenceSection
-					dashboard={dashboard}
-					mostLoadedResource={mostLoadedResource}
-					activeQueueRole={activeQueueRole}
-					rolesWorthShowing={rolesWorthShowing}
-					staffRoleLabels={staffRoleLabels}
-				/>
+				{/* Правая колонка (~38%): Кассовый срез + Чек-лист кабинета + Задачи смены */}
+				<div className="space-y-4 min-w-0" data-testid="shift-right-column">
+					{/* Кассовый срез смены и инкассация (54-ФЗ) */}
+					<DoctorShiftCashSection
+						totalRevenueRub={shiftStats.totalRevenueRub}
+						doctorCommissionPct={shiftStats.doctorCommissionPct}
+						estimatedDoctorPayoutRub={shiftStats.estimatedDoctorPayoutRub}
+						doctorFullName={activeDoctorFullName}
+						clinicName={dashboard?.clinicName ?? ""}
+						onPrintStatement={() => setIsShiftCloseModalOpen(true)}
+					/>
+
+					{/* Чек-лист передачи кабинета и готовности стерилизации (СанПиН 3.3686-21) */}
+					<DoctorCabinetHandoverCard
+						cabinetName={(inChairAppointment as any)?.cabinetName || (inChairAppointment as any)?.room || "Кабинет №1"}
+						doctorFullName={activeDoctorFullName}
+						nextDoctorName="Сменяющий врач"
+					/>
+
+					{/* Список оперативных задач смены */}
+					<ShiftTodoListSection
+						visibleRecommendedActions={visibleRecommendedActions}
+						recommendedActionPriorityLabels={recommendedActionPriorityLabels}
+						patientsById={patientsById}
+						onRunRecommendedAction={runRecommendedAction}
+					/>
+				</div>
 			</div>
+
+			{/* Вторичный бэк-офисный контроль смены (свёрнут по умолчанию в аккуратный аккордеон) */}
+			<section
+				className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs overflow-hidden"
+				data-testid="shift-secondary-accordion"
+			>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						padding: "10px 14px",
+						background: "var(--paper-soft)",
+						borderBottom: isSecondaryExpanded ? "1px solid var(--line)" : "none",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<button
+							type="button"
+							onClick={() => {
+								setSecondaryTab("emk");
+								if (!isSecondaryExpanded) setIsSecondaryExpanded(true);
+							}}
+							className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+								secondaryTab === "emk" && isSecondaryExpanded
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							Контроль качества ЭМК
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setSecondaryTab("intelligence");
+								if (!isSecondaryExpanded) setIsSecondaryExpanded(true);
+							}}
+							className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+								secondaryTab === "intelligence" && isSecondaryExpanded
+									? "bg-[var(--paper)] text-[var(--ink)] shadow-2xs border border-[var(--line)]"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							Операционный контроль смены
+						</button>
+					</div>
+
+					<button
+						type="button"
+						onClick={() => setIsSecondaryExpanded(!isSecondaryExpanded)}
+						className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-hover)] transition-colors cursor-pointer"
+						aria-expanded={isSecondaryExpanded}
+					>
+						<span>{isSecondaryExpanded ? "Свернуть" : "Развернуть"}</span>
+						{isSecondaryExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+					</button>
+				</div>
+
+				{isSecondaryExpanded && (
+					<div className="p-3 sm:p-4">
+						{secondaryTab === "emk" ? (
+							<EmkControlBoard dashboard={dashboard} />
+						) : (
+							<ShiftIntelligenceSection
+								dashboard={dashboard}
+								mostLoadedResource={mostLoadedResource}
+								activeQueueRole={activeQueueRole}
+								rolesWorthShowing={rolesWorthShowing}
+								staffRoleLabels={staffRoleLabels}
+							/>
+						)}
+					</div>
+				)}
+			</section>
 
 			{/* Doctor Piece-Rate Payroll Calculation & Form T-51 Modal */}
 			{isPayrollModalOpen && (
@@ -506,36 +551,14 @@ export function PatientCockpit({
 }: PatientCockpitProps) {
 	if (!activePatient) {
 		return (
-			<section
-				className="patient-cockpit dnt-cockpit"
-				aria-label="Карточка пациента"
-			>
+			<section className="patient-cockpit dnt-cockpit" aria-label="Карточка пациента">
 				<div className="patient-summary-card">
-					<p className="eyebrow" style={{ margin: "0 0 8px" }}>
-						Карточка пациента
-					</p>
+					<p className="eyebrow" style={{ margin: "0 0 8px" }}>Карточка пациента</p>
 					<h2>Пациент не выбран</h2>
-					<div
-						className="patient-facts"
-						style={{
-							marginTop: "8px",
-							fontSize: "13px",
-							color: "var(--muted)",
-						}}
-					>
-						<span>
-							Выберите пациента в списке или расписании, чтобы увидеть его
-							данные.
-						</span>
+					<div className="patient-facts" style={{ marginTop: "8px", fontSize: "13px", color: "var(--muted)" }}>
+						<span>Выберите пациента в списке или расписании, чтобы увидеть его данные.</span>
 					</div>
-					<div
-						style={{
-							display: "flex",
-							gap: "8px",
-							flexWrap: "wrap",
-							marginTop: "10px",
-						}}
-					>
+					<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
 						<a className="secondary-button min-h-[44px] px-3 py-2 flex items-center justify-center" href="#patients">
 							Выбрать пациента
 						</a>
@@ -711,28 +734,12 @@ export function PatientCockpit({
 							}}
 						>
 							{activePatientInsight.balanceDueRub ? (
-								<span
-									style={{
-										background: "var(--paper)",
-										padding: "3px 8px",
-										borderRadius: "6px",
-										border: "1px solid var(--line)",
-										color: "var(--ink)",
-									}}
-								>
+								<span className="bg-[var(--paper)] px-2 py-0.5 rounded-md border border-[var(--line)] text-[var(--ink)]">
 									<CreditCard size={13} className="inline mr-1 text-amber-500" /> Долг {money(activePatientInsight.balanceDueRub)}
 								</span>
 							) : null}
 							{activePatientInsight.openTasks > 0 ? (
-								<span
-									style={{
-										background: "var(--paper)",
-										padding: "3px 8px",
-										borderRadius: "6px",
-										border: "1px solid var(--line)",
-										color: "var(--ink)",
-									}}
-								>
+								<span className="bg-[var(--paper)] px-2 py-0.5 rounded-md border border-[var(--line)] text-[var(--ink)]">
 									<Phone size={13} className="inline mr-1 text-[var(--teal)]" />{" "}
 									{countLabel(
 										activePatientInsight.openTasks,
@@ -744,15 +751,7 @@ export function PatientCockpit({
 								</span>
 							) : null}
 							{(activePatientInsight.missingDocumentKinds?.length ?? 0) > 0 ? (
-								<span
-									style={{
-										background: "var(--paper)",
-										padding: "3px 8px",
-										borderRadius: "6px",
-										border: "1px solid var(--line)",
-										color: "var(--ink)",
-									}}
-								>
+								<span className="bg-[var(--paper)] px-2 py-0.5 rounded-md border border-[var(--line)] text-[var(--ink)]">
 									<FileText size={13} className="inline mr-1 text-rose-500" /> не хватает{" "}
 									{countLabel(
 										activePatientInsight.missingDocumentKinds?.length ?? 0,
@@ -763,17 +762,8 @@ export function PatientCockpit({
 								</span>
 							) : null}
 							{activePatientInsight.recallDueAt ? (
-								<span
-									style={{
-										background: "var(--paper)",
-										padding: "3px 8px",
-										borderRadius: "6px",
-										border: "1px solid var(--line)",
-										color: "var(--ink)",
-									}}
-								>
-									повторный визит{" "}
-									{formatShortDate(activePatientInsight.recallDueAt)}
+								<span className="bg-[var(--paper)] px-2 py-0.5 rounded-md border border-[var(--line)] text-[var(--ink)]">
+									повторный визит {formatShortDate(activePatientInsight.recallDueAt)}
 								</span>
 							) : null}
 						</div>

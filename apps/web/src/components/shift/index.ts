@@ -11,7 +11,7 @@ export type {
 	DoctorShiftControlBarProps,
 	DoctorShiftStats,
 } from "./DoctorShiftControlBar";
-export { DoctorShiftControlBar } from "./DoctorShiftControlBar";
+export { DoctorShiftControlBar, DoctorShiftHeaderBar } from "./DoctorShiftControlBar";
 
 export type {
 	DoctorShiftCloseModalProps,

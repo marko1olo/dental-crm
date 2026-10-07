@@ -759,10 +759,10 @@ export function OrthopedicsChairsidePanel({
 						disabled={isLabOrderSending}
 						className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
 						data-testid="direct-send-lab-order-btn"
-						title="Мгновенно отправить заказ-наряд в лабораторию без бюрократических барьеров"
+						title="Отправить заказ-наряд в зуботехническую лабораторию"
 					>
 						<Send size={15} />
-						<span>{isLabOrderSending ? "Отправка в ЗТЛ..." : "В ЗТЛ (1 клик)"}</span>
+						<span>{isLabOrderSending ? "Отправка в ЗТЛ..." : "Отправить в ЗТЛ"}</span>
 					</button>
 
 					{/* Переход в конструктор наряда ЗТЛ */}

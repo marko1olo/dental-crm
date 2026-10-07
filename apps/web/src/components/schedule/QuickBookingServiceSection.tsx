@@ -647,7 +647,7 @@ export function QuickBookingServiceSection({
                   <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                   <div className="space-y-0.5">
                     <span className="font-semibold block">
-                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением (Мандат 8e: запись не блокируется).
+                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается в штатном режиме.
                     </span>
                     <span className="text-[11px] text-[var(--muted)]">
                       При необходимости врач может принять пациента в свободном кабинете

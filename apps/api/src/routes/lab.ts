@@ -618,6 +618,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	app.get("/api/clinical/lab-orders", getLabOrdersHandler);
 	app.get("/api/lab/orders", getLabOrdersHandler);
+	app.get("/api/dental-lab/orders", getLabOrdersHandler);
 
 	/**
 	 * POST /api/clinical/lab-orders and /api/lab/orders
@@ -781,6 +782,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	app.post("/api/clinical/lab-orders", createLabOrderHandler);
 	app.post("/api/lab/orders", createLabOrderHandler);
+	app.post("/api/dental-lab/orders", createLabOrderHandler);
 
 	/**
 	 * PUT /api/clinical/lab-orders/:id and /api/lab/orders/:id
@@ -970,6 +972,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	app.put("/api/clinical/lab-orders/:id", putLabOrderHandler);
 	app.put("/api/lab/orders/:id", putLabOrderHandler);
+	app.put("/api/dental-lab/orders/:id", putLabOrderHandler);
 
 	/**
 	 * Вспомогательное сопоставление клинического этапа ЗТЛ на допустимый статус lab_orders.status (0042 CHECK).
@@ -1305,12 +1308,14 @@ export async function registerLabRoutes(app: FastifyInstance) {
 	app.patch("/api/lab/orders/:id", patchLabOrderHandler);
 	app.patch("/api/clinical/lab-orders/:id", patchLabOrderHandler);
 	app.patch("/api/clinical/lab-orders/:id/status", patchLabOrderHandler);
+	app.patch("/api/dental-lab/orders/:id", patchLabOrderHandler);
+	app.patch("/api/dental-lab/orders/:id/status", patchLabOrderHandler);
 
 	/**
-	 * DELETE /api/clinical/lab-orders/:id
+	 * DELETE /api/clinical/lab-orders/:id, /api/lab/orders/:id, /api/dental-lab/orders/:id
 	 * Удаление заказа ЗТЛ (только черновики или отмененные).
 	 */
-	app.delete("/api/clinical/lab-orders/:id", async (request, reply) => {
+	const deleteLabOrderHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -1390,7 +1395,11 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		});
 
 		return { success: true };
-	});
+	};
+
+	app.delete("/api/clinical/lab-orders/:id", deleteLabOrderHandler);
+	app.delete("/api/lab/orders/:id", deleteLabOrderHandler);
+	app.delete("/api/dental-lab/orders/:id", deleteLabOrderHandler);
 
 	/**
 	 * GET /api/portal/lab-order/:token

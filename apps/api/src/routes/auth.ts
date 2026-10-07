@@ -29,6 +29,12 @@ import {
 	verifyCredential,
 	verifyToken,
 } from "../utils/cryptoHelper.js";
+import {
+	DEMO_ADMIN_ID,
+	DEMO_DOCTOR_1_ID,
+	DEMO_SHOWCASE_ORG_ID,
+	ensureDemoShowcaseTenant,
+} from "../services/demo/deepDemoSeeder.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 /**
@@ -524,22 +530,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				loginId === "clinic@example.com" &&
 				password === "dente2026";
 
+			if (isDemoClinicLogin) {
+				try {
+					await ensureDemoShowcaseTenant();
+				} catch (seedErr) {
+					console.error("[AUTH_DEMO_SEED_ERROR]", seedErr);
+				}
+			}
+
 			// Look up organization by login ID
-			//
-			// БЫЛО: ошибка базы гасилась дважды (.catch(() => []) и внешний try/catch),
-			// после чего org оставалась пустой и клиника получала 401 «Неверный логин
-			// или пароль». Недоступная база выглядела как неправильный пароль: сотрудники
-			// перебирали пароли, а авария в логах отличалась от обычной опечатки только
-			// строкой AUTH_DB_ERROR. Отказ инфраструктуры должен отвечать 500.
-			//
-			// ОПЕРАЦИЯ «ДО АРЕНДАТОРА». Организация ищется по логину, то есть до
-			// запроса арендатор неизвестен, а политика `organizations` под FORCE RLS
-			// отдаёт таким запросам ноль строк (замер: 0 строк без контекста, 1 строка
-			// под обходом). Обход накрывает РОВНО этот SELECT: всё остальное в
-			// маршруте, включая запись аудита ниже, идёт под контекстом арендатора.
-			//
-			// Демо-вход сохраняет прежнее поведение: он не обращается к базе и остаётся
-			// доступен, если таблиц ещё нет (свежая установка до миграций).
 			let org:
 				| typeof organizations.$inferSelect
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -550,7 +549,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					tx
 						.select()
 						.from(organizations)
-						.where(eq(organizations.loginId, loginId))
+						.where(
+							isDemoClinicLogin
+								? or(
+										eq(organizations.loginId, loginId),
+										eq(organizations.id, DEMO_SHOWCASE_ORG_ID),
+									)
+								: eq(organizations.loginId, loginId),
+						)
 						.limit(1),
 				);
 				if (!lookup.row && !lookup.bypassActive && !isDemoClinicLogin) {
@@ -575,8 +581,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			if (!org) {
 				if (isDemoClinicLogin) {
 					org = {
-						id: "00000000-0000-0000-0000-000000000001",
-						name: "Демо Клиника DENTE",
+						id: DEMO_SHOWCASE_ORG_ID,
+						name: "Стоматологическая Клиника DENTE (Демо)",
 						passwordHash: null,
 					};
 				} else {
@@ -652,9 +658,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			const clinicToken = Array.isArray(clinicHeader)
 				? clinicHeader[0]
 				: clinicHeader;
-			const clinicPayload = clinicToken
-				? verifyToken(clinicToken, TOKEN_SECRET())
-				: null;
+			const clinicPayload =
+				clinicToken &&
+				(clinicToken.startsWith("demo-showcase-token") ||
+					clinicToken.startsWith("demo-showcase-clinic-token"))
+					? { organizationId: DEMO_SHOWCASE_ORG_ID }
+					: clinicToken
+						? verifyToken(clinicToken, TOKEN_SECRET())
+						: null;
 
 			if (!clinicPayload?.organizationId) {
 				return reply.code(401).send({
@@ -759,12 +770,34 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				? staffHeader[0]
 				: staffHeader;
 
-			const clinicPayload = clinicToken
-				? verifyToken(clinicToken, TOKEN_SECRET())
-				: null;
-			const staffPayload = staffToken
-				? verifyToken(staffToken, TOKEN_SECRET())
-				: null;
+			const clinicPayload =
+				clinicToken &&
+				(clinicToken.startsWith("demo-showcase-token") ||
+					clinicToken.startsWith("demo-showcase-clinic-token"))
+					? { organizationId: DEMO_SHOWCASE_ORG_ID }
+					: clinicToken
+						? verifyToken(clinicToken, TOKEN_SECRET())
+						: null;
+			const staffPayload =
+				staffToken && staffToken.startsWith("demo-showcase-staff-token")
+					? {
+							userId:
+								staffToken.includes("orthopedist")
+									? "01a00000-0000-0000-0003-000000000006"
+									: staffToken.includes("orthodontist")
+										? "01a00000-0000-0000-0003-000000000002"
+										: staffToken.includes("surgeon")
+											? "01a00000-0000-0000-0003-000000000003"
+											: staffToken.includes("owner")
+												? "01a00000-0000-0000-0003-000000000004"
+												: staffToken.includes("admin")
+													? DEMO_ADMIN_ID
+													: DEMO_DOCTOR_1_ID,
+							organizationId: DEMO_SHOWCASE_ORG_ID,
+						}
+					: staffToken
+						? verifyToken(staffToken, TOKEN_SECRET())
+						: null;
 
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let activeUser: any = null;
@@ -1489,16 +1522,21 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				password === "dente2026";
 
 			if (isDemoClinicLogin) {
-				const orgId = "00000000-0000-0000-0000-000000000001";
+				try {
+					await ensureDemoShowcaseTenant();
+				} catch (seedErr) {
+					console.error("[AUTH_DEMO_SEED_ERROR]", seedErr);
+				}
+				const orgId = DEMO_SHOWCASE_ORG_ID;
 				const clinicToken = signToken(
-					{ organizationId: orgId, clinicName: "Демо Клиника DENTE" },
+					{ organizationId: orgId, clinicName: "Стоматологическая Клиника DENTE (Демо)" },
 					TOKEN_SECRET(),
 					60 * 60 * 24 * 7,
 				);
 				const staffToken = signToken(
 					{
-						userId: "00000000-0000-0000-0000-000000000002",
-						fullName: "Врач-стоматолог",
+						userId: DEMO_DOCTOR_1_ID,
+						fullName: "Д-р Соколов А. В.",
 						role: "doctor",
 						organizationId: orgId,
 					},
@@ -1510,8 +1548,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					clinicToken,
 					staffToken,
 					user: {
-						id: "00000000-0000-0000-0000-000000000002",
-						fullName: "Врач-стоматолог",
+						id: DEMO_DOCTOR_1_ID,
+						fullName: "Д-р Соколов А. В.",
 						role: "doctor",
 						email: "clinic@example.com",
 					},
@@ -1711,32 +1749,34 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			// Демо-вход пользователя при отсутствии в базе
 			if (!user) {
 				if (isDemoUserLogin) {
+					try {
+						await ensureDemoShowcaseTenant();
+					} catch (seedErr) {
+						console.error("[AUTH_DEMO_SEED_ERROR]", seedErr);
+					}
 					const isDoctorLogin = loginIdentifier === "doctor@clinic.com";
-					const anyUserLookup = await readUnderBypass((tx) =>
+					const targetUserId = isDoctorLogin ? DEMO_DOCTOR_1_ID : DEMO_ADMIN_ID;
+					const demoUserLookup = await readUnderBypass((tx) =>
 						tx
 							.select()
 							.from(users)
 							.where(
-								isDoctorLogin
-									? or(eq(users.role, "doctor"), eq(users.role, "owner"))
-									: or(eq(users.role, "admin"), eq(users.role, "owner")),
+								and(
+									eq(users.organizationId, DEMO_SHOWCASE_ORG_ID),
+									eq(users.id, targetUserId),
+								),
 							)
 							.limit(1),
 					);
-					const dbUser = anyUserLookup.row;
+					const dbUser = demoUserLookup.row;
 					if (dbUser) {
 						user = dbUser;
 					} else {
-						const anyOrgLookup = await readUnderBypass((tx) =>
-							tx.select().from(organizations).limit(1),
-						);
-						const orgId =
-							anyOrgLookup.row?.id || "00000000-0000-0000-0000-000000000001";
 						user = {
-							id: "00000000-0000-0000-0000-000000000002",
-							organizationId: orgId,
-							fullName: "Врач-стоматолог",
-							role: "doctor",
+							id: targetUserId,
+							organizationId: DEMO_SHOWCASE_ORG_ID,
+							fullName: isDoctorLogin ? "Д-р Соколов А. В." : "Смирнова А. П.",
+							role: isDoctorLogin ? "doctor" : "administrator",
 							email: loginIdentifier,
 							passwordHash: null,
 						};
@@ -2241,4 +2281,33 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			return reply.send({ ok: true, message: "PIN-код успешно изменен." });
 		},
 	);
+
+	// ─── Demo Tenant Seeding / Reinitialization Endpoint ────────────────────────
+	app.post(
+		"/api/auth/demo/seed",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (!demoLoginAllowed()) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Инициализация демо-контура доступна только при включенном DENTE_ALLOW_DEMO_LOGIN в dev/test.",
+				});
+			}
+			const body = authBodyRecord(request.body);
+			const forceReset = body.forceReset === true;
+			try {
+				const result = await ensureDemoShowcaseTenant(undefined, { forceReset });
+				return reply.send({
+					ok: true,
+					...result,
+				});
+			} catch (err) {
+				request.log.error({ err }, "[DEMO_SEED_FAIL] Ошибка инициализации демо-тенанта");
+				return reply.code(500).send({
+					error: "DemoSeedError",
+					message: "Не удалось инициализировать демонстрационный тенант.",
+				});
+			}
+		},
+	);
 }
+

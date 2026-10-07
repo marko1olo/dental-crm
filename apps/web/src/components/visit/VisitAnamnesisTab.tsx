@@ -340,10 +340,10 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						onClick={onOpenStomxTemplates ?? (() => window.dispatchEvent(new CustomEvent("dente-open-stomx-templates")))}
 						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-3 py-1.5 rounded-xl text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-open-stomt-templates-anamnesis"
-						title="Открыть каталог 448 клинических шаблонов из StomX (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
+						title="Открыть каталог 448 клинических шаблонов (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-						<span>Клинические шаблоны StomX (448)</span>
+						<span>Клинические шаблоны (448)</span>
 					</button>
 					<button
 						type="button"

@@ -1,7 +1,6 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { useCallback, useMemo } from "react";
 import { toDateTimeLocalValue } from "../../AppHelpers";
-import { isDemoShowcaseMode, getDemoShowcaseAppointments } from "../../lib/demoMode";
 import { useScheduleStore } from "../../store/scheduleStore";
 
 export interface ScheduleFilterControllerOptions {
@@ -31,20 +30,7 @@ export function useScheduleFilterController({
 	} = useScheduleStore();
 
 	const sortedAppointments = useMemo(() => {
-		const rawAppointments: Appointment[] =
-			dashboard?.appointments && dashboard.appointments.length > 0
-				? dashboard.appointments
-				: isDemoShowcaseMode()
-					? getDemoShowcaseAppointments(
-							scheduleDateFilter ||
-								(dashboard?.clinicSettings?.profile?.timezone
-									? toDateTimeLocalValue(
-											new Date().toISOString(),
-											dashboard.clinicSettings.profile.timezone,
-									  ).slice(0, 10)
-									: undefined),
-					  )
-					: [];
+		const rawAppointments: Appointment[] = dashboard?.appointments ?? [];
 
 		return rawAppointments
 			.filter((appointment) => {

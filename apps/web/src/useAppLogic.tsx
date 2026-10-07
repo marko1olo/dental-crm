@@ -3215,7 +3215,6 @@ export function useAppLogic(): any {
 
 	useEffect(() => {
 		if (currentView === "settings") {
-			setOnboardingGuideExpanded(settingsTab === "clinic");
 			activeSettingsTabButtonRef.current?.scrollIntoView({
 				behavior: "auto",
 				inline: "center",

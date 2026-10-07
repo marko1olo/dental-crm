@@ -277,25 +277,9 @@ export function InteractiveGuideTour({
 		};
 	}, [detectedRole]);
 
-	// Check if user should be invited on first entry
+	// Tour is launched on explicit trigger via dente:start-interactive-tour, zero intrusive auto-popups
 	useEffect(() => {
-		// Never show desktop tour invite on mobile screens (<= 768px) per Apple HIG & mobile ergonomics
-		if (
-			(typeof window !== "undefined" && window.innerWidth <= 768) ||
-			isGuideTourDismissed() ||
-			hasSeenGuideTour(detectedRole)
-		) {
-			return;
-		}
-
-		// Small delay to let initial UI render before showing gentle invite banner
-		const timer = setTimeout(() => {
-			if (!isOpen) {
-				setShowInviteBanner(true);
-			}
-		}, 1200);
-
-		return () => clearTimeout(timer);
+		// Do not auto-display banner unprompted to prevent layout hijack
 	}, [detectedRole, isOpen]);
 
 	// Locate target element and calculate bounding rect

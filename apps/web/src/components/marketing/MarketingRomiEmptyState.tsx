@@ -23,7 +23,7 @@ export function MarketingRomiEmptyState({
 			</div>
 			<h4 className="romi-empty-title">Нет данных о расходах по рекламным каналам</h4>
 			<p className="romi-empty-desc">
-				Добавьте используемые каналы привлечения пациентов клиники вручную, синхронизируйте показатели с визитами CRM или загрузите типовой справочник каналов StomX с нулевым балансом.
+				Добавьте используемые каналы привлечения пациентов клиники вручную, синхронизируйте показатели с визитами CRM или загрузите типовой справочник каналов с нулевым балансом.
 			</p>
 			<div className="romi-empty-actions">
 				<button
@@ -46,10 +46,10 @@ export function MarketingRomiEmptyState({
 					type="button"
 					className="romi-action-btn secondary"
 					onClick={onResetDefaults}
-					title="Загрузить стандартный справочник каналов StomX с нулевым балансом"
+					title="Загрузить стандартный справочник каналов с нулевым балансом"
 				>
 					<RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-					Загрузить шаблон StomX
+					Загрузить типовой шаблон
 				</button>
 			</div>
 		</div>

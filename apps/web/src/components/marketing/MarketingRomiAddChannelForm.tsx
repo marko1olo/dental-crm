@@ -79,7 +79,7 @@ export function MarketingRomiAddChannelForm({
 						marginBottom: "6px",
 					}}
 				>
-					Быстрое добавление типового канала StomX (в 1 клик):
+					Быстрое добавление типового канала:
 				</span>
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
 					{QUICK_CHANNEL_PRESETS.map((p) => (

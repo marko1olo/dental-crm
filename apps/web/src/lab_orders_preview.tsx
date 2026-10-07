@@ -39,7 +39,6 @@ import { DentalLabOrdersTrackerModal } from "./components/lab/DentalLabOrdersTra
 import { DentalLabPrintBlank } from "./components/lab/DentalLabPrintBlank";
 import { DentalLabShadePicker } from "./components/lab/DentalLabShadePicker";
 import { MobileLabOrdersTimeline } from "./components/lab/mobile/MobileLabOrdersTimeline";
-import { getDemoDentalLabWorkflowOrders } from "./components/lab/dentalLabDemoData";
 import { type DentalLabWorkflowOrder, createDentalLabOrder } from "./components/lab/dentalLabWorkflowModel";
 import { type LabWorkflowStatus } from "./components/lab/dentalLabWorkflowEngine";
 import type { DentalLabOrderData } from "./components/lab/labMath";
@@ -125,7 +124,38 @@ function LabOrdersPreviewApp() {
 
 	const kanbanOrdersByStage = useMemo<Record<LabWorkflowStatus, DentalLabWorkflowOrder[]>>(() => {
 		const demoList: DentalLabWorkflowOrder[] = [
-			...getDemoDentalLabWorkflowOrders(),
+			createDentalLabOrder({
+				patientId: "demo-pat-1",
+				patientName: "Барабаш С.В.",
+				doctorId: "doc-1",
+				doctorName: "Д-р Воронов А.В. (Ортопед)",
+				labName: "CAD/CAM Центр Дентал-Мастер",
+				workTypeId: "crown_zirconia",
+				materialName: "Диоксид циркония Katana HTML (Multi-Layer)",
+				selectedTeeth: [16],
+				shadeCode: "A2",
+				initialStatus: "sent_to_lab",
+				pricePerUnitRub: 24000,
+				costPerUnitRub: 7500,
+				orderNumber: "ЗТЛ-2026-101",
+				clinicalNotes: "Интраоральный скан STL/PLY. Плечевой уступ 0.8 мм.",
+			}),
+			createDentalLabOrder({
+				patientId: "demo-pat-2",
+				patientName: "Смирнова Е.А.",
+				doctorId: "doc-1",
+				doctorName: "Д-р Воронов А.В. (Ортопед)",
+				labName: "ArtDent Премиум Лаб",
+				workTypeId: "crown_emax",
+				materialName: "IPS e.max Press (дисиликат лития)",
+				selectedTeeth: [11, 21],
+				shadeCode: "2M2",
+				initialStatus: "draft",
+				pricePerUnitRub: 28000,
+				costPerUnitRub: 9000,
+				orderNumber: "ЗТЛ-2026-102",
+				clinicalNotes: "Фронтальная группа. 3D виртуальное моделирование Wax-up.",
+			}),
 			createDentalLabOrder({
 				patientId: "demo-pat-rework",
 				patientName: "Иванов Алексей Сергеевич",
@@ -407,7 +437,7 @@ function LabOrdersPreviewApp() {
 							<DentalLabOrdersHubModal
 								isOpen={true}
 								onClose={() => setActiveTab("registry")}
-								initialOrders={getDemoDentalLabWorkflowOrders()}
+								initialOrders={[]}
 								currentPatientName="Ковалёв Роман Станиславович"
 								currentDoctorName="Д-р Воронов Алексей Владимирович"
 							/>

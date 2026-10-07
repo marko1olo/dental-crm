@@ -60,6 +60,8 @@ export interface DentalLabOrderData {
 	clinicSharePct?: number;
 	doctorSharePct?: number;
 	doctorDeductionRub?: number | null;
+	paidFromCashOperationId?: string | null;
+	isLockedInstalled?: boolean;
 	isWarrantyRework?: boolean;
 	reworkReason?: string;
 	originalOrderId?: string;

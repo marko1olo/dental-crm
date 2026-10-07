@@ -121,6 +121,12 @@ export function buildStagesFromPlanItems(
 			const netKopecks = Math.max(0, lineGrossKopecks - lineDiscKopecks);
 			const netRub = netKopecks / 100;
 
+			const isCompleted = Boolean(
+				raw.isCompleted ||
+				raw.status === "completed" ||
+				raw.planStatus === "completed",
+			);
+
 			return {
 				id: String(raw.id || `item_${phaseNumber}_${idx}_${Date.now()}`),
 				toothNumber,
@@ -139,6 +145,10 @@ export function buildStagesFromPlanItems(
 				doctorId: raw.doctorId ?? null,
 				doctorName: raw.doctorName ?? null,
 				doctorSpecialty: raw.doctorSpecialty ?? null,
+				isCompleted,
+				status: isCompleted ? "completed" : (raw.status || "planned"),
+				visitId: raw.visitId ?? null,
+				completedAtIso: raw.completedAtIso ?? raw.updatedAt ?? null,
 			};
 		});
 
@@ -187,6 +197,15 @@ export function buildStagesFromPlanItems(
 
 		const stageDoctor = mappedItems.find((it) => it.doctorId);
 
+		const hasAllCompleted =
+			mappedItems.length > 0 && mappedItems.every((it) => it.isCompleted);
+		const hasSomeCompleted = mappedItems.some((it) => it.isCompleted);
+		const stageStatus = hasAllCompleted
+			? "completed"
+			: hasSomeCompleted
+				? "in_progress"
+				: "agreed";
+
 		stages.push({
 			stageNumber: phaseNumber,
 			stageKind,
@@ -199,7 +218,7 @@ export function buildStagesFromPlanItems(
 			estimatedVisits: Math.max(1, Math.ceil(mappedItems.length / 2)),
 			estimatedWeeks: phaseNumber === 2 ? 12 : phaseNumber === 3 ? 4 : 2,
 			order804nCodes,
-			status: "agreed",
+			status: stageStatus,
 			doctorId: stageDoctor?.doctorId ?? null,
 			doctorName: stageDoctor?.doctorName ?? null,
 			doctorSpecialty: stageDoctor?.doctorSpecialty ?? null,

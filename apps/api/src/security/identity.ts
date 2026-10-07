@@ -24,6 +24,15 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
+import {
+	DEMO_SHOWCASE_ORG_ID,
+	DEMO_DOCTOR_1_ID,
+	DEMO_DOCTOR_ORTHOPEDIST_ID,
+	DEMO_DOCTOR_2_ID,
+	DEMO_DOCTOR_SURGEON_ID,
+	DEMO_OWNER_ID,
+	DEMO_ADMIN_ID,
+} from "@dental/shared";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "./authSecret.js";
 import { unguardedBypassAllowed } from "./bypass.js";
@@ -213,36 +222,89 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 	const clinicToken = headerValue(request, CLINIC_TOKEN_HEADER);
 	const staffToken = headerValue(request, STAFF_TOKEN_HEADER);
 
-	const clinicPayload = clinicToken ? verifyToken(clinicToken, secret) : null;
-	const staffPayload = staffToken ? verifyToken(staffToken, secret) : null;
+	const isDemoClinicToken =
+		typeof clinicToken === "string" &&
+		(clinicToken.startsWith("demo-showcase-token") ||
+			clinicToken.startsWith("demo-showcase-clinic-token"));
+	const isDemoStaffToken =
+		typeof staffToken === "string" &&
+		staffToken.startsWith("demo-showcase-staff-token");
 
-	if (clinicPayload && typeof clinicPayload.organizationId === "string") {
-		identity.organizationId = clinicPayload.organizationId;
+	if (isDemoClinicToken || isDemoStaffToken) {
+		identity.organizationId = DEMO_SHOWCASE_ORG_ID;
 		identity.verified = true;
-	}
 
-	if (staffPayload && typeof staffPayload.userId === "string") {
-		// Токен сотрудника обязан относиться к той же организации, что и токен кабинета.
-		const staffOrg =
-			typeof staffPayload.organizationId === "string"
-				? staffPayload.organizationId
-				: null;
-		if (!identity.organizationId && staffOrg) {
-			identity.organizationId = staffOrg;
+		const roleHint = (
+			(isDemoStaffToken
+				? staffToken.replace("demo-showcase-staff-token-", "")
+				: "") ||
+			(isDemoClinicToken
+				? clinicToken
+						.replace("demo-showcase-token-", "")
+						.replace("demo-showcase-clinic-token", "")
+				: "")
+		)
+			.toLowerCase()
+			.trim();
+
+		if (roleHint === "orthopedist") {
+			identity.userId = DEMO_DOCTOR_ORTHOPEDIST_ID;
+			identity.role = "doctor";
+			identity.fullName = "Д-р Орлов А. В.";
+		} else if (roleHint === "orthodontist") {
+			identity.userId = DEMO_DOCTOR_2_ID;
+			identity.role = "doctor";
+			identity.fullName = "Д-р Морозова Е. И.";
+		} else if (roleHint === "surgeon") {
+			identity.userId = DEMO_DOCTOR_SURGEON_ID;
+			identity.role = "doctor";
+			identity.fullName = "Д-р Громов К. Д.";
+		} else if (roleHint === "owner") {
+			identity.userId = DEMO_OWNER_ID;
+			identity.role = "owner";
+			identity.fullName = "Д-р Воронов М. С.";
+		} else if (roleHint === "admin" || roleHint === "administrator") {
+			identity.userId = DEMO_ADMIN_ID;
+			identity.role = "administrator";
+			identity.fullName = "Смирнова А. П.";
+		} else {
+			identity.userId = DEMO_DOCTOR_1_ID;
+			identity.role = "doctor";
+			identity.fullName = "Д-р Соколов А. В.";
+		}
+		identity.sessionId = null;
+	} else {
+		const clinicPayload = clinicToken ? verifyToken(clinicToken, secret) : null;
+		const staffPayload = staffToken ? verifyToken(staffToken, secret) : null;
+
+		if (clinicPayload && typeof clinicPayload.organizationId === "string") {
+			identity.organizationId = clinicPayload.organizationId;
 			identity.verified = true;
 		}
-		if (!staffOrg || staffOrg === identity.organizationId) {
-			identity.userId = staffPayload.userId;
-			identity.role =
-				typeof staffPayload.role === "string" ? staffPayload.role : null;
-			identity.fullName =
-				typeof staffPayload.fullName === "string"
-					? staffPayload.fullName
+
+		if (staffPayload && typeof staffPayload.userId === "string") {
+			// Токен сотрудника обязан относиться к той же организации, что и токен кабинета.
+			const staffOrg =
+				typeof staffPayload.organizationId === "string"
+					? staffPayload.organizationId
 					: null;
-			identity.sessionId =
-				typeof staffPayload.sessionId === "string"
-					? staffPayload.sessionId
-					: null;
+			if (!identity.organizationId && staffOrg) {
+				identity.organizationId = staffOrg;
+				identity.verified = true;
+			}
+			if (!staffOrg || staffOrg === identity.organizationId) {
+				identity.userId = staffPayload.userId;
+				identity.role =
+					typeof staffPayload.role === "string" ? staffPayload.role : null;
+				identity.fullName =
+					typeof staffPayload.fullName === "string"
+						? staffPayload.fullName
+						: null;
+				identity.sessionId =
+					typeof staffPayload.sessionId === "string"
+						? staffPayload.sessionId
+						: null;
+			}
 		}
 	}
 
@@ -292,6 +354,9 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 			id: identity.userId,
 			role: identity.role,
 			fullName: identity.fullName,
+			canSignMedicalRecords: true,
+			canManageMoney:
+				identity.role === "owner" || identity.role === "administrator",
 		};
 	}
 	return identity;

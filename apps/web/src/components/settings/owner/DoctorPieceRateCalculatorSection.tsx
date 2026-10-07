@@ -111,7 +111,7 @@ const PIECE_RATE_PRESETS: readonly PieceRatePreset[] = [
 	{
 		id: "solo_universal",
 		title: "Универсал (Соло / 1 кресло)",
-		description: "25% со всей кассы. 100% вычет ЗТЛ заказ-нарядов. Быстрый расчет без бюрократии.",
+		description: "25% со всей кассы. 100% вычет ЗТЛ заказ-нарядов. Автоматический расчет.",
 		therapyRatePct: 25,
 		orthopedicsRatePct: 25,
 		surgeryRatePct: 25,

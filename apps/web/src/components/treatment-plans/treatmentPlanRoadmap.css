@@ -398,3 +398,39 @@
 	transform: scale(0.98);
 }
 
+.roadmap-stage-completed-badge {
+	height: 32px;
+	min-height: 32px;
+	padding: 0.375rem 0.875rem;
+	border-radius: 0.5rem;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--ok-fg);
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	box-sizing: border-box;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+	.roadmap-stage-completed-badge {
+		min-height: 44px;
+		height: auto;
+		padding: 0.625rem 1rem;
+		font-size: 0.875rem;
+		border-radius: 0.75rem;
+		width: 100%;
+	}
+}
+
+.roadmap-stage-progress-indicator {
+	margin-bottom: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+

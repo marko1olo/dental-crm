@@ -153,6 +153,14 @@ export function PatientOverviewTab({ showHeaderCard = false }: PatientOverviewTa
 				style={{ marginTop: "8px" }}
 			>
 				<div className="clinical-col-left" style={{ flex: 1 }}>
+					{selectedPatientId && (
+						<PatientWorkspaceView
+							patientId={selectedPatientId}
+							patientName={selectedPatient?.fullName || null}
+							dashboard={dashboard}
+						/>
+					)}
+
 					<PatientFamilyCard
 						patientId={selectedPatientId}
 						patientName={selectedPatient?.fullName || null}
@@ -161,14 +169,6 @@ export function PatientOverviewTab({ showHeaderCard = false }: PatientOverviewTa
 						onRetryLoad={loadFamily}
 						onFamilyDataChanged={loadFamily}
 					/>
-
-					{selectedPatientId && (
-						<PatientWorkspaceView
-							patientId={selectedPatientId}
-							patientName={selectedPatient?.fullName || null}
-							dashboard={dashboard}
-						/>
-					)}
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
 					{selectedPatientId && (

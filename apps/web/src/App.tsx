@@ -1067,6 +1067,8 @@ export function App() {
 			const [route, subroute] = hash.split(/[/?]/);
 			if (route === "visit") {
 				setCurrentView("visit");
+			} else if (route === "shift") {
+				setCurrentView("shift");
 			} else if (route === "schedule") {
 				setCurrentView("schedule");
 			} else if (route === "patients") {
@@ -1601,6 +1603,9 @@ export function App() {
 	 */
 	const [defaultClinicNoticeHidden, setDefaultClinicNoticeHidden] =
 		useState(false);
+	const [isStripDismissedLocally, setIsStripDismissedLocally] = useState<boolean>(() => {
+		return typeof window !== "undefined" && safeLocalStorageGetItem("dente_onboarding_strip_dismissed") === "true";
+	});
 	// 3D CBCT CONTRAST & SLICE TUNER PLAYGROUND (?cbct=tuner)
 	// Must be rendered at the ABSOLUTE TOP before ANY auth, unlock, error, or dashboard guards!
 	if (isCbctTunerOpen) {
@@ -2140,9 +2145,11 @@ export function App() {
 					{!onboardingDismissed &&
 					!showFullOnboardingGuide &&
 					!isLocalOnboardingDismissed &&
+					!isStripDismissedLocally &&
 					!(typeof window !== "undefined" && window.innerWidth <= 768) &&
 					currentView !== "visit" &&
-					!(typeof window !== "undefined" && window.location.hash.toLowerCase().includes("visit")) ? (
+					currentView !== "shift" &&
+					!(typeof window !== "undefined" && (window.location.hash.toLowerCase().includes("visit") || window.location.hash.toLowerCase().includes("shift"))) ? (
 						<section
 							className="onboarding-compact-strip"
 							aria-label="Первичная настройка клиники"
@@ -2182,7 +2189,11 @@ export function App() {
 							<button
 								className="secondary-button"
 								type="button"
-								onClick={() => dismissOnboarding()}
+								onClick={() => {
+									setIsStripDismissedLocally(true);
+									safeLocalStorageSetItem("dente_onboarding_strip_dismissed", "true");
+									dismissOnboarding();
+								}}
 								title="Скрыть подсказку"
 								aria-label="Скрыть подсказку"
 							>

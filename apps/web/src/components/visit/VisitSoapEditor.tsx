@@ -1102,7 +1102,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
 						data-testid="btn-open-stomt-templates"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3.5 text-[13px] font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
-						title="Открыть каталог 448 клинических шаблонов из StomX"
+						title="Открыть каталог 448 клинических шаблонов"
 						aria-label="Клинические шаблоны (448)"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
@@ -1325,10 +1325,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							<span
 								className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]"
-								aria-label="Клинические протоколы StomX (448 протоколов)"
-								title="Клинические протоколы StomX (448 протоколов)"
+								aria-label="Клинические протоколы (448 шаблонов)"
+								title="Клинические протоколы (448 шаблонов)"
 							>
-								Клинические протоколы StomX (448 протоколов)
+								Клинические протоколы (448 шаблонов)
 							</span>
 						</div>
 						<button
@@ -1936,7 +1936,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					type="button"
 					onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
 					className="flex-1 min-h-[44px] px-3 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-1.5 bg-teal-600 active:bg-teal-700 text-white shadow-xs touch-manipulation cursor-pointer"
-					title="Каталог 448 шаблонов StomX"
+					title="Каталог 448 клинических шаблонов"
 				>
 					<Sparkles className="w-4 h-4 shrink-0" />
 					<span className="truncate">Шаблоны (448)</span>
