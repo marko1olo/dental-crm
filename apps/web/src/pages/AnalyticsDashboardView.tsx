@@ -391,7 +391,11 @@ export function AnalyticsDashboardView() {
 					</div>
 
 					{/* Период (Compact 32px SegmentedControl with ... menu for rare ranges) */}
-					<div className="analytics-segmented" role="radiogroup" aria-label="Выбор периода">
+					<div
+						className={`analytics-segmented ${analyticsSection === "executive" ? "hidden sm:flex" : "flex"}`}
+						role="radiogroup"
+						aria-label="Выбор периода"
+					>
 						{DATE_RANGES.slice(0, 3).map((r) => (
 							<button
 								key={r.value}
@@ -462,7 +466,11 @@ export function AnalyticsDashboardView() {
 					</div>
 
 					{/* Тактильные кнопки действий тулбара: Экспорт, Печать, Обновление */}
-					<div className="flex items-center gap-1.5 shrink-0" role="group" aria-label="Действия с отчетом">
+					<div
+						className={`flex items-center gap-1.5 shrink-0 ${analyticsSection === "executive" ? "hidden sm:flex" : "flex"}`}
+						role="group"
+						aria-label="Действия с отчетом"
+					>
 						<button
 							type="button"
 							className="analytics-action-btn"
@@ -516,7 +524,8 @@ export function AnalyticsDashboardView() {
 						setIsSectionMoreOpen(false);
 					}}
 				>
-					Рабочий стол Директора
+					<span className="hidden sm:inline">Рабочий стол Директора</span>
+					<span className="sm:hidden">Директор</span>
 				</button>
 				<button
 					type="button"
@@ -528,7 +537,8 @@ export function AnalyticsDashboardView() {
 						setIsSectionMoreOpen(false);
 					}}
 				>
-					Операционные графики
+					<span className="hidden sm:inline">Операционные графики</span>
+					<span className="sm:hidden">Графики</span>
 				</button>
 				<button
 					type="button"
@@ -540,7 +550,8 @@ export function AnalyticsDashboardView() {
 						setIsSectionMoreOpen(false);
 					}}
 				>
-					Кураторы пациентов
+					<span className="hidden sm:inline">Кураторы пациентов</span>
+					<span className="sm:hidden">Кураторы</span>
 				</button>
 
 				{/* Контекстное меню «...» для специализированных разделов */}
@@ -551,27 +562,42 @@ export function AnalyticsDashboardView() {
 						aria-selected={
 							analyticsSection === "lost_patients" ||
 							analyticsSection === "freed_slots" ||
-							analyticsSection === "marketing"
+							analyticsSection === "marketing" ||
+							analyticsSection === "clinic"
 						}
 						aria-expanded={isSectionMoreOpen}
 						className={`analytics-tab-btn ${
 							analyticsSection === "lost_patients" ||
 							analyticsSection === "freed_slots" ||
-							analyticsSection === "marketing"
+							analyticsSection === "marketing" ||
+							analyticsSection === "clinic"
 								? "analytics-tab-btn--active"
 								: ""
 						}`}
 						onClick={() => setIsSectionMoreOpen((prev) => !prev)}
-						title="Дополнительные разделы аналитики (Возврат, Освободившиеся окна, Маркетинг, ROI)"
+						title="Дополнительные разделы аналитики (Возврат, Освободившиеся окна, Маркетинг, Сводный пульт)"
 					>
-						<span>
+						<span className="hidden sm:inline">
 							{analyticsSection === "lost_patients"
 								? "Ещё: Возврат пациентов"
 								: analyticsSection === "freed_slots"
 									? "Ещё: Освободившиеся окна"
 									: analyticsSection === "marketing"
 										? "Ещё: Сквозной маркетинг"
-										: "Ещё разделы"}
+										: analyticsSection === "clinic"
+											? "Ещё: Сводный пульт"
+											: "Ещё разделы"}
+						</span>
+						<span className="sm:hidden">
+							{analyticsSection === "lost_patients"
+								? "Возврат"
+								: analyticsSection === "freed_slots"
+									? "Окна"
+									: analyticsSection === "marketing"
+										? "Маркетинг"
+										: analyticsSection === "clinic"
+											? "Пульт"
+											: "Ещё"}
 						</span>
 						<ChevronDown
 							size={13}
@@ -1228,8 +1254,7 @@ export function AnalyticsDashboardView() {
 					{/*
 						Панели возврата пациентов (LostPatientsPanel, RecallListPanel)
 						и освободившихся окон (FreedSlotsPanel) вынесены в специализированные
-						вкладки верхнего уровня (lost_patients, freed_slots) per Mandate 8s
-						(Закон Единого Неделимого Авторитета).
+						вкладки верхнего уровня (lost_patients, freed_slots).
 					*/}
 
 					{/*
@@ -1239,7 +1264,7 @@ export function AnalyticsDashboardView() {
 						ноль, строк в живой базе ноль. Эффективность подтверждения приёмов
 						считается по настоящим приёмам в «Обзвоне и подтверждениях».
 					*/}
-					{/* Виджет «Кому засчитана повторная запись» (Фича #54/#61, Мандаты 8e, 8n & 8p) */}
+					{/* Виджет «Кому засчитана повторная запись» */}
 					<RebookingConversionRulesWidget dateRange={dateRange} />
 						</>
 					)}
@@ -1363,7 +1388,7 @@ function DoctorProfitabilityTable({
 								>
 									{doc?.labOrdersCount ?? 0}
 									{(doc?.labOrdersCostRub ?? 0) > 0 && (
-										<span className="block text-[11px] text-[var(--muted)] font-normal">
+										<span className="block text-xs text-[var(--muted)] font-normal">
 											{formatRub(doc?.labOrdersCostRub ?? 0)}
 										</span>
 									)}
@@ -1541,14 +1566,14 @@ function RebookingConversionRulesWidget({ dateRange }: { dateRange: string }) {
 				<div className="glass-widget-actions flex items-center gap-2">
 					{isSolo ? (
 						<span
-							className="text-[11px] px-2 py-0.5 rounded border bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border-[var(--teal)] font-medium"
-							title="В соло-режиме (1 кабинет) у врача нет администратора на ресепшене — все записи атрибутируются врачу (Мандат 8n)"
+							className="text-xs px-2 py-0.5 rounded border bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border-[var(--teal)] font-medium"
+							title="В соло-режиме (1 кабинет) у врача нет администратора на ресепшене — все записи атрибутируются врачу"
 						>
 							Соло-режим (100% врачу)
 						</span>
 					) : (
 						<span
-							className="text-[11px] px-2 py-0.5 rounded border bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] font-medium"
+							className="text-xs px-2 py-0.5 rounded border bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] font-medium"
 							title="Окно повторной записи у кресла — 15 минут"
 						>
 							Порог: 15 минут
@@ -1569,38 +1594,38 @@ function RebookingConversionRulesWidget({ dateRange }: { dateRange: string }) {
 			{/* KPI pills row */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 border-b border-[var(--line)] bg-[var(--paper-soft)]/50">
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)]">Общая конверсия повторной записи</span>
+					<span className="text-xs text-[var(--muted)]">Общая конверсия повторной записи</span>
 					<div className="flex items-baseline gap-2">
 						<span className="text-lg font-bold text-[var(--ink)]">
 							{rebookingRate}%
 						</span>
-						<span className="text-[11px] text-[var(--muted)]">
+						<span className="text-xs text-[var(--muted)]">
 							({totalRebookings} из {totalVisits} визитов)
 						</span>
 					</div>
 				</div>
 
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)]">Врач у кресла (≤ 15 мин)</span>
+					<span className="text-xs text-[var(--muted)]">Врач у кресла (≤ 15 мин)</span>
 					<div className="flex items-baseline gap-2">
 						<span className="text-lg font-bold text-[var(--teal)]">
 							{doctorRate}%
 						</span>
-						<span className="text-[11px] text-[var(--muted)]">
+						<span className="text-xs text-[var(--muted)]">
 							({summary?.doctorRebookingsCount ?? 0} записей)
 						</span>
 					</div>
 				</div>
 
 				<div className="flex flex-col gap-0.5">
-					<span className="text-[11px] text-[var(--muted)]">
+					<span className="text-xs text-[var(--muted)]">
 						{isSolo ? "Администратор (соло: 0)" : "Администратор / Ресепшен (> 15 мин)"}
 					</span>
 					<div className="flex items-baseline gap-2">
 						<span className="text-lg font-bold text-[var(--ink-2,var(--muted))]">
 							{adminRate}%
 						</span>
-						<span className="text-[11px] text-[var(--muted)]">
+						<span className="text-xs text-[var(--muted)]">
 							({summary?.adminRebookingsCount ?? 0} записей)
 						</span>
 					</div>
@@ -1670,11 +1695,11 @@ function RebookingConversionRulesWidget({ dateRange }: { dateRange: string }) {
 											</td>
 											<td className="py-2 px-2.5">
 												{isDoctor ? (
-													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+													<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
 														{isSolo ? "Врач (Соло)" : "Врач у кресла (≤ 15 мин)"}
 													</span>
 												) : (
-													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
+													<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
 														Администратор (&gt; 15 мин)
 													</span>
 												)}
@@ -1688,7 +1713,7 @@ function RebookingConversionRulesWidget({ dateRange }: { dateRange: string }) {
 							</tbody>
 						</table>
 						{items.length > 10 && (
-							<div className="p-2 text-center text-[11px] text-[var(--muted)] border-t border-[var(--line)]">
+							<div className="p-2 text-center text-xs text-[var(--muted)] border-t border-[var(--line)]">
 								Показано 10 из {items.length} повторных записей
 							</div>
 						)}

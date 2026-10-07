@@ -43,6 +43,7 @@ export interface CbctViewportHudProps {
 	readonly zoomFactor?: number | undefined;
 	readonly windowWidth?: number | undefined;
 	readonly windowLevel?: number | undefined;
+	readonly toolsSlot?: React.ReactNode | undefined;
 	readonly children?: React.ReactNode | undefined;
 }
 
@@ -57,7 +58,7 @@ const OrientationCube3D: React.FC<OrientationCube3DProps> = ({ viewportType, siz
 
 	return (
 		<div
-			className="relative flex flex-col items-center justify-center p-0.5 rounded bg-zinc-900/90 backdrop-blur-sm border border-zinc-700/80 select-none pointer-events-auto shadow-md"
+			className="relative flex flex-col items-center justify-center select-none pointer-events-auto drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] opacity-60 hover:opacity-100 transition-opacity"
 			title={`3D Ориентационный компас: ${labels.planeNameRu}`}
 			data-testid={`cbct-orientation-cube-${viewportType}`}
 		>
@@ -164,6 +165,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 	zoomFactor,
 	windowWidth,
 	windowLevel,
+	toolsSlot,
 	children,
 }) => {
 	const labels = useMemo(() => getViewportOrientationLabels(viewportType), [viewportType]);
@@ -195,57 +197,88 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 			{/* Custom HTML/CSS Overlays (e.g. Calipers, Angles, Probes, Nerve Badges) */}
 			{children}
 
-			{/* 1. TOP-LEFT CLINICAL HEADER BADGE */}
+			{/* 1. TOP-LEFT CLINICAL HEADER (Pure text overlay floating on canvas without distracting boxes) */}
 			<div
-				className="absolute top-1.5 left-1.5 flex items-center gap-1 pointer-events-auto flex-nowrap min-w-0 max-w-[calc(100%-72px)] z-20"
-				onDoubleClick={(e) => {
-					e.stopPropagation();
-					onToggleMaximize?.();
-				}}
+				className="absolute top-2 left-2 z-20 pointer-events-none select-none max-w-[calc(100%-80px)] flex items-center gap-1 flex-wrap"
 			>
 				<div
-					className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-950/85 backdrop-blur-sm border border-zinc-800 shadow-sm text-xs font-medium whitespace-nowrap min-w-0 shrink"
-					style={{ borderLeftColor: labels.planeColor, borderLeftWidth: 3 }}
+					className="flex items-center gap-1.5 text-xs font-medium whitespace-nowrap min-w-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]"
 				>
 					<span
 						className="w-1.5 h-1.5 rounded-full shrink-0"
 						style={{ backgroundColor: labels.planeColor }}
 					/>
-					<span className="text-zinc-400 font-medium text-[11px] truncate">{labels.planeNameRu}</span>
+					<span className="text-zinc-200 font-semibold text-[11px]">{labels.planeNameRu}</span>
 					{coordText && (
-						<span className="font-mono text-zinc-500 text-[10px] ml-1 whitespace-nowrap shrink-0">
+						<span className="font-mono text-zinc-400 text-[10px] whitespace-nowrap">
 							({coordText})
 						</span>
 					)}
+					{sliceIndex !== undefined && totalSlices !== undefined && (
+						<span className="font-mono text-zinc-400 text-[10px] whitespace-nowrap pl-0.5">
+							{sliceIndex + 1}/{totalSlices}
+						</span>
+					)}
+					{zoomFactor !== undefined && Math.abs(zoomFactor - 1.0) > 0.01 && (
+						<span
+							className="text-cyan-400 text-[10px] font-mono font-semibold pl-0.5"
+							title={`Масштаб зума: ${(zoomFactor * 100).toFixed(0)}%`}
+						>
+							{zoomFactor.toFixed(1)}x
+						</span>
+					)}
+					{viewportType !== "panoramic" && slabMode !== "single" && slabThicknessMm > 1 && (
+						<span
+							className="text-[10px] font-mono font-semibold pl-0.5"
+							style={{ color: labels.planeColor }}
+						>
+							MIP {slabThicknessMm} мм
+						</span>
+					)}
 				</div>
-
-				{zoomFactor !== undefined && Math.abs(zoomFactor - 1.0) > 0.01 && (
-					<span
-						className="px-1.5 py-0.5 rounded bg-zinc-900/90 backdrop-blur-sm text-cyan-400 text-[10px] font-mono font-semibold border border-zinc-700/80 shadow-xs"
-						title={`Масштаб зума: ${(zoomFactor * 100).toFixed(0)}%`}
-					>
-						{zoomFactor.toFixed(1)}x
-					</span>
-				)}
-
-				{viewportType !== "panoramic" && slabMode !== "single" && slabThicknessMm > 1 && (
-					<span
-						className="px-1.5 py-0.5 rounded bg-zinc-900/90 backdrop-blur-sm text-[10px] font-mono font-semibold border border-zinc-700/80 shadow-xs"
-						style={{ color: labels.planeColor }}
-					>
-						MIP {slabThicknessMm} мм
-					</span>
-				)}
-
-				{sliceIndex !== undefined && totalSlices !== undefined && (
-					<span className="px-1.5 py-0.5 rounded bg-zinc-900/90 backdrop-blur-sm text-zinc-400 text-[10px] font-mono border border-zinc-700/80 shadow-xs">
-						{sliceIndex + 1}/{totalSlices}
-					</span>
-				)}
 			</div>
 
-			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE, FULL RESET BUTTON & VIEWPORT MAXIMIZE BUTTON (Fixed top-1.5 right-1.5 placement with mt-1 clearance) */}
-			<div className="absolute top-1.5 right-1.5 mt-1 pointer-events-auto flex items-center gap-1 z-30">
+			{/* 2. TOP-RIGHT CORNER: UNIFIED CLINICAL TOOLS BAR (Maximize, Reset, Angle, Tools descending down) */}
+			<div className="absolute top-2 right-2 pointer-events-auto flex flex-col items-end gap-1 z-30 select-none">
+				{onToggleMaximize && (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onToggleMaximize();
+						}}
+						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/50 border border-zinc-700/80 shadow-xs transition-all flex items-center justify-center cursor-pointer"
+						title={isMaximized ? "Свернуть квадрант в сетку (двойной клик)" : "Развернуть квадрант на весь экран (двойной клик)"}
+						data-testid={isMaximized ? `btn-viewport-collapse-${viewportType}` : `btn-viewport-expand-${viewportType}`}
+						data-legacy-testid={`cbct-maximize-${viewportType}-btn`}
+						data-expand-testid={`btn-viewport-expand-${viewportType}`}
+						data-collapse-testid={`btn-viewport-collapse-${viewportType}`}
+						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
+					>
+						{isMaximized ? (
+							<Minimize2 size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+						) : (
+							<Maximize2 size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+						)}
+					</button>
+				)}
+
+				{onResetView && (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onResetView();
+						}}
+						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/50 border border-zinc-700/80 shadow-xs transition-all flex items-center justify-center cursor-pointer"
+						title="Сбросить позицию среза: поворот 0.0°, масштаб 1.0x, перекрестие по центру"
+						data-testid={`cbct-reset-view-${viewportType}-btn`}
+						aria-label="Сбросить позицию среза"
+					>
+						<RotateCcw size={13} className="text-zinc-400 hover:text-cyan-300 transition-colors [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
+					</button>
+				)}
+
 				{obliqueAngleDeg !== undefined && (Math.abs(obliqueAngleDeg) > 0.05 || isHandleHovered || isRotating) && (
 					<button
 						type="button"
@@ -255,7 +288,7 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 						}}
 						className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md bg-zinc-900/95 hover:bg-zinc-800 backdrop-blur-sm text-xs font-mono font-bold border ${
 							isRotating
-								? "border-cyan-400 text-cyan-200 ring-1 ring-cyan-400/50 animate-pulse"
+								? "border-cyan-400 text-cyan-200 ring-1 ring-cyan-400/50 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.4)]"
 								: isHandleHovered
 									? "border-cyan-400 text-cyan-400 shadow-cyan-950/40"
 									: "border-cyan-500/50 hover:border-cyan-400 text-cyan-400 hover:text-cyan-200"
@@ -269,96 +302,57 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 					</button>
 				)}
 
-				{onResetView && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onResetView();
-						}}
-						className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-1.5 py-0.5 rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/80 shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
-						title="Сброс вида: поворот 0.0°, масштаб 1.0x, перекрестие по центру"
-						data-testid={`cbct-reset-view-${viewportType}-btn`}
-						aria-label="Сброс вида"
-					>
-						<RotateCcw size={11} className="text-slate-400 hover:text-zinc-200" />
-						<span className="text-[10px] font-mono font-bold">Сброс</span>
-					</button>
-				)}
-
-				{onToggleMaximize && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onToggleMaximize();
-						}}
-						className="w-7 h-7 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-w-[44px] [@media(pointer:coarse)]:max-h-[44px] rounded-md bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/80 shadow-xs transition-colors flex items-center justify-center cursor-pointer"
-						title={isMaximized ? "Свернуть в сетку (двойной клик)" : "Развернуть на 100% (двойной клик)"}
-						data-testid={isMaximized ? `btn-viewport-collapse-${viewportType}` : `btn-viewport-expand-${viewportType}`}
-						data-legacy-testid={`cbct-maximize-${viewportType}-btn`}
-						data-expand-testid={`btn-viewport-expand-${viewportType}`}
-						data-collapse-testid={`btn-viewport-collapse-${viewportType}`}
-						aria-label={isMaximized ? "Свернуть окно" : "Развернуть окно"}
-					>
-						{isMaximized ? (
-							<Minimize2 size={13} className="[@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
-						) : (
-							<Maximize2 size={13} className="[@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4" />
-						)}
-					</button>
-				)}
+				{toolsSlot}
 			</div>
 
-			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (High-contrast dark underlay pad with 1px border) */}
+			{/* 3. FOUR ANATOMICAL DIRECTION INDICATORS (Pure floating letters with drop shadow, zero boxes) */}
 			<div
-				className="absolute top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10"
+				className="absolute top-2 left-1/2 -translate-x-1/2 font-mono font-bold text-[11px] text-zinc-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pointer-events-none z-10 select-none"
 				title={labels.topTooltipRu}
 			>
 				{labels.top}
 			</div>
 
 			<div
-				className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10"
+				className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono font-bold text-[11px] text-zinc-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pointer-events-none z-10 select-none"
 				title={labels.bottomTooltipRu}
 			>
 				{labels.bottom}
 			</div>
 
 			<div
-				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-1"} top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10`}
+				className={`absolute ${viewportType === "panoramic" ? "left-8" : "left-2"} top-1/2 -translate-y-1/2 font-mono font-bold text-[11px] text-zinc-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pointer-events-none z-10 select-none`}
 				title={labels.leftTooltipRu}
 			>
 				{labels.left}
 			</div>
 
 			<div
-				className="absolute right-1 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-zinc-950/85 text-zinc-400 border border-zinc-800 font-mono font-medium text-[11px] shadow-sm pointer-events-none z-10"
+				className="absolute right-2 top-1/2 -translate-y-1/2 font-mono font-bold text-[11px] text-zinc-400/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pointer-events-none z-10 select-none"
 				title={labels.rightTooltipRu}
 			>
 				{labels.right}
 			</div>
 
-
-			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE & CLINICAL TELEMETRY (Ez3D-i Standard: TH, INT, Полный срез) */}
-			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20 flex items-end gap-1.5 select-none">
+			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE & CLINICAL TELEMETRY (Clean subtle text floating on canvas) */}
+			<div className="absolute bottom-2 right-2 pointer-events-none z-20 flex items-end gap-1.5 select-none">
 				{sliceIndex !== undefined && totalSlices !== undefined && (
 					<div
-						className="flex flex-col items-end gap-0.5 px-1.5 py-0.5 rounded bg-zinc-950/85 backdrop-blur-sm border border-zinc-800 text-[10px] font-mono leading-tight shadow-sm text-zinc-300"
+						className="flex flex-col items-end gap-0 text-[9px] font-mono leading-tight text-zinc-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pointer-events-none"
 						data-testid={`cbct-bottom-telemetry-${viewportType}`}
 					>
-						<div className="flex items-center gap-1">
+						<div className="flex items-center gap-1 opacity-80">
 							<span className="text-zinc-500">TH</span>
-							<span className="text-zinc-300 font-bold">[{slabThicknessMm !== undefined ? slabThicknessMm.toFixed(1) : "0.0"}mm]</span>
-							<span className="text-zinc-500 ml-1">INT</span>
-							<span className="text-zinc-300 font-bold">[{(pixelSpacingMm ?? 0.5).toFixed(1)}mm]</span>
+							<span className="text-zinc-300 font-bold">{slabThicknessMm !== undefined ? slabThicknessMm.toFixed(1) : "0.0"}mm</span>
+							<span className="text-zinc-500 ml-0.5">INT</span>
+							<span className="text-zinc-300 font-bold">{(pixelSpacingMm ?? 0.5).toFixed(1)}mm</span>
 						</div>
-						<div className="text-zinc-400 text-[9px]">
-							Полный срез ({sliceIndex + 1} / {totalSlices})
+						<div className="text-zinc-500 text-[8.5px] opacity-75">
+							{sliceIndex + 1} / {totalSlices}
 						</div>
 					</div>
 				)}
-				<OrientationCube3D viewportType={viewportType} size={isMaximized ? 40 : 28} />
+				<OrientationCube3D viewportType={viewportType} size={isMaximized ? 32 : 22} />
 			</div>
 		</div>
 	);

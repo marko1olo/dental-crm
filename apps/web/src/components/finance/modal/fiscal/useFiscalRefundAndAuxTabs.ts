@@ -377,7 +377,7 @@ export function useFiscalRefundAndAuxTabs({
 						<td style="border: 1px solid #cbd5e1; padding: 6px 8px;">
 							<strong>${it.name}</strong>
 							${it.toothNumber ? `<br><small style="color: #64748b;">Зуб FDI: ${it.toothNumber}</small>` : ""}
-							${it.code804n ? `<br><small style="color: #64748b;">Код Минздрава 804н: ${it.code804n}</small>` : ""}
+							${it.code804n ? `<br><small style="color: #64748b;">Код услуги: ${it.code804n}</small>` : ""}
 						</td>
 						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center;">${qty}</td>
 						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace;">${it.priceRub.toFixed(2)} ₽</td>

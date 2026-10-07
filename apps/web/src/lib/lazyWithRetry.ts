@@ -28,6 +28,11 @@ export function isLowSpecHardware(): boolean {
 		if (
 			docEl.getAttribute("data-low-spec") === "true" ||
 			docEl.getAttribute("data-hardware-tier") === "low" ||
+			docEl.getAttribute("data-hardware-tier") === "potato" ||
+			docEl.getAttribute("data-perf-tier") === "low" ||
+			docEl.getAttribute("data-perf-tier") === "potato" ||
+			docEl.getAttribute("data-perf-state") === "degraded" ||
+			docEl.getAttribute("data-ct-active") === "true" ||
 			docEl.classList.contains("low-spec-mode")
 		) {
 			return true;

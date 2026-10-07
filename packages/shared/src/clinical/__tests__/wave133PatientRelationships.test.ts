@@ -419,10 +419,11 @@ describe("Wave 133: Patient Relationships & Family Guarantor Engine", () => {
 			assert.ok(protocol.includes("М.П. (Место печати медицинской организации)"));
 		});
 
-		it("includes Mandate 8e financial obligations section", () => {
+		it("includes 54-FZ financial obligations section without developer jargon", () => {
 			const protocol = formatLegalGuardianConsentA4Protocol(consentParams);
 
-			assert.ok(protocol.includes("МАНДАТ 8E, 54-ФЗ"));
+			assert.ok(protocol.includes("54-ФЗ"));
+			assert.ok(!protocol.includes("МАНДАТ"));
 			assert.ok(protocol.includes("семейного"));
 		});
 

@@ -744,7 +744,7 @@ export function evaluateWarehouseOverdraft(
 
 	return {
 		hasOverdraft: true,
-		warningRu: "Мягкий овердрафт склада (Мандат 8e): задержка накладной не блокирует операцию.",
+		warningRu: "Мягкий овердрафт склада: задержка накладной не блокирует операцию.",
 		detailsRu: `Позиции будут списаны с признаком овердрафта: ${criticalItems.join(", ") || "расходные материалы"}. Доктор сохраняет протокол беспрепятственно.`,
 		pendingItems: criticalItems,
 		canProceed: true,

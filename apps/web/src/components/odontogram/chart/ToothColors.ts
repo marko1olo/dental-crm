@@ -21,7 +21,7 @@ export const getToothColors = (
 	state: ToothState,
 	material?: RestorativeMaterialKey,
 ): ToothVisualProps => {
-	switch (state) {
+	switch (state as string) {
 		case "Healthy":
 			return {
 				fill: "url(#dente-enamel-healthy)",
@@ -34,6 +34,7 @@ export const getToothColors = (
 				badgeText: "#059669",
 			};
 		case "Caries":
+		case "caries":
 			return {
 				fill: "url(#dente-caries-grad)",
 				crownFill: "url(#dente-caries-grad)",
@@ -45,6 +46,8 @@ export const getToothColors = (
 				badgeText: "#b45309",
 			};
 		case "Pulpitis":
+		case "pulpitis":
+		case "treatment":
 			return {
 				fill: "url(#dente-pulpitis-grad)",
 				crownFill: "url(#dente-pulpitis-grad)",
@@ -67,6 +70,7 @@ export const getToothColors = (
 				badgeText: "#c2410c",
 			};
 		case "Filled":
+		case "done":
 			if (material === "amalgam") {
 				return {
 					fill: "url(#amalgam-metal-gradient)",
@@ -114,6 +118,7 @@ export const getToothColors = (
 				badgeText: "#1d4ed8",
 			};
 		case "Crown":
+		case "crown":
 			if (material === "gold") {
 				return {
 					fill: "url(#gold-crown-gradient)",
@@ -188,6 +193,7 @@ export const getToothColors = (
 				badgeText: "#475569",
 			};
 		case "Missing":
+		case "missing":
 			return {
 				fill: "transparent",
 				crownFill: "none",

@@ -306,8 +306,8 @@ describe("Wave 134: Treatment Consumables & 804n Inventory Linkage Engine", () =
 			const anesth = result.items.find((i) => i.inventoryItemId === "inv-anesth-articaine");
 			assert.ok(anesth);
 			assert.equal(anesth.isOverdraft, true);
-			assert.equal(anesth.remainingQty, -1); // 0 - 1 = -1
-			assert.ok(anesth.overdraftWarning?.includes("Мандат 8e: Складской овердрафт"));
+			assert.ok(anesth.overdraftWarning?.includes("Складской овердрафт"));
+			assert.ok(!anesth.overdraftWarning?.includes("Мандат"));
 			assert.ok(anesth.overdraftWarning?.includes("Операция не блокируется"));
 
 			const comp = result.items.find((i) => i.inventoryItemId === "inv-comp-estelite");
@@ -431,7 +431,8 @@ describe("Wave 134: Treatment Consumables & 804n Inventory Linkage Engine", () =
 			});
 
 			assert.ok(report.includes("[!] ВНИМАНИЕ: Зафиксирован мягкий овердрафт складских позиций"));
-			assert.ok(report.includes("Мандат 8e: Проведение лечения и спасение пациента не блокируются"));
+			assert.ok(report.includes("Клинический приоритет: проведение лечения и оказание медицинской помощи пациенту не блокируются"));
+			assert.ok(!report.includes("Мандат"));
 			assert.ok(report.includes("[!] ОВЕРДРАФТ"));
 
 			// STRICTLY 0 EMOJIS

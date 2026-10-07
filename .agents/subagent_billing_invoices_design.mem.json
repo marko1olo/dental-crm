@@ -1,0 +1,59 @@
+{
+  "subagent": "subagent_billing_invoices_design",
+  "role": "Red Team Inquisitor for Cluster 1: Finance, Invoices, Cash Register & Insurance (Billing, Invoices, SberPay, DMS)",
+  "parent": "beb92312-c6d7-426d-a438-12dcad022abc",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T22:00:00+04:00",
+  "targetProblem": {
+    "visualDefect": "Naked buttons row side-by-side without segmentation, search icon overlapping placeholder text due to ad-hoc pl-8/paddingLeft, and erratic multi-colored buttons in billing, invoices, SberPay, and DMS insurance modules",
+    "mandatesEnforced": [
+      "Mandate 8zf: Search Input Invariant & Segmented Controls Doctrine",
+      "Frontend Rules Section 12: Search input wrapper (.dente-search-wrap), centered icon (.dente-search-icon), padding-left: 38px !important (.dente-search-input), clear button (.dente-search-clear)",
+      "Frontend Rules Section 13: Segmented Controls & Filter Chips (.dente-segmented-bar with .dente-segmented-item, .dente-filter-chips with .dente-filter-chip)",
+      "Designer Visual Inquisition Bible: Section 7 (Search Input & Icon Anatomy) & Section 8 (Segmented Controls & Filter Chips)",
+      "Mandate 8e: Doctor autonomy, single noble brand teal accent, unified 32px desktop button height",
+      "Mandate 8c: Single toolbar row, <=2 controls per entity card"
+    ]
+  },
+  "scope": [
+    "apps/web/src/components/billing/InvoicesView.tsx",
+    "apps/web/src/components/billing/RetailProductsModal.tsx",
+    "apps/web/src/components/finance/SberPayIntegration.tsx",
+    "apps/web/src/components/insurance/DmsNomenclatureSelectorCard.tsx",
+    "apps/web/src/components/insurance/DmsRegistryExportModal.tsx"
+  ],
+  "modifications": {
+    "apps/web/src/components/billing/InvoicesView.tsx": {
+      "search": "Replaced relative flex wrapper and pl-9.5 input with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear.",
+      "filterTabs": "Replaced ad-hoc border div and naked buttons with canonical .dente-segmented-bar and .dente-segmented-item (with .active and data-active state).",
+      "toolbarButtons": "Unified toolbar buttons using canonical .primary-button (for New Invoice CTA), .secondary-button (for Register, Shift, Split, Print Receipt, Installments 0%), and .icon-button (for Close)."
+    },
+    "apps/web/src/components/billing/RetailProductsModal.tsx": {
+      "search": "Replaced relative wrapper and pl-8 input with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear (preserving EAN-13 badge on empty query).",
+      "categoryFilters": "Replaced flat button row with canonical .dente-filter-chips and .dente-filter-chip (with .active and data-active state)."
+    },
+    "apps/web/src/components/finance/SberPayIntegration.tsx": {
+      "modeSelectors": "Replaced 3-column raw buttons grid with canonical .dente-segmented-bar and .dente-segmented-item (Card/Terminal, SberPay QR, FacePay).",
+      "rrnSearch": "Replaced unstyled input with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear + .secondary-button for action.",
+      "alternativeOptions": "Formatted alternative payment options into canonical .dente-filter-chips with .dente-filter-chip.",
+      "slipTabs": "Replaced naked customer/merchant receipt tabs with canonical .dente-segmented-bar and .dente-segmented-item + .secondary-button.button-sm for Copy action."
+    },
+    "apps/web/src/components/insurance/DmsNomenclatureSelectorCard.tsx": {
+      "search": "Replaced absolute icon and inline paddingLeft 42px with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear.",
+      "categoryFilters": "Replaced .dms-quick-toolbar with canonical .dente-segmented-bar and .dente-segmented-item.",
+      "diagnosisChips": "Formatted ICD-10 diagnosis selector into canonical .dente-filter-chips with .dente-filter-chip."
+    },
+    "apps/web/src/components/insurance/DmsRegistryExportModal.tsx": {
+      "search": "Replaced absolute icon and inline paddingLeft 42px with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear.",
+      "insurerFilters": "Replaced naked .dms-quick-toolbar with canonical .dente-filter-chips and .dente-filter-chip."
+    }
+  },
+  "verification": {
+    "typecheck": "PASS (npx tsc -p apps/web/tsconfig.json --noEmit completed with Exit Code 0)",
+    "invariantsEnforced": [
+      "Zero search icon overlap: All search boxes use .dente-search-wrap with .dente-search-icon (14px, left: 12px) and .dente-search-input (padding-left: 38px !important)",
+      "Zero naked text rows: Filter tabs and mode selectors unified into .dente-segmented-bar or .dente-filter-chips",
+      "Unified button geometry: 32px clinical density, 8px border-radius, single primary CTA per view"
+    ]
+  }
+}

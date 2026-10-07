@@ -564,11 +564,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								<h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
 									Рецептурный модуль Минздрава РФ
 								</h2>
-								<span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]">
+								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]">
 									Приказ № 1094н
 								</span>
 								{isUkepSigned && (
-									<span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+									<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
 										<ShieldCheck className="w-3.5 h-3.5" />
 										УКЭП активна
 									</span>
@@ -586,26 +586,20 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
-						<div className="hidden md:flex items-center p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] gap-0.5">
+						<div className="hidden md:flex dente-segmented-bar shrink-0" role="tablist">
 							<button
 								type="button"
 								onClick={() => setActiveForm("107-1u")}
-								className={`h-8 px-3 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-									activeForm === "107-1u"
-										? "bg-[var(--teal-surface)] text-[var(--teal)] font-bold shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
+								className={`dente-segmented-item ${activeForm === "107-1u" ? "active" : ""}`}
+								data-active={activeForm === "107-1u"}
 							>
 								Рецепт на препараты (107-1/у)
 							</button>
 							<button
 								type="button"
 								onClick={() => setActiveForm("148-1u-88")}
-								className={`h-8 px-3 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-									activeForm === "148-1u-88"
-										? "bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
+								className={`dente-segmented-item ${activeForm === "148-1u-88" ? "active" : ""}`}
+								data-active={activeForm === "148-1u-88"}
 							>
 								Рецепт строгого учета (№ 148-1/у-88)
 							</button>
@@ -633,7 +627,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								Внимание: обнаружен конфликт с аллергологическим анамнезом ({allergyConflicts.map((c) => c.matchedAllergyTerm).join(", ")})
 							</span>
 						</div>
-						<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+						<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
 							Автономия врача (Печать доступна)
 						</span>
 					</div>
@@ -719,19 +713,19 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							data-testid="med-rx-copy-patient-btn"
 							onClick={handleCopyPatientMemo}
 							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
-							className="min-h-[44px] px-3 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+							className="secondary-button h-8 min-h-[44px] md:min-h-[32px] px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 						>
-							<Copy className="w-3.5 h-3.5 text-[var(--teal)]" />
-							{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}
+							<Copy className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<span>{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}</span>
 						</button>
 						<button
 							type="button"
 							data-testid="insert-to-diary-btn"
 							onClick={() => handleInsertToDiary()}
-							className="h-8 px-3 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+							className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 						>
-							<PenTool className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Вставить в дневник
+							<PenTool className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<span>Вставить в дневник</span>
 						</button>
 					</div>
 
@@ -739,33 +733,33 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						<button
 							type="button"
 							onClick={handleSignUkep}
-							className={`h-8 px-3 text-xs font-semibold rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`h-8 px-3 text-[13px] font-medium rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
 								isUkepSigned
 									? "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold"
-									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+									: "secondary-button text-[var(--ink)]"
 							}`}
 						>
-							<ShieldCheck className="w-4 h-4 text-emerald-600" />
-							{isUkepSigned ? "УКЭП подписана" : isSigningUkep ? "Подписание..." : "Подписать УКЭП"}
+							<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+							<span>{isUkepSigned ? "УКЭП подписана" : isSigningUkep ? "Подписание..." : "Подписать УКЭП"}</span>
 						</button>
 						<button
 							type="button"
 							data-testid="print-patient-memo-btn"
 							onClick={handlePrintPatientMemo}
 							title="Распечатать понятную памятку со схемой приёма для пациента (без латыни)"
-							className="h-8 px-3 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all cursor-pointer flex items-center gap-1.5"
+							className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 						>
-							<Printer className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Печать памятки
+							<Printer className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<span>Печать памятки</span>
 						</button>
 						<button
 							type="button"
 							data-testid="print-prescription-btn"
 							onClick={() => handlePrint()}
-							className="h-8 px-4 text-xs font-bold rounded-lg bg-[var(--teal)] text-[var(--ink-inverse)] hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+							className="primary-button h-8 px-4 text-[13px] font-semibold rounded-lg inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
 						>
-							<Printer className="w-4 h-4" />
-							Печать бланка (А5)
+							<Printer className="w-4 h-4 shrink-0" />
+							<span>Печать бланка (А5)</span>
 						</button>
 					</div>
 				</div>

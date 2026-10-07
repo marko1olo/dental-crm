@@ -122,9 +122,9 @@ describe("Wave 66 (Feature 255): 100% Warranty Remake & Zero-Payment 1-Click Clo
 		assert.ok(html.includes('data-testid="banner-payment-zero-warranty"'), "Must render banner-payment-zero-warranty when total due is 0 ₽");
 		assert.ok(html.includes("Гарантийный прием / 100% скидка (к оплате 0 ₽)"), "Must state 100% warranty coverage");
 
-		// Must render 1-click close button
+		// Must render close button
 		assert.ok(html.includes('data-testid="btn-payment-close-warranty-zero"'), "Must render btn-payment-close-warranty-zero");
-		assert.ok(html.includes("Закрыть визит в 1 клик (0 ₽)"), "Must provide 1-click zero visit closure");
+		assert.ok(html.includes("Закрыть визит (0 ₽)"), "Must provide zero visit closure");
 
 		// Header must show 0 ₽
 		assert.ok(html.includes("0 ₽"), "Header must show 0 ₽ to pay");

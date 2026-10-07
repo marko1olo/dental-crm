@@ -8,7 +8,8 @@ const { chromium } = require("playwright");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/df880520-dc90-48e7-ab9e-032bd60d9f31";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/beb92312-c6d7-426d-a438-12dcad022abc";
+const SUBAGENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/83b92bf0-c135-4dea-9a54-137567feea06";
 const LOCAL_DIR = path.resolve(__dirname, "../apps/web/public/screenshots/schedule_flow");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
@@ -59,7 +60,7 @@ async function provisionLiveSession() {
   try {
     const { Pool } = require("pg");
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL || "postgres://dental@127.0.0.1:5432/dental_crm",
+      connectionString: process.env.DATABASE_URL || "postgres://dental:dental@127.0.0.1:5432/dental_crm",
     });
     const client = await pool.connect();
     try {
@@ -130,7 +131,7 @@ async function provisionLiveSession() {
       startsAt: `${todayStr}T10:00:00.000Z`,
       endsAt: `${todayStr}T10:30:00.000Z`,
       status: "planned",
-      reason: "CITO! Острая пульпитная боль 46 зуба",
+      reason: "Острая пульпитная боль 46 зуба (Срочно)",
       notes: "Экстренный прием по острой боли",
       isCito: true,
     }),
@@ -157,6 +158,7 @@ async function provisionLiveSession() {
 async function main() {
   fs.mkdirSync(LOCAL_DIR, { recursive: true });
   fs.mkdirSync(BRAIN_DIR, { recursive: true });
+  fs.mkdirSync(SUBAGENT_BRAIN_DIR, { recursive: true });
 
   const auth = await provisionLiveSession();
 
@@ -202,6 +204,108 @@ async function main() {
     console.log(">>> Schedule view rendered!");
     await page.waitForTimeout(2000);
 
+    // ─── 0. CAPTURE SCHEDULE FILTER STRIP (LIGHT & DARK) ───
+    console.log(">>> Capturing Schedule Filter Strip (Desktop Light)...");
+    await page.evaluate(() => {
+      if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
+      document.documentElement.setAttribute("data-theme", "light");
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+    });
+    await page.waitForTimeout(600);
+
+    const filterStripLightPath = path.join(LOCAL_DIR, "schedule_filter_strip_desktop_light.png");
+    const filterStripLightBrain = path.join(BRAIN_DIR, "schedule_filter_strip_desktop_light.png");
+    const filterStripLightSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_filter_strip_desktop_light.png");
+    const filterStripEl = await page.$(".schedule-filter-strip, [data-testid='schedule-toolbar']");
+    if (filterStripEl) {
+      await filterStripEl.screenshot({ path: filterStripLightPath });
+    } else {
+      await page.screenshot({ path: filterStripLightPath, clip: { x: 0, y: 0, width: 1440, height: 260 } });
+    }
+    fs.copyFileSync(filterStripLightPath, filterStripLightBrain);
+    fs.copyFileSync(filterStripLightPath, filterStripLightSub);
+    console.log(`>>> Captured REAL Filter Strip Light: ${filterStripLightPath} (${fs.statSync(filterStripLightPath).size} bytes)`);
+
+    console.log(">>> Capturing Schedule Filter Strip (Desktop Dark)...");
+    await page.evaluate(() => {
+      if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+    });
+    await page.waitForTimeout(600);
+
+    const filterStripDarkPath = path.join(LOCAL_DIR, "schedule_filter_strip_desktop_dark.png");
+    const filterStripDarkBrain = path.join(BRAIN_DIR, "schedule_filter_strip_desktop_dark.png");
+    const filterStripDarkSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_filter_strip_desktop_dark.png");
+    if (filterStripEl) {
+      await filterStripEl.screenshot({ path: filterStripDarkPath });
+    } else {
+      await page.screenshot({ path: filterStripDarkPath, clip: { x: 0, y: 0, width: 1440, height: 260 } });
+    }
+    fs.copyFileSync(filterStripDarkPath, filterStripDarkBrain);
+    fs.copyFileSync(filterStripDarkPath, filterStripDarkSub);
+    console.log(`>>> Captured REAL Filter Strip Dark: ${filterStripDarkPath} (${fs.statSync(filterStripDarkPath).size} bytes)`);
+
+    // Reset back to light before opening modal
+    await page.evaluate(() => {
+      if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
+      document.documentElement.setAttribute("data-theme", "light");
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+    });
+    await page.waitForTimeout(400);
+
+    // ─── 0.5 CAPTURE QUICK BOOKING DRAWER (LIGHT & DARK) ───
+    console.log(">>> Capturing Quick Booking Drawer...");
+    const quickBookBtn = await page.$("[data-testid='schedule-toolbar-primary-quick-booking-btn']");
+    if (quickBookBtn) {
+      await quickBookBtn.click();
+      await page.waitForTimeout(1000);
+      const drawer = await page.waitForSelector("[data-testid='quick-booking-drawer'], .quick-booking-drawer", { timeout: 10000 }).catch(() => null);
+      if (drawer) {
+        // Light
+        const qbLightPath = path.join(LOCAL_DIR, "schedule_quick_booking_drawer_light.png");
+        const qbLightBrain = path.join(BRAIN_DIR, "schedule_quick_booking_drawer_light.png");
+        const qbLightSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_quick_booking_drawer_light.png");
+        await drawer.screenshot({ path: qbLightPath });
+        fs.copyFileSync(qbLightPath, qbLightBrain);
+        fs.copyFileSync(qbLightPath, qbLightSub);
+        console.log(`>>> Captured REAL Quick Booking Drawer Light: ${qbLightPath} (${fs.statSync(qbLightPath).size} bytes)`);
+
+        // Dark
+        await page.evaluate(() => {
+          if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
+          document.documentElement.classList.remove("light");
+          document.documentElement.classList.add("dark");
+        });
+        await page.waitForTimeout(600);
+
+        const qbDarkPath = path.join(LOCAL_DIR, "schedule_quick_booking_drawer_dark.png");
+        const qbDarkBrain = path.join(BRAIN_DIR, "schedule_quick_booking_drawer_dark.png");
+        const qbDarkSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_quick_booking_drawer_dark.png");
+        await drawer.screenshot({ path: qbDarkPath });
+        fs.copyFileSync(qbDarkPath, qbDarkBrain);
+        fs.copyFileSync(qbDarkPath, qbDarkSub);
+        console.log(`>>> Captured REAL Quick Booking Drawer Dark: ${qbDarkPath} (${fs.statSync(qbDarkPath).size} bytes)`);
+
+        // Close drawer
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(500);
+
+        // Reset to light
+        await page.evaluate(() => {
+          if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
+          document.documentElement.setAttribute("data-theme", "light");
+          document.documentElement.classList.remove("dark");
+          document.documentElement.classList.add("light");
+        });
+        await page.waitForTimeout(400);
+      }
+    }
+
     console.log(">>> Looking for appointment card in real schedule grid...");
     const cardSelector = '.appointment-card, [data-testid="appointment-card"], .schedule-appointment-card, .schedule-card, .schedule-cell-event';
     let card = await page.$(cardSelector);
@@ -231,9 +335,11 @@ async function main() {
     });
     console.log(">>> AppointmentModal successfully mounted and visible in real app!");
     await page.waitForTimeout(1000);
+    await page.mouse.move(0, 0);
 
     // ─── 1. CAPTURE LIGHT SCREENSHOT ───
     await page.evaluate(() => {
+      if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
       document.documentElement.setAttribute("data-theme", "light");
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.add("light");
@@ -242,24 +348,81 @@ async function main() {
 
     const lightPath = path.join(LOCAL_DIR, "schedule_appointment_modal_light.png");
     const lightBrain = path.join(BRAIN_DIR, "schedule_appointment_modal_light.png");
+    const lightSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_appointment_modal_light.png");
     await page.screenshot({ path: lightPath, fullPage: false });
     fs.copyFileSync(lightPath, lightBrain);
+    fs.copyFileSync(lightPath, lightSub);
     console.log(`>>> Captured REAL Light screenshot: ${lightPath} (${fs.statSync(lightPath).size} bytes)`);
 
     // ─── 2. CAPTURE DARK SCREENSHOT ───
     console.log(">>> Switching to Dark mode...");
     await page.evaluate(() => {
+      if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("dark");
       document.documentElement.setAttribute("data-theme", "dark");
       document.documentElement.classList.remove("light");
       document.documentElement.classList.add("dark");
     });
     await page.waitForTimeout(600);
+    await page.mouse.move(0, 0);
 
     const darkPath = path.join(LOCAL_DIR, "schedule_appointment_modal_dark.png");
     const darkBrain = path.join(BRAIN_DIR, "schedule_appointment_modal_dark.png");
+    const darkSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_appointment_modal_dark.png");
     await page.screenshot({ path: darkPath, fullPage: false });
     fs.copyFileSync(darkPath, darkBrain);
+    fs.copyFileSync(darkPath, darkSub);
     console.log(`>>> Captured REAL Dark screenshot: ${darkPath} (${fs.statSync(darkPath).size} bytes)`);
+
+    // ─── 3. EXPAND ADDITIONAL PARAMETERS SPOILER ───
+    console.log(">>> Scrolling to and clicking 'Дополнительные параметры' spoiler button...");
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="appointment-modal-toggle-additional-btn"]');
+      if (btn) {
+        btn.scrollIntoView({ behavior: "instant", block: "center" });
+      }
+    });
+    await page.waitForTimeout(300);
+
+    const toggleBtn = await page.waitForSelector('[data-testid="appointment-modal-toggle-additional-btn"]', {
+      timeout: 10000,
+    });
+    await toggleBtn.click();
+    await page.waitForTimeout(600);
+
+    await page.waitForSelector('[data-testid="appointment-modal-additional-content"]', {
+      timeout: 10000,
+    });
+    console.log(">>> Spoiler expanded, content visible!");
+    await page.waitForTimeout(600);
+    await page.mouse.move(0, 0);
+
+    // ─── 4. CAPTURE EXPANDED DARK SCREENSHOT ───
+    const expDarkPath = path.join(LOCAL_DIR, "schedule_appointment_modal_expanded_dark.png");
+    const expDarkBrain = path.join(BRAIN_DIR, "schedule_appointment_modal_expanded_dark.png");
+    const expDarkSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_appointment_modal_expanded_dark.png");
+    await page.screenshot({ path: expDarkPath, fullPage: false });
+    fs.copyFileSync(expDarkPath, expDarkBrain);
+    fs.copyFileSync(expDarkPath, expDarkSub);
+    console.log(`>>> Captured REAL Expanded Dark screenshot: ${expDarkPath} (${fs.statSync(expDarkPath).size} bytes)`);
+
+    // ─── 5. CAPTURE EXPANDED LIGHT SCREENSHOT ───
+    console.log(">>> Switching to Light mode for expanded view...");
+    await page.evaluate(() => {
+      if (window.__useThemeStore) window.__useThemeStore.getState().setThemeMode("light");
+      document.documentElement.setAttribute("data-theme", "light");
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+    });
+    await page.waitForTimeout(600);
+    await page.mouse.move(0, 0);
+
+    const expLightPath = path.join(LOCAL_DIR, "schedule_appointment_modal_expanded_light.png");
+    const expLightBrain = path.join(BRAIN_DIR, "schedule_appointment_modal_expanded_light.png");
+    const expLightSub = path.join(SUBAGENT_BRAIN_DIR, "schedule_appointment_modal_expanded_light.png");
+    await page.screenshot({ path: expLightPath, fullPage: false });
+    fs.copyFileSync(expLightPath, expLightBrain);
+    fs.copyFileSync(expLightPath, expLightSub);
+    console.log(`>>> Captured REAL Expanded Light screenshot: ${expLightPath} (${fs.statSync(expLightPath).size} bytes)`);
 
     console.log(">>> ALL REAL PROOFS CAPTURED SUCCESSFULLY!");
   } finally {

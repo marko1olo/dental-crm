@@ -268,8 +268,8 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 				"Печать и сохранение карты 043/у всегда доступны (Мандат 8e: печать в любой момент)",
 			);
 			assert.ok(
-				printModalContent.includes("Норма (1 клик)"),
-				"Кнопка нормы в 1 клик должна быть на тулбаре карты 043/у",
+				printModalContent.includes("Норма"),
+				"Кнопка нормы должна быть на тулбаре карты 043/у",
 			);
 		});
 

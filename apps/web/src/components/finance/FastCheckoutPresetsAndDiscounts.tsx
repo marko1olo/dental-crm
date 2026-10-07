@@ -53,7 +53,7 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 				<summary className="p-2 px-3 flex items-center justify-between cursor-pointer select-none text-xs list-none [&::-webkit-details-marker]:hidden">
 					<div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-200">
 						<Zap size={14} className="text-amber-500 fill-amber-500 shrink-0" />
-						<span>Быстрые 1-клик сценарии оплаты (0 барьеров)</span>
+						<span>Быстрые способы оплаты</span>
 						<span className="text-[11px] font-normal text-[var(--muted,#64748b)] hidden sm:inline">
 							• Картой 100%, Нал, СБП, 50/50, Аванс
 							{familyPayerName ? ` (${familyPayerName})` : ""}
@@ -245,7 +245,7 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 									: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
 							}`}
 							data-testid="btn-discount-warranty"
-							title="100% гарантийная переделка (к оплате 0 ₽, без блокировок)"
+							title="100% гарантийная переделка (к оплате 0 ₽)"
 						>
 							<ShieldCheck size={14} className="shrink-0" />
 							<span>100% Гарантия</span>

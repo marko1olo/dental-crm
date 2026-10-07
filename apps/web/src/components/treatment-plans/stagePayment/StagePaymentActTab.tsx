@@ -114,7 +114,7 @@ export const StagePaymentActTab: React.FC<StagePaymentActTabProps> = ({
 								</strong>
 							</div>
 							<div>
-								<span>Заблокировано в эскроу: </span>
+								<span>Зарезервировано в эскроу: </span>
 								<strong className="text-[var(--teal,var(--brand-primary))]">
 									{formatKopecksRu(selectedStage.escrowLockedKopecks)}
 								</strong>
@@ -144,7 +144,7 @@ export const StagePaymentActTab: React.FC<StagePaymentActTabProps> = ({
 						className="stage-action-btn primary"
 					>
 						<FileCheck className="h-4 w-4" />
-						<span>Подписать Акт сдачи-приемки и разблокировать эскроу</span>
+						<span>Подписать акт сдачи-приемки и перевести оплату из эскроу</span>
 					</button>
 				</div>
 			</div>

@@ -861,7 +861,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		[selectedTooth, selectedSurfaces, values.anamnesis, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen, soapStorageKey],
 	);
 
-	// 1-клик физиологическая норма (Мандат 8e, 8n, 8s)
+	// Физиологическая норма (Мандат 8e, 8n, 8s)
 	const handleApplyNorm = useCallback(() => {
 		const targetTooth = selectedTooth ?? 16;
 		if (isLocked && !isCorrectionMode) {
@@ -876,7 +876,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		});
 		const autopilot = apply1ClickDoctorAutopilot("norm", { toothNumber: targetTooth });
 		const auditStamp = isLocked ? `\n\n[Исправленному верить: ${dateStr}]` : "";
-		// Мандат 8e: 1-клик соматическая норма врача (Doctor Autonomy)
+		// Мандат 8e: соматическая норма врача (Doctor Autonomy)
 		// Эталонные формулировки: «Жалоб на момент осмотра не предъявляет», «Соматически здоров. Аллергологический анамнез не отягощен.»
 		const defaultNormComplaint = "Жалоб на момент осмотра не предъявляет. Обратился(лась) с целью профилактического осмотра и гигиены.";
 		const defaultNormAnamnesis = "Соматически здоров. Аллергологический анамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает.";
@@ -968,13 +968,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			].join("\n\n");
 			onApplyFullDiary?.(fullText);
 
-			showToast(`Экспресс-протокол «${protocol.title}» применён в 1 клик`, "success", 3000);
+			showToast(`Экспресс-протокол «${protocol.title}» применён`, "success", 3000);
 		},
 		[isLocked, isCorrectionMode, selectedTooth, selectedSurfaces, visitId, patientId, soapStorageKey, onSave, onChange, onApplyFullDiary],
 	);
 
 
-	// Ручное сохранение дневника в 1 клик (Мандат 8e: никогда не disabled)
+	// Ручное сохранение дневника (Мандат 8e: никогда не disabled)
 	const handleExplicitSave = useCallback(() => {
 		onChangeRef.current?.(values);
 		onSaveRef.current?.(values);
@@ -1101,7 +1101,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						type="button"
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
 						data-testid="btn-open-stomt-templates"
-						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3.5 text-[13px] font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
 						title="Открыть каталог 448 клинических шаблонов из StomX"
 						aria-label="Клинические шаблоны (448)"
 					>
@@ -1109,13 +1109,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<span>Клинические шаблоны (448)</span>
 					</button>
 
-					{/* Физиологическая норма в 1 клик (Мандат 8e: никогда не disabled!) */}
+					{/* Физиологическая норма (Мандат 8e: никогда не disabled!) */}
 					<button
 						type="button"
 						onClick={handleApplyNorm}
 						disabled={false}
 						data-testid="btn-soap-physio-norm"
-						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
 						title="Соматически здоров / норма: зафиксировать физиологическую норму в дневнике приёма"
 						aria-label="Соматически здоров / Норма"
 					>
@@ -1123,20 +1123,36 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						<span>Норма</span>
 					</button>
 
-					{/* Переключение режима отображения */}
-					<div className="flex items-center bg-[var(--paper-soft)] border border-[var(--line)] p-0.5 rounded-lg">
+					{/* Переключение режима отображения (Каноничный Segmented Control) */}
+					<div
+						className="inline-flex items-center p-[2px] rounded-[9px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-[2px] shadow-2xs"
+						role="tablist"
+						aria-label="Режим отображения дневника"
+					>
 						<button
 							type="button"
+							role="tab"
+							aria-selected={activeViewMode === "fields"}
 							onClick={() => setActiveViewMode("fields")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "fields" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 text-[12.5px] rounded-[7px] flex items-center gap-1 cursor-pointer transition-all select-none ${
+								activeViewMode === "fields"
+									? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] shadow-xs font-semibold"
+									: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
+							}`}
 						>
 							<Edit3 className="w-3 h-3" />
 							<span>Поля</span>
 						</button>
 						<button
 							type="button"
+							role="tab"
+							aria-selected={activeViewMode === "full_text"}
 							onClick={() => setActiveViewMode("full_text")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold rounded flex items-center gap-1 cursor-pointer transition-colors ${activeViewMode === "full_text" ? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 text-[12.5px] rounded-[7px] flex items-center gap-1 cursor-pointer transition-all select-none ${
+								activeViewMode === "full_text"
+									? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] shadow-xs font-semibold"
+									: "bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
+							}`}
 						>
 							<Eye className="w-3 h-3" />
 							<span>Печать</span>
@@ -1163,7 +1179,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onClick={handleExplicitSave}
 						disabled={false}
 						data-testid="btn-soap-save"
-						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border border-[var(--teal-surface,var(--teal))] transition-colors"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border border-[var(--teal-surface,var(--teal))] transition-colors"
 						title="Сохранить дневник приёма сейчас"
 						aria-label="Сохранить дневник"
 					>
@@ -1326,11 +1342,12 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 
 					{/* Фильтры специальностей */}
-					<div className="flex items-center gap-1 overflow-x-auto pb-2 scrollbar-none">
+					<div className="dente-filter-chips overflow-x-auto pb-2 scrollbar-none">
 						<button
 							type="button"
 							onClick={() => setActiveSpecialty("all")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 text-xs font-bold rounded-lg cursor-pointer transition-colors shrink-0 ${activeSpecialty === "all" ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
+							className={`dente-filter-chip ${activeSpecialty === "all" ? "active" : ""}`}
+							data-active={activeSpecialty === "all"}
 						>
 							Все протоколы ({STOMX_ALL_448_TEMPLATES_INDEX.length})
 						</button>
@@ -1344,7 +1361,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									key={spec.id}
 									type="button"
 									onClick={() => setActiveSpecialty(spec.id)}
-									className={`min-h-[44px] sm:min-h-0 sm:h-7 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${isActive ? "bg-[var(--teal,var(--brand-primary))] text-white" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"}`}
+									className={`dente-filter-chip ${isActive ? "active" : ""}`}
+									data-active={isActive}
 								>
 									{SPECIALTY_ICONS[spec.id]}
 									<span>{spec.shortLabel}</span>
@@ -1355,15 +1373,25 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 
 					{/* Поисковая строка */}
-					<div className="relative my-2">
-						<Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[var(--muted)]" />
+					<div className="dente-search-wrap w-full my-2">
+						<Search className="dente-search-icon" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по диагнозу, протоколу (кариес, пульпит, виниры, имплантация, кюретаж)..."
-							className="w-full h-9 pl-8 pr-3 text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+							className="dente-search-input"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
+							>
+								<X className="w-3.5 h-3.5" />
+							</button>
+						)}
 					</div>
 
 					{/* Сетка шаблонов (виртуализирована чанками по 30 шт. для 4GB RAM и слабых CPU) */}
@@ -1400,9 +1428,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 										type="button"
 										onClick={() => handleApplyProtocol(protocol, "replace")}
 										className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded cursor-pointer transition-colors flex items-center justify-center touch-manipulation"
-										title="Заменить текущий дневник этим протоколом в 1 клик"
+										title="Заменить текущий дневник этим протоколом"
 									>
-										Заполнить (1 клик)
+										<span>Заполнить</span>
 									</button>
 									<button
 										type="button"
@@ -1496,7 +1524,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								onClick={() => handleApplyProtocol(previewProtocol, "replace")}
 								className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all cursor-pointer"
 							>
-								Вставить в дневник (1 клик)
+								Вставить в дневник
 							</button>
 						</div>
 					</div>
@@ -1506,66 +1534,66 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			{/* ── ТЕЛО РЕДАКТОРА: ПОЛЯ SOAP ── */}
 			{activeViewMode === "fields" ? (
 				<div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(env(safe-area-inset-bottom,0px)+80px)] md:pb-4">
-					{/* ── 5 БЫСТРЫХ ЭКСПРЕСС-ПРОТОКОЛА У КРЕСЛА (1 КЛИК, МАНДАТЫ 8E, 8K) ── */}
+					{/* ── 5 БЫСТРЫХ ЭКСПРЕСС-ПРОТОКОЛОВ У КРЕСЛА (МАНДАТЫ 8E, 8K) ── */}
 					<div
 						className="col-span-full flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl bg-gradient-to-r from-teal-500/10 via-[var(--paper-soft)] to-indigo-500/10 border border-[var(--teal,var(--brand-primary))]/30 shadow-2xs"
 						data-testid="soap-chairside-express-bar"
 					>
 						<div className="flex items-center gap-1.5 shrink-0">
 							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-							<span className="text-xs font-black text-[var(--ink)]">
-								Экспресс-протоколы у кресла (1 клик):
+							<span className="text-[12.5px] font-bold text-[var(--ink)]">
+								Экспресс-протоколы у кресла:
 							</span>
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
 								onClick={() => handleApplyExpressProtocol("caries")}
-								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 hover:border-emerald-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation"
+								className="h-8 px-3 rounded-lg text-[12.5px] font-semibold bg-[var(--paper)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 hover:border-emerald-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation whitespace-nowrap"
 								data-testid="btn-soap-express-caries"
-								title="1-Клик протокол: Кариес дентина (K02.1) — анестезия, коффердам, композит светового отверждения, полировка"
+								title="Протокол: Кариес дентина (K02.1) — анестезия, коффердам, композит светового отверждения, полировка"
 							>
-								<Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+								<Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
 								<span>Кариес (K02.1)</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleApplyExpressProtocol("pulpitis")}
-								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:border-amber-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation"
+								className="h-8 px-3 rounded-lg text-[12.5px] font-semibold bg-[var(--paper)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:border-amber-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation whitespace-nowrap"
 								data-testid="btn-soap-express-pulpitis"
-								title="1-Клик протокол: Острый пульпит (K04.0) — анестезия, экстирпация, мех/мед обработка каналов, обтурация"
+								title="Протокол: Острый пульпит (K04.0) — анестезия, экстирпация, мех/мед обработка каналов, обтурация"
 							>
-								<Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+								<Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
 								<span>Пульпит (K04.0)</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleApplyExpressProtocol("periodontitis")}
-								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-800 dark:text-purple-300 border border-purple-500/40 hover:border-purple-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation"
+								className="h-8 px-3 rounded-lg text-[12.5px] font-semibold bg-[var(--paper)] hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-800 dark:text-purple-300 border border-purple-500/40 hover:border-purple-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation whitespace-nowrap"
 								data-testid="btn-soap-express-periodontitis"
-								title="1-Клик протокол: Хронический периодонтит (K04.5) — анестезия, коффердам, ревизия каналов, Ca(OH)2"
+								title="Протокол: Хронический периодонтит (K04.5) — анестезия, коффердам, ревизия каналов, Ca(OH)2"
 							>
-								<HeartPulse className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+								<HeartPulse className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
 								<span>Периодонтит (K04.5)</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleApplyExpressProtocol("hygiene")}
-								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-800 dark:text-sky-300 border border-sky-500/40 hover:border-sky-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation"
+								className="h-8 px-3 rounded-lg text-[12.5px] font-semibold bg-[var(--paper)] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-800 dark:text-sky-300 border border-sky-500/40 hover:border-sky-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation whitespace-nowrap"
 								data-testid="btn-soap-express-hygiene"
-								title="1-Клик протокол: Профгигиена (K05.1) — ультразвуковой скейлинг, Air-Flow, полировка пастой, фторирование"
+								title="Протокол: Профгигиена (K05.1) — ультразвуковой скейлинг, Air-Flow, полировка пастой, фторирование"
 							>
-								<Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+								<Sparkles className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
 								<span>Профгигиена (K05.1)</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleApplyExpressProtocol("extraction")}
-								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-500/40 hover:border-rose-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation"
+								className="h-8 px-3 rounded-lg text-[12.5px] font-semibold bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-500/40 hover:border-rose-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation whitespace-nowrap"
 								data-testid="btn-soap-express-extraction"
-								title="1-Клик протокол: Простое удаление зуба (K01.1) — анестезия, элеватор/щипцы, кюретаж лунки, гемостаз"
+								title="Протокол: Простое удаление зуба (K01.1) — анестезия, элеватор/щипцы, кюретаж лунки, гемостаз"
 							>
-								<Scissors className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+								<Scissors className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
 								<span>Удаление (K01.1)</span>
 							</button>
 						</div>
@@ -1683,7 +1711,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 										? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))]"
 										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"
 								}`}
-								title="Справочник диагнозов (K00–K14, 1-click пресеты)"
+								title="Справочник диагнозов (K00–K14, шаблоны)"
 							>
 								<BookOpen className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<span className="hidden sm:inline">Справочник</span>
@@ -1907,7 +1935,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				<button
 					type="button"
 					onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
-					className="flex-1 min-h-[44px] px-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 bg-teal-600 active:bg-teal-700 text-white shadow-xs touch-manipulation cursor-pointer"
+					className="flex-1 min-h-[44px] px-3 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-1.5 bg-teal-600 active:bg-teal-700 text-white shadow-xs touch-manipulation cursor-pointer"
 					title="Каталог 448 шаблонов StomX"
 				>
 					<Sparkles className="w-4 h-4 shrink-0" />
@@ -1917,18 +1945,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				<button
 					type="button"
 					onClick={handleApplyNorm}
-					className="min-h-[44px] px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1 bg-emerald-500/15 active:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 touch-manipulation cursor-pointer shrink-0"
-					title="Заполнить нормой в 1 клик"
+					className="min-h-[44px] px-3.5 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-1 bg-emerald-500/15 active:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 touch-manipulation cursor-pointer shrink-0"
+					title="Заполнить нормой"
 				>
 					<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
 					<span>Норма</span>
 				</button>
 
-				<div className="flex items-center bg-[var(--paper-soft)] border border-[var(--line)] p-0.5 rounded-xl shrink-0">
+				<div className="flex items-center bg-[var(--paper-soft)] border border-[var(--line-subtle)] p-0.5 rounded-xl shrink-0">
 					<button
 						type="button"
 						onClick={() => setActiveViewMode("fields")}
-						className={`min-h-[44px] px-2.5 text-xs font-bold rounded-lg flex items-center justify-center touch-manipulation cursor-pointer ${
+						className={`min-h-[44px] px-2.5 text-[12.5px] font-semibold rounded-lg flex items-center justify-center touch-manipulation cursor-pointer ${
 							activeViewMode === "fields"
 								? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs"
 								: "text-[var(--muted)]"
@@ -1940,7 +1968,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveViewMode("full_text")}
-						className={`min-h-[44px] px-2.5 text-xs font-bold rounded-lg flex items-center justify-center touch-manipulation cursor-pointer ${
+						className={`min-h-[44px] px-2.5 text-[12.5px] font-semibold rounded-lg flex items-center justify-center touch-manipulation cursor-pointer ${
 							activeViewMode === "full_text"
 								? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs"
 								: "text-[var(--muted)]"

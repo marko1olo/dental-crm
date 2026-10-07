@@ -16,10 +16,29 @@ import "./styles/overflow-fixes.css";
 import "./components/lab/dentalLabWorkflow.css";
 import "./components/lab/labOrders.css";
 import "./components/patients/LabOrdersPanel.css";
+import "./styles/components.css";
+import {
+	FlaskConical,
+	Sun,
+	Moon,
+	Layers,
+	LayoutGrid,
+	FileText,
+	Palette,
+	Smartphone,
+	Sparkles,
+	SlidersHorizontal,
+	ExternalLink,
+} from "lucide-react";
 import { LabOrdersPage } from "./pages/LabOrdersPage";
 import { LabOrdersPanel } from "./components/patients/LabOrdersPanel";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
+import { DentalLabOrdersHubModal } from "./components/lab/DentalLabOrdersHubModal";
 import { DentalLabOrdersKanbanBoard } from "./components/lab/DentalLabOrdersKanbanBoard";
+import { DentalLabOrdersTrackerModal } from "./components/lab/DentalLabOrdersTrackerModal";
+import { DentalLabPrintBlank } from "./components/lab/DentalLabPrintBlank";
+import { DentalLabShadePicker } from "./components/lab/DentalLabShadePicker";
+import { MobileLabOrdersTimeline } from "./components/lab/mobile/MobileLabOrdersTimeline";
 import { getDemoDentalLabWorkflowOrders } from "./components/lab/dentalLabDemoData";
 import { type DentalLabWorkflowOrder, createDentalLabOrder } from "./components/lab/dentalLabWorkflowModel";
 import { type LabWorkflowStatus } from "./components/lab/dentalLabWorkflowEngine";
@@ -61,7 +80,17 @@ const DEMO_MODAL_ORDER: DentalLabOrderData = {
 	doctorDeductionRub: 4800,
 };
 
-type LabPreviewTab = "registry" | "chairside" | "kanban" | "modal" | "modal_shades";
+type LabPreviewTab =
+	| "registry"
+	| "chairside"
+	| "kanban"
+	| "tracker"
+	| "print"
+	| "shade_picker"
+	| "mobile"
+	| "modal"
+	| "modal_shades"
+	| "hub";
 
 function LabOrdersPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
@@ -138,90 +167,72 @@ function LabOrdersPreviewApp() {
 		return grouped;
 	}, []);
 
+	if (activeTab === "mobile") {
+		return (
+			<div className="min-h-screen w-full max-w-[420px] mx-auto bg-[var(--paper-soft)] text-[var(--ink)] overflow-x-clip" data-testid="mobile-preview-root">
+				<MobileLabOrdersTimeline
+					orders={[
+						DEMO_MODAL_ORDER,
+						{
+							...DEMO_MODAL_ORDER,
+							id: "order-demo-102",
+							orderNumber: "ЗТЛ-2026-102",
+							patientName: "Смирнова Елена Павловна",
+							toothFdi: "21",
+							constructionType: "veneer_emax",
+							material: "emax_press",
+							status: "fitting",
+							colorVita: "A1",
+							priceRub: 28000,
+						},
+						{
+							...DEMO_MODAL_ORDER,
+							id: "order-demo-103",
+							orderNumber: "ЗТЛ-2026-103-ГАР",
+							patientName: "Иванов Алексей Сергеевич",
+							toothFdi: "24",
+							status: "refitting",
+							isWarrantyRework: true,
+							priceRub: 0,
+						},
+					]}
+					isLoading={false}
+					error={null}
+					onRefresh={() => {}}
+					onOpenNewOrder={() => {}}
+					onOpenTrackerModal={() => {}}
+					onStatusChange={() => {}}
+					onPrintOrder={() => {}}
+					onTechnicianComment={() => {}}
+					onAttachScan={() => {}}
+					onReclamation={() => {}}
+					copyPortalLink={() => {}}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="min-h-screen bg-[var(--paper)] text-[var(--ink)] p-4 sm:p-6 transition-colors duration-200">
 			<div className="max-w-7xl mx-auto space-y-4">
-				<header className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[var(--glass-border)]">
-					<div>
-						<h1 className="text-xl font-bold tracking-tight text-[var(--ink)]">
-							Зуботехническая лаборатория (ЗТЛ): Реестр, Канбан и Заказ
-						</h1>
-						<p className="text-xs text-[var(--muted)]">
-							Врач: Д-р Воронов А.В. | Тема: {currentTheme.toUpperCase()} | 32px контролы
-						</p>
-					</div>
-
-					<div className="flex items-center gap-3 flex-wrap">
-						<div className="inline-flex rounded-lg bg-[var(--paper-soft)] p-0.5 border border-[var(--glass-border)] gap-1 flex-wrap">
-							<button
-								type="button"
-								data-testid="tab-lab-registry"
-								onClick={() => setActiveTab("registry")}
-								className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-									activeTab === "registry"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-							>
-								Реестр нарядов
-							</button>
-							<button
-								type="button"
-								data-testid="tab-lab-kanban"
-								onClick={() => setActiveTab("kanban")}
-								className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-									activeTab === "kanban"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-							>
-								Канбан ЗТЛ
-							</button>
-							<button
-								type="button"
-								data-testid="tab-lab-modal"
-								onClick={() => {
-									setIsModalOpen(true);
-									setActiveTab("modal");
-								}}
-								className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-									activeTab === "modal"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-							>
-								Модалка наряда
-							</button>
-							<button
-								type="button"
-								data-testid="tab-lab-modal-shades"
-								onClick={() => {
-									setIsModalOpen(true);
-									setActiveTab("modal_shades");
-								}}
-								className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-									activeTab === "modal_shades"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-							>
-								VITA Расцветка
-							</button>
-							<button
-								type="button"
-								data-testid="tab-lab-chairside"
-								onClick={() => setActiveTab("chairside")}
-								className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-									activeTab === "chairside"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
-							>
-								Кресельная панель
-							</button>
+				<header className="flex flex-col gap-3 pb-3 border-b border-[var(--line)]">
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<div className="flex items-center gap-2.5">
+							<div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 shadow-2xs">
+								<FlaskConical className="w-5 h-5" />
+							</div>
+							<div>
+								<h1 className="text-lg font-bold tracking-tight text-[var(--ink)] m-0">
+									Зуботехническая лаборатория (ЗТЛ): Реестр, Канбан и Заказ
+								</h1>
+								<p className="text-xs text-[var(--muted)] m-0">
+									Врач: Д-р Воронов А.В. · Стандартизация 32px · Apple / macOS HIG
+								</p>
+							</div>
 						</div>
 
-						<div className="flex items-center gap-1.5">
+						{/* Переключатель темы: благородный сегментный контрол с иконками Lucide */}
+						<div className="dente-segmented-bar shrink-0" role="toolbar" aria-label="Переключение темы оформления">
 							<button
 								type="button"
 								onClick={() => {
@@ -229,13 +240,12 @@ function LabOrdersPreviewApp() {
 									url.searchParams.set("theme", "light");
 									window.location.href = url.toString();
 								}}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
-									currentTheme === "light"
-										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
-								}`}
+								className={`dente-segmented-item ${currentTheme === "light" ? "active" : ""}`}
+								aria-pressed={currentTheme === "light"}
+								title="Светлая тема оформления"
 							>
-								Light
+								<Sun className="w-3.5 h-3.5" />
+								<span>Светлая</span>
 							</button>
 							<button
 								type="button"
@@ -244,20 +254,165 @@ function LabOrdersPreviewApp() {
 									url.searchParams.set("theme", "dark");
 									window.location.href = url.toString();
 								}}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
-									currentTheme === "dark"
-										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-strong)]"
-								}`}
+								className={`dente-segmented-item ${currentTheme === "dark" ? "active" : ""}`}
+								aria-pressed={currentTheme === "dark"}
+								title="Тёмная тема оформления"
 							>
-								Dark
+								<Moon className="w-3.5 h-3.5" />
+								<span>Тёмная</span>
 							</button>
+						</div>
+					</div>
+
+					{/* Сегментированные контролы вкладок: сгруппированы по назначению без свалки */}
+					<div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+						{/* Группа 1: Основные рабочие режимы ЗТЛ */}
+						<div className="flex items-center gap-2 flex-wrap">
+							<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider hidden sm:inline-block">
+								Режимы:
+							</span>
+							<div className="dente-segmented-bar overflow-x-auto scrollbar-none" role="tablist" aria-label="Основные рабочие режимы ЗТЛ">
+								<button
+									type="button"
+									data-testid="tab-lab-registry"
+									onClick={() => setActiveTab("registry")}
+									className={`dente-segmented-item ${activeTab === "registry" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "registry"}
+								>
+									<LayoutGrid className="w-3.5 h-3.5" />
+									<span>Реестр нарядов</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-kanban"
+									onClick={() => setActiveTab("kanban")}
+									className={`dente-segmented-item ${activeTab === "kanban" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "kanban"}
+								>
+									<Layers className="w-3.5 h-3.5" />
+									<span>Канбан ЗТЛ</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-tracker"
+									onClick={() => setActiveTab("tracker")}
+									className={`dente-segmented-item ${activeTab === "tracker" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "tracker"}
+								>
+									<SlidersHorizontal className="w-3.5 h-3.5" />
+									<span>Трекер нарядов</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-print"
+									onClick={() => setActiveTab("print")}
+									className={`dente-segmented-item ${activeTab === "print" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "print"}
+								>
+									<FileText className="w-3.5 h-3.5" />
+									<span>Печатный бланк</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-shade-picker"
+									onClick={() => setActiveTab("shade_picker")}
+									className={`dente-segmented-item ${activeTab === "shade_picker" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "shade_picker"}
+								>
+									<Palette className="w-3.5 h-3.5" />
+									<span>VITA Пикер</span>
+								</button>
+							</div>
+						</div>
+
+						{/* Группа 2: Интерактивные витрины и модальные модули */}
+						<div className="flex items-center gap-2 flex-wrap">
+							<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider hidden lg:inline-block">
+								Витрины:
+							</span>
+							<div className="dente-segmented-bar overflow-x-auto scrollbar-none" role="tablist" aria-label="Витрины и интерактивные модули">
+								<button
+									type="button"
+									data-testid="tab-lab-mobile"
+									onClick={() => setActiveTab("mobile")}
+									className={`dente-segmented-item ${(activeTab as string) === "mobile" ? "active" : ""}`}
+									role="tab"
+									aria-selected={(activeTab as string) === "mobile"}
+								>
+									<Smartphone className="w-3.5 h-3.5" />
+									<span>Мобильный</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-modal"
+									onClick={() => {
+										setIsModalOpen(true);
+										setActiveTab("modal");
+									}}
+									className={`dente-segmented-item ${activeTab === "modal" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "modal"}
+								>
+									<ExternalLink className="w-3.5 h-3.5" />
+									<span>Модалка наряда</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-modal-shades"
+									onClick={() => {
+										setIsModalOpen(true);
+										setActiveTab("modal_shades");
+									}}
+									className={`dente-segmented-item ${activeTab === "modal_shades" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "modal_shades"}
+								>
+									<Sparkles className="w-3.5 h-3.5" />
+									<span>VITA Расцветка</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-hub"
+									onClick={() => setActiveTab("hub")}
+									className={`dente-segmented-item ${activeTab === "hub" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "hub"}
+								>
+									<span>Хаб ЗТЛ</span>
+								</button>
+								<button
+									type="button"
+									data-testid="tab-lab-chairside"
+									onClick={() => setActiveTab("chairside")}
+									className={`dente-segmented-item ${activeTab === "chairside" ? "active" : ""}`}
+									role="tab"
+									aria-selected={activeTab === "chairside"}
+								>
+									<span>Кресельная панель</span>
+								</button>
+							</div>
 						</div>
 					</div>
 				</header>
 
 				<main className="bg-[var(--paper-card)] border border-[var(--glass-border)] rounded-2xl p-4 sm:p-5 shadow-sm min-h-[600px]">
 					{activeTab === "registry" && <LabOrdersPage />}
+					{activeTab === "hub" && (
+						<div className="space-y-4">
+							<DentalLabOrdersHubModal
+								isOpen={true}
+								onClose={() => setActiveTab("registry")}
+								initialOrders={getDemoDentalLabWorkflowOrders()}
+								currentPatientName="Ковалёв Роман Станиславович"
+								currentDoctorName="Д-р Воронов Алексей Владимирович"
+							/>
+						</div>
+					)}
 					{activeTab === "chairside" && <LabOrdersPanel patientId="pat-1" />}
 					{activeTab === "kanban" && (
 						<div className="space-y-4" data-testid="kanban-preview-container">
@@ -282,6 +437,73 @@ function LabOrdersPreviewApp() {
 								onTechnicianComment={() => {}}
 								onRepeatFitting={() => {}}
 								onRequestWarrantyRework={() => {}}
+							/>
+						</div>
+					)}
+					{activeTab === "tracker" && (
+						<div className="space-y-4">
+							<DentalLabOrdersTrackerModal
+								isOpen={true}
+								onClose={() => setActiveTab("registry")}
+								currentPatientId="pat-1"
+								currentPatientName="Ковалёв Роман Станиславович"
+								currentDoctorName="Д-р Воронов Алексей Владимирович"
+								currentToothNumber={16}
+							/>
+						</div>
+					)}
+					{activeTab === "print" && (
+						<div className="p-4 bg-[var(--paper)] rounded-xl border border-[var(--glass-border)]">
+							<DentalLabPrintBlank
+								gostOrderNumber="2026-042"
+								secureToken="SECURE-TOKEN-DEMO-101"
+								formPatientName="Ковалёв Роман Станиславович"
+								formDoctorName="Д-р Воронов Алексей Владимирович"
+								clinicName="ООО «ДЕНТЕ» · Стоматологическая клиника"
+								clinicPhone="+7 (495) 789-20-20"
+								doctorPhone="+7 (926) 450-11-22"
+								deliveryTimeSlot="12:00 – 15:00"
+								selectedTeeth={[16]}
+								jawScope="upper"
+								constructionType="crown_zirconia"
+								material="zirconia_multilayer"
+								shadeSystem="classical"
+								shadeClassical="A2"
+								shade3dMaster="2M2"
+								shadeBleach="0M2"
+								shadeCervical="A3"
+								shadeBody="A2"
+								shadeIncisal="A1"
+								shadeStump="ND2"
+								translucency="HT"
+								mamelons={true}
+								calcifications={false}
+								opalescence={true}
+								dueDate="2026-10-10"
+								clinicalNotes="Коронка из диоксида циркония Katana HTML. Индивидуализация режущего края, опалесценция. Фото эталона VITA A2 прикреплено."
+								totalLabPriceRub={24000}
+								portalUrl="https://dente.clinic/lab/portal/SECURE-TOKEN-DEMO-101"
+								handlePrint={() => {}}
+								isDraft={false}
+								isSigned={true}
+								status="sent_to_lab"
+							/>
+						</div>
+					)}
+					{activeTab === "shade_picker" && (
+						<div className="max-w-2xl mx-auto p-4 bg-[var(--paper-card)] border border-[var(--glass-border)] rounded-2xl space-y-4">
+							<h3 className="text-base font-bold text-[var(--ink)]">
+								Канонический селектор расцветки VITA (Classical, 3D-Master, Bleach, IPS Natural Die)
+							</h3>
+							<DentalLabShadePicker
+								selectedShade="A2"
+								onSelectShade={() => {}}
+								selectedStumpShade="ND2"
+								onSelectStumpShade={() => {}}
+								showStumpSelector={true}
+								showBleachTab={true}
+								shadePhotoUrl="photos/vita_a2_clinical_guide.jpg"
+								onShadePhotoChange={() => {}}
 							/>
 						</div>
 					)}

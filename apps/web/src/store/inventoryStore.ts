@@ -178,7 +178,7 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 					balanceBefore: 0,
 					balanceAfter: -ded.quantity,
 					visitId: ded.visitId || options?.visitId || null,
-					reason: ded.reason || options?.reason || "Овердрафт (материал не числился на складе)",
+					reason: ded.reason || options?.reason || "Расход сверх остатка (автоматическое списание)",
 					lotNumber: ded.lotNumber || null,
 					expirationDate: ded.expirationDate || null,
 					createdAt: nowIso,

@@ -35,7 +35,7 @@ export interface PresetApplyResult {
 }
 
 /**
- * Applies 1-Click Express Preset (Norm, Pro-Hygiene, Gingivitis, Mild/Moderate/Severe Periodontitis)
+ * Applies Express Protocol Preset (Norm, Pro-Hygiene, Gingivitis, Mild/Moderate/Severe Periodontitis)
  */
 export function applyExpressPerioPreset(
 	teeth: PerioToothRecord[],

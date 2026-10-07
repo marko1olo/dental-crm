@@ -254,7 +254,7 @@ export function EmkDiaryProtocolSection({
 
 	return (
 		<div className="flex flex-col gap-2.5">
-			{/* 1-клик протоколы у кресла: спокойный тихий аккордеон без серого визуального шума */}
+			{/* Экспресс-протоколы у кресла: спокойный тихий аккордеон без серого визуального шума */}
 			<details className="group text-xs transition-all">
 				<summary className="inline-flex items-center gap-1.5 px-2 py-1 cursor-pointer select-none text-xs font-semibold text-[var(--muted)] hover:text-[var(--teal)] transition-colors rounded-lg hover:bg-[var(--paper-soft)]">
 					<BookOpen size={12} className="text-[var(--teal)] shrink-0" />
@@ -312,7 +312,7 @@ export function EmkDiaryProtocolSection({
 									type="button"
 									onClick={() => handleSelectIcd10(chip, false)}
 									className="px-2.5 py-0.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer inline-flex items-center gap-1"
-									title={`${chip.label} (клик: диагноз + умное заполнение пустых разделов)`}
+									title={`${chip.label} (выбор: диагноз + умное заполнение пустых разделов)`}
 								>
 									<span className="font-mono font-bold text-[var(--teal)]">{chip.code}</span>
 									<span className="max-w-[180px] truncate">{chip.label.replace(/^.*K\d+(\.\d+)?\s*/, "")}</span>
@@ -322,7 +322,7 @@ export function EmkDiaryProtocolSection({
 									data-testid={`btn-auto-soap-${chip.code.replace(".", "_")}`}
 									onClick={() => handleSelectIcd10(chip, true)}
 									className="px-2 py-0.5 text-[10px] font-bold bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--muted)] border-l border-[var(--line)] cursor-pointer inline-flex items-center gap-0.5 transition-colors"
-									title={`Заполнить полный клинический SOAP-дневник для ${chip.code} в 1 клик`}
+									title={`Заполнить полный клинический SOAP-дневник для ${chip.code}`}
 								>
 									<Sparkles size={10} className="text-[var(--teal)]" />
 									<span>SOAP</span>

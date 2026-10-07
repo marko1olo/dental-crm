@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DENTE CT — Атлас Интерполяции (10 Квадратов 4-в-1)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #070a13;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 12px;
+      user-select: none;
+    }
+    .top-bar {
+      width: 1024px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 10px 18px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .badge-dente {
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid rgba(45, 212, 191, 0.4);
+      color: #2dd4bf;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+    }
+    .method-nav {
+      width: 1024px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+    .nav-btn {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #94a3b8;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .nav-btn:hover {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-color: #334155;
+    }
+    .nav-btn.active {
+      background: rgba(45, 212, 191, 0.15);
+      border-color: #2dd4bf;
+      color: #2dd4bf;
+      font-weight: 700;
+      box-shadow: 0 0 12px rgba(45, 212, 191, 0.2);
+    }
+    .key-hint {
+      font-size: 10px;
+      opacity: 0.6;
+      font-family: ui-monospace, monospace;
+      padding: 1px 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+    }
+
+    /* Главный вьювер */
+    .viewer-container {
+      position: relative;
+      width: 1024px;
+      height: 1114px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+      background: #0b1120;
+    }
+    .viewer-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1024px;
+      height: 1114px;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Режим Сплиттера (A/B сравнение) */
+    .split-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1024px;
+      height: 1114px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .split-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1024px;
+      height: 1114px;
+      max-width: none;
+    }
+    .split-divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #2dd4bf;
+      box-shadow: 0 0 12px #2dd4bf, 0 0 24px rgba(45, 212, 191, 0.6);
+      cursor: ew-resize;
+      display: none;
+    }
+    .split-handle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0f172a;
+      border: 2px solid #2dd4bf;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+      color: #2dd4bf;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .split-label-a, .split-label-b {
+      position: absolute;
+      top: 102px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      pointer-events: none;
+    }
+    .split-label-a { left: 16px; }
+    .split-label-b { right: 16px; }
+
+    .footer-bar {
+      width: 1024px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .toggle-split-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .toggle-split-btn.active {
+      background: #0d9488;
+      border-color: #2dd4bf;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Верхняя строка -->
+  <div class="top-bar">
+    <div class="brand">
+      <span>🦷 DENTE CT — Атлас 10 Алгоритмов Интерполяции</span>
+      <span class="badge-dente">10 КВАДРАТОВ 4-В-1 (1024x1114)</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button class="toggle-split-btn" id="split-toggle-btn" onclick="toggleSplitMode()">⚡ Сравнить со сглаживанием Bilinear (Сплит A/B)</button>
+    </div>
+  </div>
+
+  <!-- Кнопки переключения 10 алгоритмов -->
+  <div class="method-nav" id="method-nav"></div>
+
+  <!-- Большой экран просмотра -->
+  <div class="viewer-container" id="viewer-container">
+    <!-- Базовое изображение -->
+    <img id="base-img" class="viewer-img" src="./ct_quad_04_catmull_rom.png" alt="CBCT Slice">
+
+    <!-- Сплит-слой для A/B сравнения -->
+    <div class="split-overlay" id="split-overlay" style="display: none; width: 50%;">
+      <img id="split-img" class="split-img" src="./ct_quad_02_bilinear.png" alt="Bilinear Reference">
+    </div>
+
+    <!-- Разделительная линия сплита -->
+    <div class="split-divider" id="split-divider" style="left: 50%;">
+      <div class="split-handle">↔</div>
+    </div>
+
+    <!-- Подписи сплита -->
+    <div class="split-label-a" id="label-a" style="display: none;">◀ Билинейный (Размыто)</div>
+    <div class="split-label-b" id="label-b" style="display: none;">Выбранный метод (Резко) ▶</div>
+  </div>
+
+  <!-- Подвал с подсказками -->
+  <div class="footer-bar">
+    <div>Клавиши <b style="color: #cbd5e1;">[1]–[0]</b> для быстрого переключения | Стрелки <b style="color: #cbd5e1;">[←] / [→]</b> | Перетаскивайте разделитель в режиме сплита</div>
+    <div>Томограф: <span style="color: #38bdf8;">Захаров И.Д. (400x400x300, 0.25 мм)</span></div>
+  </div>
+
+  <script>
+    const METHODS = [
+      { id: "01_nearest", label: "01. Nearest", key: "1" },
+      { id: "02_bilinear", label: "02. Bilinear", key: "2" },
+      { id: "03_hermite", label: "03. Hermite", key: "3" },
+      { id: "04_catmull_rom", label: "04. Catmull-Rom", key: "4" },
+      { id: "05_b_spline", label: "05. B-Spline", key: "5" },
+      { id: "06_mitchell_netravali", label: "06. Mitchell-N.", key: "6" },
+      { id: "07_lanczos2", label: "07. Lanczos-2", key: "7" },
+      { id: "08_lanczos3", label: "08. Lanczos-3", key: "8" },
+      { id: "09_laplacian_sharpen", label: "09. Laplacian", key: "9" },
+      { id: "10_bilateral_edge_preserving", label: "10. Bilateral", key: "0" },
+    ];
+
+    let activeMethod = "04_catmull_rom";
+    let isSplitActive = false;
+    let splitPos = 512;
+    let isDraggingSplit = false;
+
+    // Рендер кнопок навигации
+    const navEl = document.getElementById("method-nav");
+    METHODS.forEach((m) => {
+      const btn = document.createElement("button");
+      btn.className = `nav-btn ${m.id === activeMethod ? "active" : ""}`;
+      btn.id = `btn-${m.id}`;
+      btn.innerHTML = `<span>${m.label}</span><span class="key-hint">${m.key}</span>`;
+      btn.onclick = () => selectMethod(m.id);
+      navEl.appendChild(btn);
+    });
+
+    function selectMethod(id) {
+      activeMethod = id;
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(`btn-${id}`)?.classList.add("active");
+
+      const baseImg = document.getElementById("base-img");
+      baseImg.src = `./ct_quad_${id}.png`;
+
+      document.getElementById("label-b").innerText = `${id} ▶`;
+    }
+
+    function toggleSplitMode() {
+      isSplitActive = !isSplitActive;
+      const toggleBtn = document.getElementById("split-toggle-btn");
+      const overlay = document.getElementById("split-overlay");
+      const divider = document.getElementById("split-divider");
+      const lblA = document.getElementById("label-a");
+      const lblB = document.getElementById("label-b");
+
+      if (isSplitActive) {
+        toggleBtn.classList.add("active");
+        overlay.style.display = "block";
+        divider.style.display = "block";
+        lblA.style.display = "block";
+        lblB.style.display = "block";
+        updateSplit(splitPos);
+      } else {
+        toggleBtn.classList.remove("active");
+        overlay.style.display = "none";
+        divider.style.display = "none";
+        lblA.style.display = "none";
+        lblB.style.display = "none";
+      }
+    }
+
+    function updateSplit(x) {
+      const clampedX = Math.max(10, Math.min(1014, x));
+      splitPos = clampedX;
+      document.getElementById("split-overlay").style.width = clampedX + "px";
+      document.getElementById("split-divider").style.left = clampedX + "px";
+    }
+
+    const container = document.getElementById("viewer-container");
+    container.addEventListener("mousedown", (e) => {
+      if (!isSplitActive) return;
+      isDraggingSplit = true;
+      const rect = container.getBoundingClientRect();
+      updateSplit(e.clientX - rect.left);
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDraggingSplit || !isSplitActive) return;
+      const rect = container.getBoundingClientRect();
+      updateSplit(e.clientX - rect.left);
+    });
+
+    window.addEventListener("mouseup", () => {
+      isDraggingSplit = false;
+    });
+
+    // Горячие клавиши 1..0 и стрелки
+    window.addEventListener("keydown", (e) => {
+      const idx = METHODS.findIndex(m => m.key === e.key);
+      if (idx !== -1) {
+        selectMethod(METHODS[idx].id);
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        const curIdx = METHODS.findIndex(m => m.id === activeMethod);
+        const nextIdx = (curIdx + 1) % METHODS.length;
+        selectMethod(METHODS[nextIdx].id);
+      } else if (e.key === "ArrowLeft") {
+        const curIdx = METHODS.findIndex(m => m.id === activeMethod);
+        const prevIdx = (curIdx - 1 + METHODS.length) % METHODS.length;
+        selectMethod(METHODS[prevIdx].id);
+      } else if (e.key === "s" || e.key === "S") {
+        toggleSplitMode();
+      }
+    });
+  </script>
+</body>
+</html>

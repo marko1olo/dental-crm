@@ -62,7 +62,7 @@ const DEMO_SHOWCASE_DOCUMENTS: GeneratedDocument[] = [
 		patientId: "00000000-0000-4000-8000-000000000010",
 		visitId: null,
 		kind: "completed_works_act",
-		title: "Акт выполненных работ и приёма услуг № А-890 (Приказ 804н)",
+		title: "Акт выполненных работ и приёма услуг № А-890",
 		issuedAt: "2026-03-15T12:30:00.000Z",
 		status: "issued",
 		doctorSignedAt: "2026-03-15T12:45:00.000Z",
@@ -186,7 +186,7 @@ export function MobileDocumentsHub({
 		},
 		{
 			id: "acts",
-			label: "Акты (804н)",
+			label: "Акты выполненных работ",
 			icon: <FileCheck size={14} className="shrink-0 text-emerald-500" aria-hidden="true" />,
 			kinds: ["completed_works_act"],
 		},
@@ -393,10 +393,10 @@ export function MobileDocumentsHub({
 						}}
 						className="mobile-quick-intake-btn active:scale-95 transition-all"
 						data-testid="mobile-quick-print-intake-btn"
-						aria-label="Печать пакета первичного приёма в 1 клик"
+						aria-label="Печать пакета первичного приёма"
 					>
 						<Printer size={15} aria-hidden="true" />
-						<span>Пакет 1-клик</span>
+						<span>Печать пакета</span>
 					</button>
 				)}
 			</div>
@@ -406,7 +406,7 @@ export function MobileDocumentsHub({
 				<div className="relative flex items-center w-full">
 					<Search
 						size={16}
-						className="absolute left-3.5 text-[var(--muted)] pointer-events-none"
+						className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
 						aria-hidden="true"
 					/>
 					<input
@@ -422,7 +422,7 @@ export function MobileDocumentsHub({
 						<button
 							type="button"
 							onClick={() => setSearchQuery("")}
-							className="absolute right-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)]"
+							className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[40px] min-w-[40px] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 							aria-label="Очистить поиск"
 						>
 							<X size={16} aria-hidden="true" />
@@ -475,15 +475,14 @@ export function MobileDocumentsHub({
 
 			{/* 4. STATUS SEGMENTED BAR */}
 			<div className="px-4">
-				<div className="flex w-full p-1 rounded-[14px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-1">
+				<div className="dente-segmented-bar flex w-full p-1 rounded-[14px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-1">
 					<button
 						type="button"
 						onClick={() => setActiveStatus("all")}
-						className={`flex-1 min-h-[38px] py-1.5 px-3 rounded-[10px] text-[13px] font-medium transition-all ${
-							activeStatus === "all"
-								? "bg-[var(--paper)] text-[var(--ink)] font-bold shadow-sm"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`dente-segmented-item flex-1 min-h-[38px] py-1.5 px-3 rounded-[10px] text-[13px] font-medium transition-all ${
+							activeStatus === "all" ? "active font-bold shadow-sm" : ""
 						}`}
+						data-active={activeStatus === "all"}
 						data-testid="mobile-status-all"
 					>
 						Все ({filteredDocs.length})
@@ -492,11 +491,12 @@ export function MobileDocumentsHub({
 					<button
 						type="button"
 						onClick={() => setActiveStatus("signed")}
-						className={`flex-1 min-h-[38px] py-1.5 px-3 rounded-[10px] text-[13px] font-medium transition-all ${
+						className={`dente-segmented-item flex-1 min-h-[38px] py-1.5 px-3 rounded-[10px] text-[13px] font-medium transition-all ${
 							activeStatus === "signed"
-								? "bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold shadow-sm"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "active font-bold shadow-sm !text-emerald-600 dark:!text-emerald-400"
+								: ""
 						}`}
+						data-active={activeStatus === "signed"}
 						data-testid="mobile-status-signed"
 					>
 						Подписан ПЭП
@@ -505,11 +505,12 @@ export function MobileDocumentsHub({
 					<button
 						type="button"
 						onClick={() => setActiveStatus("draft")}
-						className={`flex-1 min-h-[38px] py-1.5 px-3 rounded-[10px] text-[13px] font-medium transition-all ${
+						className={`dente-segmented-item flex-1 min-h-[38px] py-1.5 px-3 rounded-[10px] text-[13px] font-medium transition-all ${
 							activeStatus === "draft"
-								? "bg-[var(--paper)] text-amber-600 dark:text-amber-400 font-bold shadow-sm"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "active font-bold shadow-sm !text-amber-600 dark:!text-amber-400"
+								: ""
 						}`}
+						data-active={activeStatus === "draft"}
 						data-testid="mobile-status-draft"
 					>
 						Требует подписи

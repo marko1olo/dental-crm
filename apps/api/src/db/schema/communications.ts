@@ -863,6 +863,85 @@ export const denteVkBotConfigs = pgTable(
 	}),
 );
 
+// Dente VK Doctor / Staff Personal User Accounts
+export const denteVkUserAccounts = pgTable(
+	"dente_vk_user_accounts",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		userId: uuid("user_id").references(() => users.id),
+		vkUserId: text("vk_user_id").notNull(),
+		accessToken: text("access_token"),
+		tokenSecretRef: text("token_secret_ref"),
+		firstName: text("first_name"),
+		lastName: text("last_name"),
+		screenName: text("screen_name"),
+		photoUrl: text("photo_url"),
+		status: text("status").notNull().default("connected"),
+		isActive: boolean("is_active").notNull().default(true),
+		lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("dente_vk_user_accounts_organizationId_idx").on(
+			t.organizationId,
+		),
+		userIdIdx: index("dente_vk_user_accounts_userId_idx").on(t.userId),
+		vkUserIdIdx: index("dente_vk_user_accounts_vkUserId_idx").on(t.vkUserId),
+		uniqueOrgVkUser: unique("dente_vk_user_accounts_org_vk_user_unique").on(
+			t.organizationId,
+			t.vkUserId,
+		),
+	}),
+);
+
+// Dente Telegram Doctor / Staff Personal MTProto Accounts
+export const denteTelegramAccountConfigs = pgTable(
+	"dente_telegram_account_configs",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		clinicId: uuid("clinic_id").references(() => clinics.id),
+		userId: uuid("user_id").references(() => users.id),
+		phone: text("phone").notNull(),
+		sessionStringEncrypted: text("session_string_encrypted"),
+		tokenSecretRef: text("token_secret_ref"),
+		firstName: text("first_name"),
+		lastName: text("last_name"),
+		username: text("username"),
+		avatarUrl: text("avatar_url"),
+		status: text("status").notNull().default("connected"),
+		is2faEnabled: boolean("is_2fa_enabled").notNull().default(false),
+		connectedAt: timestamp("connected_at", { withTimezone: true }).defaultNow(),
+		lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
+		isActive: boolean("is_active").notNull().default(true),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"dente_telegram_account_configs_organizationId_idx",
+		).on(t.organizationId),
+		clinicIdIdx: index("dente_telegram_account_configs_clinicId_idx").on(
+			t.clinicId,
+		),
+		userIdIdx: index("dente_telegram_account_configs_userId_idx").on(t.userId),
+		phoneIdx: index("dente_telegram_account_configs_phone_idx").on(t.phone),
+		uniqueOrgPhone: unique(
+			"dente_telegram_account_configs_org_phone_unique",
+		).on(t.organizationId, t.phone),
+	}),
+);
+
 // Dente WhatsApp bot configs (WABA / WhatsApp settings)
 export const denteWhatsappBotConfigs = pgTable(
 	"dente_whatsapp_bot_configs",

@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * AUTOCLAVE LOG 257/U — NEW STERILIZATION CYCLE TAB
- * Регистрация нового цикла стерилизации, выбор режима в 1 клик,
+ * Регистрация нового цикла стерилизации, выбор регламентного режима,
  * физические параметры, типы упаковок и 5 контрольных точек.
  * ============================================================================
  */
@@ -218,7 +218,7 @@ export function AutoclaveNewCycleTab({
 
 	const areAllPointsPassed = chamberPoints.every((pt) => pt.status === "passed");
 
-	// 1-Click Экспресс-заполнение стандартного цикла (Мандаты 8e, 8k, 8n)
+	// Экспресс-заполнение стандартного цикла (Мандаты 8e, 8k, 8n)
 	const handleExpressStandardCycle = () => {
 		const filled = computeExpressStandardCycleValues({
 			currentPacksCount: packsCount,
@@ -297,7 +297,7 @@ export function AutoclaveNewCycleTab({
 						Стерилизация инструментов
 					</span>
 					<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-						Регистрация типового цикла для смотровых наборов и наконечников в 1 клик
+						Регистрация типового цикла для смотровых наборов и наконечников
 					</span>
 				</div>
 
@@ -328,7 +328,7 @@ export function AutoclaveNewCycleTab({
 				</button>
 			</div>
 
-			{/* 1. Быстрый выбор регламентного режима (1-Click) */}
+			{/* 1. Выбор регламентного режима */}
 			<div>
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
 					<span className="autoclave-form-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>

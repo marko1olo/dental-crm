@@ -328,7 +328,23 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	};
 
 	const [isPnlOpen, setIsPnlOpen] = useState(false);
-	const [isInvoicesOpen, setIsInvoicesOpen] = useState(false);
+	const [isInvoicesOpen, setIsInvoicesOpen] = useState(() => {
+		if (typeof window !== "undefined") {
+			return window.location.hash.toLowerCase().includes("invoices");
+		}
+		return false;
+	});
+
+	useEffect(() => {
+		const handleHash = () => {
+			if (typeof window !== "undefined") {
+				setIsInvoicesOpen(window.location.hash.toLowerCase().includes("invoices"));
+			}
+		};
+		handleHash();
+		window.addEventListener("hashchange", handleHash);
+		return () => window.removeEventListener("hashchange", handleHash);
+	}, []);
 	const [isFinanceOptionsOpen, setIsFinanceOptionsOpen] = useState(false);
 	const [isCashShiftOpen, setIsCashShiftOpen] = useState(false);
 	const [isCashboxOpen, setIsCashboxOpen] = useState(false);
@@ -794,7 +810,12 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 			<FinanceInvoicesModal
 				isOpen={isInvoicesOpen}
-				onClose={() => setIsInvoicesOpen(false)}
+				onClose={() => {
+					setIsInvoicesOpen(false);
+					if (typeof window !== "undefined" && window.location.hash.toLowerCase().includes("invoices")) {
+						window.location.hash = "finance";
+					}
+				}}
 				patientId={documentPatient?.id}
 				patientName={documentPatient?.fullName}
 			/>

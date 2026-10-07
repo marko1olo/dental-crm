@@ -413,7 +413,7 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 			assert.ok(html.includes("Рабочая смена врача открыта"), "Shows open doctor shift status");
 			assert.ok(html.includes("45\u00A0000") || html.includes("45 000"), "Shows total revenue");
 			assert.ok(html.includes("11\u00A0250") || html.includes("11 250"), "Shows doctor calculated payout");
-			assert.ok(html.includes("Расчетный лист Т-51"), "Shows Form T-51 payroll action");
+			assert.ok(html.includes("Расчет зарплаты") || html.includes("Зарплатная ведомость"), "Shows payroll action");
 
 			// Check Mandate 8e: ZERO disabled buttons
 			const buttonMatches = html.match(/<button[^>]*>/g) || [];

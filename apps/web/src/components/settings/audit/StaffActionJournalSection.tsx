@@ -15,6 +15,7 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 	User,
+	X,
 } from "lucide-react";
 import { formatKopecksRu } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
@@ -228,28 +229,29 @@ export function StaffActionJournalSection(): React.JSX.Element {
 			</div>
 
 			{/* Filters Bar */}
-			<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-				<div style={{ position: "relative", flex: "1 1 200px" }}>
-					<Search size={14} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--muted, #64748b)" }} />
+			<div className="flex flex-wrap items-center gap-2">
+				<div className="dente-search-wrap flex-1 min-w-[200px]">
+					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder="Поиск по сотруднику, причине или действию…"
-						style={{
-							width: "100%",
-							padding: "8px 10px 8px 30px",
-							fontSize: "12px",
-							borderRadius: "8px",
-							border: "1px solid var(--line, #cbd5e1)",
-							background: "var(--paper, #ffffff)",
-							color: "var(--ink, #0f172a)",
-							minHeight: "44px",
-						}}
+						className="dente-search-input"
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							onClick={() => setSearchQuery("")}
+							className="dente-search-clear"
+							aria-label="Очистить поиск"
+						>
+							<X size={13} />
+						</button>
+					)}
 				</div>
 
-				<div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+				<div className="dente-filter-chips">
 					{[
 						{ key: "all", label: "Все действия" },
 						{ key: "clinical", label: "Клинические" },
@@ -261,18 +263,8 @@ export function StaffActionJournalSection(): React.JSX.Element {
 							key={cat.key}
 							type="button"
 							onClick={() => setActionCategory(cat.key)}
-							style={{
-								padding: "6px 10px",
-								fontSize: "12px",
-								fontWeight: actionCategory === cat.key ? 700 : 500,
-								borderRadius: "6px",
-								border: "1px solid",
-								borderColor: actionCategory === cat.key ? "rgb(13, 148, 136)" : "var(--line, #cbd5e1)",
-								backgroundColor: actionCategory === cat.key ? "rgba(13, 148, 136, 0.12)" : "var(--paper, #ffffff)",
-								color: actionCategory === cat.key ? "rgb(13, 148, 136)" : "var(--ink, #0f172a)",
-								cursor: "pointer",
-								minHeight: "44px",
-							}}
+							className={`dente-filter-chip min-h-[32px] ${actionCategory === cat.key ? "active" : ""}`}
+							data-active={actionCategory === cat.key}
 						>
 							{cat.label}
 						</button>

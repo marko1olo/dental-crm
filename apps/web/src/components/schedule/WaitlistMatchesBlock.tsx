@@ -528,8 +528,8 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 										data-testid={`waitlist-match-take-slot-${match.entryId}`}
 										title={
 											match.alreadyBooked
-												? `У пациента есть запись. Перенести приём на это освободившееся окно в 1 клик`
-												: `Занять это окно пациентом ${match.patientName} в 1 клик`
+												? `У пациента есть запись. Перенести приём на это освободившееся окно`
+												: `Занять это окно (${match.patientName})`
 										}
 									>
 										<Zap
@@ -541,7 +541,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 												? "Записываем…"
 												: match.alreadyBooked
 													? "Перенести в окно"
-													: "В окно в 1 клик"}
+													: "Занять окно"}
 										</span>
 									</button>
 

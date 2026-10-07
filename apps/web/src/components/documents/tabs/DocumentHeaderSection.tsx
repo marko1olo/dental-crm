@@ -141,7 +141,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 								1. Первичный приём (Договор + Согласие ИДС + Персональные данные)
 							</span>
 							<span className="document-primary-intake-hint">
-								Оформление нового пациента в 1 клик со строками «________» для ручной подписи
+								Оформление нового пациента со строками «________» для ручной подписи
 							</span>
 						</div>
 					</div>
@@ -156,7 +156,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья) со строками «________» для быстрой ручной подписи на стойке регистрации"
 						>
 							<Printer size={15} aria-hidden="true" />
-							<span className="font-bold">Печать пакета в 1 клик</span>
+							<span className="font-bold">Печать первичного пакета</span>
 						</button>
 						<button
 							type="button"
@@ -203,7 +203,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 								className="secondary-button document-intake-a4-preview-btn flex items-center gap-1.5"
 								onClick={() => setIsA4PrintPreviewOpen(true)}
 								data-testid="btn-open-pro-a4-modal"
-								title="Открыть официальный печатный бланк А4 (Договор ПП РФ № 736, Акт 804н, План лечения, Медкарта)"
+								title="Открыть официальный печатный бланк А4 (Договор ПП РФ № 736, Акт выполненных работ, План лечения, Медкарта)"
 							>
 								<Printer size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
 								<span className="font-semibold">Бланки А4 (ГОСТ / Договор / Акт / План / Карта)</span>

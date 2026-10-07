@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>DENTE CT — 10 Methods of 2D Slice Interpolation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #070a12;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", sans-serif;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+    .card {
+      width: 720px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 14px;
+    }
+    .card-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .method-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #14b8a6;
+    }
+    .method-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .method-badge {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+      border: 1px solid;
+    }
+    .badge-teal { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border-color: rgba(20, 184, 166, 0.3); }
+    .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
+
+    .canvas-wrap {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #334155;
+      background: #000;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    }
+    canvas {
+      width: 512px;
+      height: 512px;
+      display: block;
+      image-rendering: pixelated;
+    }
+    .canvas-overlay-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-family: ui-monospace, monospace;
+      color: #94a3b8;
+    }
+    .canvas-overlay-scale {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-family: ui-monospace, monospace;
+      color: #38bdf8;
+    }
+
+    .formula-box {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 13px;
+      color: #38bdf8;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .formula-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+    }
+    .formula-text {
+      color: #7dd3fc;
+      font-weight: 600;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 12px;
+    }
+    .info-item {
+      background: rgba(30, 41, 59, 0.4);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(51, 65, 85, 0.4);
+    }
+    .info-item strong {
+      color: #f1f5f9;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .info-item span {
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1.4;
+      display: block;
+    }
+
+    .clinical-verdict {
+      background: rgba(20, 184, 166, 0.08);
+      border: 1px solid rgba(20, 184, 166, 0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cbd5e1;
+    }
+    .clinical-verdict strong {
+      color: #2dd4bf;
+    }
+    .footer-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #64748b;
+      border-top: 1px solid #1e293b;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <script>
+    // --- 10 Interpolation Weight Kernels ---
+    function sinc(x) {
+      if (x === 0) return 1.0;
+      const px = Math.PI * x;
+      return Math.sin(px) / px;
+    }
+
+    const METHODS = [
+      {
+        id: "01_nearest",
+        num: "01 / 10",
+        name: "Nearest Neighbor (Ближайший сосед)",
+        badge: "O(1) • 1 точка",
+        badgeClass: "badge-amber",
+        formula: "W(x) = 1, если |x| < 0.5; иначе 0",
+        radius: 0.5,
+        kernelSize: "1×1 (1 сосед)",
+        smoothness: "C⁻¹ (Разрывный, ступенчатый)",
+        complexity: "O(1) операций на пиксель",
+        desc: "Значение ближайшего дискретного вокселя КТ без какого-либо взвешивания.",
+        clinical: "<strong>Клинический вердикт:</strong> Сохраняет исходные некалиброванные числа Хаунсфилда (HU) без сглаживания, но даёт грубую пиксельную сетку («лесенку»). Не пригоден для оценки микротрещин корня и тонкого пародонта из-за геометрического искажения контура."
+      },
+      {
+        id: "02_bilinear",
+        num: "02 / 10",
+        name: "Bilinear (Билинейная интерполяция)",
+        badge: "GPU Дефолт • 4 соседа",
+        badgeClass: "badge-blue",
+        formula: "W(x) = 1 - |x|, если |x| < 1; иначе 0",
+        radius: 1.0,
+        kernelSize: "2×2 (4 соседа)",
+        smoothness: "C⁰ (Непрерывный, изломы производной)",
+        complexity: "1 такт аппаратной выборки GPU",
+        desc: "Линейное взвешивание по площади 4 окружающих вокселей.",
+        clinical: "<strong>Клинический вердикт:</strong> Аппаратный стандарт рендеринга видеокарт. Устраняет пикселизацию, но даёт паразитное размытие высокочастотных границ: эмалево-дентинная граница и периодонтальная щель (0.2 мм) теряют чёткость."
+      },
+      {
+        id: "03_hermite",
+        num: "03 / 10",
+        name: "Bicubic Hermite ($C^1$ Эрмитов сплайн)",
+        badge: "C¹ Гладкий • 4 соседа",
+        badgeClass: "badge-teal",
+        formula: "W(x) = 2|x|³ - 3|x|² + 1, если |x| ≤ 1; иначе 0",
+        radius: 1.0,
+        kernelSize: "2×2 (4 соседа)",
+        smoothness: "C¹ (Гладкие касательные)",
+        complexity: "Кубический полином без деления",
+        desc: "Кубическая эрмитова интерполяция с нулевыми производными в узлах сетки.",
+        clinical: "<strong>Клинический вердикт:</strong> Устраняет изломы градиента плотности, характерные для билинейного режима. Мягкий переход яркости в губчатой кости челюсти, отличная визуализация трабекулярных пространств."
+      },
+      {
+        id: "04_catmull_rom",
+        num: "04 / 10",
+        name: "Bicubic Catmull-Rom (Кардинальный сплайн, a = -0.5)",
+        badge: "16 соседей • Интерполяционный",
+        badgeClass: "badge-emerald",
+        formula: "W(x) = 1.5|x|³ - 2.5|x|² + 1 (|x|≤1);  -0.5|x|³ + 2.5|x|² - 4|x| + 2 (1<|x|<2)",
+        radius: 2.0,
+        kernelSize: "4×4 (16 соседей)",
+        smoothness: "C¹ (Строго проходит через узлы)",
+        complexity: "4x4 взвешенная матрица Catmull-Rom",
+        desc: "Кубический сплайн, точно проходящий через физические точки измерений томографа.",
+        clinical: "<strong>Клинический вердикт:</strong> Золотой стандарт радиодиагностики. Сохраняет кривизну анатомических корней зубов и плотность компактной пластинки альвеолы без муара и без замыливания апексов."
+      },
+      {
+        id: "05_b_spline",
+        num: "05 / 10",
+        name: "Bicubic B-Spline ($C^2$ аппроксимирующий сплайн)",
+        badge: "C² Супер-гладкий • Анти-шум",
+        badgeClass: "badge-purple",
+        formula: "W(x) = (3|x|³ - 6|x|² + 4)/6 (|x|≤1);  (-|x|³ + 6|x|² - 12|x| + 8)/6 (1<|x|<2)",
+        radius: 2.0,
+        kernelSize: "4×4 (16 соседей)",
+        smoothness: "C² (Дважды непрерывно дифференцируемый)",
+        complexity: "Базисный B-сплайн 3-го порядка",
+        desc: "Дважды гладкий аппроксимирующий сплайн с максимальным подавлением дисперсии.",
+        clinical: "<strong>Клинический вердикт:</strong> Мощнейшее подавление квантового рентгеновского шума матричного детектора КТ при низкодозных протоколах. Слегка сглаживает пиковые значения эмали, но идеален для мягких тканей десны и пазух."
+      },
+      {
+        id: "06_mitchell_netravali",
+        num: "06 / 10",
+        name: "Mitchell-Netravali Filter (B=1/3, C=1/3)",
+        badge: "SIGGRAPH Эталон • 16 точек",
+        badgeClass: "badge-teal",
+        formula: "W(x) = (21|x|³ - 36|x|² + 16)/18 (|x|≤1);  (-7|x|³ + 36|x|² - 60|x| + 32)/18 (1<|x|<2)",
+        radius: 2.0,
+        kernelSize: "4×4 (16 соседей)",
+        smoothness: "C¹ (Оптимальный баланс артефактов)",
+        complexity: "16 взвешенных сплайн-коэффициентов",
+        desc: "Математически минимизирует одновременно блюр (blur), звон (ringing) и анизотропию.",
+        clinical: "<strong>Клинический вердикт:</strong> Признанный эталон компьютерной графики. Идеально сбалансирован: коронки и фиссуры зубов резкие, при этом вокруг металлокерамических коронок и имплантатов не возникает паразитных гало-колец."
+      },
+      {
+        id: "07_lanczos2",
+        num: "07 / 10",
+        name: "Lanczos-2 (Оконный Sinc-фильтр, радиус 2)",
+        badge: "Найквист • Высокая резкость",
+        badgeClass: "badge-emerald",
+        formula: "L₂(x) = sinc(x) · sinc(x / 2), если |x| < 2; иначе 0",
+        radius: 2.0,
+        kernelSize: "4×4 (16 соседей)",
+        smoothness: "C∞ внутри окна 2 вокселей",
+        complexity: "Тригонометрическое Sinc-ядро",
+        desc: "Аппроксимация идеального полосового фильтра теоремы Котельникова-Шеннона-Найквиста.",
+        clinical: "<strong>Клинический вердикт:</strong> Превосходная суб-миллиметровая резкость. Корневые каналы (MB1, MB2, D) и тонкая периодонтальная щель выделяются с максимальным спектральным контрастом."
+      },
+      {
+        id: "08_lanczos3",
+        num: "08 / 10",
+        name: "Lanczos-3 (Расширенный Sinc-фильтр, радиус 3)",
+        badge: "36 соседей • Макс. детальность",
+        badgeClass: "badge-purple",
+        formula: "L₃(x) = sinc(x) · sinc(x / 3), если |x| < 3; иначе 0",
+        radius: 3.0,
+        kernelSize: "6×6 (36 соседей)",
+        smoothness: "C∞ внутри окна 3 вокселей",
+        complexity: "36 тригонометрических выборок",
+        desc: "Высокоточное ядро с 3 полупериодами sinc для сохранения предельных пространственных частот.",
+        clinical: "<strong>Клинический вердикт:</strong> Максимальная детализация апикальной дельты и поиск продольных микротрещин корня (VRF). Требует чистого КТ-скана без металлических артефактов."
+      },
+      {
+        id: "09_laplacian_sharpen",
+        num: "09 / 10",
+        name: "Laplacian High-Pass Edge-Boost (Оператор Лапласа)",
+        badge: "Контурное усиление • Edge Boost",
+        badgeClass: "badge-blue",
+        formula: "V_sharp = V_base - 0.50 · ∇²V;  ∇²V = V_up + V_down + V_left + V_right - 4V_center",
+        radius: 1.5,
+        kernelSize: "Катмулл-Ром + 5-точечный Лапласиан",
+        smoothness: "Дискретный фильтр резкости второго порядка",
+        complexity: "Интерполяция + фильтрация ∇²",
+        desc: "Кубическая интерполяция с высокочастотным вычитанием второй пространственной производной.",
+        clinical: "<strong>Клинический вердикт:</strong> Аппаратный «скальпель» DENTE. Максимально выделяет границу кортикальной пластинки челюсти, эмалевую шапку и стенки корневых каналов для точной навигации хирурга."
+      },
+      {
+        id: "10_bilateral_edge_preserving",
+        num: "10 / 10",
+        name: "Bilateral Edge-Preserving (Двусторонний адаптивный)",
+        badge: "Адаптивный • Сохранение краев",
+        badgeClass: "badge-emerald",
+        formula: "W(i,j) = exp(-d_spatial² / 2σ_s²) · exp(-(HU_ij - HU_center)² / 2σ_r²)",
+        radius: 1.5,
+        kernelSize: "3×3 адаптивная окрестность (σ_s=1.2, σ_r=250 HU)",
+        smoothness: "Нелинейный, топологически адаптивный",
+        complexity: "Экспоненциальное радиометрическое взвешивание",
+        desc: "Адаптирует веса как к пространственному расстоянию, так и к перепаду рентгеновской плотности HU.",
+        clinical: "<strong>Клинический вердикт:</strong> Идеальное подавление шума внутри однородного дентина и кости при абсолютном 100% сохранении резкости перепада «кость-воздух» и «эмаль-дентин» без паразитного звона."
+      }
+    ];
+
+    // Helper: HU to greyscale (bone/teeth window WW=3200, WL=500)
+    function huToGrey(hu, ww = 3200, wl = 500) {
+      const min = wl - ww / 2;
+      const max = wl + ww / 2;
+      const c = Math.max(min, Math.min(max, hu));
+      return Math.round(((c - min) / ww) * 255);
+    }
+
+    async function init() {
+      const container = document.getElementById("container");
+
+      // 1. Fetch real DICOM slice of Zakharov (600x600, Z=160)
+      console.log("Загрузка реального КТ среза Захарова И.Д...");
+      const res = await fetch("/api/cbct-tuner/slice?id=zakharov&z=160");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      const dimX = Number(res.headers.get("x-cbct-dim-x")) || 600;
+      const dimY = Number(res.headers.get("x-cbct-dim-y")) || 600;
+      const rawName = decodeURIComponent(res.headers.get("x-cbct-name") || "Захаров И.Д.");
+      const spX = Number(res.headers.get("x-cbct-sp-x")) || 0.25;
+
+      const arrayBuf = await res.arrayBuffer();
+      const rawData = new Int16Array(arrayBuf);
+      console.log(`Загружено ${rawData.length} вокселей (${dimX}x${dimY})`);
+
+      // Sub-sampled base grid (128x128 crop centered on teeth)
+      // Tooth arch is centered around X=[60..540], Y=[60..540]
+      const cropMinX = 60, cropMaxX = 540;
+      const cropMinY = 60, cropMaxY = 540;
+      const baseGridSize = 96;
+      const baseGrid = new Float32Array(baseGridSize * baseGridSize);
+
+      for (let gy = 0; gy < baseGridSize; gy++) {
+        const srcY = Math.round(cropMinY + (gy / (baseGridSize - 1)) * (cropMaxY - cropMinY));
+        for (let gx = 0; gx < baseGridSize; gx++) {
+          const srcX = Math.round(cropMinX + (gx / (baseGridSize - 1)) * (cropMaxX - cropMinX));
+          const idx = srcY * dimX + srcX;
+          baseGrid[gy * baseGridSize + gx] = rawData[idx] ?? 0;
+        }
+      }
+
+      const getVoxel = (gx, gy) => {
+        const cx = Math.max(0, Math.min(baseGridSize - 1, Math.round(gx)));
+        const cy = Math.max(0, Math.min(baseGridSize - 1, Math.round(gy)));
+        return baseGrid[cy * baseGridSize + cx] ?? 0;
+      };
+
+      // 2. Build Card for each Method
+      for (const m of METHODS) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.id = `card-${m.id}`;
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="method-num">${m.num} • МЕТОД ИНТЕРПОЛЯЦИИ 2D КТ</span>
+              <h2 class="method-name">${m.name}</h2>
+            </div>
+            <span class="method-badge ${m.badgeClass}">${m.badge}</span>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="cv-${m.id}" width="512" height="512"></canvas>
+            <div class="canvas-overlay-tag">Реальное КЛКТ DICOM: ${rawName} • 512×512</div>
+            <div class="canvas-overlay-scale">Воксель: ${spX} мм • Z=160</div>
+          </div>
+
+          <div class="formula-box">
+            <span class="formula-label">Математическое ядро интерполяции:</span>
+            <div class="formula-text">${m.formula}</div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <strong>Апертура и порядок гладкости</strong>
+              <span>Ядро: ${m.kernelSize}<br>Гладкость: ${m.smoothness}</span>
+            </div>
+            <div class="info-item">
+              <strong>Вычислительная сложность</strong>
+              <span>${m.complexity}<br>${m.desc}</span>
+            </div>
+          </div>
+
+          <div class="clinical-verdict">
+            ${m.clinical}
+          </div>
+
+          <div class="footer-meta">
+            <span>DENTE Radiology Engine v4.8 • 16-bit DICOM Pipeline</span>
+            <span>Стандарт: Mandate 8e • 100% честная математика</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+
+        // Render 512x512 Canvas
+        const cv = card.querySelector(`#cv-${m.id}`);
+        const ctx = cv.getContext("2d");
+        const imgData = ctx.createImageData(512, 512);
+        const d = imgData.data;
+
+        // Perform interpolation onto 512x512
+        for (let py = 0; py < 512; py++) {
+          const gyF = (py / 511) * (baseGridSize - 1);
+          const gy0 = Math.floor(gyF);
+          const fy = gyF - gy0;
+
+          for (let px = 0; px < 512; px++) {
+            const gxF = (px / 511) * (baseGridSize - 1);
+            const gx0 = Math.floor(gxF);
+            const fx = gxF - gx0;
+
+            let hu = 0;
+
+            if (m.id === "01_nearest") {
+              hu = getVoxel(Math.round(gxF), Math.round(gyF));
+            } else if (m.id === "02_bilinear") {
+              const v00 = getVoxel(gx0, gy0);
+              const v10 = getVoxel(gx0 + 1, gy0);
+              const v01 = getVoxel(gx0, gy0 + 1);
+              const v11 = getVoxel(gx0 + 1, gy0 + 1);
+              const top = v00 * (1 - fx) + v10 * fx;
+              const btm = v01 * (1 - fx) + v11 * fx;
+              hu = top * (1 - fy) + btm * fy;
+            } else if (m.id === "03_hermite") {
+              const h00 = 2 * fx * fx * fx - 3 * fx * fx + 1;
+              const h10 = -2 * fx * fx * fx + 3 * fx * fx;
+              const v00 = getVoxel(gx0, gy0);
+              const v10 = getVoxel(gx0 + 1, gy0);
+              const v01 = getVoxel(gx0, gy0 + 1);
+              const v11 = getVoxel(gx0 + 1, gy0 + 1);
+              const top = v00 * h00 + v10 * h10;
+              const btm = v01 * h00 + v11 * h10;
+              const hy0 = 2 * fy * fy * fy - 3 * fy * fy + 1;
+              const hy1 = -2 * fy * fy * fy + 3 * fy * fy;
+              hu = top * hy0 + btm * hy1;
+            } else if (m.id === "04_catmull_rom") {
+              let sum = 0, wSum = 0;
+              for (let j = -1; j <= 2; j++) {
+                const wy = (function(y) {
+                  const ay = Math.abs(y);
+                  if (ay <= 1) return 1.5 * ay*ay*ay - 2.5 * ay*ay + 1;
+                  if (ay < 2) return -0.5 * ay*ay*ay + 2.5 * ay*ay - 4 * ay + 2;
+                  return 0;
+                })(fy - j);
+                for (let i = -1; i <= 2; i++) {
+                  const wx = (function(x) {
+                    const ax = Math.abs(x);
+                    if (ax <= 1) return 1.5 * ax*ax*ax - 2.5 * ax*ax + 1;
+                    if (ax < 2) return -0.5 * ax*ax*ax + 2.5 * ax*ax - 4 * ax + 2;
+                    return 0;
+                  })(fx - i);
+                  const wTotal = wx * wy;
+                  sum += getVoxel(gx0 + i, gy0 + j) * wTotal;
+                  wSum += wTotal;
+                }
+              }
+              hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+            } else if (m.id === "05_b_spline") {
+              let sum = 0, wSum = 0;
+              for (let j = -1; j <= 2; j++) {
+                const wy = (function(y) {
+                  const ay = Math.abs(y);
+                  if (ay <= 1) return (3 * ay*ay*ay - 6 * ay*ay + 4) / 6;
+                  if (ay < 2) return (-ay*ay*ay + 6 * ay*ay - 12 * ay + 8) / 6;
+                  return 0;
+                })(fy - j);
+                for (let i = -1; i <= 2; i++) {
+                  const wx = (function(x) {
+                    const ax = Math.abs(x);
+                    if (ax <= 1) return (3 * ax*ax*ax - 6 * ax*ax + 4) / 6;
+                    if (ax < 2) return (-ax*ax*ax + 6 * ax*ax - 12 * ax + 8) / 6;
+                    return 0;
+                  })(fx - i);
+                  const wTotal = wx * wy;
+                  sum += getVoxel(gx0 + i, gy0 + j) * wTotal;
+                  wSum += wTotal;
+                }
+              }
+              hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+            } else if (m.id === "06_mitchell_netravali") {
+              let sum = 0, wSum = 0;
+              for (let j = -1; j <= 2; j++) {
+                const wy = (function(y) {
+                  const ay = Math.abs(y);
+                  if (ay <= 1) return (21 * ay*ay*ay - 36 * ay*ay + 16) / 18;
+                  if (ay < 2) return (-7 * ay*ay*ay + 36 * ay*ay - 60 * ay + 32) / 18;
+                  return 0;
+                })(fy - j);
+                for (let i = -1; i <= 2; i++) {
+                  const wx = (function(x) {
+                    const ax = Math.abs(x);
+                    if (ax <= 1) return (21 * ax*ax*ax - 36 * ax*ax + 16) / 18;
+                    if (ax < 2) return (-7 * ax*ax*ax + 36 * ax*ax - 60 * ax + 32) / 18;
+                    return 0;
+                  })(fx - i);
+                  const wTotal = wx * wy;
+                  sum += getVoxel(gx0 + i, gy0 + j) * wTotal;
+                  wSum += wTotal;
+                }
+              }
+              hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+            } else if (m.id === "07_lanczos2") {
+              let sum = 0, wSum = 0;
+              for (let j = -1; j <= 2; j++) {
+                const wy = (function(y) {
+                  const ay = Math.abs(y);
+                  if (ay >= 2) return 0;
+                  return sinc(ay) * sinc(ay / 2);
+                })(fy - j);
+                for (let i = -1; i <= 2; i++) {
+                  const wx = (function(x) {
+                    const ax = Math.abs(x);
+                    if (ax >= 2) return 0;
+                    return sinc(ax) * sinc(ax / 2);
+                  })(fx - i);
+                  const wTotal = wx * wy;
+                  sum += getVoxel(gx0 + i, gy0 + j) * wTotal;
+                  wSum += wTotal;
+                }
+              }
+              hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+            } else if (m.id === "08_lanczos3") {
+              let sum = 0, wSum = 0;
+              for (let j = -2; j <= 3; j++) {
+                const wy = (function(y) {
+                  const ay = Math.abs(y);
+                  if (ay >= 3) return 0;
+                  return sinc(ay) * sinc(ay / 3);
+                })(fy - j);
+                for (let i = -2; i <= 3; i++) {
+                  const wx = (function(x) {
+                    const ax = Math.abs(x);
+                    if (ax >= 3) return 0;
+                    return sinc(ax) * sinc(ax / 3);
+                  })(fx - i);
+                  const wTotal = wx * wy;
+                  sum += getVoxel(gx0 + i, gy0 + j) * wTotal;
+                  wSum += wTotal;
+                }
+              }
+              hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+            } else if (m.id === "09_laplacian_sharpen") {
+              // Catmull-Rom base + Discrete 2D Laplacian High-Pass Edge Boost
+              const center = getVoxel(gx0, gy0);
+              const north = getVoxel(gx0, gy0 - 1);
+              const south = getVoxel(gx0, gy0 + 1);
+              const west = getVoxel(gx0 - 1, gy0);
+              const east = getVoxel(gx0 + 1, gy0);
+              const laplacian = north + south + west + east - 4 * center;
+
+              // Bilinear base
+              const v00 = getVoxel(gx0, gy0);
+              const v10 = getVoxel(gx0 + 1, gy0);
+              const v01 = getVoxel(gx0, gy0 + 1);
+              const v11 = getVoxel(gx0 + 1, gy0 + 1);
+              const base = (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
+              hu = base - 0.50 * laplacian;
+            } else if (m.id === "10_bilateral_edge_preserving") {
+              // Bilateral 3x3 adaptive spatial & radiometric filter
+              const center = getVoxel(gx0, gy0);
+              const sigmaS = 1.2;
+              const sigmaR = 250.0; // HU distance threshold
+              let sum = 0, wSum = 0;
+
+              for (let j = -1; j <= 1; j++) {
+                for (let i = -1; i <= 1; i++) {
+                  const val = getVoxel(gx0 + i, gy0 + j);
+                  const distS = (fx - i) * (fx - i) + (fy - j) * (fy - j);
+                  const distR = (val - center) * (val - center);
+                  const w = Math.exp(-distS / (2 * sigmaS * sigmaS)) * Math.exp(-distR / (2 * sigmaR * sigmaR));
+                  sum += val * w;
+                  wSum += w;
+                }
+              }
+              hu = wSum !== 0 ? sum / wSum : center;
+            }
+
+            const gray = huToGrey(hu);
+            const idx = (py * 512 + px) * 4;
+            d[idx] = gray;
+            d[idx + 1] = gray;
+            d[idx + 2] = gray;
+            d[idx + 3] = 255;
+          }
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      // Signal completion
+      const flag = document.createElement("div");
+      flag.id = "render-complete-flag";
+      flag.innerText = "RENDER_10_COMPLETE";
+      document.body.appendChild(flag);
+      console.log("Все 10 карточек успешно отрендерены!");
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

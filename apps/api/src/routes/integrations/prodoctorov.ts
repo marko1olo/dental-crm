@@ -412,7 +412,7 @@ export async function registerProdoctorovRoutes(app: FastifyInstance) {
         <currencyId>RUR</currencyId>
         <categoryId>${targetCategory}</categoryId>
         <code>${escapeXml(item.code)}</code>
-        <param name="Код 804н">${escapeXml(code804n)}</param>
+        <param name="Код услуги">${escapeXml(code804n)}</param>
         <param name="Специальность">${escapeXml(specialtyRu)}</param>
         <param name="Длительность (мин)">${item.durationMinutes || 30}</param>
         <param name="Налоговый вычет">${item.taxDeductible ? "Да" : "Нет"}</param>

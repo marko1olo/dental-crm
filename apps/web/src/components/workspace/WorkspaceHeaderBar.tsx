@@ -118,7 +118,7 @@ export const DoctorQuestHeaderChip: React.FC<DoctorQuestHeaderChipProps> = React
 			title={
 				isCompleted
 					? "Квест врача пройден (4/4). Кликните для повторного прохождения или смены трека"
-					: `Интерактивный квест врача (3 мин) — шаг ${currentStepNum}/${totalSteps}. Нажмите для запуска в 1 клик (Esc — пауза)`
+					: `Интерактивный квест врача (3 мин) — шаг ${currentStepNum}/${totalSteps}. Нажмите для запуска (Esc — пауза)`
 			}
 			aria-label="Интерактивный квест врача (3 мин)"
 		>

@@ -1,0 +1,49 @@
+{
+  "agent": "subagent_audit_finance_settings",
+  "role": "Global Red Team Auditor & Inquisitor 3: Финансы, Касса, Склад, ЗТЛ и Настройки",
+  "completedAt": "2026-10-06T04:20:00Z",
+  "status": "COMPLETED",
+  "scope": [
+    "invoices",
+    "retail_showcase",
+    "inventory",
+    "lab_orders",
+    "settings_prices"
+  ],
+  "verificationMatrix": {
+    "viewports": ["PC (1440x900)", "Mobile (390x844)"],
+    "themes": ["Light", "Dark"],
+    "totalScreenshotsInspected": 20,
+    "sevenDeadlySinsUi": "CLEAN"
+  },
+  "appliedFixes": [
+    {
+      "file": "apps/web/src/components/finance/FinanceInvoicesModal.tsx",
+      "fix": "Elevated modal z-index to z-[75] to clear demo simulator banner, added pb-28 bottom clearance for mobile navigation"
+    },
+    {
+      "file": "apps/web/src/components/billing/RetailProductsModal.tsx",
+      "fix": "Responsive search input (retail-search-wrap, 260px on PC, 100% on mobile), shortened placeholder 'Поиск по товарам...' to eliminate EAN-13 barcode collision, single-line horizontal scrollable category filter chips, solid high-contrast teal CTA button '+ В чек'"
+    },
+    {
+      "file": "apps/web/src/styles/components.css",
+      "fix": "Added .retail-search-wrap class with 260px desktop width override to solve CSS specificity conflict"
+    },
+    {
+      "file": "apps/web/src/styles/modules/mobile-inventory.css",
+      "fix": "Adjusted mobile inventory bottom bar floating position to bottom: 56px, fully clearing .mobile-tab-bar"
+    },
+    {
+      "file": "apps/web/src/pages/LabOrdersPage.tsx",
+      "fix": "Translated 'fitted' order status to Russian 'Зафиксировано' with emerald badge, fixed contrast of Print button in dark mode"
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsPricesCategoryGroup.tsx",
+      "fix": "Reorganized card into 3-tier structure: top row (code badge left, price+duration right), middle (title + badges), bottom (salary/margin economics left, edit/delete right). Added Russian categoryTitle mapping ('anesthesia' -> 'Анестезия', 'orthopedics' -> 'Ортопедия')"
+    },
+    {
+      "file": "apps/web/src/components/settings/mobile/MobileSettingsPricesView.tsx",
+      "fix": "Added Russian translation for category titles and preserved tax badges"
+    }
+  ]
+}

@@ -184,7 +184,7 @@
 /* ─── 3. SEGMENTED STEP PROGRESS BAR (5 STEPS) ─── */
 .mobile-chairside-steps-container {
   width: 100%;
-  padding: 6px 12px 10px 12px;
+  padding: 6px 8px 8px 8px;
   background: color-mix(in srgb, var(--paper, #ffffff) 95%, transparent);
   border-bottom: 1px solid var(--line-subtle, #e2e8f0);
   box-sizing: border-box;
@@ -193,7 +193,9 @@
 .mobile-chairside-steps-scroll {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
@@ -207,21 +209,23 @@
 }
 
 .mobile-chairside-step-chip {
-  min-height: 38px;
-  padding: 5px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  min-height: 36px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 3px;
   border: 1px solid var(--line, #e2e8f0);
   background: var(--paper, #ffffff);
   color: var(--muted, #64748b);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  flex-shrink: 0;
+  flex: 1 1 0%;
+  min-width: 0;
 }
 
 .mobile-chairside-step-chip.is-active {

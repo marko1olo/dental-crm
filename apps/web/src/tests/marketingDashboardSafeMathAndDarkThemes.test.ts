@@ -50,6 +50,9 @@ describe("Marketing Dashboard Safe Math & Dark Themes Inquisitor Suite", () => {
 				site_seo: 0,
 				recommendations: 0,
 				social_media: 0,
+				avito: 0,
+				yandex_maps: 0,
+				max: 0,
 				other: 0,
 			};
 
@@ -89,6 +92,9 @@ describe("Marketing Dashboard Safe Math & Dark Themes Inquisitor Suite", () => {
 				site_seo: 0,
 				recommendations: 0,
 				social_media: 0,
+				avito: 0,
+				yandex_maps: 0,
+				max: 0,
 				other: 0,
 			};
 

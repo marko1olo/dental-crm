@@ -176,7 +176,7 @@ describe("MDLP Disposal Queue Staff & Doctor Autonomy (Mandates 8e, 8k, 8n, 8d)"
 			})
 		);
 
-		assert.ok(html.includes("Акт списания медикаментов и анестетиков (1 клик)"));
+		assert.ok(html.includes("Акт списания медикаментов и анестетиков"));
 		assert.ok(html.includes("Д-р Кузнецов М.С."));
 		assert.ok(html.includes("Медсестра ЦСО не требуется"));
 		assert.ok(html.includes("Единоличное утверждение (без комиссии из 3 человек)"));

@@ -338,7 +338,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 						className="loyalty-quick-btn one-click-btn"
 						onClick={onOneClickRedeem}
 						data-testid="loyalty-one-click-redeem-btn"
-						title="Списать максимально разрешенные бонусы в чек в 1 клик"
+						title="Списать максимально разрешенные бонусы в чек"
 						style={{
 							background: "var(--teal)",
 							color: "var(--on-teal, var(--paper))",
@@ -350,7 +350,7 @@ export const LoyaltyBalanceTab: React.FC<LoyaltyBalanceTabProps> = ({
 						}}
 					>
 						<Sparkles size={14} />
-						1-клик списать в чек ({redemptionCalc.maxAllowedRedemptionRub} ₽)
+						Списать бонусы в чек ({redemptionCalc.maxAllowedRedemptionRub} ₽)
 					</button>
 					{QUICK_REDEMPTION_PRESETS_RUB.map((preset) => (
 						<button

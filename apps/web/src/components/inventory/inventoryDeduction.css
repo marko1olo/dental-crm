@@ -292,7 +292,7 @@
 .inventory-search-input {
 	width: 100%;
 	height: 36px;
-	padding: 0 14px 0 36px;
+	padding: 0 36px 0 38px;
 	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
@@ -301,6 +301,30 @@
 	font-weight: 500;
 	box-sizing: border-box;
 	transition: border-color 0.15s ease;
+}
+
+.inventory-search-clear {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 22px;
+	height: 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	border-radius: 50%;
+	cursor: pointer;
+	padding: 0;
+	transition: all 0.15s ease;
+}
+
+.inventory-search-clear:hover {
+	background: var(--paper-hover, rgba(0, 0, 0, 0.05));
+	color: var(--ink);
 }
 
 .inventory-search-input:focus {
@@ -340,9 +364,10 @@
 }
 
 .inventory-category-tab.active {
-	background: var(--ink);
-	color: var(--paper);
-	border-color: var(--ink);
+	background: var(--teal-soft);
+	color: var(--teal);
+	border-color: var(--teal);
+	font-weight: 700;
 }
 
 /* Material List Scrollable Area */

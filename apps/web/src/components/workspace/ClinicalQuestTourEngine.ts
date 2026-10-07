@@ -88,12 +88,12 @@ export const SOLO_DOCTOR_TRACK_STEPS: readonly QuestStep[] = [
 	{
 		id: "schedule_1click",
 		stepNumber: 1,
-		title: "Запись в расписании за 1 клик",
+		title: "Быстрая запись в расписании",
 		badge: "Расписание",
 		description:
 			"Кликните в свободную ячейку сетки или нажмите кнопку «+ Запись». Приём бронируется за 5 секунд без принудительного выбора ассистента.",
 		clinicalTip:
-			"0-клик старт: соло-врач не тратит время на лишние поля и бюрократические согласования.",
+			"Быстрый старт: соло-врач не тратит время на лишние поля и бюрократические согласования.",
 		shortcutBadge: "Space / Enter — старт и финиш приёма",
 		targetSelector: '[data-tour="schedule-booking"], #topbar-booking-action-btn, [data-tour="schedule-slot"]',
 		fallbackTargetSelector: '.top-actions .primary-button',
@@ -111,10 +111,10 @@ export const SOLO_DOCTOR_TRACK_STEPS: readonly QuestStep[] = [
 		title: "Зубная формула и одонтограмма",
 		badge: "Зубная формула",
 		description:
-			"Нажмите клавиши 1..8 для выбора квадранта или кликните по зубу в дуге FDI. Для здоровых зубов нажмите «Норма» (Shift+N) — вся формула заполнится в 1 клик. Патологии отмечаются клавишами: C (кариес), P (пульпит), K (коронка), X (удален).",
+			"Нажмите клавиши 1..8 для выбора квадранта или кликните по зубу в дуге FDI. Для здоровых зубов нажмите «Норма» (Shift+N) — вся формула заполнится автоматически. Патологии отмечаются клавишами: C (кариес), P (пульпит), K (коронка), X (удален).",
 		clinicalTip:
 			"Физиологическая норма по умолчанию: отмечается только реальная клиническая патология.",
-		shortcutBadge: "Shift+N — норма в 1 клик • C, P, K, X — патологии",
+		shortcutBadge: "Shift+N — норма • C, P, K, X — патологии",
 		targetSelector: '[data-tour="tooth-card"], [data-tour="autonorm-btn"], [data-tour="odontogram-formula"]',
 		fallbackTargetSelector: 'a[href="#visit"]',
 		viewTarget: "visit",
@@ -291,7 +291,7 @@ export const IMAGING_DIAGNOSTICS_TRACK_STEPS: readonly QuestStep[] = [
 		title: "Мультипланарная реконструкция MPR",
 		badge: "3D Срезы",
 		description:
-			"Переключайтесь между аксиальным, сагиттальным и корональным срезами. Контрастность настраивается в 1 клик пресетом «Кость / Зуб».",
+			"Переключайтесь между аксиальным, сагиттальным и корональным срезами. Контрастность настраивается пресетом «Кость / Зуб».",
 		clinicalTip:
 			"Тёмная тема рентген-кабинета (WCAG AAA): фон slate-950 бережёт глаза при оценке снимков.",
 		shortcutBadge: "Колесо мыши — прокрутка срезов",

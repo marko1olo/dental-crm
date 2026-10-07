@@ -337,13 +337,14 @@
 
 .curator-search-input {
 	width: 100%;
-	min-height: 44px;
-	padding: 8px 14px 8px 38px;
-	font-size: 14px;
-	background-color: var(--paper, #f8fafc);
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
-	border-radius: 10px;
+	height: 34px !important;
+	min-height: 34px !important;
+	padding: 6px 14px 6px 38px !important;
+	font-size: 13px !important;
+	background-color: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
 	outline: none;
 }
 

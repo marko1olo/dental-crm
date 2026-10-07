@@ -507,8 +507,8 @@
 	height: 28px;
 	min-height: 28px;
 	max-height: 28px;
-	width: 130px !important;
-	min-width: 130px !important;
+	width: 102px !important;
+	min-width: 102px !important;
 	line-height: 1;
 	box-sizing: border-box;
 	padding: 2px 6px;
@@ -1148,8 +1148,8 @@ button[data-testid^="btn-slot-"]:hover span,
 	background: var(--paper-soft) !important;
 	color: var(--ink) !important;
 	padding: 0 10px !important;
-	font-size: 12px !important;
-	font-weight: 600 !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;

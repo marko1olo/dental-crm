@@ -19,6 +19,8 @@ import {
   printBlankMedicalContract,
 } from "../patients/blankContractPrint";
 
+import { formatDoctorShortName } from "./appointmentCardHelpers";
+
 export interface AppointmentModalHeaderProps {
   appointment: Appointment;
   dashboard: Dashboard;
@@ -50,6 +52,12 @@ export function AppointmentModalHeader({
 }: AppointmentModalHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const shortPatient =
+    formatDoctorShortName(currentPatientName) || currentPatientName;
+  const headerTitle = isNewAppointment
+    ? "Запись на приём"
+    : `Запись: ${shortPatient}`;
+
   return (
     <div className="px-4 py-2.5 sm:py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-2.5 sm:gap-3 flex-nowrap shrink-0">
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -57,18 +65,31 @@ export function AppointmentModalHeader({
           <Calendar size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3
-            className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate leading-tight"
-            title={
-              isNewAppointment
-                ? `Запись на следующий этап: ${currentPatientName}`
-                : `Детали записи: ${currentPatientName}`
-            }
-          >
-            {isNewAppointment
-              ? `Запись на следующий этап: ${currentPatientName}`
-              : `Детали записи: ${currentPatientName}`}
-          </h3>
+          <div className="flex items-center gap-2 min-w-0">
+            <h3
+              className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 leading-tight truncate shrink min-w-0"
+              title={
+                isNewAppointment
+                  ? "Запись на приём"
+                  : `Запись: ${currentPatientName}`
+              }
+            >
+              {headerTitle}
+            </h3>
+            {isCito && (
+              <span
+                className="h-6 px-2 rounded-md border border-rose-500/40 bg-rose-500/15 text-rose-700 dark:text-rose-300 text-[11px] font-black inline-flex items-center gap-1 shrink-0 shadow-2xs"
+                title="Экстренный прием: острая боль"
+                data-testid="appointment-cito-active-badge"
+              >
+                <Zap
+                  size={11}
+                  className="text-rose-600 dark:text-rose-400 shrink-0 fill-current"
+                />
+                <span className="tracking-wider">СРОЧНО</span>
+              </span>
+            )}
+          </div>
           <p
             className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate leading-tight"
             title={
@@ -84,38 +105,27 @@ export function AppointmentModalHeader({
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0 flex-nowrap relative">
-        {!isCito ? (
+        {!isCito && (
           <button
             type="button"
             onClick={onConvertToCito}
             className="h-8.5 min-h-[44px] sm:min-h-[34px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
-            title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании"
+            title="Пациент обратился с острой болью: перевести в срочную запись (наложение слота допустимо) и включить подсветку в расписании"
             data-testid="convert-to-cito-btn"
           >
             <Zap
-              size={14}
+              size={13}
               className="text-rose-600 dark:text-rose-400 shrink-0 fill-current"
             />
             <span className="hidden sm:inline">
-              Перевести в CITO (Острая боль)
+              + Срочно
             </span>
-            <span className="sm:hidden">CITO</span>
+            <span className="sm:hidden">Срочно</span>
+            <span className="sr-only">Перевести в срочный приём (острая боль)</span>
           </button>
-        ) : (
-          <div
-            className="h-8.5 min-h-[34px] px-3 rounded-xl border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs font-black flex items-center gap-1.5 shrink-0 animate-pulse shadow-2xs"
-            title="Экстренный прием CITO"
-            data-testid="appointment-cito-active-badge"
-          >
-            <Zap
-              size={14}
-              className="text-rose-600 dark:text-rose-400 shrink-0 fill-current"
-            />
-            <span className="tracking-wider">CITO</span>
-          </div>
         )}
 
-        {/* 1-Click Blank Contract Button (Mandates 8e, 8p) */}
+        {/* Blank Contract Button (Mandates 8e, 8p) */}
         <button
           type="button"
           onClick={() => {
@@ -137,17 +147,17 @@ export function AppointmentModalHeader({
             showToast("Печать бланка договора со строками (_____)", "info");
           }}
           className="h-8.5 min-h-[34px] px-2.5 sm:px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
-          title="Распечатать бумажный договор с пропусками для подписи (1 клик)"
+          title="Распечатать бумажный договор с пропусками для подписи"
           data-testid="appointment-modal-print-blank-contract-btn"
         >
           <Printer
             size={14}
             className="text-amber-600 dark:text-amber-400 shrink-0"
           />
-          <span className="hidden md:inline whitespace-nowrap">Бланк договора</span>
+          <span className="sr-only">Бланк договора</span>
         </button>
 
-        {/* 1-Click Blank Medical Consent Button (Mandates 8e, 8p) */}
+        {/* Blank Medical Consent Button (Mandates 8e, 8p) */}
         <button
           type="button"
           onClick={() => {
@@ -169,17 +179,17 @@ export function AppointmentModalHeader({
             showToast("Печать бланка согласия (ИДС)", "info");
           }}
           className="h-8.5 min-h-[34px] px-2.5 sm:px-3 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
-          title="Распечатать бланк информированного добровольного согласия (1 клик)"
+          title="Распечатать бланк информированного добровольного согласия"
           data-testid="appointment-modal-print-blank-consent-btn"
         >
           <FileText
             size={14}
             className="text-cyan-600 dark:text-cyan-400 shrink-0"
           />
-          <span className="hidden md:inline whitespace-nowrap">ИДС</span>
+          <span className="sr-only">ИДС</span>
         </button>
 
-        {/* 1-Click Pay 54-FZ button (Mandates 8e, 8n) */}
+        {/* Pay 54-FZ button (Mandates 8e, 8n) */}
         {patientId && !isNewAppointment && (
           <button
             type="button"
@@ -193,7 +203,7 @@ export function AppointmentModalHeader({
               );
             }}
             className="h-8.5 min-h-[34px] px-3 sm:px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer shrink-0"
-            title="Принять оплату через кассу (1 клик)"
+            title="Принять оплату через кассу"
             data-testid="appointment-modal-pay-btn"
           >
             <CreditCard
@@ -279,7 +289,7 @@ export function AppointmentModalHeader({
                 );
               }}
               className="w-full px-3 py-2 text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
-              title="Распечатать бумажный договор с пропусками для подписи (1 клик)"
+              title="Распечатать бумажный договор с пропусками для подписи"
               data-testid="appointment-modal-menu-print-blank-contract-btn"
             >
               <Printer
@@ -310,7 +320,7 @@ export function AppointmentModalHeader({
                 );
               }}
               className="w-full px-3 py-2 text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
-              title="Распечатать бланк информированного добровольного согласия (1 клик)"
+              title="Распечатать бланк информированного добровольного согласия"
               data-testid="appointment-modal-print-blank-consent-btn"
             >
               <FileText

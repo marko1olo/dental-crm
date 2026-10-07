@@ -275,7 +275,7 @@ describe("WAVE 63 (FEATURE 252): Odontogram Persistent Autonomy & 1-Click Clinic
 	describe("5. 7 Deadly Sins & Ergonomic Invariants (Mandate 8d, 8e)", () => {
 		it("guarantees 0 cartoon emojis in batch presets and diary sync labels", () => {
 			const presetLabels = [
-				"Санация: все здоровы (1 клик)",
+				"Физиологическая норма (зубные ряды интактны)",
 				"Адентия 8-ок (18, 28, 38, 48)",
 				"Санация (Все здоровы)",
 				"В дневник приёма",

@@ -259,7 +259,7 @@ ${angleText}${anbText}${sagittalText}${verticalText}${transversalText}${tmjText}
 • Зона фиксации/активации (зубы): ${teethListStr}.
 ${attachmentText ? `${attachmentText}\n` : ""}${alignerTrackerText ? `${alignerTrackerText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}${separationText}
 ${torqueAngulationText ? `${torqueAngulationText}\n` : ""}• Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
-• Фотопротокол: ${isPhotoProtocolCompleted ? "выполнен (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)" : "опционален (Мандат 8e: отсутствие фото не блокирует приём)"}.
+• Фотопротокол: ${isPhotoProtocolCompleted ? "выполнен (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)" : "не проводился на текущем визите"}.
 
 3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
 • Выполненные манипуляции: ${actionsListStr || (activeAttachmentPreset ? currentAttachmentObj?.shortLabel : "Активация аппаратуры")}.${powerChainText}

@@ -1160,19 +1160,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 											gap: "0.5rem",
 										}}
 									>
-										<span>Назначение смены в 1 клик</span>
-										<span
-											style={{
-												fontSize: "0.75rem",
-												fontWeight: 500,
-												padding: "0.125rem 0.5rem",
-												borderRadius: "9999px",
-												backgroundColor: "var(--teal-soft, #f0fdfa)",
-												color: "var(--teal, #0d9488)",
-											}}
-										>
-											StomX / DentalPRO
-										</span>
+										<span>Назначение смены</span>
 									</h4>
 									<div
 										style={{
@@ -1376,7 +1364,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 									</button>
 								</div>
 
-								{/* Weekly Doctor-to-Chair Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n) */}
+								{/* Недельные шаблоны закрепления за креслом */}
 								<div
 									style={{
 										fontSize: "0.75rem",

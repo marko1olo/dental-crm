@@ -5,8 +5,8 @@
  * Архитектурно декомпозирован согласно Engineering Rule 2:
  * - PriceValidatorHeader: заголовок, бейджи статуса, автономия и срок действия.
  * - PriceValidatorMetricsGrid: сетка карточек финансовых метрик плана.
- * - PriceValidatorPricesTab: сверка цен с прейскурантом, пороги инфляции, автономия врача в 1 клик (Мандат 8e).
- * - PriceValidatorStarTab: соответствие клиническим протоколам СтАР и Приказу 804н.
+ * - PriceValidatorPricesTab: сверка цен с прейскурантом, пороги инфляции, согласование цен в 1 клик.
+ * - PriceValidatorStarTab: соответствие клиническим протоколам СтАР и Номенклатуре услуг.
  * - PriceValidatorSummaryTab: сводное экспертное заключение по смете.
  * - PriceValidatorFooter: итоговая сводка и действия (печать протокола, оформление наряда ЗТЛ, акт).
  */
@@ -82,7 +82,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 	const [protocolSeverityFilter, setProtocolSeverityFilter] =
 		useState<StarProtocolSeverityFilter>("all");
 
-	// Поля ввода для согласования цен (Мандат 8e: автономия врача в 1 клик)
+	// Поля ввода для согласования цен (быстрое согласование лечащим врачом в 1 клик)
 	const [adminPinInput, setAdminPinInput] = useState<string>("");
 	const [adminReasonInput, setAdminReasonInput] = useState<string>(
 		"Согласовано сохранение цен в рамках клинической программы лояльности пациента",
@@ -207,18 +207,18 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 		setStatusNotice("Все позиции пересчитаны по актуальному прайс-листу клиники.");
 	};
 
-	// Авторизация согласования цен (Мандат 8e: автономия врача в 1 клик без обязательного PIN-кода)
+	// Авторизация согласования цен (согласование врачом в 1 клик без обязательного PIN-кода)
 	const handleAuthorizeDoctorAutonomy = () => {
 		setAdminOverride({
 			isAuthorized: true,
 			authorizedByAdminName: "Лечащий врач (автономия)",
 			overrideReason:
 				adminReasonInput.trim() ||
-				"Фиксация цен плана в рамках автономии врача (Мандат 8e, без бюрократических барьеров)",
+				"Фиксация цен плана в рамках автономии врача",
 			authorizedAtIso: new Date().toISOString(),
 		});
 		setShowAdminDrawer(false);
-		setStatusNotice("Цены плана подтверждены лечащим врачом в 1 клик (Мандат 8e).");
+		setStatusNotice("Цены плана подтверждены лечащим врачом.");
 	};
 
 	// Сброс авторизации

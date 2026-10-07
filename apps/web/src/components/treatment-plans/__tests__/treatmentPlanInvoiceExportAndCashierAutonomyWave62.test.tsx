@@ -181,7 +181,7 @@ describe("Wave 62 / Feature 251: Treatment Plan Cashier Export & InvoicesView Sy
 				"options-menu-export-cashier-btn must be rendered inside options menu",
 			);
 			assert.ok(
-				html.includes("Отправить счет кассиру (1 клик)"),
+				html.includes("Отправить счет кассиру"),
 				"Button must display clear clinical label without jargon",
 			);
 		});

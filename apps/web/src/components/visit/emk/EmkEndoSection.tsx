@@ -318,7 +318,7 @@ export function EmkEndoSection({
 					</div>
 				</div>
 
-				{/* 1-клик внесение в протокол */}
+				{/* Внесение в протокол лечения */}
 				<div className="pt-3 border-t border-[var(--line)] bg-transparent flex items-center justify-between gap-3 flex-wrap">
 					<div className="text-xs text-[var(--muted)]">
 						Канал <strong>{selectedEndoCanalKey}</strong> ({endoRefPoint}): WL ={" "}

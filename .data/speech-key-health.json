@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-04T00:04:48.833Z",
+  "savedAt": "2026-10-05T14:18:15.378Z",
   "health": {
     "google_speech:26987e457b44": {
       "cooldownUntil": 0,
@@ -8,6 +8,69 @@
       "consecutiveFailures": 0,
       "successes": 1,
       "lastUsedAt": 1791072288832,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:6058314b22ec": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209890101,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:6ea9f119eff0": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209891842,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:6eed7e8c3252": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209888972,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:83177d60e957": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209887899,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:c50f385b1343": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209894319,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:c73b9c86b8c4": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209895378,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq:caf98f576295": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1791209886876,
       "lastStatusCode": null,
       "lastError": null
     }

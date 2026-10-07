@@ -82,7 +82,7 @@ export const FiscalOneCTab: React.FC<FiscalOneCTabProps> = ({
 						ОКЕИ 796 (Шт.)
 					</span>
 					<span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-						КНД 1151156 / 804н
+						КНД 1151156 / Номенклатура
 					</span>
 				</div>
 			</div>
@@ -231,7 +231,7 @@ export const FiscalOneCTab: React.FC<FiscalOneCTabProps> = ({
 						<thead>
 							<tr className="bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] font-bold text-center">
 								<th className="border border-[var(--border,#cbd5e1)] p-2 w-8">№</th>
-								<th className="border border-[var(--border,#cbd5e1)] p-2 w-28">Артикул / 804н</th>
+								<th className="border border-[var(--border,#cbd5e1)] p-2 w-28">Артикул / Код</th>
 								<th className="border border-[var(--border,#cbd5e1)] p-2 text-left">Наименование номенклатуры</th>
 								<th className="border border-[var(--border,#cbd5e1)] p-2 w-16">Ед. ОКЕИ</th>
 								<th className="border border-[var(--border,#cbd5e1)] p-2 w-14">Кол-во</th>

@@ -157,7 +157,7 @@ export function RetroactiveBatchTab({
 		handleGenerateBatch();
 	}, []);
 
-	// Handle 1-Click Generation
+	// Обработка пакетной генерации журналов
 	const handleGenerateBatch = () => {
 		const options: RetroactiveGenerationOptions = {
 			preset: periodPreset,

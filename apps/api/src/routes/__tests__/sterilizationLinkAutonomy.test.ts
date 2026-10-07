@@ -92,7 +92,7 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 	it("appends emergency sterilization note to diary treatment description cleanly", () => {
 		const note = buildEmergencySterilizationAdmissionNote("TRAY-EMERGENCY-01");
 		assert.match(note, /TRAY-EMERGENCY-01/);
-		assert.match(note, /Мандаты 8e, 8n/);
+		assert.match(note, /СанПиН 3.3686-21/);
 
 		// When treatment description is empty
 		const treatment1 = applyEmergencySterilizationToDiaryTreatment(

@@ -407,7 +407,7 @@ export const MobilePatientProfileWorkspace: React.FC<
 	const handleApplySomaticNorm = useCallback(() => {
 		if (updatePatientCoreDraft) {
 			updatePatientCoreDraft("notes", "Соматически здоров. Физиологическая норма. Аллергоанамнез не отягощен.");
-			showToast("Применена физиологическая норма: соматически здоров (1 клик)", "success");
+			showToast("Применена физиологическая норма: соматически здоров", "success");
 		}
 	}, [updatePatientCoreDraft]);
 

@@ -180,7 +180,7 @@ function setupMockDom() {
 				set data(v: string) {
 					this._val = String(v ?? "");
 				},
-				style: {},
+				style: createMockStyle(),
 				parentNode: null,
 				ownerDocument: null,
 			};
@@ -192,6 +192,21 @@ function setupMockDom() {
 		activeElement: null,
 	};
 
+	function createMockStyle(): any {
+		const s: any = {
+			setProperty(k: string, v: string) {
+				s[k] = v;
+			},
+			removeProperty(k: string) {
+				delete s[k];
+			},
+			getPropertyValue(k: string) {
+				return s[k] || "";
+			},
+		};
+		return s;
+	}
+
 	function createMockElement(tag = "div"): MockDomNode {
 		const children: MockDomNode[] = [];
 		const listeners: Record<string, EventListener[]> = {};
@@ -201,7 +216,7 @@ function setupMockDom() {
 			nodeType: 1,
 			tagName: tag.toUpperCase(),
 			nodeName: tag.toUpperCase(),
-			style: {},
+			style: createMockStyle(),
 			dataset: {},
 			children,
 			childNodes: children,
@@ -383,6 +398,16 @@ function setupMockDom() {
 		Element: FakeElement,
 		Node: FakeNode,
 		innerWidth: 1200,
+		matchMedia: (query: string) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: () => {},
+			removeListener: () => {},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			dispatchEvent: () => false,
+		}),
 	};
 	doc.defaultView = win;
 
@@ -1065,11 +1090,11 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		// Chair 1 (therapist) intelligently suggests Ivanov (therapist)
 		expect(html).toContain('data-testid="btn-quick-assign-chair-1"');
-		expect(html).toContain("1 клик: Иванов И.И.");
+		expect(html).toContain("Иванов И.И.");
 
 		// Chair 2 (surgery) intelligently suggests Petrov (surgery)
 		expect(html).toContain('data-testid="btn-quick-assign-chair-2"');
-		expect(html).toContain("1 клик: Петров П.С.");
+		expect(html).toContain("Петров П.С.");
 	});
 
 	it("10. 2-shift chair doctor allocation supports morning + evening doctors with 1-tap quick pills (StomX / DentalPRO parity)", async () => {

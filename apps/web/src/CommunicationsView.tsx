@@ -12,7 +12,7 @@ import {
 	Radio,
 	Send,
 } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { MobileCommunicationsMessenger } from "./components/communications/MobileCommunicationsMessenger";
 import { CommunicationEventRow } from "./components/communications/CommunicationEventRow";
@@ -172,7 +172,41 @@ export function CommunicationsView(
 
 	const [activeSection, setActiveSection] = useState<
 		"tasks" | "chat" | "notifications" | "staff_chat" | "bot_inbox"
-	>("tasks");
+	>(() => {
+		if (typeof window !== "undefined") {
+			const hash = window.location.hash || "";
+			const search = window.location.search || "";
+			if (
+				hash.includes("bot_inbox") ||
+				hash.includes("bots") ||
+				search.includes("bot_inbox") ||
+				search.includes("bots")
+			) {
+				return "bot_inbox";
+			}
+			if (hash.includes("chat") || search.includes("chat")) return "chat";
+			if (hash.includes("notifications") || search.includes("notifications")) return "notifications";
+			if (hash.includes("staff_chat") || search.includes("staff_chat")) return "staff_chat";
+		}
+		return "tasks";
+	});
+
+	useEffect(() => {
+		const handleHash = () => {
+			const hash = window.location.hash || "";
+			if (hash.includes("bot_inbox") || hash.includes("bots")) {
+				setActiveSection("bot_inbox");
+			} else if (hash.includes("chat")) {
+				setActiveSection("chat");
+			} else if (hash.includes("notifications")) {
+				setActiveSection("notifications");
+			} else if (hash.includes("staff_chat")) {
+				setActiveSection("staff_chat");
+			}
+		};
+		window.addEventListener("hashchange", handleHash);
+		return () => window.removeEventListener("hashchange", handleHash);
+	}, []);
 	const [tasksLimit, setTasksLimit] = useState(30);
 	const [journalLimit, setJournalLimit] = useState(40);
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
@@ -253,100 +287,95 @@ export function CommunicationsView(
 					<button
 						type="button"
 						onClick={() => setIsRecallsHubOpen(true)}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+						className="secondary-button"
 						data-testid="communications-recalls-hub-btn"
 						title="Профосмотры и реколлы: плановый контроль и удержание"
 					>
-						<Calendar size={14} className="text-teal-600" />
+						<Calendar size={14} className="text-teal-600 dark:text-teal-400" />
 						<span>Профосмотры и реколлы</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setIsOmnichannelHubOpen(true)}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+						className="secondary-button"
 						data-testid="communications-omnichannel-hub-btn"
 						title="Омниканальный чат с пациентом (WhatsApp / Telegram / SMS)"
 					>
-						<MessageSquare size={14} className="text-teal-600" />
+						<MessageSquare size={14} className="text-teal-600 dark:text-teal-400" />
 						<span>Омниканальный чат с пациентом</span>
 					</button>
 					<button
-						className="text-button"
+						className="secondary-button"
 						type="button"
 						onClick={onGoToSchedule}
 						title="Перейти к сетке расписания"
 					>
-						Расписание
+						<span>Расписание</span>
 					</button>
 				</div>
 			</div>
 
 			{/* Sub-navigation tabs: Tasks & Dispatch, WhatsApp Direct Chat, Notifications Center, and Staff Messenger */}
-			<div className="flex items-center gap-2 mb-5 p-1 bg-[var(--paper-soft,rgba(30,41,59,0.5))] rounded-xl border border-[var(--line,#334155)] overflow-x-auto">
+			<div className="dente-segmented-bar w-full mb-5 overflow-x-auto scrollbar-none flex">
 				<button
 					type="button"
 					onClick={() => setActiveSection("tasks")}
-					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-						activeSection === "tasks"
-							? "bg-teal-600 text-white shadow-xs"
-							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					className={`dente-segmented-item flex-1 shrink-0 ${
+						activeSection === "tasks" ? "active" : ""
 					}`}
+					data-active={activeSection === "tasks"}
 				>
-					<MessageSquare size={14} />
+					<MessageSquare size={13} />
 					<span>Очередь задач и рассылки</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveSection("chat")}
-					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-						activeSection === "chat"
-							? "bg-teal-600 text-white shadow-xs"
-							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					className={`dente-segmented-item flex-1 shrink-0 ${
+						activeSection === "chat" ? "active" : ""
 					}`}
+					data-active={activeSection === "chat"}
 				>
-					<Send size={14} />
+					<Send size={13} />
 					<span>WhatsApp Чат</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveSection("bot_inbox")}
-					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-						activeSection === "bot_inbox"
-							? "bg-teal-600 text-white shadow-xs"
-							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					className={`dente-segmented-item flex-1 shrink-0 ${
+						activeSection === "bot_inbox" ? "active" : ""
 					}`}
+					data-active={activeSection === "bot_inbox"}
 					data-testid="communications-tab-bot-inbox"
 				>
-					<Bot size={14} />
+					<Bot size={13} />
 					<span>Пульт ботов (TG/VK/WA/MAX)</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveSection("notifications")}
-					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-						activeSection === "notifications"
-							? "bg-teal-600 text-white shadow-xs"
-							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					className={`dente-segmented-item flex-1 shrink-0 ${
+						activeSection === "notifications" ? "active" : ""
 					}`}
+					data-active={activeSection === "notifications"}
 				>
-					<Bell size={14} />
+					<Bell size={13} />
 					<span>Центр уведомлений</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveSection("staff_chat")}
-					className={`shrink-0 md:flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer ${
-						activeSection === "staff_chat"
-							? "bg-teal-600 text-white shadow-xs"
-							: "text-[var(--muted)] hover:text-[var(--ink)]"
+					className={`dente-segmented-item flex-1 shrink-0 ${
+						activeSection === "staff_chat" ? "active" : ""
 					}`}
+					data-active={activeSection === "staff_chat"}
 					data-testid="communications-tab-staff-chat"
 				>
-					<Radio size={14} />
+					<Radio size={13} />
 					<span>Чат клиники / Интерком</span>
 				</button>
 			</div>

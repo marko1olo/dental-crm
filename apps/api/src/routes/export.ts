@@ -206,7 +206,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 
 			// CSV format with UTF-8 BOM and ';' delimiter
 			const delimiter = ";";
-			const headers = "Код 804н;Коммерческое наименование;Раздел;Специальность;Цена (руб);Длительность (мин);НДС;Налоговый вычет;Статус\r\n";
+			const headers = "Код услуги;Коммерческое наименование;Раздел;Специальность;Цена (руб);Длительность (мин);НДС;Налоговый вычет;Статус\r\n";
 			const rows = catalog
 				.map((s) => [
 					escapeCsvField(s.code),

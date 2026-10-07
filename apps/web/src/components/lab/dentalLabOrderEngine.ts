@@ -1,46 +1,11 @@
 /**
  * dentalLabOrderEngine.ts — Канонический доменный движок нарядов в зуботехническую лабораторию (ЗТЛ).
- *
- * СТРОГИЙ СТОМАТОЛОГИЧЕСКИЙ ДОМЕН (БЕЗ ОБЩЕМЕДИЦИНСКОГО БЛОАТА):
- * • В стоматологии «Лаборатория» — это исключительно ЗТЛ (зуботехническая лаборатория:
- *   коронки, мосты, виниры, элайнеры, бюгели, культевые вкладки, хирургические шаблоны).
- * • Никакой биохимии крови, онкомаркеров, цитологии и мазков.
- *
- * 6 КАНОНИЧЕСКИХ СТАТУСОВ НАРЯДА ЗТЛ:
- * 1. sent_to_lab           — «Отправлен в ЗТЛ»
- * 2. in_progress           — «В работе»
- * 3. ready_in_clinic       — «Готов / В клинике»
- * 4. try_in                — «Примерка»
- * 5. delivered_to_patient  — «Сдан пациенту»
- * 6. warranty_rework       — «Переделка (гарантия)»
- *
- * 5 КАНОНИЧЕСКИХ КЛИНИЧЕСКИХ ЭТАПОВ (CANONICAL_5_CLINICAL_LAB_STATUSES):
- * Оттиск (sent) -> В лаборатории (in_progress) -> Примерка (fitting) -> Готово (ready) -> Фиксация (completed)
- *
- * 6 ВИДОВ СТОМАТОЛОГИЧЕСКИХ ОРТОПЕДИЧЕСКИХ КОНСТРУКЦИЙ:
- * 1. crown_zirconia        — Коронка цирконий (Multi-Layer Katana/Prettau)
- * 2. crown_emax            — E-max пресс (дисиликат лития IPS e.max)
- * 3. metal_ceramic         — Металлокерамика (Co-Cr фрезерованный/литой)
- * 4. clasp_denture         — Бюгельный протез (замковый Bredent / кламмерный)
- * 5. aligner_splint        — Каппа / элайнер / сплинт
- * 6. surgical_guide        — Хирургический шаблон для имплантации
- *
- * РАСЦВЕТКА VITA И ХАРАКТЕРИСТИКИ:
- * • VITA Classical: A1–A4, B1–B4, C1–C4, D2–D4 (16 оттенков)
- * • VITA Bleach: BL1, BL2, BL3, BL4, 0M1, 0M2, 0M3 (ультрасветлые)
- * • Прозрачность эмали: HT (High), MT (Medium), LT (Low), MO (Med Opacity), HO (High Opacity)
- * • Оттенок культи (IPS Natural Die): ND1 .. ND9
- *
- * ФИНАНСОВЫЙ УЧЕТ В ЦЕЛОЧИСЛЕННЫХ КОПЕЙКАХ:
- * • Себестоимость ЗТЛ (ztlCostKopecks) вычитается из валовой стоимости пациента при расчете сдельной базы врача:
- *   doctorWageBaseKopecks = max(0, patientPriceKopecks - ztlCostKopecks)
- *   doctorWageKopecks = round(doctorWageBaseKopecks * (doctorSharePercent / 100))
- *   clinicMarginKopecks = patientPriceKopecks - ztlCostKopecks - doctorWageKopecks
- *
- * АЛЕРТ ДЕДЛАЙНА (КЛИНИЧЕСКИЙ ТРИГГЕР):
- * • Если у пациента на сегодня назначен визит на сдачу/примерку коронки,
- *   а статус наряда в ЗТЛ еще «В работе» или «Отправлен в ЗТЛ» — выставляется алерт:
- *   «Работа из ЗТЛ еще не поступила в клинику!»
+ * • 6 статусов: sent_to_lab, in_progress, ready_in_clinic, try_in, delivered_to_patient, warranty_rework.
+ * • 5 клинических этапов: Оттиск -> В лаборатории -> Примерка -> Готово -> Фиксация.
+ * • 6 ортопедических конструкций: crown_zirconia, crown_emax, metal_ceramic, clasp_denture, aligner_splint, surgical_guide.
+ * • VITA Classical / Bleach, прозрачность HT/MT/LT/MO/HO, расцветка культи ND1..ND9.
+ * • Точный учет в копейках: вычет себестоимости ЗТЛ из сдельной базы врача (Mandate 8e).
+ * • Детекция коллизий визита и расчет дедлайнов.
  */
 
 export * from "./dentalLabDefinitions";
@@ -275,9 +240,18 @@ export interface FittingCollisionGuardResult {
  * формируется тревожное предупреждение: «Внимание: прием на примерку назначен раньше готовности лаборатории!».
  */
 export function checkFittingAppointmentCollision(
-	deadlineDate: string | Date,
+	deadlineDate?: string | Date | null,
 	scheduledVisitDate?: string | Date | null,
 ): FittingCollisionGuardResult {
+	if (!deadlineDate) {
+		return {
+			hasCollision: false,
+			warningRu: null,
+			daysGap: 0,
+			deadlineDateIso: "",
+			scheduledVisitDateIso: null,
+		};
+	}
 	const deadline = parseDateOnly(deadlineDate);
 	const deadlineIso = toIsoDate(deadline);
 	if (!scheduledVisitDate) {

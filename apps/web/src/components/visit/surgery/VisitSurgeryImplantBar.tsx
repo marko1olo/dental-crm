@@ -67,21 +67,21 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
 					<Sparkles size={15} />
-					<span>1-Клик Пресет имплантации:</span>
+					<span>Пресет имплантации:</span>
 				</div>
 				<button
 					type="button"
 					onClick={() => onApplyPreset()}
 					className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
 					data-testid="btn-preset-standard-implant-tab"
-					title="1-Клик: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
+					title="Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
 				>
 					<Zap size={14} className="text-amber-300" />
 					<span>Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, Prolene 4-0, снимок)</span>
 				</button>
 			</div>
 
-			{/* Быстрые параметры в 1 клик */}
+			{/* Быстрые параметры */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
 				{/* Система */}
 				<div className="space-y-1">

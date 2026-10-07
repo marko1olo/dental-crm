@@ -28,7 +28,7 @@ export const bookAppointmentSchema = z.object({
 	durationMinutes: z.number().int().min(5).max(480).default(30).optional(),
 	endsAt: z.string().optional().describe("Время окончания приема в ISO 8601"),
 	chairId: z.string().optional().describe("ID стоматологической установки"),
-	assistantUserId: z.string().optional().describe("ID ассистента (СТРОГО ОПЦИОНАЛЬНО, Мандат 8e)"),
+	assistantUserId: z.string().optional().describe("ID ассистента (опционально)"),
 	reason: z.string().default("Консультация и лечение").optional().describe("Цель визита"),
 	comment: z.string().optional(),
 });
@@ -55,7 +55,7 @@ export const bookAppointmentTool: ToolDefinition<
 > = {
 	name: "book_appointment",
 	description:
-		"Запись пациента на прием в расписание клиники без требования обязательного ассистента (Мандат 8e: свобода соло-врача и быстрая регистрация).",
+		"Запись пациента на прием в расписание клиники без требования обязательного ассистента.",
 	parameters: bookAppointmentSchema,
 	permissions: ["schedule.write"],
 	category: "write",
@@ -286,7 +286,7 @@ export const cancelAppointmentTool: ToolDefinition<
 > = {
 	name: "cancel_appointment",
 	description:
-		"Отмена записи на приём (деструктивное действие, требует подтверждения врача confirmation_required по Мандату 8e).",
+		"Отмена записи на приём (деструктивное действие, требует подтверждения confirmation_required).",
 	parameters: cancelAppointmentSchema,
 	permissions: ["schedule.cancel"],
 	category: "destructive",
@@ -538,7 +538,7 @@ export const getDailyPatientsTool: ToolDefinition<
 > = {
 	name: "get_daily_patients",
 	description:
-		"Получение списка пациентов врача на день с точным временем приёма, статусом, целью визита, контактами и статусом медицинской карты (Мандат 8ab).",
+		"Получение списка пациентов врача на день с точным временем приёма, статусом, целью визита, контактами и статусом медицинской карты.",
 	parameters: getDailyPatientsSchema,
 	permissions: ["schedule.read", "patients.read"],
 	category: "read",
@@ -731,7 +731,7 @@ export const getDoctorShiftsTool: ToolDefinition<
 > = {
 	name: "get_doctor_shifts",
 	description:
-		"Просмотр рабочих смен и расписания графика врача по дням недели (понедельник–воскресенье, утро/вечер, свободные окна для записи) (Мандат 8ab).",
+		"Просмотр рабочих смен и расписания графика врача по дням недели (понедельник–воскресенье, утро/вечер, свободные окна для записи).",
 	parameters: getDoctorShiftsSchema,
 	permissions: ["schedule.read"],
 	category: "read",

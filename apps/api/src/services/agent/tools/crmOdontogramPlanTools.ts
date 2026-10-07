@@ -247,7 +247,7 @@ export const getTeethChartTool: ToolDefinition<
 > = {
 	name: "get_teeth_chart",
 	description:
-		"Получение полной зубной одонтограммы пациента (FDI 11..48 или 51..85) с дефолтной физиологической нормой по умолчанию (Мандат 8e).",
+		"Получение полной зубной одонтограммы пациента (FDI 11..48 или 51..85) с дефолтной физиологической нормой по умолчанию.",
 	parameters: getTeethChartSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -306,7 +306,7 @@ export const getTeethChartTool: ToolDefinition<
 
 		const summaryRu =
 			pathologyCount === 0
-				? "Зубная формула интактна: все 32 зуба в физиологической норме (Мандат 8e)."
+				? "Зубная формула интактна: все 32 зуба в физиологической норме."
 				: `Зубная формула загружена: обнаружено патологий / реставраций на ${pathologyCount} зубах.`;
 
 		return {
@@ -330,7 +330,7 @@ export const createTreatmentPlanSchema = z.object({
 	title: z.string().default("Комплексный план лечения").optional(),
 	doctorId: z.string().optional(),
 	scenarioTier: z.enum(["optimal", "economy", "premium", "custom"]).default("optimal").optional(),
-	discountPercent: z.number().min(0).max(100).default(0).optional().describe("Скидка врача 0-100% (Мандат 8e)"),
+	discountPercent: z.number().min(0).max(100).default(0).optional().describe("Скидка врача 0-100%"),
 	initialStages: z
 		.array(
 			z.object({
@@ -369,7 +369,7 @@ export const createTreatmentPlanTool: ToolDefinition<
 > = {
 	name: "create_treatment_plan",
 	description:
-		"Создание комплексного плана лечения (Оптимальный, Эконом, Премиум) с расчетом в точных копейках и автономией скидки врача (0-100%, Мандат 8e).",
+		"Создание комплексного плана лечения (Оптимальный, Эконом, Премиум) с расчетом в точных копейках и свободой скидки врача (0-100%).",
 	parameters: createTreatmentPlanSchema,
 	permissions: ["clinical.write"],
 	category: "write",
@@ -583,7 +583,7 @@ export const calculatePlanCostTool: ToolDefinition<
 > = {
 	name: "calculate_plan_cost",
 	description:
-		"Точный расчет стоимости сметы и плана лечения в целых копейках со свободой скидок врача (0-100%, Мандат 8e).",
+		"Точный расчет стоимости сметы и плана лечения в целых копейках со свободой скидок врача (0-100%).",
 	parameters: calculatePlanCostSchema,
 	permissions: ["billing.calculate"],
 	category: "read",
@@ -651,7 +651,7 @@ export const getToothHistoryTool: ToolDefinition<
 > = {
 	name: "get_tooth_history",
 	description:
-		"Извлечение полной клинической истории конкретного зуба FDI: хронология изменения статусов, протоколы лечения в дневниках визитов и заказы зуботехнической лаборатории (Мандат 8ab).",
+		"Извлечение полной клинической истории конкретного зуба FDI: хронология изменения статусов, протоколы лечения в дневниках визитов и заказы зуботехнической лаборатории.",
 	parameters: getToothHistorySchema,
 	permissions: ["clinical.read"],
 	category: "read",

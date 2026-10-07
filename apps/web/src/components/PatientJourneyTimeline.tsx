@@ -386,27 +386,27 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 
 				{/* ── Мгновенный поиск по ключевым словам ── */}
 				<div className="timeline-search-bar flex flex-col gap-2 p-3 rounded-2xl bg-[var(--paper-soft)]">
-					<div className="relative flex items-center w-full">
-						<Search size={16} className="absolute left-3.5 text-[var(--muted)] pointer-events-none" />
+					<div className="dente-search-wrap relative flex items-center w-full">
+						<Search size={16} className="dente-search-icon absolute pointer-events-none" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по дневникам приёма: «пульпит», «коффердам», «пломба», «артикаин», зуб..."
-							className="w-full min-h-[44px] pl-10 pr-9 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal-soft)] transition-all font-medium"
+							className="dente-search-input w-full min-h-[44px] !pl-10 !pr-10 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal-soft)] transition-all font-medium"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-0 top-0 bottom-0 h-full min-w-[44px] flex items-center justify-center rounded-r-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+								className="dente-search-clear absolute right-0 top-0 bottom-0 h-full min-w-[44px] flex items-center justify-center rounded-r-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 								title="Очистить поиск"
 							>
 								<X size={16} />
 							</button>
 						)}
 					</div>
-					<div className="flex items-center gap-1.5 flex-wrap">
+					<div className="dente-filter-chips flex items-center gap-1.5 flex-wrap">
 						<span className="text-xs font-semibold text-[var(--muted)] mr-1">Быстрый фильтр:</span>
 						{QUICK_SEARCH_TAGS.map((tag) => {
 							const isActive = searchQuery.toLowerCase() === tag.toLowerCase();
@@ -415,9 +415,10 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 									key={tag}
 									type="button"
 									onClick={() => setSearchQuery(isActive ? "" : tag)}
-									className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1 ${
+									data-active={isActive ? "true" : undefined}
+									className={`dente-filter-chip min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1 ${
 										isActive
-											? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
+											? "active bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-strong)]"
 									}`}
 								>

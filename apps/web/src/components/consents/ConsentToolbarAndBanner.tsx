@@ -55,30 +55,28 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 
 	return (
 		<>
-			{/* Панель выбора режима и вкладок (1 строка 32-36px на ПК, адаптивный скролл на мобиле) */}
+			{/* Панель выбора режима и вкладок (1 строка 40px на ПК, адаптивный скролл на мобиле) */}
 			<div className="consent-toolbar-row">
-				<div className="consent-mode-segmented">
+				<div className="consent-mode-segmented dente-segmented-bar">
 					<button
 						type="button"
-						className={`consent-mode-btn ${activeMode === "packages" ? "active" : ""}`}
+						className={`consent-mode-btn dente-segmented-item ${activeMode === "packages" ? "active" : ""}`}
 						onClick={() => {
 							setActiveMode("packages");
 							setPreviewTemplateKey(null);
 						}}
 						data-testid="tab-mode-packages"
 						aria-pressed={activeMode === "packages"}
-						style={{ height: "24px", padding: "0 8px", fontSize: "12px" }}
 					>
 						<Layers size={13} />
-						<span>Пакеты согласий (1 клик)</span>
+						<span>Пакеты согласий</span>
 					</button>
 					<button
 						type="button"
-						className={`consent-mode-btn ${activeMode === "single" ? "active" : ""}`}
+						className={`consent-mode-btn dente-segmented-item ${activeMode === "single" ? "active" : ""}`}
 						onClick={() => setActiveMode("single")}
 						data-testid="tab-mode-single"
 						aria-pressed={activeMode === "single"}
-						style={{ height: "24px", padding: "0 8px", fontSize: "12px" }}
 					>
 						<FileText size={13} />
 						<span>Отдельные согласия</span>
@@ -97,14 +95,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 									<button
 										key={pkg.key}
 										type="button"
-										className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-0 ${isActive ? "active" : ""}`}
-										style={{
-											minHeight: "26px",
-											height: "26px",
-											padding: "0 8px",
-											fontSize: "12px",
-											borderRadius: "6px",
-										}}
+										className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-max ${isActive ? "active" : ""}`}
 										onClick={() => {
 											setActivePackageKey(pkg.key);
 											setPreviewTemplateKey(null);
@@ -114,7 +105,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 										title={titleText}
 									>
 										<Sparkles size={13} className="shrink-0" />
-										<span className="truncate max-w-[200px]">{titleText}</span>
+										<span className="whitespace-nowrap">{titleText}</span>
 									</button>
 								);
 						  })
@@ -125,20 +116,13 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 									<button
 										key={tpl.key}
 										type="button"
-										className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-0 ${isActive ? "active" : ""}`}
-										style={{
-											minHeight: "26px",
-											height: "26px",
-											padding: "0 8px",
-											fontSize: "12px",
-											borderRadius: "6px",
-										}}
+										className={`consent-tab-btn shrink-0 flex-shrink-0 min-w-max ${isActive ? "active" : ""}`}
 										onClick={() => setActiveKey(tpl.key)}
 										aria-selected={isActive}
 										data-testid={`tpl-tab-${tpl.key}`}
 										title={titleText}
 									>
-										<span className="truncate max-w-[200px]">{titleText}</span>
+										<span className="whitespace-nowrap">{titleText}</span>
 									</button>
 								);
 						  })}
@@ -151,10 +135,10 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 					<div className="consent-package-banner-title min-w-0 flex-1">
 						<Package size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div className="min-w-0 flex-1">
-							<div className="font-bold text-sm text-[var(--teal-dark,#0f766e)] truncate">
+							<div className="font-bold text-sm text-[var(--teal-dark,#0f766e)]">
 								{currentPackage.title} ({currentPackage.templateKeys.length} документа в пакете)
 							</div>
-							<div className="text-xs text-muted truncate">
+							<div className="text-xs text-muted">
 								{currentPackage.description} • 1 клик подтверждает подписание всех {currentPackage.templateKeys.length} документов на бумаге
 							</div>
 						</div>
@@ -168,12 +152,12 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 								<button
 									key={k}
 									type="button"
-									className={`consent-subdoc-chip min-w-0 ${isSelected ? "active" : ""}`}
+									className={`consent-subdoc-chip min-w-max ${isSelected ? "active" : ""}`}
 									onClick={() => setPreviewTemplateKey(k)}
 									title={`Просмотреть ${t.title}`}
 								>
 									<span className="font-mono shrink-0">{t.code}</span>
-									<span className="truncate max-w-[180px]">{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
+									<span className="whitespace-nowrap">{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
 								</button>
 							);
 						})}

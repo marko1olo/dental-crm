@@ -8,7 +8,7 @@
  * - treatmentEstimatorMoney.ts: Точные копейки (Kopecks), ДМС расчеты, со-оплата, итоги.
  * - treatmentEstimatorValidation.ts: Человеческие подсказки, блокировка сохранения, API сериализация.
  * - treatmentEstimatorStagesAndConflicts.ts: 5 этапов, гарантии СтАР, касса 54-ФЗ, конфликты зубов-призраков, коллизии.
- * - treatmentEstimatorBundles.ts: Бесшовный перенос диагнозов (кариес 16 -> анестезия + препарирование + пломба в 1 клик).
+ * - treatmentEstimatorBundles.ts: Бесшовный перенос диагнозов (кариес 16 -> анестезия + препарирование + пломба).
  */
 
 export * from "./treatmentEstimatorRules";

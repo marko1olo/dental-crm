@@ -51,7 +51,7 @@ export const LostPatientsRecallCohortsTable: React.FC<
 									{cohort.cohortMonth || cohort.cohortLabel || cohort.cohortKey}
 								</td>
 								<td className="p-2.5">
-									<span className="px-2 py-0.5 rounded border text-[11px] bg-[var(--paper-soft)] border-[var(--line)]">
+									<span className="px-2 py-0.5 rounded border text-xs bg-[var(--paper-soft)] border-[var(--line)]">
 										{cohort.category === "sanitation"
 											? "Санация полости рта"
 											: "Имплантация"}
@@ -94,7 +94,7 @@ export const LostPatientsRecallCohortsTable: React.FC<
 								</td>
 								<td className="p-2.5 text-center">
 									<span
-										className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+										className={`px-2 py-0.5 rounded text-xs font-bold ${
 											rates.healthTone === "ok"
 												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
 												: rates.healthTone === "warn"

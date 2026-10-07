@@ -73,7 +73,7 @@ export function GeneralCleaningSchedule({
 		});
 	}, [logs, selectedYear, selectedMonth, roomFilter]);
 
-	// 1-Клик генерация графика генеральных уборок на месяц (каждые 7 дней)
+	// Автоматическое составление графика генеральных уборок на месяц (каждые 7 дней)
 	const handleGenerateMonthlySchedule = async () => {
 		try {
 			setIsAutopilotLoading(true);
@@ -96,7 +96,7 @@ export function GeneralCleaningSchedule({
 			if (res.ok) {
 				const data = await res.json().catch(() => ({}));
 				showToast(
-					`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по нормам СанПиН 3.3686-21, шаг 7 дней)`,
+					`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по графику чистоты, шаг 7 дней)`,
 					"success",
 				);
 				onScheduleUpdated?.();
@@ -203,7 +203,7 @@ export function GeneralCleaningSchedule({
 					</select>
 				</div>
 
-				{/* Primary 1-Click Autopilot Action */}
+				{/* Автоматическое составление графика уборок */}
 				<button
 					type="button"
 					onClick={handleGenerateMonthlySchedule}

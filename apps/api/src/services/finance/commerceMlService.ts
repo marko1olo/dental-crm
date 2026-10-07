@@ -462,7 +462,7 @@ export class CommerceMlService {
 				attendingDoctorName: actItems[0]?.attendingDoctorName || "Лечащий врач",
 				items: actItems,
 				totalKopecks: actTotal,
-				comment: "Акт об оказании медицинских услуг (Номенклатура 804н)",
+				comment: "Акт выполненных работ об оказании медицинских услуг",
 			};
 			actDoc.sha256Hash = computeCommerceMlSha256(actDoc);
 			medicalActs.push(actDoc);

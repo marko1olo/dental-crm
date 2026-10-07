@@ -110,7 +110,7 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 											color: "#ffffff",
 										}}
 									>
-										CITO • {urgencyLabel}
+										⚡ Экстренный вызов в кабинет / Срочно • {urgencyLabel}
 									</span>
 									<span style={{ fontWeight: 600, fontSize: "14px", color: "#111827" }}>
 										Кабинет {alert.cabinetNumber}
@@ -163,7 +163,7 @@ export const LanCitoEmergencyBanner: React.FC<LanCitoEmergencyBannerProps> = ({
 							<button
 								type="button"
 								onClick={() => onDismiss(alert.alertId)}
-								aria-label="Скрыть оповещение CITO"
+								aria-label="Скрыть экстренное оповещение"
 								style={{
 									minWidth: "44px",
 									minHeight: "44px",

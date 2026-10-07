@@ -134,7 +134,7 @@ export const WarrantyServiceMemoForm = React.memo(
 			>
 				<div style={{ marginBottom: "12px" }}>
 					<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
-						Клинические пресеты гарантийных сроков (1 клик):
+						Гарантийные сроки по видам работ:
 					</span>
 					<div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "12px" }}>
 						<button

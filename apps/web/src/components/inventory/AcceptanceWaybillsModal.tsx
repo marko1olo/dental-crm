@@ -188,7 +188,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 		});
 	}, []);
 
-	// Добавление стоматологического материала из шаблона в 1 клик
+	// Добавление стоматологического материала из шаблона
 	const handleAddFromTemplate = useCallback((template: DentalMaterialTemplate) => {
 		setWaybill((prev) => {
 			const today = new Date();
@@ -301,7 +301,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 		showToast("Накладная выгружена в CSV", "success");
 	}, [waybill]);
 
-	// 1-клик Проведение накладной (зачисление на склад)
+	// Проведение накладной (зачисление на склад)
 	const handlePostWaybill = useCallback(async () => {
 		const validation = validateWaybillDraft(waybill);
 		setValidationErrors(validation.errors);
@@ -394,7 +394,6 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 								color: "var(--teal, #0d9488)",
 								fontWeight: 700,
 							}}
-							data-mandate="Мандаты 8e / 8n"
 						>
 							FEFO контроль
 						</span>
@@ -580,7 +579,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 														gap: 3,
 														marginTop: 2,
 													}}
-													title="Мандат 8n: приход автоматически закроет накопленный дефицит"
+													title="Приход автоматически закрывает накопленный дефицит расхода"
 												>
 													<AlertTriangle size={10} />
 													<span>Дефицит у кресла (овердрафт): {deficitStock} ед. (будет погашен)</span>

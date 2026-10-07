@@ -261,7 +261,7 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 				"Must render RVG control preset button",
 			);
 			assert.ok(
-				html.includes("Быстрые клинические пресеты (1 клик):"),
+				html.includes("Быстрые клинические пресеты:"),
 				"Must display presets section header",
 			);
 		});

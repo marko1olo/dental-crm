@@ -13,6 +13,7 @@ import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
 import {
 	type ChairsideExpressService,
 	type FilteredCatalogService,
@@ -37,13 +38,11 @@ import { ChairsideDiagnosisPackageCard } from "./ChairsideDiagnosisPackageCard";
 
 export { CLINICAL_SERVICE_BUNDLES, type ClinicalServiceBundle } from "./clinicalServiceBundles";
 
-/*
-  ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ У КРЕСЛА (Mandates 8b, 8e, 8k, 8n).
-  1. Запись отметки в поле treatmentPlan («Выполнено: ...») гарантирует сохранение на сервере.
-  2. Готовый чек-лист услуг по Номенклатуре 804н по клику на диагноз зуба с ценами в целых копейках.
-  3. 1-клик передача в кассу 54-ФЗ и в смету пациента без 10-минутного поиска по 300 позициям.
-  4. Точные цены без float-округлений (Mandate 8b).
-*/
+// ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ У КРЕСЛА:
+// 1. Запись отметки в поле treatmentPlan («Выполнено: ...») гарантирует сохранение на сервере.
+// 2. Готовый чек-лист услуг по Номенклатуре услуг по клику на диагноз зуба с ценами в целых копейках.
+// 3. Экспресс-передача в кассу и в смету пациента без 10-минутного поиска по 300 позициям.
+// 4. Точные цены без float-округлений.
 
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -110,11 +109,19 @@ export const CompletedServicesChecklist: React.FC<
 			: null;
 
 	// Привязка к зубу у кресла (FDI 11..48, «Без зуба»)
-	const initialTooth = contextTooth || activeToothNumber || null;
+	const storeActiveTooth = useVisitStore((s) => s.activeToothNumber);
+	const initialTooth = contextTooth || storeActiveTooth || activeToothNumber || null;
 	const [selectedTooth, setSelectedTooth] = React.useState<string | null>(
 		initialTooth ? String(initialTooth) : null,
 	);
 	const [isToothGridOpen, setIsToothGridOpen] = React.useState<boolean>(false);
+
+	// Синхронизация с активным зубом в сторе при клике на одонтограмму или вкладку зуба
+	React.useEffect(() => {
+		if (storeActiveTooth !== undefined && storeActiveTooth !== null) {
+			setSelectedTooth(String(storeActiveTooth));
+		}
+	}, [storeActiveTooth]);
 
 	// Быстрый инлайн-поиск по прейскуранту с дебаунсом 280 мс (Мандаты 8s, 8e)
 	const [catalogSearch, setCatalogSearch] = React.useState<string>("");
@@ -176,7 +183,9 @@ export const CompletedServicesChecklist: React.FC<
 				detail.source === "chairside_express" ||
 				detail.source === "chairside_catalog" ||
 				detail.source === "chairside_bundle" ||
-				detail.source === "chairside_checklist_all"
+				detail.source === "chairside_checklist_all" ||
+				detail.source === "chairside_checklist_toggle" ||
+				detail.source === "chairside_tooth_tabs"
 			) {
 				return;
 			}
@@ -220,6 +229,8 @@ export const CompletedServicesChecklist: React.FC<
 	const togglePlanItem = (item: any) => {
 		if (!updateVisitNoteField) return;
 		const line = completedLineOf(item);
+		const tooth = item?.toothCode ?? item?.toothNumber ?? selectedTooth;
+
 		if (isMarked(item)) {
 			const kept = (planText ?? "")
 				.split("\n")
@@ -228,13 +239,81 @@ export const CompletedServicesChecklist: React.FC<
 				"treatmentPlan",
 				kept.join("\n").replace(/\n+$/, ""),
 			);
+
+			// Синхронное удаление из completedServices стора
+			const currentList = useVisitStore.getState().completedServices;
+			const targetTitle = serviceTitleOf(item);
+			const removeIdx = currentList.findIndex((cs) => {
+				const csTitle = cs.name || (cs as any).title || "";
+				return csTitle === targetTitle;
+			});
+			if (removeIdx !== -1) {
+				useVisitStore.getState().removeCompletedService(removeIdx);
+			}
+
+			// Если галочка снята, и по данному зубу нет других выполненных манипуляций — возвращаем в idle
+			if (tooth) {
+				const toothStr = String(tooth);
+				const hasOther = kept.some((l) => l.includes(`(зуб ${toothStr})`) || l.includes(`(зубы ${toothStr})`));
+				if (!hasOther) {
+					useVisitStore.getState().setToothState(toothStr, "idle");
+				}
+			}
 			return;
 		}
+
 		const base = (planText ?? "").replace(/\s+$/, "");
 		updateVisitNoteField("treatmentPlan", base ? `${base}\n${line}` : line);
+
+		// Сквозная реактивность одонтограммы: при отметке галочки статус зуба немедленно обновляется
+		const serviceCode = item?.serviceCode || item?.code804n || item?.code || "A16.07.002";
+		const serviceTitle = serviceTitleOf(item);
+		const toothNum = tooth ? Number(tooth) || undefined : undefined;
+
+		useVisitStore.getState().addCompletedService({
+			serviceId: item?.serviceId || item?.id || `plan-${serviceCode}`,
+			code804n: serviceCode,
+			name: serviceTitle,
+			priceRub: planLineTotalRub(item) ?? 0,
+			toothNumber: toothNum ? Number(toothNum) : undefined,
+			toothCode: tooth ? String(tooth) : undefined,
+			quantity: planLineQuantity(item) ?? 1,
+		});
+
+		const srvPayload = {
+			toothNumber: tooth ? Number(tooth) || tooth : undefined,
+			toothCode: tooth ? String(tooth) : undefined,
+			services: [
+				{
+					code: serviceCode,
+					code804n: serviceCode,
+					title: serviceTitle,
+					price: planLineTotalRub(item) ?? 0,
+					priceRub: planLineTotalRub(item) ?? 0,
+					unitPriceRub: typeof item?.unitPriceRub === "number" ? item.unitPriceRub : (Number(item?.unitPriceRub) || planLineTotalRub(item) || 0),
+					quantity: planLineQuantity(item) ?? 1,
+					toothCode: tooth ? String(tooth) : undefined,
+				},
+			],
+			source: "chairside_checklist_toggle",
+		};
+
+		useVisitStore.getState().applyServicesToToothState(srvPayload);
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: srvPayload,
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
 	};
 
-	// 1-клик добавление экспресс-услуги у кресла
+	// Быстрое добавление экспресс-услуги у кресла
 	const handleAddExpressService = (service: ChairsideExpressService) => {
 		if (!updateVisitNoteField) return;
 
@@ -249,29 +328,44 @@ export const CompletedServicesChecklist: React.FC<
 		const updatedPlan = base ? `${base}\n${line}` : line;
 		updateVisitNoteField("treatmentPlan", updatedPlan);
 
+		const toothNum = selectedTooth ? Number.parseInt(selectedTooth, 10) || undefined : undefined;
+		useVisitStore.getState().addCompletedService({
+			serviceId: service.id,
+			code804n: service.code804n,
+			name: service.title,
+			priceRub: service.priceRub,
+			toothNumber: toothNum ? Number(toothNum) : undefined,
+			toothCode: selectedTooth ? String(selectedTooth) : undefined,
+			quantity: 1,
+		});
+
+		const expressPayload = {
+			toothNumber: selectedTooth
+				? Number(selectedTooth) || selectedTooth
+				: undefined,
+			toothCode: selectedTooth || undefined,
+			services: [
+				{
+					code: service.code804n,
+					code804n: service.code804n,
+					title: service.title,
+					price: service.priceRub,
+					priceRub: service.priceRub,
+					unitPriceRub: service.priceRub,
+					quantity: 1,
+					toothCode: selectedTooth || undefined,
+				},
+			],
+			source: "chairside_express",
+		};
+
+		useVisitStore.getState().applyServicesToToothState(expressPayload);
+
 		try {
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
 					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							toothNumber: selectedTooth
-								? Number(selectedTooth) || selectedTooth
-								: undefined,
-							toothCode: selectedTooth || undefined,
-							services: [
-								{
-									code: service.code804n,
-									code804n: service.code804n,
-									title: service.title,
-									price: service.priceRub,
-									priceRub: service.priceRub,
-									unitPriceRub: service.priceRub,
-									quantity: 1,
-									toothCode: selectedTooth || undefined,
-								},
-							],
-							source: "chairside_express",
-						},
+						detail: expressPayload,
 					}),
 				);
 			}
@@ -279,7 +373,11 @@ export const CompletedServicesChecklist: React.FC<
 			console.warn("dente-add-services-to-invoice dispatch error:", err);
 		}
 
-		const toothMsg = selectedTooth ? ` (зуб ${selectedTooth})` : "";
+		const toothMsg = selectedTooth
+			? selectedTooth.includes(",")
+				? ` (зубы ${selectedTooth})`
+				: ` (зуб ${selectedTooth})`
+			: "";
 		showToast(
 			`Услуга «[${service.code804n}] ${service.title}»${toothMsg} (${money(service.priceRub)}) внесена в карту и счёт`,
 			"success",
@@ -287,7 +385,7 @@ export const CompletedServicesChecklist: React.FC<
 		);
 	};
 
-	// 1-клик добавление услуги из прейскуранта клиники
+	// Быстрое добавление услуги из прейскуранта клиники
 	const handleAddCatalogService = (item: FilteredCatalogService) => {
 		if (!updateVisitNoteField) return;
 
@@ -302,29 +400,44 @@ export const CompletedServicesChecklist: React.FC<
 		const updatedPlan = base ? `${base}\n${line}` : line;
 		updateVisitNoteField("treatmentPlan", updatedPlan);
 
+		const toothNum = selectedTooth ? Number.parseInt(selectedTooth, 10) || undefined : undefined;
+		useVisitStore.getState().addCompletedService({
+			serviceId: item.id,
+			code804n: item.code,
+			name: item.title,
+			priceRub: item.priceRub,
+			toothNumber: toothNum ? Number(toothNum) : undefined,
+			toothCode: selectedTooth ? String(selectedTooth) : undefined,
+			quantity: 1,
+		});
+
+		const catalogPayload = {
+			toothNumber: selectedTooth
+				? Number(selectedTooth) || selectedTooth
+				: undefined,
+			toothCode: selectedTooth || undefined,
+			services: [
+				{
+					code: item.code,
+					code804n: item.code,
+					title: item.title,
+					price: item.priceRub,
+					priceRub: item.priceRub,
+					unitPriceRub: item.priceRub,
+					quantity: 1,
+					toothCode: selectedTooth || undefined,
+				},
+			],
+			source: "chairside_catalog",
+		};
+
+		useVisitStore.getState().applyServicesToToothState(catalogPayload);
+
 		try {
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
 					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							toothNumber: selectedTooth
-								? Number(selectedTooth) || selectedTooth
-								: undefined,
-							toothCode: selectedTooth || undefined,
-							services: [
-								{
-									code: item.code,
-									code804n: item.code,
-									title: item.title,
-									price: item.priceRub,
-									priceRub: item.priceRub,
-									unitPriceRub: item.priceRub,
-									quantity: 1,
-									toothCode: selectedTooth || undefined,
-								},
-							],
-							source: "chairside_catalog",
-						},
+						detail: catalogPayload,
 					}),
 				);
 			}
@@ -332,7 +445,11 @@ export const CompletedServicesChecklist: React.FC<
 			console.warn("dente-add-services-to-invoice dispatch error:", err);
 		}
 
-		const toothMsg = selectedTooth ? ` (зуб ${selectedTooth})` : "";
+		const toothMsg = selectedTooth
+			? selectedTooth.includes(",")
+				? ` (зубы ${selectedTooth})`
+				: ` (зуб ${selectedTooth})`
+			: "";
 		showToast(
 			`Услуга «[${item.code}] ${item.title}»${toothMsg} (${money(item.priceRub)}) внесена в карту и счёт`,
 			"success",
@@ -344,10 +461,13 @@ export const CompletedServicesChecklist: React.FC<
 	// Добавление клинического пакета
 	const handleAddBundle = (bundle: ClinicalServiceBundle) => {
 		if (!updateVisitNoteField) return;
-		const toothSuffix = selectedTooth ? ` (зуб ${selectedTooth})` : "";
-		const bundleLines = bundle.services.map(
-			(s) =>
-				`Выполнено: [${s.code804n}] ${s.title}${toothSuffix} — ${money(s.priceRub)}`,
+		const bundleLines = bundle.services.map((s) =>
+			formatCompletedServiceLine({
+				code804n: s.code804n,
+				title: s.title,
+				priceRub: s.priceRub,
+				toothCode: selectedTooth,
+			}),
 		);
 		const base = (planText ?? "").replace(/\s+$/, "");
 		const updatedPlan = base
@@ -355,28 +475,46 @@ export const CompletedServicesChecklist: React.FC<
 			: bundleLines.join("\n");
 		updateVisitNoteField("treatmentPlan", updatedPlan);
 
+		const toothNum = selectedTooth ? Number.parseInt(selectedTooth, 10) || undefined : undefined;
+		for (const s of bundle.services) {
+			useVisitStore.getState().addCompletedService({
+				serviceId: `${bundle.id}-${s.code804n}`,
+				code804n: s.code804n,
+				name: s.title,
+				priceRub: s.priceRub,
+				toothNumber: toothNum ? Number(toothNum) : undefined,
+				toothCode: selectedTooth ? String(selectedTooth) : undefined,
+				quantity: 1,
+			});
+		}
+
+		const bundlePayload = {
+			bundleId: bundle.id,
+			bundleTitle: bundle.title,
+			toothNumber: selectedTooth
+				? Number(selectedTooth) || selectedTooth
+				: undefined,
+			toothCode: selectedTooth || undefined,
+			services: bundle.services.map((s) => ({
+				code: s.code804n,
+				code804n: s.code804n,
+				title: s.title,
+				price: s.priceRub,
+				priceRub: s.priceRub,
+				unitPriceRub: s.priceRub,
+				quantity: 1,
+				toothCode: selectedTooth || undefined,
+			})),
+			source: "chairside_bundle",
+		};
+
+		useVisitStore.getState().applyServicesToToothState(bundlePayload);
+
 		try {
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
 					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							bundleId: bundle.id,
-							bundleTitle: bundle.title,
-							toothNumber: selectedTooth
-								? Number(selectedTooth) || selectedTooth
-								: undefined,
-							toothCode: selectedTooth || undefined,
-							services: bundle.services.map((s) => ({
-								code: s.code804n,
-								code804n: s.code804n,
-								title: s.title,
-								price: s.priceRub,
-								priceRub: s.priceRub,
-								unitPriceRub: s.priceRub,
-								quantity: 1,
-								toothCode: selectedTooth || undefined,
-							})),
-						},
+						detail: bundlePayload,
 					}),
 				);
 			}
@@ -384,7 +522,11 @@ export const CompletedServicesChecklist: React.FC<
 			console.warn("dente-add-services-to-invoice dispatch error:", err);
 		}
 
-		const toothMsg = selectedTooth ? ` (зуб ${selectedTooth})` : "";
+		const toothMsg = selectedTooth
+			? selectedTooth.includes(",")
+				? ` (зубы ${selectedTooth})`
+				: ` (зуб ${selectedTooth})`
+			: "";
 		showToast(
 			`Пакет «${bundle.title}»${toothMsg} (${countLabel(bundle.services.length, "услуга", "услуги", "услуг")} на ${money(bundle.totalPriceRub)}) внесен в карту и счет`,
 			"success",
@@ -392,7 +534,7 @@ export const CompletedServicesChecklist: React.FC<
 		);
 	};
 
-	// 1-клик внесение готового клинического пакета по Номенклатуре 804н
+	// Быстрое внесение готового клинического пакета по Номенклатуре 804н
 	const handleApplyDiagnosisPackage = (newLines: string[], invoicePayload: any) => {
 		if (!updateVisitNoteField) return;
 		const base = (planText ?? "").replace(/\s+$/, "");
@@ -412,9 +554,10 @@ export const CompletedServicesChecklist: React.FC<
 		}
 	};
 
-	// 1-клик удаление ошибочно внесенной строки
+	// Удаление ошибочно внесенной строки
 	const handleRemoveCompletedLine = (rawLine: string) => {
 		if (!updateVisitNoteField) return;
+		const parsed = parseCompletedServiceLine(rawLine);
 		const kept = (planText ?? "")
 			.split("\n")
 			.filter((existing) => (existing ?? "").trim() !== rawLine.trim());
@@ -422,10 +565,36 @@ export const CompletedServicesChecklist: React.FC<
 			"treatmentPlan",
 			kept.join("\n").replace(/\n+$/, ""),
 		);
+
+		// Синхронное удаление из completedServices стора
+		if (parsed) {
+			const currentList = useVisitStore.getState().completedServices;
+			const removeIdx = currentList.findIndex((item) => {
+				const itemTooth = String(item.toothCode || item.toothNumber || "");
+				const parsedTooth = String(parsed.toothCode || "");
+				const codeMatch = item.code804n === parsed.code804n;
+				const titleMatch = item.name === parsed.title || (item as any).title === parsed.title;
+				const toothMatch = (!itemTooth && !parsedTooth) || itemTooth === parsedTooth;
+				return (codeMatch || titleMatch) && toothMatch;
+			});
+			if (removeIdx !== -1) {
+				useVisitStore.getState().removeCompletedService(removeIdx);
+			}
+
+			// Если для зуба больше нет записей в оставшихся строках плана — сбрасываем статус зуба в idle
+			if (parsed.toothCode) {
+				const toothStr = parsed.toothCode;
+				const hasOther = kept.some((l) => l.includes(`(зуб ${toothStr})`) || l.includes(`(зубы ${toothStr})`));
+				if (!hasOther && !toothStr.includes(",")) {
+					useVisitStore.getState().setToothState(toothStr, "idle");
+				}
+			}
+		}
+
 		showToast("Услуга удалена из карты приёма", "info", 2000);
 	};
 
-	// 1-клик «Внести всё в кассовый счёт»
+	// «Внести всё в кассовый счёт»
 	const handlePushAllToInvoice = () => {
 		if (summary.servicesForInvoice.length === 0) {
 			showToast(
@@ -500,7 +669,7 @@ export const CompletedServicesChecklist: React.FC<
 			</div>
 			<p className="m-0 mb-3 text-xs text-slate-500 dark:text-slate-400">
 				{visitPatientName ? `Пациент: ${visitPatientName}. ` : ""}
-				Вносите экспресс-услуги или выбирайте из прейскуранта в 1 клик.
+				Вносите экспресс-услуги или выбирайте из прейскуранта.
 				Отмеченное дописывается в карту приёма и передается в счёт.
 			</p>
 
@@ -704,7 +873,7 @@ export const CompletedServicesChecklist: React.FC<
 				</div>
 			)}
 
-			{/* 6. СПИСОК ВСЕХ ВЫПОЛНЕННЫХ УСЛУГ В ЭТОМ ПРИЁМЕ С 1-TAP УДАЛЕНИЕМ */}
+			{/* 6. СПИСОК ВСЕХ ВЫПОЛНЕННЫХ УСЛУГ В ЭТОМ ПРИЁМЕ */}
 			<CompletedServicesList
 				completedLinesList={completedLinesList}
 				totalRub={summary.totalRub}
@@ -712,7 +881,7 @@ export const CompletedServicesChecklist: React.FC<
 			/>
 
 
-			{/* 7. ИТОГ И 1-КЛИК «ВНЕСТИ ВСЁ В КАССОВЫЙ СЧЁТ» */}
+			{/* 7. ИТОГ И «ВНЕСТИ ВСЁ В КАССОВЫЙ СЧЁТ» */}
 			<div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
 				<div className="text-xs text-slate-700 dark:text-slate-300">
 					{summary.count === 0 ? (

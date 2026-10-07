@@ -2,7 +2,7 @@
  * ============================================================================
  * RETROACTIVE BATCH HERO BANNER (SanPiN 3.3686-21)
  * Верхний баннер выбора периода, кабинетов, медсестры, автоклава и запуска
- * пакетной генерации журналов СанПиН в 1 клик.
+ * пакетной генерации журналов СанПиН за период.
  * ============================================================================
  */
 
@@ -87,7 +87,7 @@ export function RetroactiveBatchHeroBanner({
 						}}
 					>
 						<Rocket size={24} color="var(--teal)" />
-						Пакетное заполнение журналов стерилизации за период (1 клик)
+						Пакетное заполнение журналов стерилизации за период
 					</h2>
 					<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", marginTop: "0.25rem" }}>
 						Моментальное оформление журналов автоклавирования, предстерилизационной очистки (азопирам), бактерицидных ламп, уборок, медотходов и готовности кабинетов.
@@ -358,7 +358,7 @@ export function RetroactiveBatchHeroBanner({
 				</div>
 			</div>
 
-			{/* 3. PROMINENT 1-CLICK GENERATION BUTTON (Кнопка >= 52px, контрастный акцентный цвет) */}
+			{/* 3. Кнопка пакетного формирования журналов (Кнопка >= 52px, контрастный акцентный цвет) */}
 			<div style={{ display: "flex", justifyContent: "stretch", marginTop: "0.25rem" }}>
 				<button
 					type="button"
@@ -386,7 +386,7 @@ export function RetroactiveBatchHeroBanner({
 					data-testid="execute-sanpin-batch-1click-btn"
 				>
 					<Rocket size={22} color="var(--on-teal, #ffffff)" />
-					<span>Заполнить все журналы стерилизации за период в 1 клик</span>
+					<span>Заполнить все журналы стерилизации за период</span>
 				</button>
 			</div>
 		</div>

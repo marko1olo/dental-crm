@@ -340,56 +340,56 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("full")}
-								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "full"
-										? "border-teal-600 bg-teal-500/15 text-teal-900 dark:text-teal-200 shadow-xs ring-1 ring-teal-500/30"
-										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+										? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]"
+										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]"
 								}`}
 							>
 								<span>100% Оплата</span>
-								<span className="text-xs font-mono opacity-80">
+								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
 									{(baseStageAmountKop / 100).toLocaleString("ru-RU")} ₽
 								</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("advance_30")}
-								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "advance_30"
-										? "border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30"
+										? "border-amber-500 bg-amber-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-amber-500"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
 								}`}
 							>
 								<span>Аванс 30%</span>
-								<span className="text-xs font-mono opacity-80">
+								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
 									{Math.round((baseStageAmountKop * 30) / 10000).toLocaleString("ru-RU")} ₽
 								</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("advance_50")}
-								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "advance_50"
-										? "border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30"
+										? "border-amber-500 bg-amber-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-amber-500"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
 								}`}
 							>
 								<span>Аванс 50%</span>
-								<span className="text-xs font-mono opacity-80">
+								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
 									{Math.round((baseStageAmountKop * 50) / 10000).toLocaleString("ru-RU")} ₽
 								</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => setStagePaymentMode("advance_offset_tag1215")}
-								className={`min-h-[44px] px-2.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex flex-col justify-center items-center transition-all cursor-pointer ${
+								className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 									stagePaymentMode === "advance_offset_tag1215"
-										? "border-purple-600 bg-purple-500/15 text-purple-900 dark:text-purple-200 shadow-xs ring-1 ring-purple-500/30"
+										? "border-purple-500 bg-purple-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-purple-500"
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-purple-400"
 								}`}
 							>
 								<span>Зачет аванса</span>
-								<span className="text-xs font-mono opacity-80">
+								<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
 									Доплата {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽
 								</span>
 							</button>
@@ -432,31 +432,27 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 								</span>
 							)}
 						</div>
-						<div className="flex items-center gap-2 flex-wrap">
+						<div className="dente-segmented-bar inline-flex" role="tablist" aria-label="Тип плательщика">
 							<button
 								type="button"
+								role="tab"
+								aria-selected={clientType === "physical_person"}
 								onClick={() => setClientType("physical_person")}
-								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-									clientType === "physical_person"
-										? "bg-teal-600 text-white shadow-xs"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink)] border border-[var(--line,#cbd5e1)] hover:border-teal-400"
-								}`}
+								className={`dente-segmented-item ${clientType === "physical_person" ? "active" : ""}`}
 								data-testid="tab-payer-physical"
 							>
-								<User size={13} />
+								<User size={13} className="shrink-0" />
 								<span>Физическое лицо (пациент)</span>
 							</button>
 							<button
 								type="button"
+								role="tab"
+								aria-selected={clientType === "legal_entity"}
 								onClick={() => setClientType("legal_entity")}
-								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-									clientType === "legal_entity"
-										? "bg-teal-600 text-white shadow-xs"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink)] border border-[var(--line,#cbd5e1)] hover:border-teal-400"
-								}`}
+								className={`dente-segmented-item ${clientType === "legal_entity" ? "active" : ""}`}
 								data-testid="tab-payer-legal"
 							>
-								<Building2 size={13} />
+								<Building2 size={13} className="shrink-0" />
 								<span>Юрлицо / ИП</span>
 							</button>
 						</div>

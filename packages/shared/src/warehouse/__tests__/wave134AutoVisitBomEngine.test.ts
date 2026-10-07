@@ -134,8 +134,8 @@ describe("Wave 134: Auto-Visit BOM & Class B Medical Waste Engine", () => {
 			assert.strictEqual(result.hasOverdraft, true);
 			assert.ok(result.softOverdrafts.length > 0);
 			assert.ok(result.totalCostPriceKopecks > 0);
-			assert.ok(result.items.some((it) => it.isOverdraft));
-			assert.ok(result.softOverdrafts[0]?.includes("Мандат 8e/8n: Мягкий овердрафт"));
+			assert.ok(result.softOverdrafts[0]?.includes("Складской овердрафт"));
+			assert.ok(!result.softOverdrafts[0]?.includes("Мандат"));
 			assert.ok(result.softOverdrafts[0]?.includes("Лечение не блокируется"));
 			assert.strictEqual(result.classBWaste.wasteClass, "class_B");
 			assert.ok(result.statutoryActText.includes("АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ"));

@@ -424,7 +424,7 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
         >
           <AlertTriangle size={16} className="flex-shrink-0 text-[var(--amber, #d97706)]" />
           <span>
-            <strong>Предупреждение:</strong> {allergyWarningText}. Кнопка «Утвердить» активна — врач принимает окончательное решение (Мандат 8e).
+            <strong>Предупреждение:</strong> {allergyWarningText}. Кнопка «Утвердить» активна — врач принимает окончательное решение.
           </span>
         </div>
       )}
@@ -641,7 +641,7 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
                     className="copilot-btn-secondary"
                     onClick={() => handleExecute('confirm', { ...initialArgs, doctor_override: true })}
                     disabled={disabled}
-                    title="Утвердить назначение врача без замены (Мандат 8e: автономия врача без блокировок)"
+                    title="Утвердить назначение врача без замены"
                   >
                     <Check size={15} />
                     <span>Утвердить без замены (1 клик)</span>

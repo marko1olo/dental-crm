@@ -852,7 +852,7 @@ export class KnowledgeStore {
 			score: topMatch.score,
 			priceRub: topMatch.item.priceRub,
 			code804n: topMatch.item.code804n,
-			message: `Найдена позиция прайс-листа 804н: «${topMatch.item.title}» (${topMatch.item.code804n || "без кода"}) — ${topMatch.item.priceRub} ₽ (сходство: ${(topMatch.score * 100).toFixed(1)}%)`,
+			message: `Найдена позиция прейскуранта: «${topMatch.item.title}» (${topMatch.item.code804n ? `код: ${topMatch.item.code804n}` : "без кода"}) — ${topMatch.item.priceRub} ₽ (сходство: ${(topMatch.score * 100).toFixed(1)}%)`,
 		};
 	}
 

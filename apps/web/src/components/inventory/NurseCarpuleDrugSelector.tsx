@@ -22,7 +22,7 @@ export const NurseCarpuleDrugSelector: React.FC<
 					Наименование анестетика
 				</label>
 				<span className="text-[11px] text-[var(--muted,#64748b)]">
-					1 клик выбор (Закон Хика + FEFO)
+					Быстрый выбор (Закон Хика + FEFO)
 				</span>
 			</div>
 

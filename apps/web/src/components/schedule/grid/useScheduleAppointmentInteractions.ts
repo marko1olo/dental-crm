@@ -338,13 +338,13 @@ export function useScheduleAppointmentInteractions({
 
       if (collisionCheck.isCitoOverbooking) {
         showToast(
-          `CITO-овербукинг разрешён (острая боль): ${collisionCheck.message}`,
+          `Запись по острой боли (наложение слота допустимо): ${collisionCheck.message}`,
           "warning",
           4500,
         );
       } else if (collisionCheck.hasCollision) {
         showToast(
-          `Внимание: ${collisionCheck.message}. Время изменено с овербукингом`,
+          `Внимание: ${collisionCheck.message}. Время изменено с совмещением слотов`,
           "warning",
           4500,
         );
@@ -440,13 +440,13 @@ export function useScheduleAppointmentInteractions({
 
       if (collisionCheck.isCitoOverbooking) {
         showToast(
-          `CITO-овербукинг разрешён (острая боль): ${collisionCheck.message}`,
+          `Запись по острой боли (наложение слота допустимо): ${collisionCheck.message}`,
           "warning",
           4500,
         );
       } else if (collisionCheck.hasCollision) {
         showToast(
-          `Внимание: ${collisionCheck.message}. Прием сдвинут с овербукингом`,
+          `Внимание: ${collisionCheck.message}. Прием сдвинут с совмещением слотов`,
           "warning",
           4500,
         );

@@ -39,7 +39,7 @@ export function QuickBookingDrawerFooter({
           {isSubmitting
             ? "Сохраняю запись…"
             : hasCollision
-              ? "Записать с овербукингом (острая боль)"
+              ? "Записать на это время (острая боль)"
               : "Создать запись (Ctrl+Enter)"}
         </span>
       </button>

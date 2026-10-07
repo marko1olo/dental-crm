@@ -123,7 +123,7 @@ export function SanpinRegistryPackageModal({
 							style={{ minHeight: "36px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 						>
 							<CheckCircle2 size={15} />
-							<span>{sterilityVerified ? "Подтверждено в карте" : "Заверить стерильность (1 клик)"}</span>
+							<span>{sterilityVerified ? "Подтверждено в карте" : "Заверить стерильность"}</span>
 						</button>
 					</div>
 

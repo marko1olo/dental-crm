@@ -1,0 +1,43 @@
+{
+  "subagent": "subagent_emr_clinical_design",
+  "role": "Red Team Design Inquisitor for EMR & Clinical Protocols",
+  "parent": "beb92312-c6d7-426d-a438-12dcad022abc",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T20:30:00+04:00",
+  "scope": [
+    "apps/web/src/components/visit/emk/EmkServicesSection.tsx",
+    "apps/web/src/components/visit/clinicalCatalog/ClinicalProtocolsCatalogModal.tsx",
+    "apps/web/src/components/guidance/ClinicalGuidanceModal.tsx",
+    "apps/web/src/components/treatment-plans/ClinicalServiceBundlesModal.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanAddServiceModal.tsx",
+    "apps/web/src/components/treatment-plans/ClinicalBundlesPanel.tsx",
+    "apps/web/src/components/visit/VisitSoapEditor.tsx",
+    "apps/web/src/components/visit/diary/VisitDiarySoapFields.tsx",
+    "apps/web/src/styles/visit-diary-043.css",
+    "apps/web/src/components/diagnostics/Icd10ClinicalSelector.tsx",
+    "apps/web/src/components/diagnostics/icd10Selector.css",
+    "apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx",
+    "apps/web/src/components/emr/templates/clinicalDiaryTemplates.css",
+    "apps/web/src/components/prescriptions/PrescriptionDrugCatalogSelector.tsx"
+  ],
+  "verification": {
+    "typecheck": "PASS (0 errors, npx tsc -p apps/web/tsconfig.json --noEmit with 8GB heap)",
+    "screenshotsCapturedAndInspected": [
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_protocols_pc_light.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_protocols_pc_dark.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_bundles_pc_light.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_bundles_pc_dark.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_icd10_pc_light.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_templates_pc_light.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_protocols_mobile_light.png",
+      "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\beb92312-c6d7-426d-a438-12dcad022abc\\proof_emr_protocols_mobile_dark.png"
+    ],
+    "invariantsEnforced": [
+      "Mandate 8zf: Search inputs have safe padding-left (36px..38px !important), vertical centering, and right clear button",
+      "Frontend Rule 12-13: Eliminated naked unsegmented buttons/lists; replaced with .dente-filter-chips and .dente-segmented-bar",
+      "Mandate 8e: Single noble brand accent var(--teal); zero multi-color clashing; doctor autonomy 1-click presets",
+      "Touch Targets >= 44x44px on coarse pointers and mobile viewports",
+      "Buttons normalized to .primary-button / .secondary-button (h: 32px, r: 8px)"
+    ]
+  }
+}

@@ -27,8 +27,11 @@ import {
 import {
 	handleNerveWorkerMessage,
 	type NerveWorkerComputePayload,
+	type NerveWorkerComputeSuccessResponse,
+	type NerveWorkerErrorResponse,
 	type NerveWorkerInboundMessage,
 	type NerveWorkerOutboundMessage,
+	type NerveWorkerPongResponse,
 } from "../cbctNerveWorker.worker.js";
 import {
 	CbctNerveWorkerBridge,
@@ -368,10 +371,11 @@ describe("CBCT Mandibular Nerve GPU Fast Marching & Web Worker Inquisition", () 
 			);
 
 			assert.ok(outboundMsg);
-			assert.equal(outboundMsg.type, "pong");
-			assert.equal(outboundMsg.success, true);
-			assert.equal(outboundMsg.requestId, "ping_test_42");
-			assert.ok(typeof outboundMsg.timestamp === "number");
+			const pongMsg = outboundMsg as NerveWorkerPongResponse;
+			assert.equal(pongMsg.type, "pong");
+			assert.equal(pongMsg.success, true);
+			assert.equal(pongMsg.requestId, "ping_test_42");
+			assert.ok(typeof pongMsg.timestamp === "number");
 		});
 
 		it("processes compute_nerve payload and returns complete FastMarchingNerveResult with telemetry", () => {
@@ -396,11 +400,12 @@ describe("CBCT Mandibular Nerve GPU Fast Marching & Web Worker Inquisition", () 
 			});
 
 			assert.ok(response);
-			assert.equal(response.success, true);
-			assert.equal(response.type, "compute_nerve_result");
-			assert.equal(response.requestId, "worker_req_001");
+			const computeRes = response as NerveWorkerComputeSuccessResponse;
+			assert.equal(computeRes.success, true);
+			assert.equal(computeRes.type, "compute_nerve_result");
+			assert.equal(computeRes.requestId, "worker_req_001");
 
-			const result = response.result;
+			const result = computeRes.result;
 			assert.ok(result.physicalSpline.length >= 8);
 			assert.ok(result.controlPoints.length >= 2);
 			assert.ok(result.totalLengthMm > 10.0);
@@ -415,9 +420,9 @@ describe("CBCT Mandibular Nerve GPU Fast Marching & Web Worker Inquisition", () 
 				VATECH_COLLISION_DANGER_MM,
 			);
 
-			assert.ok(response.telemetry);
-			assert.ok(response.telemetry.workerDurationMs >= 0);
-			assert.ok(response.telemetry.voxelCount > 0);
+			assert.ok(computeRes.telemetry);
+			assert.ok(computeRes.telemetry.workerDurationMs >= 0);
+			assert.ok(computeRes.telemetry.voxelCount > 0);
 		});
 
 		it("handles errors gracefully and returns error message when input is malformed", () => {
@@ -437,10 +442,11 @@ describe("CBCT Mandibular Nerve GPU Fast Marching & Web Worker Inquisition", () 
 			});
 
 			assert.ok(response);
-			assert.equal(response.success, false);
-			assert.equal(response.type, "error");
-			assert.equal(response.requestId, "bad_req");
-			assert.ok(typeof response.error === "string");
+			const errRes = response as NerveWorkerErrorResponse;
+			assert.equal(errRes.success, false);
+			assert.equal(errRes.type, "error");
+			assert.equal(errRes.requestId, "bad_req");
+			assert.ok(typeof errRes.error === "string");
 		});
 	});
 

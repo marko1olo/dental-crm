@@ -166,7 +166,7 @@ export function PatientMemoPrintModal({
 						</div>
 						<div>
 							<h3 id="patient-memo-modal-title" className="text-base font-extrabold text-[var(--ink)] m-0 flex items-center gap-2">
-								<span>Послеоперационные памятки пациенту (1-клик печать А4/А5)</span>
+								<span>Послеоперационные памятки пациенту (печать А4/А5)</span>
 								<span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 									Медицинская карта
 								</span>

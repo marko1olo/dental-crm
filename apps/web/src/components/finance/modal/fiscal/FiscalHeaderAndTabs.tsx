@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 import type { FiscalModalTab } from "./fiscalModalTypes";
+import { useFiscalOperations } from "../../../../hooks/useFiscalOperations";
 
 export interface FiscalHeaderAndTabsProps {
 	readonly activeTab: FiscalModalTab;
@@ -47,10 +48,12 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 	handleRetryFiscalizationWithoutBalanceImpact,
 	isFiscalizing,
 }) => {
+	const { isOnline, pendingCount } = useFiscalOperations();
+
 	return (
 		<>
 			{/* Top Modal Header */}
-			<div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] shrink-0">
+			<div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line)] shrink-0">
 				<div className="flex items-center gap-3 min-w-0 max-w-full flex-1">
 					<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
 						<Receipt size={18} />
@@ -73,6 +76,23 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 								Онлайн-касса
 							</span>
+							{pendingCount > 0 && (
+								<span
+									className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-800 dark:text-blue-300 border border-blue-500/30 font-bold shrink-0"
+									data-testid="header-offline-fiscal-queue-badge"
+									title="В очереди фоновой фискализации 54-ФЗ"
+								>
+									Чек в очереди фискализации ({pendingCount})
+								</span>
+							)}
+							{!isOnline && (
+								<span
+									className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-bold shrink-0"
+									title="Сетевое соединение отсутствует: включен офлайн-буфер 54-ФЗ"
+								>
+									Офлайн-касса
+								</span>
+							)}
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)] break-words mt-0.5">
 							Пациент:{" "}
@@ -90,7 +110,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-8 sm:w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-center cursor-pointer transition-colors border border-transparent hover:border-[var(--border,#cbd5e1)] shrink-0"
+					className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-8 sm:w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-center cursor-pointer transition-colors border border-transparent hover:border-[var(--line)] shrink-0"
 					aria-label="Закрыть модальное окно"
 				>
 					<X size={18} />
@@ -164,15 +184,15 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 			)}
 
 			{/* Multi-Tab Selector Subheader Strip (Compact 32px height) */}
-			<div className="px-4 sm:px-6 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-b border-[var(--border,#cbd5e1)] shrink-0 overflow-x-auto">
-				<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs min-w-max">
+			<div className="px-4 sm:px-6 py-2 bg-[var(--paper-strong,var(--paper,#ffffff))] border-b border-[var(--line)] shrink-0 overflow-x-auto">
+				<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line)] text-xs min-w-max">
 					<button
 						type="button"
 						onClick={() => setActiveTab("payment")}
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "payment"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
 						Оплата
@@ -182,8 +202,8 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						onClick={() => setActiveTab("act")}
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "act"
-								? "bg-emerald-600 text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
 						Акт выполненных услуг
@@ -193,8 +213,8 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						onClick={() => setActiveTab("oneC")}
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "oneC"
-								? "bg-amber-600 text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 						data-testid="tab-1c-export"
 					>
@@ -205,8 +225,8 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						onClick={() => setActiveTab("certificate")}
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "certificate"
-								? "bg-indigo-600 text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
 						Справка для налоговой (13%)
@@ -216,8 +236,8 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						onClick={() => setActiveTab("refund")}
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "refund"
-								? "bg-rose-600 text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
 						Возврат услуг
@@ -227,8 +247,8 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						onClick={() => setActiveTab("correction")}
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "correction"
-								? "bg-amber-600 text-white shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
 						Коррекция
@@ -239,7 +259,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 						className={`h-8 px-3 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							activeTab === "preview"
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line-subtle,rgba(0,0,0,0.03))]"
 						}`}
 					>
 						Чек

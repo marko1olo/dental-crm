@@ -61,7 +61,7 @@ export const ProcedureMaterialTable: React.FC<ProcedureMaterialTableProps> = ({
 					data-testid="auto-populate-standard-preset-btn"
 				>
 					<Plus size={16} />
-					Добавить стандартный расходный набор в 1 клик
+					Добавить стандартный расходный набор
 				</button>
 			</div>
 		);

@@ -115,6 +115,7 @@ const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
   "C:/Users/Admin/.gemini/antigravity/brain/c8b0a113-d724-454f-ada2-66f09061b986",
   "C:/Users/Admin/.gemini/antigravity/brain/9ea21f87-962f-4962-8237-a01bee2ebf13",
+  "C:/Users/Admin/.gemini/antigravity/brain/8c13fca0-8160-48cc-95c0-54805cda73b5",
 ];
 
 for (const d of targetDirs) {

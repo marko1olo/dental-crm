@@ -64,6 +64,7 @@ import {
 	isWebhookPath,
 	registerWhatsappWebhookRoutes,
 } from "./whatsappWebhookRoutes.js";
+import { WhatsappConnectionHubService } from "../services/messaging/whatsappConnectionHub.js";
 
 export { isWebhookPath, registerWhatsappWebhookRoutes };
 
@@ -492,6 +493,73 @@ export async function registerWhatsappRoutes(
 	});
 
 	/**
+	 * POST /api/whatsapp/test-message
+	 * Отправка тестового проверочного сообщения на номер WhatsApp без привязки к карточке пациента.
+	 */
+	app.post("/api/whatsapp/test-message", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"whatsapp test message send",
+		);
+		if (!orgId) return;
+
+		const bodySchema = z.object({
+			phone: z.string().trim().min(5, "Укажите номер телефона"),
+			message: z.string().trim().min(1, "Укажите текст сообщения"),
+		});
+
+		const parsed = bodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: parsed.error.issues[0]?.message || "Укажите номер телефона и текст сообщения.",
+			};
+		}
+
+		const [config] = await db
+			.select()
+			.from(denteWhatsappBotConfigs)
+			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+			.limit(1);
+
+		const credentials = config ? readWhatsappCredentials({ ...config, organizationId: orgId }) : null;
+		if (!credentials) {
+			reply.code(400);
+			return {
+				error: "WhatsappNotConfigured",
+				message: "WhatsApp не настроен или не заданы ключи доступа.",
+			};
+		}
+
+		const recipient = normalizeWhatsappRecipient(parsed.data.phone);
+		if (!recipient) {
+			reply.code(422);
+			return {
+				error: "InvalidPhone",
+				message: "Некорректный номер телефона получателя.",
+			};
+		}
+
+		const sendResult = await sendWhatsappTextMessage({
+			...credentials,
+			toPhoneE164: recipient,
+			text: parsed.data.message,
+		});
+
+		if (!sendResult.ok) {
+			reply.code(502);
+			return {
+				error: "WhatsappSendFailed",
+				message: sendResult.errorMessage,
+			};
+		}
+
+		return { ok: true, providerMessageId: sendResult.providerMessageId, message: "Тестовое сообщение отправлено!" };
+	});
+
+	/**
 	 * Синхронизация каталога шаблонов Meta WABA (HSM).
 	 */
 	app.post("/api/whatsapp/templates/sync", async (request, reply) => {
@@ -519,5 +587,266 @@ export async function registerWhatsappRoutes(
 			syncedAt: new Date().toISOString(),
 		};
 	});
+
+	/**
+	 * =========================================================================
+	 * WhatsApp QR Hub: Подключение рабочего номера клиники через QR-код
+	 * =========================================================================
+	 */
+
+	/**
+	 * POST /api/whatsapp/qr/session/start
+	 * Инициализация или перезапуск сессии привязки рабочего номера через QR или Pairing Code.
+	 */
+	app.post("/api/whatsapp/qr/session/start", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"whatsapp qr session start",
+		);
+		if (!orgId) return;
+
+		const bodySchema = z.object({
+			phone: z.string().trim().max(32).nullable().optional(),
+			forceRefresh: z.boolean().optional(),
+		});
+
+		const parsed = bodySchema.safeParse(request.body || {});
+		const input = parsed.success ? parsed.data : {};
+
+		const session = WhatsappConnectionHubService.startQrSession({
+			organizationId: orgId,
+			...(input.phone ? { pairingPhone: input.phone } : {}),
+			...(input.forceRefresh !== undefined ? { forceRefresh: input.forceRefresh } : {}),
+		});
+
+		const now = Date.now();
+		const secondsLeft = Math.max(0, Math.ceil((session.expiresAt - now) / 1000));
+
+		return {
+			ok: true,
+			sessionId: session.sessionId,
+			status: session.status,
+			qrPayload: session.qrPayload,
+			qrSvg: session.qrSvg,
+			qrDataUrl: session.qrDataUrl,
+			pairingCode: session.pairingCode,
+			pairingPhone: session.pairingPhone,
+			expiresInSeconds: secondsLeft,
+			expiresAt: new Date(session.expiresAt).toISOString(),
+		};
+	});
+
+	/**
+	 * GET /api/whatsapp/qr/session/status
+	 * Получение статуса привязки QR-кода и времени до экспирации.
+	 */
+	app.get("/api/whatsapp/qr/session/status", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"whatsapp qr session status",
+		);
+		if (!orgId) return;
+
+		const status = WhatsappConnectionHubService.getQrSessionStatus(orgId);
+
+		return {
+			ok: true,
+			...status,
+		};
+	});
+
+	/**
+	 * POST /api/whatsapp/qr/session/disconnect
+	 * Отвязка рабочего номера клиники.
+	 */
+	app.post("/api/whatsapp/qr/session/disconnect", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"whatsapp qr disconnect",
+		);
+		if (!orgId) return;
+
+		WhatsappConnectionHubService.disconnectQrSession(orgId);
+
+		return {
+			ok: true,
+			status: "disconnected",
+			message: "Устройство отвязано от клиники.",
+		};
+	});
+
+	/**
+	 * POST /api/whatsapp/qr/session/simulate-auth
+	 * Тестовая / Демо авторизация для мгновенной верификации и E2E тестов.
+	 */
+	app.post("/api/whatsapp/qr/session/simulate-auth", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"whatsapp qr simulate auth",
+		);
+		if (!orgId) return;
+
+		const bodySchema = z.object({
+			phone: z.string().trim().default("+7 (999) 123-45-67"),
+			deviceModel: z.string().trim().default("Рабочий iPhone клиники"),
+		});
+
+		const parsed = bodySchema.safeParse(request.body || {});
+		const data = parsed.success ? parsed.data : { phone: "+7 (999) 123-45-67", deviceModel: "Рабочий iPhone клиники" };
+
+		const session = WhatsappConnectionHubService.simulateAuthenticate(orgId, data.phone, data.deviceModel);
+
+		return {
+			ok: true,
+			status: session.status,
+			connectedPhone: session.connectedPhone,
+			connectedAt: session.connectedAt,
+			deviceModel: session.deviceModel,
+		};
+	});
+
+	/**
+	 * =========================================================================
+	 * WhatsApp Business Cloud API (WABA): Официальная интеграция Meta
+	 * =========================================================================
+	 */
+
+	/**
+	 * POST /api/whatsapp/waba/connect
+	 * Сохранение Phone Number ID, WABA ID, Access Token и Webhook Verify Token.
+	 */
+	app.post("/api/whatsapp/waba/connect", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"whatsapp waba connect",
+		);
+		if (!orgId) return;
+
+		const wabaConnectSchema = z.object({
+			phoneNumberId: z.string().trim().min(5, "Укажите Phone Number ID"),
+			wabaAccountId: z.string().trim().nullable().optional(),
+			accessToken: z.string().trim().min(10, "Укажите Access Token"),
+			webhookVerifyToken: z.string().trim().nullable().optional(),
+		});
+
+		const parsed = wabaConnectSchema.safeParse(request.body);
+		if (!parsed.success) {
+			reply.code(400);
+			return {
+				error: "WabaValidationError",
+				message: parsed.error.errors[0]?.message || "Проверьте параметры подключения WABA",
+			};
+		}
+
+		const result = await WhatsappConnectionHubService.connectWaba({
+			organizationId: orgId,
+			phoneNumberId: parsed.data.phoneNumberId,
+			accessToken: parsed.data.accessToken,
+			...(parsed.data.wabaAccountId ? { wabaAccountId: parsed.data.wabaAccountId } : {}),
+			...(parsed.data.webhookVerifyToken ? { webhookVerifyToken: parsed.data.webhookVerifyToken } : {}),
+		});
+
+		return {
+			ok: true,
+			connected: true,
+			id: result.id,
+			message: "Параметры WhatsApp Business Cloud API сохранены.",
+		};
+	});
+
+	/**
+	 * POST /api/whatsapp/waba/test
+	 * Проверка связи с Meta Graph API.
+	 */
+	app.post("/api/whatsapp/waba/test", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"whatsapp waba test",
+		);
+		if (!orgId) return;
+
+		const testSchema = z.object({
+			phoneNumberId: z.string().trim().optional(),
+			accessToken: z.string().trim().optional(),
+		});
+
+		const parsed = testSchema.safeParse(request.body || {});
+		let phoneNumberId = parsed.success ? parsed.data.phoneNumberId : undefined;
+		let accessToken = parsed.success ? parsed.data.accessToken : undefined;
+
+		// Если параметры не переданы в теле, берем сохраненные из базы
+		if (!phoneNumberId || !accessToken) {
+			const [config] = await db
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+				.limit(1);
+
+			if (!config?.phoneNumberId || !config.tokenSecretRef) {
+				reply.code(400);
+				return {
+					ok: false,
+					error: "WabaNotConfigured",
+					message: "Не заданы Phone Number ID и Access Token. Сначала укажите параметры подключения.",
+				};
+			}
+
+			phoneNumberId = config.phoneNumberId;
+			accessToken = config.tokenSecretRef;
+		}
+
+		const testResult = await WhatsappConnectionHubService.testWabaConnection({
+			phoneNumberId,
+			accessToken,
+			organizationId: orgId,
+		});
+
+		if (!testResult.ok) {
+			reply.code(400);
+			return {
+				ok: false,
+				error: "WabaConnectionFailed",
+				errorCode: testResult.errorCode,
+				message: testResult.errorMessage || "Ошибка проверки связи с Meta Graph API",
+			};
+		}
+
+		return {
+			ok: true,
+			verifiedName: testResult.verifiedName,
+			displayPhoneNumber: testResult.displayPhoneNumber,
+			qualityRating: testResult.qualityRating,
+			codeVerificationStatus: testResult.codeVerificationStatus,
+			message: "Связь с Meta Graph API успешно подтверждена!",
+		};
+	});
+
+	/**
+	 * GET /api/whatsapp/waba/status
+	 * Текущий статус подписки на вебхуки и подключения WABA.
+	 */
+	app.get("/api/whatsapp/waba/status", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"whatsapp waba status",
+		);
+		if (!orgId) return;
+
+		const origin = `${request.protocol}://${request.hostname}`;
+		const status = await WhatsappConnectionHubService.getWabaStatus(orgId, origin);
+
+		return {
+			ok: true,
+			...status,
+		};
+	});
 }
+
 

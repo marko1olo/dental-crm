@@ -201,11 +201,17 @@ describe("3. Dental Lab QR Purity across all 3 Lab Engines", () => {
 	});
 });
 
+function resolveRepoPath(relPath: string): string {
+	const direct = path.resolve(process.cwd(), relPath);
+	if (fs.existsSync(direct)) return direct;
+	const stripped = relPath.replace(/^apps[\\/]web[\\/]/, "");
+	return path.resolve(process.cwd(), stripped);
+}
+
 describe("4. Mandate 8e: Doctor Autonomy & Mandate 8d: Zero Emojis in Warranty Studio", () => {
-	const cwd = process.cwd();
-	const modalPath = path.resolve(cwd, "apps/web/src/components/warranty/WarrantyPassportModal.tsx");
-	const enginePath = path.resolve(cwd, "apps/web/src/components/warranty/warrantyEngine.ts");
-	const presetsPath = path.resolve(cwd, "apps/web/src/components/warranty/warrantyPresets.ts");
+	const modalPath = resolveRepoPath("apps/web/src/components/warranty/WarrantyPassportModal.tsx");
+	const enginePath = resolveRepoPath("apps/web/src/components/warranty/warrantyEngine.ts");
+	const presetsPath = resolveRepoPath("apps/web/src/components/warranty/warrantyPresets.ts");
 
 	test("WarrantyPassportModal.tsx has ZERO disabled buttons (Doctor Autonomy Mandate 8e)", () => {
 		const modalContent = fs.readFileSync(modalPath, "utf8");

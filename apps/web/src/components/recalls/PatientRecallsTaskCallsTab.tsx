@@ -53,19 +53,29 @@ export const PatientRecallsTaskCallsTab: React.FC<PatientRecallsTaskCallsTabProp
 		<main className="recall-content-area" data-testid="task-calls-view-section">
 			<div className="recall-toolbar">
 				<div className="recall-toolbar-top">
-					<div className="recall-search-input-wrap">
-						<Search size={16} className="recall-search-icon" aria-hidden="true" />
+					<div className="recall-search-input-wrap dente-search-wrap">
+						<Search size={15} className="recall-search-icon dente-search-icon" aria-hidden="true" />
 						<label htmlFor="task-call-search-input" className="sr-only">
 							Поиск по пациенту, телефону или врачу
 						</label>
 						<input
 							id="task-call-search-input"
 							type="search"
-							className="recall-search-input"
+							className="recall-search-input dente-search-input"
 							placeholder="Поиск по пациенту, телефону или врачу..."
 							value={searchQuery}
 							onChange={(e) => onSearchQueryChange(e.target.value)}
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => onSearchQueryChange("")}
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
+							>
+								<X size={13} />
+							</button>
+						)}
 					</div>
 
 					{activeTaskCallScriptType ? (
@@ -84,7 +94,7 @@ export const PatientRecallsTaskCallsTab: React.FC<PatientRecallsTaskCallsTabProp
 				<div
 					className="recall-status-chips"
 					role="radiogroup"
-					aria-label="Фильтр по типам сервисных звонков StomX"
+					aria-label="Фильтр по типам сервисных звонков"
 				>
 					<button
 						type="button"
@@ -191,7 +201,7 @@ export const PatientRecallsTaskCallsTab: React.FC<PatientRecallsTaskCallsTabProp
 					<PhoneCall size={48} className="recall-empty-icon" aria-hidden="true" />
 					<h3 className="recall-empty-title">Все плановые звонки выполнены</h3>
 					<p className="recall-empty-text">
-						В выбранной категории сервисных звонков StomX нет ожидающих пациентов. Новые задачи
+						В выбранной категории сервисных звонков нет ожидающих пациентов. Новые задачи
 						формируются автоматически при завершении приемов, операций и истечении сроков
 						планов лечения.
 					</p>

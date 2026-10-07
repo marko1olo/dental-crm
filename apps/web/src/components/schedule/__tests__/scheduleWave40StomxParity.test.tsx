@@ -504,7 +504,7 @@ describe("Wave 40 — StomX Parity Suite (Features 190, 191, 192)", () => {
 			);
 			assert.strictEqual(citoResult.hasCollision, false, "Doctor/chair collision is non-blocking for CITO");
 			assert.strictEqual(citoResult.isCitoOverbooking, true, "isCitoOverbooking is flagged true");
-			assert.ok(citoResult.message?.includes("CITO-овербукинг"), "Message explains CITO overbooking");
+			assert.ok(citoResult.message?.includes("Запись по острой боли"), "Message explains CITO booking");
 		});
 
 		it("checkAppointmentResourceCollision still blocks duplicate patient even if CITO", () => {

@@ -242,7 +242,7 @@ export function TemperatureHumidityRegisterTab() {
 							measurementPeriod: period,
 							temperatureCelsius: isFridge ? 4.2 : 21.5,
 							relativeHumidityPercent: isFridge ? undefined : 48,
-							notes: `1-Клик норма смены (${period}): Санитарный регламент`,
+							notes: `Норма смены (${period}): Санитарный регламент`,
 						}),
 					});
 					if (fRes.ok) logged++;
@@ -381,11 +381,11 @@ export function TemperatureHumidityRegisterTab() {
 							gap: "0.4rem",
 							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)",
 						}}
-						title="1-Клик фиксация нормативных показателей температуры и влажности смены для всех объектов (холодильники +4.2°C, кабинеты +21.5°C / 48%)"
+						title="Фиксация нормативных показателей температуры и влажности смены для всех объектов (холодильники +4.2°C, кабинеты +21.5°C / 48%)"
 						data-testid="temp-shift-autopilot-btn"
 					>
 						<Sparkles size={16} />
-						<span>{isLoggingShift ? "Фиксация..." : "1-Клик норма смены"}</span>
+						<span>{isLoggingShift ? "Фиксация..." : "Зафиксировать норму смены"}</span>
 					</button>
 					<button
 						type="button"
@@ -450,7 +450,7 @@ export function TemperatureHumidityRegisterTab() {
 							Объекты температурного учета не зарегистрированы
 						</div>
 						<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
-							Подключите типовое оснащение (холодильник Pozis ХФ-250 для анестетиков + гигрометр ВИТ-2 в кабинете) в 1 клик для автоматического ведения журнала.
+							Подключите типовое оснащение (холодильник Pozis ХФ-250 для анестетиков + гигрометр ВИТ-2 в кабинете) по регламентному профилю для автоматического ведения журнала.
 						</p>
 					</div>
 					<button

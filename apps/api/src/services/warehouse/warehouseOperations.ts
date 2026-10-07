@@ -438,7 +438,7 @@ export async function handleWarehouseDeductRequest(
 						item.reason ||
 						item.notes ||
 						commonReason ||
-						"Списание со склада у кресла (автоматический FEFO по Мандату 8e, 8v)",
+						"Списание со склада у кресла (автоматический учет по срокам годности FEFO)",
 					userId: effectiveUserId,
 					visitId: visitId || null,
 					transactionType: "treatment_consumable",

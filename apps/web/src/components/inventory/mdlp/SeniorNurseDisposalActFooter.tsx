@@ -50,9 +50,9 @@ export const SeniorNurseDisposalActFooter: React.FC<
 						await onApproveAct(true);
 						onClose();
 					}}
-					title="Утвердить списание в фоновом режиме (Мандат 8e, 8s: без комиссии и старшей медсестры)"
+					title="Утвердить списание в фоновом режиме"
 				>
-					Фоновое списание (1 клик)
+					Фоновое списание
 				</button>
 			</div>
 
@@ -123,8 +123,8 @@ export const SeniorNurseDisposalActFooter: React.FC<
 					data-testid="approve-act-paper-journal-btn"
 					title={
 						paperJournalAcknowledged
-							? "Утвердить списание в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)"
-							: "Утвердить акт единолично в 1 клик (без комиссии из 3 человек)"
+							? "Утвердить списание (бумажный журнал учтён, старшая медсестра опциональна)"
+							: "Утвердить акт единолично (без комиссии из 3 человек)"
 					}
 				>
 					<CheckCircle2 size={18} />
@@ -134,7 +134,7 @@ export const SeniorNurseDisposalActFooter: React.FC<
 							: "Акт утверждён единолично"
 						: paperJournalAcknowledged
 							? "Утвердить списание (бумажный журнал учтён)"
-							: "Утвердить акт единолично (1 клик)"}
+							: "Утвердить акт единолично"}
 				</button>
 			</div>
 		</footer>

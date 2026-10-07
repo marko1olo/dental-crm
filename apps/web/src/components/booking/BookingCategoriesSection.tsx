@@ -49,8 +49,8 @@ export const CANONICAL_BOOKING_CATEGORIES: BookingCategoryOption[] = [
 	},
 	{
 		id: "emergency",
-		title: "Острая боль",
-		subtitle: "Экстренная помощь день-в-день (CITO), снятие болевого синдрома",
+		title: "⚡ Срочный приём / Острая боль",
+		subtitle: "Экстренная помощь день-в-день, снятие болевого синдрома",
 		durationMinutes: 30,
 		priceLabel: "от 2 500 ₽",
 		iconName: "Activity",
@@ -174,7 +174,7 @@ export const BookingCategoriesSection: React.FC<BookingCategoriesSectionProps> =
 											</span>
 										)}
 									</div>
-									<p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 leading-snug">
+									<p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 sm:line-clamp-none break-words mt-0.5 leading-snug">
 										{cat.subtitle}
 									</p>
 									<div className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400 mt-1">

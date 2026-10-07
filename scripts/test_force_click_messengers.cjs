@@ -1,0 +1,64 @@
+const { chromium } = require("playwright");
+const path = require("node:path");
+
+async function test() {
+  const res = await fetch("http://127.0.0.1:4100/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "doctor@clinic.com", password: "dente2026" }),
+  });
+  const data = await res.json();
+
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    args: ["--no-sandbox", "--disable-gpu"],
+  });
+
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.addInitScript(({ clinicToken, staffToken, user }) => {
+    localStorage.setItem("dente_clinic_token", clinicToken);
+    localStorage.setItem("dente_staff_token", staffToken);
+    localStorage.setItem("dente_active_role", "owner");
+    localStorage.setItem("dental-crm:active-user:v1", JSON.stringify({ ...user, role: "owner" }));
+    localStorage.setItem("dente_cached_active_staff_user", JSON.stringify({ ...user, role: "owner" }));
+    localStorage.setItem("dente_theme_mode", "light");
+    localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
+    localStorage.setItem("dente_tour_completed", "true");
+    localStorage.setItem("dente_quest_progress_v2", JSON.stringify({ isDismissedPermanently: true, activeTrack: null, tracksProgress: {} }));
+    localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({
+      version: 1,
+      uiLanguage: "ru",
+      selectedWorkspaceRole: "owner",
+      onboardingDismissed: true,
+      onboardingStep: "done",
+    }));
+  }, { clinicToken: data.clinicToken, staffToken: data.staffToken, user: data.user });
+
+  const page = await context.newPage();
+  await page.goto("http://127.0.0.1:5173/#settings", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(3000);
+
+  // Aggressively remove all overlays
+  await page.evaluate(() => {
+    document.querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .global-toast-container, [role="alert"]').forEach((el) => el.remove());
+  });
+
+  console.log("Clicking [data-testid='btn-settings-role-admin'] with force...");
+  await page.locator('[data-testid="btn-settings-role-admin"]').click({ force: true });
+  await page.waitForTimeout(1000);
+
+  console.log("Clicking [data-testid='admin-tab-messengers'] with force...");
+  await page.locator('[data-testid="admin-tab-messengers"]').click({ force: true });
+  await page.waitForTimeout(2500);
+
+  const cardCount = await page.locator("[data-testid='messengers-overview-card']").count();
+  console.log("Overview card count after click:", cardCount);
+
+  await page.screenshot({ path: "scripts/test_force_messengers.png" });
+  console.log("Saved scripts/test_force_messengers.png");
+
+  await browser.close();
+}
+
+test().catch(console.error);

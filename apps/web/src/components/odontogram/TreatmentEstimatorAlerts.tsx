@@ -103,7 +103,7 @@ export const TreatmentEstimatorAlerts: React.FC<TreatmentEstimatorAlertsProps> =
 							Обнаружены зубы-призраки в плане лечения ({ghostConflicts.length}):
 						</div>
 						<div className="mt-1 text-slate-700 dark:text-zinc-300">
-							В плане лечения присутствуют услуги на зубы, которые отмечены как удаленные на зубной формуле. Доступна корректировка в 1 клик:
+							В плане лечения присутствуют услуги на зубы, которые отмечены как удаленные на зубной формуле. Доступна автоматическая корректировка:
 						</div>
 						<div className="mt-2 flex flex-col gap-2">
 							{ghostConflicts.map((c) => (
@@ -225,8 +225,8 @@ export const TreatmentEstimatorAlerts: React.FC<TreatmentEstimatorAlertsProps> =
 						План лечения пуст
 					</h4>
 					<p className="text-sm leading-relaxed text-slate-500 dark:text-zinc-400 max-w-[320px]">
-						Кликните на любой зуб на схеме слева, выберите патологию, и
-						система автоматически подберет оптимальный набор процедур из
+						Выберите зуб на схеме слева, укажите патологию, и
+						система автоматически сформирует предварительную смету из
 						прайс-листа
 					</p>
 				</div>

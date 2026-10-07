@@ -1,6 +1,6 @@
 /**
  * perioMath.ts — Экспресс-скрининг пародонта PSR / CPITN (ВОЗ / СтАР)
- * и 1-клик пресеты для Формы 043/у под Мандатами 8e, 8i, 8k, 8n.
+ * и пресеты клинических протоколов для Формы 043/у под Мандатами 8e, 8i, 8k, 8n.
  *
  * Ликвидация аппаратного симулятора: врач в перчатках не должен тыкать 192 точки карманов.
  * Экспресс-скрининг PSR по 6 секстантам:
@@ -188,7 +188,7 @@ export const PERIO_EXPRESS_PRESETS: Record<
 };
 
 /**
- * 1-Клик Пресет 1: Норма пародонта (PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0).
+ * Клинический пресет 1: Норма пародонта (PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0).
  */
 export function applyHealthyPeriodontiumPreset(
 	teeth: readonly PerioToothRecord[],
@@ -259,7 +259,7 @@ export function applyHealthyPeriodontiumPreset(
 }
 
 /**
- * 1-Клик Пресет 2: Гингивит (PSR 1-2, карманы < 3.5 мм, диффузная кровоточивость).
+ * Клинический пресет 2: Гингивит (PSR 1-2, карманы < 3.5 мм, диффузная кровоточивость).
  */
 export function applyGingivitisPreset(
 	teeth: readonly PerioToothRecord[],
@@ -298,7 +298,7 @@ export function applyGingivitisPreset(
 }
 
 /**
- * 1-Клик Пресет 3: Пародонтит лёгкой степени (PSR 2-3, карманы 3.5–4 мм, CAL 1-2 мм).
+ * Клинический пресет 3: Пародонтит лёгкой степени (PSR 2-3, карманы 3.5–4 мм, CAL 1-2 мм).
  */
 export function applyPeriodontitisMildPreset(
 	teeth: readonly PerioToothRecord[],
@@ -339,7 +339,7 @@ export function applyPeriodontitisMildPreset(
 }
 
 /**
- * 1-Клик Пресет 4: Пародонтит средней степени (PSR 3, карманы до 5 мм).
+ * Клинический пресет 4: Пародонтит средней степени (PSR 3, карманы до 5 мм).
  */
 export function applyPeriodontitisModeratePreset(
 	teeth: readonly PerioToothRecord[],
@@ -381,7 +381,7 @@ export function applyPeriodontitisModeratePreset(
 }
 
 /**
- * 1-Клик Пресет 5: Пародонтит тяжёлой степени (PSR 4*, карманы >= 6 мм, гноетечение, подвижность II-III).
+ * Клинический пресет 5: Пародонтит тяжёлой степени (PSR 4*, карманы >= 6 мм, гноетечение, подвижность II-III).
  */
 export function applyPeriodontitisSeverePreset(
 	teeth: readonly PerioToothRecord[],

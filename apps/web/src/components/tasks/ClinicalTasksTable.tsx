@@ -100,7 +100,7 @@ export const ClinicalTasksTable: React.FC<ClinicalTasksTableProps> = ({
 												cursor: "pointer",
 												whiteSpace: "nowrap",
 											}}
-											title="Завершить задачу в 1 клик (Мандат 8e)"
+											title="Завершить задачу в 1 клик"
 										>
 											{completingTaskId === task.id
 												? "Завершаю…"

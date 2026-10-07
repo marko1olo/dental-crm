@@ -81,7 +81,7 @@ export const checkWarehouseSuppliesTool: ToolDefinition<
 > = {
 	name: "check_warehouse_supplies",
 	description:
-		"Проверка складских остатков расходных материалов и анестетиков у кресла с гарантией мягкого овердрафта (Мандат 8e: нулевой остаток не блокирует приём врача при задержке накладной поставщика; автоматическая фиксация дефицита и сохранение автономности).",
+		"Проверка складских остатков расходных материалов и анестетиков у кресла с поддержкой мягкого овердрафта (нулевой остаток не блокирует приём врача при задержке накладной поставщика; автоматическая фиксация дефицита).",
 	parameters: checkWarehouseSuppliesSchema,
 	permissions: ["warehouse.read"],
 	category: "read",
@@ -178,7 +178,7 @@ export const checkWarehouseSuppliesTool: ToolDefinition<
 			deficitCount,
 			warning,
 			warningMessage,
-			doctorAutonomyBlocked: false, // MANDATE 8e: NEVER BLOCKS THE DOCTOR
+			doctorAutonomyBlocked: false,
 			quickDisposalAvailable: true,
 			sanpinCompliant: true,
 			criticalMaterials,

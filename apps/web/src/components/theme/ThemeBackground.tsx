@@ -1,30 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
 import { useThemeStore } from "../../store/themeStore";
 import { DENTE_THEMES } from "./themeData";
+import {
+	useHardwareTier,
+	usePerfState,
+	useIsCtActive,
+	isLowSpecDevice,
+} from "../../lib/hardwareCapabilities";
 
 /**
  * ThemeBackground — renders rich volumetric atmospheric ambient lighting behind the application shell.
- * Uses hardware-accelerated CSS properties and disables itself on low-spec hardware or reduced motion.
+ * Uses hardware-accelerated CSS properties and disables itself on low-spec hardware, potato/low tiers,
+ * degraded performance state, active CT 3D rendering, or reduced motion.
  * Mandate 8b: strictly <= 800 lines.
  */
 export function ThemeBackground() {
 	const themeMode = useThemeStore((state) => state.themeMode);
-	const [isLowSpec, setIsLowSpec] = useState(false);
+	const tier = useHardwareTier();
+	const perfState = usePerfState();
+	const isCtActive = useIsCtActive();
+	const [isLowSpec, setIsLowSpec] = useState(() => isLowSpecDevice());
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		const nav = window.navigator as Navigator & { deviceMemory?: number; hardwareConcurrency?: number };
-		if ((nav.deviceMemory && nav.deviceMemory <= 4) || (nav.hardwareConcurrency && nav.hardwareConcurrency <= 4)) {
+		if (isLowSpecDevice()) {
 			setIsLowSpec(true);
 		}
-	}, []);
+	}, [tier, perfState, isCtActive]);
 
 	const currentTheme = useMemo(
 		() => DENTE_THEMES.find((t) => t.id === themeMode) ?? DENTE_THEMES[0]!,
 		[themeMode],
 	);
 
-	if (isLowSpec || currentTheme.id === "contrast") {
+	if (
+		isLowSpec ||
+		tier === "potato" ||
+		tier === "low" ||
+		perfState === "degraded" ||
+		isCtActive ||
+		currentTheme.id === "contrast"
+	) {
 		return null;
 	}
 

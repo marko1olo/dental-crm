@@ -260,7 +260,7 @@ export function formatStatutoryUnifiedSoapText(params: {
 
 	if (params.order804nServices && params.order804nServices.length > 0) {
 		parts.push("");
-		parts.push(`ОКАЗАННЫЕ УСЛУГИ (НОМЕНКЛАТУРА 804н):`);
+		parts.push(`ОКАЗАННЫЕ УСЛУГИ:`);
 		for (const s of params.order804nServices) {
 			const qty = s.defaultQuantity && s.defaultQuantity > 1 ? ` (x${s.defaultQuantity})` : "";
 			const price =

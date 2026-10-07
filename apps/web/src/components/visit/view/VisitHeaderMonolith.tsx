@@ -271,13 +271,13 @@ export function VisitHeaderMonolith({
 				</div>
 
 				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-					{/* Кнопка физиологической нормы 043/у (1-клик) */}
+					{/* Кнопка физиологической нормы 043/у */}
 					<button
 						type="button"
 						onClick={handleApplySomaticNormQuick}
 						data-testid="btn-somatic-norm-one-click"
 						data-tour="autonorm-btn"
-						className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+						className="secondary-button h-7.5 min-h-[30px] sm:min-h-0 sm:h-7.5 px-2.5 py-0 text-[12.5px] font-semibold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg shadow-2xs"
 						title="Заполнить нормой"
 						aria-label="Заполнить нормой"
 					>
@@ -296,12 +296,12 @@ export function VisitHeaderMonolith({
 						type="button"
 						onClick={handlePrintForm043uFast}
 						data-testid="btn-visit-fast-print-043u"
-						className={`secondary-button h-7 min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg ${
+						className={`secondary-button h-7.5 min-h-0 sm:h-7.5 px-2.5 py-0 text-[12.5px] font-medium text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg shadow-2xs ${
 							visitSubViewTab === "odontogram"
 								? "!hidden"
 								: "!hidden sm:!inline-flex"
 						}`}
-						title="Печать дневника в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+						title="Печать дневника приёма"
 					>
 						<Printer
 							className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0"
@@ -310,7 +310,7 @@ export function VisitHeaderMonolith({
 						<span className="hidden lg:inline">Печать дневника</span>
 					</button>
 
-					{/* Наряд ЗТЛ (1 клик для ортопеда у кресла) */}
+					{/* Наряд ЗТЛ для ортопеда у кресла */}
 					<button
 						type="button"
 						onClick={() => {
@@ -322,7 +322,7 @@ export function VisitHeaderMonolith({
 							}
 						}}
 						data-testid="btn-visit-lab-order-fast"
-						className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+						className="secondary-button h-7.5 min-h-[30px] sm:min-h-0 sm:h-7.5 px-2.5 py-0 text-[12.5px] font-semibold text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-50 dark:hover:bg-teal-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg shadow-2xs"
 						title="Наряд в зуботехническую лабораторию (ЗТЛ)"
 						aria-label="Наряд в лабораторию ЗТЛ"
 					>
@@ -339,7 +339,7 @@ export function VisitHeaderMonolith({
 						type="button"
 						onClick={() => setIsEmergencyModalOpen(true)}
 						data-testid="btn-visit-emergency-rescue"
-						className="hidden 2xl:inline-flex secondary-button h-7 min-h-0 px-2 py-0 text-xs font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line)] hover:border-rose-300 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+						className="hidden 2xl:inline-flex secondary-button h-7.5 min-h-0 px-2.5 py-0 text-[12.5px] font-medium text-[var(--muted)] hover:text-rose-600 border-[var(--line-subtle)] hover:border-rose-300 items-center gap-1 cursor-pointer shrink-0 rounded-lg shadow-2xs"
 						title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
 					>
 						<AlertTriangle
@@ -375,7 +375,7 @@ export function VisitHeaderMonolith({
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="visit-queue-tab-arrived"
-							title={`Ожидает приёма: ${shiftDayQueue.arrived} пациентов в холле клиники. 1 клик для вызова`}
+							title={`Ожидает приёма: ${shiftDayQueue.arrived} пациентов в холле клиники`}
 							aria-label={`Ожидает приёма: ${shiftDayQueue.arrived}`}
 						>
 							<UserCheck
@@ -391,7 +391,7 @@ export function VisitHeaderMonolith({
 							</span>
 						</button>
 
-						{/* Popover для вызова ожидающего пациента в 1 клик */}
+						{/* Popover для вызова ожидающего пациента */}
 						{isQueueLobbyDropdownOpen &&
 							shiftDayQueue.arrivedPatients.length > 0 && (
 								<div
@@ -415,7 +415,7 @@ export function VisitHeaderMonolith({
 												showToast(`Вызов в кресло: ${p.name}`, "success");
 											}}
 											className="w-full text-left p-1.5 rounded-lg hover:bg-[var(--teal-soft)] border border-transparent hover:border-[var(--teal)]/30 flex items-center justify-between transition-colors cursor-pointer"
-											title="Принять в кресло (1 клик)"
+											title="Принять в кресло"
 										>
 											<span className="font-bold text-xs truncate">
 												{p.name}
@@ -484,11 +484,11 @@ export function VisitHeaderMonolith({
 							showToast("Изменения приёма сохранены", "success", 2000);
 						}}
 						data-testid="btn-save-visit-header-mobile"
-						className="sm:hidden secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-0 text-xs font-bold flex items-center gap-1 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7 text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)]"
-						title="Сохранить изменения приёма в 1 клик"
+						className="sm:hidden secondary-button min-h-[44px] sm:min-h-0 sm:h-7.5 px-3 py-0 text-[13px] font-semibold flex items-center gap-1 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7.5 text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)] shadow-2xs"
+						title="Сохранить изменения приёма"
 					>
 						<Check size={14} className="stroke-[3] shrink-0" />
-						<span className="text-xs font-bold whitespace-nowrap">
+						<span className="text-[13px] font-semibold whitespace-nowrap">
 							Сохранить
 						</span>
 					</button>
@@ -498,14 +498,14 @@ export function VisitHeaderMonolith({
 						type="button"
 						onClick={handleFinishVisitAction}
 						data-testid="btn-complete-visit-header"
-						className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7"
+						className="primary-button min-h-[44px] sm:min-h-0 sm:h-7.5 px-3 sm:px-3.5 py-0 text-[13px] font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7.5 shadow-2xs"
 						title="Завершить приём и сохранить все изменения"
 					>
 						<CheckCircle2 size={15} className="shrink-0" />
 						<span className="hidden sm:inline whitespace-nowrap">
 							Завершить приём
 						</span>
-						<span className="sm:hidden text-xs font-bold whitespace-nowrap">
+						<span className="sm:hidden text-[13px] font-bold whitespace-nowrap">
 							Завершить
 						</span>
 					</button>

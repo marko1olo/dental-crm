@@ -67,7 +67,7 @@ type SalienceInsight<RiskLevel extends string> = {
 	riskLevel: RiskLevel;
 };
 
-export type PatientListFeatureSalience<RiskLevel extends string> = {
+export type PatientListFeatureSalience<RiskLevel extends string = string> = {
 	/** Факты уровня клиники: одной строкой над списком, а не в каждой строке. */
 	notices: string[];
 	prevailingNextAction: PrevailingFeature<string> | null;

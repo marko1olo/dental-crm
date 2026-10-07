@@ -211,7 +211,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		}
 		void SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			`1-клик Профгигиена: протокол ${protocol.diagnosis} и услуга ${protocol.serviceCode} (${protocol.serviceName}) добавлены`,
+			`Профессиональная гигиена: протокол ${protocol.diagnosis} и услуга ${protocol.serviceCode} (${protocol.serviceName}) добавлены`,
 			"success",
 		);
 	};
@@ -227,7 +227,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		}
 		void SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			`1-клик Кариес зуба ${targetTooth}: протокол ${protocol.diagnosis} и пломба ${protocol.serviceCode} добавлены`,
+			`Кариес дентина (K02.1) зуба ${targetTooth}: протокол ${protocol.diagnosis} и пломба ${protocol.serviceCode} добавлены`,
 			"success",
 		);
 	};

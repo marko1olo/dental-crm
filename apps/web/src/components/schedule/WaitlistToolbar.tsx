@@ -35,21 +35,22 @@ export const WaitlistToolbar: React.FC<WaitlistToolbarProps> = ({
 		>
 			{/* Search input + doctor filter */}
 			<div className="flex items-center gap-2">
-				<div className="relative flex-1 min-w-[140px]">
-					<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+				<div className="dente-search-wrap flex-1 min-w-[140px]">
+					<Search className="dente-search-icon" />
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
 						placeholder="Поиск по ФИО или телефону..."
-						className="w-full pl-8 pr-2.5 h-8 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:ring-1 focus:ring-[var(--teal)]"
+						className="dente-search-input"
 						data-testid="waitlist-search-input"
 					/>
 					{searchQuery && (
 						<button
 							type="button"
 							onClick={() => onSearchChange("")}
-							className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] p-0.5 cursor-pointer"
+							className="dente-search-clear"
+							aria-label="Очистить поиск"
 						>
 							<X size={12} />
 						</button>
@@ -60,10 +61,8 @@ export const WaitlistToolbar: React.FC<WaitlistToolbarProps> = ({
 					<button
 						type="button"
 						onClick={onToggleOnlySameDoctor}
-						className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
-							onlySameDoctor
-								? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
-								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`dente-filter-chip ${
+							onlySameDoctor ? "active" : ""
 						}`}
 						title="Показывать только пациентов, согласных на этого же врача"
 						data-testid="waitlist-filter-same-doctor-btn"
@@ -74,15 +73,11 @@ export const WaitlistToolbar: React.FC<WaitlistToolbarProps> = ({
 			</div>
 
 			{/* Urgency Filter Chips: 4 fast pills */}
-			<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap py-0.5 scrollbar-none">
+			<div className="dente-filter-chips overflow-x-auto whitespace-nowrap py-0.5 scrollbar-none">
 				<button
 					type="button"
 					onClick={() => onSelectUrgency("all")}
-					className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${
-						selectedUrgency === "all"
-							? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
-							: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
+					className={`dente-filter-chip ${selectedUrgency === "all" ? "active" : ""}`}
 					data-testid="waitlist-urgency-all"
 				>
 					Все ({items.length})
@@ -99,11 +94,7 @@ export const WaitlistToolbar: React.FC<WaitlistToolbarProps> = ({
 								key={u}
 								type="button"
 								onClick={() => onSelectUrgency(u)}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
-									isSel
-										? `${cfg.badgeClass} ring-1`
-										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
+								className={`dente-filter-chip ${isSel ? "active" : ""}`}
 								data-testid={`waitlist-urgency-${u}`}
 							>
 								<span>{cfg.shortLabel}</span>

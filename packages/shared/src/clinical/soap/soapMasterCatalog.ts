@@ -243,7 +243,7 @@ export function validateSoapProtocol(protocol: ClinicalSoapMasterProtocol): {
 	}
 
 	if (!protocol.materialsToDeduct || protocol.materialsToDeduct.length === 0) {
-		errors.push("Список материалов для списания (BOM) не может быть пустым (Мандат 8v)");
+		errors.push("Список материалов для списания (BOM) не может быть пустым");
 	} else {
 		for (const m of protocol.materialsToDeduct) {
 			if (!m.name || m.name.trim().length === 0) {

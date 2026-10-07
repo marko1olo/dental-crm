@@ -61,7 +61,7 @@ export function generateCarpuleDisposalActHtml(
 <body>
   <div class="clinic-header">Стоматологическая клиника • Процедурный кабинет</div>
   <h1>АКТ СПИСАНИЯ И УТИЛИЗАЦИИ КАРПУЛ АНЕСТЕТИКОВ № ${actNumber}</h1>
-  <div class="sub">Регламент СанПиН 3.3686-21 (Медицинские отходы класса Б) • Доступно врачу и администратору в 1 клик (без комиссии из 3 человек)</div>
+  <div class="sub">Регламент СанПиН 3.3686-21 (Медицинские отходы класса Б) • Доступно врачу и администратору (без комиссии из 3 человек)</div>
 
   <div class="meta-grid">
     <div><strong>Дата списания:</strong> ${dateIso}</div>
@@ -69,7 +69,7 @@ export function generateCarpuleDisposalActHtml(
     <div><strong>Лечащий врач:</strong> ${doctorName}</div>
     <div><strong>Причина:</strong> ${reasonText}</div>
     <div><strong>Класс отходов:</strong> Класс Б (дезинфекция Аламинол 3%, 60 мин)</div>
-    <div><strong>Статус склада:</strong> ${isOverdraft ? "Мягкий овердрафт (оприходование в пути)" : "Штатный остаток"}</div>
+    <div><strong>Статус склада:</strong> ${isOverdraft ? "Мягкий учет расхода при нехватке (списание с дефицитом / накладная в пути)" : "Штатный остаток"}</div>
   </div>
 
   <table>

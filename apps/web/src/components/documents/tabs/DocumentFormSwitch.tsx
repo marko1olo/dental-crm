@@ -7,6 +7,7 @@ import type {
 	StaffMember,
 } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppHelpers";
+import { useDocumentStore } from "../../../store/documentStore";
 
 // Modular Forms
 import { AnesthesiaConsentLogForm } from "../forms/AnesthesiaConsentLogForm";
@@ -381,7 +382,17 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				{selectedDocumentKind === "photo_video_consent" && (
 					<PhotoVideoConsentForm
 						materialOptions={props.photoVideoMaterialOptions ?? []}
-						toggleMaterial={props.togglePhotoVideoMaterial ?? (() => {})}
+						toggleMaterial={
+							props.togglePhotoVideoMaterial ??
+							((mat: any) => {
+								const store = useDocumentStore.getState();
+								const current = store.photoVideoMaterials || [];
+								const next = current.includes(mat)
+									? current.filter((m) => m !== mat)
+									: [...current, mat];
+								store.setPhotoVideoMaterials(next);
+							})
+						}
 					/>
 				)}
 				{selectedDocumentKind === "personal_data_processing_consent" && (

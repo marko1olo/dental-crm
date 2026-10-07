@@ -1,0 +1,68 @@
+{
+  "subagent": "subagent_settings_deep_design",
+  "role": "Red Team Inquisitor for Settings Deep Tabs, Migration, Protocols and Mobile Settings",
+  "parent": "beb92312-c6d7-426d-a438-12dcad022abc",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T22:06:00+04:00",
+  "targetProblem": {
+    "visualDefectsEliminated": [
+      "Eliminated search icon collision with placeholder text in SettingsProtocolsTab, MobileSettingsRootView, MobileSettingsStaffView, and SettingsClinicLegalSection",
+      "Eliminated naked unsegmented buttons row in protocols header, candidate action cards, and migration operator script steps",
+      "Eliminated loose unsegmented filter buttons in protocols specialty filtering, mobile settings categories, and mobile staff roles",
+      "Structured migration readiness steps (Шаг 1 / 2 / 3 / 4) with clear status badges and segmented container"
+    ],
+    "mandatesEnforced": [
+      "Frontend Rules Section 12: Search Input Invariant (.dente-search-wrap, .dente-search-icon, .dente-search-input with padding-left: 38px !important, .dente-search-clear)",
+      "Frontend Rules Section 13: Segmented Controls & Filter Chips (.dente-segmented-bar, .dente-segmented-item, .dente-filter-chips, .dente-filter-chip)",
+      "Designer Visual Inquisition Bible: Zero naked text row antipattern, 1 Primary CTA hierarchy, 32px desktop ergonomics, Apple HIG mobile touch targets >= 44x44px",
+      "Doctor Autonomy (Mandate 8e): Frictionless search, zero blocking disabled controls, clear tactile feedback"
+    ]
+  },
+  "scope": [
+    "apps/web/src/components/settings/SettingsProtocolsTab.tsx",
+    "apps/web/src/components/settings/clinic/SettingsClinicLegalSection.tsx",
+    "apps/web/src/components/settings/imports/MigrationDiscoverySection.tsx",
+    "apps/web/src/components/settings/imports/MigrationKickstartPanel.tsx",
+    "apps/web/src/components/settings/imports/MigrationOperatorStepActions.tsx",
+    "apps/web/src/components/settings/mobile/MobileSettingsRootView.tsx",
+    "apps/web/src/components/settings/mobile/MobileSettingsStaffView.tsx"
+  ],
+  "modifications": {
+    "SettingsProtocolsTab.tsx": {
+      "search": "Wrapped in .dente-search-wrap, .dente-search-icon, .dente-search-input, and added .dente-search-clear with X icon for one-tap reset. Guaranteed 38px left padding prevents icon/placeholder collision.",
+      "filters": "Replaced naked inline-styled buttons with canonical .dente-filter-chips (.dente-filter-chip) including active status and dynamic template counters per specialty.",
+      "headerActions": "Replaced loose flex buttons with .dente-segmented-bar (.dente-segmented-item with active state on Primary CTA 'Добавить шаблон')."
+    },
+    "SettingsClinicLegalSection.tsx": {
+      "search": "Added canonical legal entities / DaData quick search bar (.dente-search-wrap, .dente-search-icon, .dente-search-input, .dente-search-clear) with inline .dente-segmented-bar trigger for instant EGRUL/DaData lookup.",
+      "actions": "Replaced naked profile action buttons with .dente-segmented-bar containing structured .dente-segmented-item buttons with clear active state on 'Сохранить профиль'.",
+      "targets": "Converted raw target links into .dente-filter-chips with .dente-filter-chip pill structure and external link indicators."
+    },
+    "MigrationDiscoverySection.tsx": {
+      "searchAndFilters": "Added dedicated import files search bar (.dente-search-wrap, .dente-search-icon, .dente-search-input, .dente-search-clear) and source type filter chips (.dente-filter-chips with .dente-filter-chip for all/database/dicom/tabular).",
+      "candidateActions": "Replaced bare .text-button items in discovery cards with unified .dente-segmented-bar containing .dente-segmented-item buttons with clear active state on 'Предпросмотр'.",
+      "emptyRecovery": "Wrapped empty-recovery action buttons into .dente-segmented-bar with .dente-segmented-item."
+    },
+    "MigrationKickstartPanel.tsx": {
+      "stepStrip": "Structured .migration-progress-strip into clear sequential steps ('Шаг 1', 'Шаг 2', 'Шаг 3', 'Шаг 4') with monospace step badges, active state highlighting, and truncation protection.",
+      "reportActions": "Wrapped CSV and Checklist handoff buttons into .dente-segmented-bar with .dente-segmented-item.",
+      "browserRecovery": "Wrapped folder picking alternatives into .dente-segmented-bar with .dente-segmented-item."
+    },
+    "MigrationOperatorStepActions.tsx": {
+      "stepActions": "Replaced plain .text-button with structured .secondary-button and wrapped all step action controls into .dente-segmented-bar with clear boundaries and hover/active states.",
+      "primaryContrast": "Preserved primary prominent action styling while eliminating loose unsegmented secondary actions."
+    },
+    "MobileSettingsRootView.tsx": {
+      "search": "Replaced unpadded search input with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, .dente-search-clear, eliminating search magnifying glass overlap on mobile viewport.",
+      "categories": "Added 6 section filter chips (.dente-filter-chips / .dente-filter-chip) for all 5 settings groups (Клиника, Услуги 804н, Персонал, Стандарты, Интеграции) with active state filtering."
+    },
+    "MobileSettingsStaffView.tsx": {
+      "search": "Replaced raw relative search with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, .dente-search-clear, guaranteeing touch ergonomics and zero icon collision.",
+      "roleFilters": "Added role filter chips (.dente-filter-chips / .dente-filter-chip: Все, Врачи, Ассистенты, Администраторы, Руководство) with active indicators and staff counts per role."
+    }
+  },
+  "verification": {
+    "typecheck": "PASS: npx tsc -p apps/web/tsconfig.json --noEmit (Exit code 0, 0 errors)",
+    "standardsCheck": "All search inputs use .dente-search-wrap + .dente-search-input with 38px left padding. All button rows converted to .dente-segmented-bar or .dente-filter-chips. No bare text buttons remain."
+  }
+}

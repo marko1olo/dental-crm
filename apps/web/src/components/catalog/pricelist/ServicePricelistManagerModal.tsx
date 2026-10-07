@@ -4,10 +4,10 @@
  * Provides complete statutory Russian dental catalog management:
  * - Order 804n nomenclature tree with A16.07/B01.065/A06.07 codes.
  * - Price Tier Matrix (Standard, VIP, DMS, Promo, Night/Weekend).
- * - Inline price editing and 1-click batch markups (+5%, +10%, rounding).
+ * - Inline price editing and batch markups (+5%, +10%, rounding).
  * - Unit margin & lab/material cost profitability indicators.
  * - RFC 4180 CSV Import/Export with UTF-8 BOM.
- * - 1-Click Official Printable A4 Clinic Pricelist (ст. 149 НК РФ, НДС 0%).
+ * - Official Printable A4 Clinic Pricelist (ст. 149 НК РФ, НДС 0%).
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -276,7 +276,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 	if (!isOpen) return null;
 
-	// 1-Click Batch Markup
+	// Групповая индексация цен
 	const handleApplyBatchMarkup = (percent: number, rounding: PriceRoundingMode) => {
 		const targetIds = selectedItemIds.size > 0 ? Array.from(selectedItemIds) : undefined;
 		const updated = applyBatchPriceMarkup(items, {
@@ -291,7 +291,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		showToast(`Успешно применена наценка ${percent > 0 ? `+${percent}%` : `${percent}%`} (${PRICE_TIER_LABELS[activeTier]})`);
 	};
 
-	// 1-Click Batch Rounding
+	// Групповое округление цен
 	const handleApplyBatchRounding = (rounding: PriceRoundingMode) => {
 		const targetIds = selectedItemIds.size > 0 ? Array.from(selectedItemIds) : undefined;
 		const updated = applyBatchPriceMarkup(items, {
@@ -305,13 +305,13 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		showToast(`Цены успешно округлены (${rounding})`);
 	};
 
-	// Export to CSV Download
+	// Экспорт прейскуранта в CSV
 	const handleExportCsv = () => {
 		downloadPricelistCsv(items);
 		showToast('Прейскурант успешно экспортирован в CSV (Excel UTF-8 BOM)');
 	};
 
-	// 1-Click Print A4 Pricelist
+	// Печать прейскуранта А4
 	const handlePrintPricelist = () => {
 		const printHtml = generatePrintablePricelistHtml(
 			{
@@ -338,7 +338,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		}
 	};
 
-	// 1-Click Print Official Stand Pricelist («Уголок потребителя», Закон РФ № 2300-1, ст. 149 НК РФ)
+	// Печать официального стенда («Уголок потребителя», Закон РФ № 2300-1, ст. 149 НК РФ)
 	const handlePrintConsumerStand = () => {
 		const printHtml = generatePrintablePricelistHtml(
 			{

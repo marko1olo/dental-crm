@@ -3,7 +3,7 @@
  *
  * DENTE Dental CRM — Cash Register 54-FZ, Discounts & Staff Autonomy Operations.
  * Compliant with:
- * - Mandate 8e (Doctor & Staff Autonomy: no disabled buttons, no obstacle INN for citizens, 1-click 100% warranty closing)
+ * - Mandate 8e (Doctor & Staff Autonomy: no disabled buttons, no obstacle INN for citizens, 100% warranty checkout)
  * - 54-FZ & FFD 1.2 Tag 1228 (Buyer INN strictly optional for physical persons, required only for B2B legal entities/IP)
  * - Kopeck-exact math (integer kopecks arithmetic without float drift)
  */
@@ -103,7 +103,7 @@ export interface FastCheckoutDiscountResult {
  * - round_hundreds: rounds bill down to hundreds of rubles in favor of the patient
  * - warranty_100: 100% warranty rework discount (due 0 ₽) without admin passwords
  * - colleague_100: 100% staff / doctor treatment (due 0 ₽)
- * - discount_3 / discount_5 / discount_10: 1-click doctor presets
+ * - discount_3 / discount_5 / discount_10: doctor discount presets
  * - manual_percent: arbitrary percentage (0..100)
  */
 export function calculateFastCheckoutDiscount(params: {
@@ -166,7 +166,7 @@ export function calculateFastCheckoutDiscount(params: {
 /**
  * Мандат 8e, п. 7: Свобода скидок и гарантийных переделок.
  * Если итог к оплате после 100% скидки равен 0 ₽:
- * - визит закрывается в 1 клик («Гарантийный прием / 100% скидка»)
+ * - оформление закрытия («Гарантийный прием / 100% скидка»)
  * - статус оплаты выставляется в «Оплачено (скидка 100%)»
  * - физический фискальный регистратор ограждается от вызова с суммой 0 (защита от ошибки ККТ «Сумма чека не может быть 0»)
  */
@@ -250,7 +250,7 @@ export interface MultiTenderStateRub {
 }
 
 /**
- * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами / ДМС / 50/50».
+ * Мандат 8e, п. 9: распределение остатка: «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами / ДМС / 50/50».
  * Распределяет оставшуюся сумму до копейки без ручного ввода цифр.
  */
 export function allocateRemainderToTender(params: {
@@ -341,7 +341,7 @@ export interface FastTenderPreset {
 }
 
 /**
- * Генерация быстрых пресетов комбинированной оплаты в 1 клик.
+ * Генерация быстрых пресетов комбинированной оплаты.
  */
 export function getFastCombinedTenderPresets(params: {
 	readonly totalDueRub: number;
@@ -512,7 +512,7 @@ export function calculateCashChange(totalDueRub: number, receivedCashRub: number
 }
 
 /**
- * 1-клик пресет «Без сдачи»: наличные = 100% сумме чека, сдача 0 ₽.
+ * Пресет «Без сдачи»: наличные = 100% сумме чека, сдача 0 ₽.
  */
 export function createExactCashTenders(totalDueRub: number): MultiTenderStateRub {
 	return {
@@ -525,7 +525,7 @@ export function createExactCashTenders(totalDueRub: number): MultiTenderStateRub
 }
 
 /**
- * 1-клик пресет «Оплата картой 100%».
+ * Пресет «Оплата картой 100%».
  */
 export function createFullCardTenders(totalDueRub: number): MultiTenderStateRub {
 	return {
@@ -538,7 +538,7 @@ export function createFullCardTenders(totalDueRub: number): MultiTenderStateRub 
 }
 
 /**
- * 1-клик пресет «Комбинированная (Списать весь аванс + остаток картой)».
+ * Пресет «Комбинированная оплата (Списать весь аванс + остаток картой)».
  */
 export function createDepositAndCardComboTenders(totalDueRub: number, patientDepositRub: number): MultiTenderStateRub {
 	const totalKop = rubToKopecks(Math.max(0, totalDueRub));
@@ -554,7 +554,7 @@ export function createDepositAndCardComboTenders(totalDueRub: number, patientDep
 }
 
 /**
- * 1-клик пресет «Сертификат + остаток картой»
+ * Пресет «Комбинированная оплата: Сертификат + остаток картой».
  */
 export function createCertificateAndCardComboTenders(totalDueRub: number, certificateRub: number): MultiTenderStateRub {
 	const totalKop = rubToKopecks(Math.max(0, totalDueRub));
@@ -572,7 +572,7 @@ export function createCertificateAndCardComboTenders(totalDueRub: number, certif
 }
 
 /**
- * 1-клик пресет «Бонусы + остаток картой»
+ * Пресет «Комбинированная оплата: Бонусы + остаток картой».
  */
 export function createBonusAndCardComboTenders(totalDueRub: number, bonusRub: number): MultiTenderStateRub {
 	const totalKop = rubToKopecks(Math.max(0, totalDueRub));
@@ -616,7 +616,7 @@ export interface CombinedSplitCalculationResult {
 }
 
 /**
- * 1-кликовая сплит-оплата: Комбинированный чек (наличные + карта + аванс/бонусы с семейного счета)
+ * Комбинированная оплата: расчет сплит-чека (наличные + карта + аванс/бонусы с семейного счета)
  * с автоматическим распределением остатка 50/50 между картой и наличными (Мандат 8e п. 9, 8b).
  * Гарантирует 100% копеечную точность без потерь и округлений (cardKop + cashKop + advanceKop === totalDueKop).
  */
@@ -691,7 +691,7 @@ export function calculateCombinedFamilyCashCardSplit(
 }
 
 /**
- * 1-клик генерация сплит-тендеров (Аванс / Семейный счет + 50/50 Нал и Карта).
+ * Распределение комбинированной оплаты (Аванс / Семейный счет + 50/50 Нал и Карта).
  */
 export function createThreeWaySplitTenders(params: {
 	readonly totalDueRub: number;
@@ -736,7 +736,7 @@ export function autoDistributeSplitRemainder(params: {
 }
 
 /**
- * 1-клик пресет «Семейный счет + остаток картой»
+ * Пресет «Комбинированная оплата: Семейный счет + остаток картой».
  */
 export function createFamilyCashCardComboTenders(params: {
 	readonly totalDueRub: number;

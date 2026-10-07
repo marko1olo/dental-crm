@@ -250,7 +250,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 						<div className="flex items-center gap-2 min-w-0">
 							<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)] shrink-0" />
 							<span className="text-xs font-bold text-[var(--ok-fg,#15803d)] truncate">
-								Мандат 8e (п. 3): Физиологическая норма в 1 клик · Врач правит только патологию
+								Физиологическая норма · Врач правит только патологию
 							</span>
 						</div>
 						<button
@@ -318,7 +318,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										<button
 											type="button"
 											onClick={() => setSearchQuery("")}
-											className="absolute right-2.5 text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center h-6 w-6 rounded"
+											className="cd-search-clear"
 											aria-label="Очистить поиск"
 										>
 											<X className="w-3.5 h-3.5" />
@@ -327,11 +327,12 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 								</div>
 
 								{/* Category Filter Tabs */}
-								<div className="cd-category-scroll">
+								<div className="cd-category-scroll dente-filter-chips">
 									<button
 										type="button"
 										onClick={() => setSelectedCategory("all")}
-										className={`cd-category-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === "all" ? "active" : ""}`}
+										className={`cd-category-chip dente-filter-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === "all" ? "active" : ""}`}
+										data-active={selectedCategory === "all"}
 									>
 										Все ({allCatalogWithNorm.length})
 									</button>
@@ -340,7 +341,8 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											key={cat}
 											type="button"
 											onClick={() => setSelectedCategory(cat)}
-											className={`cd-category-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === cat ? "active" : ""}`}
+											className={`cd-category-chip dente-filter-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === cat ? "active" : ""}`}
+											data-active={selectedCategory === cat}
 										>
 											{CLINICAL_CATEGORY_LABELS[cat].split(" ")[0]}
 										</button>
@@ -431,7 +433,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										<span className="truncate">
 											{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id ? (
 												<>
-													Сформирован канонический протокол СтАР / Мандат 8e: <strong>{PHYSIOLOGICAL_NORM_PRESET.title}</strong>
+													Сформирован канонический протокол СтАР: <strong>{PHYSIOLOGICAL_NORM_PRESET.title}</strong>
 												</>
 											) : (
 												<>
@@ -514,7 +516,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<footer className="cd-templates-footer">
 								<div className="cd-footer-meta">
 									<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)]" />
-									<span>Готов к автоматической вставке в медицинскую карту (Мандат 8e)</span>
+									<span>Готов к автоматической вставке в медицинскую карту</span>
 								</div>
 
 								<div className="cd-footer-actions">
@@ -551,7 +553,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										onClick={handleApply}
 										className="cd-btn cd-btn-primary"
 										data-testid="cd-apply-btn"
-										title="Мгновенная вставка регламентного протокола в карту (Мандат 8e)"
+										title="Мгновенная вставка регламентного протокола в карту"
 									>
 										<Sparkles className="w-4 h-4" />
 										<span>Вставить в дневник (1-Click)</span>

@@ -10,7 +10,9 @@ import {
 	Calendar,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	ChevronRight,
+	ChevronUp,
 	Clock,
 	Copy,
 	Download,
@@ -34,6 +36,11 @@ import {
 	Zap,
 } from "lucide-react";
 import React, { lazy, Suspense } from "react";
+import {
+	VisitEmbeddedOdontogram,
+	type DentitionMode,
+	PATHOLOGY_STAMPS,
+} from "./view/VisitEmbeddedOdontogram";
 import { visitDraftQualityLabels } from "../../AppConstants";
 import {
 	denteAdminSecretRequestHeaders,
@@ -45,7 +52,12 @@ import {
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
-import { useVisitStore } from "../../store/visitStore";
+import { useVisitStore, type VisitToothUiState } from "../../store/visitStore";
+import {
+	loadStoredTeethData,
+	saveStoredTeethData,
+} from "../odontogram/odontogramStorage";
+import { generateSoapFromOdontogramFinding } from "../../lib/clinicalProtocols043";
 import { logger } from "../../utils/logger";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
@@ -93,7 +105,10 @@ import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
 import { EmkVoicePilot } from "./EmkVoicePilot";
 import { useVisitSave } from "./useVisitSave";
-import { useVisitEmkToothSync } from "./useVisitEmkToothSync";
+import {
+	useVisitEmkToothSync,
+	toOdontogramToothState,
+} from "./useVisitEmkToothSync";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { VisitSpecialtyFocus } from "./VisitSpecialtyFocus";
 import {
@@ -129,6 +144,55 @@ const OrthopedicsChairsidePanel = lazy(() =>
 
 // Re-export DebouncedEmkTextarea from canonical SSOT (Mandate 8s)
 export { DebouncedEmkTextarea, type DebouncedEmkTextareaProps } from "./emk/DebouncedEmkTextarea";
+
+function infer804nServiceFromStamp(stamp: string, toothNumber: number) {
+	switch (stamp) {
+		case "caries":
+			return {
+				id: `srv-caries-${toothNumber}`,
+				title: `Лечение кариеса зуба ${toothNumber} со световой пломбой`,
+				code804n: "A16.07.002",
+				priceRub: 4500,
+			};
+		case "pulpitis":
+			return {
+				id: `srv-pulpitis-${toothNumber}`,
+				title: `Эндодонтическое лечение пульпита зуба ${toothNumber}`,
+				code804n: "A16.07.030",
+				priceRub: 6500,
+			};
+		case "treatment":
+			return {
+				id: `srv-perio-${toothNumber}`,
+				title: `Лечение периодонтита зуба ${toothNumber}`,
+				code804n: "A16.07.008",
+				priceRub: 7500,
+			};
+		case "done":
+			return {
+				id: `srv-fill-${toothNumber}`,
+				title: `Восстановление зуба ${toothNumber} пломбой из фотокомпозита`,
+				code804n: "A16.07.002.011",
+				priceRub: 4000,
+			};
+		case "crown":
+			return {
+				id: `srv-crown-${toothNumber}`,
+				title: `Восстановление зуба ${toothNumber} коронкой`,
+				code804n: "A16.07.004",
+				priceRub: 18000,
+			};
+		case "missing":
+			return {
+				id: `srv-extract-${toothNumber}`,
+				title: `Удаление зуба ${toothNumber}`,
+				code804n: "A16.07.001",
+				priceRub: 3500,
+			};
+		default:
+			return null;
+	}
+}
 
 export function VisitEmkTab() {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -187,6 +251,215 @@ export function VisitEmkTab() {
 	const [isCompletingVisit, setIsCompletingVisit] = React.useState<boolean>(false);
 	const [completionResult, setCompletionResult] =
 		React.useState<ClinicalVisitCompletionResult | null>(null);
+
+	// Интерактивная одонтограмма приёма и реактивная синхронизация статусов зубов
+	const visitToothStateByCode = useVisitStore((state) => state.visitToothStateByCode);
+	const activeToothNumber = useVisitStore((state) => state.activeToothNumber);
+	const draft = useVisitStore((state) => state.draft);
+
+	const effectiveActiveTooth =
+		activeToothNumber ||
+		Number(dashboard?.activeVisit?.diagnosisTooth) ||
+		16;
+
+	const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(null);
+	const [activeStamp, setActiveStamp] = React.useState<string>("idle");
+	const activeStampRef = React.useRef<string>("idle");
+	const [isOdontogramCollapsed, setIsOdontogramCollapsed] = React.useState<boolean>(false);
+
+	const [dentitionMode, setDentitionMode] = React.useState<DentitionMode>(() => {
+		const age =
+			activePatient?.age ??
+			(activePatient?.birthDate ? calculateAge(activePatient.birthDate) : null);
+		if (age !== null && age < 6) return "pediatric";
+		if (age !== null && age < 12) return "mixed";
+		return "adult";
+	});
+
+	const toothRows = React.useMemo(
+		() => [
+			[
+				"18", "17", "16", "15", "14", "13", "12", "11",
+				"21", "22", "23", "24", "25", "26", "27", "28",
+			],
+			[
+				"48", "47", "46", "45", "44", "43", "42", "41",
+				"31", "32", "33", "34", "35", "36", "37", "38",
+			],
+		],
+		[],
+	);
+
+	const handleOdontogramToothClick = React.useCallback(
+		(code: string, _currentState: string) => {
+			const stamp = activeStampRef.current;
+			const num = Number.parseInt(code, 10) || 16;
+			useVisitStore.getState().setActiveToothNumber(num);
+
+			if (stamp && stamp !== "idle") {
+				const uiState = stamp as VisitToothUiState;
+				useVisitStore.getState().setToothState(code, uiState);
+
+				const canonicalState = toOdontogramToothState(stamp);
+				const patId = activePatient?.id;
+
+				// 1. Persistent storage update & real-time sync with VisitOdontogramTab
+				if (patId) {
+					const existingTeeth = loadStoredTeethData(patId) || [];
+					const nowIso = new Date().toISOString();
+					const nextTeeth = [...existingTeeth];
+					const idx = nextTeeth.findIndex((t) => t.toothNumber === num);
+					if (idx > -1 && nextTeeth[idx]) {
+						nextTeeth[idx] = {
+							...nextTeeth[idx],
+							toothNumber: num,
+							state: canonicalState as any,
+							updatedAt: nowIso,
+						};
+					} else {
+						nextTeeth.push({
+							toothNumber: num,
+							state: canonicalState as any,
+							updatedAt: nowIso,
+						});
+					}
+					saveStoredTeethData(patId, nextTeeth, true);
+
+					// Dispatch unified event bus to immediately update OdontogramModule in VisitOdontogramTab
+					window.dispatchEvent(
+						new CustomEvent("dente-odontogram-update", {
+							detail: { patientId: patId, states: nextTeeth },
+						}),
+					);
+
+					// Async background persist to PostgreSQL
+					fetch(`/api/patients/${patId}/tooth-states/batch`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							toothNumbers: [num],
+							state: canonicalState,
+						}),
+					}).catch((err) => {
+						logger.warn("[VisitEmkTab] Background tooth-state batch sync failed:", err);
+					});
+				}
+
+				// 2. Linear Chairside Cockpit Trajectory: Auto-enrich Form 043/u SOAP Diary
+				const soap = generateSoapFromOdontogramFinding({
+					toothNumber: num,
+					state: canonicalState,
+				});
+
+				const diagText = soap.diagnosisIcd10
+					? `${soap.diagnosisIcd10} ${soap.diagnosisIcd10Label || ""} (зуб ${num})`
+					: soap.diagnosisTooth;
+
+				const currentDiag = String(visitNoteForm?.diagnosis || "");
+				const mergedDiag = mergeMultiToothDiagnoses(currentDiag, {
+					toothNumber: num,
+					diagnosis: diagText,
+				});
+				updateVisitNoteField("diagnosis", mergedDiag);
+
+				if (soap.statusLocalis) {
+					const currentObj = String(visitNoteForm?.objectiveStatus || "");
+					const mergedObj = mergeMultiToothObjective(currentObj, soap.statusLocalis, num);
+					updateVisitNoteField("objectiveStatus", mergedObj);
+				}
+
+				if (soap.treatmentDescription) {
+					const currentPlan = String(visitNoteForm?.treatmentPlan || "");
+					const mergedPlan = mergeMultiToothTreatmentPlan(
+						currentPlan,
+						soap.treatmentDescription,
+						num,
+					);
+					updateVisitNoteField("treatmentPlan", mergedPlan);
+				}
+
+				if (soap.anamnesis) {
+					const currentComp = String(
+						visitNoteForm?.complaint || (visitNoteForm as any)?.complaints || "",
+					).trim();
+					if (
+						!currentComp ||
+						currentComp.includes("активно не предъявляет") ||
+						currentComp.includes("Жалоб нет")
+					) {
+						updateVisitNoteField("complaint", soap.anamnesis);
+					}
+				}
+
+				// Synchronize structured tooth record in useVisitStore
+				useVisitStore.getState().setVisitToothRecord(code, {
+					toothNumber: num,
+					state: uiState,
+					diagnosis: diagText,
+					diagnosisIcd10: soap.diagnosisIcd10,
+					treatmentPlan: soap.treatmentDescription,
+				});
+
+				// Dispatch dente-apply-soap-protocol
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							finding: { toothNumber: num, state: canonicalState },
+							soap: {
+								diagnosis: diagText,
+								objectiveStatus: soap.statusLocalis,
+								treatmentPlan: soap.treatmentDescription,
+								complaint: soap.anamnesis,
+							},
+							mode: "merge",
+							immediate: true,
+						},
+					}),
+				);
+
+				// 3. Auto-link Order 804n clinical services to tooth & invoice
+				const matchingService = infer804nServiceFromStamp(stamp, num);
+				if (matchingService) {
+					useVisitStore.getState().addCompletedService({
+						serviceId: matchingService.id,
+						code804n: matchingService.code804n,
+						toothNumber: num,
+						toothCode: code,
+						name: matchingService.title,
+						priceRub: matchingService.priceRub,
+						quantity: 1,
+					});
+
+					// Dispatch to billing widget
+					window.dispatchEvent(
+						new CustomEvent("dente-add-services-to-invoice", {
+							detail: {
+								services: [
+									{
+										serviceId: matchingService.id,
+										title: matchingService.title,
+										unitPriceRub: matchingService.priceRub,
+										quantity: 1,
+										code804n: matchingService.code804n,
+										toothCode: code,
+									},
+								],
+							},
+						}),
+					);
+				}
+
+				const stampObj = PATHOLOGY_STAMPS.find((s) => s.id === stamp);
+				const stampLabel = stampObj?.label || stamp;
+				showToast(`Зуб ${code}: ${stampLabel}. Дневник 043/у и услуги 804н обновлены`, "success", 2500);
+			} else {
+				showToast(`Выбран зуб ${code} для манипуляций`, "info", 1500);
+			}
+		},
+		[activePatient, visitNoteForm, updateVisitNoteField],
+	);
 
 	const isSignedVisit = Boolean(dashboard?.activeVisit?.status === "signed");
 	const isLocked = isSignedVisit && !isRevisingVisitNote;
@@ -720,6 +993,107 @@ export function VisitEmkTab() {
 
 			{/* Секции Формы 043/у — Full-Width Clinical Canvas */}
 			<div className="space-y-4 mt-2.5 w-full min-w-0" data-testid="emk-clinical-canvas">
+				{/* ═══ ТРАЕКТОРИЯ ВРАЧА У КРЕСЛА (CHAIRSIDE COCKPIT PIPELINE) ═══ */}
+				<div
+					className="chairside-cockpit-pipeline bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-blue-500/10 border border-teal-500/30 rounded-xl p-2 sm:p-2.5 text-xs text-[var(--ink)] flex flex-wrap items-center justify-between gap-2 shadow-2xs"
+					data-testid="chairside-cockpit-pipeline-banner"
+				>
+					<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 font-medium text-[11px] sm:text-xs">
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-900 dark:text-teal-200 font-bold shrink-0">
+							<Activity size={12} className="text-teal-600 dark:text-teal-400" />
+							1. Осмотр & Одонтограмма
+						</span>
+						<ChevronRight size={12} className="text-[var(--muted)] shrink-0" />
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold shrink-0">
+							<FileText size={12} className="text-amber-600 dark:text-amber-400" />
+							2. Патология ➔ Дневник приёма
+						</span>
+						<ChevronRight size={12} className="text-[var(--muted)] shrink-0" />
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-900 dark:text-blue-200 font-bold shrink-0">
+							<Tag size={12} className="text-blue-600 dark:text-blue-400" />
+							3. Услуги на зуб
+						</span>
+						<ChevronRight size={12} className="text-[var(--muted)] shrink-0" />
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 font-bold shrink-0">
+							<Receipt size={12} className="text-emerald-600 dark:text-emerald-400" />
+							4. Смета и чек
+						</span>
+					</div>
+					<div className="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							onClick={handleApplyPhysiologicalNorm}
+							data-testid="btn-cockpit-quick-norm"
+							className="px-2 py-1 rounded-md text-[11px] font-semibold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 cursor-pointer transition-colors"
+							title="Заполнить осмотр физиологической нормой Z01.2"
+						>
+							<Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+							<span>Норма (Z01.2)</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleCompleteVisitAndGenerateReceipt}
+							disabled={isCompletingVisit}
+							data-testid="btn-cockpit-quick-complete"
+							className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+							title="1-клик смета и фискальный чек с СБП QR"
+						>
+							<QrCode size={12} />
+							<span>Смета & Чек СБП</span>
+						</button>
+					</div>
+				</div>
+
+				{/* Интерактивная одонтограмма приёма */}
+				<div
+					className="visit-emk-embedded-odontogram-wrap bg-[var(--paper)] border border-[var(--line)] rounded-xl p-2.5 sm:p-3 shadow-2xs"
+					data-testid="visit-emk-embedded-odontogram"
+				>
+					<div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[var(--line)]/60">
+						<div className="flex items-center gap-2">
+							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
+							<span className="text-xs font-bold text-[var(--ink)]">
+								Интерактивная одонтограмма приёма
+							</span>
+							<span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] font-bold">
+								Активный зуб: {effectiveActiveTooth}
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsOdontogramCollapsed((v) => !v)}
+							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 py-1 rounded-md hover:bg-[var(--paper-soft)] transition-colors cursor-pointer inline-flex items-center gap-1 font-medium"
+						>
+							{isOdontogramCollapsed ? (
+								<>
+									<span>Развернуть формулу</span>
+									<ChevronDown size={13} />
+								</>
+							) : (
+								<>
+									<span>Свернуть формулу</span>
+									<ChevronUp size={13} />
+								</>
+							)}
+						</button>
+					</div>
+					{!isOdontogramCollapsed && (
+						<VisitEmbeddedOdontogram
+							activeQuadrant={activeQuadrant}
+							setActiveQuadrant={setActiveQuadrant}
+							activeStamp={activeStamp}
+							setActiveStamp={setActiveStamp}
+							activeStampRef={activeStampRef}
+							toothRows={toothRows}
+							toothStateByCode={visitToothStateByCode}
+							draft={draft?.quality?.detectedToothCodes ? { quality: { detectedToothCodes: draft.quality.detectedToothCodes } } : null}
+							handleToothClick={handleOdontogramToothClick}
+							dentitionMode={dentitionMode}
+							onDentitionModeChange={setDentitionMode}
+						/>
+					)}
+				</div>
+
 				{activeEmkTab === "all" ? (
 					<div className="space-y-4 w-full min-w-0">
 						{/* 1. Жалобы и анамнез (Full-Width) */}
@@ -734,7 +1108,7 @@ export function VisitEmkTab() {
 							visitNoteForm={visitNoteForm}
 							updateVisitNoteField={updateVisitNoteField}
 							isLocked={isLocked}
-							activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+							activeTooth={effectiveActiveTooth}
 						/>
 
 						{/* 3. Диагноз, дневник и протокол лечения (Full-Width) */}
@@ -742,7 +1116,7 @@ export function VisitEmkTab() {
 							visitNoteForm={visitNoteForm}
 							updateVisitNoteField={updateVisitNoteField}
 							isLocked={isLocked}
-							activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+							activeTooth={effectiveActiveTooth}
 							onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 						/>
 
@@ -759,7 +1133,7 @@ export function VisitEmkTab() {
 							visitNoteForm={visitNoteForm}
 							updateVisitNoteField={updateVisitNoteField}
 							isLocked={isLocked}
-							activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+							activeTooth={effectiveActiveTooth}
 						/>
 
 						<Suspense fallback={null}>
@@ -773,7 +1147,7 @@ export function VisitEmkTab() {
 								<div className="pt-2">
 									<OrthopedicsChairsidePanel
 										patientId={activePatient?.id}
-										activeToothFdi={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+										activeToothFdi={effectiveActiveTooth}
 										isLocked={isLocked}
 									/>
 								</div>
@@ -801,7 +1175,7 @@ export function VisitEmkTab() {
 								</summary>
 								<div className="pt-2">
 									<Icd10ClinicalSelector
-										selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+										selectedTooth={effectiveActiveTooth}
 										onSelect={(item, tooth) => {
 											const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
 											updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
@@ -915,13 +1289,13 @@ export function VisitEmkTab() {
 									visitNoteForm={visitNoteForm}
 									updateVisitNoteField={updateVisitNoteField}
 									isLocked={isLocked}
-									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									activeTooth={effectiveActiveTooth}
 								/>
 								<EmkEndoSection
 									visitNoteForm={visitNoteForm}
 									updateVisitNoteField={updateVisitNoteField}
 									isLocked={isLocked}
-									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									activeTooth={effectiveActiveTooth}
 								/>
 							</div>
 						)}
@@ -1021,7 +1395,7 @@ export function VisitEmkTab() {
 									visitNoteForm={visitNoteForm}
 									updateVisitNoteField={updateVisitNoteField}
 									isLocked={isLocked}
-									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									activeTooth={effectiveActiveTooth}
 									onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 								/>
 								<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
@@ -1035,7 +1409,7 @@ export function VisitEmkTab() {
 										</summary>
 										<div className="pt-2">
 											<Icd10ClinicalSelector
-												selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+												selectedTooth={effectiveActiveTooth}
 												onSelect={(item, tooth) => {
 													const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
 													updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
@@ -1074,7 +1448,7 @@ export function VisitEmkTab() {
 									visitNoteForm={visitNoteForm}
 									updateVisitNoteField={updateVisitNoteField}
 									isLocked={isLocked}
-									activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
+									activeTooth={effectiveActiveTooth}
 									onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 								/>
 							</div>
@@ -1487,10 +1861,10 @@ export function VisitEmkTab() {
 					type="button"
 					onClick={handleApplyPhysiologicalNorm}
 					data-testid="btn-fill-norm-quick"
-					title="Заполнить нормой в 1 клик"
+					title="Заполнить нормой"
 				>
 					<Sparkles size={13} />
-					<span>Заполнить нормой в 1 клик</span>
+					<span>Заполнить нормой</span>
 				</button>
 				<span data-testid="btn-anes-ultracain-ds" />
 				<span data-testid="btn-anes-ultracain-ds-forte" />

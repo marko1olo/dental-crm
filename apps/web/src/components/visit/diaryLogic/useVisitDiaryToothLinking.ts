@@ -52,7 +52,10 @@ export function useVisitDiaryToothLinking({
 	const applyOdontogramFinding = useCallback(
 		(finding: OdontogramFindingInput, mode: MergeStrategy = "smart_append") => {
 			if (isLocked && !isRevising) {
-				showToast("Дневник подписан — изменения заблокированы.", "info");
+				showToast(
+					"Дневник подписан ЭЦП. Для внесения изменений включите режим дополнения.",
+					"info",
+				);
 				return;
 			}
 			const soapProtocol = generateSoapFromOdontogramFinding(finding);
@@ -75,7 +78,10 @@ export function useVisitDiaryToothLinking({
 	const applySoapProtocol = useCallback(
 		(incoming: Partial<DiaryState>, mode: MergeStrategy = "smart_append") => {
 			if (isLocked && !isRevising) {
-				showToast("Дневник подписан — изменения заблокированы.", "info");
+				showToast(
+					"Дневник подписан ЭЦП. Для внесения изменений включите режим дополнения.",
+					"info",
+				);
 				return;
 			}
 			setDiary((prev) =>
@@ -100,7 +106,10 @@ export function useVisitDiaryToothLinking({
 			}[],
 		) => {
 			if (isLocked && !isRevising) {
-				showToast("Дневник подписан — изменения заблокированы.", "info");
+				showToast(
+					"Дневник подписан ЭЦП. Для внесения изменений включите режим дополнения.",
+					"info",
+				);
 				return;
 			}
 			const generated = generateSoapFromOdontogramStates(states);
@@ -130,7 +139,10 @@ export function useVisitDiaryToothLinking({
 	const applyPendingSoapSuggestion = useCallback(() => {
 		if (!pendingSoapSuggestion) return;
 		if (isLocked && !isRevising) {
-			showToast("Дневник подписан — изменения заблокированы.", "info");
+			showToast(
+				"Дневник подписан ЭЦП. Для внесения изменений включите режим дополнения.",
+				"info",
+			);
 			return;
 		}
 		const { soap, mode = "smart_append", title } = pendingSoapSuggestion;
@@ -269,7 +281,7 @@ export function useVisitDiaryToothLinking({
 				}
 				scheduleDebouncedSave();
 				showToast(
-					`1-клик автопилот «${autoRes.preset.shortBadge}» применён`,
+					`Протокол «${autoRes.preset.shortBadge}» применён`,
 					"success",
 					4000,
 				);
@@ -395,9 +407,9 @@ export function useVisitDiaryToothLinking({
 				setIsRevising(true);
 				setReviseSnapshot({ ...diaryRef.current });
 				setReviseTraySnapshot(trayBarcodeRef.current);
-				setRevisionReason("Исправленному верить (1-клик автопилот)");
+				setRevisionReason("Исправленному верить (протокол)");
 				showToast(
-					"Дневник визита открыт для внесения исправлений (1-клик автопилот применён)",
+					"Дневник визита открыт для внесения исправлений (протокол применён)",
 					"warning",
 					4000,
 				);
@@ -414,7 +426,7 @@ export function useVisitDiaryToothLinking({
 			}
 			scheduleDebouncedSave();
 			showToast(
-				`1-клик автопилот «${result.preset.shortBadge}» применён`,
+				`Протокол «${result.preset.shortBadge}» применён`,
 				"success",
 				4000,
 			);
@@ -424,7 +436,7 @@ export function useVisitDiaryToothLinking({
 	);
 
 	/**
-	 * 1-клик заполнение физиологической нормой по умолчанию (Мандат 8e п. 3).
+	 * Заполнение физиологической нормой по умолчанию (Мандат 8e п. 3).
 	 * Врач правит только патологию!
 	 * Если дневник закрыт, автоматически активирует режим ревизии («Исправленному верить»).
 	 */
@@ -443,7 +455,7 @@ export function useVisitDiaryToothLinking({
 		}));
 		scheduleDebouncedSave();
 		showToast(
-			"Физиологическая норма соматического статуса и осмотра внесена в дневник (1 клик)",
+			"Физиологическая норма соматического статуса и осмотра внесена в дневник",
 			"success",
 			4000,
 		);

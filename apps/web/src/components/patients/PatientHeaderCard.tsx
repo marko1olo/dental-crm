@@ -357,11 +357,11 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 								useAppStore.getState().setCurrentView("visit");
 								showToast(`Открыт приём: ${fullName}`, "success");
 							}}
-							className="h-8 px-2.5 sm:px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all text-xs"
+							className="h-8 px-3 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all text-[13px] whitespace-nowrap"
 							title="Открыть амбулаторный приём без лишних подтверждений"
 							data-testid="header-open-visit-btn"
 						>
-							<Stethoscope size={13} />
+							<Stethoscope size={14} />
 							<span>Начать приём</span>
 						</button>
 
@@ -396,11 +396,11 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									"success",
 								);
 							}}
-							className="h-8 px-2.5 rounded-lg bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+							className="h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors text-[13px] whitespace-nowrap"
 							title="Записать пациента в расписание приёма"
 							data-testid="header-book-appointment-btn"
 						>
-							<Calendar size={13} className="text-[var(--teal,#0d9488)]" />
+							<Calendar size={14} className="text-[var(--teal)]" />
 							<span>Записать</span>
 						</button>
 

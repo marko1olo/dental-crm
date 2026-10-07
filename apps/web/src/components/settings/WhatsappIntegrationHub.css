@@ -1,0 +1,286 @@
+/* WhatsappIntegrationHub.css — Стили единого хаба подключения WhatsApp */
+
+.whatsapp-hub-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+}
+
+/* Переключатель режимов подключения */
+.whatsapp-mode-tabs {
+	display: flex;
+	gap: 6px;
+	background: var(--paper-soft);
+	padding: 4px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	width: fit-content;
+	max-width: 100%;
+}
+
+.whatsapp-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+}
+
+.whatsapp-mode-btn:hover {
+	color: var(--ink);
+	background: var(--paper);
+}
+
+.whatsapp-mode-btn.active {
+	background: var(--paper);
+	color: var(--teal);
+	font-weight: 600;
+	border-color: var(--line);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Карточка режима подключения */
+.whatsapp-mode-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+/* QR-секция */
+.qr-connection-layout {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 24px;
+	align-items: start;
+}
+
+@media (max-width: 768px) {
+	.qr-connection-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.qr-code-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	padding: 16px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	width: fit-content;
+	margin: 0 auto;
+}
+
+.qr-code-image-wrapper {
+	width: 220px;
+	height: 220px;
+	background: #ffffff;
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+}
+
+.qr-code-image-wrapper img,
+.qr-code-image-wrapper svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.qr-timer-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted);
+	background: var(--paper);
+	padding: 4px 10px;
+	border-radius: 20px;
+	border: 1px solid var(--line);
+}
+
+.qr-timer-pill.urgent {
+	color: #ef4444;
+	border-color: rgba(239, 68, 68, 0.3);
+	background: rgba(239, 68, 68, 0.05);
+}
+
+.pairing-code-display {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 14px 20px;
+	background: var(--paper);
+	border: 1px dashed var(--line);
+	border-radius: 10px;
+	width: 100%;
+}
+
+.pairing-code-value {
+	font-family: monospace;
+	font-size: 24px;
+	font-weight: 800;
+	letter-spacing: 2px;
+	color: var(--teal);
+}
+
+/* Статус подключенного телефона */
+.connected-device-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding: 16px 20px;
+	background: rgba(16, 185, 129, 0.08);
+	border: 1px solid rgba(16, 185, 129, 0.25);
+	border-radius: 10px;
+}
+
+.connected-device-info {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.connected-device-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	background: rgba(16, 185, 129, 0.15);
+	color: #10b981;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.connected-device-details h4 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.connected-device-details p {
+	margin: 2px 0 0 0;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+/* Инструкции по шагам (Аккордеон) */
+.whatsapp-instructions-box {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.whatsapp-instruction-step {
+	border-bottom: 1px solid var(--line);
+}
+
+.whatsapp-instruction-step:last-child {
+	border-bottom: none;
+}
+
+.whatsapp-instruction-header {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: var(--paper-soft);
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	transition: background 0.15s ease;
+}
+
+.whatsapp-instruction-header:hover {
+	background: var(--paper);
+}
+
+.step-number-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--teal);
+	color: white;
+	font-size: 11px;
+	font-weight: 700;
+	margin-right: 10px;
+	flex-shrink: 0;
+}
+
+.whatsapp-instruction-body {
+	padding: 12px 16px 14px 48px;
+	background: var(--paper);
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--muted);
+}
+
+.whatsapp-instruction-body strong {
+	color: var(--ink);
+}
+
+/* Мета WABA статус */
+.waba-test-result-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.waba-test-result-card.success {
+	background: rgba(16, 185, 129, 0.08);
+	border: 1px solid rgba(16, 185, 129, 0.25);
+	color: #065f46;
+}
+
+.waba-test-result-card.error {
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	color: #991b1b;
+}
+
+/* Форма полей */
+.waba-grid-fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 14px;
+}

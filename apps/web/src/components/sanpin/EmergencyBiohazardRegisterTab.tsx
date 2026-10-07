@@ -193,16 +193,25 @@ export function EmergencyBiohazardRegisterTab() {
 
 			<div className="sanpin-control-bar">
 				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.6rem", color: "var(--muted)" }} />
+					<div className="dente-search-wrap" style={{ minWidth: "280px" }}>
+						<Search size={14} className="dente-search-icon" />
 						<input
 							type="text"
 							placeholder="Поиск по сотруднику, пациенту, номеру акта..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2rem", minWidth: "280px" }}
+							className="dente-search-input"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								className="dente-search-clear"
+								onClick={() => setSearchQuery("")}
+								aria-label="Очистить поиск"
+							>
+								<X size={12} />
+							</button>
+						)}
 					</div>
 				</div>
 

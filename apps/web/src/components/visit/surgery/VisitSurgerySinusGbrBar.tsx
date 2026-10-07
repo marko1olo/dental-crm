@@ -70,7 +70,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 		onApplyProtocolText(text);
 	};
 
-	// 1-Клик норма НКР / Синус-лифтинга (Мандат 8e)
+	// Физиологическая норма НКР / Синус-лифтинга (Мандат 8e)
 	const handleApplyUncomplicatedGbrNorm = () => {
 		const graft = "Bio-Oss 0.5 г (ксенографт)";
 		const membrane = isClosedSinus ? "Без мембраны" : "Bio-Gide 25x25 мм";
@@ -84,7 +84,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 		const text = buildGbrProtocolText(graft, membrane, pins, suture);
 		onApplyProtocolText(text);
 		showToast(
-			"1-Клик норма: Субантральная аугментация выполнена, мембрана Шнайдера интактна, гемостаз полный",
+			"✓ Физиологическая норма: Субантральная аугментация выполнена, мембрана Шнайдера интактна, гемостаз полный",
 			"success",
 		);
 	};
@@ -98,7 +98,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
 					<Layers size={16} />
-					<span>1-Клик Костная пластика & Синус-лифтинг:</span>
+					<span>Костная пластика & Синус-лифтинг:</span>
 				</div>
 
 				<button
@@ -106,7 +106,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 					onClick={handleApplyUncomplicatedGbrNorm}
 					className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
 					data-testid="btn-uncomplicated-gbr-norm"
-					title="1-Клик норма: остеопластика, мембрана Шнайдера интактна, гемостаз полный"
+					title="Физиологическая норма: остеопластика, мембрана Шнайдера интактна, гемостаз полный"
 				>
 					<Zap size={14} className="text-amber-300" />
 					<span>Норма НКР: мембрана Шнайдера интактна, графт внесен, гемостаз устойчивый</span>
@@ -115,7 +115,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 
 			{/* Выбор остеопластического материала (Графт) */}
 			<div className="space-y-1">
-				<span className="text-[11px] font-bold text-[var(--muted)]">Костный графт (1 клик):</span>
+				<span className="text-[11px] font-bold text-[var(--muted)]">Костный графт:</span>
 				<div className="flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Выбор костного материала">
 					{[
 						{ label: "Bio-Oss 0.5 г (Ксенографт)", short: "Bio-Oss 0.5г" },
@@ -146,7 +146,7 @@ export const VisitSurgerySinusGbrBar: React.FC<VisitSurgerySinusGbrBarProps> = (
 
 			{/* Барьерная мембрана и фиксация пинами */}
 			<div className="space-y-1">
-				<span className="text-[11px] font-bold text-[var(--muted)]">Барьерная мембрана & Пины (1 клик):</span>
+				<span className="text-[11px] font-bold text-[var(--muted)]">Барьерная мембрана & Пины:</span>
 				<div className="flex items-center gap-2 flex-wrap">
 					{[
 						{ label: "Bio-Gide 25x25 мм", short: "Bio-Gide 25×25" },

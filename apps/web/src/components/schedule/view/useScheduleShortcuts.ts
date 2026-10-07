@@ -113,12 +113,12 @@ export function useScheduleShortcuts({
       doctorUserId: dutyDoctor?.id || null,
       chairId: chair?.id || null,
       durationMinutes: 20,
-      reason: "CITO! Острая боль",
+      reason: "Срочно! Острая боль",
       isCitoEmergency: true,
     });
     setQuickBookingOpen(true);
     showToast(
-      "Экстренный прием CITO: выбран дежурный врач и срочный слот",
+      "Срочный приём (острая боль): выбран дежурный врач и резервный слот",
       "info",
       3500,
     );

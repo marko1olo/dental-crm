@@ -64,7 +64,9 @@ export function isReceptionistAllowedPrimaryDoc(
 		kind === "tax_deduction_certificate" ||
 		kind === "personal_data_processing_consent" ||
 		kind === "photo_video_consent" ||
-		kind === "warranty_service_memo";
+		kind === "warranty_service_memo" ||
+		kind === "minor_legal_representative_consent" ||
+		kind === "visit_attendance_certificate";
 	if (!isAllowedFrontDeskDoc) return false;
 	if (!role) return true;
 	const normalizedRole = role.trim().toLowerCase();

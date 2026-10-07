@@ -209,7 +209,7 @@ export const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
 							</h3>
 							{code && (
 								<span className="text-[11px] font-mono text-[var(--muted)]">
-									Код по 804н: {code}
+									Код услуги: {code}
 								</span>
 							)}
 						</div>
@@ -258,7 +258,7 @@ export const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
 								htmlFor="drawer-service-code"
 								className="text-[13px] font-medium text-[var(--muted)]"
 							>
-								Код услуги (804н)
+								Код услуги (номенклатура)
 							</label>
 							<div className="relative">
 								<input

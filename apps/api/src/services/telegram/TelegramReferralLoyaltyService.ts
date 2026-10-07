@@ -1302,12 +1302,35 @@ export class TelegramReferralLoyaltyService {
 				.where(eq(chairs.organizationId, organizationId))
 				.limit(1);
 
+			// Разрешаем лечащего врача (валидация UUID и поиск реального врача в организации)
+			let resolvedDoctorUserId: string | null = null;
+			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(booking.doctorId);
+			if (isUuid) {
+				const [foundDoc] = await db
+					.select({ id: users.id })
+					.from(users)
+					.where(and(eq(users.organizationId, organizationId), eq(users.id, booking.doctorId), eq(users.isActive, true)))
+					.limit(1);
+				if (foundDoc) {
+					resolvedDoctorUserId = foundDoc.id;
+				}
+			}
+
+			if (!resolvedDoctorUserId) {
+				const [firstDoc] = await db
+					.select({ id: users.id })
+					.from(users)
+					.where(and(eq(users.organizationId, organizationId), eq(users.isActive, true)))
+					.limit(1);
+				resolvedDoctorUserId = firstDoc?.id || null;
+			}
+
 			const [createdAppt] = await db
 				.insert(appointments)
 				.values({
 					organizationId,
 					patientId: targetPatientId,
-					doctorUserId: booking.doctorId,
+					doctorUserId: resolvedDoctorUserId,
 					chairId: chair?.id,
 					startsAt: startDateTime,
 					endsAt: endDateTime,
@@ -1329,7 +1352,7 @@ export class TelegramReferralLoyaltyService {
 					appointmentId: createdAppt.id,
 					patientId: targetPatientId,
 					patientName: targetPatient.fullName,
-					doctorId: booking.doctorId,
+					doctorId: resolvedDoctorUserId || booking.doctorId,
 					startTime: startDateTime.toISOString(),
 				},
 			});

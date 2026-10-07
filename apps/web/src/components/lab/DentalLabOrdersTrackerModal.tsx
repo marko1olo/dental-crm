@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import "../../styles/components.css";
 import {
 	FlaskConical,
 	Search,
@@ -531,13 +532,14 @@ export function DentalLabOrdersTrackerModal({
 				<div className="p-3 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex flex-wrap items-center justify-between gap-2 shrink-0">
 					{/* Поле поиска */}
 					<div className="relative flex-1 min-w-[180px] max-w-xs">
-						<Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)]" />
+						<Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none" />
 						<input
 							type="text"
 							placeholder="Поиск по пациенту, врачу, зубу, номеру..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full h-7 pl-8 pr-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
+							style={{ paddingLeft: "38px" }}
+							className="w-full h-8 min-h-[32px] pr-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[13px] text-[var(--ink,#0f172a)] focus:ring-1 focus:ring-teal-500 focus:outline-none"
 							data-testid="lab-tracker-search-input"
 						/>
 					</div>
@@ -546,7 +548,7 @@ export function DentalLabOrdersTrackerModal({
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-7 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[11px] text-[var(--ink,#0f172a)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
+						className="h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[12.5px] text-[var(--ink,#0f172a)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
 						aria-label="Фильтр по статусу"
 					>
 						<option value="all">Все статусы (6)</option>
@@ -561,7 +563,7 @@ export function DentalLabOrdersTrackerModal({
 					<select
 						value={constructionFilter}
 						onChange={(e) => setConstructionFilter(e.target.value)}
-						className="hidden sm:block h-7 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[11px] text-[var(--ink,#0f172a)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
+						className="hidden sm:block h-8 min-h-[32px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[12.5px] text-[var(--ink,#0f172a)] focus:ring-1 focus:ring-teal-500 focus:outline-none cursor-pointer"
 						aria-label="Фильтр по виду конструкции"
 					>
 						<option value="all">Все конструкции (6)</option>
@@ -587,7 +589,7 @@ export function DentalLabOrdersTrackerModal({
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="h-7 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
+						className="primary-button h-8 min-h-[32px] px-3 text-[13px] font-semibold"
 						data-testid="lab-tracker-new-order-btn"
 					>
 						<Plus className="w-3.5 h-3.5" />
@@ -611,7 +613,7 @@ export function DentalLabOrdersTrackerModal({
 							<button
 								type="button"
 								onClick={handleOpenNewOrder}
-								className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+								className="mt-3 primary-button h-8 min-h-[32px] px-3.5 text-[13px] font-semibold"
 								data-testid="tracker-empty-create-lab-order-btn"
 							>
 								<Plus className="w-3.5 h-3.5" />

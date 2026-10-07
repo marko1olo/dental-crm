@@ -11,6 +11,7 @@ import {
 	Crosshair,
 	Eye,
 	EyeOff,
+	Focus,
 	FolderOpen,
 	Hand,
 	Layers,
@@ -622,27 +623,37 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					)}
 				</div>
 
-				{/* 12. Bone Trabecular Hardware Sharpening Quick 1-Click Toggle */}
+				{/* 12. Hardware Laplacian Sharpening Quick Toggle (09 Laplacian Sharpen) */}
 				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
 						onClick={handleToggleSharpen}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							activeSharpen > 0
-								? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/60 shadow-xs shadow-emerald-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-emerald-500/40"
+								? "bg-cyan-500/25 text-cyan-300 border border-cyan-400/80 shadow-xs shadow-cyan-950/50"
+								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Резкость балочек кости (Лапласиан) [Клик: 0% / 50% / 100%]"
-						aria-label="Резкость балочек кости"
+						title="Лапласиан резкости (Sharpen / Эндо) [Клик: 0% / 50% / 100%]"
+						aria-label="Лапласиан резкости срезов"
 						data-testid="cbct-tool-sharpen"
 					>
-						<Sparkles className={`w-3.5 h-3.5 [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4 shrink-0 ${activeSharpen > 0 ? "text-emerald-300" : "text-zinc-400"}`} />
-						<span className={`text-[7.5px] [@media(pointer:coarse)]:text-[8px] font-mono font-bold leading-none mt-0.5 ${activeSharpen > 0 ? "text-emerald-300" : "text-zinc-400"}`}>
+						<Focus className={`w-3.5 h-3.5 [@media(pointer:coarse)]:w-4 [@media(pointer:coarse)]:h-4 shrink-0 transition-transform ${activeSharpen > 0 ? "text-cyan-300 scale-110" : "text-zinc-400"}`} />
+						<span className={`text-[7px] [@media(pointer:coarse)]:text-[7.5px] font-mono font-bold leading-none mt-0.5 tracking-tighter ${activeSharpen > 0 ? "text-cyan-300 font-extrabold" : "text-zinc-400"}`}>
 							{activeSharpen <= 0.05 ? "0%" : activeSharpen <= 0.55 ? "50%" : "100%"}
 						</span>
 					</button>
 
-					<DockTooltip title="Резкость балочек" subtitle={activeSharpen <= 0.05 ? "Выкл (0%)" : activeSharpen <= 0.55 ? "Умеренная (50%)" : "Максимум (100%)"} titleColor="text-emerald-300" />
+					<DockTooltip
+						title="Лапласиан резкости (Sharpen)"
+						subtitle={
+							activeSharpen <= 0.05
+								? "Выкл (0%) — кликните для включения"
+								: activeSharpen <= 0.55
+									? "Стандарт (50%) — контурная резкость"
+									: "Максимум ЭНДО (100%) — каналы MB1/MB2"
+						}
+						titleColor="text-cyan-300"
+					/>
 				</div>
 			</div>
 

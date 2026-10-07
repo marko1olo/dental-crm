@@ -327,7 +327,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		}));
 		scheduleDebouncedSave();
 		showToast(
-			"Физиологическая норма соматического статуса и осмотра внесена в дневник (1 клик)",
+			"Физиологическая норма соматического статуса и осмотра внесена в дневник",
 			"success",
 			4000,
 		);

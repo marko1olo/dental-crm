@@ -70,7 +70,7 @@ export const QuickCreateInvoiceModal: React.FC<QuickCreateInvoiceModalProps> = (
 						className="text-base font-bold flex items-center gap-2 m-0"
 					>
 						<Receipt size={18} className="text-teal-600" />
-						<span>Быстрое создание счета (1 клик)</span>
+						<span>Создать счет</span>
 					</h3>
 					<button
 						type="button"

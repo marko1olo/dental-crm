@@ -8,6 +8,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Trash2,
+	X,
 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -275,36 +276,35 @@ export function SettingsProtocolsTab() {
 						</p>
 					</div>
 				</div>
-				<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+				<div className="dente-segmented-bar" role="toolbar" aria-label="Управление шаблонами протоколов">
 					<button
 						type="button"
-						className="secondary-button"
-						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
+						className="dente-segmented-item"
 						onClick={handleSeedStandardProtocols}
 						disabled={loading}
 						title="Подключить стандартные протоколы клиники в 1 клик"
 					>
-						<Sparkles size={15} style={{ color: "var(--teal)" }} />
-						<span>Базовые протоколы (1 клик)</span>
+						<Sparkles size={14} style={{ color: "var(--teal)" }} />
+						<span>Базовые протоколы</span>
 					</button>
 					<button
 						type="button"
-						className="secondary-button"
-						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
+						className="dente-segmented-item"
 						onClick={() => setIsAutoclaveModalOpen(true)}
 						title="Журнал контроля работы стерилизаторов и автоклавирования"
 						data-testid="protocols-open-autoclave-log-btn"
 					>
-						<ShieldCheck size={16} style={{ color: "var(--teal)" }} />
-						<span>Журнал контроля стерилизации</span>
+						<ShieldCheck size={14} style={{ color: "var(--teal)" }} />
+						<span>Журнал стерилизации</span>
 					</button>
 					<button
 						type="button"
-						className="primary-button"
-						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
+						className="dente-segmented-item active"
 						onClick={handleCreateNew}
+						title="Добавить новый шаблон протокола"
 					>
-						<Plus size={16} /> Добавить шаблон
+						<Plus size={14} />
+						<span>Добавить шаблон</span>
 					</button>
 				</div>
 			</div>
@@ -363,17 +363,28 @@ export function SettingsProtocolsTab() {
 				<>
 					{/* Поиск и быстрый фильтр по специальностям */}
 					<div className="flex items-center justify-between gap-3 flex-wrap my-4 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="relative flex-1 min-w-[200px]">
-							<Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+						<div className="dente-search-wrap flex-1 min-w-[240px]">
+							<Search className="dente-search-icon" size={14} aria-hidden="true" />
 							<input
-								type="text"
+								type="search"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Быстрый поиск по названию, причине визита или МКБ-10..."
-								className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] min-h-[36px]"
+								className="dente-search-input"
+								data-testid="input-search-protocols"
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="dente-search-clear"
+									aria-label="Очистить поиск"
+								>
+									<X size={13} />
+								</button>
+							)}
 						</div>
-						<div className="flex items-center gap-1 flex-wrap">
+						<div className="dente-filter-chips" role="group" aria-label="Фильтр протоколов по специальностям">
 							{[
 								{ key: "all", label: "Все" },
 								{ key: "therapist", label: "Терапевт" },
@@ -381,20 +392,23 @@ export function SettingsProtocolsTab() {
 								{ key: "orthopedist", label: "Ортопед" },
 								{ key: "hygienist", label: "Гигиенист" },
 								{ key: "universal", label: "Универсальный" },
-							].map((f) => (
-								<button
-									key={f.key}
-									type="button"
-									onClick={() => setSelectedSpecialtyFilter(f.key)}
-									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[32px] ${
-										selectedSpecialtyFilter === f.key
-											? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-									}`}
-								>
-									{f.label}
-								</button>
-							))}
+							].map((f) => {
+								const count = f.key === "all"
+									? typedProtocolTemplates.length
+									: typedProtocolTemplates.filter((t) => t.specialty === f.key).length;
+								return (
+									<button
+										key={f.key}
+										type="button"
+										onClick={() => setSelectedSpecialtyFilter(f.key)}
+										className={`dente-filter-chip ${selectedSpecialtyFilter === f.key ? "active" : ""}`}
+										data-active={selectedSpecialtyFilter === f.key}
+									>
+										<span>{f.label}</span>
+										{count > 0 && <span className="opacity-70 text-[10px] ml-1 font-mono">({count})</span>}
+									</button>
+								);
+							})}
 						</div>
 					</div>
 

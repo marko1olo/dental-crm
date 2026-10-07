@@ -200,7 +200,7 @@
 
 .marketing-search-input {
 	width: 100%;
-	padding: 6px 28px 6px 30px;
+	padding: 6px 28px 6px 38px !important;
 	font-size: 12.5px;
 	background: var(--paper);
 	border: 1px solid var(--line);

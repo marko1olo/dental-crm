@@ -217,24 +217,24 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 				</div>
 
 				<div className="grid grid-cols-3 gap-1.5 w-full">
-					{/* 1-Click Norm */}
+					{/* Протокол «Норма» */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
 						className="min-h-[44px] px-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-						title="1-клик: Вся десна здорова (Норма)"
+						title="Вся десна здорова (Норма)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<ShieldCheck size={16} className="shrink-0" />
 						<span className="truncate">Вся норма</span>
 					</button>
 
-					{/* 1-Click Prophy */}
+					{/* Протокол «Профгигиена» */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("pro_hygiene_express")}
 						className="min-h-[44px] px-2 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-						title="Профгигиена в 1 клик"
+						title="Профессиональная гигиена полости рта"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
 						<UltrasonicScaler size={16} className="shrink-0" />

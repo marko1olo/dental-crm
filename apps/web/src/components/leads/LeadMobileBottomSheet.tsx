@@ -121,21 +121,9 @@ export const LeadMobileBottomSheet = ({
 	const handleStageClick = (e: React.MouseEvent, targetStatus: LeadStatus) => {
 		if (targetStatus === lead.status) return;
 		if (targetStatus === "trash") {
-			const reason = window.prompt(
-				"Причина отказа:\n1 - Дорого\n2 - Далеко\n3 - Передумал\n4 - Дубль\nИли свой вариант:",
-				"Дорого",
-			);
-			const mappedReason =
-				reason === "1"
-					? "Дорого"
-					: reason === "2"
-						? "Далеко / Неудобная локация"
-						: reason === "3"
-							? "Передумал / Неактуально"
-							: reason === "4"
-								? "Дубль обращения"
-								: (reason || "Дорого");
-			onStatusChange(e, lead.id, targetStatus, { dropReason: mappedReason });
+			onStatusChange(e, lead.id, targetStatus, {
+				dropReason: lead.dropReason || "Отказ / Неактуально",
+			});
 		} else {
 			onStatusChange(e, lead.id, targetStatus);
 		}

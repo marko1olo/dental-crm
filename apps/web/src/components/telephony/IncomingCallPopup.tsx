@@ -677,7 +677,7 @@ export function IncomingCallPopup() {
 									type="button"
 									onClick={() => handleQuickBook("today_standard")}
 									className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-									title="Создать запись на приём в 1 клик (соло-врач: без обязательного ассистента и филиала)"
+									title="Создать запись на приём"
 									data-testid="badge-action-book"
 								>
 									<CalendarCheck size={16} />
@@ -688,7 +688,7 @@ export function IncomingCallPopup() {
 									type="button"
 									onClick={handleToggleCardDrawer}
 									className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-									title={isKnownPatient ? "Открыть карту пациента в боковой шторке (визит 043/у сохранён)" : "Создать нового пациента в боковой шторке (визит 043/у сохранён)"}
+									title={isKnownPatient ? "Открыть карту пациента" : "Создать нового пациента"}
 									aria-label={isKnownPatient ? "Открыть карту пациента" : "Создать нового пациента"}
 									data-testid="badge-action-card"
 								>

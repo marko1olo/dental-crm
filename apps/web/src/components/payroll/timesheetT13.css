@@ -95,3 +95,138 @@
 		display: none !important;
 	}
 }
+
+/* DENTE Canonical Segmented Bar */
+.timesheet-modal-container .dente-segmented-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
+}
+
+.timesheet-modal-container .dente-segmented-item {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 7px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--muted);
+	border: none;
+	background: transparent;
+	transition: all 0.15s ease;
+	cursor: pointer;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	user-select: none;
+}
+
+.timesheet-modal-container .dente-segmented-item:hover {
+	color: var(--ink);
+}
+
+.timesheet-modal-container .dente-segmented-item.active {
+	background-color: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* DENTE Canonical Filter Chips */
+.timesheet-modal-container .dente-filter-chips {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.timesheet-modal-container .dente-filter-chip {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 20px;
+	font-size: 12.5px;
+	font-weight: 500;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+}
+
+.timesheet-modal-container .dente-filter-chip:hover {
+	background-color: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+.timesheet-modal-container .dente-filter-chip.active {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.15);
+}
+
+/* DENTE Standardized Buttons */
+.timesheet-modal-container .dente-btn-primary {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	background-color: var(--teal);
+	color: var(--on-teal);
+	border: 1px solid transparent;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	white-space: nowrap;
+}
+
+.timesheet-modal-container .dente-btn-primary:hover:not(:disabled) {
+	opacity: 0.92;
+	transform: translateY(-0.5px);
+}
+
+.timesheet-modal-container .dente-btn-secondary {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.timesheet-modal-container .dente-btn-secondary:hover:not(:disabled) {
+	background-color: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
+
+

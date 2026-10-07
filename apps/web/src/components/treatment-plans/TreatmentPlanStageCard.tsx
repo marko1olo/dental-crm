@@ -236,8 +236,8 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 										e.stopPropagation();
 										setIsStatusMenuOpen((prev) => !prev);
 									}}
-									className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusConfig.badge} flex items-center gap-1 cursor-pointer hover:opacity-90 transition-opacity touch-manipulation`}
-									title="1-клик смена статуса этапа (Черновик -> Согласован -> В работе -> Завершен)"
+									className={`text-[11.5px] px-2.5 py-0.5 rounded-full font-bold border ${statusConfig.badge} flex items-center gap-1 cursor-pointer hover:opacity-90 transition-opacity touch-manipulation`}
+									title="Смена статуса этапа (Черновик -> Согласован -> В работе -> Завершен)"
 									data-testid={`stage-${stage.stageNumber}-status-badge`}
 									aria-expanded={isStatusMenuOpen}
 								>
@@ -338,7 +338,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<button
 										type="button"
 										onClick={() => onAddItem(stage)}
-										className="mt-2 h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
+										className="mt-2 h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-medium text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
 										data-testid={`stage-${stage.stageNumber}-empty-add-item-btn`}
 									>
 										<Plus size={13} />
@@ -368,17 +368,17 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 										))}
 										{onAddItem && (
 											<div className="px-4 py-2 bg-[var(--paper-soft,#f8fafc)] border-t border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs">
-												<span className="text-[11px] text-[var(--muted,#64748b)] font-medium">
+												<span className="text-[12px] text-[var(--muted,#64748b)] font-medium">
 													Добавить процедуру или пакет в этот этап:
 												</span>
 												<button
 													type="button"
 													onClick={() => onAddItem(stage)}
-													className="h-7 sm:h-8 min-h-[28px] sm:min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-2.5 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1 transition-colors"
+													className="h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-medium text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer flex items-center gap-1.5 transition-colors"
 													data-testid={`stage-${stage.stageNumber}-add-item-btn`}
 												>
 													<Plus size={13} />
-													<span>Добавить услугу</span>
+													<span>+ Услуга</span>
 												</button>
 											</div>
 										)}

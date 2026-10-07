@@ -266,7 +266,8 @@ export function executeAutoVisitBomDeduction(
 		input.currentStockMap ?? {},
 		{
 			allowOverdraft: input.allowOverdraft !== false,
-			overdraftMessagePrefix: "Мандат 8e/8n: Мягкий овердрафт",
+			overdraftMessagePrefix: "Складской овердрафт",
+			overdraftMessageSuffix: "Накладная в пути. Лечение не блокируется.",
 		},
 	);
 

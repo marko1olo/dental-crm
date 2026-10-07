@@ -504,7 +504,7 @@ export function ProcedureMaterialDeductionModal({
 							onClick={() => setShowPoModal(true)}
 						>
 							<ShoppingCart size={13} />
-							<span>Сформировать заказ поставщику (1 клик)</span>
+							<span>Сформировать заказ поставщику</span>
 						</button>
 					</div>
 				)}
@@ -520,6 +520,16 @@ export function ProcedureMaterialDeductionModal({
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								className="inventory-search-clear"
+								onClick={() => setSearchQuery("")}
+								aria-label="Очистить поиск"
+							>
+								<X size={14} />
+							</button>
+						)}
 					</div>
 
 					<div className="inventory-category-tabs">
@@ -692,7 +702,7 @@ export function ProcedureMaterialDeductionModal({
 							style={{ minHeight: "36px" }}
 							title={
 								summary.hasDeficit
-									? `Остаток 0, списано в овердрафт: задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача: дефицит ${summary.criticalCount} поз.`
+									? `Остаток 0, списание с дефицитом: задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача: дефицит ${summary.criticalCount} поз.`
 									: "Провести списание выбранных материалов"
 							}
 						>
@@ -700,7 +710,7 @@ export function ProcedureMaterialDeductionModal({
 							{isDeducting
 								? "Списание..."
 								: summary.hasDeficit
-									? `Списать (мягкий овердрафт: ${summary.criticalCount} поз.)`
+									? `Списать (с дефицитом: ${summary.criticalCount} поз.)`
 									: "Списать со склада"}
 						</button>
 					</div>

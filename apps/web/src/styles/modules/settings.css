@@ -28,8 +28,8 @@
 	align-items: center;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
-	border-radius: 8px;
-	padding: 2px;
+	border-radius: 10px;
+	padding: 3px;
 	gap: 2px;
 	box-sizing: border-box;
 	user-select: none;
@@ -56,14 +56,17 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
-	padding: 0 14px;
-	border-radius: 6px;
-	font-size: 13px;
-	font-weight: 600;
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	padding: 0 12px;
+	border-radius: 7px;
+	font-size: 12.5px;
+	font-weight: 500;
 	white-space: nowrap;
+	width: auto;
+	min-width: max-content;
+	text-overflow: clip;
 	border: 1px solid transparent;
 	background: transparent;
 	color: var(--muted);
@@ -75,21 +78,21 @@
 
 .settings-segment-btn:hover {
 	color: var(--ink);
-	background: rgba(0, 0, 0, 0.03);
+	background: rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="dark"] .settings-segment-btn:hover,
 [data-theme="night"] .settings-segment-btn:hover,
 [data-theme="oled"] .settings-segment-btn:hover,
 [data-theme="cyber_xray"] .settings-segment-btn:hover {
-	background: rgba(255, 255, 255, 0.04);
+	background: rgba(255, 255, 255, 0.05);
 }
 
 .settings-segment-btn.active {
 	background: var(--paper);
-	border-color: var(--line);
+	border-color: var(--line-subtle, var(--line));
 	color: var(--teal-dark, var(--teal));
-	font-weight: 700;
+	font-weight: 600;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
@@ -97,10 +100,10 @@
 [data-theme="night"] .settings-segment-btn.active,
 [data-theme="oled"] .settings-segment-btn.active,
 [data-theme="cyber_xray"] .settings-segment-btn.active {
-	background: var(--paper-strong, #1e293b);
+	background: var(--paper-card, var(--paper-strong));
 	border-color: var(--line);
 	color: var(--teal-light, var(--teal));
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .settings-segment-btn:focus-visible {
@@ -168,6 +171,9 @@
 	align-items: center;
 	gap: 6px;
 	white-space: nowrap;
+	width: auto;
+	min-width: max-content;
+	text-overflow: clip;
 	flex-shrink: 0;
 	cursor: pointer;
 	border: 1px solid var(--line);

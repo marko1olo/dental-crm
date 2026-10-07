@@ -6,7 +6,7 @@
  * - Right Window: Semantic Minzdrav Order 804n mapping, price with kopecks, confidence badge.
  * - 1-Row Strict Toolbar (32-36px, Hick's Law, CLS prevention).
  * - Proportional Synchronized Scrolling between Left and Right Panes.
- * - 1-Click Inline Modifiers (±100 ₽, ±500 ₽, 0 ₽ Гарантия по Мандату 8e).
+ * - 1-Click Inline Modifiers (±100 ₽, ±500 ₽, 0 ₽ Гарантия).
  * - 1-Click Batch Indexation (+5%, +10%), Rounding (до 100 ₽, 500 ₽), Warranty (0 ₽).
  * - Pure Design Tokens (var(--paper), var(--ink), var(--teal), var(--line)), Zero Emojis, WCAG AAA Contrast.
  */
@@ -138,7 +138,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 		});
 	};
 
-	// Inline Price Modifiers (±100 ₽, ±500 ₽, 0 ₽ Гарантия по Мандату 8e)
+	// Inline Price Modifiers (±100 ₽, ±500 ₽, 0 ₽ Гарантия)
 	const handleModifyRowDelta = (rowId: string, deltaRub: number) => {
 		if (!onItemsChange) return;
 		const updated = items.map((it) => {
@@ -470,7 +470,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 							type="button"
 							className="pricelist-diff-batch-btn warranty"
 							onClick={handleBatchSetZero}
-							title="Мандат 8e: установить 0 ₽ (Гарантия) для выбранных услуг"
+							title="Установить 0 ₽ (Гарантия) для выбранных услуг"
 						>
 							0 ₽ (Гарантия)
 						</button>
@@ -495,12 +495,12 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 
 				{/* Right Group: Search, Accept All, Deselect */}
 				<div className="pricelist-diff-toolbar-right">
-					<div className="pricelist-diff-search-box">
-						<Search size={12} className="pricelist-diff-search-icon" />
+					<div className="dente-search-wrap pricelist-diff-search-box">
+						<Search size={14} className="dente-search-icon pricelist-diff-search-icon" />
 						<input
 							id={searchInputId}
 							type="text"
-							className="pricelist-diff-search-input"
+							className="dente-search-input pricelist-diff-search-input"
 							placeholder="Поиск..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
@@ -508,11 +508,11 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 						{searchTerm && (
 							<button
 								type="button"
-								className="pricelist-diff-search-clear"
+								className="dente-search-clear pricelist-diff-search-clear"
 								onClick={() => setSearchTerm('')}
 								aria-label="Очистить поиск"
 							>
-								<X size={11} />
+								<X size={12} />
 							</button>
 						)}
 					</div>
@@ -739,7 +739,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 												type="button"
 												className={`pricelist-diff-delta-btn warranty ${isWarranty ? 'active' : ''}`}
 												onClick={() => handleSetRowZeroPrice(item.id)}
-												title="Установить 0 ₽ (Гарантия / Бесплатно по Мандату 8e)"
+												title="Установить 0 ₽ (Гарантия / Бесплатно)"
 											>
 												0 ₽
 											</button>

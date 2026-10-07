@@ -245,7 +245,7 @@ export function generateCdaBody(ctx: CdaContext): string {
 		servicesSection = sectionBlock({
 			loinc: EGISZ_OIDS.LOINC_SERVICES_RENDERED,
 			displayName: "Медицинские услуги",
-			title: "Оказанные медицинские услуги (Номенклатура 804н)",
+			title: "Оказанные медицинские услуги",
 			textXml,
 			entriesXml: procedureEntries.join("\n"),
 		});

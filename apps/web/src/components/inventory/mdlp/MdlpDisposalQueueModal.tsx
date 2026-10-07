@@ -258,7 +258,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		setSuccessDoc(null);
 	}, []);
 
-	// 1-Клик пакетное списание всех пустых карпул смены медсестрой (10 шт. Артикаин + 2 шт. Скандонест)
+	// Быстрое пакетное списание всех пустых карпул смены медсестрой (10 шт. Артикаин + 2 шт. Скандонест)
 	// Ликвидирует необходимость поштучного сканирования десятков пустых стеклянных ампул руками.
 	// Использует аутентичную генерацию GS1 DataMatrix (валидный Modulo 10, серийный номер 13 симв., криптохвост 44 симв.)
 	const handleQuickNurseCarpulesDisposal = useCallback(() => {
@@ -310,12 +310,12 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 			"Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21 (бумажный журнал учтён, код 332)",
 		);
 		showToast(
-			"Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)",
+			"Списаны все использованные карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание проведено (бумажный журнал учтён, старшая медсестра опциональна)",
 			"info",
 		);
 	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
 
-	// Прямая 1-клик печать акта списания без модальных барьеров (Мандат 8e, 8k, 8s)
+	// Прямая печать акта списания без модальных барьеров (Мандат 8e, 8k, 8s)
 	const handleDirectPrintAct = useCallback(() => {
 		if (items.length === 0) {
 			showToast(
@@ -536,7 +536,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							<div className="text-xs text-muted mt-0.5 flex items-center gap-2 truncate">
 								<span>Вывод из оборота (код 13)</span> •{" "}
 								<span>Контроль сроков годности FEFO</span> •{" "}
-								<span>Акт списания (1 клик)</span>
+								<span>Акт списания</span>
 							</div>
 						</div>
 					</div>
@@ -583,9 +583,9 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 									className="mdlp-btn mdlp-btn-primary min-h-[44px] text-xs px-3"
 									style={{ minHeight: "44px" }}
 									onClick={handleDirectPrintAct}
-									title="Прямая печать акта списания в 1 клик без лишних окон (Мандат 8e)"
+									title="Прямая печать акта списания"
 								>
-									<Printer size={14} /> Печать акта списания (1 клик)
+									<Printer size={14} /> Печать акта списания
 								</button>
 								<button
 									type="button"
@@ -615,7 +615,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 						lastScanned={lastScanned}
 					/>
 
-					{/* 1-Клик Пакетное списание пустых карпул смены медсестры по СанПиН 3.3686-21 */}
+					{/* Пакетное списание пустых карпул смены медсестры по СанПиН 3.3686-21 */}
 					<div
 						style={{
 							padding: "12px 16px",
@@ -650,7 +650,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 									СанПиН 3.3686-21: Пакетное списание пустых карпул смены (без поштучного сканирования)
 								</div>
 								<div style={{ fontSize: 12, color: "var(--muted)" }}>
-									Врачу и администратору не нужно сканировать десятки ампул или ждать старшую медсестру. Списание типового набора смены в 1 клик единолично.
+									Врачу и администратору не нужно сканировать десятки ампул или ждать старшую медсестру. Быстрое списание типового набора смены единолично.
 								</div>
 							</div>
 						</div>

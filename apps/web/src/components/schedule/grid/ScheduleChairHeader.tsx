@@ -145,7 +145,7 @@ export function ScheduleChairHeader({
               );
             }}
             className="min-h-[22px] h-[22px] w-[22px] p-0 rounded hover:bg-[var(--line)]/50 text-[var(--muted)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
-            title={`Санобработка / Техперерыв для «${chair.name}» (1 клик)`}
+            title={`Санобработка / Техперерыв для «${chair.name}»`}
             aria-label={`Санобработка и техперерыв для ${chair.name}`}
             data-testid={`btn-chair-maintenance-${chair.id}`}
           >
@@ -196,7 +196,7 @@ export function ScheduleChairHeader({
                 );
               }}
               className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 shrink-0 cursor-pointer"
-              title="Кресло свободно (врач не назначен). Нажмите для назначения смены в 1 клик"
+              title="Кресло свободно (врач не назначен). Нажмите для назначения смены"
               data-testid={`chair-grid-unstaffed-badge-${chair.id}`}
             >
               + Врач
@@ -356,7 +356,7 @@ export function ScheduleChairHeader({
               }}
               onClick={(e) => e.stopPropagation()}
               className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-2 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[95px] sm:min-w-[130px] max-w-[130px] sm:max-w-[180px] shrink-0"
-              title="Закрепление врача за креслом в 1 клик (выбор из списка)"
+              title="Закрепление врача за креслом (выбор из списка)"
               data-testid={`chair-duty-doctor-select-${chair.id}`}
               aria-label={`Дежурный врач для ${chair.name}`}
             >

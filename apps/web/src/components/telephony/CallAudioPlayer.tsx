@@ -225,7 +225,7 @@ export function CallAudioPlayer({
 						<button
 							type="button"
 							onClick={() => setShowTranscript((prev) => !prev)}
-							className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[32px] py-1 transition-colors cursor-pointer"
+							className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:text-[var(--teal)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
 							<Sparkles size={13} className="text-amber-500" />
 							<span>
@@ -291,14 +291,14 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={togglePlay}
-						className="min-h-[36px] min-w-[36px] w-9 h-9 sm:w-8 sm:h-8 sm:min-h-[32px] sm:min-w-[32px] rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white flex items-center justify-center transition-all shadow-xs focus:outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
 						title={isPlaying ? "Пауза" : "Воспроизвести запись"}
 						aria-label={isPlaying ? "Пауза" : "Воспроизвести запись"}
 					>
 						{isPlaying ? (
-							<Pause size={18} />
+							<Pause size={16} />
 						) : (
-							<Play size={18} className="ml-0.5" />
+							<Play size={16} className="ml-0.5" />
 						)}
 					</button>
 
@@ -306,22 +306,22 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={() => handleSkip(-10)}
-						className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
+						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
 						title="Назад на 10 сек"
 						aria-label="Назад на 10 секунд"
 					>
-						<RotateCcw size={16} />
+						<RotateCcw size={15} />
 					</button>
 
 					{/* Skip +10s */}
 					<button
 						type="button"
 						onClick={() => handleSkip(10)}
-						className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors"
+						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-colors cursor-pointer"
 						title="Вперед на 10 сек"
 						aria-label="Вперед на 10 секунд"
 					>
-						<RotateCw size={16} />
+						<RotateCw size={15} />
 					</button>
 
 					<span className="font-mono text-xs text-[var(--ink,#0f172a)] font-semibold pl-1">
@@ -331,17 +331,19 @@ export function CallAudioPlayer({
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{/* Speed Toggle Pills (1x, 1.25x, 1.5x, 2x) */}
-					<div className="flex items-center bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-xl p-0.5 border border-[var(--line,#e2e8f0)] gap-1">
+					{/* Speed Toggle Segmented Bar (1x, 1.25x, 1.5x, 2x) */}
+					<div
+						className="dente-segmented-bar"
+						role="group"
+						aria-label="Скорость воспроизведения"
+					>
 						{speeds.map((s) => (
 							<button
 								key={s}
 								type="button"
 								onClick={() => setPlaybackSpeed(s)}
-								className={`min-h-[28px] min-w-[28px] h-7 px-2 py-0.5 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center ${
-									playbackSpeed === s
-										? "bg-[var(--teal)] text-white shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))]"
+								className={`dente-segmented-item h-7 px-2 text-[12px] font-semibold cursor-pointer ${
+									playbackSpeed === s ? "is-active active" : ""
 								}`}
 								title={`Скорость ${s}x`}
 							>
@@ -354,14 +356,14 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={toggleMute}
-						className="min-h-[32px] min-w-[32px] h-8 w-8 p-1.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all"
+						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] inline-flex items-center justify-center transition-all cursor-pointer"
 						title={isMuted ? "Включить звук" : "Выключить звук"}
 						aria-label={isMuted ? "Включить звук" : "Выключить звук"}
 					>
 						{isMuted ? (
-							<VolumeX size={18} className="text-rose-500" />
+							<VolumeX size={16} className="text-rose-500" />
 						) : (
-							<Volume2 size={18} />
+							<Volume2 size={16} />
 						)}
 					</button>
 				</div>
@@ -431,7 +433,7 @@ export function CallAudioPlayer({
 				<button
 					type="button"
 					onClick={() => setShowTranscript((prev) => !prev)}
-					className="text-xs font-bold text-[var(--teal)] hover:opacity-90 inline-flex items-center gap-1.5 min-h-[32px] py-1 transition-colors cursor-pointer"
+					className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:text-[var(--teal)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 					aria-expanded={showTranscript}
 				>
 					<Sparkles size={13} className="text-amber-500" />
@@ -446,7 +448,7 @@ export function CallAudioPlayer({
 					<button
 						type="button"
 						onClick={handleCopyTranscript}
-						className="min-h-[32px] text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors cursor-pointer"
+						className="h-8 min-h-[32px] text-xs font-semibold text-[var(--ink,#0f172a)] inline-flex items-center gap-1.5 px-3 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] transition-colors cursor-pointer"
 						title="Скопировать текст диалога"
 					>
 						{copiedTranscript ? (

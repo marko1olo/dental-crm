@@ -12,6 +12,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Users,
+	X,
 } from "lucide-react";
 import type {
 	RecallCycleType,
@@ -71,13 +72,14 @@ export const PatientRecallsToolbar: React.FC<PatientRecallsToolbarProps> = ({
 		<div className="recall-toolbar">
 			<div className="recall-view-mode-bar">
 				<div
-					className="recall-view-mode-toggles"
+					className="recall-view-mode-toggles dente-segmented-bar"
 					role="group"
 					aria-label="Режим отображения реестра"
 				>
 					<button
 						type="button"
-						className={`recall-view-mode-btn ${registryViewMode === "table" ? "active" : ""}`}
+						className={`recall-view-mode-btn dente-segmented-item ${registryViewMode === "table" ? "active" : ""}`}
+						data-active={registryViewMode === "table"}
 						onClick={() => onRegistryViewModeChange("table")}
 						data-testid="view-mode-table"
 						title="Табличный вид"
@@ -87,7 +89,8 @@ export const PatientRecallsToolbar: React.FC<PatientRecallsToolbarProps> = ({
 					</button>
 					<button
 						type="button"
-						className={`recall-view-mode-btn ${registryViewMode === "kanban" ? "active" : ""}`}
+						className={`recall-view-mode-btn dente-segmented-item ${registryViewMode === "kanban" ? "active" : ""}`}
+						data-active={registryViewMode === "kanban"}
 						onClick={() => onRegistryViewModeChange("kanban")}
 						data-testid="view-mode-kanban"
 						title="Канбан-доска («Не звонили», «Дозвонились», «Отказ», «Записан»)"
@@ -138,19 +141,29 @@ export const PatientRecallsToolbar: React.FC<PatientRecallsToolbarProps> = ({
 			</div>
 
 			<div className="recall-toolbar-top">
-				<div className="recall-search-input-wrap">
-					<Search size={16} className="recall-search-icon" aria-hidden="true" />
+				<div className="recall-search-input-wrap dente-search-wrap">
+					<Search size={15} className="recall-search-icon dente-search-icon" aria-hidden="true" />
 					<label htmlFor={searchInputId} className="sr-only">
 						Поиск по ФИО, телефону или врачу
 					</label>
 					<input
 						id={searchInputId}
 						type="search"
-						className="recall-search-input"
+						className="recall-search-input dente-search-input"
 						placeholder="Поиск по ФИО, телефону или лечащему врачу..."
 						value={searchQuery}
 						onChange={(e) => onSearchQueryChange(e.target.value)}
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							onClick={() => onSearchQueryChange("")}
+							className="dente-search-clear"
+							aria-label="Очистить поиск"
+						>
+							<X size={13} />
+						</button>
+					)}
 				</div>
 
 				<div>

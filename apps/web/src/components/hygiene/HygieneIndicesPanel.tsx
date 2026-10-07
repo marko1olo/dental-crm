@@ -3,40 +3,32 @@
  *
  * (DOMAIN: CLINICAL HYGIENE INDICES & PERIODONTAL ASSESSMENT)
  *
- * Возможности:
- * 1. OHI-S (Грин-Вермиллион): расчет налета DI-S и зубного камня CI-S по 6 индексным зубам (16, 11, 26, 36, 31, 46).
- * 2. Silness-Löe (Сиднесс-Лоэ): оценка зубного налета в придесневой области (0..3).
- * 3. Федорова-Володкиной: гигиенический индекс окрашивания Шиллера-Писарева (1..5, норма 1.0).
- * 4. PHP (Подошадлей-Хейли): индекс эффективности гигиены по 5 зонам коронки (0..5).
- * 5. PMA (Парма): оценка степени воспаления десны (сосочек P=1, маргинальная M=2, альвеолярная A=3) в %.
- * 6. КПИ (Леус): комплексный периодонтальный индекс (0=здоров, 1=кровь, 2=камень, 3=карман 4-5мм, 4=карман >=6мм).
- * 7. 1-Клик «Физиологическая норма (все 0 / Федорова-В. 1.0 / Здоров)» (Мандат 8e / Раздел VII).
- * 8. 1-Клик синхронизация с данными интерактивной перио-карты (глубина карманов, кровоточивость BOP).
- * 9. 1-Клик экспорт стандартизированного протокола в дневник приёма 043/у.
- * 10. Печать протокола клинических индексов (Закон Миллера: «В карту 043/у», «Печать протокола»).
- * 11. Не требует обязательного заполнения всех зубов — расчет работает от 1 до 6 зубов мгновенно.
+ * Архитектурная декомпозиция по Мандату 8b (строго <= 800 строк):
+ * 1. OhiSilnessCalculator.tsx — калькулятор индексов OHI-S и Silness-Löe (<= 500 строк).
+ * 2. KpuBleedingIndicesCalculator.tsx — калькулятор КПУ и кровоточивости десневой борозды SBI (<= 500 строк).
+ * 3. HygieneExpressPresetsStrip.tsx — экспресс-пресеты клинических статусов и протоколов 804н.
+ * 4. hygienePrintHelper.ts — печать стандартизированного протокола Формы 043/у.
+ * 5. hygienePresetsData.ts — справочники и генераторы клинических текстов.
  */
 
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	Check,
+	Clipboard,
+	Printer,
+	RotateCcw,
+	ShieldCheck,
+} from "lucide-react";
+import { DentalForm043 } from "../icons/DentalIcons";
+import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
 import {
 	calculateCombinedHygieneReport,
 	calculateFedorovVolodkinaScore,
 	calculatePhpScore,
-	calculateSextantHygieneIndices,
 	calculateSilnessLoeScore,
-	CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
-	CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
-	CLINICAL_PERIO_NORM_SUMMARY_RU,
-	CLINICAL_PRO_HYGIENE_SUMMARY_RU,
-	CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
-	createClinicalPerioNormProtocolText,
-	createClinicalProHygieneProtocolText,
-	createDeepFluoridationProtocolText,
 	createHealthyHygieneAssessment,
-	createPerioAntisepticProtocolText,
-	createToothMousseProtocolText,
 	deriveHygieneFromPerioTeeth,
-	formatSextantHygieneSummary,
-	HYGIENE_EXPRESS_SERVICES,
 	HYGIENE_INDEX_TEETH_CONFIG,
 	WHO_HYGIENE_SEXTANTS,
 	type CombinedHygieneReport,
@@ -47,23 +39,37 @@ import {
 	type PhpResult,
 	type SilnessLoeResult,
 } from "@dental/shared";
+
 import {
-	Activity,
-	AlertTriangle,
-	Check,
-	CheckCircle2,
-	Clipboard,
-	Droplets,
-	Printer,
-	RotateCcw,
-	ShieldAlert,
-	ShieldCheck,
-	Zap,
-} from "lucide-react";
-import { DentalForm043, UltrasonicScaler } from "../icons/DentalIcons";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { showToast } from "../GlobalToast";
-import { useVisitStore } from "../../store/visitStore";
+	CATARRHAL_GINGIVITIS_ASSESSMENTS,
+	CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
+	CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
+	CLINICAL_PERIO_NORM_SUMMARY_RU,
+	CLINICAL_PRO_HYGIENE_SUMMARY_RU,
+	CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
+	createCatarrhalGingivitisProtocolText,
+	createClinicalPerioNormProtocolText,
+	createClinicalProHygieneProtocolText,
+	createDeepFluoridationProtocolText,
+	createMildPeriodontitisProtocolText,
+	createModeratePeriodontitisProtocolText,
+	createPerioAntisepticProtocolText,
+	createSeverePeriodontitisProtocolText,
+	createToothMousseProtocolText,
+	DEEP_FLUORIDATION_SERVICE,
+	HYGIENE_EXPRESS_SERVICES,
+	MILD_PERIODONTITIS_ASSESSMENTS,
+	MODERATE_PERIODONTITIS_ASSESSMENTS,
+	PERIO_ANTISEPTIC_SERVICE,
+	PRO_HYGIENE_SERVICE,
+	SEVERE_PERIODONTITIS_ASSESSMENTS,
+	TOOTH_MOUSSE_SERVICE,
+} from "./hygienePresetsData";
+
+import { OhiSilnessCalculator } from "./OhiSilnessCalculator";
+import { KpuBleedingIndicesCalculator } from "./KpuBleedingIndicesCalculator";
+import { HygieneExpressPresetsStrip } from "./HygieneExpressPresetsStrip";
+import { printHygieneProtocol } from "./hygienePrintHelper";
 
 export {
 	CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
@@ -80,6 +86,9 @@ export {
 	calculateSilnessLoeScore,
 	calculateFedorovVolodkinaScore,
 	calculatePhpScore,
+	OhiSilnessCalculator,
+	KpuBleedingIndicesCalculator,
+	HygieneExpressPresetsStrip,
 };
 
 export type ActiveHygieneIndexTab =
@@ -88,13 +97,12 @@ export type ActiveHygieneIndexTab =
 	| "fedorov-volodkina"
 	| "php";
 
-
 export interface HygieneIndicesPanelProps {
-	/** Optional existing perio dentition for 1-click auto-sync */
+	/** Optional existing perio dentition for auto-sync */
 	readonly perioTeeth?: readonly PerioToothRecord[] | undefined;
 	/** Callback when assessments change */
 	readonly onChange?: ((report: CombinedHygieneReport) => void) | undefined;
-	/** 1-click insertion into 043/u visit diary */
+	/** Insertion into 043/u visit diary */
 	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly compactMode?: boolean | undefined;
@@ -149,7 +157,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		return calculateCombinedHygieneReport(assessments);
 	}, [assessments]);
 
-	// Calculate secondary hygiene indices
+	// Secondary indices calculation
 	const silnessResult = useMemo(
 		() => calculateSilnessLoeScore(assessments),
 		[assessments],
@@ -167,7 +175,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		}
 	}, [report, onChange]);
 
-	// ─── Mutations ───────────────────────────────────────────────────────────
+	// ─── Tooth Score Updates ──────────────────────────────────────────────────
 	const updateToothScore = useCallback(
 		(
 			toothNumber: number,
@@ -242,664 +250,130 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		[readOnly],
 	);
 
-	// 1. Норма пародонта (Мандаты 8e, 8i, 8k, 8n: OHI-S = 0, Silness = 0, Федорова-В. = 1.0)
+	// Helper to apply clinical protocols to store & events
+	const applyClinicalProtocol = useCallback(
+		(protocolText: string, toastMessage: string, toastType: "success" | "warning" = "success") => {
+			useVisitStore.getState().setVisitNoteForm((prev) => ({
+				...prev,
+				objectiveStatus: prev.objectiveStatus
+					? `${prev.objectiveStatus}\n\n${protocolText}`
+					: protocolText,
+			}));
+
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: protocolText,
+						mode: "smart_append",
+					},
+				}),
+			);
+
+			onInsertToProtocol?.(protocolText);
+			showToast(toastMessage, toastType, 4000);
+		},
+		[onInsertToProtocol],
+	);
+
+	const dispatchServiceEvents = useCallback((service: { code: string; name: string; price: number; quantity: number; category: string }) => {
+		window.dispatchEvent(
+			new CustomEvent("dente-add-estimate-service", {
+				detail: service,
+			}),
+		);
+		window.dispatchEvent(
+			new CustomEvent("dente-add-services-to-invoice", {
+				detail: {
+					...service,
+					service,
+					services: [service],
+				},
+			}),
+		);
+	}, []);
+
+	// 1. Норма пародонта
 	const handlePresetPeriodontalNorm = useCallback(() => {
 		if (readOnly) return;
 		const healthy = createHealthyHygieneAssessment();
 		const enrichedHealthy: Record<number, ExtendedToothAssessment> = {};
 		for (const [key, val] of Object.entries(healthy)) {
 			const num = Number(key);
-			enrichedHealthy[num] = {
-				...val,
-				silnessScore: 0,
-				fedorovScore: 1,
-				phpScore: 0,
-			};
+			enrichedHealthy[num] = { ...val, silnessScore: 0, fedorovScore: 1, phpScore: 0 };
 		}
 		setAssessments(enrichedHealthy);
-
 		const protocolText = createClinicalPerioNormProtocolText();
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			`${CLINICAL_PERIO_NORM_SUMMARY_RU}. Данные внесены в медицинскую карту!`,
-			"success",
-			4000,
-		);
-	}, [readOnly, onInsertToProtocol]);
+		applyClinicalProtocol(protocolText, `${CLINICAL_PERIO_NORM_SUMMARY_RU}. Данные внесены в медицинскую карту!`, "success");
+	}, [readOnly, applyClinicalProtocol]);
 
 	// 2. Катаральный гингивит
 	const handlePresetCatarrhalGingivitis = useCallback(() => {
 		if (readOnly) return;
-		const gingivitisAssessments: Record<number, ExtendedToothAssessment> = {
-			16: {
-				toothNumber: 16,
-				debrisScore: 1,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			11: {
-				toothNumber: 11,
-				debrisScore: 2,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			26: {
-				toothNumber: 26,
-				debrisScore: 1,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			46: {
-				toothNumber: 46,
-				debrisScore: 1,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			31: {
-				toothNumber: 31,
-				debrisScore: 2,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			36: {
-				toothNumber: 36,
-				debrisScore: 1,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-		};
-		setAssessments(gingivitisAssessments);
+		setAssessments(CATARRHAL_GINGIVITIS_ASSESSMENTS);
+		const rep = calculateCombinedHygieneReport(CATARRHAL_GINGIVITIS_ASSESSMENTS);
+		const protocolText = createCatarrhalGingivitisProtocolText(rep);
+		applyClinicalProtocol(protocolText, "Катаральный гингивит зафиксирован: отек сосочков, BOP+, наддесневые отложения. Данные внесены в медицинскую карту!", "warning");
+	}, [readOnly, applyClinicalProtocol]);
 
-		const rep = calculateCombinedHygieneReport(gingivitisAssessments);
-		const protocolText =
-			"• Экспресс-оценка гигиены и пародонта: Хронический катаральный гингивит (K05.1).\n" +
-			"• Status localis: Отек десневых сосочков, гиперемия и цианоз маргинального края десны, кровоточивость при зондировании (BOP+). Патологических пародонтальных карманов нет (глубина бороздок до 3 мм за счет отека десны). Определяются наддесневые зубные отложения и мягкий зубной налет.\n" +
-			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
-			"• Рекомендовано: Профессиональная гигиена полости рта (УЗ + AirFlow), противовоспалительная терапия, аппликации дентального геля.";
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			"Катаральный гингивит зафиксирован: отек сосочков, BOP+, наддесневые отложения. Данные внесены в медицинскую карту!",
-			"warning",
-			4000,
-		);
-	}, [readOnly, onInsertToProtocol]);
-
-	// 3. Пародонтит легкой степени (глубина 3-4 мм)
+	// 3. Пародонтит легкой степени
 	const handlePresetMildPeriodontitis = useCallback(() => {
 		if (readOnly) return;
-		const mildPerioAssessments: Record<number, ExtendedToothAssessment> = {
-			16: {
-				toothNumber: 16,
-				debrisScore: 1,
-				calculusScore: 2,
-				pmaScore: 2,
-				kpiScore: 3,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			11: {
-				toothNumber: 11,
-				debrisScore: 1,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			26: {
-				toothNumber: 26,
-				debrisScore: 1,
-				calculusScore: 2,
-				pmaScore: 2,
-				kpiScore: 3,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			46: {
-				toothNumber: 46,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 2,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			31: {
-				toothNumber: 31,
-				debrisScore: 1,
-				calculusScore: 1,
-				pmaScore: 2,
-				kpiScore: 2,
-				silnessScore: 1,
-				fedorovScore: 2,
-				phpScore: 2,
-			},
-			36: {
-				toothNumber: 36,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 2,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-		};
-		setAssessments(mildPerioAssessments);
-
-		const rep = calculateCombinedHygieneReport(mildPerioAssessments);
-		const protocolText =
-			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит легкой степени тяжести (K05.3).\n" +
-			"• Status localis: Десна умеренно гиперемирована, пастозна, с цианотичным оттенком. Глубина пародонтальных карманов 3-4 мм, преимущественно в межзубных промежутках, кровоточивость при зондировании (BOP+). Рецессия десны до 1 мм, умеренное количество над- и поддесневого зубного камня, патологическая подвижность зубов отсутствует (0 ст.). На рентгенограмме/КЛКТ: деструкция кортикальной пластинки и вершин межальвеолярных перегородок до 1/3 длины корней.\n" +
-			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
-			"• Рекомендовано: Профессиональная гигиена полости рта (УЗ Piezon + субгингивальный AirFlow), закрытый кюретаж карманов, антисептическая обработка десны, обучение гигиене.";
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			"Пародонтит легкой степени зафиксирован: карманы 3-4 мм, над/поддесневой камень, BOP+. Данные внесены в медицинскую карту!",
-			"warning",
-			4000,
-		);
-	}, [readOnly, onInsertToProtocol]);
+		setAssessments(MILD_PERIODONTITIS_ASSESSMENTS);
+		const rep = calculateCombinedHygieneReport(MILD_PERIODONTITIS_ASSESSMENTS);
+		const protocolText = createMildPeriodontitisProtocolText(rep);
+		applyClinicalProtocol(protocolText, "Пародонтит легкой степени зафиксирован: карманы 3-4 мм, над/поддесневой камень, BOP+. Данные внесены в медицинскую карту!", "warning");
+	}, [readOnly, applyClinicalProtocol]);
 
 	// 4. Пародонтит средней степени
 	const handlePresetModeratePeriodontitis = useCallback(() => {
 		if (readOnly) return;
-		const perioAssessments: Record<number, ExtendedToothAssessment> = {
-			16: {
-				toothNumber: 16,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			11: {
-				toothNumber: 11,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			26: {
-				toothNumber: 26,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			46: {
-				toothNumber: 46,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			31: {
-				toothNumber: 31,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			36: {
-				toothNumber: 36,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 3,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-		};
-		setAssessments(perioAssessments);
+		setAssessments(MODERATE_PERIODONTITIS_ASSESSMENTS);
+		const rep = calculateCombinedHygieneReport(MODERATE_PERIODONTITIS_ASSESSMENTS);
+		const protocolText = createModeratePeriodontitisProtocolText(rep);
+		applyClinicalProtocol(protocolText, "Пародонтит средней степени зафиксирован: карманы 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст. Данные внесены в медицинскую карту!", "warning");
+	}, [readOnly, applyClinicalProtocol]);
 
-		const rep = calculateCombinedHygieneReport(perioAssessments);
-		const protocolText =
-			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит средней степени тяжести (K05.3).\n" +
-			"• Status localis: Десна застойно гиперемирована с цианотичным оттенком, сосочки деформированы. Глубина пародонтальных карманов 4-5 мм с серозным экссудатом, рецессия десны 1-2 мм, обильный под- и наддесневой зубной камень, патологическая подвижность I ст. На рентгенограмме/КЛКТ: резорбция костной ткани межальвеолярных перегородок от 1/3 до 1/2 длины корней.\n" +
-			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
-			"• Рекомендовано: Комплексная пародонтальная терапия, поддесневой скейлинг SRP, Vector-терапия, антимикробная обработка карманов, шинирование по показаниям.";
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			"Пародонтит средней степени зафиксирован: карманы 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст. Данные внесены в медицинскую карту!",
-			"warning",
-			4000,
-		);
-	}, [readOnly, onInsertToProtocol]);
-
-	// 5. Пародонтит тяжёлой степени (Мандаты 8e, 8i, 8k, 8n)
+	// 5. Пародонтит тяжёлой степени
 	const handlePresetSeverePeriodontitis = useCallback(() => {
 		if (readOnly) return;
-		const perioAssessments: Record<number, ExtendedToothAssessment> = {
-			16: {
-				toothNumber: 16,
-				debrisScore: 3,
-				calculusScore: 3,
-				pmaScore: 3,
-				kpiScore: 4,
-				silnessScore: 3,
-				fedorovScore: 5,
-				phpScore: 5,
-			},
-			11: {
-				toothNumber: 11,
-				debrisScore: 2,
-				calculusScore: 2,
-				pmaScore: 3,
-				kpiScore: 4,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			26: {
-				toothNumber: 26,
-				debrisScore: 3,
-				calculusScore: 3,
-				pmaScore: 3,
-				kpiScore: 4,
-				silnessScore: 3,
-				fedorovScore: 5,
-				phpScore: 5,
-			},
-			46: {
-				toothNumber: 46,
-				debrisScore: 3,
-				calculusScore: 3,
-				pmaScore: 3,
-				kpiScore: 4,
-				silnessScore: 3,
-				fedorovScore: 5,
-				phpScore: 5,
-			},
-			31: {
-				toothNumber: 31,
-				debrisScore: 2,
-				calculusScore: 3,
-				pmaScore: 3,
-				kpiScore: 4,
-				silnessScore: 2,
-				fedorovScore: 3,
-				phpScore: 3,
-			},
-			36: {
-				toothNumber: 36,
-				debrisScore: 3,
-				calculusScore: 3,
-				pmaScore: 3,
-				kpiScore: 4,
-				silnessScore: 3,
-				fedorovScore: 5,
-				phpScore: 5,
-			},
-		};
-		setAssessments(perioAssessments);
+		setAssessments(SEVERE_PERIODONTITIS_ASSESSMENTS);
+		const rep = calculateCombinedHygieneReport(SEVERE_PERIODONTITIS_ASSESSMENTS);
+		const protocolText = createSeverePeriodontitisProtocolText(rep);
+		applyClinicalProtocol(protocolText, "Пародонтит тяжёлой степени зафиксирован: карманы ≥6 мм, гноетечение, подвижность II-III ст. Данные внесены в медицинскую карту!", "warning");
+	}, [readOnly, applyClinicalProtocol]);
 
-		const rep = calculateCombinedHygieneReport(perioAssessments);
-		const protocolText =
-			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит тяжёлой степени (K05.32).\n" +
-			"• Status localis: Десна застойно цианотична, выраженная кровоточивость сосочков (BOP > 50%). Глубокие пародонтальные карманы от 6 до 8 мм с серозно-гнойным экссудатом, рецессия десны 2-4 мм с обнажением фуркаций корней (фуркационные дефекты II класса). Обильный над- и поддесневой зубной камень, патологическая подвижность зубов II-III ст., веерообразное расхождение резцов. На рентгенограмме/КЛКТ: диффузная деструкция костной ткани межальвеолярных перегородок более 1/2 длины корней.\n" +
-			`• Клинические индексы: ${rep.ohiS.ratingText}, ${rep.pma.ratingText}, ${rep.kpi.ratingText}.\n` +
-			"• Рекомендовано: Неотложная противовоспалительная санация пародонта, антисептическое орошение карманов хлоргексидином 0.05%, эвакуация гнойного экссудата. Временное экстракоронарное шинирование подвижных зубов (A16.07.019). Системная противовоспалительная терапия, консультация хирурга-пародонтолога (лоскутные операции / удаление безнадежных зубов).";
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			"Пародонтит тяжёлой степени зафиксирован: карманы ≥6 мм, гноетечение, подвижность II-III ст. Данные внесены в медицинскую карту!",
-			"warning",
-			4500,
-		);
-	}, [readOnly, onInsertToProtocol]);
-
-	// 5. Профессиональная гигиена выполнена (Мандаты 8e, 8i, 8k, 8n)
+	// 6. Профессиональная гигиена выполнена (A16.07.051)
 	const handlePresetProHygieneDone = useCallback(() => {
 		if (readOnly) return;
-		const healthy = createHealthyHygieneAssessment();
-		const enrichedHealthy: Record<number, ExtendedToothAssessment> = {};
-		for (const [key, val] of Object.entries(healthy)) {
-			const num = Number(key);
-			enrichedHealthy[num] = {
-				...val,
-				silnessScore: 0,
-				fedorovScore: 1,
-				phpScore: 0,
-			};
-		}
-		setAssessments(enrichedHealthy);
-
+		handlePresetPeriodontalNorm();
 		const protocolText = createClinicalProHygieneProtocolText();
+		dispatchServiceEvents(PRO_HYGIENE_SERVICE);
+		applyClinicalProtocol(protocolText, `${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Дневник приёма и смета обновлены!`, "success");
+	}, [readOnly, handlePresetPeriodontalNorm, dispatchServiceEvents, applyClinicalProtocol]);
 
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		const proHygieneService = {
-			code: "A16.07.051",
-			name: CLINICAL_PRO_HYGIENE_SUMMARY_RU,
-			price: 5500,
-			quantity: 1,
-			category: "hygiene",
-		};
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-estimate-service", {
-				detail: proHygieneService,
-			}),
-		);
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-services-to-invoice", {
-				detail: {
-					...proHygieneService,
-					service: proHygieneService,
-					services: [proHygieneService],
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			`${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Дневник приёма и смета обновлены!`,
-			"success",
-			4500,
-		);
-	}, [readOnly, onInsertToProtocol]);
-
-	// 6. Глубокое фторирование эмали (Tiefenfluorid / Сафорайд, A11.07.012, 1800 ₽)
+	// 7. Глубокое фторирование эмали (A11.07.012)
 	const handlePresetDeepFluoridation = useCallback(() => {
 		if (readOnly) return;
 		const protocolText = createDeepFluoridationProtocolText();
+		dispatchServiceEvents(DEEP_FLUORIDATION_SERVICE);
+		applyClinicalProtocol(protocolText, `${CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU}. Внесено в карту и чек визита!`, "success");
+	}, [readOnly, dispatchServiceEvents, applyClinicalProtocol]);
 
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		const fluoridationService = {
-			code: "A11.07.012",
-			name: CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
-			price: 1800,
-			quantity: 1,
-			category: "hygiene",
-		};
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-estimate-service", {
-				detail: fluoridationService,
-			}),
-		);
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-services-to-invoice", {
-				detail: {
-					...fluoridationService,
-					service: fluoridationService,
-					services: [fluoridationService],
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			`${CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU}. Внесено в карту и чек визита!`,
-			"success",
-			4500,
-		);
-	}, [readOnly, onInsertToProtocol]);
-
-	// 7. Реминерализирующая терапия каппой (GC Tooth Mousse, A11.07.010, 1500 ₽)
+	// 8. Реминерализирующая терапия каппой (GC Tooth Mousse, A11.07.010)
 	const handlePresetToothMousse = useCallback(() => {
 		if (readOnly) return;
 		const protocolText = createToothMousseProtocolText();
+		dispatchServiceEvents(TOOTH_MOUSSE_SERVICE);
+		applyClinicalProtocol(protocolText, `${CLINICAL_TOOTH_MOUSSE_SUMMARY_RU}. Внесено в карту и чек визита!`, "success");
+	}, [readOnly, dispatchServiceEvents, applyClinicalProtocol]);
 
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		const toothMousseService = {
-			code: "A11.07.010",
-			name: CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
-			price: 1500,
-			quantity: 1,
-			category: "hygiene",
-		};
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-estimate-service", {
-				detail: toothMousseService,
-			}),
-		);
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-services-to-invoice", {
-				detail: {
-					...toothMousseService,
-					service: toothMousseService,
-					services: [toothMousseService],
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			`${CLINICAL_TOOTH_MOUSSE_SUMMARY_RU}. Внесено в карту и чек визита!`,
-			"success",
-			4500,
-		);
-	}, [readOnly, onInsertToProtocol]);
-
-	// 8. Медикаментозная обработка пародонтальных карманов (Хлоргексидин + Метрогил Дента, A16.07.053, 1200 ₽)
+	// 9. Медикаментозная обработка карманов (A16.07.053)
 	const handlePresetPerioAntiseptic = useCallback(() => {
 		if (readOnly) return;
 		const protocolText = createPerioAntisepticProtocolText();
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${protocolText}`
-				: protocolText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: protocolText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		const perioAntisepticService = {
-			code: "A16.07.053",
-			name: CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
-			price: 1200,
-			quantity: 1,
-			category: "hygiene",
-		};
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-estimate-service", {
-				detail: perioAntisepticService,
-			}),
-		);
-
-		window.dispatchEvent(
-			new CustomEvent("dente-add-services-to-invoice", {
-				detail: {
-					...perioAntisepticService,
-					service: perioAntisepticService,
-					services: [perioAntisepticService],
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(protocolText);
-		showToast(
-			`${CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU}. Внесено в карту и чек визита!`,
-			"success",
-			4500,
-		);
-	}, [readOnly, onInsertToProtocol]);
+		dispatchServiceEvents(PERIO_ANTISEPTIC_SERVICE);
+		applyClinicalProtocol(protocolText, `${CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU}. Внесено в карту и чек визита!`, "success");
+	}, [readOnly, dispatchServiceEvents, applyClinicalProtocol]);
 
 	const handleSyncFromPerio = useCallback(() => {
 		if (readOnly || !perioTeeth || perioTeeth.length === 0) return;
@@ -916,20 +390,13 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			};
 		}
 		setAssessments(enriched);
-		showToast(
-			"Индексы синхронизированы с текущей пародонтограммой",
-			"info",
-			3500,
-		);
+		showToast("Индексы синхронизированы с текущей пародонтограммой", "info", 3500);
 	}, [readOnly, perioTeeth]);
 
-	// 1-Click Insert into Visit Diary 043/u (ALWAYS ACTIVE - Zero Obstacles)
+	// Вставка в медицинскую карту 043/у
 	const handleInsertTo043 = useCallback(() => {
-		const sextantsResult = calculateSextantHygieneIndices(assessments);
-		const sextantSummary = formatSextantHygieneSummary(sextantsResult);
 		const lines = [
 			report.summaryText043,
-			`• Экспресс-скрининг по 6 секстантам ВОЗ (16, 11, 26 • 36, 31, 46): ${sextantSummary}`,
 			"• Дополнительные клинические индексы гигиены:",
 			`  - ${silnessResult.ratingText}`,
 			`  - ${fedorovResult.ratingText}`,
@@ -937,116 +404,20 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		];
 		const textToInsert = lines.join("\n");
 
-		// 1. Instantly update visit store
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${textToInsert}`
-				: textToInsert,
-		}));
+		applyClinicalProtocol(textToInsert, "Индексы гигиены успешно внесены в дневник приёма", "success");
 
-		// 2. Dispatch SOAP custom event
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: textToInsert,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		// 3. Invoke callback if supplied
-		if (onInsertToProtocol) {
-			onInsertToProtocol(textToInsert);
-		}
-
-		// 4. Also copy to clipboard for fail-safe resilience
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			void navigator.clipboard.writeText(textToInsert);
 		}
 
 		setInsertStatus(true);
 		setTimeout(() => setInsertStatus(false), 2500);
-		showToast(
-			"Индексы гигиены успешно внесены в дневник приёма",
-			"success",
-			4000,
-		);
-	}, [
-		report.summaryText043,
-		assessments,
-		silnessResult,
-		fedorovResult,
-		phpResult,
-		onInsertToProtocol,
-	]);
+	}, [report.summaryText043, silnessResult, fedorovResult, phpResult, applyClinicalProtocol]);
 
-	// 1-Click Print Protocol (Miller's Law: лаконичное прямое действие)
+	// Печать протокола клинических индексов
 	const handlePrintProtocol = useCallback(() => {
-		const sextantsResult = calculateSextantHygieneIndices(assessments);
-		const sextantSummary = formatSextantHygieneSummary(sextantsResult);
-		const printContent = [
-			"═══════════════════════════════════════════════════════════════",
-			"ПРОТОКОЛ КЛИНИЧЕСКИХ ИНДЕКСОВ ГИГИЕНЫ И ПАРОДОНТА",
-			"═══════════════════════════════════════════════════════════════",
-			"",
-			`Дата осмотра: ${new Date().toLocaleDateString("ru-RU")}`,
-			"",
-			`1. Индекс OHI-S (Грин-Вермиллион): ${report.ohiS.ratingText}`,
-			`   - Зубной налет (DI-S): ${report.ohiS.debrisScore}`,
-			`   - Зубной камень (CI-S): ${report.ohiS.calculusScore}`,
-			`   - Экспресс-скрининг по 6 секстантам ВОЗ: ${sextantSummary}`,
-			`2. Индекс Silness-Löe (Сиднесс-Лоэ): ${silnessResult.ratingText}`,
-			`3. Индекс Федорова-Володкиной: ${fedorovResult.ratingText}`,
-			`4. Индекс PHP (Подошадлей-Хейли): ${phpResult.ratingText}`,
-			`5. Индекс PMA (Парма / воспаление десны): ${report.pma.ratingText}`,
-			`6. КПИ Леуса (состояние периодонта): ${report.kpi.ratingText}`,
-			"",
-			"ЗАКЛЮЧЕНИЕ:",
-			report.summaryText043,
-			"",
-			"───────────────────────────────────────────────────────────────",
-			"Врач-стоматолог / гигиенист: ____________________ / ____________",
-			"───────────────────────────────────────────────────────────────",
-		].join("\n");
-
-		if (typeof window !== "undefined") {
-			const printWindow = window.open("", "_blank");
-			if (printWindow) {
-				printWindow.document.write(`
-					<!DOCTYPE html>
-					<html>
-					<head>
-						<meta charset="utf-8">
-						<title>Протокол индексов гигиены</title>
-						<style>
-							body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; max-width: 700px; margin: 0 auto; }
-							h2 { font-size: 15px; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 6px; text-transform: uppercase; }
-							pre { white-space: pre-wrap; font-size: 12px; line-height: 1.5; font-family: inherit; }
-							.footer { margin-top: 30px; font-size: 11px; color: #666; border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; }
-							@media print { body { padding: 0; } }
-						</style>
-					</head>
-					<body>
-						<h2>Протокол клинических индексов гигиены и пародонта</h2>
-						<pre>${printContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
-						<div class="footer">
-							<span>DENTE Dental CRM • Медицинская карта пациента</span>
-							<span>Распечатано: ${new Date().toLocaleString("ru-RU")}</span>
-						</div>
-						<script>
-							window.onload = function() { window.print(); window.close(); }
-						</script>
-					</body>
-					</html>
-				`);
-				printWindow.document.close();
-			} else {
-				window.print();
-			}
-		}
-		showToast("Протокол отправлен на печать", "info", 3000);
-	}, [report, silnessResult, fedorovResult, phpResult]);
+		printHygieneProtocol(report, silnessResult, fedorovResult, phpResult, assessments);
+	}, [report, silnessResult, fedorovResult, phpResult, assessments]);
 
 	const handleCopyText = useCallback(() => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -1058,8 +429,8 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 	}, [report.summaryText043]);
 
 	return (
-		<div className="w-full flex flex-col gap-4 p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] shadow-xs">
-			{/* ─── Header & Action Presets (Miller's Law: <= 2 primary buttons) ── */}
+		<div data-testid="hygiene-indices-panel" className="w-full flex flex-col gap-4 p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] shadow-xs">
+			{/* ─── Шапка и действия (Miller's Law) ─────────────────────────── */}
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
 				<div className="flex items-center gap-2.5 min-w-0">
 					<div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 shrink-0">
@@ -1070,8 +441,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							Индексы гигиены полости рта (OHI-S, PMA, КПИ Леуса)
 						</h4>
 						<p className="text-xs text-[var(--muted)] truncate">
-							Быстрый клинический замер по 6 индексным зубам без требования
-							заполнять всю челюсть
+							Быстрый клинический замер по 6 индексным зубам без требования заполнять всю челюсть
 						</p>
 					</div>
 				</div>
@@ -1090,7 +460,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							</button>
 						)}
 
-						{/* 1-Click Insert into 043/u: ALWAYS VISIBLE AND ACTIVE (Mandate 8e) */}
+						{/* Внесение в 043/у */}
 						<button
 							type="button"
 							onClick={handleInsertTo043}
@@ -1098,17 +468,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							title="Вставить сводку индексов гигиены в дневник приёма"
 							data-testid="hygiene-insert-to-043-btn"
 						>
-							{insertStatus ? (
-								<Check size={14} className="shrink-0" />
-							) : (
-								<DentalForm043 size={14} className="shrink-0" />
-							)}
-							<span className="truncate">
-								{insertStatus ? "Внесено в карту!" : "В медицинскую карту"}
-							</span>
+							{insertStatus ? <Check size={14} className="shrink-0" /> : <DentalForm043 size={14} className="shrink-0" />}
+							<span className="truncate">{insertStatus ? "Внесено в карту!" : "В медицинскую карту"}</span>
 						</button>
 
-						{/* 1-Click Print Protocol (Miller's Law) */}
+						{/* Печать протокола */}
 						<button
 							type="button"
 							onClick={handlePrintProtocol}
@@ -1128,241 +492,34 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							aria-label="Скопировать протокол в буфер"
 							data-testid="hygiene-copy-protocol-btn"
 						>
-							{copyStatus ? (
-								<Check size={15} className="text-emerald-500 dark:text-emerald-400" />
-							) : (
-								<Clipboard size={15} />
-							)}
+							{copyStatus ? <Check size={15} className="text-emerald-500 dark:text-emerald-400" /> : <Clipboard size={15} />}
 						</button>
 					</div>
 				)}
 			</div>
 
-			{/* ─── 1-Click Express Presets Strip (Mandates 8e, 8i, 8k, 8n) ─── */}
+			{/* ─── Экспресс-пресеты клинических статусов и протоколов 804н ─── */}
 			{!readOnly && (
-				<div className="flex flex-col gap-3 p-3 rounded-xl bg-teal-500/10 border border-teal-500/30">
-					{/* Section A: Клинические статусы пародонта */}
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center gap-2">
-							<Zap size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span className="text-xs font-black text-teal-900 dark:text-teal-300 truncate">
-								1-Клик экспресс-статусы пародонта (без ручного ввода 192 точек):
-							</span>
-						</div>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-							{/* Preset 1: Норма пародонта */}
-							<button
-								type="button"
-								onClick={handlePresetPeriodontalNorm}
-								className="min-h-[48px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-900 dark:text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
-								data-testid="hygiene-preset-norm"
-							>
-								<div className="flex items-center gap-1.5 font-black text-xs min-w-0">
-									<ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span className="truncate">Норма пародонта</span>
-								</div>
-								<span className="text-[10px] text-emerald-800 dark:text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
-									бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
-									подвижность 0
-								</span>
-							</button>
-
-							{/* Preset 2: Катаральный гингивит */}
-							<button
-								type="button"
-								onClick={handlePresetCatarrhalGingivitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-900 dark:text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
-								data-testid="hygiene-preset-gingivitis"
-							>
-								<div className="flex items-center gap-1.5 font-black text-xs min-w-0">
-									<Activity size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
-									<span className="truncate">Катаральный гингивит</span>
-								</div>
-								<span className="text-[10px] text-amber-800 dark:text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
-									отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
-									камень
-								</span>
-							</button>
-
-							{/* Preset 3: Пародонтит легкий */}
-							<button
-								type="button"
-								onClick={handlePresetMildPeriodontitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-900 dark:text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Пародонтит легкой степени: глубина карманов 3-4 мм, над/поддесневой камень, BOP+, подвижность 0"
-								data-testid="hygiene-preset-mild-periodontitis"
-							>
-								<div className="flex items-center gap-1.5 font-black text-xs min-w-0">
-									<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="truncate">Пародонтит легкий (3-4 мм)</span>
-								</div>
-								<span className="text-[10px] text-rose-800 dark:text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
-									карманы 3–4 мм, над/поддесневой камень, кровоточивость, подвижность 0
-								</span>
-							</button>
-
-							{/* Preset 4: Пародонтит средней степени */}
-							<button
-								type="button"
-								onClick={handlePresetModeratePeriodontitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-900 dark:text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
-								data-testid="hygiene-preset-periodontitis"
-							>
-								<div className="flex items-center gap-1.5 font-black text-xs min-w-0">
-									<ShieldAlert size={15} className="text-orange-600 dark:text-orange-400 shrink-0" />
-									<span className="truncate">Пародонтит средний (4-5 мм)</span>
-								</div>
-								<span className="text-[10px] text-orange-800 dark:text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
-									карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I
-									ст.
-								</span>
-							</button>
-
-							{/* Preset 5: Пародонтит тяжёлой степени */}
-							<button
-								type="button"
-								onClick={handlePresetSeverePeriodontitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-900 dark:text-red-200 border border-red-600/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Пародонтит тяжёлой степени: глубина карманов >= 6 мм, гноетечение, рецессия 2-4 мм, подвижность II-III ст."
-								data-testid="hygiene-preset-severe-periodontitis"
-							>
-								<div className="flex items-center gap-1.5 font-black text-xs min-w-0">
-									<ShieldAlert size={15} className="text-red-600 dark:text-red-400 shrink-0" />
-									<span className="truncate">Пародонтит тяжелый (&ge;6 мм)</span>
-								</div>
-								<span className="text-[10px] text-red-800 dark:text-red-200/80 leading-tight mt-0.5 line-clamp-2">
-									карманы &ge;6 мм, гноетечение, рецессия, подвижность II-III ст.
-								</span>
-							</button>
-						</div>
-					</div>
-
-					{/* Section B: 1-Клик Chairside-протоколы и начисление услуг в чек (Номенклатура 804н) */}
-					<div className="flex flex-col gap-2 pt-2 border-t border-teal-500/20">
-						<div className="flex items-center justify-between flex-wrap gap-1">
-							<div className="flex items-center gap-2 min-w-0">
-								<UltrasonicScaler size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-								<span className="text-xs font-black text-cyan-900 dark:text-cyan-300 truncate">
-									Chairside-протоколы лечения и профилактики (начисление в счёт + дневник приёма):
-								</span>
-							</div>
-							<span className="text-[10px] text-teal-800 dark:text-teal-300/70 shrink-0">
-								1-клик автоначисление в чек визита
-							</span>
-						</div>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-							{/* Protocol 1: Профессиональная гигиена выполнена (A16.07.051) */}
-							<button
-								type="button"
-								onClick={handlePresetProHygieneDone}
-								className="min-h-[48px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-900 dark:text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Комплексная профессиональная гигиена (A16.07.051, 5500 ₽): УЗ Piezon + Air-Flow глицином + Kerr Cleanic + Fluocal"
-								data-testid="hygiene-preset-pro-hygiene"
-							>
-								<div className="flex items-center justify-between gap-1 font-black text-xs min-w-0">
-									<div className="flex items-center gap-1.5 truncate min-w-0">
-										<UltrasonicScaler size={15} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-										<span className="truncate">Профгигиена</span>
-									</div>
-									<span className="text-[11px] font-mono text-cyan-900 dark:text-cyan-300 font-black shrink-0">
-										5 500 ₽
-									</span>
-								</div>
-								<span className="text-[10px] text-cyan-800 dark:text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
-									A16.07.051 • УЗ Piezon + AirFlow + Cleanic + Fluocal
-								</span>
-							</button>
-
-							{/* Protocol 2: Глубокое фторирование (A11.07.012) */}
-							<button
-								type="button"
-								onClick={handlePresetDeepFluoridation}
-								className="min-h-[48px] p-2.5 rounded-xl bg-sky-600/25 hover:bg-sky-600/40 text-sky-900 dark:text-sky-200 border border-sky-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Глубокое фторирование эмали (A11.07.012, 1800 ₽): аппликация эмаль-ликвида Tiefenfluorid / Сафорайд, экспозиция, сушка"
-								data-testid="hygiene-preset-deep-fluoridation"
-							>
-								<div className="flex items-center justify-between gap-1 font-black text-xs min-w-0">
-									<div className="flex items-center gap-1.5 truncate min-w-0">
-										<Droplets size={15} className="text-sky-600 dark:text-sky-400 shrink-0" />
-										<span className="truncate">Глубокое фторирование</span>
-									</div>
-									<span className="text-[11px] font-mono text-sky-900 dark:text-sky-300 font-black shrink-0">
-										1 800 ₽
-									</span>
-								</div>
-								<span className="text-[10px] text-sky-800 dark:text-sky-200/80 leading-tight mt-0.5 line-clamp-2">
-									A11.07.012 • Tiefenfluorid / Сафорайд, СаF2 в порах
-								</span>
-							</button>
-
-							{/* Protocol 3: Ремтерапия Tooth Mousse (A11.07.010) */}
-							<button
-								type="button"
-								onClick={handlePresetToothMousse}
-								className="min-h-[48px] p-2.5 rounded-xl bg-violet-600/25 hover:bg-violet-600/40 text-violet-900 dark:text-violet-200 border border-violet-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Реминерализирующая терапия каппой (A11.07.010, 1500 ₽): крем GC Tooth Mousse (Recaldent CPP-ACP) на индивидуальной каппе, 5 мин"
-								data-testid="hygiene-preset-tooth-mousse"
-							>
-								<div className="flex items-center justify-between gap-1 font-black text-xs min-w-0">
-									<div className="flex items-center gap-1.5 truncate min-w-0">
-										<ShieldCheck size={15} className="text-violet-600 dark:text-violet-400 shrink-0" />
-										<span className="truncate">Ремтерапия Tooth Mousse</span>
-									</div>
-									<span className="text-[11px] font-mono text-violet-900 dark:text-violet-300 font-black shrink-0">
-										1 500 ₽
-									</span>
-								</div>
-								<span className="text-[10px] text-violet-800 dark:text-violet-200/80 leading-tight mt-0.5 line-clamp-2">
-									A11.07.010 • GC Tooth Mousse на каппе, 5 мин
-								</span>
-							</button>
-
-							{/* Protocol 4: Антисептическая обработка карманов (A16.07.053) */}
-							<button
-								type="button"
-								onClick={handlePresetPerioAntiseptic}
-								className="min-h-[48px] p-2.5 rounded-xl bg-teal-600/25 hover:bg-teal-600/40 text-teal-900 dark:text-teal-200 border border-teal-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center min-w-0"
-								title="Медикаментозная обработка карманов (A16.07.053, 1200 ₽): орошение 0.05% хлоргексидином + инстилляция Метрогил Дента"
-								data-testid="hygiene-preset-perio-antiseptic"
-							>
-								<div className="flex items-center justify-between gap-1 font-black text-xs min-w-0">
-									<div className="flex items-center gap-1.5 truncate min-w-0">
-										<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-										<span className="truncate">Обработка карманов</span>
-									</div>
-									<span className="text-[11px] font-mono text-teal-900 dark:text-teal-300 font-black shrink-0">
-										1 200 ₽
-									</span>
-								</div>
-								<span className="text-[10px] text-teal-800 dark:text-teal-200/80 leading-tight mt-0.5 line-clamp-2">
-									A16.07.053 • Хлоргексидин 0.05% + Метрогил Дента
-								</span>
-							</button>
-						</div>
-					</div>
-				</div>
+				<HygieneExpressPresetsStrip
+					onPresetPeriodontalNorm={handlePresetPeriodontalNorm}
+					onPresetCatarrhalGingivitis={handlePresetCatarrhalGingivitis}
+					onPresetMildPeriodontitis={handlePresetMildPeriodontitis}
+					onPresetModeratePeriodontitis={handlePresetModeratePeriodontitis}
+					onPresetSeverePeriodontitis={handlePresetSeverePeriodontitis}
+					onPresetProHygieneDone={handlePresetProHygieneDone}
+					onPresetDeepFluoridation={handlePresetDeepFluoridation}
+					onPresetToothMousse={handlePresetToothMousse}
+					onPresetPerioAntiseptic={handlePresetPerioAntiseptic}
+				/>
 			)}
 
-			{/* ─── Compact Index Switcher Toolbar (Hick's Law: 32–36px height) ─── */}
+			{/* ─── Тулбар переключения индексов (Hick's Law: 32–36px) ────────── */}
 			<div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-[var(--line)]">
 				<div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] h-8 sm:h-9">
 					{[
 						{ id: "ohi-s", label: "OHI-S (Грин-Вермиллион)", shortLabel: "OHI-S" },
-						{
-							id: "silness-loe",
-							label: "Silness-Löe (Сиднесс-Лоэ)",
-							shortLabel: "Сиднесс-Лоэ",
-						},
-						{
-							id: "fedorov-volodkina",
-							label: "Федорова-Володкина",
-							shortLabel: "Федорова-Володкина",
-						},
+						{ id: "silness-loe", label: "Silness-Löe (Сиднесс-Лоэ)", shortLabel: "Сиднесс-Лоэ" },
+						{ id: "fedorov-volodkina", label: "Федорова-Володкина", shortLabel: "Федорова-Володкина" },
 						{ id: "php", label: "PHP (Подошадлей-Хейли)", shortLabel: "PHP" },
 					].map((tab) => {
 						const isActive = activeTab === tab.id;
@@ -1393,166 +550,28 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						{activeTab === "php" && "PHP:"}
 					</span>
 					<span className="truncate">
-						{activeTab === "ohi-s" &&
-							"Зубной налет (DI-S) + зубной камень (CI-S). Норма ≤ 0.6"}
-						{activeTab === "silness-loe" &&
-							"Толщина налета у края десны (0..3). Норма = 0 (налет отсутствует)"}
-						{activeTab === "fedorov-volodkina" &&
-							"Окрашивание раствором Шиллера-Писарева (1..5). Норма = 1.0"}
-						{activeTab === "php" &&
-							"Эффективность гигиены по 5 зонам коронки (0..5). Норма = 0.0"}
+						{activeTab === "ohi-s" && "Зубной налет (DI-S) + зубной камень (CI-S). Норма ≤ 0.6"}
+						{activeTab === "silness-loe" && "Толщина налета у края десны (0..3). Норма = 0 (налет отсутствует)"}
+						{activeTab === "fedorov-volodkina" && "Окрашивание раствором Шиллера-Писарева (1..5). Норма = 1.0"}
+						{activeTab === "php" && "Эффективность гигиены по 5 зонам коронки (0..5). Норма = 0.0"}
 					</span>
 				</div>
 			</div>
 
-			{/* ─── Real-Time Index Telemetry Cards (4-Indices Strip) ─────────── */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-				{/* 1. OHI-S / Green-Vermillion */}
-				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1 min-w-0">
-					<div className="flex items-center justify-between gap-1 min-w-0">
-						<span className="text-xs font-bold text-[var(--muted)] truncate">
-							Индекс OHI-S (Грин-Вермиллион)
-						</span>
-						<span
-							className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${
-								report.ohiS.totalScore <= 0.6
-									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-									: report.ohiS.totalScore <= 1.6
-										? "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30"
-										: report.ohiS.totalScore <= 2.5
-											? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
-							}`}
-						>
-							{report.ohiS.clinicalEvaluation === "excellent"
-								? "Отличная"
-								: report.ohiS.clinicalEvaluation === "good"
-									? "Хорошая"
-									: report.ohiS.clinicalEvaluation === "moderate"
-										? "Удовлетворит."
-										: report.ohiS.clinicalEvaluation === "poor"
-											? "Неудовлетворит."
-											: "Плохая"}
-						</span>
-					</div>
+			{/* ─── Телеметрия OHI-S и Silness-Löe (Субкомпонент 1) ─────────── */}
+			<OhiSilnessCalculator
+				assessments={assessments}
+				report={report}
+				silnessResult={silnessResult}
+				activeTab={activeTab}
+				onUpdateToothScore={updateToothScore}
+				readOnly={readOnly}
+				compactMode={compactMode}
+			/>
 
-					<div className="flex items-baseline gap-2 mt-1 min-w-0">
-						<span
-							className={`text-2xl font-black shrink-0 ${
-								report.ohiS.totalScore <= 0.6
-									? "text-emerald-600 dark:text-emerald-400"
-									: report.ohiS.totalScore <= 1.6
-										? "text-teal-700 dark:text-teal-300"
-										: report.ohiS.totalScore <= 2.5
-											? "text-amber-600 dark:text-amber-400"
-											: "text-rose-600 dark:text-rose-400"
-							}`}
-						>
-							{report.ohiS.totalScore.toFixed(1)}
-						</span>
-						<span className="text-xs text-[var(--muted)] truncate">
-							DI-S: <strong>{report.ohiS.debrisScore}</strong> • CI-S:{" "}
-							<strong>{report.ohiS.calculusScore}</strong>
-						</span>
-					</div>
-					<span className="text-[11px] text-[var(--muted)] truncate">
-						Норма: ≤ 0.6 (отл.) / ≤ 1.6 (хор.)
-					</span>
-				</div>
-
-				{/* 2. Active Secondary Index (Silness-Löe / Федорова-Володкиной / PHP) */}
-				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1 min-w-0">
-					<div className="flex items-center justify-between gap-1 min-w-0">
-						<span className="text-xs font-bold text-[var(--muted)] truncate">
-							{activeTab === "silness-loe"
-								? "Индекс Silness-Löe"
-								: activeTab === "fedorov-volodkina"
-									? "Индекс Федорова-Володкиной"
-									: activeTab === "php"
-										? "Индекс PHP (Подошадлей)"
-										: "Индекс Silness-Löe (десна)"}
-						</span>
-						<span
-							className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${
-								activeTab === "fedorov-volodkina"
-									? fedorovResult.isOptimal
-										? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-										: fedorovResult.evaluation === "moderate"
-											? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
-									: activeTab === "php"
-										? phpResult.isOptimal
-											? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-											: phpResult.evaluation === "good"
-												? "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30"
-												: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
-										: silnessResult.isOptimal
-											? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-											: silnessResult.evaluation === "good"
-												? "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30"
-												: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
-							}`}
-						>
-							{activeTab === "fedorov-volodkina"
-								? fedorovResult.evaluation === "good"
-									? "Норма (хор.)"
-									: fedorovResult.evaluation === "moderate"
-										? "Удовл."
-										: "Плохая"
-								: activeTab === "php"
-									? phpResult.isOptimal
-										? "Норма (отл.)"
-										: phpResult.evaluation === "good"
-											? "Хорошая"
-											: "Неудовл."
-									: silnessResult.isOptimal
-										? "Норма (0)"
-										: silnessResult.evaluation === "good"
-											? "Хорошая"
-											: "Налет"}
-						</span>
-					</div>
-
-					<div className="flex items-baseline gap-2 mt-1 min-w-0">
-						<span
-							className={`text-2xl font-black shrink-0 ${
-								activeTab === "fedorov-volodkina"
-									? fedorovResult.isOptimal
-										? "text-emerald-600 dark:text-emerald-400"
-										: "text-amber-600 dark:text-amber-400"
-									: activeTab === "php"
-										? phpResult.isOptimal
-											? "text-emerald-600 dark:text-emerald-400"
-											: "text-amber-600 dark:text-amber-400"
-										: silnessResult.isOptimal
-											? "text-emerald-600 dark:text-emerald-400"
-											: "text-amber-600 dark:text-amber-400"
-							}`}
-						>
-							{activeTab === "fedorov-volodkina"
-								? fedorovResult.score.toFixed(1)
-								: activeTab === "php"
-									? phpResult.score.toFixed(1)
-									: silnessResult.score.toFixed(1)}
-						</span>
-						<span className="text-xs text-[var(--muted)] truncate">
-							{activeTab === "fedorov-volodkina"
-								? "окрашивание Шиллера-Писарева"
-								: activeTab === "php"
-									? "зоны налета (0..5)"
-									: "налет в придесневой зоне"}
-						</span>
-					</div>
-					<span className="text-[11px] text-[var(--muted)] truncate">
-						{activeTab === "fedorov-volodkina"
-							? "Норма: 1.0 (хорошая гигиена ≤ 1.5)"
-							: activeTab === "php"
-								? "Норма: 0.0 (отличная) / ≤ 0.6 (хорошая)"
-								: "Норма: 0.0 (налет у края десны отсутствует)"}
-					</span>
-				</div>
-
-				{/* 3. PMA / Parma Index */}
+			{/* ─── Карточки вторичных индексов (PMA и КПИ) ─────────────────── */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+				{/* PMA */}
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1 min-w-0">
 					<div className="flex items-center justify-between gap-1 min-w-0">
 						<span className="text-xs font-bold text-[var(--muted)] truncate">
@@ -1564,18 +583,14 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
 									: report.pma.severity === "mild"
 										? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-										: report.pma.severity === "moderate"
-											? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
-											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+										: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
 							}`}
 						>
 							{report.pma.severity === "intact"
 								? "Норма 0%"
 								: report.pma.severity === "mild"
 									? "Легкий"
-									: report.pma.severity === "moderate"
-										? "Средний"
-										: "Тяжелый"}
+									: "Средний/Тяжелый"}
 						</span>
 					</div>
 
@@ -1592,8 +607,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							{report.pma.pmaPercent}%
 						</span>
 						<span className="text-xs text-[var(--muted)] truncate">
-							баллы: <strong>{report.pma.totalPoints}</strong> из{" "}
-							{report.pma.maxPossiblePoints}
+							баллы: <strong>{report.pma.totalPoints}</strong> из {report.pma.maxPossiblePoints}
 						</span>
 					</div>
 					<span className="text-[11px] text-[var(--muted)] truncate">
@@ -1601,7 +615,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					</span>
 				</div>
 
-				{/* 4. KPI / Leus Complex Index */}
+				{/* КПИ Леуса */}
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1 min-w-0">
 					<div className="flex items-center justify-between gap-1 min-w-0">
 						<span className="text-xs font-bold text-[var(--muted)] truncate">
@@ -1613,20 +627,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
 									: report.kpi.severity === "risk"
 										? "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30"
-										: report.kpi.severity === "mild"
-											? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+										: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
 							}`}
 						>
-							{report.kpi.severity === "healthy"
-								? "Здоров 0.0"
-								: report.kpi.severity === "risk"
-									? "Риск"
-									: report.kpi.severity === "mild"
-										? "Легкая"
-										: report.kpi.severity === "moderate"
-											? "Средняя"
-											: "Тяжелая"}
+							{report.kpi.severity === "healthy" ? "Здоров 0.0" : "Изменения"}
 						</span>
 					</div>
 
@@ -1635,11 +639,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							className={`text-2xl font-black shrink-0 ${
 								report.kpi.kpiScore === 0
 									? "text-emerald-600 dark:text-emerald-400"
-									: report.kpi.kpiScore <= 1.0
-										? "text-teal-700 dark:text-teal-300"
-										: report.kpi.kpiScore <= 2.0
-											? "text-amber-600 dark:text-amber-400"
-											: "text-rose-600 dark:text-rose-400"
+									: "text-amber-600 dark:text-amber-400"
 							}`}
 						>
 							{report.kpi.kpiScore.toFixed(1)}
@@ -1654,15 +654,11 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				</div>
 			</div>
 
-			{/* ─── 6 Index Teeth Grid Matrix ─────────────────────────────────── */}
+			{/* ─── Сетка 6 индексных зубов для PMA и КПИ ───────────────────── */}
 			<div className="flex flex-col gap-3">
 				<div className="text-xs font-bold text-teal-700 dark:text-teal-400 flex items-center justify-between flex-wrap gap-1">
 					<span className="truncate">
-						СЕТКА 6 ИНДЕКСНЫХ ЗУБОВ (16, 11, 26 • 46, 31, 36) — РЕЖИМ:{" "}
-						{activeTab === "ohi-s" && "OHI-S (ГРИН-ВЕРМИЛЛИОН)"}
-						{activeTab === "silness-loe" && "SILNESS-LÖE (СИДНЕСС-ЛОЭ)"}
-						{activeTab === "fedorov-volodkina" && "ФЕДОРОВА-ВОЛОДКИНОЙ"}
-						{activeTab === "php" && "PHP (ПОДОШАДЛЕЙ-ХЕЙЛИ)"}:
+						СЕТКА 6 ИНДЕКСНЫХ ЗУБОВ (16, 11, 26 • 46, 31, 36) — ВОСПАЛЕНИЕ И ПЕРИОДОНТ:
 					</span>
 					<span className="text-[11px] text-[var(--muted)] font-normal truncate">
 						Кликните на цифру для выбора балла
@@ -1671,13 +667,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
 					{HYGIENE_INDEX_TEETH_CONFIG.map((cfg) => {
-						const item = assessments[cfg.toothNumber] ?? {
-							toothNumber: cfg.toothNumber,
-						};
-						const debris = item.debrisScore ?? 0;
-						const calculus = item.calculusScore ?? 0;
+						const item = assessments[cfg.toothNumber] ?? { toothNumber: cfg.toothNumber };
 						const pma = item.pmaScore ?? 0;
 						const kpi = item.kpiScore ?? 0;
+						const sextantDef = WHO_HYGIENE_SEXTANTS.find((s) => s.indexToothNumber === cfg.toothNumber);
 
 						return (
 							<div
@@ -1699,219 +692,25 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 											</div>
 										</div>
 									</div>
-									{(() => {
-										const sextantDef = WHO_HYGIENE_SEXTANTS.find((s) => s.indexToothNumber === cfg.toothNumber);
-										return sextantDef ? (
-											<span
-												className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30 shrink-0"
-												title={`Секстант ВОЗ ${sextantDef.sextant}: зубы ${sextantDef.teethRangeRu}`}
-											>
-												{sextantDef.sextant} ({sextantDef.teethRangeRu})
-											</span>
-										) : null;
-									})()}
+									{sextantDef && (
+										<span
+											className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30 shrink-0"
+											title={`Секстант ВОЗ ${sextantDef.sextant}: зубы ${sextantDef.teethRangeRu}`}
+										>
+											{sextantDef.sextant} ({sextantDef.teethRangeRu})
+										</span>
+									)}
 								</div>
 
-								{/* Row 1: Primary Hygiene Score (OHI-S DI-S / Silness-Löe / Fedorov-Volodkina / PHP) */}
-								{activeTab === "ohi-s" && (
-									<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line)]/60">
-										<span className="text-[11px] text-[var(--muted)] font-medium truncate">
-											Налёт (DI-S):
-										</span>
-										<div className="flex items-center gap-1 shrink-0">
-											{[0, 1, 2, 3].map((val) => (
-												<button
-													key={val}
-													type="button"
-													disabled={readOnly}
-													onClick={() =>
-														updateToothScore(cfg.toothNumber, "debrisScore", val)
-													}
-													className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
-														debris === val
-															? "bg-amber-500 text-slate-950 font-black shadow-xs ring-1 ring-amber-300"
-															: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
-													}`}
-													title={
-														val === 0
-															? "0: Зубной налет отсутствует"
-															: val === 1
-																? "1: Налет покрывает до 1/3 поверхности"
-																: val === 2
-																	? "2: Налет покрывает от 1/3 до 2/3"
-																	: "3: Налет покрывает более 2/3 поверхности"
-													}
-												>
-													{val}
-												</button>
-											))}
-										</div>
-									</div>
-								)}
-
-								{activeTab === "silness-loe" && (
-									<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line)]/60">
-										<span className="text-[11px] text-[var(--muted)] font-medium truncate">
-											Сиднесс-Лоэ:
-										</span>
-										<div className="flex items-center gap-1 shrink-0">
-											{[
-												{ val: 0, hint: "0: Налет у десны отсутствует (норма)" },
-												{ val: 1, hint: "1: Тонкая пленка у края десны (видна зондом)" },
-												{ val: 2, hint: "2: Умеренное скопление налета, видимое глазом" },
-												{ val: 3, hint: "3: Обильный налет на десне и зубе" },
-											].map(({ val, hint }) => {
-												const silness = item.silnessScore ?? debris;
-												return (
-													<button
-														key={val}
-														type="button"
-														disabled={readOnly}
-														onClick={() =>
-															updateToothScore(cfg.toothNumber, "silnessScore", val)
-														}
-														className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
-															silness === val
-																? "bg-teal-600 text-white font-black shadow-xs ring-1 ring-teal-300"
-																: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
-														}`}
-														title={hint}
-													>
-														{val}
-													</button>
-												);
-											})}
-										</div>
-									</div>
-								)}
-
-								{activeTab === "fedorov-volodkina" && (
-									<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line)]/60">
-										<span className="text-[11px] text-[var(--muted)] font-medium truncate">
-											Федорова-В.:
-										</span>
-										<div className="flex items-center gap-1 shrink-0">
-											{[
-												{ val: 1, hint: "1: Нет окрашивания (норма / чистая поверхность)" },
-												{ val: 2, hint: "2: Окрашивание до 1/4 поверхности коронки" },
-												{ val: 3, hint: "3: Окрашивание до 1/2 поверхности коронки" },
-												{ val: 4, hint: "4: Окрашивание до 3/4 поверхности коронки" },
-												{ val: 5, hint: "5: Окрашивание всей поверхности коронки" },
-											].map(({ val, hint }) => {
-												const fedorov =
-													item.fedorovScore ??
-													(debris === 0 ? 1 : Math.min(5, debris + 1));
-												return (
-													<button
-														key={val}
-														type="button"
-														disabled={readOnly}
-														onClick={() =>
-															updateToothScore(cfg.toothNumber, "fedorovScore", val)
-														}
-														className={`min-h-[44px] min-w-[26px] sm:min-w-[28px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
-															fedorov === val
-																? val === 1
-																	? "bg-emerald-500 text-slate-950 font-black shadow-xs ring-1 ring-emerald-300"
-																	: "bg-indigo-600 text-white font-black shadow-xs ring-1 ring-indigo-300"
-																: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
-														}`}
-														title={hint}
-													>
-														{val}
-													</button>
-												);
-											})}
-										</div>
-									</div>
-								)}
-
-								{activeTab === "php" && (
-									<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line)]/60">
-										<span className="text-[11px] text-[var(--muted)] font-medium truncate">
-											PHP (зоны):
-										</span>
-										<div className="flex items-center gap-1 shrink-0">
-											{[0, 1, 2, 3, 4, 5].map((val) => {
-												const php =
-													item.phpScore ?? Math.min(5, Math.round(debris * 1.67));
-												return (
-													<button
-														key={val}
-														type="button"
-														disabled={readOnly}
-														onClick={() =>
-															updateToothScore(cfg.toothNumber, "phpScore", val)
-														}
-														className={`min-h-[44px] min-w-[24px] sm:min-w-[26px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
-															php === val
-																? val === 0
-																	? "bg-emerald-500 text-slate-950 font-black shadow-xs ring-1 ring-emerald-300"
-																	: "bg-cyan-600 text-white font-black shadow-xs ring-1 ring-cyan-300"
-																: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
-														}`}
-														title={`${val} из 5 зон поверхности окрашено`}
-													>
-														{val}
-													</button>
-												);
-											})}
-										</div>
-									</div>
-								)}
-
-								{/* Row 2: CI-S Calculus (Камень 0..3) */}
-								<div className="flex items-center justify-between text-xs">
-									<span className="text-[11px] text-[var(--muted)] font-medium truncate">
-										Камень (CI-S):
-									</span>
-									<div className="flex items-center gap-1 shrink-0">
-										{[0, 1, 2, 3].map((val) => (
-											<button
-												key={val}
-												type="button"
-												disabled={readOnly}
-												onClick={() =>
-													updateToothScore(
-														cfg.toothNumber,
-														"calculusScore",
-														val,
-													)
-												}
-												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
-													calculus === val
-														? "bg-orange-500 text-white font-black shadow-xs ring-1 ring-orange-300"
-														: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
-												}`}
-												title={
-													val === 0
-														? "0: Зубной камень отсутствует"
-														: val === 1
-															? "1: Наддесневой камень до 1/3 коронки"
-															: val === 2
-																? "2: Наддесневой 1/3..2/3 или отдельные очаги поддесневого"
-																: "3: Наддесневой >2/3 или сплошной поддесневой валик"
-												}
-											>
-												{val}
-											</button>
-										))}
-									</div>
-								</div>
-
-								{/* Row 3: PMA (Десна 0..3: P, M, A) */}
-								<div className="flex items-center justify-between text-xs">
+								{/* PMA */}
+								<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line)]/60">
 									<span className="text-[11px] text-[var(--muted)] font-medium truncate">
 										Воспаление (PMA):
 									</span>
 									<div className="flex items-center gap-1 shrink-0">
 										{[
 											{ val: 0, label: "0", hint: "0: Десна здорова" },
-											{
-												val: 1,
-												label: "P",
-												hint: "1: Сосочек (P - Papillary)",
-											},
+											{ val: 1, label: "P", hint: "1: Сосочек (P - Papillary)" },
 											{ val: 2, label: "M", hint: "2: Маргинальная десна (M)" },
 											{ val: 3, label: "A", hint: "3: Альвеолярная десна (A)" },
 										].map(({ val, label, hint }) => (
@@ -1919,9 +718,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 												key={val}
 												type="button"
 												disabled={readOnly}
-												onClick={() =>
-													updateToothScore(cfg.toothNumber, "pmaScore", val)
-												}
+												onClick={() => updateToothScore(cfg.toothNumber, "pmaScore", val)}
 												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													pma === val
 														? val === 0
@@ -1937,7 +734,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 									</div>
 								</div>
 
-								{/* Row 4: KPI (КПИ 0..4) */}
+								{/* KPI */}
 								<div className="flex items-center justify-between text-xs">
 									<span className="text-[11px] text-[var(--muted)] font-medium truncate">
 										Периодонт (КПИ):
@@ -1948,19 +745,13 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 											{ val: 1, label: "1", hint: "1: Кровоточивость (BOP)" },
 											{ val: 2, label: "2", hint: "2: Зубной камень" },
 											{ val: 3, label: "3", hint: "3: Карман 4-5 мм" },
-											{
-												val: 4,
-												label: "4",
-												hint: "4: Карман ≥ 6 мм или подвижность",
-											},
+											{ val: 4, label: "4", hint: "4: Карман ≥ 6 мм или подвижность" },
 										].map(({ val, label, hint }) => (
 											<button
 												key={val}
 												type="button"
 												disabled={readOnly}
-												onClick={() =>
-													updateToothScore(cfg.toothNumber, "kpiScore", val)
-												}
+												onClick={() => updateToothScore(cfg.toothNumber, "kpiScore", val)}
 												className={`min-h-[44px] min-w-[28px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													kpi === val
 														? val === 0
@@ -1982,6 +773,12 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					})}
 				</div>
 			</div>
+
+			{/* ─── Индексы КПУ и кровоточивости десневой борозды (Субкомпонент 2) ─── */}
+			<KpuBleedingIndicesCalculator
+				onInsertToProtocol={onInsertToProtocol}
+				readOnly={readOnly}
+			/>
 		</div>
 	);
 };

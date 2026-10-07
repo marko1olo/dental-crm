@@ -71,7 +71,7 @@ export const createInvoiceTool: ToolDefinition<
 > = {
 	name: "create_invoice",
 	description:
-		"Формирование счета на оплату стоматологических услуг в точных целых копейках с учетом скидок врача (Мандат 8e: при 100% скидке чек 54-ФЗ не формируется, оформляется внутренний акт гарантийного обслуживания).",
+		"Формирование счета на оплату стоматологических услуг в точных целых копейках с учетом скидок врача (при 100% скидке чек 54-ФЗ не формируется, оформляется внутренний акт гарантийного обслуживания).",
 	parameters: createInvoiceSchema,
 	permissions: ["billing.write"],
 	category: "write",
@@ -152,11 +152,11 @@ export const applyDiscountSchema = z.object({
 	discountPercent: z
 		.number()
 		.min(0, "Скидка не может быть отрицательной")
-		.max(100, "Скидка врача может быть до 100% (Мандат 8e)")
+		.max(100, "Скидка врача может быть до 100%")
 		.describe("Процент скидки (0-100%)"),
 	reason: z
 		.string()
-		.default("Врачебная скидка / гарантийная переделка (Мандат 8e)")
+		.default("Врачебная скидка / гарантийная переделка")
 		.optional()
 		.describe("Клиническое обоснование скидки"),
 });
@@ -180,7 +180,7 @@ export const applyDiscountTool: ToolDefinition<
 > = {
 	name: "apply_discount",
 	description:
-		"Применение врачебной скидки (вплоть до 100% на переделки и персонал) без администраторских паролей (Мандат 8e: врач автономен в клинико-финансовых решениях).",
+		"Применение врачебной скидки (вплоть до 100% на переделки и персонал) без администраторских паролей.",
 	parameters: applyDiscountSchema,
 	permissions: ["billing.write"],
 	category: "write",
@@ -424,7 +424,7 @@ export const getDoctorEarningsTool: ToolDefinition<
 > = {
 	name: "get_doctor_earnings",
 	description:
-		"Запрос выручки и сдельного заработка врача за смену, день или месяц с расчетом по форме Т-51 и сдельному проценту (Мандат 8ab).",
+		"Запрос выручки и сдельного заработка врача за смену, день или месяц с расчетом по форме Т-51 и сдельному проценту.",
 	parameters: getDoctorEarningsSchema,
 	permissions: ["finance.read", "billing.read"],
 	category: "read",

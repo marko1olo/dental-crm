@@ -156,7 +156,8 @@ export function viewFromHash(): AppView {
 	if (view === "sanpin") return "scanner";
 	if (view === "cmo") return "analytics";
 	if (view === "telephony") return "communications";
-	if (view === "lab-orders") return "lab";
+	if (view === "lab-orders" || view === "lab_orders") return "lab";
+	if (view === "invoices") return "finance";
 	if (view === "radiology" || view === "ct" || view === "cbct") return "imaging";
 	return (appViews as readonly string[]).includes(view)
 		? (view as AppView)
@@ -171,6 +172,7 @@ export function settingsTabFromHash(): SettingsTab {
 		.filter(Boolean);
 	const tab = hashParts[1];
 	if (!tab) return "clinic";
+	if (tab === "messengers") return "telegram";
 	const candidate = tab;
 	return settingsTabs.some((item) => item.id === candidate)
 		? (candidate as SettingsTab)

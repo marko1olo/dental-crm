@@ -1,8 +1,8 @@
 import {
-	SHARED_DOCUMENT_CSS,
 	renderDocHeader,
 	renderPatientInfoBlock,
 	renderSignaturesBlock,
+	SHARED_DOCUMENT_CSS,
 } from "./templateStyles.js";
 
 /**
@@ -131,28 +131,127 @@ export const ORTHO_AND_DIAGNOSTIC_TEMPLATES_HTML: Record<string, string> = {
 <div class="doc-wrapper">
   ${renderDocHeader("Заказ-наряд № {{Документ.Номер}}")}
   <div class="doc-title">ЗАКАЗ-НАРЯД В ЗУБОТЕХНИЧЕСКУЮ ЛАБОРАТОРИЮ № {{Документ.Номер}}</div>
+  <div class="doc-subtitle">от {{ТекущаяПолнаяДата}}</div>
 
-  ${renderPatientInfoBlock()}
+  <!-- Реквизиты клиники, лаборатории и пациента -->
+  <table class="doc-table" style="margin: 10px 0; font-size: 8.5pt;">
+    <tr>
+      <td style="width: 50%; vertical-align: top;">
+        <strong>Заказчик (Клиника):</strong> {{Клиника.Название}}<br/>
+        ИНН: {{Клиника.ИНН}} • Тел: {{Клиника.Телефон}}<br/>
+        Адрес: {{Клиника.Адрес}}<br/>
+        <strong>Лечащий врач-ортопед:</strong> {{АктивныйВрач.ФИО}} ({{АктивныйВрач.Должность}})
+      </td>
+      <td style="width: 50%; vertical-align: top;">
+        <strong>Исполнитель (ЗТЛ):</strong> {{Лаборатория.Название}}<br/>
+        <strong>Зубной техник:</strong> {{ЗубнойТехник.ФИО}}<br/>
+        <strong>Пациент:</strong> {{Пациент.ФИО}} ({{Пациент.Пол}}, {{Пациент.Возраст}} лет)<br/>
+        Дата рожд.: {{Пациент.ДатаРождения}} • Медкарта № {{Пациент.НомерКарты}}
+      </td>
+    </tr>
+  </table>
 
+  <!-- Таблица ортопедических работ -->
+  <div class="doc-section-title">СПЕЦИФИКАЦИЯ ЗУБОТЕХНИЧЕСКИХ РАБОТ И КОНСТРУКЦИЙ</div>
   <table class="doc-table">
     <thead>
-      <tr><th>Зубная формула</th><th>Вид изделия</th><th>Материал</th><th>Цвет по шкале VITA</th><th>Срок сдачи</th></tr>
+      <tr>
+        <th style="width: 5%;">№</th>
+        <th style="width: 10%;">Зуб (FDI)</th>
+        <th style="width: 12%;">Код услуги</th>
+        <th>Вид работы / Конструкция / Материал</th>
+        <th style="width: 7%;">Кол-во</th>
+        <th style="width: 14%;">Цвет (VITA)</th>
+        <th style="width: 14%;">Сумма (руб.)</th>
+      </tr>
     </thead>
     <tbody>
       <tr>
-        <td>По зубной карте</td>
-        <td>Одиночная коронка / Мостовидный протез / Винир / Вкладка</td>
-        <td>Диоксид циркония / E.max / Металлокерамика</td>
-        <td>A2 / A3 / Bleach</td>
-        <td>{{Документ.ДатаОкончания}}</td>
+        <td style="text-align: center;">1</td>
+        <td style="text-align: center; font-weight: bold;">11, 21</td>
+        <td style="text-align: center;">A16.07.004</td>
+        <td>Одиночная коронка из диоксида циркония (ZrO2) Prettau с индивидуализацией</td>
+        <td style="text-align: center;">2</td>
+        <td style="text-align: center; font-weight: bold;">{{ЗаказНаряд.Цвет}}</td>
+        <td style="text-align: right;">36 000,00</td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">2</td>
+        <td style="text-align: center; font-weight: bold;">14, 15</td>
+        <td style="text-align: center;">A16.07.003</td>
+        <td>Керамический винир E.max Press с послойным нанесением полевошпатной керамики</td>
+        <td style="text-align: center;">2</td>
+        <td style="text-align: center; font-weight: bold;">{{ЗаказНаряд.Цвет}}</td>
+        <td style="text-align: right;">38 000,00</td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">3</td>
+        <td style="text-align: center; font-weight: bold;">46</td>
+        <td style="text-align: center;">A16.07.006</td>
+        <td>Коронка на имплантате с винтовой фиксацией (Ti-base + цельноциркониевая коронка)</td>
+        <td style="text-align: center;">1</td>
+        <td style="text-align: center; font-weight: bold;">{{ЗаказНаряд.Цвет}}</td>
+        <td style="text-align: right;">28 000,00</td>
       </tr>
     </tbody>
+    <tfoot>
+      <tr style="font-weight: bold; background: #f8fafc;">
+        <td colspan="6" style="text-align: right;">ИТОГО ПО ЗАКАЗ-НАРЯДУ:</td>
+        <td style="text-align: right; color: #0f766e;">{{Сумма}}</td>
+      </tr>
+    </tfoot>
   </table>
-  <div style="margin-top: 10px; font-size: 10pt;">
-    <strong>Особые указания техника:</strong> тип культи, уступ chamfer/shoulder, поднутрения, индивидуальные особенности микрорельефа и прозрачности режущего края.
+
+  <div style="margin: 6px 0 10px 0; font-size: 8.5pt;">
+    Сумма прописью: <strong>{{СуммаПрописью}}</strong>
   </div>
 
-  ${renderSignaturesBlock("Врач-стоматолог ортопед", "Зубной техник")}
+  <!-- Технические и клинические параметры -->
+  <div class="doc-section-title">ТЕХНИЧЕСКИЕ И КЛИНИЧЕСКИЕ ПАРАМЕТРЫ ЗАКАЗА</div>
+  <table class="doc-table" style="font-size: 8.5pt;">
+    <tr>
+      <td style="width: 35%; background: #f8fafc; font-weight: bold;">Цвет по шкале VITA / 3D Master:</td>
+      <td><strong>{{ЗаказНаряд.Цвет}}</strong></td>
+    </tr>
+    <tr>
+      <td style="background: #f8fafc; font-weight: bold;">Цифровой 3D STL-скан / CAD проект:</td>
+      <td>{{ЗаказНаряд.StlСсылка}}</td>
+    </tr>
+    <tr>
+      <td style="background: #f8fafc; font-weight: bold;">Дата примерки каркаса / конструкции:</td>
+      <td><strong>{{ЗаказНаряд.ДатаПримерки}}</strong></td>
+    </tr>
+    <tr>
+      <td style="background: #f8fafc; font-weight: bold;">Ожидаемая дата сдачи работы в клинику:</td>
+      <td><strong>{{Документ.ДатаОкончания}}</strong></td>
+    </tr>
+    <tr>
+      <td style="background: #f8fafc; font-weight: bold;">Тип культи и окклюзия:</td>
+      <td>Уступ chamfer 0.8 мм, погружение 0.2 мм, клыковое ведение, множественные фиссурно-бугорковые контакты.</td>
+    </tr>
+    <tr>
+      <td style="background: #f8fafc; font-weight: bold;">Клинические указания и комментарии:</td>
+      <td><em>{{ЗаказНаряд.Комментарий}}</em></td>
+    </tr>
+  </table>
+
+  <!-- Подписи сторон -->
+  <table class="doc-table" style="margin-top: 16px;">
+    <tr>
+      <td style="width: 50%;">
+        <strong>Врач-стоматолог ортопед:</strong><br/><br/>
+        Подпись: _____________________ / {{АктивныйВрач.ФамилияИнициалы}} /<br/>
+        <div class="doc-sig-caption">({{АктивныйВрач.Должность}})</div>
+        <div style="margin-top: 6px;">Дата передачи в ЗТЛ: {{ТекущаяПолнаяДата}}</div>
+      </td>
+      <td style="width: 50%;">
+        <strong>Зубной техник / Ответственный ЗТЛ:</strong><br/><br/>
+        Подпись: _____________________ / {{ЗубнойТехник.ФИО}} /<br/>
+        <div class="doc-sig-caption">(Заказ принят в производство)</div>
+        <div style="margin-top: 6px;">М.П. Лаборатории</div>
+      </td>
+    </tr>
+  </table>
 </div>
 </body>
 </html>

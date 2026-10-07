@@ -47,11 +47,20 @@ export const MobileSettingsStaffView: React.FC<MobileSettingsStaffViewProps> = (
 	const staffList = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
 
 	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("all");
 	const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
 	const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 	const [pinTargetStaff, setPinTargetStaff] = useState<StaffMember | null>(null);
 	const [pinValue, setPinValue] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const STAFF_ROLE_FILTERS = [
+		{ key: "all", label: "Все" },
+		{ key: "doctor", label: "Врачи" },
+		{ key: "assistant", label: "Ассистенты" },
+		{ key: "administrator", label: "Администраторы" },
+		{ key: "owner", label: "Руководство" },
+	];
 
 	// New staff form state
 	const [newName, setNewName] = useState("");
@@ -63,9 +72,13 @@ export const MobileSettingsStaffView: React.FC<MobileSettingsStaffViewProps> = (
 	const accessHeaders = auth?.settingsAccessHeaders;
 
 	const filteredStaff = useMemo(() => {
-		if (!searchQuery.trim()) return staffList;
+		let list = staffList;
+		if (selectedRoleFilter !== "all") {
+			list = list.filter((s) => s.role === selectedRoleFilter);
+		}
+		if (!searchQuery.trim()) return list;
 		const q = searchQuery.toLowerCase().trim();
-		return staffList.filter((s) => {
+		return list.filter((s) => {
 			const nameMatch = s.fullName?.toLowerCase().includes(q);
 			const phoneMatch = s.phone?.toLowerCase().includes(q);
 			const roleMatch = staffRoleTitle(String(s.role || ""))
@@ -73,7 +86,7 @@ export const MobileSettingsStaffView: React.FC<MobileSettingsStaffViewProps> = (
 				.includes(q);
 			return nameMatch || phoneMatch || roleMatch;
 		});
-	}, [staffList, searchQuery]);
+	}, [staffList, searchQuery, selectedRoleFilter]);
 
 	// Create staff
 	const handleCreateStaff = async (e: React.FormEvent) => {
@@ -205,28 +218,53 @@ export const MobileSettingsStaffView: React.FC<MobileSettingsStaffViewProps> = (
 
 			{/* Search */}
 			<div className="px-4 pt-3 pb-2">
-				<div className="relative flex items-center w-full">
+				<div className="dente-search-wrap">
 					<Search
-						size={15}
-						className="absolute left-3.5 text-[var(--muted)] pointer-events-none"
+						size={14}
+						className="dente-search-icon"
+						aria-hidden="true"
 					/>
 					<input
 						type="search"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder="Поиск по имени, роли или телефону..."
-						className="w-full h-10 min-h-[40px] pl-9.5 pr-9 text-[14px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all"
+						className="dente-search-input"
+						data-testid="input-mobile-staff-search"
 					/>
 					{searchQuery && (
 						<button
 							type="button"
 							onClick={() => setSearchQuery("")}
-							className="absolute right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-transform cursor-pointer"
+							className="dente-search-clear"
 							aria-label="Очистить поиск"
 						>
 							<X size={14} />
 						</button>
 					)}
+				</div>
+			</div>
+
+			{/* Role Filter Chips */}
+			<div className="px-4 pb-2 overflow-x-auto">
+				<div className="dente-filter-chips flex-nowrap" role="group" aria-label="Фильтр сотрудников по ролям">
+					{STAFF_ROLE_FILTERS.map((f) => {
+						const count = f.key === "all"
+							? staffList.length
+							: staffList.filter((s) => s.role === f.key).length;
+						return (
+							<button
+								key={f.key}
+								type="button"
+								onClick={() => setSelectedRoleFilter(f.key)}
+								className={`dente-filter-chip ${selectedRoleFilter === f.key ? "active" : ""}`}
+								data-active={selectedRoleFilter === f.key}
+							>
+								<span>{f.label}</span>
+								{count > 0 && <span className="opacity-70 text-[10px] ml-1 font-mono">({count})</span>}
+							</button>
+						);
+					})}
 				</div>
 			</div>
 

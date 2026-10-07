@@ -356,7 +356,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 				<div className="flex items-center gap-2 ml-auto">
 					<button
 						type="button"
-						className="secondary-button text-xs min-h-[36px]"
+						className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-[12.5px] font-medium transition-colors cursor-pointer"
 						onClick={() => void loadRates()}
 						disabled={load.kind === "loading"}
 						data-testid="staff-commissions-refresh"
@@ -484,7 +484,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 														<div className="flex items-center justify-end gap-2">
 															<button
 																type="button"
-																className="primary-button px-3 py-1 text-xs min-h-[36px]"
+																className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 transition-opacity cursor-pointer"
 																disabled={isSaving}
 																onClick={() => void saveRate(row.userId)}
 																data-testid={`staff-commission-save-${row.userId}`}
@@ -493,7 +493,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 															</button>
 															<button
 																type="button"
-																className="secondary-button px-3 py-1 text-xs min-h-[36px]"
+																className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 																disabled={isSaving}
 																onClick={cancelEdit}
 															>
@@ -503,7 +503,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 													) : (
 														<button
 															type="button"
-															className="secondary-button px-3 py-1 text-xs min-h-[36px]"
+															className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 															onClick={() =>
 																beginEdit(
 																	row.userId,

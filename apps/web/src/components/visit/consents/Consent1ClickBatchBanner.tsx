@@ -46,7 +46,7 @@ export function Consent1ClickBatchBanner({
 						type="button"
 						onClick={onMarkAllRequiredTodaySigned}
 						className="vct-btn vct-btn-success"
-						title="1-клик отметка: пациент лично подписал бумажный пакет у кресла или на стойке"
+						title="Отметить: пациент лично подписал бумажный пакет у кресла или на стойке"
 					>
 						<CheckCircle2 size={14} />
 						<span>Отметить пакет: Подписано на бумаге</span>

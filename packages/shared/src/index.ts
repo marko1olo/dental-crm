@@ -28,6 +28,9 @@ export * from "./mdlp/index.js";
 export * from "./utils/index.js";
 export * from "./mobile/index.js";
 export * from "./hardware/index.js";
+export * from "./imaging/index.js";
+import { hardwareTierSchema, hardwareGpuTypeSchema } from "./hardware/index.js";
+
 export * from "./onboarding/index.js";
 export * from "./omniPlatformAdapter.js";
 
@@ -6660,6 +6663,11 @@ export const createPaymentSchema = z
 		payerRelationship: z.string().trim().max(120).nullable().optional(),
 		taxDeductionCode: z.enum(["1", "2"]).nullable().optional(),
 		note: z.string().nullable().optional(),
+		toothNumber: z.union([z.number().int(), z.string()]).nullable().optional(),
+		tooth_number: z.union([z.number().int(), z.string()]).nullable().optional(),
+		toothCode: z.string().nullable().optional(),
+		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
+		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
 	})
 	.superRefine((input, context) => {
 		const fiscalReceiptIssuedAt = input.fiscalReceiptIssuedAt?.trim();
@@ -7962,7 +7970,11 @@ export const dicomWorkstationClientFactsSchema = z.object({
 	directoryHandlePersistence: dicomDirectoryHandlePersistenceSchema.optional(),
 	userAgent: z.string().max(300).nullable().optional(),
 	platform: z.string().max(120).nullable().optional(),
+	hardwareTier: hardwareTierSchema.optional(),
+	hardwareScore: z.number().int().min(0).max(100).optional(),
+	gpuType: hardwareGpuTypeSchema.optional(),
 });
+
 export type DicomWorkstationClientFacts = z.infer<
 	typeof dicomWorkstationClientFactsSchema
 >;
@@ -12069,6 +12081,8 @@ export const visitFlowRequestSchema = z.object({
 				 */
 				priceRub: nonNegativeMoneyRubSchema,
 				toothCode: z.string().nullable().optional(),
+				toothNumber: z.union([z.number().int(), z.string()]).nullable().optional(),
+				code804n: z.string().optional(),
 			}),
 		)
 		.optional(),

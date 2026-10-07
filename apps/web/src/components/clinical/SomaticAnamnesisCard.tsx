@@ -94,7 +94,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 			onSave(updatedProfile, formatSafetyProfileToDiaryText(updatedProfile));
 		}
 		showToast(
-			"Применена физиологическая норма: соматически здоров (1 клик)",
+			"Применена физиологическая норма: соматически здоров",
 			"success",
 			3000,
 		);
@@ -169,23 +169,23 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 						</h4>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0">
 							{patientName ? `Пациент: ${patientName} • ` : ""}
-							Амбулаторная безопасность: норма в 1 клик, правка только патологии
+							Амбулаторная безопасность: норма по умолчанию, правка только патологии
 						</p>
 					</div>
 				</div>
 
-				{/* 1-Click Somatic Norm Button (Mandate 8e, 8k) */}
+				{/* Somatic Norm Button (Mandate 8e, 8k) */}
 				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						onClick={handleApplyPhysiologicalNorm}
 						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer active:scale-98 select-none"
 						data-testid="mark-somatic-norm-btn"
-						title="1 клик: соматически здоров, без отягощенного анамнеза (физиологическая норма)"
-						aria-label="Физиологическая норма в 1 клик"
+						title="Соматически здоров, без отягощенного анамнеза (физиологическая норма)"
+						aria-label="Физиологическая норма"
 					>
 						<ShieldCheck className="w-4 h-4 shrink-0" />
-						<span>Соматически здоров / норма (1-клик)</span>
+						<span>✓ Соматически здоров / норма</span>
 					</button>
 				</div>
 			</div>

@@ -137,11 +137,11 @@ export function AppointmentAlertBadges({
 			{isCito && (
 				<span
 					className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500 ring-2 ring-rose-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
-					title="CITO! Прием по острой боли (наивысший приоритет)"
+					title="Срочный приём (острая боль)"
 					data-testid="appointment-cito-badge"
 				>
 					<Zap size={13} className="text-rose-600 dark:text-rose-300 fill-rose-500" />
-					<span>CITO Острая боль</span>
+					<span>⚡ СРОЧНО</span>
 				</span>
 			)}
 			{collisionMessage ? (
@@ -252,7 +252,7 @@ export function AppointmentRefusalBanner({
 			</div>
 			{!hasReason && (
 				<div className="flex flex-wrap gap-1 mt-0.5" data-testid="appointment-card-refusal-chips">
-					<span className="text-[11px] text-[var(--muted)] w-full">Причина отказа (1 клик):</span>
+					<span className="text-[11px] text-[var(--muted)] w-full">Причина отказа:</span>
 					{STOMX_REFUSE_REASONS_CATALOG.slice(0, 4).map((refuse) => (
 						<button
 							key={refuse.code}

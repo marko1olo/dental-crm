@@ -72,7 +72,7 @@ export async function executeSeniorNurseDisposalActInBackground(
 					: "Уполномоченный сотрудник клиники",
 		paperJournalAcknowledged: true,
 		isSingleSigner: true,
-		notes: options.notes ?? "Фоновое списание пустых карпул по СанПиН 3.3686-21 (Мандат 8e, 8s)",
+		notes: options.notes ?? "Фоновое списание пустых карпул по СанПиН 3.3686-21",
 		items: options.items,
 	});
 
@@ -81,7 +81,7 @@ export async function executeSeniorNurseDisposalActInBackground(
 	}
 
 	showToast(
-		`Акт списания карпул №${actNumber} утверждён в фоновом режиме (СанПиН 3.3686-21, без комиссии и старшей медсестры)`,
+		`Акт списания карпул №${actNumber} утверждён в фоновом режиме по СанПиН 3.3686-21`,
 		"info",
 	);
 
@@ -476,7 +476,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 							<div className="font-bold text-lg leading-tight truncate">
 								{approverRole === "senior_nurse"
 									? "Акт списания медикаментов и анестетиков (Старшая медсестра)"
-									: "Акт списания медикаментов и анестетиков (1 клик)"}
+									: "Акт списания медикаментов и анестетиков"}
 							</div>
 							<div className="text-xs text-muted mt-0.5 truncate">
 								СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560) •
@@ -533,8 +533,8 @@ export const SeniorNurseDisposalActModal: React.FC<
 								</div>
 								<div style={{ fontSize: 12, color: "var(--muted)" }}>
 									{paperJournalAcknowledged
-										? "Медсестра ведёт локальный бумажный журнал или отсутствует. Акт списания утверждается в 1 клик дежурным врачом или администратором."
-										: "При списании зафиксировано достижение порога остатков. Рекомендуется 1-кликовое пополнение."}
+										? "Медсестра ведёт локальный бумажный журнал или отсутствует. Акт списания утверждается дежурным врачом или администратором без комиссий."
+										: "При списании зафиксировано достижение порога остатков. Рекомендуется оперативное пополнение."}
 								</div>
 							</div>
 						</div>
@@ -561,7 +561,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 									onClick={() => setShowPoModal(true)}
 								>
 									<ShoppingCart size={15} />
-									Заказ (1 клик)
+									Заказ поставщику
 								</button>
 							)}
 						</div>
@@ -588,7 +588,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 						</div>
 
 						<div className="text-[11px] text-teal-700 dark:text-teal-300 bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/50 rounded px-2.5 py-1.5 leading-relaxed">
-							<strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится в 1 клик врачом, администратором или старшей медсестрой единолично без бюрократического требования комиссии из 3 человек.
+							<strong>СанПиН 3.3686-21:</strong> Списание использованных карпул анестетиков проводится врачом, администратором или старшей медсестрой единолично без бюрократического требования комиссии из 3 человек.
 						</div>
 
 						<div className="grid grid-cols-1 md:grid-cols-4 gap-3">

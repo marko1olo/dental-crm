@@ -632,6 +632,32 @@ html.dark .tg-bonus-chip {
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
 }
 
+/* Закрепленная нижняя плашка действия (Apple HIG Floating Bottom Bar) */
+.tg-floating-bottom-bar {
+	position: sticky;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 45;
+	padding: 10px 16px;
+	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+	background: var(--tg-card-bg);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--tg-border);
+	margin-left: -16px;
+	margin-right: -16px;
+	margin-bottom: -14px;
+	margin-top: 12px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .tg-floating-bottom-bar,
+html.light .tg-floating-bottom-bar,
+html[data-theme="light"] .tg-floating-bottom-bar {
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+}
+
 /* Главная кнопка действия (CTA) */
 .tg-cta-button {
 	width: 100%;

@@ -208,7 +208,7 @@ describe("SEMD 108 Dental CDA R2 Generator & Validator", () => {
 
 			// Section 4: Services Rendered (LOINC 47519-4)
 			assert.ok(xml.includes(`<code code="${EGISZ_OIDS.LOINC_SERVICES_RENDERED}" codeSystem="${EGISZ_OIDS.LOINC}"`));
-			assert.ok(xml.includes("<title>Оказанные медицинские услуги (Номенклатура 804н)</title>"));
+			assert.ok(xml.includes("<title>Оказанные медицинские услуги</title>"));
 			assert.ok(xml.includes(`code="A11.07.012" codeSystem="${EGISZ_OIDS.ORDER_804N}"`));
 			assert.ok(xml.includes(`code="A16.07.002.001" codeSystem="${EGISZ_OIDS.ORDER_804N}"`));
 

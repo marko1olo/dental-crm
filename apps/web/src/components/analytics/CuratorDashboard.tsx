@@ -35,6 +35,7 @@ import {
 	UserCheck,
 	UserPlus,
 	Users,
+	X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -369,23 +370,34 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 			<div className="curator-queue-section">
 				<div className="curator-queue-toolbar">
 					{/* Поиск */}
-					<div className="curator-search-input-wrapper">
-						<Search className="curator-search-icon w-4 h-4" />
+					<div className="dente-search-wrap curator-search-input-wrapper">
+						<Search className="dente-search-icon curator-search-icon w-4 h-4" />
 						<input
 							type="text"
 							placeholder="Поиск по пациенту, телефону, плану, врачу..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="curator-search-input"
+							className="dente-search-input curator-search-input"
+							aria-label="Поиск по пациенту, телефону, плану, врачу"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								className="dente-search-clear"
+								onClick={() => setSearchQuery("")}
+								aria-label="Очистить поиск"
+							>
+								<X size={14} />
+							</button>
+						)}
 					</div>
 
 					{/* Фильтры этапов */}
-					<div className="curator-filter-pills">
+					<div className="curator-filter-pills dente-segmented-bar" role="tablist" aria-label="Фильтры этапов воронки куратора">
 						<button
 							type="button"
 							onClick={() => setSelectedStage("all")}
-							className={`curator-pill-btn ${selectedStage === "all" ? "active" : ""}`}
+							className={`curator-pill-btn dente-segmented-item ${selectedStage === "all" ? "active" : ""}`}
 						>
 							Все этапы ({queueItems.length})
 						</button>
@@ -396,7 +408,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 									key={def.stage}
 									type="button"
 									onClick={() => setSelectedStage(def.stage)}
-									className={`curator-pill-btn ${selectedStage === def.stage ? "active" : ""}`}
+									className={`curator-pill-btn dente-segmented-item ${selectedStage === def.stage ? "active" : ""}`}
 								>
 									{def.shortTitle} ({cnt})
 								</button>
@@ -420,32 +432,32 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 						<span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 600 }}>
 							Сумма:
 						</span>
-						<div className="curator-filter-pills" role="radiogroup" aria-label="Фильтр по сумме сметы">
+						<div className="curator-filter-pills dente-segmented-bar" role="radiogroup" aria-label="Фильтр по сумме сметы">
 							<button
 								type="button"
 								onClick={() => setSelectedPriceRange("all")}
-								className={`curator-pill-btn ${selectedPriceRange === "all" ? "active" : ""}`}
+								className={`curator-pill-btn dente-segmented-item ${selectedPriceRange === "all" ? "active" : ""}`}
 							>
 								Все суммы
 							</button>
 							<button
 								type="button"
 								onClick={() => setSelectedPriceRange("low")}
-								className={`curator-pill-btn ${selectedPriceRange === "low" ? "active" : ""}`}
+								className={`curator-pill-btn dente-segmented-item ${selectedPriceRange === "low" ? "active" : ""}`}
 							>
 								&lt; 50 тыс. ₽
 							</button>
 							<button
 								type="button"
 								onClick={() => setSelectedPriceRange("medium")}
-								className={`curator-pill-btn ${selectedPriceRange === "medium" ? "active" : ""}`}
+								className={`curator-pill-btn dente-segmented-item ${selectedPriceRange === "medium" ? "active" : ""}`}
 							>
 								50–150 тыс. ₽
 							</button>
 							<button
 								type="button"
 								onClick={() => setSelectedPriceRange("high")}
-								className={`curator-pill-btn ${selectedPriceRange === "high" ? "active" : ""}`}
+								className={`curator-pill-btn dente-segmented-item ${selectedPriceRange === "high" ? "active" : ""}`}
 							>
 								&gt; 150 тыс. ₽
 							</button>
@@ -454,7 +466,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 						<button
 							type="button"
 							onClick={() => setOnlyAttentionFlags(!onlyAttentionFlags)}
-							className={`curator-toggle-filter-btn ${onlyAttentionFlags ? "active" : ""}`}
+							className={`curator-toggle-filter-btn dente-filter-chip ${onlyAttentionFlags ? "active" : ""}`}
 						>
 							<AlertTriangle className="w-3.5 h-3.5" />
 							Только требующие внимания

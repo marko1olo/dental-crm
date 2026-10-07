@@ -17,8 +17,7 @@
  * своими шагами — эта панель их не подменяет.
  */
 
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
@@ -392,7 +391,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 					},
 				);
 				if (res.ok) {
-					showToast("Клиническая задача завершена в 1 клик", "success");
+					showToast("Клиническая задача завершена", "success");
 					if (patientId) {
 						updateLocalTaskStatus(patientId, taskId, "completed");
 					}
@@ -489,7 +488,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				</div>
 			) : null}
 
-			{/* 1-клик быстрые пресеты клинических задач у кресла (Мандаты 8e, 8k, 8n) */}
+			{/* Быстрые пресеты клинических задач у кресла (Мандаты 8e, 8k, 8n) */}
 			<div
 				className="clinical-task-presets"
 				style={{
@@ -510,7 +509,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 						color: "var(--ink, #1e293b)",
 					}}
 				>
-					Быстрые клинические пресеты (1 клик):
+					Быстрые клинические пресеты:
 				</span>
 				<div
 					className="ops-actions"

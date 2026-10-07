@@ -21,6 +21,7 @@ import {
 export type FiscalReceiptStatusCode =
 	| "fiscalized"
 	| "pending"
+	| "pending_fiscal_sync"
 	| "offline_buffered"
 	| "refund"
 	| "correction"
@@ -59,6 +60,12 @@ export const FiscalReceiptStatusBadge: React.FC<FiscalReceiptStatusBadgeProps> =
 			bgClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30",
 			icon: Clock,
 			title: "Чек ожидает отправки оператору фискальных данных",
+		},
+		pending_fiscal_sync: {
+			labelRu: "Оплачено (Ожидает фискализации в очереди)",
+			bgClass: "bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-500/30",
+			icon: Clock,
+			title: "Оплата зафиксирована в CRM, чек поставлен в очередь отложенной фискализации",
 		},
 		offline_buffered: {
 			labelRu: "Офлайн-буфер ККТ",

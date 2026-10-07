@@ -155,14 +155,14 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 				<div className="h-4 w-px bg-[var(--odontogram-border,var(--line))] mx-0.5 shrink-0 hidden sm:block" />
 			)}
 
-			{/* Core 1-Click Fast Actions */}
+			{/* Core Clinical Express Actions */}
 			{!hideExpressActions && (
 				<div className="flex items-center gap-1.5 flex-nowrap shrink-0 ml-auto sm:ml-0">
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
 						className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
+						title="Физиологическая норма (зубные ряды интактны): вся формула отмечается здоровой"
 						data-testid="mark-intact-dentition-btn"
 						data-action="tooth-chart-mark-intact-btn"
 					>
@@ -174,7 +174,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						type="button"
 						onClick={handleMarkProHygieneDone}
 						className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка + протокол в дневник"
+						title="Профессиональная гигиена: снятие зубных отложений УЗ + Air-Flow + полировка + протокол в дневник"
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 						data-action="tooth-chart-mark-pro-hygiene-btn"
 					>
@@ -186,7 +186,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						type="button"
 						onClick={handleApplyFastCariesK021}
 						className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол в дневник + световая пломба"
+						title="Кариес дентина (K02.1) для выбранного зуба: протокол в дневник + пломбирование композитом"
 						data-testid="tooth-chart-apply-fast-caries-btn"
 						data-action="tooth-chart-apply-fast-caries-btn"
 					>
@@ -199,7 +199,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 							type="button"
 							onClick={handleMarkWisdomTeethMissing}
 							className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-							title="1-клик Адентия 8-ок: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+							title="Первичная адентия третьих моляров: зубы 18, 28, 38, 48 отмечаются отсутствующими"
 							data-testid="mark-wisdom-missing-btn"
 							data-action="tooth-chart-mark-wisdom-missing-btn"
 						>
@@ -213,7 +213,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 							type="button"
 							onClick={handleMarkMolarsMissing}
 							className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
+							title="Вторичная частичная адентия моляров: зубы 16, 26, 36, 46 отмечаются удаленными ранее"
 							data-testid="mark-molars-missing-btn"
 						>
 							<ToothExtractForceps size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
@@ -225,7 +225,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						type="button"
 						onClick={handleMarkFrontIntact}
 						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
+						title="Физиологическая норма фронтальной группы: зубы 13–23, 33–43 отмечаются здоровыми"
 						data-testid="mark-front-intact-btn"
 					>
 						<ToothIncisor size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />

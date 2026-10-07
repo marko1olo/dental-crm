@@ -803,7 +803,7 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			const source = fs.readFileSync(patientsViewPath, "utf-8");
 			assert.ok(!source.includes('disabled={!selectedPatient}'), "PatientsView не должен содержать disabled={!selectedPatient}");
 			assert.ok(source.includes('data-testid="patient-card-open-visit-btn"'), "Кнопка 'Открыть приём' должна присутствовать");
-			assert.ok(source.includes("Выберите пациента из списка слева для открытия приёма 043/у"), "Кнопка 'Открыть приём' должна выводить информативное уведомление при нажатии");
+			assert.ok(source.includes("Выберите пациента из списка слева для открытия приёма"), "Кнопка 'Открыть приём' должна выводить информативное уведомление при нажатии");
 			assert.ok(source.includes('data-testid="patient-card-book-appointment-btn"'), "Кнопка 'Записать в расписание' должна присутствовать");
 			assert.ok(source.includes("Выберите пациента из списка слева для записи в расписание"), "Кнопка записи должна выводить информативное уведомление при нажатии");
 		});

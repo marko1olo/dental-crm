@@ -46,7 +46,7 @@ export const TreatmentEstimatorSignModal: React.FC<TreatmentEstimatorSignModalPr
 							data-testid="estimator-modal-paper-confirm-btn"
 						>
 							<ShieldCheck size={16} />
-							<span>Подтвердить на бумаге (1 клик)</span>
+							<span>Подтвердить на бумажном носителе</span>
 						</button>
 						<button
 							type="button"

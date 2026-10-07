@@ -16,6 +16,7 @@
 
 import type { CbctVoxelVolume } from "../cbctMprMath";
 import { downsampleVolumeData } from "../cbctPanoramicReconstructionMath";
+import { downsampleVolumeBoxFilter } from "@dental/shared";
 import {
 	type Volume3DClippingBox,
 	type Volume3DPresetId,
@@ -64,6 +65,7 @@ uniform int u_presetMode;      // 0 = surface (skull, dense_bone, soft_tissue), 
 uniform vec3 u_boneColor;      // base bone color (e.g. 240, 225, 200 / 255.0)
 uniform vec3 u_lightDir;       // normalized light direction
 uniform int u_maxSteps;        // 60-200 steps
+uniform float u_voxelStep;     // adaptive ray step in voxels (0.5 ultra, 1.0 balanced, 1.8 low, 2.5 potato)
 uniform vec3 u_clipMin;        // normalized [0, 1] clipping box minimum
 uniform vec3 u_clipMax;        // normalized [0, 1] clipping box maximum
 uniform int u_refineSteps;     // 0 during interaction, 4 on mouseUp
@@ -202,6 +204,8 @@ float sampleHUTrilinear(vec3 pos) {
 // Metal Artifact Reduction (MAR): detects 1D high-density streak needles/spikes radiating from metal
 bool isMetalStreakArtifact(vec3 pos, float huVal, vec3 rayDirection) {
     if (u_marActive == 0) return false;
+    // On low/potato interaction passes with coarse step, skip expensive transverse sampling
+    if (u_refineSteps == 0 && u_voxelStep >= 1.5) return false;
     
     // Only filter high-density candidates that could be streak spikes
     if (huVal < u_huMin) return false;
@@ -290,7 +294,7 @@ void main() {
     
     float rayDist = tFar - tNear;
     int safeMaxSteps = clamp(u_maxSteps, 1, 200);
-    float stepSize = max(0.4, rayDist / float(safeMaxSteps));
+    float stepSize = max(0.25, (u_voxelStep > 0.05 ? u_voxelStep : rayDist / float(safeMaxSteps)));
     int actualSteps = int(clamp(ceil(rayDist / stepSize), 1.0, float(safeMaxSteps)));
     float dt = rayDist / float(actualSteps);
     
@@ -553,7 +557,8 @@ export interface WebGlVolume3DState {
 	volumeTexture: WebGLTexture | null;
 	volumeDataRef: Int16Array | null;
 	uploadDim: { width: number; height: number; depth: number } | null;
-	lastRenderTimeMs?: number;
+	targetLimitRef?: number | undefined;
+	lastRenderTimeMs?: number | undefined;
 	uniforms: {
 		volumeDim: WebGLUniformLocation | null;
 		rotMatrix: WebGLUniformLocation | null;
@@ -566,6 +571,7 @@ export interface WebGlVolume3DState {
 		boneColor: WebGLUniformLocation | null;
 		lightDir: WebGLUniformLocation | null;
 		maxSteps: WebGLUniformLocation | null;
+		voxelStep: WebGLUniformLocation | null;
 		clipMin: WebGLUniformLocation | null;
 		clipMax: WebGLUniformLocation | null;
 		refineSteps: WebGLUniformLocation | null;
@@ -654,6 +660,7 @@ export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVo
 			boneColor: gl.getUniformLocation(program, "u_boneColor"),
 			lightDir: gl.getUniformLocation(program, "u_lightDir"),
 			maxSteps: gl.getUniformLocation(program, "u_maxSteps"),
+			voxelStep: gl.getUniformLocation(program, "u_voxelStep"),
 			clipMin: gl.getUniformLocation(program, "u_clipMin"),
 			clipMax: gl.getUniformLocation(program, "u_clipMax"),
 			refineSteps: gl.getUniformLocation(program, "u_refineSteps"),
@@ -667,6 +674,13 @@ export function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVo
 			implantColors: gl.getUniformLocation(program, "u_implantColors[0]") ?? gl.getUniformLocation(program, "u_implantColors"),
 		},
 	};
+}
+
+export interface RenderWebGl2VolumeOptions {
+	voxelStep?: number;
+	maxSteps?: number;
+	refineSteps?: number;
+	max3DLimit?: number;
 }
 
 export function renderWebGl2VolumeRaymarching(
@@ -685,13 +699,17 @@ export function renderWebGl2VolumeRaymarching(
 	objectId = 0,
 	implants: readonly Volume3DImplantParam[] = [],
 	marActive = true,
+	options?: RenderWebGl2VolumeOptions,
 ): void {
 	const { gl, program, vao, uniforms } = state;
 	const dim = volume.dimensions;
 	const data = volume.data;
 
-	// Upload or update 3D texture if volume changed
-	if (!state.volumeTexture || state.volumeDataRef !== data) {
+	const max3D = gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) || 512;
+	const targetLimit = Math.min(max3D, options?.max3DLimit ?? 512);
+
+	// Upload or update 3D texture if volume changed or target limit changed
+	if (!state.volumeTexture || state.volumeDataRef !== data || state.targetLimitRef !== targetLimit) {
 		if (state.volumeTexture) {
 			gl.deleteTexture(state.volumeTexture);
 		}
@@ -704,8 +722,6 @@ export function renderWebGl2VolumeRaymarching(
 			gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 			gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-			const max3D = gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) || 512;
-			const targetLimit = Math.min(max3D, 512);
 			const maxDim = Math.max(dim.width, Math.max(dim.height, dim.depth));
 			if (!data) return;
 			let uploadData: Int16Array = data;
@@ -715,7 +731,7 @@ export function renderWebGl2VolumeRaymarching(
 
 			if (maxDim > targetLimit) {
 				const factor = Math.ceil(maxDim / targetLimit);
-				const downsampled = downsampleVolumeData(data, dim, factor);
+				const downsampled = downsampleVolumeBoxFilter(data, dim, factor, factor, factor);
 				uploadData = downsampled.data;
 				uploadW = downsampled.width;
 				uploadH = downsampled.height;
@@ -738,12 +754,14 @@ export function renderWebGl2VolumeRaymarching(
 				state.volumeTexture = tex;
 				state.volumeDataRef = data;
 				state.uploadDim = { width: uploadW, height: uploadH, depth: uploadD };
+				state.targetLimitRef = targetLimit;
 			} catch (err) {
 				console.warn("[CbctVolume3DViewport] 3D texture upload failed:", err);
 				gl.deleteTexture(tex);
 				state.volumeTexture = null;
 				state.volumeDataRef = null;
 				state.uploadDim = null;
+				state.targetLimitRef = undefined;
 			}
 		}
 	}
@@ -809,8 +827,14 @@ export function renderWebGl2VolumeRaymarching(
 		clipping.clipMax[1],
 		clipping.clipMax[2],
 	);
-	gl.uniform1i(uniforms.refineSteps, isInteracting ? 0 : 4);
-	gl.uniform1i(uniforms.maxSteps, isInteracting ? 64 : 160);
+
+	const effectiveVoxelStep = options?.voxelStep ?? (isInteracting ? 1.0 : 0.5);
+	const effectiveRefineSteps = options?.refineSteps ?? (isInteracting ? 0 : 4);
+	const effectiveMaxSteps = options?.maxSteps ?? (isInteracting ? 64 : 160);
+
+	if (uniforms.voxelStep) gl.uniform1f(uniforms.voxelStep, effectiveVoxelStep);
+	gl.uniform1i(uniforms.refineSteps, effectiveRefineSteps);
+	gl.uniform1i(uniforms.maxSteps, effectiveMaxSteps);
 	gl.uniform1i(uniforms.renderMode, renderMode);
 	gl.uniform1f(uniforms.objectId, objectId);
 	if (uniforms.marActive) gl.uniform1i(uniforms.marActive, marActive ? 1 : 0);
@@ -912,4 +936,29 @@ export function pickVolume3DObjectAtPixel(
 		return null;
 	}
 }
+
+/**
+ * Ironclad VRAM disposal for 3D Volume Raymarching WebGL2 resources.
+ * Completely deletes the 3D volume texture, vertex array object, and compiled shader program.
+ */
+export function disposeWebGl2VolumeRaymarching(state: WebGlVolume3DState | null): void {
+	if (!state) return;
+	const { gl, program, vao, volumeTexture } = state;
+	if (gl) {
+		if (volumeTexture && typeof gl.deleteTexture === "function") {
+			gl.deleteTexture(volumeTexture);
+		}
+		if (vao && typeof gl.deleteVertexArray === "function") {
+			gl.deleteVertexArray(vao);
+		}
+		if (program && typeof gl.deleteProgram === "function") {
+			gl.deleteProgram(program);
+		}
+	}
+	state.volumeTexture = null;
+	state.volumeDataRef = null;
+	state.uploadDim = null;
+	state.targetLimitRef = undefined;
+}
+
 

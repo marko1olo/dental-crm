@@ -107,16 +107,16 @@ describe("QuickBookingDrawer", () => {
 		);
 
 		assert.ok(
-			html.includes("Экстренный прием (CITO!)"),
-			"должен быть заголовок экстренного приема CITO",
+			html.includes("⚡ Срочная запись: острая боль"),
+			"должен быть заголовок экстренного приема острая боль",
 		);
 		assert.ok(
 			html.includes("Острая боль"),
 			"должен быть бейдж Острая боль",
 		);
 		assert.ok(
-			html.includes("+ Экспресс-пациент CITO"),
-			"должна быть кнопка быстрого создания пациента CITO",
+			html.includes("+ Срочный пациент (острая боль)"),
+			"должна быть кнопка быстрого создания пациента",
 		);
 	});
 	it("renders all receptionist duration presets with service hints", () => {

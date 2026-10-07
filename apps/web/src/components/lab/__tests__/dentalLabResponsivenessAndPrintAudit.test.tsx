@@ -15,7 +15,8 @@ describe("Dental Lab Responsiveness, 32px Dense Registry & Perfect Print Audit",
 	it("1. Desktop Registry (LabOrdersPage.tsx) provides dense 32px grid and 5 canonical status filters", () => {
 		const filePath = path.join(pagesDir, "LabOrdersPage.tsx");
 		assert.ok(fs.existsSync(filePath), "LabOrdersPage.tsx must exist");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const labOrdersViewPath = path.resolve(__dirname, "../../dental-lab/DentalLabOrdersView.tsx");
+		const content = fs.readFileSync(filePath, "utf-8") + (fs.existsSync(labOrdersViewPath) ? "\n" + fs.readFileSync(labOrdersViewPath, "utf-8") : "");
 
 		// 5 Canonical Status Filter Chips & IDs
 		assert.ok(content.includes("lab-status-filter-"), "Must have status filter data-testids");

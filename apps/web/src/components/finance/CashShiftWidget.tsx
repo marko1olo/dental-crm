@@ -440,7 +440,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						<div>
 							<span>В офлайн-очереди накопилось <strong>{pendingOfflineCount} неотправленных чеков</strong> на сумму <strong>{formatMoneyRu(pendingOfflineAmountRub)}</strong> (обрыв связи с ККТ/ОФД).</span>
 							<div className="text-[11px] text-[var(--muted,#64748b)] font-normal">
-								Все оплаты зафиксированы в программе без блокировки кассира. Пробейте очередь в 1 клик после восстановления связи.
+								Все оплаты зафиксированы в программе. Пробейте очередь после восстановления связи.
 							</div>
 						</div>
 					</div>

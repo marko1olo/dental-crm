@@ -445,7 +445,7 @@ export function SterilizationCycleModal({
 									className="sanpin-btn sanpin-btn-secondary"
 									style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
 								>
-									<CheckCircle2 size={13} color="#16a34a" /> <span>Норма в 1 клик</span>
+									<CheckCircle2 size={13} color="#16a34a" /> <span>Заполнить нормой</span>
 								</button>
 							</div>
 

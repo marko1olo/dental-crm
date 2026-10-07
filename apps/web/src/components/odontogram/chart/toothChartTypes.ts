@@ -165,7 +165,7 @@ export const FAST_TOOTH_PRESETS: readonly FastToothPreset[] = [
 		title: "Адентия 8-ок (18, 28, 38, 48)",
 		shortTitle: "Без 8-ок",
 		description: "Зубы мудрости 18, 28, 38, 48 помечаются отсутствующими / удаленными",
-		badge: "1 клик",
+		badge: "K08.1",
 		icd10: "K08.1",
 	},
 	{

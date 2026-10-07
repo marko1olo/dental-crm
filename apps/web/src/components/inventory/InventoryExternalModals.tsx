@@ -155,7 +155,7 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 												body: JSON.stringify({
 													adjustment: -line.actualQuantity,
 													allowOverdraft: true,
-													reason: `Акт 804н ${doc.actNumber}: ${line.nameRu}`,
+													reason: `Акт ${doc.actNumber}: ${line.nameRu}`,
 												}),
 											},
 										);
@@ -163,7 +163,7 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 									}
 								}
 								showToast(
-									`Акт списания 804н зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
+									`Акт списания зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
 									"success",
 								);
 							} catch (e) {
@@ -202,7 +202,7 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 												allowOverdraft: true,
 												reason: `Списание по техкарте: ${line.materialName} (${line.quantity} ${line.unit})`,
 											})),
-										reason: "Списание материалов по техкартам процедур (Мандат 8e)",
+										reason: "Списание материалов по техкартам процедур",
 										allowOverdraft: true,
 									}),
 								});
@@ -389,7 +389,7 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 											allowOverdraft: true,
 											reason: `Ручное списание: ${line.name}`,
 										})),
-										reason: "Ручное списание со склада (Мандат 8e, 8k)",
+										reason: "Ручное списание со склада",
 										allowOverdraft: true,
 									}),
 								});

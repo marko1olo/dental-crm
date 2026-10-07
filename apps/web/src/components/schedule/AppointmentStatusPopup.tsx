@@ -213,7 +213,7 @@ export function AppointmentHoverHud({
 				</div>
 			</div>
 
-			{/* 5. Оперативная очередь StomX: 4-кликовое перемещение между этапами (Запланирован -> В клинике -> В кресле -> Завершен) */}
+			{/* 5. Оперативная очередь: быстрое перемещение между этапами (Запланирован -> В клинике -> В кресле -> Завершен) */}
 			<div className="pt-2 border-t border-[var(--line)]">
 				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
 					<span>Очередь смены</span>
@@ -296,7 +296,7 @@ export function AppointmentHoverHud({
 					</button>
 				</div>
 
-				{/* 1-кликовые главные действия приёма */}
+				{/* Главные действия приёма */}
 				<div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-[var(--line)]">
 					<button
 						type="button"
@@ -317,7 +317,7 @@ export function AppointmentHoverHud({
 							showToast(`Приём начат: ${appointmentPatientName} в кресле`, "success");
 						}}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-						title="Начать приём: перевести в статус «В кресле» и открыть медицинскую карту (1 клик)"
+						title="Начать приём: перевести в статус «В кресле» и открыть медицинскую карту"
 					>
 						<Stethoscope size={14} className="shrink-0" />
 						<span className="whitespace-nowrap">Начать приём</span>
@@ -340,7 +340,7 @@ export function AppointmentHoverHud({
 							showToast(`Быстрый расчёт: ${appointmentPatientName}`, "info");
 						}}
 						className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-						title="Быстрый расчёт: перейти к оплате (1 клик)"
+						title="Быстрый расчёт: перейти к оплате"
 					>
 						<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span className="whitespace-nowrap">Быстрый расчёт</span>

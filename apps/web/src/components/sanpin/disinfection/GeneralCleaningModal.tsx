@@ -229,7 +229,7 @@ export const GeneralCleaningModal: React.FC<GeneralCleaningModalProps> = ({
 					</button>
 				</div>
 
-				{/* 1-Click Preset Norm */}
+				{/* Регламентная норма уборки */}
 				<div className="p-3.5 rounded-xl bg-teal-50/80 border border-teal-200 flex items-center justify-between gap-3 flex-wrap">
 					<div className="flex items-center gap-2 text-xs text-teal-900">
 						<Sparkles size={16} className="text-[var(--teal,#0d9488)] shrink-0" />

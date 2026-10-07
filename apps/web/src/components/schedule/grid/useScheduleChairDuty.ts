@@ -716,7 +716,7 @@ export function useScheduleChairDuty({
       handleConfirmAssignDoctor(chairId, doctorId, "full");
 
       showToast(
-        `Врач ${doctorName} закреплен за креслом «${chairName}» (StomX Parity)`,
+        `Врач ${doctorName} закреплен за креслом «${chairName}»`,
         "success",
         3500,
       );

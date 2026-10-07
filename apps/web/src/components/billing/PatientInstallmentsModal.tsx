@@ -390,7 +390,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 						<div className="flex items-center justify-between mb-3">
 							<span className="font-bold text-xs uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
 								<CreditCard className="w-3.5 h-3.5 text-teal-600" />
-								<span>1-Клик Прием взноса рассрочки</span>
+								<span>Внести взнос по рассрочке</span>
 							</span>
 							<button
 								type="button"

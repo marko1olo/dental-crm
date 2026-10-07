@@ -599,7 +599,7 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.equal(getAnatomicalWorkingLength(85), 16.5);
 	});
 
-	test("applyAnatomicalWorkingLengths автозаполняет длины для всех каналов зуба в 1 клик", () => {
+	test("applyAnatomicalWorkingLengths автозаполняет длины для всех каналов зуба", () => {
 		const canals: EndoCanalData[] = [
 			{
 				id: "c1",

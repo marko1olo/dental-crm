@@ -38,7 +38,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					<button
 						type="button"
 						onClick={onPrintOrthodonticCard}
-						className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+						className="secondary-button shrink-0"
 						data-testid="print-ortho-protocol-btn"
 						title="Распечатать карту"
 						aria-label="Печать протокола"
@@ -49,7 +49,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					<button
 						type="button"
 						onClick={onCopyClipboard}
-						className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+						className="secondary-button shrink-0 min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border"
 						title="Скопировать протокол в буфер"
 					>
 						<Copy size={13} />
@@ -70,7 +70,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						type="button"
 						onClick={onCopyPatientMemo}
 						data-testid="ortho-copy-patient-memo-btn"
-						className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+						className="secondary-button min-h-[48px] px-3.5 py-2 rounded-xl w-full justify-center shrink-0"
 						title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
 					>
 						<Copy size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -82,7 +82,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 						type="button"
 						onClick={onPrintPatientMemo}
 						data-testid="ortho-print-patient-memo-btn"
-						className="min-h-[48px] px-3 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+						className="secondary-button w-full justify-center shrink-0"
 						title="Распечатать памятку пациенту (A4)"
 					>
 						<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -94,7 +94,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					<button
 						type="button"
 						onClick={onPrintOrthodonticCard}
-						className="min-h-[44px] px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+						className="secondary-button shrink-0"
 						data-testid="bottom-print-protocol-btn"
 						title="Распечатать карту"
 						aria-label="Печать протокола"
@@ -106,7 +106,7 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					<button
 						type="button"
 						onClick={onAddServicesToInvoice}
-						className="min-h-[44px] px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+						className="secondary-button shrink-0"
 						data-testid="bottom-add-services-to-invoice-btn"
 						title="Начислить услуги в чек/смету"
 						aria-label="Начислить услуги в чек/смету"
@@ -118,21 +118,21 @@ export const OrthoProtocolPreviewSection: React.FC<OrthoProtocolPreviewSectionPr
 					<button
 						type="button"
 						onClick={onApplyToVisitNote}
-						className="flex-1 min-h-[44px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+						className="primary-button flex-1 justify-center shrink-0 whitespace-nowrap min-w-fit"
 						data-testid="bottom-apply-protocol-btn"
-						title="Вставить в медицинскую карту"
+						title="Вставить протокол в медицинскую карту"
 						aria-label="В медицинскую карту"
 					>
 						<Check size={16} />
-						<span>Вставить в карту</span>
+						<span>В карту</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
+						className="secondary-button shrink-0"
 					>
-						Отмена
+						<span>Отмена</span>
 					</button>
 				</div>
 			</div>

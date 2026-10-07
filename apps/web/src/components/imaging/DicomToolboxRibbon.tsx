@@ -229,95 +229,97 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 			<div
 				id="dicom-mpr-toolbar"
 				data-tour="imaging-filter"
-				className="overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x shrink-0"
-				style={{
-					height: "38px",
-					minHeight: "38px",
-					backgroundColor: "#090d16",
-					borderBottom: "1px solid #1e293b",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					padding: "0 8px",
-					gap: "6px",
-					userSelect: "none",
-					color: "#f8fafc",
-					fontSize: "12px",
-					flexWrap: "nowrap",
-					whiteSpace: "nowrap",
-				}}
+				className="overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x shrink-0 px-2 flex items-center justify-between gap-2 select-none flex-nowrap whitespace-nowrap bg-[#090d16] border-b border-slate-800 text-slate-100 h-10 min-h-[40px]"
 			>
 				{/* Tabs */}
-				<div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
-					<span style={{ backgroundColor: "#0d9488", color: "#fff", fontWeight: 800, fontSize: "11px", padding: "4px 8px", borderRadius: "4px", letterSpacing: "0.5px", marginRight: "4px" }}>
+				<div className="flex items-center gap-1.5 shrink-0">
+					<span className="bg-[var(--teal)] text-[var(--on-teal,white)] font-extrabold text-xs px-2.5 py-1 rounded-md tracking-wider shrink-0">
 						DENTE КТ
 					</span>
-					{(["2D", "MPR", "SECTION", "3D_PANO", "TMJ"] as const).map((tab) => {
-						const labels: Record<string, string> = { "2D": "2D СРЕЗ", MPR: "MPR", SECTION: "РАЗДЕЛ", "3D_PANO": "3D ПАНОРАМА", TMJ: "ВНЧС (TMJ)" };
-						const isActive = activeTab === tab;
-						const testId = tab === "MPR" ? "btn-dicom-switch-mpr" : tab === "SECTION" ? "btn-dicom-switch-sectioning" : undefined;
-						return (
-							<button
-								key={tab}
-								type="button"
-								data-testid={testId}
-								onClick={() => {
-									setInternalActiveTab(tab);
-									onTabChange?.(tab);
-								}}
-								style={{ height: "26px", padding: "0 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 700, border: "none", cursor: "pointer", backgroundColor: isActive ? "#134e4a" : "transparent", color: isActive ? "#2dd4bf" : "#94a3b8" }}
-							>
-								{labels[tab]}
-							</button>
-						);
-					})}
+					<div className="dente-segmented-bar shrink-0">
+						{(["2D", "MPR", "SECTION", "3D_PANO", "TMJ"] as const).map((tab) => {
+							const labels: Record<string, string> = { "2D": "2D СРЕЗ", MPR: "MPR", SECTION: "РАЗДЕЛ", "3D_PANO": "3D ПАНОРАМА", TMJ: "ВНЧС (TMJ)" };
+							const isActive = activeTab === tab;
+							const testId = tab === "MPR" ? "btn-dicom-switch-mpr" : tab === "SECTION" ? "btn-dicom-switch-sectioning" : undefined;
+							return (
+								<button
+									key={tab}
+									type="button"
+									data-testid={testId}
+									onClick={() => {
+										setInternalActiveTab(tab);
+										onTabChange?.(tab);
+									}}
+									className={`dente-segmented-item ${isActive ? "active" : ""}`}
+								>
+									{labels[tab]}
+								</button>
+							);
+						})}
+					</div>
 				</div>
 
 				{/* Center: Tools */}
-				<div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
+				<div className="flex items-center gap-1 shrink-0">
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
-						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "5px", border: activeTool === "pan" ? "1px solid #0d9488" : "1px solid #334155", backgroundColor: activeTool === "pan" ? "#134e4a" : "#1e293b", color: activeTool === "pan" ? "#5eead4" : "#cbd5e1", cursor: "pointer" }}
+						className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+							activeTool === "pan"
+								? "bg-teal-900/80 border-[var(--teal)] text-teal-300"
+								: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+						}`}
 						title="Рука (Pan / Перемещение среза)"
 					>
-						<Hand size={14} />
+						<Hand size={15} />
 					</button>
 
 					<button
 						type="button"
 						onClick={() => onSelectTool("ruler")}
-						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "5px", border: activeTool === "ruler" ? "1px solid #0284c7" : "1px solid #334155", backgroundColor: activeTool === "ruler" ? "#0369a1" : "#1e293b", color: activeTool === "ruler" ? "#bae6fd" : "#cbd5e1", cursor: "pointer" }}
+						className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+							activeTool === "ruler"
+								? "bg-sky-900/80 border-sky-500 text-sky-200"
+								: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+						}`}
 						title="Линейка (Distance / Калиброванное расстояние в мм)"
 					>
-						<Ruler size={14} />
+						<Ruler size={15} />
 					</button>
 
 					<button
 						type="button"
 						onClick={() => { onSelectTool("angle"); showToast("Инструмент угла: выберите вершину и две точки лучей", "info"); }}
-						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "5px", border: activeTool === "angle" ? "1px solid #f59e0b" : "1px solid #334155", backgroundColor: activeTool === "angle" ? "#78350f" : "#1e293b", color: activeTool === "angle" ? "#fde68a" : "#cbd5e1", cursor: "pointer" }}
+						className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+							activeTool === "angle"
+								? "bg-amber-900/80 border-amber-500 text-amber-200"
+								: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+						}`}
 						title="Угол (Angle / Измерение угла в градусах)"
 					>
-						<Triangle size={14} />
+						<Triangle size={15} />
 					</button>
 
 					<button
 						type="button"
 						onClick={() => onSelectTool("root_canal_tracer")}
-						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "5px", border: activeTool === "root_canal_tracer" ? "1px solid #ef4444" : "1px solid #334155", backgroundColor: activeTool === "root_canal_tracer" ? "#7f1d1d" : "#1e293b", color: activeTool === "root_canal_tracer" ? "#fca5a5" : "#cbd5e1", cursor: "pointer" }}
-						title="Трассировка корневого канала (Mandate 8c: Анатомический красный #ef4444)"
+						className={`h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border ${
+							activeTool === "root_canal_tracer"
+								? "bg-rose-900/80 border-rose-500 text-rose-200"
+								: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+						}`}
+						title="Трассировка корневого канала"
 					>
-						<PenTool size={14} />
+						<PenTool size={15} />
 					</button>
 
 					<button
 						type="button"
 						onClick={() => handleInstantScreenCapture(true)}
-						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "5px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "#cbd5e1", cursor: "pointer" }}
+						className="h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
 						title="Быстрый снимок экрана в буфер обмена Windows"
 					>
-						<Camera size={14} />
+						<Camera size={15} />
 					</button>
 
 					<button
@@ -325,54 +327,58 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 						data-testid="btn-dicom-hu-profile"
 						id="btn-ez3d-hu-profile"
 						onClick={handleOpenHuProfile}
-						style={{ height: "28px", padding: "0 8px", display: "inline-flex", alignItems: "center", gap: "5px", borderRadius: "5px", border: "1px solid #0284c7", backgroundColor: "#0369a1", color: "#ffffff", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}
+						className="h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-sky-500/50 bg-sky-600/30 text-sky-200 hover:bg-sky-600/40 text-[13px] font-semibold cursor-pointer transition-colors"
 						title="Профиль плотности кости (HU Хаунсфилд вдоль линии измерения D1..D5)"
 					>
-						<Activity size={14} color="#38bdf8" />
+						<Activity size={14} className="text-sky-400" />
 						<span>Плотность HU</span>
 					</button>
 
 					{/* ▾ Измерение: Dropdown Menu */}
-					<div style={{ position: "relative" }} ref={measureMenuRef}>
+					<div className="relative" ref={measureMenuRef}>
 						<button
 							type="button"
 							data-testid="btn-dicom-measurement-dropdown"
 							id="btn-ez3d-measurement-dropdown"
 							onClick={() => setIsMeasureMenuOpen((prev) => !prev)}
-							style={{ height: "28px", padding: "0 8px", borderRadius: "5px", border: isMeasureMenuOpen ? "1px solid #0d9488" : "1px solid #334155", backgroundColor: isMeasureMenuOpen ? "#134e4a" : "#1e293b", color: "#e2e8f0", fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+							className={`h-8 px-2.5 rounded-lg inline-flex items-center gap-1 border text-[13px] font-medium cursor-pointer transition-colors ${
+								isMeasureMenuOpen
+									? "bg-teal-900/80 border-[var(--teal)] text-teal-200"
+									: "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+							}`}
 						>
 							<span>▾ Измерение</span>
 						</button>
 
 						{isMeasureMenuOpen && (
-							<div style={{ position: "absolute", left: 0, top: "100%", marginTop: "4px", width: "240px", backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.6)", zIndex: 10001, padding: "6px", display: "flex", flexDirection: "column", gap: "2px" }}>
-								<div style={dropdownSectionHeaderStyle}>Измерение</div>
-								<button type="button" onClick={() => { onSelectTool("ruler"); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Ruler size={13} color="#38bdf8" /><span>Длина / Линейка (мм)</span>
+							<div className="absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[10001] p-1.5 flex flex-col gap-0.5">
+								<div className="text-xs font-bold text-slate-400 px-2 py-1 uppercase border-b border-slate-800 tracking-wider">Измерение</div>
+								<button type="button" onClick={() => { onSelectTool("ruler"); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Ruler size={14} className="text-sky-400" /><span>Длина / Линейка (мм)</span>
 								</button>
-								<button type="button" onClick={() => { onSelectTool("angle"); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Triangle size={13} color="#f59e0b" /><span>Угол (Cobb / Gnathic °)</span>
+								<button type="button" onClick={() => { onSelectTool("angle"); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Triangle size={14} className="text-amber-400" /><span>Угол (Cobb / Gnathic °)</span>
 								</button>
-								<button type="button" onClick={() => { handleOpenHuProfile(); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Activity size={13} color="#2dd4bf" /><span>Плотность кости (HU Misch)</span>
-								</button>
-
-								<div style={dropdownSectionHeaderStyle}>Захват</div>
-								<button type="button" onClick={() => { handleInstantScreenCapture(true); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Copy size={13} color="#a7f3d0" /><span>Снимок в буфер (Ctrl+V)</span>
-								</button>
-								<button type="button" onClick={() => { handleInstantScreenCapture(false); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Download size={13} color="#67e8f9" /><span>Экспорт PNG высокого разрешения</span>
+								<button type="button" onClick={() => { handleOpenHuProfile(); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Activity size={14} className="text-teal-400" /><span>Плотность кости (HU Misch)</span>
 								</button>
 
-								<div style={dropdownSectionHeaderStyle}>Аннотация</div>
-								<button type="button" onClick={() => { showToast("Режим стрелки-аннотации активирован: кликните на очаг", "info"); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Move size={13} color="#f472b6" /><span>Стрелка / Клиническая выноска</span>
+								<div className="text-xs font-bold text-slate-400 px-2 py-1 uppercase border-b border-slate-800 tracking-wider mt-1">Захват</div>
+								<button type="button" onClick={() => { handleInstantScreenCapture(true); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Copy size={14} className="text-emerald-400" /><span>Снимок в буфер (Ctrl+V)</span>
+								</button>
+								<button type="button" onClick={() => { handleInstantScreenCapture(false); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Download size={14} className="text-cyan-400" /><span>Экспорт PNG высокого разрешения</span>
 								</button>
 
-								<div style={dropdownSectionHeaderStyle}>Моделирование</div>
-								<button type="button" onClick={() => { showToast("Библиотека имплантатов: буфер безопасности 1.5–2 мм вокруг IAN активна", "success"); setIsMeasureMenuOpen(false); }} style={menuItemStyle}>
-									<Zap size={13} color="#fbbf24" /><span>Имплантат (Буфер 1.5–2 мм)</span>
+								<div className="text-xs font-bold text-slate-400 px-2 py-1 uppercase border-b border-slate-800 tracking-wider mt-1">Аннотация</div>
+								<button type="button" onClick={() => { showToast("Режим стрелки-аннотации активирован: кликните на очаг", "info"); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Move size={14} className="text-pink-400" /><span>Стрелка / Клиническая выноска</span>
+								</button>
+
+								<div className="text-xs font-bold text-slate-400 px-2 py-1 uppercase border-b border-slate-800 tracking-wider mt-1">Моделирование</div>
+								<button type="button" onClick={() => { showToast("Библиотека имплантатов: буфер безопасности 1.5–2 мм вокруг IAN активна", "success"); setIsMeasureMenuOpen(false); }} className="w-full text-left px-2 py-1.5 text-[13px] font-medium rounded-lg text-slate-200 hover:bg-slate-800 cursor-pointer flex items-center gap-2 transition-colors">
+									<Zap size={14} className="text-amber-300" /><span>Имплантат (Буфер 1.5–2 мм)</span>
 								</button>
 							</div>
 						)}
@@ -384,10 +390,14 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 						id="btn-dicom-window-panel"
 						data-tour="mpr-presets"
 						onClick={() => setIsWindowPanelOpen((prev) => !prev)}
-						style={{ height: "28px", padding: "0 8px", borderRadius: "5px", border: isWindowPanelOpen ? "1px solid #8b5cf6" : "1px solid #334155", backgroundColor: isWindowPanelOpen ? "#5b21b6" : "#1e293b", color: isWindowPanelOpen ? "#ddd6fe" : "#cbd5e1", fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+						className={`h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border text-[13px] font-medium cursor-pointer transition-colors ${
+							isWindowPanelOpen
+								? "bg-purple-900/80 border-purple-500 text-purple-200"
+								: "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+						}`}
 						title="Управление окнами (Ширина, Уровень, Фильтры)"
 					>
-						<Sliders size={13} />
+						<Sliders size={14} />
 						<span>Окна W/L</span>
 					</button>
 
@@ -396,47 +406,39 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 						type="button"
 						id="btn-dicom-clipping-panel"
 						onClick={() => setIsClippingPanelOpen((prev) => !prev)}
-						style={{ height: "28px", padding: "0 8px", borderRadius: "5px", border: isClippingApplied ? "1px solid #10b981" : isClippingPanelOpen ? "1px solid #0d9488" : "1px solid #334155", backgroundColor: isClippingApplied ? "#064e3b" : isClippingPanelOpen ? "#134e4a" : "#1e293b", color: isClippingApplied ? "#a7f3d0" : "#cbd5e1", fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+						className={`h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border text-[13px] font-medium cursor-pointer transition-colors ${
+							isClippingApplied
+								? "bg-emerald-950 border-emerald-500 text-emerald-200"
+								: isClippingPanelOpen
+									? "bg-teal-900/80 border-[var(--teal)] text-teal-200"
+									: "bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700"
+						}`}
 						title="Обрезка срезов (Clipping box ROI)"
 					>
-						<Crop size={13} />
+						<Crop size={14} />
 						<span>Обрезка</span>
 					</button>
 				</div>
 
 				{/* Right: Patient Metadata, AI, 1-Click Norma, Fullscreen, Close */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+				<div className="flex items-center gap-1.5 shrink-0">
 					{onAiAnalyze && (
 						<button
 							type="button"
 							data-testid="btn-dicom-run-ai"
 							onClick={onAiAnalyze}
 							disabled={isAiAnalyzing}
-							style={{
-								height: "26px",
-								padding: "0 8px",
-								fontSize: "11px",
-								borderRadius: "4px",
-								border: "1px solid #0d9488",
-								backgroundColor: isAiAnalyzing ? "#134e4a" : "#0f766e",
-								color: "#ccfbf1",
-								cursor: isAiAnalyzing ? "not-allowed" : "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "4px",
-								fontWeight: 700,
-								opacity: isAiAnalyzing ? 0.6 : 1,
-							}}
+							className="h-8 px-3 rounded-lg border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] text-[13px] font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
 							title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы"
 						>
 							{isAiAnalyzing ? (
 								<>
-									<Loader2 size={12} className="animate-spin" />
+									<Loader2 size={13} className="animate-spin" />
 									<span>Анализ...</span>
 								</>
 							) : (
 								<>
-									<Sparkles size={12} />
+									<Sparkles size={13} />
 									<span>{aiReport ? "ИИ-повтор" : "ИИ-анализ"}</span>
 								</>
 							)}
@@ -446,23 +448,10 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 						<button
 							type="button"
 							onClick={onToggleFindingsDrawer}
-							style={{
-								height: "26px",
-								padding: "0 8px",
-								fontSize: "11px",
-								borderRadius: "4px",
-								border: "1px solid #334155",
-								backgroundColor: "#1e293b",
-								color: "#2dd4bf",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "4px",
-								fontWeight: 700,
-							}}
+							className="h-8 px-2.5 rounded-lg border border-slate-700 bg-slate-800 text-teal-300 hover:bg-slate-700 text-[13px] font-medium cursor-pointer inline-flex items-center gap-1.5 transition-colors"
 							title="Показать / скрыть панель находок ИИ"
 						>
-							<Sparkles size={12} />
+							<Sparkles size={13} />
 							<span>Находки ИИ</span>
 						</button>
 					)}
@@ -471,45 +460,36 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 							type="button"
 							data-testid="btn-dicom-norma-043"
 							onClick={onNormaClick}
-							style={{
-								height: "26px",
-								padding: "0 8px",
-								fontSize: "11px",
-								borderRadius: "4px",
-								border: "1px solid #10b981",
-								backgroundColor: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "#064e3b",
-								color: "#a7f3d0",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "4px",
-								fontWeight: 700,
-							}}
+							className={`h-8 px-3 rounded-lg border text-[13px] font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors ${
+								isNormaApplied
+									? "border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
+									: "border-emerald-500/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/60"
+							}`}
 							title="1-клик действие: внести «Рентген-норма» в дневник приёма"
 						>
-							<Zap size={12} color="#34d399" />
+							<Zap size={13} className="text-emerald-400" />
 							<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 						</button>
 					)}
-					<div style={{ fontSize: "11px", color: "#2dd4bf", fontWeight: 700, fontFamily: "monospace" }}>
+					<div className="text-xs text-teal-300 font-bold font-mono px-2 py-1 rounded bg-slate-800/80 border border-slate-700">
 						{patientName ? patientName.toUpperCase() : "PID2026-CLINIC"}
 					</div>
 					<button
 						type="button"
 						onClick={toggleFullscreen}
-						style={{ width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "#94a3b8", cursor: "pointer" }}
+						className="h-8 w-8 rounded-lg flex items-center justify-center border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 cursor-pointer transition-colors"
 						title="Полноэкранный режим (F11)"
 					>
-						{isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+						{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
 					</button>
 					{onClose && (
 						<button
 							type="button"
 							onClick={onClose}
-							style={{ width: "26px", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", backgroundColor: "transparent", color: "#94a3b8", cursor: "pointer" }}
+							className="h-8 w-8 rounded-lg flex items-center justify-center border-none bg-transparent text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 cursor-pointer transition-colors"
 							title="Закрыть (Esc)"
 						>
-							<X size={16} />
+							<X size={17} />
 						</button>
 					)}
 				</div>
@@ -520,7 +500,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 				<div
 					ref={windowPanelRef}
 					id="dicom-window-management-dock"
-					style={{ position: "absolute", top: "42px", left: "12px", width: "270px", backgroundColor: "#0b1120", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 15px 35px rgba(0,0,0,0.75)", zIndex: 10002, padding: "10px", color: "#f8fafc", fontSize: "11px" }}
+					style={{ position: "absolute", top: "42px", left: "12px", width: "270px", backgroundColor: "#0b1120", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 15px 35px rgba(0,0,0,0.75)", zIndex: 10002, padding: "10px", color: "#f8fafc", fontSize: "12px" }}
 				>
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #1e293b", paddingBottom: "6px", marginBottom: "8px" }}>
 						<span style={{ fontWeight: 800, letterSpacing: "0.5px", color: "#e2e8f0" }}>УПРАВЛЕНИЕ ОКНАМИ</span>
@@ -607,7 +587,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 				<div
 					ref={clippingPanelRef}
 					id="dicom-clipping-dock"
-					style={{ position: "absolute", top: "42px", left: "140px", width: "250px", backgroundColor: "#0b1120", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 15px 35px rgba(0,0,0,0.75)", zIndex: 10002, padding: "10px", color: "#f8fafc", fontSize: "11px" }}
+					style={{ position: "absolute", top: "42px", left: "140px", width: "250px", backgroundColor: "#0b1120", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 15px 35px rgba(0,0,0,0.75)", zIndex: 10002, padding: "10px", color: "#f8fafc", fontSize: "12px" }}
 				>
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #1e293b", paddingBottom: "6px", marginBottom: "8px" }}>
 						<span style={{ fontWeight: 800, letterSpacing: "0.5px", color: "#e2e8f0" }}>ОБРЕЗКА ROI</span>
@@ -672,7 +652,7 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 								<Activity size={18} color="#38bdf8" />
 								<div>
 									<div style={{ fontWeight: 800, fontSize: "14px" }}>Профиль плотности кости (Шкала Хаунсфилда HU)</div>
-									<div style={{ fontSize: "11px", color: "#94a3b8" }}>Классификация Carl E. Misch (D1..D5) вдоль линии измерения ({huProfileStats.lengthMm} мм)</div>
+									<div style={{ fontSize: "12px", color: "#94a3b8" }}>Классификация Carl E. Misch (D1..D5) вдоль линии измерения ({huProfileStats.lengthMm} мм)</div>
 								</div>
 							</div>
 							<button type="button" onClick={() => setIsHuModalOpen(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}>
@@ -681,10 +661,10 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 						</div>
 
 						<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-							<div style={statPillStyle}><span style={{ fontSize: "10px", color: "#94a3b8" }}>СРЕДНЯЯ</span><strong style={{ fontSize: "13px", color: "#38bdf8" }}>{huProfileStats.meanHu} HU</strong></div>
-							<div style={statPillStyle}><span style={{ fontSize: "10px", color: "#94a3b8" }}>КЛАСС MISCH</span><strong style={{ fontSize: "13px", color: "#2dd4bf" }}>{huProfileStats.dominantClass}</strong></div>
-							<div style={statPillStyle}><span style={{ fontSize: "10px", color: "#94a3b8" }}>МИНИМУМ</span><strong style={{ fontSize: "13px", color: "#f59e0b" }}>{huProfileStats.minHu} HU</strong></div>
-							<div style={statPillStyle}><span style={{ fontSize: "10px", color: "#94a3b8" }}>МАКСИМУМ</span><strong style={{ fontSize: "13px", color: "#a855f7" }}>{huProfileStats.maxHu} HU</strong></div>
+							<div style={statPillStyle}><span style={{ fontSize: "12px", color: "#94a3b8" }}>СРЕДНЯЯ</span><strong style={{ fontSize: "13px", color: "#38bdf8" }}>{huProfileStats.meanHu} HU</strong></div>
+							<div style={statPillStyle}><span style={{ fontSize: "12px", color: "#94a3b8" }}>КЛАСС MISCH</span><strong style={{ fontSize: "13px", color: "#2dd4bf" }}>{huProfileStats.dominantClass}</strong></div>
+							<div style={statPillStyle}><span style={{ fontSize: "12px", color: "#94a3b8" }}>МИНИМУМ</span><strong style={{ fontSize: "13px", color: "#f59e0b" }}>{huProfileStats.minHu} HU</strong></div>
+							<div style={statPillStyle}><span style={{ fontSize: "12px", color: "#94a3b8" }}>МАКСИМУМ</span><strong style={{ fontSize: "13px", color: "#a855f7" }}>{huProfileStats.maxHu} HU</strong></div>
 						</div>
 
 						{/* SVG Chart of HU Profile */}
@@ -745,11 +725,11 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 						</div>
 
 						<div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-							<button type="button" onClick={() => setIsHuModalOpen(false)} style={{ padding: "8px 14px", borderRadius: "6px", backgroundColor: "#1e293b", border: "1px solid #334155", color: "#cbd5e1", fontSize: "12px", cursor: "pointer" }}>
+							<button type="button" onClick={() => setIsHuModalOpen(false)} style={{ height: "36px", padding: "0 16px", borderRadius: "8px", backgroundColor: "#1e293b", border: "1px solid #334155", color: "#cbd5e1", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>
 								Закрыть
 							</button>
-							<button type="button" onClick={handleInsertHuToProtocol} style={{ padding: "8px 16px", borderRadius: "6px", backgroundColor: "#0d9488", border: "none", color: "#ffffff", fontSize: "12px", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-								<FileText size={14} /><span>Внести в медицинскую карту</span>
+							<button type="button" onClick={handleInsertHuToProtocol} style={{ height: "36px", padding: "0 18px", borderRadius: "8px", backgroundColor: "var(--teal)", border: "none", color: "var(--on-teal, #ffffff)", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+								<FileText size={15} /><span>Внести в медицинскую карту</span>
 							</button>
 						</div>
 					</div>
@@ -759,11 +739,11 @@ export const DicomToolboxRibbon: React.FC<DicomToolboxRibbonProps> = ({
 	);
 };
 
-const dropdownSectionHeaderStyle: React.CSSProperties = { fontSize: "10px", fontWeight: 800, color: "#94a3b8", padding: "4px 6px", textTransform: "uppercase", borderBottom: "1px solid #1e293b" };
-const menuItemStyle: React.CSSProperties = { textAlign: "left", padding: "6px 8px", fontSize: "11px", borderRadius: "5px", background: "transparent", border: "none", color: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.15s ease" };
-const checkboxLabelStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#cbd5e1", cursor: "pointer", userSelect: "none" };
-const selectInputStyle: React.CSSProperties = { width: "100%", height: "24px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "4px", color: "#f8fafc", fontSize: "11px", padding: "0 4px" };
-const numberInputStyle: React.CSSProperties = { width: "80px", height: "22px", backgroundColor: "#1e293b", border: "1px solid #475569", borderRadius: "4px", color: "#f8fafc", fontSize: "11px", fontWeight: 700, fontFamily: "monospace", textAlign: "right", padding: "0 4px" };
+const dropdownSectionHeaderStyle: React.CSSProperties = { fontSize: "12px", fontWeight: 800, color: "#94a3b8", padding: "4px 6px", textTransform: "uppercase", borderBottom: "1px solid #1e293b" };
+const menuItemStyle: React.CSSProperties = { textAlign: "left", padding: "6px 8px", fontSize: "12px", borderRadius: "5px", background: "transparent", border: "none", color: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", transition: "background 0.15s ease" };
+const checkboxLabelStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#cbd5e1", cursor: "pointer", userSelect: "none" };
+const selectInputStyle: React.CSSProperties = { width: "100%", height: "26px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "6px", color: "#f8fafc", fontSize: "12px", padding: "0 6px" };
+const numberInputStyle: React.CSSProperties = { width: "80px", height: "26px", backgroundColor: "#1e293b", border: "1px solid #475569", borderRadius: "6px", color: "#f8fafc", fontSize: "12px", fontWeight: 700, fontFamily: "monospace", textAlign: "right", padding: "0 6px" };
 const statPillStyle: React.CSSProperties = { backgroundColor: "#020617", border: "1px solid #1e293b", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "2px" };
 
 // Backwards compatibility aliases

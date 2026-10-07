@@ -46,8 +46,7 @@ export const InvoicesDomVirtualizationBar: React.FC<InvoicesDomVirtualizationBar
 					{listSlice.hasMore && (
 						<span className="hidden md:inline text-[11px] opacity-75">
 							{" "}
-							(осталось {listSlice.remainingCount} • защита RAM
-							ноутбука)
+							(осталось {listSlice.remainingCount})
 						</span>
 					)}
 				</span>

@@ -302,7 +302,7 @@ describe("Wave 45: Express Slots & Appointment Reasons in Schedule (Feature 222)
 			assert.strictEqual(hygiene.testId, "quick-reason-hygiene");
 
 			const emergency = QUICK_APPOINTMENT_REASON_PRESETS.find((p) => p.id === "emergency")!;
-			assert.strictEqual(emergency.reason, "CITO! Острая боль");
+			assert.strictEqual(emergency.reason, "Срочно! Острая боль");
 			assert.strictEqual(emergency.durationMinutes, 30);
 			assert.strictEqual(emergency.tone, "emergency");
 			assert.strictEqual(emergency.testId, "quick-reason-emergency");

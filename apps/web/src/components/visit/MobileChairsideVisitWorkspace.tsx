@@ -152,7 +152,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
     { id: "exam", label: "Осмотр", number: 2 },
     { id: "diagnosis", label: "Диагноз", number: 3 },
     { id: "treatment", label: "Лечение", number: 4 },
-    { id: "checkout", label: "Итог и Чек", number: 5 },
+    { id: "checkout", label: "Чек", number: 5 },
   ];
 
   // 1-Tap Somatic Norm Action
@@ -494,8 +494,8 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
                 }`}
                 data-testid={`${testId}-step-${step.id}`}
               >
-                <span>{`${step.number}. ${step.label}`}</span>
-                {isCompleted && !isActive && <Check size={12} className="stroke-[3]" />}
+                <span className="truncate">{step.label}</span>
+                {isCompleted && !isActive && <Check size={11} className="stroke-[2.5] shrink-0" />}
               </button>
             );
           })}
@@ -831,7 +831,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             <div className="mobile-chairside-grouped-card">
               <div className="mobile-chairside-card-title flex items-center justify-between">
                 <span>Оказанные услуги и манипуляции</span>
-                <span className="text-[11px] text-teal-600 font-bold">804н стандарт</span>
+                <span className="text-[11px] text-teal-600 font-bold">Стандарт услуг</span>
               </div>
 
               {billingItems.map((item) => (

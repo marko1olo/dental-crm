@@ -257,7 +257,7 @@ describe("AppointmentCard Suite", () => {
 			})
 		);
 
-		assert.ok(html.includes("CITO Острая боль"), "должен отображаться текст бейджа CITO");
+		assert.ok(html.includes("⚡ СРОЧНО"), "должен отображаться текст бейджа срочного приёма");
 		assert.ok(html.includes("data-testid=\"appointment-cito-badge\""), "должен присутствовать data-testid appointment-cito-badge");
 	});
 

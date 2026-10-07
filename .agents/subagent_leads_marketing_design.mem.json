@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-10-05T22:05:00.000Z",
+  "subagent": "Leads Marketing & Loyalty Design Refactor",
+  "scope": [
+    "apps/web/src/components/leads/LeadsKanbanHeader.tsx",
+    "apps/web/src/components/leads/ExpandedColumnFocusModal.tsx",
+    "apps/web/src/components/leads/LeadsMobileFeedView.tsx",
+    "apps/web/src/components/marketing/MarketingPromosList.tsx",
+    "apps/web/src/components/analytics/CuratorDashboard.tsx",
+    "apps/web/src/components/loyalty/program/LoyaltyLedgerTab.tsx",
+    "apps/web/src/components/loyalty/program/LoyaltyProgramModal.tsx",
+    "apps/web/src/components/leads/leadsKanban.css",
+    "apps/web/src/components/leads/leadsMobileFeed.css",
+    "apps/web/src/styles/modules/marketing.css",
+    "apps/web/src/components/analytics/curatorDashboard.css",
+    "apps/web/src/components/loyalty/program/loyaltyProgram.css"
+  ],
+  "invariantsSatisfied": {
+    "zeroSearchCollision": "All search inputs canonicalized to .dente-search-wrap, .dente-search-icon, .dente-search-input, .dente-search-clear with strict 38px left padding preventing any text-icon collision.",
+    "zeroNakedButtons": "All raw button arrays replaced with .dente-segmented-bar + .dente-segmented-item or .dente-filter-chips + .dente-filter-chip.",
+    "zeroDoubleBorders": "Custom wrapper classes adjusted to avoid double frames around canonical .dente-search-wrap.",
+    "typecheck": "Clean compile via npx tsc -p apps/web/tsconfig.json --noEmit (Exit 0)."
+  },
+  "status": "COMPLETED"
+}

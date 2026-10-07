@@ -73,8 +73,35 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	});
 	const [periodStart, setPeriodStart] = useState(effectivePeriodStart);
 	const [periodEnd, setPeriodEnd] = useState(effectivePeriodEnd);
+	const [periodPreset, setPeriodPreset] = useState<"current_month" | "previous_month" | "quarter" | "custom">("current_month");
 	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
 	const [manualAdjustmentRub, setManualAdjustmentRub] = useState<number>(0);
+
+	const handleSelectPeriodPreset = (preset: "current_month" | "previous_month" | "quarter" | "custom") => {
+		setPeriodPreset(preset);
+		const now = new Date();
+		const year = now.getFullYear();
+		if (preset === "current_month") {
+			const month = String(now.getMonth() + 1).padStart(2, "0");
+			const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+			setPeriodStart(`${year}-${month}-01`);
+			setPeriodEnd(`${year}-${month}-${String(lastDay).padStart(2, "0")}`);
+		} else if (preset === "previous_month") {
+			const prevMonthDate = new Date(year, now.getMonth() - 1, 1);
+			const pYear = prevMonthDate.getFullYear();
+			const pMonth = String(prevMonthDate.getMonth() + 1).padStart(2, "0");
+			const lastDay = new Date(pYear, prevMonthDate.getMonth() + 1, 0).getDate();
+			setPeriodStart(`${pYear}-${pMonth}-01`);
+			setPeriodEnd(`${pYear}-${pMonth}-${String(lastDay).padStart(2, "0")}`);
+		} else if (preset === "quarter") {
+			const currentQuarter = Math.floor(now.getMonth() / 3);
+			const startMonth = String(currentQuarter * 3 + 1).padStart(2, "0");
+			const endMonthNum = currentQuarter * 3 + 3;
+			const lastDay = new Date(year, endMonthNum, 0).getDate();
+			setPeriodStart(`${year}-${startMonth}-01`);
+			setPeriodEnd(`${year}-${String(endMonthNum).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`);
+		}
+	};
 
 	// Sync when initial values change
 	React.useEffect(() => {
@@ -89,8 +116,14 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		} else if (doctorsList.length > 0 && !doctorsList.some((d) => d.id === selectedDoctorId)) {
 			setSelectedDoctorId(doctorsList[0]?.id ?? "");
 		}
-		if (initialPeriodStart) setPeriodStart(initialPeriodStart);
-		if (initialPeriodEnd) setPeriodEnd(initialPeriodEnd);
+		if (initialPeriodStart) {
+			setPeriodStart(initialPeriodStart);
+			setPeriodPreset("custom");
+		}
+		if (initialPeriodEnd) {
+			setPeriodEnd(initialPeriodEnd);
+			setPeriodPreset("custom");
+		}
 		if (initialBasePercentage !== undefined) setCustomPercent(initialBasePercentage);
 	}, [initialDoctorId, initialPeriodStart, initialPeriodEnd, initialBasePercentage, doctorsList, selectedDoctorId]);
 
@@ -210,86 +243,132 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
+						aria-label="Закрыть окно"
+						className="w-8 h-8 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors cursor-pointer"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</div>
 
 				{/* Body Content */}
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
-					{/* Filter Controls */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-						<div className="flex flex-col gap-1">
-							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-								<User className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-								{doctorsList.length === 0 ? "Врач / Специализация (соло):" : "Врач / Специалист:"}
-							</label>
-							<select
-								value={doctorsList.length === 0 ? soloSpecialtyId : selectedDoctorId}
-								onChange={(e) => {
-									if (doctorsList.length === 0) {
-										const val = e.target.value === "solo-doctor" ? DEFAULT_SOLO_DOCTOR.specialtyId : e.target.value;
-										setSoloSpecialtyId(val);
-									} else {
-										setSelectedDoctorId(e.target.value);
-									}
-								}}
-								disabled={false}
-								data-testid="doctor-payroll-select"
-								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] disabled:opacity-60 disabled:cursor-not-allowed"
-							>
-								{doctorsList.length === 0 ? (
-									SOLO_DOCTOR_SPECIALTY_PRESETS.map((spec) => (
-										<option key={spec.specialtyId} value={spec.specialtyId}>
-											{spec.labelRu}
-										</option>
-									))
-								) : (
-									doctorsList.map((doc) => (
-										<option key={doc.id} value={doc.id}>
-											{doc.name}
-										</option>
-									))
-								)}
-							</select>
+					{/* Filter Controls with Segmented Bar */}
+					<div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+									<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+									Период расчета:
+								</span>
+								<div className="dente-segmented-bar">
+									<button
+										type="button"
+										className={`dente-segmented-item ${periodPreset === "current_month" ? "active" : ""}`}
+										onClick={() => handleSelectPeriodPreset("current_month")}
+									>
+										Текущий месяц
+									</button>
+									<button
+										type="button"
+										className={`dente-segmented-item ${periodPreset === "previous_month" ? "active" : ""}`}
+										onClick={() => handleSelectPeriodPreset("previous_month")}
+									>
+										Прошлый месяц
+									</button>
+									<button
+										type="button"
+										className={`dente-segmented-item ${periodPreset === "quarter" ? "active" : ""}`}
+										onClick={() => handleSelectPeriodPreset("quarter")}
+									>
+										Квартал
+									</button>
+									<button
+										type="button"
+										className={`dente-segmented-item ${periodPreset === "custom" ? "active" : ""}`}
+										onClick={() => handleSelectPeriodPreset("custom")}
+									>
+										Произвольный
+									</button>
+								</div>
+							</div>
 						</div>
 
-						<div className="flex flex-col gap-1">
-							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-								<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-								Начало периода:
-							</label>
-							<input
-								type="date"
-								value={periodStart}
-								onChange={(e) => setPeriodStart(e.target.value)}
-								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)]"
-							/>
-						</div>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2.5 border-t border-[var(--line,#e2e8f0)]/80">
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+									<User className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+									{doctorsList.length === 0 ? "Врач / Специализация (соло):" : "Врач / Специалист:"}
+								</label>
+								<select
+									value={doctorsList.length === 0 ? soloSpecialtyId : selectedDoctorId}
+									onChange={(e) => {
+										if (doctorsList.length === 0) {
+											const val = e.target.value === "solo-doctor" ? DEFAULT_SOLO_DOCTOR.specialtyId : e.target.value;
+											setSoloSpecialtyId(val);
+										} else {
+											setSelectedDoctorId(e.target.value);
+										}
+									}}
+									disabled={false}
+									data-testid="doctor-payroll-select"
+									className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] disabled:opacity-60 disabled:cursor-not-allowed"
+								>
+									{doctorsList.length === 0 ? (
+										SOLO_DOCTOR_SPECIALTY_PRESETS.map((spec) => (
+											<option key={spec.specialtyId} value={spec.specialtyId}>
+												{spec.labelRu}
+											</option>
+										))
+									) : (
+										doctorsList.map((doc) => (
+											<option key={doc.id} value={doc.id}>
+												{doc.name}
+											</option>
+										))
+									)}
+								</select>
+							</div>
 
-						<div className="flex flex-col gap-1">
-							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
-								<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-								Конец периода:
-							</label>
-							<input
-								type="date"
-								value={periodEnd}
-								onChange={(e) => setPeriodEnd(e.target.value)}
-								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)]"
-							/>
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+									Начало периода:
+								</label>
+								<input
+									type="date"
+									value={periodStart}
+									onChange={(e) => {
+										setPeriodStart(e.target.value);
+										setPeriodPreset("custom");
+									}}
+									className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)]"
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+									Конец периода:
+								</label>
+								<input
+									type="date"
+									value={periodEnd}
+									onChange={(e) => {
+										setPeriodEnd(e.target.value);
+										setPeriodPreset("custom");
+									}}
+									className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-medium text-[var(--ink,#0f172a)]"
+								/>
+							</div>
 						</div>
 					</div>
 
-					{/* 4 Summary Stat Cards */}
+					{/* 4 Summary Stat Cards — Standardized Typography & Geometry */}
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 						<div className="payroll-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">Выручка брутто</span>
+							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Выручка брутто</span>
 							<span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400">
 								{(payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU")} ₽
 							</span>
-							<span className="text-[10px] text-[var(--muted,#64748b)]">
+							<span className="text-[12px] text-[var(--muted,#64748b)]">
 								{payrollResult.serviceCount} услуг
 								{payrollResult.warrantyServicesCount > 0 ? ` • ${payrollResult.warrantyServicesCount} гарантия` : ""}
 								{payrollResult.refundedServicesCount > 0 ? ` • ${payrollResult.refundedServicesCount} возврат` : ""}
@@ -297,11 +376,11 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						</div>
 
 						<div className="payroll-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">Вычеты (Мат/Лаб)</span>
+							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Вычеты (Мат/Лаб)</span>
 							<span className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400">
 								-{( (payrollResult.totalLabDeductionsKop + payrollResult.totalMaterialDeductionsKop) / 100).toLocaleString("ru-RU")} ₽
 							</span>
-							<span className="text-[10px] text-[var(--muted,#64748b)]">
+							<span className="text-[12px] text-[var(--muted,#64748b)]">
 								{payrollResult.totalRefundClawbackKop > 0
 									? `Сторно возвратов: -${(payrollResult.totalRefundClawbackKop / 100).toLocaleString("ru-RU")} ₽`
 									: `База: ${(payrollResult.totalNetBaseKop / 100).toLocaleString("ru-RU")} ₽`}
@@ -309,21 +388,21 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						</div>
 
 						<div className="payroll-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">Ставка + KPI</span>
+							<span className="text-[12px] font-medium text-[var(--muted,#64748b)]">Ставка + KPI</span>
 							<span className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)]">
 								{payrollResult.baseCommissionPercent}% {payrollResult.kpiBonusPercent > 0 ? `+ ${payrollResult.kpiBonusPercent}%` : ""}
 							</span>
-							<span className="text-[10px] text-[var(--teal,#0d9488)] truncate" title={payrollResult.kpiTierBadgeRu}>
+							<span className="text-[12px] text-[var(--teal,#0d9488)] truncate" title={payrollResult.kpiTierBadgeRu}>
 								{payrollResult.kpiTierBadgeRu}
 							</span>
 						</div>
 
 						<div className="payroll-stat-card border-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,#f0fdfa)]">
-							<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">Итого на руки (нетто)</span>
+							<span className="text-[12px] font-bold text-[var(--teal,#0d9488)]">Итого на руки (нетто)</span>
 							<span className="text-base sm:text-lg font-black text-[var(--ok-fg,#059669)]">
 								{(payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU")} ₽
 							</span>
-							<span className="text-[10px] text-[var(--muted,#64748b)]">
+							<span className="text-[12px] text-[var(--muted,#64748b)]">
 								{payrollResult.isProgressiveTaxApplied
 									? `НДФЛ 13-15%: ${(((payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop)) / 100).toLocaleString("ru-RU")} ₽`
 									: `НДФЛ 13%: ${(payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU")} ₽`}
@@ -507,22 +586,22 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 					<div className="text-xs text-[var(--muted,#64748b)]">
 						Специальность: <span className="font-bold text-[var(--ink,#0f172a)]">{payrollResult.specialtyTitleRu}</span>
 					</div>
-					<div className="flex items-center gap-2.5">
+					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={handleDownloadCsv}
-							className="h-10 px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="dente-btn-secondary"
 						>
-							<Download className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-							Экспорт зарплаты (CSV)
+							<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<span>Экспорт зарплаты (CSV)</span>
 						</button>
 						<button
 							type="button"
 							onClick={handlePrintPayslip}
-							className="h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="dente-btn-primary"
 						>
-							<FileText className="w-4 h-4" />
-							Печать расчетного листка
+							<FileText className="w-3.5 h-3.5" />
+							<span>Печать расчетного листка</span>
 						</button>
 					</div>
 				</div>

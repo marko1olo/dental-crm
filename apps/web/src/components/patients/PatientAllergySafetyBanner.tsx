@@ -138,7 +138,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 						"Соматический статус: Соматически здоров, физиологическая норма. Аллергоанамнез не отягощен.",
 					);
 				}
-				showToast("Зафиксирована норма: Соматически здоров (1 клик)", "success");
+				showToast("Зафиксирована норма: Соматически здоров", "success");
 			}, [onUpdateProfile, onSyncToEmkDiary]);
 
 			const bannerStyleClass = useMemo(() => {
@@ -231,7 +231,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										onClick={handleApplySomaticNorm}
 										className="safety-btn safety-btn--outline text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 min-h-[44px] sm:min-h-[32px]"
 										data-testid="banner-apply-somatic-norm-btn"
-										title="Зафиксировать физиологическую норму в 1 клик"
+										title="Зафиксировать физиологическую норму"
 									>
 										<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
 										<span>Соматически здоров (норма)</span>

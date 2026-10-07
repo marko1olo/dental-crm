@@ -145,17 +145,17 @@ export function IncomingCallPatientDrawer({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1.5">
 					<div className="relative" data-drawer-more-container="true">
 						<button
 							type="button"
 							onClick={() => setShowMoreMenu((prev) => !prev)}
-							className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
+							className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] hover:border-[var(--line,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
 							title="Дополнительные действия (WhatsApp, SMS, перевод, исходы)"
 							aria-label="Дополнительные действия"
 							data-testid="drawer-more-menu-btn"
 						>
-							<MoreHorizontal size={20} />
+							<MoreHorizontal size={16} />
 						</button>
 						{showMoreMenu && (
 							<div className="absolute right-0 top-full mt-1 w-60 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5">
@@ -252,11 +252,11 @@ export function IncomingCallPatientDrawer({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] rounded-xl hover:bg-[var(--paper-soft,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
+						className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line-subtle,var(--line,#e2e8f0))] hover:border-[var(--line,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer"
 						title="Закрыть боковую шторку (Esc)"
 						aria-label="Закрыть шторку"
 					>
-						<X size={20} />
+						<X size={16} />
 					</button>
 				</div>
 			</div>
@@ -268,7 +268,7 @@ export function IncomingCallPatientDrawer({
 					<button
 						type="button"
 						onClick={onToggleQuickBooking}
-						className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+						className="flex-1 h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 						title="Создать запись на приём (быстрые слоты в 1 клик)"
 						data-testid="drawer-action-book"
 					>
@@ -283,7 +283,7 @@ export function IncomingCallPatientDrawer({
 					<button
 						type="button"
 						onClick={onOpenFullPatientView}
-						className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+						className="flex-1 h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 						title={
 							isKnownPatient
 								? "Открыть карту пациента в реестре"
@@ -366,14 +366,14 @@ export function IncomingCallPatientDrawer({
 								value={newPatientNameInput}
 								onChange={(e) => onChangeNewPatientNameInput(e.target.value)}
 								placeholder="ФИО пациента (по умолчанию: Пациент + телефон)"
-								className="w-full min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-xs font-medium text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								className="w-full h-8 min-h-[32px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-xs font-medium text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								data-testid="popup-drawer-new-patient-name-input"
 							/>
 							<button
 								type="button"
 								onClick={onQuickCreatePatient}
 								disabled={isCreatingPatient}
-								className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+								className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] text-white text-[13px] font-semibold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 								data-testid="popup-drawer-quick-create-patient-btn"
 								title="Создать первичную карту пациента в 1 клик за 5 секунд (без обязательного паспорта и СНИЛС)"
 							>
@@ -394,7 +394,7 @@ export function IncomingCallPatientDrawer({
 				<button
 					type="button"
 					onClick={onClose}
-					className="px-4 py-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--ink,#0f172a)] transition-all min-h-[44px] cursor-pointer"
+					className="h-8 min-h-[32px] px-3.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#e2e8f0)] border border-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] transition-all cursor-pointer inline-flex items-center justify-center"
 				>
 					Закрыть шторку
 				</button>
@@ -402,7 +402,7 @@ export function IncomingCallPatientDrawer({
 				<button
 					type="button"
 					onClick={onOpenFullPatientView}
-					className="text-[11px] font-semibold text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer min-h-[44px] px-2"
+					className="h-8 min-h-[32px] px-3 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--teal-soft)] border border-transparent hover:border-[var(--teal)] inline-flex items-center gap-1 cursor-pointer transition-all"
 					title="Перейти в полноэкранный раздел Пациенты"
 				>
 					<span>Открыть в общем списке</span>

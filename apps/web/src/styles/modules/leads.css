@@ -144,62 +144,80 @@
 	margin: auto 0;
 }
 
-/* Leads Segmented View Mode Toggle */
+/* Leads Segmented View Mode Toggle (Canonical DENTE Spec) */
 .leads-viewmode-segmented {
 	display: inline-flex;
 	align-items: center;
 	padding: 3px;
-	border-radius: 8px;
+	border-radius: 10px;
 	background: var(--paper-soft);
-	border: 1px solid var(--line);
+	border: 1px solid var(--line-subtle, var(--line));
 	gap: 2px;
-	height: 34px;
+	height: 36px;
 	box-sizing: border-box;
 }
 
 .leads-viewmode-segmented-btn {
-	padding: 4px 10px;
-	font-size: 12px;
+	padding: 0 12px;
+	font-size: 12.5px;
 	font-weight: 500;
-	border-radius: 6px;
-	border: none;
+	border-radius: 7px;
+	border: 1px solid transparent;
 	cursor: pointer;
 	background: transparent;
 	color: var(--muted);
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
-	transition: all 0.15s ease;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	white-space: nowrap;
-	height: 26px;
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
 	line-height: 1;
+	box-sizing: border-box;
 }
 
 .leads-viewmode-segmented-btn:hover {
 	color: var(--ink);
+	background: rgba(0, 0, 0, 0.04);
 }
 
-.leads-viewmode-segmented-btn.is-active {
+[data-theme="dark"] .leads-viewmode-segmented-btn:hover,
+.dark .leads-viewmode-segmented-btn:hover {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.leads-viewmode-segmented-btn.is-active,
+.leads-viewmode-segmented-btn.active {
 	background: var(--paper);
+	border-color: var(--line-subtle, var(--line));
 	color: var(--ink);
 	font-weight: 600;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .leads-viewmode-segmented-btn.is-active,
+[data-theme="dark"] .leads-viewmode-segmented-btn.active,
+.dark .leads-viewmode-segmented-btn.is-active,
+.dark .leads-viewmode-segmented-btn.active {
+	background: var(--paper-card, var(--paper-strong));
+	border-color: var(--line);
+	color: var(--ink);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .leads-viewmode-badge {
 	font-size: 10px;
 	font-weight: 700;
-	padding: 1px 5px;
+	padding: 1px 6px;
 	border-radius: 8px;
 	background: var(--teal-soft);
-	color: var(--teal-dark);
+	color: var(--teal-dark, var(--teal));
 }
 
 /* Dark mode overrides */
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-board-container {
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-}
-
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-viewmode-segmented-btn.is-active {
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }

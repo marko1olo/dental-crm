@@ -328,7 +328,7 @@ export async function handleSeedBaseline804n(
 	if (!parseResult.success) {
 		return reply.code(400).send({
 			error: "PricelistValidationError",
-			message: "Некорректный формат параметров сидирования 804н.",
+			message: "Некорректный формат параметров наполнения прейскуранта.",
 		});
 	}
 
@@ -347,13 +347,13 @@ export async function handleSeedBaseline804n(
 		}
 		request.log.error(
 			{ err: error },
-			"Ошибка при наполнении базового прейскуранта 804н",
+			"Ошибка при наполнении базового прейскуранта",
 		);
 		return reply.code(500).send({
 			error: "PricelistSeedBaselineError",
 			message:
 				(error as Error).message ||
-				"Не удалось наполнить базовый прейскурант 804н",
+				"Не удалось наполнить базовый прейскурант",
 		});
 	}
 }
@@ -1245,7 +1245,7 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 		// CSV format per RFC 4180 with UTF-8 BOM
 		const delimiter = ";";
 		const headers = [
-			"Код 804н",
+			"Код услуги",
 			"Коммерческое наименование",
 			"Раздел",
 			"Специальность",

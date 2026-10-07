@@ -260,7 +260,7 @@
 .recall-search-input {
 	width: 100%;
 	min-height: 44px;
-	padding: 8px 12px 8px 36px;
+	padding: 8px 12px 8px 38px !important;
 	border: 1px solid var(--rm-border);
 	border-radius: var(--rm-radius-sm);
 	background: var(--rm-bg);
@@ -278,7 +278,7 @@
 
 .recall-search-icon {
 	position: absolute;
-	left: 10px;
+	left: 12px;
 	top: 50%;
 	transform: translateY(-50%);
 	color: var(--rm-text-subtle);

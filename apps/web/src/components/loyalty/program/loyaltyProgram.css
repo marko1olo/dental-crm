@@ -107,7 +107,8 @@
 }
 
 /* Nav Tabs */
-.loyalty-nav-tabs {
+.loyalty-nav-tabs,
+.loyalty-tabs-nav {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;

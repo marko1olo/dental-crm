@@ -1247,7 +1247,7 @@ const suggestTreatmentPlanSchema = z.object({
 		.max(100)
 		.optional()
 		.default(0)
-		.describe("Процент скидки врача (0–100%, Мандат 8e: свобода скидок на переделки и персонал)"),
+		.describe("Процент скидки врача (0–100%, свобода скидок на переделки и персонал)"),
 	installmentMonths: z
 		.enum(["3", "6", "12", "24"])
 		.optional()

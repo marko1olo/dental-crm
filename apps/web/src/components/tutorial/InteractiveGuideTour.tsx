@@ -118,7 +118,7 @@ export const ROLE_TOUR_CATALOGS: Record<TourRole, RoleTourCatalog> = {
 				viewTarget: "visit",
 				description:
 					"Физиологическая норма в 1 тап (52px). Протокол осмотра и анамнез заполняются автоматически. Врач отмечает только реальную патологию.",
-				clinicalTip: "Врачебная автономия (Мандат 8e): софт освобождает от заполнения десятков очевидных пунктов нормы.",
+				clinicalTip: "Врачебная автономия: система освобождает от заполнения десятков очевидных пунктов нормы.",
 				actionBadge: "1 тап — норма",
 			},
 			{
@@ -279,7 +279,12 @@ export function InteractiveGuideTour({
 
 	// Check if user should be invited on first entry
 	useEffect(() => {
-		if (isGuideTourDismissed() || hasSeenGuideTour(detectedRole)) {
+		// Never show desktop tour invite on mobile screens (<= 768px) per Apple HIG & mobile ergonomics
+		if (
+			(typeof window !== "undefined" && window.innerWidth <= 768) ||
+			isGuideTourDismissed() ||
+			hasSeenGuideTour(detectedRole)
+		) {
 			return;
 		}
 
@@ -391,7 +396,7 @@ export function InteractiveGuideTour({
 			{/* 1. Polite Gentle Context Invite Banner */}
 			{showInviteBanner && !isOpen && (
 				<aside
-					className="fixed bottom-5 right-5 z-40 max-w-sm p-4 rounded-2xl bg-[var(--paper)]/95 backdrop-blur-md border border-teal-500/30 shadow-2xl animate-fade-in-up"
+					className="hidden md:block fixed bottom-5 right-5 z-40 max-w-sm p-4 rounded-2xl bg-[var(--paper)]/95 backdrop-blur-md border border-teal-500/30 shadow-2xl animate-fade-in-up"
 					style={{
 						boxShadow: "0 20px 40px -10px rgba(0,0,0,0.25)",
 					}}

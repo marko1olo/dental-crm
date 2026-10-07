@@ -16,9 +16,9 @@
 }
 
 .payroll-modal-container {
-	background-color: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	border-radius: 1.25rem;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 	width: 100%;
@@ -31,8 +31,8 @@
 
 .payroll-kpi-badge {
 	background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(14, 165, 233, 0.15));
-	border: 1px solid var(--teal, #0d9488);
-	color: var(--teal-ink, #0f766e);
+	border: 1px solid var(--teal);
+	color: var(--teal-ink, var(--teal));
 	font-weight: 700;
 	border-radius: 9999px;
 	padding: 0.25rem 0.75rem;
@@ -40,11 +40,150 @@
 }
 
 .payroll-stat-card {
-	background-color: var(--paper-soft, #f8fafc);
-	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 0.875rem;
 	padding: 0.875rem 1rem;
 	display: flex;
 	flex-direction: column;
 	gap: 0.25rem;
 }
+
+/* DENTE Canonical Segmented Bar (Apple HIG / Design System Invariant) */
+.dente-segmented-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
+}
+
+.dente-segmented-item {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 7px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--muted);
+	border: none;
+	background: transparent;
+	transition: all 0.15s ease;
+	cursor: pointer;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	user-select: none;
+}
+
+.dente-segmented-item:hover {
+	color: var(--ink);
+}
+
+.dente-segmented-item.active {
+	background-color: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* DENTE Canonical Filter Chips */
+.dente-filter-chips {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.dente-filter-chip {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 20px;
+	font-size: 12.5px;
+	font-weight: 500;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+}
+
+.dente-filter-chip:hover {
+	background-color: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+.dente-filter-chip.active {
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.15);
+}
+
+/* DENTE Standardized Buttons (Height strictly 32px, Radius strictly 8px, Font 13px) */
+.dente-btn-primary {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	background-color: var(--teal);
+	color: var(--on-teal);
+	border: 1px solid transparent;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	white-space: nowrap;
+}
+
+.dente-btn-primary:hover:not(:disabled) {
+	opacity: 0.92;
+	transform: translateY(-0.5px);
+}
+
+.dente-btn-primary:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+.dente-btn-secondary {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.dente-btn-secondary:hover:not(:disabled) {
+	background-color: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
+
+

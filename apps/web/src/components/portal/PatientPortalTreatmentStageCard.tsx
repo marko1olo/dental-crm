@@ -165,7 +165,7 @@ export function formatDualServiceName(code: string, rawTitle: string): DualServi
 
 	return {
 		humanTitleRu: rawTitle,
-		statutoryCode804n: code || "Номенклатура МЗ РФ 804н",
+		statutoryCode804n: code || "Медицинская услуга",
 		explanationRu: "Медицинская манипуляция по клиническим протоколам СтАР и Минздрава РФ.",
 		sensationRu: "Процедура выполняется под индивидуально подобранной анестезией.",
 		defaultWarrantyRu: "Гарантия клиники DENTE",

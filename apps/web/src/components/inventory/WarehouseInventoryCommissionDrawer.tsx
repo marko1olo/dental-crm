@@ -169,7 +169,7 @@ export const WarehouseInventoryCommissionDrawer: React.FC<
 						</div>
 						<p style={{ fontSize: "0.75rem", color: "var(--muted)", margin: "2px 0 0 0" }}>
 							{commission.length === 1
-								? "Режим соло-врача / небольшой клиники (Клинический регламент): подпись описи формируется за одного ответственного сотрудника без навязывания 4 фиктивных должностей."
+								? "Единоличный учет: подпись описи формируется одним ответственным сотрудником без созыва расширенной комиссии."
 								: "Стандартный многоместный состав комиссии для стоматологической клиники."}
 						</p>
 					</div>
@@ -179,10 +179,10 @@ export const WarehouseInventoryCommissionDrawer: React.FC<
 							type="button"
 							className={`warehouse-btn ${commission.length === 1 ? "warehouse-btn-primary" : "warehouse-btn-secondary"}`}
 							onClick={onSetSoloCommission}
-							title="Единоличная инвентаризация для соло-врача или ответственного сотрудника (1 член комиссии)"
+							title="Единоличная инвентаризация ответственным сотрудником (1 член комиссии)"
 						>
 							<User size={14} />
-							<span>Единоличная инвентаризация (Соло-врач / Ответственный)</span>
+							<span>Единоличная инвентаризация (Ответственный сотрудник)</span>
 						</button>
 
 						{commission.length === 1 && (

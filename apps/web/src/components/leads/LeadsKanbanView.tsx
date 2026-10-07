@@ -263,24 +263,10 @@ export function LeadsKanbanView() {
 		e.preventDefault();
 		const id = e.dataTransfer?.getData("leadId") || draggedLeadId;
 		if (id) {
-			let options: { dropReason?: string } | undefined;
-			if (status === "trash") {
-				const selectedReason = window.prompt(
-					"Укажите причину отказа:\n1 - Дорого\n2 - Далеко\n3 - Передумал\n4 - Дубль обращения\nИли введите свой текст:",
-					"Дорого",
-				);
-				const mappedReason =
-					selectedReason === "1"
-						? "Дорого"
-						: selectedReason === "2"
-							? "Далеко / Неудобная локация"
-							: selectedReason === "3"
-								? "Передумал / Неактуально"
-								: selectedReason === "4"
-									? "Дубль обращения"
-									: (selectedReason || "Дорого");
-				options = { dropReason: mappedReason };
-			}
+			const options =
+				status === "trash"
+					? { dropReason: "Отказ / Неактуально" }
+					: undefined;
 			void updateLeadStatus(id, status, options)
 				.then(() => {
 					showToast(

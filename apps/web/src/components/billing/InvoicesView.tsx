@@ -7,7 +7,7 @@
  * Features:
  * - 1-line dense toolbar (32–36px) with quick filter tabs and search.
  * - Entity cards with <=2 primary action buttons ([Оплатить], [Счет]).
- * - Context menu (...) for secondary operations (Акт 804н, Справка ФНС, Гарантия 100%).
+ * - Context menu (...) for secondary operations (Акт выполненных работ, Справка ФНС, Гарантия 100%).
  * - Seamless integration with PaymentModal (cash, card, SBP, certificate, bonus, 0 ₽ warranty).
  * - Minimum touch target >= 44x44px, modal depth strictly 1.
  * - Zero emojis (strict Lucide vector icons).
@@ -17,6 +17,7 @@ import { rubToKopecks } from "@dental/shared";
 import {
 	Banknote,
 	CreditCard,
+	MoreHorizontal,
 	Plus,
 	Printer,
 	Receipt,
@@ -35,18 +36,8 @@ import {
 const PaymentModal = lazy(() =>
 	import("./PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
 );
-import { CashboxShiftModal } from "../finance/CashboxShiftModal.js";
-import { CashRegisterDrawer } from "./CashRegisterDrawer.js";
-import { CashReceiptPrintModal } from "../finance/CashReceiptPrintModal.js";
-import { PaymentSplitModal } from "../finance/PaymentSplitModal.js";
-import { PatientInstallmentsModal } from "./PatientInstallmentsModal.js";
-import { RefundServiceModal } from "../finance/refunds/RefundServiceModal.js";
-import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal.js";
+import { InvoicesModalsLayer } from "./InvoicesModalsLayer.js";
 import { showToast } from "../GlobalToast.js";
-import {
-	safeLocalStorageGetJson,
-	safeLocalStorageSetJson,
-} from "../../lib/safeLocalStorage.js";
 import type {
 	BillingInvoice,
 	InvoiceFilterTab,
@@ -56,8 +47,14 @@ import type {
 import { handlePrintAct, handlePrintInvoice } from "./invoicesPrintHelpers.js";
 import { InvoiceCardItem } from "./InvoiceCardItem.js";
 import { InvoicesDomVirtualizationBar } from "./InvoicesDomVirtualizationBar.js";
-import { QuickCreateInvoiceModal } from "./QuickCreateInvoiceModal.js";
+import {
+	INVOICES_STORAGE_KEY,
+	loadStoredInvoices,
+	saveStoredInvoices,
+} from "./invoicesStorage.js";
+import { useInvoicesData } from "./useInvoicesData.js";
 
+export { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices };
 export type { InvoiceLineItem, BillingInvoice, InvoicesViewProps, InvoiceFilterTab };
 
 export const INVOICE_STATUS_CLASSES = {
@@ -65,24 +62,6 @@ export const INVOICE_STATUS_CLASSES = {
 	warranty: "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800",
 	pending: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
 } as const;
-
-export const INVOICES_STORAGE_KEY = "dente_billing_invoices";
-
-export function loadStoredInvoices(): BillingInvoice[] {
-	if (typeof window === "undefined") {
-		return [];
-	}
-	const stored = safeLocalStorageGetJson<BillingInvoice[]>(INVOICES_STORAGE_KEY, []);
-	if (!Array.isArray(stored)) return [];
-	return stored.filter((item): item is BillingInvoice => Boolean(item && typeof item === "object"));
-}
-
-export function saveStoredInvoices(invoices: BillingInvoice[]): void {
-	if (typeof window === "undefined") {
-		return;
-	}
-	safeLocalStorageSetJson(INVOICES_STORAGE_KEY, invoices);
-}
 
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	initialInvoices,
@@ -92,13 +71,16 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	clinicLegalName = "ООО «ДЕНТЕ»",
 	onClose,
 }) => {
-	const [invoices, setInvoices] = useState<BillingInvoice[]>(() => {
-		if (initialInvoices && initialInvoices.length > 0) {
-			return initialInvoices;
-		}
-		const stored = loadStoredInvoices();
-		return stored.length > 0 ? stored : [];
+	// Memory leak protection & DOM virtualization (Wave 252-Perf2 / Low-RAM Laptop Protection)
+	const memoryGuard = useMemoryLeakGuard({ debugName: "InvoicesView" });
+	const { invoices, setInvoices } = useInvoicesData({
+		initialInvoices,
+		patientId,
+		patientName,
+		currentDoctorName,
+		memoryGuard,
 	});
+
 	const [filterTab, setFilterTab] = useState<InvoiceFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [activePaymentInvoice, setActivePaymentInvoice] =
@@ -118,13 +100,13 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		useState<BillingInvoice | null>(null);
 	const [bankInstallmentInvoice, setBankInstallmentInvoice] =
 		useState<BillingInvoice | null>(null);
+	const [isToolbarMenuOpen, setIsToolbarMenuOpen] = useState<boolean>(false);
 
-	// Memory leak protection & DOM virtualization (Wave 252-Perf2 / Low-RAM Laptop Protection)
-	const memoryGuard = useMemoryLeakGuard({ debugName: "InvoicesView" });
 	const [displayLimit, setDisplayLimit] = useState<number>(
 		DEFAULT_DOM_PAGE_SIZE,
 	);
 	const sentinelRef = useRef<HTMLDivElement | null>(null);
+	const toolbarMenuRef = useRef<HTMLDivElement | null>(null);
 
 	// Reset limit to default page size whenever tab or search filter changes to prevent memory blow-up
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limit when filters change
@@ -132,186 +114,22 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		setDisplayLimit(DEFAULT_DOM_PAGE_SIZE);
 	}, [filterTab, searchQuery]);
 
-	// Server synchronization (Mandates 8e, 8n) with AbortController memory protection
+	// Auto-dismiss active invoice context menu and toolbar menu on click-outside or Escape (Wave 252-Perf2)
 	useEffect(() => {
-		const abortController = memoryGuard.createAbortController();
-		const syncInvoices = async () => {
-			try {
-				const url = `/api/invoices${patientId ? `?patientId=${encodeURIComponent(patientId)}` : ""}`;
-				const res = await fetch(url, {
-					signal: abortController.signal,
-					headers: {
-						...denteAdminSecretRequestHeaders(),
-					},
-				});
-				if (!res.ok) return;
-				const data = (await res.json()) as unknown;
-				const rawList: Record<string, unknown>[] = Array.isArray(data)
-					? (data as Record<string, unknown>[])
-					: Array.isArray((data as { items?: unknown[] })?.items)
-						? (data as { items: Record<string, unknown>[] }).items
-						: Array.isArray((data as { invoices?: unknown[] })?.invoices)
-							? (data as { invoices: Record<string, unknown>[] }).invoices
-							: [];
-
-				if (rawList.length === 0) return;
-
-				const mapped: BillingInvoice[] = rawList.map((raw, idx) => {
-					if (raw.number && raw.status && Array.isArray(raw.items)) {
-						return raw as unknown as BillingInvoice;
-					}
-
-					const numMatch =
-						typeof raw.notes === "string"
-							? raw.notes.match(
-									/(?:Наряд|Счет|СЧТ|НРД|АКТ)[\s-]*([A-ZА-Я0-9-]+)/i,
-								)
-							: null;
-					const invoiceNumber = String(
-						raw.number ||
-							(numMatch
-								? numMatch[1]
-								: `СЧ-${(raw.id || idx).toString().slice(-6)}`),
-					);
-					const total =
-						typeof raw.totalAmountRub === "number"
-							? raw.totalAmountRub
-							: typeof raw.priceRub === "number"
-								? raw.priceRub
-								: 0;
-
-					return {
-						id: String(raw.id || `inv-${Date.now()}-${idx}`),
-						number: invoiceNumber,
-						patientId: String(raw.patientId || patientId || ""),
-						patientName: String(raw.patientName || patientName || "Пациент"),
-						patientPhone:
-							typeof raw.patientPhone === "string"
-								? raw.patientPhone
-								: undefined,
-						doctorName: String(raw.doctorName || currentDoctorName),
-						date:
-							typeof raw.date === "string"
-								? raw.date
-								: typeof raw.createdAt === "string"
-									? new Date(raw.createdAt).toLocaleDateString("ru-RU")
-									: new Date().toLocaleDateString("ru-RU"),
-						totalAmountRub: total,
-						paidAmountRub:
-							typeof raw.paidAmountRub === "number"
-								? raw.paidAmountRub
-								: raw.status === "paid"
-									? total
-									: 0,
-						status: (raw.status as BillingInvoice["status"]) || "issued",
-						items:
-							Array.isArray(raw.items) && raw.items.length > 0
-								? (raw.items as InvoiceLineItem[])
-								: [
-										{
-											id: `li-${String(raw.id || idx)}`,
-											code: String(raw.code || raw.serviceCode || "A16.07.002"),
-											name: String(
-												raw.title || raw.name || "Стоматологический прием",
-											),
-											quantity: Number(raw.quantity) || 1,
-											priceRub: total,
-										},
-									],
-						createdAt:
-							typeof raw.createdAt === "string"
-								? raw.createdAt
-								: new Date().toISOString(),
-						paidAt: typeof raw.paidAt === "string" ? raw.paidAt : undefined,
-						paymentMethod:
-							typeof raw.paymentMethod === "string"
-								? raw.paymentMethod
-								: undefined,
-						notes: typeof raw.notes === "string" ? raw.notes : undefined,
-					};
-				});
-
-				if (!memoryGuard.isMounted()) return;
-
-				setInvoices((prev) => {
-					const map = new Map<string, BillingInvoice>();
-					for (const inv of mapped) {
-						map.set(inv.id, inv);
-						if (inv.number) map.set(inv.number, inv);
-					}
-					for (const inv of prev) {
-						map.set(inv.id, inv);
-						if (inv.number) map.set(inv.number, inv);
-					}
-					const merged = Array.from(new Set(map.values()));
-					saveStoredInvoices(merged);
-					return merged;
-				});
-			} catch (err: unknown) {
-				if ((err as Error)?.name === "AbortError") {
-					return;
-				}
-				// Soft fallback: continue working with local data (Mandates 8e, 8n)
-			}
-		};
-
-		void syncInvoices();
-	}, [patientId, patientName, currentDoctorName, memoryGuard]);
-
-	// Real-time reactive synchronization across tabs and modules (Treatment Plans -> Invoices)
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		const handleExternalInvoiceUpdate = (evt?: Event) => {
-			const customDetail = (evt as CustomEvent<BillingInvoice>)?.detail;
-			const stored = loadStoredInvoices();
-			setInvoices((prev) => {
-				const map = new Map<string, BillingInvoice>();
-				if (customDetail?.id) {
-					map.set(customDetail.id, customDetail);
-					if (customDetail.number) map.set(customDetail.number, customDetail);
-				}
-				for (const inv of stored) {
-					map.set(inv.id, inv);
-					if (inv.number) map.set(inv.number, inv);
-				}
-				for (const inv of prev) {
-					if (!map.has(inv.id) && (!inv.number || !map.has(inv.number))) {
-						map.set(inv.id, inv);
-						if (inv.number) map.set(inv.number, inv);
-					}
-				}
-				return Array.from(new Set(map.values()));
-			});
-		};
-
-		const unlisten1 = memoryGuard.safeAddEventListener(
-			window,
-			"dente-invoices-updated",
-			handleExternalInvoiceUpdate,
-		);
-		const unlisten2 = memoryGuard.safeAddEventListener(
-			window,
-			"storage",
-			handleExternalInvoiceUpdate,
-		);
-		return () => {
-			unlisten1();
-			unlisten2();
-		};
-	}, [memoryGuard]);
-
-	// Auto-dismiss active invoice context menu on click-outside or Escape (Wave 252-Perf2)
-	useEffect(() => {
-		if (!activeMenuInvoiceId) return;
+		if (!activeMenuInvoiceId && !isToolbarMenuOpen) return;
 		const handleDocumentClick = (e: MouseEvent) => {
 			const target = e.target as HTMLElement | null;
-			if (!target?.closest(`[data-testid^="btn-invoice-menu-"]`)) {
+			if (activeMenuInvoiceId && !target?.closest(`[data-testid^="btn-invoice-menu-"]`)) {
 				setActiveMenuInvoiceId(null);
+			}
+			if (isToolbarMenuOpen && !target?.closest(`[data-testid="invoices-toolbar-options-btn"]`) && !target?.closest(`[data-testid="invoices-toolbar-menu-dropdown"]`)) {
+				setIsToolbarMenuOpen(false);
 			}
 		};
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				setActiveMenuInvoiceId(null);
+				setIsToolbarMenuOpen(false);
 			}
 		};
 		const removeClick = memoryGuard.safeAddEventListener(
@@ -328,7 +146,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			removeClick();
 			removeKey();
 		};
-	}, [activeMenuInvoiceId, memoryGuard]);
+	}, [activeMenuInvoiceId, isToolbarMenuOpen, memoryGuard]);
 
 	// Filtered list
 	const filteredInvoices = useMemo(() => {
@@ -483,12 +301,12 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		<div className="w-full h-full flex flex-col bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] select-none">
 			{/* 1-Line Dense Toolbar (32–36px on desktop, >=44px touch targets on mobile) — Compliance: Mandates 8d, 8p & Hick's Law */}
 			<div
-				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0 overflow-x-auto"
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 shrink-0"
 				role="toolbar"
 				aria-label="Панель счетов и актов"
 			>
 				{/* Left: Section Identity & Filter Tabs */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 shrink min-w-0 overflow-x-auto scrollbar-none py-0.5">
 					<div className="flex items-center gap-1.5 font-bold text-xs mr-2 text-[var(--ink,#0f172a)] shrink-0">
 						<Receipt
 							size={16}
@@ -497,34 +315,28 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 						<span className="whitespace-nowrap">Счета и Акты</span>
 					</div>
 
-					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 sm:p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
+					<div className="dente-segmented-bar shrink-0" role="tablist" aria-label="Фильтры счетов">
 						<button
 							type="button"
 							onClick={() => setFilterTab("all")}
-							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-								filterTab === "all"
-									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
+							className={`dente-segmented-item ${filterTab === "all" ? "active" : ""}`}
+							data-active={filterTab === "all"}
 							data-testid="filter-invoices-all"
 						>
 							<span>Все</span>
-							<span className="text-[10px] opacity-70">
+							<span className="text-[10px] opacity-70 font-mono">
 								({(Array.isArray(invoices) ? invoices : []).length})
 							</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setFilterTab("pending")}
-							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-								filterTab === "pending"
-									? "bg-[var(--paper,#ffffff)] text-amber-700 dark:text-amber-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
+							className={`dente-segmented-item ${filterTab === "pending" ? "active" : ""}`}
+							data-active={filterTab === "pending"}
 							data-testid="filter-invoices-pending"
 						>
 							<span>К оплате</span>
-							<span className="text-[10px] opacity-70">
+							<span className="text-[10px] opacity-70 font-mono">
 								(
 								{
 									(Array.isArray(invoices) ? invoices : []).filter(
@@ -541,30 +353,24 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 						<button
 							type="button"
 							onClick={() => setFilterTab("paid")}
-							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-								filterTab === "paid"
-									? "bg-[var(--paper,#ffffff)] text-emerald-700 dark:text-emerald-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
+							className={`dente-segmented-item ${filterTab === "paid" ? "active" : ""}`}
+							data-active={filterTab === "paid"}
 							data-testid="filter-invoices-paid"
 						>
 							<span>Оплачено</span>
-							<span className="text-[10px] opacity-70">
+							<span className="text-[10px] opacity-70 font-mono">
 								({(Array.isArray(invoices) ? invoices : []).filter((i) => i && i.status === "paid").length})
 							</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setFilterTab("warranty")}
-							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2.5 sm:px-2 py-1.5 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-								filterTab === "warranty"
-									? "bg-[var(--paper,#ffffff)] text-purple-700 dark:text-purple-400 shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-							}`}
+							className={`dente-segmented-item ${filterTab === "warranty" ? "active" : ""}`}
+							data-active={filterTab === "warranty"}
 							data-testid="filter-invoices-warranty"
 						>
 							<span>Гарантия 100%</span>
-							<span className="text-[10px] opacity-70">
+							<span className="text-[10px] opacity-70 font-mono">
 								({(Array.isArray(invoices) ? invoices : []).filter((i) => i && i.status === "warranty_100").length})
 							</span>
 						</button>
@@ -573,102 +379,141 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
 				{/* Right: Search box & fast actions (Mandate 8c: >=44px on mobile, compact on desktop) */}
 				<div className="flex items-center gap-2 shrink-0">
-					<div className="relative flex items-center">
+					<div className="dente-search-wrap hidden md:flex w-48 sm:w-60">
 						<Search
 							size={14}
-							className="absolute left-2.5 text-[var(--muted,#64748b)] pointer-events-none"
+							className="dente-search-icon"
 						/>
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по пациенту или № счета..."
-							className="h-11 min-h-[44px] sm:h-7 sm:min-h-[28px] w-48 sm:w-60 pl-9.5 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
+							className="dente-search-input"
 							data-testid="input-search-invoices"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-[28px] sm:min-w-[28px] absolute right-0 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer flex items-center justify-center"
+								className="dente-search-clear"
 								aria-label="Очистить поиск"
 							>
-								<X size={14} />
+								<X size={13} />
 							</button>
 						)}
 					</div>
 
-					<button
-						type="button"
-						onClick={() => setIsRegisterDrawerOpen(true)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-teal-500/40 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
-						data-testid="btn-cash-drawer-open"
-						title="Денежный ящик, телеметрия смены и чеки (1 клик)"
-					>
-						<Banknote size={14} className="text-teal-600 dark:text-teal-400" />
-						<span className="hidden md:inline">Ящик кассы</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsShiftModalOpen(true)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
-						data-testid="btn-cashbox-shift-open"
-						title="Смена кассы (Z/X отчеты)"
-					>
-						<Receipt size={14} className="text-emerald-600 dark:text-emerald-400" />
-						<span className="hidden md:inline">Смена кассы</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setActiveSplitInvoice(invoices[0] || null)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-purple-500/40 bg-purple-50 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
-						data-testid="btn-payment-split-open"
-						title="Сплит-оплата (несколько плательщиков / методов)"
-					>
-						<CreditCard size={14} className="text-purple-600 dark:text-purple-400" />
-						<span className="hidden md:inline">Сплит-оплата</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setReceiptToPrint(invoices[0] || null)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
-						data-testid="btn-cash-receipt-print-open"
-						title="Печать кассового чека"
-					>
-						<Printer size={14} className="text-teal-600 dark:text-teal-400" />
-						<span className="hidden md:inline">Кассовый чек</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsInstallmentsModalOpen(true)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-teal-500/40 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
-						data-testid="btn-installments-modal-open"
-						title="Внутренняя беспроцентная рассрочка клиники (0%)"
-					>
-						<Wallet size={14} className="text-teal-600 dark:text-teal-400" />
-						<span className="hidden md:inline">Рассрочка 0%</span>
-					</button>
-
+					{/* Primary Action: New Invoice */}
 					<button
 						type="button"
 						onClick={() => setIsCreateModalOpen(true)}
-						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98 shrink-0 whitespace-nowrap"
+						className="primary-button min-h-[36px] sm:min-h-[30px] shrink-0"
 						data-testid="btn-create-invoice-open"
-						title="Создать счет (1 клик)"
+						title="Создать счет"
 					>
-						<Plus size={14} />
-						<span className="hidden sm:inline">Новый счет</span>
+						<Plus size={14} className="shrink-0" />
+						<span className="hidden sm:inline whitespace-nowrap">Новый счет</span>
 					</button>
+
+					{/* Secondary Operations Dropdown (Clean Studio HIG — Mandates 8c, 8d) */}
+					<div className="relative shrink-0" ref={toolbarMenuRef}>
+						<button
+							type="button"
+							onClick={() => setIsToolbarMenuOpen(!isToolbarMenuOpen)}
+							data-testid="invoices-toolbar-options-btn"
+							className="min-h-[36px] min-w-[36px] sm:min-h-[30px] sm:min-w-[30px] h-8 w-8 p-0 flex items-center justify-center shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							title="Дополнительные операции с кассой и счетами"
+							aria-label="Дополнительные действия"
+							aria-expanded={isToolbarMenuOpen}
+						>
+							<MoreHorizontal size={15} className="shrink-0" />
+						</button>
+
+						{isToolbarMenuOpen && (
+							<div
+								className="absolute right-0 top-full mt-1 w-60 py-1 px-1 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl z-50 flex flex-col gap-0.5 text-left animate-in fade-in zoom-in-95 duration-100"
+								role="menu"
+								data-testid="invoices-toolbar-menu-dropdown"
+							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsToolbarMenuOpen(false);
+										setIsRegisterDrawerOpen(true);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center gap-2.5 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid="btn-cash-drawer-open"
+								>
+									<Banknote size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Ящик кассы и чеки</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsToolbarMenuOpen(false);
+										setIsShiftModalOpen(true);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center gap-2.5 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid="btn-cashbox-shift-open"
+								>
+									<Receipt size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Смена кассы (Z/X отчеты)</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsToolbarMenuOpen(false);
+										setActiveSplitInvoice(invoices[0] || null);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center gap-2.5 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid="btn-payment-split-open"
+								>
+									<CreditCard size={15} className="text-purple-600 dark:text-purple-400 shrink-0" />
+									<span>Сплит-оплата (несколько методов)</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsToolbarMenuOpen(false);
+										setReceiptToPrint(invoices[0] || null);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center gap-2.5 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid="btn-cash-receipt-print-open"
+								>
+									<Printer size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Печать кассового чека</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsToolbarMenuOpen(false);
+										setIsInstallmentsModalOpen(true);
+									}}
+									className="w-full text-left px-2.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center gap-2.5 cursor-pointer transition-colors"
+									role="menuitem"
+									data-testid="btn-installments-modal-open"
+								>
+									<Wallet size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Рассрочка клиники (0%)</span>
+								</button>
+							</div>
+						)}
+					</div>
 
 					{onClose && (
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-7 sm:h-7 sm:min-h-[28px] sm:min-w-[28px] rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors shrink-0"
+							className="icon-button min-h-[36px] min-w-[36px] flex items-center justify-center shrink-0 cursor-pointer"
 							aria-label="Закрыть реестр счетов"
 							data-testid="btn-invoices-close"
 						>
@@ -679,7 +524,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			</div>
 
 			{/* Invoices List Content */}
-			<div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5">
+			<div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5 pb-28 sm:pb-6">
 				{filteredInvoices.length === 0 ? (
 					<div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-[var(--line,#e2e8f0)] rounded-2xl bg-[var(--paper,#ffffff)]">
 						<Receipt
@@ -831,136 +676,41 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 				</Suspense>
 			)}
 
-			{/* Quick Create Invoice Modal (Modal Depth strictly 1) */}
-			<QuickCreateInvoiceModal
-				isOpen={isCreateModalOpen}
-				onClose={() => setIsCreateModalOpen(false)}
+			{/* Invoices Modals & Drawers Sub-Layer (Mandate 8b / 8d) */}
+			<InvoicesModalsLayer
+				isCreateModalOpen={isCreateModalOpen}
+				setIsCreateModalOpen={setIsCreateModalOpen}
+				patientId={patientId}
 				patientName={patientName}
 				currentDoctorName={currentDoctorName}
-				onCreateInvoice={handleCreateInvoice}
+				clinicLegalName={clinicLegalName}
+				invoices={invoices}
+				handleCreateInvoice={handleCreateInvoice}
+				isInstallmentsModalOpen={isInstallmentsModalOpen}
+				setIsInstallmentsModalOpen={setIsInstallmentsModalOpen}
+				setBankInstallmentInvoice={setBankInstallmentInvoice}
+				isShiftModalOpen={isShiftModalOpen}
+				setIsShiftModalOpen={setIsShiftModalOpen}
+				isRegisterDrawerOpen={isRegisterDrawerOpen}
+				setIsRegisterDrawerOpen={setIsRegisterDrawerOpen}
+				setActivePaymentInvoice={setActivePaymentInvoice}
+				activeSplitInvoice={activeSplitInvoice}
+				setActiveSplitInvoice={setActiveSplitInvoice}
+				receiptToPrint={receiptToPrint}
+				setReceiptToPrint={setReceiptToPrint}
+				refundInvoice={refundInvoice}
+				setRefundInvoice={setRefundInvoice}
+				bankInstallmentInvoice={bankInstallmentInvoice}
+				onUpdateInvoice={(updatedInv) => {
+					setInvoices((prev) => {
+						const updated = prev.map((item) =>
+							item.id === updatedInv.id ? updatedInv : item,
+						);
+						saveStoredInvoices(updated);
+						return updated;
+					});
+				}}
 			/>
-
-			{isInstallmentsModalOpen && (
-				<PatientInstallmentsModal
-					isOpen={isInstallmentsModalOpen}
-					onClose={() => setIsInstallmentsModalOpen(false)}
-					patientId={patientId}
-					patientName={patientName}
-					clinicName={clinicLegalName}
-					onOpenBankInstallment={() => {
-						setIsInstallmentsModalOpen(false);
-						setBankInstallmentInvoice(invoices[0] || null);
-					}}
-				/>
-			)}
-
-			{isShiftModalOpen && (
-				<CashboxShiftModal
-					isOpen={isShiftModalOpen}
-					onClose={() => setIsShiftModalOpen(false)}
-					clinicLegalName={clinicLegalName}
-					cashierFullName={currentDoctorName}
-				/>
-			)}
-
-			{isRegisterDrawerOpen && (
-				<CashRegisterDrawer
-					isOpen={isRegisterDrawerOpen}
-					onClose={() => setIsRegisterDrawerOpen(false)}
-					cashierFullName={currentDoctorName}
-					clinicLegalName={clinicLegalName}
-					invoices={invoices}
-					onOpenPaymentModal={() => {
-						if (invoices.length > 0 && invoices[0]) {
-							setActivePaymentInvoice(invoices[0]);
-						} else {
-							setIsCreateModalOpen(true);
-						}
-					}}
-				/>
-			)}
-
-			{activeSplitInvoice && (
-				<PaymentSplitModal
-					isOpen={Boolean(activeSplitInvoice)}
-					onClose={() => setActiveSplitInvoice(null)}
-					totalBillRub={activeSplitInvoice.totalAmountRub}
-					patientId={activeSplitInvoice.patientId}
-					patientName={activeSplitInvoice.patientName}
-					patientPhone={activeSplitInvoice.patientPhone}
-					attendingDoctorName={activeSplitInvoice.doctorName}
-					cashierFullName={currentDoctorName}
-					orderId={activeSplitInvoice.id}
-					onPaymentComplete={() => {
-						setActiveSplitInvoice(null);
-						showToast(
-							`Сплит-оплата по счету ${activeSplitInvoice.number} успешно проведена`,
-							"success",
-						);
-					}}
-				/>
-			)}
-
-			{receiptToPrint && (
-				<CashReceiptPrintModal
-					isOpen={Boolean(receiptToPrint)}
-					onClose={() => setReceiptToPrint(null)}
-					invoice={receiptToPrint}
-					clinicName={clinicLegalName}
-					attendingDoctorName={receiptToPrint.doctorName}
-					cashierFullName={currentDoctorName}
-				/>
-			)}
-
-			{refundInvoice && (
-				<RefundServiceModal
-					isOpen={Boolean(refundInvoice)}
-					onClose={() => setRefundInvoice(null)}
-					invoiceId={refundInvoice.id}
-					invoiceNumber={refundInvoice.number}
-					patientId={refundInvoice.patientId}
-					patientName={refundInvoice.patientName}
-					patientPhone={refundInvoice.patientPhone || ""}
-					doctorName={refundInvoice.doctorName}
-					services={(refundInvoice.items || []).map((it) => ({
-						id: it.id,
-						name: it.name,
-						code804n: it.code || "",
-						toothNumber: undefined,
-						priceRub: it.priceRub,
-						quantity: it.quantity,
-						doctorName: refundInvoice.doctorName,
-						commissionPct: 30,
-					}))}
-					onRefundSuccess={(res) => {
-						setRefundInvoice(null);
-						showToast(
-							`Возврат по счету ${refundInvoice.number} на сумму ${res.totalRefundRub} ₽ успешно проведен по 54-ФЗ`,
-							"success",
-						);
-					}}
-				/>
-			)}
-
-			{bankInstallmentInvoice && (
-				<BankInstallmentQrModal
-					isOpen={Boolean(bankInstallmentInvoice)}
-					onClose={() => setBankInstallmentInvoice(null)}
-					stageTitle={`Оплата по счету ${bankInstallmentInvoice.number}`}
-					stageAmountKopecks={rubToKopecks(bankInstallmentInvoice.totalAmountRub)}
-					patientId={bankInstallmentInvoice.patientId}
-					patientName={bankInstallmentInvoice.patientName}
-					patientPhone={bankInstallmentInvoice.patientPhone || ""}
-					clinicName={clinicLegalName}
-					onInstallmentApproved={(appr) => {
-						setBankInstallmentInvoice(null);
-						showToast(
-							`Рассрочка одобрена! Сумма: ${(appr.approvedAmountKopecks / 100).toLocaleString("ru-RU")} ₽ (${appr.monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес)`,
-							"success",
-						);
-					}}
-				/>
-			)}
 		</div>
 	);
 };

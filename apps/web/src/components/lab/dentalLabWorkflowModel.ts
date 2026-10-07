@@ -48,6 +48,7 @@ export interface DentalLabWorkflowOrder {
 	readonly orderNumber: string;
 	readonly organizationId?: string | undefined;
 	readonly clinicName: string;
+	readonly clinicPhone?: string | undefined;
 	readonly labName: string;
 	readonly labContactPhone?: string | undefined;
 	readonly patientId: string;
@@ -96,6 +97,7 @@ export interface DentalLabWorkflowOrder {
 	readonly clinicalNotes?: string | undefined;
 	readonly technicianNotes?: string | undefined;
 	readonly isUrgent?: boolean | undefined;
+	readonly urgentDelivery?: boolean | undefined;
 	readonly originalOrderId?: string | undefined;
 	readonly originalOrderNumber?: string | undefined;
 	readonly isWarrantyRework?: boolean | undefined;

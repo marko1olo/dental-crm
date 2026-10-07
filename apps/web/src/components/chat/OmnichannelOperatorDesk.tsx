@@ -44,6 +44,8 @@ export interface InboxConversation {
 	interceptedBy: string | null;
 	leadId: string | null;
 	leadStatus: string | null;
+	sourceBadge?: string;
+	sourceType?: string;
 }
 
 export interface ChatMessageItem {
@@ -56,6 +58,92 @@ export interface ChatMessageItem {
 	text: string;
 	actionExecuted?: string;
 	createdAt: string;
+}
+
+export const SOURCE_BADGE_CONFIG: Record<
+	string,
+	{ name: string; badge: string; color: string; bgColor: string; borderColor: string }
+> = {
+	tg_bot: {
+		name: "Telegram Бот",
+		badge: "TG Бот",
+		color: "#0284c7",
+		bgColor: "rgba(2, 132, 199, 0.12)",
+		borderColor: "rgba(2, 132, 199, 0.35)",
+	},
+	tg_account: {
+		name: "Telegram Аккаунт",
+		badge: "TG Аккаунт",
+		color: "#4f46e5",
+		bgColor: "rgba(79, 70, 229, 0.12)",
+		borderColor: "rgba(79, 70, 229, 0.35)",
+	},
+	vk_group: {
+		name: "VK Группа",
+		badge: "VK Группа",
+		color: "#0077ff",
+		bgColor: "rgba(0, 119, 255, 0.12)",
+		borderColor: "rgba(0, 119, 255, 0.35)",
+	},
+	vk_account: {
+		name: "VK Аккаунт",
+		badge: "VK Аккаунт",
+		color: "#7c3aed",
+		bgColor: "rgba(124, 58, 237, 0.12)",
+		borderColor: "rgba(124, 58, 237, 0.35)",
+	},
+	wa_phone: {
+		name: "WhatsApp Телефон",
+		badge: "WA Телефон",
+		color: "#059669",
+		bgColor: "rgba(5, 150, 105, 0.12)",
+		borderColor: "rgba(5, 150, 105, 0.35)",
+	},
+	wa_waba: {
+		name: "WhatsApp WABA",
+		badge: "WA WABA",
+		color: "#16a34a",
+		bgColor: "rgba(22, 163, 74, 0.12)",
+		borderColor: "rgba(22, 163, 74, 0.35)",
+	},
+	max_bot: {
+		name: "MAX by 1C",
+		badge: "MAX",
+		color: "#9333ea",
+		bgColor: "rgba(147, 51, 234, 0.12)",
+		borderColor: "rgba(147, 51, 234, 0.35)",
+	},
+};
+
+export interface SourceBadgeInfo {
+	name: string;
+	badge: string;
+	color: string;
+	bgColor: string;
+	borderColor: string;
+}
+
+export function getSourceBadgeInfo(conv: InboxConversation): SourceBadgeInfo {
+	const defaultInfo: SourceBadgeInfo = {
+		name: "Telegram Бот",
+		badge: "TG Бот",
+		color: "#0284c7",
+		bgColor: "rgba(2, 132, 199, 0.12)",
+		borderColor: "rgba(2, 132, 199, 0.35)",
+	};
+
+	if (conv.sourceType && SOURCE_BADGE_CONFIG[conv.sourceType]) {
+		return SOURCE_BADGE_CONFIG[conv.sourceType] ?? defaultInfo;
+	}
+	if (conv.sourceBadge) {
+		const matched = Object.values(SOURCE_BADGE_CONFIG).find((cfg) => cfg.badge === conv.sourceBadge);
+		if (matched) return matched;
+	}
+	if (conv.channel === "telegram") return SOURCE_BADGE_CONFIG.tg_bot ?? defaultInfo;
+	if (conv.channel === "vk") return SOURCE_BADGE_CONFIG.vk_group ?? defaultInfo;
+	if (conv.channel === "whatsapp") return SOURCE_BADGE_CONFIG.wa_phone ?? defaultInfo;
+	if (conv.channel === "max") return SOURCE_BADGE_CONFIG.max_bot ?? defaultInfo;
+	return defaultInfo;
 }
 
 const CHANNEL_CONFIGS: Record<
@@ -103,16 +191,48 @@ const CLINICAL_QUICK_REPLIES = [
 export interface OmnichannelOperatorDeskProps {
 	className?: string;
 	onOpenPatientCard?: (patientId: string) => void;
+	onBookAppointment?: (patient: {
+		patientId: string | null;
+		patientName: string;
+		phone: string | null;
+	}) => void;
 }
 
 export function OmnichannelOperatorDesk({
 	className = "",
 	onOpenPatientCard,
+	onBookAppointment,
 }: OmnichannelOperatorDeskProps) {
 	// Conversations list
 	const [conversations, setConversations] = useState<InboxConversation[]>([]);
 	const [isLoadingList, setIsLoadingList] = useState(false);
 	const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
+	// Быстрая запись на прием из чата (Мандат 8e)
+	const [isQuickBookingOpen, setIsQuickBookingOpen] = useState(false);
+	const [bookingDate, setBookingDate] = useState(() => {
+		const d = new Date();
+		d.setDate(d.getDate() + 1);
+		return d.toISOString().split("T")[0]!;
+	});
+	const [bookingTime, setBookingTime] = useState("11:00");
+	const [bookingReason, setBookingReason] = useState("Первичная консультация и осмотр");
+	const [bookingDoctorId, setBookingDoctorId] = useState<string>("");
+	const [bookingSendConfirmation, setBookingSendConfirmation] = useState(true);
+	const [isBookingSubmitting, setIsBookingSubmitting] = useState(false);
+
+	// Быстрое создание / привязка карты пациента (Мандат 8e)
+	const [isLinkPatientModalOpen, setIsLinkPatientModalOpen] = useState(false);
+	const [newPatientFullName, setNewPatientFullName] = useState("");
+	const [newPatientPhone, setNewPatientPhone] = useState("");
+	const [isLinkingSubmitting, setIsLinkingSubmitting] = useState(false);
+
+	// Список врачей для назначения
+	const [doctorsList] = useState<Array<{ id: string; fullName: string }>>([
+		{ id: "doc-1", fullName: "Смирнова Елена Александровна (Терапевт)" },
+		{ id: "doc-2", fullName: "Ковалев Дмитрий Сергеевич (Хирург-имплантолог)" },
+		{ id: "doc-3", fullName: "Иванова Ольга Петровна (Ортодонт)" },
+	]);
 
 	// Filters & Search
 	const [channelFilter, setChannelFilter] = useState<"all" | BotChannel>("all");
@@ -414,6 +534,122 @@ export function OmnichannelOperatorDesk({
 		}
 	};
 
+	// ─── 7. Quick Booking Handler (Mandate 8e) ───
+	const handleQuickBookingSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!activeConv) return;
+
+		if (onBookAppointment) {
+			onBookAppointment({
+				patientId: activeConv.patientId,
+				patientName: activeConv.patientName,
+				phone: activeConv.phone,
+			});
+			setIsQuickBookingOpen(false);
+			return;
+		}
+
+		if (!activeConv.patientId) {
+			showToast("Сначала привяжите диалог к карте пациента", "warning");
+			setIsQuickBookingOpen(false);
+			setIsLinkPatientModalOpen(true);
+			return;
+		}
+
+		setIsBookingSubmitting(true);
+		try {
+			const startsAt = `${bookingDate}T${bookingTime}:00Z`;
+			const [hours, minutes] = bookingTime.split(":").map(Number);
+			const endMinutes = ((minutes ?? 0) + 45) % 60;
+			const endHours = (hours ?? 10) + Math.floor(((minutes ?? 0) + 45) / 60);
+			const endsAt = `${bookingDate}T${String(endHours).padStart(2, "0")}:${String(endMinutes).padStart(2, "0")}:00Z`;
+
+			const res = await fetch(`/api/bots/chats/${encodeURIComponent(activeConv.senderId)}/book-appointment`, {
+				method: "POST",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					channel: activeConv.channel,
+					patientId: activeConv.patientId,
+					doctorUserId: bookingDoctorId || undefined,
+					startsAt,
+					endsAt,
+					reason: bookingReason,
+					sendConfirmationToChat: bookingSendConfirmation,
+					operatorName,
+				}),
+			});
+
+			const data = await res.json();
+			if (res.ok && data.ok) {
+				showToast("✓ Запись на приём оформлена! Пациент уведомлен в чате.", "success");
+				setIsQuickBookingOpen(false);
+				await fetchMessages(activeConv, false);
+			} else {
+				showToast(data.message || "Ошибка при создании записи", "error");
+			}
+		} catch {
+			showToast("Сетевая ошибка при бронировании приёма", "error");
+		} finally {
+			setIsBookingSubmitting(false);
+		}
+	};
+
+	// ─── 8. Link Patient Handler (Mandate 8e) ───
+	const handleLinkPatientSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!activeConv) return;
+		const name = newPatientFullName.trim() || activeConv.senderName;
+		if (!name) {
+			showToast("Укажите ФИО пациента", "warning");
+			return;
+		}
+
+		setIsLinkingSubmitting(true);
+		try {
+			const res = await fetch(`/api/bots/chats/${encodeURIComponent(activeConv.senderId)}/link-patient`, {
+				method: "POST",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					channel: activeConv.channel,
+					createNew: {
+						fullName: name,
+						phone: newPatientPhone.trim() || activeConv.phone,
+					},
+				}),
+			});
+
+			const data = await res.json();
+			if (res.ok && data.ok && data.patient) {
+				showToast(`✓ Карта пациента ${data.patient.fullName} создана и привязана!`, "success");
+				setConversations((prev) =>
+					prev.map((c) =>
+						c.key === activeConv.key
+							? {
+									...c,
+									patientId: data.patient.id,
+									patientName: data.patient.fullName,
+									phone: data.patient.phone || c.phone,
+								}
+							: c,
+					),
+				);
+				setIsLinkPatientModalOpen(false);
+			} else {
+				showToast(data.message || "Ошибка привязки карты", "error");
+			}
+		} catch {
+			showToast("Сетевая ошибка при создании пациента", "error");
+		} finally {
+			setIsLinkingSubmitting(false);
+		}
+	};
+
 	return (
 		<div
 			className={`flex flex-col md:flex-row h-[calc(100vh-230px)] min-h-[520px] md:h-[780px] w-full rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-sm overflow-hidden text-[var(--ink,#0f172a)] ${className}`}
@@ -449,39 +685,40 @@ export function OmnichannelOperatorDesk({
 							<button
 								type="button"
 								onClick={handleSimulateIncoming}
-								className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-teal-600 text-white hover:bg-teal-700 transition-colors flex items-center gap-1 cursor-pointer"
+								className="secondary-button h-7 min-h-[28px] max-h-7 px-2.5 rounded-lg text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer"
 								title="Симулировать входящее сообщение от пациента"
 								data-testid="simulate-incoming-btn"
 							>
-								<Plus size={12} />
+								<Plus size={13} />
 								<span>Тест-бот</span>
 							</button>
 						</div>
 					</div>
 
 					{/* Search input */}
-					<div className="relative">
-						<Search size={14} className="absolute left-2.5 top-2.5 text-[var(--muted,#64748b)]" />
+					<div className="dente-search-wrap">
+						<Search size={14} className="dente-search-icon" />
 						<input
 							type="text"
 							placeholder="Поиск по пациенту, телефону..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+							className="dente-search-input"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-2 top-2 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
 							>
 								<X size={13} />
 							</button>
 						)}
 					</div>
 
-					{/* Channel Filter Chips */}
-					<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+					{/* Channel Filter (Segmented Control) */}
+					<div className="dente-segmented-bar w-full overflow-x-auto scrollbar-none">
 						{(["all", "telegram", "vk", "whatsapp", "max"] as const).map((ch) => {
 							const isSel = channelFilter === ch;
 							const cfg = ch === "all" ? null : CHANNEL_CONFIGS[ch];
@@ -490,53 +727,47 @@ export function OmnichannelOperatorDesk({
 									key={ch}
 									type="button"
 									onClick={() => setChannelFilter(ch)}
-									className={`shrink-0 px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-										isSel
-											? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-											: "text-[var(--muted,#64748b)] bg-[var(--line,#e2e8f0)]/50 hover:bg-[var(--line,#e2e8f0)]"
-									}`}
+									className={`dente-segmented-item flex-1 ${isSel ? "active" : ""}`}
+									data-active={isSel}
 								>
-									{ch === "all" ? "Все каналы" : cfg?.name}
+									{ch === "all" ? "Все" : cfg?.name}
 								</button>
 							);
 						})}
 					</div>
 
 					{/* Status Sub-filter: All / Intercepted / Bot */}
-					<div className="flex items-center gap-1.5 text-[11px]">
+					<div className="dente-filter-chips">
 						<button
 							type="button"
 							onClick={() => setStatusFilter("all")}
-							className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
-								statusFilter === "all"
-									? "font-bold text-teal-700 bg-teal-50 dark:text-teal-300 dark:bg-teal-900/30"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink)]"
+							className={`dente-filter-chip ${
+								statusFilter === "all" ? "active" : ""
 							}`}
+							data-active={statusFilter === "all"}
 						>
 							Все ({conversations.length})
 						</button>
 						<button
 							type="button"
 							onClick={() => setStatusFilter("intercepted")}
-							className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
-								statusFilter === "intercepted"
-									? "font-bold text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-900/30"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink)]"
+							className={`dente-filter-chip flex items-center gap-1.5 ${
+								statusFilter === "intercepted" ? "active" : ""
 							}`}
+							data-active={statusFilter === "intercepted"}
 						>
-							<UserCheck size={11} />
+							<UserCheck size={13} />
 							<span>Перехвачен</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setStatusFilter("bot")}
-							className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer flex items-center gap-1 ${
-								statusFilter === "bot"
-									? "font-bold text-sky-700 bg-sky-50 dark:text-sky-300 dark:bg-sky-900/30"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink)]"
+							className={`dente-filter-chip flex items-center gap-1.5 ${
+								statusFilter === "bot" ? "active" : ""
 							}`}
+							data-active={statusFilter === "bot"}
 						>
-							<Bot size={11} />
+							<Bot size={13} />
 							<span>Отвечает бот</span>
 						</button>
 					</div>
@@ -560,6 +791,7 @@ export function OmnichannelOperatorDesk({
 						filteredConversations.map((conv) => {
 							const isSelected = conv.key === selectedKey;
 							const chCfg = CHANNEL_CONFIGS[conv.channel] || CHANNEL_CONFIGS.telegram;
+							const sourceInfo = getSourceBadgeInfo(conv);
 							const initials = formatPatientInitials(conv.patientName);
 							const avatarCol = getAvatarColor(conv.patientName);
 
@@ -587,11 +819,11 @@ export function OmnichannelOperatorDesk({
 											{initials}
 										</div>
 										<span
-											className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded text-[9px] font-black uppercase text-white shadow-xs border border-white dark:border-slate-800"
-											style={{ backgroundColor: chCfg.color }}
-											title={`Канал: ${chCfg.name}`}
+											className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded text-[8px] font-black uppercase text-white shadow-xs border border-white dark:border-slate-800"
+											style={{ backgroundColor: sourceInfo.color }}
+											title={`Канал: ${sourceInfo.name}`}
 										>
-											{chCfg.badge}
+											{sourceInfo.badge}
 										</span>
 									</div>
 
@@ -609,8 +841,19 @@ export function OmnichannelOperatorDesk({
 											</span>
 										</div>
 
-										{/* Phone and Intercept Pill */}
+										{/* Phone, Source Badge and Intercept Pill */}
 										<div className="flex items-center gap-1.5 mb-1 flex-wrap">
+											<span
+												className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold shadow-2xs border"
+												style={{
+													backgroundColor: sourceInfo.bgColor,
+													color: sourceInfo.color,
+													borderColor: sourceInfo.borderColor,
+												}}
+												title={`Источник сообщения: ${sourceInfo.name}`}
+											>
+												{sourceInfo.badge}
+											</span>
 											{conv.phone && (
 												<span className="text-[10px] font-mono text-[var(--muted,#64748b)]">
 													{formatPhoneDisplay(conv.phone)}
@@ -681,16 +924,22 @@ export function OmnichannelOperatorDesk({
 										<h4 className="font-bold text-sm truncate text-[var(--ink,#0f172a)]">
 											{activeConv.patientName}
 										</h4>
-										<span
-											className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase text-white shrink-0"
-											style={{
-												backgroundColor:
-													CHANNEL_CONFIGS[activeConv.channel]?.color || "#0284c7",
-											}}
-											title={`Канал: ${CHANNEL_CONFIGS[activeConv.channel]?.name}`}
-										>
-											{CHANNEL_CONFIGS[activeConv.channel]?.badge}
-										</span>
+										{(() => {
+											const activeSourceInfo = getSourceBadgeInfo(activeConv);
+											return (
+												<span
+													className="px-2 py-0.5 rounded text-[10px] font-bold shadow-2xs border shrink-0"
+													style={{
+														backgroundColor: activeSourceInfo.bgColor,
+														color: activeSourceInfo.color,
+														borderColor: activeSourceInfo.borderColor,
+													}}
+													title={`Источник: ${activeSourceInfo.name}`}
+												>
+													{activeSourceInfo.badge}
+												</span>
+											);
+										})()}
 									</div>
 									<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)] flex-wrap">
 										{activeConv.phone && (
@@ -713,8 +962,60 @@ export function OmnichannelOperatorDesk({
 								</div>
 							</div>
 
-							{/* Takeover Control Action Buttons */}
-							<div className="flex items-center gap-2 shrink-0">
+							{/* Action Buttons: Запись на приём / Привязать к карте / Перехватить диалог */}
+							<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+								{/* Кнопка записи на прием в 1 клик (Мандат 8e) */}
+								<button
+									type="button"
+									onClick={() => {
+										if (!activeConv.patientId) {
+											setNewPatientFullName(
+												activeConv.senderName !== `${activeConv.channel.toUpperCase()} Пациент`
+													? activeConv.senderName
+													: "",
+											);
+											setNewPatientPhone(
+												activeConv.phone || (activeConv.senderId.startsWith("79") ? `+${activeConv.senderId}` : ""),
+											);
+											setIsLinkPatientModalOpen(true);
+										} else {
+											setIsQuickBookingOpen(true);
+										}
+									}}
+									className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+									title="Записать пациента на приём"
+									data-testid="quick-book-chat-btn"
+								>
+									<Calendar size={15} />
+									<span className="hidden sm:inline">Записать на приём</span>
+									<span className="sm:hidden text-[11px]">Запись</span>
+								</button>
+
+								{/* Создать / привязать карту, если ещё не привязана */}
+								{!activeConv.patientId && (
+									<button
+										type="button"
+										onClick={() => {
+											setNewPatientFullName(
+												activeConv.senderName !== `${activeConv.channel.toUpperCase()} Пациент`
+													? activeConv.senderName
+													: "",
+											);
+											setNewPatientPhone(
+												activeConv.phone || (activeConv.senderId.startsWith("79") ? `+${activeConv.senderId}` : ""),
+											);
+											setIsLinkPatientModalOpen(true);
+										}}
+										className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] transition-all flex items-center gap-1 cursor-pointer shrink-0"
+										title="Создать или привязать карту пациента в 1 клик"
+										data-testid="link-patient-chat-btn"
+									>
+										<Plus size={14} className="text-teal-600" />
+										<span className="hidden md:inline">Создать карту</span>
+									</button>
+								)}
+
+								{/* Перехват диалога */}
 								{activeConv.isIntercepted ? (
 									<button
 										type="button"
@@ -736,8 +1037,8 @@ export function OmnichannelOperatorDesk({
 										data-testid="takeover-chat-btn"
 									>
 										<UserCheck size={15} />
-										<span className="hidden sm:inline">Перехватить диалог</span>
-										<span className="sm:hidden text-[11px]">Перехватить</span>
+										<span className="hidden sm:inline">Перехватить</span>
+										<span className="sm:hidden text-[11px]">Ручной</span>
 									</button>
 								)}
 							</div>
@@ -852,7 +1153,7 @@ export function OmnichannelOperatorDesk({
 									key={idx}
 									type="button"
 									onClick={() => handleSendMessage(tpl.text)}
-									className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-teal-500/20 bg-teal-50 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors cursor-pointer"
+									className="shrink-0 h-7 px-3 rounded-full text-[12.5px] font-medium border border-teal-500/20 bg-teal-50 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors cursor-pointer min-w-max"
 									title={tpl.text}
 								>
 									{tpl.label}
@@ -926,6 +1227,295 @@ export function OmnichannelOperatorDesk({
 					</div>
 				)}
 			</div>
+
+			{/* ════════════ MODAL: QUICK APPOINTMENT BOOKING (MANDATE 8e) ════════════ */}
+			{isQuickBookingOpen && activeConv && (
+				<div
+					className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+					data-testid="quick-booking-modal"
+				>
+					<div className="w-full max-w-lg rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl p-5 text-[var(--ink,#0f172a)] my-auto animate-in fade-in zoom-in-95 duration-150">
+						{/* Header */}
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)]">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center">
+									<Calendar size={18} />
+								</div>
+								<div>
+									<h3 className="font-bold text-base leading-tight">
+										Быстрая запись на приём из чата
+									</h3>
+									<p className="text-xs text-[var(--muted,#64748b)]">
+										{activeConv.channel.toUpperCase()} • Пациент: {activeConv.patientName}
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsQuickBookingOpen(false)}
+								className="p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
+								title="Закрыть"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						{/* Form */}
+						<form onSubmit={handleQuickBookingSubmit} className="mt-4 flex flex-col gap-3.5">
+							{/* Patient Info Banner */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs">
+								<div className="flex items-center gap-2">
+									<User size={15} className="text-teal-600" />
+									<span className="font-bold">{activeConv.patientName}</span>
+								</div>
+								{activeConv.phone && (
+									<span className="font-mono text-[var(--muted,#64748b)]">
+										{formatPhoneDisplay(activeConv.phone)}
+									</span>
+								)}
+							</div>
+
+							{/* Date & Time Row */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div className="flex flex-col gap-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)]" htmlFor="booking-date">
+										Дата приёма:
+									</label>
+									<input
+										id="booking-date"
+										type="date"
+										value={bookingDate}
+										onChange={(e) => setBookingDate(e.target.value)}
+										className="w-full p-2 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500"
+										required
+									/>
+								</div>
+
+								<div className="flex flex-col gap-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)]" htmlFor="booking-time">
+										Время начала:
+									</label>
+									<input
+										id="booking-time"
+										type="time"
+										value={bookingTime}
+										onChange={(e) => setBookingTime(e.target.value)}
+										className="w-full p-2 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500"
+										required
+									/>
+								</div>
+							</div>
+
+							{/* Quick Time Chips */}
+							<div className="flex items-center gap-1.5 flex-wrap">
+								<span className="text-[10px] text-[var(--muted,#64748b)] uppercase font-bold mr-1">
+									Слоты:
+								</span>
+								{["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"].map((t) => (
+									<button
+										key={t}
+										type="button"
+										onClick={() => setBookingTime(t)}
+										className={`px-2.5 py-1 rounded-md text-[12px] font-medium border transition-colors cursor-pointer min-w-max ${
+											bookingTime === t
+												? "bg-teal-600 text-white border-teal-600 shadow-xs"
+												: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink)]"
+										}`}
+									>
+										{t}
+									</button>
+								))}
+							</div>
+
+							{/* Doctor Select */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]" htmlFor="booking-doctor">
+									Лечащий врач:
+								</label>
+								<select
+									id="booking-doctor"
+									value={bookingDoctorId}
+									onChange={(e) => setBookingDoctorId(e.target.value)}
+									className="w-full p-2 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500"
+								>
+									<option value="">Дежурный врач (первый доступный)</option>
+									{doctorsList.map((doc) => (
+										<option key={doc.id} value={doc.id}>
+											{doc.fullName}
+										</option>
+									))}
+								</select>
+							</div>
+
+							{/* Reason / Notes */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]" htmlFor="booking-reason">
+									Причина обращения / услуга:
+								</label>
+								<input
+									id="booking-reason"
+									type="text"
+									value={bookingReason}
+									onChange={(e) => setBookingReason(e.target.value)}
+									placeholder="Консультация, осмотр, острая боль..."
+									className="w-full p-2 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500"
+								/>
+								{/* Quick Reason Chips */}
+								<div className="flex items-center gap-1.5 flex-wrap mt-1">
+									{[
+										"Консультация и осмотр",
+										"Острая зубная боль",
+										"Профгигиена полости рта",
+										"Лечение кариеса",
+										"Удаление зуба",
+									].map((r) => (
+										<button
+											key={r}
+											type="button"
+											onClick={() => setBookingReason(r)}
+											className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink)] cursor-pointer"
+										>
+											{r}
+										</button>
+									))}
+								</div>
+							</div>
+
+							{/* Confirmation in Chat Checkbox */}
+							<label className="flex items-center gap-2 p-3 rounded-xl bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 text-xs cursor-pointer select-none">
+								<input
+									type="checkbox"
+									checked={bookingSendConfirmation}
+									onChange={(e) => setBookingSendConfirmation(e.target.checked)}
+									className="rounded text-teal-600 focus:ring-teal-500"
+								/>
+								<span className="font-semibold text-teal-900 dark:text-teal-200">
+									Отправить красивое подтверждение визита пациенту в {activeConv.channel.toUpperCase()}
+								</span>
+							</label>
+
+							{/* Modal Footer Buttons */}
+							<div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] mt-1">
+								<button
+									type="button"
+									onClick={() => setIsQuickBookingOpen(false)}
+									className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
+								>
+									Отмена
+								</button>
+								<button
+									type="submit"
+									disabled={isBookingSubmitting}
+									className="min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+									data-testid="submit-quick-booking-btn"
+								>
+									{isBookingSubmitting ? (
+										<RefreshCw size={15} className="animate-spin" />
+									) : (
+										<Check size={15} />
+									)}
+									<span>Забронировать визит</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
+
+			{/* ════════════ MODAL: LINK / CREATE PATIENT (MANDATE 8e) ════════════ */}
+			{isLinkPatientModalOpen && activeConv && (
+				<div
+					className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+					data-testid="link-patient-modal"
+				>
+					<div className="w-full max-w-md rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl p-5 text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-150">
+						{/* Header */}
+						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)]">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center">
+									<UserCheck size={18} />
+								</div>
+								<div>
+									<h3 className="font-bold text-base leading-tight">
+										Привязать карту пациента
+									</h3>
+									<p className="text-xs text-[var(--muted,#64748b)]">
+										{activeConv.channel.toUpperCase()}: ID {activeConv.senderId}
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsLinkPatientModalOpen(false)}
+								className="p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
+								title="Закрыть"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						{/* Form */}
+						<form onSubmit={handleLinkPatientSubmit} className="mt-4 flex flex-col gap-3.5">
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]" htmlFor="link-patient-name">
+									ФИО пациента:
+								</label>
+								<input
+									id="link-patient-name"
+									type="text"
+									placeholder="Иванов Иван Иванович"
+									value={newPatientFullName}
+									onChange={(e) => setNewPatientFullName(e.target.value)}
+									className="w-full p-2.5 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold"
+									required
+								/>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]" htmlFor="link-patient-phone">
+									Номер телефона:
+								</label>
+								<input
+									id="link-patient-phone"
+									type="tel"
+									placeholder="+7 (999) 000-00-00"
+									value={newPatientPhone}
+									onChange={(e) => setNewPatientPhone(e.target.value)}
+									className="w-full p-2.5 text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono"
+								/>
+							</div>
+
+							<p className="text-[11px] text-[var(--muted,#64748b)] leading-relaxed">
+								После сохранения пациент появится в базе клиники (PostgreSQL 18), все последующие сообщения и звонки будут автоматически привязываться к его амбулаторной карте 043/у.
+							</p>
+
+							{/* Footer */}
+							<div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] mt-1">
+								<button
+									type="button"
+									onClick={() => setIsLinkPatientModalOpen(false)}
+									className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
+								>
+									Отмена
+								</button>
+								<button
+									type="submit"
+									disabled={isLinkingSubmitting}
+									className="min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+									data-testid="submit-link-patient-btn"
+								>
+									{isLinkingSubmitting ? (
+										<RefreshCw size={15} className="animate-spin" />
+									) : (
+										<Check size={15} />
+									)}
+									<span>Создать карту в 1 клик</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

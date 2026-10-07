@@ -47,7 +47,7 @@ export function OnlineBookingAdminComparison({
 							<h4 className="text-sm font-bold text-[var(--ink)] m-0">
 								Онлайн-самозапись (Авто)
 							</h4>
-							<p className="text-[11px] text-[var(--muted)] m-0">
+							<p className="text-xs text-[var(--muted)] m-0">
 								Виджет сайта, Яндекс Карты, 2ГИС, Telegram
 							</p>
 						</div>
@@ -116,7 +116,7 @@ export function OnlineBookingAdminComparison({
 							<h4 className="text-sm font-bold text-[var(--ink)] m-0">
 								Регистратура (АТС / Звонки)
 							</h4>
-							<p className="text-[11px] text-[var(--muted)] m-0">
+							<p className="text-xs text-[var(--muted)] m-0">
 								Входящие звонки, обработанные администраторами
 							</p>
 						</div>

@@ -32,6 +32,8 @@ export interface DocumentPayloadCardProps {
 	 * там карточка выписана руками; этот слот избавляет от второй такой копии.
 	 */
 	notice?: ReactNode;
+	/** Развернут ли блок по умолчанию (по умолчанию true для удобства врача) */
+	defaultOpen?: boolean;
 	/** Поля формы: они и раньше лежали внутри складного блока. */
 	children: ReactNode;
 }
@@ -40,6 +42,7 @@ export function DocumentPayloadCard({
 	title,
 	description,
 	notice,
+	defaultOpen = true,
 	children,
 }: DocumentPayloadCardProps) {
 	return (
@@ -49,7 +52,7 @@ export function DocumentPayloadCard({
 				<p>{description}</p>
 			</div>
 			{notice ?? null}
-			<details className="document-manual-override">
+			<details className="document-manual-override" open={defaultOpen ? true : undefined}>
 				<summary className="inline-flex items-center gap-1.5 cursor-pointer">
 					<FileEdit size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
 					<span>Ручная корректировка полей (развернуть)</span>

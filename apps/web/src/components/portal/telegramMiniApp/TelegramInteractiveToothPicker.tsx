@@ -547,7 +547,7 @@ export const TelegramInteractiveToothPicker: React.FC<TelegramInteractiveToothPi
 												<span>{catalogItem?.label}</span>
 												{c.cito && (
 													<span className="text-[9px] bg-red-500/20 text-red-600 dark:text-red-300 px-1 py-0.2 rounded font-bold border border-red-500/30">
-														CITO
+														⚡ Срочно
 													</span>
 												)}
 											</div>
@@ -654,7 +654,7 @@ export const TelegramInteractiveToothPicker: React.FC<TelegramInteractiveToothPi
 														<span>{item.label}</span>
 														{item.cito && (
 															<span className="text-[9px] bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/40 px-1 py-0.2 rounded font-extrabold">
-																CITO!
+																⚡ Срочно!
 															</span>
 														)}
 													</div>
@@ -685,7 +685,7 @@ export const TelegramInteractiveToothPicker: React.FC<TelegramInteractiveToothPi
 										{painLevel === 1 && "1 — Лёгкий дискомфорт"}
 										{painLevel === 2 && "2 — Терпимая боль"}
 										{painLevel === 3 && "3 — Умеренная боль"}
-										{painLevel === 4 && "4 — Сильная боль (CITO)"}
+										{painLevel === 4 && "4 — Сильная боль (Срочно)"}
 										{painLevel === 5 && "5 — Нестерпимая острая боль!"}
 									</span>
 								</div>

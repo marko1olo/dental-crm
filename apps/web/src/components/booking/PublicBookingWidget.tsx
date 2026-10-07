@@ -82,13 +82,13 @@ export type PublicBookingWidgetProps = PublicOnlineBookingWidgetProps;
 
 // ============================================================================
 // Main Canonical Component: Online Booking SSOT (Mandates 8e, 8k, 8p, 8n, 8s, 8za)
-// Streamlined 1-Screen 2-Click Booking (< 30s) + Responsive Mobile Touch Targets (>= 44px)
+// Streamlined 1-Screen Booking (< 30s) + Responsive Mobile Touch Targets (>= 44px)
 // ============================================================================
 
 export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	organizationId = null,
 	title = "Онлайн-запись в клинику DENTE",
-	subtitle = "Выберите удобное время и запишитесь на приём за 2 клика",
+	subtitle = "Выберите врача и удобное время визита",
 	theme = "auto",
 	embedMode,
 	customBranches = DEFAULT_BRANCHES,
@@ -636,7 +636,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 			id={`dente-booking-${widgetInstanceId}`}
 		>
 			{artBackground && <AuthArtBackground />}
-			{/* Top Glass Header (Strictly <= 110px on mobile, Mandate 8p) */}
+			{/* Top Glass Header */}
 			<BookingHeader
 				title={title}
 				subtitle={subtitle}
@@ -646,7 +646,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 			{/* Main Widget Body */}
 			<div className="dbw-body">
 				{/* ================================================================ */}
-				{/* 1-SCREEN 2-CLICK BOOKING FLOW (Mandates 8e, 8k, 8p, 8n)           */}
+				{/* 1-SCREEN BOOKING FLOW                                            */}
 				{/* ================================================================ */}
 				{step !== 5 && !confirmationData && (
 					<div className="dbw-streamlined-flow">
@@ -712,7 +712,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 							/>
 						</div>
 
-						{/* Step 2: Doctor Header: Solo Doctor or Doctor Choice (Mandate 8n) */}
+						{/* Step 2: Doctor Header: Solo Doctor or Doctor Choice */}
 						<div id="dbw-step-doctor" className="dbw-step-card">
 							<BookingDoctorsSection
 								isSoloDoctor={isSoloDoctor}

@@ -1,0 +1,87 @@
+{
+  "subagent": "audit_dental_lab_workflow",
+  "timestamp": "2026-10-06T20:48:00+04:00",
+  "status": "COMPLETED",
+  "mission": "Total Red Team Inquisitorial Audit of Dental Lab Module (ЗТЛ): Kanban board, Tracker modal, VITA shade picker, Print blank, Mobile timeline, and Registry page. Enforcement of Doctor Autonomy (Mandate 8e), zero-emojis print blank, 4-state visual proof gate (PC Light/Dark 1440x900, Mobile Light/Dark 390x844), touch targets >= 44x44px, and 0px horizontal scroll.",
+  "invariants_enforced": [
+    "Mandate 8e: Doctor autonomy, zero disabled primary buttons, 30-day treatment plan expiration never blocks ZTL orders, warranty rework at 0 ₽",
+    "Apple iOS HIG & Mobile Touch Ergonomics: 1-row header, 44x44px touch targets, Natural Thumb Zone CTA, 0px horizontal scroll (overflow-x: clip; max-width: 100vw)",
+    "Designer Visual Inquisition Bible: Miller's Law (<=2 buttons per card + '...' dropdown), single-height 32px desktop controls, design tokens var(--paper), var(--ink), var(--line)",
+    "Print Blank Invariant: Zero emojis in official medical/statutory documentation, 5-stage lab progress, 6-stage orthopedic lifecycle, barcode + QR code SVG, non-blocking draft/signed stamp",
+    "Screen Proof Law: 100% live server captures, view_file pixel verification with own eyes, MD5/filesize excuses rejected"
+  ],
+  "files_refactored": {
+    "apps/web/src/components/lab/DentalLabShadePicker.tsx": {
+      "changes": "Replaced hardcoded slate background and border classes with canonical design tokens var(--paper), var(--ink), var(--line) to resolve dark mode contrast issues. Upgraded VITA tab switchers to Apple HIG segmented control. Added robust onError thumbnail fallback for clinical shade photos."
+    },
+    "apps/web/src/components/lab/labMath.ts": {
+      "changes": "Extended DentalLabOrderData interface with optional orderNumber?: string property to eliminate cross-component TS errors."
+    },
+    "apps/web/src/lab_orders_preview.tsx": {
+      "changes": "Added comprehensive multi-tab preview harness supporting 'registry', 'kanban', 'tracker', 'print', 'shade_picker', and dedicated full-screen Apple HIG 'mobile' timeline view. Eliminated TS2367 type narrowing conflict on desktop navigation header."
+    },
+    "scripts/audit_dental_lab_workflow_layout.cjs": {
+      "changes": "Created dedicated automated Puppeteer visual proof runner with about:blank detaching, bundle warm-up, and strict selector waiting."
+    }
+  },
+  "verification": {
+    "typecheck": "PASS (0 TS errors across apps/web via npx tsc -p apps/web/tsconfig.json --noEmit)",
+    "visual_screenshots": [
+      {
+        "file": "01_pc_light_lab_orders_1440x900.png",
+        "size_bytes": 94153,
+        "verified_pixels": "Desktop Light: Dense 32px controls, canonical status filter chips, VITA shade color dots, overdue dates in red, warranty 0 ₽ badge, print and actions toolbar."
+      },
+      {
+        "file": "02_pc_dark_lab_orders_1440x900.png",
+        "size_bytes": 93373,
+        "verified_pixels": "Desktop Dark: Deep slate-900 surface, WCAG AAA text contrast, glowing overdue alerts, zero white border bleeds."
+      },
+      {
+        "file": "03_pc_light_lab_kanban_1440x900.png",
+        "size_bytes": 90047,
+        "verified_pixels": "Desktop Light Kanban: 5 columns (Черновик, Отправлено в ЗТЛ, Примерка, Сдано, Гарантийная переделка), warranty remake card at 0 ₽, strictly <=2 primary action buttons per card + '...' dropdown."
+      },
+      {
+        "file": "04_pc_dark_lab_kanban_1440x900.png",
+        "size_bytes": 89670,
+        "verified_pixels": "Desktop Dark Kanban: Dark theme card surfaces, crisp status borders, warranty badge highlighted in orange/red, excellent contrast."
+      },
+      {
+        "file": "05_pc_light_lab_tracker_modal_1440x900.png",
+        "size_bytes": 111324,
+        "verified_pixels": "Desktop Light Tracker Modal: Header with KPI pills (Всего: 7, В работе: 4, В клинике: 1), search input with icon, deadline alert filters, 7 dense cards with patient and lab costs."
+      },
+      {
+        "file": "06_pc_dark_lab_tracker_modal_1440x900.png",
+        "size_bytes": 108996,
+        "verified_pixels": "Desktop Dark Tracker Modal: Dark modal surface, crisp typography, distinct financial breakdown (Patient vs Lab)."
+      },
+      {
+        "file": "07_pc_light_lab_shade_picker_1440x900.png",
+        "size_bytes": 67562,
+        "verified_pixels": "Desktop Light VITA Shade Picker: Classical A1-D4 groups, Bleach tab, IPS Natural Die ND1-ND9 stump selector with checked mark, clinical photo thumbnail guide."
+      },
+      {
+        "file": "08_pc_dark_lab_shade_picker_1440x900.png",
+        "size_bytes": 65711,
+        "verified_pixels": "Desktop Dark VITA Shade Picker: Dark swatch surface, amber group labels, high contrast active teal swatch ring."
+      },
+      {
+        "file": "09_pc_light_lab_print_blank_1440x900.png",
+        "size_bytes": 107246,
+        "verified_pixels": "Desktop Light Print Blank: Statutory A4 layout, zero emojis, 5-stage lab progression, 6-stage orthopedic lifecycle, barcode + QR code SVG, non-blocking stamp 'ПОДПИСАНО ВРАЧОМ'."
+      },
+      {
+        "file": "10_mobile_light_lab_timeline_390x844.png",
+        "size_bytes": 55587,
+        "verified_pixels": "Mobile Light (390x844): Strictly 1-row header, 4-stage mobile progress stepper, >=44x44px call button, floating bottom action '+ Новый наряд в ЗТЛ' in Natural Thumb Zone, 0px horizontal scroll."
+      },
+      {
+        "file": "11_mobile_dark_lab_timeline_390x844.png",
+        "size_bytes": 56538,
+        "verified_pixels": "Mobile Dark (390x844): Deep dark mode tokens, cyan stepper glow, floating bottom CTA in high-contrast teal, grouped cards with Apple iOS HIG padding."
+      }
+    ]
+  }
+}

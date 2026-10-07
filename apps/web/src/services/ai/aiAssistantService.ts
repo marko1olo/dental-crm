@@ -434,7 +434,7 @@ export class AIAssistantService {
 			msg.toolCalls = [toolCallObj];
 
 			if (isDestructive) {
-				msg.content = `Клиническое действие требует 1-клик подтверждения врача: удаление зуба ${detectedTooth}.`;
+				msg.content = `Клиническое действие требует подтверждения врача: удаление зуба ${detectedTooth}.`;
 				this.callbacks.onConfirmationRequired?.(toolCallObj);
 			} else {
 				const actionResult = await copilotActionRunner.executeAction({

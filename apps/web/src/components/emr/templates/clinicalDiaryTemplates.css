@@ -381,7 +381,7 @@
   width: 100%;
   min-height: 32px;
   height: 32px;
-  padding: 6px 12px 6px 34px;
+  padding: 6px 32px 6px 38px !important;
   border: 1px solid var(--line, #cbd5e1);
   border-radius: 8px;
   background: var(--paper-strong, #ffffff);
@@ -395,7 +395,7 @@
   .cd-search-input {
     min-height: 44px;
     height: 44px;
-    padding: 8px 12px 8px 36px;
+    padding: 8px 36px 8px 40px !important;
     font-size: 13px;
   }
 }
@@ -418,6 +418,35 @@
   height: 15px;
   color: var(--muted, #64748b);
   pointer-events: none;
+}
+
+.cd-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--muted, #64748b);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cd-search-clear:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .cd-search-clear:hover,
+.dark .cd-search-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink, #f8fafc);
 }
 
 /* Category Filter Tabs */

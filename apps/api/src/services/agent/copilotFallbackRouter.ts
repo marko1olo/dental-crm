@@ -621,7 +621,7 @@ export async function* routeCopilotFallback(
 			input: {
 				planId: "plan_sample_01",
 				discountPercent,
-				reason: "Врачебная скидка (Мандат 8e)",
+				reason: "Врачебная скидка",
 			},
 		};
 		yield { type: "done", stopReason: "tool_use" };
@@ -685,7 +685,7 @@ export async function* routeCopilotFallback(
 	) {
 		yield {
 			type: "text_delta",
-			text: "Списание расходных материалов (Мандат 8aa) выполняется автоматически в фоновом режиме на основе протоколов лечения без отвлечения внимания врача от приёма.",
+			text: "Списание расходных материалов выполняется автоматически в фоновом режиме на основе протоколов лечения без отвлечения внимания врача от приёма.",
 		};
 		yield { type: "done", stopReason: "stop" };
 		return;

@@ -411,8 +411,8 @@ export function AppointmentCardEditor({
 							id={appointmentHandoffNoteId}
 							className="status-blocker-note appointment-handoff-note text-xs mt-1 font-medium p-2 rounded break-words"
 						>
-							Статус приема заблокирован: по этому приему открыт активный визит.
-							Завершите или отмените визит в рабочем месте врача (закройте прием перед закрывающим статусом записи).
+							По этой записи сейчас открыт активный приём у врача.
+							Завершите или закройте приём в рабочем месте врача перед изменением статуса записи.
 						</div>
 					)}
 				</div>

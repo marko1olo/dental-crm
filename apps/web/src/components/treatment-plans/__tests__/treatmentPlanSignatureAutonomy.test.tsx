@@ -309,9 +309,9 @@ describe("Treatment Plan Signature & Estimator Paper-First Autonomy (Mandates 8e
 			expect(html).toContain('data-testid="print-treatment-plan-btn"');
 			expect(html).toContain("Печать плана (А4)");
 
-			// Verify presence of 1-click paper confirmation button
+			// Verify presence of paper confirmation button
 			expect(html).toContain('data-testid="paper-signature-confirm-btn"');
-			expect(html).toContain("Утвердить и подписать на бумаге (1 клик)");
+			expect(html).toContain("Утвердить и подписать на бумаге");
 
 			// Verify presence of main approval button
 			expect(html).toContain('data-testid="confirm-sign-plan-btn"');
@@ -567,11 +567,11 @@ describe("Treatment Plan Signature & Estimator Paper-First Autonomy (Mandates 8e
 				</AppLogicProvider>,
 			);
 
-			// Verify presence of 1-click paper confirmation button
+			// Verify presence of paper confirmation button
 			expect(html).toContain('data-testid="estimator-paper-confirm-btn"');
-			expect(html).toContain("На бумаге (1 клик)");
+			expect(html).toContain("На бумаге");
 			expect(html).toContain(
-				"Пациент подписал распечатанную смету — подтвердить в 1 клик",
+				"Пациент подписал распечатанную смету — подтвердить",
 			);
 		});
 

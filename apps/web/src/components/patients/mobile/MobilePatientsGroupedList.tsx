@@ -6,6 +6,7 @@ import type { Dashboard, Patient } from "@dental/shared";
 import {
 	ChevronRight,
 	Filter,
+	MessageCircle,
 	Phone,
 	Plus,
 	Search,
@@ -378,22 +379,48 @@ export function MobilePatientsGroupedList({
 									)}
 								</div>
 
-								{/* Right: 1-Tap Quick Call + Chevron */}
+								{/* Right: 1-Tap Quick Call + 1-Tap Quick Chat + Chevron */}
 								<div className="mobile-patient-actions">
 									{patient.phone ? (
-										<a
-											href={`tel:${patient.phone}`}
-											className="mobile-patient-call-btn"
-											onClick={(e) => {
-												e.stopPropagation();
-												triggerHaptic("medium");
-											}}
-											aria-label={`Позвонить ${patient.fullName}`}
-											title={`Позвонить ${patient.phone}`}
-											data-testid={`mobile-call-btn-${patient.id}`}
-										>
-											<Phone size={18} aria-hidden="true" />
-										</a>
+										<>
+											<a
+												href={`tel:${patient.phone}`}
+												className="mobile-patient-call-btn"
+												onClick={(e) => {
+													e.stopPropagation();
+													triggerHaptic("medium");
+												}}
+												aria-label={`Позвонить ${patient.fullName}`}
+												title={`Позвонить ${patient.phone}`}
+												data-testid={`mobile-call-btn-${patient.id}`}
+											>
+												<Phone size={18} aria-hidden="true" />
+											</a>
+											{(() => {
+												const digits = patient.phone.replace(/\D/g, "");
+												const waNumber =
+													digits.startsWith("8") && digits.length === 11
+														? `7${digits.slice(1)}`
+														: digits;
+												return (
+													<a
+														href={`https://wa.me/${waNumber}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="mobile-patient-chat-btn"
+														onClick={(e) => {
+															e.stopPropagation();
+															triggerHaptic("light");
+														}}
+														aria-label={`Чат WhatsApp с ${patient.fullName}`}
+														title={`Написать в WhatsApp: ${patient.phone}`}
+														data-testid={`mobile-chat-btn-${patient.id}`}
+													>
+														<MessageCircle size={18} aria-hidden="true" />
+													</a>
+												);
+											})()}
+										</>
 									) : null}
 
 									<div

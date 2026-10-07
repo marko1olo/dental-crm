@@ -254,11 +254,12 @@ export function PatientSearchAutocomplete({
 			className={`patient-search-autocomplete relative w-full ${className}`}
 			data-testid="patient-search-autocomplete"
 		>
-			{/* Input Field: 32px desktop density */}
-			<div className="relative flex items-center">
+			{/* Input Field: Canonical Dente Search Input System */}
+			<div className="dente-search-wrap">
 				<Search
 					size={14}
-					className="absolute left-2.5 text-[var(--muted)] pointer-events-none shrink-0"
+					className="dente-search-icon"
+					aria-hidden="true"
 				/>
 				<input
 					ref={inputRef}
@@ -279,7 +280,7 @@ export function PatientSearchAutocomplete({
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
 					data-testid="patient-search-autocomplete-input"
-					className="w-full min-h-[32px] h-8 pl-8 pr-7 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-hidden focus:ring-1 focus:ring-[var(--teal)] transition-colors"
+					className="dente-search-input h-8 text-xs"
 				/>
 				{query && !disabled && (
 					<button
@@ -290,7 +291,7 @@ export function PatientSearchAutocomplete({
 							setIsOpen(false);
 							inputRef.current?.focus();
 						}}
-						className="absolute right-2 p-0.5 rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+						className="dente-search-clear"
 						title="Очистить поиск"
 						aria-label="Очистить поиск"
 					>

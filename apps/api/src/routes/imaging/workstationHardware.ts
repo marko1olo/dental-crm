@@ -175,6 +175,9 @@ export function describeDicomExecutionLaneForOperator(
 export function detectWorkstationTier(
 	input: DicomWorkstationReadinessRequest["client"],
 ): DicomMprReadiness["resourcePolicy"]["requiredTier"] {
+	if (input.hardwareTier === "potato") {
+		return "low_end";
+	}
 	const memory = input.deviceMemoryGb ?? 0;
 	const cores = input.hardwareConcurrency ?? 0;
 	const freeStorageMb =
@@ -185,18 +188,20 @@ export function detectWorkstationTier(
 	if (
 		input.webgl2Supported &&
 		input.indexedDbSupported &&
-		memory >= 16 &&
-		cores >= 8 &&
-		(freeStorageMb === null || freeStorageMb >= 4096)
+		(input.hardwareTier === "ultra" ||
+			(memory >= 16 &&
+				cores >= 8 &&
+				(freeStorageMb === null || freeStorageMb >= 4096)))
 	) {
 		return "diagnostic_workstation";
 	}
 	if (
 		input.webgl2Supported &&
 		input.indexedDbSupported &&
-		memory >= 8 &&
-		cores >= 4 &&
-		(freeStorageMb === null || freeStorageMb >= 2048)
+		(input.hardwareTier === "balanced" ||
+			(memory >= 8 &&
+				cores >= 4 &&
+				(freeStorageMb === null || freeStorageMb >= 2048)))
 	) {
 		return "workstation";
 	}
@@ -230,16 +235,23 @@ export function detectGpuClass(
 	client: DicomWorkstationReadinessRequest["client"],
 ): DicomGpuRenderPlan["gpuClass"] {
 	if (!client.webgl2Supported) return "none";
+	if (client.gpuType === "software") return "none";
 	const renderer =
 		`${client.webglVendor ?? ""} ${client.webglRenderer ?? ""}`.toLowerCase();
 	const memory = client.deviceMemoryGb ?? 0;
 	const cores = client.hardwareConcurrency ?? 0;
 	const max3d = client.max3dTextureSize ?? 0;
 	const discreteHint =
+		client.gpuType === "discrete" ||
+		client.gpuType === "apple_silicon" ||
 		/nvidia|geforce|quadro|rtx|gtx|radeon|rx |arc|apple m[2-9]|apple gpu/i.test(
 			renderer,
 		);
-	if (discreteHint && memory >= 16 && cores >= 8 && max3d >= 2048)
+	if (
+		discreteHint &&
+		(client.hardwareTier === "ultra" ||
+			(memory >= 16 && cores >= 8 && max3d >= 2048))
+	)
 		return "diagnostic";
 	if (
 		(discreteHint && max3d >= 1024) ||
@@ -249,6 +261,7 @@ export function detectGpuClass(
 	if (memory >= 6 && cores >= 4 && max3d >= 512) return "integrated_ok";
 	return "integrated_low";
 }
+
 
 export function policyRatio(
 	value: number | null | undefined,

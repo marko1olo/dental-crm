@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DENTE CT — Интерактивный Атлас Интерполяции 512x512</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #070a13;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 16px;
+    }
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 900px;
+      padding: 12px 20px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .header-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid rgba(45, 212, 191, 0.35);
+      color: #2dd4bf;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+    }
+    .main-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      width: 900px;
+    }
+    /* 512x512 Screen Box */
+    .viewport-box {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #334155;
+      background: #000;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      flex-shrink: 0;
+    }
+    #main-canvas {
+      width: 512px;
+      height: 512px;
+      display: block;
+      image-rendering: pixelated;
+    }
+    /* Control Panel */
+    .controls-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .chip-btn {
+      padding: 6px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .chip-btn:hover {
+      background: #334155;
+      color: #ffffff;
+      border-color: #475569;
+    }
+    .chip-btn.active {
+      background: #0d9488;
+      border-color: #14b8a6;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(20, 184, 166, 0.4);
+    }
+    .method-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 7px 12px;
+      background: #131d31;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .method-btn:hover {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-color: #334155;
+    }
+    .method-btn.active {
+      background: rgba(13, 148, 136, 0.25);
+      border-color: #14b8a6;
+      color: #2dd4bf;
+      box-shadow: inset 0 0 8px rgba(20, 184, 166, 0.2);
+    }
+    .method-btn-badge {
+      font-size: 9px;
+      font-family: ui-monospace, monospace;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.3);
+    }
+
+    /* OSD Overlays inside 512x512 Viewport */
+    .hud-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      padding: 6px 12px 5px;
+      background: linear-gradient(180deg, rgba(6, 11, 22, 0.96) 0%, rgba(6, 11, 22, 0.85) 80%, rgba(6, 11, 22, 0) 100%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 10;
+    }
+    .hud-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 512px;
+      padding: 6px 12px 8px;
+      background: linear-gradient(0deg, rgba(6, 11, 22, 0.97) 0%, rgba(6, 11, 22, 0.90) 80%, rgba(6, 11, 22, 0) 100%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      z-index: 10;
+    }
+    .hud-formula {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hud-verdict {
+      font-size: 9.5px;
+      color: #cbd5e1;
+      line-height: 1.32;
+    }
+    .hud-verdict strong { color: #2dd4bf; }
+    
+    /* 4-in-1 Composite Grid lines */
+    #comp-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      z-index: 5;
+    }
+    .comp-v { position: absolute; top:0; bottom:0; left:256px; width:2px; background:rgba(56,189,248,0.5); }
+    .comp-h { position: absolute; left:0; right:0; top:256px; height:2px; background:rgba(56,189,248,0.5); }
+    .comp-lbl {
+      position: absolute;
+      padding: 2px 5px;
+      font-size: 7.5px;
+      font-weight: 800;
+      font-family: ui-monospace, monospace;
+      background: rgba(10,18,32,0.92);
+      border: 1px solid rgba(56,189,248,0.4);
+      color: #7dd3fc;
+      border-radius: 4px;
+      z-index: 6;
+    }
+    #cl-1 { top: 38px; left: 6px; }
+    #cl-2 { top: 38px; right: 6px; }
+    #cl-3 { top: 260px; left: 6px; }
+    #cl-4 { top: 260px; right: 6px; }
+
+    .zoom-badge {
+      position: absolute;
+      bottom: 60px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      color: #38bdf8;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-family: ui-monospace, monospace;
+      z-index: 7;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <div class="header-title">
+      <span>DENTE CT — Интерактивный Атлас 2D-Интерполяции</span>
+      <span class="header-badge">СТРОГО 512×512 PX</span>
+    </div>
+    <div style="font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace;">
+      Томограф: Захаров И.Д. • 16-bit DICOM • 0.25 мм воксель
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Viewport 512x512 -->
+    <div class="viewport-box">
+      <canvas id="main-canvas" width="512" height="512"></canvas>
+
+      <div id="comp-grid">
+        <div class="comp-v"></div>
+        <div class="comp-h"></div>
+        <div class="comp-lbl" id="cl-1">L1: КОРОНКИ (Z=150)</div>
+        <div class="comp-lbl" id="cl-2">L2: ПУЛЬПА (Z=160)</div>
+        <div class="comp-lbl" id="cl-3">L3: КАНАЛЫ (Z=175)</div>
+        <div class="comp-lbl" id="cl-4">L5: КОСТЬ (Z=210)</div>
+      </div>
+
+      <div class="zoom-badge" id="zoom-badge">ZOOM: 1.0x (Вся челюсть)</div>
+
+      <div class="hud-top">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11.5px; font-weight:800; color:#fff;" id="hud-title">04. BICUBIC CATMULL-ROM</span>
+          <span style="font-size:8.5px; font-weight:700; color:#2dd4bf; background:rgba(13,148,136,0.3); border:1px solid rgba(45,212,191,0.45); padding:1px 6px; border-radius:4px;" id="hud-badge">16 ТОЧЕК • ЭТАЛОН КТ</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:9px; color:#94a3b8; font-family:ui-monospace, monospace;">
+          <span id="hud-kernel">Ядро: 4×4 • C¹</span>
+          <span style="color:#38bdf8; font-weight:700;" id="hud-level">L2: Пульпарная камера (Z=160)</span>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="hud-formula" id="hud-formula">W(x) = 1.5|x|³ - 2.5|x|² + 1 (|x|≤1); -0.5|x|³ + 2.5|x|² - 4|x| + 2 (1&lt;|x|&lt;2)</div>
+        <div class="hud-verdict" id="hud-verdict">
+          <strong>Что и как:</strong> Золотой стандарт КТ. Строго интерполирует узлы, сохраняет кривизну корней и контраст кортикальной пластинки без замыливания.
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:8.5px; font-family:ui-monospace, monospace; color:#64748b; margin-top:1px;">
+          <span>КЛКТ: Захаров И.Д. • 16-bit HU</span>
+          <span style="color:#38bdf8; font-weight:700;">РАЗРЕШЕНИЕ: 512×512 PX</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-panel">
+      <!-- Анатомический уровень -->
+      <div>
+        <div class="section-title">Анатомический уровень среза</div>
+        <div class="btn-row">
+          <button class="chip-btn" data-level="L1_crowns">L1 Коронки</button>
+          <button class="chip-btn active" data-level="L2_pulp">L2 Пульпа</button>
+          <button class="chip-btn" data-level="L3_canals">L3 Каналы</button>
+          <button class="chip-btn" data-level="L4_apices">L4 Апексы</button>
+          <button class="chip-btn" data-level="L5_bone">L5 Кость</button>
+          <button class="chip-btn" data-level="COMPOSITE" style="border-color:#14b8a6; color:#2dd4bf;">🌟 Сводный 4-в-1</button>
+        </div>
+      </div>
+
+      <!-- Зум -->
+      <div>
+        <div class="section-title">Масштаб (Зум)</div>
+        <div class="btn-row">
+          <button class="chip-btn active" data-zoom="overview">Вся челюсть (1.0x)</button>
+          <button class="chip-btn" data-zoom="macro">Макро-зум на моляры и каналы (2.2x)</button>
+        </div>
+      </div>
+
+      <!-- 10 Методов интерполяции -->
+      <div>
+        <div class="section-title">Методы интерполяции (10 алгоритмов)</div>
+        <div class="btn-group" id="methods-container">
+          <!-- Генерируются JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function sinc(x) {
+      if (x === 0) return 1.0;
+      const px = Math.PI * x;
+      return Math.sin(px) / px;
+    }
+
+    const METHODS_CONFIG = {
+      "01_nearest": {
+        title: "01. NEAREST NEIGHBOR",
+        name: "Ближайший сосед (0-й порядок)",
+        badge: "1 ТОЧКА • O(1)",
+        kernel: "Ядро: 1×1 • C⁻¹ (Ступени)",
+        formula: "W(x) = 1 (|x| < 0.5); 0 (иначе)",
+        compositeSummary: "Квантованное значение вокселя. 0 размытия, ступенчатые блочные пиксели. Сохраняет истинные HU, но ломает округлость каналов.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> 0 блюра на эмали. Блочные ступеньки на фиссурах искажают окклюзионные контакты.",
+          "L2_pulp": "<strong>Что и как:</strong> Резкий скачок пульпа/дентин без полутонов. Контур пульпы ступенчатый.",
+          "L3_canals": "<strong>Что и как:</strong> Просветы каналов пикселизированы. Ступенчатый артефакт имитирует микротрещину.",
+          "L4_apices": "<strong>Что и как:</strong> Периодонтальная щель имеет ступенчатый пунктирный контур.",
+          "L5_bone": "<strong>Что и как:</strong> Костные трабекулы выглядят мозаичными кубиками. Истинные HU сохранены."
+        }
+      },
+      "02_bilinear": {
+        title: "02. BILINEAR",
+        name: "Билинейная интерполяция (GPU дефолт)",
+        badge: "4 ТОЧКИ • GPU ДЕФОЛТ",
+        kernel: "Ядро: 2×2 • C⁰ (Непрерывный)",
+        formula: "W(x) = 1 - |x| (|x| < 1); 0 (иначе)",
+        compositeSummary: "Аппаратный стандарт GPU. Сглаживает пикселизацию линейным размытием. Снижает контраст микроструктур.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Мягкий контур эмали. Потеря пиковой плотности на кромках эмалевых бугров.",
+          "L2_pulp": "<strong>Что и как:</strong> Граница пульпарной камеры слегка размыта. Дентикли теряют резкость.",
+          "L3_canals": "<strong>Что и как:</strong> Устье MB2 может казаться уже из-за размытия светлого дентина внутрь просвета.",
+          "L4_apices": "<strong>Что и как:</strong> Lamina Dura сглажена, периодонтальная щель теряет бритвенную контрастность.",
+          "L5_bone": "<strong>Что и как:</strong> Трабекулы кости мягкие, тонкие костные балки теряют микрорельеф."
+        }
+      },
+      "03_hermite": {
+        title: "03. BICUBIC HERMITE",
+        name: "Кубический Эрмитов сплайн",
+        badge: "4 ТОЧКИ • C¹ ГЛАДКИЙ",
+        kernel: "Ядро: 2×2 • C¹ (Нулевые производные)",
+        formula: "W(x) = 2|x|³ - 3|x|² + 1 (|x| ≤ 1); 0 (иначе)",
+        compositeSummary: "Кубический сплайн с непрерывной первой производной. Устраняет угловатость билинейного фильтра.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Плавные светотени на эмали без изломов градиента.",
+          "L2_pulp": "<strong>Что и как:</strong> Градиент плотности «пульпа-дентин» гладкий и непрерывный.",
+          "L3_canals": "<strong>Что и как:</strong> Округлая форма каналов отображается анатомически точно.",
+          "L4_apices": "<strong>Что и как:</strong> Мягкий перепад апекс-периодонт для позиционирования верхушек.",
+          "L5_bone": "<strong>Что и как:</strong> Приятная гладкость костной ткани, мягкие переходы между трабекулами."
+        }
+      },
+      "04_catmull_rom": {
+        title: "04. BICUBIC CATMULL-ROM",
+        name: "Кардинальный сплайн (Эталон КТ)",
+        badge: "16 ТОЧЕК • ЭТАЛОН КТ",
+        kernel: "Ядро: 4×4 • C¹ (Интерполяционный)",
+        formula: "W(x) = 1.5|x|³ - 2.5|x|² + 1 (|x|≤1); -0.5|x|³ + 2.5|x|² - 4|x| + 2 (1<|x|<2)",
+        compositeSummary: "Золотой стандарт дентальной томографии. Строго проходит через узлы, сохраняет кривизну корней и контраст Lamina Dura.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Бритвенный контур эмали (+2800 HU) без потери высоты бугров.",
+          "L2_pulp": "<strong>Что и как:</strong> Высочайшая четкость границ пульпарной камеры. Дентикли четко видны.",
+          "L3_canals": "<strong>Что и как:</strong> Каналы MB1, MB2 и дистальный четко разделены без сужения.",
+          "L4_apices": "<strong>Что и как:</strong> Lamina Dura тонкая и непрерывная. Эталон для эндодонтии.",
+          "L5_bone": "<strong>Что и как:</strong> Четкая архитектоника трабекул без паразитного размытия."
+        }
+      },
+      "05_b_spline": {
+        title: "05. BICUBIC B-SPLINE",
+        name: "B-Сплайн (Подавление шума детектора)",
+        badge: "16 ТОЧЕК • C² ГЛАДКИЙ",
+        kernel: "Ядро: 4×4 • C² (Дважды гладкий)",
+        formula: "W(x) = (3|x|³ - 6|x|² + 4)/6 (|x|≤1); (-|x|³ + 6|x|² - 12|x| + 8)/6 (1<|x|<2)",
+        compositeSummary: "Аппроксимирующий C²-сплайн. Мощно гасит шум трубки и детектора КТ в кости и мягких тканях.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Сглаживает артефакты от металлических коронок.",
+          "L2_pulp": "<strong>Что и как:</strong> Мягкое поле внутри пульпы без зернистости шума.",
+          "L3_canals": "<strong>Что и как:</strong> Подавляет шум внутри просвета широких каналов.",
+          "L4_apices": "<strong>Что и как:</strong> Отлично визуализирует деструктивные очаги при периодонтите.",
+          "L5_bone": "<strong>Что и как:</strong> Максимальное подавление шума в губчатой кости перед имплантацией."
+        }
+      },
+      "06_mitchell_netravali": {
+        title: "06. MITCHELL-NETRAVALI",
+        name: "Mitchell-Netravali (B=1/3, C=1/3)",
+        badge: "16 ТОЧЕК • SIGGRAPH",
+        kernel: "Ядро: 4×4 • C¹ (Минимум артефактов)",
+        formula: "W(x) = (21|x|³ - 36|x|² + 16)/18 (|x|≤1); (-7|x|³ + 36|x|² - 60|x| + 32)/18 (1<|x|<2)",
+        compositeSummary: "Оптимальный баланс: минимизирует одновременно блюр, звон Гиббса и анизотропию. Превосходен для зубов с пломбами.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Резкие коронки без темных ореолов вокруг реставраций.",
+          "L2_pulp": "<strong>Что и как:</strong> Четкая пульпарная камера без перерегулирования на границе с дентином.",
+          "L3_canals": "<strong>Что и как:</strong> Просветы каналов контрастны, стенки не раздуваются ложным звоном.",
+          "L4_apices": "<strong>Что и как:</strong> Периодонтальная щель сохраняет естественную толщину ~0.2 мм.",
+          "L5_bone": "<strong>Что и как:</strong> Естественная текстура кости: трабекулы резки, шум не акцентируется."
+        }
+      },
+      "07_lanczos2": {
+        title: "07. LANCZOS-2",
+        name: "Оконный Sinc (радиус 2)",
+        badge: "16 ТОЧЕК • SINC ОКОННЫЙ",
+        kernel: "Ядро: 4×4 • C∞ (Спектральный)",
+        formula: "L₂(x) = sinc(x) · sinc(x / 2) (|x| < 2); 0 (иначе)",
+        compositeSummary: "Фильтр Найквиста-Шеннона: высокая спектральная резкость каналов MB1, MB2 и периодонтальной щели.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Высокая микрорезкость эмалевых призм.",
+          "L2_pulp": "<strong>Что и как:</strong> Четко очерчены мельчайшие кальцификаты в пульпе.",
+          "L3_canals": "<strong>Что и как:</strong> Отличная дифференциация узкого канала MB2 от окружающего дентина.",
+          "L4_apices": "<strong>Что и как:</strong> Lamina Dura выглядит контрастной белой полосой.",
+          "L5_bone": "<strong>Что и как:</strong> Тонкие костные перемычки максимально контрастны."
+        }
+      },
+      "08_lanczos3": {
+        title: "08. LANCZOS-3",
+        name: "Оконный Sinc (радиус 3, ультра-резкость)",
+        badge: "36 ТОЧЕК • МАКСИМАЛЬНАЯ РЕЗКОСТЬ",
+        kernel: "Ядро: 6×6 • C∞ (Спектральный идеал)",
+        formula: "L₃(x) = sinc(x) · sinc(x / 3) (|x| < 3); 0 (иначе)",
+        compositeSummary: "36-точечное sinc-ядро. Экстремальная резкость: поиск продольных переломов корня и ультратонких каналов.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Экстремально резкие фиссуры. Видны микротрещины эмали.",
+          "L2_pulp": "<strong>Что и как:</strong> Высочайшая детализация анатомии пульпы.",
+          "L3_canals": "<strong>Что и как:</strong> Визуализация апикальной дельты и облитерированных каналов.",
+          "L4_apices": "<strong>Что и как:</strong> Верхушки корней очерчены с предельной четкостью.",
+          "L5_bone": "<strong>Что и как:</strong> Трабекулы кости бритвенно-четкие."
+        }
+      },
+      "09_laplacian_sharpen": {
+        title: "09. LAPLACIAN SHARPEN",
+        name: "Edge-Boost Скальпель (Оператор ∇²)",
+        badge: "EDGE-BOOST • ∇² ОПЕРАТОР",
+        kernel: "Ядро: Catmull-Rom + ∇²",
+        formula: "V_sharp = V_base - 0.45 · ∇²V; ∇²V = ∑ V_соседи - 4V_C",
+        compositeSummary: "Контурный усилитель резкости. Экстремально подчеркивает анатомические границы (эмаль, кортикальная пластинка).",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Контур эмали выделен как скальпелем.",
+          "L2_pulp": "<strong>Что и как:</strong> Граница «дентин-пульпа» контрастно усилена.",
+          "L3_canals": "<strong>Что и как:</strong> Стенки корневых каналов усилены локальным градиентом.",
+          "L4_apices": "<strong>Что и как:</strong> Кортикальная пластинка альвеолы усилена.",
+          "L5_bone": "<strong>Что и как:</strong> Высокая резкость трабекулярной сети."
+        }
+      },
+      "10_bilateral_edge_preserving": {
+        title: "10. BILATERAL EDGE-PRESERVING",
+        name: "Адаптивный Bilateral (Сохранение краев)",
+        badge: "АДАПТИВНЫЙ • СОХРАНЯЕТ КРАЯ",
+        kernel: "Ядро: 3×3 • Нелинейный",
+        formula: "W(i,j) = exp(-d_s² / 2σ_s²) · exp(-(HU - HU_center)² / 2σ_r²)",
+        compositeSummary: "Умный фильтр: подавляет шум внутри однородных тканей (дентин, костный мозг), сохраняя 100% резкость краев.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Внутри эмали шум сглажен, наружная граница эмаль-воздух бритвенно-резкая.",
+          "L2_pulp": "<strong>Что и как:</strong> Чистое однородное поле внутри пульпы и дентина.",
+          "L3_canals": "<strong>Что и как:</strong> Шум внутри просвета канала устранен, стенки не размыты.",
+          "L4_apices": "<strong>Что и как:</strong> Периодонтальная щель не зашумлена, кортикальная пластинка сплошная.",
+          "L5_bone": "<strong>Что и как:</strong> Подавляет зернистость в костномозговых пространствах."
+        }
+      }
+    };
+
+    const LEVELS_CONFIG = {
+      "L1_crowns": { z: 150, title: "L1: Коронки и эмалевые шапки (Z=150)" },
+      "L2_pulp": { z: 160, title: "L2: Пульпарная камера и шейки (Z=160)" },
+      "L3_canals": { z: 175, title: "L3: Корневые каналы и бифуркация (Z=175)" },
+      "L4_apices": { z: 190, title: "L4: Апексы и периодонтальная щель (Z=190)" },
+      "L5_bone": { z: 210, title: "L5: Губчатая кость и трабекулы (Z=210)" }
+    };
+
+    let activeMethod = "04_catmull_rom";
+    let activeLevel = "L2_pulp";
+    let activeZoom = "overview"; // "overview" or "macro"
+
+    const volumesCache = {};
+
+    function huToGrey(hu, ww = 3200, wl = 500) {
+      const min = wl - ww / 2;
+      const max = wl + ww / 2;
+      const c = Math.max(min, Math.min(max, hu));
+      return Math.round(((c - min) / ww) * 255);
+    }
+
+    async function loadAllVolumes() {
+      const zValues = [150, 160, 175, 190, 210];
+      await Promise.all(zValues.map(async (z) => {
+        const res = await fetch(`/api/cbct-tuner/slice?id=zakharov&z=${z}`);
+        const buf = await res.arrayBuffer();
+        volumesCache[z] = {
+          data: new Int16Array(buf),
+          dimX: Number(res.headers.get("x-cbct-dim-x")) || 600,
+          dimY: Number(res.headers.get("x-cbct-dim-y")) || 600,
+        };
+      }));
+    }
+
+    function sampleMethodHu(methodId, rawData, dimX, dimY, gxF, gyF) {
+      const gx0 = Math.floor(gxF);
+      const gy0 = Math.floor(gyF);
+      const fx = gxF - gx0;
+      const fy = gyF - gy0;
+
+      const getVoxel = (x, y) => {
+        const cx = Math.max(0, Math.min(dimX - 1, Math.round(x)));
+        const cy = Math.max(0, Math.min(dimY - 1, Math.round(y)));
+        return rawData[cy * dimX + cx] ?? 0;
+      };
+
+      if (methodId === "01_nearest") return getVoxel(Math.round(gxF), Math.round(gyF));
+      if (methodId === "02_bilinear") {
+        const v00 = getVoxel(gx0, gy0), v10 = getVoxel(gx0 + 1, gy0);
+        const v01 = getVoxel(gx0, gy0 + 1), v11 = getVoxel(gx0 + 1, gy0 + 1);
+        return (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
+      }
+      if (methodId === "03_hermite") {
+        const h00 = 2 * fx * fx * fx - 3 * fx * fx + 1, h10 = -2 * fx * fx * fx + 3 * fx * fx;
+        const hy0 = 2 * fy * fy * fy - 3 * fy * fy + 1, hy1 = -2 * fy * fy * fy + 3 * fy * fy;
+        const v00 = getVoxel(gx0, gy0), v10 = getVoxel(gx0 + 1, gy0);
+        const v01 = getVoxel(gx0, gy0 + 1), v11 = getVoxel(gx0 + 1, gy0 + 1);
+        return (v00 * h00 + v10 * h10) * hy0 + (v01 * h00 + v11 * h10) * hy1;
+      }
+      if (methodId === "04_catmull_rom") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          let wy = ay <= 1 ? 1.5 * ay*ay*ay - 2.5 * ay*ay + 1 : (ay < 2 ? -0.5 * ay*ay*ay + 2.5 * ay*ay - 4 * ay + 2 : 0);
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            let wx = ax <= 1 ? 1.5 * ax*ax*ax - 2.5 * ax*ax + 1 : (ax < 2 ? -0.5 * ax*ax*ax + 2.5 * ax*ax - 4 * ax + 2 : 0);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "05_b_spline") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          let wy = ay <= 1 ? (3 * ay*ay*ay - 6 * ay*ay + 4) / 6 : (ay < 2 ? (-ay*ay*ay + 6 * ay*ay - 12 * ay + 8) / 6 : 0);
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            let wx = ax <= 1 ? (3 * ax*ax*ax - 6 * ax*ax + 4) / 6 : (ax < 2 ? (-ax*ax*ax + 6 * ax*ax - 12 * ax + 8) / 6 : 0);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "06_mitchell_netravali") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          let wy = ay <= 1 ? (21 * ay*ay*ay - 36 * ay*ay + 16) / 18 : (ay < 2 ? (-7 * ay*ay*ay + 36 * ay*ay - 60 * ay + 32) / 18 : 0);
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            let wx = ax <= 1 ? (21 * ax*ax*ax - 36 * ax*ax + 16) / 18 : (ax < 2 ? (-7 * ax*ax*ax + 36 * ax*ax - 60 * ax + 32) / 18 : 0);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "07_lanczos2") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          if (ay >= 2) continue;
+          const wy = sinc(ay) * sinc(ay / 2);
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            if (ax >= 2) continue;
+            const wx = sinc(ax) * sinc(ax / 2);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "08_lanczos3") {
+        let sum = 0, wSum = 0;
+        for (let j = -2; j <= 3; j++) {
+          const ay = Math.abs(fy - j);
+          if (ay >= 3) continue;
+          const wy = sinc(ay) * sinc(ay / 3);
+          for (let i = -2; i <= 3; i++) {
+            const ax = Math.abs(fx - i);
+            if (ax >= 3) continue;
+            const wx = sinc(ax) * sinc(ax / 3);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "09_laplacian_sharpen") {
+        const center = getVoxel(gx0, gy0);
+        const north = getVoxel(gx0, gy0 - 1), south = getVoxel(gx0, gy0 + 1);
+        const west = getVoxel(gx0 - 1, gy0), east = getVoxel(gx0 + 1, gy0);
+        const laplacian = north + south + west + east - 4 * center;
+        const v00 = getVoxel(gx0, gy0), v10 = getVoxel(gx0 + 1, gy0);
+        const v01 = getVoxel(gx0, gy0 + 1), v11 = getVoxel(gx0 + 1, gy0 + 1);
+        const base = (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
+        return base - 0.45 * laplacian;
+      }
+      if (methodId === "10_bilateral_edge_preserving") {
+        const center = getVoxel(gx0, gy0);
+        const sigmaS = 1.2, sigmaR = 250.0;
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 1; j++) {
+          for (let i = -1; i <= 1; i++) {
+            const val = getVoxel(gx0 + i, gy0 + j);
+            const distS = (fx - i)*(fx - i) + (fy - j)*(fy - j);
+            const distR = (val - center)*(val - center);
+            const w = Math.exp(-distS / (2 * sigmaS * sigmaS)) * Math.exp(-distR / (2 * sigmaR * sigmaR));
+            sum += val * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : center;
+      }
+      return getVoxel(gx0, gy0);
+    }
+
+    function render() {
+      const mCfg = METHODS_CONFIG[activeMethod];
+      document.getElementById("hud-title").innerText = mCfg.title;
+      document.getElementById("hud-badge").innerText = mCfg.badge;
+      document.getElementById("hud-kernel").innerText = mCfg.kernel;
+      document.getElementById("hud-formula").innerText = mCfg.formula;
+
+      const cv = document.getElementById("main-canvas");
+      const ctx = cv.getContext("2d");
+      const imgData = ctx.createImageData(512, 512);
+      const d = imgData.data;
+
+      // Определение координат кропа
+      let srcW = 280, srcH = 280, startX = 300 - 140, startY = 240 - 140;
+      if (activeZoom === "macro") {
+        // Фокус на зубы: центр (300, 130), окно 130x130 вокселей (эмаль, дентин, пульповая полость)
+        srcW = 130;
+        srcH = 130;
+        startX = 300 - srcW / 2;
+        startY = 130 - srcH / 2;
+        document.getElementById("zoom-badge").innerText = "ZOOM: 2.2x (Зубы и каналы крупно)";
+      } else {
+        document.getElementById("zoom-badge").innerText = "ZOOM: 1.0x (Вся челюсть)";
+      }
+
+      if (activeLevel === "COMPOSITE") {
+        document.getElementById("comp-grid").style.display = "block";
+        document.getElementById("hud-level").innerText = "4 КВАДРАНТА: L1•L2•L3•L5";
+        document.getElementById("hud-verdict").innerHTML = "<strong>Сводный клинический вердикт:</strong> " + mCfg.compositeSummary;
+
+        const quads = [
+          { qx: 0, qy: 0, vol: volumesCache[150] },
+          { qx: 1, qy: 0, vol: volumesCache[160] },
+          { qx: 0, qy: 1, vol: volumesCache[175] },
+          { qx: 1, qy: 1, vol: volumesCache[210] }
+        ];
+
+        for (let py = 0; py < 512; py++) {
+          const qy = py < 256 ? 0 : 1;
+          const localPy = py % 256;
+          const gyF = startY + (localPy / 255) * (srcH - 1);
+          for (let px = 0; px < 512; px++) {
+            const qx = px < 256 ? 0 : 1;
+            const localPx = px % 256;
+            const gxF = startX + (localPx / 255) * (srcW - 1);
+            const vol = quads[qy * 2 + qx].vol;
+            const hu = sampleMethodHu(activeMethod, vol.data, vol.dimX, vol.dimY, gxF, gyF);
+            const gray = huToGrey(hu);
+            const idx = (py * 512 + px) * 4;
+            d[idx] = gray; d[idx+1] = gray; d[idx+2] = gray; d[idx+3] = 255;
+          }
+        }
+      } else {
+        document.getElementById("comp-grid").style.display = "none";
+        const lCfg = LEVELS_CONFIG[activeLevel];
+        document.getElementById("hud-level").innerText = lCfg.title;
+        document.getElementById("hud-verdict").innerHTML = mCfg.verdicts[activeLevel];
+
+        const vol = volumesCache[lCfg.z];
+        for (let py = 0; py < 512; py++) {
+          const gyF = startY + (py / 511) * (srcH - 1);
+          for (let px = 0; px < 512; px++) {
+            const gxF = startX + (px / 511) * (srcW - 1);
+            const hu = sampleMethodHu(activeMethod, vol.data, vol.dimX, vol.dimY, gxF, gyF);
+            const gray = huToGrey(hu);
+            const idx = (py * 512 + px) * 4;
+            d[idx] = gray; d[idx+1] = gray; d[idx+2] = gray; d[idx+3] = 255;
+          }
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    // Инициализация интерфейса
+    function initUI() {
+      const container = document.getElementById("methods-container");
+      container.innerHTML = "";
+      Object.keys(METHODS_CONFIG).forEach((id) => {
+        const m = METHODS_CONFIG[id];
+        const btn = document.createElement("button");
+        btn.className = `method-btn ${id === activeMethod ? "active" : ""}`;
+        btn.dataset.id = id;
+        btn.innerHTML = `<span>${m.name}</span><span class="method-btn-badge">${m.badge.split("•")[0].trim()}</span>`;
+        btn.onclick = () => {
+          activeMethod = id;
+          document.querySelectorAll(".method-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          render();
+        };
+        container.appendChild(btn);
+      });
+
+      document.querySelectorAll("[data-level]").forEach(b => {
+        b.onclick = () => {
+          activeLevel = b.dataset.level;
+          document.querySelectorAll("[data-level]").forEach(x => x.classList.remove("active"));
+          b.classList.add("active");
+          render();
+        };
+      });
+
+      document.querySelectorAll("[data-zoom]").forEach(b => {
+        b.onclick = () => {
+          activeZoom = b.dataset.zoom;
+          document.querySelectorAll("[data-zoom]").forEach(x => x.classList.remove("active"));
+          b.classList.add("active");
+          render();
+        };
+      });
+    }
+
+    loadAllVolumes().then(() => {
+      initUI();
+      render();
+    });
+  </script>
+</body>
+</html>

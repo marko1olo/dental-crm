@@ -8,10 +8,15 @@
 import React from "react";
 import { X } from "lucide-react";
 import type { ToothData, ToothState } from "./ToothChart";
-import { ToothRadialMenu } from "./ToothRadialMenu";
-import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
+import { ToothRadialMenu } from "./ToothRadialMenu";
 import { showToast } from "../GlobalToast";
+
+const ToothContextDrawer = React.lazy(() =>
+	import("../diagnostics/ToothContextDrawer").then((m) => ({
+		default: m.ToothContextDrawer,
+	})),
+);
 
 const CephalometricAnalysisModal = React.lazy(() =>
 	import("../radiology/CephalometricAnalysisModal").then((m) => ({
@@ -130,21 +135,23 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 
 			{/* Tier 2 Context Drawer for Selected Tooth */}
 			{contextDrawerTooth !== null && (
-				<ToothContextDrawer
-					isOpen={contextDrawerTooth !== null}
-					onClose={onCloseContextDrawer}
-					toothNumber={contextDrawerTooth}
-					toothData={teethData?.find((t) => t.toothNumber === contextDrawerTooth)}
-					onUpdateTooth={(num, updates) => {
-						if (updates.state) {
-							onUpdateToothContext?.(num, updates.state, updates.surfaces);
-							showToast(
-								`Зуб ${num}: состояние «${updates.state}» сохранено`,
-								"success",
-							);
-						}
-					}}
-				/>
+				<React.Suspense fallback={null}>
+					<ToothContextDrawer
+						isOpen={contextDrawerTooth !== null}
+						onClose={onCloseContextDrawer}
+						toothNumber={contextDrawerTooth}
+						toothData={teethData?.find((t) => t.toothNumber === contextDrawerTooth)}
+						onUpdateTooth={(num, updates) => {
+							if (updates.state) {
+								onUpdateToothContext?.(num, updates.state, updates.surfaces);
+								showToast(
+									`Зуб ${num}: состояние «${updates.state}» сохранено`,
+									"success",
+								);
+							}
+						}}
+					/>
+				</React.Suspense>
 			)}
 
 			{/* Tier 2 Endo Canal Measurement Drawer */}

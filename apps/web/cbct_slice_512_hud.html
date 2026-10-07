@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>512x512 DICOM Interpolation Card</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", sans-serif;
+      user-select: none;
+    }
+    #viewport {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background: #000;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: block;
+      image-rendering: pixelated;
+    }
+    /* OSD Top Header */
+    .osd-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      padding: 10px 14px 8px;
+      background: linear-gradient(180deg, rgba(7, 11, 20, 0.92) 0%, rgba(7, 11, 20, 0.75) 80%, rgba(7, 11, 20, 0) 100%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      z-index: 10;
+    }
+    .osd-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .osd-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .osd-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(45, 212, 191, 0.4);
+      background: rgba(13, 148, 136, 0.25);
+      color: #2dd4bf;
+    }
+    .osd-meta-row {
+      font-size: 10px;
+      color: #94a3b8;
+      display: flex;
+      gap: 12px;
+      font-family: ui-monospace, monospace;
+    }
+
+    /* OSD Bottom Footer */
+    .osd-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 512px;
+      padding: 10px 14px 10px;
+      background: linear-gradient(0deg, rgba(7, 11, 20, 0.95) 0%, rgba(7, 11, 20, 0.85) 75%, rgba(7, 11, 20, 0) 100%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 10;
+    }
+    .osd-formula {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .osd-verdict {
+      font-size: 10px;
+      color: #cbd5e1;
+      line-height: 1.35;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .osd-verdict strong {
+      color: #2dd4bf;
+    }
+    .osd-bottom-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      font-family: ui-monospace, monospace;
+      color: #64748b;
+      margin-top: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <canvas id="canvas" width="512" height="512"></canvas>
+
+    <div class="osd-header">
+      <div class="osd-title-row">
+        <span class="osd-title" id="osd-title">01. NEAREST NEIGHBOR</span>
+        <span class="osd-badge" id="osd-badge">1 ТОЧКА • O(1)</span>
+      </div>
+      <div class="osd-meta-row">
+        <span id="osd-kernel">Ядро: 1×1 (1 сосед)</span>
+        <span id="osd-smooth">Гладкость: C⁻¹</span>
+        <span id="osd-res">Матрица: 512×512</span>
+      </div>
+    </div>
+
+    <div class="osd-footer">
+      <div class="osd-formula" id="osd-formula">W(x) = 1 (|x|<0.5); 0 (иначе)</div>
+      <div class="osd-verdict" id="osd-verdict">
+        <strong>Что и как:</strong> 0 размытия, ступенчатая блочная сетка. Исходные HU без сглаживания.
+      </div>
+      <div class="osd-bottom-info">
+        <span>КЛКТ: Захаров И.Д. • Срез Z=160 • Воксель 0.25 мм</span>
+        <span>DENTE CT ENGINE • MANDATE 8E</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function sinc(x) {
+      if (x === 0) return 1.0;
+      const px = Math.PI * x;
+      return Math.sin(px) / px;
+    }
+
+    const METHODS_CONFIG = {
+      "01_nearest": {
+        title: "01. NEAREST NEIGHBOR (Ближайший сосед)",
+        badge: "1 ТОЧКА • O(1)",
+        kernel: "Ядро: 1×1 (1 точка)",
+        smooth: "Гладкость: C⁻¹ (Ступени)",
+        formula: "W(x) = 1 (|x| < 0.5); 0 (иначе)",
+        verdict: "<strong>Что и как:</strong> Квантованное значение ближайшего вокселя. 0 размытия, резкие ступенчатые пиксели. Сохраняет исходные HU, но искажает форму корней."
+      },
+      "02_bilinear": {
+        title: "02. BILINEAR (Билинейная интерполяция)",
+        badge: "4 ТОЧКИ • GPU ДЕФОЛТ",
+        kernel: "Ядро: 2×2 (4 соседа)",
+        smooth: "Гладкость: C⁰ (Непрерывный)",
+        formula: "W(x) = 1 - |x| (|x| < 1); 0 (иначе)",
+        verdict: "<strong>Что и как:</strong> Взвешенное среднее по площади 4 вокселей. Аппаратный стандарт GPU. Убирает ступени, но размывает эмаль и микротрещины."
+      },
+      "03_hermite": {
+        title: "03. BICUBIC HERMITE (Эрмитов сплайн)",
+        badge: "4 ТОЧКИ • C¹ ГЛАДКИЙ",
+        kernel: "Ядро: 2×2 (4 соседа)",
+        smooth: "Гладкость: C¹ (Нулевые производные)",
+        formula: "W(x) = 2|x|³ - 3|x|² + 1 (|x| ≤ 1); 0 (иначе)",
+        verdict: "<strong>Что и как:</strong> Кубический эрмитов сплайн. Устраняет изломы градиента плотности, мягкий переход яркости в губчатой кости челюсти."
+      },
+      "04_catmull_rom": {
+        title: "04. BICUBIC CATMULL-ROM (Кардинальный сплайн)",
+        badge: "16 ТОЧЕК • ЭТАЛОН КТ",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C¹ (Интерполяционный)",
+        formula: "W(x) = 1.5|x|³ - 2.5|x|² + 1 (|x|≤1); -0.5|x|³ + 2.5|x|² - 4|x| + 2 (1<|x|<2)",
+        verdict: "<strong>Что и как:</strong> Золотой стандарт КТ. Строго проходит через опорные точки. Сохраняет кривизну корней и кортикальной пластинки без замыливания."
+      },
+      "05_b_spline": {
+        title: "05. BICUBIC B-SPLINE (Анти-шум детектора)",
+        badge: "16 ТОЧЕК • C² ГЛАДКИЙ",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C² (Дважды гладкий)",
+        formula: "W(x) = (3|x|³ - 6|x|² + 4)/6 (|x|≤1); (-|x|³ + 6|x|² - 12|x| + 8)/6 (1<|x|<2)",
+        verdict: "<strong>Что и как:</strong> Аппроксимирующий B-сплайн. Подавляет квантовый шум детектора КТ в кости и мягких тканях. Слегка сглаживает вершины эмали."
+      },
+      "06_mitchell_netravali": {
+        title: "06. MITCHELL-NETRAVALI (B=1/3, C=1/3)",
+        badge: "16 ТОЧЕК • SIGGRAPH",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C¹ (Минимум артефактов)",
+        formula: "W(x) = (21|x|³ - 36|x|² + 16)/18 (|x|≤1); (-7|x|³ + 36|x|² - 60|x| + 32)/18 (1<|x|<2)",
+        verdict: "<strong>Что и как:</strong> Идеальный баланс: минимизирует одновременно блюр, звон Гиббса и анизотропию. Коронки резкие, вокруг металла нет паразитных ореолов."
+      },
+      "07_lanczos2": {
+        title: "07. LANCZOS-2 (Оконный Sinc, радиус 2)",
+        badge: "16 ТОЧЕК • SINC ОКОННЫЙ",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C∞ (Анти-алиасинг)",
+        formula: "L₂(x) = sinc(x) · sinc(x / 2) (|x| < 2); 0 (иначе)",
+        verdict: "<strong>Что и как:</strong> Аппроксимация фильтра Найквиста-Шеннона. Высокая спектральная резкость: каналы MB1, MB2 и периодонт максимально контрастны."
+      },
+      "08_lanczos3": {
+        title: "08. LANCZOS-3 (Оконный Sinc, радиус 3)",
+        badge: "36 ТОЧЕК • МАКСИМАЛЬНАЯ РЕЗКОСТЬ",
+        kernel: "Ядро: 6×6 (36 соседей)",
+        smooth: "Гладкость: C∞ (Спектральный идеал)",
+        formula: "L₃(x) = sinc(x) · sinc(x / 3) (|x| < 3); 0 (иначе)",
+        verdict: "<strong>Что и как:</strong> Высокочастотное ядро с 3 полупериодами sinc. Предельная детализация апикальной дельты и поиск продольных микротрещин корня."
+      },
+      "09_laplacian_sharpen": {
+        title: "09. LAPLACIAN SHARPEN (Edge-Boost скальпель)",
+        badge: "EDGE-BOOST • ∇² ОПЕРАТОР",
+        kernel: "Ядро: Catmull-Rom + ∇²",
+        smooth: "Гладкость: Контурный фильтр 2-го порядка",
+        formula: "V_sharp = V_base - 0.50 · ∇²V; ∇²V = V_up + V_down + V_left + V_right - 4V_c",
+        verdict: "<strong>Что и как:</strong> Контурный усилитель резкости. Максимально выделяет эмалево-дентинную границу и стенки каналов для навигации хирурга."
+      },
+      "10_bilateral_edge_preserving": {
+        title: "10. BILATERAL EDGE-PRESERVING (Адаптивный)",
+        badge: "АДАПТИВНЫЙ • СОХРАНЯЕТ КРАЯ",
+        kernel: "Ядро: 3×3 (σ_s=1.2, σ_r=250 HU)",
+        smooth: "Гладкость: Нелинейный радиометрический",
+        formula: "W(i,j) = exp(-d_spatial² / 2σ_s²) · exp(-(HU - HU_center)² / 2σ_r²)",
+        verdict: "<strong>Что и как:</strong> Подавляет шум внутри кости и дентина при 100% сохранении бритвенной резкости скачка плотности «кость-воздух» без ореолов."
+      }
+    };
+
+    function huToGrey(hu, ww = 3200, wl = 500) {
+      const min = wl - ww / 2;
+      const max = wl + ww / 2;
+      const c = Math.max(min, Math.min(max, hu));
+      return Math.round(((c - min) / ww) * 255);
+    }
+
+    let globalRawData = null;
+    let globalDimX = 600;
+    let globalDimY = 600;
+
+    async function loadVolume() {
+      const res = await fetch("/api/cbct-tuner/slice?id=zakharov&z=160");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      globalDimX = Number(res.headers.get("x-cbct-dim-x")) || 600;
+      globalDimY = Number(res.headers.get("x-cbct-dim-y")) || 600;
+      const buf = await res.arrayBuffer();
+      globalRawData = new Int16Array(buf);
+      console.log("Том успешно загружен, вокселей:", globalRawData.length);
+    }
+
+    // Рендерит заданный метод интерполяции ровно в 512x512
+    window.renderMethod = function(methodId) {
+      const cfg = METHODS_CONFIG[methodId];
+      if (!cfg) throw new Error("Unknown method: " + methodId);
+
+      document.getElementById("osd-title").innerText = cfg.title;
+      document.getElementById("osd-badge").innerText = cfg.badge;
+      document.getElementById("osd-kernel").innerText = cfg.kernel;
+      document.getElementById("osd-smooth").innerText = cfg.smooth;
+      document.getElementById("osd-formula").innerText = cfg.formula;
+      document.getElementById("osd-verdict").innerHTML = cfg.verdict;
+
+      const cv = document.getElementById("canvas");
+      const ctx = cv.getContext("2d");
+      const imgData = ctx.createImageData(512, 512);
+      const d = imgData.data;
+
+      // Кроп челюсти Захарова: центр (300, 270), размер 320x320 вокселей КТ томографа
+      const srcW = 320, srcH = 320;
+      const startX = 300 - srcW / 2;
+      const startY = 270 - srcH / 2;
+
+      const getVoxel = (x, y) => {
+        const cx = Math.max(0, Math.min(globalDimX - 1, Math.round(x)));
+        const cy = Math.max(0, Math.min(globalDimY - 1, Math.round(y)));
+        return globalRawData[cy * globalDimX + cx] ?? 0;
+      };
+
+      for (let py = 0; py < 512; py++) {
+        const gyF = startY + (py / 511) * (srcH - 1);
+        const gy0 = Math.floor(gyF);
+        const fy = gyF - gy0;
+
+        for (let px = 0; px < 512; px++) {
+          const gxF = startX + (px / 511) * (srcW - 1);
+          const gx0 = Math.floor(gxF);
+          const fx = gxF - gx0;
+
+          let hu = 0;
+
+          if (methodId === "01_nearest") {
+            hu = getVoxel(Math.round(gxF), Math.round(gyF));
+          } else if (methodId === "02_bilinear") {
+            const v00 = getVoxel(gx0, gy0);
+            const v10 = getVoxel(gx0 + 1, gy0);
+            const v01 = getVoxel(gx0, gy0 + 1);
+            const v11 = getVoxel(gx0 + 1, gy0 + 1);
+            const top = v00 * (1 - fx) + v10 * fx;
+            const btm = v01 * (1 - fx) + v11 * fx;
+            hu = top * (1 - fy) + btm * fy;
+          } else if (methodId === "03_hermite") {
+            const h00 = 2 * fx * fx * fx - 3 * fx * fx + 1;
+            const h10 = -2 * fx * fx * fx + 3 * fx * fx;
+            const v00 = getVoxel(gx0, gy0);
+            const v10 = getVoxel(gx0 + 1, gy0);
+            const v01 = getVoxel(gx0, gy0 + 1);
+            const v11 = getVoxel(gx0 + 1, gy0 + 1);
+            const top = v00 * h00 + v10 * h10;
+            const btm = v01 * h00 + v11 * h10;
+            const hy0 = 2 * fy * fy * fy - 3 * fy * fy + 1;
+            const hy1 = -2 * fy * fy * fy + 3 * fy * fy;
+            hu = top * hy0 + btm * hy1;
+          } else if (methodId === "04_catmull_rom") {
+            let sum = 0, wSum = 0;
+            for (let j = -1; j <= 2; j++) {
+              const wy = (function(y) {
+                const ay = Math.abs(y);
+                if (ay <= 1) return 1.5 * ay*ay*ay - 2.5 * ay*ay + 1;
+                if (ay < 2) return -0.5 * ay*ay*ay + 2.5 * ay*ay - 4 * ay + 2;
+                return 0;
+              })(fy - j);
+              for (let i = -1; i <= 2; i++) {
+                const wx = (function(x) {
+                  const ax = Math.abs(x);
+                  if (ax <= 1) return 1.5 * ax*ax*ax - 2.5 * ax*ax + 1;
+                  if (ax < 2) return -0.5 * ax*ax*ax + 2.5 * ax*ax - 4 * ax + 2;
+                  return 0;
+                })(fx - i);
+                const w = wx * wy;
+                sum += getVoxel(gx0 + i, gy0 + j) * w;
+                wSum += w;
+              }
+            }
+            hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+          } else if (methodId === "05_b_spline") {
+            let sum = 0, wSum = 0;
+            for (let j = -1; j <= 2; j++) {
+              const wy = (function(y) {
+                const ay = Math.abs(y);
+                if (ay <= 1) return (3 * ay*ay*ay - 6 * ay*ay + 4) / 6;
+                if (ay < 2) return (-ay*ay*ay + 6 * ay*ay - 12 * ay + 8) / 6;
+                return 0;
+              })(fy - j);
+              for (let i = -1; i <= 2; i++) {
+                const wx = (function(x) {
+                  const ax = Math.abs(x);
+                  if (ax <= 1) return (3 * ax*ax*ax - 6 * ax*ax + 4) / 6;
+                  if (ax < 2) return (-ax*ax*ax + 6 * ax*ax - 12 * ax + 8) / 6;
+                  return 0;
+                })(fx - i);
+                const w = wx * wy;
+                sum += getVoxel(gx0 + i, gy0 + j) * w;
+                wSum += w;
+              }
+            }
+            hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+          } else if (methodId === "06_mitchell_netravali") {
+            let sum = 0, wSum = 0;
+            for (let j = -1; j <= 2; j++) {
+              const wy = (function(y) {
+                const ay = Math.abs(y);
+                if (ay <= 1) return (21 * ay*ay*ay - 36 * ay*ay + 16) / 18;
+                if (ay < 2) return (-7 * ay*ay*ay + 36 * ay*ay - 60 * ay + 32) / 18;
+                return 0;
+              })(fy - j);
+              for (let i = -1; i <= 2; i++) {
+                const wx = (function(x) {
+                  const ax = Math.abs(x);
+                  if (ax <= 1) return (21 * ax*ax*ax - 36 * ax*ax + 16) / 18;
+                  if (ax < 2) return (-7 * ax*ax*ax + 36 * ax*ax - 60 * ax + 32) / 18;
+                  return 0;
+                })(fx - i);
+                const w = wx * wy;
+                sum += getVoxel(gx0 + i, gy0 + j) * w;
+                wSum += w;
+              }
+            }
+            hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+          } else if (methodId === "07_lanczos2") {
+            let sum = 0, wSum = 0;
+            for (let j = -1; j <= 2; j++) {
+              const wy = (function(y) {
+                const ay = Math.abs(y);
+                return ay < 2 ? sinc(ay) * sinc(ay / 2) : 0;
+              })(fy - j);
+              for (let i = -1; i <= 2; i++) {
+                const wx = (function(x) {
+                  const ax = Math.abs(x);
+                  return ax < 2 ? sinc(ax) * sinc(ax / 2) : 0;
+                })(fx - i);
+                const w = wx * wy;
+                sum += getVoxel(gx0 + i, gy0 + j) * w;
+                wSum += w;
+              }
+            }
+            hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+          } else if (methodId === "08_lanczos3") {
+            let sum = 0, wSum = 0;
+            for (let j = -2; j <= 3; j++) {
+              const wy = (function(y) {
+                const ay = Math.abs(y);
+                return ay < 3 ? sinc(ay) * sinc(ay / 3) : 0;
+              })(fy - j);
+              for (let i = -2; i <= 3; i++) {
+                const wx = (function(x) {
+                  const ax = Math.abs(x);
+                  return ax < 3 ? sinc(ax) * sinc(ax / 3) : 0;
+                })(fx - i);
+                const w = wx * wy;
+                sum += getVoxel(gx0 + i, gy0 + j) * w;
+                wSum += w;
+              }
+            }
+            hu = wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+          } else if (methodId === "09_laplacian_sharpen") {
+            const center = getVoxel(gx0, gy0);
+            const north = getVoxel(gx0, gy0 - 1);
+            const south = getVoxel(gx0, gy0 + 1);
+            const west = getVoxel(gx0 - 1, gy0);
+            const east = getVoxel(gx0 + 1, gy0);
+            const laplacian = north + south + west + east - 4 * center;
+
+            const v00 = getVoxel(gx0, gy0);
+            const v10 = getVoxel(gx0 + 1, gy0);
+            const v01 = getVoxel(gx0, gy0 + 1);
+            const v11 = getVoxel(gx0 + 1, gy0 + 1);
+            const base = (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
+            hu = base - 0.50 * laplacian;
+          } else if (methodId === "10_bilateral_edge_preserving") {
+            const center = getVoxel(gx0, gy0);
+            const sigmaS = 1.2;
+            const sigmaR = 250.0;
+            let sum = 0, wSum = 0;
+
+            for (let j = -1; j <= 1; j++) {
+              for (let i = -1; i <= 1; i++) {
+                const val = getVoxel(gx0 + i, gy0 + j);
+                const distS = (fx - i) * (fx - i) + (fy - j) * (fy - j);
+                const distR = (val - center) * (val - center);
+                const w = Math.exp(-distS / (2 * sigmaS * sigmaS)) * Math.exp(-distR / (2 * sigmaR * sigmaR));
+                sum += val * w;
+                wSum += w;
+              }
+            }
+            hu = wSum !== 0 ? sum / wSum : center;
+          }
+
+          const gray = huToGrey(hu);
+          const idx = (py * 512 + px) * 4;
+          d[idx] = gray;
+          d[idx + 1] = gray;
+          d[idx + 2] = gray;
+          d[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      return true;
+    };
+
+    window.initPromise = loadVolume();
+  </script>
+</body>
+</html>

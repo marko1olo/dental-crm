@@ -10,6 +10,7 @@ import type { FiscalModalTab, FiscalReceipt54FzModalProps } from "./fiscalModalT
 import { useFiscalItemsAndDiscounts } from "./useFiscalItemsAndDiscounts";
 import { useFiscalTenderAllocation } from "./useFiscalTenderAllocation";
 import { useFiscalRefundAndAuxTabs } from "./useFiscalRefundAndAuxTabs";
+import { enqueueOfflineReceipt } from "../../../../services/billing/offlineFiscalQueue";
 
 export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 	const {
@@ -176,6 +177,29 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 		inFlightRef.current = true;
 		lastClickTimeRef.current = now;
 		setIsFiscalizing(true);
+
+		const receiptToFiscalize =
+			activeTab === "payment"
+				? generateFiscalReceipt54Fz({
+						items: itemsHook.activeItems,
+						splitPayment: activeSplit,
+						patientId,
+						patientName,
+						customerContact: tenderHook.customerContact.trim() || patientPhone,
+						cashierFullName,
+						clinicLegalName: clinicName,
+						payerType: tenderHook.payerType,
+						buyerInn:
+							tenderHook.payerType === "legal_entity"
+								? tenderHook.buyerInn
+								: undefined,
+						buyerName:
+							tenderHook.payerType === "legal_entity"
+								? tenderHook.buyerLegalName
+								: undefined,
+					})
+				: auxHook.fiscalReceipt;
+
 		try {
 			const opText =
 				activeTab === "refund"
@@ -183,21 +207,6 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 					: activeTab === "correction"
 						? "Чек коррекции"
 						: "Чек";
-
-			const receiptToFiscalize = activeTab === "payment"
-				? generateFiscalReceipt54Fz({
-					items: itemsHook.activeItems,
-					splitPayment: activeSplit,
-					patientId,
-					patientName,
-					customerContact: tenderHook.customerContact.trim() || patientPhone,
-					cashierFullName,
-					clinicLegalName: clinicName,
-					payerType: tenderHook.payerType,
-					buyerInn: tenderHook.payerType === "legal_entity" ? tenderHook.buyerInn : undefined,
-					buyerName: tenderHook.payerType === "legal_entity" ? tenderHook.buyerLegalName : undefined,
-				})
-				: auxHook.fiscalReceipt;
 
 			// 54-ФЗ / ФФД 1.2 & Мандат 8e: 100% гарантийная скидка (0.00 ₽) — чек в ККТ не отправляется, формируется внутренний Акт гарантии
 			if (activeTab === "payment" && (receiptToFiscalize.totalRub <= 0 || receiptToFiscalize.isWarrantyZeroAct)) {
@@ -255,14 +264,35 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 			setInterruptedFiscalState(null);
 			setActiveTab("preview");
 		} catch (err: unknown) {
-			const errMsg = err instanceof Error ? err.message : "Ошибка связи с фискальным регистратором ККТ";
-			showToast(errMsg, "error");
+			const errMsg =
+				err instanceof Error
+					? err.message
+					: "Ошибка связи с фискальным регистратором ККТ";
+
+			void enqueueOfflineReceipt({
+				visitId: patientId,
+				payload: receiptToFiscalize,
+				lastError: errMsg,
+				idempotencyKey: `fiscal-modal-${receiptToFiscalize.receiptNumber || Date.now()}`,
+			});
+
+			showToast(
+				"Оплата зафиксирована, чек в очереди фискализации",
+				"info",
+				5000,
+			);
+
+			if (onReceiptFiscalized) {
+				onReceiptFiscalized(receiptToFiscalize.receiptNumber);
+			}
+
 			setInterruptedFiscalState({
 				isInterrupted: true,
-				reason: errMsg,
+				reason: `${errMsg}. Оплата зафиксирована, чек в очереди фискализации (автоповтор при появлении связи).`,
 				amountRub: itemsHook.totalSumRub,
 				lastReceiptNumber: auxHook.fiscalReceipt.receiptNumber,
 			});
+			setActiveTab("preview");
 		} finally {
 			setIsFiscalizing(false);
 			inFlightRef.current = false;
@@ -305,7 +335,17 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 
 			const printRes = await printThermalReceipt(printPayload);
 			if (printRes && !printRes.success) {
-				showToast(`Ошибка фискализации на ККТ: ${printRes.error || "Устройство недоступно"}`, "error");
+				void enqueueOfflineReceipt({
+					visitId: patientId,
+					payload: printPayload,
+					lastError: printRes.error || "Кассовое устройство недоступно",
+					idempotencyKey: `fiscal-retry-${Date.now()}`,
+				});
+				showToast(
+					"Оплата зафиксирована, чек в очереди фискализации",
+					"info",
+					5000,
+				);
 			} else {
 				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);
 				setInterruptedFiscalState(null);
@@ -316,7 +356,17 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 			}
 		} catch (err: unknown) {
 			const errMsg = err instanceof Error ? err.message : "Сбой повторной фискализации чека";
-			showToast(errMsg, "error");
+			void enqueueOfflineReceipt({
+				visitId: patientId,
+				payload: {
+					clinicName,
+					items: itemsHook.activeItems,
+					totalRub: itemsHook.totalSumRub,
+				},
+				lastError: errMsg,
+				idempotencyKey: `fiscal-retry-err-${Date.now()}`,
+			});
+			showToast("Оплата зафиксирована, чек в очереди фискализации", "info", 5000);
 		} finally {
 			setIsFiscalizing(false);
 		}

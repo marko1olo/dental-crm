@@ -298,15 +298,12 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 				{/* Toolbar: Category Filters, FDI Tooth Selector & Search */}
 				<div className="flex items-center justify-between gap-2.5 px-5 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#cbd5e1)] flex-wrap shrink-0">
 					{/* Category Tabs (Hick's Law) */}
-					<div className="flex items-center gap-1 overflow-x-auto min-w-0 py-0.5">
+					<div className="dente-filter-chips overflow-x-auto min-w-0 py-0.5">
 						<button
 							type="button"
 							onClick={() => setSelectedCategory("all")}
-							className={`h-8 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-								selectedCategory === "all"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
-							}`}
+							className={`dente-filter-chip ${selectedCategory === "all" ? "active" : ""}`}
+							data-active={selectedCategory === "all"}
 							data-testid="filter-cat-all"
 						>
 							Все пакеты ({CLINICAL_BUNDLES.length})
@@ -314,11 +311,8 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 						<button
 							type="button"
 							onClick={() => setSelectedCategory("therapy")}
-							className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-								selectedCategory === "therapy"
-									? "bg-emerald-600 text-white shadow-xs"
-									: "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
-							}`}
+							className={`dente-filter-chip ${selectedCategory === "therapy" ? "active" : ""}`}
+							data-active={selectedCategory === "therapy"}
 							data-testid="filter-cat-therapy"
 						>
 							Терапия ({CLINICAL_BUNDLES.filter((b) => b.category === "therapy").length})
@@ -326,11 +320,8 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 						<button
 							type="button"
 							onClick={() => setSelectedCategory("surgery")}
-							className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-								selectedCategory === "surgery"
-									? "bg-rose-600 text-white shadow-xs"
-									: "text-rose-700 dark:text-rose-400 hover:bg-rose-500/10"
-							}`}
+							className={`dente-filter-chip ${selectedCategory === "surgery" ? "active" : ""}`}
+							data-active={selectedCategory === "surgery"}
 							data-testid="filter-cat-surgery"
 						>
 							Хирургия ({CLINICAL_BUNDLES.filter((b) => b.category === "surgery").length})
@@ -338,11 +329,8 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 						<button
 							type="button"
 							onClick={() => setSelectedCategory("hygiene")}
-							className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-								selectedCategory === "hygiene"
-									? "bg-cyan-600 text-white shadow-xs"
-									: "text-cyan-700 dark:text-cyan-400 hover:bg-cyan-500/10"
-							}`}
+							className={`dente-filter-chip ${selectedCategory === "hygiene" ? "active" : ""}`}
+							data-active={selectedCategory === "hygiene"}
 							data-testid="filter-cat-hygiene"
 						>
 							Профгигиена ({CLINICAL_BUNDLES.filter((b) => b.category === "hygiene").length})
@@ -350,11 +338,8 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 						<button
 							type="button"
 							onClick={() => setSelectedCategory("orthopedics")}
-							className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-								selectedCategory === "orthopedics"
-									? "bg-purple-600 text-white shadow-xs"
-									: "text-purple-700 dark:text-purple-400 hover:bg-purple-500/10"
-							}`}
+							className={`dente-filter-chip ${selectedCategory === "orthopedics" ? "active" : ""}`}
+							data-active={selectedCategory === "orthopedics"}
 							data-testid="filter-cat-orthopedics"
 						>
 							Ортопедия ({CLINICAL_BUNDLES.filter((b) => b.category === "orthopedics").length})
@@ -384,22 +369,32 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 								onChange={handleCustomToothChange}
 								placeholder="FDI"
 								maxLength={2}
-								className="w-8 text-center font-mono font-bold text-xs bg-transparent text-[var(--teal,#0d9488)] outline-none border-l border-[var(--line,#cbd5e1)] pl-1"
+								className="w-8 text-center font-mono font-bold text-xs text-[var(--teal,#0d9488)] outline-none border-l border-[var(--line,#cbd5e1)] pl-1"
 								title="Ввести номер зуба вручную (11-85)"
 								data-testid="custom-tooth-input"
 							/>
 						</div>
 
-						<div className="relative flex items-center">
-							<Search size={14} className="absolute left-2.5 text-[var(--muted,#64748b)] pointer-events-none" />
+						<div className="dente-search-wrap" style={{ width: "200px" }}>
+							<Search size={14} className="dente-search-icon" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по коду или названию..."
-								className="h-8 w-36 sm:w-48 pl-8 pr-2.5 text-xs rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,#0d9488)] transition-all"
+								className="dente-search-input"
 								data-testid="bundles-search-input"
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="dente-search-clear"
+									aria-label="Очистить поиск"
+								>
+									<X size={13} />
+								</button>
+							)}
 						</div>
 					</div>
 				</div>
@@ -638,7 +633,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-8 px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-bold transition-colors cursor-pointer"
+						className="secondary-button"
 						data-testid="bundles-modal-bottom-close-btn"
 					>
 						Закрыть

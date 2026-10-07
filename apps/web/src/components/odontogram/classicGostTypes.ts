@@ -481,7 +481,7 @@ export function formatOdontogramTo043ProtocolText(
 		const topPed = UPPER_TEETH_PEDIATRIC.map(formatToothStr).join(" ");
 		const bottomPed = LOWER_TEETH_PEDIATRIC.map(formatToothStr).join(" ");
 		return [
-			"Зубная формула 043/у (Молочный прикус):",
+			"Зубная формула (молочный прикус):",
 			`Верх: ${topPed}`,
 			`Низ:  ${bottomPed}`,
 			`Индекс кпу = ${dmft.pediatricKpu.total} (к:${dmft.pediatricKpu.k}, п:${dmft.pediatricKpu.p}, у:${dmft.pediatricKpu.u})`,
@@ -494,7 +494,7 @@ export function formatOdontogramTo043ProtocolText(
 	const bottomQ3 = LOWER_TEETH_ADULT.slice(8, 16).map(formatToothStr).join(" ");
 
 	return [
-		"Зубная формула (Форма 043/у):",
+		"Зубная формула (постоянный прикус):",
 		`Верхняя челюсть: ${topQ1} | ${topQ2}`,
 		`Нижняя челюсть:  ${bottomQ4} | ${bottomQ3}`,
 		`Индекс КПУ = ${dmft.dmftTotal} (К:${dmft.decayed}, П:${dmft.filled}, У:${dmft.missing}) — ${dmft.severityLabel}`,

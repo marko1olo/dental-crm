@@ -94,7 +94,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 		onSelectPreset(preset, effectiveTooth);
 		const toothSuffix = effectiveTooth ? ` (Зуб ${effectiveTooth})` : "";
 		showToast(
-			`Применен 1-Click Smart-Bundle: «${preset.title}»${toothSuffix}`,
+			`Применен протокол: «${preset.title}»${toothSuffix}`,
 			"success",
 			3000,
 		);
@@ -162,7 +162,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							}
 						}}
 						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-						title="1-клик норма (Z01.2): соматически здоров, норма прикуса и пародонта (Мандат 8e / 8n)"
+						title="Норма (Z01.2): соматически здоров, норма прикуса и пародонта"
 						data-testid="btn-quick-apply-physio-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
@@ -180,7 +180,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							}
 						}}
 						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-cyan-700 hover:bg-cyan-600 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-						title="1-клик норма ортопедии (Z46.3): контрольный осмотр конструкций, окклюзия стабильна (Мандат 8e / 8n)"
+						title="Норма ортопедии (Z46.3): контрольный осмотр конструкций, окклюзия стабильна"
 						data-testid="btn-quick-apply-ortho-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
@@ -198,7 +198,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							}
 						}}
 						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-indigo-700 hover:bg-indigo-600 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-						title="1-клик норма хирургии (Z09.0): послеоперационный осмотр, заживление без осложнений (Мандат 8e / 8n)"
+						title="Норма хирургии (Z09.0): послеоперационный осмотр, заживление без осложнений"
 						data-testid="btn-quick-apply-surgery-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
@@ -402,7 +402,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 				</div>
 			</div>
 
-			{/* ── ТЕРАПИЯ И ЭНДОДОНТИЯ 1-КЛИК (БЕЗ СИМУЛЯТОРА: ПУЛЬПИТ / ОБТУРАЦИЯ / ПЕРИОДОНТИТ / КАРИЕС) ── */}
+			{/* ── ТЕРАПИЯ И ЭНДОДОНТИЯ (БЕЗ СИМУЛЯТОРА: ПУЛЬПИТ / ОБТУРАЦИЯ / ПЕРИОДОНТИТ / КАРИЕС) ── */}
 			<div
 				className="space-y-1.5 pt-1 border-t border-[var(--border)]"
 				data-testid="therapy-endo-quick-actions-section"
@@ -411,7 +411,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<div className="flex items-center gap-1.5">
 						<Stethoscope size={14} className="text-blue-500 shrink-0" />
 						<span>
-							Терапия и эндодонтия в 1 клик:
+							Терапия и эндодонтия:
 						</span>
 					</div>
 					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">
@@ -476,7 +476,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 						<span>Хирургические быстрые действия (Острая боль):</span>
 					</div>
 					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">
-						1 клик: сложное удаление / периостотомия
+						Сложное удаление / периостотомия
 					</span>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-2 gap-2">

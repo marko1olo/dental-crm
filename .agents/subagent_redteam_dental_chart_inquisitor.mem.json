@@ -1,24 +1,56 @@
 {
   "agent": "Red Team Инквизитор-Самоправщик №8: Аудитор интерактивной зубной формулы и одонтограммы (Dental Chart & Odontogram Inquisitor)",
-  "status": "INITIALIZING",
+  "status": "COMPLETED",
+  "completed_at": "2026-10-05T19:02:00+04:00",
   "completed_steps": [
-    "Full read of THE_HAMMER_MASTER_PROMPT.md",
-    "Full read of AGENTS.md",
-    "Created working memory file"
+    "Full read of THE_HAMMER_MASTER_PROMPT.md & AGENTS.md (Rule 0 / Anti-skimming invariant)",
+    "Reconnaissance of dental chart components: OdontogramViewContainer, AnatomicalSvgOdontogram, ToothChart, ClassicGostOdontogram, ToothRadialMenu, ToothStandardGraphic",
+    "Verified live stack: PostgreSQL 18.4 (127.0.0.1:5432), Fastify API (127.0.0.1:4100), React Vite (127.0.0.1:5173). Eradicated dev_api_stub hijacking port 4100",
+    "Fixed auth role bug in apps/api/src/routes/auth.ts to ensure doctor login receives clinical permissions for 152-ФЗ / 323-ФЗ tooth states",
+    "Fixed Fastify server unhandledRejection guard in server.ts and reply double-send in communications.ts",
+    "Verified adult dentition 32 teeth (FDI 11–48) in full vector 3D anatomical view",
+    "Verified pediatric dentition 20 deciduous teeth (FDI 51–85) in full vector anatomical view",
+    "Verified mixed dentition mode support",
+    "Verified Classic GOST / Form 043/u clinical table view with real-time DMF/КПУ index calculation",
+    "Verified interactive Tooth Radial Menu centered on tooth 16 with surface selector pill (O, M, D, V, L, C) and direct therapy/invoice CTA",
+    "Verified Mandate 8e: 1-click physiological norm 'Санирован' ('Все зубы норма') with zero disabled buttons, instant feedback toast, all-green status dots",
+    "Captured 12 real 1440x900 screenshots (PC Light and PC Dark) into docs/screenshots/dental_chart_inquisition/",
+    "Inspected all 12 PNG screenshots visually with own eyes via view_file",
+    "Passed compiler gates: npm run typecheck -w @dental/web (0 errors) and npm run typecheck -w @dental/api (0 errors)",
+    "Passed CSS token verification: npm run check:css-tokens (0 unresolved tokens)"
   ],
-  "pending_steps": [
-    "Reconnaissance of dental chart & odontogram components, routes, schemas",
-    "Check live backend (Fastify 127.0.0.1:4100), frontend (Vite 127.0.0.1:5173), PostgreSQL 18 (127.0.0.1:5432)",
-    "Audit adult (32) and deciduous/child (20) dental chart interactive modes",
-    "Audit surfaces (O, M, D, V/B, L) and statuses (caries, pulpitis, periodontitis, filling, crown, implant, extracted/missing)",
-    "Audit Mandate 8e: 1-click physiological norm ('Санирован / Все зубы норма')",
-    "Audit linkage of tooth pathologies to treatment plans and clinical record (043/y)",
-    "Eliminate Potemkin villages, mocks, stubs, disabled buttons",
-    "Take real screenshots 1440x900 (PC Light and PC Dark) in docs/screenshots/dental_chart_inquisition/",
-    "Inspect each PNG with own eyes via view_file",
-    "Fix any defects found in code/styles",
-    "Run gates: npm run typecheck -w @dental/web && npm run check:css-tokens",
-    "Send comprehensive report via send_message to parent"
+  "proofs": [
+    "docs/screenshots/dental_chart_inquisition/dental_chart_adult_anatomical_pc_light.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_adult_anatomical_pc_dark.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_pediatric_fdi_pc_light.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_pediatric_fdi_pc_dark.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_classic_gost_pc_light.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_classic_gost_pc_dark.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_fdi_segmented_pc_light.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_fdi_segmented_pc_dark.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_radial_surfaces_pc_light.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_radial_surfaces_pc_dark.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_1click_sanitation_pc_light.png",
+    "docs/screenshots/dental_chart_inquisition/dental_chart_1click_sanitation_pc_dark.png"
   ],
-  "findings": []
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "category": "SECURITY / ACCESS",
+      "description": "Fixed 403 Forbidden on tooth-states API: doctor demo login was previously assigning an admin role without clinical authorization. Resolved in apps/api/src/routes/auth.ts by prioritizing users with role 'doctor' or 'owner'.",
+      "status": "FIXED"
+    },
+    {
+      "severity": "HIGH",
+      "category": "INFRASTRUCTURE / INTEGRITY",
+      "description": "Eliminated dev_api_stub.cjs mock server intercepting port 4100 on 127.0.0.1, guaranteeing single source of truth is real PostgreSQL 18 + Fastify API.",
+      "status": "FIXED"
+    },
+    {
+      "severity": "INFORMATIONAL",
+      "category": "COMPLIANCE",
+      "description": "Mandate 8e (Doctor Autonomy) validated 100%: 1-click sanitation applies intact status to all 32 teeth without blocking wizards, disabled buttons, or modal friction.",
+      "status": "VERIFIED_CLEAN"
+    }
+  ]
 }

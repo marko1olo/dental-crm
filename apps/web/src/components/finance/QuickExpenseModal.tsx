@@ -164,7 +164,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 						<div className="quick-expense-field">
 							<span className="quick-expense-label">
 								<Tag size={13} />
-								Быстрые шаблоны (Мандат 8n — соло-врач):
+								Быстрые шаблоны:
 							</span>
 							<div className="quick-expense-presets-bar">
 								{COMMON_PRESETS.map((p) => (

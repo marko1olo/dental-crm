@@ -222,7 +222,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			expect.stringContaining("Слизистая оболочка полости рта"),
 		);
 		expect(mockToast).toHaveBeenCalledWith(
-			"Применена норма: соматически здоров (1 клик)",
+			"Применена норма: соматически здоров",
 			"success",
 		);
 

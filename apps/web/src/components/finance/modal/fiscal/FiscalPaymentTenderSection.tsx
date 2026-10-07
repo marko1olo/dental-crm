@@ -101,95 +101,95 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 					</span>
 				</div>
 
-				<div className="p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] grid grid-cols-5 gap-1 text-xs font-bold" data-testid="fiscal-segmented-control">
+				<div className="dente-segmented-bar w-full flex" data-testid="fiscal-segmented-control" role="tablist" aria-label="Способ оплаты">
 					<button
 						type="button"
+						role="tab"
+						aria-selected={paymentMode === "cash"}
 						onClick={() => {
 							setPaymentMode("cash");
 							selectSingleMethod("cash");
 						}}
-						className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
-							paymentMode === "cash"
-								? "bg-emerald-600 text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+						className={`dente-segmented-item flex-1 ${
+							paymentMode === "cash" ? "active" : ""
 						}`}
 						data-testid="segment-cash"
 					>
-						<Banknote size={15} className="shrink-0" />
-						<span className="truncate">Наличные</span>
+						<Banknote size={14} className="shrink-0" />
+						<span>Наличные</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={paymentMode === "card"}
 						onClick={() => {
 							setPaymentMode("card");
 							selectSingleMethod("card");
 						}}
-						className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
-							paymentMode === "card"
-								? "bg-blue-600 text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+						className={`dente-segmented-item flex-1 ${
+							paymentMode === "card" ? "active" : ""
 						}`}
 						data-testid="segment-card"
 					>
-						<CreditCard size={15} className="shrink-0" />
-						<span className="truncate">Карта</span>
+						<CreditCard size={14} className="shrink-0" />
+						<span>Карта</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={paymentMode === "sbp"}
 						onClick={() => {
 							setPaymentMode("sbp");
 							selectSingleMethod("sbp");
 						}}
-						className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
-							paymentMode === "sbp"
-								? "bg-teal-600 text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+						className={`dente-segmented-item flex-1 ${
+							paymentMode === "sbp" ? "active" : ""
 						}`}
 						data-testid="segment-sbp"
 					>
-						<QrCode size={15} className="shrink-0" />
-						<span className="truncate">СБП</span>
+						<QrCode size={14} className="shrink-0" />
+						<span>СБП</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={paymentMode === "deposit"}
 						onClick={() => {
 							setPaymentMode("deposit");
 							selectSingleMethod("deposit");
 						}}
-						className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
-							paymentMode === "deposit"
-								? "bg-amber-600 text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+						className={`dente-segmented-item flex-1 ${
+							paymentMode === "deposit" ? "active" : ""
 						}`}
 						data-testid="segment-deposit"
 					>
-						<Coins size={15} className="shrink-0" />
-						<span className="truncate">Баланс семьи</span>
+						<Coins size={14} className="shrink-0" />
+						<span>Баланс семьи</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={paymentMode === "split"}
 						onClick={() => setPaymentMode("split")}
-						className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
-							paymentMode === "split"
-								? "bg-purple-600 text-white shadow-xs"
-								: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+						className={`dente-segmented-item flex-1 ${
+							paymentMode === "split" ? "active" : ""
 						}`}
 						data-testid="segment-split"
 					>
-						<Layers size={15} className="shrink-0" />
-						<span className="truncate">Сплит</span>
+						<Layers size={14} className="shrink-0" />
+						<span>Сплит</span>
 					</button>
 				</div>
 			</div>
 
 			{/* 1-Click Fast Combined Payment Presets (Мандаты 8e, 8k, 8n) */}
-			<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]" data-testid="fiscal-presets-strip">
-				<span className="text-xs font-bold text-[var(--muted,#64748b)] mr-1 flex items-center gap-1 shrink-0">
-					<Sparkles size={13} className="text-teal-600 dark:text-teal-400" />
+			<div className="dente-filter-chips flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line-subtle,var(--border,#cbd5e1))]" data-testid="fiscal-presets-strip">
+				<span className="text-[12px] font-semibold text-[var(--muted,#64748b)] mr-1 flex items-center gap-1 shrink-0">
+					<Sparkles size={13} className="text-[var(--teal,#0d9488)]" />
 					<span>Пресеты:</span>
 				</span>
 				<button
@@ -198,7 +198,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 						applyCombinedPaymentPreset("exact_cash");
 						setPaymentMode("cash");
 					}}
-					className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+					className="dente-filter-chip flex items-center gap-1"
 					data-testid="preset-exact-cash"
 					title="Оплатить наличными ровно в сумме чека (без сдачи)"
 				>
@@ -211,7 +211,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 						applyCombinedPaymentPreset("full_card");
 						setPaymentMode("card");
 					}}
-					className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+					className="dente-filter-chip flex items-center gap-1"
 					data-testid="preset-full-card"
 					title="Оплатить 100% картой через терминал"
 				>
@@ -224,7 +224,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 						applyCombinedPaymentPreset("split_cash_card");
 						setPaymentMode("split");
 					}}
-					className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+					className="dente-filter-chip flex items-center gap-1"
 					data-testid="preset-50-50-cash-card"
 					title="Разделить оплату ровно пополам: 50% наличные + 50% карта"
 				>
@@ -244,15 +244,13 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 						setPaymentMode("split");
 						showToast("Применен пресет: Гарантия 100% (0 ₽, без фискального чека ККТ)", "info", 2500);
 					}}
-					className={`h-7 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
-						selectedDiscountPreset === "warranty_100"
-							? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-							: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500"
+					className={`dente-filter-chip flex items-center gap-1 ${
+						selectedDiscountPreset === "warranty_100" ? "active" : ""
 					}`}
 					data-testid="preset-warranty-100"
 					title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
 				>
-					<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-white shrink-0" : "text-purple-600 shrink-0"} />
+					<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-[var(--teal)] shrink-0" : "text-purple-600 shrink-0"} />
 					<span>Гарантия (0 ₽)</span>
 				</button>
 				<button
@@ -262,15 +260,13 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 						setPaymentMode("split");
 						showToast("Применено 100% покрытие по ДМС (безналичный расчёт со страховой)", "info", 2000);
 					}}
-					className={`h-7 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
-						insuranceAmount > 0 && insuranceAmount === totalSumRub
-							? "bg-sky-600 text-white border-sky-600 shadow-2xs"
-							: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-sky-500/30 text-sky-700 dark:text-sky-300 hover:bg-sky-50 hover:border-sky-500"
+					className={`dente-filter-chip flex items-center gap-1 ${
+						insuranceAmount > 0 && insuranceAmount === totalSumRub ? "active" : ""
 					}`}
 					data-testid="preset-full-dms"
 					title="Оплата 100% через ДМС (по безналичному расчету со страховой компанией)"
 				>
-					<ShieldCheck size={13} className={insuranceAmount > 0 && insuranceAmount === totalSumRub ? "text-white shrink-0" : "text-sky-600 shrink-0"} />
+					<ShieldCheck size={13} className={insuranceAmount > 0 && insuranceAmount === totalSumRub ? "text-[var(--teal)] shrink-0" : "text-sky-600 shrink-0"} />
 					<span>100% ДМС</span>
 				</button>
 				<button
@@ -772,7 +768,7 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 											showToast(`ДМС переведен на оплату пациентом (карта): ${formatMoneyRu(fallbackAmt)}`, "info", 2000);
 										}}
 										className="h-7 px-2.5 rounded-md text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 cursor-pointer transition-colors"
-										title="1-клик отмена страхового покрытия и мгновенный перевод на оплату картой пациентом"
+										title="Отмена страхового покрытия и перевод на оплату картой пациентом"
 										data-testid="btn-fallback-dms-to-patient"
 									>
 										Перевести на пациента

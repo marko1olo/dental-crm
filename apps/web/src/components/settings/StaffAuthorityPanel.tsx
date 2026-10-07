@@ -364,7 +364,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 				</div>
 				<button
 					type="button"
-					className="secondary-button text-xs"
+					className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-[12.5px] font-medium transition-colors cursor-pointer"
 					onClick={() => {
 						setOverrides({});
 						setSave({ kind: "idle" });
@@ -438,36 +438,36 @@ export const StaffAuthorityPanel: React.FC = () => {
 														{staffRoleTitle(row.role)}
 													</span>
 												</div>
-												<div className="flex items-center gap-2 mt-1 text-[11px] flex-nowrap overflow-x-auto">
+												<div className="flex items-center gap-2 mt-1 text-[12px] flex-nowrap overflow-x-auto">
 													{isPiiFull ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800 whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-medium bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800 whitespace-nowrap">
 															<ShieldCheck size={12} className="shrink-0" />
 															<span>ПДн: Полный</span>
 														</span>
 													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
 															<ShieldAlert size={12} className="shrink-0" />
 															<span>ПДн: Маскирован</span>
 														</span>
 													)}
 													{isPnlVisible ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 whitespace-nowrap">
 															<Lock size={12} className="shrink-0" />
 															<span>P&L: Доступен</span>
 														</span>
 													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-medium bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
 															<Lock size={12} className="shrink-0" />
 															<span>P&L: Скрыт (Изоляция)</span>
 														</span>
 													)}
 													{isMedicalDoctor ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
 															<ShieldCheck size={12} className="shrink-0" />
 															<span>Врачебная автономия (ЭМК)</span>
 														</span>
 													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-medium bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
 															<Lock size={12} className="shrink-0" />
 															<span>ЭМК: Без подписи</span>
 														</span>

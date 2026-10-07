@@ -888,7 +888,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 						notes:
 							parsedStock.data.reason ||
 							(isClinicalOperation
-								? `Списание под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед., Мандат 8e, 8v)`
+								? `Списание под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед.)`
 								: "Списание со склада (FEFO)"),
 						userId: effectiveUserId,
 						transactionType: isClinicalOperation
@@ -945,7 +945,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					transactionType: isOverdraft ? "emergency_overdraft" : "manual_adjust",
 					isOverdraft,
 					notes: isOverdraft
-						? (parsedStock.data.reason || `Списано под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед., Мандат 8e)`)
+						? (parsedStock.data.reason || `Списано под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед.)`)
 						: (parsedStock.data.reason || null),
 					userId: effectiveUserId,
 				});
@@ -975,7 +975,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return {
 				...result.updated,
 				isOverdraft: true,
-				warning: `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед., накладная поставщика ещё в пути, списание под операцию проведено без блокировки врача по Мандату 8e).`,
+				warning: `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед., накладная поставщика ещё в пути, списание под операцию проведено без блокировки).`,
 			};
 		}
 		return result.updated;
@@ -1217,7 +1217,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return {
 				success: true,
 				...result,
-				message: `Засеяно ${result.createdRulesCount} технологических карт 804н (${result.createdServicesCount} услуг, ${result.createdItemsCount} расходников). Всего активных правил: ${result.totalRulesCount}.`,
+				message: `Добавлено ${result.createdRulesCount} технологических карт списания (${result.createdServicesCount} услуг, ${result.createdItemsCount} расходников). Всего активных правил: ${result.totalRulesCount}.`,
 			};
 		},
 	);
@@ -2287,7 +2287,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 							item.reason ||
 							item.notes ||
 							commonReason ||
-							"Списание со склада у кресла (автоматический FEFO по Мандату 8e, 8v)",
+							"Списание со склада у кресла (автоматический FEFO)",
 						userId: effectiveUserId,
 						visitId: visitId || null,
 						transactionType: "treatment_consumable",
@@ -2328,8 +2328,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					isOverdraft: true,
 					is_overdraft: true,
 					hasOverdraft: true,
-					warning: `Мягкий овердрафт склада (Мандат 8n): зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Приём проведён без блокировки.`,
-					message: `Мягкий овердрафт склада (Мандат 8n): дефицит по материалу «${invItemName}». Клинический процесс не блокируется.`,
+					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Приём проведён без блокировки.`,
+					message: `Мягкий овердрафт склада: дефицит по материалу «${invItemName}». Клинический процесс не блокируется.`,
 					inventoryItemId: invItemId,
 					inventoryItemName: invItemName,
 					availableStock: avail,
@@ -3146,7 +3146,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 						notes:
 							data.notes ||
 							data.reason ||
-							`Списание материалов по услуге отменено: автоматическое сторно при отмене услуги «${m.serviceTitle || "услуга"}» (+${m.quantity} ${targetItem.unit ?? "ед."}, Мандаты 8e, 8n)`,
+							`Списание материалов по услуге отменено: автоматическое сторно при отмене услуги «${m.serviceTitle || "услуга"}» (+${m.quantity} ${targetItem.unit ?? "ед."})`,
 						userId: effectiveUserId,
 					});
 

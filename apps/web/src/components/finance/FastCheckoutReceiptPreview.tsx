@@ -108,7 +108,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 								<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
 									{interruptedPaymentState?.reason ||
 										kktHardwareStatus.error ||
-										"Связь с кассовым аппаратом отсутствует. Программа не блокирует расчет пациента! Примите оплату через автономный терминал — чек будет поставлен в очередь отложенной печати."}
+										"Связь с кассовым аппаратом отсутствует. Примите оплату через автономный терминал — чек будет поставлен в очередь отложенной печати."}
 								</p>
 							</div>
 						</div>
@@ -357,7 +357,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						onClick={() => void onAcceptPaymentOfflineFallback()}
 						disabled={isPrinting}
 						className="min-h-[48px] sm:min-h-[40px] sm:h-10 px-3 sm:px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98 transition-all truncate"
-						title="Принять оплату через автономный терминал без блокировки: чек ставится в очередь отложенной печати (Мандаты 8e, 8n)"
+						title="Принять оплату через автономный терминал: чек ставится в очередь отложенной печати"
 					>
 						<WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
 						<span className="truncate">Оплата через автономный терминал (без ККТ)</span>

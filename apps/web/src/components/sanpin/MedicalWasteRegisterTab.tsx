@@ -265,16 +265,25 @@ export function MedicalWasteRegisterTab() {
 
 			<div className="sanpin-control-bar">
 				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.6rem", color: "var(--muted)" }} />
+					<div className="dente-search-wrap" style={{ minWidth: "260px" }}>
+						<Search size={14} className="dente-search-icon" />
 						<input
 							type="text"
 							placeholder="Поиск по описанию, компании утилизатору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2rem", minWidth: "260px" }}
+							className="dente-search-input"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								className="dente-search-clear"
+								onClick={() => setSearchQuery("")}
+								aria-label="Очистить поиск"
+							>
+								<X size={12} />
+							</button>
+						)}
 					</div>
 					<select
 						value={classFilter}
@@ -312,11 +321,11 @@ export function MedicalWasteRegisterTab() {
 							gap: "0.45rem",
 							whiteSpace: "nowrap",
 						}}
-						title="1-Клик сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
+						title="Сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
 						data-testid="nurse-waste-quick-shift-tab-btn"
 					>
 						<Sparkles size={16} />
-						<span>{isQuickShiftLoading ? "Списание отходов..." : "1-Клик отходы смены"}</span>
+						<span>{isQuickShiftLoading ? "Списание отходов..." : "Сдать отходы смены"}</span>
 					</button>
 
 					<button

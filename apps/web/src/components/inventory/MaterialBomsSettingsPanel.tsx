@@ -129,7 +129,7 @@ export function MaterialBomsSettingsPanel({
 				);
 			}
 		} catch (e) {
-			logger.error("Ошибка загрузки техкарт 804н", e);
+			logger.error("Ошибка загрузки техкарт расхода", e);
 			showToast("Ошибка загрузки техкарт", "error");
 		} finally {
 			setIsLoading(false);
@@ -152,15 +152,15 @@ export function MaterialBomsSettingsPanel({
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
-					data.message || "Типовые нормы 804н успешно засеяны",
+					data.message || "Типовые нормы расхода успешно добавлены",
 					"success",
 				);
 				await fetchAllRules();
 			} else {
-				showToast("Ошибка при засеве норм 804н", "error");
+				showToast("Ошибка при загрузке типовых норм", "error");
 			}
 		} catch (e) {
-			logger.error("Ошибка сидирования норм 804н", e);
+			logger.error("Ошибка загрузки типовых норм", e);
 			showToast("Системная ошибка", "error");
 		} finally {
 			setIsSeeding(false);
@@ -248,7 +248,7 @@ export function MaterialBomsSettingsPanel({
 			if (!group) {
 				group = {
 					serviceId: sId,
-					serviceCode: r.serviceCode || "804н",
+					serviceCode: r.serviceCode || "—",
 					serviceTitle: r.serviceTitle || "Медицинская услуга",
 					serviceCategory: r.serviceCategory || "therapy",
 					specialty: r.specialty || "therapist",
@@ -494,7 +494,7 @@ export function MaterialBomsSettingsPanel({
 					<p style={{ margin: "0 0 20px 0", color: "var(--muted)", fontSize: 14, maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>
 						{searchQuery
 							? "Попробуйте изменить поисковый запрос или сбросить фильтры."
-							: "Нажмите «Загрузить типовые нормы», чтобы за 1 клик подключить готовые стандарты по терапии, эндодонтии, хирургии и гигиене."}
+							: "Нажмите «Загрузить типовые нормы», чтобы быстро подключить готовые стандарты по терапии, эндодонтии, хирургии и гигиене."}
 					</p>
 					{!searchQuery && (
 						<button

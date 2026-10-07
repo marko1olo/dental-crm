@@ -243,7 +243,7 @@ export function TelemetryHostMonitorPreview() {
 					<div className="flex items-center gap-2.5">
 						<Layers size={18} className="text-teal-600 dark:text-teal-400" />
 						<h2 className="text-sm font-bold text-[var(--ink)]">
-							Адаптивный конвейер рендеринга КТ / DICOM (Mandates 8c, 8e, 8k, 8n)
+							Адаптивный конвейер рендеринга КТ / DICOM
 						</h2>
 					</div>
 					<span

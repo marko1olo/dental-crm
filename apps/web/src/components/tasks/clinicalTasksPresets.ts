@@ -22,7 +22,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 21);
 			return d.toISOString();
 		},
-		hint: "1 клик: контроль брекетов/элайнеров через 3 недели",
+		hint: "Контроль брекетов/элайнеров через 3 недели",
 	},
 	{
 		id: "preset-implant-check",
@@ -37,7 +37,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 10);
 			return d.toISOString();
 		},
-		hint: "1 клик: контрольный осмотр после имплантации через 10 дней",
+		hint: "Контрольный осмотр после имплантации через 10 дней",
 	},
 	{
 		id: "preset-prosthetics-ztl",
@@ -52,7 +52,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 7);
 			return d.toISOString();
 		},
-		hint: "1 клик: отследить готовность работы в лаборатории через 7 дней",
+		hint: "Отследить готовность работы в лаборатории через 7 дней",
 	},
 	{
 		id: "preset-recall-6m",
@@ -67,7 +67,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setMonth(d.getMonth() + 6);
 			return d.toISOString();
 		},
-		hint: "1 клик: создать задачу контрольного осмотра и профгигиены через 6 месяцев",
+		hint: "Создать задачу контрольного осмотра и профгигиены через 6 месяцев",
 	},
 	{
 		id: "preset-ct-planning",
@@ -82,7 +82,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 3);
 			return d.toISOString();
 		},
-		hint: "1 клик: задача на анализ КТ и 3D-планирование за 3 дня",
+		hint: "Задача на анализ КТ и 3D-планирование за 3 дня",
 	},
 	{
 		id: "preset-suture-removal",
@@ -97,7 +97,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 8);
 			return d.toISOString();
 		},
-		hint: "1 клик: создать задачу на снятие швов через 7–10 дней после хирургии",
+		hint: "Создать задачу на снятие швов через 7–10 дней после хирургии",
 	},
 	{
 		id: "preset-rvg-control",
@@ -112,7 +112,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 14);
 			return d.toISOString();
 		},
-		hint: "1 клик: создать задачу на контрольный снимок визиографа RVG",
+		hint: "Создать задачу на контрольный снимок визиографа RVG",
 	},
 	{
 		id: "preset-prepare-cast",
@@ -127,7 +127,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 1);
 			return d.toISOString();
 		},
-		hint: "1 клик: подготовить диагностический/рабочий слепок за 24 часа",
+		hint: "Подготовить диагностический/рабочий слепок за 24 часа",
 	},
 	{
 		id: "preset-order-implant",
@@ -142,7 +142,7 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 			d.setDate(d.getDate() + 3);
 			return d.toISOString();
 		},
-		hint: "1 клик: заказать имплант и хирургические компоненты за 3 дня",
+		hint: "Заказать имплант и хирургические компоненты за 3 дня",
 	},
 ];
 

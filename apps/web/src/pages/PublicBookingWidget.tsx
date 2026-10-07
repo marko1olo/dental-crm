@@ -190,7 +190,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 						</div>
 						<h2 className="text-xl font-bold">Личный кабинет пациента</h2>
 						<p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-							Планы лечения, счета, оплата СБП в 1 клик и справки для налогового вычета
+							Планы лечения, счета, оплата через СБП и справки для налогового вычета
 						</p>
 					</div>
 

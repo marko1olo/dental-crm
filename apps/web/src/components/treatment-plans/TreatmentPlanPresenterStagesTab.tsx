@@ -40,13 +40,19 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 										<strong className="text-[var(--tp-primary)]">{selectedTier.totalRub.toLocaleString("ru-RU")} ₽</strong>
 									</p>
 								</div>
-								<div className="flex items-center gap-2">
+								{/* Canonical DENTE Segmented Bar for Tier Selection */}
+								<div className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft,var(--tp-surface-soft))] border border-[var(--line-subtle,var(--tp-border))] shadow-2xs">
 									{allTiers.map((t) => (
 										<button
 											key={t.tierId}
 											type="button"
 											onClick={() => onSelectTier(t)}
-											className={"px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer " + (selectedTierId === t.tierId ? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-sm" : "bg-[var(--tp-bg)] text-[var(--tp-text-muted)] border-[var(--tp-border)] hover:text-[var(--tp-text-main)]")}
+											className={`h-7 px-3 rounded-[7px] text-[12.5px] cursor-pointer transition-all whitespace-nowrap ${
+												selectedTierId === t.tierId
+													? "bg-[var(--paper,var(--tp-surface,#ffffff))] text-[var(--teal,var(--tp-primary))] font-semibold shadow-xs"
+													: "text-[var(--muted,var(--tp-text-muted))] font-medium hover:text-[var(--ink,var(--tp-text-main))] hover:bg-black/5 dark:hover:bg-white/5"
+											}`}
+											data-testid={`stages-tab-tier-btn-${t.tierId}`}
 										>
 											{t.badge}
 										</button>

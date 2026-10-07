@@ -106,7 +106,7 @@ button.primary-button,
 a.primary-button {
 	background: var(--teal);
 	border: 1px solid var(--teal);
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	font-weight: 600;
 	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.25));
 }
@@ -116,7 +116,7 @@ button.primary-button:hover:not(:disabled),
 a.primary-button:hover:not(:disabled) {
 	background: var(--teal-dark);
 	border-color: var(--teal-dark);
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	transform: translateY(-1px);
 	box-shadow: 0 4px 12px var(--teal-glow, rgba(13, 148, 136, 0.35));
 }
@@ -431,3 +431,396 @@ a.button-lg {
 	background: var(--paper);
 	border-color: var(--line-strong, var(--line));
 }
+
+/* ==========================================================================
+   9. CANONICAL DENTE SEARCH INPUT SYSTEM (.dente-search-wrap / .dente-search-input)
+   Authority: FRONTEND RULES Section 12 & DESIGNER BIBLE Section 7
+   Guarantees: Zero search icon collision with placeholder/hint text!
+   ========================================================================== */
+
+.dente-search-wrap,
+.patients-search-box,
+.pricelist-search-wrapper,
+.pricelist-search-box,
+.pricelist-diff-search-box,
+.search-input-wrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.dente-search-icon,
+.dente-search-wrap > svg:first-child,
+.patients-search-box > svg:first-child,
+.pricelist-search-wrapper > svg:first-child,
+.pricelist-search-box > svg:first-child,
+.pricelist-diff-search-box > svg:first-child,
+.search-input-wrapper > svg:first-child {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 14px;
+	height: 14px;
+	color: var(--muted);
+	pointer-events: none;
+	flex-shrink: 0;
+	z-index: 2;
+	transition: color 0.15s ease;
+}
+
+.dente-search-input,
+.dente-search-wrap input,
+.patients-search-box input,
+.pricelist-search-wrapper input,
+.pricelist-search-box input,
+.pricelist-diff-search-box input,
+.search-input-wrapper input {
+	width: 100%;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding-left: 38px !important; /* IRONCLAD INVARIANT: Search icon never overlaps text! */
+	padding-right: 32px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
+	color: var(--ink) !important;
+	font-size: 13px !important;
+	line-height: 1.4 !important;
+	outline: none !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.dente-search-input::placeholder,
+.dente-search-wrap input::placeholder,
+.patients-search-box input::placeholder,
+.pricelist-search-wrapper input::placeholder,
+.pricelist-search-box input::placeholder,
+.pricelist-diff-search-box input::placeholder,
+.search-input-wrapper input::placeholder {
+	color: var(--muted) !important;
+	opacity: 0.85 !important;
+	font-size: 12.5px !important;
+}
+
+.dente-search-input:focus,
+.dente-search-wrap input:focus,
+.patients-search-box input:focus,
+.pricelist-search-wrapper input:focus,
+.pricelist-search-box input:focus,
+.pricelist-diff-search-box input:focus,
+.search-input-wrapper input:focus {
+	background: var(--paper) !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 0 0 3px var(--teal-soft, rgba(13, 148, 136, 0.15)) !important;
+}
+
+.dente-search-clear,
+.dente-search-wrap .search-clear-btn,
+.patients-search-box .patients-search-clear-btn,
+.pricelist-search-wrapper button,
+.pricelist-search-box .pricelist-search-clear,
+.pricelist-diff-search-box .pricelist-diff-search-clear {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--muted);
+	cursor: pointer;
+	z-index: 2;
+	transition: all 0.15s ease;
+}
+
+.dente-search-clear:hover,
+.patients-search-box .patients-search-clear-btn:hover,
+.pricelist-search-wrapper button:hover,
+.pricelist-search-box .pricelist-search-clear:hover,
+.pricelist-diff-search-box .pricelist-diff-search-clear:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+/* Omnibar Search Override */
+.omnibar-search-wrap,
+.dente-search-wrap.omnibar-search-wrap {
+	display: flex !important;
+	align-items: center !important;
+	position: relative !important;
+	width: 100% !important;
+}
+
+.omnibar-search-wrap .dente-search-icon,
+.dente-search-wrap.omnibar-search-wrap > svg:first-child {
+	left: 16px !important;
+	width: 18px !important;
+	height: 18px !important;
+}
+
+.omnibar-search-wrap input,
+.dente-search-input.omnibar-search-input,
+.omnibar-input {
+	height: 56px !important;
+	min-height: 56px !important;
+	max-height: 56px !important;
+	padding-left: 48px !important;
+	padding-right: 48px !important;
+	font-size: 16px !important;
+	background: transparent !important;
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+/* Retail Showcase Search Override (desktop 260px fixed width, mobile full width) */
+.retail-search-wrap {
+	width: 100%;
+}
+@media (min-width: 640px) {
+	.retail-search-wrap {
+		width: 260px !important;
+		min-width: 240px !important;
+		max-width: 260px !important;
+		flex-shrink: 0 !important;
+	}
+}
+
+/* ==========================================================================
+   10. CANONICAL DENTE SEGMENTED CONTROLS & FILTER CHIPS SYSTEM
+   Authority: FRONTEND RULES Section 13 & DESIGNER BIBLE Section 8
+   Guarantees: Zero "naked text row" antipattern, noble Apple-style segmentation!
+   Creator Directive: Anti-truncation invariant — NO artificial ellipsis or word-cutting!
+   ========================================================================== */
+
+/* A. Apple-style Segmented Control Bar */
+.dente-segmented-bar,
+.segmented-control-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
+	box-sizing: border-box;
+	user-select: none;
+	max-width: 100%;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.dente-segmented-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.dente-segmented-item,
+.segmented-control-item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 12px !important;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 7px !important;
+	color: var(--muted);
+	font-family: inherit;
+	font-size: 12.5px !important;
+	font-weight: 500;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	width: auto !important;
+	min-width: max-content !important;
+	text-overflow: clip !important;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	outline: none;
+	box-sizing: border-box;
+}
+
+.dente-segmented-item:hover:not(.active):not([data-active="true"]) {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .dente-segmented-item:hover:not(.active):not([data-active="true"]),
+.dark .dente-segmented-item:hover:not(.active):not([data-active="true"]) {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.dente-segmented-item.active,
+.dente-segmented-item[data-active="true"] {
+	background: var(--paper) !important;
+	border: 1px solid var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .dente-segmented-item.active,
+[data-theme="dark"] .dente-segmented-item[data-active="true"],
+.dark .dente-segmented-item.active {
+	background: rgba(13, 148, 136, 0.18) !important;
+	border: 1px solid var(--teal, #0d9488) !important;
+	color: #2dd4bf !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Ensure button borders are never wiped by unlayered resets */
+button:is([class*="border"]):not([class*="border-none"]):not([class*="border-transparent"]) {
+	border-style: solid;
+}
+
+/* B. Modern Filter Chips / Pills (For Categories, Statuses, Channels, Tags) */
+.dente-filter-chips,
+.filter-chips-strip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+.dente-filter-chip,
+.filter-chip-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 28px !important;
+	min-height: 28px !important;
+	max-height: 28px !important;
+	padding: 0 12px !important;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 20px !important; /* Noble Pill shape */
+	color: var(--muted);
+	font-family: inherit;
+	font-size: 12.5px !important;
+	font-weight: 500;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	width: auto !important;
+	min-width: max-content !important;
+	text-overflow: clip !important;
+	cursor: pointer;
+	user-select: none;
+	outline: none;
+	box-sizing: border-box;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	flex-shrink: 0;
+}
+
+.dente-filter-chip:hover {
+	background: var(--paper);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+	transform: translateY(-0.5px);
+}
+
+.dente-filter-chip.active,
+.dente-filter-chip[data-active="true"] {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.18)) !important;
+}
+
+[data-theme="dark"] .dente-filter-chip.active,
+[data-theme="dark"] .dente-filter-chip[data-active="true"],
+.dark .dente-filter-chip.active {
+	background: var(--teal-soft) !important;
+	border-color: var(--teal) !important;
+	color: #ffffff !important;
+	box-shadow: 0 1px 4px rgba(13, 148, 136, 0.4) !important;
+}
+
+/* ==========================================================================
+   11. ANTI-NAKED-TEXT-ROW PROTECTION & BUTTON GROUP SYSTEM
+   Guarantees: Zero raw, unstyled consecutive text buttons side-by-side!
+   All button clusters must be explicitly framed as segmented controls,
+   filter chips, or structured secondary button groups.
+   ========================================================================== */
+
+.dente-button-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+}
+
+/* Fallback protection for buttons that lack styling classes */
+.dente-button-group > button:not([class*="-button"]):not([class*="dente-"]):not([class*="tab"]) {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+.dente-button-group > button:not([class*="-button"]):not([class*="dente-"]):not([class*="tab"]):hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
+
+/* Refinement for text-button to guarantee interactive boundaries */
+.text-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	border-radius: 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--teal);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	text-decoration: none;
+}
+
+.text-button:hover {
+	background: var(--teal-soft);
+	border-color: var(--teal-surface, transparent);
+	color: var(--teal-dark, var(--teal));
+}
+
+

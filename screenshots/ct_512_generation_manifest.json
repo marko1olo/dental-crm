@@ -1,0 +1,560 @@
+{
+  "totalImages": 60,
+  "singleSlicesCount": 50,
+  "compositesCount": 10,
+  "resolution": "512x512",
+  "dataset": "Zakharov I.D. (Real CBCT DICOM)",
+  "methods": [
+    "01_nearest",
+    "02_bilinear",
+    "03_hermite",
+    "04_catmull_rom",
+    "05_b_spline",
+    "06_mitchell_netravali",
+    "07_lanczos2",
+    "08_lanczos3",
+    "09_laplacian_sharpen",
+    "10_bilateral_edge_preserving"
+  ],
+  "levels": [
+    "L1_crowns",
+    "L2_pulp",
+    "L3_canals",
+    "L4_apices",
+    "L5_bone"
+  ],
+  "singleSliceResults": [
+    {
+      "methodId": "01_nearest",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_01_nearest_L1_crowns.png",
+      "size": 132351,
+      "hash": "2c00c2e0b85a9a0e1eff6b071f8fd3e5",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "01_nearest",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_01_nearest_L2_pulp.png",
+      "size": 131437,
+      "hash": "91655f14bc8de74a3839fe5852c24414",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "01_nearest",
+      "levelId": "L3_canals",
+      "filename": "ct_512_01_nearest_L3_canals.png",
+      "size": 130779,
+      "hash": "5ec029c73a10a1174d719719431c7aeb",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "01_nearest",
+      "levelId": "L4_apices",
+      "filename": "ct_512_01_nearest_L4_apices.png",
+      "size": 128236,
+      "hash": "1203f917848897b404c07a90c60cd01c",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "01_nearest",
+      "levelId": "L5_bone",
+      "filename": "ct_512_01_nearest_L5_bone.png",
+      "size": 128120,
+      "hash": "c08912c08c01d6d6a20f16f6d7e60fb7",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "02_bilinear",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_02_bilinear_L1_crowns.png",
+      "size": 170020,
+      "hash": "fdde0d134fe9a1894911c21c32a24dee",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "02_bilinear",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_02_bilinear_L2_pulp.png",
+      "size": 167994,
+      "hash": "2ccca28f1c47a8f5b65b425def837a6d",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "02_bilinear",
+      "levelId": "L3_canals",
+      "filename": "ct_512_02_bilinear_L3_canals.png",
+      "size": 165388,
+      "hash": "2acb9099d9c70ccc5ef5dfa15cb463af",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "02_bilinear",
+      "levelId": "L4_apices",
+      "filename": "ct_512_02_bilinear_L4_apices.png",
+      "size": 164953,
+      "hash": "6a6b137aa709624e84bf4e11b59257a8",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "02_bilinear",
+      "levelId": "L5_bone",
+      "filename": "ct_512_02_bilinear_L5_bone.png",
+      "size": 163825,
+      "hash": "22a693568484e6506ddcd23d873d032f",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "03_hermite",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_03_hermite_L1_crowns.png",
+      "size": 175685,
+      "hash": "83be5bfabc57667f738a6de298deb013",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "03_hermite",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_03_hermite_L2_pulp.png",
+      "size": 174105,
+      "hash": "599a213f1ee415ee869fe780275c9ad2",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "03_hermite",
+      "levelId": "L3_canals",
+      "filename": "ct_512_03_hermite_L3_canals.png",
+      "size": 172205,
+      "hash": "cd0a71df06ee0e3c36c117764ba72630",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "03_hermite",
+      "levelId": "L4_apices",
+      "filename": "ct_512_03_hermite_L4_apices.png",
+      "size": 170140,
+      "hash": "2e18fc33c7bfd5a3a99ee460314f5519",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "03_hermite",
+      "levelId": "L5_bone",
+      "filename": "ct_512_03_hermite_L5_bone.png",
+      "size": 168623,
+      "hash": "d5b9d8ec36988714c058b3a69c890a12",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "04_catmull_rom",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_04_catmull_rom_L1_crowns.png",
+      "size": 181203,
+      "hash": "38725e9686401d7d79b2ef8c954856c8",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "04_catmull_rom",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_04_catmull_rom_L2_pulp.png",
+      "size": 178174,
+      "hash": "37fd840922773f1d77ad1f93807b4e43",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "04_catmull_rom",
+      "levelId": "L3_canals",
+      "filename": "ct_512_04_catmull_rom_L3_canals.png",
+      "size": 177006,
+      "hash": "19b64673a0a58c47f906c84d87274185",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "04_catmull_rom",
+      "levelId": "L4_apices",
+      "filename": "ct_512_04_catmull_rom_L4_apices.png",
+      "size": 175137,
+      "hash": "7ad2fe81563e7c19493dc9cff05e19ad",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "04_catmull_rom",
+      "levelId": "L5_bone",
+      "filename": "ct_512_04_catmull_rom_L5_bone.png",
+      "size": 174410,
+      "hash": "d257bb247e21c7ab11d2062084e376c6",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "05_b_spline",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_05_b_spline_L1_crowns.png",
+      "size": 163744,
+      "hash": "59c0e846ece6e7434f86830211b4d6a6",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "05_b_spline",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_05_b_spline_L2_pulp.png",
+      "size": 161372,
+      "hash": "886536e648e57f8bc3e837e10372d1be",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "05_b_spline",
+      "levelId": "L3_canals",
+      "filename": "ct_512_05_b_spline_L3_canals.png",
+      "size": 159247,
+      "hash": "ee1b466099c5643914d8ef66ff45ca97",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "05_b_spline",
+      "levelId": "L4_apices",
+      "filename": "ct_512_05_b_spline_L4_apices.png",
+      "size": 158857,
+      "hash": "4aa49478e5a6fb5a7aaf91b86ff7de0a",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "05_b_spline",
+      "levelId": "L5_bone",
+      "filename": "ct_512_05_b_spline_L5_bone.png",
+      "size": 158585,
+      "hash": "36e4d63274e8fdc996f0c2222b9370e4",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "06_mitchell_netravali",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_06_mitchell_netravali_L1_crowns.png",
+      "size": 175205,
+      "hash": "6833a87801632e6f42e93bdb10cf30c4",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "06_mitchell_netravali",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_06_mitchell_netravali_L2_pulp.png",
+      "size": 171501,
+      "hash": "b87b9b718fc224893b0f9ab122c9b5af",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "06_mitchell_netravali",
+      "levelId": "L3_canals",
+      "filename": "ct_512_06_mitchell_netravali_L3_canals.png",
+      "size": 170401,
+      "hash": "3335a9f139ef2dc60c21e4c2cf0fd041",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "06_mitchell_netravali",
+      "levelId": "L4_apices",
+      "filename": "ct_512_06_mitchell_netravali_L4_apices.png",
+      "size": 169759,
+      "hash": "d597b92544d39474e087702cfbd579c3",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "06_mitchell_netravali",
+      "levelId": "L5_bone",
+      "filename": "ct_512_06_mitchell_netravali_L5_bone.png",
+      "size": 167865,
+      "hash": "0960a3826d6a375d56c906817de4d62e",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "07_lanczos2",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_07_lanczos2_L1_crowns.png",
+      "size": 180484,
+      "hash": "30524a5065fb47a30872692f1960eded",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "07_lanczos2",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_07_lanczos2_L2_pulp.png",
+      "size": 178273,
+      "hash": "1d80685eccbf18e81b980ced7644c59a",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "07_lanczos2",
+      "levelId": "L3_canals",
+      "filename": "ct_512_07_lanczos2_L3_canals.png",
+      "size": 174860,
+      "hash": "f40549462ed089b96c0cecff3c8565e2",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "07_lanczos2",
+      "levelId": "L4_apices",
+      "filename": "ct_512_07_lanczos2_L4_apices.png",
+      "size": 174881,
+      "hash": "935f12150da34d0992c6b96bafdacd15",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "07_lanczos2",
+      "levelId": "L5_bone",
+      "filename": "ct_512_07_lanczos2_L5_bone.png",
+      "size": 173528,
+      "hash": "3b4f69b25824e06a8175b20e6d431dd7",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "08_lanczos3",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_08_lanczos3_L1_crowns.png",
+      "size": 183282,
+      "hash": "874505015d1d027285d5bb21e373f9ba",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "08_lanczos3",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_08_lanczos3_L2_pulp.png",
+      "size": 182177,
+      "hash": "5f8ba7fc727a09a8c02d142094367c34",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "08_lanczos3",
+      "levelId": "L3_canals",
+      "filename": "ct_512_08_lanczos3_L3_canals.png",
+      "size": 179417,
+      "hash": "13af2638d4cc40e1b929bda20ac3b7b6",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "08_lanczos3",
+      "levelId": "L4_apices",
+      "filename": "ct_512_08_lanczos3_L4_apices.png",
+      "size": 178503,
+      "hash": "7f1c01dc082b82b5b2798741d44692c4",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "08_lanczos3",
+      "levelId": "L5_bone",
+      "filename": "ct_512_08_lanczos3_L5_bone.png",
+      "size": 177854,
+      "hash": "3393d334b06412049d942f614f372e7c",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "09_laplacian_sharpen",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_09_laplacian_sharpen_L1_crowns.png",
+      "size": 218962,
+      "hash": "ce54e06d2080ef00f8f388c538afe131",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "09_laplacian_sharpen",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_09_laplacian_sharpen_L2_pulp.png",
+      "size": 215648,
+      "hash": "a68616d5ad5c8497bbfeeb81c7547954",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "09_laplacian_sharpen",
+      "levelId": "L3_canals",
+      "filename": "ct_512_09_laplacian_sharpen_L3_canals.png",
+      "size": 213653,
+      "hash": "d80e6cd7657b80920063415d153976b0",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "09_laplacian_sharpen",
+      "levelId": "L4_apices",
+      "filename": "ct_512_09_laplacian_sharpen_L4_apices.png",
+      "size": 211820,
+      "hash": "04824eb67de15faa043abdbba90979ed",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "09_laplacian_sharpen",
+      "levelId": "L5_bone",
+      "filename": "ct_512_09_laplacian_sharpen_L5_bone.png",
+      "size": 211337,
+      "hash": "ca83f99bbe4c80d96c4554139d89c980",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "10_bilateral_edge_preserving",
+      "levelId": "L1_crowns",
+      "filename": "ct_512_10_bilateral_edge_preserving_L1_crowns.png",
+      "size": 156510,
+      "hash": "67e40ac9e7045bfb1b3cce6da5291da4",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "10_bilateral_edge_preserving",
+      "levelId": "L2_pulp",
+      "filename": "ct_512_10_bilateral_edge_preserving_L2_pulp.png",
+      "size": 154598,
+      "hash": "c88ca1c3ff282d29a5b2edb20ab9cd16",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "10_bilateral_edge_preserving",
+      "levelId": "L3_canals",
+      "filename": "ct_512_10_bilateral_edge_preserving_L3_canals.png",
+      "size": 153168,
+      "hash": "127cfee8b2094ac4da0ef66996d63cb5",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "10_bilateral_edge_preserving",
+      "levelId": "L4_apices",
+      "filename": "ct_512_10_bilateral_edge_preserving_L4_apices.png",
+      "size": 152693,
+      "hash": "ddf86eff4a7e3ce9bcbd55fc746635e4",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "10_bilateral_edge_preserving",
+      "levelId": "L5_bone",
+      "filename": "ct_512_10_bilateral_edge_preserving_L5_bone.png",
+      "size": 153405,
+      "hash": "a85b37c68a5c100dbe210303e5b99aec",
+      "width": 512,
+      "height": 512
+    }
+  ],
+  "compositeResults": [
+    {
+      "methodId": "01_nearest",
+      "filename": "ct_512_composite_01_nearest.png",
+      "size": 248520,
+      "hash": "0c2aabde9792023b2502364b20b56b43",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "02_bilinear",
+      "filename": "ct_512_composite_02_bilinear.png",
+      "size": 240424,
+      "hash": "4ed2875393639a60630e2f0f05cb9293",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "03_hermite",
+      "filename": "ct_512_composite_03_hermite.png",
+      "size": 242585,
+      "hash": "59ab425ad38d8a57ba1f2cced3781004",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "04_catmull_rom",
+      "filename": "ct_512_composite_04_catmull_rom.png",
+      "size": 250568,
+      "hash": "cd6bc79513a3cc12825a0f88f5a6bb7a",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "05_b_spline",
+      "filename": "ct_512_composite_05_b_spline.png",
+      "size": 233594,
+      "hash": "bf6a92114ab840c2fdbc83ac517ebc9a",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "06_mitchell_netravali",
+      "filename": "ct_512_composite_06_mitchell_netravali.png",
+      "size": 246084,
+      "hash": "397f663e5c7be6ae3ea36d902758e7d6",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "07_lanczos2",
+      "filename": "ct_512_composite_07_lanczos2.png",
+      "size": 249918,
+      "hash": "9437b4d6c1007eab0bc72030dc4cdfc6",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "08_lanczos3",
+      "filename": "ct_512_composite_08_lanczos3.png",
+      "size": 253001,
+      "hash": "2506fd4533423eeae28dbcc70a04b6db",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "09_laplacian_sharpen",
+      "filename": "ct_512_composite_09_laplacian_sharpen.png",
+      "size": 280733,
+      "hash": "c9db75d65087a1e0f6679871fb977c04",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "methodId": "10_bilateral_edge_preserving",
+      "filename": "ct_512_composite_10_bilateral_edge_preserving.png",
+      "size": 224535,
+      "hash": "265f6ded24eab658701f68102ba232e3",
+      "width": 512,
+      "height": 512
+    }
+  ]
+}

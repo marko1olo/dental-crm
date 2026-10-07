@@ -382,44 +382,41 @@ export const SettingsPricesAiImportSection: React.FC<
 				</div>
 
 				<div className="pricelist-upload-area">
-					{/* Mode Switcher */}
-					<div className="pricelist-mode-selector">
-						<label className="radio-label">
-							<input
-								type="radio"
-								name="importStudioMode"
-								value="excel_csv"
-								checked={activeSourceMode === "excel_csv"}
-								onChange={() => setActiveSourceMode("excel_csv")}
-							/>
+					{/* Mode Switcher — Canonical Dente Segmented Bar */}
+					<div className="dente-segmented-bar mb-3 shrink-0" role="tablist">
+						<button
+							type="button"
+							className={`dente-segmented-item ${activeSourceMode === "excel_csv" ? "active" : ""}`}
+							data-active={activeSourceMode === "excel_csv"}
+							onClick={() => setActiveSourceMode("excel_csv")}
+						>
+							<FileSpreadsheet size={15} />
 							<span>Excel (.xlsx, .xls) и CSV (.csv)</span>
-						</label>
-						<label className="radio-label">
-							<input
-								type="radio"
-								name="importStudioMode"
-								value="text"
-								checked={activeSourceMode === "text"}
-								onChange={() => {
-									setActiveSourceMode("text");
-									setPricelistSourceKind?.("text");
-								}}
-							/>
+						</button>
+						<button
+							type="button"
+							className={`dente-segmented-item ${activeSourceMode === "text" ? "active" : ""}`}
+							data-active={activeSourceMode === "text"}
+							onClick={() => {
+								setActiveSourceMode("text");
+								setPricelistSourceKind?.("text");
+							}}
+						>
+							<FileText size={15} />
 							<span>Вставка текста</span>
-						</label>
-						<label className="radio-label">
-							<input
-								type="radio"
-								name="importStudioMode"
-								value="photo"
-								checked={activeSourceMode === "photo"}
-								onChange={() => {
-									setActiveSourceMode("photo");
-									setPricelistSourceKind?.("photo");
-								}}
-							/>
+						</button>
+						<button
+							type="button"
+							className={`dente-segmented-item ${activeSourceMode === "photo" ? "active" : ""}`}
+							data-active={activeSourceMode === "photo"}
+							onClick={() => {
+								setActiveSourceMode("photo");
+								setPricelistSourceKind?.("photo");
+							}}
+						>
+							<ImageIcon size={15} />
 							<span>Фото / Скан (ИИ-распознавание)</span>
-						</label>
+						</button>
 					</div>
 
 					{/* 1. Excel / CSV Dropzone Mode */}
@@ -595,12 +592,13 @@ export const SettingsPricesAiImportSection: React.FC<
 								Формат: {tabularAnalysis.vendorLabel}
 							</span>
 							{availableSheets.length > 1 && (
-								<div style={{ display: "flex", gap: "6px" }}>
+								<div className="dente-segmented-bar shrink-0" role="tablist">
 									{availableSheets.map((sheet, idx) => (
 										<button
 											key={sheet}
 											type="button"
-											className={`pricelist-tab-btn ${selectedSheetIndex === idx ? "active" : ""}`}
+											className={`dente-segmented-item ${selectedSheetIndex === idx ? "active" : ""}`}
+											data-active={selectedSheetIndex === idx}
 											onClick={() => {
 												if (selectedFile) {
 													parseSpreadsheetFile(
@@ -856,26 +854,28 @@ export const SettingsPricesAiImportSection: React.FC<
 							)}
 						</div>
 
-						<div style={{ display: "flex", gap: "10px" }}>
+						<div className="flex items-center gap-2">
 							<button
-								className="secondary-button"
+								className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
 								type="button"
 								onClick={() => setIsDiffModalOpen(true)}
 							>
-								<Sparkles size={16} style={{ marginRight: "6px" }} />
-								Сопоставление с каталогом услуг
+								<Sparkles size={15} className="text-[var(--teal)] shrink-0" />
+								<span>Сопоставление с каталогом услуг</span>
 							</button>
 
 							<button
-								className="primary-button"
+								className="primary-button h-8 px-4 text-[13px] font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
 								type="button"
 								disabled={isImporting || tabularAnalysis.validRowsCount === 0}
 								onClick={() => handleBatchImportSubmit()}
 							>
-								<Database size={16} style={{ marginRight: "6px" }} />
-								{isImporting
-									? "Импорт в базу..."
-									: `Импортировать в прейскурант (${tabularAnalysis.validRowsCount})`}
+								<Database size={15} className="shrink-0" />
+								<span>
+									{isImporting
+										? "Импорт в базу..."
+										: `Импортировать в прейскурант (${tabularAnalysis.validRowsCount})`}
+								</span>
 							</button>
 						</div>
 					</div>

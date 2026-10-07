@@ -64,8 +64,8 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 			"0-Click Objective Norm button must exist",
 		);
 		assert.ok(
-			source.includes("0-Клик: Норма осмотра"),
-			"Button must clearly state 0-Click Objective Norm",
+			source.includes("Физиологическая норма осмотра"),
+			"Button must clearly state Objective Norm",
 		);
 
 		// Examination chips must be wrapped in <details>

@@ -47,7 +47,7 @@ export const informedConsent1051nPayloadSchema = z.object({
 	consentTitle: z.string().trim().min(1).max(240).default("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА МЕДИЦИНСКОЕ ВМЕШАТЕЛЬСТВО"),
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
 	clinicAddress: z.string().trim().max(240).default(""),
-	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
+	clinicOgrn: z.string().trim().max(32).default(""),
 	clinicInn: z.string().trim().max(16).default(""),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
 	medicalLicenseDate: z.string().trim().max(32).default(DEFAULT_CLINIC_LICENSE_DATE),
@@ -93,6 +93,10 @@ export interface InformedConsent1051nOptions {
 	readonly doctorSpecialty?: string | null | undefined;
 	readonly clinicName?: string | null | undefined;
 	readonly clinicLicense?: string | null | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly clinicPhone?: string | null | undefined;
+	readonly clinicOgrn?: string | null | undefined;
+	readonly clinicInn?: string | null | undefined;
 	readonly interventionType?: "therapy" | "surgery" | "anesthesia" | "general" | string | undefined;
 	readonly toothNumbers?: string | null | undefined;
 	readonly diagnosisIcd?: string | null | undefined;
@@ -168,15 +172,15 @@ export function generateStatutoryConsent1051nPayload(params: {
 		consentTitle: title,
 		clinicLegalName: c?.legalName || 'ООО "Денте Клиник"',
 		clinicAddress: c?.address || "",
-		clinicOgrn: c?.ogrn || "1234567890123",
+		clinicOgrn: c?.ogrn || "",
 		clinicInn: c?.inn || "",
 		medicalLicenseNumber: c?.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER,
 		medicalLicenseDate: DEFAULT_CLINIC_LICENSE_DATE,
 		patientFullName: p.fullName,
 		patientBirthDate: p.birthDate,
-		patientPassport: p.passport || "Паспорт гражданина РФ",
-		patientAddress: p.address || "г. Москва",
-		patientPhone: p.phone || "+7 (999) 000-00-00",
+		patientPassport: p.passport || "",
+		patientAddress: p.address || "",
+		patientPhone: p.phone || "",
 		patientSnils: p.snils || null,
 		representativeFullName: rep?.fullName || null,
 		representativePassport: rep?.passport || null,
@@ -254,9 +258,12 @@ export function generateInformedConsent1051nHtml(
 	const license =
 		options.clinicLicense ||
 		"№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения города Москвы";
+	const clinicAddress = options.clinicAddress || "";
+	const clinicPhone = options.clinicPhone || "";
+	const clinicContactLine = [clinicAddress, clinicPhone ? `Тел: ${clinicPhone}` : ""].filter(Boolean).join(" • ");
 	const patient = options.patientFullName || "—";
 	const birthDate = options.patientBirthDate || "—";
-	const passport = options.patientPassport || "Паспорт гражданина РФ: _________________________";
+	const passport = options.patientPassport || "_________________________";
 	const address = options.patientAddress || "__________________________________________________";
 	const doctor = options.doctorFullName || "—";
 	const specialty = options.doctorSpecialty || "Врач-стоматолог";
@@ -281,9 +288,9 @@ export function generateInformedConsent1051nHtml(
 	<div class="watermark-draft" style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 52pt; font-weight: 900; color: rgba(0, 0, 0, 0.04); text-transform: uppercase; letter-spacing: 4pt; pointer-events: none; z-index: 0; user-select: none;" aria-hidden="true">${effectiveWatermark}</div>
 	<div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
 		<div>
-			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: normal; word-break: normal; overflow-wrap: break-word; hyphens: none;">${clinic}</div>
-			<div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 2px;">Лицензия: ${license}</div>
-			<div style="font-size: 10px; color: #64748b;">119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99</div>
+			<div style="font-size: 15px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: normal; word-break: normal; overflow-wrap: break-word; hyphens: none;">${escapeHtml(clinic)}</div>
+			<div style="font-size: 11px; font-weight: 600; color: #475569; margin-top: 2px;">Лицензия: ${escapeHtml(license)}</div>
+			${clinicContactLine ? `<div style="font-size: 10px; color: #64748b;">${escapeHtml(clinicContactLine)}</div>` : ""}
 		</div>
 		<div style="text-align: right; font-size: 11px; shrink: 0;">
 			<div style="margin-bottom: 4px;">
@@ -371,7 +378,7 @@ export function renderInformedConsent1051nHtml(payload: InformedConsent1051nPayl
 	}
 
 	const clinicName = payload.clinicLegalName || payload.clinicName || payload.organization?.fullName || 'ООО "Денте Клиник"';
-	const clinicAddress = payload.clinicAddress || payload.organization?.address || "г. Москва";
+	const clinicAddress = payload.clinicAddress || payload.organization?.address || "";
 	const clinicOgrn = payload.clinicOgrn || payload.organization?.ogrn || "—";
 	const clinicInn = payload.clinicInn || payload.organization?.inn || "—";
 	const medLic = payload.medicalLicenseNumber || payload.clinicLicense || DEFAULT_CLINIC_LICENSE_NUMBER;
@@ -379,7 +386,7 @@ export function renderInformedConsent1051nHtml(payload: InformedConsent1051nPayl
 
 	const patientName = payload.patientFullName || payload.patient?.fullName || "—";
 	const patientBirth = payload.patientBirthDate || payload.patient?.birthDate || "—";
-	const patientPassport = payload.patientPassport || payload.patient?.passport || "Паспорт гражданина РФ";
+	const patientPassport = payload.patientPassport || payload.patient?.passport || "—";
 	const patientAddress = payload.patientAddress || payload.patient?.address || "—";
 	const patientPhone = payload.patientPhone || payload.patient?.phone || "—";
 	const patientSnils = payload.patientSnils || payload.patient?.snils || "—";
@@ -642,13 +649,13 @@ export function generateStatutoryRefusal1051nPayload(params: {
 		doctorSpecialty: d.specialty || "Врач-стоматолог",
 		patientFullName: p.fullName,
 		patientBirthDate: p.birthDate,
-		patientPassport: p.passport || "Паспорт гражданина РФ",
+		patientPassport: p.passport || "",
 		patientAddress: p.address || "",
 		patientPhone: p.phone || "",
 		patientSnils: p.snils || null,
 		clinicLegalName: c?.legalName || 'ООО "Денте Клиник"',
 		clinicAddress: c?.address || "",
-		clinicOgrn: c?.ogrn || "1234567890123",
+		clinicOgrn: c?.ogrn || "",
 		clinicInn: c?.inn || "",
 		medicalLicenseNumber: c?.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER,
 		representativeFullName: rep?.fullName || null,
@@ -714,7 +721,7 @@ export function generateMedicalInterventionRefusal1051nHtml(
 	const license = options.clinicLicense || "№ ЛО41-01137-77/00368421 от 14.02.2023 г.";
 	const patient = options.patientFullName || "—";
 	const birthDate = options.patientBirthDate || "—";
-	const passport = options.patientPassport || "Паспорт гражданина РФ: _________________________";
+	const passport = options.patientPassport || "_________________________";
 	const address = options.patientAddress || "__________________________________________________";
 	const doctor = options.doctorFullName || "—";
 	const specialty = options.doctorSpecialty || "Врач-стоматолог";
@@ -774,7 +781,7 @@ export function generateMedicalInterventionRefusal1051nHtml(
 		<div>
 			<div style="font-size: 14px; font-weight: 900; text-transform: uppercase; color: #0f172a;">${escapeHtml(clinic)}</div>
 			<div style="font-size: 10.5px; font-weight: 600; color: #475569; margin-top: 2px;">Лицензия: ${escapeHtml(license)}</div>
-			<div style="font-size: 9.5px; color: #64748b;">${escapeHtml(options.clinicAddress || "г. Москва")}</div>
+			${options.clinicAddress ? `<div style="font-size: 9.5px; color: #64748b;">${escapeHtml(options.clinicAddress)}</div>` : ""}
 		</div>
 		<div style="text-align: right; font-size: 10.5px; shrink: 0;">
 			<div style="margin-bottom: 4px;">

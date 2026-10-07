@@ -325,6 +325,52 @@ export function cbctCasesPlugin(): Plugin {
 					return;
 				}
 
+				// 2.5 Single Slice Binary Stream Endpoint (Instant 2D DICOM Slice)
+				if (pathname === "/api/cbct-tuner/slice") {
+					const patientId = parsedUrl.searchParams.get("id") || "zakharov";
+					const zIdx = Math.max(0, parseInt(parsedUrl.searchParams.get("z") || "160", 10));
+					const cfg = PATIENTS_CONFIG.find((p) => p.id === patientId) || PATIENTS_CONFIG[0]!;
+
+					try {
+						let cached = volumeCache.get(cfg.id);
+						if (!cached) {
+							if (cfg.type === "multiframe") {
+								cached = await loadMultiframeVolume(cfg.path, cfg.name, cfg.id);
+							} else {
+								cached = loadSeriesVolumeSync(cfg.path, cfg.name, cfg.id);
+							}
+							volumeCache.set(cfg.id, cached);
+						}
+
+						const w = cached.meta.dimX;
+						const h = cached.meta.dimY;
+						const d = cached.meta.dimZ;
+						const clampedZ = Math.min(d - 1, zIdx);
+						const sliceBytes = w * h * 2;
+						const offset = clampedZ * sliceBytes;
+						const sliceBuf = cached.buffer.subarray(offset, offset + sliceBytes);
+
+						res.setHeader("Content-Type", "application/octet-stream");
+						res.setHeader("x-cbct-id", cached.meta.id);
+						res.setHeader("x-cbct-name", encodeURIComponent(cached.meta.name));
+						res.setHeader("x-cbct-dim-x", String(w));
+						res.setHeader("x-cbct-dim-y", String(h));
+						res.setHeader("x-cbct-z", String(clampedZ));
+						res.setHeader("x-cbct-sp-x", String(cached.meta.spX));
+						res.setHeader("x-cbct-sp-y", String(cached.meta.spY));
+						res.setHeader("x-cbct-min-hu", String(cached.meta.minHU));
+						res.setHeader("x-cbct-max-hu", String(cached.meta.maxHU));
+						res.setHeader("Content-Length", String(sliceBuf.length));
+						res.end(sliceBuf);
+					} catch (err: unknown) {
+						const msg = err instanceof Error ? err.message : String(err);
+						res.statusCode = 500;
+						res.setHeader("Content-Type", "application/json");
+						res.end(JSON.stringify({ ok: false, error: msg }));
+					}
+					return;
+				}
+
 				// 3. Single Raw DICOM File Stream
 				if (pathname === "/api/cbct-tuner/file") {
 					const patientId = parsedUrl.searchParams.get("id") || "";

@@ -157,10 +157,10 @@ export function VisitSpecialtyFocus({
 				type="button"
 				data-testid="toggle-specialty-protocol-drawer"
 				onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
-				className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
+				className={`h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border text-[13px] font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
 					isProtocolDrawerOpen
 						? "border-[var(--teal)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))]"
-						: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))]"
+						: "border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))]"
 				}`}
 				title="Развернуть специализированный бланк приема"
 				aria-expanded={isProtocolDrawerOpen}
@@ -185,37 +185,53 @@ export function VisitSpecialtyFocus({
 					({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
 				</span>
 			</div>
-			<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
+			<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
 				{focusOptions.length === 0 ? (
 					<span className="text-xs text-[var(--muted)] truncate">
 						Направления не настроены
 					</span>
 				) : null}
-				{focusOptions.map((option: any) => (
-					<button
-						className={`px-2 py-0.5 sm:h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-white font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
-						type="button"
-						key={option.specialty}
-						aria-pressed={selectedSpecialty === option.specialty}
-						onClick={() => {
-							if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
-							if (setSelectedProtocolId) setSelectedProtocolId(null);
-						}}
-						title={option.hint}
+				{focusOptions.length > 0 && (
+					<div
+						className="inline-flex items-center p-[2px] rounded-[9px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-[2px] shadow-2xs shrink-0"
+						role="tablist"
+						aria-label="Направления специализаций"
 					>
-						<strong>{option.title}</strong>
-					</button>
-				))}
+						{focusOptions.map((option: any) => {
+							const isActive = selectedSpecialty === option.specialty;
+							return (
+								<button
+									className={`h-7 px-2.5 rounded-[7px] text-[12.5px] transition-all cursor-pointer select-none whitespace-nowrap ${
+										isActive
+											? "bg-[var(--teal)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
+									}`}
+									type="button"
+									role="tab"
+									key={option.specialty}
+									aria-selected={isActive}
+									onClick={() => {
+										if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
+										if (setSelectedProtocolId) setSelectedProtocolId(null);
+									}}
+									title={option.hint}
+								>
+									<span>{option.title}</span>
+								</button>
+							);
+						})}
+					</div>
+				)}
 
 				{/* Кнопка быстрого специализированного бланка (Мандаты 8c, 8e: Warm Context Tier 2) */}
 				<button
 					type="button"
 					onClick={() => setIsProtocolDrawerOpen((prev: boolean) => !prev)}
-					className="h-7 px-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white"
+					className="h-7.5 px-2.5 rounded-lg text-[12.5px] font-semibold flex items-center gap-1 transition-all cursor-pointer border border-[var(--line-subtle)] bg-[var(--paper-soft)] text-[var(--teal-ink,var(--teal))] hover:bg-[var(--teal)] hover:text-white shrink-0"
 					title="Развернуть специализированный бланк приема"
 					data-testid="toggle-specialty-protocol-drawer"
 				>
-					<FileText size={11} className="shrink-0" />
+					<FileText size={12} className="shrink-0" />
 					<span className="hidden sm:inline">Бланк:</span>
 					<span>{isChildDentition ? "Детство" : isSurgery ? "Хирургия" : "Терапия"}</span>
 					<ChevronDown size={11} className={`shrink-0 transform transition-transform ${isProtocolDrawerOpen ? "rotate-180" : ""}`} />

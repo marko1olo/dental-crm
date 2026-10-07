@@ -78,7 +78,7 @@ export const InvoiceDecree659Banner: React.FC<InvoiceDecree659BannerProps> = ({
 						: "Сформировать Дополнительное соглашение (ДС-2026)"}
 				</button>
 				<span className="text-[11px] text-amber-700 dark:text-amber-400 italic">
-					После оформления документа система разблокирует выписку наряда и счета
+					После оформления соглашения выписка наряда и счета будет продолжена без задержек
 				</span>
 			</div>
 		</div>

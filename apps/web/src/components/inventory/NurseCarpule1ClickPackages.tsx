@@ -19,10 +19,10 @@ export const NurseCarpule1ClickPackages: React.FC<
 						size={14}
 						className="text-teal-600 dark:text-teal-400 shrink-0"
 					/>
-					<span className="truncate">Пакетное списание в 1 клик:</span>
+					<span className="truncate">Быстрое пакетное списание:</span>
 				</span>
 				<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 shrink-0">
-					Мягкий овердрафт активен
+					Расход сверх остатка разрешен
 				</span>
 			</div>
 			<div className="flex items-center gap-2 flex-wrap">
@@ -92,7 +92,7 @@ export const NurseCarpule1ClickPackages: React.FC<
 					onClick={onShiftCloseClassBDisposal}
 					className="btn-shift-close-class-b-disposal min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-amber-500/40 bg-[var(--paper,#ffffff)] text-amber-800 dark:text-amber-200 hover:bg-amber-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer shadow-xs min-w-0"
 					data-testid="btn-shift-close-class-b-disposal"
-					title="1-клик сдача отходов смены (Класс Б, СанПиН 2.1.3684-21) без комиссии из 3 человек"
+					title="Сдача отходов смены (Класс Б, СанПиН 2.1.3684-21) без комиссии из 3 человек"
 				>
 					<ShieldCheck
 						size={16}

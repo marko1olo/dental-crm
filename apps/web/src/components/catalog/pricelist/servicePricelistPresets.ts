@@ -1147,7 +1147,7 @@ export const STATUTORY_ORDER_804N_PRESETS: readonly ServicePricelistItem[] = [
 ];
 
 /**
- * Baseline 804n Pricelist (30 canonical services) for 1-click quick-fill suite (Mandates 8e, 8k, 8n)
+ * Baseline 804n Pricelist (30 canonical services) для быстрого заполнения каталога клиники (Мандаты 8e, 8k, 8n)
  */
 export const BASELINE_804N_PRICELIST_SERVICES: readonly ServicePricelistItem[] = [
 	{

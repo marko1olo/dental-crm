@@ -75,10 +75,10 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 	const notify = propShowToast || showToast;
 
 	return (
-		<div className="shrink-0 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+		<div className="shrink-0 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
 			{activeTab === "payment" && (
 				<>
-					<div className="text-xs text-[var(--muted,#64748b)] flex items-center gap-2">
+					<div className="text-xs text-[var(--muted,#64748b)] flex items-center justify-between sm:justify-start gap-2">
 						<span>
 							К оплате:{" "}
 							<strong className="text-sm font-mono text-[var(--ink,#0f172a)] font-bold">
@@ -103,31 +103,33 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							)}
 						</span>
 					</div>
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							onClick={handlePrintSalesSlip}
-							className="h-9 px-3 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
-							data-testid="btn-print-sales-slip-modal"
-							title="Напечатать товарный чек без отправки в налоговую"
-						>
-							<FileText size={14} className="text-teal-600" />
-							<span>Товарный чек</span>
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-						>
-							Закрыть
-						</button>
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
+						<div className="flex items-center gap-2 w-full sm:w-auto">
+							<button
+								type="button"
+								onClick={handlePrintSalesSlip}
+								className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0 h-11 sm:h-9 px-3 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+								data-testid="btn-print-sales-slip-modal"
+								title="Напечатать товарный чек без отправки в налоговую"
+							>
+								<FileText size={14} className="text-teal-600" />
+								<span>Товарный чек</span>
+							</button>
+							<button
+								type="button"
+								onClick={onClose}
+								className="flex-1 sm:flex-none min-h-[44px] sm:min-h-0 h-11 sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center cursor-pointer transition-colors"
+							>
+								Закрыть
+							</button>
+						</div>
 						<button
 							type="button"
 							onClick={() => handleExecuteFiscalization()}
 							disabled={isFiscalizing}
 							data-testid="btn-execute-fiscalization btn-fiscalize-receipt"
 							title={isFiscalizing ? "Идет печать чека на кассе..." : undefined}
-							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-0 h-11 sm:h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 shrink-0"
 						>
 							<ShieldCheck size={16} />
 							<span>
@@ -151,7 +153,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 								navigator.clipboard.writeText(oneCXmlPreview);
 								notify("XML-код 1С:Предприятие скопирован в буфер обмена!", "success", 2500);
 							}}
-							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 						>
 							<Copy size={14} />
 							<span>Копировать XML</span>
@@ -164,7 +166,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 								navigator.clipboard.writeText(summaryText);
 								notify("Сводка для бухгалтера скопирована!", "success", 2500);
 							}}
-							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+							className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 						>
 							<FileText size={14} />
 							<span>Сводка для бухгалтерии</span>
@@ -175,7 +177,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -208,7 +210,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 					<button
 						type="button"
 						onClick={handleCopyActData}
-						className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+						className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
 						<Copy size={14} />
 						<span>Скопировать текст Акта</span>
@@ -217,7 +219,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -238,7 +240,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 					<button
 						type="button"
 						onClick={handleCopyCertData}
-						className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+						className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
 					>
 						<Copy size={14} />
 						<span>Скопировать данные справки</span>
@@ -247,7 +249,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -275,7 +277,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -316,7 +318,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>
@@ -350,7 +352,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+							className="h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
 						>
 							Закрыть
 						</button>

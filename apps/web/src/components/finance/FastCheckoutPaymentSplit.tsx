@@ -196,40 +196,38 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 						)}
 					</div>
 				) : (
-					<div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] overflow-x-auto">
+					<div className="dente-segmented-bar w-full flex overflow-x-auto" role="tablist" aria-label="Способ оплаты">
 						{CHECKOUT_PAYMENT_METHODS.map((m) => {
 							const isSelected = activeMethod === m.id;
 							return (
 								<button
 									key={m.id}
 									type="button"
+									role="tab"
+									aria-selected={isSelected}
 									onClick={() => onSelectMethod(m.id)}
-									className={
-										"min-h-[44px] sm:h-8.5 px-3 rounded-xl border flex items-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 whitespace-nowrap shrink-0 " +
-										(isSelected
-											? "border-teal-600 bg-teal-600 text-white shadow-xs"
-											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-teal-400 text-[var(--ink,#0f172a)]")
-									}
+									className={`dente-segmented-item flex-1 ${isSelected ? "active" : ""}`}
+									data-testid={`checkout-method-${m.id}`}
 								>
 									{m.id === "sbp_qr" && (
-										<QrCode size={14} className={isSelected ? "text-white" : "text-teal-600 dark:text-teal-400"} />
+										<QrCode size={14} className="shrink-0" />
 									)}
 									{m.id === "bank_card" && (
-										<CreditCard size={14} className={isSelected ? "text-white" : "text-blue-600 dark:text-blue-400"} />
+										<CreditCard size={14} className="shrink-0" />
 									)}
 									{m.id === "cash" && (
-										<Banknote size={14} className={isSelected ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />
+										<Banknote size={14} className="shrink-0" />
 									)}
 									{m.id === "patient_deposit" && (
-										<Coins size={14} className={isSelected ? "text-white" : "text-amber-600 dark:text-amber-400"} />
+										<Coins size={14} className="shrink-0" />
 									)}
 									{m.id === "dms_insurance" && (
-										<ShieldCheck size={14} className={isSelected ? "text-white" : "text-purple-600 dark:text-purple-400"} />
+										<ShieldCheck size={14} className="shrink-0" />
 									)}
 									{m.id === "loyalty_points" && (
-										<Sparkles size={14} className={isSelected ? "text-white" : "text-indigo-600 dark:text-indigo-400"} />
+										<Sparkles size={14} className="shrink-0" />
 									)}
-									<span>{m.titleRu.split(" ")[0]}</span>
+									<span>{m.titleRu}</span>
 								</button>
 							);
 						})}
@@ -248,14 +246,14 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 
 						{/* 1-Click Remainder Balancer Buttons */}
 						{remainingRub > 0 ? (
-							<div className="flex items-center gap-1.5 flex-wrap">
-								<span className="text-xs text-[var(--muted,#64748b)]">
+							<div className="dente-filter-chips flex items-center gap-1.5 flex-wrap">
+								<span className="text-[12px] text-[var(--muted,#64748b)] font-medium">
 									Остаток <strong className="font-mono text-amber-600 dark:text-amber-400">{remainingRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</strong>:
 								</span>
 								<button
 									type="button"
 									onClick={onAddRemainingToCard}
-									className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-500/15 hover:bg-blue-500/25 text-blue-700 dark:text-blue-300 border border-blue-500/30 transition-all cursor-pointer select-none active:scale-95"
+									className="dente-filter-chip"
 									title="Заполнить остаток картой"
 									data-testid="split-fill-card-btn"
 								>
@@ -264,7 +262,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								<button
 									type="button"
 									onClick={onAddRemainingToCash}
-									className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer select-none active:scale-95"
+									className="dente-filter-chip"
 									title="Заполнить остаток наличными"
 									data-testid="split-fill-cash-btn"
 								>
@@ -273,7 +271,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								<button
 									type="button"
 									onClick={onAddRemainingToSbp}
-									className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 transition-all cursor-pointer select-none active:scale-95"
+									className="dente-filter-chip"
 									title="Заполнить остаток через СБП"
 									data-testid="split-fill-sbp-btn"
 								>
@@ -282,7 +280,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								<button
 									type="button"
 									onClick={onAddRemainingToDeposit}
-									className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all cursor-pointer select-none active:scale-95"
+									className="dente-filter-chip"
 									title="Заполнить остаток из депозита"
 									data-testid="split-fill-deposit-btn"
 								>
@@ -292,7 +290,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 									<button
 										type="button"
 										onClick={onAddRemainingDepositPlusCard}
-										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-200 border border-amber-500/40 transition-all cursor-pointer select-none active:scale-95"
+										className="dente-filter-chip active"
 										title={`Использовать весь остаток депозита (${totalAvailableDeposit.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽), а недостачу закрыть картой`}
 										data-testid="split-fill-deposit-card-btn"
 									>
@@ -302,7 +300,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								<button
 									type="button"
 									onClick={onAddRemainingToLoyalty}
-									className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer select-none active:scale-95"
+									className="dente-filter-chip"
 									title="Заполнить остаток баллами"
 									data-testid="split-fill-loyalty-btn"
 								>
@@ -312,7 +310,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 									<button
 										type="button"
 										onClick={onAddRemainingToFamily}
-										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 border border-teal-500/30 transition-all cursor-pointer select-none active:scale-95"
+										className="dente-filter-chip"
 										title={`Заполнить остаток из семейного счета (${familyPayerName || "семья"})`}
 										data-testid="split-fill-family-btn"
 									>
@@ -322,7 +320,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 								<button
 									type="button"
 									onClick={onAddRemaining5050}
-									className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 transition-all cursor-pointer select-none active:scale-95"
+									className="dente-filter-chip"
 									title="Разделить остаток 50/50 между картой и наличными (без копеечного дрейфа)"
 									data-testid="split-fill-5050-btn"
 								>
@@ -548,7 +546,7 @@ export const FastCheckoutPaymentSplit: React.FC<FastCheckoutPaymentSplitProps> =
 									disabled={isCheckingSbp}
 									className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
 									data-testid="btn-manual-confirm-sbp"
-									title="Подтвердить зачисление средств по выписке/СМС банка (Мандат 8e)"
+									title="Подтвердить зачисление средств по выписке/СМС банка"
 								>
 									<Check size={13} />
 									<span>Подтвердить вручную</span>

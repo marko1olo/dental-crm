@@ -173,14 +173,14 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 			{/* ── 2. Collapsible Search Bar ─────────────────────────────────── */}
 			{isSearchOpen && (
 				<div className="leads-mobile-search-bar">
-					<div className="leads-mobile-search-input-wrap">
-						<Search size={16} className="text-[var(--muted)] shrink-0" />
+					<div className="dente-search-wrap leads-mobile-search-input-wrap">
+						<Search size={16} className="dente-search-icon" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по имени, телефону или жалобе..."
-							className="leads-mobile-search-input"
+							className="dente-search-input leads-mobile-search-input"
 							autoFocus
 							data-testid="mobile-leads-search-input"
 						/>
@@ -188,7 +188,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="text-[var(--muted)] p-1 hover:text-[var(--ink)]"
+								className="dente-search-clear"
 								aria-label="Очистить поиск"
 							>
 								<X size={15} />
@@ -199,14 +199,14 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 			)}
 
 			{/* ── 3. Apple Segmented Status Scroller ────────────────────────── */}
-			<div className="leads-mobile-segmented-wrap" role="tablist" aria-label="Статусы воронки">
+			<div className="leads-mobile-segmented-wrap dente-segmented-bar" role="tablist" aria-label="Статусы воронки">
 				<div className="leads-mobile-segmented-scroller">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "new"}
 						onClick={() => setActiveTab("new")}
-						className={`leads-mobile-seg-btn ${activeTab === "new" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "new" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-new"
 					>
 						<span>Новые</span>
@@ -218,7 +218,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						role="tab"
 						aria-selected={activeTab === "contacted"}
 						onClick={() => setActiveTab("contacted")}
-						className={`leads-mobile-seg-btn ${activeTab === "contacted" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "contacted" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-contacted"
 					>
 						<span>В работе</span>
@@ -230,7 +230,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						role="tab"
 						aria-selected={activeTab === "consult_booked"}
 						onClick={() => setActiveTab("consult_booked")}
-						className={`leads-mobile-seg-btn ${activeTab === "consult_booked" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "consult_booked" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-consult_booked"
 					>
 						<span>Записаны</span>
@@ -242,7 +242,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						role="tab"
 						aria-selected={activeTab === "showed_up"}
 						onClick={() => setActiveTab("showed_up")}
-						className={`leads-mobile-seg-btn ${activeTab === "showed_up" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "showed_up" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-showed_up"
 					>
 						<span>Дошли</span>
@@ -254,7 +254,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						role="tab"
 						aria-selected={activeTab === "no_answer"}
 						onClick={() => setActiveTab("no_answer")}
-						className={`leads-mobile-seg-btn ${activeTab === "no_answer" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "no_answer" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-no_answer"
 					>
 						<span>Недозвон</span>
@@ -266,7 +266,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						role="tab"
 						aria-selected={activeTab === "trash"}
 						onClick={() => setActiveTab("trash")}
-						className={`leads-mobile-seg-btn ${activeTab === "trash" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "trash" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-trash"
 					>
 						<span>Отказ</span>
@@ -278,7 +278,7 @@ export const LeadsMobileFeedView: React.FC<LeadsMobileFeedViewProps> = ({
 						role="tab"
 						aria-selected={activeTab === "all"}
 						onClick={() => setActiveTab("all")}
-						className={`leads-mobile-seg-btn ${activeTab === "all" ? "is-active" : ""}`}
+						className={`leads-mobile-seg-btn dente-segmented-item ${activeTab === "all" ? "is-active active" : ""}`}
 						data-testid="mobile-tab-all"
 					>
 						<span>Все</span>

@@ -441,7 +441,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 							</h2>
 							<p className="text-xs text-[var(--odontogram-ink-muted,#64748b)]">
 								{patientName ? `Пациент: ${patientName} • ` : ""}
-								Автоматический сбор всех выявленных кариозных и эндодонтических находок в 1 клик
+								Автоматический сбор всех выявленных кариозных и эндодонтических находок
 							</p>
 						</div>
 					</div>

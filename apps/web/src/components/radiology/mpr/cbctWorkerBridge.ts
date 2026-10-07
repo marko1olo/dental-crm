@@ -12,21 +12,28 @@ import type { ObliqueRotationAngles } from "../cbctObliqueMatrixMath";
 import { extractObliqueMprSlice, type ObliqueSliceRenderOptions } from "../cbctObliqueSliceMath";
 import { extractArchCrossSectionSeries, type CrossSectionSeriesOptions, type CrossSectionSliceData } from "../cbctCrossSectionResliceMath";
 import type { DentalArchCurve } from "../cbctArchSplineMath";
+import { calculateDynamicWorkerPoolSize } from "@dental/shared";
 import type { CbctWorkerInboundMessage, CbctWorkerOutboundMessage, DecodeDicomSliceTask, GenerateProgressiveLodPayload } from "./cbctSliceWorker";
 
-import type {
-	DecodedSliceResult,
-	WorkerRenderSliceOptions,
-	WorkerRenderSliceParams,
-	WorkerRenderAllPlanesParams,
-	WorkerCrossSectionSeriesParams,
-	CbctWorkerBridgeOptions,
-	PendingSingleSlice,
-	PendingMultiPlane,
-	PendingSeriesRequest,
-	PendingDecodeRequest,
-	PendingLodRequest,
+import {
+	type DecodedSliceResult,
+	type WorkerRenderSliceOptions,
+	type WorkerRenderSliceParams,
+	type WorkerRenderAllPlanesParams,
+	type WorkerCrossSectionSeriesParams,
+	type CbctWorkerBridgeOptions,
+	type PendingSingleSlice,
+	type PendingMultiPlane,
+	type PendingSeriesRequest,
+	type PendingDecodeRequest,
+	type PendingLodRequest,
+	type QueuedSingleSlice,
+	type QueuedMultiPlane,
+	StaleSliceRequestError,
+	isStaleSliceRequestError,
 } from "./cbctWorkerBridgeTypes";
+
+export { StaleSliceRequestError, isStaleSliceRequestError };
 
 export type {
 	DecodeDicomSliceTask,
@@ -37,10 +44,14 @@ export type {
 	WorkerRenderAllPlanesParams,
 	WorkerCrossSectionSeriesParams,
 	CbctWorkerBridgeOptions,
+	QueuedSingleSlice,
+	QueuedMultiPlane,
 };
 
 export class CbctWorkerBridge {
-	private worker: Worker | null = null;
+	private workers: Worker[] = [];
+	private workerPoolSize = 1;
+	private roundRobinIndex = 0;
 	private forceFallback: boolean;
 	private isWorkerActive = false;
 	private initializedVolumeId: string | null = null;
@@ -54,56 +65,74 @@ export class CbctWorkerBridge {
 	private pendingDecodeRequests = new Map<number, PendingDecodeRequest>();
 	private pendingLodRequests = new Map<number, PendingLodRequest>();
 
+	// ─── MPR QUEUE & IN-FLIGHT SCRUBBING OPTIMIZER ─────────────────────────────
+	private inFlightSingleByPlane = new Map<MprPlane, { requestId: number; worker: Worker; abortNotified?: boolean }>();
+	private queuedSingleByPlane = new Map<MprPlane, QueuedSingleSlice>();
+
+	private inFlightMulti: { requestId: number; worker: Worker; abortNotified?: boolean } | null = null;
+	private queuedMulti: QueuedMultiPlane | null = null;
+
 	constructor(options?: CbctWorkerBridgeOptions) {
 		this.forceFallback = options?.forceFallback ?? false;
 
+		const concurrency =
+			typeof navigator !== "undefined" && typeof navigator.hardwareConcurrency === "number"
+				? navigator.hardwareConcurrency
+				: 4;
+		const defaultPool = options?.workerFactory
+			? (options?.poolSize ?? 1)
+			: calculateDynamicWorkerPoolSize(concurrency);
+		this.workerPoolSize = Math.max(1, options?.poolSize ?? defaultPool);
+
 		if (!this.forceFallback) {
-			this.initializeWorker(options?.workerFactory);
+			this.initializeWorkers(options?.workerFactory);
 		}
 	}
 
-	private initializeWorker(customFactory?: () => Worker): void {
+	private initializeWorkers(customFactory?: () => Worker): void {
 		try {
-			if (customFactory) {
-				this.worker = customFactory();
-				this.isWorkerActive = true;
-				this.setupListeners();
-			} else if (typeof Worker !== "undefined") {
-				// Vite native module worker URL resolution
-				this.worker = new Worker(
-					new URL("./cbctSliceWorker.ts", import.meta.url),
-					{ type: "module" },
-				);
-				this.isWorkerActive = true;
-				this.setupListeners();
-			} else {
-				this.isWorkerActive = false;
-				this.worker = null;
+			this.workers = [];
+			for (let i = 0; i < this.workerPoolSize; i++) {
+				let w: Worker | null = null;
+				if (customFactory) {
+					w = customFactory();
+				} else if (typeof Worker !== "undefined") {
+					// Vite native module worker URL resolution
+					w = new Worker(
+						new URL("./cbctSliceWorker.ts", import.meta.url),
+						{ type: "module" },
+					);
+				}
+				if (w) {
+					this.setupWorkerListeners(w);
+					this.workers.push(w);
+				}
 			}
+			this.isWorkerActive = this.workers.length > 0;
 		} catch (err) {
 			console.warn(
 				"[CbctWorkerBridge] Web Worker instantiation unavailable, falling back to main-thread rendering:",
 				err,
 			);
 			this.isWorkerActive = false;
-			this.worker = null;
+			this.workers = [];
 		}
 	}
 
-	private setupListeners(): void {
-		if (!this.worker) return;
-
-		this.worker.onmessage = (event: MessageEvent<CbctWorkerOutboundMessage>) => {
+	private setupWorkerListeners(worker: Worker): void {
+		worker.onmessage = (event: MessageEvent<CbctWorkerOutboundMessage>) => {
 			this.handleWorkerMessage(event.data);
 		};
 
-		this.worker.onerror = (err: ErrorEvent) => {
+		worker.onerror = (err: ErrorEvent) => {
 			console.error("[CbctWorkerBridge] Worker error encountered:", err.message);
 			// Fail all pending requests with error
 			for (const [, req] of this.pendingSingleRequests) {
+				req.onAbortCleanup?.();
 				req.reject(new Error(`Worker execution error: ${err.message}`));
 			}
 			for (const [, req] of this.pendingMultiRequests) {
+				req.onAbortCleanup?.();
 				req.reject(new Error(`Worker execution error: ${err.message}`));
 			}
 			for (const [, req] of this.pendingSeriesRequests) {
@@ -115,12 +144,37 @@ export class CbctWorkerBridge {
 			for (const [, req] of this.pendingLodRequests) {
 				req.reject(new Error(`Worker execution error: ${err.message}`));
 			}
+			for (const [, q] of this.queuedSingleByPlane) {
+				q.onAbortCleanup?.();
+				q.reject(new Error(`Worker execution error: ${err.message}`));
+			}
+			if (this.queuedMulti) {
+				this.queuedMulti.onAbortCleanup?.();
+				this.queuedMulti.reject(new Error(`Worker execution error: ${err.message}`));
+				this.queuedMulti = null;
+			}
 			this.pendingSingleRequests.clear();
 			this.pendingMultiRequests.clear();
 			this.pendingSeriesRequests.clear();
 			this.pendingDecodeRequests.clear();
 			this.pendingLodRequests.clear();
+			this.queuedSingleByPlane.clear();
+			this.inFlightSingleByPlane.clear();
+			this.inFlightMulti = null;
 		};
+	}
+
+	public getNextWorker(): Worker {
+		if (this.workers.length === 0) {
+			throw new Error("CbctWorkerBridge: No active workers in pool.");
+		}
+		const w = this.workers[this.roundRobinIndex % this.workers.length]!;
+		this.roundRobinIndex = (this.roundRobinIndex + 1) % this.workers.length;
+		return w;
+	}
+
+	public getPoolSize(): number {
+		return this.workers.length;
 	}
 
 	public handleWorkerMessage(msg: CbctWorkerOutboundMessage): void {
@@ -135,11 +189,20 @@ export class CbctWorkerBridge {
 			case "SLICE_RENDERED": {
 				const pending = this.pendingSingleRequests.get(msg.requestId);
 				if (pending) {
+					pending.onAbortCleanup?.();
 					this.pendingSingleRequests.delete(msg.requestId);
 					pending.resolve({
 						data: new Uint8ClampedArray(msg.pixelBuffer as ArrayBuffer),
 						metadata: msg.metadata,
 					});
+				}
+				const plane = msg.metadata?.plane ?? msg.plane;
+				if (plane) {
+					const inFlight = this.inFlightSingleByPlane.get(plane);
+					if (inFlight && inFlight.requestId === msg.requestId) {
+						this.inFlightSingleByPlane.delete(plane);
+						(this as any).drainNextQueuedSlice(plane);
+					}
 				}
 				break;
 			}
@@ -147,6 +210,7 @@ export class CbctWorkerBridge {
 			case "ALL_PLANES_RENDERED": {
 				const pending = this.pendingMultiRequests.get(msg.requestId);
 				if (pending) {
+					pending.onAbortCleanup?.();
 					this.pendingMultiRequests.delete(msg.requestId);
 					pending.resolve({
 						axial: {
@@ -162,6 +226,38 @@ export class CbctWorkerBridge {
 							metadata: msg.slices.sagittal.metadata,
 						},
 					});
+				}
+				if (this.inFlightMulti && this.inFlightMulti.requestId === msg.requestId) {
+					this.inFlightMulti = null;
+					(this as any).drainNextQueuedMulti();
+				}
+				break;
+			}
+
+			case "REQUEST_ABORTED": {
+				const pendingSingle = this.pendingSingleRequests.get(msg.requestId);
+				if (pendingSingle) {
+					pendingSingle.onAbortCleanup?.();
+					this.pendingSingleRequests.delete(msg.requestId);
+					pendingSingle.reject(new StaleSliceRequestError(msg.requestId, pendingSingle.plane));
+				}
+				const plane = msg.plane ?? pendingSingle?.plane;
+				if (plane) {
+					const inFlight = this.inFlightSingleByPlane.get(plane);
+					if (inFlight && inFlight.requestId === msg.requestId) {
+						this.inFlightSingleByPlane.delete(plane);
+						(this as any).drainNextQueuedSlice(plane);
+					}
+				}
+				const pendingMulti = this.pendingMultiRequests.get(msg.requestId);
+				if (pendingMulti) {
+					pendingMulti.onAbortCleanup?.();
+					this.pendingMultiRequests.delete(msg.requestId);
+					pendingMulti.reject(new StaleSliceRequestError(msg.requestId));
+				}
+				if (this.inFlightMulti && this.inFlightMulti.requestId === msg.requestId) {
+					this.inFlightMulti = null;
+					(this as any).drainNextQueuedMulti();
 				}
 				break;
 			}
@@ -211,13 +307,24 @@ export class CbctWorkerBridge {
 				if (msg.requestId !== undefined) {
 					const pendingSingle = this.pendingSingleRequests.get(msg.requestId);
 					if (pendingSingle) {
+						pendingSingle.onAbortCleanup?.();
 						this.pendingSingleRequests.delete(msg.requestId);
 						pendingSingle.reject(new Error(msg.error));
+						const inFlight = this.inFlightSingleByPlane.get(pendingSingle.plane);
+						if (inFlight && inFlight.requestId === msg.requestId) {
+							this.inFlightSingleByPlane.delete(pendingSingle.plane);
+							(this as any).drainNextQueuedSlice(pendingSingle.plane);
+						}
 					}
 					const pendingMulti = this.pendingMultiRequests.get(msg.requestId);
 					if (pendingMulti) {
+						pendingMulti.onAbortCleanup?.();
 						this.pendingMultiRequests.delete(msg.requestId);
 						pendingMulti.reject(new Error(msg.error));
+						if (this.inFlightMulti && this.inFlightMulti.requestId === msg.requestId) {
+							this.inFlightMulti = null;
+							(this as any).drainNextQueuedMulti();
+						}
 					}
 					const pendingSeries = this.pendingSeriesRequests.get(msg.requestId);
 					if (pendingSeries) {
@@ -241,7 +348,7 @@ export class CbctWorkerBridge {
 	}
 
 	public isFallbackMode(): boolean {
-		return this.forceFallback || !this.isWorkerActive || !this.worker;
+		return this.forceFallback || !this.isWorkerActive || this.workers.length === 0;
 	}
 
 	public getActiveVolumeId(): string | null {
@@ -249,7 +356,7 @@ export class CbctWorkerBridge {
 	}
 
 	/**
-	 * Registers a CBCT volume with the worker. If already initialized, skips redundant transfer.
+	 * Registers a CBCT volume with the worker pool. Broadcasts to all workers so each has volume cached in memory.
 	 */
 	public initVolume(volume: CbctVoxelVolume): void {
 		this.activeVolume = volume;
@@ -283,16 +390,239 @@ export class CbctWorkerBridge {
 			data: volume.data,
 		};
 
-		this.worker!.postMessage(initMsg);
+		for (const w of this.workers) {
+			w.postMessage(initMsg);
+		}
 		this.initializedVolumeId = volume.id;
 	}
 
 	/**
+	 * Cancels all pending single-slice requests for the given plane whose requestId < currentRequestId.
+	 */
+	public supersedePendingSingleSlice(plane: MprPlane, currentRequestId: number): void {
+		const queued = this.queuedSingleByPlane.get(plane);
+		if (queued && queued.requestId < currentRequestId) {
+			this.queuedSingleByPlane.delete(plane);
+			queued.onAbortCleanup?.();
+			queued.reject(new StaleSliceRequestError(queued.requestId, plane));
+		}
+
+		for (const [id, req] of this.pendingSingleRequests) {
+			if (id < currentRequestId && req.plane === plane) {
+				req.onAbortCleanup?.();
+				this.pendingSingleRequests.delete(id);
+				this.notifyWorkersAbort(id, plane);
+				req.reject(new StaleSliceRequestError(id, plane));
+			}
+		}
+
+		const inFlight = this.inFlightSingleByPlane.get(plane);
+		if (inFlight && inFlight.requestId < currentRequestId) {
+			this.notifyWorkersAbort(inFlight.requestId, plane);
+		}
+	}
+
+	/**
+	 * Cancels all pending multi-plane requests whose requestId < currentRequestId.
+	 */
+	public supersedePendingAllPlanes(currentRequestId: number): void {
+		if (this.queuedMulti && this.queuedMulti.requestId < currentRequestId) {
+			const q = this.queuedMulti;
+			this.queuedMulti = null;
+			q.onAbortCleanup?.();
+			q.reject(new StaleSliceRequestError(q.requestId));
+		}
+
+		for (const [id, req] of this.pendingMultiRequests) {
+			if (id < currentRequestId) {
+				req.onAbortCleanup?.();
+				this.pendingMultiRequests.delete(id);
+				this.notifyWorkersAbort(id);
+				req.reject(new StaleSliceRequestError(id));
+			}
+		}
+
+		if (this.inFlightMulti && this.inFlightMulti.requestId < currentRequestId) {
+			this.notifyWorkersAbort(this.inFlightMulti.requestId);
+		}
+	}
+
+	/**
+	 * Manually abort a specific in-flight or queued request.
+	 */
+	public abortRequest(requestId: number, plane?: MprPlane): void {
+		if (plane) {
+			const queued = this.queuedSingleByPlane.get(plane);
+			if (queued && queued.requestId === requestId) {
+				this.queuedSingleByPlane.delete(plane);
+				queued.onAbortCleanup?.();
+				queued.reject(new StaleSliceRequestError(requestId, plane));
+			}
+		} else {
+			for (const [p, queued] of this.queuedSingleByPlane) {
+				if (queued.requestId === requestId) {
+					this.queuedSingleByPlane.delete(p);
+					queued.onAbortCleanup?.();
+					queued.reject(new StaleSliceRequestError(requestId, p));
+				}
+			}
+		}
+
+		if (this.queuedMulti && this.queuedMulti.requestId === requestId) {
+			const q = this.queuedMulti;
+			this.queuedMulti = null;
+			q.onAbortCleanup?.();
+			q.reject(new StaleSliceRequestError(requestId));
+		}
+
+		const pendingSingle = this.pendingSingleRequests.get(requestId);
+		if (pendingSingle) {
+			const targetPlane = plane ?? pendingSingle.plane;
+			pendingSingle.onAbortCleanup?.();
+			this.pendingSingleRequests.delete(requestId);
+			this.notifyWorkersAbort(requestId, targetPlane);
+			pendingSingle.reject(new StaleSliceRequestError(requestId, targetPlane));
+
+			const inFlight = this.inFlightSingleByPlane.get(targetPlane);
+			if (inFlight && inFlight.requestId === requestId) {
+				this.inFlightSingleByPlane.delete(targetPlane);
+				this.drainNextQueuedSlice(targetPlane);
+			}
+		}
+
+		const pendingMulti = this.pendingMultiRequests.get(requestId);
+		if (pendingMulti) {
+			pendingMulti.onAbortCleanup?.();
+			this.pendingMultiRequests.delete(requestId);
+			this.notifyWorkersAbort(requestId);
+			pendingMulti.reject(new StaleSliceRequestError(requestId));
+
+			if (this.inFlightMulti && this.inFlightMulti.requestId === requestId) {
+				this.inFlightMulti = null;
+				this.drainNextQueuedMulti();
+			}
+		}
+	}
+
+	/**
+	 * Sends an ABORT_REQUEST notification to all active workers so they drop the request pre-flight.
+	 */
+	public notifyWorkersAbort(requestId: number, plane?: MprPlane): void {
+		if (this.isFallbackMode()) return;
+		const abortMsg: CbctWorkerInboundMessage = {
+			type: "ABORT_REQUEST",
+			requestId,
+			...(plane ? { plane } : {}),
+		};
+		for (const w of this.workers) {
+			try {
+				w.postMessage(abortMsg);
+			} catch {
+				// Ignore if worker is closed or unreachable
+			}
+		}
+	}
+
+	private dispatchSingleSlice(
+		reqId: number,
+		params: WorkerRenderSliceParams,
+		existingPromise?: {
+			resolve: (val: MprSliceExtractionResult) => void;
+			reject: (err: Error) => void;
+			onAbortCleanup?: () => void;
+		},
+	): Promise<MprSliceExtractionResult> {
+		const worker = this.getNextWorker();
+		this.inFlightSingleByPlane.set(params.plane, { requestId: reqId, worker, abortNotified: false });
+
+		const setupPendingAndPost = (
+			resolve: (val: MprSliceExtractionResult) => void,
+			reject: (err: Error) => void,
+		) => {
+			const pendingEntry: PendingSingleSlice = {
+				requestId: reqId,
+				resolve,
+				reject,
+				volumeId: params.volume.id,
+				plane: params.plane,
+			};
+
+			if (params.signal) {
+				const onAbort = () => {
+					this.abortRequest(reqId, params.plane);
+				};
+				params.signal.addEventListener("abort", onAbort, { once: true });
+				pendingEntry.onAbortCleanup = () => {
+					params.signal?.removeEventListener("abort", onAbort);
+				};
+			}
+
+			this.pendingSingleRequests.set(reqId, pendingEntry);
+
+			const msg: CbctWorkerInboundMessage = {
+				type: "RENDER_SLICE",
+				requestId: reqId,
+				volumeId: params.volume.id,
+				plane: params.plane,
+				crosshairMm: params.crosshairMm,
+				angles: params.obliqueAngles,
+				options: {
+					windowWidth: params.options.windowWidth,
+					windowLevel: params.options.windowLevel,
+					...(params.options.invert !== undefined ? { invert: params.options.invert } : {}),
+					...(params.options.slabMode !== undefined ? { slabMode: params.options.slabMode } : {}),
+					...(params.options.slabThicknessMm !== undefined ? { slabThicknessMm: params.options.slabThicknessMm } : {}),
+					...(params.options.interpolation !== undefined ? { interpolation: params.options.interpolation } : {}),
+				},
+			};
+
+			worker.postMessage(msg);
+		};
+
+		if (existingPromise) {
+			setupPendingAndPost(existingPromise.resolve, existingPromise.reject);
+			return Promise.resolve(undefined as unknown as MprSliceExtractionResult);
+		}
+
+		return new Promise<MprSliceExtractionResult>((resolve, reject) => {
+			setupPendingAndPost(resolve, reject);
+		});
+	}
+
+	private drainNextQueuedSlice(plane: MprPlane): void {
+		this.inFlightSingleByPlane.delete(plane);
+
+		const nextQueued = this.queuedSingleByPlane.get(plane);
+		if (!nextQueued) {
+			return;
+		}
+
+		this.queuedSingleByPlane.delete(plane);
+		nextQueued.onAbortCleanup?.();
+
+		if (nextQueued.params.signal?.aborted) {
+			nextQueued.reject(new StaleSliceRequestError(nextQueued.requestId, plane));
+			this.drainNextQueuedSlice(plane);
+			return;
+		}
+
+		this.dispatchSingleSlice(nextQueued.requestId, nextQueued.params, {
+			resolve: nextQueued.resolve,
+			reject: nextQueued.reject,
+		});
+	}
+
+	/**
 	 * Extracts an oblique slice asynchronously in the background worker, or synchronously in fallback mode.
+	 * Drops earlier stale requests in queue for the same plane when supersedePrevious is enabled (default true).
 	 */
 	public renderSlice(params: WorkerRenderSliceParams): Promise<MprSliceExtractionResult> {
 		const reqId = params.requestId ?? ++this.nextRequestId;
 		this.latestRequestedId = Math.max(this.latestRequestedId, reqId);
+
+		if (params.signal?.aborted) {
+			return Promise.reject(new StaleSliceRequestError(reqId, params.plane));
+		}
 
 		if (this.isFallbackMode()) {
 			const renderOpts: ObliqueSliceRenderOptions = {
@@ -318,19 +648,91 @@ export class CbctWorkerBridge {
 			this.initVolume(params.volume);
 		}
 
-		return new Promise<MprSliceExtractionResult>((resolve, reject) => {
-			this.pendingSingleRequests.set(reqId, {
+		if (params.supersedePrevious !== false) {
+			const existingQueued = this.queuedSingleByPlane.get(params.plane);
+			if (existingQueued) {
+				existingQueued.onAbortCleanup?.();
+				this.queuedSingleByPlane.delete(params.plane);
+				existingQueued.reject(new StaleSliceRequestError(existingQueued.requestId, params.plane));
+			}
+
+			const currentInFlight = this.inFlightSingleByPlane.get(params.plane);
+			if (currentInFlight) {
+				if (!currentInFlight.abortNotified) {
+					this.notifyWorkersAbort(currentInFlight.requestId, params.plane);
+					currentInFlight.abortNotified = true;
+				}
+
+				return new Promise<MprSliceExtractionResult>((resolve, reject) => {
+					const queuedEntry: QueuedSingleSlice = {
+						requestId: reqId,
+						params,
+						resolve,
+						reject,
+					};
+
+					if (params.signal) {
+						const onAbort = () => {
+							const q = this.queuedSingleByPlane.get(params.plane);
+							if (q && q.requestId === reqId) {
+								this.queuedSingleByPlane.delete(params.plane);
+								q.onAbortCleanup?.();
+								q.reject(new StaleSliceRequestError(reqId, params.plane));
+							}
+						};
+						params.signal.addEventListener("abort", onAbort, { once: true });
+						queuedEntry.onAbortCleanup = () => {
+							params.signal?.removeEventListener("abort", onAbort);
+						};
+					}
+
+					this.queuedSingleByPlane.set(params.plane, queuedEntry);
+				});
+			}
+		}
+
+		return this.dispatchSingleSlice(reqId, params);
+	}
+
+	private dispatchMultiPlanes(
+		reqId: number,
+		params: WorkerRenderAllPlanesParams,
+		existingPromise?: {
+			resolve: (val: Record<MprPlane, MprSliceExtractionResult>) => void;
+			reject: (err: Error) => void;
+			onAbortCleanup?: () => void;
+		},
+	): Promise<Record<MprPlane, MprSliceExtractionResult>> {
+		const worker = this.getNextWorker();
+		this.inFlightMulti = { requestId: reqId, worker, abortNotified: false };
+
+		const setupPendingAndPost = (
+			resolve: (val: Record<MprPlane, MprSliceExtractionResult>) => void,
+			reject: (err: Error) => void,
+		) => {
+			const pendingEntry: PendingMultiPlane = {
+				requestId: reqId,
 				resolve,
 				reject,
 				volumeId: params.volume.id,
-				plane: params.plane,
-			});
+			};
+
+			if (params.signal) {
+				const onAbort = () => {
+					this.abortRequest(reqId);
+				};
+				params.signal.addEventListener("abort", onAbort, { once: true });
+				pendingEntry.onAbortCleanup = () => {
+					params.signal?.removeEventListener("abort", onAbort);
+				};
+			}
+
+			this.pendingMultiRequests.set(reqId, pendingEntry);
 
 			const msg: CbctWorkerInboundMessage = {
-				type: "RENDER_SLICE",
+				type: "RENDER_ALL_PLANES",
 				requestId: reqId,
 				volumeId: params.volume.id,
-				plane: params.plane,
 				crosshairMm: params.crosshairMm,
 				angles: params.obliqueAngles,
 				options: {
@@ -343,18 +745,55 @@ export class CbctWorkerBridge {
 				},
 			};
 
-			this.worker!.postMessage(msg);
+			worker.postMessage(msg);
+		};
+
+		if (existingPromise) {
+			setupPendingAndPost(existingPromise.resolve, existingPromise.reject);
+			return Promise.resolve(undefined as unknown as Record<MprPlane, MprSliceExtractionResult>);
+		}
+
+		return new Promise<Record<MprPlane, MprSliceExtractionResult>>((resolve, reject) => {
+			setupPendingAndPost(resolve, reject);
+		});
+	}
+
+	private drainNextQueuedMulti(): void {
+		this.inFlightMulti = null;
+
+		const nextQueued = this.queuedMulti;
+		if (!nextQueued) {
+			return;
+		}
+
+		this.queuedMulti = null;
+		nextQueued.onAbortCleanup?.();
+
+		if (nextQueued.params.signal?.aborted) {
+			nextQueued.reject(new StaleSliceRequestError(nextQueued.requestId));
+			this.drainNextQueuedMulti();
+			return;
+		}
+
+		this.dispatchMultiPlanes(nextQueued.requestId, nextQueued.params, {
+			resolve: nextQueued.resolve,
+			reject: nextQueued.reject,
 		});
 	}
 
 	/**
-	 * Extracts all 3 orthogonal/oblique MPR planes (Axial, Coronal, Sagittal) synchronously or in background worker.
+	 * Extracts all 3 orthogonal/oblique MPR planes (Axial, Coronal, Sagittal) synchronously or in background worker pool.
+	 * If pool size >= 3, dispatches planes in parallel across CPU cores.
 	 */
 	public renderAllPlanes(
 		params: WorkerRenderAllPlanesParams,
 	): Promise<Record<MprPlane, MprSliceExtractionResult>> {
 		const reqId = params.requestId ?? ++this.nextRequestId;
 		this.latestRequestedId = Math.max(this.latestRequestedId, reqId);
+
+		if (params.signal?.aborted) {
+			return Promise.reject(new StaleSliceRequestError(reqId));
+		}
 
 		if (this.isFallbackMode()) {
 			const renderOpts: ObliqueSliceRenderOptions = {
@@ -394,31 +833,102 @@ export class CbctWorkerBridge {
 			this.initVolume(params.volume);
 		}
 
-		return new Promise<Record<MprPlane, MprSliceExtractionResult>>((resolve, reject) => {
-			this.pendingMultiRequests.set(reqId, {
-				resolve,
-				reject,
-				volumeId: params.volume.id,
-			});
+		if (this.workers.length >= 3) {
+			// Multi-worker parallel dispatch across CPU cores (axial, coronal, sagittal)
+			return Promise.all([
+				this.renderSlice({
+					volume: params.volume,
+					plane: "axial",
+					crosshairMm: params.crosshairMm,
+					obliqueAngles: params.obliqueAngles,
+					options: params.options,
+					signal: params.signal,
+					supersedePrevious: params.supersedePrevious,
+				}),
+				this.renderSlice({
+					volume: params.volume,
+					plane: "coronal",
+					crosshairMm: params.crosshairMm,
+					obliqueAngles: params.obliqueAngles,
+					options: params.options,
+					signal: params.signal,
+					supersedePrevious: params.supersedePrevious,
+				}),
+				this.renderSlice({
+					volume: params.volume,
+					plane: "sagittal",
+					crosshairMm: params.crosshairMm,
+					obliqueAngles: params.obliqueAngles,
+					options: params.options,
+					signal: params.signal,
+					supersedePrevious: params.supersedePrevious,
+				}),
+			]).then(([axial, coronal, sagittal]) => ({
+				axial: axial!,
+				coronal: coronal!,
+				sagittal: sagittal!,
+			}));
+		}
 
-			const msg: CbctWorkerInboundMessage = {
-				type: "RENDER_ALL_PLANES",
-				requestId: reqId,
-				volumeId: params.volume.id,
-				crosshairMm: params.crosshairMm,
-				angles: params.obliqueAngles,
-				options: {
-					windowWidth: params.options.windowWidth,
-					windowLevel: params.options.windowLevel,
-					...(params.options.invert !== undefined ? { invert: params.options.invert } : {}),
-					...(params.options.slabMode !== undefined ? { slabMode: params.options.slabMode } : {}),
-					...(params.options.slabThicknessMm !== undefined ? { slabThicknessMm: params.options.slabThicknessMm } : {}),
-					...(params.options.interpolation !== undefined ? { interpolation: params.options.interpolation } : {}),
-				},
-			};
+		if (params.supersedePrevious !== false) {
+			if (this.queuedMulti) {
+				const q = this.queuedMulti;
+				this.queuedMulti = null;
+				q.onAbortCleanup?.();
+				q.reject(new StaleSliceRequestError(q.requestId));
+			}
 
-			this.worker!.postMessage(msg);
-		});
+			if (this.inFlightMulti) {
+				if (!this.inFlightMulti.abortNotified) {
+					this.notifyWorkersAbort(this.inFlightMulti.requestId);
+					this.inFlightMulti.abortNotified = true;
+				}
+
+				return new Promise<Record<MprPlane, MprSliceExtractionResult>>((resolve, reject) => {
+					const queuedEntry: QueuedMultiPlane = {
+						requestId: reqId,
+						params,
+						resolve,
+						reject,
+					};
+
+					if (params.signal) {
+						const onAbort = () => {
+							if (this.queuedMulti && this.queuedMulti.requestId === reqId) {
+								const q = this.queuedMulti;
+								this.queuedMulti = null;
+								q.onAbortCleanup?.();
+								q.reject(new StaleSliceRequestError(reqId));
+							}
+						};
+						params.signal.addEventListener("abort", onAbort, { once: true });
+						queuedEntry.onAbortCleanup = () => {
+							params.signal?.removeEventListener("abort", onAbort);
+						};
+					}
+
+					this.queuedMulti = queuedEntry;
+				});
+			}
+		}
+
+		return this.dispatchMultiPlanes(reqId, params);
+	}
+
+	public getQueuedSingleCount(): number {
+		return this.queuedSingleByPlane.size;
+	}
+
+	public getInFlightSingleCount(): number {
+		return this.inFlightSingleByPlane.size;
+	}
+
+	public isPlaneInFlight(plane: MprPlane): boolean {
+		return this.inFlightSingleByPlane.has(plane);
+	}
+
+	public isPlaneQueued(plane: MprPlane): boolean {
+		return this.queuedSingleByPlane.has(plane);
 	}
 
 	/**
@@ -460,7 +970,7 @@ export class CbctWorkerBridge {
 				options: params.options,
 			};
 
-			this.worker!.postMessage(msg);
+			this.getNextWorker().postMessage(msg);
 		});
 	}
 
@@ -607,7 +1117,7 @@ export class CbctWorkerBridge {
 				tasks,
 			};
 
-			this.worker!.postMessage(msg, transferList);
+			this.getNextWorker().postMessage(msg, transferList);
 		});
 	}
 
@@ -727,18 +1237,18 @@ export class CbctWorkerBridge {
 				...payload,
 			};
 
-			this.worker!.postMessage(msg, transferList);
+			this.getNextWorker().postMessage(msg, transferList);
 		});
 	}
 
 	/**
-	 * Disposes worker thread, clears memory caches and terminates pending promises.
+	 * Disposes worker thread pool, clears memory caches and terminates pending promises.
 	 */
 	public dispose(): void {
-		if (this.worker) {
+		for (const w of this.workers) {
 			if (this.initializedVolumeId) {
 				try {
-					this.worker.postMessage({
+					w.postMessage({
 						type: "DISPOSE_VOLUME",
 						volumeId: this.initializedVolumeId,
 					});
@@ -746,18 +1256,20 @@ export class CbctWorkerBridge {
 					// Ignore postMessage failure on closing worker
 				}
 			}
-			this.worker.terminate();
-			this.worker = null;
+			w.terminate();
 		}
+		this.workers = [];
 
 		this.isWorkerActive = false;
 		this.initializedVolumeId = null;
 		this.activeVolume = null;
 
 		for (const [, req] of this.pendingSingleRequests) {
+			req.onAbortCleanup?.();
 			req.reject(new Error("CbctWorkerBridge disposed."));
 		}
 		for (const [, req] of this.pendingMultiRequests) {
+			req.onAbortCleanup?.();
 			req.reject(new Error("CbctWorkerBridge disposed."));
 		}
 		for (const [, req] of this.pendingSeriesRequests) {
@@ -769,11 +1281,23 @@ export class CbctWorkerBridge {
 		for (const [, req] of this.pendingLodRequests) {
 			req.reject(new Error("CbctWorkerBridge disposed."));
 		}
+		for (const [, q] of this.queuedSingleByPlane) {
+			q.onAbortCleanup?.();
+			q.reject(new Error("CbctWorkerBridge disposed."));
+		}
+		if (this.queuedMulti) {
+			this.queuedMulti.onAbortCleanup?.();
+			this.queuedMulti.reject(new Error("CbctWorkerBridge disposed."));
+			this.queuedMulti = null;
+		}
 		this.pendingSingleRequests.clear();
 		this.pendingMultiRequests.clear();
 		this.pendingSeriesRequests.clear();
 		this.pendingDecodeRequests.clear();
 		this.pendingLodRequests.clear();
+		this.queuedSingleByPlane.clear();
+		this.inFlightSingleByPlane.clear();
+		this.inFlightMulti = null;
 	}
 
 	public terminate(): void {

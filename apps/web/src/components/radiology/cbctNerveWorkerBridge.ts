@@ -164,7 +164,7 @@ export class CbctNerveWorkerBridge {
 			voxelData: volume.data,
 			startSeedMm,
 			endSeedMm,
-			options,
+			...(options !== undefined ? { options } : {}),
 		};
 
 		return new Promise<FastMarchingNerveResult>((resolve, reject) => {

@@ -100,7 +100,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 		}
 		handleBatchSelectGroup([]);
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Выделение зубов снято в 1 клик", "info", 2000);
+		showToast("Выделение зубов снято", "info", 2000);
 	}, [onClearSelection, handleBatchSelectGroup]);
 
 	const handleGroupAction = useCallback(
@@ -122,25 +122,25 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 	);
 
 	const stampHint = activeStampTool
-		? ` (Штамп «${TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}» покрасит всю группу в 1 клик)`
+		? ` (Штамп «${TOOTH_STATE_LABELS[activeStampTool] || activeStampTool}» окрасит всю группу)`
 		: "";
 
 	return (
 		<details className="relative shrink-0">
 			<summary
-				className="list-none h-7 px-2 sm:px-2.5 rounded-md bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 text-[var(--odontogram-ink-muted,#64748b)] text-xs font-bold flex items-center gap-1 cursor-pointer select-none transition-all shrink-0"
+				className="list-none h-7.5 px-2.5 rounded-[8px] bg-[var(--paper-soft,var(--odontogram-surface-hover,#f1f5f9))] border border-[var(--line-subtle,var(--odontogram-border-subtle,#e2e8f0))] hover:text-indigo-600 text-[var(--ink-muted,#64748b)] text-[12.5px] font-medium flex items-center gap-1 cursor-pointer select-none transition-all shrink-0"
 				title="Быстрые действия: санация, без 8-ок, инвертировать, квадранты, челюсти"
 				data-testid="odontogram-quick-actions-menu"
 			>
 				<Layers size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
 				<span className="hidden sm:inline">Действия</span>
-				<ChevronDown size={11} className="shrink-0 opacity-70" />
+				<ChevronDown size={12} className="shrink-0 opacity-70" />
 			</summary>
 			<div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
 				{onQuickStateChange && (
 					<div>
 						<div className="text-xs font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
-							Пакетные операции (1 клик)
+							Пакетные операции
 						</div>
 						<div className="flex items-center gap-1.5 mb-1.5">
 							<button
@@ -151,7 +151,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 									handleSanitizeAll();
 								}}
 								className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
-								title="1-клик Санирован / Интактный зубной ряд: вся челюсть моментально помечается здоровой без поверхностей"
+								title="Физиологическая норма (зубные ряды интактны): вся челюсть моментально помечается здоровой без поверхностей"
 								data-testid="mark-intact-dentition-dropdown-btn mark-intact-dentition-btn"
 							>
 								<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -167,7 +167,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 										handleWisdomMissing();
 									}}
 									className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
-									title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими без поверхностей"
+									title="Первичная адентия третьих моляров: зубы 18, 28, 38, 48 моментально помечаются отсутствующими без поверхностей"
 									data-testid="mark-wisdom-missing-btn"
 								>
 									<Zap size={13} className="text-zinc-500 shrink-0" />
@@ -201,7 +201,7 @@ export const OdontogramToolbarQuickActions: React.FC<OdontogramToolbarQuickActio
 									handleClear();
 								}}
 								className="h-7 px-2.5 rounded-lg text-xs font-bold bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-700 dark:text-zinc-300 border border-zinc-500/20 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
-								title="Снять выделение со всех зубов в 1 клик"
+								title="Снять выделение со всех зубов"
 								data-testid="clear-selection-btn"
 							>
 								<X size={12} className="text-zinc-500 shrink-0" />

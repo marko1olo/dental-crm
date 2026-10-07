@@ -18,7 +18,7 @@ import { CbctViewportHud } from "../CbctViewportHud";
 import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
 import type { ImplantBrandKey, Implant3DWorldProjection, NerveSafetyAuditResult } from "../implantSafetyEngine";
 import { CbctVolume3DViewport } from "./CbctVolume3DViewport";
-import { CbctViewportsRulerOverlay } from "./CbctViewportsRuler";
+import { CbctViewportsRulerOverlay, CbctViewportRulerToolbar } from "./CbctViewportsRuler";
 import { CbctEmptyVolumeDropzone } from "./CbctEmptyVolumeDropzone";
 import {
 	MprQuadWorkspace,
@@ -233,21 +233,18 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		return () => window.removeEventListener("pointerup", handleGlobalPointerUp);
 	}, [activeRotationHandle, isShiftRotating, handleCanvasMouseUp]);
 
+	const renderRulerToolbar = (viewport: CbctViewportType) => (
+		<CbctViewportRulerToolbar viewportType={viewport} activeTool={activeTool} onSelectTool={onSelectTool} rulers={rulers} onClearRulers={onClearRulers} angles={angles} onClearAngles={onClearAngles} />
+	);
+
 	const renderViewportOverlaysWithRuler = (viewport: CbctViewportType) => (
 		<>
 			<CbctViewportsRulerOverlay
-				viewportType={viewport}
-				activeTool={activeTool}
-				onSelectTool={onSelectTool}
-				rulers={rulers}
-				onClearRulers={onClearRulers}
-				angles={angles}
-				onClearAngles={onClearAngles}
-				windowWidth={windowWidth}
-				windowLevel={windowLevel}
-				onSelectQuickWlPreset={onSelectQuickWlPreset}
+				viewportType={viewport} activeTool={activeTool} onSelectTool={onSelectTool}
+				rulers={rulers} onClearRulers={onClearRulers} angles={angles} onClearAngles={onClearAngles}
+				windowWidth={windowWidth} windowLevel={windowLevel} onSelectQuickWlPreset={onSelectQuickWlPreset}
+				hideToolbar
 			/>
-
 			{renderViewportOverlays(viewport)}
 		</>
 	);
@@ -266,7 +263,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-axial"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
+			<div className="absolute inset-0 w-full h-full min-h-0 min-w-0 overflow-hidden" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={axialBaseCanvasRef}
 					style={{ backgroundColor: "#000000" }}
@@ -325,8 +322,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 						</button>
 					</div>
 				)}
-				<CbctViewportHud
-					viewportType="axial"
+				<CbctViewportHud viewportType="axial" toolsSlot={renderRulerToolbar("axial")}
 					coordinateMm={{ z: crosshairMm.z }}
 					sliceIndex={volume ? currentVoxel.z : undefined}
 					totalSlices={volume?.dimensions.depth}
@@ -364,7 +360,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-coronal"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
+			<div className="absolute inset-0 w-full h-full min-h-0 min-w-0 overflow-hidden" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={coronalBaseCanvasRef}
 					style={{ backgroundColor: "#000000" }}
@@ -383,8 +379,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-coronal"
 				/>
-				<CbctViewportHud
-					viewportType="coronal"
+				<CbctViewportHud viewportType="coronal" toolsSlot={renderRulerToolbar("coronal")}
 					coordinateMm={{ y: crosshairMm.y }}
 					sliceIndex={volume ? currentVoxel.y : undefined}
 					totalSlices={volume?.dimensions.height}
@@ -422,7 +417,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-sagittal"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
+			<div className="absolute inset-0 w-full h-full min-h-0 min-w-0 overflow-hidden" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={sagittalBaseCanvasRef}
 					style={{ backgroundColor: "#000000" }}
@@ -441,8 +436,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-sagittal"
 				/>
-				<CbctViewportHud
-					viewportType="sagittal"
+				<CbctViewportHud viewportType="sagittal" toolsSlot={renderRulerToolbar("sagittal")}
 					coordinateMm={{ x: crosshairMm.x }}
 					sliceIndex={volume ? currentVoxel.x : undefined}
 					totalSlices={volume?.dimensions.width}
@@ -526,7 +520,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			data-testid="cbct-viewport-container-panoramic"
 		>
 
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
+			<div className="absolute inset-0 w-full h-full min-h-0 min-w-0 overflow-hidden" style={{ backgroundColor: "#000000" }}>
 				{/* Top-left Mode Switcher (placed below clinical HUD badge to prevent overlap) */}
 				<div className="absolute top-9 left-2 z-30 pointer-events-auto">
 					{renderFourthQuadrantSwitcher()}
@@ -553,8 +547,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					className="absolute inset-0 w-full h-full object-contain cursor-pointer z-10"
 					data-testid="cbct-panorama-canvas"
 				/>
-				<CbctViewportHud
-					viewportType="panoramic"
+				<CbctViewportHud viewportType="panoramic" toolsSlot={renderRulerToolbar("panoramic")}
 					coordinateMm={{ z: crosshairMm.z }}
 					sliceIndex={volume ? currentVoxel.z : undefined}
 					totalSlices={volume?.dimensions.depth}
@@ -616,7 +609,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-cross-section"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
+			<div className="absolute inset-0 w-full h-full min-h-0 min-w-0 overflow-hidden" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={crossSectionBaseCanvasRef}
 					style={{ backgroundColor: "#000000" }}
@@ -641,8 +634,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					}`}
 					data-testid="cbct-cross-section-canvas"
 				/>
-				<CbctViewportHud
-					viewportType="cross_section"
+				<CbctViewportHud viewportType="cross_section" toolsSlot={renderRulerToolbar("cross_section")}
 					toothFdi={activeCrossSection?.nearestToothFdi}
 					sliceIndex={activeCrossSectionIdx}
 					totalSlices={crossSections.length}

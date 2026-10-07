@@ -187,7 +187,7 @@ export const BookingContactsSection: React.FC<BookingContactsSectionProps> = ({
 					/>
 				)}
 
-				{/* Privacy Policy Checkbox (Mandate 8e: Non-blocking, default accepted) */}
+				{/* Privacy Policy Checkbox */}
 				<div className="dbw-privacy-row">
 					<input
 						id="privacy-checkbox"

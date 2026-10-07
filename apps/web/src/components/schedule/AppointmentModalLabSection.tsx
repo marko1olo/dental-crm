@@ -166,13 +166,13 @@ export function AppointmentModalLabSection({
 						{/* Верхняя строка: Номер наряда + Статус-бейдж */}
 						<div className="flex items-center justify-between gap-2 flex-wrap font-bold">
 							<div className="flex items-center gap-1.5 min-w-0">
-								<span>
-									{item.statusInfo.isOverdue
-										? "⚠️"
-										: item.statusInfo.state === "ready_in_clinic"
-											? "🦷"
-											: "⏳"}
-								</span>
+								{item.statusInfo.isOverdue ? (
+									<AlertTriangle size={13} className="text-rose-500 shrink-0" />
+								) : item.statusInfo.state === "ready_in_clinic" ? (
+									<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+								) : (
+									<Clock size={13} className="text-amber-500 shrink-0" />
+								)}
 								<span className="text-[var(--ink)] font-bold">Наряд ЗТЛ:</span>
 								<span className="font-mono text-[var(--muted)]">{item.orderNumber}</span>
 							</div>

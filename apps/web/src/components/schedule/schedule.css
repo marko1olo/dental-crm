@@ -31,16 +31,16 @@
 
 /* 1-Click Primary Quick Booking Action */
 .schedule-toolbar-primary-quick-booking-btn {
-	height: 28px;
-	min-height: 28px;
-	max-height: 28px;
-	padding: 0 10px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 4px;
-	font-size: 12px;
-	font-weight: 700;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
 	border-radius: 8px;
 	background: var(--teal, var(--brand-primary, #0d9488));
 	color: var(--on-teal, #ffffff);
@@ -215,10 +215,10 @@
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.appointment-modal-duration-chip:hover {
-	border-color: var(--teal) !important;
-	color: var(--teal) !important;
+.appointment-modal-duration-chip:hover:not(.active) {
 	background-color: var(--paper-subtle, var(--paper)) !important;
+	border-color: var(--line-strong) !important;
+	color: var(--ink) !important;
 }
 
 .appointment-modal-duration-chip:active {

@@ -256,7 +256,7 @@ export function compileTomorrowReminders(
 		});
 
 		// Append interactive confirm & reschedule instructions
-		const interactiveLinksBlock = `\n\nПодтвердите ваш визит в 1 клик:\n[Подтвердить]: ${confirmUrl}\n[Перенести]: ${rescheduleUrl}`;
+		const interactiveLinksBlock = `\n\nПодтвердите ваш визит:\n[Подтвердить]: ${confirmUrl}\n[Перенести]: ${rescheduleUrl}`;
 		const reminderText = `${baseReminderText}${interactiveLinksBlock}`;
 
 		let whatsAppUrl: string | null = null;
@@ -402,7 +402,7 @@ export async function dispatchBatchReminders(
 				patientName: item.patientName,
 				channel: item.preferredChannel,
 				status: "skipped_quiet_hours",
-				error: "Отправка заблокирована фильтром «Тихий час» (21:00 – 08:00)",
+				error: "Отправка отложена: действует режим «Тихий час» (21:00 – 08:00)",
 			});
 			continue;
 		}

@@ -80,7 +80,7 @@ export function formatPlaybookForm043A4Protocol(
 		}
 		lines.push(subDivider);
 
-		lines.push("2. КРИТИЧЕСКИЕ АЛЛЕРГИИ И СОМАТИЧЕСКИЕ СТОП-ФАКТОРЫ (МАНДАТ 8E):");
+		lines.push("2. КРИТИЧЕСКИЕ АЛЛЕРГИИ И СОМАТИЧЕСКИЕ СТОП-ФАКТОРЫ:");
 		if (b.criticalAlerts.length === 0) {
 			lines.push("   [OK] Стоп-факторы отсутствуют. Физиологическая норма активна по умолчанию в 1 клик.");
 		} else {
@@ -144,7 +144,7 @@ export function formatPlaybookForm043A4Protocol(
 		lines.push(`Телефон: ${p.patient.phone ?? "не указан"} | Статус: ${p.isFirstVisit ? "ПЕРВИЧНЫЙ" : "ПОВТОРНЫЙ"}`);
 		lines.push(subDivider);
 
-		lines.push("1. СОМАТИЧЕСКИЙ АНАМНЕЗ И КРИТИЧЕСКИЕ АЛЛЕРГИИ (МАНДАТ 8E):");
+		lines.push("1. СОМАТИЧЕСКИЙ АНАМНЕЗ И КРИТИЧЕСКИЕ АЛЛЕРГИИ:");
 		if (!p.hasCriticalAlerts) {
 			lines.push("   [OK] Соматически здоров / физиологическая норма активна в 1 клик.");
 		} else {

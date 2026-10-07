@@ -220,33 +220,6 @@ export function normalizeMarketingChannel(
 		return s as CanonicalMarketingChannelKey;
 	}
 
-	if (s.includes("авито") || s.includes("avito")) {
-		return "avito";
-	}
-	if (
-		s.includes("карты") ||
-		s.includes("яндекс.карты") ||
-		s.includes("яндекс карты") ||
-		s.includes("yandex maps") ||
-		s.includes("yandex_maps") ||
-		s.includes("maps.yandex") ||
-		s.includes("гео")
-	) {
-		return "yandex_maps";
-	}
-	if (s.includes("max") || s.includes("макс")) {
-		return "max";
-	}
-
-	if (
-		s.includes("директ") ||
-		s.includes("direct") ||
-		s.includes("яндекс") ||
-		s.includes("yandex") ||
-		s.includes("рся")
-	) {
-		return "yandex_direct";
-	}
 	if (
 		s.includes("2gis") ||
 		s.includes("2гис") ||
@@ -255,6 +228,32 @@ export function normalizeMarketingChannel(
 		s.includes("дубльгис")
 	) {
 		return "gis_2";
+	}
+	if (s.includes("авито") || s.includes("avito")) {
+		return "avito";
+	}
+	if (
+		s.includes("яндекс.карты") ||
+		s.includes("яндекс карты") ||
+		s.includes("yandex maps") ||
+		s.includes("yandex_maps") ||
+		s.includes("maps.yandex") ||
+		s.includes("карты") ||
+		s.includes("гео")
+	) {
+		return "yandex_maps";
+	}
+	if (s.includes("max") || s.includes("макс")) {
+		return "max";
+	}
+	if (
+		s.includes("директ") ||
+		s.includes("direct") ||
+		s.includes("яндекс") ||
+		s.includes("yandex") ||
+		s.includes("рся")
+	) {
+		return "yandex_direct";
 	}
 	if (s.includes("продокторов") || s.includes("prodoctorov")) {
 		return "prodoctorov";

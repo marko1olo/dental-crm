@@ -156,7 +156,7 @@ export const InventoryStockAdjustModal: React.FC<InventoryStockAdjustModalProps>
 							className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs leading-relaxed"
 							data-testid="adjust-stock-overdraft-warning"
 						>
-							Внимание: остаток отрицательный (овердрафт). Задержка оприходования накладной поставщика не блокирует оказание помощи.
+							Внимание: остаток отрицательный (списание с дефицитом). Задержка оприходования накладной поставщика не блокирует оказание помощи.
 						</div>
 					)}
 
@@ -172,7 +172,7 @@ export const InventoryStockAdjustModal: React.FC<InventoryStockAdjustModalProps>
 							: adjustType === "in"
 								? "Оприходовать"
 								: adjustExceedsStock
-									? "Списать (Мягкий овердрафт)"
+									? "Списать (с дефицитом)"
 									: "Списать"}
 					</button>
 				</form>

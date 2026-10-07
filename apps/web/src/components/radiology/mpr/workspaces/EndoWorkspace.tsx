@@ -255,7 +255,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 						type="button"
 						onClick={handleExportPlanAction}
 						className="h-7 px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1.5 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 hover:text-emerald-200 border border-emerald-700/60 transition-colors cursor-pointer"
-						title="Добавить услуги эндодонтии в план лечения пациента (Приказ 804н)"
+						title="Добавить услуги эндодонтии в план лечения пациента"
 						data-testid="cbct-endo-export-plan-btn"
 					>
 						{isPlanAdded ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <FilePlus className="w-3.5 h-3.5 text-emerald-400" />}
@@ -270,7 +270,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 						data-testid="cbct-endo-copy-emr-btn"
 					>
 						{isCopied ? <Check className="w-3.5 h-3.5 text-cyan-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
-						<span>{isCopied ? "Перенесено" : "В 043/у"}</span>
+						<span>{isCopied ? "Перенесено" : "В медкарту (043/у)"}</span>
 					</button>
 				</div>
 			</div>

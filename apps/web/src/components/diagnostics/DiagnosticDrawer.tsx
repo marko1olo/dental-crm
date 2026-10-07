@@ -257,48 +257,58 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 
 						{/* Tabs */}
 						<div className="dente-diagnostic-tabs">
-							<button
-								type="button"
-								className={`dente-diagnostic-tab-btn ${activeTab === "logs" ? "active" : ""}`}
-								onClick={() => setActiveTab("logs")}
-							>
-								<Terminal size={15} />
-								<span>Консоль логов ({logs.length})</span>
-							</button>
-							<button
-								type="button"
-								className={`dente-diagnostic-tab-btn ${activeTab === "network" ? "active" : ""}`}
-								onClick={() => setActiveTab("network")}
-							>
-								<Globe size={15} />
-								<span>Сетевые запросы ({networkLogs.length})</span>
-							</button>
-							<button
-								type="button"
-								className={`dente-diagnostic-tab-btn ${activeTab === "offline" ? "active" : ""}`}
-								onClick={() => setActiveTab("offline")}
-							>
-								<Database size={15} />
-								<span>Офлайн-очередь ({offlineStore.pendingMutationCount})</span>
-							</button>
-							<button
-								type="button"
-								className={`dente-diagnostic-tab-btn ${activeTab === "system" ? "active" : ""}`}
-								onClick={() => setActiveTab("system")}
-							>
-								<Activity size={15} />
-								<span>Системный отчет</span>
-							</button>
+							<div className="dente-segmented-bar" role="tablist" aria-label="Разделы диагностики">
+								<button
+									type="button"
+									role="tab"
+									aria-selected={activeTab === "logs"}
+									className={`dente-segmented-item ${activeTab === "logs" ? "active" : ""}`}
+									onClick={() => setActiveTab("logs")}
+								>
+									<Terminal size={14} />
+									<span>Консоль логов ({logs.length})</span>
+								</button>
+								<button
+									type="button"
+									role="tab"
+									aria-selected={activeTab === "network"}
+									className={`dente-segmented-item ${activeTab === "network" ? "active" : ""}`}
+									onClick={() => setActiveTab("network")}
+								>
+									<Globe size={14} />
+									<span>Сетевые запросы ({networkLogs.length})</span>
+								</button>
+								<button
+									type="button"
+									role="tab"
+									aria-selected={activeTab === "offline"}
+									className={`dente-segmented-item ${activeTab === "offline" ? "active" : ""}`}
+									onClick={() => setActiveTab("offline")}
+								>
+									<Database size={14} />
+									<span>Офлайн-очередь ({offlineStore.pendingMutationCount})</span>
+								</button>
+								<button
+									type="button"
+									role="tab"
+									aria-selected={activeTab === "system"}
+									className={`dente-segmented-item ${activeTab === "system" ? "active" : ""}`}
+									onClick={() => setActiveTab("system")}
+								>
+									<Activity size={14} />
+									<span>Системный отчет</span>
+								</button>
+							</div>
 						</div>
 
 						{/* Toolbar */}
 						{(activeTab === "logs" || activeTab === "network") && (
 							<div className="dente-diagnostic-toolbar">
-								<div className="dente-diagnostic-search-box">
-									<Search size={15} color="var(--muted, #64748b)" />
+								<div className="dente-search-wrap flex-1 min-w-[180px]">
+									<Search size={14} className="dente-search-icon" />
 									<input
 										type="text"
-										className="dente-diagnostic-search-input"
+										className="dente-search-input"
 										placeholder="Поиск по сообщениям, URL или Correlation ID..."
 										value={searchQuery}
 										onChange={(e) => setSearchQuery(e.target.value)}
@@ -306,8 +316,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 									{searchQuery && (
 										<button
 											type="button"
-											className="dente-diagnostic-close-btn"
-											style={{ minWidth: 24, minHeight: 24, width: 24, height: 24, padding: 0 }}
+											className="dente-search-clear"
 											onClick={() => setSearchQuery("")}
 											aria-label="Очистить поиск"
 										>

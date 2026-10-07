@@ -380,7 +380,7 @@ export function checkAppointmentResourceCollision(
 						conflictType: "doctor",
 						conflictingAppointment: appt,
 						isCitoOverbooking: true,
-						message: `CITO-овербукинг разрешён (острая боль): наложение с приёмом врача ${name} (${timeIntervalStr})`,
+						message: `Запись по острой боли (наложение слота допустимо): наложение с приёмом врача ${name} (${timeIntervalStr})`,
 						suggestedSlot: null,
 					};
 				}
@@ -403,7 +403,7 @@ export function checkAppointmentResourceCollision(
 						conflictType: "chair",
 						conflictingAppointment: appt,
 						isCitoOverbooking: true,
-						message: `CITO-овербукинг разрешён (острая боль): наложение на кресле «${name}» (${timeIntervalStr})`,
+						message: `Запись по острой боли (наложение слота допустимо): наложение на кресле «${name}» (${timeIntervalStr})`,
 						suggestedSlot: null,
 					};
 				}
@@ -426,7 +426,7 @@ export function checkAppointmentResourceCollision(
 						conflictType: "assistant",
 						conflictingAppointment: appt,
 						isCitoOverbooking: true,
-						message: `CITO-овербукинг разрешён (острая боль): ассистент ${name} совмещён (${timeIntervalStr})`,
+						message: `Запись по острой боли (наложение слота допустимо): ассистент ${name} совмещён (${timeIntervalStr})`,
 						suggestedSlot: null,
 					};
 				}

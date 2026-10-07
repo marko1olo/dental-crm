@@ -1,5 +1,5 @@
 import type React from "react";
-import { Download, Search } from "lucide-react";
+import { Download, Search, X } from "lucide-react";
 import type { LoyaltyLedgerEntry } from "./loyaltyEngine";
 
 export interface LoyaltyLedgerTabProps {
@@ -27,42 +27,34 @@ export const LoyaltyLedgerTab: React.FC<LoyaltyLedgerTabProps> = ({
 					gap: "0.75rem",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-					<Search size={18} color="var(--muted)" />
+				<div className="dente-search-wrap w-64">
+					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
 						placeholder="Поиск по операциям..."
 						value={ledgerSearch}
 						onChange={(e) => onLedgerSearchChange(e.target.value)}
-						style={{
-							padding: "0.375rem 0.75rem",
-							borderRadius: "0.5rem",
-							border: "1px solid var(--line)",
-							fontSize: "0.8125rem",
-							width: "240px",
-						}}
+						className="dente-search-input"
+						aria-label="Поиск по операциям программы лояльности"
 					/>
+					{ledgerSearch && (
+						<button
+							type="button"
+							className="dente-search-clear"
+							onClick={() => onLedgerSearchChange("")}
+							aria-label="Очистить поиск"
+						>
+							<X size={13} />
+						</button>
+					)}
 				</div>
 
 				<button
 					type="button"
 					onClick={onExportLedger}
-					style={{
-						padding: "0.5rem 1rem",
-						minHeight: "44px",
-						borderRadius: "0.5rem",
-						border: "none",
-						background: "var(--teal)",
-						color: "var(--on-teal, var(--paper))",
-						fontWeight: 700,
-						fontSize: "0.8125rem",
-						cursor: "pointer",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.375rem",
-					}}
+					className="primary-button h-[32px] min-h-[32px] text-xs font-semibold px-3 rounded-lg inline-flex items-center gap-1.5"
 				>
-					<Download size={16} />
+					<Download size={14} />
 					Экспорт CSV (RFC 4180 / UTF-8 BOM)
 				</button>
 			</div>

@@ -3,7 +3,7 @@
  *
  * Mandate 8s (SSOT Componentization), Mandate 8n (Anti-Landfill & Solo Doctor Autonomy):
  * - Exactly <= 2 primary actions per card (Schedule in grid + Create patient card)
- * - 1-click status selection
+ * - Quick status selection
  * - Click-to-call direct phone link
  * - Compact clinical density (desktop-first)
  * - Zero emojis
@@ -37,6 +37,7 @@ import {
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
 import { getLeadSlaStatus } from "./leadsKanbanTypes";
 import { LeadAudioPlayerWidget } from "./LeadAudioPlayerWidget";
+import { LeadInstantPreview } from "./LeadInstantPreview";
 
 const NEXT_STAGE_MAP: Partial<
 	Record<Lead["status"], { status: Lead["status"]; label: string }>
@@ -447,111 +448,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
 			{/* Интерактивный быстрый просмотр (Instant Preview Panel) */}
 			{isPreviewOpen && (
-				<div
-					style={{
-						marginBottom: 8,
-						padding: "8px 10px",
-						background: "var(--paper-soft)",
-						borderRadius: 8,
-						border: `1px solid ${borderColor}`,
-						fontSize: 12,
-						display: "flex",
-						flexDirection: "column",
-						gap: 5,
-					}}
-					onClick={(e) => e.stopPropagation()}
-					data-testid={`lead-instant-preview-${lead.id}`}
-				>
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-						<span style={{ fontWeight: 600, color: "var(--ink)", fontSize: 11 }}>
-							Карточка обращения
-						</span>
-						<span style={{ fontSize: 10, color: "var(--muted)" }}>
-							№ {lead.id.slice(0, 6)}
-						</span>
-					</div>
-					{lead.notes && (
-						<div style={{ fontSize: 11.5 }}>
-							<span style={{ color: "var(--muted)" }}>Запрос: </span>
-							<span style={{ color: "var(--ink)", fontStyle: "italic" }}>{lead.notes}</span>
-						</div>
-					)}
-					{lead.source && (
-						<div style={{ fontSize: 11.5 }}>
-							<span style={{ color: "var(--muted)" }}>Канал: </span>
-							<span style={{ color: channelBadge.color, fontWeight: 500 }}>{channelLabel}</span>
-						</div>
-					)}
-					{lead.createdAt && (
-						<div style={{ fontSize: 10.5, color: "var(--muted)" }}>
-							Дата: {new Date(lead.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-						</div>
-					)}
-					{lead.existingPatient && (
-						<div
-							style={{
-								fontSize: 11.5,
-								display: "flex",
-								alignItems: "center",
-								gap: 5,
-								padding: "3px 6px",
-								background: "var(--teal-soft)",
-								borderRadius: 5,
-								border: "1px solid var(--teal)",
-							}}
-						>
-							<UserCheck size={12} style={{ color: "var(--teal-dark, var(--teal))" }} />
-							<span style={{ color: "var(--muted)" }}>В базе клиники:</span>
-							<button
-								type="button"
-								onClick={(e) => handleOpenPatient(e, lead.existingPatient!.id)}
-								style={{
-									background: "none",
-									border: "none",
-									padding: 0,
-									color: "var(--teal-dark, var(--teal))",
-									fontWeight: 600,
-									textDecoration: "underline",
-									cursor: "pointer",
-									fontSize: 11.5,
-								}}
-								title="Открыть амбулаторную карту"
-								data-testid={`instant-preview-patient-link-${lead.id}`}
-							>
-								{lead.existingPatient.fullName} →
-							</button>
-						</div>
-					)}
-					{onQuickSchedule && lead.status !== "trash" && (
-						<button
-							type="button"
-							onClick={(e) => {
-								e.stopPropagation();
-								void onQuickSchedule(lead.id);
-							}}
-							style={{
-								marginTop: 4,
-								padding: "4px 8px",
-								borderRadius: 6,
-								fontSize: 11,
-								fontWeight: 600,
-								background: "var(--teal-soft)",
-								color: "var(--teal-dark, var(--teal))",
-								border: "1px solid var(--teal)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: 5,
-								cursor: "pointer",
-							}}
-							title="Записать на ближайшее время в расписании в 1 клик"
-							data-testid={`instant-quick-schedule-btn-${lead.id}`}
-						>
-							<Calendar size={12} />
-							<span>Записать в 1 клик (дежурный слот)</span>
-						</button>
-					)}
-				</div>
+				<LeadInstantPreview
+					lead={lead}
+					borderColor={borderColor}
+					channelBadge={channelBadge}
+					channelLabel={channelLabel}
+					onOpenPatient={handleOpenPatient}
+					onQuickSchedule={onQuickSchedule}
+				/>
 			)}
 
 			{/* Источник и ожидаемая выручка */}
@@ -607,7 +511,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				) : null}
 			</div>
 
-			{/* 1-клик перевод на следующий этап воронки */}
+			{/* Перевод на следующий этап воронки */}
 			{NEXT_STAGE_MAP[lead.status] ? (
 				<button
 					type="button"
@@ -615,24 +519,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 						e.stopPropagation();
 						onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
 					}}
-					style={{
-						width: "100%",
-						padding: "5px 8px",
-						borderRadius: 7,
-						fontSize: 11.5,
-						fontWeight: 600,
-						background: "var(--teal-soft)",
-						color: "var(--teal-dark, var(--teal))",
-						border: "1px solid var(--teal)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: 6,
-						cursor: "pointer",
-						transition: "all 0.15s ease",
-						marginBottom: 6,
-					}}
-					title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label} в 1 клик`}
+					className="w-full h-7 px-2.5 rounded-lg text-[12px] font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)] flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:bg-[var(--teal)] hover:text-white mb-1.5"
+					title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label}`}
 					data-testid={`advance-stage-btn-${lead.id}`}
 				>
 					<span>{NEXT_STAGE_MAP[lead.status]!.label}</span>
@@ -640,21 +528,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				</button>
 			) : lead.status === "showed_up" ? (
 				<div
-					style={{
-						width: "100%",
-						padding: "4px 8px",
-						borderRadius: 6,
-						fontSize: 11,
-						fontWeight: 600,
-						background: "var(--ok-bg)",
-						color: "var(--ok-fg)",
-						border: "1px solid var(--line)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: 5,
-						marginBottom: 6,
-					}}
+					className="w-full h-7 px-2.5 rounded-lg text-[11.5px] font-semibold bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--line)] flex items-center justify-center gap-1.5 mb-1.5"
 				>
 					<Check size={12} className="shrink-0" />
 					<span>Пациент в клинике</span>
@@ -689,36 +563,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					onChange={(e) => {
 						const nextVal = e.target.value as Lead["status"];
 						if (nextVal === "trash") {
-							const selectedReason = window.prompt(
-								"Укажите причину отказа:\n1 - Дорого\n2 - Далеко\n3 - Передумал\n4 - Дубль обращения\nИли введите свой текст:",
-								"Дорого",
-							);
-							const mappedReason =
-								selectedReason === "1"
-									? "Дорого"
-									: selectedReason === "2"
-										? "Далеко / Неудобная локация"
-										: selectedReason === "3"
-											? "Передумал / Неактуально"
-											: selectedReason === "4"
-												? "Дубль обращения"
-												: (selectedReason || "Дорого");
-							onStatusChange(e, lead.id, nextVal, { dropReason: mappedReason });
+							onStatusChange(e, lead.id, nextVal, {
+								dropReason: lead.dropReason || "Отказ / Неактуально",
+							});
 						} else {
 							onStatusChange(e, lead.id, nextVal);
 						}
 					}}
-					style={{
-						fontSize: 11,
-						padding: "2px 6px",
-						borderRadius: 6,
-						border: `1px solid ${borderColor}`,
-						background: "var(--paper-soft)",
-						color: "var(--ink)",
-						cursor: "pointer",
-						outline: "none",
-						maxWidth: 155,
-					}}
+					className="h-7 text-[11.5px] font-medium px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer outline-none max-w-[155px] hover:border-[var(--line-strong,var(--line))]"
 					title="Сменить статус обращения"
 					aria-label="Выбрать статус обращения"
 				>
@@ -733,15 +585,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
 			{/* Ровно 2 первичных действия карточки согласно Мандату 8n (Anti-Landfill) */}
 			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					gap: 6,
-					marginTop: "8px",
-				}}
+				className="flex flex-col gap-1.5 mt-2"
 				onClick={(e) => e.stopPropagation()}
 			>
-				{/* Действие 1: Записать в сетку расписания (1 клик для вызова слота записи) */}
+				{/* Действие 1: Записать в сетку расписания (Primary CTA) */}
 				{lead.status !== "trash" && (
 					<button
 						type="button"
@@ -749,22 +596,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							e.stopPropagation();
 							onSchedule(lead.id);
 						}}
-						style={{
-							width: "100%",
-							padding: "6px 10px",
-							borderRadius: 8,
-							fontSize: 12,
-							fontWeight: 600,
-							background: "var(--teal-soft)",
-							color: "var(--teal-dark, var(--teal))",
-							border: "1px solid var(--teal)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: 6,
-							cursor: "pointer",
-							transition: "all 0.15s ease",
-						}}
+						className="primary-button w-full h-8 min-h-[32px] text-[12.5px] font-semibold px-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center justify-center gap-1.5"
 						data-testid={`schedule-lead-btn-${lead.id}`}
 						title="Записать в сетку расписания"
 					>
@@ -775,31 +607,16 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					</button>
 				)}
 
-				{/* Действие 2: Создать амбулаторную карту пациента или открыть существующую в 1 клик */}
+				{/* Действие 2: Создать амбулаторную карту пациента или открыть существующую (Secondary CTA) */}
 				{lead.existingPatient ? (
 					<button
 						type="button"
 						onClick={(e) => handleOpenPatient(e, lead.existingPatient!.id)}
-						style={{
-							width: "100%",
-							padding: "6px 10px",
-							borderRadius: 8,
-							fontSize: 12,
-							fontWeight: 600,
-							background: "var(--ok-bg)",
-							color: "var(--ok-fg)",
-							border: "1px solid var(--line)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: 6,
-							cursor: "pointer",
-							transition: "all 0.2s ease",
-						}}
+						className="secondary-button w-full h-8 min-h-[32px] text-[12.5px] font-medium px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 transition-all"
 						data-testid={`open-patient-btn-${lead.id}`}
-						title={`Открыть амбулаторную карту пациента ${lead.existingPatient.fullName} в 1 клик`}
+						title={`Открыть амбулаторную карту пациента ${lead.existingPatient.fullName}`}
 					>
-						<UserCheck size={13} className="shrink-0" />
+						<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
 						<span className="truncate">
 							Карточка пациента
 						</span>
@@ -812,33 +629,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							void onCreatePatient(lead);
 						}}
 						disabled={creatingPatientLeadId === lead.id}
-						style={{
-							width: "100%",
-							padding: "6px 10px",
-							borderRadius: 8,
-							fontSize: 12,
-							fontWeight: 600,
-							background: "var(--ok-bg)",
-							color: "var(--ok-fg)",
-							border: "1px solid var(--line)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: 6,
-							cursor:
-								creatingPatientLeadId === lead.id
-									? "wait"
-									: "pointer",
-							transition: "all 0.2s ease",
-						}}
+						className="secondary-button w-full h-8 min-h-[32px] text-[12.5px] font-medium px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 transition-all disabled:opacity-60 disabled:cursor-wait"
 						data-testid={`create-patient-btn-${lead.id}`}
-						title="Создать карту пациента из обращения в 1 клик"
+						title="Создать карту пациента из обращения"
 					>
-						<UserPlus size={13} className="shrink-0" />
+						<UserPlus size={13} className="shrink-0 text-[var(--teal)]" />
 						<span className="truncate">
 							{creatingPatientLeadId === lead.id
 								? "Создаём карту…"
-								: "Создать пациента в 1 клик"}
+								: "Создать карту пациента"}
 						</span>
 					</button>
 				)}

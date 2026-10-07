@@ -742,12 +742,12 @@ export const DoctorClinicalTrainingTour: React.FC<DoctorClinicalTrainingTourProp
 								Больше не показывать
 							</button>
 
-							<div className="flex items-center gap-1.5">
+							<div className="flex items-center gap-1.5 flex-shrink-0">
 								{currentStepIndex > 0 && (
 									<button
 										type="button"
 										onClick={handlePrev}
-										className="h-7 px-2 rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold inline-flex items-center gap-0.5 hover:bg-[var(--paper-soft,#f8fafc)] transition-all cursor-pointer shadow-2xs"
+										className="h-7 px-2 rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold inline-flex items-center gap-0.5 hover:bg-[var(--paper-soft,#f8fafc)] transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 										aria-label="Предыдущий шаг"
 									>
 										<ChevronLeft size={13} aria-hidden="true" />
@@ -758,7 +758,7 @@ export const DoctorClinicalTrainingTour: React.FC<DoctorClinicalTrainingTourProp
 								<button
 									type="button"
 									onClick={handleSkip}
-									className="h-7 px-2 rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] text-xs font-medium inline-flex items-center gap-0.5 transition-all cursor-pointer shadow-2xs"
+									className="h-7 px-2 rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] text-xs font-medium inline-flex items-center gap-0.5 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 									title="Пропустить текущий шаг без выполнения действия"
 								>
 									<span>Пропустить</span>
@@ -768,7 +768,7 @@ export const DoctorClinicalTrainingTour: React.FC<DoctorClinicalTrainingTourProp
 									<button
 										type="button"
 										onClick={handleStepAccomplished}
-										className="h-7 px-2.5 rounded-md bg-[var(--teal,#0d9488)] text-white text-xs font-semibold inline-flex items-center gap-1 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-2xs"
+										className="h-7 px-2.5 rounded-md bg-[var(--teal,#0d9488)] text-white text-xs font-semibold inline-flex items-center gap-1 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 										aria-label="Следующий шаг"
 										data-testid="coach-mark-next-btn"
 									>

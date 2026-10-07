@@ -422,7 +422,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 							<Zap className="w-5 h-5 text-[var(--teal,#0d9488)] shrink-0" />
 							<div>
 								<span className="text-xs font-bold text-[var(--ink,#0f172a)] block">
-									Соло-врач (1 клик):
+									Соло-врач:
 								</span>
 								<span className="text-[11px] text-[var(--muted,#64748b)]">
 									Закрепить {formatDoctorShortName(doctors[0]?.fullName || "Врача")} на весь день
@@ -442,7 +442,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 					</div>
 				)}
 
-				{/* Mode Tabs: Day vs Date Range (StomX / DentalPRO parity) */}
+				{/* Mode Tabs: Day vs Date Range */}
 				<div className="flex p-1 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
 					<button
 						type="button"

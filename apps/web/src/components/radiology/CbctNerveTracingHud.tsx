@@ -1,0 +1,160 @@
+/**
+ * DENTE CRM — CBCT Mandibular Nerve Tracing HUD Overlay
+ * 2-Seed Fast Marching Interactive Workflow (Planmeca Romexis / 3Shape Implant Studio)
+ *
+ * Visual Invariants:
+ * - Clear step hints (Step 1 -> Step 2 -> Success badge with 3D length in mm)
+ * - 1-Click Clear / Redo button
+ * - Bilateral toggle: [ Правый нерв | Левый нерв ]
+ * - Doctor autonomy (Mandate 8e): Manual control node dragging instruction
+ * - Dense, non-blocking floating bar with backdrop blur and high contrast WCAG badges.
+ *
+ * Mandate 8b compliant (strictly <= 800 lines).
+ */
+
+import { Check, Info, RotateCcw, Trash2 } from "lucide-react";
+import React from "react";
+import type { Point3D } from "./cbctMprMath.js";
+import { formatNerveStepStatus } from "./mpr/cbctNerveHitTest.js";
+import type { NerveCanalSide } from "./mpr/cbctStudioTypes.js";
+
+export interface CbctNerveTracingHudProps {
+	readonly activeTool: string;
+	readonly activeSide: NerveCanalSide;
+	readonly onSwitchSide: (side: NerveCanalSide) => void;
+	readonly nervePoints: readonly Point3D[];
+	readonly nerveTotalLengthMm: number;
+	readonly selectedNerveNodeIdx?: number | null | undefined;
+	readonly onResetNerve: () => void;
+	readonly onDeleteSelectedNode?: (() => void) | undefined;
+	readonly className?: string | undefined;
+}
+
+export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
+	activeTool,
+	activeSide,
+	onSwitchSide,
+	nervePoints,
+	nerveTotalLengthMm,
+	selectedNerveNodeIdx,
+	onResetNerve,
+	onDeleteSelectedNode,
+	className = "",
+}) => {
+	// HUD отображается только когда активен инструмент трассировки нерва или если есть непустые узлы
+	if (activeTool !== "nerve" && nervePoints.length === 0) {
+		return null;
+	}
+
+	const status = formatNerveStepStatus(
+		nervePoints.length,
+		nerveTotalLengthMm,
+		activeSide,
+	);
+
+	return (
+		<div
+			className={`absolute top-2 left-1/2 -translate-x-1/2 z-40 pointer-events-auto select-none flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-950/90 border border-zinc-800/90 backdrop-blur-md shadow-2xl transition-all ${className}`}
+			data-testid="cbct-nerve-tracing-hud"
+			data-nerve-step={status.step}
+			data-nerve-side={activeSide}
+		>
+			{/* 1. БИЛАТЕРАЛЬНЫЙ ПЕРЕКЛЮЧАТЕЛЬ СТОРОНЫ (Apple HIG Segmented Bar) */}
+			<div
+				className="flex items-center p-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[11px]"
+				role="group"
+				aria-label="Сторона нижнечелюстного канала"
+			>
+				<button
+					type="button"
+					onClick={() => onSwitchSide("right")}
+					className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+						activeSide === "right"
+							? "bg-amber-500 text-zinc-950 font-bold shadow-xs"
+							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+					}`}
+					title="Правый нижнечелюстной канал (квадрант 4: 4.4-4.8)"
+					data-testid="cbct-nerve-hud-side-right-btn"
+				>
+					Правый (4.4-4.8)
+				</button>
+				<button
+					type="button"
+					onClick={() => onSwitchSide("left")}
+					className={`px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+						activeSide === "left"
+							? "bg-amber-500 text-zinc-950 font-bold shadow-xs"
+							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+					}`}
+					title="Левый нижнечелюстной канал (квадрант 3: 3.4-3.8)"
+					data-testid="cbct-nerve-hud-side-left-btn"
+				>
+					Левый (3.4-3.8)
+				</button>
+			</div>
+
+			{/* 2. ИНДИКАТОР ТЕКУЩЕГО ШАГА С КЛИНИЧЕСКОЙ ПОДСКАЗКОЙ */}
+			<div className="flex items-center gap-1.5">
+				<span
+					className={`px-2.5 py-1 rounded-md text-xs font-semibold border flex items-center gap-1.5 transition-all ${status.badgeClass}`}
+					data-testid="cbct-nerve-hud-step-badge"
+					title={status.hintRu}
+				>
+					{status.step === 1 && (
+						<span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-ping" />
+					)}
+					{status.step === 2 && (
+						<span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-ping" />
+					)}
+					{status.step === 3 && (
+						<Check className="w-3.5 h-3.5 text-cyan-300 shrink-0 stroke-[2.5]" />
+					)}
+					<span>{status.titleRu}</span>
+				</span>
+			</div>
+
+			{/* 3. КНОПКИ УПРАВЛЕНИЯ ТРАССОЙ (1-КЛИК СБРОС И УДАЛЕНИЕ) */}
+			<div className="flex items-center gap-1 pl-1 border-l border-zinc-800">
+				{selectedNerveNodeIdx !== null &&
+					selectedNerveNodeIdx !== undefined &&
+					onDeleteSelectedNode && (
+						<button
+							type="button"
+							onClick={onDeleteSelectedNode}
+							className="h-7 px-2 rounded bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 hover:text-rose-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+							title={`Удалить выбранный узел #${selectedNerveNodeIdx + 1} (Backspace)`}
+							data-testid="cbct-nerve-hud-delete-node-btn"
+						>
+							<Trash2 className="w-3 h-3" />
+							<span>Узел #{selectedNerveNodeIdx + 1}</span>
+						</button>
+					)}
+
+				<button
+					type="button"
+					onClick={onResetNerve}
+					disabled={nervePoints.length === 0}
+					className="h-7 px-2 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700/60 text-zinc-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+					title="Очистить и перерисовать канал IAN в 1 клик"
+					data-testid="cbct-nerve-hud-reset-btn"
+				>
+					<RotateCcw className="w-3 h-3 text-amber-400" />
+					<span>Сброс</span>
+				</button>
+			</div>
+
+			{/* 4. ТИХАЯ ПОДСКАЗКА ВРАЧУ О МИКРОПОДГОНКЕ */}
+			{status.isCompleted && (
+				<div
+					className="hidden xl:flex items-center gap-1 text-[10px] text-zinc-400 pl-1 border-l border-zinc-800"
+					title="Перетащите любой узел мышью или кликните на срезе для добавления контрольной точки"
+				>
+					<Info className="w-3 h-3 text-cyan-400 shrink-0" />
+					<span className="whitespace-nowrap">Тяните узел для подгонки</span>
+				</div>
+			)}
+		</div>
+	);
+};
+
+export default CbctNerveTracingHud;

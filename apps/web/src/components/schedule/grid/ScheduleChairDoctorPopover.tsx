@@ -104,7 +104,7 @@ export function ScheduleChairDoctorPopover({
       {/* Doctors list */}
       <div className="flex flex-col gap-1 max-h-[160px] overflow-y-auto">
         <span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
-          Выберите врача (1 клик):
+          Выберите врача:
         </span>
         {doctors.map((doc) => {
           const isCurrent = assignment?.doctorId === doc.id;
@@ -146,7 +146,7 @@ export function ScheduleChairDoctorPopover({
       {/* 1-Tap Shift & Week Presets inside popover */}
       <div className="flex flex-col gap-1.5 pt-1.5 border-t border-[var(--line)]">
         <span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
-          Шаблоны смен (1 клик):
+          Шаблоны смен:
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           <button
@@ -163,7 +163,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Утро 08:00–14:00 (1 клик)"
+            title="Утро 08:00–14:00"
             aria-label={`Назначить утреннюю смену 08:00–14:00 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-morning-${chair.id}`}
           >
@@ -184,7 +184,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="1 смена: 09:00–15:00 (1 клик)"
+            title="1 смена: 09:00–15:00"
             aria-label={`Назначить 1 смену 09:00–15:00 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-morning-9-${chair.id}`}
           >
@@ -205,7 +205,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Вечер 14:00–20:00 (1 клик)"
+            title="Вечер 14:00–20:00"
             aria-label={`Назначить вечернюю смену 14:00–20:00 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-evening-${chair.id}`}
           >
@@ -226,7 +226,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="2 смена: 15:00–21:00 (1 клик)"
+            title="2 смена: 15:00–21:00"
             aria-label={`Назначить смену 15:00–21:00 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-evening-15-${chair.id}`}
           >
@@ -247,7 +247,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Весь день 08:00–20:00 (1 клик)"
+            title="Весь день 08:00–20:00"
             aria-label={`Назначить смену на весь день 08:00–20:00 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-full-${chair.id}`}
           >
@@ -268,7 +268,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Весь день 09:00–21:00 (1 клик)"
+            title="Весь день 09:00–21:00"
             aria-label={`Назначить смену на весь день 09:00–21:00 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-full-9-21-${chair.id}`}
           >
@@ -289,7 +289,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="На всю неделю (Пн–Пт) (1 клик)"
+            title="На всю неделю (Пн–Пт)"
             aria-label={`Закрепить врача на кресле ${chair.name} на всю неделю (Пн–Пт)`}
             data-testid={`chair-popover-shift-week-${chair.id}`}
           >
@@ -310,7 +310,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="На всю неделю (Пн–Вс, 7 дней) (1 клик)"
+            title="На всю неделю (Пн–Вс, 7 дней)"
             aria-label={`Закрепить врача на кресле ${chair.name} на всю неделю (Пн–Вс)`}
             data-testid={`chair-popover-shift-week-full-${chair.id}`}
           >
@@ -351,7 +351,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="График 2 через 2 (08:00–20:00) (1 клик)"
+            title="График 2 через 2 (08:00–20:00)"
             aria-label={`Назначить график 2 через 2 на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-two-two-${chair.id}`}
           >
@@ -402,7 +402,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Чётные/Нечётные дни месяца (1 клик)"
+            title="Чётные/Нечётные дни месяца"
             aria-label={`Назначить график чет/нечет на кресло ${chair.name}`}
             data-testid={`chair-popover-shift-even-odd-${chair.id}`}
           >
@@ -423,12 +423,12 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="На весь месяц (1 клик)"
+            title="На весь месяц"
             aria-label={`Закрепить врача на кресле ${chair.name} на весь месяц`}
             data-testid={`chair-popover-shift-month-${chair.id}`}
           >
             <CalendarRange size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-            <span className="truncate">На весь месяц (1 клик)</span>
+            <span className="truncate">На весь месяц</span>
           </button>
           <button
             type="button"
@@ -443,7 +443,7 @@ export function ScheduleChairDoctorPopover({
             }}
             className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200 cursor-pointer transition-all"
             style={{ minHeight: "44px" }}
-            title="Быстрая подмена дежурного врача на сегодня (1 клик)"
+            title="Быстрая подмена дежурного врача на сегодня"
             aria-label={`Подменить врача на сегодня на кресле ${chair.name}`}
             data-testid={`chair-popover-substitute-${chair.id}`}
           >

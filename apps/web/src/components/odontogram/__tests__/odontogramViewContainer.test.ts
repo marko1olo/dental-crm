@@ -232,7 +232,7 @@ describe("OdontogramViewContainer — Data Contracts & Props Propagation", () =>
 		}
 	});
 
-	test("Mandate 8e: 1-клик действие Санирован/Интактный помечает все 32 зуба здоровыми без модалок", () => {
+	test("Mandate 8e: действие Санирован/Интактный помечает все 32 зуба здоровыми без модалок", () => {
 		let updatedTargets: number[] = [];
 		let updatedState = "";
 
@@ -258,7 +258,7 @@ describe("OdontogramViewContainer — Data Contracts & Props Propagation", () =>
 		assert.equal(updatedState, "Healthy", "Статус должен быть Healthy");
 	});
 
-	test("Mandate 8e: 1-клик действие Адентия 8-ок помечает зубы 18, 28, 38, 48 отсутствующими", () => {
+	test("Mandate 8e: действие Адентия 8-ок помечает зубы 18, 28, 38, 48 отсутствующими", () => {
 		let updatedTargets: number[] = [];
 		let updatedState = "";
 

@@ -48,7 +48,7 @@ export interface SlotConflictModalProps {
 	readonly onClose: () => void;
 	readonly conflictMessage?: string | null | undefined;
 	readonly conflictType?: "chair" | "doctor" | "patient" | "double_booking" | null | undefined;
-	readonly suggestedSlots?: readonly string[] | undefined;
+	readonly suggestedSlots?: readonly (string | { timeDisplay?: string; label?: string; startsAt?: string; endsAt?: string })[] | undefined;
 	readonly onSelectSlot?: ((slotTime: string) => void) | undefined;
 	readonly onOverbook?: (() => void) | undefined;
 	readonly onForceSave?: (() => void) | undefined;
@@ -212,25 +212,42 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 
 				{suggestedSlots && suggestedSlots.length > 0 ? (
 					<div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
-						{suggestedSlots.map((slot, idx) => (
-							<button
-								key={slot}
-								type="button"
-								data-slot-btn="true"
-								data-testid="suggested-slot-btn"
-								data-autofocus={idx === 0 ? "true" : undefined}
-								onClick={() => {
-									onSelectSlot(slot);
-									onClose();
-								}}
-								className="min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group touch-manipulation select-none active:scale-[0.98]"
-								title={`Записать на ${slot}`}
-								aria-label={`Выбрать альтернативное время ${slot}`}
-							>
-								<Calendar className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
-								<span>{slot}</span>
-							</button>
-						))}
+						{suggestedSlots.map((rawSlot, idx) => {
+							const slotLabel =
+								typeof rawSlot === "string"
+									? rawSlot
+									: rawSlot?.timeDisplay || rawSlot?.label || "Свободное окно";
+							const slotValue =
+								typeof rawSlot === "string"
+									? rawSlot
+									: rawSlot?.timeDisplay ||
+										(rawSlot?.startsAt ? new Date(rawSlot.startsAt).toISOString().slice(11, 16) : "") ||
+										rawSlot?.label ||
+										"";
+							const key =
+								typeof rawSlot === "string"
+									? rawSlot
+									: rawSlot?.startsAt || rawSlot?.timeDisplay || `slot-${idx}`;
+							return (
+								<button
+									key={key}
+									type="button"
+									data-slot-btn="true"
+									data-testid="suggested-slot-btn"
+									data-autofocus={idx === 0 ? "true" : undefined}
+									onClick={() => {
+										onSelectSlot(slotValue);
+										onClose();
+									}}
+									className="min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group touch-manipulation select-none active:scale-[0.98]"
+									title={`Записать на ${slotLabel}`}
+									aria-label={`Выбрать альтернативное время ${slotLabel}`}
+								>
+									<Calendar className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
+									<span>{slotLabel}</span>
+								</button>
+							);
+						})}
 					</div>
 				) : (
 					<p className="text-xs text-[var(--muted,#64748b)] italic">
@@ -264,7 +281,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 										: "Выбранное время уже занято"}
 							</h4>
 							<p className="text-[11px] text-[var(--muted,#64748b)] m-0">
-								Сдвиньте время, перенесите на свободное кресло или оформите CITO
+								Сдвиньте время, перенесите на свободное кресло или запишите внахлёст (острая боль)
 							</p>
 						</div>
 					</div>
@@ -302,10 +319,10 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 								onClose();
 							}}
 							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-							title="Записать в это же время в режиме овербукинга для острой боли"
+							title="Записать в это же время (совмещение слотов для острой боли)"
 						>
 							<Zap className="w-4 h-4" />
-							<span>Записать всё равно (овербукинг / CITO)</span>
+							<span>Записать всё равно (острая боль)</span>
 						</button>
 					)}
 				</div>
@@ -347,7 +364,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 										: "Выбранное время уже занято"}
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Сдвиньте время, перенесите на свободное кресло или оформите CITO-овербукинг
+								Сдвиньте время, перенесите на свободное кресло или запишите внахлёст (острая боль)
 							</p>
 						</div>
 					</div>
@@ -390,10 +407,10 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 								onClose();
 							}}
 							className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-							title="Записать в это же время в режиме овербукинга для острой боли"
+							title="Записать в это же время (совмещение слотов для острой боли)"
 						>
 							<Zap className="w-4 h-4" />
-							<span>Записать всё равно (овербукинг / CITO)</span>
+							<span>Записать всё равно (острая боль)</span>
 						</button>
 					)}
 				</div>

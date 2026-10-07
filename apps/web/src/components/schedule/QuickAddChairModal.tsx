@@ -382,13 +382,13 @@ export function QuickAddChairModal({
 					onSubmit={handleSubmit}
 					className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1"
 				>
-					{/* 1-Click Chair Archetype Presets (StomX / DentalPRO parity, Mandates 8e, 8k) */}
+					{/* Выбор типового кресла по специализации */}
 					<div className="space-y-1.5">
 						<span
 							id="quick-add-chair-archetypes-label"
 							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
 						>
-							Архетипы кресел (1 клик)
+							Типовые кресла
 						</span>
 						<div
 							className="grid grid-cols-2 sm:grid-cols-3 gap-2"
@@ -529,7 +529,7 @@ export function QuickAddChairModal({
 						</div>
 					</div>
 
-					{/* Field: Default Doctor (StomX / DentalPRO parity, Mandates 8e, 8n) */}
+					{/* Field: Default Doctor */}
 					<div className="space-y-1.5">
 						<label
 							htmlFor="quick-add-chair-doctor-select"
@@ -577,7 +577,7 @@ export function QuickAddChairModal({
 						</p>
 					</div>
 
-					{/* Field: Color picker presets (14 StomX authentic palettes, Mandates 8e, 8k) */}
+					{/* Field: Color picker presets */}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
 							<span
@@ -637,7 +637,7 @@ export function QuickAddChairModal({
 						</div>
 					</div>
 
-					{/* 1-Click Chair Live Preview Card (StomX / DentalPRO parity, Mandates 8e, 8k) */}
+					{/* 1-Click Chair Live Preview Card */}
 					<div
 						className="p-3.5 rounded-2xl border transition-all"
 						style={{

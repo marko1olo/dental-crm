@@ -17,7 +17,8 @@ const fs = require("node:fs");
 const targetDirs = [
   path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/cbct_departments"),
   path.resolve("C:/Clinic_MVP/dental-crm/apps/web/public/screenshots"),
-  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/77830cc1-dac0-4da3-8789-c3f2b3c54e79"),
+  path.resolve("C:/Users/Admin/Desktop/НОВЫЕ_ПРУФЫ_ВНЕДРЕНИЯ_ШАРПЕН_И_CATMULL_ROM"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/3dd8abc3-cf84-46a0-8273-8471441ce17d"),
 ];
 
 for (const d of targetDirs) {
@@ -144,6 +145,17 @@ async function main() {
       }
 
       await takeScreen(page, `01_mpr_quad_${theme}.png`, `Отдел 1: MPR Quad 4 квадранта (${theme})`);
+
+      if (theme === "dark") {
+        const sharpenBtn = await page.$('[data-testid="cbct-tool-sharpen"]');
+        if (sharpenBtn) {
+          await sharpenBtn.click();
+          await page.waitForTimeout(500);
+          await sharpenBtn.click();
+          await page.waitForTimeout(800);
+        }
+        await takeScreen(page, `06_Полный_экран_КТ_Темный_кокпит_100_Sharpen.png`, `Реальный КТ Захарова 312 срезов Edge-to-Edge`);
+      }
 
       // 2. Отдел 2: Панорама ОПТГ 50/50
       console.log(`Selecting Panoramic Tab (${theme})...`);

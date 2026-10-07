@@ -11,54 +11,32 @@
  * • Привязка даты примерки к расписанию приемов (fittingDate, appointmentId).
  * • Фильтры по лабораториям, статусам, типам конструкций и текстовый поиск.
  * • Создание новых нарядов с автоматическим расчетом себестоимости и ЗП врача в копейках.
- * • 1-клик экспорт в CSV (RFC 4180) и печать бланка наряда А4 для курьера лаборатории.
+ * • Экспорт в CSV (RFC 4180) и печать бланка наряда А4 для курьера лаборатории.
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
-	FlaskConical,
-	Plus,
-	Download,
-	X,
-	Search,
-	AlertTriangle,
-	Printer,
-	CheckCircle2,
-	RefreshCw,
+	FlaskConical, Plus, Download, X, Search, AlertTriangle, Printer, CheckCircle2, RefreshCw,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
 import {
-	ORTHOPEDIC_WORK_TYPES,
-	type LabWorkflowStatus,
-	LAB_WORKFLOW_STATUSES,
-	type DentalLabWorkflowOrder,
-	advanceLabOrderStage,
-	advanceLabOrderTechStage,
-	sendOrderToWarrantyRework,
-	getNextLabProductionStage,
-	generateDentalLabOrderA4PrintBlank,
-	exportDentalLabOrdersToCsv,
+	ORTHOPEDIC_WORK_TYPES, type LabWorkflowStatus, LAB_WORKFLOW_STATUSES,
+	type DentalLabWorkflowOrder, advanceLabOrderStage, advanceLabOrderTechStage,
+	sendOrderToWarrantyRework, getNextLabProductionStage,
+	generateDentalLabOrderA4PrintBlank, exportDentalLabOrdersToCsv,
 } from "./dentalLabWorkflowEngine";
 import { getDemoDentalLabWorkflowOrders } from "./dentalLabDemoData";
 import {
-	LAB_TECHNOLOGICAL_STAGES,
-	LAB_TECHNOLOGICAL_STAGE_ORDER,
-	type LabTechnologicalStageId,
+	LAB_TECHNOLOGICAL_STAGES, LAB_TECHNOLOGICAL_STAGE_ORDER, type LabTechnologicalStageId,
 } from "./orders/labWorkOrderPresets";
 import { mapRawApiOrderToWorkflowOrder } from "./dentalLabApiMapper";
 import { formatRuDate } from "./dentalLabOrderEngine";
 import { DentalLabOrdersKanbanBoard } from "./DentalLabOrdersKanbanBoard";
 import { DentalLabCreateOrderModal } from "./DentalLabCreateOrderModal";
-import {
-	DentalLabOrderDetailsModal,
-	type ActionPromptState,
-} from "./DentalLabOrderDetailsModal";
-import {
-	DentalLabReadyInClinicModal,
-	type ReadyInClinicLabOrder,
-} from "./DentalLabReadyInClinicModal";
+import { DentalLabOrderDetailsModal, type ActionPromptState } from "./DentalLabOrderDetailsModal";
+import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "./DentalLabReadyInClinicModal";
 
 export interface DentalLabOrdersHubModalProps {
 	readonly isOpen: boolean;
@@ -571,7 +549,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					>
 						<CheckCircle2 size={15} style={{ color: "var(--ok-fg, #10b981)", flexShrink: 0 }} />
 						<span>
-							<strong>Клинический регламент:</strong> План составлен более 30 дней назад{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""}, цены могут быть скорректированы, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты (Мандат 8e).
+							<strong>Клинический регламент:</strong> План составлен более 30 дней назад{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""}, цены могут быть скорректированы, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
 						</span>
 					</div>
 				) : null}
@@ -609,6 +587,16 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									className="ztl-search-clear"
+									onClick={() => setSearchQuery("")}
+									aria-label="Очистить поиск"
+								>
+									<X size={12} />
+								</button>
+							)}
 						</div>
 
 						<select
@@ -666,7 +654,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							<option value="week">Ближайшие 7 дней</option>
 						</select>
 
-						<div className="ztl-stage-chips-group" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+						<div className="dente-segmented-bar ztl-stage-chips-group" role="tablist">
 							{[
 								{ id: "ALL", label: "Все" },
 								{ id: "sent_to_lab", label: "Отправлен" },
@@ -678,8 +666,9 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 								<button
 									key={st.id}
 									type="button"
-									className={`ztl-chip ${selectedStage === st.id ? "active" : ""}`}
-									style={{ height: "26px", padding: "0 8px", fontSize: "11px" }}
+									role="tab"
+									aria-selected={selectedStage === st.id}
+									className={`dente-segmented-item ${selectedStage === st.id ? "active" : ""}`}
 									onClick={() => setSelectedStage(st.id)}
 									data-testid={`ztl-filter-stage-${st.id}`}
 									title={`Фильтр статуса: ${st.label}`}

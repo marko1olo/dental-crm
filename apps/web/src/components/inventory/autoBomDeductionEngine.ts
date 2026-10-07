@@ -657,7 +657,7 @@ export async function executeShiftCloseClassBWasteDisposal(
 
 	const brokenNotice = brokenCarpulesCount > 0 ? ` (из них бой: ${brokenCarpulesCount} шт.)` : "";
 	const partialNotice = partiallyUsedCarpulesCount > 0 ? ` (неполные: ${partiallyUsedCarpulesCount} шт.)` : "";
-	const toastMessage = `1-клик сдача отходов Класса Б: ${carpulesCount} карпул${brokenNotice}${partialNotice}, ${needlesCount + sharpsCount} игл (${netWeightKg} кг) внесены в журнал СанПиН 2.1.3684-21 (Пломба ${sealNumber}).`;
+	const toastMessage = `Сдача отходов Класса Б: ${carpulesCount} карпул${brokenNotice}${partialNotice}, ${needlesCount + sharpsCount} игл (${netWeightKg} кг) внесены в журнал СанПиН 2.1.3684-21 (Пломба ${sealNumber}).`;
 
 	if (input.onToast) {
 		input.onToast(toastMessage, "success");
@@ -683,7 +683,7 @@ export async function executeShiftCloseClassBWasteDisposal(
 					totalCarpulesCount: carpulesCount,
 					brokenCarpulesCount,
 					partiallyUsedCarpulesCount,
-					description: `1-клик сдача отходов смены: ${carpulesCount} карпул${brokenNotice}${partialNotice}, ${needlesCount + sharpsCount} игл/лезвий, СИЗ`,
+					description: `Сдача отходов смены: ${carpulesCount} карпул${brokenNotice}${partialNotice}, ${needlesCount + sharpsCount} игл/лезвий, СИЗ`,
 					disinfectionMethod: "chemical_soaking",
 					disinfectantName: "Аламинол 3% (60 мин)",
 					responsibleStaffName: input.responsibleStaffName,

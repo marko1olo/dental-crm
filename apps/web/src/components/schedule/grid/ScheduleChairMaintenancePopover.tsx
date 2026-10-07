@@ -104,7 +104,7 @@ export function ScheduleChairMaintenancePopover({
         </div>
 
         <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider pt-0.5">
-          Технический перерыв (1 клик):
+          Технический перерыв:
         </span>
         <div className="grid grid-cols-3 gap-1">
           <button

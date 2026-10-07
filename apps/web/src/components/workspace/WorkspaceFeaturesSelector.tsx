@@ -602,7 +602,7 @@ export function WorkspaceFeaturesSelector() {
 						) : (
 							<Zap size={16} />
 						)}
-						<span>Применить профиль: {activePreset.shortTitle} (1 клик)</span>
+						<span>Применить профиль: {activePreset.shortTitle}</span>
 					</button>
 				</div>
 

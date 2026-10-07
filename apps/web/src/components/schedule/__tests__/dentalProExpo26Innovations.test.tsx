@@ -97,7 +97,7 @@ describe("DentalPRO Expo26 Schedule Innovations Suite", () => {
     dashboard: mockDashboard,
   };
 
-  it("1. Renders DentalPRO Expo26 Segmented Status with [Плановый | Внеплановый (CITO) | Утверждённый]", () => {
+  it("1. Renders DentalPRO Expo26 Segmented Status with [Плановый | Внеплановый (срочно) | Утверждённый]", () => {
     const html = renderToStaticMarkup(
       <QuickBookingServiceSection
         {...defaultServiceProps}
@@ -110,7 +110,7 @@ describe("DentalPRO Expo26 Schedule Innovations Suite", () => {
     assert.ok(html.includes('data-testid="expo26-status-emergency"'), "expo26-status-emergency button must render");
     assert.ok(html.includes('data-testid="expo26-status-confirmed"'), "expo26-status-confirmed button must render");
     assert.ok(html.includes("Плановый"), "Must include 'Плановый' text");
-    assert.ok(html.includes("Внеплановый (CITO)"), "Must include 'Внеплановый (CITO)' text");
+    assert.ok(html.includes("Внеплановый (срочно)"), "Must include 'Внеплановый (срочно)' text");
     assert.ok(html.includes("Утверждённый"), "Must include 'Утверждённый' text");
   });
 

@@ -114,8 +114,9 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 
 	it("9. ChairsideDiagnosisPackageCard: purged 54-ФЗ and 804н from visible chairside UI", () => {
 		const cardCode = readComponent("components/visit/ChairsideDiagnosisPackageCard.tsx");
-		assert.ok(cardCode.includes("В кассу (1 клик)"), "Button must be clean 'В кассу (1 клик)'");
-		assert.ok(!cardCode.includes("В кассу 54-ФЗ (1 клик)"), "Button must not contain 54-ФЗ");
+		assert.ok(cardCode.includes("В кассу"), "Button must be clean 'В кассу'");
+		assert.ok(!cardCode.includes("1 клик"), "Button must not contain 1 клик");
+		assert.ok(!cardCode.includes("54-ФЗ"), "Button must not contain 54-ФЗ");
 		assert.ok(cardCode.includes("Готовый чек-лист клинических услуг"), "Header must be 'Готовый чек-лист клинических услуг'");
 		assert.ok(!cardCode.includes("Номенклатуре 804н"), "Header must not cite 804н in visible label");
 		assert.ok(cardCode.includes('data-testid="export-diagnosis-bundle-cashier-btn"'), "Preserve data-testid");
@@ -156,7 +157,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("14. SanpinRegisters & Warranty: human toast messages & standard card prefix", () => {
-		const sanpinCode = readComponent("components/sanpin/SanpinRegisters.tsx");
+		const sanpinCode =
+			readComponent("components/sanpin/SanpinRegisters.tsx") +
+			"\n" +
+			readComponent("components/sanpin/SanpinNurseSignModal.tsx");
 		assert.ok(sanpinCode.includes("Журналы стерилизации в норме"), "Sanpin toast must be clean Russian");
 		assert.ok(!sanpinCode.includes("Журналы СанПиН в норме"), "Sanpin toast must not shout СанПиН");
 		assert.ok(sanpinCode.includes("Журналы за неделю заполнены"), "Week toast must be clean");

@@ -186,7 +186,7 @@ export const RecallListPanel: React.FC = () => {
 				<h2>Пора пригласить</h2>
 				{report ? (
 					<span className="status-pill status-planned">
-						просмотрено карточек: {report.examinedPatients}
+						просмотрено карточек: {report.examinedPatients ?? 0}
 					</span>
 				) : null}
 			</div>
@@ -218,7 +218,7 @@ export const RecallListPanel: React.FC = () => {
 						Звать некого: все, кто лечился, либо были недавно, либо уже
 						записаны. Просмотрено{" "}
 						{countLabel(
-							report.examinedPatients,
+							report.examinedPatients ?? 0,
 							"карточка",
 							"карточки",
 							"карточек",
@@ -325,35 +325,11 @@ export const RecallListPanel: React.FC = () => {
 													</td>
 													<td data-label="Что делать">
 														{/* Звонок доступен всегда: он не рассылка и согласия не требует. */}
-														<button
-															className="secondary-button inline-flex items-center gap-1 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px]"
-															type="button"
-															disabled={false}
-															onClick={() => {
-																if (!candidate.phone) {
-																	showToast(
-																		"У пациента не указан телефон. Открыть карточку для ввода?",
-																		"warning",
-																	);
-																	if (
-																		candidate.patientId &&
-																		typeof appLogic?.setSelectedPatientId === "function"
-																	) {
-																		appLogic.setSelectedPatientId(candidate.patientId);
-																	}
-																	return;
-																}
-																markCalled(candidate.patientId);
-															}}
-														>
-															{wasCalled && <Check size={13} className="text-emerald-600" aria-hidden="true" />}
-															<span>{wasCalled ? "Позвонил" : "Позвонить"}</span>
-														</button>
-														{INVITABLE.includes(candidate.band) ? (
+														<div className="dente-button-group inline-flex items-center gap-1.5 flex-wrap">
 															<button
-																className="secondary-button min-h-[44px] sm:min-h-[32px] sm:min-h-[34px]"
+																className="secondary-button inline-flex items-center gap-1 h-8 min-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium"
 																type="button"
-																disabled={busy}
+																disabled={false}
 																onClick={() => {
 																	if (!candidate.phone) {
 																		showToast(
@@ -368,17 +344,43 @@ export const RecallListPanel: React.FC = () => {
 																		}
 																		return;
 																	}
-																	void invite(candidate);
+																	markCalled(candidate.patientId);
 																}}
 															>
-																{busy ? "Отправляю…" : "Пригласить SMS"}
+																{wasCalled && <Check size={13} className="text-emerald-600" aria-hidden="true" />}
+																<span>{wasCalled ? "Позвонил" : "Позвонить"}</span>
 															</button>
-														) : (
-															<span className="ops-note">
-																{NOT_INVITABLE_REASON[candidate.band] ??
-																	"Приглашение не предлагается."}
-															</span>
-														)}
+															{INVITABLE.includes(candidate.band) ? (
+																<button
+																	className="secondary-button inline-flex items-center gap-1 h-8 min-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium"
+																	type="button"
+																	disabled={busy}
+																	onClick={() => {
+																		if (!candidate.phone) {
+																			showToast(
+																				"У пациента не указан телефон. Открыть карточку для ввода?",
+																				"warning",
+																			);
+																			if (
+																				candidate.patientId &&
+																				typeof appLogic?.setSelectedPatientId === "function"
+																			) {
+																				appLogic.setSelectedPatientId(candidate.patientId);
+																			}
+																			return;
+																		}
+																		void invite(candidate);
+																	}}
+																>
+																	{busy ? "Отправляю…" : "Пригласить SMS"}
+																</button>
+															) : (
+																<span className="ops-note">
+																	{NOT_INVITABLE_REASON[candidate.band] ??
+																		"Приглашение не предлагается."}
+																</span>
+															)}
+														</div>
 													</td>
 												</tr>
 											);
@@ -392,7 +394,7 @@ export const RecallListPanel: React.FC = () => {
 								<button
 									type="button"
 									data-testid="btn-recall-show-more"
-									className="secondary-button text-xs py-1.5 px-3 min-h-[36px]"
+									className="secondary-button h-8 min-h-[32px] px-3.5 rounded-lg text-[13px] font-medium"
 									onClick={() => setDisplayLimit((previous) => previous + 40)}
 								>
 									Показать ещё ({Math.min(40, candidateSlice.remainingCount)} из {candidateSlice.remainingCount})

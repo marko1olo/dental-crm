@@ -72,30 +72,33 @@
 	flex-wrap: wrap;
 }
 
-/* Переключатели табов и периодов — строгий macOS / Studio HIG Segmented Control */
+/* Переключатели табов и периодов — строгий macOS / DENTE Segmented Control */
 .cad-pill-group {
 	display: inline-flex;
 	align-items: center;
 	background-color: var(--paper-soft);
-	border: 1px solid var(--line);
-	border-radius: 12px;
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
 	padding: 3px;
-	gap: 3px;
+	gap: 2px;
 	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .cad-pill-btn {
 	height: 28px;
-	padding: 0 11px;
-	border-radius: 8px;
+	min-height: 28px;
+	max-height: 28px;
+	padding: 0 12px;
+	border-radius: 7px;
 	border: 1px solid transparent;
 	background: transparent;
 	color: var(--muted);
-	font-size: 0.75rem;
+	font-size: 12.5px;
 	font-weight: 500;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 5px;
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
@@ -104,33 +107,42 @@
 
 .cad-pill-btn:hover:not(.active) {
 	color: var(--ink);
-	background-color: var(--paper);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	background-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .cad-pill-btn:hover:not(.active),
+.dark .cad-pill-btn:hover:not(.active) {
+	background-color: rgba(255, 255, 255, 0.06);
 }
 
 .cad-pill-btn.active {
-	background-color: var(--teal);
-	color: var(--on-teal, #ffffff) !important;
+	background-color: var(--paper) !important;
+	color: var(--ink) !important;
 	font-weight: 600;
-	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.35), 0 1px 2px rgba(0, 0, 0, 0.1);
-	border-color: transparent;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+	border-color: var(--line-subtle, var(--line));
 }
 
 [data-theme="dark"] .cad-pill-btn.active,
-[data-theme="night"] .cad-pill-btn.active {
-	background-color: var(--teal);
-	color: var(--on-teal, #ffffff) !important;
+[data-theme="night"] .cad-pill-btn.active,
+[data-theme="oled"] .cad-pill-btn.active,
+.dark .cad-pill-btn.active {
+	background-color: var(--paper-card, var(--paper-strong)) !important;
+	color: var(--ink) !important;
+	border-color: var(--line);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .cad-action-btn {
-	height: 34px;
-	min-height: 34px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
 	padding: 0 12px;
-	border-radius: 10px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background-color: var(--paper);
 	color: var(--ink);
-	font-size: 0.75rem;
+	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
@@ -249,12 +261,13 @@
 }
 
 .cad-badge {
-	font-size: 0.6875rem;
+	font-size: 0.75rem;
 	font-weight: 600;
-	padding: 2px 6px;
-	border-radius: 4px;
-	background-color: rgba(13, 148, 136, 0.15);
+	padding: 3px 8px;
+	border-radius: 6px;
+	background-color: var(--teal-surface, rgba(13, 148, 136, 0.15));
 	color: var(--teal);
+	border: 1px solid var(--line-subtle, transparent);
 }
 
 /* Таблицы высокой клинической плотности */
@@ -273,7 +286,7 @@
 	text-align: left;
 	padding: 8px 10px;
 	font-weight: 600;
-	font-size: 0.6875rem;
+	font-size: 0.75rem;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
 	color: var(--muted);

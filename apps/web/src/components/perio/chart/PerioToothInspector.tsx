@@ -73,10 +73,8 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 									isMissing: !selectedTooth.isMissing,
 								})
 							}
-							className={`min-h-[44px] px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all touch-manipulation flex items-center gap-1.5 ${
-								selectedTooth.isMissing
-									? "bg-[var(--line-strong)] text-[var(--ink)] border-[var(--line)]"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							className={`secondary-button ${
+								selectedTooth.isMissing ? "!bg-slate-200 dark:!bg-slate-700 !text-slate-900 dark:!text-white font-semibold" : ""
 							}`}
 						>
 							<span>
@@ -85,7 +83,7 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 									: "Отметить отсутствующим"}
 							</span>
 							{selectedTooth.isMissing && (
-								<Check size={14} className="text-[var(--ink)]" />
+								<Check size={14} className="text-slate-900 dark:text-white" />
 							)}
 						</button>
 
@@ -96,22 +94,20 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 									isImplant: !selectedTooth.isImplant,
 								})
 							}
-							className={`min-h-[44px] px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all touch-manipulation flex items-center gap-1.5 ${
-								selectedTooth.isImplant
-									? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							className={`secondary-button ${
+								selectedTooth.isImplant ? "!bg-amber-500/20 !text-amber-700 dark:!text-amber-300 !border-amber-500/50 font-semibold" : ""
 							}`}
 						>
 							<span>Имплантат</span>
 							{selectedTooth.isImplant && (
-								<Check size={14} className="text-amber-300" />
+								<Check size={14} className="text-amber-600 dark:text-amber-300" />
 							)}
 						</button>
 
-						{/* Mobility Selector (Miller 0..III) */}
-						<div className="flex items-center gap-1 bg-[var(--paper)] px-2 py-1 rounded-lg border border-[var(--line)]">
+						{/* Mobility Selector (Miller 0..III) Segmented Bar */}
+						<div className="dente-segmented-bar h-8 px-1.5 flex items-center gap-1 shadow-2xs">
 							<span
-								className="text-[11px] text-[var(--muted)]"
+								className="text-[12px] font-semibold text-[var(--muted)] px-1 select-none"
 								title="Классификация подвижности зубов по Miller (Миллеру): 0 (норма), I (до 1 мм), II (> 1 мм), III (выраженная + вертикальная подвижность)"
 							>
 								Подвижность (Miller):
@@ -125,10 +121,8 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 											mobility: grade,
 										})
 									}
-									className={`px-1.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${
-										selectedTooth.mobility === grade
-											? "bg-teal-500 text-slate-950 font-black"
-											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									className={`dente-segmented-item !h-6 !min-h-[24px] !max-h-[24px] !px-2 text-[12px] ${
+										selectedTooth.mobility === grade ? "active" : ""
 									}`}
 									title={`Подвижность по Miller (Миллеру): ${MOBILITY_GRADES[grade]?.nameRu ?? grade}`}
 									data-testid={`inspector-mobility-${grade}`}
@@ -138,11 +132,11 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 							))}
 						</div>
 
-						{/* Furcation Selector (Hamp I..IV for multi-rooted) */}
+						{/* Furcation Selector (Hamp I..IV for multi-rooted) Segmented Bar */}
 						{isFurcationEligibleTooth(selectedTooth.toothNumber) && (
-							<div className="flex items-center gap-1 bg-[var(--paper)] px-2 py-1 rounded-lg border border-[var(--line)]">
+							<div className="dente-segmented-bar h-8 px-1.5 flex items-center gap-1 shadow-2xs">
 								<span
-									className="text-[11px] text-[var(--muted)]"
+									className="text-[12px] font-semibold text-[var(--muted)] px-1 select-none"
 									title="Классификация фуркационных дефектов по Hamp (Хэмпу): 0 (норма), I (до 3 мм), II (> 3 мм не насквозь), III (сквозной дефект), IV (сквозной с рецессией десны)"
 								>
 									Фуркация (Hamp):
@@ -156,10 +150,8 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 												furcation: grade,
 											})
 										}
-										className={`px-1.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${
-											selectedTooth.furcation === grade
-												? "bg-rose-500 text-white font-black"
-												: "text-[var(--muted)] hover:text-[var(--ink)]"
+										className={`dente-segmented-item !h-6 !min-h-[24px] !max-h-[24px] !px-2 text-[12px] ${
+											selectedTooth.furcation === grade ? "active" : ""
 										}`}
 										title={`Фуркационный дефект по Hamp (Хэмпу): ${FURCATION_GRADES[grade]?.nameRu ?? grade}`}
 										data-testid={`inspector-furcation-${grade}`}

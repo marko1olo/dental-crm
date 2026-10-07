@@ -133,7 +133,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 					<span className="text-xs font-semibold text-[var(--muted)] whitespace-nowrap hidden lg:inline">
 						Специализация:
 					</span>
-					<div className="grid grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-nowrap gap-1.5 p-1 rounded-xl bg-[var(--paper-soft)]/70 border border-[var(--line)]/70 w-full sm:w-auto">
+					<div className="dente-segmented-bar flex flex-wrap sm:flex-nowrap">
 						{SPECIALTY_PRESET_BUTTONS.map((spec) => {
 							const isSelected = currentSpecialty === spec.key;
 							return (
@@ -144,11 +144,8 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 										applySpecialtyPreset(spec.key);
 										showToast(`Пресет «${spec.label}» активирован (настройки приёма обновлены)`, "success");
 									}}
-									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[32px] h-8 whitespace-nowrap flex items-center justify-center shrink-0 ${
-										isSelected
-											? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
-											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-teal-500/70 hover:bg-[var(--paper-soft)]"
-									}`}
+									className={`dente-segmented-item ${isSelected ? "active" : ""}`}
+									data-active={isSelected}
 									title={`Активировать пресет рабочего места для «${spec.label}»`}
 									data-testid={`doctor-specialty-preset-banner-${spec.key}`}
 								>

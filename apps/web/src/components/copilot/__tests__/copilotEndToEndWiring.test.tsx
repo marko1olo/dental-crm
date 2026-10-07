@@ -117,8 +117,8 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(html).toContain("Копилот у кресла");
     expect(html).toContain("Сидоров А.П.");
     expect(html).toContain("btn-chairside-apply-all");
-    expect(html).toContain("Применить всё в 1 клик");
-    expect(html).toContain("Автономия врача (Мандат 8e)");
+    expect(html).toContain("Применить все предложения");
+    expect(html).toContain("Обратимые действия • Полный контроль врача");
     expect(html).toContain("btn-preset-caries-16");
     expect(html).toContain("btn-preset-pulpitis-26");
     expect(html).toContain("btn-preset-hygiene");

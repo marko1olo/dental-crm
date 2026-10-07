@@ -34,18 +34,36 @@ export function normalizeCyrillicText(value: string | null | undefined): string 
 export interface PatientSearchableFields {
 	fullName?: string | null | undefined;
 	phone?: string | null | undefined;
+	mobilePhone?: string | null | undefined;
+	contactPhone?: string | null | undefined;
 	birthDate?: string | null | undefined;
 	cardNumber?: string | null | undefined;
+	chartNumber?: string | null | undefined;
+	medicalCardNumber?: string | null | undefined;
+	medCardNumber?: string | null | undefined;
+	snils?: string | null | undefined;
+	insurancePolicyNumber?: string | null | undefined;
+	policyNumber?: string | null | undefined;
+	omsPolicy?: string | null | undefined;
+	dmsPolicyNumber?: string | null | undefined;
+	notes?: string | null | undefined;
+	tags?: string[] | string | null | undefined;
 	administrativeProfile?: {
 		legalRepresentativePhone?: string | null | undefined;
 		legalRepresentativeFullName?: string | null | undefined;
+		cardNumber?: string | null | undefined;
+		patientPhone?: string | null | undefined;
+		snils?: string | null | undefined;
+		insurancePolicyNumber?: string | null | undefined;
+		identityDocument?: string | null | undefined;
+		taxpayerInn?: string | null | undefined;
 	} | null | undefined;
 }
 
 export interface PatientSearchScoredResult {
 	readonly isMatch: boolean;
 	readonly score: number;
-	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name";
+	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name" | "snils" | "policy" | "tag" | "notes";
 	readonly isExact: boolean;
 	readonly isFuzzy: boolean;
 	readonly suggestedName?: string | undefined;
@@ -412,6 +430,76 @@ export function scorePatientSearch(
 				isExact: repMatch.isExact,
 				isFuzzy: !repMatch.isExact,
 				suggestedName: repName,
+			};
+		}
+	}
+
+	// 8. Поиск по СНИЛС (11 цифр или фрагмент от 3 цифр)
+	const snilsVal = patient.snils || patient.administrativeProfile?.snils;
+	if (snilsVal && queryDigits.length >= 3) {
+		const snilsDigits = snilsVal.replace(/\D/g, "");
+		if (snilsDigits.includes(queryDigits)) {
+			return {
+				isMatch: true,
+				score: 85,
+				matchedBy: "snils",
+				isExact: snilsDigits === queryDigits,
+				isFuzzy: false,
+			};
+		}
+	}
+
+	// 9. Поиск по номеру полиса ОМС/ДМС
+	const policyVal =
+		patient.insurancePolicyNumber ||
+		patient.policyNumber ||
+		patient.omsPolicy ||
+		patient.dmsPolicyNumber ||
+		patient.administrativeProfile?.insurancePolicyNumber;
+	if (policyVal) {
+		const normPolicy = normalizeCyrillicText(policyVal);
+		const policyDigits = policyVal.replace(/\D/g, "");
+		if (
+			normPolicy.includes(normalizedQuery) ||
+			(queryDigits.length >= 3 && policyDigits.includes(queryDigits))
+		) {
+			return {
+				isMatch: true,
+				score: 80,
+				matchedBy: "policy",
+				isExact: normPolicy === normalizedQuery || (queryDigits.length >= 6 && policyDigits === queryDigits),
+				isFuzzy: false,
+			};
+		}
+	}
+
+	// 10. Поиск по тегам
+	if (patient.tags) {
+		const tagsList = Array.isArray(patient.tags) ? patient.tags : [String(patient.tags)];
+		for (const t of tagsList) {
+			const normTag = normalizeCyrillicText(t);
+			if (normTag.includes(normalizedQuery)) {
+				return {
+					isMatch: true,
+					score: 75,
+					matchedBy: "tag",
+					isExact: normTag === normalizedQuery,
+					isFuzzy: false,
+				};
+			}
+		}
+	}
+
+	// 11. Поиск по заметкам (notes)
+	if (patient.notes && normalizedQuery.length >= 3) {
+		const normNotes = normalizeCyrillicText(patient.notes);
+		if (normNotes.includes(normalizedQuery)) {
+			return {
+				isMatch: true,
+				score: 60,
+				matchedBy: "notes",
+				isExact: false,
+				isFuzzy: false,
 			};
 		}
 	}

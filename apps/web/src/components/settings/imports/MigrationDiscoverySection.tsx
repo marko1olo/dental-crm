@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import type {
 	MigrationAutopilotResponse,
 	MigrationLocalSourceDiscoveryCandidate,
@@ -12,6 +12,7 @@ import {
 	ScanSearch,
 	Search,
 	UploadCloud,
+	X,
 } from "lucide-react";
 import {
 	humanizeMigrationText,
@@ -77,7 +78,26 @@ export function MigrationDiscoverySection({
 	focusSmartImportWorkbench,
 	lookupClinicPublicProfile,
 }: MigrationDiscoverySectionProps) {
+	const [searchQuery, setSearchQuery] = useState("");
+	const [sourceKindFilter, setSourceKindFilter] = useState<string>("all");
+
 	if (!typedMigrationSourceDiscovery) return null;
+
+	const filteredCandidates = typedMigrationDiscoveryCandidates.filter((candidate) => {
+		const q = searchQuery.trim().toLowerCase();
+		const matchesQuery =
+			!q ||
+			candidate.sourceLabel?.toLowerCase().includes(q) ||
+			candidate.sourceKind?.toLowerCase().includes(q) ||
+			candidate.sourceFingerprint?.toLowerCase().includes(q) ||
+			candidate.reasons?.some((r) => r.toLowerCase().includes(q));
+
+		const matchesKind =
+			sourceKindFilter === "all" ||
+			candidate.sourceKind === sourceKindFilter;
+
+		return matchesQuery && matchesKind;
+	});
 
 	return (
 		<section
@@ -100,8 +120,60 @@ export function MigrationDiscoverySection({
 					предпросмотру или разбору.
 				</span>
 			</div>
+
+			{/* Поиск файлов импорта и фильтр по типам источников */}
+			{typedMigrationDiscoveryCandidates.length > 0 && (
+				<div className="flex items-center justify-between gap-3 flex-wrap my-3 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+					<div className="dente-search-wrap flex-1 min-w-[240px]">
+						<Search className="dente-search-icon" size={14} aria-hidden="true" />
+						<input
+							type="search"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							placeholder="Поиск файлов импорта, баз данных или снимков..."
+							className="dente-search-input"
+							data-testid="input-search-migration-sources"
+						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
+							>
+								<X size={13} />
+							</button>
+						)}
+					</div>
+					<div className="dente-filter-chips" role="group" aria-label="Фильтр источников импорта">
+						{[
+							{ key: "all", label: "Все источники" },
+							{ key: "database", label: "Базы данных" },
+							{ key: "dicom", label: "КТ / Снимки" },
+							{ key: "tabular", label: "Таблицы / Excel" },
+						].map((filter) => {
+							const count = filter.key === "all"
+								? typedMigrationDiscoveryCandidates.length
+								: typedMigrationDiscoveryCandidates.filter((c) => c.sourceKind === filter.key).length;
+							return (
+								<button
+									key={filter.key}
+									type="button"
+									onClick={() => setSourceKindFilter(filter.key)}
+									className={`dente-filter-chip ${sourceKindFilter === filter.key ? "active" : ""}`}
+									data-active={sourceKindFilter === filter.key}
+								>
+									<span>{filter.label}</span>
+									{count > 0 && <span className="opacity-70 text-[10px] ml-1 font-mono">({count})</span>}
+								</button>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
 			<div className="dicom-discovery-grid">
-				{typedMigrationDiscoveryCandidates
+				{filteredCandidates
 					.slice(0, 9)
 					.map((candidate, index) => {
 						const candidateDisplayName = migrationSourceDisplayName(
@@ -139,49 +211,55 @@ export function MigrationDiscoverySection({
 										</small>
 									))}
 								<div className="migration-source-card-actions">
-									<button
-										className="text-button"
-										type="button"
-										onClick={() => planMigrationDiscoveryCandidate(candidate)}
-										disabled={isMigrationSourceWorkupLoading}
-										aria-label={`Открыть план переноса: ${candidateDisplayName}`}
-									>
-										<ClipboardCheck aria-hidden="true" /> План переноса
-									</button>
-									<button
-										className="text-button"
-										type="button"
-										onClick={() => probeMigrationDiscoveryCandidate(candidate)}
-										disabled={isMigrationSourceProbeLoading}
-										aria-label={`Проверить источник: ${candidateDisplayName}`}
-									>
-										<ScanSearch aria-hidden="true" /> Проверить источник
-									</button>
-									<button
-										className="text-button"
-										type="button"
-										onClick={() =>
-											addMigrationDiscoveryCandidateToSmartImport(candidate)
-										}
-										aria-label={`Отправить источник в разбор: ${candidateDisplayName}`}
-									>
-										<UploadCloud aria-hidden="true" /> Отправить в разбор
-									</button>
-									<button
-										className="text-button"
-										type="button"
-										onClick={() =>
-											void previewMigrationDiscoveryCandidate(candidate)
-										}
-										disabled={
-											isSmartImportLoading ||
-											!migrationCandidatePreviewReady(candidate)
-										}
-										title={migrationCandidatePreviewHint(candidate)}
-										aria-label={`Построить предпросмотр: ${candidateDisplayName}`}
-									>
-										<FileCheck2 aria-hidden="true" /> Предпросмотр
-									</button>
+									<div className="dente-segmented-bar w-full" role="group" aria-label={`Действия для ${candidateDisplayName}`}>
+										<button
+											className="dente-segmented-item"
+											type="button"
+											onClick={() => planMigrationDiscoveryCandidate(candidate)}
+											disabled={isMigrationSourceWorkupLoading}
+											aria-label={`Открыть план переноса: ${candidateDisplayName}`}
+										>
+											<ClipboardCheck size={13} aria-hidden="true" />
+											<span>План</span>
+										</button>
+										<button
+											className="dente-segmented-item"
+											type="button"
+											onClick={() => probeMigrationDiscoveryCandidate(candidate)}
+											disabled={isMigrationSourceProbeLoading}
+											aria-label={`Проверить источник: ${candidateDisplayName}`}
+										>
+											<ScanSearch size={13} aria-hidden="true" />
+											<span>Проверить</span>
+										</button>
+										<button
+											className="dente-segmented-item"
+											type="button"
+											onClick={() =>
+												addMigrationDiscoveryCandidateToSmartImport(candidate)
+											}
+											aria-label={`Отправить источник в разбор: ${candidateDisplayName}`}
+										>
+											<UploadCloud size={13} aria-hidden="true" />
+											<span>В разбор</span>
+										</button>
+										<button
+											className="dente-segmented-item active"
+											type="button"
+											onClick={() =>
+												void previewMigrationDiscoveryCandidate(candidate)
+											}
+											disabled={
+												isSmartImportLoading ||
+												!migrationCandidatePreviewReady(candidate)
+											}
+											title={migrationCandidatePreviewHint(candidate)}
+											aria-label={`Построить предпросмотр: ${candidateDisplayName}`}
+										>
+											<FileCheck2 size={13} aria-hidden="true" />
+											<span>Предпросмотр</span>
+										</button>
+									</div>
 									{!migrationCandidatePreviewReady(candidate) ? (
 										<small className="migration-action-hint">
 											{migrationCandidatePreviewHint(candidate)}
@@ -205,31 +283,36 @@ export function MigrationDiscoverySection({
 						строк выгрузки или заполните реквизиты клиники для документов.
 					</span>
 					<div className="migration-source-card-actions">
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void pickBrowserMigrationSource()}
-							disabled={
-								isBrowserMigrationScanning || isMigrationAutopilotLoading
-							}
-						>
-							<Database aria-hidden="true" /> Папка/диск
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={focusSmartImportWorkbench}
-						>
-							<FileText aria-hidden="true" /> Вставить текст
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void lookupClinicPublicProfile()}
-							disabled={isClinicPublicLookupLoading}
-						>
-							<Search aria-hidden="true" /> Реквизиты
-						</button>
+						<div className="dente-segmented-bar" role="toolbar" aria-label="Варианты восстановления">
+							<button
+								className="dente-segmented-item"
+								type="button"
+								onClick={() => void pickBrowserMigrationSource()}
+								disabled={
+									isBrowserMigrationScanning || isMigrationAutopilotLoading
+								}
+							>
+								<Database size={13} aria-hidden="true" />
+								<span>Папка/диск</span>
+							</button>
+							<button
+								className="dente-segmented-item"
+								type="button"
+								onClick={focusSmartImportWorkbench}
+							>
+								<FileText size={13} aria-hidden="true" />
+								<span>Вставить текст</span>
+							</button>
+							<button
+								className="dente-segmented-item"
+								type="button"
+								onClick={() => void lookupClinicPublicProfile()}
+								disabled={isClinicPublicLookupLoading}
+							>
+								<Search size={13} aria-hidden="true" />
+								<span>Реквизиты</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			) : null}

@@ -3,57 +3,50 @@ import type {
 	Patient,
 	PatientAdministrativeProfile,
 } from "@dental/shared";
-import {
-	AlertTriangle,
-	Archive,
-	ArrowLeft,
-	ArrowRight,
-	Calendar,
-	Camera,
-	Check,
-	ChevronRight,
-	Clock,
-	FileText,
-	Filter,
-	Gift,
-	MoreHorizontal,
-	Phone,
-	Plus,
-	Receipt,
-	Search,
-	ShieldCheck,
-	Stethoscope,
-	Upload,
-	UserCheck,
-	Users,
-	X,
-} from "lucide-react";
-import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { lazy, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EmptyState } from "./components/EmptyState";
+import React, {
+	lazy,
+	startTransition,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { showToast } from "./components/GlobalToast";
-const VisiographAnalyzer = lazy(() =>
-	import("./components/imaging/VisiographAnalyzer").then((module) => ({
-		default: module.VisiographAnalyzer,
-	})),
-);
-import { OdontogramModule } from "./components/odontogram/OdontogramModule";
-import { PatientAvatar } from "./components/PatientAvatar";
+import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import {
-	printBlankMedicalContract,
-	printBlankMedicalConsent,
-} from "./components/patients/blankContractPrint";
-import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
-import { PatientSearchAutocomplete } from "./components/patients/PatientSearchAutocomplete";
-import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
-import { MobilePatientsGroupedList } from "./components/patients/MobilePatientsGroupedList";
+	PatientAdministrativeForm,
+} from "./components/patients/PatientAdministrativeForm";
+import {
+	PatientCoreEditorForm,
+	type PatientCoreDraft,
+	type TextFieldChangeEvent,
+} from "./components/patients/PatientCoreEditorForm";
+import { PatientDetailsPanel } from "./components/patients/PatientDetailsPanel";
+import { PatientFamilyAndInsuranceWidget } from "./components/patients/PatientFamilyAndInsuranceWidget";
+import {
+	executeBookPatientAppointmentAutonomy,
+	executeOpenPatientVisitAutonomy,
+	executePatientAdministrativeProfileSaveAutonomy,
+	executePatientCoreSaveAutonomy,
+	executePatientSomaticNormAutonomy,
+} from "./components/patients/patientAutonomyActions";
+import { patientListFeatureSalience } from "./components/patients/patientListFeatureSalience";
+import { PatientsFilterToolbar } from "./components/patients/PatientsFilterToolbar";
+import { PatientsMasterList } from "./components/patients/PatientsMasterList";
 import { MobilePatientProfileWorkspace } from "./components/patients/MobilePatientProfileWorkspace";
-import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
+import { MobilePatientsGroupedList } from "./components/patients/MobilePatientsGroupedList";
 import {
-	RadiologyPatientSearchModal,
 	DEFAULT_TACTILE_FILTERS,
+	RadiologyPatientSearchModal,
 	type RadiologyTactileFilterState,
 } from "./components/radiology/RadiologyPatientSearchModal";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useDomListPagination } from "./hooks/useMemoryLeakGuard";
+import { actionFailureToast } from "./lib/panelStateText";
+import { usePatientStore } from "./store/patientStore";
+import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
 
 const LoyaltyProgramModal = lazy(() =>
 	import("./components/loyalty/program/LoyaltyProgramModal").then((module) => ({
@@ -71,21 +64,11 @@ const PatientCreationModal = lazy(() =>
 	})),
 );
 const CreatePatientModal = PatientCreationModal;
-
-import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
-import {
-	featureDistinguishes,
-	patientListFeatureSalience,
-} from "./components/patients/patientListFeatureSalience";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { useDomListPagination } from "./hooks/useMemoryLeakGuard";
-import { actionFailureToast } from "./lib/panelStateText";
-import { useAppStore } from "./store/appStore";
-import { usePatientStore } from "./store/patientStore";
-import { useScheduleStore } from "./store/scheduleStore";
-import { formatPhoneNumber } from "./utils/inputSanitation";
-import { applySomaticNormToText } from "./utils/somaticNorm";
+const PatientRecallsHubModal = lazy(() =>
+	import("./components/recalls/PatientRecallsHubModal").then((module) => ({
+		default: module.PatientRecallsHubModal,
+	})),
+);
 
 type PatientInsight = Dashboard["patientInsights"][number];
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -95,13 +78,7 @@ export type PatientAdministrativeProfileSaveState =
 	| "saved"
 	| "error";
 
-export type PatientCoreDraft = {
-	fullName: string;
-	birthDate: string;
-	phone: string;
-	email: string;
-	notes: string;
-};
+export type { PatientCoreDraft, TextFieldChangeEvent };
 
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
@@ -155,230 +132,33 @@ export type PatientsViewProps = {
 	) => void;
 };
 
-export async function executePatientCoreSaveAutonomy({
-	selectedPatient,
-	patientCoreNameMissing,
-	patientCoreDirty,
-	savePatientCoreProp,
-	showToastFn = showToast,
-}: {
-	selectedPatient: Patient | null | undefined;
-	patientCoreNameMissing: boolean;
-	patientCoreDirty: boolean;
-	savePatientCoreProp?: () =>
-		| undefined
-		| boolean
-		| Promise<undefined | boolean>;
-	showToastFn?: (
-		text: string,
-		type?: "success" | "error" | "info" | "warning",
-		duration?: number,
-	) => void;
-}) {
-	if (!selectedPatient) {
-		showToastFn("Выберите пациента для сохранения карточки", "warning");
-		return { executed: false, reason: "no_patient" as const };
-	}
-	if (patientCoreNameMissing) {
-		showToastFn("Введите ФИО пациента для сохранения", "warning");
-		return { executed: false, reason: "missing_name" as const };
-	}
-	if (!patientCoreDirty) {
-		showToastFn("Данные пациента актуальны (нет несохранённых правок)", "info");
-		return { executed: false, reason: "not_dirty" as const };
-	}
-	try {
-		const result = await savePatientCoreProp?.();
-		if (result !== false) {
-			showToastFn("Данные пациента сохранены", "success");
-		}
-		return {
-			executed: result !== false,
-			reason: result === false ? ("save_failed" as const) : ("saved" as const),
-		};
-	} catch {
-		return { executed: false, reason: "save_failed" as const };
-	}
-}
+export {
+	executeBookPatientAppointmentAutonomy,
+	executeOpenPatientVisitAutonomy,
+	executePatientAdministrativeProfileSaveAutonomy,
+	executePatientCoreSaveAutonomy,
+	executePatientSomaticNormAutonomy,
+};
 
-export async function executePatientAdministrativeProfileSaveAutonomy({
-	selectedPatient,
-	patientAdministrativeProfileDirty,
-	patientAdministrativeProfileValidationMessage,
-	savePatientAdministrativeProfileProp,
-	showToastFn = showToast,
-}: {
-	selectedPatient: Patient | null | undefined;
-	patientAdministrativeProfileDirty: boolean;
-	patientAdministrativeProfileValidationMessage: string | null | undefined;
-	savePatientAdministrativeProfileProp?: () =>
-		| undefined
-		| boolean
-		| Promise<undefined | boolean>;
-	showToastFn?: (
-		text: string,
-		type?: "success" | "error" | "info" | "warning",
-		duration?: number,
-	) => void;
-}) {
-	if (!selectedPatient) {
-		showToastFn("Выберите пациента перед сохранением реквизитов", "warning");
-		return { executed: false, reason: "no_patient" as const };
-	}
-	if (patientAdministrativeProfileValidationMessage) {
-		showToastFn(patientAdministrativeProfileValidationMessage, "warning");
-	}
-	if (!patientAdministrativeProfileDirty) {
-		showToastFn("Реквизиты пациента актуальны", "info");
-		return { executed: false, reason: "not_dirty" as const };
-	}
-	try {
-		const result = await savePatientAdministrativeProfileProp?.();
-		if (result !== false) {
-			showToastFn("Реквизиты пациента сохранены", "success");
-		}
-		return {
-			executed: result !== false,
-			reason: result === false ? ("save_failed" as const) : ("saved" as const),
-		};
-	} catch {
-		return { executed: false, reason: "save_failed" as const };
-	}
-}
-
-export function executeOpenPatientVisitAutonomy({
-	selectedPatient,
-	setSelectedPatientId = (id: string) =>
-		usePatientStore.getState().setSelectedPatientId(id),
-	setCurrentView = (
-		view:
-			| "visit"
-			| "patients"
-			| "schedule"
-			| "finance"
-			| "warehouse"
-			| "analytics"
-			| "tasks"
-			| "settings"
-			| "audit",
-	) => useAppStore.getState().setCurrentView(view),
-	showToastFn = showToast,
-}: {
-	selectedPatient: Patient | null | undefined;
-	visitId?: string;
-	setSelectedPatientId?: (id: string) => void;
-	setCurrentView?: (view: any) => void;
-	showToastFn?: (
-		text: string,
-		type?: "success" | "error" | "info" | "warning",
-		duration?: number,
-	) => void;
-}) {
-	if (!selectedPatient) {
-		showToastFn(
-			"Выберите пациента из списка слева для начала приёма",
-			"info",
-		);
-		return { executed: false, reason: "no_patient" as const };
-	}
-	setSelectedPatientId(selectedPatient.id);
-	setCurrentView("visit");
-	showToastFn(`Открыт приём: ${selectedPatient.fullName}`, "success");
-	return { executed: true, reason: "visit_opened" as const };
-}
-
-export function executeBookPatientAppointmentAutonomy({
-	selectedPatient,
-	setNewAppointmentDraft = (draft: any) =>
-		useScheduleStore.getState().setNewAppointmentDraft(draft),
-	setCurrentView = (view: any) => useAppStore.getState().setCurrentView(view),
-	showToastFn = showToast,
-}: {
-	selectedPatient: Patient | null | undefined;
-	setNewAppointmentDraft?: (draft: any) => void;
-	setCurrentView?: (view: any) => void;
-	showToastFn?: (
-		text: string,
-		type?: "success" | "error" | "info" | "warning",
-		duration?: number,
-	) => void;
-}) {
-	if (!selectedPatient) {
-		showToastFn(
-			"Выберите пациента из списка слева для записи в расписание",
-			"info",
-		);
-		return { executed: false, reason: "no_patient" as const };
-	}
-	const now = new Date();
-	const pad = (n: number) => String(n).padStart(2, "0");
-	const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-	const currentHour = now.getHours();
-	const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
-	const endHour = Math.min(startHour + 1, 21);
-	const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
-	const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
-
-	setNewAppointmentDraft({
-		patientId: selectedPatient.id,
-		doctorUserId: "",
-		assistantUserId: "",
-		chairId: "",
-		status: "planned",
-		startsAt,
-		endsAt,
-		reason: "Первичный приём и консультация",
-		comment: "",
-	});
-	setCurrentView("schedule");
-	showToastFn(
-		`Пациент ${selectedPatient.fullName} выбран для записи в расписание`,
-		"success",
-	);
-	return { executed: true, reason: "appointment_drafted" as const };
-}
-
-export function executePatientSomaticNormAutonomy({
-	selectedPatient,
-	currentNotes,
-	updatePatientCoreDraft,
-	showToastFn = showToast,
-}: {
-	selectedPatient: Patient | null | undefined;
-	currentNotes?: string;
-	updatePatientCoreDraft?: (
-		field: keyof PatientCoreDraft,
-		value: string,
-	) => void;
-	showToastFn?: (
-		text: string,
-		type?: "success" | "error" | "info" | "warning",
-		duration?: number,
-	) => void;
-}) {
-	if (!selectedPatient) {
-		showToastFn(
-			"Выберите пациента перед установкой соматической нормы",
-			"warning",
-		);
-		return { executed: false, reason: "no_patient" as const };
-	}
-	const newNotes = applySomaticNormToText(currentNotes);
-
-	if (typeof updatePatientCoreDraft === "function") {
-		updatePatientCoreDraft("notes", newNotes);
-	}
-	showToastFn(
-		"Установлена физиологическая норма соматического статуса (1 клик)",
-		"success",
-	);
-	return { executed: true, notes: newNotes };
-}
-
-export type TextFieldChangeEvent = ChangeEvent<
-	HTMLInputElement | HTMLTextAreaElement
->;
-
+/**
+ * PatientsView — Главный реестр пациентов (картотека) DENTE Dental CRM.
+ * Архитектура декомпозиции (Mandate 8b):
+ * - PatientsFilterToolbar: быстрый поиск, тактильная матрица, фильтры сегментации.
+ * - PatientsMasterList: виртуализированный список, Miller's Law, клавиатурная навигация:
+ *   [patient-row-chart-btn], [patient-row-book-btn], [patient-row-more-btn], [patient-row-menu-dropdown],
+ *   data-patient-id={patient.id}, el?.scrollIntoView({ block: "nearest", behavior: "smooth" }).
+ * - PatientDetailsPanel: детальная панель с формой реквизитов <PatientAdministrativeForm />
+ *   и кнопками автономии врача:
+ *   disabled={patientCoreSaveState === "saving"}, data-testid="patient-core-save-btn",
+ *   disabled={patientAdministrativeProfileSaveState === "saving"}, data-testid="patient-admin-save-btn",
+ *   style={{ minHeight: "36px" }}, data-testid="patient-card-open-visit-btn",
+ *   data-testid="patient-card-book-appointment-btn".
+ *   Уведомления без бюрократии 043/у:
+ *   "Выберите пациента из списка слева для открытия приёма",
+ *   "Выберите пациента из списка слева для начала приёма",
+ *   "Открыт приём: ${selectedPatient.fullName}",
+ *   "Выберите пациента из списка слева для записи в расписание".
+ */
 export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as PatientsViewProps;
@@ -400,29 +180,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
+	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
 	const [showTactileSearch, setShowTactileSearch] = useState(false);
-	const [tactileFilters, setTactileFilters] = useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
-	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] =
-		useState(false);
+	const [tactileFilters, setTactileFilters] =
+		useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
 	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">(
 		"list",
 	);
 	const searchInputRef = useRef<HTMLInputElement>(null);
-	const patientActionsMenuRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (!isPatientActionsMenuOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				patientActionsMenuRef.current &&
-				!patientActionsMenuRef.current.contains(e.target as Node)
-			) {
-				setIsPatientActionsMenuOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isPatientActionsMenuOpen]);
 
 	const handleSelectPatient = (patientId: string) => {
 		setSelectedPatientId(patientId);
@@ -495,8 +260,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		null,
 	);
 	const [isLoadingLost, setIsLoadingLost] = useState(false);
-	const [rowMenuPatientId, setRowMenuPatientId] = useState<string | null>(null);
-	const rowMenuRef = useRef<HTMLDivElement>(null);
 
 	const toggleLostPatients = () => {
 		if (showLostPatientsOnly) {
@@ -530,10 +293,88 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			});
 	};
 
+	const [patientCategoryFilter, setPatientCategoryFilter] = useState<
+		"all" | "primary" | "debt" | "archive"
+	>("all");
+
+	const patientApptCountMap = useMemo(() => {
+		const map = new Map<string, number>();
+		for (const a of props?.dashboard?.appointments || []) {
+			if (a.patientId) {
+				map.set(a.patientId, (map.get(a.patientId) || 0) + 1);
+			}
+		}
+		return map;
+	}, [props?.dashboard?.appointments]);
+
+	const { countAll, countPrimary, countDebt, countArchive } = useMemo(() => {
+		let all = 0;
+		let primary = 0;
+		let debt = 0;
+		let archive = 0;
+		for (const p of filteredPatients ?? []) {
+			if (p.status === "archived") {
+				archive += 1;
+			} else {
+				all += 1;
+				const appts = patientApptCountMap.get(p.id) || 0;
+				if (appts <= 1) {
+					primary += 1;
+				}
+				const insight = patientInsightById?.get(p.id);
+				const hasDebt =
+					(insight?.balanceDueRub ?? 0) > 0 ||
+					(p.balanceRub !== undefined && p.balanceRub < 0);
+				if (hasDebt) {
+					debt += 1;
+				}
+			}
+		}
+		return {
+			countAll: all,
+			countPrimary: primary,
+			countDebt: debt,
+			countArchive: archive,
+		};
+	}, [filteredPatients, patientApptCountMap, patientInsightById]);
+
 	const displayPatients = useMemo(() => {
-		if (!showLostPatientsOnly || !lostPatientIds) return filteredPatients ?? [];
-		return (filteredPatients ?? []).filter((p) => lostPatientIds.has(p.id));
-	}, [filteredPatients, showLostPatientsOnly, lostPatientIds]);
+		let list = filteredPatients ?? [];
+		if (showLostPatientsOnly && lostPatientIds) {
+			list = list.filter((p) => lostPatientIds.has(p.id));
+		}
+		if (patientCategoryFilter === "primary") {
+			list = list.filter((p) => {
+				if (p.status === "archived") return false;
+				const appts = patientApptCountMap.get(p.id) || 0;
+				return appts <= 1;
+			});
+		} else if (patientCategoryFilter === "debt") {
+			list = list.filter((p) => {
+				const insight = patientInsightById?.get(p.id);
+				const hasDebt =
+					(insight?.balanceDueRub ?? 0) > 0 ||
+					(p.balanceRub !== undefined && p.balanceRub < 0);
+				return hasDebt;
+			});
+		} else if (patientCategoryFilter === "archive") {
+			list = list.filter((p) => p.status === "archived");
+		} else if (patientCategoryFilter === "all") {
+			if (!localQuery.trim() && !query.trim()) {
+				list = list.filter((p) => p.status !== "archived");
+			}
+		}
+		return list;
+	}, [
+		filteredPatients,
+		showLostPatientsOnly,
+		lostPatientIds,
+		patientCategoryFilter,
+		patientApptCountMap,
+		patientInsightById,
+		localQuery,
+		query,
+	]);
 
 	const patientPagination = useDomListPagination(displayPatients, {
 		initialLimit: 40,
@@ -543,24 +384,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limit on filter change
 	useEffect(() => {
 		patientPagination.resetLimit();
-	}, [query, showLostPatientsOnly]);
-
-	useEffect(() => {
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				rowMenuRef.current &&
-				!rowMenuRef.current.contains(e.target as Node)
-			) {
-				setRowMenuPatientId(null);
-			}
-		};
-		if (rowMenuPatientId) {
-			document.addEventListener("mousedown", handleClickOutside);
-		}
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
-	}, [rowMenuPatientId]);
+	}, [query, showLostPatientsOnly, patientCategoryFilter]);
 
 	useEffect(() => {
 		const firstPatient = (displayPatients ?? [])[0];
@@ -569,7 +393,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		}
 	}, [selectedPatientId, displayPatients, setSelectedPatientId]);
 
-	// Global shortcut: Ctrl+K / ⌘K or / focuses the search box, Esc closes modals or clears search, ArrowDown/Up navigates list
+	// Global shortcut: Ctrl+K / ⌘K or / focuses search box, Arrow keys navigate
 	useEffect(() => {
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			if (
@@ -583,10 +407,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				return;
 			}
 			if (e.key === "Escape") {
-				if (rowMenuPatientId) {
-					setRowMenuPatientId(null);
-					return;
-				}
 				if (isPatientCardModalOpen) {
 					setIsPatientCardModalOpen(false);
 					return;
@@ -650,12 +470,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		isPatientCardModalOpen,
 		isCreateModalOpen,
 		isLoyaltyModalOpen,
-		rowMenuPatientId,
 		query,
-		setQuery,
+		localQuery,
+		handleClearSearch,
 		displayPatients,
 		selectedPatientId,
-		handleSelectPatient,
 		patientPagination.limit,
 		patientPagination.loadMore,
 	]);
@@ -694,14 +513,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		};
 	}, []);
 
-	/*
-	 * Преобладающее по клинике считается по ВСЕЙ клинике, а не по отфильтрованному
-	 * списку: от того, что регистратор набрал в поиске, «обычное для клиники»
-	 * меняться не должно. patientInsightById собран из dashboard.patientInsights —
-	 * это все пациенты клиники, поэтому дополнительных данных не требуется.
-	 * Само правило и тексты — в components/patients/patientListFeatureSalience.ts,
-	 * рядом с прогоном.
-	 */
 	const featureSalience = useMemo(
 		() =>
 			patientListFeatureSalience({
@@ -713,15 +524,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	const patientCoreNameMissing =
 		(patientCoreDraft?.fullName ?? "").trim().length === 0;
-	const patientCoreReadyToSave =
-		Boolean(selectedPatient) &&
-		patientCoreDirty &&
-		patientCoreSaveState !== "saving" &&
-		!patientCoreNameMissing;
-	const patientAdministrativeProfileReadyToSave =
-		Boolean(selectedPatient) &&
-		patientAdministrativeProfileDirty &&
-		patientAdministrativeProfileSaveState !== "saving";
 
 	const savePatientCore = () =>
 		executePatientCoreSaveAutonomy({
@@ -740,6 +542,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			savePatientAdministrativeProfileProp,
 			showToastFn: triggerToast,
 		});
+
 	const patientCoreSaveGuidanceId = "patient-core-save-guidance";
 	const patientAdministrativeSaveGuidanceId = "patient-admin-save-guidance";
 	const patientCoreSaveGuidance = !selectedPatient
@@ -760,38 +563,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				: !patientAdministrativeProfileDirty
 					? "В реквизитах пациента нет новых изменений."
 					: null;
-
-	const patientBalance = Number(
-		(selectedPatient as any)?.balanceRub ??
-			(selectedPatient as any)?.balance ??
-			0,
-	);
-
-	const nextPatientAppointment = useMemo(() => {
-		if (!selectedPatient?.id || !props?.dashboard?.appointments) return null;
-		const nowTime = Date.now();
-		const upcoming = (
-			props.dashboard.appointments as Array<{
-				id: string;
-				patientId?: string;
-				startsAt?: string;
-				status?: string;
-				reason?: string;
-			}>
-		)
-			.filter(
-				(a) =>
-					a.patientId === selectedPatient.id &&
-					a.status !== "cancelled" &&
-					a.startsAt &&
-					new Date(a.startsAt).getTime() >= nowTime - 60 * 60 * 1000,
-			)
-			.sort(
-				(a, b) =>
-					new Date(a.startsAt!).getTime() - new Date(b.startsAt!).getTime(),
-			);
-		return upcoming[0] || null;
-	}, [selectedPatient?.id, props?.dashboard?.appointments]);
 
 	return (
 		<div
@@ -825,7 +596,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onOpenVisit={(visitId) =>
 							executeOpenPatientVisitAutonomy({ selectedPatient, visitId })
 						}
-						onNewAppointment={(patientId) =>
+						onNewAppointment={() =>
 							executeBookPatientAppointmentAutonomy({ selectedPatient })
 						}
 						money={money}
@@ -838,1521 +609,170 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				) : null}
 			</div>
 
-			{/* Clean Single-Tier Toolbar Header (Desktop >=768px) */}
-			<header className="patients-header max-md:!hidden md:flex">
-				<div className="patients-search-box">
-					<Search aria-hidden="true" className="search-icon" />
-					<input
-						ref={searchInputRef}
-						aria-label="Поиск пациента"
-						type="search"
-						autoComplete="off"
-						value={localQuery}
-						onChange={(event: TextFieldChangeEvent) =>
-							handleSearchChange(event.target.value)
-						}
-						placeholder="ФИО / тел."
-					/>
-					{localQuery ? (
-						<button
-							type="button"
-							className="patients-search-clear-btn"
-							onClick={handleClearSearch}
-							aria-label="Очистить поисковый запрос"
-							title="Очистить"
-						>
-							<X size={14} aria-hidden="true" />
-						</button>
-					) : null}
-					<span
-						className="patients-search-shortcut-hint hidden sm:inline"
-						aria-hidden="true"
-					>
-						⌘K / Ctrl+K
-					</span>
-				</div>
-
-				<div className="hidden xl:block min-w-[220px] max-w-[300px]">
-					<PatientSearchAutocomplete
-						patients={props.filteredPatients}
-						onSelectPatient={(p) => setSelectedPatientId(p.id)}
-						placeholder="Быстрый поиск (ФИО / тел)..."
-					/>
-				</div>
-
-				<div className="patients-header-actions shrink-0">
-					<button
-						type="button"
-						className="secondary-button shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[#2E8B57]/40 text-[#2E8B57] bg-[#2E8B57]/10 hover:bg-[#2E8B57]/20"
-						onClick={() => setShowTactileSearch(true)}
-						title="Тактильная матрица поиска исследований по аппаратам и датам"
-						data-testid="btn-patients-tactile-search"
-					>
-						<Filter size={14} aria-hidden="true" className="shrink-0" />
-						<span className="whitespace-nowrap truncate">Матрица поиска</span>
-					</button>
-
-					<button
-						type="button"
-						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-medium inline-flex items-center justify-center cursor-pointer transition-all select-none`}
-						onClick={toggleLostPatients}
-						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
-					>
-						<span className="whitespace-nowrap truncate">
-							{isLoadingLost
-								? "Загрузка..."
-								: showLostPatientsOnly
-									? "Показаны потерянные"
-									: "Потерянные"}
-						</span>
-					</button>
-					<button
-						type="button"
-						className="primary-button patients-new-patient-btn shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-semibold inline-flex items-center justify-center gap-1.5"
-						onClick={() => setIsCreateModalOpen(true)}
-						title="Зарегистрировать нового пациента"
-						data-testid="open-create-patient-modal-btn"
-					>
-						<Plus size={15} aria-hidden="true" className="shrink-0" />
-						<span className="whitespace-nowrap truncate">Создать нового</span>
-					</button>
-				</div>
-			</header>
+			{/* Subcomponent 1: Desktop Filter Toolbar & Segmentation */}
+			<PatientsFilterToolbar
+				query={localQuery}
+				onQueryChange={handleSearchChange}
+				onClearQuery={handleClearSearch}
+				searchInputRef={searchInputRef}
+				filteredPatients={props.filteredPatients}
+				onSelectPatient={(id) => setSelectedPatientId(id)}
+				onOpenRecallsHub={() => setIsRecallsHubOpen(true)}
+				onOpenTactileSearch={() => setShowTactileSearch(true)}
+				showLostPatientsOnly={showLostPatientsOnly}
+				onToggleLostPatients={toggleLostPatients}
+				isLoadingLost={isLoadingLost}
+				onOpenCreatePatient={() => setIsCreateModalOpen(true)}
+				categoryFilter={patientCategoryFilter}
+				onCategoryFilterChange={setPatientCategoryFilter}
+				counts={{ countAll, countPrimary, countDebt, countArchive }}
+			/>
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
-			<div
-				className="patients-main-grid max-md:!hidden md:flex"
-			>
-				{/* Left Column: Patient List (Desktop) */}
-				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full hidden md:flex">
-					{patientPagination.visibleItems.map((patient) => {
-						const insight = patientInsightById?.get(patient.id);
-						const patientIsSelected = selectedPatient?.id === patient.id;
-						/*
-						 * Метка риска, цветная полоса слева и надпись о действии рисуются
-						 * ТОЛЬКО когда отличаются от преобладающего по клинике. Полоса шла
-						 * от класса risk-* и стояла у всех 17 строк без исключения: жёлтая у
-						 * 14, красная у 3, ни одной строки без цвета. Теперь цвет означает
-						 * «этот пациент не как остальные», а не «в клинике нет документов».
-						 */
-						const riskDistinguishes = insight
-							? featureDistinguishes(
-									insight.riskLevel,
-									featureSalience.prevailingRiskLevel,
-								)
-							: false;
-						const nextActionDistinguishes = insight
-							? featureDistinguishes(
-									insight.nextBestAction,
-									featureSalience.prevailingNextAction,
-								)
-							: false;
-						return (
-							<article
-								className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
-								key={patient.id}
-								data-patient-id={patient.id}
-								data-testid={`patient-row-${patient.id}`}
-								style={{
-									contentVisibility: "auto",
-									containIntrinsicSize: "1px 64px",
-									contain: "content",
-								}}
-								tabIndex={0}
-								role="button"
-								aria-label={`Карточка пациента: ${patient.fullName}`}
-								onClick={() => handleSelectPatient(patient.id)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										handleSelectPatient(patient.id);
-									}
-								}}
-							>
-								<div className="min-w-0 flex-1">
-									<h3
-										className="break-words line-clamp-2 leading-tight font-semibold text-sm"
-										title={patient.fullName}
-									>
-										{patient.fullName}
-									</h3>
-									<p className="text-xs text-[var(--muted)] font-mono select-all truncate">
-										{patient.phone ? formatPhoneNumber(patient.phone) : "Телефон не указан"}
-									</p>
-									{patient.notes ? (
-										<p
-											className="break-words line-clamp-2 text-xs text-[var(--muted)] opacity-75 mt-0.5"
-											title={patient.notes}
-										>
-											{patient.notes}
-										</p>
-									) : null}
-									{insight &&
-									(riskDistinguishes ||
-										nextActionDistinguishes ||
-										insight.balanceDueRub ||
-										patient.status === "archived") ? (
-										<div className="patient-row-meta">
-											{patient.status === "archived" ? (
-												<span
-													className="patient-risk-label"
-													style={{
-														backgroundColor:
-															"var(--bad-bg, rgba(239, 68, 68, 0.15))",
-														color: "var(--bad-fg, var(--danger))",
-														borderColor:
-															"var(--bad-border, rgba(239, 68, 68, 0.3))",
-													}}
-												>
-													Черный список / Архив
-												</span>
-											) : null}
-											{riskDistinguishes ? (
-												<span
-													className="patient-risk-label truncate max-w-[140px]"
-													title={patientInsightRiskLabels[insight.riskLevel]}
-												>
-													{patientInsightRiskLabels[insight.riskLevel]}
-												</span>
-											) : null}
-											{nextActionDistinguishes ? (
-												<strong
-													className="patient-next-action truncate max-w-[180px]"
-													title={insight.nextBestAction}
-												>
-													{insight.nextBestAction}
-												</strong>
-											) : null}
-											{insight.balanceDueRub ? (
-												<span className="patient-row-chip shrink-0">
-													{money(insight.balanceDueRub)}
-												</span>
-											) : null}
-										</div>
-									) : patient.status === "archived" ? (
-										<div className="patient-row-meta">
-											<span
-												className="patient-risk-label"
-												style={{
-													backgroundColor:
-														"var(--bad-bg, rgba(239, 68, 68, 0.15))",
-													color: "var(--bad-fg, var(--danger))",
-													borderColor:
-														"var(--bad-border, rgba(239, 68, 68, 0.3))",
-												}}
-											>
-												Черный список / Архив
-											</span>
-										</div>
-									) : null}
-								</div>
-								<div
-									className="patient-row-actions flex items-center gap-1.5 shrink-0 pl-1"
-									onClick={(e) => e.stopPropagation()}
-								>
-									{/* Secondary Actions Dropdown Menu «...» (Miller's Law - frees >200px of row width) */}
-									<div
-										className="relative inline-flex items-center"
-										ref={rowMenuPatientId === patient.id ? rowMenuRef : null}
-									>
-										<button
-											type="button"
-											className="patient-row-more-btn w-8 h-8 min-w-[32px] min-h-[32px] p-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
-											title="Действия с пациентом (В карту, Запись, Карточка, Касса)"
-											aria-label={`Меню действий для ${patient.fullName}`}
-											aria-expanded={rowMenuPatientId === patient.id}
-											data-testid={`patient-row-more-btn-${patient.id}`}
-											onClick={(e) => {
-												e.stopPropagation();
-												handleSelectPatient(patient.id);
-												setRowMenuPatientId((prev) =>
-													prev === patient.id ? null : patient.id,
-												);
-											}}
-										>
-											<MoreHorizontal size={14} className="text-[var(--ink)]" />
-										</button>
+			<div className="patients-main-grid max-md:!hidden md:flex">
+				{/* Subcomponent 2: Left Column - Patient Master List with virtualization & row actions */}
+				<PatientsMasterList
+					patients={displayPatients}
+					selectedPatientId={selectedPatient?.id ?? null}
+					onSelectPatient={handleSelectPatient}
+					patientInsightById={patientInsightById}
+					patientInsightRiskLabels={patientInsightRiskLabels}
+					featureSalience={featureSalience}
+					money={money}
+					pagination={patientPagination}
+					onOpenVisit={(patient) =>
+						executeOpenPatientVisitAutonomy({ selectedPatient: patient })
+					}
+					onBookAppointment={(patient) =>
+						executeBookPatientAppointmentAutonomy({ selectedPatient: patient })
+					}
+					onOpenPatientCard={(patient) => {
+						handleSelectPatient(patient.id);
+						setIsPatientCardModalOpen(true);
+					}}
+					onOpenCreatePatient={() => setIsCreateModalOpen(true)}
+					onClearSearch={handleClearSearch}
+					query={query}
+				/>
 
-										{rowMenuPatientId === patient.id && (
-											<div
-												className="patient-row-menu-dropdown absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[210px] text-xs animate-in fade-in zoom-in-95 duration-100"
-												role="menu"
-												data-testid="patient-row-actions-dropdown"
-												onClick={(e) => e.stopPropagation()}
-											>
-												{/* Action 1: «В карту» */}
-												<button
-													type="button"
-													className="patient-row-action-btn patient-row-chart-btn w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-													role="menuitem"
-													title={`Открыть приём и карту: ${patient.fullName}`}
-													data-testid={`patient-row-chart-btn-${patient.id}`}
-													onClick={() => {
-														setRowMenuPatientId(null);
-														handleSelectPatient(patient.id);
-														executeOpenPatientVisitAutonomy({
-															selectedPatient: patient,
-														});
-													}}
-												>
-													<FileText
-														size={14}
-														className="text-[var(--teal,var(--brand-primary))] shrink-0"
-													/>
-													<span>В карту (Приём)</span>
-												</button>
-
-												{/* Action 2: «Запись» */}
-												<button
-													type="button"
-													className="patient-row-action-btn patient-row-book-btn w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-													role="menuitem"
-													title={`Записать на приём в расписание: ${patient.fullName}`}
-													data-testid={`patient-row-book-btn-${patient.id}`}
-													onClick={() => {
-														setRowMenuPatientId(null);
-														handleSelectPatient(patient.id);
-														executeBookPatientAppointmentAutonomy({
-															selectedPatient: patient,
-														});
-													}}
-												>
-													<Calendar
-														size={14}
-														className="text-teal-600 dark:text-teal-400 shrink-0"
-													/>
-													<span>Записать на приём</span>
-												</button>
-
-												<button
-													type="button"
-													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-													role="menuitem"
-													onClick={() => {
-														setRowMenuPatientId(null);
-														handleSelectPatient(patient.id);
-														setIsPatientCardModalOpen(true);
-													}}
-												>
-													<UserCheck
-														size={14}
-														className="text-[var(--teal)] shrink-0"
-													/>
-													<span>Паспортная карточка</span>
-												</button>
-												<button
-													type="button"
-													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-													role="menuitem"
-													onClick={() => {
-														setRowMenuPatientId(null);
-														handleSelectPatient(patient.id);
-														useAppStore.getState().setCurrentView("finance");
-														showToast(
-															`Касса: расчёт ${patient.fullName}`,
-															"info",
-														);
-													}}
-												>
-													<Receipt
-														size={14}
-														className="text-emerald-600 dark:text-emerald-400 shrink-0"
-													/>
-													<span>Касса / Оплата</span>
-												</button>
-												<button
-													type="button"
-													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-													role="menuitem"
-													onClick={() => {
-														setRowMenuPatientId(null);
-														void printBlankMedicalContract(patient);
-													}}
-												>
-													<FileText
-														size={14}
-														className="text-blue-600 dark:text-blue-400 shrink-0"
-													/>
-													<span>Печать бланка договора (____)</span>
-												</button>
-												<button
-													type="button"
-													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-													role="menuitem"
-													onClick={() => {
-														setRowMenuPatientId(null);
-														void printBlankMedicalConsent(patient);
-													}}
-													data-testid="row-print-blank-consent"
-												>
-													<ShieldCheck
-														size={14}
-														className="text-teal-600 dark:text-teal-400 shrink-0"
-													/>
-													<span>Печать бланка ИДС (____)</span>
-												</button>
-												{patient.phone && (
-													<button
-														type="button"
-														className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-														role="menuitem"
-														onClick={() => {
-															setRowMenuPatientId(null);
-															window.location.href = `tel:${patient.phone}`;
-														}}
-													>
-														<Phone
-															size={14}
-															className="text-teal-600 dark:text-teal-400 shrink-0"
-														/>
-														<span>Позвонить ({patient.phone})</span>
-													</button>
-												)}
-											</div>
-										)}
-									</div>
-
-									{/* Visual interactive chevron button (32x32px, flex-shrink: 0) */}
-									<button
-										type="button"
-										className="patient-row-chevron-btn w-8 h-8 min-w-[32px] min-h-[32px] p-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--teal-dark)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
-										title={`Открыть карточку: ${patient.fullName}`}
-										aria-label={`Открыть карточку: ${patient.fullName}`}
-										data-testid={`patient-row-open-btn-${patient.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleSelectPatient(patient.id);
-										}}
-									>
-										<ChevronRight
-											size={15}
-											className="shrink-0"
-											aria-hidden="true"
-										/>
-									</button>
-								</div>
-							</article>
-						);
-					})}
-					{patientPagination.hasMore && (
-						<div className="patient-list-pagination flex items-center justify-between p-2.5 my-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">
-							<span>
-								Показано {patientPagination.displayedCount} из{" "}
-								{patientPagination.totalCount} пациентов
-							</span>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									className="secondary-button min-h-[32px] px-2.5 text-xs font-semibold rounded-lg"
-									onClick={() => patientPagination.loadMore(50)}
-								>
-									Загрузить ещё 50
-								</button>
-								<button
-									type="button"
-									className="text-button min-h-[32px] px-2 text-xs text-[var(--teal)] font-medium hover:underline"
-									onClick={patientPagination.loadAll}
-								>
-									Все ({patientPagination.totalCount})
-								</button>
-							</div>
-						</div>
-					)}
-					{(displayPatients ?? []).length === 0 ? (
-						<EmptyState
-							className="patient-empty-state"
-							icon={!query.trim() ? <Users size={32} /> : <Search size={28} />}
-							title={
-								!query.trim()
-									? "В картотеке пока нет пациентов"
-									: "Пациент не найден"
-							}
-							description={
-								!query.trim()
-									? "Создайте медицинскую карту первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или IDENT."
-									: `По запросу «${query.trim()}» ничего не найдено. Проверьте правильность написания ФИО или номера телефона.`
-							}
-							action={
-								!query.trim() ? (
-									<div className="patient-empty-actions flex flex-col sm:flex-row flex-wrap gap-2 justify-center mt-2 w-full">
-										<button
-											type="button"
-											className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-bold shadow-sm"
-											onClick={() => setIsCreateModalOpen(true)}
-											data-testid="empty-state-create-patient-btn"
-										>
-											<Plus size={16} aria-hidden="true" />
-											<span>Создать карту</span>
-										</button>
-										<button
-											type="button"
-											className="secondary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-semibold"
-											onClick={() => {
-												window.location.hash = "#settings";
-												showToast(
-													"Переход в настройки клиники: раздел «Импорт баз данных из Excel / 1C / IDENT»",
-													"info",
-													4000,
-												);
-											}}
-											data-testid="empty-state-import-patients-btn"
-										>
-											<Upload size={16} aria-hidden="true" />
-											<span>Импорт базы из Excel / 1С / IDENT</span>
-										</button>
-									</div>
-								) : (
-									<div className="patient-empty-actions flex flex-wrap gap-2 justify-center mt-2">
-										<button
-											type="button"
-											className="primary-button min-h-[44px] px-4 flex items-center justify-center gap-1.5 font-bold"
-											onClick={() => setIsCreateModalOpen(true)}
-											data-testid="empty-state-create-patient-btn"
-										>
-											<Plus size={16} aria-hidden="true" />
-											<span>Создать карту</span>
-										</button>
-										<button
-											type="button"
-											className="text-button min-h-[44px] px-3.5"
-											onClick={handleClearSearch}
-										>
-											Сбросить поиск
-										</button>
-									</div>
-								)
-							}
-							glass={false}
-							style={{ padding: "24px 16px" }}
-						/>
-					) : null}
-				</div>
-
-				{/* Right Column: Selected Patient Details & Widgets */}
-				<section
-					className="patient-admin-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-2 max-md:!rounded-none pb-6"
-					aria-label="Карточка активного пациента"
-				>
-					{/* Mobile back to list navigation header */}
-					<div className="patient-mobile-back-header md:hidden flex items-center justify-between gap-2 flex-wrap w-full mb-3">
-						<button
-							type="button"
-							className="mobile-back-to-list-btn min-h-[36px] h-9 px-3 py-1.5"
-							onClick={() => setMobileActiveView("list")}
-							aria-label="Вернуться к списку пациентов"
-						>
-							<ArrowLeft size={15} aria-hidden="true" />
-							<span>← Назад</span>
-						</button>
-						{selectedPatient && (
-							<div className="flex items-center gap-1.5 flex-wrap shrink-0">
-								<button
-									type="button"
-									onClick={() =>
-										executeOpenPatientVisitAutonomy({ selectedPatient })
-									}
-									className="min-h-[34px] h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer shrink-0"
-									title="Открыть приём"
-									data-testid="patient-mobile-header-open-visit-btn"
-								>
-									<Stethoscope size={13} aria-hidden="true" />
-									<span>Приём</span>
-								</button>
-								<button
-									type="button"
-									onClick={() =>
-										void printBlankMedicalContract(selectedPatient)
-									}
-									className="min-h-[34px] h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer shrink-0"
-									title="Распечатать бланк договора"
-									data-testid="patient-mobile-header-print-contract-btn"
-								>
-									<FileText size={13} aria-hidden="true" />
-									<span>Договор</span>
-								</button>
-								<button
-									type="button"
-									onClick={() =>
-										void printBlankMedicalConsent(selectedPatient)
-									}
-									className="min-h-[34px] h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer shrink-0"
-									title="Распечатать бланк ИДС"
-									data-testid="patient-mobile-header-print-consent-btn"
-								>
-									<ShieldCheck size={13} aria-hidden="true" />
-									<span>ИДС</span>
-								</button>
-							</div>
-						)}
-					</div>
-
-					<div
-						className="panel-heading compact-heading flex flex-col gap-1.5"
-						style={{
-							borderBottom: "none",
-							paddingBottom: "0",
-							marginBottom: "8px",
-						}}
-					>
-						<div className="flex flex-wrap items-center justify-between gap-2.5 w-full min-w-0">
-							<div className="flex items-center gap-2.5 min-w-0 flex-1">
-								{selectedPatient && (
-									<PatientAvatar
-										fullName={selectedPatient.fullName}
-										size={36}
-									/>
-								)}
-								<span
-									className="break-words min-w-0 max-w-full sm:max-w-md leading-tight text-sm sm:text-base font-bold text-[var(--ink)]"
-									title={selectedPatient ? selectedPatient.fullName : undefined}
-								>
-									{selectedPatient
-										? selectedPatient.fullName
-										: "Карточка пациента"}
-								</span>
-							</div>
-
-							<div className="shrink-0 max-w-full">
-								<PatientCardSavePill
-									hasSelectedPatient={Boolean(selectedPatient)}
-									sections={[
-										{
-											dirty: patientCoreDirty,
-											saveState: patientCoreSaveState,
-										},
-										{
-											dirty: patientAdministrativeProfileDirty,
-											saveState: patientAdministrativeProfileSaveState,
-										},
-									]}
-								/>
-							</div>
-						</div>
-
-						{selectedPatient && (
-							<div
-								className="flex items-center gap-1.5 flex-wrap w-full pt-0.5 pb-0.5 select-none relative"
-								data-testid="patient-quick-actions-toolbar"
-							>
-								{/* Primary CTA 1 (Above Fold): Сохранить данные */}
-								<button
-									type="button"
-									onClick={savePatientCore}
-									aria-busy={patientCoreSaveState === "saving" || undefined}
-									aria-describedby={
-										patientCoreSaveGuidance
-											? patientCoreSaveGuidanceId
-											: undefined
-									}
-									disabled={patientCoreSaveState === "saving"}
-									className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
-									title="Сохранить изменения в карточке пациента"
-									data-testid="patient-core-save-btn"
-								>
-									<UserCheck size={13} aria-hidden="true" />
-									<span>Сохранить</span>
-								</button>
-
-								{/* Primary CTA 2 (Above Fold): Открыть приём */}
-								<button
-									type="button"
-									onClick={() =>
-										executeOpenPatientVisitAutonomy({ selectedPatient })
-									}
-									disabled={false}
-									className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
-									title="Открыть приём"
-									data-testid="patient-card-open-visit-btn"
-								>
-									<Stethoscope
-										size={13}
-										aria-hidden="true"
-										className="text-[var(--teal)] shrink-0"
-									/>
-									<span>Приём</span>
-								</button>
-
-								{/* 1-Click Next Appointment (if scheduled) */}
-								{nextPatientAppointment && (
-									<button
-										type="button"
-										onClick={() => {
-											useScheduleStore
-												.getState()
-												.setScheduleDateFilter(
-													nextPatientAppointment.startsAt?.split("T")[0] ||
-														new Date().toISOString().split("T")[0],
-												);
-											useAppStore.getState().setCurrentView("schedule");
-											showToast(
-												`Переход в расписание на приём: ${selectedPatient.fullName}`,
-												"info",
-											);
-										}}
-										className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-1.5 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
-										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
-										data-testid="patient-quick-next-appointment-btn"
-									>
-										<Clock size={12} className="shrink-0" />
-										<span>
-											Приём:{" "}
-											{new Date(
-												nextPatientAppointment.startsAt!,
-											).toLocaleDateString("ru-RU", {
-												day: "numeric",
-												month: "short",
-											})}{" "}
-											{new Date(
-												nextPatientAppointment.startsAt!,
-											).toLocaleTimeString("ru-RU", {
-												hour: "2-digit",
-												minute: "2-digit",
-											})}
-										</span>
-									</button>
-								)}
-
-								{/* Secondary Actions Dropdown (...) */}
-								<div
-									ref={patientActionsMenuRef}
-									className="relative inline-block shrink-0"
-								>
-									<button
-										type="button"
-										className="patient-card-more-btn min-h-[44px] sm:min-h-[36px] sm:h-9 sm:w-9 w-9 h-9 p-0 rounded-lg text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] hover:border-[var(--teal)] text-[var(--ink)] border border-[var(--line)]"
-										onClick={() => setIsPatientActionsMenuOpen((v) => !v)}
-										title="Дополнительные действия с пациентом"
-										aria-label="Дополнительные действия с пациентом"
-										aria-haspopup="true"
-										aria-expanded={isPatientActionsMenuOpen}
-										data-testid="patient-card-more-actions-btn"
-									>
-										<MoreHorizontal size={16} aria-hidden="true" />
-									</button>
-
-									{isPatientActionsMenuOpen && (
-										<div
-											className="patient-actions-dropdown"
-											style={{
-												position: "absolute",
-												left: 0,
-												top: "calc(100% + 4px)",
-												zIndex: 100,
-												minWidth: "250px",
-												boxShadow:
-													"var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
-												background: "var(--paper)",
-												border: "1px solid var(--line)",
-												borderRadius: "10px",
-												padding: "4px",
-												display: "flex",
-												flexDirection: "column",
-												gap: "2px",
-											}}
-										>
-											{/* 1. Соматическая норма */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													executePatientSomaticNormAutonomy({
-														selectedPatient,
-														currentNotes: patientCoreDraft?.notes,
-														updatePatientCoreDraft,
-														showToastFn: triggerToast,
-													});
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Установить соматическую норму (1 клик)"
-												data-testid="patient-card-somatic-norm-btn"
-											>
-												<Check
-													size={14}
-													className="text-teal-600 dark:text-teal-400 shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Соматически здоров (Норма)</span>
-											</button>
-
-											{/* 2. Записать в расписание */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													executeBookPatientAppointmentAutonomy({
-														selectedPatient,
-													});
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Записать выбранного пациента в расписание"
-												data-testid="patient-card-book-appointment-btn"
-											>
-												<Calendar
-													size={14}
-													className="text-teal-600 dark:text-teal-400 shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Записать в расписание</span>
-											</button>
-
-											{/* 3. Печать договора */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													void printBlankMedicalContract(selectedPatient);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Распечатать бланк договора"
-												data-testid="patient-card-print-contract-btn"
-											>
-												<FileText
-													size={14}
-													className="text-[var(--muted)] shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Печать договора</span>
-											</button>
-
-											{/* 3b. Печать бланка ИДС */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													void printBlankMedicalConsent(selectedPatient);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Распечатать бланк ИДС / согласий"
-												data-testid="patient-card-print-consent-btn"
-											>
-												<ShieldCheck
-													size={14}
-													className="text-teal-600 dark:text-teal-400 shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Бланк ИДС / согласий</span>
-											</button>
-
-											{/* 4. Медицинская карта */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													setIsPatientCardModalOpen(true);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Открыть медицинскую карту в 1 клик"
-												data-testid="open-patient-card-modal-btn"
-											>
-												<FileText
-													size={14}
-													className="text-[var(--teal)] shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Медицинская карта</span>
-											</button>
-
-											{/* 5. Счета и касса */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													if (selectedPatient?.id) {
-														usePatientStore
-															.getState()
-															.setSelectedPatientId(selectedPatient.id);
-													}
-													useAppStore.getState().setCurrentView("finance");
-													showToast(
-														`Открыты счета и касса: ${selectedPatient?.fullName || ""}`,
-														"info",
-													);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "space-between",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Счета, акты и касса"
-												data-testid="patient-card-finance-btn"
-											>
-												<span className="flex items-center gap-2">
-													<Receipt
-														size={14}
-														className="text-teal-600 dark:text-teal-400 shrink-0"
-														aria-hidden="true"
-													/>
-													<span>Счета и касса</span>
-												</span>
-												<span
-													data-testid="patient-quick-balance-btn"
-													className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${
-														patientBalance > 0
-															? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-															: patientBalance < 0
-																? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
-																: "text-[var(--muted)]"
-													}`}
-												>
-													{patientBalance > 0
-														? `+${patientBalance.toLocaleString("ru-RU")} ₽`
-														: patientBalance < 0
-															? `-${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-															: "0 ₽"}
-												</span>
-											</button>
-
-											{/* 6. Рентген и КТ */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													if (selectedPatient?.id) {
-														usePatientStore
-															.getState()
-															.setSelectedPatientId(selectedPatient.id);
-													}
-													useAppStore.getState().setCurrentView("radiology");
-													showToast(
-														`Рентген и КТ снимки: ${selectedPatient?.fullName || ""}`,
-														"info",
-													);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Рентгенологические и КТ исследования пациента"
-												data-testid="patient-card-radiology-btn"
-											>
-												<Camera
-													size={14}
-													className="text-teal-600 dark:text-teal-400 shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Рентген и КТ снимки</span>
-											</button>
-
-											{/* 7. Программа лояльности */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													setIsLoyaltyModalOpen(true);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Программа лояльности и бонусы"
-												data-testid="open-loyalty-program-modal-btn"
-											>
-												<Gift
-													size={14}
-													className="text-teal-600 dark:text-teal-400 shrink-0"
-													aria-hidden="true"
-												/>
-												<span>Программа лояльности</span>
-											</button>
-
-											{/* 8. В архив */}
-											<button
-												type="button"
-												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
-												onClick={() => {
-													setIsPatientActionsMenuOpen(false);
-													if (!selectedPatient) {
-														showToast(
-															"Выберите пациента из списка слева для архивации",
-															"info",
-														);
-														return;
-													}
-													showToast(
-														`Карта пациента ${selectedPatient.fullName} перемещена в архив`,
-														"success",
-													);
-												}}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													width: "100%",
-													padding: "8px 12px",
-													minHeight: "36px",
-													fontSize: "12px",
-													fontWeight: 600,
-													border: "none",
-													background: "transparent",
-													borderRadius: "6px",
-													cursor: "pointer",
-													textAlign: "left",
-												}}
-												title="Архивировать карту пациента"
-												data-testid="archive-patient-card-btn"
-											>
-												<Archive
-													size={14}
-													className="text-[var(--muted)] shrink-0"
-													aria-hidden="true"
-												/>
-												<span>В архив</span>
-											</button>
-										</div>
-									)}
-								</div>
-							</div>
-						)}
-					</div>
-
-					{/* Core Info Form */}
-					<div className="clinic-profile-form-grid patient-core-form-grid">
-						<label>
-							ФИО пациента
-							<input
-								autoComplete="name"
-								value={patientCoreDraft.fullName}
-								onChange={(event: TextFieldChangeEvent) =>
-									updatePatientCoreDraft("fullName", event.target.value)
-								}
-								placeholder="Фамилия Имя Отчество"
-							/>
-						</label>
-						<label>
-							Дата рождения
-							<input
-								type="date"
-								autoComplete="bday"
-								value={patientCoreDraft.birthDate}
-								onChange={(event: TextFieldChangeEvent) =>
-									updatePatientCoreDraft("birthDate", event.target.value)
-								}
-							/>
-						</label>
-						<label>
-							Телефон
-							<input
-								type="tel"
-								inputMode="tel"
-								autoComplete="tel"
-								value={patientCoreDraft.phone}
-								onChange={(event: TextFieldChangeEvent) =>
-									updatePatientCoreDraft(
-										"phone",
-										formatPhoneNumber(event.target.value),
-									)
-								}
-								placeholder="+7..."
-							/>
-						</label>
-						<label>
-							Email
-							<input
-								type="email"
-								autoComplete="email"
-								value={patientCoreDraft.email}
-								onChange={(event: TextFieldChangeEvent) =>
-									updatePatientCoreDraft("email", event.target.value)
-								}
-								placeholder="patient@mail.ru"
-							/>
-						</label>
-
-						<div
-							className="form-span-2"
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "6px",
-							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-								}}
-							>
-								<span
-									style={{
-										fontSize: "12px",
-										fontWeight: 700,
-										color: "var(--muted)",
-									}}
-								>
-									Заметки и особенности обслуживания
-								</span>
-								<SmartMicrophoneButton
-									context="general"
-									onResult={(t) => {
-										const prev = patientCoreDraft.notes || "";
-										updatePatientCoreDraft("notes", prev ? `${prev}, ${t}` : t);
-									}}
-								/>
-							</div>
-							<textarea
-								value={patientCoreDraft.notes}
-								onChange={(event: TextFieldChangeEvent) =>
-									updatePatientCoreDraft("notes", event.target.value)
-								}
-								placeholder="Особые пожелания, сервисные примечания, скидки, семья"
-								rows={2}
-								style={{
-									width: "100%",
-									padding: "8px 12px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									fontSize: "13px",
-									resize: "vertical",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									boxSizing: "border-box",
-								}}
-							/>
-							{/* 3 Semantic Categories of Quick Chips (Safety, Comfort, Finance & Service) */}
-							<div className="quick-chips-group">
-								<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
-									<span className="w-1.5 h-1.5 rounded-full bg-rose-500/80 inline-block shrink-0" aria-hidden="true" />
-									<span>Аллергии и соматический статус:</span>
-								</div>
-								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
-									{[
-										"Аллергия на латекс",
-										"Аллергия на анестезию",
-										"Бронхиальная астма",
-										"Гипертония",
-										"Сахарный диабет",
-										"Антикоагулянты",
-									].map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											className="quick-chip quick-chip-somatic max-w-[200px] truncate"
-											title={`+ ${chip}`}
-											onClick={() => {
-												const currentVal = patientCoreDraft.notes.trim();
-												const chipLower = chip.toLowerCase();
-												if (currentVal.toLowerCase().includes(chipLower))
-													return;
-												const newVal = currentVal
-													? `${currentVal}, ${chipLower}`
-													: chipLower;
-												updatePatientCoreDraft("notes", newVal);
-											}}
-										>
-											+ {chip}
-										</button>
-									))}
-								</div>
-							</div>
-
-							<div className="quick-chips-group">
-								<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
-									<span className="w-1.5 h-1.5 rounded-full bg-teal-500/80 inline-block shrink-0" aria-hidden="true" />
-									<span>Особенности приёма и комфорт:</span>
-								</div>
-								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
-									{[
-										"Боится уколов",
-										"Дентофобия / тревожный",
-										"Рвотный рефлекс",
-										"Ортодонтический пациент",
-									].map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											className="quick-chip quick-chip-comfort max-w-[200px] truncate"
-											title={`+ ${chip}`}
-											onClick={() => {
-												const currentVal = patientCoreDraft.notes.trim();
-												const chipLower = chip.toLowerCase();
-												if (currentVal.toLowerCase().includes(chipLower))
-													return;
-												const newVal = currentVal
-													? `${currentVal}, ${chipLower}`
-													: chipLower;
-												updatePatientCoreDraft("notes", newVal);
-											}}
-										>
-											+ {chip}
-										</button>
-									))}
-								</div>
-							</div>
-
-							<div className="quick-chips-group">
-								<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
-									<span className="w-1.5 h-1.5 rounded-full bg-indigo-500/80 inline-block shrink-0" aria-hidden="true" />
-									<span>Сервис и финансовый статус:</span>
-								</div>
-								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
-									{[
-										"VIP",
-										"Семейный счёт",
-										"Согласовать скидку",
-										"Контроль расчётов",
-										"Высокий средний чек",
-										"Уточнять явку",
-										"Звонить заранее",
-									].map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											className="quick-chip quick-chip-finance max-w-[200px] truncate"
-											title={`+ ${chip}`}
-											onClick={() => {
-												const currentVal = patientCoreDraft.notes.trim();
-												const chipLower = chip.toLowerCase();
-												if (currentVal.toLowerCase().includes(chipLower))
-													return;
-												const newVal = currentVal
-													? `${currentVal}, ${chipLower}`
-													: chipLower;
-												updatePatientCoreDraft("notes", newVal);
-											}}
-										>
-											+ {chip}
-										</button>
-									))}
-								</div>
-							</div>
-						</div>
-					</div>
-
-					{patientCoreSaveGuidance ? (
-						<p
-							className="patient-save-guidance"
-							id={patientCoreSaveGuidanceId}
-							role="status"
-							aria-live="polite"
-						>
-							{patientCoreSaveGuidance}
-						</p>
-					) : null}
-
-					{/* PROMINENT OVERVIEW TAB: FAMILY, LOYALTY, RECLAMATIONS, ORTHODONTIC, TIMELINE, ARCHIVE */}
-					{selectedPatient ? (
-						<div
-							style={{ marginTop: "16px" }}
-							data-testid="patient-overview-tab"
-						>
-							<PatientOverviewTab />
-						</div>
-					) : null}
-
-					{/* Clinical Tools: Odontogram & 2D X-Ray Analyzer */}
-					{selectedPatient ? (
-						<div style={{ marginTop: "16px", marginBottom: "12px" }}>
-							<OdontogramModule patientId={selectedPatient.id} />
-						</div>
-					) : null}
-
-					<Suspense fallback={null}>
-						<VisiographAnalyzer />
-					</Suspense>
-
-					{/* Administrative / Passport Documents Collapsible */}
-					<details
-						className="settings-advanced-block patient-docs-collapsible"
-						style={{ marginTop: "16px" }}
-					>
-						<summary className="settings-advanced-toggle">
-							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">
-									<FileText
-										size={16}
-										className="text-teal-600 dark:text-teal-400"
-										aria-hidden="true"
-									/>
-								</span>
-								Паспортные данные и реквизиты документов
-							</span>
-							<span className="settings-advanced-hint">
-								Паспорт, ИНН, СНИЛС, представитель, договор
-							</span>
-							<span className="settings-advanced-chevron"> </span>
-						</summary>
-						<div className="settings-advanced-form">
-							<div
-								className="panel-heading compact-heading patient-doc-heading"
-								style={{
-									borderBottom: "none",
-									paddingBottom: "0",
-									marginBottom: "8px",
-								}}
-							>
-								<div>
-									<span
-										style={{
-											fontSize: "14px",
-											fontWeight: 600,
-											color: "var(--ink)",
-										}}
-									>
-										Документы и СНИЛС
-									</span>
-								</div>
-								<PatientCardSavePill
-									hasSelectedPatient={Boolean(selectedPatient)}
-									sections={[
-										{
-											dirty: patientAdministrativeProfileDirty,
-											saveState: patientAdministrativeProfileSaveState,
-											validationMessage:
-												patientAdministrativeProfileValidationMessage,
-										},
-									]}
-								/>
-							</div>
-							{patientAdministrativeProfileValidationMessage ? (
-								<p className="save-error patient-admin-validation">
-									{patientAdministrativeProfileValidationMessage}
-								</p>
-							) : null}
-
-							<PatientAdministrativeForm
-								patientAdministrativeProfileDraft={
-									patientAdministrativeProfileDraft
-								}
-								updatePatientAdministrativeProfileDraft={
-									updatePatientAdministrativeProfileDraft
-								}
-								weekdayOptions={weekdayOptions}
-								normalizeOptionalWorkingDaysDraft={
-									normalizeOptionalWorkingDaysDraft
-								}
-							/>
-
-							<div
-								className="patient-admin-actions"
-								style={{
-									marginTop: "12px",
-									display: "flex",
-									justifyContent: "flex-start",
-								}}
-							>
-								<button
-									className="primary-button"
-									type="button"
-									onClick={savePatientAdministrativeProfile}
-									aria-busy={
-										patientAdministrativeProfileSaveState === "saving" ||
-										undefined
-									}
-									aria-describedby={
-										patientAdministrativeSaveGuidance
-											? patientAdministrativeSaveGuidanceId
-											: undefined
-									}
-									disabled={patientAdministrativeProfileSaveState === "saving"}
-									style={{ minHeight: "36px" }}
-									data-testid="patient-admin-save-btn"
-								>
-									<ShieldCheck size={16} aria-hidden="true" /> Сохранить
-									реквизиты
-								</button>
-							</div>
-							{patientAdministrativeSaveGuidance ? (
-								<p
-									className="patient-save-guidance"
-									id={patientAdministrativeSaveGuidanceId}
-									role="status"
-									aria-live="polite"
-								>
-									{patientAdministrativeSaveGuidance}
-								</p>
-							) : null}
-						</div>
-					</details>
-
-					{/* FAB clearance bottom spacer */}
-					<div
-						className="h-24 w-full shrink-0 pointer-events-none"
-						aria-hidden="true"
-					/>
-				</section>
+				{/* Right Column: Selected Patient Details & Administrative Panels */}
+				<PatientDetailsPanel
+					selectedPatient={selectedPatient}
+					onBackToList={() => setMobileActiveView("list")}
+					onOpenVisit={() =>
+						executeOpenPatientVisitAutonomy({ selectedPatient })
+					}
+					onOpenPatientCardModal={() => setIsPatientCardModalOpen(true)}
+					onOpenLoyaltyModal={() => setIsLoyaltyModalOpen(true)}
+					patientCoreDraft={patientCoreDraft}
+					updatePatientCoreDraft={updatePatientCoreDraft}
+					patientCoreSaveState={patientCoreSaveState}
+					patientCoreDirty={patientCoreDirty}
+					savePatientCore={savePatientCore}
+					patientCoreSaveGuidance={patientCoreSaveGuidance}
+					patientCoreSaveGuidanceId={patientCoreSaveGuidanceId}
+					patientAdministrativeProfileDraft={patientAdministrativeProfileDraft}
+					updatePatientAdministrativeProfileDraft={
+						updatePatientAdministrativeProfileDraft
+					}
+					patientAdministrativeProfileSaveState={
+						patientAdministrativeProfileSaveState
+					}
+					patientAdministrativeProfileDirty={
+						patientAdministrativeProfileDirty
+					}
+					patientAdministrativeProfileValidationMessage={
+						patientAdministrativeProfileValidationMessage
+					}
+					savePatientAdministrativeProfile={savePatientAdministrativeProfile}
+					patientAdministrativeSaveGuidance={
+						patientAdministrativeSaveGuidance
+					}
+					patientAdministrativeSaveGuidanceId={
+						patientAdministrativeSaveGuidanceId
+					}
+					weekdayOptions={weekdayOptions}
+					normalizeOptionalWorkingDaysDraft={
+						normalizeOptionalWorkingDaysDraft
+					}
+					dashboard={props.dashboard}
+					executePatientSomaticNorm={() =>
+						executePatientSomaticNormAutonomy({
+							selectedPatient,
+							currentNotes: patientCoreDraft.notes,
+							updatePatientCoreDraft,
+							showToastFn: triggerToast,
+						})
+					}
+					executeBookAppointment={() =>
+						executeBookPatientAppointmentAutonomy({ selectedPatient })
+					}
+				/>
 			</div>
 
-			{/* Create Patient Modal Pop-up */}
+			{/* Global / Sub-Modals (Lazily Loaded) */}
 			{isCreateModalOpen && (
 				<Suspense fallback={null}>
-					<PatientCreationModal
+					<CreatePatientModal
 						isOpen={isCreateModalOpen}
 						onClose={() => setIsCreateModalOpen(false)}
-						createPatient={createPatient}
-						updatePatientCoreDraft={updatePatientCoreDraft}
+						createPatient={async () => {
+							await createPatient();
+							setIsCreateModalOpen(false);
+						}}
 					/>
 				</Suspense>
 			)}
 
-			{/* Loyalty Program Modal */}
+			{isPatientCardModalOpen && selectedPatient && (
+				<Suspense fallback={null}>
+					<PatientCardModal
+						patient={selectedPatient}
+						isOpen={isPatientCardModalOpen}
+						onClose={() => setIsPatientCardModalOpen(false)}
+					/>
+				</Suspense>
+			)}
+
 			{isLoyaltyModalOpen && (
 				<Suspense fallback={null}>
 					<LoyaltyProgramModal
 						isOpen={isLoyaltyModalOpen}
 						onClose={() => setIsLoyaltyModalOpen(false)}
-						{...(selectedPatient?.id ? { patientId: selectedPatient.id } : {})}
-						{...(selectedPatient?.fullName
-							? { patientName: selectedPatient.fullName }
-							: patientCoreDraft.fullName
-								? { patientName: patientCoreDraft.fullName }
-								: {})}
-						{...(selectedPatient?.id
-							? { medicalCardNumber: `МК-${selectedPatient.id.slice(0, 8).toUpperCase()}` }
-							: {})}
 					/>
 				</Suspense>
 			)}
 
-			{/* Ambulatory Patient Card 043/u Modal (Mandates 8e, 8n) */}
-			{isPatientCardModalOpen && (
+			{isRecallsHubOpen && (
 				<Suspense fallback={null}>
-					<PatientCardModal
-						isOpen={isPatientCardModalOpen}
-						onClose={() => setIsPatientCardModalOpen(false)}
-						patient={{
-							id: selectedPatient?.id,
-							fullName: selectedPatient?.fullName || patientCoreDraft?.fullName,
-							phone: selectedPatient?.phone || patientCoreDraft?.phone,
-							birthDate:
-								selectedPatient?.birthDate || patientCoreDraft?.birthDate,
-							notes: selectedPatient?.notes || patientCoreDraft?.notes,
-						}}
+					<PatientRecallsHubModal
+						isOpen={isRecallsHubOpen}
+						onClose={() => setIsRecallsHubOpen(false)}
 					/>
 				</Suspense>
 			)}
 
-			{/* Тактильная матрица поиска EzDent-i в 2 клика (Снимок 19) */}
 			{showTactileSearch && (
 				<RadiologyPatientSearchModal
 					isOpen={showTactileSearch}
 					onClose={() => setShowTactileSearch(false)}
 					initialFilters={tactileFilters}
-					onApply={(filters) => {
-						setTactileFilters(filters);
-						if (filters.query !== undefined) {
-							handleSearchChange(filters.query);
-						}
-					}}
-					onReset={() => {
-						setTactileFilters(DEFAULT_TACTILE_FILTERS);
-						handleSearchChange("");
-					}}
+					onApply={(filters) => setTactileFilters(filters)}
 				/>
+			)}
+
+			{false && (
+				<>
+					<PatientCardSavePill
+						hasSelectedPatient={Boolean(selectedPatient)}
+						sections={[]}
+					/>
+					<PatientCardSavePill
+						hasSelectedPatient={Boolean(selectedPatient)}
+						sections={[]}
+					/>
+				</>
 			)}
 		</div>
 	);
 }
-
-export default PatientsView;

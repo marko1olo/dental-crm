@@ -41,7 +41,7 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 			<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 				<button
 					type="button"
-					className="consent-action-btn secondary"
+					className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
 					onClick={onPrint}
 					title={
 						activeMode === "packages"
@@ -49,18 +49,18 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 							: "Печать заполненного бланка ИДС на принтер (А4)"
 					}
 				>
-					<Printer size={18} />
+					<Printer size={15} />
 					<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
 				</button>
 
 				<button
 					type="button"
-					className="consent-action-btn secondary"
+					className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
 					data-testid="btn-download-pdfa"
 					onClick={onDownloadPdfA}
 					title="Скачать архивный документ ISO 19005-1 PDF/A-1b с вшитым криптографическим отпечатком"
 				>
-					<Download size={18} />
+					<Download size={15} />
 					<span>Скачать PDF/A</span>
 				</button>
 
@@ -68,13 +68,13 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 				<div className="relative inline-flex items-center">
 					<button
 						type="button"
-						className="consent-action-btn secondary px-2.5 min-w-[40px]"
+						className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 w-8 px-0 text-[13px] font-medium rounded-lg flex items-center justify-center"
 						onClick={() => setIsMoreMenuOpen((v) => !v)}
 						title="Дополнительные действия (чистые бланки, памятка пациенту, закрыть)"
 						aria-label="Дополнительные действия"
 						data-testid="consent-modal-more-btn"
 					>
-						<MoreHorizontal size={18} />
+						<MoreHorizontal size={16} />
 					</button>
 
 					{isMoreMenuOpen && (
@@ -86,15 +86,14 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 					)}
 
 					<div
-						className={`absolute left-0 bottom-full mb-2 w-72 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 py-1.5 ${
+						className={`absolute left-0 bottom-full mb-2 w-72 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl z-40 p-1 ${
 							isMoreMenuOpen ? "block" : "hidden"
 						}`}
-						style={{ background: "var(--paper)", border: "1px solid var(--line)" }}
 						data-testid="consent-modal-more-menu"
 					>
 						<button
 							type="button"
-							className="consent-action-btn secondary w-full !justify-start !border-none !bg-transparent hover:!bg-[var(--paper-soft)] !min-h-[38px] !px-3 !py-2 text-xs text-[var(--ink)] cursor-pointer"
+							className="flex items-center gap-2 w-full px-3 py-1.5 text-[12.5px] rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer text-left transition-colors"
 							data-testid="btn-print-blank-consent"
 							onClick={() => {
 								setIsMoreMenuOpen(false);
@@ -106,7 +105,7 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 									: "Печать чистого бланка со строками «________» для ручного заполнения"
 							}
 						>
-							<FileText size={16} className="text-[var(--muted)] shrink-0" />
+							<FileText size={15} className="text-[var(--muted)] shrink-0" />
 							<span className="truncate">
 								{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
 							</span>
@@ -118,15 +117,15 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 								onCopyPatientSummary();
 							}}
 							data-testid="consent-copy-patient-text-btn"
-							className="consent-action-btn secondary w-full !justify-start !border-none !bg-transparent hover:!bg-[var(--paper-soft)] !min-h-[38px] !px-3 !py-2 text-xs text-[var(--ink)] cursor-pointer"
+							className="flex items-center gap-2 w-full px-3 py-1.5 text-[12.5px] rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer text-left transition-colors"
 							title="Скопировать выжимку ИДС и памятку для отправки пациенту в WhatsApp/Telegram"
 						>
-							<Copy size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<Copy size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 							<span className="truncate">Скопировать для пациента</span>
 						</button>
 						<button
 							type="button"
-							className="consent-action-btn secondary w-full !justify-start !border-none !bg-transparent hover:!bg-[var(--paper-soft)] !min-h-[38px] !px-3 !py-2 text-xs text-[var(--ink)] cursor-pointer"
+							className="flex items-center gap-2 w-full px-3 py-1.5 text-[12.5px] rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer text-left transition-colors"
 							data-testid="btn-download-pdfa-menu"
 							onClick={() => {
 								setIsMoreMenuOpen(false);
@@ -134,19 +133,19 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 							}}
 							title="Скачать архивный документ ISO 19005-1 PDF/A-1b"
 						>
-							<Download size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<Download size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 							<span className="truncate">Скачать архивный PDF/A</span>
 						</button>
 						<div className="my-1 border-t border-[var(--line)]" />
 						<button
 							type="button"
-							className="consent-action-btn secondary w-full !justify-start !border-none !bg-transparent hover:!bg-[var(--paper-soft)] !min-h-[38px] !px-3 !py-2 text-xs text-[var(--muted)] hover:!text-[var(--ink)] cursor-pointer"
+							className="flex items-center gap-2 w-full px-3 py-1.5 text-[12.5px] rounded-md hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer text-left transition-colors"
 							onClick={() => {
 								setIsMoreMenuOpen(false);
 								onClose();
 							}}
 						>
-							<X size={16} className="shrink-0" />
+							<X size={15} className="shrink-0" />
 							<span>Отмена (закрыть)</span>
 						</button>
 					</div>
@@ -156,21 +155,17 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 			<div className="flex items-center gap-3">
 				<button
 					type="button"
-					className="consent-action-btn primary"
+					className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 px-4 text-[13px] font-semibold rounded-lg flex items-center gap-1.5"
 					data-testid="btn-confirm-sign"
 					onClick={onConfirmSign}
 					disabled={isSubmitting}
-					style={{
-						background: isSigningReady ? "var(--teal)" : "var(--brand-primary, var(--teal))",
-						cursor: isSubmitting ? "wait" : "pointer",
-					}}
 					title={
 						isSigningReady
 							? (activeMode === "packages" ? "Подтвердить пакет согласий" : "Подтвердить согласие")
 							: "Подтвердить подписание"
 					}
 				>
-					<Zap size={18} />
+					<Zap size={15} />
 					<span>
 						{activeMode === "packages"
 							? `Подтвердить пакет (${packageDocsCount} док.) в 1 клик`

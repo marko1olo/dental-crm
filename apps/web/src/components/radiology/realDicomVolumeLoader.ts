@@ -150,7 +150,7 @@ export function uploadSliceTo3dTexture(
 }
 
 export async function buildVolumeFromDicomBuffers(
-  items: Array<{ buffer: ArrayBuffer; fileName?: string }>,
+  items: Array<{ buffer: ArrayBuffer; fileName?: string | undefined }>,
   options?: ((percent: number, message: string) => void) | DicomVolumeIngestionOptions,
 ): Promise<CbctVoxelVolume> {
   if (!items || items.length === 0) {

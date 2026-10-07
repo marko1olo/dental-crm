@@ -64,7 +64,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 		);
 	};
 
-	// 1-Клик норма врача: Протокол без осложнений (Мандат 8e)
+	// Протокол без осложнений (Мандат 8e)
 	const handleApplyUncomplicatedNorm = () => {
 		const text = buildStandardExtractionProtocolText({
 			toothFdi: effectiveTooth,
@@ -75,10 +75,10 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 		});
 		setSelectedHemostasis(["alvogyl", "hemostatic_sponge", "vicryl_suture", "tampon"]);
 		onApplyProtocolText(text);
-		showToast("1-Клик норма: Протокол без осложнений / Лунка ушита / Гемостаз полный", "success");
+		showToast("✓ Физиологическая норма: Протокол без осложнений / Лунка ушита / Гемостаз полный", "success");
 	};
 
-	// 1-Клик памятка пациенту (WhatsApp / SMS) без эмодзи
+	// Памятка пациенту (WhatsApp / SMS)
 	const handleCopyPatientMemo = () => {
 		const memo = buildPostExtractionMemoText({
 			patientName,
@@ -97,11 +97,11 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 			className="p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3"
 			data-testid="visit-surgery-extraction-bar"
 		>
-			{/* Верхний ряд: Заголовок и 1-Клик норма */}
+			{/* Верхний ряд: Заголовок и протокол */}
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
 					<ShieldCheck size={16} />
-					<span>1-Клик Протокол удаления зуба:</span>
+					<span>Протокол удаления зуба:</span>
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap">
@@ -110,7 +110,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 						onClick={handleApplyUncomplicatedNorm}
 						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all touch-manipulation"
 						data-testid="btn-uncomplicated-extraction-norm"
-						title="1-Клик норма: лунка ушита, Альвожил, гемостаз полный"
+						title="Физиологическая норма: лунка ушита, Альвожил, гемостаз полный"
 					>
 						<Zap size={14} className="text-amber-300" />
 						<span>Протокол без осложнений: лунка ушита, гемостаз полный</span>
@@ -160,7 +160,7 @@ export const VisitSurgeryExtractionBar: React.FC<VisitSurgeryExtractionBarProps>
 
 			{/* Гемостаз и шовный материал */}
 			<div className="space-y-1">
-				<span className="text-[11px] font-bold text-[var(--muted)]">Местный гемостаз & Лунка (1 клик):</span>
+				<span className="text-[11px] font-bold text-[var(--muted)]">Местный гемостаз & Лунка:</span>
 				<div className="flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Опции гемостаза">
 					{SURGICAL_HEMOSTASIS_OPTIONS.map((opt) => {
 						const isSel = selectedHemostasis.includes(opt.id);

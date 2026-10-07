@@ -138,7 +138,7 @@ describe("planPriceValidationEngine: Pricelist Matching, Inflation Thresholds & 
 		assert.equal(report.canGenerateCompletedAct, true, "Формирование акта выполненных работ НЕ БЛОКИРУЕТСЯ");
 		assert.equal(report.overallStatus, "APPROVED_PRICE_LOCKED", "Статус должен фиксировать цены плана по гарантии");
 		assert.ok(
-			report.validationMessages.some((m) => m.includes("не блокируются")),
+			report.validationMessages.some((m) => m.includes("разрешены") || m.includes("не блокируются")),
 			"В отчете должно быть мягкое информационное предупреждение о неблокирующем истечении 30 дней",
 		);
 

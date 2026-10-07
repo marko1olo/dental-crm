@@ -54,10 +54,10 @@ export function SterilizerFleetOnboarding({
 				</p>
 			</div>
 
-			{/* 1-Click Quick Preset Setup Buttons */}
+			{/* Типовые профили оснащения */}
 			<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
 				<span style={{ fontSize: "0.775rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
-					Быстрое добавление популярного аппарата (1 клик):
+					Быстрое добавление типового аппарата:
 				</span>
 				<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.4rem", maxWidth: "650px" }}>
 					{POPULAR_STERILIZER_BRAND_PRESETS.slice(0, 6).map((preset) => (

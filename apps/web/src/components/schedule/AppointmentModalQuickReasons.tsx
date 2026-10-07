@@ -5,7 +5,7 @@ export const QUICK_APPOINTMENT_REASONS = [
   {
     label: "Острая боль",
     fullLabel: "Острая боль (30 мин)",
-    reason: "Острая боль (Неотложная помощь / Cito / ст. 124 УК РФ)",
+    reason: "Острая боль (Неотложная помощь / ст. 124 УК РФ)",
     durationMinutes: 30,
     comment: "Экстренно: обращение с острой болью (ст. 124 УК РФ)",
     status: "confirmed" as const,
@@ -80,7 +80,7 @@ export const TECHNICAL_BREAK_PRESETS = [
   {
     label: "Отпуск",
     shortLabel: "Отпуск",
-    reason: "Блокировка расписания: Отпуск",
+    reason: "Служебный перерыв: Отпуск",
     durationMinutes: 480,
     comment: "Служебная бронь: Отпуск врача",
   },
@@ -94,16 +94,16 @@ export const TECHNICAL_BREAK_PRESETS = [
   {
     label: "Отсутствует",
     shortLabel: "Отсутствует",
-    reason: "Блокировка расписания: Отсутствует",
+    reason: "Служебный перерыв: Отсутствует",
     durationMinutes: 120,
     comment: "Служебная бронь: Врач отсутствует",
   },
   {
-    label: "Другое (блокировка)",
+    label: "Другое (служебное)",
     shortLabel: "Другое",
     reason: "Служебный перерыв: Другое",
     durationMinutes: 30,
-    comment: "Служебная бронь: Другое (блокировка)",
+    comment: "Служебная бронь: Другое (служебное)",
   },
   {
     label: "Санобработка (30 мин)",
@@ -157,11 +157,8 @@ export function AppointmentModalQuickReasons({
       className="space-y-2 mt-2"
       data-testid="appointment-quick-reasons"
     >
-      <div className="flex items-center justify-between text-[11px] font-bold text-[var(--muted)]">
+      <div className="text-[11px] font-bold text-[var(--muted)]">
         <span>Причины визита:</span>
-        <span className="text-[10px] uppercase text-[var(--teal)] font-extrabold">
-          1-клик выбор
-        </span>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
         {QUICK_APPOINTMENT_REASONS.map((preset) => (
@@ -180,19 +177,16 @@ export function AppointmentModalQuickReasons({
             <span>{preset.label}</span>
             {preset.tone === "emergency" && (
               <span className="px-1.5 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider">
-                CITO
+                СРОЧНО
               </span>
             )}
           </button>
         ))}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] font-bold text-amber-800 dark:text-amber-300 pt-2 border-t border-[var(--line)]/50">
+      <div className="text-[11px] font-bold text-amber-800 dark:text-amber-300 pt-2 border-t border-[var(--line)]/50">
         <span>
-          Технические блокировки расписания врача (без пациента):
-        </span>
-        <span className="text-[10px] uppercase text-amber-600 dark:text-amber-400 font-extrabold">
-          1-клик интервал
+          Служебные перерывы в расписании (без пациента):
         </span>
       </div>
       <div

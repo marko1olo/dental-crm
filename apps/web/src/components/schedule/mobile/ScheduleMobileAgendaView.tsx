@@ -8,9 +8,12 @@ import {
   Plus,
   User,
   AlertTriangle,
+  Armchair,
   ChevronRight as ChevronRightIcon,
+  Users,
 } from "lucide-react";
 import { formatDoctorShortName } from "../GridAppointmentCard";
+import { formatPatientDisplayFio } from "../appointmentCardHelpers";
 import { ScheduleMobileBottomSheet } from "../grid/ScheduleMobileBottomSheet";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import { isNegativeAllergyStatement } from "../../../utils/somaticNorm";
@@ -399,7 +402,8 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
                 if (onSelectChair) onSelectChair(null);
               }}
             >
-              <span>👨‍⚕️ Все врачи и кабинеты</span>
+              <Users size={13} className="shrink-0" />
+              <span>Все врачи и кабинеты</span>
             </button>
 
             {doctors.map((doc: any) => {
@@ -438,7 +442,8 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
                     }
                   }}
                 >
-                  <span>🪑 {chair.name}</span>
+                  <Armchair size={13} className="shrink-0" />
+                  <span>{chair.name}</span>
                 </button>
               );
             })}
@@ -514,7 +519,8 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 
               const appt = item.appointment;
               const pat = dashboard?.patients?.find((p: any) => p.id === appt.patientId);
-              const pName = patientName(dashboard?.patients ?? [], appt.patientId);
+              const fullPatientName = patientName(dashboard?.patients ?? [], appt.patientId);
+              const pName = formatPatientDisplayFio(fullPatientName);
               const doc = dashboard?.clinicSettings?.staff?.find((s: any) => s.id === appt.doctorUserId);
               const chair = dashboard?.clinicSettings?.chairs?.find((c: any) => c.id === appt.chairId);
               const statusTheme = getStatusTheme(appt.status);
@@ -560,13 +566,13 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
                     }}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Приём: ${pName}, ${item.startsAtLocal}, статус: ${statusTheme.label}`}
+                    aria-label={`Приём: ${fullPatientName}, ${item.startsAtLocal}, статус: ${statusTheme.label}`}
                   >
                     <div className={`schedule-mobile-status-stripe ${statusTheme.stripe}`} />
 
                     <div className="schedule-mobile-card-content">
                       <div className="schedule-mobile-card-header">
-                        <span className="schedule-mobile-patient-name">{pName}</span>
+                        <span className="schedule-mobile-patient-name" title={fullPatientName}>{pName}</span>
                         <span className={`schedule-mobile-status-badge ${statusTheme.badgeBg}`}>
                           {statusTheme.label}
                         </span>

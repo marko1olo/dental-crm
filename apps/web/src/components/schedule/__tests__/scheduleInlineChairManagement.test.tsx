@@ -149,7 +149,7 @@ function setupMockDom() {
 		createTextNode: (text: string) => ({
 			nodeType: 3,
 			textContent: text,
-			style: {},
+			style: createMockStyle(),
 			parentNode: null,
 			ownerDocument: null,
 		}),
@@ -158,6 +158,21 @@ function setupMockDom() {
 		removeEventListener: () => {},
 		activeElement: null,
 	};
+
+	function createMockStyle(): any {
+		const s: any = {
+			setProperty(k: string, v: string) {
+				s[k] = v;
+			},
+			removeProperty(k: string) {
+				delete s[k];
+			},
+			getPropertyValue(k: string) {
+				return s[k] || "";
+			},
+		};
+		return s;
+	}
 
 	function createMockElement(tag = "div"): MockDomNode {
 		const children: MockDomNode[] = [];
@@ -168,7 +183,7 @@ function setupMockDom() {
 			nodeType: 1,
 			tagName: tag.toUpperCase(),
 			nodeName: tag.toUpperCase(),
-			style: {},
+			style: createMockStyle(),
 			dataset: {},
 			children,
 			childNodes: children,
@@ -424,7 +439,7 @@ describe("Schedule Inline Chair Management & Quick Add Modal (StomX / DentalPRO 
 			<QuickAddChairModal isOpen={true} onClose={vi.fn()} existingChairsCount={2} />,
 		);
 		expect(modalHtml).toContain("Добавить кресло в расписание");
-		expect(modalHtml).toContain("Быстрое добавление рабочего места (StomX / DentalPRO parity)");
+		expect(modalHtml).toContain("Быстрое добавление рабочего места");
 		expect(modalHtml).toContain("+ Добавить кресло");
 	});
 

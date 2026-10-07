@@ -315,7 +315,7 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 								Приходная накладная поставщика (ТОРГ-12 / FEFO)
 							</h2>
 							<p className="text-[11px] text-[var(--muted)]">
-								Оприходование партий стоматологических материалов и автоматическое погашение овердрафта
+								Оприходование партий стоматологических материалов и автоматическое погашение дефицита
 							</p>
 						</div>
 					</div>

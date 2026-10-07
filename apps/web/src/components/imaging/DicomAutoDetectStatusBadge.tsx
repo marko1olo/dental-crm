@@ -112,7 +112,7 @@ export const DicomAutoDetectStatusBadge: React.FC<DicomAutoDetectStatusBadgeProp
 
 				{hasPending ? (
 					<span
-						className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+						className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-xs font-bold"
 						style={{
 							background: "var(--warn, #eab308)",
 							color: "var(--paper, #ffffff)",
@@ -121,7 +121,7 @@ export const DicomAutoDetectStatusBadge: React.FC<DicomAutoDetectStatusBadgeProp
 						{pendingCount}
 					</span>
 				) : (
-					<span className="text-[11px] opacity-70">
+					<span className="text-xs opacity-75">
 						{isDaemonActive ? "активен" : "остановлен"}
 					</span>
 				)}

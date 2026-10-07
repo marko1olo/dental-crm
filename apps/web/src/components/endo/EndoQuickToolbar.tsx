@@ -76,7 +76,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 
 				<div className="hidden xl:flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 shrink-0 mr-0.5">
 					<EndoFileCanal size={14} className="shrink-0" />
-					<span>1-клик:</span>
+					<span>Протоколы:</span>
 				</div>
 
 				{/* Preset 1: Каналы пройдены и обтурированы */}
@@ -85,7 +85,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-express-apical-endo-protocol"
 					onClick={handleApplyExpressApicalPreset}
 					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-[var(--teal,#0d9488)] hover:brightness-110 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="1-клик: Каналы обработаны и обтурированы до апекса (Apex 0.0 + RVG + AH Plus)"
+					title="Обтурация канала (гуттаперча + силер): Каналы обработаны и обтурированы до апекса (Apex 0.0 + RVG + AH Plus)"
 				>
 					<Check size={13} className="shrink-0" />
 					<span className="truncate">Пройдены и обтурированы</span>
@@ -97,7 +97,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-caoh2-endo-protocol"
 					onClick={handleApplyCaOh2Protocol}
 					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="1-клик: Временная повязка Ca(OH)2 (Каласепт / Metapex) на 7–14 дней"
+					title="Протокол эндодонтического лечения: Временная повязка Ca(OH)2 (Каласепт / Metapex) на 7–14 дней"
 				>
 					<ShieldCheck size={13} className="shrink-0" />
 					<span className="truncate">Временная Ca(OH)2</span>
@@ -109,7 +109,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-endo-preset-pulpitis-complete"
 					onClick={handleApplyPulpitisPreset}
 					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
-					title="1-клик: Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)"
+					title="Протокол эндодонтического лечения: Пульпит в 1 визит (ProTaper F2 + AH Plus)"
 				>
 					<ToothPulpitis size={13} className="shrink-0" />
 					<span className="truncate">Пульпит в 1 визит</span>
@@ -245,7 +245,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					data-testid="btn-endo-anatomical-autofill"
 					onClick={handleApplyAnatomicalLengths}
 					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1 transition-all cursor-pointer shrink-0 active:scale-98"
-					title="Автозаполнение анатомической рабочей длины по FDI в 1 клик"
+					title="Автозаполнение анатомической рабочей длины по стандарту FDI"
 				>
 					<ApexLocator
 						size={13}

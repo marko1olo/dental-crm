@@ -127,11 +127,11 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 										)
 									}
 									className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-1 rounded-md text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1"
-									title={`1-клик наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
+									title={`Наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
 									data-testid={`item-lab-order-one-click-btn-${item.id}`}
 								>
 									<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-									<span>1-клик</span>
+									<span>Наряд ЗТЛ</span>
 								</button>
 							)}
 						</div>
@@ -184,7 +184,7 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 							<div
 								className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap"
 								data-testid={`price-drift-badge-${item.id}`}
-								title="Цены утвержденного плана зафиксированы и не меняются при обновлении каталога (Мандат 8e, 8n)"
+								title="Цены утвержденного плана зафиксированы и не меняются при обновлении каталога"
 							>
 								<Lock size={10} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>

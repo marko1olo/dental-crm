@@ -651,3 +651,75 @@ export function exportCustomizedBundleToCashier54Fz(
 		receiptItems,
 	};
 }
+
+/**
+ * Структурированный элемент услуги Номенклатуры 804н, привязанный к зубу (Мандаты 8b, 8e).
+ * Гарантирует сохранение номера зуба toothNumber / toothCode в биллинге и карте пациента.
+ */
+export interface ToothClinicalServicePayload {
+	readonly serviceId: string;
+	readonly code804n: string;
+	readonly toothNumber?: number | string | undefined;
+	readonly toothCode?: string | undefined;
+	readonly name: string;
+	readonly priceRub: number;
+	readonly priceKopecks?: number | undefined;
+	readonly quantity: number;
+	readonly category?: string | undefined;
+}
+
+/**
+ * Канонические экспресс-пресеты услуг Номенклатуры 804н для 1-клик назначения в модалке зуба:
+ * - Кариес: A16.07.002.010 Восстановление зуба пломбой световой (4 500 ₽)
+ * - Пульпит: A16.07.030 Пульпотомия / Лечение каналов (3 500 ₽) + пломба (4 500 ₽)
+ * - Коронка: A16.07.004 Коронка металлокерамическая / диоксид циркония (24 000 ₽)
+ * - Удаление: A16.07.001 Удаление постоянного зуба (3 500 ₽)
+ * - Анестезия: A11.07.012 Анестезия инфильтрационная (1 200 ₽)
+ */
+export const TOOTH_804N_PRESETS = {
+	cariesFilling: {
+		serviceId: "caries_restoration_804n",
+		code804n: "A16.07.002.010",
+		name: "Восстановление зуба пломбой световой",
+		priceRub: 4500,
+		priceKopecks: 450000,
+		quantity: 1,
+		category: "Терапия",
+	},
+	endoCanals: {
+		serviceId: "endo_canals_804n",
+		code804n: "A16.07.030",
+		name: "Пульпотомия / Лечение каналов",
+		priceRub: 3500,
+		priceKopecks: 350000,
+		quantity: 1,
+		category: "Эндодонтия",
+	},
+	crownZirconia: {
+		serviceId: "crown_zirconia_804n",
+		code804n: "A16.07.004",
+		name: "Коронка металлокерамическая / диоксид циркония",
+		priceRub: 24000,
+		priceKopecks: 2400000,
+		quantity: 1,
+		category: "Ортопедия",
+	},
+	extractionPermanent: {
+		serviceId: "extraction_permanent_804n",
+		code804n: "A16.07.001",
+		name: "Удаление постоянного зуба",
+		priceRub: 3500,
+		priceKopecks: 350000,
+		quantity: 1,
+		category: "Хирургия",
+	},
+	anesthesiaInfiltration: {
+		serviceId: "anesthesia_infilt_804n",
+		code804n: "A11.07.012",
+		name: "Анестезия инфильтрационная",
+		priceRub: 1200,
+		priceKopecks: 120000,
+		quantity: 1,
+		category: "Анестезия",
+	},
+} as const;

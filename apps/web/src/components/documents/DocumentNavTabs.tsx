@@ -121,7 +121,7 @@ export function DocumentNavTabs({
 
 	return (
 		<nav
-			className="document-nav-tabs overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x flex flex-nowrap w-full min-w-0"
+			className="dente-segmented-bar document-nav-tabs overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x flex flex-nowrap w-full min-w-0"
 			aria-label="Категории документов"
 			role="tablist"
 			onWheel={(e) => {
@@ -139,17 +139,18 @@ export function DocumentNavTabs({
 						type="button"
 						role="tab"
 						aria-selected={isActive}
-						className={`document-nav-tab-btn ${isActive ? "active" : ""}`}
+						data-active={isActive}
+						className={`dente-segmented-item document-nav-tab-btn ${isActive ? "active" : ""}`}
 						onClick={() => onSelectTab(tab.id)}
 					>
 						{tab.icon}
-						<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
+						<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max text-[12.5px] leading-none">
 							<span className="sm:hidden">{tab.mobileLabel}</span>
 							<span className="hidden sm:inline 2xl:hidden">{tab.tabletLabel}</span>
 							<span className="hidden 2xl:inline">{tab.label}</span>
 						</span>
 						<span
-							className="document-nav-tab-badge text-[11px] h-4.5 min-w-[18px] px-1 shrink-0 flex-shrink-0"
+							className="document-nav-tab-badge text-[11px] h-[18px] min-w-[18px] px-1.5 shrink-0 flex-shrink-0 leading-none inline-flex items-center justify-center font-semibold rounded-full"
 							aria-label={`Количество: ${count}`}
 						>
 							{count}

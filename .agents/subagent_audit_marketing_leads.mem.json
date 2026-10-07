@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-10-06T20:44:00+04:00",
+  "inquisitorRole": "GLOBAL RED TEAM INQUISITOR 3: МАРКЕТИНГ, ROMI, ВОРОНКА ОБРАЩЕНИЙ И ЛИДЫ",
+  "verdict": "VERIFIED_CLEAN",
+  "modulesAudited": [
+    "apps/web/src/MarketingView.tsx",
+    "apps/web/src/pages/MarketingDashboardView.tsx",
+    "apps/web/src/components/marketing/MarketingRomiTable.tsx",
+    "apps/web/src/components/marketing/MarketingRomiKpiStrip.tsx",
+    "apps/web/src/components/marketing/MarketingPromosList.tsx",
+    "apps/web/src/components/marketing/MarketingCampaignDetail.tsx",
+    "apps/web/src/components/leads/LeadsKanbanView.tsx",
+    "apps/web/src/components/leads/LeadCard.tsx",
+    "apps/web/src/components/leads/LeadConvertModal.tsx",
+    "apps/web/src/components/leads/LeadInstantPreview.tsx",
+    "apps/web/src/components/leads/LeadMobileBottomSheet.tsx",
+    "apps/web/src/components/leads/LeadsMobileFeedView.tsx",
+    "apps/web/src/components/leads/leadsFunnelEngine.ts",
+    "apps/web/src/components/leads/leadsFunnelTypes.ts"
+  ],
+  "defectsEliminated": [
+    {
+      "id": "DEFECT-PROMPT-01",
+      "title": "Eradication of window.prompt blocking popups in LeadCard, LeadMobileBottomSheet, LeadsKanbanView",
+      "files": [
+        "apps/web/src/components/leads/LeadCard.tsx",
+        "apps/web/src/components/leads/LeadMobileBottomSheet.tsx",
+        "apps/web/src/components/leads/LeadsKanbanView.tsx"
+      ],
+      "rationale": "Violated frontend.md §8.3 and Mandate 8e (Doctor/Staff Autonomy). Replaced with silent non-blocking default reason and in-card dropdown/modal editing."
+    },
+    {
+      "id": "DEFECT-2GIS-NORM-02",
+      "title": "Channel Normalization Priority Collision (2ГИС Карты -> yandex_maps)",
+      "files": [
+        "apps/web/src/components/leads/leadsFunnelTypes.ts"
+      ],
+      "rationale": "Regex checked generic 'карты' before '2гис', causing 2GIS map attribution to be stolen by Yandex Maps. Prioritized 2GIS checks."
+    },
+    {
+      "id": "DEFECT-CONSENT-LABEL-03",
+      "title": "Exact 152-FZ and Law on Advertising Legal Text Alignment",
+      "files": [
+        "apps/web/src/components/leads/LeadConvertModal.tsx"
+      ],
+      "rationale": "Aligned consent section header and medical consent label with statutory text: 'Разделение согласий (152-ФЗ и ст. 18 ФЗ «О рекламе»)' and 'Согласие на обработку персданных (152-ФЗ)'."
+    },
+    {
+      "id": "DEFECT-SPEND-MAP-04",
+      "title": "Canonical Marketing Channels Spend Map Completeness",
+      "files": [
+        "apps/web/src/tests/marketingDashboardSafeMathAndDarkThemes.test.ts",
+        "apps/web/src/components/leads/__tests__/leadsFunnelEngine.test.ts"
+      ],
+      "rationale": "Added newly introduced channels (avito, yandex_maps, max) to test custom spend maps so default spends don't leak into zero-spend unit tests."
+    }
+  ],
+  "testSuitesResults": {
+    "totalTests": 136,
+    "passed": 136,
+    "failed": 0,
+    "suites": [
+      "CRM Leads Funnel & Marketing Intelligence Engine Tests",
+      "Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends",
+      "Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification",
+      "Marketing Attribution Separation & Self-Booking Panel",
+      "Marketing Dashboard Safe Math & Dark Themes Inquisitor Suite",
+      "CRM Leads & Marketing Funnel Inquisitor Tests",
+      "Marketing 2-Column Balanced Dashboard",
+      "MarketingRomiTable Component & SSR Rendering"
+    ]
+  },
+  "typecheck": {
+    "command": "npx tsc -p apps/web/tsconfig.json --noEmit",
+    "exitCode": 0
+  },
+  "visualProofScreenshots": [
+    "docs/screenshots/audit_marketing_leads/marketing_promos_pc_light.png",
+    "docs/screenshots/audit_marketing_leads/marketing_promos_pc_dark.png",
+    "docs/screenshots/audit_marketing_leads/marketing_analytics_pc_light.png",
+    "docs/screenshots/audit_marketing_leads/marketing_analytics_pc_dark.png",
+    "docs/screenshots/audit_marketing_leads/marketing_romi_pc_light.png",
+    "docs/screenshots/audit_marketing_leads/marketing_romi_pc_dark.png",
+    "docs/screenshots/audit_marketing_leads/marketing_promos_mobile_light.png",
+    "docs/screenshots/audit_marketing_leads/marketing_promos_mobile_dark.png",
+    "docs/screenshots/audit_marketing_leads/leads_kanban_pc_light.png",
+    "docs/screenshots/audit_marketing_leads/leads_kanban_pc_dark.png",
+    "docs/screenshots/audit_marketing_leads/leads_kanban_mobile_light.png",
+    "docs/screenshots/audit_marketing_leads/leads_kanban_mobile_dark.png"
+  ]
+}

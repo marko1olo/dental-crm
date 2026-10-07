@@ -155,7 +155,7 @@ export const ORTHOPEDIC_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 27. Z46.3 КОНТРОЛЬНЫЙ ОСМОТР ОРТОПЕДА (НОРМА / ОККЛЮЗИЯ СТАБИЛЬНА) ──
 	{
 		id: "orthopedics_norm_checkup",
-		title: "Контрольный осмотр ортопедических конструкций (Z46.3) — Норма / окклюзия стабильна (1-клик)",
+		title: "Контрольный осмотр ортопедических конструкций (Z46.3) — Норма / окклюзия стабильна",
 		shortBadge: "Осмотр ортопеда (Норма)",
 		category: "orthopedics",
 		icd10: "Z46.3",

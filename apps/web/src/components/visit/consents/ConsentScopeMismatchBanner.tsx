@@ -74,7 +74,7 @@ export function ConsentScopeMismatchBanner({
 						color: "#ffffff",
 						fontWeight: 700,
 					}}
-					title="1-клик: сформировать дополнительное согласие на новые процедуры и отправить на печать"
+					title="Сформировать дополнительное согласие на новые процедуры и отправить на печать"
 				>
 					<FileText size={14} />
 					<span>{mismatch.suggestedActionLabel}</span>

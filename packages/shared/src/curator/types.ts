@@ -90,7 +90,7 @@ export const CURATOR_STAGE_DEFINITIONS: readonly CuratorStageDefinition[] = [
 		stepNumber: 5,
 		title: "Завершение лечения",
 		shortTitle: "Завершено",
-		description: "Все этапы выполнены, акт 804н подписан, окончательный расчет произведен.",
+		description: "Все этапы выполнены, акт выполненных работ подписан, окончательный расчет произведен.",
 		standardCycleDays: 0,
 		colorTheme: "emerald",
 		nextStage: null,

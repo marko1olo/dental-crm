@@ -409,7 +409,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 							}}
 						>
 							<ShieldCheck size={13} style={{ color: "var(--teal)" }} />
-							<span>Разделение согласий (на лечение и на рассылки)</span>
+							<span>Разделение согласий (152-ФЗ и ст. 18 ФЗ «О рекламе»)</span>
 						</div>
 
 						{/* Согласие 1: Обработка персданных для медпомощи (обязательное) */}
@@ -433,7 +433,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 							/>
 							<div>
 								<span style={{ fontWeight: 600 }}>
-									Согласие на обработку персональных данных
+									Согласие на обработку персданных (152-ФЗ)
 								</span>
 								<p className="m-0 text-[10.5px] leading-tight text-[var(--muted)]">
 									Обязательно для оказания медицинской помощи, амбулаторной

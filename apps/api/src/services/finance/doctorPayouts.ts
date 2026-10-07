@@ -1476,7 +1476,7 @@ export async function doctorPayouts(
 							category: srv.category ?? null,
 							specialty,
 							toothCode: srv.toothCode ?? null,
-							priceRub: moneyFromDb(srv.priceRub, "цена услуги 804н"),
+							priceRub: moneyFromDb(srv.priceRub, "цена услуги"),
 							quantity: Number(srv.quantity ?? 1),
 						};
 					});

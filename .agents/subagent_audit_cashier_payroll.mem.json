@@ -1,0 +1,110 @@
+{
+  "auditId": "audit_cashier_payroll_20261006",
+  "subagentRole": "GLOBAL RED TEAM INQUISITOR 3: КАССОВЫЕ СМЕНЫ, СДЕЛЬНАЯ ЗАРПЛАТА ВРАЧЕЙ И ГАРАНТИЙНЫЕ СКИДКИ (CASHIER SHIFT, PAYROLL & DISCOUNTS)",
+  "timestampIso": "2026-10-06T14:27:00.000Z",
+  "status": "COMPLETED",
+  "verdict": "VERIFIED_CLEAN",
+  "environment": {
+    "api": "http://127.0.0.1:4100",
+    "web": "http://127.0.0.1:5173",
+    "database": "postgresql://postgres:***@127.0.0.1:5432/dente"
+  },
+  "scopes": [
+    {
+      "scopeNumber": 1,
+      "title": "АРМ кассы и виджет смены (CashShiftWidget)",
+      "component": "apps/web/src/components/finance/CashShiftWidget.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "01_cashier_shift_arm_pc_light.png",
+        "01_cashier_shift_arm_pc_dark.png",
+        "01_cashier_shift_arm_mobile_light.png",
+        "01_cashier_shift_arm_mobile_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 2,
+      "title": "Закрытие смены и Z-отчет 54-ФЗ (ShiftCloseZReportModal)",
+      "component": "apps/web/src/components/finance/fiscal/ShiftCloseZReportModal.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "02_cashier_z_report_modal_pc_light.png",
+        "02_cashier_z_report_modal_pc_dark.png",
+        "02_cashier_z_report_modal_mobile_light.png",
+        "02_cashier_z_report_modal_mobile_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 3,
+      "title": "Кассовый аппарат и денежный ящик (CashRegisterModal)",
+      "component": "apps/web/src/components/finance/CashRegisterModal.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "03_cash_register_drawer_modal_pc_light.png",
+        "03_cash_register_drawer_modal_pc_dark.png",
+        "03_cash_register_drawer_modal_mobile_light.png",
+        "03_cash_register_drawer_modal_mobile_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 4,
+      "title": "Десктопная ведомость выплат врачам (DoctorPayoutDashboard)",
+      "component": "apps/web/src/pages/DoctorPayoutDashboard.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "04_doctor_payout_dashboard_pc_light.png",
+        "04_doctor_payout_dashboard_pc_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 5,
+      "title": "Официальная ведомость Т-51 / расчет врача (DoctorPayrollModal)",
+      "component": "apps/web/src/components/finance/DoctorPayrollModal.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "05_doctor_payroll_t51_modal_pc_light.png",
+        "05_doctor_payroll_t51_modal_pc_dark.png",
+        "05_doctor_payroll_t51_modal_mobile_light.png",
+        "05_doctor_payroll_t51_modal_mobile_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 6,
+      "title": "Калькулятор сдельной оплаты и мотивации (DoctorPieceRateCalculatorSection)",
+      "component": "apps/web/src/components/finance/DoctorPieceRateCalculatorSection.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "06_doctor_piece_rate_calculator_pc_light.png",
+        "06_doctor_piece_rate_calculator_pc_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 7,
+      "title": "Мобильный кошелек выплат врача (DoctorPayoutMobileWallet, 390x844)",
+      "component": "apps/web/src/components/finance/DoctorPayoutMobileWallet.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "07_doctor_payout_mobile_wallet_light.png",
+        "07_doctor_payout_mobile_wallet_dark.png"
+      ]
+    },
+    {
+      "scopeNumber": 8,
+      "title": "100% гарантийные скидки врача (PaymentCapture, чек 0.00 ₽ без блокировок)",
+      "component": "apps/web/src/components/billing/PaymentCapture.tsx",
+      "verdict": "CLEAN",
+      "proofScreenshots": [
+        "08_guarantee_100_discount_pc_light.png",
+        "08_guarantee_100_discount_pc_dark.png",
+        "08_guarantee_100_discount_mobile_light.png",
+        "08_guarantee_100_discount_mobile_dark.png"
+      ]
+    }
+  ],
+  "mandateCompliance": {
+    "mandate8e_doctorAutonomy": "CONFIRMED_ZERO_DISABLED_BUTTONS_ZERO_BLOCKED_ZERO_RUBL_CHECKS",
+    "mandate8c_antiMatryoshka": "CONFIRMED_MODAL_DEPTH_STRICTLY_1",
+    "appleHigMobileErgonomics": "CONFIRMED_44PX_TOUCH_TARGETS_ZERO_HORIZONTAL_DRIFT",
+    "noEmojisInOfficialDocs": "CONFIRMED_ZERO_EMOJIS_IN_FINANCIAL_FORMS"
+  }
+}

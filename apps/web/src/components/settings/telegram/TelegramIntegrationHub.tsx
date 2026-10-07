@@ -1205,7 +1205,7 @@ export function TelegramIntegrationHub({
 														}}
 														title="Нажмите для автоматического ввода тестового кода"
 													>
-														<span>Тестовый код: {testCodePreset} (ввести в 1 клик)</span>
+														<span>Тестовый код: {testCodePreset} (автозаполнение)</span>
 													</div>
 												</div>
 											)}

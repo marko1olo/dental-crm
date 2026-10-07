@@ -354,6 +354,37 @@ describe("Wave 47: Форматирование и разбор строк вы�
 		assert.equal(parsed.priceRub, 1600);
 	});
 
+	it("parseCompletedServiceLine корректно разбирает множественные зубы (зубы 16, 17)", () => {
+		const formatted = formatCompletedServiceLine({
+			code804n: "A16.07.002",
+			title: "Пломбирование композитом",
+			priceRub: 9000,
+			toothCode: "16, 17",
+		});
+		assert.equal(formatted, `Выполнено: [A16.07.002] Пломбирование композитом (зубы 16, 17) — ${money(9000)}`);
+
+		const parsed = parseCompletedServiceLine(formatted);
+		assert.ok(parsed);
+		assert.equal(parsed.code804n, "A16.07.002");
+		assert.equal(parsed.toothCode, "16, 17");
+		assert.equal(parsed.priceRub, 9000);
+	});
+
+	it("parseCompletedServiceLine корректно разбирает префиксную нотацию Зуб 16:", () => {
+		const parsedSingle = parseCompletedServiceLine("Зуб 16: [A16.07.002] Пломба световая — 4 500 ₽");
+		assert.ok(parsedSingle);
+		assert.equal(parsedSingle.toothCode, "16");
+		assert.equal(parsedSingle.code804n, "A16.07.002");
+		assert.equal(parsedSingle.title, "Пломба световая");
+		assert.equal(parsedSingle.priceRub, 4500);
+
+		const parsedMulti = parseCompletedServiceLine("Зубы 16, 17: [A16.07.002] Пломба световая — 9 000 ₽");
+		assert.ok(parsedMulti);
+		assert.equal(parsedMulti.toothCode, "16, 17");
+		assert.equal(parsedMulti.code804n, "A16.07.002");
+		assert.equal(parsedMulti.priceRub, 9000);
+	});
+
 	it("parseCompletedServiceLine возвращает null для строк не выполненного", () => {
 		assert.equal(parseCompletedServiceLine("Рекомендован контрольный осмотр через полгода"), null);
 		assert.equal(parseCompletedServiceLine(""), null);

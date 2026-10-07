@@ -50,7 +50,9 @@
 	.primary-button,
 	.secondary-button,
 	.text-button,
-	.icon-button {
+	.icon-button,
+	.dente-segmented-item,
+	.dente-filter-chip {
 		min-height: 44px !important;
 	}
 
@@ -585,6 +587,18 @@
 		min-height: 32px !important;
 		height: 32px;
 		font-size: 13px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .dente-segmented-item,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .dente-filter-chip,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .dente-segmented-item,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .dente-filter-chip,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .dente-segmented-item,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .dente-filter-chip {
+		min-height: 28px !important;
+		height: 28px !important;
+		max-height: 28px !important;
+		font-size: 12.5px !important;
 	}
 
 	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-primary-action,

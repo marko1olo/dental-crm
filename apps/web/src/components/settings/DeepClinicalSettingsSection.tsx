@@ -202,7 +202,7 @@ export function DeepClinicalSettingsSection() {
 					<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 						<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
 							<ShieldAlert size={16} className="text-teal-600" aria-hidden="true" />
-							Обязательность клинических тестов в карте приёма (Мандат 8e)
+							Обязательность клинических тестов в карте приёма
 						</h4>
 						<p className="m-0 text-xs text-[var(--muted)] leading-relaxed">
 							По умолчанию система использует мягкие клинические предупреждения без блокировки кнопки «Сохранить приём».
@@ -456,7 +456,7 @@ export function DeepClinicalSettingsSection() {
 						<label className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--line)] hover:bg-[var(--line)]/20 cursor-pointer transition-colors mt-2">
 							<div>
 								<strong className="block text-xs text-[var(--ink)]">
-									Мягкий овердрафт склада (Soft Negative Stock, Мандат 8e / 8k)
+									Мягкий овердрафт склада (списание при временной нехватке)
 								</strong>
 								<span className="block text-[11px] text-[var(--muted)]">
 									Приём пациента никогда не блокируется из-за задержки накладной поставщика
@@ -543,14 +543,14 @@ export function DeepClinicalSettingsSection() {
 					<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 						<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
 							<ShieldCheck size={16} className="text-teal-600" aria-hidden="true" />
-							Финансовая автономия врача и касса 54-ФЗ (Мандат 8e / 8n)
+							Финансовая автономия врача и касса 54-ФЗ
 						</h4>
 
 						<div className="space-y-2.5 pt-1">
 							<label className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--line)] hover:bg-[var(--line)]/20 cursor-pointer transition-colors">
 								<div>
 									<strong className="block text-xs text-[var(--ink)]">
-										Экспресс-чеки без ИНН физлиц (Мандат 8e)
+										Экспресс-чеки без ИНН физлиц
 									</strong>
 									<span className="block text-[11px] text-[var(--muted)]">
 										По закону 54-ФЗ для пациентов-физлиц ИНН не обязателен. Чек выбивается моментально.

@@ -184,7 +184,7 @@ export const DentalLabGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =
 
 					{/* Bottom Autonomy Status */}
 					<div className="px-4 py-2 bg-[var(--paper)] border-t border-[var(--line)] flex items-center justify-between text-[10px] text-[var(--muted)]">
-						<span>Задержка наряда ЗТЛ не блокирует оказание терапевтических услуг пациенту (Мандат 8e)</span>
+						<span>Задержка наряда ЗТЛ не блокирует оказание терапевтических услуг пациенту</span>
 						<span className="font-semibold text-emerald-600 dark:text-emerald-400">Техник: Лаборатория «ДенталАрт»</span>
 					</div>
 				</div>

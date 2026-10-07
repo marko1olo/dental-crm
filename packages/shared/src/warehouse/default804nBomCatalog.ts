@@ -434,7 +434,7 @@ export const DEFAULT_804N_CONSUMABLE_LINKS: readonly ConsumableItemLink[] = [
 		quantityPerService: 1,
 		isMandatory: true,
 		costPriceKopecks: 850000, // 8 500.00 ₽ (#1 рынок РФ)
-		notes: "Стерильный имплантат с имплантоводом (Мандат 8e)",
+		notes: "Стерильный имплантат с имплантоводом",
 	},
 	{
 		id: "def-link-implant-healing-abutment",

@@ -2,7 +2,16 @@
 .messengers-settings {
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
+	gap: 20px;
+	width: 100%;
+}
+
+.messengers-settings-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	flex-wrap: wrap;
 	width: 100%;
 }
 
@@ -78,6 +87,11 @@
 .tg-badge {
 	background: rgba(0, 136, 204, 0.15);
 	color: rgb(0, 136, 204);
+}
+
+.vk-badge {
+	background: rgba(0, 119, 255, 0.15);
+	color: rgb(0, 119, 255);
 }
 
 .max-badge {
@@ -622,3 +636,94 @@
 :is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .security-zone .telegram-settings-panel-header h3 {
 	color: var(--bad-fg);
 }
+
+/* ==========================================================================
+   Mobile & Responsive ergonomics (Apple HIG / Mandate 8e)
+   ========================================================================== */
+
+.whatsapp-mode-toggle-group {
+	display: flex;
+	gap: 8px;
+	margin-top: 6px;
+	flex-wrap: wrap;
+}
+
+.qr-connection-layout {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 20px;
+	align-items: start;
+}
+
+@media (max-width: 640px) {
+	.messenger-panel {
+		padding: 14px;
+		gap: 16px;
+	}
+
+	.messenger-panel-header {
+		display: grid;
+		grid-template-columns: 40px 1fr;
+		grid-template-areas:
+			"icon title"
+			"badge badge";
+		gap: 10px 12px;
+		align-items: start;
+	}
+
+	.messenger-panel-icon {
+		grid-area: icon;
+	}
+
+	.messenger-panel-title {
+		grid-area: title;
+		min-width: 0;
+		width: 100%;
+	}
+
+	.messenger-panel-title h3 {
+		font-size: 16px;
+		line-height: 1.25;
+	}
+
+	.messenger-panel-title p {
+		font-size: 12px;
+		line-height: 1.4;
+		word-break: normal;
+		overflow-wrap: break-word;
+	}
+
+	.messenger-status-badge {
+		grid-area: badge;
+		margin-left: 0;
+		width: fit-content;
+	}
+
+	.whatsapp-mode-toggle-group {
+		flex-direction: column;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.whatsapp-mode-toggle-group button {
+		width: 100%;
+		justify-content: center;
+		min-height: 44px;
+		font-size: 13px;
+		padding: 10px 12px;
+		white-space: normal;
+		text-align: center;
+	}
+
+	.qr-connection-layout {
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	.qr-connection-layout .qr-code-box {
+		width: 100% !important;
+		max-width: 260px;
+		margin: 0 auto;
+	}
+}
+

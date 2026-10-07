@@ -3,9 +3,11 @@ import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 import {
 	AlertOctagon,
 	AlertTriangle,
+	Calculator,
 	Check,
 	CheckCircle2,
 	Clock,
+	FileText,
 	FlaskConical,
 	Lock,
 	MoreHorizontal,
@@ -44,6 +46,8 @@ import {
 	executeApplyAnesthesiaPresetAutonomy,
 	executeFastPrint043u,
 	executeFastPrintInformedConsent,
+	executeFastPrintCompletedAct,
+	executeFastPrintTreatmentPlanEstimate,
 	VisitSecondaryPanelsInner,
 	VisitClinicalToothModal,
 	VisitViewModals,
@@ -258,6 +262,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		});
 	}, [updateVisitNoteField, visitNoteForm, activePatient]);
 
+	// Dynamic treatment plan age & soft expiration calculation
+	const activePlan = useMemo(() => {
+		const scenarios = (dashboard?.treatmentPlanScenarios as any[]) || [];
+		const patientScenarios = scenarios.filter((s) => s.patientId === activePatient?.id);
+		if (patientScenarios.length > 0) return patientScenarios[0];
+		const items = (dashboard?.treatmentPlanItems as any[]) || [];
+		const patientItems = items.filter((i) => i.patientId === activePatient?.id);
+		if (patientItems.length > 0) return patientItems[0];
+		return null;
+	}, [dashboard?.treatmentPlanScenarios, dashboard?.treatmentPlanItems, activePatient?.id]);
+
+	const treatmentPlanAgeDays = useMemo(() => {
+		if (!activePlan) return 0;
+		const rawDate = activePlan.createdAt || activePlan.plannedAt || activePlan.date;
+		if (!rawDate) return 0;
+		const createdTime = new Date(rawDate).getTime();
+		if (Number.isNaN(createdTime)) return 0;
+		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
+	}, [activePlan]);
+
+	const isTreatmentPlanExpiredSoft = activePlan !== null && treatmentPlanAgeDays > 30;
+
 	const handlePrintForm043uFast = useCallback(() => {
 		const isClosed =
 			activeAppointment?.status === "completed" ||
@@ -267,12 +293,57 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			visitNoteForm?.status === "signed";
 		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
 		// Поддержка отметки: ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ
-		executeFastPrint043u({ activePatient, activeDoctor, activeAppointment, visitNoteForm, isClosed, watermarkText });
-	}, [activeAppointment, activeDoctor, activePatient, visitNoteForm]);
+		executeFastPrint043u({
+			activePatient,
+			activeDoctor,
+			activeAppointment,
+			visitNoteForm,
+			isClosed,
+			watermarkText,
+			dashboard,
+			teethFormula: toothStateByCode,
+			selectedToothForMenu,
+		});
+	}, [activeAppointment, activeDoctor, activePatient, dashboard, selectedToothForMenu, toothStateByCode, visitNoteForm]);
 
 	const handlePrintInformedConsentFast = useCallback(() => {
-		executeFastPrintInformedConsent({ activePatient, activeDoctor, activeAppointment, visitNoteForm, dashboard, selectedToothForMenu });
-	}, [activeAppointment, activeDoctor, activePatient, dashboard, visitNoteForm, selectedToothForMenu]);
+		executeFastPrintInformedConsent({
+			activePatient,
+			activeDoctor,
+			activeAppointment,
+			visitNoteForm,
+			dashboard,
+			selectedToothForMenu,
+		});
+	}, [activeAppointment, activeDoctor, activePatient, dashboard, selectedToothForMenu, visitNoteForm]);
+
+	const handlePrintCompletedActFast = useCallback(() => {
+		const isClosed =
+			activeAppointment?.status === "completed" ||
+			activeAppointment?.status === "signed" ||
+			activeAppointment?.status === "closed" ||
+			visitNoteForm?.status === "completed" ||
+			visitNoteForm?.status === "signed";
+		executeFastPrintCompletedAct({
+			activePatient,
+			activeDoctor,
+			activeAppointment,
+			visitNoteForm,
+			dashboard,
+			activePlan,
+			isClosed,
+		});
+	}, [activeAppointment, activeDoctor, activePatient, activePlan, dashboard, visitNoteForm]);
+
+	const handlePrintEstimateFast = useCallback(() => {
+		executeFastPrintTreatmentPlanEstimate({
+			activePatient,
+			activeDoctor,
+			activeAppointment,
+			dashboard,
+			activePlan,
+		});
+	}, [activeAppointment, activeDoctor, activePatient, activePlan, dashboard]);
 
 	const flushAll = useCallback(async () => {
 		if (typeof flushPendingVisitSaves === "function") {
@@ -310,6 +381,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	}, [flushAll]);
 
 	const handleToothClick = useCallback((code: string, currentState: string) => {
+		const num = Number(code) || null;
+		useVisitStore.getState().setActiveToothNumber(num);
 		if (activeStamp && activeStamp !== "idle") {
 			setToothState(code, activeStamp);
 		} else {
@@ -329,6 +402,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			if (detail) {
 				const code = String(detail.code || detail.toothNumber || "");
 				if (code) {
+					const num = Number(code) || null;
+					useVisitStore.getState().setActiveToothNumber(num);
 					setSelectedToothForMenu({
 						code,
 						state: detail.state || (toothStateByCode as Record<string, string>)?.[code] || "Healthy",
@@ -357,28 +432,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		onClick: flushAll,
 		kind: "save",
 	};
-
-	// Dynamic treatment plan age & soft expiration calculation
-	const activePlan = useMemo(() => {
-		const scenarios = (dashboard?.treatmentPlanScenarios as any[]) || [];
-		const patientScenarios = scenarios.filter((s) => s.patientId === activePatient?.id);
-		if (patientScenarios.length > 0) return patientScenarios[0];
-		const items = (dashboard?.treatmentPlanItems as any[]) || [];
-		const patientItems = items.filter((i) => i.patientId === activePatient?.id);
-		if (patientItems.length > 0) return patientItems[0];
-		return null;
-	}, [dashboard?.treatmentPlanScenarios, dashboard?.treatmentPlanItems, activePatient?.id]);
-
-	const treatmentPlanAgeDays = useMemo(() => {
-		if (!activePlan) return 0;
-		const rawDate = activePlan.createdAt || activePlan.plannedAt || activePlan.date;
-		if (!rawDate) return 0;
-		const createdTime = new Date(rawDate).getTime();
-		if (Number.isNaN(createdTime)) return 0;
-		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
-	}, [activePlan]);
-
-	const isTreatmentPlanExpiredSoft = activePlan !== null && treatmentPlanAgeDays > 30;
 
 	if (!activePatient) {
 		return <EmptyState title="Пациент не выбран" description="Выберите пациента в расписании или списке для начала приёма." />;
@@ -491,7 +544,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								/>
 							</div>
 
-							{/* Кнопка физиологической нормы 043/у (1-клик) — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
+							{/* Кнопка физиологической нормы 043/у — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
@@ -517,7 +570,31 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 							</button>
 
-							{/* Наряд ЗТЛ (1 клик для ортопеда у кресла) */}
+							{/* Печать Акта выполненных работ 804н (Мандат 8e) */}
+							<button
+								type="button"
+								onClick={handlePrintCompletedActFast}
+								data-testid="btn-visit-fast-print-act"
+								className="secondary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 w-7 sm:w-8 p-0 text-xs font-semibold text-blue-700 dark:text-blue-300 border-blue-500/40 hover:bg-blue-50 dark:hover:bg-blue-950/30 flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
+								title="Печать Акта выполненных работ"
+								aria-label="Печать Акта выполненных работ"
+							>
+								<FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+							</button>
+
+							{/* Печать Сметы и плана лечения (Мандат 8e) */}
+							<button
+								type="button"
+								onClick={handlePrintEstimateFast}
+								data-testid="btn-visit-fast-print-estimate"
+								className="secondary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 w-7 sm:w-8 p-0 text-xs font-semibold text-violet-700 dark:text-violet-300 border-violet-500/40 hover:bg-violet-50 dark:hover:bg-violet-950/30 flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
+								title="Печать Сметы и плана лечения"
+								aria-label="Печать Сметы и плана лечения"
+							>
+								<Calculator className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" aria-hidden="true" />
+							</button>
+
+							{/* Наряд ЗТЛ для ортопеда у кресла */}
 							<button
 								type="button"
 								onClick={handleOpenLabOrder}
@@ -575,6 +652,54 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-xl z-50 p-1.5 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
 										role="menu"
 									>
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												handlePrintForm043uFast();
+											}}
+											data-testid="visit-more-action-print-043u"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
+											role="menuitem"
+										>
+											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Печать дневника (Форма 043/у)</span>
+												<span className="text-[10px] text-[var(--muted)]">Амбулаторная карта, статус, зубная формула</span>
+											</div>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												handlePrintCompletedActFast();
+											}}
+											data-testid="visit-more-action-print-act"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
+											role="menuitem"
+										>
+											<FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Печать Акта выполненных работ</span>
+												<span className="text-[10px] text-[var(--muted)]">Реестр оказанных медицинских услуг</span>
+											</div>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												handlePrintEstimateFast();
+											}}
+											data-testid="visit-more-action-print-estimate"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
+											role="menuitem"
+										>
+											<Calculator size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Печать Сметы и плана лечения</span>
+												<span className="text-[10px] text-[var(--muted)]">Финансовый расчёт и гарантийные сроки</span>
+											</div>
+										</button>
 										<button
 											type="button"
 											onClick={() => {
@@ -949,6 +1074,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				setIsEndoModalOpen={setIsEndoModalOpen} appendToEMKField={appendToEMKField}
 				setLabOrderModalToothNumber={setLabOrderModalToothNumber} setIsLabOrderModalOpen={setIsLabOrderModalOpen}
 				visitWarnings={visitWarnings}
+				onAddServiceToTooth={(svc) => {
+					useVisitStore.getState().addCompletedService(svc);
+				}}
 			/>
 
 			{/* ═══ VISIT VIEW MODALS ═══ */}

@@ -308,7 +308,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								<h2 className="text-base font-bold text-[var(--ink)]">
 									Направление на КЛКТ / 3D Лучевую диагностику
 								</h2>
-								<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
+								<span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 									1-клик протокол
 								</span>
 							</div>
@@ -319,23 +319,21 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
-						{/* Desktop / Mobile Tab Switcher */}
-						<div className="flex items-center p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)]">
+						{/* Canonical Segmented Control Bar */}
+						<div className="dente-segmented-bar" data-testid="referral-tab-bar">
 							<button
 								type="button"
 								onClick={() => setActiveTab("form")}
-								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-									activeTab === "form" ? "bg-[var(--teal)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
+								className={`dente-segmented-item ${activeTab === "form" ? "active" : ""}`}
+								data-testid="referral-tab-form"
 							>
 								Параметры FOV
 							</button>
 							<button
 								type="button"
 								onClick={() => setActiveTab("preview")}
-								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-									activeTab === "preview" ? "bg-[var(--teal)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]"
-								}`}
+								className={`dente-segmented-item ${activeTab === "preview" ? "active" : ""}`}
+								data-testid="referral-tab-preview"
 							>
 								Бланк и QR
 							</button>
@@ -344,11 +342,11 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 							title="Закрыть (Esc)"
 							data-testid="referral-modal-close-btn"
 						>
-							<X className="w-5 h-5" />
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 				</header>
@@ -367,13 +365,13 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								<Sparkles className="w-4 h-4" />
 								<span>Быстрые пресеты у кресла (0–1 клик):</span>
 							</div>
-							<div className="flex flex-wrap gap-1.5">
+							<div className="dente-filter-chips" data-testid="referral-express-presets">
 								{CLINICAL_EXPRESS_PRESETS.map((preset) => (
 									<button
 										key={preset.label}
 										type="button"
 										onClick={() => handleApplyExpressPreset(preset)}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--teal-soft)] text-[var(--ink)] hover:bg-[var(--teal)] hover:text-white transition-all shadow-xs"
+										className="dente-filter-chip hover:border-[var(--teal)] hover:text-[var(--ink)] cursor-pointer"
 									>
 										{preset.label}
 									</button>
@@ -401,7 +399,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											key={fov.id}
 											type="button"
 											onClick={() => handleSelectFov(fov)}
-											className={`flex flex-col p-3 rounded-2xl border text-left transition-all min-h-[44px] ${
+											className={`flex flex-col p-3 rounded-2xl border text-left transition-all min-h-[44px] cursor-pointer ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal-soft)]"
 													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -415,7 +413,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												</div>
 											</div>
 											<span className="text-xs font-semibold text-[var(--ink)] mb-0.5 line-clamp-1">{fov.titleRu}</span>
-											<span className="text-[11px] text-[var(--muted)] leading-tight line-clamp-2">{fov.description}</span>
+											<span className="text-xs text-[var(--muted)] leading-tight line-clamp-2">{fov.description}</span>
 										</button>
 									);
 								})}
@@ -435,7 +433,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											key={goal.id}
 											type="button"
 											onClick={() => handleSelectGoal(goal)}
-											className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all ${
+											className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-sm"
 													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -443,7 +441,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											data-testid={`referral-goal-${goal.id}`}
 										>
 											<div className="text-xs font-bold line-clamp-1">{goal.titleRu}</div>
-											<div className="text-[10px] text-[var(--muted)] line-clamp-1">{goal.shortBadge}</div>
+											<div className="text-xs text-[var(--muted)] line-clamp-1 font-medium">{goal.shortBadge}</div>
 										</button>
 									);
 								})}
@@ -463,7 +461,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											key={partner.id}
 											type="button"
 											onClick={() => setSelectedPartnerId(partner.id)}
-											className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+											className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] font-bold shadow-sm"
 													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -473,7 +471,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											<Building2 className={`w-4 h-4 shrink-0 ${isSelected ? "text-[var(--teal)]" : "text-[var(--muted)]"}`} />
 											<div className="min-w-0">
 												<div className="text-xs font-bold truncate">{partner.nameRu}</div>
-												<div className="text-[10px] text-[var(--muted)] truncate">{partner.integrationNote}</div>
+												<div className="text-xs text-[var(--muted)] truncate font-medium">{partner.integrationNote}</div>
 											</div>
 										</button>
 									);
@@ -501,7 +499,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								)}
 							</div>
 
-							<div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 scrollbar-thin">
+							<div className="dente-filter-chips mb-2" data-testid="referral-zone-chips">
 								{TOOTH_ZONE_PRESETS.map((preset) => {
 									const isCurrent =
 										preset.teeth.length === selectedTeeth.length &&
@@ -511,10 +509,10 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											key={preset.label}
 											type="button"
 											onClick={() => handleApplyZonePreset(preset.teeth)}
-											className={`px-2 py-0.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-all ${
+											className={`dente-filter-chip cursor-pointer ${
 												isCurrent
-													? "bg-[var(--teal)] border-[var(--teal)] text-white shadow-xs font-bold"
-													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+													? "!bg-[var(--teal-soft)] !border-[var(--teal)] !text-[var(--teal-dark,var(--teal))] !font-semibold"
+													: ""
 											}`}
 										>
 											{preset.label}
@@ -545,7 +543,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									value={customTeethInput}
 									onChange={(e) => setCustomTeethInput(e.target.value)}
 									placeholder="Область зубов: 16, 26, 36-38, Все..."
-									className="w-full px-3 min-h-[36px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full px-3 h-9 text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -561,7 +559,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									type="text"
 									value={diagnosisIcd10}
 									onChange={(e) => setDiagnosisIcd10(e.target.value)}
-									className="w-full px-3 min-h-[36px] text-xs font-mono font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full px-3 h-9 text-xs font-mono font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 
@@ -574,7 +572,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									type="text"
 									value={referralNumber}
 									onChange={(e) => setReferralNumber(e.target.value)}
-									className="w-full px-3 min-h-[36px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full px-3 h-9 text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -630,7 +628,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								<button
 									type="button"
 									onClick={handleCopyText}
-									className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors"
+									className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
 									title="Копировать текст направления"
 									data-testid="btn-copy-referral-text"
 								>
@@ -647,11 +645,11 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							<div className="border-b-2 border-[var(--line-strong,var(--line))] pb-2.5 flex justify-between items-start">
 								<div>
 									<div className="font-extrabold text-sm uppercase text-[var(--ink)]">{clinic}</div>
-									<div className="text-[10px] text-[var(--muted)]">Лицензия: {license} · {phone}</div>
+									<div className="text-xs text-[var(--muted)]">Лицензия: {license} · {phone}</div>
 								</div>
 								<div className="text-right">
 									<div className="font-black text-sm text-[var(--teal)] uppercase tracking-tight">НАПРАВЛЕНИЕ НА КЛКТ</div>
-									<div className="text-[10px] text-[var(--muted)] font-semibold">{currentPartner.nameRu}</div>
+									<div className="text-xs text-[var(--muted)] font-semibold">{currentPartner.nameRu}</div>
 								</div>
 							</div>
 
@@ -702,14 +700,14 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-4 py-2 text-xs md:text-sm font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="h-9 px-4 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handleInsertToDiary}
-							className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all"
+							className="inline-flex items-center gap-1.5 h-9 px-4 text-[13px] font-semibold rounded-lg border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all cursor-pointer shadow-2xs"
 							data-testid="btn-insert-referral-to-043"
 							title="Внести текст направления в дневник приёма"
 						>
@@ -719,7 +717,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 text-xs md:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md hover:opacity-95 active:scale-95 transition-all font-extrabold"
+							className="inline-flex items-center gap-2 h-9 px-5 text-[13px] font-semibold rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
 							data-testid="print-referral-btn"
 						>
 							<Printer className="w-4 h-4" />

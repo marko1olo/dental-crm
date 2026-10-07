@@ -179,7 +179,7 @@ export function splitDiaryAnamnesis(
 		}
 	}
 
-	// Случай 3: один абзац без переносов строк (например, стандартная норма в 1 клик)
+	// Случай 3: один абзац без переносов строк (например, стандартная физиологическая норма)
 	return splitSingleParagraphAnamnesis(trimmed, cComp, cAnam);
 }
 

@@ -59,7 +59,7 @@ export const PriceValidatorFooter: React.FC<PriceValidatorFooterProps> = ({
 					type="button"
 					className="price-validator-btn-brand"
 					onClick={onGenerateCompletedAct}
-					title="Сформировать акт выполненных работ (1 клик)"
+					title="Сформировать акт выполненных работ"
 					style={{ background: "var(--pv-ok)", borderColor: "var(--pv-ok)" }}
 					data-testid="btn-generate-completed-act"
 				>

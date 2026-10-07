@@ -311,7 +311,7 @@ export function useWaitlistDrawerOperations({
 								item.treatmentCategory ||
 								item.notes ||
 								"Запись из листа ожидания",
-							comment: "Посадка из листа ожидания в 1 клик",
+							comment: "Запись из листа ожидания",
 							assistantUserId: "",
 							clientMutationId: `waitlist-direct-${Date.now()}`,
 						}),

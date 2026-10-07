@@ -330,3 +330,22 @@ export function generateEscPosSanpinLabelBinary(
 
 	return out;
 }
+
+export function printThermalStickers(
+	records: KraftPackageRecord[],
+	size: "58x40" | "43x25" = "58x40",
+): void {
+	if (typeof window === "undefined" || !records.length) return;
+	const htmlList = records
+		.map((r) => generateThermalStickerHtml(r, { size }))
+		.join("<div style='page-break-after:always;'></div>");
+	const printWindow = window.open("", "_blank");
+	if (printWindow) {
+		printWindow.document.write(
+			`<!DOCTYPE html><html><head><title>Печать термоэтикеток</title><style>@page{margin:0;}body{margin:0;padding:0;}</style></head><body>${htmlList}</body></html>`,
+		);
+		printWindow.document.close();
+		printWindow.focus();
+		printWindow.print();
+	}
+}

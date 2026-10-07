@@ -61,7 +61,7 @@ function OnboardingPresetsPreviewApp() {
 						<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400">
 							Онбординг клиники
 						</span>
-						<span className="text-xs text-[var(--muted)]">Мандат 8n: Суверенитет масштаба</span>
+						<span className="text-xs text-[var(--muted)]">Готовые профили клиники</span>
 					</div>
 					<h1 className="text-xl md:text-2xl font-bold text-[var(--ink)]">
 						Экспресс-конфигурация стоматологического кабинета
@@ -134,7 +134,7 @@ function OnboardingPresetsPreviewApp() {
 					<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,var(--line)/20)] space-y-3 flex flex-col justify-between">
 						<div>
 							<strong className="text-xs font-bold text-[var(--ink)] block mb-1">
-								Автозаполнение нормы (Мандат 8e)
+								Автозаполнение нормы в 1 клик
 							</strong>
 							<p className="text-xs text-[var(--muted)]">
 								Физиологическая норма в 1 тап (52px). Врач отмечает только реальную патологию.
@@ -149,7 +149,7 @@ function OnboardingPresetsPreviewApp() {
 								className="h-[44px] md:h-[52px] px-4 rounded-xl bg-teal-600 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-teal-700 transition-colors"
 							>
 								<CheckCircle2 size={16} />
-								<span>✓ Соматически здоров (Норма в 1 клик)</span>
+								<span>✓ Соматически здоров / Норма</span>
 							</button>
 
 							<button

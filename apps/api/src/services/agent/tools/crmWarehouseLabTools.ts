@@ -65,7 +65,7 @@ export const checkStockAvailabilityTool: ToolDefinition<
 > = {
 	name: "check_stock_availability",
 	description:
-		"Проверка фактического наличия расходных материалов и анестетиков на складе клиники с оценкой дефицита (Мандат 8n: опциональный склад, никогда не прерывает прием врача).",
+		"Проверка фактического наличия расходных материалов и анестетиков на складе клиники с оценкой дефицита.",
 	parameters: checkStockAvailabilitySchema,
 	permissions: ["warehouse.read"],
 	category: "read",
@@ -122,7 +122,7 @@ export const checkStockAvailabilityTool: ToolDefinition<
 				status,
 				minQty,
 				tracked,
-				available: true, // Mandate 8n: materials are always available for doctor's treatment
+				available: true,
 			});
 		}
 
@@ -130,7 +130,7 @@ export const checkStockAvailabilityTool: ToolDefinition<
 
 		const summaryRu = deficitCount === 0
 			? "Все запрошенные материалы имеются на складе или доступны для приёма (складской учёт опционален)."
-			: `Внимание: по данным склада дефицит по ${deficitCount} позициям (Мандат 8n: мягкий овердрафт защищает приём врача, материал доступен).`;
+			: `Внимание: по данным склада дефицит по ${deficitCount} позициям (материал доступен).`;
 
 		return {
 			success: true,
@@ -173,7 +173,7 @@ export const logMaterialUsageTool: ToolDefinition<
 > = {
 	name: "log_material_usage",
 	description:
-		"Списание стоматологических расходных материалов у кресла с гарантией мягкого овердрафта (Мандат 8n: нулевой остаток на складе никогда не блокирует операцию спасения зуба).",
+		"Списание стоматологических расходных материалов у кресла с поддержкой овердрафта склада.",
 	parameters: logMaterialUsageSchema,
 	permissions: ["warehouse.write"],
 	category: "write",
@@ -217,7 +217,7 @@ export const logMaterialUsageTool: ToolDefinition<
 			isOverdraft,
 			doctorAutonomyProtected: true,
 			message: isOverdraft
-				? `Списано ${args.quantity} ед. '${args.itemName}'. Зафиксирован мягкий овердрафт склада (остаток: ${remainingQty}). Приём врача не прерван (Мандат 8n).`
+				? `Списано ${args.quantity} ед. '${args.itemName}'. Зафиксирован мягкий овердрафт склада (остаток: ${remainingQty}). Приём врача не прерван.`
 				: `Списано ${args.quantity} ед. '${args.itemName}'. Текущий остаток: ${remainingQty}.`,
 		};
 	},
@@ -275,7 +275,7 @@ export const createLabOrderTool: ToolDefinition<
 > = {
 	name: "create_lab_order",
 	description:
-		"Создание наряда-заказа в зуботехническую лабораторию (ЗТЛ): оттенок VITA, зубы FDI, материал, срок сдачи и защищенный токен портала техника (Мандат 8e).",
+		"Создание наряда-заказа в зуботехническую лабораторию (ЗТЛ): оттенок VITA, зубы FDI, материал, срок сдачи и защищенный токен портала техника.",
 	parameters: createLabOrderSchema,
 	permissions: ["clinical.write"],
 	category: "write",

@@ -323,7 +323,7 @@ export function useChairShiftOperations({
       }
 
       showToast(
-        `График смен кресел применён на ${label} (${mondayIso}..) в 1 клик`,
+        `График смен кресел применён на ${label} (${mondayIso}..)`,
         "success",
         3500,
       );
@@ -379,7 +379,7 @@ export function useChairShiftOperations({
     }
 
     showToast(
-      `График смен кресел применён на весь текущий месяц (${monthName}) в 1 клик`,
+      `График смен кресел применён на весь текущий месяц (${monthName})`,
       "success",
       3500,
     );
@@ -494,7 +494,7 @@ export function useChairShiftOperations({
     }
 
     showToast(
-      "Выполнена циклическая ротация смен между креслами в 1 клик",
+      "Выполнена циклическая ротация смен между креслами",
       "success",
       3500,
     );
@@ -586,7 +586,7 @@ export function useChairShiftOperations({
     }
 
     showToast(
-      "Закреплённые врачи назначены на смены дня в 1 клик",
+      "Закреплённые врачи назначены на смены дня",
       "success",
       3500,
     );

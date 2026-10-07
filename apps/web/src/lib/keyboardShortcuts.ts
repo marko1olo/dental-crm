@@ -164,7 +164,7 @@ export const CLINICAL_SHORTCUTS: readonly ClinicalShortcutItem[] = [
 		title: "Формула интактна / физиологическая норма",
 		keyCombination: "Shift+N",
 		keys: ["Shift", "N"],
-		description: "1-клик заполнение зубной формулы нормой без ручного прокликивания 32 зубов.",
+		description: "Заполнение зубной формулы нормой без ручного прокликивания 32 зубов.",
 		category: "odontogram",
 		context: "Зубная формула",
 		badge: "Автонорма",

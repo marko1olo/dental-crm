@@ -70,6 +70,12 @@ export const FULLSCREEN_STUDIO_MODAL_IDS: ReadonlySet<PrimaryModalId> = new Set(
 	"privacy_shield",
 ]);
 
+export const CT_STUDIO_MODAL_IDS: ReadonlySet<PrimaryModalId> = new Set([
+	"cbct_implant_studio",
+	"dicom_viewer",
+	"cephalometric_trg",
+]);
+
 export const CLINICAL_VISIT_MODAL_IDS: ReadonlySet<PrimaryModalId> = new Set([
 	"lab_order",
 	"endo_canal",
@@ -146,8 +152,14 @@ export interface UiSurfaceStore {
 	/** Индикатор: активна ли сейчас полноэкранная клиническая студия (КЛКТ, ТРГ, ЕГИСЗ, Privacy Shield). */
 	readonly isFullScreenStudioActive: boolean;
 
+	/** Индикатор: активен ли рендеринг КТ / DICOM / 3D студии имплантации (КЛКТ, ТРГ, DICOM). */
+	readonly isCtActive: boolean;
+
 	/** Проверить, активна ли полноэкранная студия (опционально конкретная). */
 	readonly isStudioActive: (id?: PrimaryModalId) => boolean;
+
+	/** Проверить, активен ли КТ-просмотрщик или КЛКТ-студия */
+	readonly isCtRunning: () => boolean;
 }
 
 export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
@@ -157,9 +169,11 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 	hasActiveDrawer: false,
 	isSurfaceOccupied: false,
 	isFullScreenStudioActive: false,
+	isCtActive: false,
 
 	openPrimaryModal: (id, payload, options) => {
 		const isStudio = FULLSCREEN_STUDIO_MODAL_IDS.has(id);
+		const isCt = CT_STUDIO_MODAL_IDS.has(id);
 		const keepDrawers = isStudio ? false : (options?.keepDrawers ?? false);
 		if (!keepDrawers || isStudio) {
 			useTelephonyStore.getState().closeCallDrawer();
@@ -176,11 +190,19 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 			hasActiveDrawer: keepDrawers ? Boolean(get().activeDrawer) : false,
 			isSurfaceOccupied: true,
 			isFullScreenStudioActive: isStudio,
+			isCtActive: isCt,
 		});
+
+		if (typeof document !== "undefined") {
+			document.documentElement.setAttribute("data-ct-active", isCt ? "true" : "false");
+		}
 
 		if (isStudio && typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente:close-all-drawers"));
 			window.dispatchEvent(new CustomEvent("dente:studio-opened", { detail: { id } }));
+		}
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:ct-active-changed", { detail: { isCtActive: isCt, id } }));
 		}
 	},
 
@@ -189,14 +211,22 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 		if (!id || current?.id === id) {
 			const activeDrawer = get().activeDrawer;
 			const wasStudio = current ? FULLSCREEN_STUDIO_MODAL_IDS.has(current.id) : false;
+			const wasCt = current ? CT_STUDIO_MODAL_IDS.has(current.id) : false;
 			set({
 				primaryModal: null,
 				hasPrimaryModal: false,
 				isSurfaceOccupied: Boolean(activeDrawer),
 				isFullScreenStudioActive: false,
+				isCtActive: false,
 			});
+			if (typeof document !== "undefined") {
+				document.documentElement.setAttribute("data-ct-active", "false");
+			}
 			if (wasStudio && typeof window !== "undefined") {
 				window.dispatchEvent(new CustomEvent("dente:studio-closed", { detail: { id: current?.id } }));
+			}
+			if (wasCt && typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:ct-active-changed", { detail: { isCtActive: false, id: current?.id } }));
 			}
 		}
 	},
@@ -210,6 +240,10 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 		if (!current) return false;
 		if (id) return current.id === id;
 		return FULLSCREEN_STUDIO_MODAL_IDS.has(current.id);
+	},
+
+	isCtRunning: () => {
+		return get().isCtActive;
 	},
 
 	openDrawer: (id, options) => {
@@ -264,6 +298,7 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 		useTelephonyStore.getState().closeCallDrawer();
 		const current = get().primaryModal;
 		const wasStudio = current ? FULLSCREEN_STUDIO_MODAL_IDS.has(current.id) : false;
+		const wasCt = current ? CT_STUDIO_MODAL_IDS.has(current.id) : false;
 		set({
 			primaryModal: null,
 			activeDrawer: null,
@@ -271,9 +306,16 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 			hasActiveDrawer: false,
 			isSurfaceOccupied: false,
 			isFullScreenStudioActive: false,
+			isCtActive: false,
 		});
+		if (typeof document !== "undefined") {
+			document.documentElement.setAttribute("data-ct-active", "false");
+		}
 		if (wasStudio && typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente:studio-closed", { detail: { id: current?.id } }));
+		}
+		if (wasCt && typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:ct-active-changed", { detail: { isCtActive: false } }));
 		}
 	},
 }));

@@ -167,7 +167,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const initialRoleMode = useMemo<SettingsRoleMode>(() => {
 		const role = activeStaffUser?.role;
 		if (role === "doctor") return "doctor";
-		if (role === "admin" || role === "receptionist") return "admin";
+		if (role === "admin" || role === "receptionist" || role === "administrator" || role === "manager") return "admin";
 		if (role === "director" || role === "owner") return "owner";
 		return "doctor";
 	}, [activeStaffUser?.role]);
@@ -228,8 +228,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	};
 
 	const selectSettingsTab = (tabId: SettingsTabId | string) => {
-		setSettingsTab?.(tabId);
-		window.location.hash = `settings/${tabId}`;
+		const canonicalTab = tabId === "messengers" ? "telegram" : tabId;
+		setSettingsTab?.(canonicalTab);
+		window.location.hash = `settings/${canonicalTab}`;
 	};
 
 	const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
@@ -319,6 +320,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
 	const isMobile = useIsMobile(768);
 	const [mobileSection, setMobileSection] = useState<string>(() => {
+		if (settingsTab === "telegram" || settingsTab === "messengers") return "messengers";
 		if (settingsTab && settingsTab !== "clinic") return settingsTab;
 		return "root";
 	});
@@ -329,6 +331,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 			setMobileSection("prices");
 		} else if (settingsTab === "staff") {
 			setMobileSection("staff");
+		} else if (settingsTab === "messengers" || settingsTab === "telegram") {
+			setMobileSection("messengers");
 		}
 	}, [settingsTab]);
 
@@ -389,7 +393,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 								{mobileSection === "protocols" && "Протоколы лечения"}
 								{mobileSection === "rules" && "Клинические правила"}
 								{mobileSection === "procedure-boms" && "Техкарты материалов"}
-								{mobileSection === "messengers" && "Мессенджеры"}
+								{(mobileSection === "messengers" || mobileSection === "telegram") && "Мессенджеры"}
 								{mobileSection === "booking" && "Онлайн-запись"}
 								{mobileSection === "imports" && "Перенос данных"}
 								{mobileSection === "audit" && "Журнал аудита"}
@@ -426,7 +430,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 										: {})}
 								/>
 							)}
-							{mobileSection === "messengers" && (
+							{(mobileSection === "messengers" || mobileSection === "telegram") && (
 								<SettingsMessengersTab props={settingsProps} settingsTab="messengers" />
 							)}
 							{mobileSection === "booking" && <PublicBookingLinkPanel />}

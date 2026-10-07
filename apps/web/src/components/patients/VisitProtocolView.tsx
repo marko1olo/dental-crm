@@ -212,7 +212,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 				treatmentProtocol: "Проведен осмотр, зондирование, перкуссия отрицательна. Индекс гигиены удовлетворительный. Проведена контролируемая чистка зубов.",
 				recommendations: "Профилактический контрольный осмотр через 6 месяцев.",
 			}));
-			showToast("1 клик: Норма соматики и физиологический статус применены", "success", 3000);
+			showToast("Норма соматики и физиологический статус применены", "success", 3000);
 		}, []);
 
 		// Автогенерация дневника по выбранному диагнозу МКБ-10
@@ -281,7 +281,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 					deductedMaterials: existing,
 				};
 			});
-			showToast(`Анестезия и карпула списаны в 1 клик (${anes.nameRu})`, "success", 2500);
+			showToast(`Анестезия и карпула списаны (${anes.nameRu})`, "success", 2500);
 		}, []);
 
 		// Сохранение протокола
@@ -340,7 +340,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 							data-testid="btn-visit-somatic-norm"
 							onClick={handleApplySomaticNorm}
 							className="min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-							title="Заполнить соматику и статус физиологической нормой в 1 клик"
+							title="Заполнить соматику и статус физиологической нормой"
 						>
 							<ShieldCheck className="w-4 h-4" />
 							<span>Норма соматики</span>
@@ -385,7 +385,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 					<div className="flex items-center justify-between gap-2 flex-wrap">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-teal-500" />
-							<span>Заполнение дневника по диагнозу (1 клик):</span>
+							<span>Заполнение дневника по диагнозу:</span>
 						</span>
 						<div className="flex items-center gap-1 text-[11px] font-bold text-[var(--muted)]">
 							<span>Зуб:</span>
@@ -513,7 +513,7 @@ export const VisitProtocolView: React.FC<VisitProtocolViewProps> = React.memo(
 						<div className="flex items-center gap-1.5">
 							<Syringe className="w-4 h-4 text-teal-500" />
 							<span className="text-xs font-bold text-[var(--ink)]">
-								Анестезия и списание материалов со склада (Мандат 8v — без медсестринских квестов):
+								Анестезия и списание материалов:
 							</span>
 						</div>
 						<div className="flex items-center gap-1 flex-wrap">

@@ -67,10 +67,10 @@ export function useOdontogramQuickActions({
 		SoundFeedbackService.getInstance().playActionSuccess();
 		const toastMessage =
 			dentitionMode === "mixed"
-				? "Санация: сменный прикус (24 зуба) отмечен здоровым в 1 клик"
+				? "Санация: сменный прикус (24 зуба) отмечен как норма"
 				: isPediatricMode
-					? "Санация: молочный прикус (20 зубов) отмечен здоровым в 1 клик"
-					: "Санация: вся зубная формула отмечена здоровой в 1 клик";
+					? "Санация: молочный прикус (20 зубов) отмечен как норма"
+					: "Санация: вся зубная формула отмечена как норма";
 		showToast(toastMessage, "success", 4000);
 	}, [dentitionMode, isPediatricMode, updateToothState]);
 
@@ -104,7 +104,7 @@ export function useOdontogramQuickActions({
 		(setSelectedTeeth: (t: number[]) => void) => {
 			setSelectedTeeth([]);
 			SoundFeedbackService.getInstance().playActionSuccess();
-			showToast("Выделение зубов снято в 1 клик", "info", 2000);
+			showToast("Выделение зубов снято", "info", 2000);
 		},
 		[],
 	);
@@ -162,7 +162,7 @@ export function useOdontogramQuickActions({
 		const toothFdiStr = targetTeeth.join(", ");
 
 		try {
-			showToast(`Создаём 1-клик наряд ЗТЛ для зубов ${toothFdiStr}...`, "info", 2000);
+			showToast(`Оформление наряда ЗТЛ для зубов ${toothFdiStr}...`, "info", 2000);
 			const res = await fetch("/api/clinical/lab-orders", {
 				method: "POST",
 				headers: {
@@ -176,7 +176,7 @@ export function useOdontogramQuickActions({
 					material: ONE_CLICK_LAB_DEFAULTS.materialName,
 					colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
 					dueDate: dueDateIso,
-					clinicalNotes: `• Экспресс 1-клик наряд ЗТЛ из одонтограммы\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
+					clinicalNotes: `• Экспресс-наряд ЗТЛ из одонтограммы\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
 					priceRub,
 				}),
 			});
@@ -214,7 +214,7 @@ export function useOdontogramQuickActions({
 			}
 
 			showToast(
-				`Наряд ЗТЛ успешно оформлен в 1 клик для зубов ${toothFdiStr} (Цирконий A2, сдача: ${dueDateFormatted})!`,
+				`Наряд ЗТЛ успешно оформлен для зубов ${toothFdiStr} (Цирконий A2, сдача: ${dueDateFormatted})!`,
 				"success",
 				6000,
 			);
@@ -237,7 +237,7 @@ export function useOdontogramQuickActions({
 }
 
 /**
- * Чистая утилита инвертирования выделенных зубов челюсти (1 клик).
+ * Чистая утилита инвертирования выделенных зубов челюсти.
  */
 export function invertTeethSelection(
 	allTeeth: number[],

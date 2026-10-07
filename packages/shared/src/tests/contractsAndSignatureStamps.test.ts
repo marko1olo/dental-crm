@@ -176,7 +176,7 @@ describe("Red Team Inquisitor: Patient Contracts, Medical Agreements & Digital S
 			assert.ok(injected.includes("Сидоров С.С."), "ФИО Заказчика обязано сохраниться");
 		});
 
-		it("инжектирует синий штамп в Акт 804н вместо подписи Исполнителя", () => {
+		it("инжектирует синий штамп в Акт выполненных работ вместо подписи Исполнителя", () => {
 			const actHtml = renderActOfCompletedWorksHtml({
 				actNumber: "АКТ-ЭЦП-2026/001",
 				attendingDoctorFullName: "Иванова М.С.",

@@ -44,6 +44,13 @@ export interface CephalometricCanvasProps {
 	onScaleChange?: (scale: number) => void;
 	onLoadPreset?: () => void;
 	onResetLandmarks?: () => void;
+	onRunAiAutoPlacement?: () => void;
+	isAiInferring?: boolean;
+	aiBackendBadge?: string;
+	aiBackendLabel?: string;
+	aiBackendPref?: import("./cephAiInferenceService").CephAiBackendPreference;
+	onChangeAiBackendPref?: (pref: import("./cephAiInferenceService").CephAiBackendPreference) => void;
+	aiInferenceStats?: { latencyMs: number; placedCount: number } | null;
 }
 
 export function CephalometricCanvas({
@@ -68,6 +75,13 @@ export function CephalometricCanvas({
 	onScaleChange,
 	onLoadPreset,
 	onResetLandmarks,
+	onRunAiAutoPlacement,
+	isAiInferring,
+	aiBackendBadge,
+	aiBackendLabel,
+	aiBackendPref,
+	onChangeAiBackendPref,
+	aiInferenceStats,
 }: CephalometricCanvasProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
@@ -366,6 +380,13 @@ export function CephalometricCanvas({
 				onFileProcess={handleFileProcess}
 				onLoadPreset={onLoadPreset}
 				onResetLandmarks={onResetLandmarks}
+				onRunAiAutoPlacement={onRunAiAutoPlacement}
+				isAiInferring={isAiInferring}
+				aiBackendBadge={aiBackendBadge}
+				aiBackendLabel={aiBackendLabel}
+				aiBackendPref={aiBackendPref}
+				onChangeAiBackendPref={onChangeAiBackendPref}
+				aiInferenceStats={aiInferenceStats}
 			/>
 
 			{!imageUrl ? (

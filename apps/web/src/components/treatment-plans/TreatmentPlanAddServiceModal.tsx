@@ -162,24 +162,25 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 						<div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
 							{/* Search & Category Filter */}
 							<div className="space-y-2">
-								<div className="relative">
+								<div className="dente-search-wrap w-full">
 									<Search
-										size={15}
-										className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)]"
+										size={14}
+										className="dente-search-icon"
 									/>
 									<input
 										type="text"
 										value={serviceSearchQuery}
 										onChange={(e) => setServiceSearchQuery(e.target.value)}
 										placeholder="Поиск по названию или коду услуги (кариес, коронка, имплант, A16.07...)"
-										className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										className="dente-search-input"
 										data-testid="catalog-service-search-input"
 									/>
 									{serviceSearchQuery && (
 										<button
 											type="button"
 											onClick={() => setServiceSearchQuery("")}
-											className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+											className="dente-search-clear"
+											aria-label="Очистить поиск"
 										>
 											<X size={14} />
 										</button>
@@ -188,15 +189,12 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 
 								{/* Category Pills */}
 								{availableCategories.length > 0 && (
-									<div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
+									<div className="dente-filter-chips overflow-x-auto pb-1 max-w-full">
 										<button
 											type="button"
 											onClick={() => setServiceCategoryFilter("all")}
-											className={`h-6 px-2.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors shrink-0 ${
-												serviceCategoryFilter === "all"
-													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-													: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
-											}`}
+											className={`dente-filter-chip ${serviceCategoryFilter === "all" ? "active" : ""}`}
+											data-active={serviceCategoryFilter === "all"}
 										>
 											Все ({effectiveCatalog.length})
 										</button>
@@ -205,11 +203,8 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 												key={cat}
 												type="button"
 												onClick={() => setServiceCategoryFilter(cat)}
-												className={`h-6 px-2.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors shrink-0 ${
-													serviceCategoryFilter === cat
-														? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-														: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
-												}`}
+												className={`dente-filter-chip ${serviceCategoryFilter === cat ? "active" : ""}`}
+												data-active={serviceCategoryFilter === cat}
 											>
 												{cat}
 											</button>
@@ -490,7 +485,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 									onClose();
 									setSelectedCatalogItem(null);
 								}}
-								className="min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] cursor-pointer transition-colors"
+								className="secondary-button"
 							>
 								Отмена
 							</button>
@@ -500,7 +495,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 								disabled={!selectedCatalogItem}
 								onClick={handleConfirmAddService}
 								data-testid="confirm-add-service-to-stage-btn"
-								className="min-h-[44px] sm:min-h-[36px] px-5 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,#0f766e)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all shadow-md flex items-center gap-1.5"
+								className="primary-button"
 							>
 								<Plus size={15} />
 								<span>Добавить в этап</span>

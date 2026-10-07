@@ -50,7 +50,7 @@ export const OrthoPhotoAndCephProtocolSection: React.FC<OrthoPhotoAndCephProtoco
 			>
 				<div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-200 font-bold text-[11px]">
 					<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span>Автономия врача: фотопротокол опционален (отсутствие фото не блокирует приём)</span>
+					<span>Клинический фотопротокол опционален</span>
 				</div>
 				<div className="flex items-center gap-2 flex-wrap">
 					<button
@@ -77,9 +77,6 @@ export const OrthoPhotoAndCephProtocolSection: React.FC<OrthoPhotoAndCephProtoco
 						<Check size={12} />
 						<span>{isPhotoProtocolCompleted ? "Снято" : "Подтвердить"}</span>
 					</button>
-					<span className="text-[10px] text-teal-700 dark:text-teal-300 font-mono font-medium">
-						Клиническая автономия врача
-					</span>
 				</div>
 			</div>
 

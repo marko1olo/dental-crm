@@ -1,5 +1,6 @@
 import {
 	Activity,
+	Building2,
 	ChevronDown,
 	Clock,
 	CreditCard,
@@ -7,12 +8,14 @@ import {
 	FileText,
 	Glasses,
 	Headphones,
+	Layers,
 	Lock,
 	Moon,
 	Phone,
 	PhoneCall,
 	RefreshCw,
 	ShieldCheck,
+	Sparkles,
 	Sun,
 	Volume2,
 	VolumeX,
@@ -324,6 +327,7 @@ export function ClinicControlPill({
 				aria-expanded={isOpen}
 				aria-label="Пульт управления клиникой (macOS Control Center)"
 				title="Открыть центр управления статусом клиники"
+				data-testid="clinic-control-center-trigger"
 			>
 				{/* 1. PBX / Telephony indicator (Mango PBX) */}
 				<span
@@ -731,7 +735,56 @@ export function ClinicControlPill({
 							</fieldset>
 						</div>
 
-						<div className="flex items-center justify-between gap-2 pt-2 text-xs">
+						{/* Quick Theme Segmented Control (Light / Dark) */}
+						<div className="pt-2.5 pb-1 flex items-center justify-between gap-2">
+							<span className="text-xs font-semibold text-[var(--muted)]">Тема оформления:</span>
+							<div className="dente-segmented-bar" role="radiogroup" aria-label="Быстрое переключение темы">
+								<button
+									type="button"
+									role="radio"
+									aria-checked={themeMode === "light" || themeMode === "warm_sand" || themeMode === "sakura"}
+									onClick={() => setThemeMode("light")}
+									className={`dente-segmented-item ${
+										themeMode === "light" || themeMode === "warm_sand" || themeMode === "sakura"
+											? "active"
+											: ""
+									}`}
+									title="Включить светлую тему оформления"
+									data-testid="header-theme-toggle-light"
+								>
+									<Sun size={13} className="shrink-0 text-amber-500" />
+									<span>Светлая</span>
+								</button>
+								<button
+									type="button"
+									role="radio"
+									aria-checked={
+										themeMode === "dark" ||
+										themeMode === "night" ||
+										themeMode === "ocean" ||
+										themeMode === "cyber_xray" ||
+										themeMode === "emerald"
+									}
+									onClick={() => setThemeMode("dark")}
+									className={`dente-segmented-item ${
+										themeMode === "dark" ||
+										themeMode === "night" ||
+										themeMode === "ocean" ||
+										themeMode === "cyber_xray" ||
+										themeMode === "emerald"
+											? "active"
+											: ""
+									}`}
+									title="Включить тёмную тему оформления"
+									data-testid="header-theme-toggle-dark"
+								>
+									<Moon size={13} className="shrink-0 text-sky-400" />
+									<span>Тёмная</span>
+								</button>
+							</div>
+						</div>
+
+						<div className="flex items-center justify-between gap-2 pt-1 text-xs">
 							<AccessibilityModeButton
 								className="flex-1 !min-h-[44px]"
 								onToggle={toggleAccessibilityMode}
@@ -749,17 +802,43 @@ export function ClinicControlPill({
 								}}
 								className="dnt-cc-btn dnt-cc-btn--secondary flex-1 !min-h-[44px]"
 								title="Выбрать из 10 специализированных палитр оформления DENTE"
+								data-testid="header-palette-picker-btn"
 							>
-								{themeMode === "dark" ||
-								themeMode === "night" ||
-								themeMode === "ocean" ||
-								themeMode === "cyber_xray" ||
-								themeMode === "emerald" ? (
-									<Moon size={14} className="text-[var(--teal)]" />
-								) : (
-									<Sun size={14} className="text-[var(--teal)]" />
-								)}
+								<Sparkles size={14} className="text-[var(--teal)]" />
 								<span>Палитра (10 тем)</span>
+							</button>
+						</div>
+
+						{/* Quick Links to Clinic Profile & Branches (Uniform 32px secondary buttons) */}
+						<div className="pt-2 flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => {
+									setIsOpen(false);
+									setCurrentView("settings");
+									window.location.hash = "settings";
+								}}
+								className="secondary-button flex-1 h-8 min-h-[32px] max-h-8 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer"
+								title="Перейти в настройки клиники и реквизитов"
+								data-testid="header-quick-clinic-settings-btn"
+							>
+								<Building2 size={13} className="text-[var(--teal)] shrink-0" />
+								<span>Профиль клиники</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsOpen(false);
+									setCurrentView("settings");
+									window.location.hash = "settings";
+								}}
+								className="secondary-button flex-1 h-8 min-h-[32px] max-h-8 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer"
+								title="Перейти к управлению филиалами и креслами"
+								data-testid="header-quick-branches-btn"
+							>
+								<Layers size={13} className="text-[var(--teal)] shrink-0" />
+								<span>Филиалы и кресла</span>
 							</button>
 						</div>
 

@@ -1,0 +1,40 @@
+{
+  "subagent": "subagent_settings_pricelist_design",
+  "role": "Red Team Design Inquisitor for Settings & Pricelist",
+  "parent": "beb92312-c6d7-426d-a438-12dcad022abc",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T20:32:00+04:00",
+  "targetProblem": {
+    "visualDefect": "Search icon collision with placeholder text 'Поиск по услугам или ко...', naked flat text category buttons in a row without segmentation, unstandardized action buttons in SettingsPricesTab",
+    "mandatesEnforced": [
+      "Mandate 8zf: Search Input Invariant & Segmented Controls Doctrine",
+      "Frontend Rules Section 12: Search input wrapper (.dente-search-wrap), centered icon, padding-left: 38px !important, right clear button",
+      "Frontend Rules Section 13: Segmented Controls & Filter Chips (.dente-segmented-bar, .dente-filter-chips)",
+      "Designer Visual Inquisition Bible: Section 7 (Search Input & Icon Anatomy) & Section 8 (Segmented Controls & Filter Chips)",
+      "Mandate 8e: Doctor autonomy, single noble brand teal accent, zero multi-color chaos",
+      "Mandate 8c: Single toolbar row, <=2 controls per card"
+    ]
+  },
+  "scope": [
+    "apps/web/src/styles/components.css",
+    "apps/web/src/components/settings/SettingsPricesTab.tsx",
+    "apps/web/src/components/settings/SettingsPricesTab.css",
+    "apps/web/src/components/settings/owner/OwnerPriceList804nSection.tsx",
+    "apps/web/src/components/pricing/PriceListMappingDiffView.tsx",
+    "apps/web/src/components/pricing/PriceListMappingDiffView.css",
+    "apps/web/src/components/catalog/pricelist/ServicePricelistManagerModal.tsx",
+    "apps/web/src/components/settings/mobile/MobileSettingsPricesView.tsx",
+    "apps/web/src/components/settings/doctor/DoctorMaterialsCatalogSection.tsx"
+  ],
+  "verification": {
+    "typecheck": "PASS (0 errors in modified settings and pricelist files)",
+    "cssTokens": "PASS (node scripts/check-css-tokens.mjs -> 0 errors across 189 CSS files)",
+    "encoding": "PASS (node scripts/check-encoding.mjs -> 7958 files clean UTF-8)",
+    "invariantsEnforced": [
+      "Zero search icon overlap: Canonical .dente-search-wrap + .dente-search-icon + .dente-search-input (padding-left: 38px !important)",
+      "Zero naked text rows: Replaced raw category buttons with Apple-style .dente-filter-chips (.dente-filter-chip with rounded-full pill shape and active state)",
+      "Standardized buttons: .primary-button and .secondary-button replacing erratic ad-hoc utility classes",
+      "Dark & Light mode parity tested and supported via CSS variables"
+    ]
+  }
+}

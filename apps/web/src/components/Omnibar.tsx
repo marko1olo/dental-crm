@@ -360,13 +360,13 @@ export function Omnibar() {
 								className="relative w-full max-w-2xl bg-[var(--paper)] shadow-2xl rounded-2xl overflow-hidden border border-[var(--line)] flex flex-col text-[var(--ink)]"
 								style={{ maxHeight: "60vh" }}
 							>
-								{/* Header/Input */}
-								<div className="flex items-center px-4 border-b border-[var(--line)]">
-									<Search className="w-5 h-5 text-[var(--muted)] mr-3" />
+								{/* Header/Input with canonical Dente Search System */}
+								<div className="dente-search-wrap omnibar-search-wrap omnibar-header border-b border-[var(--line)]">
+									<Search className="dente-search-icon omnibar-icon-search text-[var(--muted)]" aria-hidden="true" />
 									<input
 										ref={inputRef}
 										type="text"
-										className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-[var(--ink)] placeholder-[var(--muted)]"
+										className="dente-search-input omnibar-search-input omnibar-input !h-14 !min-h-[56px] !max-h-[56px] !pl-12 !pr-12 !bg-transparent !border-none !outline-none !text-lg !text-[var(--ink)] placeholder:!text-[var(--muted)]"
 										placeholder="Поиск по разделам или действиям..."
 										value={query}
 										id="omnibar-input"
@@ -379,7 +379,7 @@ export function Omnibar() {
 									<button
 										type="button"
 										onClick={() => setOmnibarOpen(false)}
-										className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)]"
+										className="dente-search-clear omnibar-close-btn !right-3 !w-9 !h-9 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)]"
 										aria-label="Закрыть омнибар"
 									>
 										<X className="w-5 h-5" />

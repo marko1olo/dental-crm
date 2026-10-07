@@ -3,7 +3,7 @@
  * розничные сопутствующие товары (Curaprox, Marvis, Biorepair, Waterpik) с НДС 20%
  * и подарочные сертификаты (3000 / 5000 / 10000 ₽) с фискализацией аванса по 54-ФЗ.
  *
- * Эргономика: 1-рядный компактный тулбар (32-36px), 1-клик добавление в чек,
+ * Эргономика: 1-рядный компактный тулбар (32-36px), быстрое добавление в чек,
  * поиск по названию, артикулу или штрихкоду EAN-13, точные фискальные теги (1212/1199).
  */
 
@@ -123,18 +123,18 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+			className="fixed inset-0 z-[70] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200 select-none"
 			data-testid="retail-products-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Витрина стойки ресепшена"
 		>
 			<div
-				className="w-full max-w-4xl max-h-[90vh] bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-2xl border border-[var(--border,#cbd5e1)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)] font-sans"
+				className="w-full max-w-4xl max-h-[94vh] sm:max-h-[90vh] bg-[var(--paper-strong,var(--paper,#ffffff))] rounded-2xl border border-[var(--line)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)] font-sans"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* 1. Header (Compact 48px) */}
-				<header className="px-4 sm:px-6 py-3 border-b border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-between gap-3 shrink-0">
+				<header className="px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
 							<ShoppingBag size={18} />
@@ -165,20 +165,20 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 					</button>
 				</header>
 
-				{/* 2. Compact 1-Row Toolbar (Search + Category Filter, height 36px) */}
-				<div className="px-4 sm:px-6 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+				{/* 2. Compact 1-Row Toolbar (Canonical Search + Filter Chips) */}
+				<div className="px-4 sm:px-6 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line)] flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
 					{/* Search Input with barcode indicator */}
-					<div className="relative flex-1 min-w-[200px]">
+					<div className="dente-search-wrap retail-search-wrap shrink-0 relative">
 						<Search
-							size={15}
-							className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none"
+							size={14}
+							className="dente-search-icon"
 						/>
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Поиск по названию, артикулу, штрихкоду EAN-13..."
-							className="w-full h-8 pl-8 pr-16 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] focus:outline-none focus:border-teal-500 transition-colors"
+							placeholder="Поиск по товарам..."
+							className="dente-search-input"
 							data-testid="input-retail-search"
 							autoFocus
 						/>
@@ -186,34 +186,35 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
 							>
-								Очистить
+								<X size={13} />
 							</button>
 						) : (
-							<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-[var(--muted,#64748b)] flex items-center gap-0.5 pointer-events-none">
+							<span className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-[var(--muted,#64748b)] items-center gap-0.5 pointer-events-none">
 								<Barcode size={12} /> EAN-13
 							</span>
 						)}
 					</div>
 
-					{/* Category Selector Pills (Dense 30px) */}
-					<div className="flex items-center gap-1 overflow-x-auto py-0.5 max-w-full">
-						{CATEGORY_OPTIONS.map((cat) => (
-							<button
-								key={cat.id}
-								type="button"
-								onClick={() => setSelectedCategory(cat.id)}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-									selectedCategory === cat.id
-										? "bg-teal-600 text-white shadow-2xs"
-										: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"
-								}`}
-								data-testid={`filter-cat-${cat.id}`}
-							>
-								{cat.label}
-							</button>
-						))}
+					{/* Category Selector Filter Chips (Canonical DENTE filter chips system) */}
+					<div className="dente-filter-chips flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 flex items-center gap-1.5 flex-nowrap">
+						{CATEGORY_OPTIONS.map((cat) => {
+							const isActive = selectedCategory === cat.id;
+							return (
+								<button
+									key={cat.id}
+									type="button"
+									onClick={() => setSelectedCategory(cat.id)}
+									className={`dente-filter-chip ${isActive ? "active" : ""}`}
+									data-active={isActive}
+									data-testid={`filter-cat-${cat.id}`}
+								>
+									{cat.label}
+								</button>
+							);
+						})}
 					</div>
 				</div>
 
@@ -240,7 +241,7 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 										className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-2.5 ${
 											isAdded
 												? "border-teal-500 bg-teal-50/50 dark:bg-teal-950/30"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-teal-300 hover:shadow-xs"
+												: "border-[var(--line)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-teal-300 hover:shadow-xs"
 										}`}
 										data-testid={`product-card-${product.id}`}
 									>
@@ -288,7 +289,7 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 										</div>
 
 										{/* Card Footer: Price & 1-Click Action */}
-										<div className="pt-2 border-t border-[var(--border,#cbd5e1)] flex items-center justify-between gap-2">
+										<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between gap-2">
 											<div>
 												<span className="text-[10px] text-[var(--muted,#64748b)] block">Цена:</span>
 												<span className="text-sm font-black font-mono text-emerald-600 dark:text-emerald-400">
@@ -298,7 +299,7 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 
 											<div className="flex items-center gap-1.5">
 												{/* Quantity Stepper (Compact 28px) */}
-												<div className="inline-flex items-center rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] p-0.5">
+												<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] p-0.5">
 													<button
 														type="button"
 														onClick={() => handleQuantityChange(product.id, -1)}
@@ -324,13 +325,15 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 												<button
 													type="button"
 													onClick={() => handleQuickAdd(product)}
-													className={`h-7 px-3 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-														isAdded
-															? "bg-teal-600 text-white shadow-2xs"
+													className="h-7 px-3 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+													style={{
+														background: isAdded
+															? "var(--teal, #0d9488)"
 															: isCertificate
-																? "bg-amber-600 hover:bg-amber-700 text-white shadow-2xs active:scale-95"
-																: "bg-teal-600 hover:bg-teal-700 text-white shadow-2xs active:scale-95"
-													}`}
+																? "#d97706"
+																: "var(--teal, #0d9488)",
+														color: "#ffffff",
+													}}
 													data-testid={`btn-add-product-${product.id}`}
 													title={isCertificate ? "Добавить сертификат в чек" : "Добавить в чек (НДС 20%)"}
 												>
@@ -361,7 +364,7 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 				</div>
 
 				{/* 4. Footer (Compact 44px) */}
-				<footer className="px-4 sm:px-6 py-2.5 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-3 text-xs shrink-0">
+				<footer className="px-4 sm:px-6 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-3 text-xs shrink-0">
 					<div className="flex items-center gap-2 text-[var(--muted,#64748b)]">
 						<ShieldCheck size={14} className="text-teal-600 shrink-0" />
 						<span className="hidden sm:inline">
@@ -385,7 +388,7 @@ export const RetailProductsModal: React.FC<RetailProductsModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 px-3.5 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+							className="h-8 px-3.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
 						>
 							Готово
 						</button>

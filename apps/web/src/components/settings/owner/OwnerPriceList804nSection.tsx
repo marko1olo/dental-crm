@@ -23,6 +23,7 @@ import {
 	Search,
 	ShieldCheck,
 	TrendingUp,
+	X,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
@@ -232,61 +233,63 @@ export function OwnerPriceList804nSection() {
 				</div>
 			</div>
 
-			{/* Фильтры и поиск */}
+			{/* Фильтры и поиск — Canonical Search & Apple-style Segmented & Filter Chips (Mandate 8zf) */}
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] mb-4 space-y-2.5">
-				<div className="flex flex-col sm:flex-row gap-2">
-					<div className="relative flex-1">
+				<div className="flex flex-col sm:flex-row gap-2 items-center">
+					<div className="dente-search-wrap relative flex-1">
 						<Search
 							size={14}
-							className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]"
+							className="dente-search-icon"
 						/>
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по коду услуги (A16.07.002) или названию услуги..."
-							className="w-full text-xs pl-8 pr-2.5 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
+							className="dente-search-input"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="dente-search-clear"
+								title="Очистить поиск"
+								aria-label="Очистить поиск"
+							>
+								<X size={13} />
+							</button>
+						)}
 					</div>
-					<div className="flex gap-1.5 shrink-0">
+					<div className="dente-segmented-bar shrink-0">
 						<button
 							type="button"
 							onClick={() => setMarginFilter("all")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${
-								marginFilter === "all"
-									? "bg-[var(--teal)] text-white border-[var(--teal)]"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
-							}`}
+							className={`dente-segmented-item ${marginFilter === "all" ? "active" : ""}`}
+							data-active={marginFilter === "all" ? "true" : undefined}
 						>
 							Все
 						</button>
 						<button
 							type="button"
 							onClick={() => setMarginFilter("high")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${
-								marginFilter === "high"
-									? "bg-emerald-600 text-white border-emerald-600"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
-							}`}
+							className={`dente-segmented-item ${marginFilter === "high" ? "active" : ""}`}
+							data-active={marginFilter === "high" ? "true" : undefined}
 						>
 							Маржа &gt;= 70%
 						</button>
 						<button
 							type="button"
 							onClick={() => setMarginFilter("low")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${
-								marginFilter === "low"
-									? "bg-amber-600 text-white border-amber-600"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
-							}`}
+							className={`dente-segmented-item ${marginFilter === "low" ? "active" : ""}`}
+							data-active={marginFilter === "low" ? "true" : undefined}
 						>
 							Маржа &lt; 50%
 						</button>
 					</div>
 				</div>
 
-				{/* Категории */}
-				<div className="flex gap-1.5 overflow-x-auto pb-1">
+				{/* Категории — Canonical Dente Filter Chips */}
+				<div className="dente-filter-chips overflow-x-auto pb-1">
 					{categories.map((cat) => {
 						const isSelected = selectedCategory === cat.key;
 						return (
@@ -294,11 +297,8 @@ export function OwnerPriceList804nSection() {
 								key={cat.key}
 								type="button"
 								onClick={() => setSelectedCategory(cat.key)}
-								className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer border transition-all ${
-									isSelected
-										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-										: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-								}`}
+								className={`dente-filter-chip ${isSelected ? "active" : ""}`}
+								data-active={isSelected ? "true" : undefined}
 							>
 								{cat.label}
 							</button>

@@ -325,7 +325,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 					className="px-2 sm:px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-200 border border-zinc-750 hover:border-cyan-500/40 shadow-xs transition-all cursor-pointer"
 					data-testid="cbct-btn-copy-clipboard"
 					id="cbct-btn-copy-clipboard"
-					title="Копировать текущий снимок в буфер обмена для WhatsApp / Telegram (Ctrl+C)"
+					title="Копировать текущий снимок в буфер обмена (Ctrl+C)"
 				>
 					<Camera className="w-3.5 h-3.5 text-cyan-400" />
 					<span className="hidden sm:inline">Буфер</span>
@@ -535,7 +535,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 								}}
 								className="w-full px-2.5 py-1.5 rounded text-xs font-medium text-left flex items-center gap-2 text-cyan-300/90 hover:text-cyan-200 hover:bg-zinc-800 transition-colors cursor-pointer"
 								data-testid="cbct-menu-copy-clipboard"
-								title="Копировать текущий кадр в буфер обмена для WhatsApp / Telegram (Ctrl+C)"
+								title="Копировать текущий кадр в буфер обмена (Ctrl+C)"
 							>
 								<Camera className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
 								<span>Копировать снимок (Ctrl+C)</span>

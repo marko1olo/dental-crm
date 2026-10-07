@@ -69,8 +69,8 @@
 
 [data-theme="dark"] .autoclave-log-header,
 .dark .autoclave-log-header {
-	background: #1e293b;
-	border-color: #334155;
+	background: var(--paper-soft);
+	border-color: var(--line);
 }
 
 .autoclave-log-title-group {
@@ -103,7 +103,7 @@
 
 [data-theme="dark"] .autoclave-log-title-text h2,
 .dark .autoclave-log-title-text h2 {
-	color: #f8fafc;
+	color: var(--ink);
 }
 
 .autoclave-log-title-text p {
@@ -114,7 +114,7 @@
 
 [data-theme="dark"] .autoclave-log-title-text p,
 .dark .autoclave-log-title-text p {
-	color: #94a3b8;
+	color: var(--muted);
 }
 
 .autoclave-log-close-btn {
@@ -134,8 +134,8 @@
 
 [data-theme="dark"] .autoclave-log-close-btn,
 .dark .autoclave-log-close-btn {
-	border-color: #334155;
-	color: #94a3b8;
+	border-color: var(--line);
+	color: var(--muted);
 }
 
 .autoclave-log-close-btn:hover {
@@ -145,8 +145,8 @@
 
 [data-theme="dark"] .autoclave-log-close-btn:hover,
 .dark .autoclave-log-close-btn:hover {
-	background: #334155;
-	color: #ffffff;
+	background: var(--paper-soft);
+	color: var(--ink);
 }
 
 /* Navigation Tabs */
@@ -163,8 +163,8 @@
 
 [data-theme="dark"] .autoclave-log-tabs-nav,
 .dark .autoclave-log-tabs-nav {
-	background: #1e293b;
-	border-color: #334155;
+	background: var(--paper-soft);
+	border-color: var(--line);
 }
 
 .autoclave-log-tab-btn {

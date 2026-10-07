@@ -105,7 +105,7 @@ export const FiscalPaymentBuyerSection: React.FC<FiscalPaymentBuyerSectionProps>
 					<div className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-[11.5px] text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
 						<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
 						<span>
-							При расчетах с пациентами-физлицами ИНН <strong>не требуется</strong>. Чек печатается мгновенно в 1 клик.
+							При расчетах с пациентами-физлицами ИНН <strong>не требуется</strong>. Чек печатается мгновенно.
 						</span>
 					</div>
 				) : (

@@ -5,6 +5,7 @@ import {
 	Plus,
 	Search,
 	Syringe,
+	X,
 	Zap,
 } from "lucide-react";
 import React from "react";
@@ -116,7 +117,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 
 				{/* Subtabs switcher */}
 				<div
-					className="inventory-subtabs-container flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0"
+					className="dente-segmented-bar shrink-0"
 					role="tablist"
 					aria-label="Режимы склада"
 				>
@@ -126,10 +127,8 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 							setActiveSubTab("inventory");
 							setStockViewMode("standard");
 						}}
-						className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-							activeSubTab === "inventory" && stockViewMode === "standard"
-								? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
-								: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)] shadow-xs"
+						className={`dente-segmented-item ${
+							activeSubTab === "inventory" && stockViewMode === "standard" ? "active" : ""
 						}`}
 						role="tab"
 						aria-selected={activeSubTab === "inventory" && stockViewMode === "standard"}
@@ -153,10 +152,8 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 							setActiveSubTab("inventory");
 							setStockViewMode("fefo");
 						}}
-						className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-							activeSubTab === "inventory" && stockViewMode === "fefo"
-								? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
-								: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)] shadow-xs"
+						className={`dente-segmented-item ${
+							activeSubTab === "inventory" && stockViewMode === "fefo" ? "active" : ""
 						}`}
 						role="tab"
 						aria-selected={activeSubTab === "inventory" && stockViewMode === "fefo"}
@@ -177,10 +174,8 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("rules")}
-						className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-							activeSubTab === "rules"
-								? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
-								: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)] shadow-xs"
+						className={`dente-segmented-item ${
+							activeSubTab === "rules" ? "active" : ""
 						}`}
 						role="tab"
 						aria-selected={activeSubTab === "rules"}
@@ -230,19 +225,29 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 			{/* Right: Search, Quick Packages Toggle, Carpule Disposal, Ops Menu, Inbound Invoice, Add Item */}
 			<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
 				{/* Compact Search Input */}
-				<div className="relative flex items-center shrink-0">
+				<div className="dente-search-wrap relative flex items-center shrink-0 w-28 sm:w-44">
 					<Search
 						size={13}
-						className="absolute left-2.5 text-[var(--muted)] pointer-events-none"
+						className="dente-search-icon"
 					/>
 					<input
 						type="text"
 						placeholder="Поиск..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-28 sm:w-36 text-xs h-8 pl-7.5 pr-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] outline-none"
+						className="dente-search-input !h-8"
 						data-testid="inventory-search-input"
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							className="dente-search-clear"
+							onClick={() => setSearchQuery("")}
+							aria-label="Очистить поиск"
+						>
+							<X size={12} />
+						</button>
+					)}
 				</div>
 
 				{/* Quick Packages Toggle */}
@@ -255,7 +260,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 						color: isQuickPackagesOpen ? "var(--teal-dark, #0f766e)" : "var(--ink)",
 						borderColor: isQuickPackagesOpen ? "var(--teal)" : borderColor,
 					}}
-					title="Пакетное списание расходников в 1 клик (Мандаты 8e, 8k)"
+					title="Пакетное списание расходных материалов"
 					data-testid="btn-toggle-quick-packages"
 				>
 					<Zap
@@ -265,14 +270,14 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					<span className="hidden sm:inline">Пакеты</span>
 				</button>
 
-				{/* 1-Click Carpules Write-off */}
+				{/* Carpules Write-off */}
 				<button
 					type="button"
 					data-testid="nurse-quick-carpules-btn"
 					disabled={isWritingOffCarpules}
 					onClick={() => handleQuickWriteoffCarpules()}
 					className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-bold text-xs cursor-pointer transition-colors bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
-					title="Утилизировать пустую карпулу анестетика в 1 клик"
+					title="Утилизировать пустую карпулу анестетика"
 				>
 					<Syringe size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="hidden sm:inline">
@@ -307,7 +312,7 @@ export const InventoryTopToolbar: React.FC<InventoryTopToolbarProps> = ({
 					type="button"
 					className="secondary-button min-h-[44px] sm:min-h-[32px] sm:h-8 shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 px-2.5 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] shadow-xs"
 					onClick={() => setIsInboundInvoiceModalOpen(true)}
-					title="Приходная накладная поставщика (партии по срокам, погашение овердрафта)"
+					title="Приходная накладная поставщика (партии по срокам, погашение дефицита)"
 					data-testid="btn-acceptance-waybills"
 				>
 					<FileText size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />

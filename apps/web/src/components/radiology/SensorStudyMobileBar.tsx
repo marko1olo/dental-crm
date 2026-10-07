@@ -82,9 +82,9 @@ export const SensorStudyMobileBar: React.FC<SensorStudyMobileBarProps> = ({
 					minHeight: "46px",
 					width: "46px",
 					height: "46px",
-					backgroundColor: activeTool === "pan" ? "rgba(19, 78, 74, 0.95)" : "transparent",
+					backgroundColor: activeTool === "pan" ? "rgba(19, 78, 74, 0.95)" : "rgba(255, 255, 255, 0.05)",
 					color: activeTool === "pan" ? "#2dd4bf" : "#94a3b8",
-					border: activeTool === "pan" ? "1px solid rgba(45, 212, 191, 0.5)" : "1px solid transparent",
+					border: activeTool === "pan" ? "1px solid rgba(45, 212, 191, 0.6)" : "1px solid rgba(255, 255, 255, 0.12)",
 				}}
 				title="Панорамирование (Рука)"
 				aria-label="Панорамирование снимка"
@@ -105,9 +105,9 @@ export const SensorStudyMobileBar: React.FC<SensorStudyMobileBarProps> = ({
 					minHeight: "46px",
 					width: "46px",
 					height: "46px",
-					backgroundColor: activeTool === "ruler" ? "rgba(19, 78, 74, 0.95)" : "transparent",
+					backgroundColor: activeTool === "ruler" ? "rgba(19, 78, 74, 0.95)" : "rgba(255, 255, 255, 0.05)",
 					color: activeTool === "ruler" ? "#2dd4bf" : "#94a3b8",
-					border: activeTool === "ruler" ? "1px solid rgba(45, 212, 191, 0.5)" : "1px solid transparent",
+					border: activeTool === "ruler" ? "1px solid rgba(45, 212, 191, 0.6)" : "1px solid rgba(255, 255, 255, 0.12)",
 				}}
 				title="Линейка (мм)"
 				aria-label="Измерение расстояний в миллиметрах"
@@ -136,9 +136,9 @@ export const SensorStudyMobileBar: React.FC<SensorStudyMobileBarProps> = ({
 					minHeight: "46px",
 					width: "46px",
 					height: "46px",
-					backgroundColor: activeTool === "magnifier" ? "rgba(19, 78, 74, 0.95)" : "transparent",
+					backgroundColor: activeTool === "magnifier" ? "rgba(19, 78, 74, 0.95)" : "rgba(255, 255, 255, 0.05)",
 					color: activeTool === "magnifier" ? "#2dd4bf" : "#94a3b8",
-					border: activeTool === "magnifier" ? "1px solid rgba(45, 212, 191, 0.5)" : "1px solid transparent",
+					border: activeTool === "magnifier" ? "1px solid rgba(45, 212, 191, 0.6)" : "1px solid rgba(255, 255, 255, 0.12)",
 				}}
 				title="Лупа 2.5x для микротрещин и апекса"
 				aria-label="Интерактивная лупа 2.5x"
@@ -159,9 +159,9 @@ export const SensorStudyMobileBar: React.FC<SensorStudyMobileBarProps> = ({
 					minHeight: "46px",
 					width: "46px",
 					height: "46px",
-					backgroundColor: invert ? "rgba(16, 185, 129, 0.3)" : "transparent",
+					backgroundColor: invert ? "rgba(16, 185, 129, 0.3)" : "rgba(255, 255, 255, 0.05)",
 					color: invert ? "#34d399" : "#94a3b8",
-					border: invert ? "1px solid rgba(52, 211, 153, 0.6)" : "1px solid transparent",
+					border: invert ? "1px solid rgba(52, 211, 153, 0.6)" : "1px solid rgba(255, 255, 255, 0.12)",
 				}}
 				title="Инверсия (Негатив / Позитив)"
 				aria-label="Инвертировать снимок в негатив"
@@ -182,9 +182,9 @@ export const SensorStudyMobileBar: React.FC<SensorStudyMobileBarProps> = ({
 					minHeight: "46px",
 					width: "46px",
 					height: "46px",
-					backgroundColor: isWlOpen || hasActiveFilters ? "rgba(19, 78, 74, 0.95)" : "transparent",
+					backgroundColor: isWlOpen || hasActiveFilters ? "rgba(19, 78, 74, 0.95)" : "rgba(255, 255, 255, 0.05)",
 					color: isWlOpen || hasActiveFilters ? "#2dd4bf" : "#94a3b8",
-					border: isWlOpen || hasActiveFilters ? "1px solid rgba(45, 212, 191, 0.5)" : "1px solid transparent",
+					border: isWlOpen || hasActiveFilters ? "1px solid rgba(45, 212, 191, 0.6)" : "1px solid rgba(255, 255, 255, 0.12)",
 				}}
 				title="Яркость и контрастность (W/L)"
 				aria-label="Панель яркости и контрастности"
@@ -205,9 +205,9 @@ export const SensorStudyMobileBar: React.FC<SensorStudyMobileBarProps> = ({
 					minHeight: "46px",
 					width: "46px",
 					height: "46px",
-					backgroundColor: isStudiesOpen ? "rgba(19, 78, 74, 0.95)" : "transparent",
+					backgroundColor: isStudiesOpen ? "rgba(19, 78, 74, 0.95)" : "rgba(255, 255, 255, 0.05)",
 					color: isStudiesOpen ? "#2dd4bf" : "#94a3b8",
-					border: isStudiesOpen ? "1px solid rgba(45, 212, 191, 0.5)" : "1px solid transparent",
+					border: isStudiesOpen ? "1px solid rgba(45, 212, 191, 0.6)" : "1px solid rgba(255, 255, 255, 0.12)",
 				}}
 				title="Все снимки пациента"
 				aria-label="Открыть галерею снимков пациента"

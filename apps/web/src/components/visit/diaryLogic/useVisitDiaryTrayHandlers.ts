@@ -81,7 +81,7 @@ export function useVisitDiaryTrayHandlers({
 				showToast(
 					detail ??
 						(linkRes.status === 400
-							? `Лоток ${trayBarcode} не зарегистрирован в электронном журнале (бумажный журнал учёта). Лоток зафиксирован в медицинской карте без блокировки подписи.`
+							? `Лоток ${trayBarcode} зафиксирован в медицинской карте (бумажный журнал учёта).`
 							: `Штрихкод лотка: ${requestFailureCause(linkRes.status)}. Подписание карты продолжено.`),
 					"warning",
 					8000,

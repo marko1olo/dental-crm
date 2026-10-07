@@ -15,7 +15,7 @@ const path = require("node:path");
 const LOCK_DIR = path.resolve(__dirname, ".playwright_locks");
 const MAX_CONCURRENT_BROWSERS = 6;
 const LOCK_TIMEOUT_MS = 45000;
-const HARD_WATCHDOG_MS = 60000;
+const HARD_WATCHDOG_MS = 180000;
 
 let activeBrowser = null;
 let currentLockFile = null;

@@ -378,7 +378,7 @@ export function generateCompletedActAndWarrantyHtml(params: CompletedWorksActPar
 		<thead>
 			<tr>
 				<th style="width: 25px;">№</th>
-				<th style="width: 75px;">Код 804н</th>
+				<th style="width: 75px;">Код услуги</th>
 				<th style="width: 45px;">Зуб</th>
 				<th>Наименование оказанной медицинской услуги / работы</th>
 				<th style="width: 40px;">Кол.</th>

@@ -189,7 +189,7 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 						type="button"
 						onClick={handleConfirmSbpManual}
 						disabled={isCheckingSbp}
-						title="Подтвердить получение оплаты СБП по выписке банка (Мандат 8e)"
+						title="Подтвердить получение оплаты СБП по выписке банка"
 						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
 						data-testid="btn-sbp-submit-footer"
 					>

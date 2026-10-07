@@ -361,6 +361,59 @@ export function huToGrayscale(
 
 // ─── 3. DOCTOR CBCT DEFAULT SETTINGS PERSISTENCE ────────────────────────────
 
+export type CbctInterpolationMethod =
+	| "catmull_rom"
+	| "b_spline"
+	| "bilinear"
+	| "nearest";
+
+export interface CbctInterpolationMeta {
+	readonly id: CbctInterpolationMethod;
+	readonly labelRu: string;
+	readonly shortLabel: string;
+	readonly descriptionRu: string;
+	readonly isHardwareAccelerated: boolean;
+	readonly recommendedFor: string;
+}
+
+export const CBCT_INTERPOLATION_METHODS: readonly CbctInterpolationMeta[] = [
+	{
+		id: "catmull_rom",
+		labelRu: "Кубический сплайн (Catmull-Rom)",
+		shortLabel: "Catmull-Rom (Золотой стандарт)",
+		descriptionRu: "Непрерывный C1-сплайн строго через узлы вокселей: бритвенный контур эмали и корней",
+		isHardwareAccelerated: true,
+		recommendedFor: "Золотой стандарт клиники / все виды исследований",
+	},
+	{
+		id: "b_spline",
+		labelRu: "Гладкий B-Сплайн (B-Spline)",
+		shortLabel: "B-Spline (Антишум)",
+		descriptionRu: "Кубический B-сплайн с подавлением шума матрицы томографа и артефактов от металла",
+		isHardwareAccelerated: true,
+		recommendedFor: "Гайморовы пазухи / мягкие ткани / импланты",
+	},
+	{
+		id: "bilinear",
+		labelRu: "Билинейный (Bilinear)",
+		shortLabel: "Bilinear (Базовый)",
+		descriptionRu: "Аппаратный TMU-рендеринг с мягким сглаживанием для слабых офисных GPU",
+		isHardwareAccelerated: true,
+		recommendedFor: "Слабые офисные ПК / скоростной черновик",
+	},
+] as const;
+
+export const VALID_CBCT_INTERPOLATION_METHODS: readonly CbctInterpolationMethod[] = [
+	"catmull_rom",
+	"b_spline",
+	"bilinear",
+	"nearest",
+];
+
+export function isValidInterpolationMethod(method: unknown): method is CbctInterpolationMethod {
+	return typeof method === "string" && VALID_CBCT_INTERPOLATION_METHODS.includes(method as CbctInterpolationMethod);
+}
+
 export interface DoctorCbctDefaultSettings {
 	readonly windowWidth: number;
 	readonly windowLevel: number;
@@ -368,6 +421,7 @@ export interface DoctorCbctDefaultSettings {
 	readonly airCutoffHU: number;
 	readonly mprThicknessMm: number;
 	readonly panoThicknessMm: number;
+	readonly interpolationMethod?: CbctInterpolationMethod | undefined;
 }
 
 export const CANONICAL_CBCT_SETTINGS: DoctorCbctDefaultSettings = {
@@ -377,13 +431,14 @@ export const CANONICAL_CBCT_SETTINGS: DoctorCbctDefaultSettings = {
 	airCutoffHU: -500,
 	mprThicknessMm: 1.0,
 	panoThicknessMm: 1.0,
+	interpolationMethod: "catmull_rom",
 };
 
 export const DOCTOR_CBCT_SETTINGS_STORAGE_KEY = "dente_doctor_cbct_defaults_v1";
 
 /**
  * Loads persisted doctor CBCT default settings from safeLocalStorage.
- * Falls back to canonical standards (W: 4025, L: 525, Gamma: 1.50, Air: -500, MPR: 1.0, Pano: 1.0).
+ * Falls back to canonical standards (W: 4025, L: 525, Gamma: 1.50, Air: -500, MPR: 1.0, Pano: 1.0, Interpolation: Bilinear).
  */
 export function loadDoctorCbctSettings(): DoctorCbctDefaultSettings {
 	if (typeof window === "undefined") {
@@ -418,6 +473,10 @@ export function loadDoctorCbctSettings(): DoctorCbctDefaultSettings {
 				typeof parsed.panoThicknessMm === "number" && parsed.panoThicknessMm >= 0.5 && parsed.panoThicknessMm <= 30
 					? Number(parsed.panoThicknessMm.toFixed(1))
 					: CANONICAL_CBCT_SETTINGS.panoThicknessMm,
+			interpolationMethod:
+				isValidInterpolationMethod(parsed.interpolationMethod)
+					? parsed.interpolationMethod
+					: CANONICAL_CBCT_SETTINGS.interpolationMethod,
 		};
 	} catch {
 		return CANONICAL_CBCT_SETTINGS;
@@ -457,6 +516,10 @@ export function saveDoctorCbctSettings(
 			typeof settings.panoThicknessMm === "number" && settings.panoThicknessMm >= 0.5 && settings.panoThicknessMm <= 30
 				? Number(settings.panoThicknessMm.toFixed(1))
 				: current.panoThicknessMm,
+		interpolationMethod:
+			isValidInterpolationMethod(settings.interpolationMethod)
+				? settings.interpolationMethod
+				: (current.interpolationMethod ?? CANONICAL_CBCT_SETTINGS.interpolationMethod),
 	};
 
 	if (typeof window !== "undefined") {
@@ -471,7 +534,7 @@ export function saveDoctorCbctSettings(
 }
 
 /**
- * Resets doctor CBCT default settings back to canonical standard (4025 HU / 525 HU).
+ * Resets doctor CBCT default settings back to canonical standard (4025 HU / 525 HU, Bilinear).
  */
 export function resetDoctorCbctSettings(): DoctorCbctDefaultSettings {
 	if (typeof window !== "undefined") {

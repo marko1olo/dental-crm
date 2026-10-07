@@ -19,6 +19,7 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
+	X,
 	Zap,
 } from "lucide-react";
 import { DentalCrown } from "../icons/DentalIcons.js";
@@ -194,15 +195,12 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 					{/* Hick's Law: Compact 1-Row Toolbar (32-36px) for Stage Filter, FDI Tooth & Search */}
 					<div className="flex items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] flex-wrap sm:flex-nowrap min-h-[36px]">
 						{/* Stage Filter Pills (Hick's Law: reduce choices) */}
-						<div className="flex items-center gap-1 overflow-x-auto min-w-0 flex-1 py-0.5">
+						<div className="dente-filter-chips overflow-x-auto min-w-0 flex-1 py-0.5">
 							<button
 								type="button"
 								onClick={() => setStageFilter("all")}
-								className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-									stageFilter === "all"
-										? "bg-[var(--teal,#0d9488)] text-white shadow-2xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
-								}`}
+								className={`dente-filter-chip ${stageFilter === "all" ? "active" : ""}`}
+								data-active={stageFilter === "all"}
 								data-testid="bundle-filter-all"
 							>
 								Все ({CLINICAL_BUNDLES.length})
@@ -210,11 +208,8 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 							<button
 								type="button"
 								onClick={() => setStageFilter(1)}
-								className={`h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-									stageFilter === 1
-										? "bg-emerald-600 text-white shadow-2xs"
-										: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10"
-								}`}
+								className={`dente-filter-chip ${stageFilter === 1 ? "active" : ""}`}
+								data-active={stageFilter === 1}
 								data-testid="bundle-filter-stage-1"
 							>
 								Этап I: Терапия
@@ -222,11 +217,8 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 							<button
 								type="button"
 								onClick={() => setStageFilter(2)}
-								className={`h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-									stageFilter === 2
-										? "bg-amber-600 text-white shadow-2xs"
-										: "text-amber-700 dark:text-amber-300 hover:bg-amber-500/10"
-								}`}
+								className={`dente-filter-chip ${stageFilter === 2 ? "active" : ""}`}
+								data-active={stageFilter === 2}
 								data-testid="bundle-filter-stage-2"
 							>
 								Этап II: Хирургия
@@ -234,11 +226,8 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 							<button
 								type="button"
 								onClick={() => setStageFilter(3)}
-								className={`h-7 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-									stageFilter === 3
-										? "bg-purple-600 text-white shadow-2xs"
-										: "text-purple-700 dark:text-purple-300 hover:bg-purple-500/10"
-								}`}
+								className={`dente-filter-chip ${stageFilter === 3 ? "active" : ""}`}
+								data-active={stageFilter === 3}
 								data-testid="bundle-filter-stage-3"
 							>
 								Этап III: Ортопедия
@@ -273,19 +262,29 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 								/>
 							</div>
 
-							<div className="relative flex items-center">
+							<div className="dente-search-wrap" style={{ width: "160px" }}>
 								<Search
 									size={12}
-									className="absolute left-2 text-[var(--muted,#64748b)] pointer-events-none"
+									className="dente-search-icon"
 								/>
 								<input
 									type="text"
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
 									placeholder="Поиск пакета..."
-									className="h-7 w-28 sm:w-36 pl-6 pr-2 text-xs rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,#0d9488)]"
+									className="dente-search-input"
 									data-testid="bundle-search-input"
 								/>
+								{searchQuery && (
+									<button
+										type="button"
+										onClick={() => setSearchQuery("")}
+										className="dente-search-clear"
+										aria-label="Очистить поиск"
+									>
+										<X size={12} />
+									</button>
+								)}
 							</div>
 						</div>
 					</div>

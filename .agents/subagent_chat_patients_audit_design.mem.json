@@ -1,0 +1,171 @@
+{
+  "subagent": "redteam_chat_patients_audit_design_inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-05T21:18:00+04:00",
+  "typecheck_exit_code": 0,
+  "verified_scopes": [
+    "chat_omnichannel",
+    "patients_mobile",
+    "audit_trail_152fz",
+    "staff_action_journal",
+    "outpatient_documents_archive",
+    "analytics_lost_patients_and_roi",
+    "patient_recalls"
+  ],
+  "key_modifications": [
+    {
+      "file": "apps/web/src/components/chat/WhatsAppChatPanel.tsx",
+      "change": "Enforced .dente-search-wrap, .dente-search-icon, .dente-search-input, .dente-search-clear, eliminating search icon collisions"
+    },
+    {
+      "file": "apps/web/src/components/chat/OmnichannelOperatorDesk.tsx",
+      "change": "Converted search to .dente-search-wrap, replaced naked buttons with .dente-segmented-bar and .dente-filter-chips"
+    },
+    {
+      "file": "apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx",
+      "change": "Converted search to .dente-search-wrap, channel tabs to .dente-segmented-bar, buttons to canonical components.css buttons"
+    },
+    {
+      "file": "apps/web/src/components/patients/mobile/MobilePatientsGroupedList.tsx",
+      "change": "Centered search icon with 38px left padding, zero placeholder overlap, Apple HIG grouped cards and touch ergonomics"
+    },
+    {
+      "file": "apps/web/src/styles/modules/mobile-patients-list.css",
+      "change": "Enforced padding-left: 38px !important and vertical icon centering"
+    },
+    {
+      "file": "apps/web/src/components/security/AuditTrailHubModal.tsx",
+      "change": "Encapsulated search in .dente-search-wrap with .dente-search-clear, standardized filter and action buttons"
+    },
+    {
+      "file": "apps/web/src/components/security/auditTrail.css",
+      "change": "Strict padding-left: 38px !important for audit search input, centralized search icon"
+    },
+    {
+      "file": "apps/web/src/components/settings/audit/StaffActionJournalSection.tsx",
+      "change": "Eliminated hardcoded inline padding styles, converted filters to .dente-filter-chips and search to .dente-search-wrap"
+    },
+    {
+      "file": "apps/web/src/components/documents/DocumentRegistryFilterBar.tsx",
+      "change": "Standardized search and filter styling"
+    },
+    {
+      "file": "apps/web/src/styles/modules/documents.css",
+      "change": "Enforced 38px padding-left and centered icon"
+    },
+    {
+      "file": "apps/web/src/components/documents/DocumentsOutpatientArchive.tsx",
+      "change": "Segmented bar for document statuses, search input wrapped"
+    },
+    {
+      "file": "apps/web/src/components/documents/mobile/MobileDocumentsHub.tsx",
+      "change": "Vertically centered search icon and segmented bar for mobile documents"
+    },
+    {
+      "file": "apps/web/src/components/analytics/LostPatientsPanel.tsx",
+      "change": "Upgraded tabs to .dente-segmented-bar and search to .dente-search-wrap"
+    },
+    {
+      "file": "apps/web/src/components/analytics/MarketingRoiModal.tsx",
+      "change": "Converted period buttons to .dente-segmented-bar and categories to .dente-filter-chips"
+    },
+    {
+      "file": "apps/web/src/components/analytics/MarketingRoiChannelsTab.tsx",
+      "change": "Converted search to .dente-search-wrap"
+    },
+    {
+      "file": "apps/web/src/components/recalls/PatientRecallsToolbar.tsx",
+      "change": "Standardized search and clear button"
+    },
+    {
+      "file": "apps/web/src/components/recalls/PatientRecallsTaskCallsTab.tsx",
+      "change": "Standardized search and clear button"
+    },
+    {
+      "file": "apps/web/src/components/recalls/recalls.css",
+      "change": "Enforced 38px padding-left and centered search icon"
+    }
+  ],
+  "visual_proof_manifest": [
+    {
+      "file": "proof_chat_desk_pc_light.png",
+      "md5": "6C04AF44C5861E662AF2F630CC2B23B3",
+      "size_bytes": 141282,
+      "viewport": "1440x900",
+      "theme": "light",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_chat_desk_pc_dark.png",
+      "md5": "BE0C3B8593A791C86B8D5FE644303681",
+      "size_bytes": 49062,
+      "viewport": "1440x900",
+      "theme": "dark",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_patient_hub_pc_light.png",
+      "md5": "251CF6D2930ED3BEC70A4DFD67525DBC",
+      "size_bytes": 289309,
+      "viewport": "1440x900",
+      "theme": "light",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_patient_hub_pc_dark.png",
+      "md5": "3449479C42F70CF24FD53B63AE8DE75C",
+      "size_bytes": 294001,
+      "viewport": "1440x900",
+      "theme": "dark",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_patients_mobile_light.png",
+      "md5": "A946C650D69867DB64FAC450C78ED24E",
+      "size_bytes": 125149,
+      "viewport": "390x844",
+      "theme": "light",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_patients_mobile_dark.png",
+      "md5": "2A8345D14C719352F01D4B0ACD612DAB",
+      "size_bytes": 124026,
+      "viewport": "390x844",
+      "theme": "dark",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_audit_trail_pc_light.png",
+      "md5": "3D077A283DDBD9A3865F71510EE64F6B",
+      "size_bytes": 213291,
+      "viewport": "1440x900",
+      "theme": "light",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_audit_trail_pc_dark.png",
+      "md5": "D565AD0727ED792D5FDDED53EFE88719",
+      "size_bytes": 216251,
+      "viewport": "1440x900",
+      "theme": "dark",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_staff_journal_pc_light.png",
+      "md5": "3D4564794A056CCE3612B45C79804334",
+      "size_bytes": 131067,
+      "viewport": "1440x900",
+      "theme": "light",
+      "status": "VERIFIED_CLEAN"
+    },
+    {
+      "file": "proof_staff_journal_pc_dark.png",
+      "md5": "7095D6E8E87C8F48B9C6692CADB5C84B",
+      "size_bytes": 144419,
+      "viewport": "1440x900",
+      "theme": "dark",
+      "status": "VERIFIED_CLEAN"
+    }
+  ]
+}

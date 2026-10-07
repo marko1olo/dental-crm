@@ -275,7 +275,7 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 			</div>
 
 			{/* 2. Вкладки рубрик МКБ-10 */}
-			<div className="icd10-rubric-tabs" role="tablist" aria-label="Рубрики МКБ-10">
+			<div className="icd10-rubric-tabs dente-filter-chips" role="tablist" aria-label="Рубрики МКБ-10">
 				{RUBRIC_FILTER_TABS.map((tab) => {
 					const isActive = activeRubricTab === tab.id;
 					return (
@@ -284,7 +284,8 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 							type="button"
 							role="tab"
 							aria-selected={isActive}
-							className={`icd10-rubric-tab ${isActive ? "is-active" : ""}`}
+							data-active={isActive}
+							className={`icd10-rubric-tab dente-filter-chip ${isActive ? "is-active active" : ""}`}
 							onClick={() => {
 								setActiveRubricTab(tab.id);
 								setFocusedIndex(-1);

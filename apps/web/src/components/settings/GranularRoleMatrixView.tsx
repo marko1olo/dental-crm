@@ -78,7 +78,7 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 	},
 	"clinical.records.write": {
 		badge: "Врачебная автономия",
-		hint: "Мандат 8e: право врача свободно вести дневник, ставить диагноз и назначать услуги без мастер-пароля администратора.",
+		hint: "Право врача свободно вести дневник, ставить диагноз и назначать услуги без подтверждения администратора.",
 		isCritical: true,
 	},
 	"settings.staff_authority": {
@@ -170,7 +170,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						</span>
 					</div>
 					<p className="text-xs text-[var(--muted)] m-0 leading-normal">
-						Разграничение прав соло-врача, клинициста и руководства. Защита базы от увода (маскирование телефонов), финансовая изоляция и свобода врача у кресла (Мандат 8e).
+						Разграничение прав соло-врача, клинициста и руководства. Защита базы от увода (маскирование телефонов), финансовая изоляция и врачебная автономия у кресла.
 					</p>
 				</div>
 			</div>
@@ -186,7 +186,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 					</div>
 					<div className="flex flex-col gap-0.5 min-w-0">
 						<span className="font-bold text-[var(--ink)] text-xs">
-							Суверенитет масштаба практики (Мандат 8n):
+							Масштаб практики и режим работы:
 						</span>
 						<p className="text-[11px] text-[var(--muted)] m-0 leading-snug">
 							<strong>Соло-врач (кабинет / аренда):</strong> полный суверенитет над своими пациентами, дневником и кассой (100% автономия без бюрократии).
@@ -393,7 +393,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 							<Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
 							<div>
-								<strong className="block text-slate-900 dark:text-white">Автономия у кресла (8e):</strong>
+								<strong className="block text-slate-900 dark:text-white">Врачебная автономия у кресла:</strong>
 								<span>Свободное ведение дневника ЭМК, назначение услуг и применение клинических скидок без ввода мастер-пароля администратора.</span>
 							</div>
 						</div>

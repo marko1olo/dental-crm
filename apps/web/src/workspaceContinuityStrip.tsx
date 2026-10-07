@@ -120,7 +120,7 @@ export function WorkspaceContinuityStrip({
 						className="workspace-continuity-btn workspace-continuity-btn--clear"
 						type="button"
 						onClick={onClearMutations}
-						title="Очистить очередь офлайн-мутаций (1 клик)"
+						title="Очистить очередь офлайн-мутаций"
 						data-testid="btn-clear-mutations"
 					>
 						Очистить очередь
@@ -134,7 +134,7 @@ export function WorkspaceContinuityStrip({
 						disabled={isSyncingMutations}
 						title={
 							!effectiveOnline
-								? "Принудительная синхронизация мутаций при нестабильной сети (1 клик)"
+								? "Принудительная синхронизация мутаций при нестабильной сети"
 								: "Синхронизировать очередь мутаций"
 						}
 						data-testid="btn-sync-mutations"
@@ -159,7 +159,7 @@ export function WorkspaceContinuityStrip({
 						disabled={isPendingVisitSyncing}
 						title={
 							!effectiveOnline
-								? "Принудительная отправка сохраненных приемов (1 клик)"
+								? "Принудительная отправка сохраненных приемов"
 								: "Отправить приемы"
 						}
 						data-testid="btn-flush-visits"

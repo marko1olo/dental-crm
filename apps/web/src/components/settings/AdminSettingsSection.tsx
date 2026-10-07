@@ -124,11 +124,12 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 	initialTab = "clinic",
 	onSelectTab,
 }) => {
-	const [activeSubTab, setActiveSubTab] = useState<AdminSubTab>(initialTab);
+	const resolvedInitialTab: AdminSubTab = initialTab === "telegram" ? "messengers" : initialTab;
+	const [activeSubTab, setActiveSubTab] = useState<AdminSubTab>(resolvedInitialTab);
 
 	useEffect(() => {
 		if (initialTab) {
-			setActiveSubTab(initialTab);
+			setActiveSubTab(initialTab === "telegram" ? "messengers" : initialTab);
 		}
 	}, [initialTab]);
 

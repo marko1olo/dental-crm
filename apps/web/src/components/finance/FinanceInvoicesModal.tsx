@@ -18,17 +18,17 @@ export function FinanceInvoicesModal({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
+			className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Счета и акты по номенклатуре 804н"
+			aria-label="Счета и акты выполненных работ"
 			data-testid="modal-finance-invoices"
 		>
-			<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line)] flex flex-col bg-[var(--paper)]">
+			<div className="w-full h-full sm:h-[92vh] max-w-5xl sm:max-h-[920px] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl border-0 sm:border border-[var(--line)] flex flex-col bg-[var(--paper)]">
 				<Suspense
 					fallback={
 						<div className="p-8 text-center text-xs text-[var(--muted)]">
-							Загрузка модуля счетов 804н...
+							Загрузка счетов и актов...
 						</div>
 					}
 				>

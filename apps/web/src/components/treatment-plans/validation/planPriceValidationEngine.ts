@@ -431,7 +431,7 @@ export function validateTreatmentPlanPrices(
 	if (hasUnresolvedArchivedOrMissing && !isAuthorizedByAdmin) {
 		overallStatus = "BLOCKED_ARCHIVED_SERVICE";
 		validationMessages.push(
-			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных позиций. Оказание услуг, создание наряда ЗТЛ и печать акта разрешены в полном объеме по гарантии сметы (Мандат 8e: автономия врача, без блокировок).`,
+			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных позиций. Оказание услуг, создание наряда ЗТЛ и печать акта разрешены в полном объеме по гарантии сметы.`,
 		);
 	} else if (itemsRequiringAdminOverrideCount > 0 && !isAuthorizedByAdmin) {
 		// Не блокируем кассу и врача: скидка согласована врачом, инфо-бейдж для последующей сводки директору
@@ -443,7 +443,7 @@ export function validateTreatmentPlanPrices(
 		// План составлен более 30 дней назад: не блокируем создание нарядов ЗТЛ, оказание услуг и оплату (Мандат 8e)
 		overallStatus = "APPROVED_PRICE_LOCKED";
 		validationMessages.push(
-			`План составлен более 30 дней назад, цены могут быть скорректированы (истек ${Math.abs(expiryDaysRemaining)} дн. назад). Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются. Цена зафиксирована по согласованию с врачом.`,
+			`План составлен более 30 дней назад, цены могут быть скорректированы (истек ${Math.abs(expiryDaysRemaining)} дн. назад). Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются и разрешены. Цена зафиксирована по согласованию с врачом.`,
 		);
 	} else {
 		const isAnyUpdatedToCurrent = validatedItems.some(

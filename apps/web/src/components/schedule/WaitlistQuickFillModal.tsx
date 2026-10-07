@@ -1,21 +1,6 @@
 import {
-	AlertTriangle,
 	Calendar,
-	CalendarDays,
-	Check,
-	ClipboardList,
-	Clock,
-	Copy,
-	MessageSquare,
-	MoreVertical,
-	Phone,
-	Plus,
-	Search,
-	Send,
 	Sparkles,
-	Star,
-	Trash2,
-	UserCheck,
 	UserPlus,
 	X,
 	Zap,
@@ -23,427 +8,52 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { logger } from "../../utils/logger";
-import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { findDoctorFreeSlots } from "./doctorFreeSlotsEngine";
 import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
-
-export type WaitlistPriority =
-	| "urgent"
-	| "acute_pain"
-	| "treatment_plan"
-	| "vip"
-	| "routine"
-	| "high"
-	| "medium"
-	| "low";
-
-export type PreferredTimeOfDay = "morning" | "day" | "evening" | "any";
-export type PreferredDaysType = "weekdays" | "weekend" | "any" | "specific";
-
-export interface WaitlistPatientEntry {
-	id: string;
-	patientId: string;
-	patientName: string | null;
-	patientPhone: string | null;
-	preferredDoctorId: string | null;
-	preferredDoctorName: string | null;
-	priorityLevel: WaitlistPriority;
-	treatmentCategory?: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: JSONB metadata from server or draft
-	preferredTimeRanges?: any;
-	preferredDays?: string[] | string;
-	preferredTimeOfDay?: PreferredTimeOfDay[];
-	notes?: string | null;
-	expiryDate?: string | null;
-	status: "active" | "waiting" | "fulfilled" | "cancelled" | string;
-	createdAt: string;
-	updatedAt?: string;
-	alreadyBooked?: boolean;
-}
-
-const DEMO_SHOWCASE_WAITLIST_ENTRIES: WaitlistPatientEntry[] = [
-	{
-		id: "demo-waitlist-1",
-		patientId: "demo-patient-volkov",
-		patientName: "Волков Сергей Николаевич",
-		patientPhone: "+7 (916) 111-22-33",
-		preferredDoctorId: "doc-smirnov",
-		preferredDoctorName: "Д-р Смирнов А.П.",
-		priorityLevel: "acute_pain",
-		treatmentCategory: "Терапия",
-		preferredDays: "weekdays",
-		preferredTimeOfDay: ["morning", "day"],
-		notes: "Острая боль 4.6, просит принять как можно раньше",
-		status: "waiting",
-		createdAt: new Date(Date.now() - 3600 * 1000 * 12).toISOString(),
-	},
-	{
-		id: "demo-waitlist-2",
-		patientId: "demo-patient-morozova",
-		patientName: "Морозова Елена Викторовна",
-		patientPhone: "+7 (926) 444-55-66",
-		preferredDoctorId: "doc-smirnov",
-		preferredDoctorName: "Д-р Смирнов А.П.",
-		priorityLevel: "treatment_plan",
-		treatmentCategory: "Ортодонтия",
-		preferredDays: "any",
-		preferredTimeOfDay: ["day", "evening"],
-		notes: "Активация дуги по плану лечения",
-		status: "waiting",
-		createdAt: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
-	},
-];
-
+import { WaitlistSlotSelectorBanner } from "./WaitlistSlotSelectorBanner";
+import { WaitlistAddPatientForm } from "./WaitlistAddPatientForm";
+import { WaitlistMatchTab } from "./WaitlistMatchTab";
+import { WaitlistListTab } from "./WaitlistListTab";
 import type { TargetSlotInfo } from "./waitlistCancellationEngine";
+import {
+	calculateMatchScore,
+	DEMO_SHOWCASE_WAITLIST_ENTRIES,
+	generateWhatsAppOfferMessage,
+	openTelegramChat,
+	openWhatsAppChat,
+} from "./waitlistMatchScoring";
+import type {
+	MatchScoringResult,
+	PreferredDaysType,
+	PreferredTimeOfDay,
+	WaitlistPatientEntry,
+	WaitlistPriority,
+} from "./waitlistMatchScoring";
+
 export type { TargetSlotInfo };
-
-export interface MatchScoringResult {
-	score: number; // 0 to 100
-	rating: "excellent" | "good" | "moderate" | "low";
-	ratingLabel: string;
-	priorityRank: number;
-	matchReasons: string[];
-	mismatchReasons: string[];
-	sameDoctor: boolean;
-	timeFits: boolean;
-	dayFits: boolean;
-	categoryFits: boolean;
-}
-
-export const PRIORITY_CONFIG: Record<
-	string,
-	{ label: string; badgeClass: string; weight: number }
-> = {
-	urgent: {
-		label: "Острая боль",
-		badgeClass:
-			"bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
-		weight: 100,
-	},
-	acute_pain: {
-		label: "Острая боль",
-		badgeClass:
-			"bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
-		weight: 100,
-	},
-	high: {
-		label: "Срочно",
-		badgeClass:
-			"bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
-		weight: 100,
-	},
-	treatment_plan: {
-		label: "Незавершённый план",
-		badgeClass:
-			"bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/35 font-bold",
-		weight: 75,
-	},
-	vip: {
-		label: "VIP",
-		badgeClass:
-			"bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/35 font-bold",
-		weight: 60,
-	},
-	routine: {
-		label: "Плановый",
-		badgeClass:
-			"bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
-		weight: 25,
-	},
-	medium: {
-		label: "Плановый",
-		badgeClass:
-			"bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
-		weight: 25,
-	},
-	low: {
-		label: "Лист ожидания",
-		badgeClass:
-			"bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25 font-medium",
-		weight: 10,
-	},
+export type {
+	WaitlistPriority,
+	PreferredTimeOfDay,
+	PreferredDaysType,
+	WaitlistPatientEntry,
+	MatchScoringResult,
 };
-
-export function renderPriorityIcon(priorityKey: string, size = 12) {
-	switch (priorityKey) {
-		case "urgent":
-		case "acute_pain":
-		case "high":
-			return <AlertTriangle size={size} className="shrink-0 text-rose-500" />;
-		case "treatment_plan":
-			return <ClipboardList size={size} className="shrink-0 text-amber-500" />;
-		case "vip":
-			return <Star size={size} className="shrink-0 text-purple-500" />;
-		case "routine":
-		case "medium":
-			return <CalendarDays size={size} className="shrink-0 text-sky-500" />;
-		default:
-			return <Clock size={size} className="shrink-0 text-slate-400" />;
-	}
-}
-
-export const TREATMENT_CATEGORIES = [
-	"Терапия (кариес, пломба)",
-	"Эндодонтия (каналы, пульпит)",
-	"Хирургия (удаление, имплантация)",
-	"Ортопедия (коронки, виниры)",
-	"Ортодонтия (брекеты, элайнеры)",
-	"Пародонтология (дёсны)",
-	"Профгигиена и отбеливание",
-	"Детская стоматология",
-	"Консультация и осмотр",
-];
-
-export const DEFAULT_PRIORITY_CFG = {
-	label: "Плановый",
-	badgeClass:
-		"bg-[var(--paper-strong)] text-[var(--ink-2)] border-[var(--line)]",
-	weight: 25,
-};
-
-/**
- * Calculates match score between a waitlist patient and target opening.
- */
-export function calculateMatchScore(
-	patient: WaitlistPatientEntry,
-	slot?: TargetSlotInfo | null,
-): MatchScoringResult {
-	const priorityCfg =
-		PRIORITY_CONFIG[patient.priorityLevel] ??
-		PRIORITY_CONFIG.routine ??
-		DEFAULT_PRIORITY_CFG;
-	const matchReasons: string[] = [];
-	const mismatchReasons: string[] = [];
-
-	if (!slot?.startsAt) {
-		const score = Math.min(100, priorityCfg.weight);
-		return {
-			score,
-			rating: score >= 80 ? "excellent" : score >= 50 ? "good" : "moderate",
-			ratingLabel: score >= 80 ? "Высокий приоритет" : "Стандартный приоритет",
-			priorityRank: priorityCfg.weight,
-			matchReasons: [priorityCfg.label],
-			mismatchReasons: [],
-			sameDoctor: false,
-			timeFits: true,
-			dayFits: true,
-			categoryFits: true,
-		};
-	}
-
-	const slotDate = new Date(slot.startsAt);
-	const datePartMatch = /^(\d{4}-\d{2}-\d{2})/.exec(slot.startsAt);
-	const slotDayDate = datePartMatch
-		? new Date(`${datePartMatch[1]}T12:00:00`)
-		: slotDate;
-	const slotDay = slotDayDate.getDay(); // 0 = Sun, 1 = Mon, ... 6 = Sat
-	const isWeekend = slotDay === 0 || slotDay === 6;
-
-	let totalScore = 0;
-
-	// 1. Doctor Match (30 pts max)
-	let sameDoctor = false;
-	if (
-		patient.preferredDoctorId &&
-		slot.doctorUserId &&
-		patient.preferredDoctorId === slot.doctorUserId
-	) {
-		sameDoctor = true;
-		totalScore += 30;
-		matchReasons.push("Желаемый врач совпадает");
-	} else if (!patient.preferredDoctorId) {
-		sameDoctor = true;
-		totalScore += 20;
-		matchReasons.push("Согласен на любого врача");
-	} else {
-		mismatchReasons.push("Просил другого специалиста");
-	}
-
-	// 2. Day of Week Match (25 pts max)
-	let dayFits = true;
-	const prefDays = Array.isArray(patient.preferredDays)
-		? patient.preferredDays
-		: typeof patient.preferredDays === "string"
-			? [patient.preferredDays]
-			: [];
-
-	if (prefDays.length > 0) {
-		const wantsWeekend =
-			prefDays.includes("weekend") || prefDays.includes("Выходные");
-		const wantsWeekdays =
-			prefDays.includes("weekdays") || prefDays.includes("Будни");
-		const wantsAny = prefDays.includes("any") || prefDays.includes("Любые дни");
-
-		if (wantsAny) {
-			totalScore += 25;
-			matchReasons.push("Подходят любые дни недели");
-		} else if (isWeekend && wantsWeekend) {
-			totalScore += 25;
-			matchReasons.push("Подходит выходной день");
-		} else if (!isWeekend && wantsWeekdays) {
-			totalScore += 25;
-			matchReasons.push("Подходит будний день (Пн-Пт)");
-		} else {
-			dayFits = false;
-			mismatchReasons.push(
-				isWeekend ? "Предпочитает будни" : "Предпочитает выходные",
-			);
-		}
-	} else {
-		totalScore += 20;
-		matchReasons.push("Дни недели не ограничены");
-	}
-
-	// 3. Time of Day Match (25 pts max)
-	let timeFits = true;
-	const wallMatch = /T(\d{2}):(\d{2})/.exec(slot.startsAt);
-	const slotHours = wallMatch ? Number(wallMatch[1]) : slotDate.getHours();
-	const slotMinutes = wallMatch ? Number(wallMatch[2]) : slotDate.getMinutes();
-	const slotMinuteTotal =
-		(Number.isFinite(slotHours) ? slotHours : slotDate.getHours()) * 60 +
-		(Number.isFinite(slotMinutes) ? slotMinutes : slotDate.getMinutes());
-
-	const isMorning = slotMinuteTotal >= 8 * 60 && slotMinuteTotal < 12 * 60;
-	const isDay = slotMinuteTotal >= 12 * 60 && slotMinuteTotal < 17 * 60;
-	const isEvening = slotMinuteTotal >= 17 * 60 && slotMinuteTotal <= 21 * 60;
-
-	const prefTimes = Array.isArray(patient.preferredTimeOfDay)
-		? patient.preferredTimeOfDay
-		: [];
-
-	if (prefTimes.length > 0) {
-		const matchedTime =
-			prefTimes.includes("any") ||
-			(isMorning && prefTimes.includes("morning")) ||
-			(isDay && prefTimes.includes("day")) ||
-			(isEvening && prefTimes.includes("evening"));
-
-		if (matchedTime) {
-			totalScore += 25;
-			const timeLabel = isMorning ? "Утро" : isDay ? "День" : "Вечер";
-			matchReasons.push(`Подходит время приёма (${timeLabel})`);
-		} else {
-			timeFits = false;
-			mismatchReasons.push("Время вне желаемого интервала");
-		}
-	} else {
-		totalScore += 20;
-		matchReasons.push("Любое время приёма");
-	}
-
-	// 4. Treatment Category Match (10 pts)
-	let categoryFits = false;
-	if (
-		patient.treatmentCategory &&
-		slot.treatmentCategory &&
-		patient.treatmentCategory
-			.toLowerCase()
-			.includes(slot.treatmentCategory.toLowerCase())
-	) {
-		categoryFits = true;
-		totalScore += 10;
-		matchReasons.push(`Направление: ${patient.treatmentCategory}`);
-	} else if (!patient.treatmentCategory) {
-		categoryFits = true;
-		totalScore += 5;
-	}
-
-	// 5. Priority Bonus (10 pts)
-	if (
-		patient.priorityLevel === "urgent" ||
-		patient.priorityLevel === "acute_pain" ||
-		patient.priorityLevel === "high"
-	) {
-		totalScore += 10;
-		matchReasons.push("Острая боль / Срочный вызов");
-	} else if (patient.priorityLevel === "treatment_plan") {
-		totalScore += 7;
-		matchReasons.push("Незавершённый план лечения");
-	} else if (patient.priorityLevel === "vip") {
-		totalScore += 5;
-		matchReasons.push("VIP клиент");
-	}
-
-	const finalScore = Math.min(100, Math.max(0, totalScore));
-	const rating =
-		finalScore >= 80
-			? "excellent"
-			: finalScore >= 60
-				? "good"
-				: finalScore >= 40
-					? "moderate"
-					: "low";
-
-	const ratingLabel =
-		finalScore >= 80
-			? "Отличное совпадение"
-			: finalScore >= 60
-				? "Хорошее совпадение"
-				: finalScore >= 40
-					? "Частичное совпадение"
-					: "Низкое совпадение";
-
-	return {
-		score: finalScore,
-		rating,
-		ratingLabel,
-		priorityRank: priorityCfg.weight + finalScore,
-		matchReasons,
-		mismatchReasons,
-		sameDoctor,
-		timeFits,
-		dayFits,
-		categoryFits,
-	};
-}
-
-/**
- * Generates WhatsApp/SMS message offering the opened slot.
- */
-export function generateWhatsAppOfferMessage(params: {
-	patientName: string;
-	doctorName?: string | null;
-	slotStartsAt: string;
-	clinicName?: string;
-}): string {
-	const dateObj = new Date(params.slotStartsAt);
-	const formattedDate = dateObj.toLocaleDateString("ru-RU", {
-		day: "numeric",
-		month: "long",
-		weekday: "short",
-	});
-	const formattedTime = dateObj.toLocaleTimeString("ru-RU", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-	const doctor = params.doctorName ? ` к врачу ${params.doctorName}` : "";
-	const clinic = params.clinicName || "стоматологической клинике DENTE";
-
-	return `Здравствуйте, ${params.patientName}! В ${clinic} освободилось окно на приём${doctor}: ${formattedDate} в ${formattedTime}. Записать вас на это время? Ответьте ДА или позвоните нам.`;
-}
-
-/**
- * Opens WhatsApp chat via wa.me link.
- */
-export function openWhatsAppChat(phone: string, text: string) {
-	const cleanPhone = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
-	const encodedText = encodeURIComponent(text);
-	window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, "_blank");
-}
-
-/**
- * Opens Telegram chat/share link offering the opened slot.
- */
-export function openTelegramChat(phone: string, text: string) {
-	const cleanPhone = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
-	const encodedText = encodeURIComponent(text);
-	window.open(`https://t.me/share/url?text=${encodedText}`, "_blank");
-}
+export {
+	PRIORITY_CONFIG,
+	DEFAULT_PRIORITY_CFG,
+	renderPriorityIcon,
+	TREATMENT_CATEGORIES,
+	calculateMatchScore,
+	generateWhatsAppOfferMessage,
+	openWhatsAppChat,
+	openTelegramChat,
+	DEMO_SHOWCASE_WAITLIST_ENTRIES,
+} from "./waitlistMatchScoring";
 
 function waitlistWriteHeaders(): Record<string, string> {
 	return denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
@@ -480,7 +90,7 @@ export function WaitlistQuickFillModal({
 	dashboard: propDashboard,
 	auth: propAuth,
 }: WaitlistQuickFillModalProps) {
-	const ctx = useAppLogicContext();
+	const ctx = useOptionalAppLogicContext();
 	const dashboard = propDashboard || ctx?.dashboard;
 	const auth = propAuth || ctx?.auth;
 
@@ -549,7 +159,7 @@ export function WaitlistQuickFillModal({
 		}
 	}, [auth]);
 
-	// Динамический поиск свободных / горящих окон в расписании (если targetSlot не был передан явно)
+	// Поиск свободных окон в расписании
 	const discoveredFreeSlots: TargetSlotInfo[] = useMemo(() => {
 		if (targetSlot) return [targetSlot];
 		const today = new Date().toISOString().slice(0, 10);
@@ -662,7 +272,7 @@ export function WaitlistQuickFillModal({
 		});
 	}, [items, searchQuery, selectedPriorityFilter]);
 
-	// 1-Click WhatsApp action
+	// WhatsApp action
 	const handleSendWhatsApp = (patient: WaitlistPatientEntry) => {
 		if (!patient.patientPhone) {
 			showToast("У пациента не указан номер телефона", "error");
@@ -683,7 +293,7 @@ export function WaitlistQuickFillModal({
 		);
 	};
 
-	// 1-Click Copy SMS
+	// Copy SMS action
 	const handleCopySms = (patient: WaitlistPatientEntry) => {
 		const msg = generateWhatsAppOfferMessage({
 			patientName: patient.patientName || "Пациент",
@@ -698,7 +308,7 @@ export function WaitlistQuickFillModal({
 		});
 	};
 
-	// 1-Click Telegram action
+	// Telegram action
 	const handleSendTelegram = (patient: WaitlistPatientEntry) => {
 		if (!patient.patientPhone) {
 			showToast("У пациента не указан номер телефона", "error");
@@ -719,7 +329,7 @@ export function WaitlistQuickFillModal({
 		);
 	};
 
-	// 1-Click Direct Booking onto Slot (Мандат 8e: реальная посадка в базу в 1 клик)
+	// Запись пациента из листа ожидания (Мандат 8e: реальная посадка в базу)
 	const handleBookPatient = async (patient: WaitlistPatientEntry) => {
 		setBookingPatientId(patient.id);
 		try {
@@ -761,8 +371,8 @@ export function WaitlistQuickFillModal({
 								patientId: patient.patientId,
 								status: "planned",
 								expectedCurrentStatus: ["cancelled", "no_show"],
-								reason: patient.treatmentCategory || "Запись из листа ожидания",
-								comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+								reason: patient.treatmentCategory || "Записать пациента из листа ожидания",
+								comment: `Запись из листа ожидания${patient.notes ? `: ${patient.notes}` : ""}`,
 								assistantUserId: "",
 							}),
 						},
@@ -787,8 +397,8 @@ export function WaitlistQuickFillModal({
 							startsAt,
 							endsAt,
 							status: "planned",
-							reason: patient.treatmentCategory || "Запись из листа ожидания",
-							comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+							reason: patient.treatmentCategory || "Записать пациента из листа ожидания",
+							comment: `Запись из листа ожидания${patient.notes ? `: ${patient.notes}` : ""}`,
 							assistantUserId: "",
 							clientMutationId: `waitlist-quickfill-${Date.now()}`,
 						}),
@@ -870,7 +480,6 @@ export function WaitlistQuickFillModal({
 				expiryIso = exp.toISOString();
 			}
 
-			// Format preferred ranges for backwards-compatible API
 			const preferredTimeRangesFormatted = preferredDays.flatMap((day) =>
 				preferredTimeOfDay.map((time) => ({
 					day,
@@ -991,1003 +600,126 @@ export function WaitlistQuickFillModal({
 					</button>
 				</div>
 
-				{/* Target Slot Banner if present */}
-				{activeTargetSlot?.startsAt && (
-					<div
-						className="p-4 mx-5 mt-4 rounded-xl bg-gradient-to-r from-[var(--teal)]/10 to-teal-500/5 border border-[var(--teal)]/20 flex flex-col gap-3 shrink-0"
-						data-testid="target-slot-banner"
-					>
-						<div className="flex flex-wrap items-center justify-between gap-3">
-							<div className="flex items-center gap-3 min-w-0">
-								<div className="p-2 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] shrink-0">
-									<Clock className="w-4 h-4" />
-								</div>
-								<div className="min-w-0">
-									<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--teal-dark)]">
-										Освободившееся окно для записи
-									</div>
-									<div className="text-sm font-semibold text-[var(--ink)] truncate">
-										{new Date(activeTargetSlot.startsAt).toLocaleDateString(
-											"ru-RU",
-											{
-												day: "numeric",
-												month: "long",
-												weekday: "long",
-											},
-										)}{" "}
-										·{" "}
-										{new Date(activeTargetSlot.startsAt).toLocaleTimeString(
-											"ru-RU",
-											{
-												hour: "2-digit",
-												minute: "2-digit",
-											},
-										)}
-										–
-										{new Date(activeTargetSlot.endsAt).toLocaleTimeString(
-											"ru-RU",
-											{
-												hour: "2-digit",
-												minute: "2-digit",
-											},
-										)}
-									</div>
-									<div className="text-xs text-[var(--muted)] mt-0.5 flex flex-wrap items-center gap-2">
-										<span className="truncate max-w-[200px]">
-											Врач: {activeTargetSlot.doctorName || "Любой специалист"}
-										</span>
-										{activeTargetSlot.freedBecause && (
-											<span className="truncate max-w-[200px]">
-												· Причина: {activeTargetSlot.freedBecause}
-											</span>
-										)}
-									</div>
-								</div>
-							</div>
-							<div className="text-xs font-semibold px-3 py-1 rounded-lg bg-[var(--teal)]/15 text-[var(--teal-dark)] shrink-0">
-								{scoredPatients.length} кандидатов в очереди
-							</div>
-						</div>
+				{/* Target Slot Banner */}
+				<WaitlistSlotSelectorBanner
+					activeTargetSlot={activeTargetSlot}
+					discoveredFreeSlots={discoveredFreeSlots}
+					selectedSlotIndex={selectedSlotIndex}
+					onSelectSlotIndex={setSelectedSlotIndex}
+					scoredPatientsCount={scoredPatients.length}
+				/>
 
-						{/* Quick selector across multiple discovered free slots */}
-						{discoveredFreeSlots.length > 1 && (
-							<div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-[var(--teal)]/15">
-								<span className="text-[11px] font-bold text-[var(--muted)] shrink-0 mr-1">
-									Окна:
-								</span>
-								{discoveredFreeSlots.map((slot, idx) => {
-									const sDate = new Date(slot.startsAt);
-									const dateLabel = sDate.toLocaleDateString("ru-RU", {
-										day: "numeric",
-										month: "short",
-									});
-									const timeLabel = sDate.toLocaleTimeString("ru-RU", {
-										hour: "2-digit",
-										minute: "2-digit",
-									});
-									const isSel = idx === selectedSlotIndex;
-									return (
-										<button
-											key={slot.startsAt + slot.doctorUserId}
-											type="button"
-											onClick={() => setSelectedSlotIndex(idx)}
-											className={`px-2.5 py-1 h-7 rounded-lg text-xs font-bold whitespace-nowrap transition-all border cursor-pointer pointer-coarse:min-h-[36px] ${
-												isSel
-													? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
-													: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-											}`}
-										>
-											<span>
-												{dateLabel} {timeLabel}
-											</span>
-											<span className="opacity-75 font-normal ml-1">
-												({slot.doctorName?.split(" ")[0]})
-											</span>
-										</button>
-									);
-								})}
-							</div>
+				{/* Navigation Sub-Tabs */}
+				<div className="px-5 py-2 border-b border-[var(--line)] flex items-center shrink-0 overflow-x-auto whitespace-nowrap bg-[var(--paper)]">
+					<div className="dente-segmented-bar">
+						{activeTargetSlot && (
+							<button
+								type="button"
+								onClick={() => setActiveTab("match")}
+								className={`dente-segmented-item ${
+									activeTab === "match" ? "active" : ""
+								}`}
+								data-testid="tab-match"
+							>
+								<Sparkles className="w-3.5 h-3.5 shrink-0" />
+								<span>Подбор на окно ({scoredPatients.length})</span>
+							</button>
 						)}
-					</div>
-				)}
-
-				{/* Navigation Sub-Tabs: Exactly 1 row on desktop, 32px height */}
-				<div className="px-5 pt-2 border-b border-[var(--line)] flex items-center gap-2 shrink-0 overflow-x-auto whitespace-nowrap">
-					{activeTargetSlot && (
 						<button
 							type="button"
-							onClick={() => setActiveTab("match")}
-							className={`px-3 py-1.5 h-8 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:py-2.5 ${
-								activeTab === "match"
-									? "border-[var(--teal)] text-[var(--teal-dark)] bg-[var(--paper-soft)]"
-									: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							onClick={() => setActiveTab("list")}
+							className={`dente-segmented-item ${
+								activeTab === "list" ? "active" : ""
 							}`}
-							data-testid="tab-match"
+							data-testid="tab-list"
 						>
-							<Sparkles className="w-3.5 h-3.5 shrink-0" />
-							<span>Подбор на окно ({scoredPatients.length})</span>
+							<Calendar className="w-3.5 h-3.5 shrink-0" />
+							<span>Все в очереди ({items.length})</span>
 						</button>
-					)}
-					<button
-						type="button"
-						onClick={() => setActiveTab("list")}
-						className={`px-3 py-1.5 h-8 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:py-2.5 ${
-							activeTab === "list"
-								? "border-[var(--teal)] text-[var(--teal-dark)] bg-[var(--paper-soft)]"
-								: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="tab-list"
-					>
-						<Calendar className="w-3.5 h-3.5 shrink-0" />
-						<span>Все в очереди ({items.length})</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("add")}
-						className={`px-3 py-1.5 h-8 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:py-2.5 ${
-							activeTab === "add"
-								? "border-[var(--teal)] text-[var(--teal-dark)] bg-[var(--paper-soft)]"
-								: "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="tab-add"
-					>
-						<UserPlus className="w-3.5 h-3.5 shrink-0" />
-						<span>Добавить пациента</span>
-					</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("add")}
+							className={`dente-segmented-item ${
+								activeTab === "add" ? "active" : ""
+							}`}
+							data-testid="tab-add"
+						>
+							<UserPlus className="w-3.5 h-3.5 shrink-0" />
+							<span>Добавить пациента</span>
+						</button>
+					</div>
 				</div>
 
 				{/* Tab Contents */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-4">
 					{/* TAB 1: MATCHING ON TARGET SLOT */}
 					{activeTab === "match" && (
-						<div className="space-y-3" data-testid="match-tab-content">
-							{scoredPatients.length === 0 ? (
-								<EmptyState
-									icon={<Sparkles size={28} />}
-									title="В листе ожидания нет подходящих пациентов"
-									description="Добавьте пациента в очередь или откройте окно для записи с улицы."
-									glass={false}
-									action={
-										<button
-											type="button"
-											onClick={() => setActiveTab("add")}
-											className="h-8 px-3 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] font-bold text-xs inline-flex items-center gap-1.5 hover:brightness-105 active:scale-95 transition-all shadow-xs cursor-pointer pointer-coarse:min-h-[44px]"
-											data-testid="match-empty-add-btn"
-										>
-											<Plus className="w-3.5 h-3.5 shrink-0" />
-											<span>Добавить в лист ожидания</span>
-										</button>
-									}
-								/>
-							) : (
-								<div className="space-y-2.5">
-									{scoredPatients.map(({ patient, scoring }, idx) => {
-										const priorityCfg =
-											PRIORITY_CONFIG[patient.priorityLevel] ??
-											PRIORITY_CONFIG.routine ??
-											DEFAULT_PRIORITY_CFG;
-										const isContacted = contactedPatients.has(patient.id);
-
-										return (
-											<div
-												key={patient.id}
-												className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)]/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0"
-												data-testid={`match-card-${patient.id}`}
-											>
-												<div className="space-y-1.5 flex-1 min-w-0">
-													<div className="flex flex-wrap items-center gap-2">
-														<span className="text-xs font-bold text-[var(--muted)] shrink-0">
-															#{idx + 1}
-														</span>
-														<h4
-															className="font-bold text-sm text-[var(--ink)] truncate max-w-[260px]"
-															title={patient.patientName || "Пациент без имени"}
-														>
-															{patient.patientName || "Пациент без имени"}
-														</h4>
-														<span
-															className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border shrink-0 ${priorityCfg.badgeClass}`}
-														>
-															{renderPriorityIcon(patient.priorityLevel)}
-															<span>{priorityCfg.label}</span>
-														</span>
-														<span
-															className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-																scoring.score >= 80
-																	? "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
-																	: scoring.score >= 60
-																		? "bg-[var(--warn-bg)] text-[var(--warn-fg)]"
-																		: "bg-[var(--paper-strong)] text-[var(--muted)]"
-															}`}
-														>
-															{scoring.score}% совпадение
-														</span>
-													</div>
-
-													<div className="text-xs text-[var(--muted)] flex flex-wrap items-center gap-x-3 gap-y-1">
-														{patient.patientPhone && (
-															<span className="flex items-center gap-1 font-medium text-[var(--ink-2)] shrink-0">
-																<Phone className="w-3 h-3 text-[var(--teal)]" />
-																{patient.patientPhone}
-															</span>
-														)}
-														{patient.preferredDoctorName && (
-															<span className="truncate max-w-[200px]">
-																Врач: {patient.preferredDoctorName}
-															</span>
-														)}
-														{patient.treatmentCategory && (
-															<span className="truncate max-w-[200px]">
-																Категория: {patient.treatmentCategory}
-															</span>
-														)}
-														<span className="shrink-0">
-															Ждёт{" "}
-															{Math.max(
-																0,
-																Math.floor(
-																	(Date.now() -
-																		new Date(patient.createdAt).getTime()) /
-																		(86400 * 1000),
-																),
-															)}{" "}
-															дн.
-														</span>
-													</div>
-
-													{/* Match reasons tags */}
-													<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-														{scoring.matchReasons.map((r) => (
-															<span
-																key={r}
-																className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal-dark)] font-medium inline-flex items-center gap-1 shrink-0"
-															>
-																<Check className="w-3 h-3 text-[var(--teal-dark)] shrink-0" />
-																<span>{r}</span>
-															</span>
-														))}
-														{scoring.mismatchReasons.map((m) => (
-															<span
-																key={m}
-																className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--bad-bg)]/50 text-[var(--bad-fg)] font-medium inline-flex items-center gap-1 shrink-0"
-															>
-																<X className="w-3 h-3 text-[var(--bad-fg)] shrink-0" />
-																<span>{m}</span>
-															</span>
-														))}
-													</div>
-
-													{patient.notes && (
-														<p className="text-xs italic text-[var(--muted)] bg-[var(--paper)] p-2 rounded-lg border border-[var(--line)] break-words">
-															"{patient.notes}"
-														</p>
-													)}
-												</div>
-
-												{/* 1-Click Action Buttons: Law of Miller (strictly <= 2 direct buttons) + MoreVertical */}
-												<div
-													className="flex items-center gap-1.5 shrink-0 justify-end relative"
-													data-menu-container={patient.id}
-												>
-													{/* Button 1 (Main): 1-Click Booking */}
-													<button
-														type="button"
-														onClick={() => handleBookPatient(patient)}
-														disabled={bookingPatientId === patient.id}
-														className="h-8 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 pointer-coarse:min-h-[44px]"
-														data-testid={`btn-book-${patient.id}`}
-														title="Записать пациента в освободившееся окно в 1 клик"
-													>
-														<UserCheck className="w-3.5 h-3.5 shrink-0" />
-														<span>
-															{bookingPatientId === patient.id
-																? "Записываем..."
-																: "В окно в 1 клик"}
-														</span>
-													</button>
-
-													{/* Button 2: WhatsApp direct */}
-													{patient.patientPhone && (
-														<button
-															type="button"
-															onClick={() => handleSendWhatsApp(patient)}
-															className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer pointer-coarse:min-h-[44px] border ${
-																isContacted
-																	? "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
-																	: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)]"
-															}`}
-															title="Предложить окно через WhatsApp"
-															data-testid={`btn-whatsapp-${patient.id}`}
-														>
-															{isContacted ? (
-																<>
-																	<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-																	<span>Предложено</span>
-																</>
-															) : (
-																<>
-																	<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-																	<span>WhatsApp</span>
-																</>
-															)}
-														</button>
-													)}
-
-													{/* Button 3: Secondary Actions Dropdown (MoreVertical) */}
-													<div className="relative">
-														<button
-															type="button"
-															onClick={() =>
-																setActiveMenuPatientId((prev) =>
-																	prev === patient.id ? null : patient.id,
-																)
-															}
-															className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
-															title="Другие действия"
-															aria-label="Другие действия"
-															aria-haspopup="true"
-															aria-expanded={activeMenuPatientId === patient.id}
-															data-testid={`btn-more-${patient.id}`}
-														>
-															<MoreVertical className="w-3.5 h-3.5 shrink-0" />
-														</button>
-
-														{activeMenuPatientId === patient.id && (
-															<div className="absolute right-0 top-full mt-1.5 min-w-[210px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1">
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleCopySms(patient);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																	title="Скопировать текст SMS"
-																	aria-label="Скопировать текст SMS"
-																>
-																	<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
-																	<span>Скопировать SMS</span>
-																</button>
-
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleSendTelegram(patient);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-sky-600 dark:text-sky-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																	title="Отправить в Telegram"
-																	aria-label="Отправить в Telegram"
-																	data-testid={`btn-telegram-${patient.id}`}
-																>
-																	<Send className="w-3.5 h-3.5 shrink-0" />
-																	<span>Telegram</span>
-																</button>
-
-																{patient.patientPhone && (
-																	<a
-																		href={`tel:${patient.patientPhone.replace(/[^\d+]/g, "")}`}
-																		onClick={() => setActiveMenuPatientId(null)}
-																		className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																		title="Позвонить пациенту"
-																		aria-label="Позвонить пациенту"
-																	>
-																		<Phone className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-																		<span>Позвонить</span>
-																	</a>
-																)}
-
-																<div className="my-0.5 border-t border-[var(--line)]" />
-
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleDelete(patient.id);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																	title="Удалить из листа ожидания"
-																	aria-label="Удалить из листа ожидания"
-																>
-																	<Trash2 className="w-3.5 h-3.5 shrink-0" />
-																	<span>Удалить из листа</span>
-																</button>
-															</div>
-														)}
-													</div>
-												</div>
-											</div>
-										);
-									})}
-								</div>
-							)}
-						</div>
+						<WaitlistMatchTab
+							scoredPatients={scoredPatients}
+							contactedPatients={contactedPatients}
+							bookingPatientId={bookingPatientId}
+							activeTargetSlot={activeTargetSlot}
+							activeMenuPatientId={activeMenuPatientId}
+							onToggleMenu={setActiveMenuPatientId}
+							onBookPatient={handleBookPatient}
+							onSendWhatsApp={handleSendWhatsApp}
+							onCopySms={handleCopySms}
+							onSendTelegram={handleSendTelegram}
+							onDelete={handleDelete}
+							onOpenAddTab={() => setActiveTab("add")}
+						/>
 					)}
 
 					{/* TAB 2: FULL WAITLIST QUEUE */}
 					{activeTab === "list" && (
-						<div className="space-y-3" data-testid="list-tab-content">
-							{/* Filter and search bar: exactly 1 row (32px, h-8) on desktop */}
-							<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
-								<div className="relative flex-1 min-w-[180px] max-w-sm">
-									<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-									<input
-										type="text"
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-										placeholder="Поиск по ФИО, телефону или примечанию..."
-										className="w-full pl-8 pr-2.5 h-8 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
-									/>
-								</div>
-								<div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap shrink-0">
-									{[
-										{ id: "all", label: "Все" },
-										{ id: "urgent", label: "Острая боль" },
-										{ id: "treatment_plan", label: "План" },
-										{ id: "vip", label: "VIP" },
-										{ id: "routine", label: "Плановый" },
-									].map((filter) => (
-										<button
-											key={filter.id}
-											type="button"
-											onClick={() => setSelectedPriorityFilter(filter.id)}
-											className={`px-2.5 h-8 rounded-lg text-xs font-semibold border transition-all flex items-center justify-center cursor-pointer pointer-coarse:min-h-[44px] ${
-												selectedPriorityFilter === filter.id
-													? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-2xs"
-													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-											}`}
-										>
-											{filter.label}
-										</button>
-									))}
-								</div>
-							</div>
-
-							{isLoading && items.length === 0 ? (
-								<div className="text-center py-8 text-[var(--muted)] text-sm">
-									Загрузка листа ожидания...
-								</div>
-							) : filteredList.length === 0 ? (
-								<EmptyState
-									icon={<Calendar size={28} />}
-									title={
-										searchQuery || selectedPriorityFilter !== "all"
-											? "Ничего не найдено по фильтрам"
-											: "В листе ожидания нет записей"
-									}
-									description={
-										searchQuery || selectedPriorityFilter !== "all"
-											? "Попробуйте изменить запрос или сбросить фильтр приоритета."
-											: "Поставьте пациента в очередь ожидания при отмене или нехватке времени."
-									}
-									glass={false}
-									action={
-										<button
-											type="button"
-											onClick={() => {
-												if (searchQuery || selectedPriorityFilter !== "all") {
-													setSearchQuery("");
-													setSelectedPriorityFilter("all");
-												} else {
-													setActiveTab("add");
-												}
-											}}
-											className="h-8 px-3 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] font-bold text-xs inline-flex items-center gap-1.5 hover:brightness-105 active:scale-95 transition-all shadow-xs cursor-pointer pointer-coarse:min-h-[44px]"
-											data-testid="list-empty-add-btn"
-										>
-											<Plus className="w-3.5 h-3.5 shrink-0" />
-											<span>
-												{searchQuery || selectedPriorityFilter !== "all"
-													? "Сбросить фильтры"
-													: "+ Добавить в лист ожидания"}
-											</span>
-										</button>
-									}
-								/>
-							) : (
-								<div className="space-y-2.5">
-									{filteredList.map((item) => {
-										const priorityCfg =
-											PRIORITY_CONFIG[item.priorityLevel] ??
-											PRIORITY_CONFIG.routine ??
-											DEFAULT_PRIORITY_CFG;
-										const isContacted = contactedPatients.has(item.id);
-
-										return (
-											<div
-												key={item.id}
-												className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col md:flex-row md:items-center justify-between gap-3 min-w-0"
-												data-testid={`waitlist-item-${item.id}`}
-											>
-												<div className="space-y-1.5 flex-1 min-w-0">
-													<div className="flex flex-wrap items-center gap-2">
-														<h4
-															className="font-bold text-sm text-[var(--ink)] truncate max-w-[260px]"
-															title={item.patientName || "Пациент без имени"}
-														>
-															{item.patientName || "Пациент без имени"}
-														</h4>
-														<span
-															className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border shrink-0 ${priorityCfg.badgeClass}`}
-														>
-															{renderPriorityIcon(item.priorityLevel)}
-															<span>{priorityCfg.label}</span>
-														</span>
-														{item.status === "fulfilled" && (
-															<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 inline-flex items-center gap-1 shrink-0">
-																<span>Принят</span>
-																<Check className="w-3 h-3 text-green-600 shrink-0" />
-															</span>
-														)}
-													</div>
-													<div className="text-xs text-[var(--muted)] flex flex-wrap items-center gap-x-3 gap-y-1">
-														{item.patientPhone && (
-															<span className="font-medium text-[var(--ink-2)] shrink-0">
-																{item.patientPhone}
-															</span>
-														)}
-														{item.preferredDoctorName && (
-															<span className="truncate max-w-[200px]">
-																Врач: {item.preferredDoctorName}
-															</span>
-														)}
-														{item.treatmentCategory && (
-															<span className="truncate max-w-[200px]">
-																Категория: {item.treatmentCategory}
-															</span>
-														)}
-														{item.expiryDate && (
-															<span className="shrink-0">
-																Действует до:{" "}
-																{new Date(item.expiryDate).toLocaleDateString(
-																	"ru-RU",
-																)}
-															</span>
-														)}
-													</div>
-													{item.notes && (
-														<p className="text-xs text-[var(--muted)] break-words">
-															{item.notes}
-														</p>
-													)}
-												</div>
-
-												{/* Action Buttons: Law of Miller (strictly <= 2 direct buttons) + MoreVertical */}
-												<div
-													className="flex items-center gap-1.5 shrink-0 justify-end relative"
-													data-menu-container={item.id}
-												>
-													{activeTargetSlot && item.status !== "fulfilled" && (
-														<button
-															type="button"
-															onClick={() => handleBookPatient(item)}
-															disabled={bookingPatientId === item.id}
-															className="h-8 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all disabled:opacity-50 pointer-coarse:min-h-[44px]"
-															title="Записать в окно в 1 клик"
-															data-testid={`btn-book-list-${item.id}`}
-														>
-															<UserCheck className="w-3.5 h-3.5 shrink-0" />
-															<span>
-																{bookingPatientId === item.id
-																	? "Записываем..."
-																	: "В окно"}
-															</span>
-														</button>
-													)}
-
-													{item.patientPhone && (
-														<button
-															type="button"
-															onClick={() => handleSendWhatsApp(item)}
-															className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer pointer-coarse:min-h-[44px] border ${
-																isContacted
-																	? "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
-																	: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line)]"
-															}`}
-															title="Отправить сообщение в WhatsApp"
-															data-testid={`btn-whatsapp-list-${item.id}`}
-														>
-															{isContacted ? (
-																<>
-																	<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-																	<span>Предложено</span>
-																</>
-															) : (
-																<>
-																	<MessageSquare className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-																	<span>WhatsApp</span>
-																</>
-															)}
-														</button>
-													)}
-
-													{/* Context menu for secondary actions: SMS, Call, Delete */}
-													<div className="relative">
-														<button
-															type="button"
-															onClick={() =>
-																setActiveMenuPatientId((prev) =>
-																	prev === item.id ? null : item.id,
-																)
-															}
-															className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
-															title="Другие действия"
-															aria-label="Другие действия"
-															aria-haspopup="true"
-															aria-expanded={activeMenuPatientId === item.id}
-															data-testid={`btn-more-list-${item.id}`}
-														>
-															<MoreVertical className="w-3.5 h-3.5 shrink-0" />
-														</button>
-
-														{activeMenuPatientId === item.id && (
-															<div className="absolute right-0 top-full mt-1.5 min-w-[210px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1">
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleCopySms(item);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																	title="Скопировать текст SMS"
-																	aria-label="Скопировать текст SMS"
-																>
-																	<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
-																	<span>Скопировать SMS</span>
-																</button>
-
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleSendTelegram(item);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-sky-600 dark:text-sky-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																	title="Отправить в Telegram"
-																	aria-label="Отправить в Telegram"
-																	data-testid={`btn-telegram-list-${item.id}`}
-																>
-																	<Send className="w-3.5 h-3.5 shrink-0" />
-																	<span>Telegram</span>
-																</button>
-
-																{item.patientPhone && (
-																	<a
-																		href={`tel:${item.patientPhone.replace(/[^\d+]/g, "")}`}
-																		onClick={() => setActiveMenuPatientId(null)}
-																		className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal)] transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																		title="Позвонить пациенту"
-																		aria-label="Позвонить пациенту"
-																	>
-																		<Phone className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-																		<span>Позвонить</span>
-																	</a>
-																)}
-
-																<div className="my-0.5 border-t border-[var(--line)]" />
-
-																<button
-																	type="button"
-																	onClick={() => {
-																		handleDelete(item.id);
-																		setActiveMenuPatientId(null);
-																	}}
-																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
-																	title="Удалить из листа ожидания"
-																	aria-label="Удалить из листа ожидания"
-																>
-																	<Trash2 className="w-3.5 h-3.5 shrink-0" />
-																	<span>Удалить из листа</span>
-																</button>
-															</div>
-														)}
-													</div>
-												</div>
-											</div>
-										);
-									})}
-								</div>
-							)}
-						</div>
+						<WaitlistListTab
+							filteredList={filteredList}
+							searchQuery={searchQuery}
+							onSearchChange={setSearchQuery}
+							selectedPriorityFilter={selectedPriorityFilter}
+							onPriorityFilterChange={setSelectedPriorityFilter}
+							isLoading={isLoading}
+							totalItemsCount={items.length}
+							contactedPatients={contactedPatients}
+							bookingPatientId={bookingPatientId}
+							activeTargetSlot={activeTargetSlot}
+							activeMenuPatientId={activeMenuPatientId}
+							onToggleMenu={setActiveMenuPatientId}
+							onBookPatient={handleBookPatient}
+							onSendWhatsApp={handleSendWhatsApp}
+							onCopySms={handleCopySms}
+							onSendTelegram={handleSendTelegram}
+							onDelete={handleDelete}
+							onOpenAddTab={() => setActiveTab("add")}
+						/>
 					)}
 
 					{/* TAB 3: ADD PATIENT TO WAITLIST */}
 					{activeTab === "add" && (
-						<form
+						<WaitlistAddPatientForm
+							patientsList={patientsList}
+							doctors={doctors}
+							selectedPatientId={selectedPatientId}
+							setSelectedPatientId={setSelectedPatientId}
+							priorityLevel={priorityLevel}
+							setPriorityLevel={setPriorityLevel}
+							preferredDoctorId={preferredDoctorId}
+							setPreferredDoctorId={setPreferredDoctorId}
+							treatmentCategory={treatmentCategory}
+							setTreatmentCategory={setTreatmentCategory}
+							preferredDays={preferredDays}
+							setPreferredDays={setPreferredDays}
+							preferredTimeOfDay={preferredTimeOfDay}
+							setPreferredTimeOfDay={setPreferredTimeOfDay}
+							expiryDays={expiryDays}
+							setExpiryDays={setExpiryDays}
+							customExpiryDate={customExpiryDate}
+							setCustomExpiryDate={setCustomExpiryDate}
+							notes={notes}
+							setNotes={setNotes}
+							isSubmitting={isSubmitting}
 							onSubmit={handleAddPatient}
-							className="space-y-4 max-w-2xl mx-auto"
-							data-testid="add-waitlist-form"
-						>
-							<div className="bg-[var(--paper-soft)] rounded-xl p-4 border border-[var(--line)] space-y-4">
-								<h3 className="text-sm font-bold text-[var(--ink)] flex items-center gap-2">
-									<UserPlus className="w-4 h-4 text-[var(--teal)]" />
-									Регистрация пациента в листе ожидания
-								</h3>
-
-								{/* Patient Selection */}
-								<div className="space-y-1.5">
-									<label
-										htmlFor="waitlist-select-patient"
-										className="text-xs font-semibold text-[var(--muted)]"
-									>
-										Пациент из картотеки *
-									</label>
-									<select
-										id="waitlist-select-patient"
-										value={selectedPatientId}
-										onChange={(e) => setSelectedPatientId(e.target.value)}
-										className="w-full p-2 h-9 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
-									>
-										<option value="">-- Выберите пациента из базы --</option>
-										{patientsList.map((p) => (
-											<option key={p.id} value={p.id}>
-												{p.fullName} {p.phone ? `(${p.phone})` : ""}
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Priority Selection */}
-								<div className="space-y-1.5">
-									<span className="text-xs font-semibold text-[var(--muted)] block">
-										Категория срочности и приоритет *
-									</span>
-									<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-										{[
-											{
-												id: "urgent",
-												label: "Острая боль",
-												icon: <Zap size={15} className="shrink-0" />,
-												color:
-													"bg-[var(--bad-bg)] text-[var(--bad-fg)] border-[var(--bad-fg)]",
-											},
-											{
-												id: "treatment_plan",
-												label: "Незавершённый план",
-												icon: <ClipboardList size={15} className="shrink-0" />,
-												color:
-													"bg-[var(--warn-bg)] text-[var(--warn-fg)] border-[var(--warn-fg)]",
-											},
-											{
-												id: "vip",
-												label: "VIP клиент",
-												icon: (
-													<Star
-														size={15}
-														className="shrink-0 text-purple-500"
-													/>
-												),
-												color:
-													"bg-purple-500/20 text-purple-600 border-purple-500",
-											},
-											{
-												id: "routine",
-												label: "Плановый",
-												icon: (
-													<CalendarDays
-														size={15}
-														className="shrink-0 text-slate-500"
-													/>
-												),
-												color:
-													"bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--line-strong)]",
-											},
-										].map((p) => (
-											<button
-												key={p.id}
-												type="button"
-												onClick={() =>
-													setPriorityLevel(p.id as WaitlistPriority)
-												}
-												className={`p-2 rounded-lg text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1 cursor-pointer pointer-coarse:min-h-[44px] ${
-													priorityLevel === p.id
-														? `${p.color} ring-2 ring-offset-1`
-														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-												}`}
-											>
-												<span className="flex items-center justify-center">
-													{p.icon}
-												</span>
-												<span>{p.label}</span>
-											</button>
-										))}
-									</div>
-								</div>
-
-								{/* Desired Doctor */}
-								<div className="space-y-1.5">
-									<label
-										htmlFor="waitlist-select-doctor"
-										className="text-xs font-semibold text-[var(--muted)]"
-									>
-										Желаемый специалист
-									</label>
-									<select
-										id="waitlist-select-doctor"
-										value={preferredDoctorId}
-										onChange={(e) => setPreferredDoctorId(e.target.value)}
-										className="w-full p-2 h-9 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
-									>
-										<option value="">-- Любой специалист клиники --</option>
-										{/* biome-ignore lint/suspicious/noExplicitAny: doctor type */}
-										{doctors.map((d: any) => (
-											<option key={d.id} value={d.id}>
-												{d.fullName || d.name} ({d.specialty || "Врач"})
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Treatment Category */}
-								<div className="space-y-1.5">
-									<label
-										htmlFor="waitlist-select-category"
-										className="text-xs font-semibold text-[var(--muted)]"
-									>
-										Направление / Причина обращения
-									</label>
-									<select
-										id="waitlist-select-category"
-										value={treatmentCategory}
-										onChange={(e) => setTreatmentCategory(e.target.value)}
-										className="w-full p-2 h-9 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] pointer-coarse:min-h-[44px]"
-									>
-										<option value="">-- Выберите направление --</option>
-										{TREATMENT_CATEGORIES.map((cat) => (
-											<option key={cat} value={cat}>
-												{cat}
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Preferred Days of Week */}
-								<div className="space-y-1.5">
-									<span className="text-xs font-semibold text-[var(--muted)] block">
-										Желаемые дни недели
-									</span>
-									<div className="flex flex-wrap gap-1.5">
-										{[
-											{ id: "weekdays", label: "Пн-Пт (Будни)" },
-											{ id: "weekend", label: "Сб-Вс (Выходные)" },
-											{ id: "any", label: "Любые дни" },
-										].map((d) => (
-											<button
-												key={d.id}
-												type="button"
-												onClick={() => {
-													if (preferredDays.includes(d.id)) {
-														setPreferredDays(
-															preferredDays.filter((x) => x !== d.id),
-														);
-													} else {
-														setPreferredDays([...preferredDays, d.id]);
-													}
-												}}
-												className={`px-3 py-1.5 h-8 rounded-lg text-xs font-semibold border transition-all cursor-pointer pointer-coarse:min-h-[44px] ${
-													preferredDays.includes(d.id)
-														? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
-														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-												}`}
-											>
-												{d.label}
-											</button>
-										))}
-									</div>
-								</div>
-
-								{/* Preferred Time of Day */}
-								<div className="space-y-1.5">
-									<span className="text-xs font-semibold text-[var(--muted)] block">
-										Желаемое время суток
-									</span>
-									<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-										{[
-											{ id: "morning", label: "Утро", sub: "08:00–12:00" },
-											{ id: "day", label: "День", sub: "12:00–17:00" },
-											{ id: "evening", label: "Вечер", sub: "17:00–21:00" },
-											{ id: "any", label: "Любое", sub: "В течение дня" },
-										].map((t) => (
-											<button
-												key={t.id}
-												type="button"
-												onClick={() => {
-													const val = t.id as PreferredTimeOfDay;
-													if (preferredTimeOfDay.includes(val)) {
-														setPreferredTimeOfDay(
-															preferredTimeOfDay.filter((x) => x !== val),
-														);
-													} else {
-														setPreferredTimeOfDay([...preferredTimeOfDay, val]);
-													}
-												}}
-												className={`p-1.5 rounded-lg text-xs border transition-all flex flex-col items-center justify-center cursor-pointer pointer-coarse:min-h-[44px] ${
-													preferredTimeOfDay.includes(
-														t.id as PreferredTimeOfDay,
-													)
-														? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
-														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-												}`}
-											>
-												<span className="font-bold">{t.label}</span>
-												<span className="text-[11px] opacity-80">{t.sub}</span>
-											</button>
-										))}
-									</div>
-								</div>
-
-								{/* Expiry Date */}
-								<div className="space-y-1.5">
-									<span className="text-xs font-semibold text-[var(--muted)] block">
-										Срок ожидания (до даты)
-									</span>
-									<div className="flex flex-wrap gap-1.5 items-center">
-										{[
-											{ days: 3, label: "3 дня" },
-											{ days: 7, label: "7 дней" },
-											{ days: 14, label: "14 дней" },
-											{ days: 30, label: "30 дней" },
-										].map((opt) => (
-											<button
-												key={opt.days}
-												type="button"
-												onClick={() => {
-													setExpiryDays(opt.days);
-													setCustomExpiryDate("");
-												}}
-												className={`px-3 py-1.5 h-8 rounded-lg text-xs font-semibold border transition-all cursor-pointer pointer-coarse:min-h-[44px] ${
-													expiryDays === opt.days && !customExpiryDate
-														? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)]"
-														: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-												}`}
-											>
-												{opt.label}
-											</button>
-										))}
-										<input
-											type="date"
-											value={customExpiryDate}
-											onChange={(e) => {
-												setCustomExpiryDate(e.target.value);
-												setExpiryDays(null);
-											}}
-											className="h-8 px-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] pointer-coarse:min-h-[44px]"
-										/>
-									</div>
-								</div>
-
-								{/* Notes */}
-								<div className="space-y-1.5">
-									<label
-										htmlFor="waitlist-notes"
-										className="text-xs font-semibold text-[var(--muted)]"
-									>
-										Примечание администратора
-									</label>
-									<textarea
-										id="waitlist-notes"
-										value={notes}
-										onChange={(e) => setNotes(e.target.value)}
-										placeholder="Например: Пациент просил перезвонить после 15:00. Готов приехать за 30 минут."
-										rows={3}
-										className="w-full p-2 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
-									/>
-								</div>
-							</div>
-
-							<button
-								type="submit"
-								disabled={isSubmitting}
-								className="w-full py-2.5 h-10 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 pointer-coarse:min-h-[44px]"
-								data-testid="submit-waitlist-btn"
-							>
-								<UserPlus className="w-4 h-4" />
-								<span>
-									{isSubmitting
-										? "Сохранение..."
-										: "Зарегистрировать в листе ожидания"}
-								</span>
-							</button>
-						</form>
+						/>
 					)}
 				</div>
 			</div>

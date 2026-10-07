@@ -74,7 +74,7 @@ export function BotStudioModal({
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 id="bot-modal-title" className="bot-modal-title">
-									Студия ботов DENTE: Запуск в 2 клика
+									Студия ботов DENTE: Быстрый запуск
 								</h2>
 								<span className="bot-pill-mini text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/50">
 									<ShieldCheck size={12} className="inline mr-1" />

@@ -769,8 +769,8 @@ describe("VisitSoapEditor — Template Drawer DOM Chunking & Memory Guard (Manda
 			}),
 		);
 
-		// Проверяем, что отрисовано ровно 30 карточек (кнопка 'Заполнить (1 клик)')
-		const matches = html.match(/Заполнить \(1 клик\)/g) || [];
+		// Проверяем, что отрисовано ровно 30 карточек (кнопка 'Заполнить')
+		const matches = html.match(/<span>Заполнить<\/span>/g) || [];
 		assert.strictEqual(
 			matches.length,
 			30,

@@ -222,7 +222,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 
 					<div className="marketing-roi-header-right">
 						<div
-							className="marketing-roi-period-selector"
+							className="marketing-roi-period-selector dente-segmented-bar"
 							role="group"
 							aria-label="Период отчета"
 						>
@@ -238,9 +238,10 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 									key={p.id}
 									type="button"
 									onClick={() => setSelectedPeriod(p.id)}
-									className={`marketing-roi-period-btn ${
+									className={`marketing-roi-period-btn dente-segmented-item ${
 										selectedPeriod === p.id ? "active" : ""
 									}`}
+									data-active={selectedPeriod === p.id}
 								>
 									{p.label}
 								</button>
@@ -492,16 +493,26 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 									</p>
 								</div>
 
-								<div className="relative min-w-[260px]">
-									<Search className="w-4 h-4 absolute left-3 top-2.5 text-[var(--muted,#94a3b8)]" />
+								<div className="dente-search-wrap min-w-[260px]">
+									<Search size={14} className="dente-search-icon" />
 									<input
 										type="text"
 										value={searchQuery}
 										onChange={(e) => setSearchQuery(e.target.value)}
 										placeholder="Поиск по ФИО, телефону, UTM или ID..."
-										className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-[var(--paper-soft,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(204,251,241,0.15))] outline-none focus:border-[var(--teal,#0d9488)]"
+										className="dente-search-input"
 										data-testid="search-attributions-input"
 									/>
+									{searchQuery && (
+										<button
+											type="button"
+											onClick={() => setSearchQuery("")}
+											className="dente-search-clear"
+											aria-label="Очистить поиск"
+										>
+											<X size={13} />
+										</button>
+									)}
 								</div>
 							</div>
 
@@ -552,7 +563,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 														<span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 px-2.5 py-1 rounded-lg">
 															Оплачено: {(attr.totalPaidKopecks / 100).toLocaleString("ru-RU")} ₽
 														</span>
-														<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/50">
+														<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/50">
 															{attr.currentStage === "paid_plan"
 																? "Оплачен план"
 																: attr.currentStage === "attended"
@@ -617,7 +628,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 														</span>
 													</div>
 													{attr.notes && (
-														<div className="text-[11px] italic text-[var(--muted,#94a3b8)]">
+														<div className="text-xs italic text-[var(--muted,#94a3b8)]">
 															«{attr.notes}»
 														</div>
 													)}

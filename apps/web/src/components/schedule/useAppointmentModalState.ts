@@ -516,21 +516,21 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
 
   const handleConvertToCito = useCallback(() => {
     setIsCito(true);
-    const citoReason = "CITO! Острая боль";
+    const citoReason = "Срочно! Острая боль";
     setReason((prev) => (prev ? `${citoReason} (${prev})` : citoReason));
     applyDuration(30);
-    if (!comment.includes("CITO")) {
+    if (!comment.includes("Экстренно") && !comment.includes("CITO")) {
       setComment((prev) =>
         prev
-          ? `${prev}\n[CITO: экстренное обращение с острой болью]`
-          : "[CITO: экстренное обращение с острой болью]",
+          ? `${prev}\n[Экстренно: обращение с острой болью]`
+          : "[Экстренно: обращение с острой болью]",
       );
     }
     if (status === "planned") {
       setStatus("confirmed");
     }
     showToast(
-      "Приём переведён в CITO (Острая боль): 30 мин, овербукинг разрешён",
+      "Приём переведён в срочную запись (Острая боль): 30 мин, наложение слота допустимо",
       "warning",
       3500,
     );
@@ -620,7 +620,7 @@ export function useAppointmentModalState(props: AppointmentModalProps) {
         (comment ?? "").toLowerCase().includes("острая боль")
       ) {
         const created = await handleCreateInlinePatient({
-          fullName: "Пациент с острой болью (CITO)",
+          fullName: "Пациент с острой болью (Срочно)",
         });
         if (created?.id) {
           effectivePatientId = created.id;

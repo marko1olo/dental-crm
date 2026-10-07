@@ -382,7 +382,7 @@ export function BotOnboardingWizard({
 					{ num: 1, label: "Канал связи", desc: "TG, VK, WA, MAX" },
 					{ num: 2, label: "Профиль клиники", desc: "Название и тексты" },
 					{ num: 3, label: "Выбор плагинов", desc: "5 умных модулей" },
-					{ num: 4, label: "Запуск в 1 клик", desc: "Статус & ZIP" },
+					{ num: 4, label: "Быстрый запуск", desc: "Статус & ZIP" },
 				].map((step) => {
 					const isPast = currentStep > step.num;
 					const isCurrent = currentStep === step.num;
@@ -413,7 +413,7 @@ export function BotOnboardingWizard({
 						<span className="bot-step-chip">Шаг 1 из 4</span>
 						<h3 className="bot-pane-title">Выберите канал автоматизации клиники</h3>
 						<p className="bot-pane-subtitle">
-							Подключите бота за 2 простых клика. Выберите мессенджер, в котором общаются ваши пациенты:
+							Подключите бота по инструкции. Выберите мессенджер, в котором общаются ваши пациенты:
 						</p>
 					</div>
 
@@ -661,7 +661,7 @@ export function BotOnboardingWizard({
 					{/* 1-Click Clinical Concept Selector */}
 					<div className="bot-presets-selector-bar">
 						<span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-							Готовые концепции в 1 клик:
+							Готовые клинические концепции:
 						</span>
 						<div className="bot-preset-chips-row">
 							{Object.values(CLINICAL_BOT_PRESETS).map((p) => {
@@ -1012,7 +1012,7 @@ export function BotOnboardingWizard({
 						<span className="bot-step-chip">Шаг 4 из 4</span>
 						<h3 className="bot-pane-title">Запуск бота и управление лидами</h3>
 						<p className="bot-pane-subtitle">
-							Бот полностью сконфигурирован. Запустите его в 1 клик на защищенном сервере DENTE либо скачайте архив с открытым исходным кодом:
+							Бот полностью сконфигурирован. Запустите его на защищенном сервере DENTE либо скачайте архив с открытым исходным кодом:
 						</p>
 					</div>
 

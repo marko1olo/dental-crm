@@ -27,6 +27,7 @@ import {
 	mapRoleToSpecialtyId,
 	inferServiceCategory,
 } from "../../pages/DoctorPayoutDashboard";
+import "../../styles/modules/mobile-doctor-payout.css";
 
 export interface DoctorPayoutMobileWalletProps {
 	readonly report: DoctorPayoutReport | null;

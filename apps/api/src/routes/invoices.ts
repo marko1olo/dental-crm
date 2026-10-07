@@ -64,7 +64,8 @@ const validatePlanBodySchema = z.object({
 	items: z.array(
 		z.object({
 			itemId: z.string().min(1),
-			toothNumber: z.number().int().nullable().optional(),
+			toothNumber: z.union([z.number().int(), z.string()]).nullable().optional(),
+			tooth_number: z.union([z.number().int(), z.string()]).nullable().optional(),
 			surfaces: z.array(z.string()).optional(),
 			code804n: z.string().min(1),
 			nameRu: z.string().min(1),
@@ -97,7 +98,8 @@ const generateInvoiceFromPlanSchema = z.object({
 	items: z.array(
 		z.object({
 			itemId: z.string().optional(),
-			toothNumber: z.number().int().nullable().optional(),
+			toothNumber: z.union([z.number().int(), z.string()]).nullable().optional(),
+			tooth_number: z.union([z.number().int(), z.string()]).nullable().optional(),
 			surfaces: z.array(z.string()).optional().default([]),
 			code804n: z.string().optional(),
 			nameRu: z.string().min(1),
@@ -178,7 +180,12 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 				quantity: it.quantity,
 				planUnitPriceKopecks: it.planUnitPriceKopecks,
 				planDiscountKopecks: it.planDiscountKopecks || 0,
-				toothNumber: it.toothNumber !== undefined ? it.toothNumber : null,
+				toothNumber:
+					it.toothNumber !== undefined && it.toothNumber !== null
+						? Number(it.toothNumber) || null
+						: it.tooth_number !== undefined && it.tooth_number !== null
+							? Number(it.tooth_number) || null
+							: null,
 				surfaces: it.surfaces || [],
 				...(it.serviceId !== undefined ? { serviceId: it.serviceId } : {}),
 				...(it.stageId !== undefined ? { stageId: it.stageId } : {}),
@@ -505,10 +512,17 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					return false;
 				});
 
+				const resolvedToothNumber =
+					it.toothNumber !== undefined && it.toothNumber !== null
+						? Number(it.toothNumber) || null
+						: it.tooth_number !== undefined && it.tooth_number !== null
+							? Number(it.tooth_number) || null
+							: null;
+
 				const matchingDbPlanItem = targetPlanDbItems.find((pi) => {
 					if (it.serviceId && pi.priceId?.startsWith(it.serviceId)) return true;
 					if (it.nameRu && pi.priceId?.includes(it.nameRu)) return true;
-					if (it.toothNumber !== undefined && pi.toothNumber === it.toothNumber) return true;
+					if (resolvedToothNumber !== null && pi.toothNumber === resolvedToothNumber) return true;
 					return false;
 				});
 
@@ -588,7 +602,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 				return {
 					itemId: it.itemId || it.serviceId || `item-${idx + 1}`,
-					toothNumber: it.toothNumber !== undefined ? it.toothNumber : null,
+					toothNumber: resolvedToothNumber,
 					surfaces: it.surfaces || [],
 					code804n: it.code804n || matchingCatalog?.code || "A16.07.001",
 					nameRu: it.nameRu,

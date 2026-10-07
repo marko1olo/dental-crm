@@ -10,6 +10,7 @@ import {
 	Search,
 	ShieldCheck,
 	Sparkles,
+	X,
 	Zap,
 } from "lucide-react";
 import type { GeneratedDocument } from "@dental/shared";
@@ -106,10 +107,10 @@ const OutpatientDocumentCard = memo<OutpatientDocumentCardProps>(({
 					type="button"
 					data-testid={`archive-open-btn-${doc.id}`}
 					onClick={onOpen}
-					className="min-h-[44px] sm:min-h-[32px] px-3 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1 cursor-pointer"
+					className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg secondary-button inline-flex items-center gap-1.5 cursor-pointer"
 					title="Открыть документ"
 				>
-					<FileText size={13} />
+					<FileText size={14} className="shrink-0" />
 					<span>Открыть</span>
 				</button>
 
@@ -117,10 +118,10 @@ const OutpatientDocumentCard = memo<OutpatientDocumentCardProps>(({
 					type="button"
 					data-testid={`archive-print-btn-${doc.id}`}
 					onClick={onPrint}
-					className="min-h-[44px] sm:min-h-[32px] px-3 text-xs font-semibold rounded-lg border border-teal-600/30 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors inline-flex items-center gap-1 cursor-pointer"
+					className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-semibold rounded-lg primary-button inline-flex items-center gap-1.5 cursor-pointer"
 					title="Печать или сохранение PDF"
 				>
-					<Printer size={13} />
+					<Printer size={14} className="shrink-0" />
 					<span>Печать</span>
 				</button>
 
@@ -130,7 +131,7 @@ const OutpatientDocumentCard = memo<OutpatientDocumentCardProps>(({
 						type="button"
 						data-testid={`archive-more-btn-${doc.id}`}
 						onClick={onToggleDropdown}
-						className="min-h-[44px] sm:min-h-[32px] w-[32px] flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+						className="min-h-[44px] sm:min-h-8 sm:h-8 w-8 sm:w-8 px-0 flex items-center justify-center rounded-lg secondary-button cursor-pointer"
 						title="Дополнительные действия"
 						aria-expanded={isDropdownOpen}
 					>
@@ -363,17 +364,17 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 						}}
 					>
 						<Sparkles size={16} className="text-teal-600 dark:text-teal-400" />
-						Печать чистых бланков («________») в 1 клик:
+						Печать чистых бланков («________»):
 					</span>
 
 					<button
 						type="button"
 						data-testid="archive-quick-blank-contract-btn"
 						onClick={handlePrintBlankContract}
-						className="min-h-[44px] sm:min-h-[34px] px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg secondary-button inline-flex items-center gap-1.5 cursor-pointer"
 						title="Распечатать чистый бланк договора на медицинские услуги со строками «________» для ручного заполнения"
 					>
-						<Printer size={14} className="text-teal-600 dark:text-teal-400" />
+						<Printer size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Бланк договора</span>
 					</button>
 
@@ -381,10 +382,10 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 						type="button"
 						data-testid="archive-quick-blank-consent-btn"
 						onClick={handlePrintBlankConsent}
-						className="min-h-[44px] sm:min-h-[34px] px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg secondary-button inline-flex items-center gap-1.5 cursor-pointer"
 						title="Распечатать чистый бланк информированного согласия на лечение со строками «________» для ручного заполнения"
 					>
-						<FileText size={14} className="text-teal-600 dark:text-teal-400" />
+						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Бланк согласия</span>
 					</button>
 
@@ -392,10 +393,10 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 						type="button"
 						data-testid="archive-quick-blank-form043-btn"
 						onClick={handlePrintBlankForm043}
-						className="min-h-[44px] sm:min-h-[34px] px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg secondary-button inline-flex items-center gap-1.5 cursor-pointer"
 						title="Распечатать чистую амбулаторную медкарту со строками «________» и зубной формулой FDI"
 					>
-						<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400" />
+						<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Бланк медкарты</span>
 					</button>
 				</div>
@@ -404,10 +405,10 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 					type="button"
 					data-testid="archive-quick-open-latest-btn"
 					onClick={handleOpenLatest}
-					className="min-h-[44px] sm:min-h-[34px] px-3 py-1 text-xs font-semibold rounded-lg border border-teal-600/40 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+					className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-semibold text-teal-700 dark:text-teal-300 rounded-lg secondary-button inline-flex items-center gap-1.5 cursor-pointer"
 					title="Открыть последний документ в архиве"
 				>
-					<Zap size={14} className="text-amber-500" />
+					<Zap size={14} className="text-amber-500 shrink-0" />
 					<span>Открыть последний</span>
 				</button>
 			</div>
@@ -424,27 +425,28 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 					flexWrap: "wrap",
 				}}
 			>
-				<div style={{ position: "relative", minWidth: "240px", flex: 1 }}>
-					<Search
-						size={15}
-						style={{
-							position: "absolute",
-							left: "10px",
-							top: "50%",
-							transform: "translateY(-50%)",
-							color: "var(--muted, #64748b)",
-						}}
-					/>
+				<div className="dente-search-wrap" style={{ minWidth: "240px", flex: 1 }}>
+					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder="Поиск по архиву документов..."
-						className="min-h-[44px] sm:min-h-[36px] w-full pl-8 pr-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+						className="dente-search-input"
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							onClick={() => setSearchQuery("")}
+							className="dente-search-clear"
+							aria-label="Очистить поиск"
+						>
+							<X size={13} />
+						</button>
+					)}
 				</div>
 
-				<div style={{ display: "flex", gap: "6px" }}>
+				<div className="dente-segmented-bar">
 					{(
 						[
 							{ id: "all", label: "Все" },
@@ -456,11 +458,8 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 							key={tab.id}
 							type="button"
 							onClick={() => setStatusFilter(tab.id)}
-							className={`min-h-[44px] sm:min-h-[32px] px-3 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
-								statusFilter === tab.id
-									? "border-teal-600 bg-teal-600 text-white"
-									: "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-							}`}
+							className={`dente-segmented-item ${statusFilter === tab.id ? "active" : ""}`}
+							data-active={statusFilter === tab.id}
 						>
 							{tab.label}
 						</button>
@@ -526,7 +525,7 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 								type="button"
 								data-testid="archive-load-more-btn"
 								onClick={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
-								className="min-h-[44px] sm:min-h-[34px] px-4 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+								className="min-h-[44px] sm:min-h-8 sm:h-8 px-4 text-[13px] font-medium rounded-lg secondary-button cursor-pointer inline-flex items-center gap-1.5"
 							>
 								<span>Показать ещё ({documentSlice.remainingCount} из {documentSlice.totalCount})</span>
 							</button>
@@ -535,7 +534,7 @@ export const DocumentsOutpatientArchive: React.FC<DocumentsOutpatientArchiveProp
 								type="button"
 								data-testid="archive-load-all-btn"
 								onClick={() => setDisplayLimit(documentSlice.totalCount)}
-								className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors cursor-pointer"
+								className="min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg ghost-button cursor-pointer"
 							>
 								<span>Показать все</span>
 							</button>

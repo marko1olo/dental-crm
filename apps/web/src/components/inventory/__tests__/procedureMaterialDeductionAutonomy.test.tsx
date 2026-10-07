@@ -148,8 +148,11 @@ describe("WarehouseManagerModal & Soft Overdraft (Mandates 8e, 8k, 8n)", () => {
 			})
 		);
 
-		// Zero stock item must show overdraft label
-		assert.ok(html.includes("Остаток 0 (Овердрафт)"));
+		// Zero stock item must show deficit label
+		assert.ok(
+			html.includes("Остаток 0 (списание с дефицитом)") ||
+				html.includes("Остаток 0 (Овердрафт)"),
+		);
 		// Confirm button is present and not disabled
 		assert.ok(html.includes("data-testid=\"confirm-writeoff-btn\""));
 		assert.ok(!html.includes("disabled=\"\""));

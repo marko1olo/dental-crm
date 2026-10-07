@@ -63,7 +63,9 @@ describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () =
 		assert.ok(html.includes("data-testid=\"senior-nurse-disposal-act-modal\""));
 		assert.ok(html.includes("Акт списания медикаментов и анестетиков (Старшая медсестра)"));
 		assert.ok(html.includes("СанПиН 3.3686-21"));
-		assert.ok(html.includes("Заказ (1 клик)"));
+		assert.ok(
+			html.includes("Заказ поставщику") || html.includes("Заказ (1 клик)"),
+		);
 		assert.ok(html.includes("Старшая медсестра"));
 		assert.ok(html.includes("Иванова Е.В."));
 		assert.ok(html.includes("Печать акта списания"));

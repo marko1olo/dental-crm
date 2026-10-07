@@ -340,96 +340,115 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 
 				<div className="cad-toolbar">
 					{/* Вкладки разделов */}
-					<div className="cad-pill-group" role="tablist" aria-label="Разделы аналитики">
+					<div className="dente-segmented-bar" role="tablist" aria-label="Разделы аналитики">
 						<button
 							type="button"
 							role="tab"
 							aria-selected={activeTab === "overview"}
-							className={`cad-pill-btn ${activeTab === "overview" ? "active" : ""}`}
+							className={`dente-segmented-item ${activeTab === "overview" ? "active" : ""}`}
+							data-active={activeTab === "overview"}
 							onClick={() => setActiveTab("overview")}
 						>
-							<PieChart size={14} /> Сводка
+							<PieChart size={14} /> <span>Сводка</span>
 						</button>
 						<button
 							type="button"
 							role="tab"
 							aria-selected={activeTab === "finances"}
-							className={`cad-pill-btn ${activeTab === "finances" ? "active" : ""}`}
+							className={`dente-segmented-item ${activeTab === "finances" ? "active" : ""}`}
+							data-active={activeTab === "finances"}
 							onClick={() => setActiveTab("finances")}
 						>
-							<Coins size={14} /> Финансы
+							<Coins size={14} /> <span>Финансы</span>
 						</button>
 						<button
 							type="button"
 							role="tab"
 							aria-selected={activeTab === "chairs"}
-							className={`cad-pill-btn ${activeTab === "chairs" ? "active" : ""}`}
+							className={`dente-segmented-item ${activeTab === "chairs" ? "active" : ""}`}
+							data-active={activeTab === "chairs"}
 							onClick={() => setActiveTab("chairs")}
 						>
-							<Activity size={14} /> Кресла
+							<Activity size={14} /> <span>Кресла</span>
 						</button>
 						<button
 							type="button"
 							role="tab"
 							aria-selected={activeTab === "doctors"}
-							className={`cad-pill-btn ${activeTab === "doctors" ? "active" : ""}`}
+							className={`dente-segmented-item ${activeTab === "doctors" ? "active" : ""}`}
+							data-active={activeTab === "doctors"}
 							onClick={() => setActiveTab("doctors")}
 						>
-							<Users size={14} /> Врачи
+							<Users size={14} /> <span>Врачи</span>
 						</button>
 					</div>
 
-					{/* Селектор периода */}
-					<div className="cad-pill-group" role="group" aria-label="Период аналитики">
+					{/* Селектор периода [ Сегодня | Неделя | Месяц | Квартал | Год ] */}
+					<div className="dente-segmented-bar" role="group" aria-label="Период аналитики">
 						<button
 							type="button"
-							className={`cad-pill-btn ${period === "day" ? "active" : ""}`}
+							className={`dente-segmented-item ${period === "day" ? "active" : ""}`}
+							data-active={period === "day"}
 							onClick={() => setPeriod("day")}
 						>
-							День
+							Сегодня
 						</button>
 						<button
 							type="button"
-							className={`cad-pill-btn ${period === "week" ? "active" : ""}`}
+							className={`dente-segmented-item ${period === "week" ? "active" : ""}`}
+							data-active={period === "week"}
 							onClick={() => setPeriod("week")}
 						>
 							Неделя
 						</button>
 						<button
 							type="button"
-							className={`cad-pill-btn ${period === "month" ? "active" : ""}`}
+							className={`dente-segmented-item ${period === "month" ? "active" : ""}`}
+							data-active={period === "month"}
 							onClick={() => setPeriod("month")}
 						>
 							Месяц
 						</button>
 						<button
 							type="button"
-							className={`cad-pill-btn ${period === "quarter" ? "active" : ""}`}
+							className={`dente-segmented-item ${period === "quarter" ? "active" : ""}`}
+							data-active={period === "quarter"}
 							onClick={() => setPeriod("quarter")}
 						>
 							Квартал
 						</button>
+						<button
+							type="button"
+							className={`dente-segmented-item ${period === "year" ? "active" : ""}`}
+							data-active={period === "year"}
+							onClick={() => setPeriod("year")}
+						>
+							Год
+						</button>
 					</div>
 
-					{/* Кнопки действий */}
+					{/* Кнопки действий (Стандарт DENTE: высота 32px, шрифт 13px, скругление 8px) */}
 					<button
 						type="button"
-						className="cad-action-btn"
+						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
 						onClick={handleExportCsv}
-						title="Экспорт в Excel / CSV"
+						title="Экспорт аналитического отчета в Excel / CSV"
+						data-testid="cad-export-excel-btn"
 					>
 						<Download size={14} />
-						<span>Экспорт</span>
+						<span>Экспорт в Excel</span>
 					</button>
 
 					<button
 						type="button"
-						className="cad-action-btn"
+						className="secondary-button h-8 w-8 min-w-[32px] min-h-[32px] p-0 rounded-lg inline-flex items-center justify-center cursor-pointer shadow-xs"
 						onClick={loadLiveData}
 						disabled={isLoading}
 						title="Обновить данные из базы"
+						aria-label="Обновить данные аналитики"
+						data-testid="cad-refresh-btn"
 					>
-						<RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+						<RefreshCw size={14} className={isLoading ? "animate-spin text-[var(--teal)]" : ""} />
 					</button>
 				</div>
 			</header>
@@ -580,27 +599,27 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 										{/* Metrics Pill Grid */}
 										<div className="grid grid-cols-3 gap-2 pt-1 text-center">
 											<div className="p-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)]">
-												<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">Приемы</div>
+												<div className="text-xs uppercase font-bold text-[var(--muted,#64748b)]">Приемы</div>
 												<div className="text-xs font-black font-mono text-[var(--ink,#0f172a)] mt-0.5">
 													{ch.completedCount} виз.
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">{Math.round(ch.occupiedMinutes / 60)} ч</div>
+												<div className="text-xs text-[var(--muted,#64748b)] font-mono">{Math.round(ch.occupiedMinutes / 60)} ч</div>
 											</div>
 
 											<div className="p-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)]">
-												<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">Санобработка</div>
+												<div className="text-xs uppercase font-bold text-[var(--muted,#64748b)]">Санобработка</div>
 												<div className="text-xs font-black font-mono text-[var(--ink,#0f172a)] mt-0.5">
 													{ch.sanitationMinutes} мин
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">Простой: {Math.round(ch.idleMinutes / 60)}ч</div>
+												<div className="text-xs text-[var(--muted,#64748b)] font-mono">Простой: {Math.round(ch.idleMinutes / 60)}ч</div>
 											</div>
 
 											<div className="p-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)]">
-												<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">Срывы</div>
+												<div className="text-xs uppercase font-bold text-[var(--muted,#64748b)]">Срывы</div>
 												<div className={`text-xs font-black font-mono mt-0.5 ${ch.cancellationRatePercent > 15 ? "text-rose-600" : "text-emerald-600"}`}>
 													{ch.cancellationRatePercent}%
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">{formatMoneyKopecks(ch.revenuePerHourKopecks, false)}/ч</div>
+												<div className="text-xs text-[var(--muted,#64748b)] font-mono">{formatMoneyKopecks(ch.revenuePerHourKopecks, false)}/ч</div>
 											</div>
 										</div>
 									</div>
@@ -627,7 +646,7 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 											<tr key={ch.chairId}>
 												<td>
 													<div style={{ fontWeight: 600 }}>{ch.chairName}</div>
-													<div style={{ fontSize: "0.6875rem", color: "var(--muted, #94a3b8)" }}>{ch.cabinet}</div>
+													<div style={{ fontSize: "0.75rem", color: "var(--muted, #94a3b8)" }}>{ch.cabinet}</div>
 												</td>
 												<td>
 													<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -716,7 +735,7 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 												{doc.rank === 1 ? (
 													<Award size={18} className="text-amber-500 shrink-0" />
 												) : (
-													<span className="w-5 h-5 rounded-full bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[10px] font-bold text-[var(--muted,#64748b)] flex items-center justify-center shrink-0">
+													<span className="w-5 h-5 rounded-full bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-xs font-bold text-[var(--muted,#64748b)] flex items-center justify-center shrink-0">
 														#{doc.rank}
 													</span>
 												)}
@@ -729,24 +748,24 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 												<div className="text-sm font-black font-mono text-teal-700 dark:text-teal-300">
 													{formatMoneyKopecks(doc.totalBilledKopecks, false)}
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)]">выработка</div>
+												<div className="text-xs text-[var(--muted,#64748b)]">выработка</div>
 											</div>
 										</div>
 
 										{/* Metrics Pill Grid */}
 										<div className="grid grid-cols-3 gap-2 pt-1 text-center">
 											<div className="p-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)]">
-												<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">Визиты</div>
+												<div className="text-xs uppercase font-bold text-[var(--muted,#64748b)]">Визиты</div>
 												<div className="text-xs font-black font-mono text-[var(--ink,#0f172a)] mt-0.5">
 													{doc.completedVisitsCount}
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)]">
+												<div className="text-xs text-[var(--muted,#64748b)]">
 													<span className="text-teal-600 font-bold">{doc.primaryPatientsCount}</span> / {doc.repeatPatientsCount}
 												</div>
 											</div>
 
 											<div className="p-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)]">
-												<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">Доходимость</div>
+												<div className="text-xs uppercase font-bold text-[var(--muted,#64748b)]">Доходимость</div>
 												<div className="mt-0.5">
 													<span
 														className={`text-xs font-black font-mono px-1.5 py-0.5 rounded ${
@@ -758,15 +777,15 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 														{doc.attendanceRatePercent}%
 													</span>
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)] font-mono mt-0.5">{formatMoneyKopecks(doc.hourlyBilledKopecks, false)}/ч</div>
+												<div className="text-xs text-[var(--muted,#64748b)] font-mono mt-0.5">{formatMoneyKopecks(doc.hourlyBilledKopecks, false)}/ч</div>
 											</div>
 
 											<div className="p-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)]">
-												<div className="text-[10px] uppercase font-bold text-[var(--muted,#64748b)]">Ср. чек</div>
+												<div className="text-xs uppercase font-bold text-[var(--muted,#64748b)]">Ср. чек</div>
 												<div className="text-xs font-black font-mono text-[var(--ink,#0f172a)] mt-0.5">
 													{formatMoneyKopecks(doc.averageBillKopecks, false)}
 												</div>
-												<div className="text-[10px] text-[var(--muted,#64748b)]">первичка {doc.primarySharePercent}%</div>
+												<div className="text-xs text-[var(--muted,#64748b)]">первичка {doc.primarySharePercent}%</div>
 											</div>
 										</div>
 									</div>
@@ -865,7 +884,7 @@ export const ClinicAnalyticsDashboard: React.FC<ClinicAnalyticsDashboardProps> =
 									<div key={pm.method} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.8125rem" }}>
 										<div>
 											<span style={{ fontWeight: 500 }}>{pm.labelRu}</span>
-											<span style={{ color: "var(--muted, #94a3b8)", marginLeft: 6, fontSize: "0.6875rem" }}>
+											<span style={{ color: "var(--muted, #94a3b8)", marginLeft: 6, fontSize: "0.75rem" }}>
 												({pm.transactionsCount} чеков)
 											</span>
 										</div>

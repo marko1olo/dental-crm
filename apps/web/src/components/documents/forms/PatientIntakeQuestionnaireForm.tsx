@@ -108,10 +108,10 @@ export const PatientIntakeQuestionnaireForm: React.FC<
 					onClick={handleFillNormInOneClick}
 					className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
 					data-testid="btn-intake-fill-norm"
-					title="1 клик: заполнить все поля анкеты физиологической нормой (соматически здоров)"
+					title="Заполнить все поля анкеты физиологической нормой (соматически здоров)"
 				>
 					<Zap size={16} />
-					<span>Пациент соматически здоров / Противопоказаний нет (1 клик)</span>
+					<span>Пациент соматически здоров / Противопоказаний нет</span>
 				</button>
 			</div>
 			<details

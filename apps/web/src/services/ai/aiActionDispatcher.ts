@@ -188,7 +188,7 @@ export async function dispatchCrmAction(
 			category: "clinical_odontogram",
 			needsConfirmation: true,
 			destructive: true,
-			message: `Действие «${getActionTitleRu(name)}» требует 1-клик подтверждения врача.`,
+			message: `Действие «${getActionTitleRu(name)}» требует подтверждения врача.`,
 			data: args,
 		};
 	}
@@ -257,7 +257,7 @@ export async function dispatchCrmAction(
 		) {
 			const toothNum = normalizeToothNumber(args.toothNumber ?? args.tooth);
 			const complaints = String(args.complaints || args.complaint || "Жалобы отсутствуют (плановый осмотр).");
-			const anamnesis = String(args.somaticStatus || args.anamnesis || "Соматически здоров / норма (Мандат 8e).");
+			const anamnesis = String(args.somaticStatus || args.anamnesis || "Соматически здоров / норма.");
 			const objective = String(args.performedTreatment || args.objectiveStatus || args.objective || "Слизистая оболочка чистая, бледно-розовая, без признаков воспаления.");
 			const diagnosis = String(args.diagnosisCode || args.diagnosis || "K02.1 Кариес дентина");
 			const treatmentPlan = String(args.performedTreatment || args.treatmentPlan || args.treatment || "Анестезия, препарирование, наложение светоотверждаемой пломбы.");
@@ -446,7 +446,7 @@ export async function dispatchCrmAction(
 				callId,
 				actionName: name,
 				category: "billing_estimate",
-				message: `Клиническая смета сформирована для зубов: ${teethList.join(", ")}. Скидка врача применена по Мандату 8e.`,
+				message: `Клиническая смета сформирована для зубов: ${teethList.join(", ")}. Скидка врача успешно применена.`,
 				data: { teeth: teethList, status: "planned" },
 			};
 		}
@@ -650,7 +650,7 @@ export async function dispatchCrmAction(
 				callId,
 				actionName: name,
 				category: "warehouse",
-				message: `Расходные материалы («${itemName}») списываются фоновым сервисом по техкарте приёма (Мандат 8ab: приём не блокируется).`,
+				message: `Расходные материалы («${itemName}») списываются фоновым сервисом по техкарте приёма.`,
 				data: { itemName, autoDeducted: true, doctorAutonomyGuaranteed: true },
 			};
 		}
@@ -1041,7 +1041,7 @@ export async function dispatchCrmAction(
 				callId,
 				actionName: name,
 				category: "pharmacology",
-				message: warning ? `⚠️ ${warning} (Мандат 8e: приём не блокируется).` : `Расчет дозы анестетика: ${formattedSummary}`,
+				message: warning ? `⚠️ ${warning}` : `Расчет дозы анестетика: ${formattedSummary}`,
 				data: {
 					patientId: activePatId,
 					anestheticType: drugKey,

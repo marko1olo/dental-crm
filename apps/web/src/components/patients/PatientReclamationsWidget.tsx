@@ -474,7 +474,7 @@ export function PatientReclamationsWidget({
 								<div className="flex flex-col gap-2">
 									<div className="flex items-center gap-1.5 text-xs font-bold text-rose-900 dark:text-rose-300">
 										<Zap size={14} className="text-amber-500 shrink-0" />
-										<span>Быстрые клинические шаблоны (1 клик):</span>
+										<span>Быстрые клинические шаблоны:</span>
 									</div>
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 										{RECLAMATION_PRESETS.map((preset) => (

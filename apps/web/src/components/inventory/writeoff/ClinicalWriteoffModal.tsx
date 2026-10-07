@@ -221,7 +221,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		setLines((prev) => prev.filter((l) => l.id !== lineId));
 	}, []);
 
-	// 1-Клик Экспресс-списание карпулы анестетика (Мандат 8e п. 10, Мандат 8n)
+	// Экспресс-списание карпулы анестетика (Мандат 8e п. 10, Мандат 8n)
 	const handleQuickCarpuleWriteoff = useCallback(() => {
 		const doc = createQuickCarpuleWriteoffDocument({
 			count: 1,
@@ -234,10 +234,10 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		setActNumber(doc.actNumber);
 		if (doc.notes) setNotes(doc.notes);
 		setIsSingleSigner(true);
-		showToast("Списание карпулы анестетика оформлено в 1 клик (без комиссии)!", "success");
+		showToast("Списание карпулы анестетика оформлено без комиссии!", "success");
 	}, [selectedCabinetId, stockBatches, assistantFullName, doctorFullName]);
 
-	// 1-Клик Экспресс-списание пакета анестезии (карпула 1.7 мл + игла 30G + антисептик) без комиссии (Мандат 8e п. 10, 8n)
+	// Экспресс-списание пакета анестезии (карпула 1.7 мл + игла 30G + антисептик) без комиссии (Мандат 8e п. 10, 8n)
 	const handleQuickAnesthesiaPackageWriteoff = useCallback(() => {
 		const doc = createQuickAnesthesiaPackageWriteoffDocument({
 			cabinetId: selectedCabinetId,
@@ -251,10 +251,10 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		setActNumber(doc.actNumber);
 		if (doc.notes) setNotes(doc.notes);
 		setIsSingleSigner(true);
-		showToast("Пакет анестезии (карпула + игла + антисептик) списан в 1 клик (без комиссии)!", "success");
+		showToast("Пакет анестезии (карпула + игла + антисептик) списан без комиссии!", "success");
 	}, [selectedCabinetId, stockBatches, assistantFullName, doctorFullName, patientName]);
 
-	// 1-Клик Экспресс-списание визита терапии
+	// Экспресс-списание визита терапии
 	const handleQuickTherapyWriteoff = useCallback(() => {
 		const doc = createQuickVisitWriteoffDocument({
 			visitType: "therapy",
@@ -269,10 +269,10 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		setActNumber(doc.actNumber);
 		if (doc.notes) setNotes(doc.notes);
 		setIsSingleSigner(true);
-		showToast("Акт списания материалов терапии (1 клик) сформирован!", "success");
+		showToast("Акт списания материалов терапии сформирован!", "success");
 	}, [selectedCabinetId, stockBatches, doctorFullName, doctorSpecialty, patientName]);
 
-	// 1-Клик Экспресс-списание визита хирургии
+	// Экспресс-списание визита хирургии
 	const handleQuickSurgeryWriteoff = useCallback(() => {
 		const doc = createQuickVisitWriteoffDocument({
 			visitType: "surgery",
@@ -287,7 +287,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		setActNumber(doc.actNumber);
 		if (doc.notes) setNotes(doc.notes);
 		setIsSingleSigner(true);
-		showToast("Акт списания материалов хирургии (1 клик) сформирован!", "success");
+		showToast("Акт списания материалов хирургии сформирован!", "success");
 	}, [selectedCabinetId, stockBatches, doctorFullName, doctorSpecialty, patientName]);
 
 	// Формирование объекта документа
@@ -483,7 +483,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						</div>
 					</div>
 
-					{/* 1-Клик Экспресс-Списание и Единоличное списание */}
+					{/* Экспресс-Списание и Единоличное списание */}
 					<ClinicalWriteoffQuickStrip
 						onQuickCarpuleWriteoff={handleQuickCarpuleWriteoff}
 						onQuickAnesthesiaPackageWriteoff={handleQuickAnesthesiaPackageWriteoff}
@@ -520,7 +520,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						<div className="cw-warning-banner cw-warning-amber">
 							<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
 							<div>
-								<strong>Внимание: остаток отрицательный, требуется оприходование накладной (мягкий овердрафт: {totals.deficitItemsCount} поз.):</strong>
+								<strong>Внимание: остаток отрицательный, требуется оприходование накладной (списание с дефицитом: {totals.deficitItemsCount} поз.):</strong>
 								<div className="mt-0.5">
 									Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Клинический регламент, режим соло-практики). Задержка накладной не блокирует прием.
 								</div>
@@ -726,7 +726,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 								</>
 							) : totals.hasDeficit ? (
 								<>
-									<AlertTriangle size={18} /> Списать (мягкий овердрафт: {totals.deficitItemsCount} поз.)
+									<AlertTriangle size={18} /> Списать (с дефицитом: {totals.deficitItemsCount} поз.)
 								</>
 							) : (
 								<>

@@ -25,7 +25,12 @@
  */
 
 /** Вид события истории. `null` — сервер прислал вид, которого мы не знаем. */
-export type ToothHistoryEventKind = "diary" | "plan" | "state_change";
+export type ToothHistoryEventKind =
+	| "diary"
+	| "plan"
+	| "state_change"
+	| "treatment_procedure"
+	| "diary_revision";
 
 export interface ToothHistoryEvent {
 	/**
@@ -42,9 +47,17 @@ export interface ToothHistoryEvent {
 	readonly description: string | null;
 	/** Автор как его прислал сервер: идентификатор, ФИО или служебное слово. */
 	readonly author: string | null;
+	/** Идентификатор визита (если привязан) */
+	readonly visitId?: string | null | undefined;
 }
 
-const KNOWN_KINDS: readonly string[] = ["diary", "plan", "state_change"];
+const KNOWN_KINDS: readonly string[] = [
+	"diary",
+	"plan",
+	"state_change",
+	"treatment_procedure",
+	"diary_revision",
+];
 
 /** Непустая строка или null. Пробелы значением не считаются. */
 function trimmedOrNull(value: unknown): string | null {
@@ -91,6 +104,7 @@ export function toothHistoryEventFromServer(
 		dateIso,
 		description,
 		author: trimmedOrNull(row.authorId),
+		visitId: trimmedOrNull(row.visitId),
 	};
 }
 
@@ -175,6 +189,7 @@ export function mergeLocusHistoryEvents(
 				? `[Молочный зуб #${predecessorToothNumber}] ${evt.description}`
 				: `[Молочный зуб #${predecessorToothNumber}] Запись в карте`,
 			author: evt.author,
+			visitId: evt.visitId ?? null,
 		}),
 	);
 

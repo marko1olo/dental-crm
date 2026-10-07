@@ -17,3 +17,21 @@ export {
 	createToothMousseProtocolText,
 	createPerioAntisepticProtocolText,
 } from "./HygieneIndicesPanel";
+
+export {
+	OhiSilnessCalculator,
+	type OhiSilnessCalculatorProps,
+} from "./OhiSilnessCalculator";
+
+export {
+	KpuBleedingIndicesCalculator,
+	type KpuBleedingIndicesCalculatorProps,
+	type BleedingScore,
+	type BleedingSiteState,
+} from "./KpuBleedingIndicesCalculator";
+
+export {
+	HygieneExpressPresetsStrip,
+	type HygieneExpressPresetsStripProps,
+} from "./HygieneExpressPresetsStrip";
+

@@ -350,10 +350,10 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						onClick={handleApplyPhysiologicalNorm}
 						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-somatic-norm-one-click"
-						title="1 клик: заполнить осмотр нормой (соматически здоров)"
+						title="Физиологическая норма (соматически здоров)"
 					>
 						<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-						<span>Соматически здоров / Норма Z01.2 (1-клик)</span>
+						<span>Физиологическая норма (соматически здоров)</span>
 					</button>
 					<button
 						type="button"

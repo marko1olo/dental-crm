@@ -127,7 +127,7 @@ export const PatientCard: React.FC<PatientCardProps> = React.memo(
 		const handleApplyNorm = useCallback(() => {
 			const clean = createHealthySomaticNormProfile();
 			setSafetyProfile(clean);
-			showToast("Применена физиологическая норма: соматически здоров (1 клик)", "success");
+			showToast("Применена физиологическая норма: соматически здоров", "success");
 		}, []);
 
 		const handleCopyPhone = useCallback(() => {
@@ -232,7 +232,7 @@ export const PatientCard: React.FC<PatientCardProps> = React.memo(
 								type="button"
 								onClick={handleApplyNorm}
 								className="min-h-[40px] px-3 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
-								title="Зафиксировать физиологическую норму в 1 клик"
+								title="Зафиксировать физиологическую норму"
 								data-testid="btn-patient-card-somatic-norm"
 							>
 								<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

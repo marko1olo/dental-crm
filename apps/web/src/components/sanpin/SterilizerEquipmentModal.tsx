@@ -387,7 +387,7 @@ export function SterilizerEquipmentModal({
 								<span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
 									<Sparkles size={14} color="#0d9488" /> Выберите популярную марку или введите вручную:
 								</span>
-								<span style={{ fontSize: "0.7rem", color: "var(--muted, #64748b)" }}>1-клик автозаполнение</span>
+								<span style={{ fontSize: "0.7rem", color: "var(--muted, #64748b)" }}>Типовой профиль</span>
 							</div>
 
 							<div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>

@@ -1,14 +1,18 @@
-import { BellRing, MessageCircle, Sparkles } from "lucide-react";
+import { BellRing, Bot, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import "./SettingsMessengersTab.css";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { showToast } from "../GlobalToast";
 import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
+import { MessengersOverviewCard } from "./MessengersOverviewCard.js";
 import { ReminderCadenceConfigPanel } from "./ReminderCadenceConfigPanel.js";
 import { SettingsMessageTemplatesTab } from "./SettingsMessageTemplatesTab.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
+import { VkIntegrationHub } from "./VkIntegrationHub.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
+import { BotOnboardingWizard } from "./telegram/BotOnboardingWizard.js";
 import { BotStudioModal } from "./telegram/BotStudioModal.js";
 
 interface StaffOption {
@@ -19,6 +23,7 @@ interface StaffOption {
 export type MessengerTabId =
 	| "cadence"
 	| "telegram"
+	| "vk"
 	| "whatsapp"
 	| "max"
 	| "templates";
@@ -72,7 +77,7 @@ export function SettingsMessengersTab({
 
 	return (
 		<section className="messengers-settings" aria-label="Мессенджеры клиники">
-			<div className="import-copy flex justify-between items-start flex-wrap gap-4">
+			<div className="messengers-settings-header">
 				<div className="flex gap-4">
 					<MessageCircle aria-hidden="true" />
 					<div>
@@ -89,9 +94,39 @@ export function SettingsMessengersTab({
 					onClick={() => setIsBotStudioOpen(true)}
 					className="primary-button compact-button inline-flex items-center gap-1.5 shrink-0 self-start mt-1"
 				>
-					<Sparkles size={14} />
-					<span>🚀 Мастер запуска бота в 2 клика</span>
+					<Bot size={14} />
+					<span>Настройка бота-ассистента</span>
 				</button>
+			</div>
+
+			{/* Master Omnichannel Overview Card */}
+			<div className="my-5">
+				<MessengersOverviewCard
+					onSelectTab={(tabId) => {
+						if (
+							tabId === "telegram" ||
+							tabId === "whatsapp" ||
+							tabId === "vk" ||
+							tabId === "max" ||
+							tabId === "cadence" ||
+							tabId === "templates"
+						) {
+							setActiveMessenger(tabId as MessengerTabId);
+						} else {
+							setActiveMessenger("telegram");
+						}
+					}}
+					onOpenBotStudio={() => setIsBotStudioOpen(true)}
+					onOpenOperatorDesk={() => {
+						if (appLogic?.setActiveView) {
+							appLogic.setActiveView("chat");
+						} else if (appLogic?.setCurrentView) {
+							appLogic.setCurrentView("chat");
+						} else {
+							showToast("Переход в диалоги оператора ботов", "info");
+						}
+					}}
+				/>
 			</div>
 
 			<div
@@ -130,6 +165,21 @@ export function SettingsMessengersTab({
 						TG
 					</span>
 					Telegram-бот
+				</button>
+
+				<button
+					role="tab"
+					aria-selected={activeMessenger === "vk"}
+					aria-controls="messenger-panel-vk"
+					id="messenger-tab-vk"
+					type="button"
+					onClick={() => setActiveMessenger("vk")}
+					className={`messenger-channel-tab${activeMessenger === "vk" ? " active" : ""}`}
+				>
+					<span className="messenger-tab-badge vk-badge" aria-hidden="true">
+						VK
+					</span>
+					ВКонтакте
 				</button>
 
 				<button
@@ -201,6 +251,16 @@ export function SettingsMessengersTab({
 				</div>
 			)}
 
+			{activeMessenger === "vk" && (
+				<div
+					id="messenger-panel-vk"
+					role="tabpanel"
+					aria-labelledby="messenger-tab-vk"
+				>
+					<VkIntegrationHub serverBaseUrl={serverBaseUrl} />
+				</div>
+			)}
+
 			{activeMessenger === "whatsapp" && (
 				<div
 					id="messenger-panel-whatsapp"
@@ -242,11 +302,13 @@ export function SettingsMessengersTab({
 				onClose={() => setIsBotStudioOpen(false)}
 				parentProps={mergedBag}
 				initialChannel={
-					activeMessenger === "whatsapp"
-						? "whatsapp"
-						: activeMessenger === "max"
-							? "max"
-							: "telegram"
+					activeMessenger === "vk"
+						? "vk"
+						: activeMessenger === "whatsapp"
+							? "whatsapp"
+							: activeMessenger === "max"
+								? "max"
+								: "telegram"
 				}
 			/>
 		</section>

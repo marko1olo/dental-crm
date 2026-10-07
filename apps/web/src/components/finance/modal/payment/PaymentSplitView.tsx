@@ -234,7 +234,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 
 			{/* 1-Click Fast Auto-Balance Chips */}
 			<div className="flex items-center gap-1.5 flex-wrap pt-1">
-				<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">1-клик:</span>
+				<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">Быстрый выбор:</span>
 				{availableDmsCoverageRub !== undefined && availableDmsCoverageRub > 0 && (
 					<>
 						<button
@@ -533,7 +533,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 									disabled={isCheckingSbp}
 									className="h-7 px-2.5 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 cursor-pointer flex items-center gap-1 transition-all disabled:opacity-50"
 									data-testid="btn-manual-confirm-split-sbp"
-									title="Подтвердить зачисление СБП вручную (Мандат 8e)"
+									title="Подтвердить зачисление СБП вручную"
 								>
 									<Check size={12} />
 									<span>Подтвердить вручную</span>

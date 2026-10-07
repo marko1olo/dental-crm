@@ -98,7 +98,7 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 				const name = itemObj?.latinName || itemObj?.tradeName || "";
 				if (name && FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(name))) {
 					narcoticErrors.push(
-						`Препарат «${name}» относится к наркотическим средствам Списка II/III. В амбулаторной стоматологии применяются ненаркотические анальгетики (НПВП: Нимесил, Кетанов, Дексалгин) (Мандат 8i).`,
+						`Препарат «${name}» относится к наркотическим средствам Списка II/III. В амбулаторной стоматологии применяются ненаркотические анальгетики (НПВП: Нимесил, Кетанов, Дексалгин).`,
 					);
 				}
 			}

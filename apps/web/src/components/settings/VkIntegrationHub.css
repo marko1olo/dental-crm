@@ -1,0 +1,501 @@
+/* ==========================================================================
+   VkIntegrationHub — Стили центра интеграции ВКонтакте (DENTE Design Tokens)
+   ========================================================================== */
+
+.vk-hub-container {
+	--ink-secondary: var(--ink-2, var(--ink-muted, #64748b));
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+/* Переключатель вкладок (Community / Personal Account) */
+.vk-subtabs-nav {
+	display: flex;
+	gap: 0.5rem;
+	background: var(--paper-subtle, #f1f5f9);
+	padding: 0.375rem;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.vk-subtabs-nav::-webkit-scrollbar {
+	display: none;
+}
+
+.vk-subtab-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1.125rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--ink-secondary, #64748b);
+	background: transparent;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease-in-out;
+	min-height: 40px;
+	min-width: 0;
+}
+
+.vk-subtab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(255, 255, 255, 0.6);
+}
+
+.vk-subtab-btn.active {
+	color: var(--ink, #0f172a);
+	background: var(--paper, #ffffff);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Карточки секций */
+.vk-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.vk-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.vk-card-title-group {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.vk-channel-icon-badge {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: #0077ff18;
+	color: #0077ff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.vk-card-title {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+.vk-card-subtitle {
+	font-size: 0.8125rem;
+	color: var(--ink-muted, #94a3b8);
+	margin: 0.125rem 0 0 0;
+}
+
+/* Статусные бейджи */
+.vk-status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.75rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.025em;
+}
+
+.vk-status-pill.connected {
+	background: #10b98118;
+	color: #059669;
+	border: 1px solid #10b98130;
+}
+
+.vk-status-pill.unconfigured {
+	background: #64748b15;
+	color: #64748b;
+	border: 1px solid #64748b30;
+}
+
+/* Аккордеон инструкции */
+.vk-guide-accordion {
+	border: 1px solid var(--line-subtle, #e2e8f0);
+	border-radius: 12px;
+	background: var(--paper-subtle, #f8fafc);
+	overflow: hidden;
+}
+
+.vk-guide-trigger {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.875rem 1rem;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	text-align: left;
+}
+
+.vk-guide-content {
+	padding: 1rem 1.25rem 1.25rem;
+	border-top: 1px solid var(--line-subtle, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	font-size: 0.875rem;
+	color: var(--ink-secondary, #475569);
+	line-height: 1.5;
+}
+
+.vk-step-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+}
+
+.vk-step-number {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #0077ff;
+	color: #ffffff;
+	font-size: 0.75rem;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-top: 0.125rem;
+}
+
+.vk-step-text {
+	flex: 1;
+}
+
+/* Копируемые параметры Callback API */
+.vk-copy-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 0.75rem;
+	margin-top: 0.5rem;
+}
+
+@media (min-width: 640px) {
+	.vk-copy-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.vk-copy-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.vk-copy-item.full-width {
+	grid-column: 1 / -1;
+}
+
+.vk-copy-label {
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--ink-muted, #64748b);
+}
+
+.vk-copy-row {
+	display: flex;
+	align-items: center;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	padding: 0.25rem 0.375rem 0.25rem 0.75rem;
+}
+
+.vk-copy-value {
+	flex: 1;
+	font-family: monospace;
+	font-size: 0.8125rem;
+	color: var(--ink, #0f172a);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.vk-copy-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--ink-secondary, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.vk-copy-btn:hover {
+	color: var(--brand, #0077ff);
+	background: var(--paper-subtle, #f1f5f9);
+}
+
+/* Поля формы */
+.vk-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.vk-form-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--ink, #1e293b);
+}
+
+.vk-form-input {
+	height: 42px;
+	padding: 0 0.875rem;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	transition: border-color 0.15s ease;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.vk-form-input:focus {
+	outline: none;
+	border-color: #0077ff;
+	box-shadow: 0 0 0 2px rgba(0, 119, 255, 0.15);
+}
+
+.vk-input-with-action {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.vk-input-action-btn {
+	position: absolute;
+	right: 0.375rem;
+	background: transparent;
+	border: none;
+	padding: 0.375rem;
+	cursor: pointer;
+	color: var(--ink-muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.vk-form-hint {
+	font-size: 0.75rem;
+	color: var(--ink-muted, #94a3b8);
+	margin: 0;
+}
+
+/* Кнопки действий */
+.vk-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	margin-top: 0.5rem;
+}
+
+.vk-btn-primary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: #0077ff;
+	color: #ffffff;
+	border: none;
+	border-radius: 8px;
+	padding: 0.625rem 1.25rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	min-height: 42px;
+	transition: background-color 0.15s ease;
+}
+
+.vk-btn-primary:hover {
+	background: #0066dc;
+}
+
+.vk-btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: var(--paper-subtle, #f1f5f9);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 8px;
+	padding: 0.625rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	min-height: 42px;
+	transition: background-color 0.15s ease;
+}
+
+.vk-btn-secondary:hover {
+	background: var(--line-subtle, #e2e8f0);
+}
+
+.vk-btn-danger {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: transparent;
+	color: #ef4444;
+	border: 1px solid #ef444440;
+	border-radius: 8px;
+	padding: 0.625rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	min-height: 42px;
+	margin-left: auto;
+	transition: all 0.15s ease;
+}
+
+.vk-btn-danger:hover {
+	background: #ef444415;
+}
+
+/* Карточка профиля врача */
+.vk-profile-card {
+	display: flex;
+	align-items: center;
+	gap: 1.25rem;
+	padding: 1.25rem;
+	background: var(--paper-subtle, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+}
+
+.vk-avatar-img {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid #0077ff30;
+}
+
+.vk-avatar-placeholder {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: #0077ff15;
+	color: #0077ff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.25rem;
+	font-weight: 700;
+}
+
+.vk-profile-info {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	flex: 1;
+}
+
+.vk-profile-name {
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.vk-profile-handle {
+	font-size: 0.8125rem;
+	color: var(--ink-secondary, #64748b);
+}
+
+.vk-profile-meta {
+	font-size: 0.75rem;
+	color: var(--ink-muted, #94a3b8);
+}
+
+/* Мобильная адаптация Apple HIG (44x44px touch targets) */
+@media (max-width: 768px) {
+	.vk-card {
+		padding: 1rem;
+		border-radius: 12px;
+	}
+
+	.vk-subtabs-nav {
+		width: 100%;
+		gap: 0.375rem;
+		padding: 0.25rem;
+	}
+
+	.vk-subtab-btn {
+		flex: 1 1 0%;
+		min-width: 0;
+		justify-content: center;
+		min-height: 44px;
+		padding: 0.5rem 0.5rem;
+		font-size: 0.8125rem;
+	}
+
+	.vk-actions-row {
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.vk-btn-primary,
+	.vk-btn-secondary,
+	.vk-btn-danger {
+		width: 100%;
+		justify-content: center;
+		min-height: 48px;
+		margin-left: 0;
+	}
+
+	.vk-copy-row {
+		min-height: 44px;
+	}
+
+	.vk-copy-btn {
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	.vk-form-input {
+		height: 48px;
+		font-size: 16px; /* Предотвращает зум на iOS */
+	}
+
+	.vk-profile-card {
+		flex-direction: column;
+		text-align: center;
+		align-items: center;
+	}
+}

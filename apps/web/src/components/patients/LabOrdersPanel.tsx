@@ -1,32 +1,23 @@
 import type React from "react";
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy } from "react";
 import {
-	AlertOctagon,
-	Calendar,
-	Camera,
-	Check,
 	ChevronDown,
 	Clock,
 	FlaskConical,
 	Layers,
-	Link,
 	Loader2,
-	MessageSquare,
-	MoreHorizontal,
-	Palette,
 	Plus,
-	Printer,
 	RefreshCw,
-	RotateCcw,
-	Send,
-	Sparkles,
-	Trash2,
-	X,
 	Zap,
 } from "lucide-react";
-import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
-import { LabOrdersPage, LabActionPromptModal, type LabPromptDialogState } from "../../pages/LabOrdersPage";
+import { LabOrdersPage, LabActionPromptModal } from "../../pages/LabOrdersPage";
+import { EXPRESS_LAB_PRESETS } from "../lab/labMath";
+import { useLabOrdersPanelLogic } from "./useLabOrdersPanelLogic";
+import { LabOrdersQuickForm } from "./LabOrdersQuickForm";
+import { LabOrderCardItem } from "./LabOrderCardItem";
+import "./LabOrdersPanel.css";
 
 // Lazy-loaded secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
 const DentalLabOrderModal = lazy(() =>
@@ -41,22 +32,6 @@ const DentalLabOrdersTrackerModal = lazy(() =>
 const LabTrackingDrawer = lazy(() =>
 	import("../lab/LabTrackingDrawer").then((m) => ({ default: m.LabTrackingDrawer }))
 );
-import {
-	type DentalLabOrderData,
-	type CanonicalLabOrderStatus,
-	CANONICAL_LAB_STATUSES,
-	mapToCanonicalStatus,
-	buildLabAppointmentDraft,
-	MATERIALS,
-	calculateMaterialTotalCostKopecks,
-	addWorkingDays,
-	ONE_CLICK_LAB_DEFAULTS,
-	EXPRESS_LAB_PRESETS,
-	type ExpressLabPreset,
-} from "../lab/labMath";
-import { DentalLabShadePicker } from "../lab/DentalLabShadePicker";
-import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import "./LabOrdersPanel.css";
 
 export interface LabOrder {
 	id: string;
@@ -94,696 +69,12 @@ interface LabOrdersPanelProps {
 	patientId?: string;
 }
 
-const RESTORATION_TYPES = [
-	{ value: "single_crown", label: "Коронка анатомическая" },
-	{ value: "bridge", label: "Мостовидный протез" },
-	{ value: "veneer", label: "Керамический винир E.max" },
-	{ value: "inlay_onlay", label: "Вкладка / Накладка" },
-	{ value: "custom_abutment_tibase", label: "Абатмент Ti-Base + коронка" },
-	{ value: "all_on_4_6", label: "Тотал All-on-4 / All-on-6" },
-	{ value: "pmma_provisional", label: "Временная коронка PMMA" },
-	{ value: "occlusal_splint", label: "Окклюзионная сплинт-каппа" },
-	{ value: "clasp_denture", label: "Бюгельный протез (кламмеры / замки)" },
-];
-
 export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	if (!patientId) {
 		return <LabOrdersPage />;
 	}
 
-	const appLogic = useOptionalAppLogicContext();
-	const [orders, setOrders] = useState<LabOrder[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	// Modals & Drawer state
-	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-	const [isLabHubOpen, setIsLabHubOpen] = useState(false);
-	const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
-	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
-	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
-	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
-	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
-	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
-	const cardMenuRef = useRef<HTMLDivElement | null>(null);
-
-	// Action Prompt Modal State (Mandates 8e, 8n)
-	const [promptState, setPromptState] = useState<LabPromptDialogState | null>(null);
-
-	// Fast Presets dropdown state
-	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
-	const presetsMenuRef = useRef<HTMLDivElement | null>(null);
-
-	useEffect(() => {
-		if (!isPresetsMenuOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (presetsMenuRef.current && !presetsMenuRef.current.contains(e.target as Node)) {
-				setIsPresetsMenuOpen(false);
-			}
-		};
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				setIsPresetsMenuOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		document.addEventListener("keydown", handleKeyDown);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [isPresetsMenuOpen]);
-
-	useEffect(() => {
-		if (!openMenuOrderId) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
-				setOpenMenuOrderId(null);
-			}
-		};
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				setOpenMenuOrderId(null);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		document.addEventListener("keydown", handleKeyDown);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [openMenuOrderId]);
-
-	// Quick Inline Create State
-	const [showQuickForm, setShowQuickForm] = useState(false);
-	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
-	const [restorationType, setRestorationType] = useState("single_crown");
-	const [material, setMaterial] = useState("zirconia_multilayer");
-	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach">("classical");
-	const [colorVita, setColorVita] = useState("A2");
-	const [stumpShade, setStumpShade] = useState<string>("");
-	const [cementGap, setCementGap] = useState(30);
-	const [fittingDate, setFittingDate] = useState("");
-	const [dueDate, setDueDate] = useState("");
-	const [clinicalNotes, setClinicalNotes] = useState("");
-	const [submitting, setSubmitting] = useState(false);
-
-	// Calculated material cost in whole kopecks
-	const calculatedMaterialCostKopecks = useMemo(() => {
-		return calculateMaterialTotalCostKopecks(material, selectedTeeth.length || 1);
-	}, [material, selectedTeeth.length]);
-
-	const fetchOrders = useCallback(async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			const query = patientId
-				? `?patientId=${encodeURIComponent(patientId)}`
-				: "";
-			const res = await fetch(`/api/clinical/lab-orders${query}`, {
-				headers: denteAdminSecretRequestHeaders(),
-			});
-			if (!res.ok) {
-				throw new Error("Не удалось загрузить список заказов лаборатории");
-			}
-			const data = await res.json();
-			setOrders(
-				Array.isArray(data)
-					? data
-					: Array.isArray(data?.orders)
-					? data.orders
-					: Array.isArray(data?.data)
-					? data.data
-					: [],
-			);
-		} catch (err: any) {
-			setError(err.message || "Ошибка загрузки заказов ЗТЛ");
-		} finally {
-			setLoading(false);
-		}
-	}, [patientId]);
-
-	useEffect(() => {
-		fetchOrders();
-		const handleRefresh = () => {
-			void fetchOrders();
-		};
-		window.addEventListener("dente-lab-order-created", handleRefresh);
-		return () => {
-			window.removeEventListener("dente-lab-order-created", handleRefresh);
-		};
-	}, [fetchOrders]);
-
-	const toggleTooth = (tooth: number) => {
-		setSelectedTeeth((prev) =>
-			prev.includes(tooth)
-				? prev.filter((t) => t !== tooth)
-				: [...prev, tooth].sort((a, b) => a - b),
-		);
-	};
-
-	const selectQuadrant = (teeth: number[]) => {
-		setSelectedTeeth((prev) => {
-			const allSelected = teeth.every((t) => prev.includes(t));
-			if (allSelected) {
-				return prev.filter((t) => !teeth.includes(t));
-			}
-			return Array.from(new Set([...prev, ...teeth])).sort((a, b) => a - b);
-		});
-	};
-
-	// 1-Click Status Transition Handler
-	const handleStatusTransition = async (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
-		// Map canonical status to API status (DB enum has refitting, not fitting)
-		const apiStatusMap: Record<CanonicalLabOrderStatus, string> = {
-			sent: "sent",
-			ready: "received",
-			fitting: "refitting",
-			completed: "completed",
-		};
-		const statusToSend = apiStatusMap[targetStatus] || "sent";
-		const stageToSend =
-			targetStatus === "fitting"
-				? "fitting_in_mouth"
-				: targetStatus === "ready"
-					? "ready_in_clinic"
-					: targetStatus === "completed"
-						? "completed"
-						: "sent_to_lab";
-
-		// Optimistic update
-		const previousOrders = orders;
-		setOrders((prev) =>
-			prev.map((o) => (o.id === orderId ? { ...o, status: statusToSend } : o)),
-		);
-
-		try {
-			const res = await fetch(`/api/clinical/lab-orders/${orderId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({ status: statusToSend, stage: stageToSend }),
-			});
-
-			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
-				throw new Error(errData.message || "Не удалось обновить статус наряда");
-			}
-
-			showToast(
-				`Статус наряда ЗТЛ изменен на: ${CANONICAL_LAB_STATUSES.find((s) => s.id === targetStatus)?.label}`,
-				"success",
-			);
-			fetchOrders();
-		} catch (err: any) {
-			setOrders(previousOrders);
-			showToast(err.message || "Ошибка смены статуса наряда", "error");
-		}
-	};
-
-	// 1-Click Schedule Slot Planning on Ready Date
-	const handleScheduleAppointment = (order: LabOrder) => {
-		const draftInfo = buildLabAppointmentDraft(order);
-		if (!draftInfo || !draftInfo.targetDateIso) {
-			showToast("У наряда ЗТЛ не указан срок готовности", "warning");
-			return;
-		}
-
-		if (appLogic?.updateNewAppointmentDraft) {
-			appLogic.updateNewAppointmentDraft("patientId", order.patientId);
-			if (order.doctorId) {
-				appLogic.updateNewAppointmentDraft("doctorUserId", order.doctorId);
-			}
-			appLogic.updateNewAppointmentDraft("startsAt", draftInfo.targetDateIso);
-			appLogic.updateNewAppointmentDraft("reason", draftInfo.reason);
-			if (appLogic.setShowCreateForm) {
-				appLogic.setShowCreateForm(true);
-			}
-		}
-
-		window.location.hash = "#schedule";
-		const dateFormatted = new Date(draftInfo.targetDateIso).toLocaleDateString("ru-RU", {
-			day: "numeric",
-			month: "long",
-		});
-		showToast(
-			`Слот приема запланирован на дату готовности ЗТЛ: ${dateFormatted} (${draftInfo.reason})`,
-			"success",
-		);
-	};
-
-	const copyPortalLink = (token: string) => {
-		const url = `${window.location.origin}/#/portal/lab-order/${token}`;
-		navigator.clipboard.writeText(url);
-		showToast("Ссылка для зуботехника скопирована в буфер обмена", "success");
-	};
-
-	const handleDeleteOrder = async (id: string) => {
-		try {
-			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
-				method: "DELETE",
-				headers: denteAdminSecretRequestHeaders(),
-			});
-			if (res.ok) {
-				showToast("Заказ ЗТЛ удален", "success");
-				fetchOrders();
-			} else {
-				showToast("Ошибка удаления заказа", "error");
-			}
-		} catch (err: any) {
-			showToast(err.message || "Ошибка удаления заказа", "error");
-		}
-	};
-
-	const handleOpenPrintOrder = (order: LabOrder) => {
-		setSelectedOrderForEdit(order as any);
-		setModalInitialTab("print");
-		setIsOrderModalOpen(true);
-	};
-
-	const handleOpenTrackingDrawer = (order: LabOrder) => {
-		setSelectedOrderForTracking(order as any);
-		setIsTrackingDrawerOpen(true);
-	};
-
-	const handleAttachBitePhoto = (order: LabOrder) => {
-		setOpenMenuOrderId(null);
-		setPromptState({
-			title: "Фото прикуса / 3D-скан (ЗТЛ)",
-			description: `Укажите URL или ссылку на фото прикуса, окклюдограмму или 3D-снимок для наряда #${order.id.slice(0, 8)}.`,
-			icon: <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
-			initialValue: order.attachedImageUrl || "",
-			placeholder: "https://... или storage/scans/bite_photo.jpg",
-			submitLabel: "Прикрепить фото",
-			submitVariant: "teal",
-			onSubmit: (url: string) => {
-				setPromptState(null);
-				void fetch(`/api/clinical/lab-orders/${order.id}`, {
-					method: "PATCH",
-					headers: {
-						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
-					body: JSON.stringify({ attachedImageUrl: url.trim() || null }),
-				}).then((res) => {
-					if (res.ok) {
-						showToast("Фото прикуса сохранено в наряде ЗТЛ", "success");
-						void fetchOrders();
-					} else {
-						showToast("Не удалось сохранить фото", "error");
-					}
-				}).catch(() => showToast("Ошибка сети при сохранении фото", "error"));
-			},
-		});
-	};
-
-	const handleTechnicianComment = (order: LabOrder) => {
-		setOpenMenuOrderId(null);
-		setPromptState({
-			title: "Комментарий зубному технику",
-			description: `Клиническое уточнение границ уступа, цвета по VITA, рельефа фиссур или анатомии для наряда #${order.id.slice(0, 8)}.`,
-			icon: <MessageSquare className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
-			initialValue: order.labComments || "",
-			placeholder: "Например: поднутрения с дистальной стороны не заливать, уступ плечевой 0.8мм...",
-			submitLabel: "Сохранить комментарий",
-			submitVariant: "teal",
-			multiline: true,
-			onSubmit: (comment: string) => {
-				setPromptState(null);
-				void fetch(`/api/clinical/lab-orders/${order.id}`, {
-					method: "PATCH",
-					headers: {
-						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
-					body: JSON.stringify({ labComments: comment.trim() || null }),
-				}).then((res) => {
-					if (res.ok) {
-						showToast("Комментарий технику обновлен", "success");
-						void fetchOrders();
-					} else {
-						showToast("Не удалось обновить комментарий", "error");
-					}
-				}).catch(() => showToast("Ошибка сети", "error"));
-			},
-		});
-	};
-
-	const handleRepeatFitting = (order: LabOrder) => {
-		void handleStatusTransition(order.id, "fitting");
-		showToast(`Наряд переведен на этап повторной примерки (зуб ${order.toothFdi || "—"})`, "success");
-	};
-
-	const handleReclamation = (order: LabOrder) => {
-		setOpenMenuOrderId(null);
-		const defaultReason = "Несоответствие цвета VITA / переделка по гарантии (0 ₽)";
-		setPromptState({
-			title: "Оформление рекламации ЗТЛ",
-			description: "Перевод наряда на гарантийную доработку (0 ₽). Выберите причину из списка или введите подробное описание дефекта:",
-			icon: <AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
-			initialValue: defaultReason,
-			placeholder: "Опишите дефект конструкции...",
-			submitLabel: "Оформить рекламацию (0 ₽)",
-			submitVariant: "danger",
-			multiline: true,
-			quickPresets: [
-				"Несоответствие цвета VITA / переделка по гарантии (0 ₽)",
-				"Скол облицовочной керамики",
-				"Балансир каркаса / неплотное краевое прилегание",
-				"Завышение по прикусу / окклюзионная интерференция",
-				"Некорректная анатомическая форма / контактный пункт",
-			],
-			onSubmit: (reason: string) => {
-				setPromptState(null);
-				if (!reason.trim()) return;
-				void fetch(`/api/clinical/lab-orders/${order.id}`, {
-					method: "PATCH",
-					headers: {
-						"Content-Type": "application/json",
-						...denteAdminSecretRequestHeaders(),
-					},
-					body: JSON.stringify({
-						clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}[РЕКЛАМАЦИЯ]: ${reason.trim()}`,
-					}),
-				}).then((res) => {
-					if (res.ok) {
-						showToast("Рекламация зафиксирована в наряде ЗТЛ", "success");
-						void fetchOrders();
-					} else {
-						showToast("Не удалось зафиксировать рекламацию", "error");
-					}
-				}).catch(() => showToast("Ошибка сети", "error"));
-			},
-		});
-	};
-
-	const handleQuickSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!patientId) {
-			showToast("ID пациента обязателен", "error");
-			return;
-		}
-
-		setSubmitting(true);
-		try {
-			const isBridge = restorationType === "bridge" && selectedTeeth.length > 1;
-			const toothFdiStr =
-				selectedTeeth.length > 0
-					? selectedTeeth.join(", ")
-					: "Общий наряд / Челюсть целиком";
-			const bridgeNote = isBridge
-				? `Мостовидный протез (${selectedTeeth.length} ед.: ${selectedTeeth.join("-")})`
-				: null;
-
-			const fullNotes = [
-				clinicalNotes,
-				fittingDate ? `Примерка каркаса/бисквита: ${new Date(fittingDate).toLocaleDateString("ru-RU")}` : null,
-				bridgeNote,
-				`Шкала: ${shadeSystem === "3d_master" ? "VITA 3D-Master" : shadeSystem === "bleach" ? "Bleach" : "VITA Classical"}`,
-				stumpShade ? `Культя: ${stumpShade}` : null,
-				`Зазор: ${cementGap} мкм`,
-			]
-				.filter(Boolean)
-				.join(" | ");
-
-			const finalPriceRub = calculatedMaterialCostKopecks / 100;
-			const matObj = MATERIALS.find((m) => m.id === material);
-
-			const res = await fetch("/api/clinical/lab-orders", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					patientId,
-					toothFdi: toothFdiStr,
-					material: matObj?.name || material,
-					colorVita,
-					dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-					clinicalNotes: fullNotes || null,
-					priceRub: finalPriceRub,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorData = await res.json().catch(() => ({}));
-				throw new Error(errorData.message || "Не удалось создать наряд в ЗТЛ");
-			}
-
-			const createdOrder = await res.json();
-
-			if (selectedTeeth.length > 0 && createdOrder?.id) {
-				const itemErrors: number[] = [];
-				for (const tooth of selectedTeeth) {
-					try {
-						const itemRes = await fetch(
-							`/api/clinical/lab-orders/${createdOrder.id}/items`,
-							{
-								method: "POST",
-								headers: {
-									"Content-Type": "application/json",
-									...denteAdminSecretRequestHeaders(),
-								},
-								body: JSON.stringify({
-									toothFdi: tooth,
-									restorationType,
-									material: matObj?.name || material,
-									shadeFinal: colorVita,
-									shadeStump: stumpShade || null,
-									cementGapMicrons: cementGap,
-									priceRub: finalPriceRub / selectedTeeth.length,
-								}),
-							},
-						);
-						if (!itemRes.ok) {
-							itemErrors.push(tooth);
-						}
-					} catch {
-						itemErrors.push(tooth);
-					}
-				}
-				if (itemErrors.length > 0) {
-					showToast(
-						`Внимание: часть позиций не удалось привязать (зубы ${itemErrors.join(", ")})`,
-						"warning",
-					);
-				}
-			}
-
-			showToast("Наряд в лабораторию успешно оформлен!", "success");
-			setShowQuickForm(false);
-			setSelectedTeeth([]);
-			setFittingDate("");
-			setDueDate("");
-			setClinicalNotes("");
-			await fetchOrders();
-		} catch (err: any) {
-			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
-		} finally {
-			setSubmitting(false);
-		}
-	};
-
-	const handleOneClickCreate = async (teethOverride?: number[]) => {
-		if (!patientId) {
-			showToast("ID пациента обязателен", "error");
-			return;
-		}
-
-		const targetTeeth =
-			teethOverride && teethOverride.length > 0
-				? teethOverride
-				: selectedTeeth.length > 0
-					? selectedTeeth
-					: [21];
-
-		setSubmitting(true);
-		try {
-			const isBridge = targetTeeth.length > 1;
-			const toothFdiStr = targetTeeth.join(", ");
-			const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
-			const dueDateIso = due.toISOString();
-			const dueDateFormatted = due.toLocaleDateString("ru-RU");
-			const finalPriceRub =
-				calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) / 100;
-
-			const fullNotes = [
-				"• 1-клик наряд ЗТЛ: Коронка (диоксид циркония Katana ML / E.max)",
-				`• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}`,
-				`• Расцветка: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}`,
-				`• Срок изготовления: 7 рабочих дней (до ${dueDateFormatted})`,
-				`• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
-			].join("\n");
-
-			const res = await fetch("/api/clinical/lab-orders", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					patientId,
-					doctorId: appLogic?.activeDoctor?.id || null,
-					toothFdi: toothFdiStr,
-					material: ONE_CLICK_LAB_DEFAULTS.materialName,
-					colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
-					dueDate: dueDateIso,
-					clinicalNotes: fullNotes,
-					priceRub: finalPriceRub,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorData = await res.json().catch(() => ({}));
-				throw new Error(errorData.message || "Не удалось создать наряд в ЗТЛ");
-			}
-
-			const createdOrder = await res.json();
-
-			if (targetTeeth.length > 0 && createdOrder?.id) {
-				for (const tooth of targetTeeth) {
-					try {
-						await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
-							body: JSON.stringify({
-								toothFdi: tooth,
-								restorationType: isBridge ? "bridge" : "single_crown",
-								material: ONE_CLICK_LAB_DEFAULTS.materialId,
-								shadeFinal: ONE_CLICK_LAB_DEFAULTS.colorVita,
-								translucencyLevel: ONE_CLICK_LAB_DEFAULTS.translucency,
-								cementGapMicrons: ONE_CLICK_LAB_DEFAULTS.cementGapMicrons,
-								priceRub: finalPriceRub / targetTeeth.length,
-							}),
-						});
-					} catch {
-						// Non-blocking item fallback
-					}
-				}
-			}
-
-			showToast(
-				`Наряд ЗТЛ успешно оформлен в 1 клик для зубов ${toothFdiStr} (Цирконий A2, срок до ${dueDateFormatted})!`,
-				"success",
-				6000,
-			);
-			setShowQuickForm(false);
-			setSelectedTeeth([]);
-			await fetchOrders();
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", { detail: { order: createdOrder } }),
-			);
-		} catch (err: any) {
-			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
-		} finally {
-			setSubmitting(false);
-		}
-	};
-
-	const handleExpressPresetCreate = async (preset: ExpressLabPreset, teethOverride?: number[]) => {
-		if (!patientId) {
-			showToast("ID пациента обязателен", "error");
-			return;
-		}
-
-		const targetTeeth =
-			teethOverride && teethOverride.length > 0
-				? teethOverride
-				: selectedTeeth.length > 0
-					? selectedTeeth
-					: [21];
-
-		setSubmitting(true);
-		try {
-			const isBridge = targetTeeth.length > 1;
-			const toothFdiStr = targetTeeth.join(", ");
-			const due = addWorkingDays(new Date(), preset.workingDays);
-			const dueDateIso = due.toISOString();
-			const dueDateFormatted = due.toLocaleDateString("ru-RU");
-			const finalPriceRub = preset.priceRub * targetTeeth.length;
-
-			const fullNotes = [
-				`• 1-клик экспресс-наряд ЗТЛ: ${preset.title}`,
-				`• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : preset.shortDesc}`,
-				`• Расцветка: VITA Classical ${preset.colorVita}`,
-				`• Срок изготовления: ${preset.workingDays} рабочих дней (до ${dueDateFormatted})`,
-				`• Цементный зазор: ${preset.cementGapMicrons} мкм`,
-			].join("\n");
-
-			const matObj = MATERIALS.find((m) => m.id === preset.materialId);
-
-			const res = await fetch("/api/clinical/lab-orders", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					patientId,
-					doctorId: appLogic?.activeDoctor?.id || null,
-					toothFdi: toothFdiStr,
-					material: matObj?.name || preset.materialId,
-					colorVita: preset.colorVita,
-					dueDate: dueDateIso,
-					clinicalNotes: fullNotes,
-					priceRub: finalPriceRub,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorData = await res.json().catch(() => ({}));
-				throw new Error(errorData.message || "Не удалось создать наряд в ЗТЛ");
-			}
-
-			const createdOrder = await res.json();
-
-			if (targetTeeth.length > 0 && createdOrder?.id) {
-				for (const tooth of targetTeeth) {
-					try {
-						await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
-							body: JSON.stringify({
-								toothFdi: tooth,
-								restorationType: isBridge ? "bridge" : preset.constructionType,
-								material: preset.materialId,
-								shadeFinal: preset.colorVita,
-								cementGapMicrons: preset.cementGapMicrons,
-								priceRub: finalPriceRub / targetTeeth.length,
-							}),
-						});
-					} catch {
-						// Item attachment non-blocking
-					}
-				}
-			}
-
-			showToast(
-				`Наряд «${preset.title}» оформлен в 1 клик для зубов ${toothFdiStr} (срок до ${dueDateFormatted})!`,
-				"success",
-				6000,
-			);
-			setShowQuickForm(false);
-			setSelectedTeeth([]);
-			await fetchOrders();
-			window.dispatchEvent(
-				new CustomEvent("dente-lab-order-created", { detail: { order: createdOrder } }),
-			);
-		} catch (err: any) {
-			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
-		} finally {
-			setSubmitting(false);
-		}
-	};
+	const logic = useLabOrdersPanelLogic(patientId);
 
 	return (
 		<div className="lab-orders-panel">
@@ -795,37 +86,37 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						<span>CAD/CAM ЗТЛ</span>
 					</h3>
 					<span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
-						{orders.length} наряд{orders.length === 1 ? "" : orders.length < 5 ? "а" : "ов"}
+						{logic.orders.length} наряд{logic.orders.length === 1 ? "" : logic.orders.length < 5 ? "а" : "ов"}
 					</span>
 				</div>
 
 				<div className="lab-orders-toolbar">
 					<button
 						type="button"
-						onClick={fetchOrders}
+						onClick={logic.fetchOrders}
 						className="lab-btn-32"
 						title="Обновить список"
 					>
-						<RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[var(--teal)]" : ""}`} />
+						<RefreshCw className={`w-3.5 h-3.5 ${logic.loading ? "animate-spin text-[var(--teal)]" : ""}`} />
 					</button>
 
 					{/* Consolidated Presets, Tracker & Registry Dropdown (1-Row Rule) */}
-					<div className="relative inline-block" ref={presetsMenuRef}>
+					<div className="relative inline-block" ref={logic.presetsMenuRef}>
 						<button
 							type="button"
-							onClick={() => setIsPresetsMenuOpen((prev) => !prev)}
-							disabled={submitting}
+							onClick={() => logic.setIsPresetsMenuOpen((prev) => !prev)}
+							disabled={logic.submitting}
 							className="lab-btn-32"
 							title="Инструменты, шаблоны и трекер ЗТЛ"
-							aria-expanded={isPresetsMenuOpen}
+							aria-expanded={logic.isPresetsMenuOpen}
 							aria-haspopup="true"
 						>
 							<Layers className="w-3.5 h-3.5 text-[var(--teal)]" />
 							<span>Шаблоны и трекер</span>
-							<ChevronDown className={`w-3 h-3 transition-transform ${isPresetsMenuOpen ? "rotate-180" : ""}`} />
+							<ChevronDown className={`w-3 h-3 transition-transform ${logic.isPresetsMenuOpen ? "rotate-180" : ""}`} />
 						</button>
 
-						{isPresetsMenuOpen && (
+						{logic.isPresetsMenuOpen && (
 							<div className="absolute right-0 sm:left-0 top-full mt-1 w-64 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 z-30 space-y-1">
 								<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
 									Экспресс-шаблоны ЗТЛ:
@@ -833,12 +124,12 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								<button
 									type="button"
 									onClick={() => {
-										setIsPresetsMenuOpen(false);
-										void handleOneClickCreate();
+										logic.setIsPresetsMenuOpen(false);
+										void logic.handleOneClickCreate();
 									}}
-									disabled={submitting}
+									disabled={logic.submitting}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
-									title="Создать наряд ЗТЛ в 1 клик: Коронка цирконий/E.max, цвет VITA A2, срок 7 рабочих дней"
+									title="Оформить наряд ЗТЛ: Коронка цирконий/E.max, цвет VITA A2, срок 7 рабочих дней"
 									data-testid="lab-order-one-click-btn"
 								>
 									<div className="flex items-center gap-2">
@@ -853,13 +144,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								<button
 									type="button"
 									onClick={() => {
-										setIsPresetsMenuOpen(false);
+										logic.setIsPresetsMenuOpen(false);
 										const pmma = EXPRESS_LAB_PRESETS.find((p) => p.id === "pmma_temp");
-										if (pmma) void handleExpressPresetCreate(pmma);
+										if (pmma) void logic.handleExpressPresetCreate(pmma);
 									}}
-									disabled={submitting}
+									disabled={logic.submitting}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
-									title="Создать наряд в 1 клик: Временная PMMA CAD/CAM, срок 2 рабочих дня"
+									title="Оформить наряд: Временная PMMA CAD/CAM, срок 2 рабочих дня"
 									data-testid="lab-order-preset-pmma-btn"
 								>
 									<div className="flex items-center gap-2">
@@ -874,13 +165,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								<button
 									type="button"
 									onClick={() => {
-										setIsPresetsMenuOpen(false);
+										logic.setIsPresetsMenuOpen(false);
 										const corePost = EXPRESS_LAB_PRESETS.find((p) => p.id === "core_post_cocr");
-										if (corePost) void handleExpressPresetCreate(corePost);
+										if (corePost) void logic.handleExpressPresetCreate(corePost);
 									}}
-									disabled={submitting}
+									disabled={logic.submitting}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
-									title="Создать наряд в 1 клик: Культевая вкладка КХС (CoCr), срок 3 рабочих дня"
+									title="Оформить наряд: Культевая вкладка КХС (CoCr), срок 3 рабочих дня"
 									data-testid="lab-order-preset-core-post-btn"
 								>
 									<div className="flex items-center gap-2">
@@ -897,8 +188,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								<button
 									type="button"
 									onClick={() => {
-										setIsPresetsMenuOpen(false);
-										setIsTrackerModalOpen(true);
+										logic.setIsPresetsMenuOpen(false);
+										logic.setIsTrackerModalOpen(true);
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 transition-colors cursor-pointer"
 									title="Трекер нарядов и дедлайнов ЗТЛ"
@@ -911,8 +202,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								<button
 									type="button"
 									onClick={() => {
-										setIsPresetsMenuOpen(false);
-										setIsLabHubOpen(true);
+										logic.setIsPresetsMenuOpen(false);
+										logic.setIsLabHubOpen(true);
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 transition-colors cursor-pointer"
 									title="Реестр нарядов ЗТЛ"
@@ -925,13 +216,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								<button
 									type="button"
 									onClick={() => {
-										setIsPresetsMenuOpen(false);
-										setShowQuickForm(!showQuickForm);
+										logic.setIsPresetsMenuOpen(false);
+										logic.setShowQuickForm(!logic.showQuickForm);
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 transition-colors cursor-pointer"
 								>
 									<Plus className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-									<span>{showQuickForm ? "Скрыть форму наряда" : "Быстрый наряд (inline-форма)"}</span>
+									<span>{logic.showQuickForm ? "Скрыть форму наряда" : "Быстрый наряд (inline-форма)"}</span>
 								</button>
 							</div>
 						)}
@@ -940,8 +231,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					<button
 						type="button"
 						onClick={() => {
-							setSelectedOrderForEdit(null);
-							setIsOrderModalOpen(true);
+							logic.setSelectedOrderForEdit(null);
+							logic.setIsOrderModalOpen(true);
 						}}
 						className="lab-btn-32 is-primary"
 						title="Оформить заказ в лабораторию"
@@ -954,232 +245,43 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			</div>
 
 			{/* Inline Quick Creation Form */}
-			{showQuickForm && (
-				<form
-					onSubmit={handleQuickSubmit}
-					className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-3.5 space-y-3 shadow-sm"
-				>
-					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<FlaskConical className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Параметры ортопедической работы (Быстрое оформление)
-						</span>
-						<span className="text-xs font-mono font-bold text-[var(--teal)]">
-							Себестоимость: {money(calculatedMaterialCostKopecks / 100)}
-						</span>
-					</div>
-
-					{/* Tooth Selection FDI formula with Upper / Lower / Bridge / Reset */}
-					<div className="space-y-1.5">
-						<div className="flex items-center justify-between text-xs text-[var(--muted)] flex-wrap gap-1">
-							<span className="font-medium">
-								Зубы по FDI:{" "}
-								<strong className="text-[var(--ink)]">
-									{selectedTeeth.length > 0
-										? restorationType === "bridge" && selectedTeeth.length > 1
-											? `${selectedTeeth[0]}–${selectedTeeth[selectedTeeth.length - 1]} (мост, ${selectedTeeth.length} ед.: ${selectedTeeth.join(", ")})`
-											: selectedTeeth.join(", ")
-										: "не выбрано"}
-								</strong>
-							</span>
-							<div className="flex items-center gap-1.5">
-								<button
-									type="button"
-									onClick={() => selectQuadrant([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28])}
-									className="px-2 py-0.5 rounded text-[11px] font-bold border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] transition-colors"
-								>
-									Верхняя
-								</button>
-								<button
-									type="button"
-									onClick={() => selectQuadrant([48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38])}
-									className="px-2 py-0.5 rounded text-[11px] font-bold border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--ink)] transition-colors"
-								>
-									Нижняя
-								</button>
-								{selectedTeeth.length > 0 && (
-									<button
-										type="button"
-										onClick={() => setSelectedTeeth([])}
-										className="px-2 py-0.5 rounded text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-									>
-										Сбросить
-									</button>
-								)}
-							</div>
-						</div>
-
-						{/* Upper Jaw */}
-						<div className="flex flex-wrap gap-1">
-							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
-								<button
-									key={t}
-									type="button"
-									onClick={() => toggleTooth(t)}
-									className={`min-h-[28px] h-7 px-1.5 rounded-md text-xs font-bold font-mono border transition-all ${
-										selectedTeeth.includes(t)
-											? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-									}`}
-									title={`Зуб ${t}`}
-								>
-									{t}
-								</button>
-							))}
-						</div>
-
-						{/* Lower Jaw */}
-						<div className="flex flex-wrap gap-1">
-							{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
-								<button
-									key={t}
-									type="button"
-									onClick={() => toggleTooth(t)}
-									className={`min-h-[28px] h-7 px-1.5 rounded-md text-xs font-bold font-mono border transition-all ${
-										selectedTeeth.includes(t)
-											? "bg-[var(--teal)] text-white border-[var(--teal-dark)] shadow-xs"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-									}`}
-									title={`Зуб ${t}`}
-								>
-									{t}
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Construction Type and Material */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-						<div>
-							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Вид конструкции
-							</label>
-							<select
-								value={restorationType}
-								onChange={(e) => setRestorationType(e.target.value)}
-								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-							>
-								{RESTORATION_TYPES.map((rt) => (
-									<option key={rt.value} value={rt.value}>
-										{rt.label}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div>
-							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Материал (Копеечный учет)
-							</label>
-							<select
-								value={material}
-								onChange={(e) => setMaterial(e.target.value)}
-								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-							>
-								{MATERIALS.map((m) => (
-									<option key={m.id} value={m.id}>
-										{m.name} ({money((m as any).unitCostRub || 6500)})
-									</option>
-								))}
-							</select>
-						</div>
-					</div>
-
-					{/* Канонический Single Source of Truth селектор расцветки VITA */}
-					<DentalLabShadePicker
-						shadeSystem={shadeSystem}
-						onShadeSystemChange={setShadeSystem}
-						selectedShade={colorVita}
-						onSelectShade={setColorVita}
-						selectedStumpShade={stumpShade}
-						onSelectStumpShade={setStumpShade}
-						showStumpSelector={true}
-					/>
-
-					{/* Deadlines & Clinical Notes */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-						<div>
-							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Дата примерки (каркас/бисквит)
-							</label>
-							<input
-								type="date"
-								value={fittingDate}
-								onChange={(e) => setFittingDate(e.target.value)}
-								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-								data-testid="lab-order-quick-fitting-date-input"
-							/>
-						</div>
-
-						<div>
-							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Срок сдачи / Дедлайн ЗТЛ
-							</label>
-							<input
-								type="date"
-								value={dueDate}
-								onChange={(e) => setDueDate(e.target.value)}
-								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-								data-testid="lab-order-quick-due-date-input"
-							/>
-						</div>
-
-						<div>
-							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
-								Клинические примечания технику
-							</label>
-							<input
-								type="text"
-								placeholder="Контакты, прикус, мамелоны..."
-								value={clinicalNotes}
-								onChange={(e) => setClinicalNotes(e.target.value)}
-								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
-							/>
-						</div>
-					</div>
-
-					<div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
-						<button
-							type="button"
-							onClick={() => void handleOneClickCreate()}
-							disabled={submitting}
-							className="lab-btn-32 bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20 font-bold"
-							title="1-клик быстрое оформление с дефолтными параметрами: Диоксид циркония, цвет VITA A2, срок 7 раб. дней"
-						>
-							<Zap className="w-3.5 h-3.5 text-amber-500" />
-							<span>1-клик: Цирконий VITA A2 (+7 раб. дн.)</span>
-						</button>
-
-						<div className="flex gap-2 ml-auto">
-							<button
-								type="button"
-								onClick={() => setShowQuickForm(false)}
-								className="lab-btn-32"
-							>
-								Отмена
-							</button>
-							<button
-								type="submit"
-								disabled={submitting}
-								className="lab-btn-32 is-primary"
-							>
-								<Send className="w-3.5 h-3.5" />
-								{submitting ? "Оформление..." : "Отправить наряд в ЗТЛ"}
-							</button>
-						</div>
-					</div>
-				</form>
+			{logic.showQuickForm && (
+				<LabOrdersQuickForm
+					selectedTeeth={logic.selectedTeeth}
+					setSelectedTeeth={logic.setSelectedTeeth}
+					restorationType={logic.restorationType}
+					setRestorationType={logic.setRestorationType}
+					material={logic.material}
+					setMaterial={logic.setMaterial}
+					shadeSystem={logic.shadeSystem}
+					setShadeSystem={logic.setShadeSystem}
+					colorVita={logic.colorVita}
+					setColorVita={logic.setColorVita}
+					stumpShade={logic.stumpShade}
+					setStumpShade={logic.setStumpShade}
+					fittingDate={logic.fittingDate}
+					setFittingDate={logic.setFittingDate}
+					dueDate={logic.dueDate}
+					setDueDate={logic.setDueDate}
+					clinicalNotes={logic.clinicalNotes}
+					setClinicalNotes={logic.setClinicalNotes}
+					calculatedMaterialCostKopecks={logic.calculatedMaterialCostKopecks}
+					submitting={logic.submitting}
+					onSubmit={logic.handleQuickSubmit}
+					onCancel={() => logic.setShowQuickForm(false)}
+					onOneClickCreate={() => void logic.handleOneClickCreate()}
+				/>
 			)}
 
-			{error && <div className="lab-order-warning">{error}</div>}
+			{logic.error && <div className="lab-order-warning">{logic.error}</div>}
 
 			{/* Orders List */}
-			{loading && orders.length === 0 ? (
+			{logic.loading && logic.orders.length === 0 ? (
 				<div className="py-6 text-center text-xs text-[var(--muted)] flex items-center justify-center gap-2">
 					<Loader2 className="w-4 h-4 animate-spin text-[var(--teal)]" />
 					Загрузка нарядов лаборатории...
 				</div>
-			) : orders.length === 0 ? (
+			) : logic.orders.length === 0 ? (
 				<div
 					style={{
 						padding: "2rem 1.5rem",
@@ -1204,8 +306,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					<button
 						type="button"
 						onClick={() => {
-							setSelectedOrderForEdit(null);
-							setIsOrderModalOpen(true);
+							logic.setSelectedOrderForEdit(null);
+							logic.setIsOrderModalOpen(true);
 						}}
 						className="primary-button min-h-[40px] px-4 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
 						data-testid="empty-state-add-first-patient-lab-order-btn"
@@ -1216,272 +318,54 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				</div>
 			) : (
 				<div className="lab-orders-list">
-					{orders.map((order) => {
-						const canonicalStatus = mapToCanonicalStatus(order.status);
-
-						return (
-							<div key={order.id} className="lab-order-card">
-								{/* Card Top Row */}
-								<div className="lab-order-main-row">
-									<div className="lab-order-info-group">
-										<div className="fdi-badge-compact">
-											Зуб {order.toothFdi || "—"}
-										</div>
-										<div className="lab-order-title-block">
-											<strong>{order.patientName || "Пациент"}</strong>
-											<div className="lab-order-spec-line">
-												<span className="lab-order-spec-chip">{order.material || "Цирконий"}</span>
-												<span>·</span>
-												<span>Цвет VITA: <strong className="text-[var(--teal)]">{order.colorVita || "A2"}</strong></span>
-												{order.doctorName && (
-													<>
-														<span>·</span>
-														<span>Врач: {order.doctorName}</span>
-													</>
-												)}
-												{order.dueDate && (
-													<>
-														<span>·</span>
-														<span className="text-[var(--ink)] font-semibold flex items-center gap-1">
-															<Calendar className="w-3 h-3 text-[var(--teal)]" />
-															Срок: {new Date(order.dueDate).toLocaleDateString("ru-RU")}
-														</span>
-													</>
-												)}
-											</div>
-										</div>
-									</div>
-
-									{/* Cost */}
-									<div className="lab-card-financials">
-										<span>Себестоимость:</span>
-										<span className="lab-card-price">
-											{order.priceRub != null ? money(order.priceRub) : "—"}
-										</span>
-									</div>
-								</div>
-
-								{/* Compact 1-Line 4-Status Progression Strip */}
-								<div className="lab-status-strip-1line" role="group" aria-label="Статус наряда ЗТЛ">
-									{CANONICAL_LAB_STATUSES.map((st) => {
-										const isActive = canonicalStatus === st.id;
-										return (
-											<button
-												key={st.id}
-												type="button"
-												onClick={() => handleStatusTransition(order.id, st.id)}
-												className={`lab-status-step ${isActive ? `is-active status-${st.id}` : ""}`}
-												title={`Переключить статус на: ${st.label}`}
-											>
-												{isActive && <Check className="w-3 h-3" />}
-												<span>{st.shortLabel}</span>
-											</button>
-										);
-									})}
-								</div>
-
-								{/* Clinical Notes (if present) */}
-								{order.clinicalNotes && (
-									<p className="text-xs text-[var(--muted)] italic line-clamp-1 m-0">
-										«{order.clinicalNotes}»
-									</p>
-								)}
-
-								{/* Card Bottom 32px Action Toolbar */}
-								<div className="lab-card-footer">
-									<div className="flex items-center gap-1 text-xs text-[var(--muted)]">
-										<Clock className="w-3 h-3" />
-										<span>Создан: {new Date(order.createdAt).toLocaleDateString("ru-RU")}</span>
-									</div>
-
-									<div className="lab-card-actions">
-										<button
-											type="button"
-											onClick={() => handleOpenPrintOrder(order)}
-											className="lab-btn-32 is-primary"
-											title="Распечатать бланк заказа для лаборатории"
-										>
-											<Printer className="w-3.5 h-3.5" />
-											<span>Печать заказа</span>
-										</button>
-
-										<button
-											type="button"
-											onClick={() => handleOpenTrackingDrawer(order)}
-											className="lab-btn-32"
-											title="Сменить этап/статус и открыть трекинг заказа"
-										>
-											<Layers className="w-3.5 h-3.5 text-indigo-500" />
-											<span>Этап/статус</span>
-										</button>
-
-										<div
-											className="relative inline-flex"
-											ref={openMenuOrderId === order.id ? cardMenuRef : null}
-										>
-											<button
-												type="button"
-												onClick={() =>
-													setOpenMenuOrderId((prev) =>
-														prev === order.id ? null : order.id,
-													)
-												}
-												className="lab-btn-32 !px-2"
-												title="Дополнительные действия (Миллер: вторичные операции в меню ...)"
-												aria-label="Меню действий"
-												aria-haspopup="menu"
-												aria-expanded={openMenuOrderId === order.id}
-											>
-												<MoreHorizontal className="w-3.5 h-3.5" />
-											</button>
-
-											{openMenuOrderId === order.id && (
-												<div
-													className="absolute right-0 bottom-full mb-1 w-56 p-1.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] shadow-xl z-50 flex flex-col gap-1 text-xs text-[var(--ink,#0f172a)] backdrop-blur-md"
-													role="menu"
-													aria-label="Меню действий наряда"
-												>
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															handleScheduleAppointment(order);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
-														role="menuitem"
-													>
-														<Calendar className="w-3.5 h-3.5 text-amber-500" />
-														<span>Запланировать прием</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															setSelectedOrderForEdit(order as any);
-															setModalInitialTab("main");
-															setIsOrderModalOpen(true);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
-														role="menuitem"
-													>
-														<FlaskConical className="w-3.5 h-3.5 text-[var(--teal)]" />
-														<span>Детали наряда</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															handleAttachBitePhoto(order);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
-														role="menuitem"
-													>
-														<Camera className="w-3.5 h-3.5 text-sky-500" />
-														<span>Прикрепить фото прикуса</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															handleTechnicianComment(order);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
-														role="menuitem"
-													>
-														<MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
-														<span>Комментарий технику</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															handleRepeatFitting(order);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
-														role="menuitem"
-													>
-														<RotateCcw className="w-3.5 h-3.5 text-orange-500" />
-														<span>Повторная примерка</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															handleReclamation(order);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-rose-600 dark:text-rose-400 font-medium"
-														role="menuitem"
-													>
-														<AlertOctagon className="w-3.5 h-3.5" />
-														<span>Рекламация / брак</span>
-													</button>
-
-													{order.secureToken && (
-														<button
-															type="button"
-															onClick={() => {
-																setOpenMenuOrderId(null);
-																copyPortalLink(order.secureToken);
-															}}
-															className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
-															role="menuitem"
-														>
-															<Link className="w-3.5 h-3.5 text-sky-500" />
-															<span>Ссылка технику</span>
-														</button>
-													)}
-
-													<div className="h-[1px] bg-[var(--line,#e2e8f0)] my-0.5" />
-
-													<button
-														type="button"
-														onClick={() => {
-															setOpenMenuOrderId(null);
-															handleDeleteOrder(order.id);
-														}}
-														className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer font-semibold"
-														role="menuitem"
-													>
-														<Trash2 className="w-3.5 h-3.5" />
-														<span>Удалить наряд</span>
-													</button>
-												</div>
-											)}
-										</div>
-									</div>
-								</div>
-							</div>
-						);
-					})}
+					{logic.orders.map((order) => (
+						<LabOrderCardItem
+							key={order.id}
+							order={order}
+							openMenuOrderId={logic.openMenuOrderId}
+							setOpenMenuOrderId={logic.setOpenMenuOrderId}
+							cardMenuRef={logic.cardMenuRef}
+							onStatusTransition={logic.handleStatusTransition}
+							onOpenPrintOrder={logic.handleOpenPrintOrder}
+							onOpenTrackingDrawer={logic.handleOpenTrackingDrawer}
+							onScheduleAppointment={logic.handleScheduleAppointment}
+							onEditOrder={(ord) => {
+								logic.setSelectedOrderForEdit(ord as any);
+								logic.setModalInitialTab("main");
+								logic.setIsOrderModalOpen(true);
+							}}
+							onAttachBitePhoto={logic.handleAttachBitePhoto}
+							onTechnicianComment={logic.handleTechnicianComment}
+							onRepeatFitting={logic.handleRepeatFitting}
+							onReclamation={logic.handleReclamation}
+							onCopyPortalLink={logic.copyPortalLink}
+							onDeleteOrder={logic.handleDeleteOrder}
+						/>
+					))}
 				</div>
 			)}
 
 			{/* Full CAD/CAM Order Modal */}
-			{isOrderModalOpen && (
+			{logic.isOrderModalOpen && (
 				<Suspense fallback={null}>
 					<DentalLabOrderModal
-						isOpen={isOrderModalOpen}
-						onClose={() => setIsOrderModalOpen(false)}
-						initialOrder={selectedOrderForEdit}
-						initialTab={modalInitialTab}
+						isOpen={logic.isOrderModalOpen}
+						onClose={() => logic.setIsOrderModalOpen(false)}
+						initialOrder={logic.selectedOrderForEdit}
+						initialTab={logic.modalInitialTab}
 						patientId={patientId}
-						onOrderSaved={() => fetchOrders()}
+						onOrderSaved={() => logic.fetchOrders()}
 					/>
 				</Suspense>
 			)}
 
 			{/* 7-Stage Tracking Drawer */}
-			{isTrackingDrawerOpen && (
+			{logic.isTrackingDrawerOpen && (
 				<Suspense fallback={null}>
 					<LabTrackingDrawer
-						isOpen={isTrackingDrawerOpen}
-						onClose={() => setIsTrackingDrawerOpen(false)}
-						order={selectedOrderForTracking}
+						isOpen={logic.isTrackingDrawerOpen}
+						onClose={() => logic.setIsTrackingDrawerOpen(false)}
+						order={logic.selectedOrderForTracking}
 						onStageUpdate={async (orderId, newStage, note) => {
 							try {
 								const res = await fetch(`/api/lab/orders/${orderId}`, {
@@ -1500,7 +384,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 									throw new Error(errData?.message || `Ошибка смены этапа (${res.status})`);
 								}
 								showToast("Этап наряда ЗТЛ успешно сохранен в базе данных", "success");
-								await fetchOrders();
+								await logic.fetchOrders();
 							} catch (err: any) {
 								showToast(err.message || "Не удалось обновить этап наряда в БД", "error");
 							}
@@ -1509,31 +393,31 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				</Suspense>
 			)}
 
-			{isLabHubOpen && (
+			{logic.isLabHubOpen && (
 				<Suspense fallback={null}>
 					<DentalLabOrdersHubModal
-						isOpen={isLabHubOpen}
-						onClose={() => setIsLabHubOpen(false)}
+						isOpen={logic.isLabHubOpen}
+						onClose={() => logic.setIsLabHubOpen(false)}
 						currentPatientId={patientId}
-						currentPatientName={orders[0]?.patientName}
-						currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
+						currentPatientName={logic.orders[0]?.patientName}
+						currentDoctorName={logic.appLogic?.activeDoctor?.fullName || logic.appLogic?.activeDoctor?.name}
 						onSaveOrder={() => {
-							void fetchOrders();
+							void logic.fetchOrders();
 						}}
 					/>
 				</Suspense>
 			)}
 
-			{isTrackerModalOpen && (
+			{logic.isTrackerModalOpen && (
 				<Suspense fallback={null}>
 					<DentalLabOrdersTrackerModal
-						isOpen={isTrackerModalOpen}
-						onClose={() => setIsTrackerModalOpen(false)}
+						isOpen={logic.isTrackerModalOpen}
+						onClose={() => logic.setIsTrackerModalOpen(false)}
 						currentPatientId={patientId}
-						currentPatientName={orders[0]?.patientName}
-						currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
+						currentPatientName={logic.orders[0]?.patientName}
+						currentDoctorName={logic.appLogic?.activeDoctor?.fullName || logic.appLogic?.activeDoctor?.name}
 						onOrderSaved={() => {
-							void fetchOrders();
+							void logic.fetchOrders();
 						}}
 					/>
 				</Suspense>
@@ -1541,10 +425,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 			{/* Non-blocking Action Prompt Modal (Mandates 8e, 8n) */}
 			<LabActionPromptModal
-				state={promptState}
-				onClose={() => setPromptState(null)}
+				state={logic.promptState}
+				onClose={() => logic.setPromptState(null)}
 			/>
 		</div>
 	);
 }
-

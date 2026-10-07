@@ -11,12 +11,40 @@ import type {
 	CrossSectionSliceData,
 } from "../cbctCrossSectionResliceMath";
 import type { DentalArchCurve } from "../cbctArchSplineMath";
+import type { CbctInterpolationMethod } from "../cbctLutMath";
 import type {
 	DecodeDicomSliceTask,
 	GenerateProgressiveLodPayload,
 } from "./cbctSliceWorker";
 
 export type { DecodeDicomSliceTask, GenerateProgressiveLodPayload };
+
+export class StaleSliceRequestError extends Error {
+	readonly requestId: number;
+	readonly plane?: MprPlane | undefined;
+
+	constructor(requestId: number, plane?: MprPlane | undefined) {
+		super(
+			`Stale slice request ${requestId}${plane ? ` on plane ${plane}` : ""} was superseded`,
+		);
+		this.name = "StaleSliceRequestError";
+		this.requestId = requestId;
+		this.plane = plane;
+		Object.setPrototypeOf(this, StaleSliceRequestError.prototype);
+	}
+}
+
+export function isStaleSliceRequestError(
+	error: unknown,
+): error is StaleSliceRequestError {
+	return (
+		error instanceof StaleSliceRequestError ||
+		(typeof error === "object" &&
+			error !== null &&
+			"name" in error &&
+			(error as { name: string }).name === "StaleSliceRequestError")
+	);
+}
 
 export interface DecodedSliceResult {
 	sliceIndex: number;
@@ -45,6 +73,8 @@ export interface WorkerRenderSliceParams {
 	obliqueAngles: ObliqueRotationAngles;
 	options: WorkerRenderSliceOptions;
 	requestId?: number | undefined;
+	signal?: AbortSignal | undefined;
+	supersedePrevious?: boolean | undefined;
 }
 
 export interface WorkerRenderAllPlanesParams {
@@ -53,6 +83,8 @@ export interface WorkerRenderAllPlanesParams {
 	obliqueAngles: ObliqueRotationAngles;
 	options: WorkerRenderSliceOptions;
 	requestId?: number | undefined;
+	signal?: AbortSignal | undefined;
+	supersedePrevious?: boolean | undefined;
 }
 
 export interface WorkerCrossSectionSeriesParams {
@@ -65,6 +97,7 @@ export interface WorkerCrossSectionSeriesParams {
 export interface CbctWorkerBridgeOptions {
 	forceFallback?: boolean | undefined;
 	workerFactory?: (() => Worker) | undefined;
+	poolSize?: number | undefined;
 }
 
 export interface PendingSingleSlice {
@@ -72,12 +105,32 @@ export interface PendingSingleSlice {
 	reject: (reason: Error) => void;
 	volumeId: string;
 	plane: MprPlane;
+	requestId?: number | undefined;
+	onAbortCleanup?: (() => void) | undefined;
 }
 
 export interface PendingMultiPlane {
 	resolve: (value: Record<MprPlane, MprSliceExtractionResult>) => void;
 	reject: (reason: Error) => void;
 	volumeId: string;
+	requestId?: number | undefined;
+	onAbortCleanup?: (() => void) | undefined;
+}
+
+export interface QueuedSingleSlice {
+	params: WorkerRenderSliceParams;
+	requestId: number;
+	resolve: (value: MprSliceExtractionResult) => void;
+	reject: (reason: Error) => void;
+	onAbortCleanup?: (() => void) | undefined;
+}
+
+export interface QueuedMultiPlane {
+	params: WorkerRenderAllPlanesParams;
+	requestId: number;
+	resolve: (value: Record<MprPlane, MprSliceExtractionResult>) => void;
+	reject: (reason: Error) => void;
+	onAbortCleanup?: (() => void) | undefined;
 }
 
 export interface PendingSeriesRequest {

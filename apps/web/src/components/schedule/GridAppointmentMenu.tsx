@@ -346,10 +346,10 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 				</div>
 			)}
 
-			{/* Блок «Длительность (1 клик)» */}
+			{/* Блок «Длительность» */}
 			<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
 				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
-					Длительность (1 клик)
+					Длительность
 				</div>
 				<div className="grid grid-cols-3 gap-1 px-1">
 					<button
@@ -414,11 +414,11 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 				</button>
 			</div>
 
-			{/* Сменить кресло (1 клик без модального ада) */}
+			{/* Сменить кресло */}
 			{effectiveChairs.length > 1 && (
 				<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
 					<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
-						Сменить кресло (1 клик)
+						Сменить кресло
 					</div>
 					<div className="flex items-center gap-1 px-1 flex-wrap">
 						{effectiveChairs.map((ch, chIdx) => {
@@ -450,11 +450,11 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 				</div>
 			)}
 
-			{/* Сменить врача (1 клик без модального ада) */}
+			{/* Сменить врача */}
 			{doctors.length > 1 && (
 				<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
 					<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
-						Сменить врача (1 клик)
+						Сменить врача
 					</div>
 					<div className="flex items-center gap-1 px-1 flex-wrap">
 						{doctors.slice(0, 4).map((doc) => {

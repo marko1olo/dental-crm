@@ -330,7 +330,7 @@ export const PaidServiceContractForm = React.memo(
 			setPaidContractServiceListConfirmed(true);
 			setPaidContractPaidBasisConfirmed(true);
 			setPaidContractWrittenChangesConfirmed(true);
-			showToast("Типовой договор заполнен (1 клик)", "success", 3000);
+			showToast("Типовой договор заполнен", "success", 3000);
 		};
 
 		const handlePrintFilledContract = () => {
@@ -513,7 +513,7 @@ export const PaidServiceContractForm = React.memo(
 							}}
 							className="paid-contract-btn h-9 px-3 rounded-lg text-xs font-semibold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98"
 							data-testid="btn-paid-contract-print-blank"
-							title="Печать пустого бланка договора со строками ________ для ручного заполнения пациентом до приёма (Мандат 8e — без 403-ошибок)"
+							title="Печать пустого бланка договора со строками ________ для ручного заполнения пациентом до приёма"
 						>
 							<Printer size={15} aria-hidden="true" />
 							<span>Печать договора (бланк со строками _______)</span>
@@ -525,10 +525,10 @@ export const PaidServiceContractForm = React.memo(
 							onClick={handleFillStandardContract}
 							className="paid-contract-btn h-9 px-3 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98"
 							data-testid="btn-paid-contract-fill-norm"
-							title="1 клик: заполнить типовой договор клиники со стандартными реквизитами"
+							title="Заполнить типовой договор клиники со стандартными реквизитами"
 						>
 							<ShieldCheck size={15} aria-hidden="true" />
-							<span>Типовой договор (1 клик)</span>
+							<span>Типовой договор</span>
 						</button>
 
 						{/* Второстепенные опции в меню "..." (Закон Миллера per Mandate 8d) */}

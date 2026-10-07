@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-10-05T22:05:00+04:00",
+  "cluster": "CLUSTER_2_RADIOLOGY_CBCT_OPTG_STUDIES_ARCHIVE",
+  "status": "COMPLETED",
+  "compiler_status": "PASSED_ZERO_ERRORS",
+  "typecheck_command": "npx tsc -p apps/web/tsconfig.json --noEmit",
+  "inspected_and_fixed_files": [
+    {
+      "file": "apps/web/src/components/radiology/RadiologyPatientSearchModal.tsx",
+      "changes": [
+        "Replaced naked search input with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear (guaranteed >= 38px left padding, zero icon collision)",
+        "Replaced raw date range filter tabs with .dente-segmented-bar and .dente-segmented-item (active)",
+        "Upgraded quick preset filter buttons to .dente-filter-chips and .dente-filter-chip (active)",
+        "Ensured touch targets >= 36px on desktop and wrapped bottom action buttons with proper border tokens"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/radiology/archive/RadiologyStudiesArchive.tsx",
+      "changes": [
+        "Wrapped search input in canonical .dente-search-wrap with .dente-search-icon, .dente-search-input, and .dente-search-clear",
+        "Upgraded date presets strip to .dente-segmented-bar and .dente-segmented-item",
+        "Upgraded modality filter (All / 3D CBCT / OPTG / Periapical) to .dente-segmented-bar and .dente-segmented-item",
+        "Upgraded binding control status filter to .dente-segmented-bar and .dente-segmented-item",
+        "Purged non-compliant emoji '🔬' from 3D Studio action button (Mandates 8d & 8c zero emojis in clinical UI)"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/radiology/archive/StudyPatientBindControlModal.tsx",
+      "changes": [
+        "Replaced naked relative input with .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear",
+        "Added clear button for instant query reset and verified icon-text separation >= 38px"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/radiology/SensorStudyMobileBar.tsx",
+      "changes": [
+        "Replaced transparent unbordered buttons with solid themed items: bg rgba(255,255,255,0.05) and border 1px solid rgba(255,255,255,0.12)",
+        "Active states styled with distinct teal tint: rgba(19,78,74,0.95) and border 1px solid rgba(45,212,191,0.6)",
+        "Enforced 46x46px touch targets for mobile viewport (HIG compliance >= 44x44px)"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/radiology/SensorStudyViewer.tsx",
+      "changes": [
+        "Converted raw tool toggles container to .dente-segmented-bar and .dente-segmented-item (active)",
+        "Added explicit borders border-[var(--line)] and bg-[var(--paper-soft)] to auxiliary viewport action buttons"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/radiology/mpr/CbctRightSidebar.tsx",
+      "changes": [
+        "Converted implant brand selector (Straumann, Nobel, Osstem, Dentium, MIS) to .dente-segmented-bar and .dente-segmented-item (active)",
+        "Increased 152-FZ Anonymization button min-height to 36px and Center/Share buttons to 38px min-height",
+        "Maintained all existing data-testids for testing compatibility"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/diagnostics/DiagnosticDrawer.tsx",
+      "changes": [
+        "Upgraded Dev HUD navigation tabs to .dente-segmented-bar and .dente-segmented-item (active)",
+        "Replaced custom .dente-diagnostic-search-box with canonical .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear",
+        "Updated DiagnosticDrawer.css with unified 32px control heights, proper token borders, and 42px tab bar container"
+      ]
+    }
+  ],
+  "invariants_guaranteed": {
+    "zero_naked_buttons": true,
+    "zero_search_icon_overlap": true,
+    "touch_target_desktop_gte_36px": true,
+    "touch_target_mobile_gte_44px": true,
+    "zero_emojis_in_clinical_ui": true,
+    "data_testids_preserved": true
+  }
+}

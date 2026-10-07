@@ -58,12 +58,14 @@ import {
 } from "../dentalCurveEngine";
 import { traceMandibularNerveFastMarching } from "../fastMarchingNerve";
 import { notifyCbctSliceInteraction } from "./cbctAdaptiveSlicePipeline";
+import { hitTestNerveControlPoint } from "./cbctNerveHitTest";
 import {
 	projectMeasurementsToSlice,
 	updateDraggedMeasurementAngle,
 	updateDraggedMeasurementRuler,
 } from "./cbctInteractionHelpers";
 import { ROTATE_CURSOR, type StudioMode } from "./cbctStudioTypes";
+import type { VirtualImplantSpec } from "../implantSafetyEngine";
 import { useCbctCurvedViewportHandlers } from "./useCbctCurvedViewportHandlers";
 
 export interface UseCbctInteractionHandlersParams {
@@ -700,6 +702,27 @@ export function useCbctInteractionHandlers(
 			if (activeTool === "nerve") {
 				const currentTransform =
 					transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+
+				// Хит-тест существующего узла канала IAN (микроподгонка перетаскиванием мыши)
+				const nerveHit = hitTestNerveControlPoint(
+					pointerPx,
+					nervePoints,
+					plane,
+					crosshairMm,
+					volume,
+					currentTransform,
+					14,
+				);
+				if (nerveHit) {
+					setSelectedNerveNodeIdx(nerveHit.index);
+					setIsDraggingNerveNode(nerveHit.index);
+					showToast(
+						`Выбран 3D-узел нерва #${nerveHit.index + 1}. Перетащите для микроподгонки`,
+						"info",
+					);
+					return;
+				}
+
 				const pointMm = mapCanvasPointerToWorldMmWithTransform(
 					pointerPx,
 					{ width: canvas.width, height: canvas.height },
@@ -853,13 +876,32 @@ export function useCbctInteractionHandlers(
 				isShiftRotating !== null ||
 				isPanning !== null ||
 				isDraggingZoom !== null ||
-				isDraggingArchAnchor !== null
+				isDraggingArchAnchor !== null ||
+				isDraggingNerveNode !== null
 			) {
 				notifyCbctSliceInteraction();
 			}
 			const canvas = e.currentTarget;
 			const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 			const pointerPx = { x, y };
+
+			if (isDraggingNerveNode !== null) {
+				const currentTransform =
+					transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const pointMm = mapCanvasPointerToWorldMmWithTransform(
+					pointerPx,
+					{ width: canvas.width, height: canvas.height },
+					plane,
+					crosshairMm,
+					obliqueAngles,
+					currentTransform,
+					volume,
+				);
+				setNervePoints((prev) =>
+					prev.map((pt, idx) => (idx === isDraggingNerveNode ? pointMm : pt)),
+				);
+				return;
+			}
 
 			if (isDraggingArchAnchor !== null && plane === "axial") {
 				const currentTransform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
@@ -1339,6 +1381,7 @@ export function useCbctInteractionHandlers(
 
 	const getCanvasCursor = useCallback(
 		(plane: MprPlane) => {
+			if (isDraggingNerveNode !== null) return "grabbing";
 			if (isDraggingArchAnchor !== null && plane === "axial") return "grabbing";
 			if (hoveredArchAnchorIdx !== null && plane === "axial") return "pointer";
 			if (draggingMeasurementHandle) return "grabbing";
@@ -1359,6 +1402,7 @@ export function useCbctInteractionHandlers(
 			return "crosshair";
 		},
 		[
+			isDraggingNerveNode,
 			isDraggingArchAnchor,
 			hoveredArchAnchorIdx,
 			draggingMeasurementHandle,

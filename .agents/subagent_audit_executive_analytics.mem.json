@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-10-06T20:45:00+04:00",
+  "inquisitor": "GLOBAL RED TEAM INQUISITOR 4: АНАЛИТИКА КЛИНИКИ, ЗАГРУЗКА КРЕСЕЛ И ВОРОНКА КУРАТОРА",
+  "status": "COMPLETED",
+  "verdict": "VERIFIED_CLEAN",
+  "scope": {
+    "routes": ["#analytics", "#cmo", "#payout"],
+    "components": [
+      "apps/web/src/pages/AnalyticsDashboardView.tsx",
+      "apps/web/src/components/analytics/DirectorExecutiveDashboard.tsx",
+      "apps/web/src/components/analytics/ExecutiveDashboard.tsx",
+      "apps/web/src/components/analytics/ExecutivePnlWidget.tsx",
+      "apps/web/src/components/analytics/chairUtilizationEngine.ts",
+      "apps/web/src/components/analytics/CuratorConversionFunnel.tsx",
+      "apps/web/src/components/analytics/CuratorDashboard.tsx",
+      "apps/web/src/components/analytics/ClinicAnalyticsDashboard.tsx",
+      "apps/web/src/components/analytics/LostPatientsRecallCohortsTable.tsx",
+      "apps/web/src/components/patients/RecallListPanel.tsx"
+    ]
+  },
+  "defectsIdentifiedAndFixed": [
+    {
+      "id": "DEFECT-ANALYTICS-01",
+      "file": "apps/web/src/App.tsx",
+      "description": "Прямой хэш-роут #analytics не приводил к активации currentView = 'analytics' из-за отсутствия проверки route === 'analytics' в handleDirectHashRoutes.",
+      "fix": "Добавлено route === 'analytics' в handleDirectHashRoutes.",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DEFECT-ANALYTICS-02",
+      "file": "apps/web/src/components/patients/RecallListPanel.tsx",
+      "description": "Рендеринг сырого undefined в пользовательский интерфейс ('просмотрено карточек: ' и 'Просмотрено undefined карточек.') при отсутствии поля examinedPatients в теле ответа.",
+      "fix": "Применен безопасный числовой фолбэк: report.examinedPatients ?? 0.",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DEFECT-ANALYTICS-03",
+      "file": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+      "description": "Обрезка русского слова на кнопке вкладки ('Операционные графи...') и горизонтальный оверфлоу на мобильных экранах 390px (iPhone 14/15/16).",
+      "fix": "Реализована адаптивная типографика вкладок (Директор / Графики / Кураторы / Ещё на <640px), гарантирующая 100% размещение всех 4 вкладок в 1 строку без обрезки и без горизонтального скролла.",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "DEFECT-ANALYTICS-04",
+      "file": "apps/web/src/pages/AnalyticsDashboardView.tsx",
+      "description": "Двойной селектор периода на мобильных устройствах при просмотре рабочего стола директора: селектор в шапке дублировал сенсорный Segmented Control Apple Health HIG внутри ExecutiveDashboard.",
+      "fix": "Верхний селектор периода скрыт на экранах <640px при активной секции executive (hidden sm:flex), оставив эталонный крупный тач-бар 44px.",
+      "status": "RESOLVED"
+    }
+  ],
+  "visualProofScreenshots": [
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_light_director_executive.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_dark_director_executive.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_light_curator_funnel.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_dark_curator_funnel.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_light_clinic_dashboard.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_dark_clinic_dashboard.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_light_lost_patients_cohorts.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_pc_dark_lost_patients_cohorts.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_mobile_light_executive.png",
+    "C:/Clinic_MVP/dental-crm/docs/screenshots/audit_executive_analytics/audit_mobile_dark_executive.png"
+  ],
+  "firstPrinciplesAudit": {
+    "revenueKpis": "Честные факты и планы выручки (4 850 000 ₽ / 5 000 000 ₽, 97%), разбивка 5 отделений по кассовому методу.",
+    "chairUtilization": "Утилизация мощности по СанПиН 3.3686-21: (∑ минуты реальных приемов + буфер 15 мин санобработки) / фонд смен. Защита от деления на 0 при пустом расписании.",
+    "curatorFunnel": "5-этапная воронка куратора (Консультация -> Согласование -> Предоплата -> Лечение -> Завершено) с прозрачным расчетом сдельной комиссии 2% и очередью планов.",
+    "recallCohorts": "Когортный анализ Recall 6/12 месяцев по санации и имплантации без вымышленных данных."
+  },
+  "compilerCheck": "npx tsc -p apps/web/tsconfig.json --noEmit exited with code 0."
+}

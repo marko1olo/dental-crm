@@ -609,6 +609,34 @@ export function calculateWheelSliceDelta(deltaY: number, step = 1): number {
 }
 
 /**
+ * Quantizes accumulated mouse wheel deltaY into discrete slice steps.
+ * Handles rapid wheel scrub events by batching delta and preserving remainder.
+ * @param accumulatedDeltaY Accumulated deltaY across wheel events within an animation frame.
+ * @param quantum Threshold delta per 1 slice step (default 60px).
+ * @param step Multiplier per quantum (default 1, or 5 when Shift is held).
+ */
+export function calculateQuantizedWheelDelta(
+	accumulatedDeltaY: number,
+	quantum = 60,
+	step = 1,
+): { steps: number; remainder: number } {
+	if (!Number.isFinite(accumulatedDeltaY) || accumulatedDeltaY === 0) {
+		return { steps: 0, remainder: 0 };
+	}
+	const safeQuantum = Number.isFinite(quantum) && quantum > 0 ? quantum : 60;
+	const safeStep = Number.isFinite(step) && step > 0 ? step : 1;
+
+	const numQuanta = Math.trunc(accumulatedDeltaY / safeQuantum);
+	if (numQuanta === 0) {
+		return { steps: 0, remainder: accumulatedDeltaY };
+	}
+
+	const steps = numQuanta * safeStep;
+	const remainder = accumulatedDeltaY - numQuanta * safeQuantum;
+	return { steps, remainder };
+}
+
+/**
  * Computes updated slice index after mouse wheel scroll, clamped to [0, maxSliceIndex].
  */
 export function calculateSliceIndexFromWheel(

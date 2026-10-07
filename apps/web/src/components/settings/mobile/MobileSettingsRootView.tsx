@@ -70,6 +70,16 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 }) => {
 	const { dashboard } = appLogic;
 	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+	const SETTING_CATEGORIES = [
+		{ id: "all", label: "Все" },
+		{ id: "clinic_org", label: "Клиника" },
+		{ id: "prices_services", label: "Прейскурант услуг" },
+		{ id: "staff_team", label: "Персонал" },
+		{ id: "clinical_standards", label: "Стандарты" },
+		{ id: "integrations_sync", label: "Интеграции" },
+	];
 
 	const clinicName = dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName || "Стоматология ДЕНТЕ";
 	const clinicMode = dashboard?.clinicSettings?.profile?.mode || "small_clinic";
@@ -111,12 +121,12 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 			},
 			{
 				id: "prices_services",
-				header: "Прейскурант и услуги (804н)",
+				header: "Прейскурант и услуги",
 				items: [
 					{
 						id: "prices",
 						title: "Прейскурант услуг",
-						subtitle: "Официальная номенклатура 804н, базовые цены",
+						subtitle: "Номенклатура услуг клиники, базовые цены",
 						icon: Tag,
 						iconBg: "rgba(13, 148, 136, 0.12)",
 						iconColor: "var(--teal)",
@@ -235,20 +245,26 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 		[serviceCatalogCount, staffCount, chairsCount],
 	);
 
-	// Search filtering across all sections
+	// Search and category filtering across all sections
 	const filteredGroups = useMemo(() => {
-		if (!searchQuery.trim()) return SETTINGS_GROUPS;
+		let groups = SETTINGS_GROUPS;
+		if (selectedCategory !== "all") {
+			groups = groups.filter((g) => g.id === selectedCategory);
+		}
+		if (!searchQuery.trim()) return groups;
 		const q = searchQuery.toLowerCase().trim();
-		return SETTINGS_GROUPS.map((group) => {
-			const matchingItems = group.items.filter(
-				(item) =>
-					item.title.toLowerCase().includes(q) ||
-					item.subtitle.toLowerCase().includes(q) ||
-					group.header.toLowerCase().includes(q),
-			);
-			return { ...group, items: matchingItems };
-		}).filter((group) => group.items.length > 0);
-	}, [SETTINGS_GROUPS, searchQuery]);
+		return groups
+			.map((group) => {
+				const matchingItems = group.items.filter(
+					(item) =>
+						item.title.toLowerCase().includes(q) ||
+						item.subtitle.toLowerCase().includes(q) ||
+						group.header.toLowerCase().includes(q),
+				);
+				return { ...group, items: matchingItems };
+			})
+			.filter((group) => group.items.length > 0);
+	}, [SETTINGS_GROUPS, searchQuery, selectedCategory]);
 
 	return (
 		<div
@@ -267,29 +283,47 @@ export const MobileSettingsRootView: React.FC<MobileSettingsRootViewProps> = ({
 
 			{/* Search Input */}
 			<div className="px-4 py-2">
-				<div className="relative flex items-center w-full">
+				<div className="dente-search-wrap">
 					<Search
-						size={15}
-						className="absolute left-3.5 text-[var(--muted)] pointer-events-none"
+						size={14}
+						className="dente-search-icon"
+						aria-hidden="true"
 					/>
 					<input
 						type="search"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder="Поиск по параметрам клиники..."
-						className="w-full h-10 min-h-[40px] pr-9 text-[14px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all mobile-settings-search-input"
+						className="dente-search-input"
 						data-testid="input-mobile-settings-search"
 					/>
 					{searchQuery && (
 						<button
 							type="button"
 							onClick={() => setSearchQuery("")}
-							className="absolute right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-transform cursor-pointer"
+							className="dente-search-clear"
 							aria-label="Очистить поиск"
 						>
 							<X size={14} />
 						</button>
 					)}
+				</div>
+			</div>
+
+			{/* Category Filter Chips */}
+			<div className="px-4 pb-2 overflow-x-auto">
+				<div className="dente-filter-chips flex-nowrap" role="group" aria-label="Категории настроек">
+					{SETTING_CATEGORIES.map((cat) => (
+						<button
+							key={cat.id}
+							type="button"
+							onClick={() => setSelectedCategory(cat.id)}
+							className={`dente-filter-chip ${selectedCategory === cat.id ? "active" : ""}`}
+							data-active={selectedCategory === cat.id}
+						>
+							<span>{cat.label}</span>
+						</button>
+					))}
 				</div>
 			</div>
 

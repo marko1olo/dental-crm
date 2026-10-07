@@ -303,24 +303,30 @@ export function AutoclaveLog257Modal({
 				</div>
 
 				{/* Navigation Tabs */}
-				<div className="autoclave-log-tabs-nav">
-					<button
-						type="button"
-						className={`autoclave-log-tab-btn ${activeTab === "new_cycle" ? "active" : ""}`}
-						onClick={() => setActiveTab("new_cycle")}
-					>
-						<Plus size={16} />
-						Новый цикл стерилизации
-					</button>
+				<div className="px-6 py-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center shrink-0">
+					<div className="dente-segmented-bar" role="tablist" aria-label="Вкладки журнала автоклава">
+						<button
+							type="button"
+							role="tab"
+							aria-selected={activeTab === "new_cycle"}
+							className={`dente-segmented-item ${activeTab === "new_cycle" ? "active" : ""}`}
+							onClick={() => setActiveTab("new_cycle")}
+						>
+							<Plus size={14} className="shrink-0" />
+							<span>Новый цикл стерилизации</span>
+						</button>
 
-					<button
-						type="button"
-						className={`autoclave-log-tab-btn ${activeTab === "journal_257" ? "active" : ""}`}
-						onClick={() => setActiveTab("journal_257")}
-					>
-						<FileText size={16} />
-						Реестр Журнала 257/у ({records.length})
-					</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={activeTab === "journal_257"}
+							className={`dente-segmented-item ${activeTab === "journal_257" ? "active" : ""}`}
+							onClick={() => setActiveTab("journal_257")}
+						>
+							<FileText size={14} className="shrink-0" />
+							<span>Реестр Журнала 257/у ({records.length})</span>
+						</button>
+					</div>
 				</div>
 
 				{/* Body Content Area */}

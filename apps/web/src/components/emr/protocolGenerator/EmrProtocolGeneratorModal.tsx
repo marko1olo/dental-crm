@@ -671,7 +671,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										data-testid="apply-emr-protocol-btn"
 									>
 										<Sparkles className="w-4 h-4" />
-										<span>Применить в дневник приёма (1 клик)</span>
+										<span>Применить в дневник приёма</span>
 									</button>
 								</div>
 							</div>

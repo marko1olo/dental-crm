@@ -122,7 +122,7 @@ export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.mem
 							data-testid="btn-043-anamnesis-norm"
 							className="emr043-btn emr043-btn-secondary"
 							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
-							title="Заполнить незаполненные графы анамнеза нормой (Мандат 8e)"
+							title="Заполнить незаполненные графы анамнеза физиологической нормой"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-amber-500" />
 							<span>Норма анамнеза</span>
@@ -189,7 +189,7 @@ export const Form043OdontogramTab: React.FC<Form043OdontogramTabProps> = React.m
 							data-testid="btn-043-status-norm"
 							className="emr043-btn emr043-btn-secondary"
 							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
-							title="Зафиксировать физиологическую норму СОПР и прикуса (Мандат 8e)"
+							title="Зафиксировать физиологическую норму слизистой оболочки и прикуса"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-amber-500" />
 							<span>Норма статуса</span>

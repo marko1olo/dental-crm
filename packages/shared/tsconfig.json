@@ -26,8 +26,9 @@
 		"declaration": true,
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
-		"lib": ["ES2022"],
+		"lib": ["ES2022", "DOM"],
 		"types": ["node"]
+
 	},
 	"include": ["src"],
 	"exclude": ["src/tests", "src/**/*.test.ts"]

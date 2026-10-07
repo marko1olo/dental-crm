@@ -54,14 +54,14 @@ export const StagePaymentEscrowTab: React.FC<StagePaymentEscrowTabProps> = ({
 
 				<div className="rounded-2xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] p-5 shadow-sm">
 					<div className="flex items-center justify-between text-xs text-[var(--teal-dark,var(--teal))] mb-1">
-						<span>Заблокировано в Эскроу</span>
+						<span>Зарезервировано в эскроу</span>
 						<Lock className="h-4 w-4 text-[var(--teal,var(--brand-primary))]" />
 					</div>
 					<div className="text-2xl font-black text-[var(--teal,var(--brand-primary))]">
 						{formatKopecksRu(depositWallet.lockedEscrowKopecks)}
 					</div>
 					<p className="text-xs text-[var(--muted,#64748b)] mt-2">
-						Средства заморожены под активные этапы до подписания Акта.
+						Средства зарезервированы под активные этапы до подписания акта.
 					</p>
 				</div>
 

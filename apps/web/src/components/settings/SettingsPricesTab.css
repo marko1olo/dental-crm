@@ -6,53 +6,71 @@
 }
 
 .pricelist-tabs-header {
-	display: flex;
-	gap: 12px;
-	border-bottom: 2px solid var(--line);
-	padding-bottom: 0;
-	margin-bottom: 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-subtle, var(--line));
+	border-radius: 10px;
+	margin-bottom: 12px;
+	box-sizing: border-box;
+	user-select: none;
+	width: fit-content;
 }
 
 .pricelist-tab-btn {
-	padding: 8px 14px;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 8px;
-	background: transparent;
-	border: none;
-	color: var(--ink-muted, var(--muted));
-	font-weight: 600;
-	font-size: 13.5px;
+	height: 32px;
 	min-height: 32px;
+	max-height: 32px;
+	padding: 0 14px;
+	border-radius: 8px;
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--muted);
+	font-family: inherit;
+	font-weight: 500;
+	font-size: 13px;
+	line-height: 1;
 	cursor: pointer;
-	border-bottom: 2px solid transparent;
-	margin-bottom: -2px;
-	transition: all 0.2s ease;
+	white-space: nowrap;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
 }
 
-.pricelist-tab-btn:hover {
+.pricelist-tab-btn:hover:not(.active) {
 	color: var(--ink);
-	background: var(--paper-soft, rgba(0, 0, 0, 0.02));
+	background: rgba(0, 0, 0, 0.04);
 }
 
-[data-theme="dark"] .pricelist-tab-btn,
-[data-theme="night"] .pricelist-tab-btn,
-[data-theme="cyber_xray"] .pricelist-tab-btn,
-[data-theme="contrast"] .pricelist-tab-btn {
-	color: var(--ink-2, #cbd5e1);
-}
-
-[data-theme="dark"] .pricelist-tab-btn:hover,
-[data-theme="night"] .pricelist-tab-btn:hover,
-[data-theme="cyber_xray"] .pricelist-tab-btn:hover,
-[data-theme="contrast"] .pricelist-tab-btn:hover {
+[data-theme="dark"] .pricelist-tab-btn:hover:not(.active),
+[data-theme="night"] .pricelist-tab-btn:hover:not(.active),
+[data-theme="cyber_xray"] .pricelist-tab-btn:hover:not(.active),
+[data-theme="contrast"] .pricelist-tab-btn:hover:not(.active) {
+	background: rgba(255, 255, 255, 0.06);
 	color: var(--ink, #ffffff);
-	background: var(--paper-soft);
 }
 
 .pricelist-tab-btn.active {
-	color: var(--teal);
-	border-bottom-color: var(--teal);
+	background: var(--paper) !important;
+	border-color: var(--line-subtle, var(--line)) !important;
+	color: var(--ink) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="dark"] .pricelist-tab-btn.active,
+[data-theme="night"] .pricelist-tab-btn.active,
+[data-theme="cyber_xray"] .pricelist-tab-btn.active,
+[data-theme="contrast"] .pricelist-tab-btn.active {
+	background: var(--paper-card, var(--paper-strong)) !important;
+	border-color: var(--line) !important;
+	color: var(--ink, #ffffff) !important;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
 }
 
 .pricelist-header-actions {
@@ -63,32 +81,48 @@
 
 .pricelist-search-wrapper {
 	position: relative;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 }
 
 .pricelist-search-wrapper input {
-	padding: 6px 12px 6px 36px;
+	padding: 0 36px 0 38px !important;
 	border: 1px solid var(--line);
-	border-radius: 6px;
-	background: var(--paper);
+	border-radius: 8px;
+	background: var(--paper-soft);
 	color: var(--ink);
 	font-size: 13px;
 	height: 32px;
-	width: 260px;
-	transition: all 0.2s ease;
+	min-height: 32px;
+	max-height: 32px;
+	width: 100%;
+	outline: none;
+	box-sizing: border-box;
+	transition: all 0.15s ease;
 }
 
 .pricelist-search-wrapper input:focus {
 	outline: none;
+	background: var(--paper);
 	border-color: var(--teal);
-	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+	box-shadow: 0 0 0 3px var(--teal-soft, rgba(13, 148, 136, 0.15));
 }
 
-.pricelist-search-wrapper svg {
+.pricelist-search-wrapper svg.dente-search-icon,
+.pricelist-search-wrapper > svg:first-child {
 	position: absolute;
 	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 14px;
+	height: 14px;
 	color: var(--muted);
+	pointer-events: none;
+	flex-shrink: 0;
+	z-index: 2;
 }
 
 .catalog-groups {

@@ -400,8 +400,8 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 			assert.ok(html.includes("Ортопедия"));
 			assert.ok(html.includes("Хирургия"));
 			assert.ok(html.includes("Имплантация"));
-			assert.ok(html.includes("Пародонтология"));
-			assert.ok(html.includes("Заполнить (1 клик)"));
+			assert.ok(html.includes("Заполнить"));
+			assert.ok(!html.includes("Заполнить (1 клик)"));
 			assert.ok(html.includes("+ Добавить"));
 		});
 

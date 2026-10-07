@@ -17,6 +17,7 @@ export type JawScope = "upper" | "lower" | "both";
 
 export interface DentalLabOrderData {
 	id?: string;
+	orderNumber?: string;
 	patientId: string;
 	patientName?: string;
 	doctorId?: string | null;

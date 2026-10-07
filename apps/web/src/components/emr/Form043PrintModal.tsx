@@ -424,10 +424,10 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								onClick={handleApplyNorm043}
 								disabled={false}
 								data-testid="btn-form043-apply-norm"
-								title="Заполнить незаполненные поля анамнеза и статуса физиологической нормой (Мандат 8e)"
+								title="Заполнить незаполненные поля анамнеза и статуса физиологической нормой"
 							>
 								<Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-								<span>Норма (1 клик)</span>
+								<span>Норма</span>
 							</button>
 
 							{/* Кнопка сохранения карты при наличии onSave (Мандат 8e: 0 disabled) */}
@@ -483,10 +483,10 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												setIsMoreMenuOpen(false);
 											}}
 											data-testid="btn-043-more-apply-norm"
-											title="Заполнить незаполненные поля анамнеза и статуса нормой (Мандат 8e)"
+											title="Заполнить незаполненные поля анамнеза и статуса физиологической нормой"
 										>
 											<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-											<span>Физиологическая норма (1 клик)</span>
+											<span>Физиологическая норма</span>
 										</button>
 										{onSave && (
 											<button
@@ -652,9 +652,9 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										fontWeight: 600,
 										padding: 0,
 									}}
-									title="Заполнить незаполненные показатели нормой в 1 клик (Мандат 8e)"
+									title="Заполнить незаполненные показатели физиологической нормой"
 								>
-									Заполнить нормой (1 клик)
+									Заполнить нормой
 								</button>
 							</div>
 						)}

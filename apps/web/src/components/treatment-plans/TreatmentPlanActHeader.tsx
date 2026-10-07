@@ -3,10 +3,10 @@
  * для печатной формы Акта сдачи-приемки оказанных стоматологических услуг.
  */
 
-import React from "react";
 import { Building2, FileText } from "lucide-react";
-import type { CompletedWorksActAndWriteOffData } from "./types";
+import type React from "react";
 import type { DocumentBrandColorPalette } from "../../store/documentBrandingStore";
+import type { CompletedWorksActAndWriteOffData } from "./types";
 
 export interface TreatmentPlanActHeaderProps {
 	readonly actData: CompletedWorksActAndWriteOffData;
@@ -73,18 +73,31 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 		<>
 			{/* ── 1. Official Header with Clinic Details & Accreditation ── */}
 			{headerStyle === "classic_centered" ? (
-				<header className="doc-header-classic-centered border-b-2 pb-4 mb-4" style={{ borderColor: palette.primary }}>
-					<div className="doc-brand-title text-xl font-extrabold" style={{ color: palette.primaryDark }}>
+				<header
+					className="doc-header-classic-centered border-b-2 pb-4 mb-4"
+					style={{ borderColor: palette.primary }}
+				>
+					<div
+						className="doc-brand-title text-xl font-extrabold"
+						style={{ color: palette.primaryDark }}
+					>
 						{actData.clinicName || clinicName}
 					</div>
-					{slogan && <div className="doc-brand-slogan text-xs text-slate-500 uppercase tracking-widest mt-1">{slogan}</div>}
+					{slogan && (
+						<div className="doc-brand-slogan text-xs text-slate-500 uppercase tracking-widest mt-1">
+							{slogan}
+						</div>
+					)}
 					{showClinicRequisites && (
 						<div className="doc-clinic-meta text-[11px] text-slate-600 mt-2 leading-relaxed">
-							<strong>{legalName}</strong> • ИНН: {inn} / КПП: {kpp} • ОГРН: {ogrn}
+							<strong>{legalName}</strong> • ИНН: {inn} / КПП: {kpp} • ОГРН:{" "}
+							{ogrn}
 							<br />
-							Лицензия на осуществление мед. деятельности: <strong>{license}</strong>
+							Лицензия на осуществление мед. деятельности:{" "}
+							<strong>{license}</strong>
 							<br />
-							Адрес: {address} • Тел: <strong>{phone}</strong> • {website} • {email}
+							Адрес: {address} • Тел: <strong>{phone}</strong> • {website} •{" "}
+							{email}
 						</div>
 					)}
 				</header>
@@ -100,12 +113,17 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 					</div>
 					<div className="text-right doc-clinic-meta text-[11px] text-slate-600">
 						<div>Лицензия: {license}</div>
-						<div>Тел: <strong>{phone}</strong> • {website}</div>
+						<div>
+							Тел: <strong>{phone}</strong> • {website}
+						</div>
 					</div>
 				</header>
 			) : (
 				/* Modern Magazine Split Header */
-				<header className="doc-header-modern-split flex items-start justify-between border-b-2 pb-4 mb-4" style={{ borderColor: palette.primary }}>
+				<header
+					className="doc-header-modern-split flex items-start justify-between border-b-2 pb-4 mb-4"
+					style={{ borderColor: palette.primary }}
+				>
 					<div className="flex items-center gap-3.5">
 						{showClinicLogo && (
 							<div
@@ -124,19 +142,33 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 							</div>
 						)}
 						<div>
-							<div className="doc-brand-title text-xl font-black tracking-tight" style={{ color: palette.primaryDark }}>
+							<div
+								className="doc-brand-title text-xl font-black tracking-tight"
+								style={{ color: palette.primaryDark }}
+							>
 								{actData.clinicName || clinicName}
 							</div>
-							{slogan && <div className="doc-brand-slogan text-xs text-slate-500 font-semibold uppercase tracking-wider">{slogan}</div>}
-							<div className="doc-clinic-meta text-xs font-semibold text-slate-700 mt-0.5">{legalName}</div>
+							{slogan && (
+								<div className="doc-brand-slogan text-xs text-slate-500 font-semibold uppercase tracking-wider">
+									{slogan}
+								</div>
+							)}
+							<div className="doc-clinic-meta text-xs font-semibold text-slate-700 mt-0.5">
+								{legalName}
+							</div>
 						</div>
 					</div>
 					{showClinicRequisites && (
 						<div className="text-right doc-clinic-meta text-[11px] leading-tight text-slate-600 max-w-sm">
-							<div className="font-bold text-slate-900" style={{ color: palette.primaryDark }}>
+							<div
+								className="font-bold text-slate-900"
+								style={{ color: palette.primaryDark }}
+							>
 								Лицензия: {license}
 							</div>
-							<div className="mt-0.5">ИНН: {inn} • КПП: {kpp} • ОГРН: {ogrn}</div>
+							<div className="mt-0.5">
+								ИНН: {inn} • КПП: {kpp} • ОГРН: {ogrn}
+							</div>
 							<div className="mt-0.5">{address}</div>
 							<div className="mt-0.5">
 								Тел: <strong>{phone}</strong> • {website}
@@ -163,24 +195,34 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 						<span>АКТ&nbsp;№&nbsp;{actData.actNumber}</span>
 					</span>
 					<span className="text-xs font-bold text-slate-800">
-						к&nbsp;Договору на оказание платных медицинских услуг №&nbsp;{actData.contractNumber} от {contractDateFormatted}&nbsp;г.
+						к&nbsp;Договору на оказание платных медицинских услуг №&nbsp;
+						{actData.contractNumber} от {contractDateFormatted}&nbsp;г.
 					</span>
 				</div>
 				<div className="text-xs font-semibold text-slate-600">
-					Дата составления: <strong className="text-slate-900 font-mono">{actData.actDate}&nbsp;г.</strong> (г.&nbsp;Москва)
+					Дата составления:{" "}
+					<strong className="text-slate-900 font-mono">
+						{actData.actDate}&nbsp;г.
+					</strong>
+					{address ? ` (${address.split(",")[0]?.trim()})` : ""}
 				</div>
 			</div>
 
 			{/* ── 3. Official Document Title Box ── */}
 			<div className="doc-official-title-box text-center my-4 print:my-2">
-				<h1 className="text-base sm:text-lg font-black tracking-tight uppercase text-slate-900" style={{ color: palette.primaryDark }}>
+				<h1
+					className="text-base sm:text-lg font-black tracking-tight uppercase text-slate-900"
+					style={{ color: palette.primaryDark }}
+				>
 					АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ
 				</h1>
 				<div className="doc-form-sub text-xs font-bold text-slate-600 uppercase tracking-wide mt-1">
-					И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) • ЭТАП&nbsp;№&nbsp;{actData.stageNumber} («{actData.stageTitle}»)
+					И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) •
+					ЭТАП&nbsp;№&nbsp;{actData.stageNumber} («{actData.stageTitle}»)
 				</div>
 				<p className="text-[10px] text-slate-500 mt-0.5">
-					Составлен во исполнение ст.&nbsp;779–783 ГК&nbsp;РФ, ст.&nbsp;20, 79 323-ФЗ и Постановления Правительства РФ от 11.05.2023 №&nbsp;736
+					Составлен во исполнение ст.&nbsp;779–783 ГК&nbsp;РФ, ст.&nbsp;20, 79
+					323-ФЗ и Постановления Правительства РФ от 11.05.2023 №&nbsp;736
 				</p>
 			</div>
 
@@ -193,7 +235,9 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 								Исполнитель (Клиника):
 							</td>
 							<td className="w-1/4 p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
-								<strong className="block text-slate-950 min-w-0 break-words">{legalName}</strong>
+								<strong className="block text-slate-950 min-w-0 break-words">
+									{legalName}
+								</strong>
 								<span className="text-[11px] text-slate-600 block mt-0.5">
 									ИНН:&nbsp;{inn} / КПП:&nbsp;{kpp} • ОГРН:&nbsp;{ogrn}
 								</span>
@@ -202,7 +246,9 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 								Пациент (Заказчик):
 							</td>
 							<td className="w-1/4 p-2.5 bg-white text-slate-900 leading-snug">
-								<strong className="block text-slate-950">{actData.patientName}</strong>
+								<strong className="block text-slate-950">
+									{actData.patientName}
+								</strong>
 								<span className="text-[11px] text-slate-600 block mt-0.5">
 									Дата рожд.: {patientDob} ({patientGenderText})
 								</span>
@@ -227,7 +273,9 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 								Лечащий врач (Исполнитель):
 							</td>
 							<td className="p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
-								<strong className="block text-slate-950">{actData.doctorFullName}</strong>
+								<strong className="block text-slate-950">
+									{actData.doctorFullName}
+								</strong>
 								<span className="text-[11px] text-slate-600 block mt-0.5">
 									{doctorSpec} • СНИЛС: {doctorSnilsVal}
 								</span>
@@ -236,8 +284,12 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 								Полис ОМС / СНИЛС / Контакт:
 							</td>
 							<td className="p-2.5 bg-white text-slate-900 text-[11px] leading-snug">
-								<div>{patientOmsVal} • СНИЛС: {patientSnilsVal}</div>
-								<div className="text-slate-600 mt-0.5">Тел: {patientContactPhone} • {patientRegAddress}</div>
+								<div>
+									{patientOmsVal} • СНИЛС: {patientSnilsVal}
+								</div>
+								<div className="text-slate-600 mt-0.5">
+									Тел: {patientContactPhone} • {patientRegAddress}
+								</div>
 							</td>
 						</tr>
 						<tr>
@@ -245,7 +297,8 @@ export const TreatmentPlanActHeader: React.FC<TreatmentPlanActHeaderProps> = ({
 								Основание и этап лечения:
 							</td>
 							<td className="p-2.5 bg-white text-slate-900 border-r border-slate-300 leading-snug">
-								Договор № <strong>{actData.contractNumber}</strong> • План лечения
+								Договор № <strong>{actData.contractNumber}</strong> • План
+								лечения
 							</td>
 							<td className="p-2.5 bg-slate-100 font-bold text-slate-800 border-r border-slate-300">
 								№ Медкарты / ID:

@@ -65,12 +65,11 @@
 /* Header */
 .treatment-presenter-header {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 12px 20px;
+	flex-direction: column;
+	padding: 12px 20px 10px 20px;
 	background: var(--tp-surface);
 	border-bottom: 1px solid var(--tp-border);
-	gap: 16px;
+	gap: 10px;
 	flex-shrink: 0;
 }
 
@@ -78,9 +77,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	min-width: 0;
-	flex: 1;
+	gap: 16px;
+	width: 100%;
 }
 
 .treatment-presenter-title-group {
@@ -91,8 +89,8 @@
 }
 
 .treatment-presenter-icon-badge {
-	width: 38px;
-	height: 38px;
+	width: 36px;
+	height: 36px;
 	border-radius: var(--tp-radius-md);
 	background: var(--tp-primary-light);
 	color: var(--tp-primary);
@@ -107,37 +105,41 @@
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	gap: 2px;
 }
 
 .treatment-presenter-main-title {
 	font-size: 15px;
-	font-weight: 800;
+	font-weight: 700;
 	color: var(--tp-text-main);
 	margin: 0;
-	display: flex;
-	align-items: center;
-	gap: 8px;
 	white-space: nowrap;
 }
 
 .treatment-presenter-law-badge {
-	font-size: 10px;
-	padding: 2px 7px;
+	font-size: 11.5px;
+	padding: 2px 8px;
 	border-radius: 9999px;
 	background: rgba(13, 148, 136, 0.12);
 	color: var(--tp-primary);
-	font-weight: 800;
+	font-weight: 600;
 	border: 1px solid rgba(13, 148, 136, 0.25);
 	white-space: nowrap;
 }
 
 .treatment-presenter-subtitle {
-	font-size: 12px;
+	font-size: 12.5px;
 	color: var(--tp-text-muted);
-	margin: 2px 0 0 0;
+	margin: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.treatment-presenter-nav-row {
+	display: flex;
+	align-items: center;
+	width: 100%;
 }
 
 .treatment-presenter-close-btn {
@@ -163,29 +165,31 @@
 	color: var(--tp-text-main);
 }
 
-/* Nav Tabs Strip */
+/* Nav Tabs Strip (Canonical DENTE Segmented Control) */
 .treatment-presenter-tabs {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	background: var(--tp-surface-soft);
-	padding: 4px;
-	border-radius: var(--tp-radius-md);
-	border: 1px solid var(--tp-border);
+	gap: 4px;
+	background: var(--tp-surface-soft, var(--paper-soft));
+	padding: 3px;
+	border-radius: 10px;
+	border: 1px solid var(--tp-border, var(--line-subtle));
 	flex-shrink: 0;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .treatment-presenter-tab-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 8px 14px;
-	min-height: 44px;
-	min-width: 44px;
-	border-radius: var(--tp-radius-sm);
-	font-size: 12px;
-	font-weight: 700;
-	color: var(--tp-text-muted);
+	padding: 4px 12px;
+	height: 28px;
+	min-height: 28px;
+	border-radius: 7px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--tp-text-muted, var(--muted));
 	background: transparent;
 	border: none;
 	cursor: pointer;
@@ -194,15 +198,25 @@
 	touch-action: manipulation;
 }
 
+@media (max-width: 768px) {
+	.treatment-presenter-tab-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 8px 14px;
+		font-size: 13px;
+	}
+}
+
 .treatment-presenter-tab-btn:hover {
-	color: var(--tp-text-main);
+	color: var(--tp-text-main, var(--ink));
 	background: rgba(0, 0, 0, 0.04);
 }
 
 .treatment-presenter-tab-btn.active {
-	color: var(--paper-strong);
-	background: var(--tp-primary);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	color: var(--tp-primary, var(--teal));
+	background: var(--tp-surface, var(--paper, #ffffff));
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Mobile & iPad Tier Switcher Bar (Segmented Control <= 1024px) */
@@ -325,20 +339,23 @@
 	.treatment-presenter-header {
 		flex-direction: column;
 		align-items: stretch;
-		padding: 10px 12px;
+		padding: 10px 12px 8px 12px;
 		gap: 8px;
 	}
 	.treatment-presenter-header-main {
 		width: 100%;
 	}
 	.treatment-presenter-main-title {
-		font-size: 13px;
+		font-size: 13.5px;
 	}
 	.treatment-presenter-law-badge {
 		display: none;
 	}
 	.treatment-presenter-subtitle {
-		font-size: 11px;
+		font-size: 11.5px;
+	}
+	.treatment-presenter-nav-row {
+		width: 100%;
 	}
 	.treatment-presenter-tabs {
 		width: 100%;
@@ -346,15 +363,15 @@
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
 		padding: 3px;
-		gap: 4px;
+		gap: 3px;
 		flex-wrap: nowrap;
 	}
 	.treatment-presenter-tabs::-webkit-scrollbar {
 		display: none;
 	}
 	.treatment-presenter-tab-btn {
-		padding: 8px 12px;
-		font-size: 12px;
+		padding: 6px 12px;
+		font-size: 12.5px;
 		min-height: 44px;
 		flex-shrink: 0;
 		white-space: nowrap;
@@ -861,7 +878,7 @@
 	background: var(--tp-primary-light);
 	color: var(--tp-primary);
 	font-weight: 800;
-	font-size: 11px;
+	font-size: 12px;
 }
 
 /* Sticky Action Footer */
@@ -890,7 +907,7 @@
 }
 
 .treatment-footer-label {
-	font-size: 11px;
+	font-size: 12px;
 	color: var(--tp-text-muted);
 }
 

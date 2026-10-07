@@ -277,7 +277,13 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 					>
 						<div className="flex items-center justify-between gap-1 font-bold">
 							<span className="flex items-center gap-1.5">
-								<span>{labInfo.isOverdue ? "⚠️" : labInfo.state === "ready_in_clinic" ? "🦷" : "⏳"}</span>
+								{labInfo.isOverdue ? (
+									<AlertTriangle size={13} className="text-rose-500 shrink-0" />
+								) : labInfo.state === "ready_in_clinic" ? (
+									<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+								) : (
+									<Clock size={13} className="text-amber-500 shrink-0" />
+								)}
 								<span className="text-[var(--ink)]">Наряд ЗТЛ:</span>
 								<span className="font-mono text-[var(--muted)]">{labInfo.orderNumber || "ЗТЛ"}</span>
 							</span>
@@ -372,7 +378,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 				</div>
 			</div>
 
-			{/* 6. Оперативная очередь StomX: 1-кликовое перемещение между этапами и главные действия */}
+			{/* 6. Оперативная очередь StomX: быстрое перемещение между этапами и главные действия */}
 			{onQuickStatusChange && (
 				<div className="pt-2 border-t border-[var(--line)]">
 					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
@@ -382,7 +388,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 						</span>
 					</div>
 
-					{/* 3-Stage Day Queue: 1-кликовое перемещение между этапами */}
+					{/* 3-Stage Day Queue: быстрое перемещение между этапами */}
 					<div className="grid grid-cols-3 gap-1 mb-2" data-testid={`hover-queue-stages-${a.id}`}>
 						<button
 							type="button"
@@ -398,7 +404,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 									? "bg-amber-500 text-white border-amber-500 shadow-2xs"
 									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
 							}`}
-							title="Пациент в холле клиники — перевести в статус «Ожидает приёма» (1 клик)"
+							title="Пациент в холле клиники — перевести в статус «Ожидает приёма»"
 							aria-label="Ожидает приёма"
 						>
 							<UserCheck size={14} className="shrink-0" />
@@ -418,7 +424,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 									? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)] shadow-2xs"
 									: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 							}`}
-							title="Пациент в кабинете — статус «На приёме» (1 клик)"
+							title="Пациент в кабинете — статус «На приёме»"
 							aria-label="На приёме"
 						>
 							<CalendarCheck size={14} className="shrink-0" />
@@ -438,7 +444,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 									? "bg-slate-700 dark:bg-slate-600 text-white border-slate-700 shadow-2xs"
 									: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
 							}`}
-							title="Приём завершён — перевести в статус «Ожидает оплаты» (1 клик)"
+							title="Приём завершён — перевести в статус «Ожидает оплаты»"
 							aria-label="Ожидает оплаты"
 						>
 							<CheckCircle2 size={14} className="shrink-0" />
@@ -618,7 +624,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 						</div>
 					</div>
 
-					{/* 1-кликовые главные действия приёма: «Начать приём» и «Быстрый чек 54-ФЗ» (Мандаты 8e, 8n) */}
+					{/* Главные действия приёма: «Начать приём» и «Быстрый чек 54-ФЗ» (Мандаты 8e, 8n) */}
 					<div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-[var(--line)]">
 						<button
 							type="button"
@@ -636,7 +642,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								showToast(`Приём начат: ${pName} в кресле`, "success");
 							}}
 							className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-							title="Начать приём: перевести в статус «На приёме» и открыть карту приёма (1 клик)"
+							title="Начать приём: перевести в статус «На приёме» и открыть карту приёма"
 						>
 							<Stethoscope size={14} className="shrink-0" />
 							<span className="whitespace-nowrap">Начать приём</span>
@@ -658,7 +664,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								showToast(`Быстрый расчёт: ${pName}`, "info");
 							}}
 							className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-							title="Быстрый расчёт: перейти к кассовому расчёту (1 клик)"
+							title="Быстрый расчёт: перейти к кассовому расчёту"
 						>
 							<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span className="whitespace-nowrap">Быстрый расчёт</span>
@@ -670,7 +676,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 			{/* 7. Быстрое изменение длительности и сдвиг при опоздании (Wave 58) */}
 			<div className="pt-2 border-t border-[var(--line)]">
 				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
-					<span>Длительность и сдвиг (1 клик)</span>
+					<span>Длительность и сдвиг</span>
 				</div>
 				<div className="grid grid-cols-4 gap-1">
 					<button

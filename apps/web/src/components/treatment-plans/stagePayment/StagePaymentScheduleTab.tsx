@@ -74,7 +74,7 @@ export const StagePaymentScheduleTab: React.FC<StagePaymentScheduleTabProps> = (
 							</span>
 						</div>
 						<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--border,#cbd5e1)] px-3 py-1.5 shadow-sm">
-							<span className="text-[var(--muted,#64748b)] block">В эскроу (заблокировано):</span>
+							<span className="text-[var(--muted,#64748b)] block">В эскроу (резерв):</span>
 							<span className="font-bold text-[var(--teal,var(--brand-primary))] text-sm">
 								{formatKopecksRu(totals.totalEscrowLockedKopecks)}
 							</span>

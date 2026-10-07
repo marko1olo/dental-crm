@@ -121,10 +121,10 @@ export const StaffProfilePayrollSection: React.FC<StaffProfilePayrollSectionProp
 									key={spec.id}
 									type="button"
 									onClick={() => handleSpecialtyToggle(spec.id)}
-									className={`text-xs px-3 py-1.5 min-h-[44px] rounded-lg border transition-all inline-flex items-center justify-center cursor-pointer ${
+									className={`h-7 px-3 rounded-full text-[12.5px] font-medium border transition-all inline-flex items-center justify-center cursor-pointer select-none ${
 										isSelected
-											? "bg-teal-600 text-white border-teal-600 font-semibold shadow-xs"
-											: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-teal-500"
+											? "bg-[var(--teal-soft)] text-[var(--teal)] border-[var(--teal)] font-semibold shadow-xs"
+											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--line-strong,var(--line))] hover:text-[var(--ink)]"
 									}`}
 								>
 									{spec.label}

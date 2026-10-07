@@ -66,7 +66,7 @@ export const MarketingNewPromoModal: React.FC<MarketingNewPromoModalProps> = ({
 			},
 			templates: {
 				sms: templateSms,
-				whatsapp: `Здравствуйте, {Имя}! 🦷\n\nВ клинике *{Клиника}* действует акция «${trimmedTitle}»!\nПромокод: *{Промокод}*\nЗапись: {Ссылка}`,
+				whatsapp: `Здравствуйте, {Имя}!\n\nВ клинике *{Клиника}* действует акция «${trimmedTitle}»!\nПромокод: *{Промокод}*\nЗапись: {Ссылка}`,
 				telegram: `{Имя}, для вас акция «${trimmedTitle}» в *{Клиника}*!\nПромокод: \`{Промокод}\`\nЗапись: {Ссылка}`,
 			},
 			recommendedSegment: "all_active",

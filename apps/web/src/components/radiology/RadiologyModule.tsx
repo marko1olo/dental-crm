@@ -143,15 +143,11 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 				</div>
 
 				{/* Переключатель: Архив КТ и снимков vs Хаб инструментов */}
-				<div className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg p-0.5 shadow-2xs">
+				<div className="dente-segmented-bar shrink-0">
 					<button
 						type="button"
 						onClick={() => setActiveView("archive")}
-						className={`h-7 px-3 rounded-md font-semibold text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
-							activeView === "archive"
-								? "bg-teal-600 text-white shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`dente-segmented-item ${activeView === "archive" ? "active" : ""}`}
 						data-testid="tab-radiology-archive"
 					>
 						<Layers className="w-3.5 h-3.5" />
@@ -160,11 +156,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveView("hub")}
-						className={`h-7 px-3 rounded-md font-semibold text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
-							activeView === "hub"
-								? "bg-teal-600 text-white shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`dente-segmented-item ${activeView === "hub" ? "active" : ""}`}
 						data-testid="tab-radiology-hub"
 					>
 						<Scan className="w-3.5 h-3.5" />
@@ -172,12 +164,12 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					</button>
 				</div>
 
-				{/* 1-Click Launchers Bar (32–36px height) */}
+				{/* 1-Click Launchers Bar (32px density, Single Primary CTA) */}
 				<div className="flex flex-wrap items-center gap-2">
 					<button
 						type="button"
 						onClick={() => setShowTactileSearchModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+						className="secondary-button"
 						data-testid="btn-open-tactile-matrix-modal"
 						title="Тактильная матрица поиска снимков по датам и аппаратам"
 					>
@@ -188,7 +180,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowReferralModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--teal)] text-white shadow-xs hover:opacity-95 active:scale-95 transition-all"
+						className="primary-button"
 						data-testid="btn-open-referral-modal"
 						title="Сформировать направление на КЛКТ с выбором FOV и QR-кодом"
 					>
@@ -202,7 +194,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							setSelectedStudyForStudio(null);
 							setShow3dStudioModal(true);
 						}}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-3d-cbct-studio"
 						title="Открыть 3D мультипланарную реконструкцию (MPR) КЛКТ"
 					>
@@ -216,7 +208,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 							setSelectedStudyForViewer(null);
 							setShowDicomViewerModal(true);
 						}}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-dicom-viewer"
 						title="Просмотр 2D визиограмм и серии DICOM"
 					>
@@ -227,18 +219,18 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowConsultationModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[#00C853] hover:text-[#00C853] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-consultation-split"
 						title="Открыть сплит-экран консультации и библиотеку 8 дисциплин"
 					>
-						<SplitSquareHorizontal className="w-3.5 h-3.5 text-[#00C853]" />
+						<SplitSquareHorizontal className="w-3.5 h-3.5 text-emerald-600" />
 						<span>Консультация (Сплит)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setShowReportStudioModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-emerald-600 hover:text-emerald-600 transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-report-studio"
 						title="Конструктор отчетов и печать листа А4 / пленки"
 					>
@@ -249,7 +241,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowRvgCaptureModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-rvg-capture"
 						title="Прямой захват снимка с датчика"
 					>
@@ -260,7 +252,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowDoseSheetModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-dose-sheet"
 						title="Архив лучевой нагрузки (для проверок)"
 					>
@@ -271,7 +263,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowHotFolderModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-hot-folder"
 						title="Автоприём снимков из горячей папки томографа"
 					>
@@ -282,7 +274,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowImplantModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors"
+						className="secondary-button"
 						data-testid="btn-open-implant-modal"
 						title="3D Библиотека имплантатов (Straumann, Nobel, Osstem, Dentium, MIS)"
 					>
@@ -294,7 +286,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 px-3 text-xs font-semibold rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors ml-auto"
+							className="secondary-button ml-auto"
 						>
 							Закрыть
 						</button>
@@ -309,13 +301,13 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 				<div className="flex items-center gap-2">
 					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" />
 					<span className="font-bold text-[var(--muted)]">1-клик протокол в карту:</span>
-					<div className="flex items-center gap-1.5 overflow-x-auto">
+					<div className="dente-filter-chips overflow-x-auto">
 						{RADIOLOGY_STANDARD_PROTOCOLS.map((proto) => (
 							<button
 								key={proto.id}
 								type="button"
 								onClick={() => handleInsertStandardProtocol(proto)}
-								className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:text-[var(--teal)] transition-all shadow-2xs"
+								className="dente-filter-chip"
 								data-testid={`btn-protocol-${proto.id}`}
 								title={proto.text}
 							>

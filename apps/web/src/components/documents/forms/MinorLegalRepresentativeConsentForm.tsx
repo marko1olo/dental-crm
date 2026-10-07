@@ -296,7 +296,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 						title="Печать текущего заполненного согласия законного представителя на принтер (А4)"
 					>
 						<Printer size={14} className="text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
-						<span>Печать согласия представителя (1 клик)</span>
+						<span>Печать согласия представителя</span>
 					</button>
 
 					<button

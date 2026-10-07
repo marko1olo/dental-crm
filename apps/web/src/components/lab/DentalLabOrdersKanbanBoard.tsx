@@ -405,7 +405,7 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 													type="button"
 													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 													onClick={() => onAdvanceStage(order)}
-													title="Назначить клиническую примерку"
+													title="Принять работу из лаборатории (назначить клиническую примерку)"
 													data-testid={`ztl-card-status-${order.id}`}
 												>
 													<Calendar size={13} />
@@ -416,7 +416,7 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 													type="button"
 													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
 													onClick={() => onAdvanceStage(order)}
-													title="Зафиксировать и сдать работу пациенту"
+													title="Выдать работу в кабинет (зафиксировать и сдать работу пациенту)"
 													data-testid={`ztl-card-status-${order.id}`}
 												>
 													<CheckCircle2 size={13} />

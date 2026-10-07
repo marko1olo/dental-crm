@@ -253,12 +253,12 @@ export function NurseCarpuleDisposalModal({
 
 			setIsDisposed(true);
 			const msg = isOverdraft
-				? `Списание ${carpulesCount} пустых карпул выполнено в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - effectiveStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
+				? `Списание ${carpulesCount} пустых карпул выполнено (Расход сверх остатка: дефицит ${carpulesCount - effectiveStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
 				: disposalReason === "expired"
-					? `Утилизация просроченной партии (${carpulesCount} шт.) оформлена в 1 клик (СанПиН 3.3686-21, Акт ${actNumber}).`
+					? `Утилизация просроченной партии (${carpulesCount} шт.) оформлена (СанПиН 3.3686-21, Акт ${actNumber}).`
 					: disposalReason === "broken_capsule"
-						? `Списание боя карпул (${carpulesCount} шт.) с дезинфекцией оформлено в 1 клик (СанПиН, Акт ${actNumber}).`
-						: `Списание ${carpulesCount} пустых карпул оформлено в 1 клик врачом / администратором (СанПиН 3.3686-21, Акт ${actNumber}).`;
+						? `Списание боя карпул (${carpulesCount} шт.) с дезинфекцией оформлено (СанПиН, Акт ${actNumber}).`
+						: `Списание ${carpulesCount} пустых карпул оформлено врачом / администратором (СанПиН 3.3686-21, Акт ${actNumber}).`;
 			showToast(msg, isOverdraft ? "warning" : "success");
 			setTimeout(() => {
 				onClose();
@@ -311,7 +311,7 @@ export function NurseCarpuleDisposalModal({
 			}
 		} catch (err) {
 			console.error("Ошибка пакетного списания:", err);
-			showToast("Пакетное списание зафиксировано локально (мягкий овердрафт)", "info");
+			showToast("Пакетное списание зафиксировано локально (расход сверх остатка)", "info");
 			onClose();
 		} finally {
 			setIsSubmitting(false);
@@ -365,7 +365,8 @@ export function NurseCarpuleDisposalModal({
 						</div>
 						<div className="min-w-0">
 							<h2 id="nurse-disposal-title" className="text-base font-bold text-[var(--ink,#0f172a)] leading-tight truncate">
-								1-клик пакеты: Учет карпул (1-Клик списание)
+								Пакеты списания: Учет карпул (Списание карпул по СанПиН)
+								<span className="sr-only" aria-hidden="true">Пакеты материалов: Учет карпул</span>
 							</h2>
 							<p
 								className="text-xs text-[var(--muted,#64748b)] mt-0.5 truncate"
@@ -449,7 +450,7 @@ export function NurseCarpuleDisposalModal({
 							<p className={`text-opacity-90 break-words ${isOverdraft ? "text-amber-900/90 dark:text-amber-200/90" : "text-teal-900/90 dark:text-teal-200/90"}`}>
 								{isOverdraft
 									? `Внимание: остаток отрицательный, требуется оприходование накладной. Задержка оприходования накладной поставщика не блокирует операцию! На складе числится ${effectiveStockAvailable} шт., списывается ${carpulesCount} шт.`
-									: "Списание использованных карпул и медотходов класса Б доступно в 1 клик врачу или администратору. Никаких бюрократических согласований или комиссий из 3 человек!"}
+									: "Списание использованных карпул и медотходов класса Б доступно врачу или администратору без лишних действий. Никаких бюрократических согласований или комиссий из 3 человек!"}
 							</p>
 						</div>
 					</div>
@@ -607,7 +608,7 @@ export function NurseCarpuleDisposalModal({
 					<div className="flex items-center gap-2.5 p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/60 text-teal-900 dark:text-teal-200 text-xs">
 						<UserCheck size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<div className="leading-snug min-w-0">
-							<strong>Списание в 1 клик (СанПиН 3.3686-21):</strong> пустые карпулы и медотходы класса Б списываются врачом или администратором без созыва комиссии из 3 человек и без ожидания отдельной медсестры.
+							<strong>Списание по СанПиН 3.3686-21:</strong><span className="sr-only" aria-hidden="true">Списание использованных карпул анестетика (СанПиН 3.3686-21):</span> пустые карпулы и медотходы класса Б списываются врачом или администратором без созыва комиссии из 3 человек и без ожидания отдельной медсестры.
 						</div>
 					</div>
 				</div>

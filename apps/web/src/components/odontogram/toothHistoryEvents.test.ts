@@ -173,3 +173,31 @@ test("выброшенные строки не роняют остальные �
 	assert.equal(events.length, 1);
 	assert.equal(events[0]?.description, "План: коронка");
 });
+
+test("события treatment_procedure и diary_revision распознаются с сохранением visitId", () => {
+	const body = JSON.stringify({
+		events: [
+			{
+				type: "treatment_procedure",
+				date: "2026-06-15T11:00:00.000Z",
+				description: "Восстановление зуба пломбой A16.07.002",
+				authorId: "Клинический протокол",
+				visitId: "vis-1234-uuid",
+			},
+			{
+				type: "diary_revision",
+				date: "2026-06-15T12:00:00.000Z",
+				description: "Ревизия записи: уточнение глубины кариозной полости",
+				authorId: "Смирнов А.В.",
+				visitId: "vis-1234-uuid",
+			},
+		],
+	});
+	const events = toothHistoryEventsFromResponseBody(body) as ToothHistoryEvent[];
+	assert.equal(events.length, 2);
+	assert.equal(events[0]?.kind, "treatment_procedure");
+	assert.equal(events[0]?.visitId, "vis-1234-uuid");
+	assert.equal(events[1]?.kind, "diary_revision");
+	assert.equal(events[1]?.author, "Смирнов А.В.");
+});
+

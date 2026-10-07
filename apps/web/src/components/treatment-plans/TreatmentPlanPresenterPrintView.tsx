@@ -136,7 +136,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 
 							{printDocFormat === "patient_friendly" ? (
 								/* ==========================================================
-								   PATIENT-FRIENDLY ESTIMATE: CLEAN LARGE BLOCKS (Mandate 8e)
+								   PATIENT-FRIENDLY ESTIMATE: CLEAN LARGE BLOCKS
 								   ========================================================== */
 								<div className="patient-friendly-estimate-doc" style={{ position: "relative" }} data-testid="patient-friendly-estimate-view">
 									<div
@@ -229,7 +229,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 										<div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold mb-4 flex items-center gap-2">
 											<Clock size={15} className="text-amber-600 shrink-0" />
 											<span>
-												План составлен более 30 дней назад, цены могут быть скорректированы. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений (Мандат 8e).
+												План составлен более 30 дней назад, цены могут быть скорректированы. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений.
 											</span>
 										</div>
 									)}

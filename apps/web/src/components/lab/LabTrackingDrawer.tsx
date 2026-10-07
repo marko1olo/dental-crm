@@ -267,7 +267,7 @@ export function LabTrackingDrawer({
 						>
 							<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex justify-between">
 								<span>5 этапов клинического трекинга</span>
-								<span className="font-mono text-[10px]">ГОСТ Р 51087-97</span>
+								<span className="text-[10px] text-[var(--muted)] font-medium">Стандарт лаборатории</span>
 							</div>
 							<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
 								{CANONICAL_5_CLINICAL_LAB_STATUSES.map((item) => {

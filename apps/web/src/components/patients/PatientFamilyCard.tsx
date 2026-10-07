@@ -16,6 +16,7 @@ import {
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { usePatientStore } from "../../store/patientStore";
 
 export type PatientFamilyCardProps = {
 	patientId: string | null;
@@ -453,27 +454,48 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						)}
 					</div>
 					<div className="flex flex-col gap-2">
-						<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
-							Участники:
-						</span>
-						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-						{(familyData?.members ?? []).map((m: any) => (
-							<div
-								key={m.id}
-								className="p-2.5 bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg flex justify-between items-center"
-							>
-								<span
-									className={`text-xs ${m.id === patientId ? "font-semibold text-[var(--ink)]" : "font-medium text-[var(--muted)]"}`}
-								>
-									{m.fullName}
-								</span>
-								{m.id === familyData.headPatientId && (
-									<span className="text-xs bg-[var(--teal)]/10 text-[var(--teal)] px-2 py-0.5 rounded font-semibold">
-										Глава
-									</span>
-								)}
-							</div>
-						))}
+						<div className="flex items-center justify-between">
+							<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+								Члены семьи (выбор карты):
+							</span>
+							<span className="text-[11px] text-[var(--muted)] font-mono">
+								{familyData?.members?.length || 0} чел.
+							</span>
+						</div>
+						<div
+							className="dente-filter-chips"
+							role="tablist"
+							aria-label="Выбор члена семьи"
+							data-testid="family-members-chips"
+						>
+							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
+							{(familyData?.members ?? []).map((m: any) => {
+								const isCurrent = m.id === patientId;
+								const isHead = m.id === familyData.headPatientId;
+								return (
+									<button
+										key={m.id}
+										type="button"
+										role="tab"
+										aria-selected={isCurrent}
+										data-active={isCurrent}
+										onClick={() => {
+											usePatientStore.getState().setSelectedPatientId(m.id);
+										}}
+										className={`dente-filter-chip ${isCurrent ? "active" : ""}`}
+										data-testid={`family-member-chip-${m.id}`}
+										title={`Переключить на пациента: ${m.fullName}${isHead ? " (Глава семьи)" : ""}`}
+									>
+										<span>{m.fullName}</span>
+										{isHead && (
+											<span className="text-[10px] opacity-75 font-semibold">
+												(Глава)
+											</span>
+										)}
+									</button>
+								);
+							})}
+						</div>
 					</div>
 					<button
 						type="button"
@@ -537,14 +559,15 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						</div>
 					) : isLinking ? (
 						<div className="flex flex-col gap-3">
-							<div className="relative">
+							<div className="dente-search-wrap">
 								<Search
 									size={14}
-									className="absolute left-2.5 top-3 text-[var(--muted)]"
+									className="dente-search-icon"
+									aria-hidden="true"
 								/>
 								<input
 									type="text"
-									className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] outline-none text-xs"
+									className="dente-search-input"
 									placeholder="Поиск семьи по названию..."
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
@@ -610,10 +633,10 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							</div>
 						</div>
 					) : (
-						<div className="flex gap-2">
+						<div className="dente-segmented-bar w-full" role="group" aria-label="Действия с семьей">
 							<button
 								type="button"
-								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal)] rounded-xl font-semibold cursor-pointer border-0 transition-colors"
+								className="dente-segmented-item flex-1"
 								onClick={() => {
 									const namePart =
 										typeof patientName === "string"
@@ -623,14 +646,14 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									setIsCreating(true);
 								}}
 							>
-								<UserPlus size={16} /> <span>Создать семью</span>
+								<UserPlus size={14} /> <span>Создать семью</span>
 							</button>
 							<button
 								type="button"
-								className="flex-1 flex items-center justify-center gap-2 p-2.5 min-h-[44px] sm:min-h-[32px] text-xs bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] rounded-xl font-semibold cursor-pointer border border-[var(--line)] transition-colors"
+								className="dente-segmented-item flex-1"
 								onClick={() => setIsLinking(true)}
 							>
-								<LinkIcon size={16} /> <span>Привязать</span>
+								<LinkIcon size={14} /> <span>Привязать</span>
 							</button>
 						</div>
 					)}

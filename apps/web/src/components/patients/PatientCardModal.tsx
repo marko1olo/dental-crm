@@ -206,7 +206,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			if (onApplySomaticNorm) {
 				onApplySomaticNorm();
 			}
-			showToast("Применена физиологическая норма: соматически здоров (1 клик)", "success", 4000);
+			showToast("Применена физиологическая норма: соматически здоров", "success", 4000);
 		}, [onApplySomaticNorm]);
 
 		const handlePrint = useCallback(() => {

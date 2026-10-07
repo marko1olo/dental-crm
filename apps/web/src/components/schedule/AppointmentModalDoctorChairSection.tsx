@@ -42,6 +42,7 @@ export interface AppointmentModalDoctorChairSectionProps {
   collision: ResourceCollisionResult;
   safeToDateTimeLocalValue: (iso: string | null | undefined, tz?: string | null) => string;
   timezone: string;
+  hideAssistant?: boolean;
 }
 
 export function AppointmentModalDoctorChairSection({
@@ -70,10 +71,11 @@ export function AppointmentModalDoctorChairSection({
   collision,
   safeToDateTimeLocalValue,
   timezone,
+  hideAssistant = false,
 }: AppointmentModalDoctorChairSectionProps) {
   return (
     <>
-      {/* CITO Overbooking warning */}
+      {/* CITO / Urgent Overbooking warning */}
       {collision.isCitoOverbooking && (
         <div
           className="p-2.5 sm:p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
@@ -86,12 +88,12 @@ export function AppointmentModalDoctorChairSection({
           />
           <span>
             {collision.message ||
-              "CITO-овербукинг разрешён (острая боль): наложение на занятый слот разрешено."}
+              "Запись по острой боли (наложение слота допустимо): наложение на занятый слот разрешено."}
           </span>
         </div>
       )}
 
-      {/* Collision warning with 1-click suggested slot */}
+      {/* Collision warning with suggested slot */}
       {collision.hasCollision && (
         <div
           className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2.5 flex-wrap"
@@ -105,7 +107,7 @@ export function AppointmentModalDoctorChairSection({
             />
             <span>
               {collision.message}. Разрешена экстренная запись (острая боль /
-              овербукинг).
+              совмещение допустимо).
             </span>
           </div>
           {collision.suggestedSlot && (
@@ -128,7 +130,7 @@ export function AppointmentModalDoctorChairSection({
                 );
               }}
               className="px-2.5 py-1.5 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
-              title="Выбрать ближайшее свободное окно в 1 клик"
+              title="Выбрать ближайшее свободное окно"
               data-testid="appointment-apply-suggested-slot-btn"
             >
               <Clock size={13} className="shrink-0" />
@@ -212,7 +214,7 @@ export function AppointmentModalDoctorChairSection({
                 className={`appointment-modal-duration-chip ${isSelected ? "active" : ""} h-8 sm:h-8.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
                   isSelected
                     ? "!bg-[var(--teal)] !text-white !border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]/25 font-bold"
-                    : "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--paper-subtle)] hover:border-[var(--teal)] hover:text-[var(--teal)]"
+                    : "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
                 }`}
               >
                 {mins < 60
@@ -229,7 +231,7 @@ export function AppointmentModalDoctorChairSection({
       </div>
 
       {/* Doctor */}
-      <div>
+      <div className={hideAssistant ? "sm:col-span-1" : ""}>
         <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
           Врач {isSoloDoctor ? "(соло-врач)" : "*"}
         </label>
@@ -360,10 +362,10 @@ export function AppointmentModalDoctorChairSection({
               />
               <div className="space-y-0.5">
                 <span className="font-semibold block">
-                  На кресле дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись не блокируется.
+                  На кресле дежурит {formatDoctorShortName(dutyDoc.fullName)}. Мандат 8e: запись не блокируется (Запись не блокируется).
                 </span>
                 <span className="text-[11px] text-[var(--muted)] block">
-                  Мандат 8e: запись не блокируется, врач может принять пациента.
+                  Врач может принять пациента на этой установке.
                 </span>
               </div>
             </div>
@@ -371,7 +373,7 @@ export function AppointmentModalDoctorChairSection({
       </div>
 
       {/* Assistant */}
-      {!isSoloDoctor && (
+      {!hideAssistant && !isSoloDoctor && (
         <div>
           <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between mb-1">
             <span>Ассистент</span>
@@ -396,7 +398,7 @@ export function AppointmentModalDoctorChairSection({
       )}
 
       {/* Chair */}
-      <div className={isSoloDoctor ? "sm:col-span-1" : "sm:col-span-2"}>
+      <div className={hideAssistant ? "sm:col-span-1" : isSoloDoctor ? "sm:col-span-1" : "sm:col-span-2"}>
         <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
           Кресло / Кабинет {chairs.length <= 1 ? "(авто)" : "*"}
         </label>

@@ -121,7 +121,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 											? "bg-orange-500/30 text-orange-200 border-orange-500/50 ring-1 ring-orange-400/40"
 											: "bg-rose-500/35 text-rose-200 border-rose-500/60 ring-1 ring-rose-400/50 font-black animate-pulse"
 							}`}
-							title={`Подвижность по Miller (Миллеру): ${MOBILITY_GRADES[tooth.mobility]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III)`}
+							title={`Подвижность по Miller (Миллеру): ${MOBILITY_GRADES[tooth.mobility]?.nameRu ?? "0"} (переключение 0 -> I -> II -> III)`}
 							aria-label={`Подвижность зуба ${tooth.toothNumber}: ${tooth.mobility}`}
 							data-testid={`tooth-${tooth.toothNumber}-mobility`}
 						>
@@ -129,7 +129,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 						</button>
 					)}
 
-					{/* 1-Click Furcation Chip for Multi-Rooted Teeth (Hamp I..IV) */}
+					{/* Furcation Chip for Multi-Rooted Teeth (Hamp I..IV) */}
 					{!isMissing &&
 						isFurcationEligibleTooth(tooth.toothNumber) &&
 						onCycleFurcation && (
@@ -149,7 +149,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 												? "bg-orange-500/30 text-orange-200 border-orange-500/50 ring-1 ring-orange-400/40"
 												: "bg-rose-600/35 text-rose-200 border-rose-500/60 ring-1 ring-rose-400/50 font-black"
 								}`}
-								title={`Фуркационный дефект по Hamp (Хэмпу): ${FURCATION_GRADES[tooth.furcation]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III -> IV)`}
+								title={`Фуркационный дефект по Hamp (Хэмпу): ${FURCATION_GRADES[tooth.furcation]?.nameRu ?? "0"} (переключение 0 -> I -> II -> III -> IV)`}
 								aria-label={`Фуркация зуба ${tooth.toothNumber}: ${tooth.furcation}`}
 								data-testid={`tooth-${tooth.toothNumber}-furcation`}
 							>
@@ -210,8 +210,8 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									}`}
 									title={
 										site.bleedingOnProbing
-											? "BOP: Кровоточивость есть (клик для снятия)"
-											: "BOP: Кровоточивости нет (клик для отметки)"
+											? "BOP: Кровоточивость есть (нажмите для снятия)"
+											: "BOP: Кровоточивости нет (нажмите для отметки)"
 									}
 									aria-label="BOP"
 								>
@@ -233,8 +233,8 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									}`}
 									title={
 										site.plaque
-											? "PLQ: Зубной налет есть (клик для снятия)"
-											: "PLQ: Зубного налета нет (клик для отметки)"
+											? "PLQ: Зубной налет есть (нажмите для снятия)"
+											: "PLQ: Зубного налета нет (нажмите для отметки)"
 									}
 									aria-label="PLQ"
 								>
@@ -311,8 +311,8 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									}`}
 									title={
 										site.bleedingOnProbing
-											? "BOP: Кровоточивость есть (клик для снятия)"
-											: "BOP: Кровоточивости нет (клик для отметки)"
+											? "BOP: Кровоточивость есть (нажмите для снятия)"
+											: "BOP: Кровоточивости нет (нажмите для отметки)"
 									}
 									aria-label="BOP"
 								>
@@ -334,8 +334,8 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 									}`}
 									title={
 										site.plaque
-											? "PLQ: Зубной налет есть (клик для снятия)"
-											: "PLQ: Зубного налета нет (клик для отметки)"
+											? "PLQ: Зубной налет есть (нажмите для снятия)"
+											: "PLQ: Зубного налета нет (нажмите для отметки)"
 									}
 									aria-label="PLQ"
 								>

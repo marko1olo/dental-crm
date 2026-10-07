@@ -445,7 +445,7 @@ export const workloadStateLabels: Record<ResourceLoad["state"], string> = {
 	idle: "пусто",
 	healthy: "норма",
 	tight: "плотно",
-	overbooked: "перегруз",
+	overbooked: "плотный график приёма",
 };
 
 export const warningSeverityLabels: Record<

@@ -91,7 +91,7 @@ describe("AppointmentModal", () => {
 		);
 
 		assert.ok(
-			html.includes("Детали записи"),
+			html.includes("Запись: Иванов Иван") || html.includes("Детали приема"),
 			"должен быть заголовок модального окна",
 		);
 		assert.ok(html.includes("Иванов Иван"), "должно быть ФИО пациента");
@@ -153,6 +153,7 @@ describe("AppointmentModal", () => {
 		const soloAppointment: Appointment = {
 			...mockAppointment,
 			id: "appt-solo-1",
+			patientId: null as any,
 			assistantUserId: null,
 		};
 		const html = renderToStaticMarkup(
@@ -242,14 +243,15 @@ describe("AppointmentModal", () => {
 			}),
 		);
 
-		// 1-Click + CITO button must be present in header
+		// 1-Click + Срочно / CITO convert button must be present in header
 		assert.ok(
-			html.includes('data-testid="appointment-modal-cito-express-btn"'),
-			"Must render + CITO express button",
+			html.includes('data-testid="convert-to-cito-btn"') ||
+				html.includes('data-testid="appointment-modal-cito-express-btn"'),
+			"Must render urgent express button",
 		);
 		assert.ok(
-			html.includes("+ CITO"),
-			"Must show + CITO label for 1-click patient creation",
+			html.includes("+ Срочно") || html.includes("Срочно"),
+			"Must show + Срочно label for 1-click patient creation",
 		);
 
 		// Assistant is optional

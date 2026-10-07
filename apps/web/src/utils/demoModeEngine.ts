@@ -188,6 +188,11 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 				return false;
 			}
 
+			// Автоматический демо-режим для страниц предварительного просмотра (*_preview.html)
+			if (window.location?.pathname?.includes("preview")) {
+				return true;
+			}
+
 			// Включение демо через search (?demo=true, ?demo=1, ?showcase=true, ?cbct=demo, ?cbct=1)
 			if (
 				search.includes("demo=true") ||

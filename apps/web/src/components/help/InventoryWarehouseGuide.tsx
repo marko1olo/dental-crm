@@ -62,7 +62,7 @@ export const InventoryWarehouseGuide: React.FC<ClinicalGuideProps> = ({ onLaunch
 					</div>
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
 						Фоновый автоматический учёт стоматологических материалов, анестетиков, боров и перчаток.
-						Списание происходит строго по техкартам оказанных услуг без отвлечения врача у кресла и без блокировок.
+						Списание происходит строго по техкартам оказанных услуг без отвлечения врача у кресла и без задержек приёма.
 					</div>
 				</div>
 			</div>
@@ -247,7 +247,7 @@ export const InventoryWarehouseGuide: React.FC<ClinicalGuideProps> = ({ onLaunch
 			<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-2">
 				<div className="flex items-center gap-1.5 font-semibold text-xs text-[var(--ink)]">
 					<CheckCircle2 size={14} className="text-emerald-500" />
-					<span>Принцип мягкого овердрафта (Zero Warehouse Invasion — Мандат 8ab)</span>
+					<span>Принцип мягкого овердрафта склада</span>
 				</div>
 				<p className="text-[11px] text-[var(--muted)] leading-relaxed">
 					Если по программе на складе числится ноль анестетиков или перчаток (например, накладную еще не успели оприходовать),

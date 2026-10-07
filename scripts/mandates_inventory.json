@@ -1,0 +1,67 @@
+[
+  {
+    "file": "apps\\web\\src\\components\\inventory\\warehousePackageWriteOffEngine.ts",
+    "line": 460,
+    "text": "readonly allowSoftOverdraft?: boolean | undefined; // default: true (Mandates 8e, 8k, 8n)"
+  },
+  {
+    "file": "apps\\web\\src\\components\\lab\\labClinicalStages.ts",
+    "line": 503,
+    "text": "mandate8eClauseRu: \"Клинический регламент: Срок плана лечения не блокирует создание нарядов ЗТЛ и оказание услуг.\","
+  },
+  {
+    "file": "apps\\web\\src\\components\\loyalty\\program\\loyaltyEngine.ts",
+    "line": 56,
+    "text": "readonly isDoctorOverride?: boolean; // Doctor Autonomy / Warranty rework override (Mandates 8e, 8s) up to 100%"
+  },
+  {
+    "file": "apps\\web\\src\\components\\orthopedics\\orthopedicProtocols.ts",
+    "line": 342,
+    "text": "readonly mandate8e: true;"
+  },
+  {
+    "file": "apps\\web\\src\\components\\orthopedics\\orthopedicProtocols.ts",
+    "line": 362,
+    "text": "mandate8e: true,"
+  },
+  {
+    "file": "apps\\web\\src\\components\\radiology\\dentalViewerCanvasDraw.ts",
+    "line": 427,
+    "text": "const humanDate = formatHumanStudyDate(studyDate);"
+  },
+  {
+    "file": "apps\\web\\src\\components\\radiology\\dentalViewerCanvasDraw.ts",
+    "line": 466,
+    "text": "`${humanDate} | ${modalityLabel}`,"
+  },
+  {
+    "file": "apps\\web\\src\\components\\radiology\\doseSheet\\radiationDoseEngine.ts",
+    "line": 406,
+    "text": "requiresMedicalCouncilJustification: false, // Мандат 8e, 8i: исключены стационарные комиссии"
+  },
+  {
+    "file": "apps\\web\\src\\components\\visit\\emk\\DebouncedEmkTextarea.tsx",
+    "line": 56,
+    "text": "}, 400); // Debounced autosave 300-500ms (Мандаты 8e, 8n)"
+  },
+  {
+    "file": "apps\\web\\src\\components\\visit\\useVisitCompletion.ts",
+    "line": 165,
+    "text": "allowOverdraft: true, // Мягкий овердрафт: дефицит склада никогда не блокирует приём (Мандат 8e, 8n)"
+  },
+  {
+    "file": "apps\\web\\src\\components\\warranty\\warrantyEngine.ts",
+    "line": 108,
+    "text": "readonly costToPatientRub: 0; // Strictly 0 ₽ (Mandate 8e: 1-click free warranty rework)"
+  },
+  {
+    "file": "apps\\web\\src\\store\\deepClinicalSettingsStore.ts",
+    "line": 61,
+    "text": "requireThermalTests: false, // Default non-blocking (Mandate 8e)"
+  },
+  {
+    "file": "apps\\web\\src\\store\\deepClinicalSettingsStore.ts",
+    "line": 81,
+    "text": "allowSoftNegativeStock: true, // Never block doctor visit on zero inventory (Mandates 8e, 8k)"
+  }
+]

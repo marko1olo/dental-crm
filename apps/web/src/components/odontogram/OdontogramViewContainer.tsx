@@ -220,7 +220,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			onSelectTeethGroup([]);
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Выделение зубов снято в 1 клик", "info", 2000);
+		showToast("Выделение зубов снято", "info", 2000);
 	}, [onSelectTeethGroup]);
 
 	const handleBatchSelectGroup = useCallback(

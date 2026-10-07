@@ -370,7 +370,7 @@ export const INJECTION_TECHNIQUES: Record<InjectionTechniqueId, InjectionTechniq
 };
 
 // ---------------------------------------------------------------------------
-// 4. Standard 1-Click Anesthesia Presets (Минздрав РФ / Mandate 8e)
+// 4. Standard Anesthesia Presets (Минздрав РФ / Mandate 8e)
 // ---------------------------------------------------------------------------
 
 export interface StandardAnesthesiaPreset {
@@ -391,7 +391,7 @@ export interface StandardAnesthesiaPreset {
 export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPreset> = {
 	ultracain_ds_forte: {
 		id: 'ultracain_ds_forte',
-		labelRu: '1-клик: Ультракаин Д-С Форте 1.7 мл инфильтрационная (1:100 000, 1 карпула, осложнений нет)',
+		labelRu: 'Ультракаин Д-С Форте 1.7 мл инфильтрационная (1:100 000, 1 карпула, осложнений нет)',
 		shortLabelRu: 'Ультракаин Д-С Форте 1.7 мл (инфильтрационная)',
 		testId: 'btn-anesthesia-preset-ultracain-ds-forte',
 		drugId: 'articaine_1_100k',
@@ -405,7 +405,7 @@ export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPrese
 	},
 	ultracain_ds: {
 		id: 'ultracain_ds',
-		labelRu: '1-клик: Ультракаин Д-С 1:200000 (1 карпула 1.7 мл, инфильтрация, осложнений нет)',
+		labelRu: 'Ультракаин Д-С 1:200 000 (1 карпула 1.7 мл, инфильтрация, осложнений нет)',
 		shortLabelRu: 'Ультракаин Д-С 1:200k (1 карп., инфильтрация)',
 		testId: 'btn-anesthesia-preset-ultracain-ds',
 		drugId: 'articaine_1_200k',
@@ -419,7 +419,7 @@ export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPrese
 	},
 	articaine_mandibular: {
 		id: 'articaine_mandibular',
-		labelRu: '1-клик: Артикаин 4% 1:100000 (1 карпула 1.7 мл, мандибулярная проводниковая, анестезия наступила через 3 мин)',
+		labelRu: 'Артикаин 4% 1:100 000 (1 карпула 1.7 мл, мандибулярная проводниковая, анестезия наступила через 3 мин)',
 		shortLabelRu: 'Артикаин 1:100k (1 карп., мандибулярная)',
 		testId: 'btn-anesthesia-preset-articaine-mandibular',
 		drugId: 'articaine_1_100k',
@@ -433,7 +433,7 @@ export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPrese
 	},
 	mepivacaine_plain: {
 		id: 'mepivacaine_plain',
-		labelRu: '1-клик: Мепивакаин 3% без вазоконстриктора (1 карпула 1.7 мл, препарат выбора при ССЗ и бета-блокаторах)',
+		labelRu: 'Мепивакаин 3% без вазоконстриктора (1 карпула 1.7 мл, препарат выбора при ССЗ и бета-блокаторах)',
 		shortLabelRu: 'Мепивакаин 3% (1 карп., без адреналина)',
 		testId: 'btn-anesthesia-preset-mepivacaine-plain',
 		drugId: 'mepivacaine_plain',

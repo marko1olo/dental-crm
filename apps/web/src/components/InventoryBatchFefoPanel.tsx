@@ -12,6 +12,7 @@ import {
 	Sparkles,
 	Syringe,
 	Trash2,
+	X,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { money } from "../AppHelpers.js";
@@ -146,29 +147,25 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 			{/* Верхняя статусная полоса и быстрые фильтры FEFO */}
 			<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
 				{/* KPI чипы */}
-				<div className="flex flex-wrap items-center gap-1.5 text-xs">
+				<div className="dente-filter-chips flex flex-wrap items-center gap-1.5 text-xs">
 					<button
 						type="button"
 						onClick={() => setActiveFilter("all")}
-						className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer border transition-colors inline-flex items-center gap-1 ${
-							activeFilter === "all"
-								? "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-xs"
-								: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
-						}`}
+						className={`dente-filter-chip ${activeFilter === "all" ? "active" : ""}`}
 						data-testid="fefo-filter-all"
 					>
 						<Package size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Все партии:</span>
-						<strong className="font-mono text-[var(--ink)]">{stats.total}</strong>
+						<strong className="font-mono">{stats.total}</strong>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveFilter("expired")}
-						className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer border transition-colors inline-flex items-center gap-1 ${
+						className={`dente-filter-chip ${
 							activeFilter === "expired"
-								? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 shadow-xs"
-								: "bg-transparent text-[var(--muted)] border-transparent hover:text-rose-600"
+								? "!bg-rose-500/15 !text-rose-700 dark:!text-rose-300 !border-rose-500/40 shadow-xs active"
+								: "hover:!text-rose-600"
 						}`}
 						data-testid="fefo-filter-expired"
 					>
@@ -180,10 +177,10 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 					<button
 						type="button"
 						onClick={() => setActiveFilter("warning_soon")}
-						className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer border transition-colors inline-flex items-center gap-1 ${
+						className={`dente-filter-chip ${
 							activeFilter === "warning_soon"
-								? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/40 shadow-xs"
-								: "bg-transparent text-[var(--muted)] border-transparent hover:text-amber-600"
+								? "!bg-amber-500/15 !text-amber-800 dark:!text-amber-200 !border-amber-500/40 shadow-xs active"
+								: "hover:!text-amber-600"
 						}`}
 						data-testid="fefo-filter-warning"
 					>
@@ -195,10 +192,10 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 					<button
 						type="button"
 						onClick={() => setActiveFilter("good")}
-						className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer border transition-colors inline-flex items-center gap-1 ${
+						className={`dente-filter-chip ${
 							activeFilter === "good"
-								? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40 shadow-xs"
-								: "bg-transparent text-[var(--muted)] border-transparent hover:text-emerald-600"
+								? "!bg-emerald-500/15 !text-emerald-800 dark:!text-emerald-200 !border-emerald-500/40 shadow-xs active"
+								: "hover:!text-emerald-600"
 						}`}
 						data-testid="fefo-filter-good"
 					>
@@ -209,16 +206,26 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 				</div>
 
 				{/* Поле поиска по партии/материалу */}
-				<div className="relative flex items-center min-w-[200px] max-w-xs shrink-0">
-					<Search size={13} className="absolute left-2.5 text-[var(--muted)] pointer-events-none" />
+				<div className="dente-search-wrap min-w-[200px] max-w-xs shrink-0">
+					<Search size={13} className="dente-search-icon" />
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						placeholder="Партия, артикул, материал..."
-						className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] outline-none focus:border-teal-500 transition-colors"
+						className="dente-search-input"
 						data-testid="fefo-search-input"
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							className="dente-search-clear"
+							onClick={() => setSearchQuery("")}
+							aria-label="Очистить поиск"
+						>
+							<X size={12} />
+						</button>
+					)}
 				</div>
 			</div>
 

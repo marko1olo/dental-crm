@@ -84,91 +84,87 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 				</div>
 			</div>
 
-			{/* 1-Click Fast Action Presets (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
+			{/* Клинические протоколы пародонтологии (1 Row 32px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
 			{!readOnly && (
-				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 h-9 min-h-[36px]">
-					{/* 1-Click Norm Express: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
+				<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto py-0.5 shrink-0 h-8 min-h-[32px]">
+					{/* Протокол «Норма»: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="h-9 sm:h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
-						title="1-клик: Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
+						className="secondary-button shrink-0"
+						title="Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в дневник)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
-						<ShieldCheck size={16} className="shrink-0" />
-						<span>1-клик: Вся десна здорова (Норма)</span>
+						<ShieldCheck size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+						<span>Десна здорова (Норма)</span>
 					</button>
 
-					{/* 1-Click Pro-Hygiene: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
+					{/* Протокол «Профгигиена»: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-						className="h-9 sm:h-8 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
-						title="Профгигиена в 1 клик (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
+						className="secondary-button shrink-0"
+						title="Профессиональная гигиена полости рта (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
-						<UltrasonicScaler size={16} className="shrink-0" />
+						<UltrasonicScaler size={15} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
 						<span>Профгигиена</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onSetAllIntact}
-						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
+						className="secondary-button shrink-0"
 						title="Пародонт интактен / норма (все 32 зуба: глубина 2 мм, рецессия 0 мм, BOP 0%)"
 						data-testid="perio-healthy-norm-btn"
 					>
-						<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-						<span>Пародонт интактен / норма</span>
+						<ShieldCheck size={14} className="text-emerald-500 shrink-0" />
+						<span>Интактно</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => onMarkSelectedToothPathology(5, true)}
-						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
+						className="secondary-button hidden md:inline-flex shrink-0"
 						title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
 						data-testid="perio-preset-tooth-pathology"
 					>
-						<Droplets size={14} className="text-rose-400 shrink-0" />
+						<Droplets size={14} className="text-rose-500 shrink-0" />
 						<span>#{selectedToothNumber} 5мм+BOP</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onMarkBopOnDeepPockets}
-						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
+						className="secondary-button hidden lg:inline-flex shrink-0"
 						title="Автоматически проставить кровоточивость на всех карманах глубиной ≥ 4 мм"
 						data-testid="perio-preset-bop-pockets"
 					>
-						<Droplets size={14} className="text-rose-400 shrink-0" />
+						<Droplets size={14} className="text-rose-500 shrink-0" />
 						<span>BOP ≥ 4мм</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onClearPlaque}
-						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
+						className="secondary-button hidden xl:inline-flex shrink-0"
 						title="Очистить весь зубной налет"
 						data-testid="perio-preset-clear-plaque"
 					>
-						<RotateCcw size={14} className="text-teal-400 shrink-0" />
+						<RotateCcw size={14} className="text-teal-500 shrink-0" />
 						<span>Очистить налет</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onToggleHygieneExpanded}
-						className={`h-9 sm:h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0 ${
-							isHygieneExpanded
-								? "bg-teal-600 text-white border-teal-500 shadow-xs"
-								: "bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border-[var(--line)] text-[var(--ink)]"
-						}`}
+						className={`${isHygieneExpanded ? "primary-button" : "secondary-button"} shrink-0`}
 						title="Открыть экспресс-расчет индексов гигиены (OHI-S, PMA, КПИ)"
 						data-testid="perio-hygiene-indices-btn"
 					>
 						<ShieldCheck
 							size={14}
-							className={isHygieneExpanded ? "text-white" : "text-teal-400"}
+							className={isHygieneExpanded ? "text-white" : "text-teal-500"}
 						/>
 						<span>Индексы гигиены</span>
 						{isHygieneExpanded ? (
@@ -178,11 +174,11 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						)}
 					</button>
 
-					{/* 1-Click Insert into 043/u: ALWAYS VISIBLE AND ACTIVE */}
+					{/* 1-Click Insert into 043/u: SINGLE PRIMARY CTA */}
 					<button
 						type="button"
 						onClick={onInsertToProtocol}
-						className="h-9 sm:h-8 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
+						className="primary-button shrink-0"
 						title="Сформировать и вставить протокол пародонтограммы в дневник приёма"
 						data-testid="perio-insert-protocol-btn"
 					>
@@ -195,25 +191,25 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onCopyProtocol}
-						className="h-9 sm:h-8 w-9 sm:w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 shrink-0"
+						className="secondary-button !px-2 !w-8 shrink-0"
 						title="Копировать текст протокола в буфер"
 						aria-label="Копировать текст протокола"
 					>
 						{copyStatus ? (
-							<Check size={16} className="text-emerald-400" />
+							<Check size={15} className="text-emerald-500" />
 						) : (
-							<Clipboard size={16} />
+							<Clipboard size={15} />
 						)}
 					</button>
 
 					<button
 						type="button"
 						onClick={onToggleHelp}
-						className="h-9 sm:h-8 w-9 sm:w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 shrink-0"
+						className="secondary-button !px-2 !w-8 shrink-0"
 						title="Справка по горячим клавишам пародонтограммы"
 						aria-label="Справка по горячим клавишам"
 					>
-						<HelpCircle size={16} />
+						<HelpCircle size={15} />
 					</button>
 				</div>
 			)}

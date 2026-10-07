@@ -126,7 +126,14 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 					s.price ??
 					(typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0)
 				);
-				const tooth = s.toothCode ?? s.toothNumber ?? detail.toothCode ?? detail.toothNumber;
+				let tooth = s.toothCode ?? s.toothNumber ?? detail.toothCode ?? detail.toothNumber;
+				if (!tooth) {
+					const titleCandidate = s.title || s.name || s.nameRu || "";
+					const match = titleCandidate.match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
+					if (match) {
+						tooth = (match[1] || match[2] || "").trim();
+					}
+				}
 				return {
 					id: s.id || `inv-svc-${Date.now()}-${idSuffix}`,
 					code804n: s.code804n || s.code || "A16.07.001",
@@ -177,11 +184,19 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 				? crypto.randomUUID().slice(0, 8)
 				: Date.now().toString(36);
+			let tooth = item.toothNumber ? String(item.toothNumber) : item.toothCode;
+			if (!tooth) {
+				const titleCandidate = item.title || item.name || "";
+				const match = titleCandidate.match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
+				if (match) {
+					tooth = (match[1] || match[2] || "").trim();
+				}
+			}
 			const newItem: VisitBillingServiceItem = {
 				id: `copilot-serv-${Date.now()}-${idSuffix}`,
 				code804n: item.code804n || "A16.07.001",
 				title: item.title || item.name || "Услуга",
-				toothCode: item.toothNumber ? String(item.toothNumber) : item.toothCode,
+				toothCode: tooth ? String(tooth) : undefined,
 				quantity: item.quantity || 1,
 				unitPriceRub: Number(item.priceRub ?? item.unitPriceRub ?? item.basePriceRub ?? 0),
 				discountPercent: 0,

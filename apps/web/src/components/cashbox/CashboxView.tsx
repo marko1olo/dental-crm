@@ -22,6 +22,7 @@ import {
 	RotateCcw,
 	CheckCircle2,
 	Plus,
+	ShoppingBag,
 } from "lucide-react";
 import {
 	createCompositeIdempotencyKey,
@@ -30,6 +31,7 @@ import {
 } from "@dental/shared";
 import { CashShiftWidget } from "../finance/CashShiftWidget.js";
 import { PaymentModal, type PaymentMethodTab } from "../finance/PaymentModal.js";
+import { RetailProductsModal } from "../billing/RetailProductsModal.js";
 import {
 	validateBuyerInn54Fz,
 	process100PercentDiscountCheckout,
@@ -95,6 +97,7 @@ export function CashboxView({
 	const [isWarranty, setIsWarranty] = useState<boolean>(false);
 	const [isStaffColleague, setIsStaffColleague] = useState<boolean>(false);
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+	const [isRetailModalOpen, setIsRetailModalOpen] = useState<boolean>(false);
 	const [activePaymentMethod, setActivePaymentMethod] = useState<PaymentMethodTab>("card_terminal");
 	const [isSubmittingZeroReceipt, setIsSubmittingZeroReceipt] = useState<boolean>(false);
 
@@ -458,6 +461,20 @@ export function CashboxView({
 							</button>
 						)}
 					</div>
+
+					{/* 1-Click Retail Showcase Button for Front Desk (Curaprox, Marvis, Gift Certificates) */}
+					<div className="shrink-0 flex items-center">
+						<button
+							type="button"
+							onClick={() => setIsRetailModalOpen(true)}
+							className="h-7 px-2.5 rounded-md text-xs font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-600/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer inline-flex items-center gap-1.5 shrink-0 transition-colors"
+							data-testid="btn-open-retail-showcase"
+							title="Витрина сопутствующих товаров ресепшена (Curaprox, Marvis, сертификаты 54-ФЗ)"
+						>
+							<ShoppingBag className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>Витрина товаров</span>
+						</button>
+					</div>
 				</div>
 
 				{/* Payer Type & 54-FZ INN Logic */}
@@ -469,9 +486,9 @@ export function CashboxView({
 						<div className="flex gap-2">
 							<button
 								type="button"
-								className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+								className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
 									payerType === "physical_person"
-										? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))]"
+										? "!bg-teal-600 !text-white !border-teal-500 shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								onClick={() => setPayerType("physical_person")}
@@ -480,9 +497,9 @@ export function CashboxView({
 							</button>
 							<button
 								type="button"
-								className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+								className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
 									payerType === "legal_entity"
-										? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))]"
+										? "!bg-teal-600 !text-white !border-teal-500 shadow-xs"
 										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								onClick={() => setPayerType("legal_entity")}
@@ -609,6 +626,18 @@ export function CashboxView({
 						setIsPaymentModalOpen(false);
 						onPaymentComplete?.(receipt);
 					}}
+				/>
+			)}
+
+			{isRetailModalOpen && (
+				<RetailProductsModal
+					isOpen={isRetailModalOpen}
+					onClose={() => setIsRetailModalOpen(false)}
+					onAddProduct={(product, qty) => {
+						handleAddAmountPreset(product.priceRub * qty);
+						showToast(`Добавлено: ${product.name} (${qty} шт.)`, "success");
+					}}
+					patientName={patientName}
 				/>
 			)}
 		</div>

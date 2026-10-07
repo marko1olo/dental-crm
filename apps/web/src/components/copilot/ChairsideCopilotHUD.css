@@ -88,7 +88,7 @@
 
 /* Expanded Main Panel */
 .chairside-hud-panel {
-  width: 520px;
+  width: 600px;
   max-width: calc(100% - 32px);
   max-height: min(85vh, 720px);
   display: flex;
@@ -118,8 +118,8 @@
   padding: 0 10px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 10px;
   background-color: var(--paper-strong);
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
@@ -143,7 +143,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .chairside-hud-header-icon {
@@ -165,8 +165,7 @@
   letter-spacing: 0.04em;
   color: var(--ink);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .chairside-hud-patient-name {
@@ -189,6 +188,10 @@
   border: 1px solid var(--line);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-hud-badge {
+  display: none;
 }
 
 /* Quick Microphone Button in Capsule (Mandate 8l) */
@@ -266,6 +269,7 @@
   max-width: 320px;
   scrollbar-width: none;
   flex-shrink: 1;
+  min-width: 0;
 }
 
 .chairside-hud-live-pills::-webkit-scrollbar {
@@ -282,7 +286,7 @@
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 700;
-  background-color: var(--teal-soft);
+  background-color: var(--paper-strong);
   border: 1px solid var(--teal);
   color: var(--ink);
   white-space: nowrap;
@@ -318,7 +322,7 @@
 }
 
 .chairside-live-pill-text {
-  max-width: 140px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -346,6 +350,15 @@
 }
 
 /* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-capsule-btn-apply {
+  display: none;
+}
+
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-hud-btn-mic-capsule,
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-vu-meter {
+  display: none;
+}
+
 .chairside-capsule-btn-apply {
   min-height: 28px;
   height: 28px;
@@ -394,6 +407,7 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .chairside-hud-btn-icon {

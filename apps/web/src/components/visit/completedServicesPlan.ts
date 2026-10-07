@@ -117,7 +117,7 @@ export function planLineTotalRub(item: unknown): number | null {
 export const PRICE_UNKNOWN_TEXT = "цена не указана";
 
 /**
- * 9 ЭКСПРЕСС-УСЛУГ У КРЕСЛА (1 клик, Номенклатура 804н).
+ * 9 ЭКСПРЕСС-УСЛУГ У КРЕСЛА (Номенклатура 804н).
  * Заполняют пробел между ручным вводом и 4 крупными пакетами:
  * снимки, анестезия, коффердам, осмотр, снятие швов, временная пломба.
  */
@@ -228,12 +228,15 @@ export function formatCompletedServiceLine({
 
 	const toothStr =
 		toothCode !== undefined && toothCode !== null ? String(toothCode).trim() : "";
+	const isMulti = toothStr.includes(",") || toothStr.includes("-");
 	const toothPart =
 		toothStr &&
 		toothStr.toLowerCase() !== "none" &&
 		toothStr !== "0" &&
 		toothStr.toLowerCase() !== "без зуба"
-			? ` (зуб ${toothStr})`
+			? isMulti
+				? ` (зубы ${toothStr})`
+				: ` (зуб ${toothStr})`
 			: "";
 
 	const q =
@@ -262,16 +265,24 @@ export type ParsedCompletedServiceLine = ParsedCompletedLine;
 
 /**
  * Разбирает строку «Выполнено: ...» из текста карты приёма.
- * Возвращает null, если строка не начинается с «Выполнено:».
+ * Возвращает null, если строка не является записью выполненной услуги.
  */
 export function parseCompletedServiceLine(
 	rawLine: string,
 ): ParsedCompletedLine | null {
 	if (typeof rawLine !== "string") return null;
 	const trimmed = rawLine.trim();
-	if (!trimmed.toLowerCase().startsWith("выполнено:")) return null;
+	const isCompleted = trimmed.toLowerCase().startsWith("выполнено:");
+	const isBullet = trimmed.startsWith("•") || trimmed.startsWith("-");
+	const isToothPrefix = /^зуб(?:ы)?\s+[A-Za-z0-9.,\s-]+[:\s]/i.test(trimmed);
+	if (!isCompleted && !isBullet && !isToothPrefix) return null;
 
-	const content = trimmed.substring("выполнено:".length).trim();
+	let content = trimmed;
+	if (isCompleted) {
+		content = trimmed.substring("выполнено:".length).trim();
+	} else if (isBullet) {
+		content = trimmed.substring(1).trim();
+	}
 	if (!content) return null;
 
 	// Разделение по последнему тире (эмитируется em-dash «—», en-dash «–» или « - »)
@@ -294,30 +305,54 @@ export function parseCompletedServiceLine(
 		) {
 			priceRub = parseRubAmount(priceStr);
 		}
+	} else if (isBullet) {
+		return null;
 	}
 
-	// Извлекаем код 804н в квадратных скобках [A06.07.001]
+	// 1. Проверяем префиксный зуб в самом начале: «Зуб 16: ...» или «зубы 16, 17: ...»
+	let toothCode: string | undefined;
+	const prefixToothMatch = headPart.match(/^зуб(?:ы)?\s+([A-Za-z0-9.,\s-]+)[:\s]\s*/i);
+	if (prefixToothMatch && prefixToothMatch[1]) {
+		toothCode = prefixToothMatch[1].trim();
+		headPart = headPart.slice(prefixToothMatch[0].length).trim();
+	}
+
+	// 2. Извлекаем код 804н: в квадратных скобках [A06.07.001] или без скобок A16.07.002.001
 	let code804n: string | undefined;
-	const codeMatch = headPart.match(/^\[([A-Za-z0-9.]+)\]\s*/);
+	const codeMatch = headPart.match(/^(?:\[([A-Za-z0-9.]+)\]|([AB]\d{2}(?:\.\d{2,3})*(?:\.\d{3})?))\s*/i);
 	if (codeMatch) {
-		code804n = codeMatch[1];
+		code804n = codeMatch[1] || codeMatch[2];
 		headPart = headPart.slice(codeMatch[0].length).trim();
 	}
 
-	// Извлекаем количество: «, 2 шт.»
-	let quantity = 1;
-	const qMatch = headPart.match(/,\s*(\d+)\s*шт\.?$/i);
-	if (qMatch && qMatch[1]) {
-		quantity = Math.max(1, Number.parseInt(qMatch[1], 10) || 1);
-		headPart = headPart.slice(0, qMatch.index).trim();
+	// 3. Если зуба еще нет, проверяем префиксный зуб ПОСЛЕ кода: «[A16.07.002] Зуб 16: ...»
+	if (!toothCode) {
+		const afterCodeToothMatch = headPart.match(/^зуб(?:ы)?\s+([A-Za-z0-9.,\s-]+)[:\s]\s*/i);
+		if (afterCodeToothMatch && afterCodeToothMatch[1]) {
+			toothCode = afterCodeToothMatch[1].trim();
+			headPart = headPart.slice(afterCodeToothMatch[0].length).trim();
+		}
 	}
 
-	// Извлекаем зуб: «(зуб 26)»
-	let toothCode: string | undefined;
-	const toothMatch = headPart.match(/\(зуб\s+([A-Za-z0-9.]+)\)$/i);
-	if (toothMatch) {
-		toothCode = toothMatch[1];
-		headPart = headPart.slice(0, toothMatch.index).trim();
+	// 4. Извлекаем количество: «, 2 шт.» или «— 1 усл.»
+	let quantity = 1;
+	const qMatch = headPart.match(/,\s*(\d+)\s*(?:шт|усл)\.?$/i);
+	if (qMatch && qMatch[1]) {
+		quantity = Math.max(1, Number.parseInt(qMatch[1], 10) || 1);
+		if (qMatch.index !== undefined) {
+			headPart = headPart.slice(0, qMatch.index).trim();
+		}
+	}
+
+	// 5. Если зуба еще нет, извлекаем суффиксный зуб в конце: «(зуб 26)» или «(зубы 16, 17)»
+	if (!toothCode) {
+		const toothMatch = headPart.match(/\(зуб(?:ы)?\s+([A-Za-z0-9.,\s-]+)\)$/i);
+		if (toothMatch && toothMatch[1]) {
+			toothCode = toothMatch[1].trim();
+			if (toothMatch.index !== undefined) {
+				headPart = headPart.slice(0, toothMatch.index).trim();
+			}
+		}
 	}
 
 	const title = stripEmojis(headPart.trim());
@@ -416,17 +451,16 @@ export function calculateCompletedServicesSummary(
 		typeof treatmentPlanText === "string" ? treatmentPlanText : "";
 	const lines = rawText.split("\n").map((l) => (l ?? "").trim());
 
-	const completedLines = lines.filter((l) =>
-		l.toLowerCase().startsWith("выполнено:"),
-	);
-
+	const completedLines: string[] = [];
 	let totalRub = 0;
 	let unpricedCount = 0;
 	const servicesForInvoice: CompletedServicesSummary["servicesForInvoice"] = [];
 
-	for (const line of completedLines) {
+	for (const line of lines) {
 		const parsed = parseCompletedServiceLine(line);
 		if (!parsed) continue;
+
+		completedLines.push(line);
 
 		if (parsed.priceRub === null) {
 			unpricedCount++;

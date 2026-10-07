@@ -262,4 +262,5 @@ export interface DynamicPerformanceSnapshot {
 	readonly downscaleFactor: number;
 	readonly targetFpsCap: number;
 	readonly recommendedBlurDisabled: boolean;
+	readonly isBatteryThrottling?: boolean | undefined;
 }

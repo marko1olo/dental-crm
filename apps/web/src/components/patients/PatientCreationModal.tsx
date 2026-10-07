@@ -242,7 +242,7 @@ export function PatientCreationModal({
 	const patientCreateReady = validationResult.isValid && !isPatientCreating;
 	const patientCreateGuidance = validationResult.guidanceMessage;
 
-	// Quick intake validation (CITO / booking / duty doctor): requires ONLY full name and phone (or name only if anonymous per PP RF 659)
+	// Quick intake validation (emergency / booking / duty doctor): requires ONLY full name and phone (or name only if anonymous per PP RF 659)
 	const quickIntakeValidationResult = useMemo(() => {
 		return validatePatientDraftWithRequirements(
 			{
@@ -311,12 +311,12 @@ export function PatientCreationModal({
 		let effectiveName = (newPatientName.trim() || usePatientStore.getState().newPatientName.trim() || inputElem?.value.trim() || "");
 		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
-				effectiveName = "Пациент с острой болью (CITO)";
+				effectiveName = "Пациент с острой болью (Срочный приём)";
 				setNewPatientName(effectiveName);
 				usePatientStore.getState().setNewPatientName(effectiveName);
 			} else {
 				showToast(
-					"Укажите имя пациента или включите CITO для экстренной записи",
+					"Укажите имя пациента или включите срочный приём для экстренной записи",
 					"warning",
 				);
 				return;
@@ -373,12 +373,12 @@ export function PatientCreationModal({
 		let effectiveName = newPatientName.trim();
 		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
-				effectiveName = "Пациент с острой болью (CITO)";
+				effectiveName = "Пациент с острой болью (Срочный приём)";
 				setNewPatientName(effectiveName);
 				usePatientStore.getState().setNewPatientName(effectiveName);
 			} else {
 				showToast(
-					"Укажите имя пациента или включите CITO для экстренной записи",
+					"Укажите имя пациента или включите срочный приём для экстренной записи",
 					"warning",
 				);
 				return;
@@ -425,7 +425,7 @@ export function PatientCreationModal({
 				startsAt,
 				endsAt,
 				reason: isEmergencyOrPrimary
-					? "CITO! Острая боль"
+					? "⚡ Срочный приём (Острая боль)"
 					: "Первичный приём и консультация",
 				comment: isEmergencyOrPrimary
 					? "Экстренный прием по острой боли (ст. 124 УК РФ)"
@@ -446,12 +446,12 @@ export function PatientCreationModal({
 		let effectiveName = newPatientName.trim();
 		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
-				effectiveName = "Пациент с острой болью (CITO)";
+				effectiveName = "Пациент с острой болью (Срочный приём)";
 				setNewPatientName(effectiveName);
 				usePatientStore.getState().setNewPatientName(effectiveName);
 			} else {
 				showToast(
-					"Укажите имя пациента или включите CITO для экстренной записи",
+					"Укажите имя пациента или включите срочный приём для экстренной записи",
 					"warning",
 				);
 				return;
@@ -501,7 +501,7 @@ export function PatientCreationModal({
 		if (!quickActionReady) {
 			if (!newPatientName.trim() && !isEmergencyOrPrimary) {
 				showToast(
-					"Укажите имя пациента или включите CITO для экстренной записи",
+					"Укажите имя пациента или включите срочный приём для экстренной записи",
 					"warning",
 				);
 			}
@@ -597,7 +597,7 @@ export function PatientCreationModal({
 										gap: "6px",
 									}}
 								>
-									Острая боль / Первичный осмотр (без документов)
+									⚡ Срочный приём (Острая боль)
 									{isEmergencyOrPrimary && (
 										<span
 											style={{
@@ -810,6 +810,7 @@ export function PatientCreationModal({
 							<input
 								ref={nameInputRef}
 								id="patient-create-full-name"
+								data-testid="patient-creation-fullname-input"
 								autoComplete="name"
 								value={newPatientName}
 								onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -957,7 +958,7 @@ export function PatientCreationModal({
 															setSelectedPatientId(p.id);
 															onClose();
 														}}
-														className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--teal)] text-white hover:brightness-110 transition-all cursor-pointer shadow-xs min-h-[30px]"
+														className="px-2.5 py-1 rounded-md text-xs font-semibold !bg-[var(--teal)] !text-white hover:brightness-110 transition-all cursor-pointer shadow-sm min-h-[30px]"
 														data-testid="select-existing-patient-btn"
 														title="Выбрать эту карту и закрыть форму создания"
 													>
@@ -1002,6 +1003,7 @@ export function PatientCreationModal({
 							</label>
 							<input
 								id="patient-create-phone"
+								data-testid="patient-creation-phone-input"
 								type="tel"
 								inputMode="tel"
 								autoComplete="tel"
@@ -1082,7 +1084,7 @@ export function PatientCreationModal({
 							<div className="flex items-center justify-between gap-2 flex-wrap">
 								<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
 									<Users size={14} className="text-[var(--teal)] shrink-0" />
-									<span>Привязка родителя / опекуна в 1 клик</span>
+									<span>Привязка родителя / опекуна</span>
 								</div>
 								<span className="text-[11px] text-[var(--muted)]">
 									Без бюрократии • Для записи и звонков
@@ -1402,7 +1404,7 @@ export function PatientCreationModal({
 										? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
 										: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--glass-border)] shadow-2xs"
 								}`}
-								title="1 клик: заполнить нормой (соматически здоров)"
+								title="Заполнить нормой (соматически здоров)"
 							>
 								<Check size={13} className="shrink-0" />
 								<span>{isSomaticNorm ? "Норма" : "Применить норму"}</span>
@@ -1494,7 +1496,7 @@ export function PatientCreationModal({
 							title={
 								isPatientCreating
 									? "Создание карточки..."
-									: "Создать медицинскую карту пациента (без блокировки по СНИЛС/паспорту)"
+									: "Создать медицинскую карту пациента"
 							}
 							data-testid="patient-creation-submit-btn"
 							style={{

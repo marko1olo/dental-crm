@@ -133,7 +133,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 					<button
 						type="button"
 						onClick={onStartStageClick}
-						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-sky-800 dark:text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-semibold text-sky-800 dark:text-sky-200 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 						title={`Взять этап №${stage.stageNumber} «${stage.title}» в работу`}
 						data-testid={`stage-${stage.stageNumber}-start-btn`}
 					>
@@ -144,7 +144,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 					<button
 						type="button"
 						onClick={() => onExecuteWriteOffStage!(stage)}
-						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-medium text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 						title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 						data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
 					>
@@ -158,7 +158,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 					<button
 						type="button"
 						onClick={() => onExportStageEstimate!(stage)}
-						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-medium text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 						title={`Печать сметы и спецификации по этапу №${stage.stageNumber}`}
 						data-testid={`stage-${stage.stageNumber}-estimate-btn`}
 					>
@@ -169,7 +169,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 					<button
 						type="button"
 						onClick={() => onPayStage!(stage)}
-						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-semibold text-emerald-800 dark:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 						title={`Принять оплату за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
 						data-testid={`stage-${stage.stageNumber}-pay-btn`}
 					>
@@ -180,7 +180,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 					<button
 						type="button"
 						onClick={() => onExecuteWriteOffStage!(stage)}
-						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
+						className="h-8 sm:h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3 rounded-lg text-[13px] font-medium text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 						title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 						data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
 					>
@@ -210,7 +210,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 								role="menu"
 							>
 								{/* 0. Смена статуса этапа (Mandate 8e: Doctor Autonomy) */}
-								<div className="px-2.5 py-1 text-[10px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+								<div className="px-2.5 py-1 text-[11.5px] font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">
 									Статус этапа:
 								</div>
 								{(["draft", "agreed", "in_progress", "completed"] as const).map((st) => {
@@ -330,12 +330,12 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 											onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 										}}
 										className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/15 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
-										title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
+										title="Оформить наряд в ЗТЛ (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
 										data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
 										role="menuitem"
 									>
 										<Zap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-										<span>1-клик ЗТЛ (Цирконий A2)</span>
+										<span>Наряд ЗТЛ (Цирконий A2)</span>
 									</button>
 								)}
 

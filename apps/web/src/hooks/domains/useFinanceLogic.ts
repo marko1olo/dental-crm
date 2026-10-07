@@ -16,6 +16,7 @@ import { useAppStore } from "../../store/appStore";
 import { useDocumentStore } from "../../store/documentStore";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import { fetchWithHandling } from "../../utils/networkUtils";
+import { enqueueOfflineReceipt } from "../../services/billing/offlineFiscalQueue";
 
 export type UseFinanceLogicOptions = {
 	auth: {
@@ -286,16 +287,100 @@ export function useFinanceLogic({
 			);
 			setError(null);
 		} catch (paymentError) {
-			showToast(
-				actionFailureToast(
-					"Оплата не записана",
-					(paymentError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			setError(
-				operatorWorkflowFailureMessage("Оплата не записана", paymentError),
-			);
+			const isOfflineOrNetwork =
+				(typeof navigator !== "undefined" && !navigator.onLine) ||
+				(paymentError instanceof TypeError &&
+					paymentError.message.toLowerCase().includes("fetch")) ||
+				(paymentError instanceof Error &&
+					(paymentError.message.toLowerCase().includes("network") ||
+						paymentError.message.toLowerCase().includes("failed to fetch") ||
+						paymentError.message.startsWith("HTTP 502") ||
+						paymentError.message.startsWith("HTTP 503") ||
+						paymentError.message.startsWith("HTTP 504")));
+
+			if (isOfflineOrNetwork) {
+				const offlinePayload = {
+					patientId: documentPatient.id,
+					visitId: realActiveVisitId,
+					amountRub,
+					method: paymentMethod,
+					fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() || null,
+					fiscalReceiptIssuedAt: paymentFiscalReceiptIssuedAt.trim() || null,
+					fiscalReceipt: {
+						fn: explicitFiscalFn || null,
+						fd: explicitFiscalFd || null,
+						fpd: explicitFiscalFpd || null,
+						cashierName: paymentFiscalCashierName.trim() || null,
+						receiptUrl: explicitFiscalReceiptUrl || null,
+						operationType: "income",
+					},
+					payerFullName: taxReadyPaymentRequested
+						? paymentPayerName
+						: paymentPayerName || documentPatient.fullName,
+					payerInn: normalizedPayerInn || null,
+					payerBirthDate: taxReadyPaymentRequested
+						? explicitPayerBirthDate
+						: explicitPayerBirthDate || documentPatient.birthDate,
+					payerIdentityDocument: taxReadyPaymentRequested
+						? explicitPayerIdentityDocument
+						: explicitPayerIdentityDocument ||
+							administrativePayerDocument ||
+							null,
+					payerRelationship: taxReadyPaymentRequested
+						? paymentPayerRelation
+						: paymentPayerRelation || "пациент",
+					taxDeductionCode: paymentTaxDeductionCode || null,
+					note: "Оплата принята офлайн: чек добавлен в очередь фоновой фискализации",
+				};
+
+				void enqueueOfflineReceipt({
+					visitId: realActiveVisitId ?? undefined,
+					paymentId: paymentMutationIdRef.current || undefined,
+					payload: offlinePayload,
+					lastError:
+						paymentError instanceof Error
+							? paymentError.message
+							: "Сетевой сбой при фискализации чека",
+				});
+
+				showToast(
+					"Оплата зафиксирована, чек в очереди фискализации",
+					"info",
+					5000,
+				);
+
+				paymentMutationIdRef.current = null;
+				setPaymentAmount("");
+				setPaymentFiscalReceiptNumber("");
+				setPaymentFiscalReceiptIssuedAt("");
+				setPaymentFiscalFn("");
+				setPaymentFiscalFd("");
+				setPaymentFiscalFpd("");
+				setPaymentFiscalCashierName("");
+				setPaymentFiscalReceiptUrl("");
+				setPaymentPayerFullName("");
+				setPaymentPayerInn("");
+				setPaymentPayerBirthDate("");
+				setPaymentPayerIdentityDocument("");
+				setPaymentPayerRelationship("пациент");
+				setPaymentTaxDeductionCode("");
+
+				setPaymentFeedback(
+					`Оплата ${money(amountRub)} зафиксирована локально. Чек поставлен в очередь фискализации и будет отправлен в ОФД при восстановлении сети.`,
+				);
+				setError(null);
+			} else {
+				showToast(
+					actionFailureToast(
+						"Оплата не записана",
+						(paymentError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				setError(
+					operatorWorkflowFailureMessage("Оплата не записана", paymentError),
+				);
+			}
 		} finally {
 			setIsPaymentSaving(false);
 		}

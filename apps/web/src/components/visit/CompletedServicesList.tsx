@@ -35,24 +35,28 @@ export const CompletedServicesList: React.FC<CompletedServicesListProps> = ({
 					return (
 						<div
 							key={`${entry.rawLine}-${idx}`}
-							className="flex items-center justify-between gap-2 p-1.5 rounded-md bg-slate-50 dark:bg-slate-800/40 text-xs border border-slate-100 dark:border-slate-800"
+							className="flex items-center justify-between gap-2 p-1.5 sm:p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-xs border border-slate-100 dark:border-slate-800"
 						>
-							<div className="flex items-center gap-1.5 flex-1 min-w-0">
-								<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-								<span className="truncate">
-									<span className="font-medium text-slate-900 dark:text-slate-100">{entry.title}</span>
+							<div className="flex items-center gap-2 flex-1 min-w-0">
+								<Check className="w-4 h-4 text-emerald-500 shrink-0" />
+								{entry.toothCode ? (
+									<span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold font-mono bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+										{entry.toothCode.includes(",") ? `Зубы ${entry.toothCode}:` : `Зуб ${entry.toothCode}:`}
+									</span>
+								) : (
+									<span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800">
+										Общая
+									</span>
+								)}
+								<span className="truncate flex-1">
 									{entry.code804n && (
-										<span className="font-mono text-[10px] text-slate-400 ml-1.5">
+										<span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1.5">
 											[{entry.code804n}]
 										</span>
 									)}
-									{entry.toothCode && (
-										<span className="text-indigo-600 dark:text-indigo-400 font-medium ml-1">
-											(зуб {entry.toothCode})
-										</span>
-									)}
+									<span className="font-medium text-slate-900 dark:text-slate-100">{entry.title}</span>
 									{entry.quantity > 1 && (
-										<span className="text-slate-500 ml-1">
+										<span className="text-slate-500 ml-1 text-[11px]">
 											× {entry.quantity} шт.
 										</span>
 									)}
@@ -67,11 +71,11 @@ export const CompletedServicesList: React.FC<CompletedServicesListProps> = ({
 								<button
 									type="button"
 									onClick={() => onRemoveCompletedLine(entry.rawLine)}
-									className="min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
+									className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
 									title="Удалить из выполненного"
-									aria-label="Удалить выполненную услугу"
+									aria-label={`Удалить выполненную услугу ${entry.title}`}
 								>
-									<Trash2 className="w-3.5 h-3.5" />
+									<Trash2 className="w-4 h-4" />
 								</button>
 							</div>
 						</div>

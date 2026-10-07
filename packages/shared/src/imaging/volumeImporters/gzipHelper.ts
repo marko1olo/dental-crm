@@ -51,8 +51,9 @@ export async function safeGunzip(data: Uint8Array, maxBytes: number): Promise<Ui
 
   // Web Streams DecompressionStream (browsers & modern runtimes)
   if (typeof DecompressionStream !== "undefined") {
-    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("gzip"));
+    const stream = new Blob([data as unknown as BlobPart]).stream().pipeThrough(new DecompressionStream("gzip"));
     const reader = stream.getReader();
+
     const chunks: Uint8Array[] = [];
     let totalLength = 0;
 

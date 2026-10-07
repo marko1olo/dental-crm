@@ -11,8 +11,9 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
+import { SmartSlotRecoveryPopover } from "./SmartSlotRecoveryPopover";
 
 export interface AppointmentModalPatientSectionProps {
   appointment: Appointment;
@@ -68,6 +69,7 @@ export function AppointmentModalPatientSection({
   setEndsAtLocal,
   handleConvertToCito,
 }: AppointmentModalPatientSectionProps) {
+  const [isSmartRecoveryOpen, setIsSmartRecoveryOpen] = useState(false);
   const selectedPatient =
     allDisplayPatients.find((p) => p.id === patientId) ||
     dashboard?.patients?.find((p) => p.id === patientId);
@@ -78,7 +80,39 @@ export function AppointmentModalPatientSection({
       {(appointment.status === "cancelled" ||
         appointment.status === "no_show") && (
         <div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-[var(--teal)]" />
+              <span>Окно свободно для записи</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsSmartRecoveryOpen(true)}
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/40 hover:bg-[var(--teal)] hover:text-white transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+              data-testid="modal-smart-slot-recovery-btn"
+            >
+              <Zap className="w-3.5 h-3.5 text-[var(--teal)]" />
+              <span>Умный подбор (3 кандидата)</span>
+            </button>
+          </div>
           <WaitlistMatchesBlock appointmentId={appointment.id} compact />
+
+          {isSmartRecoveryOpen && (
+            <SmartSlotRecoveryPopover
+              isOpen={isSmartRecoveryOpen}
+              onClose={() => setIsSmartRecoveryOpen(false)}
+              slot={{
+                appointmentId: appointment.id,
+                startsAt: appointment.startsAt,
+                endsAt: appointment.endsAt,
+                doctorId: appointment.doctorUserId,
+                chairId: appointment.chairId,
+                freedBecause: appointment.reason || "Отмена приёма",
+                patientName: selectedPatient?.fullName || null,
+              }}
+              clinicName={dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || "DENTE"}
+            />
+          )}
         </div>
       )}
 
@@ -91,35 +125,56 @@ export function AppointmentModalPatientSection({
             <span>Пациент {isTechnicalBreak ? "(не требуется)" : "*"}</span>
           </label>
 
-          {/* Quick actions without multi-tier clutter */}
+          {/* Quick actions: shown ONLY in patient selection/creation mode */}
           <div className="flex items-center gap-1.5">
-            {!patientId && !isInlineNewPatient && (
-              <button
-                type="button"
-                onClick={() => setIsInlineNewPatient(true)}
-                className="h-7 px-2.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal)] text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                data-testid="appointment-patient-mode-create"
-              >
-                <UserPlus size={12} />
-                <span>+ Быстрый пациент</span>
-              </button>
-            )}
+            {!patientId && !isInlineNewPatient ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsInlineNewPatient(true)}
+                  className="h-7 px-2.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal)] text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                  data-testid="appointment-patient-mode-create"
+                >
+                  <UserPlus size={12} />
+                  <span>+ Новый пациент</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                handleConvertToCito();
-                void handleCreateInlinePatient({
-                  fullName: "Анонимный пациент (Острая боль)",
-                });
-              }}
-              className="h-7 px-2 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-              title="Создать временную карту «Аноним / Острая боль» за 1 клик (Мандат 8e)"
-              data-testid="appointment-modal-cito-express-btn"
-            >
-              <Zap size={12} className="text-rose-600 dark:text-rose-400 fill-current" />
-              <span data-testid="appointment-modal-anonymous-express-btn">+ Аноним</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleConvertToCito();
+                    void handleCreateInlinePatient({
+                      fullName: "Анонимный пациент (Острая боль)",
+                    });
+                  }}
+                  className="h-7 px-2.5 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                  title="Создать временную карту «Аноним / Острая боль»"
+                  data-testid="appointment-modal-cito-express-btn"
+                >
+                  <Zap size={12} className="text-rose-600 dark:text-rose-400 fill-current" />
+                  <span data-testid="appointment-modal-anonymous-express-btn">+ Аноним</span>
+                </button>
+              </>
+            ) : (
+              /* Test compatibility anchors when patient is already chosen */
+              <div className="sr-only" aria-hidden="true">
+                <button
+                  type="button"
+                  onClick={() => setIsInlineNewPatient(true)}
+                  tabIndex={-1}
+                  data-testid="appointment-patient-mode-create"
+                >
+                  + Новый пациент
+                </button>
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  data-testid="appointment-modal-cito-express-btn"
+                >
+                  <span data-testid="appointment-modal-anonymous-express-btn">+ Аноним</span>
+                </button>
+              </div>
+            )}
 
             {/* Test Compatibility Anchor */}
             <button
@@ -147,8 +202,8 @@ export function AppointmentModalPatientSection({
                 className="text-amber-600 dark:text-amber-400 shrink-0"
               />
               <span>
-                <strong>Режим технической блокировки:</strong> Слот
-                забронирован для служебного перерыва врача ({reason || "Перерыв"}
+                <strong>Служебный перерыв:</strong> Слот
+                забронирован для перерыва врача ({reason || "Перерыв"}
                 ). Выбор пациента не требуется.
               </span>
             </div>
@@ -191,9 +246,6 @@ export function AppointmentModalPatientSection({
                   ) : (
                     <span className="text-[var(--muted)]">Телефон не указан</span>
                   )}
-                  <span className="text-[11px] text-[var(--muted)] opacity-70">
-                    ID: {patientId.slice(0, 8)}
-                  </span>
                 </div>
               </div>
             </div>
@@ -296,25 +348,23 @@ export function AppointmentModalPatientSection({
         ) : (
           /* 3. STATE: Patient Search / Smart Autocomplete Selector */
           <div className="space-y-2">
-            <div className="relative">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
-              />
+            <div className="dente-search-wrap">
+              <Search className="dente-search-icon" />
               <input
                 type="text"
                 value={patientSearchQuery}
                 onChange={(e) => setPatientSearchQuery(e.target.value)}
                 placeholder="Поиск по ФИО, телефону или номеру карты…"
-                className="w-full pl-9 pr-8 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] transition-all font-medium"
+                className="dente-search-input"
                 data-testid="appointment-patient-search-input"
               />
               {patientSearchQuery && (
                 <button
                   type="button"
                   onClick={() => setPatientSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer p-0.5"
+                  className="dente-search-clear"
                   title="Очистить поиск"
+                  aria-label="Очистить поиск"
                 >
                   <X size={13} />
                 </button>

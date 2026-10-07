@@ -308,7 +308,7 @@ export class ChairsideSentinelEngine {
 		actionChain.push({
 			step: "calculate_order_804n",
 			description:
-				"Подбор актуальных кодов и расчет сметы по Номенклатуре 804н Минздрава РФ",
+				"Подбор актуальных кодов и расчет сметы услуг",
 			status: "completed",
 			timestamp: now,
 			details: {
@@ -567,13 +567,13 @@ export class ChairsideSentinelEngine {
 			});
 		}
 
-		// 8. MANDATE 8E: PHYSIOLOGICAL NORM CONFIRMATION
+		// 8. PHYSIOLOGICAL NORM CONFIRMATION
 		if (isPhysiologicalNorm) {
 			alerts.push({
 				id: `alert_norm_${randomUUID()}`,
 				severity: "info",
 				alertType: "physiological_norm",
-				title: "Физиологическая норма (Мандат 8e)",
+				title: "Физиологическая норма",
 				message:
 					"Соматически здоров, аллергоанамнез не отягощен. Полная клиническая автономия без ограничений.",
 				isBlocking: false,
@@ -808,7 +808,7 @@ export class ChairsideSentinelEngine {
 ${procedureProtocol}
 РЕКОМЕНДАЦИИ (P): ${recommendations}
 --------------------------------------------------------------------------------
-[МАНДАТ 8E: ЧЕРНОВИК СОЗДАН АВТОНОМНО — ВРАЧ ПРАВИТ ТОЛЬКО ПАТОЛОГИЮ]`;
+[ЧЕРНОВИК СОЗДАН АВТОНОМНО — ВРАЧ ПРАВИТ ТОЛЬКО ПАТОЛОГИЮ]`;
 
 		return {
 			subjective: {

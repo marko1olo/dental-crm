@@ -252,7 +252,7 @@ export const getPatientEmk043uTool: ToolDefinition<
 			`Пациент: ${resolvedPatient.fullName}, ${resolvedPatient.birthDate} г.р. (${resolvedPatient.gender})`,
 			`Соматический статус: ${somaticStatus}`,
 			`Аллергоанамнез: ${allergies.length > 0 ? allergies.join(", ") : "Не отягощен"}`,
-			`Зубная формула FDI: 32 зуба (постоянный прикус). Состояние по умолчанию: норма (Мандат 8e).`,
+			`Зубная формула FDI: 32 зуба (постоянный прикус). Состояние по умолчанию: норма.`,
 		].join("\n");
 
 		return {
@@ -428,7 +428,7 @@ export const calculate804nEstimateSchema = z.object({
 		.enum(["therapy", "endodontics", "surgery", "orthopedics", "hygiene", "preventive"])
 		.optional()
 		.describe("Клиническая категория лечения"),
-	serviceCodes: z.array(z.string()).optional().describe("Массив номенклатурных кодов 804н (например, ['A16.07.002.001', 'A16.07.030'])"),
+	serviceCodes: z.array(z.string()).optional().describe("Массив кодов услуг (например, ['A16.07.002.001', 'A16.07.030'])"),
 	customItems: z
 		.array(
 			z.object({
@@ -445,7 +445,7 @@ export const calculate804nEstimateSchema = z.object({
 		.min(0, "Скидка не может быть отрицательной")
 		.max(100, "Скидка не может превышать 100%")
 		.default(0)
-		.describe("Скидка лечащего врача в процентах (0-100%, Мандат 8e: врач автономен)"),
+		.describe("Скидка лечащего врача в процентах (0-100%, свобода скидок врача)"),
 	priceModifiers: z
 		.array(
 			z.object({
@@ -491,7 +491,7 @@ export const calculate804nEstimateTool: ToolDefinition<
 > = {
 	name: "calculate_804n_estimate",
 	description:
-		"Расчет клинической сметы по Номенклатуре медицинских услуг Приказа Минздрава РФ № 804н в точных целых копейках со свободой скидок врача (0-100%, Мандат 8e).",
+		"Расчет клинической сметы медицинских услуг в точных целых копейках со свободой скидок врача (0-100%).",
 	parameters: calculate804nEstimateSchema,
 	permissions: ["billing.calculate"],
 	category: "read",
@@ -527,7 +527,7 @@ export const calculate804nEstimateTool: ToolDefinition<
 				} else if (code.startsWith("A16.07.008")) {
 					addService(code, `Пломбирование корневых каналов зуба (${canalCount} канала)`, canalCount * 2000);
 				} else {
-					addService(code, `Медицинская услуга 804н (${code})`, 1200);
+					addService(code, `Медицинская услуга (${code})`, 1200);
 				}
 			}
 		}
@@ -750,7 +750,7 @@ export const checkDrugInteractionsTool: ToolDefinition<
 				id: `alert_norm_${crypto.randomUUID()}`,
 				severity: "info",
 				alertType: "physiological_norm",
-				title: "Физиологическая норма (Мандат 8e)",
+				title: "Физиологическая норма",
 				message: "Соматический фон и аллергоанамнез чисты. Полная клиническая автономия врача.",
 				isBlocking: false,
 			});
@@ -820,7 +820,7 @@ export const createDentalLabOrderTool: ToolDefinition<
 > = {
 	name: "create_dental_lab_order",
 	description:
-		"Создание наряда-заказа в зуботехническую лабораторию (ЗТЛ): оттенок VITA (A1..D4/3D-Master), зубы FDI, конструкция, материал, защищенный токен и автономия без 30-дневных блокировок (Мандат 8e).",
+		"Создание наряда-заказа в зуботехническую лабораторию (ЗТЛ): оттенок VITA (A1..D4/3D-Master), зубы FDI, конструкция, материал, защищенный токен без блокировок по сроку плана.",
 	parameters: createDentalLabOrderSchema,
 	permissions: ["clinical.write"],
 	category: "write",
@@ -892,7 +892,7 @@ export const bookChairsideAppointmentSchema = z.object({
 	endsAt: z.string().optional().describe("Время окончания приема в ISO 8601"),
 	reason: z.string().min(1, "Причина записи обязательна").describe("Причина записи / этап лечения"),
 	chairId: z.string().optional().describe("ID стоматологической установки"),
-	assistantUserId: z.string().optional().describe("ID ассистента (строго опционально, Мандат 8e)"),
+	assistantUserId: z.string().optional().describe("ID ассистента (опционально)"),
 	comment: z.string().optional(),
 });
 
@@ -917,7 +917,7 @@ export const bookChairsideAppointmentTool: ToolDefinition<
 > = {
 	name: "book_chairside_appointment",
 	description:
-		"Запись пациента на повторный клинический прием прямо у кресла без требования обязательного выбора ассистента (Мандат 8e: регистратура и врач без барьеров).",
+		"Запись пациента на повторный клинический прием прямо у кресла без требования обязательного выбора ассистента.",
 	parameters: bookChairsideAppointmentSchema,
 	permissions: ["schedule.write"],
 	category: "write",
@@ -982,7 +982,7 @@ export const draft043uSoapDiarySchema = z.object({
 	complaints: z.string().optional().describe("Жалобы пациента"),
 	somaticStatus: z.string().optional().describe("Соматический анамнез"),
 	allergiesStatus: z.string().optional().describe("Аллергологический анамнез"),
-	oneClickNorm: z.boolean().default(true).optional().describe("Заполнение физиологической нормы в 1 клик (Мандат 8e)"),
+	oneClickNorm: z.boolean().default(true).optional().describe("Заполнение физиологической нормы в 1 клик"),
 	performedTreatment: z.string().optional().describe("Выполненные манипуляции"),
 	recommendations: z.string().optional().describe("Клинические рекомендации пациенту"),
 });
@@ -1006,7 +1006,7 @@ export const draft043uSoapDiaryTool: ToolDefinition<
 > = {
 	name: "draft_043u_soap_diary",
 	description:
-		"Генерация протокола приема по Форме 043/у Минздрава РФ (SOAP, МКБ-10, СтАР) с физиологической нормой по умолчанию в 1 клик, версионным аудитом и печатью без замков (Мандат 8e).",
+		"Генерация протокола приема по Форме 043/у (SOAP, МКБ-10, СтАР) с физиологической нормой по умолчанию в 1 клик, версионным аудитом и печатью без замков.",
 	parameters: draft043uSoapDiarySchema,
 	permissions: ["clinical.write"],
 	category: "write",
@@ -1066,7 +1066,7 @@ export const draft043uSoapDiaryTool: ToolDefinition<
 			`ПРОТОКОЛ ЛЕЧЕНИЯ (P):\n${protocol}`,
 			`РЕКОМЕНДАЦИИ (P): ${recommendations}`,
 			`═══════════════════════════════════════════════════════════════════════════`,
-			`[МАНДАТ 8E: ЧЕРНОВИК СОЗДАН АВТОНОМНО — ВРАЧ ПРАВИТ ТОЛЬКО ПАТОЛОГИЮ]`,
+			`[ЧЕРНОВИК СОЗДАН АВТОНОМНО — ВРАЧ ПРАВИТ ТОЛЬКО ПАТОЛОГИЮ]`,
 		].join("\n");
 
 		const soapDiary: ChairsideSoapDiary = {

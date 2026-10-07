@@ -160,7 +160,7 @@ export function runDeterministicClinicalValidation(
 					recommendation: `Проверьте КЛКТ и скорректируйте код на ${expectedPrepCode} (${expectedCanals}-канальный зуб).`,
 					code804nRelated: [endoPrepItem.code804n, expectedPrepCode],
 				});
-				clinicalRecommendations.push(`Зуб ${toothNum}: проверьте соответствие числа каналов (${expectedCanals} кан.) коду 804н.`);
+				clinicalRecommendations.push(`Зуб ${toothNum}: проверьте соответствие числа каналов (${expectedCanals} кан.) выбранной услуге.`);
 			}
 		}
 

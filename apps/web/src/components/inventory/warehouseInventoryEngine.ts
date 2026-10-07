@@ -565,7 +565,7 @@ export function validateInventoryAuditDraft(
 				errors.push(`Товар «${it.nameRu}» содержит отрицательное фактическое количество.`);
 			} else if (it.bookQuantity < 0) {
 				warnings.push(
-					`Товар «${it.nameRu}» имеет отрицательный учетный остаток (${it.bookQuantity}) — зафиксирован мягкий овердрафт («Списано под операцию, требуется оприходование»).`,
+					`Товар «${it.nameRu}» имеет отрицательный учетный остаток (${it.bookQuantity}) — зафиксирован мягкий учет расхода при нехватке («Списано под операцию, требуется оприходование»).`,
 				);
 			}
 			if (!it.batchNumber || it.batchNumber.trim().length === 0) {

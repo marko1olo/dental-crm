@@ -88,12 +88,17 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 		>
 			{/* Top Half: Dominant Panoramic Viewport (ОПТГ) with Non-overlapping Control Bar */}
 			<div
-				className="flex-1 min-h-[45%] max-h-[55%] flex flex-col rounded-md overflow-hidden border border-purple-500/30 bg-black shadow-lg"
+				className="flex-1 min-h-[45%] max-h-[55%] relative rounded-md overflow-hidden border border-purple-500/30 bg-black shadow-lg"
 				style={{ backgroundColor: "#000000" }}
 				data-testid="cbct-panoramic-dominant-container"
 			>
-				{/* Dedicated Top Toolbar: Quiet Info & Compact Controls (Zero overlap on OPG canvas) */}
-				<div className="h-7 px-2.5 bg-zinc-950/95 border-b border-zinc-850 flex items-center justify-between gap-2 text-xs text-zinc-400 shrink-0 select-none">
+				{/* Full-bleed Edge-to-Edge OPG Viewport Canvas Area */}
+				<div className="absolute inset-0 w-full h-full min-h-0 min-w-0 overflow-hidden bg-black">
+					{renderers.renderPanoramic("w-full h-full")}
+				</div>
+
+				{/* Floating Translucent Control Bar (Zero slice squeeze, pointer-events-none with pointer-events-auto buttons) */}
+				<div className="absolute top-0 left-0 right-0 z-20 h-7 px-2.5 bg-zinc-950/75 backdrop-blur-md border-b border-zinc-800/80 flex items-center justify-between gap-2 text-xs text-zinc-400 select-none pointer-events-none">
 					{/* Left: Quiet Clinical Info Chip */}
 					<div
 						className="flex items-center gap-1.5"
@@ -112,9 +117,9 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 					</div>
 
 					{/* Right: Low-contrast, compact Slab Slider & Sharpness Toggle */}
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 pointer-events-auto">
 						{onChangePanoThicknessMm && (
-							<div className="flex items-center gap-1.5 bg-zinc-900/60 border border-zinc-800 rounded px-2 py-0.5 text-[11px]">
+							<div className="flex items-center gap-1.5 bg-zinc-900/80 border border-zinc-700/80 rounded px-2 py-0.5 text-[11px] backdrop-blur-sm">
 								<Layers className="w-3 h-3 text-purple-400/80 shrink-0" />
 								<span className="text-zinc-400 text-[10px] hidden sm:inline">Слой:</span>
 								<input
@@ -140,8 +145,8 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 								onClick={onToggleUnsharp}
 								className={`h-5.5 px-2 rounded text-[10px] font-semibold flex items-center gap-1 border transition-colors cursor-pointer ${
 									isUnsharpActive
-										? "bg-amber-950/40 text-amber-300 border-amber-600/50"
-										: "bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
+										? "bg-amber-950/60 text-amber-300 border-amber-600/70"
+										: "bg-zinc-900/80 text-zinc-400 border-zinc-700/80 hover:text-zinc-200 hover:border-zinc-600"
 								}`}
 								data-testid="cbct-pano-unsharp-toggle-btn"
 								title="Контурная резкость ОПТГ (Unsharp Masking)"
@@ -156,18 +161,15 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 					</div>
 				</div>
 
-				{/* Dedicated FDI Tooth Ribbon for 1-Click Multi-Plane Navigation (Mandate 8e, 8k) */}
-				<CbctPanoramicFdiRibbon
-					activeToothFdi={activeCrossSection?.nearestToothFdi}
-					onSelectTooth={(fdi) => handleSelectTooth?.(fdi)}
-					onSwitchJaw={onSwitchJaw}
-					archCurve={archCurve}
-					className="shrink-0"
-				/>
-
-				{/* OPG Viewport Canvas Area (100% clean, zero control overlap on teeth) */}
-				<div className="flex-1 relative flex flex-col min-h-0 w-full h-full bg-black">
-					{renderers.renderPanoramic("flex-1 flex flex-col w-full h-full")}
+				{/* Floating FDI Tooth Ribbon */}
+				<div className="absolute top-7 left-0 right-0 z-20 pointer-events-auto">
+					<CbctPanoramicFdiRibbon
+						activeToothFdi={activeCrossSection?.nearestToothFdi}
+						onSelectTooth={(fdi) => handleSelectTooth?.(fdi)}
+						onSwitchJaw={onSwitchJaw}
+						archCurve={archCurve}
+						className="shrink-0"
+					/>
 				</div>
 			</div>
 

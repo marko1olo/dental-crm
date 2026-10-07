@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * VISIT THERAPEUTIC PROTOCOL WIDGET (CHAIRSIDE 30-SECOND WORKSPACE)
- * Fast 1-click Form 043/u & Order 804n Caries & Restoration Logging
+ * Form 043/u & Order 804n Caries & Restoration Logging
  * Zero Emojis | Touch Targets >= 44px | Dual-Dispatch SOAP Sync (Mandates 8d, 8e, 8k, 8n)
  * ═══════════════════════════════════════════════════════════════════════════
  */
@@ -108,7 +108,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 		}
 	}, [effectiveTooth, activeSurfaces]);
 
-	// Переключение поверхности в 1 клик
+	// Переключение поверхности
 	const toggleSurface = useCallback(
 		(surf: string) => {
 			setSelectedSurfaces((prev) => {
@@ -143,7 +143,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 		if (preset.id === "wedge_defect_erosion") {
 			setIncludeFluoridation(true);
 		}
-		showToast(`Выбран 1-клик протокол: «${preset.shortLabelRu}»`, "info", 2000);
+		showToast(`Выбран протокол: «${preset.shortLabelRu}»`, "info", 2000);
 	}, [onSelectSurfaces]);
 
 	// Определение класса по Блэку
@@ -197,7 +197,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 		includeFluoridation,
 	]);
 
-	// 1-КЛИК ВНЕСЕНИЕ В КАРТУ 043/у (ДВОЙНОЙ ДИСПАТЧ: useVisitStore + CustomEvent dente-apply-soap-protocol)
+	// ВНЕСЕНИЕ В КАРТУ 043/у (ДВОЙНОЙ ДИСПАТЧ: useVisitStore + CustomEvent dente-apply-soap-protocol)
 	const handleInsertToForm043 = useCallback(() => {
 		const textToApply = soapResult.fullProtocolText043;
 
@@ -247,7 +247,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в дневник приёма`, "success", 3000);
 	}, [soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);
 
-	// 1-КЛИК ДОБАВЛЕНИЕ В СМЕТУ / НАЧИСЛЕНИЕ УСЛУГ 804н
+	// ДОБАВЛЕНИЕ В СМЕТУ / НАЧИСЛЕНИЕ УСЛУГ 804н
 	const handleAddServicesToInvoice = useCallback(() => {
 		onAddToInvoice?.(services804n);
 
@@ -292,7 +292,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted)]">
-							Фиксация кариеса и реставраций за &le; 30 секунд без лишней бюрократии
+							Быстрая фиксация кариеса и эстетических реставраций
 						</p>
 					</div>
 				</div>
@@ -320,10 +320,10 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 			</div>
 
-			{/* 1-КЛИК КЛИНИЧЕСКИЕ ПРОТОКОЛЫ (МАНДАТ 8e, 8k: ТАЧ-ТАРГЕТЫ >= 48px) */}
+			{/* КЛИНИЧЕСКИЕ ПРОТОКОЛЫ (МАНДАТ 8e, 8k: ТАЧ-ТАРГЕТЫ >= 48px) */}
 			<div className="mb-4">
 				<div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-					1-Клик протоколы у кресла:
+					Протоколы лечения у кресла:
 				</div>
 				<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
 					{THERAPY_PROTOCOL_PRESETS.map((preset) => {
@@ -359,11 +359,11 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 			</div>
 
-			{/* 1-КЛИК ПОВЕРХНОСТИ ЗУБА (ТАЧ-ТАРГЕТЫ >= 44-48px) */}
+			{/* ПОВЕРХНОСТИ ЗУБА (ТАЧ-ТАРГЕТЫ >= 44-48px) */}
 			<div className="mb-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3">
 				<div className="mb-2 flex items-center justify-between">
 					<span className="text-xs font-semibold text-[var(--ink)]">
-						Поверхности в 1 клик:
+						Поверхности зуба:
 					</span>
 					<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
 						[{selectedSurfaces.join(", ") || "O"}]
@@ -529,10 +529,10 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 			)}
 
-			{/* НИЖНИЙ ПЛАНШЕТ ДЕЙСТВИЙ: 1-КЛИК ВНЕСЕНИЕ В 043/у И В СМЕТУ (МАНДАТ 8e: КНОПКИ ВСЕГДА АКТИВНЫ) */}
+			{/* НИЖНИЙ ПЛАНШЕТ ДЕЙСТВИЙ: ВНЕСЕНИЕ В 043/у И В СМЕТУ (МАНДАТ 8e: КНОПКИ ВСЕГДА АКТИВНЫ) */}
 			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--line)]">
 				<div className="flex items-center gap-2">
-					{/* Кнопка 1-клик в 043/у */}
+					{/* Кнопка внесения в 043/у */}
 					<button
 						type="button"
 						onClick={handleInsertToForm043}
@@ -543,7 +543,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 						<span>Внести в дневник</span>
 					</button>
 
-					{/* Кнопка 1-клик в смету */}
+					{/* Кнопка добавления в смету */}
 					<button
 						type="button"
 						onClick={handleAddServicesToInvoice}

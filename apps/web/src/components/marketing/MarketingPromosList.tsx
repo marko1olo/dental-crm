@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { Plus, Search, Tag, CheckCircle2, Archive, Sparkles } from "lucide-react";
+import { Plus, Search, Tag, CheckCircle2, Archive, Sparkles, X } from "lucide-react";
 import type { MarketingPromo, PromoStatus } from "./marketingTypes";
 
 export interface MarketingPromosListProps {
@@ -50,12 +50,12 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 		<div className="marketing-promos-col" data-testid="marketing-promos-list">
 			{/* Top Bar: Segmented Switcher & New Promo CTA */}
 			<div className="marketing-col-header">
-				<div className="marketing-segmented-control" role="tablist">
+				<div className="marketing-segmented-control dente-segmented-bar" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "active"}
-						className={`marketing-seg-btn ${activeTab === "active" ? "marketing-seg-btn--active" : ""}`}
+						className={`marketing-seg-btn dente-segmented-item ${activeTab === "active" ? "marketing-seg-btn--active active" : ""}`}
 						onClick={() => setActiveTab("active")}
 						data-testid="tab-promos-active"
 					>
@@ -66,7 +66,7 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "archived"}
-						className={`marketing-seg-btn ${activeTab === "archived" ? "marketing-seg-btn--active" : ""}`}
+						className={`marketing-seg-btn dente-segmented-item ${activeTab === "archived" ? "marketing-seg-btn--active active" : ""}`}
 						onClick={() => setActiveTab("archived")}
 						data-testid="tab-promos-archived"
 					>
@@ -88,24 +88,24 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 			</div>
 
 			{/* Search input */}
-			<div className="marketing-search-box">
-				<Search size={14} className="marketing-search-icon" aria-hidden="true" />
+			<div className="dente-search-wrap marketing-search-box">
+				<Search size={14} className="dente-search-icon marketing-search-icon" aria-hidden="true" />
 				<input
 					type="text"
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					placeholder="Поиск по названию или промокоду…"
-					className="marketing-search-input"
+					className="dente-search-input marketing-search-input"
 					data-testid="marketing-promos-search"
 				/>
 				{searchQuery && (
 					<button
 						type="button"
-						className="marketing-search-clear"
+						className="dente-search-clear marketing-search-clear"
 						onClick={() => setSearchQuery("")}
 						aria-label="Очистить поиск"
 					>
-						✕
+						<X size={14} />
 					</button>
 				)}
 			</div>

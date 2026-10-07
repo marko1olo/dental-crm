@@ -213,16 +213,11 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 				<div className="p-3.5 sm:p-4 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3">
 					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 						{/* Category Tabs */}
-						<div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+						<div className="dente-filter-chips overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
 							<button
 								type="button"
 								onClick={() => setActiveCategory("all")}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-2xs ${
-									activeCategory === "all"
-										? "border border-transparent font-bold"
-										: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-								}`}
-								style={activeCategory === "all" ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+								className={`dente-filter-chip ${activeCategory === "all" ? "active" : ""}`}
 								data-testid="tab-preventive-all"
 							>
 								<span>Все пациенты</span>
@@ -234,12 +229,7 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 							<button
 								type="button"
 								onClick={() => setActiveCategory("implant_warranty")}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-2xs ${
-									activeCategory === "implant_warranty"
-										? "bg-amber-600 !text-white shadow-xs font-bold"
-										: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-amber-800 dark:text-amber-300 hover:border-amber-500"
-								}`}
-								style={activeCategory === "implant_warranty" ? { color: "#ffffff", backgroundColor: "#d97706" } : undefined}
+								className={`dente-filter-chip ${activeCategory === "implant_warranty" ? "active" : ""}`}
 								data-testid="tab-preventive-warranty"
 							>
 								<ShieldCheck size={13} className="shrink-0" />
@@ -252,12 +242,7 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 							<button
 								type="button"
 								onClick={() => setActiveCategory("hygiene_6m")}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-2xs ${
-									activeCategory === "hygiene_6m"
-										? "border border-transparent font-bold"
-										: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-								}`}
-								style={activeCategory === "hygiene_6m" ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+								className={`dente-filter-chip ${activeCategory === "hygiene_6m" ? "active" : ""}`}
 								data-testid="tab-preventive-hygiene"
 							>
 								<Sparkles size={13} className={`shrink-0 ${activeCategory === "hygiene_6m" ? "text-current" : "text-[var(--teal)]"}`} />
@@ -271,12 +256,7 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 								<button
 									type="button"
 									onClick={() => setActiveCategory("ortho_retention")}
-									className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-										activeCategory === "ortho_retention"
-											? "bg-purple-600 !text-white shadow-xs font-bold"
-											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-purple-800 dark:text-purple-300 hover:border-purple-500"
-									}`}
-									style={activeCategory === "ortho_retention" ? { color: "#ffffff", backgroundColor: "#9333ea" } : undefined}
+									className={`dente-filter-chip ${activeCategory === "ortho_retention" ? "active" : ""}`}
 									data-testid="tab-preventive-ortho"
 								>
 									<span>Ортодонтия</span>
@@ -288,16 +268,26 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 						</div>
 
 						{/* Search Input */}
-						<div className="relative w-full sm:w-64 shrink-0">
-							<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+						<div className="dente-search-wrap w-full sm:w-64 shrink-0">
+							<Search className="dente-search-icon" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по пациенту, телефону..."
-								className="w-full h-7 pl-8 pr-2.5 rounded-lg text-xs border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
+								className="dente-search-input"
 								data-testid="preventive-search-input"
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="dente-search-clear"
+									aria-label="Очистить поиск"
+								>
+									<X size={12} />
+								</button>
+							)}
 						</div>
 					</div>
 				</div>
@@ -402,7 +392,7 @@ export const PreventiveInspectionModal: React.FC<PreventiveInspectionModalProps>
 												}}
 												className="h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all hover:opacity-90 active:scale-95"
 												style={{ backgroundColor: "var(--teal-fill, var(--teal, #0d9488))", color: "var(--on-teal, #ffffff)" }}
-												title="Записать пациента на плановый осмотр в 1 клик"
+												title="Записать пациента на плановый осмотр"
 												data-testid={`btn-book-preventive-${c.patientId}`}
 											>
 												<Calendar size={12} />

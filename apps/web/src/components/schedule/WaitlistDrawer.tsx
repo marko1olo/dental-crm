@@ -360,7 +360,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           doctors={doctors}
         />
 
-        {/* 1-Row Clinical Filter Bar (Hick's Law: 32-36px toolbar, Mandate 8p) */}
+        {/* 1-Row Clinical Filter Bar */}
         <WaitlistToolbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

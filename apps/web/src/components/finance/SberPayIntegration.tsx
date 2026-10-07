@@ -21,6 +21,7 @@ import {
 	ShieldCheck,
 	Ban,
 	Search,
+	X,
 } from "lucide-react";
 import {
 	type SberPosTerminalConfig,
@@ -245,44 +246,35 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 				</div>
 			)}
 
-			{/* Mode Selectors */}
-			<div className="grid grid-cols-3 gap-2">
+			{/* Mode Selectors — Canonical DENTE Segmented Bar */}
+			<div className="dente-segmented-bar w-full flex" role="tablist" aria-label="Тип операции Сбер POS">
 				<button
 					type="button"
 					onClick={() => handleStartPayment("sale")}
-					className={`min-h-[44px] p-2 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
-						operation === "sale"
-							? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-emerald-400"
-					}`}
+					className={`dente-segmented-item flex-1 min-h-[36px] py-1.5 ${operation === "sale" ? "active" : ""}`}
+					data-active={operation === "sale"}
 				>
-					<CreditCard size={16} className="text-emerald-600 dark:text-emerald-400" />
+					<CreditCard size={15} />
 					<span>Карта / Терминал</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => handleStartPayment("sberpay_qr")}
-					className={`min-h-[44px] p-2 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
-						operation === "sberpay_qr"
-							? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
-					}`}
+					className={`dente-segmented-item flex-1 min-h-[36px] py-1.5 ${operation === "sberpay_qr" ? "active" : ""}`}
+					data-active={operation === "sberpay_qr"}
 				>
-					<QrCode size={16} className="text-teal-600 dark:text-teal-400" />
+					<QrCode size={15} />
 					<span>SberPay QR (СБП)</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => handleStartPayment("biometry_facepay")}
-					className={`min-h-[44px] p-2 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
-						operation === "biometry_facepay"
-							? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-emerald-400"
-					}`}
+					className={`dente-segmented-item flex-1 min-h-[36px] py-1.5 ${operation === "biometry_facepay" ? "active" : ""}`}
+					data-active={operation === "biometry_facepay"}
 				>
-					<Smile size={16} className="text-emerald-600 dark:text-emerald-400" />
+					<Smile size={15} />
 					<span>Оплата улыбкой</span>
 				</button>
 			</div>
@@ -357,18 +349,31 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 
 			{/* RRN Recovery Drawer */}
 			<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center gap-2">
-				<input
-					type="text"
-					value={rrnInput}
-					onChange={(e) => setRrnInput(e.target.value)}
-					placeholder="RRN (12 знаков для проверки)"
-					className="min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono flex-1"
-				/>
+				<div className="dente-search-wrap flex-1">
+					<Search size={14} className="dente-search-icon" />
+					<input
+						type="text"
+						value={rrnInput}
+						onChange={(e) => setRrnInput(e.target.value)}
+						placeholder="RRN (12 знаков для проверки)..."
+						className="dente-search-input font-mono"
+					/>
+					{rrnInput && (
+						<button
+							type="button"
+							onClick={() => setRrnInput("")}
+							className="dente-search-clear"
+							aria-label="Очистить RRN"
+						>
+							<X size={13} />
+						</button>
+					)}
+				</div>
 				<button
 					type="button"
 					onClick={handleReconcileRrn}
 					disabled={isReconciling}
-					className="min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] flex items-center gap-1 cursor-pointer"
+					className="secondary-button"
 				>
 					<Search size={14} />
 					<span>Проверить RRN</span>
@@ -382,11 +387,12 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 						<AlertCircle size={16} className="text-amber-600 shrink-0" />
 						<span>Терминал отклонил операцию или истек таймаут. Выберите альтернативный способ:</span>
 					</div>
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="dente-filter-chips">
 						<button
 							type="button"
 							onClick={() => handleStartPayment("sberpay_qr")}
-							className="min-h-[44px] px-3 py-2 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+							className="dente-filter-chip active"
+							data-active="true"
 						>
 							<QrCode size={14} />
 							<span>Оплата по QR коду</span>
@@ -396,7 +402,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 								<button
 									type="button"
 									onClick={() => onSelectAlternativeMethod("cash")}
-									className="min-h-[44px] px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+									className="dente-filter-chip"
 								>
 									<CreditCard size={14} />
 									<span>Наличные в кассу</span>
@@ -404,7 +410,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 								<button
 									type="button"
 									onClick={() => onSelectAlternativeMethod("deposit")}
-									className="min-h-[44px] px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+									className="dente-filter-chip"
 								>
 									<RotateCcw size={14} />
 									<span>Депозит / Семья</span>
@@ -419,26 +425,20 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 			{lastResponse && (
 				<div className="space-y-2">
 					<div className="flex items-center justify-between text-xs">
-						<div className="flex gap-1">
+						<div className="dente-segmented-bar" role="tablist" aria-label="Вкладки банковского слипа">
 							<button
 								type="button"
 								onClick={() => setActiveSlipTab("customer")}
-								className={`min-h-[44px] px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center ${
-									activeSlipTab === "customer"
-										? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-										: "text-[var(--muted,#64748b)] hover:bg-[var(--surface-hover,#f1f5f9)]"
-								}`}
+								className={`dente-segmented-item ${activeSlipTab === "customer" ? "active" : ""}`}
+								data-active={activeSlipTab === "customer"}
 							>
 								Чек клиента
 							</button>
 							<button
 								type="button"
 								onClick={() => setActiveSlipTab("merchant")}
-								className={`min-h-[44px] px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center ${
-									activeSlipTab === "merchant"
-										? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-										: "text-[var(--muted,#64748b)] hover:bg-[var(--surface-hover,#f1f5f9)]"
-								}`}
+								className={`dente-segmented-item ${activeSlipTab === "merchant" ? "active" : ""}`}
+								data-active={activeSlipTab === "merchant"}
 							>
 								Чек клиники
 							</button>
@@ -447,7 +447,7 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 						<button
 							type="button"
 							onClick={handleCopySlip}
-							className="text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center gap-1 cursor-pointer"
+							className="secondary-button button-sm"
 						>
 							{isCopied ? <CheckCheck size={14} className="text-emerald-600" /> : <Copy size={14} />}
 							<span>{isCopied ? "Скопировано" : "Копировать"}</span>

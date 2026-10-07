@@ -61,7 +61,7 @@ export function MedicalWasteAccumulateTab({
 }: MedicalWasteAccumulateTabProps) {
 	return (
 		<div className="flex flex-col gap-4">
-			{/* Dominant 1-Click Shift Preset */}
+			{/* Регламентный типовой учет отходов смены */}
 			<div
 				style={{
 					display: "flex",
@@ -81,7 +81,7 @@ export function MedicalWasteAccumulateTab({
 							<span>Экспресс-учет отходов смены</span>
 						</div>
 						<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
-							1-клик автоматическое формирование двух записей: мягкие отходы (желтый пакет 2.5 кг) + острые отходы (контейнер игл 0.8 кг)
+							Автоматическое формирование двух регламентных записей: мягкие отходы (желтый пакет 2.5 кг) + острые отходы (контейнер игл 0.8 кг)
 						</div>
 					</div>
 
@@ -106,11 +106,11 @@ export function MedicalWasteAccumulateTab({
 							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
 							whiteSpace: "nowrap",
 						}}
-						title="1-Клик сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
+						title="Сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
 						data-testid="waste-quick-shift-btn"
 					>
 						<Sparkles size={18} />
-						<span>{isSubmittingQuickShift ? "Оформление смены..." : "1-Клик сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
+						<span>{isSubmittingQuickShift ? "Оформление смены..." : "Сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
 					</button>
 				</div>
 			</div>

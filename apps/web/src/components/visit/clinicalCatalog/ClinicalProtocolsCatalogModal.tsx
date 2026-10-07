@@ -187,7 +187,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 									)}
 								</div>
 								<p className="text-[11px] text-[var(--muted)]">
-									1-клик заполнение карты и дневника приёма: жалобы • анамнез • объективно • лечение • рекомендации
+									Заполнение карты и дневника приёма: жалобы • анамнез • объективно • лечение • рекомендации
 								</p>
 							</div>
 						</div>
@@ -205,14 +205,14 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 
 					{/* ── ПОИСКОВАЯ СТРОКА И РЕЖИМЫ ОТОБРАЖЕНИЯ ── */}
 					<div className="p-3 border-b border-[var(--glass-border)] bg-[var(--paper)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
-						<div className="relative flex-1">
-							<Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+						<div className="dente-search-wrap flex-1">
+							<Search size={15} className="dente-search-icon" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по процедуре, МКБ-10, материалу или симптому (например: кариес, пульпит, виниры)..."
-								className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal)] transition-colors placeholder:text-[var(--muted)]"
+								className="dente-search-input"
 								autoFocus
 								data-testid="input-search-protocols"
 							/>
@@ -220,7 +220,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 								<button
 									type="button"
 									onClick={() => setSearchQuery("")}
-									className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									className="dente-search-clear"
 									aria-label="Очистить поиск"
 								>
 									<X size={14} />
@@ -229,16 +229,11 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 						</div>
 
 						{/* Переключатель вида */}
-						<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-lg border border-[var(--glass-border)] shrink-0 self-start sm:self-auto">
+						<div className="dente-segmented-bar shrink-0 self-start sm:self-auto">
 							<button
 								type="button"
 								onClick={() => setViewMode("procedures")}
-								style={viewMode === "procedures" ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" } : undefined}
-								className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-									viewMode === "procedures"
-										? "shadow-2xs"
-										: "text-[var(--ink)] hover:text-[var(--teal-dark)]"
-								}`}
+								className={`dente-segmented-item ${viewMode === "procedures" ? "active" : ""}`}
 								data-testid="btn-view-mode-procedures"
 							>
 								<Layers size={13} />
@@ -248,12 +243,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 							<button
 								type="button"
 								onClick={() => setViewMode("chunks")}
-								style={viewMode === "chunks" ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" } : undefined}
-								className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-									viewMode === "chunks"
-										? "shadow-2xs"
-										: "text-[var(--ink)] hover:text-[var(--teal-dark)]"
-								}`}
+								className={`dente-segmented-item ${viewMode === "chunks" ? "active" : ""}`}
 								data-testid="btn-view-mode-chunks"
 							>
 								<FileText size={13} />
@@ -263,12 +253,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 							<button
 								type="button"
 								onClick={() => setViewMode("diagnoses")}
-								style={viewMode === "diagnoses" ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" } : undefined}
-								className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-									viewMode === "diagnoses"
-										? "shadow-2xs"
-										: "text-[var(--ink)] hover:text-[var(--teal-dark)]"
-								}`}
+								className={`dente-segmented-item ${viewMode === "diagnoses" ? "active" : ""}`}
 								data-testid="btn-view-mode-diagnoses"
 							>
 								<Activity size={13} />
@@ -297,7 +282,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 							{/* Контейнер вкладок */}
 							<div
 								ref={tabsRef}
-								className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full"
+								className="dente-filter-chips overflow-x-auto no-scrollbar scroll-smooth px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full flex-nowrap"
 							>
 								{SPECIALTY_CATEGORIES_META.map((meta) => {
 									const isActive = activeCategory === meta.key;
@@ -306,21 +291,15 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 											key={meta.key}
 											type="button"
 											onClick={() => setActiveCategory(meta.key)}
-											style={isActive ? { backgroundColor: "var(--teal-fill)", color: "var(--on-teal)", borderColor: "var(--teal-fill)" } : undefined}
-											className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer whitespace-nowrap select-none ${
-												isActive
-													? "shadow-2xs"
-													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)] hover:border-[var(--teal)] hover:text-[var(--teal-dark)]"
-											}`}
+											className={`dente-filter-chip ${isActive ? "active" : ""}`}
 											data-testid={`tab-specialty-${meta.key}`}
 										>
 											<span>{meta.shortLabel}</span>
 											<span
-												style={isActive ? { backgroundColor: "rgba(255, 255, 255, 0.22)", color: "inherit" } : undefined}
 												className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
 													isActive
-														? ""
-														: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)]"
+														? "bg-white/20 text-inherit"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--glass-border)]"
 												}`}
 											>
 												{meta.count}
@@ -449,18 +428,17 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 														)}
 													</div>
 
-													{/* Кнопки действий: 1-клик и детали */}
+													{/* Кнопки действий: применение протокола и детали */}
 													<div className="flex items-center gap-1.5 pt-2 border-t border-[var(--glass-border)] mt-auto">
 														<button
 															type="button"
 															onClick={() => handleApplyFullProcedure(proc)}
-															style={{ backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" }}
-															className="h-8 px-3 rounded-lg text-xs font-extrabold shadow-xs hover:opacity-90 transition-all flex items-center justify-center gap-1.5 flex-1 cursor-pointer touch-manipulation active:scale-[0.98]"
-															title="1-клик вставка жалоб, анамнеза, статуса, протокола лечения и рекомендаций"
+															className="primary-button flex-1"
+															title="Вставка жалоб, анамнеза, статуса, протокола лечения и рекомендаций"
 															data-testid={`btn-apply-full-proc-${proc.id}`}
 														>
 															<Zap size={13} className="shrink-0" />
-															<span>Применить (1 клик)</span>
+															<span>Применить</span>
 														</button>
 
 														<button
@@ -668,8 +646,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 												<button
 													type="button"
 													onClick={() => handleApplyDiagnosis(diag)}
-													style={{ backgroundColor: "var(--teal-fill)", color: "var(--on-teal)" }}
-													className="shrink-0 h-8 px-3 rounded-lg text-xs font-bold hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-[0.98]"
+													className="primary-button shrink-0"
 													title="Установить этот диагноз в карту приёма"
 												>
 													<Check size={13} />

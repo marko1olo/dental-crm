@@ -1428,7 +1428,22 @@ export function useVisitLogic({
 					transcript,
 					specialty: selectedSpecialty,
 					source: "voice",
-					completedServices: dashboard?.activeVisit?.completedServices ?? [],
+					completedServices:
+						(useVisitStore.getState().completedServices?.length ?? 0) > 0
+							? useVisitStore.getState().completedServices.map((s) => ({
+									serviceId: s.serviceId,
+									title: s.name,
+									quantity: s.quantity || 1,
+									priceRub: s.priceRub,
+									toothCode: s.toothCode
+										? String(s.toothCode)
+										: s.toothNumber
+											? String(s.toothNumber)
+											: null,
+									toothNumber: s.toothNumber ? Number(s.toothNumber) : null,
+									code804n: s.code804n,
+							  }))
+							: (dashboard?.activeVisit?.completedServices ?? []),
 					doctorFullName: activeDoctor?.fullName ?? undefined,
 					planPayload: null, // extracted inside flow
 					recommendationsPayload: null,

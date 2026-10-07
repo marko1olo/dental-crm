@@ -156,7 +156,7 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({
 					fontSize: "12px",
 					fontWeight: 500,
 					lineHeight: "1.4",
-					zIndex: 9999,
+					zIndex: 35,
 					flexWrap: "wrap",
 				}}
 			>

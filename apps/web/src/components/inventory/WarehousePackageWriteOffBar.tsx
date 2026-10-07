@@ -106,15 +106,15 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink,#0f172a)] min-w-0">
 					<Zap size={16} className="text-teal-600 shrink-0" />
-					<span className="truncate">1-Клик пакетное списание расходников:</span>
+					<span className="truncate">Пакетное списание расходных материалов:</span>
 				</div>
 
 				<div
 					className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shrink-0"
-					title="Задержка накладной не блокирует прием врача (мягкий овердрафт)"
+					title="Задержка накладной не блокирует прием врача (расход сверх остатка)"
 				>
 					<ShieldCheck size={14} className="shrink-0 text-teal-600" />
-					<span>Мягкий овердрафт активен (без блокировок)</span>
+					<span>Расход сверх остатка разрешен</span>
 				</div>
 			</div>
 
@@ -127,13 +127,13 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					disabled={Boolean(submittingPackageId)}
 					className="btn-writeoff-anesthetic-carpule min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-anesthetic-carpule"
-					title="1-клик списание пустых карпул анестетика (Септанест/Убистезин) медсестрой без комиссии из 3 человек"
+					title="Списание использованных карпул анестетика медсестрой без комиссии"
 				>
 					<Syringe size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="truncate min-w-0">
 						{submittingPackageId === "carpule_quick"
 							? "Списание..."
-							: "Списать карпулу анестетика (Септанест/Убистезин)"}
+							: "Списать препарат"}
 					</span>
 				</button>
 
@@ -144,7 +144,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					disabled={Boolean(submittingPackageId)}
 					className="btn-writeoff-sterilization-kit min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-indigo-500/30 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-sterilization-kit"
-					title="1-клик списание набора стерилизации: 1 лоток со смотровым инструментом в крафт-пакете + 2 пары перчаток"
+					title="Списание набора стерилизации: 1 лоток со смотровым инструментом в крафт-пакете + 2 пары перчаток"
 				>
 					<PackageCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
 					<span className="truncate min-w-0">
@@ -161,7 +161,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					disabled={Boolean(submittingPackageId)}
 					className="btn-writeoff-anesthesia-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-anesthesia-packet"
-					title="1-клик списание пакета: Артикаин 1.7 мл + карпульная игла 30G + ватные валики (4 шт.)"
+					title="Списание пакета: Артикаин 1.7 мл + карпульная игла 30G + ватные валики (4 шт.)"
 				>
 					<Syringe size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="truncate min-w-0">
@@ -176,7 +176,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					disabled={Boolean(submittingPackageId)}
 					className="btn-writeoff-hygiene-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-hygiene-packet"
-					title="1-клик списание пакета: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка + валики"
+					title="Списание пакета: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка + валики"
 				>
 					<PackageCheck size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
 					<span className="truncate min-w-0">
@@ -191,7 +191,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					disabled={Boolean(submittingPackageId)}
 					className="btn-writeoff-filling-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-filling-packet"
-					title="1-клик списание пакета: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
+					title="Списание пакета: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
 				>
 					<Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 					<span className="truncate min-w-0">
@@ -206,7 +206,7 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 					disabled={Boolean(submittingPackageId)}
 					className="btn-writeoff-surgery-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/30 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer min-w-0"
 					data-testid="btn-writeoff-surgery-packet"
-					title="1-клик списание пакета: Анестетик + игла 27G + скальпель + шовник + губка"
+					title="Списание пакета: Анестетик + игла 27G + скальпель + шовник + губка"
 				>
 					<ShieldCheck size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
 					<span className="truncate min-w-0">

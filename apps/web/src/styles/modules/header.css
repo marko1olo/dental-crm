@@ -74,6 +74,12 @@
 	position: relative !important;
 }
 
+@media (max-width: 768px) {
+	.topbar .top-actions {
+		display: none !important;
+	}
+}
+
 .topbar .top-actions .primary-button {
 	height: 32px !important;
 	min-height: 32px !important;

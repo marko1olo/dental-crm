@@ -71,7 +71,7 @@ export function EmkAnesthesiaSection({
 
 	return (
 		<div className="flex flex-col gap-2.5 mt-1 min-w-0 max-w-full">
-			{/* Быстрый протокол анестезии (1-клик пресеты) — чистый разделитель без двойных рамок (Анти-Матрёшка) */}
+			{/* Быстрый протокол анестезии (пресеты) — чистый разделитель без двойных рамок (Анти-Матрёшка) */}
 			<div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-[var(--line)] bg-transparent min-w-0">
 				<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 					<span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
@@ -95,7 +95,7 @@ export function EmkAnesthesiaSection({
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 						}`}
 						data-testid="btn-anes-ultracain-ds"
-						title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
+						title="Внести стандартную анестезию 1:200 000 в протокол"
 					>
 						<Syringe size={12} className="text-teal-600 shrink-0" />
 						<span>Ультракаин 1:200k (1 карп.)</span>
@@ -123,7 +123,7 @@ export function EmkAnesthesiaSection({
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 						}`}
 						data-testid="btn-anes-ultracain-ds-forte"
-						title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
+						title="Внести глубокую анестезию 1:100 000 в протокол"
 					>
 						<Syringe size={12} className="text-blue-500 shrink-0" />
 						<span>Ультракаин Форте (1 карп.)</span>
@@ -151,7 +151,7 @@ export function EmkAnesthesiaSection({
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
 						}`}
 						data-testid="btn-anes-scandonest-3"
-						title="1 клик: безадреналиновая анестезия для кардио-пациентов"
+						title="Безадреналиновая анестезия для кардио-пациентов"
 					>
 						<Syringe size={12} className="text-amber-500 shrink-0" />
 						<span>Скандонест 3% (без адреналина)</span>
@@ -271,7 +271,7 @@ export function EmkAnesthesiaSection({
 						onClick={() => setCarpuleCount(anesthesiaSafety.maxSafeCarpules)}
 						data-testid="btn-anesthesia-clamp-safe-dose"
 						className="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-200 dark:bg-rose-800 text-rose-950 dark:text-rose-100 hover:bg-rose-300 dark:hover:bg-rose-700 shrink-0 cursor-pointer min-h-[30px]"
-						title="1 клик: снизить дозу до максимально безопасной"
+						title="Снизить дозу до максимально безопасной"
 					>
 						Снизить до {anesthesiaSafety.maxSafeCarpules} карп.
 					</button>

@@ -62,17 +62,19 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 			<div className="treatment-presenter-header-main">
 				<div className="treatment-presenter-title-group min-w-0 flex-1">
 					<div className="treatment-presenter-icon-badge shrink-0">
-						<Tablet size={20} />
+						<Tablet size={18} />
 					</div>
 					<div className="treatment-presenter-header-meta min-w-0 flex-1">
-						<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title flex items-center gap-2 flex-wrap">
-							<span className="truncate">Презентация планов лечения</span>
+						<div className="flex items-center gap-2 flex-wrap">
+							<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title">
+								Презентация планов лечения
+							</h2>
 							<span className="treatment-presenter-law-badge whitespace-nowrap" title="Прейскурант и стандарты лечения">
 								Прейскурант клиники
 							</span>
 							{planAgeDays > 30 && (
 								<span
-									className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 text-xs inline-flex items-center gap-1 shadow-2xs whitespace-nowrap"
+									className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-semibold border border-amber-500/30 text-[11.5px] inline-flex items-center gap-1 shadow-2xs whitespace-nowrap"
 									title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 									data-testid="presenter-expired-unblocked-badge"
 								>
@@ -80,9 +82,9 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 									План составлен более 30 дней назад, цены могут быть скорректированы
 								</span>
 							)}
-						</h2>
+						</div>
 						<p className="treatment-presenter-subtitle truncate">
-							Пациент: <strong className="text-[var(--tp-text-main)]">{patientName || "Не указан"}</strong>
+							Пациент: <strong className="text-[var(--tp-text-main)] font-semibold">{patientName || "Не указан"}</strong>
 							{doctorFullName ? <> · Врач: {doctorFullName}</> : null}
 						</p>
 					</div>
@@ -93,19 +95,19 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onCopyTiersSummary}
-						className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
+						className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-[13px] font-medium bg-[var(--tp-surface-soft,var(--paper-soft))] hover:bg-[var(--tp-surface,var(--paper))] text-[var(--tp-text-main,var(--ink))] border border-[var(--tp-border,var(--line))] shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary,var(--teal))]"
 						title="Скопировать смету для пациента (WhatsApp / Telegram)"
 						aria-label="Скопировать смету"
 						data-testid="presenter-copy-tiers-summary-btn"
 					>
-						<Copy size={15} className="text-[var(--tp-primary)] shrink-0" />
+						<Copy size={14} className="text-[var(--tp-primary,var(--teal))] shrink-0" />
 						<span className="hidden sm:inline">Скопировать смету</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onPrintAppendix}
-						className="treatment-presenter-header-print-btn hidden md:inline-flex min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
+						className="treatment-presenter-header-print-btn hidden md:inline-flex min-h-[32px] h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--tp-surface-soft,var(--paper-soft))] hover:bg-[var(--tp-surface,var(--paper))] text-[var(--tp-text-main,var(--ink))] border border-[var(--tp-border,var(--line))] shadow-xs items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary,var(--teal))]"
 						title="Печать Приложения №1 к Договору (ПП РФ № 736)"
 						data-testid="presenter-header-print-btn"
 					>
@@ -116,12 +118,12 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<button
 						type="button"
 						onClick={onToggleFullscreen}
-						className="treatment-presenter-fullscreen-btn hidden sm:inline-flex treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
+						className="treatment-presenter-fullscreen-btn hidden sm:inline-flex sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] hover:bg-[var(--tp-surface-soft)] border border-[var(--tp-border)] bg-[var(--tp-bg)] items-center justify-center cursor-pointer transition-all"
 						title={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 						aria-label={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
 						data-testid="presenter-fullscreen-btn"
 					>
-						{isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+						{isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
 					</button>
 
 					<button
@@ -131,13 +133,14 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 						aria-label="Закрыть модальное окно"
 						data-testid="close-treatment-presenter-btn"
 					>
-						<X size={18} />
+						<X size={16} />
 					</button>
 				</div>
 			</div>
 
 			{/* Navigation Tabs */}
-			<nav className="treatment-presenter-tabs" aria-label="Режимы просмотра">
+			<div className="treatment-presenter-nav-row">
+				<nav className="treatment-presenter-tabs" aria-label="Режимы просмотра">
 				<button
 					type="button"
 					onClick={() => onSelectTab("comparison")}
@@ -198,6 +201,7 @@ export const TreatmentPlanPresenterHeader: React.FC<TreatmentPlanPresenterHeader
 					<span>ИИ-Аудит & Комментарий</span>
 				</button>
 			</nav>
+			</div>
 		</header>
 	);
 };

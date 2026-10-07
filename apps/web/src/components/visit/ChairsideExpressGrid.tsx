@@ -53,7 +53,7 @@ export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 			<div className="flex items-center justify-between gap-2 mb-2">
 				<span className="text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
 					<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-					Экспресс-услуги у кресла (1 клик):
+					Экспресс-услуги у кресла:
 				</span>
 				<span className="text-[11px] text-slate-500 dark:text-slate-400">
 					{selectedTooth

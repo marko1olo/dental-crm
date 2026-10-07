@@ -297,8 +297,8 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
       if (type === "emergency") {
         setDurationMinutes(30);
         setStatus("confirmed");
-        if (!reason.includes("CITO")) {
-          setReason((prev) => (prev ? `CITO! ${prev}` : "CITO! Острая боль"));
+        if (!reason.includes("Срочно")) {
+          setReason((prev) => (prev ? `Срочно! ${prev}` : "Срочно! Острая боль"));
         }
       } else if (type === "primary") {
         setDurationMinutes(30);
@@ -339,7 +339,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     }
     const initialReason =
       initialSlot?.reason ||
-      (initialSlot?.isCitoEmergency ? "CITO! Острая боль" : "Первичный осмотр");
+      (initialSlot?.isCitoEmergency ? "Срочно! Острая боль" : "Первичный осмотр");
     if (reason.trim() !== initialReason.trim()) return true;
     return false;
   }, [
@@ -416,7 +416,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         rawName ||
         (rawPhone ? `Пациент (${rawPhone})` : "") ||
         patientSearch.searchQuery.trim() ||
-        (appointmentType === "emergency" ? "Пациент с острой болью (CITO)" : "");
+        (appointmentType === "emergency" ? "Пациент с острой болью (срочно)" : "");
 
       if (fallbackName) {
         setIsSubmitting(true);
@@ -482,12 +482,15 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     const endsAtIso = new Date(startMs + durationMinutes * 60_000).toISOString();
 
     const isEmergency = appointmentType === "emergency";
-    const effectiveReason = reason.trim() || (isEmergency ? "CITO! Острая боль" : "Приём врача");
+    const effectiveReason = reason.trim() || (isEmergency ? "Срочно! Острая боль" : "Приём врача");
 
     if (collision.hasCollision && !isEmergency && !opts?.overbookOverride) {
+      const slotStr = collision.suggestedSlot
+        ? collision.suggestedSlot.timeDisplay || collision.suggestedSlot.label
+        : null;
       setSlotConflict({
         message: collision.message,
-        suggestedSlots: collision.suggestedSlot ? [collision.suggestedSlot] : [],
+        suggestedSlots: slotStr ? [slotStr] : [],
       });
       return;
     }
@@ -575,7 +578,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         ? `Пациент (${patientSearch.newPatientPhone.trim()})`
         : "") ||
       patientSearch.searchQuery.trim() ||
-      (appointmentType === "emergency" ? "Пациент с острой болью (CITO)" : "");
+      (appointmentType === "emergency" ? "Пациент с острой болью (срочно)" : "");
 
     const patientName = patientSearch.selectedPatient?.fullName || candidateName || "Пациент";
 

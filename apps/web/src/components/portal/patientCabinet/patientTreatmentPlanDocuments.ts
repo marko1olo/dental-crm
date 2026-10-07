@@ -225,7 +225,7 @@ export function generateTreatmentPlanEstimateHtml(
 
     <div class="all-inclusive-box">
       <div class="all-inclusive-title">
-        СТАНДАРТ ЧЕСТНОЙ ЦЕНЫ DENTE — ВСЁ ВКЛЮЧЕНО (МАНДАТ 8e)
+        СТАНДАРТ ЧЕСТНОЙ ЦЕНЫ DENTE — ВСЁ ВКЛЮЧЕНО
       </div>
       <div>
         Анестезия современным карпульным анестетиком (Septanest/Убистезин), прицельная радиовизиография зубов и изоляция операционного поля системой коффердам (OptiDam) включены в стоимость каждого этапа без дополнительных доплат (0 ₽).

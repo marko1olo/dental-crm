@@ -134,7 +134,7 @@ export function UrgentScheduleRequestsWidget({
 					style={{ color: "var(--ink)" }}
 				>
 					<Flame size={16} className="text-rose-600 animate-bounce" />
-					<span>Срочные обращения (CITO!)</span>
+					<span>Срочные запросы на приём</span>
 				</h3>
 				<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
 					{requests.length}
@@ -188,7 +188,7 @@ export function UrgentScheduleRequestsWidget({
 							<Clock size={13} className="text-blue-500 shrink-0" />
 							<span>Желаемое время: </span>
 							<span style={{ color: "var(--ink)" }}>
-								{r.preferredSlotTime || "Ближайшее свободное (CITO)"}
+								{r.preferredSlotTime || "Ближайшее свободное (срочно)"}
 							</span>
 						</div>
 					</div>
@@ -199,15 +199,15 @@ export function UrgentScheduleRequestsWidget({
 								if (onBookUrgentRequest) {
 									onBookUrgentRequest(r);
 								} else {
-									showToast(`Запись CITO для «${r.patientName}»`, "info");
+									showToast(`Срочная запись для «${r.patientName}»`, "info");
 								}
 							}}
 							className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:brightness-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
 							data-testid={`urgent-request-book-btn-${r.id}`}
-							title="Назначить в расписание в 1 клик (CITO / острая боль)"
+							title="Назначить в расписание (срочно / острая боль)"
 						>
 							<Flame size={15} className="animate-pulse shrink-0" />
-							<span>Записать CITO в 1 клик</span>
+							<span>Записать срочно (острая боль)</span>
 						</button>
 						<button
 							type="button"

@@ -58,32 +58,22 @@ export function OrthodonticMaterialsQuickSelector({
 	}, [searchQuery, activeCategory]);
 
 	return (
-		<div
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "10px",
-				backgroundColor: "var(--paper, #fff)",
-				border: "1px solid var(--border, #e2e8f0)",
-				borderRadius: "8px",
-				padding: compact ? "10px" : "14px",
-			}}
-		>
+		<div className="flex flex-col gap-2.5 p-3 sm:p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs">
 			{/* Header */}
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<BracesBracket size={16} style={{ color: "var(--primary, #0d9488)" }} />
-					<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink, #1e293b)" }}>
+			<div className="flex items-center justify-between flex-wrap gap-2">
+				<div className="flex items-center gap-1.5">
+					<BracesBracket size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<span className="text-[13px] font-semibold text-[var(--ink)]">
 						Ортодонтические материалы (90% рынка РФ)
 					</span>
 				</div>
-				<span style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>
+				<span className="text-[11.5px] text-[var(--muted)] font-medium">
 					Быстрый выбор
 				</span>
 			</div>
 
-			{/* Category Filter Chips */}
-			<div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+			{/* Category Filter Segmented Bar */}
+			<div className="dente-segmented-bar flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-x-auto shrink-0 shadow-2xs">
 				{CATEGORY_TABS.map((tab) => {
 					const isActive = activeCategory === tab.id;
 					return (
@@ -91,16 +81,7 @@ export function OrthodonticMaterialsQuickSelector({
 							key={tab.id}
 							type="button"
 							onClick={() => setActiveCategory(tab.id)}
-							style={{
-								padding: "4px 8px",
-								borderRadius: "4px",
-								fontSize: "11px",
-								fontWeight: isActive ? 600 : 400,
-								border: isActive ? "1px solid var(--primary, #0d9488)" : "1px solid var(--border, #e2e8f0)",
-								backgroundColor: isActive ? "var(--primary-subtle, rgba(13,148,136,0.1))" : "var(--paper, #fff)",
-								color: isActive ? "var(--primary, #0d9488)" : "var(--ink, #1e293b)",
-								cursor: "pointer",
-							}}
+							className={`dente-segmented-item ${isActive ? "active" : ""}`}
 						>
 							{tab.label}
 						</button>
@@ -108,42 +89,30 @@ export function OrthodonticMaterialsQuickSelector({
 				})}
 			</div>
 
-			{/* Search input */}
-			<div style={{ position: "relative" }}>
+			{/* Search input with Mandate 12 icon overlap protection (38px+ left padding) */}
+			<div className="relative">
 				<Search
-					size={14}
-					style={{ position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)", color: "var(--muted)" }}
+					size={15}
+					className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
 				/>
 				<input
 					type="text"
 					placeholder="Поиск (Damon, Clarity, 3D Smile, Bio-Ray, Cu-Ni-Ti)..."
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
-					style={{
-						width: "100%",
-						boxSizing: "border-box",
-						padding: "6px 8px 6px 28px",
-						fontSize: "12px",
-						borderRadius: "6px",
-						border: "1px solid var(--border, #cbd5e1)",
-						backgroundColor: "var(--paper-subtle, #f8fafc)",
-						color: "var(--ink, #1e293b)",
-					}}
+					className="w-full h-8 pl-9 pr-3 text-[13px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-teal-500 transition-colors"
+					style={{ paddingLeft: "38px" }}
 				/>
 			</div>
 
 			{/* Materials List */}
 			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					gap: "6px",
-					maxHeight: compact ? "220px" : "320px",
-					overflowY: "auto",
-				}}
+				className={`flex flex-col gap-1.5 overflow-y-auto ${
+					compact ? "max-h-[220px]" : "max-h-[320px]"
+				}`}
 			>
 				{filteredMaterials.length === 0 ? (
-					<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>
+					<div className="p-4 text-center text-xs text-[var(--muted)]">
 						Материалы не найдены
 					</div>
 				) : (
@@ -156,62 +125,43 @@ export function OrthodonticMaterialsQuickSelector({
 								key={mat.id}
 								type="button"
 								onClick={() => onSelectMaterial(mat)}
-								style={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "space-between",
-									padding: "8px 10px",
-									borderRadius: "6px",
-									border: isSelected
-										? "2px solid var(--primary, #0d9488)"
+								className={`flex items-center justify-between p-2 sm:px-2.5 sm:py-2 rounded-lg border text-left transition-all cursor-pointer ${
+									isSelected
+										? "border-teal-500 bg-teal-500/10 shadow-xs"
 										: isLeader
-											? "1px solid var(--primary, #0d9488)"
-											: "1px solid var(--border, #e2e8f0)",
-									backgroundColor: isSelected
-										? "var(--primary-subtle, rgba(13,148,136,0.12))"
-										: isLeader
-											? "var(--primary-subtle, rgba(13,148,136,0.04))"
-											: "var(--paper, #fff)",
-									cursor: "pointer",
-									textAlign: "left",
-									transition: "all 0.15s ease",
-								}}
+											? "border-teal-500/40 bg-teal-500/5 hover:bg-teal-500/10"
+											: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
+								}`}
 							>
-								<div style={{ flex: 1, minWidth: 0, marginRight: "8px" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+								<div className="flex-1 min-w-0 mr-2">
+									<div className="flex items-center gap-1.5 mb-0.5">
 										<span
-											style={{
-												fontSize: "10px",
-												fontWeight: 700,
-												padding: "1px 5px",
-												borderRadius: "3px",
-												backgroundColor: isLeader ? "#0d9488" : "var(--muted-bg, #f1f5f9)",
-												color: isLeader ? "#fff" : "var(--muted, #64748b)",
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "2px",
-											}}
+											className={`text-[11.5px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 shrink-0 ${
+												isLeader
+													? "bg-teal-600 text-white"
+													: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
+											}`}
 										>
-											{isLeader && <Award size={10} />}
+											{isLeader && <Award size={11} />}
 											{isLeader ? "№1" : `№${mat.marketRank}`}
 										</span>
-										<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--ink, #1e293b)" }}>
+										<span className="text-[13px] font-semibold text-[var(--ink)] truncate">
 											{mat.brandName}
 										</span>
-										<span style={{ fontSize: "10px", color: "var(--muted)" }}>
+										<span className="text-[11.5px] text-[var(--muted)] truncate">
 											({mat.manufacturer})
 										</span>
 									</div>
-									<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+									<div className="text-[12px] text-[var(--muted)] truncate">
 										{mat.nameRu}
 									</div>
 								</div>
 
-								<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-									<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--ink, #1e293b)" }}>
+								<div className="flex items-center gap-2 shrink-0">
+									<span className="text-[12.5px] font-semibold text-[var(--ink)]">
 										{mat.approximatePriceRub.toLocaleString("ru-RU")} ₽
 									</span>
-									{isSelected && <Check size={14} style={{ color: "var(--primary, #0d9488)" }} />}
+									{isSelected && <Check size={14} className="text-teal-600 dark:text-teal-400" />}
 								</div>
 							</button>
 						);

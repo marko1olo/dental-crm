@@ -27,7 +27,7 @@ export interface PatientSearchResultItem {
 	readonly fullNameHighlights: SearchMatchHighlightPart[];
 	readonly phoneHighlights: SearchMatchHighlightPart[];
 	readonly cardHighlights?: SearchMatchHighlightPart[] | undefined;
-	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name" | "both";
+	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name" | "both" | "snils" | "policy" | "tag" | "notes";
 	readonly isFuzzy?: boolean | undefined;
 	readonly suggestedName?: string | undefined;
 }
@@ -45,7 +45,7 @@ export interface PotentialDuplicateItem {
 	readonly fullNameHighlights: SearchMatchHighlightPart[];
 	readonly phoneHighlights: SearchMatchHighlightPart[];
 	readonly cardHighlights?: SearchMatchHighlightPart[] | undefined;
-	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name" | "both";
+	readonly matchedBy: "phone" | "name" | "card" | "rep_phone" | "birth_date" | "fuzzy_name" | "both" | "snils" | "policy" | "tag" | "notes";
 	readonly isFuzzy?: boolean | undefined;
 	readonly suggestedName?: string | undefined;
 	readonly duplicateReason: "phone" | "name" | "fuzzy_name" | "both";

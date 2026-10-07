@@ -223,7 +223,9 @@ export const MedicalInterventionRefusalForm = React.memo(
 				"Последствия: пациенту разъяснен риск прогрессирования процесса, одонтогенных осложнений и потери зуба.",
 			].join("\n");
 			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-				navigator.clipboard.writeText(summary).catch(() => {});
+				navigator.clipboard.writeText(summary).catch((err) => {
+					console.warn("[MedicalInterventionRefusalForm] Clipboard write failed:", err);
+				});
 			}
 			showToast("Выжимка отказа скопирована в буфер обмена", "success", 3000);
 		};
@@ -300,7 +302,7 @@ export const MedicalInterventionRefusalForm = React.memo(
 						<div style={{ marginBottom: "8px" }}>
 							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)", display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px" }}>
 								<Zap size={13} className="text-amber-500 shrink-0" aria-hidden="true" />
-								<span>Пресеты клинических осложнений отказа (1 клик):</span>
+								<span>Клинические осложнения при отказе:</span>
 							</span>
 							<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
 								<button

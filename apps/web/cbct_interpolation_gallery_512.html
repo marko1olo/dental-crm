@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DENTE CT — 512x512 Interpolation Master Gallery</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", sans-serif;
+      user-select: none;
+    }
+    #viewport {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      overflow: hidden;
+      background: #000;
+    }
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      display: block;
+      image-rendering: pixelated;
+    }
+    
+    /* Grid dividers for composite mode */
+    #composite-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      height: 512px;
+      pointer-events: none;
+      display: none;
+      z-index: 5;
+    }
+    .grid-line-v {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 256px;
+      width: 2px;
+      background: rgba(56, 189, 248, 0.45);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
+    .grid-line-h {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 256px;
+      height: 2px;
+      background: rgba(56, 189, 248, 0.45);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
+    .quad-label {
+      position: absolute;
+      padding: 2px 6px;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      font-family: ui-monospace, monospace;
+      border-radius: 4px;
+      background: rgba(10, 18, 32, 0.92);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+      z-index: 6;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.85);
+      pointer-events: none;
+    }
+    #label-q1 { top: 40px; left: 6px; }
+    #label-q2 { top: 40px; right: 6px; }
+    #label-q3 { top: 260px; left: 6px; }
+    #label-q4 { top: 260px; right: 6px; }
+
+    /* OSD Header */
+    .osd-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 512px;
+      padding: 5px 10px 4px;
+      background: linear-gradient(180deg, rgba(6, 11, 22, 0.96) 0%, rgba(6, 11, 22, 0.85) 80%, rgba(6, 11, 22, 0) 100%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 10;
+    }
+    .osd-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .osd-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .osd-badge {
+      font-size: 8.5px;
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(45, 212, 191, 0.45);
+      background: rgba(13, 148, 136, 0.3);
+      color: #2dd4bf;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .osd-meta-row {
+      font-size: 9px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      font-family: ui-monospace, monospace;
+      white-space: nowrap;
+    }
+    .osd-level-tag {
+      color: #38bdf8;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    /* OSD Footer */
+    .osd-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 512px;
+      padding: 6px 10px 6px;
+      background: linear-gradient(0deg, rgba(6, 11, 22, 0.97) 0%, rgba(6, 11, 22, 0.90) 80%, rgba(6, 11, 22, 0) 100%);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 10;
+    }
+    .osd-formula {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .osd-verdict {
+      font-size: 9.5px;
+      color: #cbd5e1;
+      line-height: 1.32;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+    }
+    .osd-verdict strong {
+      color: #2dd4bf;
+    }
+    .osd-bottom-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5px;
+      font-family: ui-monospace, monospace;
+      color: #64748b;
+      margin-top: 1px;
+    }
+    .badge-512 {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <canvas id="canvas" width="512" height="512"></canvas>
+
+    <!-- Composite quadrant markers -->
+    <div id="composite-grid">
+      <div class="grid-line-v"></div>
+      <div class="grid-line-h"></div>
+      <div class="quad-label" id="label-q1">L1: КОРОНКИ / ЭМАЛЬ (Z=150)</div>
+      <div class="quad-label" id="label-q2">L2: ПУЛЬПА / ШЕЙКИ (Z=160)</div>
+      <div class="quad-label" id="label-q3">L3: КАНАЛЫ MB1/MB2 (Z=175)</div>
+      <div class="quad-label" id="label-q4">L5: ГУБЧАТАЯ КОСТЬ (Z=210)</div>
+    </div>
+
+    <!-- Top OSD -->
+    <div class="osd-header">
+      <div class="osd-title-row">
+        <span class="osd-title" id="osd-title">01. NEAREST NEIGHBOR</span>
+        <span class="osd-badge" id="osd-badge">1 ТОЧКА • O(1)</span>
+      </div>
+      <div class="osd-meta-row">
+        <span id="osd-meta-left">Ядро: 1×1 • Гладкость: C⁻¹</span>
+        <span class="osd-level-tag" id="osd-level-tag">УРОВЕНЬ: L2 Пульпа (Z=160)</span>
+      </div>
+    </div>
+
+    <!-- Bottom OSD -->
+    <div class="osd-footer">
+      <div class="osd-formula" id="osd-formula">W(x) = 1 (|x| &lt; 0.5); 0 (иначе)</div>
+      <div class="osd-verdict" id="osd-verdict">
+        <strong>Что и как:</strong> Квантованное значение вокселя без усреднения. 0 размытия, ступенчатые пиксели.
+      </div>
+      <div class="osd-bottom-info">
+        <span id="osd-patient-meta">КЛКТ: Захаров И.Д. • Воксель: 0.25 мм • 16-bit HU</span>
+        <span class="badge-512">РАЗРЕШЕНИЕ: 512×512 PX</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function sinc(x) {
+      if (x === 0) return 1.0;
+      const px = Math.PI * x;
+      return Math.sin(px) / px;
+    }
+
+    const LEVELS_CONFIG = {
+      "L1_crowns": {
+        id: "L1_crowns",
+        num: 1,
+        z: 150,
+        title: "L1: КОРОНКИ И ЭМАЛЕВЫЕ ШАПКИ (Z=150)",
+        tag: "L1: Коронки/Эмаль (Z=150)",
+        density: "Эмаль +2800 HU • Дентин +1500 HU • Воздух -1000 HU",
+        clinicalFocus: "эмалево-дентинную границу, окклюзионный рельеф фиссур и сохранность контура эмалевых призм"
+      },
+      "L2_pulp": {
+        id: "L2_pulp",
+        num: 2,
+        z: 160,
+        title: "L2: ПУЛЬПАРНАЯ КАМЕРА И ШЕЙКИ (Z=160)",
+        tag: "L2: Пульпа/Шейки (Z=160)",
+        density: "Пульпа +40 HU • Дентин +1500 HU • Эмаль +2600 HU",
+        clinicalFocus: "объем полости зуба, рога пульпы, дентикли и толщину околопульпарного дентина"
+      },
+      "L3_canals": {
+        id: "L3_canals",
+        num: 3,
+        z: 175,
+        title: "L3: КОРНЕВЫЕ КАНАЛЫ И БИФУРКАЦИЯ (Z=175)",
+        tag: "L3: Корневые каналы (Z=175)",
+        density: "Просвет канала -50..+80 HU • Дентин корня +1400 HU",
+        clinicalFocus: "анатомию каналов MB1, MB2, Distal, устьевую конвергенцию и толщину стенок"
+      },
+      "L4_apices": {
+        id: "L4_apices",
+        num: 4,
+        z: 190,
+        title: "L4: АПЕКСЫ И ПЕРИОДОНТАЛЬНАЯ ЩЕЛЬ (Z=190)",
+        tag: "L4: Апексы/Периодонт (Z=190)",
+        density: "Периодонтальная щель -100 HU • Lamina Dura +1650 HU",
+        clinicalFocus: "целостность компактной пластинки альвеолы (Lamina Dura) и ширину периодонтальной щели"
+      },
+      "L5_bone": {
+        id: "L5_bone",
+        num: 5,
+        z: 210,
+        title: "L5: ГУБЧАТАЯ КОСТЬ И ТРАБЕКУЛЫ (Z=210)",
+        tag: "L5: Губчатая кость (Z=210)",
+        density: "Трабекулы +700..+1100 HU • Костный мозг +150..+350 HU",
+        clinicalFocus: "трабекулярный рисунок альвеолярного отростка, костные балки и плотность по Мишу (D2/D3)"
+      }
+    };
+
+    const METHODS_CONFIG = {
+      "01_nearest": {
+        title: "01. NEAREST NEIGHBOR (Ближайший сосед)",
+        badge: "1 ТОЧКА • O(1)",
+        kernel: "Ядро: 1×1 (1 точка)",
+        smooth: "Гладкость: C⁻¹ (Ступени)",
+        formula: "W(x) = 1 (|x| < 0.5); 0 (иначе)",
+        compositeSummary: "Квантованное значение ближайшего вокселя. 0 размытия, ступенчатые блочные пиксели. Сохраняет исходные HU, но ломает округлость корней и каналов.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> 0 блюра на эмали. Блочные ступеньки на фиссурах искажают окклюзионные контакты, но HU остаются истинными.",
+          "L2_pulp": "<strong>Что и как:</strong> Резкий перепад пульпа/дентин без полутонов. Контур пульпы ступенчатый, видны границы первичной сетки КТ.",
+          "L3_canals": "<strong>Что и как:</strong> Просветы каналов MB1/MB2 пикселизированы. Риск принять ступенчатый артефакт за микротрещину корня.",
+          "L4_apices": "<strong>Что и как:</strong> Периодонтальная щель имеет ступенчатый пунктирный контур. Затрудняет оценку деструкции у верхушки.",
+          "L5_bone": "<strong>Что и как:</strong> Костные трабекулы выглядят мозаичными кубиками. Истинные HU кости сохранены, но трабекулярный рисунок зашумлен."
+        }
+      },
+      "02_bilinear": {
+        title: "02. BILINEAR (Билинейная интерполяция)",
+        badge: "4 ТОЧКИ • GPU ДЕФОЛТ",
+        kernel: "Ядро: 2×2 (4 соседа)",
+        smooth: "Гладкость: C⁰ (Непрерывный)",
+        formula: "W(x) = 1 - |x| (|x| < 1); 0 (иначе)",
+        compositeSummary: "Аппаратный дефолт GPU (текстурные фильтры). Сглаживает пикселизацию за счет линейного размытия. Снижает контраст микроструктур.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Мягкий контур эмали. Потеря пиковой плотности на кромках эмалевых бугров из-за линейного блюра.",
+          "L2_pulp": "<strong>Что и как:</strong> Граница пульпарной камеры слегка размыта (~1.5 вокселя). Дентикли визуализируются с потерей резкости контура.",
+          "L3_canals": "<strong>Что и как:</strong> Каналы сглажены, но устье MB2 может казаться уже из-за размытия светлого дентина внутрь просвета.",
+          "L4_apices": "<strong>Что и как:</strong> Lamina Dura сглажена, периодонтальная щель теряет бритвенную контрастность на апексах.",
+          "L5_bone": "<strong>Что и как:</strong> Трабекулы кости мягкие, шум детектора частично сглажен, но тонкие костные балки теряют микрорельеф."
+        }
+      },
+      "03_hermite": {
+        title: "03. BICUBIC HERMITE (Эрмитов сплайн)",
+        badge: "4 ТОЧКИ • C¹ ГЛАДКИЙ",
+        kernel: "Ядро: 2×2 (4 соседа)",
+        smooth: "Гладкость: C¹ (Нулевые производные)",
+        formula: "W(x) = 2|x|³ - 3|x|² + 1 (|x| ≤ 1); 0 (иначе)",
+        compositeSummary: "Кубический сплайн с непрерывной первой производной. Устраняет угловатость билинейного метода, плавная передача градиентов плотности.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Плавные светотени на эмали без изломов градиента. Фиссуры очерчены органично и гладко.",
+          "L2_pulp": "<strong>Что и как:</strong> Градиент плотности «пульпа-дентин» гладкий и непрерывный. Устраняет ромбовидные артефакты.",
+          "L3_canals": "<strong>Что и как:</strong> Округлая форма каналов отображается анатомически точно без блочности и угловатых изломов.",
+          "L4_apices": "<strong>Что и как:</strong> Мягкий перепад апекс-периодонт. Идеально для общего позиционирования верхушек корней.",
+          "L5_bone": "<strong>Что и как:</strong> Приятная гладкость костной ткани, мягкие переходы между трабекулами и межтрабекулярным пространством."
+        }
+      },
+      "04_catmull_rom": {
+        title: "04. BICUBIC CATMULL-ROM (Кардинальный сплайн)",
+        badge: "16 ТОЧЕК • ЭТАЛОН КТ",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C¹ (Интерполяционный)",
+        formula: "W(x) = 1.5|x|³ - 2.5|x|² + 1 (|x|≤1); -0.5|x|³ + 2.5|x|² - 4|x| + 2 (1<|x|<2)",
+        compositeSummary: "Золотой стандарт дентальной томографии. Строго интерполирует узлы, сохраняет кривизну корней и контраст кортикальной пластинки без замыливания.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Бритвенный контур эмали (+2800 HU) без потери высоты бугров. Истинная форма фиссур сохранена на 100%.",
+          "L2_pulp": "<strong>Что и как:</strong> Высочайшая четкость границ пульпарной камеры. Мельчайшие дентикли четко дифференцируются от дентина.",
+          "L3_canals": "<strong>Что и как:</strong> Каналы MB1, MB2 и дистальный четко разделены. Просвет виден без паразитного сужения.",
+          "L4_apices": "<strong>Что и как:</strong> Кортикальная пластинка альвеолы (Lamina Dura) тонкая и непрерывная. Эталон для эндодонтии.",
+          "L5_bone": "<strong>Что и как:</strong> Четкая архитектоника трабекул. Баланс между резкостью балок и естественной текстурой кости."
+        }
+      },
+      "05_b_spline": {
+        title: "05. BICUBIC B-SPLINE (Подавление шума детектора)",
+        badge: "16 ТОЧЕК • C² ГЛАДКИЙ",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C² (Дважды гладкий)",
+        formula: "W(x) = (3|x|³ - 6|x|² + 4)/6 (|x|≤1); (-|x|³ + 6|x|² - 12|x| + 8)/6 (1<|x|<2)",
+        compositeSummary: "Аппроксимирующий C²-сплайн. Мощно гасит шум рентгеновской трубки и детектора КТ в кости и мягких тканях. Слегка сглаживает острые пики эмали.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Сглаживает артефакты от металлических коронок. Вершины эмалевых бугров слегка приглушены.",
+          "L2_pulp": "<strong>Что и как:</strong> Мягкое поле внутри пульпы без зернистости шума. Отличная визуализация общего объема камеры.",
+          "L3_canals": "<strong>Что и как:</strong> Подавляет шум внутри просвета каналов. Безопасно для широких каналов, мелкие могут казаться мягче.",
+          "L4_apices": "<strong>Что и как:</strong> Отлично визуализирует деструктивные очаги при периодонтите, сглаживая шум в зоне костного разрежения.",
+          "L5_bone": "<strong>Что и как:</strong> Максимальное подавление шума в губчатой кости. Идеально для имплантологов при оценке плотности костного ложа."
+        }
+      },
+      "06_mitchell_netravali": {
+        title: "06. MITCHELL-NETRAVALI (B=1/3, C=1/3)",
+        badge: "16 ТОЧЕК • SIGGRAPH",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C¹ (Минимум артефактов)",
+        formula: "W(x) = (21|x|³ - 36|x|² + 16)/18 (|x|≤1); (-7|x|³ + 36|x|² - 60|x| + 32)/18 (1<|x|<2)",
+        compositeSummary: "Математически доказанный баланс Mitchell-Netravali. Одновременно минимизирует размытие, звон Гиббса и анизотропию. Превосходен для зубов с пломбами.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Резкие коронки без темных ореолов вокруг реставраций и пломб. Отличная визуализация краевого прилегания.",
+          "L2_pulp": "<strong>Что и как:</strong> Четкая пульпарная камера без перерегулирования на границе с дентином. Истинные пропорции тканей.",
+          "L3_canals": "<strong>Что и как:</strong> Просветы каналов высококонтрастны, при этом стенки не раздуваются ложным звоном.",
+          "L4_apices": "<strong>Что и как:</strong> Периодонтальная щель сохраняет естественную толщину ~0.2 мм без искусственного расширения.",
+          "L5_bone": "<strong>Что и как:</strong> Естественная текстура кости: трабекулы резки, но зернистый шум не акцентируется."
+        }
+      },
+      "07_lanczos2": {
+        title: "07. LANCZOS-2 (Оконный Sinc, радиус 2)",
+        badge: "16 ТОЧЕК • SINC ОКОННЫЙ",
+        kernel: "Ядро: 4×4 (16 соседей)",
+        smooth: "Гладкость: C∞ (Спектральный фильтр)",
+        formula: "L₂(x) = sinc(x) · sinc(x / 2) (|x| < 2); 0 (иначе)",
+        compositeSummary: "Аппроксимация фильтра Найквиста-Шеннона. Спектральная резкость: микроструктуры (MB2, периодонт) отображаются с высоким контрастом.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Высокая микрорезкость эмалевых призм. Легкий звон на скачке эмаль-воздух подчеркивает границу зуба.",
+          "L2_pulp": "<strong>Что и как:</strong> Четко очерчены мельчайшие кальцификаты в коронковой пульпе. Граница шейки зуба бритвенно-резкая.",
+          "L3_canals": "<strong>Что и как:</strong> Отличная дифференциация узкого канала MB2 от окружающего дентина за счет спектрального усиления.",
+          "L4_apices": "<strong>Что и как:</strong> Lamina Dura выглядит контрастной белой линией. Периодонтальная щель читается безупречно.",
+          "L5_bone": "<strong>Что и как:</strong> Тонкие костные перемычки максимально контрастны. Легкое подчеркивание микроструктур."
+        }
+      },
+      "08_lanczos3": {
+        title: "08. LANCZOS-3 (Оконный Sinc, радиус 3)",
+        badge: "36 ТОЧЕК • МАКСИМАЛЬНАЯ РЕЗКОСТЬ",
+        kernel: "Ядро: 6×6 (36 соседей)",
+        smooth: "Гладкость: C∞ (Спектральный идеал)",
+        formula: "L₃(x) = sinc(x) · sinc(x / 3) (|x| < 3); 0 (иначе)",
+        compositeSummary: "36-точечное sinc-ядро с тремя полупериодами. Экстремальная резкость: поиск продольных переломов корня и ультратонких каналов.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Экстремально резкие фиссуры. Видны микротрещины эмали при диагностике вертикальных фрактур.",
+          "L2_pulp": "<strong>Что и как:</strong> Высочайшая детализация анатомии пульпы. Тончайшие рога пульпы не теряются в полутонах.",
+          "L3_canals": "<strong>Что и как:</strong> Ультра-резкость: визуализация апикальной дельты и облитерированных каналов. Незаменим в сложной эндодонтии.",
+          "L4_apices": "<strong>Что и как:</strong> Верхушки корней очерчены с предельной четкостью. Периодонтальный зазор контрастен.",
+          "L5_bone": "<strong>Что и как:</strong> Трабекулы кости бритвенно-четкие. Слегка усиливается высокочастотный шум детектора."
+        }
+      },
+      "09_laplacian_sharpen": {
+        title: "09. LAPLACIAN SHARPEN (Edge-Boost скальпель)",
+        badge: "EDGE-BOOST • ∇² ОПЕРАТОР",
+        kernel: "Ядро: Catmull-Rom + ∇²",
+        smooth: "Гладкость: Контурный фильтр 2-го порядка",
+        formula: "V_sharp = V_base - 0.45 · ∇²V; ∇²V = V_N + V_S + V_W + V_E - 4V_C",
+        compositeSummary: "Контурный дифференциальный усилитель. Экстремально подчеркивает анатомические границы (эмаль, кортикальная пластинка, стенки каналов).",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Контур эмали выделен как скальпелем. Максимальная контрастность для моделирования коронок.",
+          "L2_pulp": "<strong>Что и как:</strong> Граница «дентин-пульпа» контрастно усилена, рога пульпы выделяются темными клиньями.",
+          "L3_canals": "<strong>Что и как:</strong> Стенки корневых каналов усилены локальным градиентом. Превосходно для эндодонтического измерения длины.",
+          "L4_apices": "<strong>Что и как:</strong> Кортикальная пластинка альвеолы усилена, что облегчает выявление участков резорбции верхушки.",
+          "L5_bone": "<strong>Что и как:</strong> Высокая резкость трабекулярной сети. В зонах низкой плотности шум слегка подчеркнут."
+        }
+      },
+      "10_bilateral_edge_preserving": {
+        title: "10. BILATERAL EDGE-PRESERVING (Адаптивный)",
+        badge: "АДАПТИВНЫЙ • СОХРАНЯЕТ КРАЯ",
+        kernel: "Ядро: 3×3 (σ_s=1.2, σ_r=250 HU)",
+        smooth: "Гладкость: Нелинейный радиометрический",
+        formula: "W(i,j) = exp(-d_s² / 2σ_s²) · exp(-(HU - HU_center)² / 2σ_r²)",
+        compositeSummary: "Умный двумерный фильтр: подавляет шум внутри однородных тканей (дентин, костный мозг), но на 100% сохраняет резкость анатомических границ.",
+        verdicts: {
+          "L1_crowns": "<strong>Что и как:</strong> Внутри эмали шум сглажен, наружная граница эмаль-воздух остается абсолютно резкой без размытия.",
+          "L2_pulp": "<strong>Что и как:</strong> Чистое однородное поле внутри пульпы и дентина, при этом стык между ними сохраняет бритвенную четкость.",
+          "L3_canals": "<strong>Что и как:</strong> Шум внутри просвета канала устранен, стенки канала не размыты. Отличная навигация для врача.",
+          "L4_apices": "<strong>Что и как:</strong> Периодонтальная щель не зашумлена, кортикальная пластинка остается сплошной и четкой.",
+          "L5_bone": "<strong>Что и как:</strong> Подавляет зернистость в костномозговых пространствах при полном сохранении четких краев костных балок."
+        }
+      }
+    };
+
+    function huToGrey(hu, ww = 3200, wl = 500) {
+      const min = wl - ww / 2;
+      const max = wl + ww / 2;
+      const c = Math.max(min, Math.min(max, hu));
+      return Math.round(((c - min) / ww) * 255);
+    }
+
+    const volumesCache = {};
+
+    async function loadAllLevels() {
+      const zValues = [150, 160, 175, 190, 210];
+      const promises = zValues.map(async (z) => {
+        const res = await fetch(`/api/cbct-tuner/slice?id=zakharov&z=${z}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status} for z=${z}`);
+        const dimX = Number(res.headers.get("x-cbct-dim-x")) || 600;
+        const dimY = Number(res.headers.get("x-cbct-dim-y")) || 600;
+        const buf = await res.arrayBuffer();
+        const data = new Int16Array(buf);
+        volumesCache[z] = { data, dimX, dimY };
+      });
+      await Promise.all(promises);
+      console.log("Все 5 уровней КТ срезов успешно предзагружены в память!");
+    }
+
+    // Вычисляет HU вокселя для заданной координаты с выбранным методом
+    function sampleMethodHu(methodId, rawData, dimX, dimY, gxF, gyF) {
+      const gx0 = Math.floor(gxF);
+      const gy0 = Math.floor(gyF);
+      const fx = gxF - gx0;
+      const fy = gyF - gy0;
+
+      const getVoxel = (x, y) => {
+        const cx = Math.max(0, Math.min(dimX - 1, Math.round(x)));
+        const cy = Math.max(0, Math.min(dimY - 1, Math.round(y)));
+        return rawData[cy * dimX + cx] ?? 0;
+      };
+
+      if (methodId === "01_nearest") {
+        return getVoxel(Math.round(gxF), Math.round(gyF));
+      }
+      if (methodId === "02_bilinear") {
+        const v00 = getVoxel(gx0, gy0);
+        const v10 = getVoxel(gx0 + 1, gy0);
+        const v01 = getVoxel(gx0, gy0 + 1);
+        const v11 = getVoxel(gx0 + 1, gy0 + 1);
+        const top = v00 * (1 - fx) + v10 * fx;
+        const btm = v01 * (1 - fx) + v11 * fx;
+        return top * (1 - fy) + btm * fy;
+      }
+      if (methodId === "03_hermite") {
+        const h00 = 2 * fx * fx * fx - 3 * fx * fx + 1;
+        const h10 = -2 * fx * fx * fx + 3 * fx * fx;
+        const v00 = getVoxel(gx0, gy0);
+        const v10 = getVoxel(gx0 + 1, gy0);
+        const v01 = getVoxel(gx0, gy0 + 1);
+        const v11 = getVoxel(gx0 + 1, gy0 + 1);
+        const top = v00 * h00 + v10 * h10;
+        const btm = v01 * h00 + v11 * h10;
+        const hy0 = 2 * fy * fy * fy - 3 * fy * fy + 1;
+        const hy1 = -2 * fy * fy * fy + 3 * fy * fy;
+        return top * hy0 + btm * hy1;
+      }
+      if (methodId === "04_catmull_rom") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          let wy = 0;
+          if (ay <= 1) wy = 1.5 * ay*ay*ay - 2.5 * ay*ay + 1;
+          else if (ay < 2) wy = -0.5 * ay*ay*ay + 2.5 * ay*ay - 4 * ay + 2;
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            let wx = 0;
+            if (ax <= 1) wx = 1.5 * ax*ax*ax - 2.5 * ax*ax + 1;
+            else if (ax < 2) wx = -0.5 * ax*ax*ax + 2.5 * ax*ax - 4 * ax + 2;
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "05_b_spline") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          let wy = 0;
+          if (ay <= 1) wy = (3 * ay*ay*ay - 6 * ay*ay + 4) / 6;
+          else if (ay < 2) wy = (-ay*ay*ay + 6 * ay*ay - 12 * ay + 8) / 6;
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            let wx = 0;
+            if (ax <= 1) wx = (3 * ax*ax*ax - 6 * ax*ax + 4) / 6;
+            else if (ax < 2) wx = (-ax*ax*ax + 6 * ax*ax - 12 * ax + 8) / 6;
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "06_mitchell_netravali") {
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          let wy = 0;
+          if (ay <= 1) wy = (21 * ay*ay*ay - 36 * ay*ay + 16) / 18;
+          else if (ay < 2) wy = (-7 * ay*ay*ay + 36 * ay*ay - 60 * ay + 32) / 18;
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            let wx = 0;
+            if (ax <= 1) wx = (21 * ax*ax*ax - 36 * ax*ax + 16) / 18;
+            else if (ax < 2) wx = (-7 * ax*ax*ax + 36 * ax*ax - 60 * ax + 32) / 18;
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "07_lanczos2") {
+        // Separable Lanczos-2 (radius 2)
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 2; j++) {
+          const ay = Math.abs(fy - j);
+          if (ay >= 2) continue;
+          const wy = sinc(ay) * sinc(ay / 2);
+          for (let i = -1; i <= 2; i++) {
+            const ax = Math.abs(fx - i);
+            if (ax >= 2) continue;
+            const wx = sinc(ax) * sinc(ax / 2);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "08_lanczos3") {
+        // Separable Lanczos-3 (radius 3)
+        let sum = 0, wSum = 0;
+        for (let j = -2; j <= 3; j++) {
+          const ay = Math.abs(fy - j);
+          if (ay >= 3) continue;
+          const wy = sinc(ay) * sinc(ay / 3);
+          for (let i = -2; i <= 3; i++) {
+            const ax = Math.abs(fx - i);
+            if (ax >= 3) continue;
+            const wx = sinc(ax) * sinc(ax / 3);
+            const w = wx * wy;
+            sum += getVoxel(gx0 + i, gy0 + j) * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : getVoxel(gx0, gy0);
+      }
+      if (methodId === "09_laplacian_sharpen") {
+        const center = getVoxel(gx0, gy0);
+        const north = getVoxel(gx0, gy0 - 1);
+        const south = getVoxel(gx0, gy0 + 1);
+        const west = getVoxel(gx0 - 1, gy0);
+        const east = getVoxel(gx0 + 1, gy0);
+        const laplacian = north + south + west + east - 4 * center;
+        const v00 = getVoxel(gx0, gy0);
+        const v10 = getVoxel(gx0 + 1, gy0);
+        const v01 = getVoxel(gx0, gy0 + 1);
+        const v11 = getVoxel(gx0 + 1, gy0 + 1);
+        const base = (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
+        return base - 0.45 * laplacian;
+      }
+      if (methodId === "10_bilateral_edge_preserving") {
+        const center = getVoxel(gx0, gy0);
+        const sigmaS = 1.2;
+        const sigmaR = 250.0;
+        let sum = 0, wSum = 0;
+        for (let j = -1; j <= 1; j++) {
+          for (let i = -1; i <= 1; i++) {
+            const val = getVoxel(gx0 + i, gy0 + j);
+            const distS = (fx - i) * (fx - i) + (fy - j) * (fy - j);
+            const distR = (val - center) * (val - center);
+            const w = Math.exp(-distS / (2 * sigmaS * sigmaS)) * Math.exp(-distR / (2 * sigmaR * sigmaR));
+            sum += val * w;
+            wSum += w;
+          }
+        }
+        return wSum !== 0 ? sum / wSum : center;
+      }
+      return getVoxel(gx0, gy0);
+    }
+
+    // Рендерит 1 конкретный срез (1 уровень из 5) ровно 512x512
+    window.renderSingleSlice = async function(methodId, levelKey) {
+      const mCfg = METHODS_CONFIG[methodId];
+      const lCfg = LEVELS_CONFIG[levelKey];
+      if (!mCfg || !lCfg) throw new Error("Invalid method or level: " + methodId + " / " + levelKey);
+
+      document.getElementById("composite-grid").style.display = "none";
+
+      document.getElementById("osd-title").innerText = mCfg.title;
+      document.getElementById("osd-badge").innerText = mCfg.badge;
+      document.getElementById("osd-meta-left").innerText = mCfg.kernel + " • " + mCfg.smooth;
+      document.getElementById("osd-level-tag").innerText = lCfg.tag;
+      document.getElementById("osd-formula").innerText = mCfg.formula;
+      document.getElementById("osd-verdict").innerHTML = mCfg.verdicts[levelKey];
+      document.getElementById("osd-patient-meta").innerText = `КЛКТ: Захаров И.Д. • ${lCfg.density}`;
+
+      const vol = volumesCache[lCfg.z];
+      if (!vol) throw new Error("Volume not cached for Z=" + lCfg.z);
+
+      const cv = document.getElementById("canvas");
+      const ctx = cv.getContext("2d");
+      const imgData = ctx.createImageData(512, 512);
+      const d = imgData.data;
+
+      const srcW = 320, srcH = 320;
+      const startX = 300 - srcW / 2;
+      const startY = 270 - srcH / 2;
+
+      for (let py = 0; py < 512; py++) {
+        const gyF = startY + (py / 511) * (srcH - 1);
+        for (let px = 0; px < 512; px++) {
+          const gxF = startX + (px / 511) * (srcW - 1);
+          const hu = sampleMethodHu(methodId, vol.data, vol.dimX, vol.dimY, gxF, gyF);
+          const gray = huToGrey(hu);
+          const idx = (py * 512 + px) * 4;
+          d[idx] = gray;
+          d[idx + 1] = gray;
+          d[idx + 2] = gray;
+          d[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return true;
+    };
+
+    // Рендерит СВОДНЫЙ КВАДРАТ 512x512 для метода: 4 квадранта анатомических уровней (L1, L2, L3, L5)
+    window.renderCompositeSquare = async function(methodId) {
+      const mCfg = METHODS_CONFIG[methodId];
+      if (!mCfg) throw new Error("Invalid method: " + methodId);
+
+      document.getElementById("composite-grid").style.display = "block";
+
+      document.getElementById("osd-title").innerText = mCfg.title;
+      document.getElementById("osd-badge").innerText = mCfg.badge + " • 4-В-1";
+      document.getElementById("osd-meta-left").innerText = mCfg.kernel + " • " + mCfg.smooth;
+      document.getElementById("osd-level-tag").innerText = "L1•L2•L3•L5";
+      document.getElementById("osd-formula").innerText = mCfg.formula;
+      document.getElementById("osd-verdict").innerHTML = "<strong>Сводный клинический вердикт:</strong> " + mCfg.compositeSummary;
+      document.getElementById("osd-patient-meta").innerText = "КЛКТ: Захаров И.Д. • Сводный квадрантный срез 512×512 • Воксель 0.25 мм";
+
+      const cv = document.getElementById("canvas");
+      const ctx = cv.getContext("2d");
+      const imgData = ctx.createImageData(512, 512);
+      const d = imgData.data;
+
+      const quads = [
+        { qx: 0, qy: 0, vol: volumesCache[150] },
+        { qx: 1, qy: 0, vol: volumesCache[160] },
+        { qx: 0, qy: 1, vol: volumesCache[175] },
+        { qx: 1, qy: 1, vol: volumesCache[210] }
+      ];
+
+      // Оптимальный кроп по зубной дуге: центр (300, 240), размер 280x280 вокселей КТ
+      const srcW = 280, srcH = 280;
+      const startX = 300 - srcW / 2;
+      const startY = 240 - srcH / 2;
+
+      for (let py = 0; py < 512; py++) {
+        const qy = py < 256 ? 0 : 1;
+        const localPy = py % 256;
+        const gyF = startY + (localPy / 255) * (srcH - 1);
+
+        for (let px = 0; px < 512; px++) {
+          const qx = px < 256 ? 0 : 1;
+          const localPx = px % 256;
+          const gxF = startX + (localPx / 255) * (srcW - 1);
+
+          const qIndex = qy * 2 + qx;
+          const vol = quads[qIndex].vol;
+
+          const hu = sampleMethodHu(methodId, vol.data, vol.dimX, vol.dimY, gxF, gyF);
+          const gray = huToGrey(hu);
+          const idx = (py * 512 + px) * 4;
+          d[idx] = gray;
+          d[idx + 1] = gray;
+          d[idx + 2] = gray;
+          d[idx + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return true;
+    };
+
+    window.initPromise = loadAllLevels();
+  </script>
+</body>
+</html>

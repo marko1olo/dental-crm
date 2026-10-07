@@ -138,11 +138,11 @@ export function QuickBookingServiceSection({
               className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
               data-testid="cito-slot-priority-badge"
             >
-              CITO Экстренно
+              ⚡ СРОЧНО
             </span>
           )}
         </div>
-        <div className="p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] grid grid-cols-3 gap-1" data-testid="expo26-segmented-status">
+        <div className="dente-segmented-bar w-full grid grid-cols-3" data-testid="expo26-segmented-status">
           <button
             type="button"
             onClick={() => {
@@ -151,48 +151,46 @@ export function QuickBookingServiceSection({
                 handleSelectAppointmentType("secondary");
               }
             }}
-            className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
-              status === "planned" && appointmentType !== "emergency"
-                ? "bg-[var(--paper)] text-[var(--teal-dark,var(--teal))] shadow-xs border border-[var(--line)]"
-                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            className={`dente-segmented-item w-full ${
+              status === "planned" && appointmentType !== "emergency" ? "active" : ""
             }`}
             data-testid="expo26-status-planned"
           >
             <Clock size={13} className="shrink-0" />
-            <span>Плановый</span>
+            <span className="truncate">Плановый</span>
           </button>
           <button
             type="button"
             onClick={() => {
               handleSelectAppointmentType("emergency");
-              if (!reason.includes("CITO")) {
-                setReason(reason ? `CITO! Острая боль, ${reason}` : "CITO! Острая боль");
+              if (!reason.includes("Срочно")) {
+                setReason(reason ? `Срочно! Острая боль, ${reason}` : "Срочно! Острая боль");
               }
             }}
-            className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+            className={`dente-segmented-item w-full ${
               appointmentType === "emergency"
-                ? "bg-rose-600 text-white shadow-xs"
-                : "text-rose-700 dark:text-rose-300 hover:bg-rose-500/10"
+                ? "active !bg-rose-600 !text-white"
+                : "text-rose-700 dark:text-rose-300"
             }`}
             data-testid="expo26-status-emergency"
           >
-            <Flame size={13} className={appointmentType === "emergency" ? "text-white animate-pulse" : "text-rose-600"} />
-            <span>Внеплановый (CITO)</span>
+            <Flame size={13} className={appointmentType === "emergency" ? "text-white animate-pulse shrink-0" : "text-rose-600 shrink-0"} />
+            <span className="truncate hidden sm:inline">Внеплановый (срочно)</span>
+            <span className="truncate sm:hidden">Срочный</span>
           </button>
           <button
             type="button"
             onClick={() => {
               setStatus("confirmed");
             }}
-            className={`min-h-[38px] px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
-              status === "confirmed"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            className={`dente-segmented-item w-full ${
+              status === "confirmed" ? "active" : ""
             }`}
             data-testid="expo26-status-confirmed"
           >
             <CheckCircle2 size={13} className="shrink-0" />
-            <span>Утверждённый</span>
+            <span className="truncate hidden sm:inline">Утверждённый</span>
+            <span className="truncate sm:hidden">Подтверждён</span>
           </button>
         </div>
       </div>
@@ -226,7 +224,7 @@ export function QuickBookingServiceSection({
                   isSelected
                     ? isEm
                       ? "bg-rose-500/20 text-rose-950 dark:text-rose-100 border-rose-500 ring-2 ring-rose-500/50 shadow-md"
-                      : "bg-[var(--teal-dark)] text-[var(--on-teal)] border-[var(--teal)] shadow-md"
+                      : "bg-[var(--teal-dark)] text-white dark:bg-teal-500/25 dark:text-teal-100 dark:border-teal-400 shadow-md"
                     : isEm
                       ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/15"
                       : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]"
@@ -251,8 +249,8 @@ export function QuickBookingServiceSection({
                   className={`text-[10px] truncate block mt-0.5 ${
                     isSelected
                       ? isEm
-                        ? "text-rose-800 dark:text-rose-200"
-                        : "text-white/80"
+                        ? "text-rose-950 dark:text-rose-100 font-semibold"
+                        : "text-white font-medium"
                       : "text-[var(--muted)]"
                   }`}
                 >
@@ -362,6 +360,7 @@ export function QuickBookingServiceSection({
             </span>
             <input
               type="datetime-local"
+              data-testid="quick-booking-starts-at-input"
               value={startsAtLocal}
               onChange={(e) => {
                 const nextVal = e.target.value;
@@ -391,46 +390,32 @@ export function QuickBookingServiceSection({
               className="mt-1"
             >
               <span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
-                Быстрый выбор длительности (1 клик):
+                Быстрый выбор длительности:
               </span>
-              <div className="flex flex-wrap gap-2">
+              <div className="dente-filter-chips gap-2">
                 {DURATION_PRESETS.map((preset) => {
                   const isSelected = durationMinutes === preset.minutes;
-                  let displayHint = (preset as any).serviceHint || (preset as any).hint;
-                  let displayLabel = preset.label;
-                  if (preset.minutes === 15) {
-                    displayHint = "Осмотр";
-                  } else if (preset.minutes === 30) {
-                    displayHint = "Терапия (Гигиена/Швы)";
-                  } else if (preset.minutes === 45) {
-                    displayHint = "Эндо/Реставрация (Терапия)";
-                  } else if (preset.minutes === 60) {
-                    displayHint = "Хирургия/Ортопедия (Лечение)";
-                  } else if (preset.minutes === 90) {
-                    displayLabel = "90 мин (90+ мин)";
-                    displayHint = "Хирургия / Комплексный приём";
-                  } else if (preset.minutes === 120) {
-                    displayHint = "Ортопедия (Тотальная работа)";
-                  }
+                  const displayHint = (preset as any).serviceHint || (preset as any).hint || "";
+                  const displayLabel = (preset as any).label || `${preset.minutes} мин`;
                   return (
                     <button
                       key={preset.minutes}
                       type="button"
                       onClick={() => handleSelectDuration(preset.minutes)}
-                      className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                        isSelected
-                          ? "bg-[var(--teal-dark)] text-[var(--on-teal)] border-[var(--teal)] shadow-sm"
-                          : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]"
+                      className={`dente-filter-chip min-h-[36px] h-auto py-1.5 px-3 ${
+                        isSelected ? "active font-bold" : ""
                       }`}
                       data-testid={`duration-preset-${preset.minutes}`}
                     >
-                      <span>{displayLabel}</span>
+                      <span className="font-semibold">{displayLabel}</span>
                       <span
                         className={`text-[11px] font-normal ${
-                          isSelected ? "text-white/90" : "text-[var(--muted)]"
+                          isSelected
+                            ? "text-slate-900 dark:text-white font-bold"
+                            : "text-[var(--muted)]"
                         }`}
                       >
-                        ({displayHint})
+                        · {displayHint}
                       </span>
                     </button>
                   );
@@ -556,10 +541,10 @@ export function QuickBookingServiceSection({
                   <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                   <div className="space-y-0.5">
                     <span className="font-semibold block">
-                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
+                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением (Мандат 8e: запись не блокируется).
                     </span>
                     <span className="text-[11px] text-[var(--muted)]">
-                      (Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
+                      При необходимости врач может принять пациента в свободном кабинете
                     </span>
                   </div>
                 </div>
@@ -586,7 +571,7 @@ export function QuickBookingServiceSection({
                 ))}
               </select>
               <span className="text-[11px] text-[var(--muted)] block mt-0.5">
-                Выбор ассистента строго опционален и не блокирует запись (Мандаты 8e, 8n)
+                Выбор ассистента строго опционален и не блокирует запись
               </span>
             </div>
           )}
@@ -597,85 +582,73 @@ export function QuickBookingServiceSection({
       <div className="space-y-1.5 pt-1" data-testid="quick-booking-status-selector">
         <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
           <CalendarCheck size={14} className="text-[var(--teal)]" />
-          <span>Статус записи (1 клик)</span>
+          <span>Статус записи</span>
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+        <div className="dente-filter-chips gap-1.5">
           <button
             type="button"
             onClick={() => setStatus("planned")}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
-              status === "planned"
-                ? "bg-[var(--teal)] text-white font-bold border-[var(--teal)] shadow-sm"
-                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            className={`dente-filter-chip ${
+              status === "planned" ? "active font-semibold" : ""
             }`}
             data-testid="quick-status-btn-planned"
           >
-            <Clock size={14} className="shrink-0" />
+            <Clock size={13} className="shrink-0" />
             <span className="whitespace-nowrap leading-none">Ожидает</span>
           </button>
           <button
             type="button"
             onClick={() => setStatus("confirmed")}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
-              status === "confirmed"
-                ? "bg-violet-600 text-white font-bold border-violet-600 shadow-sm"
-                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            className={`dente-filter-chip ${
+              status === "confirmed" ? "active font-semibold" : ""
             }`}
             data-testid="quick-status-btn-confirmed"
           >
-            <UserCheck size={14} className="shrink-0" />
+            <UserCheck size={13} className="shrink-0" />
             <span className="whitespace-nowrap leading-none">Подтвержден</span>
           </button>
           <button
             type="button"
             onClick={() => setStatus("arrived")}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
-              status === "arrived"
-                ? "bg-emerald-600 text-white font-bold border-emerald-600 shadow-sm"
-                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            className={`dente-filter-chip ${
+              status === "arrived" ? "active font-semibold" : ""
             }`}
             data-testid="quick-status-btn-arrived"
           >
-            <UserCheck size={14} className="shrink-0" />
+            <UserCheck size={13} className="shrink-0" />
             <span className="whitespace-nowrap leading-none">Пациент пришел</span>
           </button>
           <button
             type="button"
             onClick={() => setStatus("in_treatment")}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
-              status === "in_treatment"
-                ? "bg-cyan-600 text-white font-bold border-cyan-600 shadow-sm"
-                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            className={`dente-filter-chip ${
+              status === "in_treatment" ? "active font-semibold" : ""
             }`}
             data-testid="quick-status-btn-in_treatment"
           >
-            <CalendarCheck size={14} className="shrink-0" />
+            <CalendarCheck size={13} className="shrink-0" />
             <span className="whitespace-nowrap leading-none">В кресле</span>
           </button>
           <button
             type="button"
             onClick={() => setStatus("completed")}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
-              status === "completed"
-                ? "bg-slate-700 text-white font-bold border-slate-700 shadow-sm"
-                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            className={`dente-filter-chip ${
+              status === "completed" ? "active font-semibold" : ""
             }`}
             data-testid="quick-status-btn-completed"
           >
-            <CheckCircle2 size={14} className="shrink-0" />
+            <CheckCircle2 size={13} className="shrink-0" />
             <span className="whitespace-nowrap leading-none">Прием завершен</span>
           </button>
           <button
             type="button"
             onClick={() => setStatus("no_show")}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
-              status === "no_show"
-                ? "bg-rose-600 text-white font-bold border-rose-600"
-                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            className={`dente-filter-chip ${
+              status === "no_show" ? "active !bg-rose-600 !text-white font-semibold" : ""
             }`}
             data-testid="quick-status-btn-no_show"
           >
-            <UserX size={14} className="shrink-0" />
+            <UserX size={13} className="shrink-0" />
             <span className="whitespace-nowrap leading-none">Неявка</span>
           </button>
         </div>
@@ -694,7 +667,7 @@ export function QuickBookingServiceSection({
             placeholder="Например: Осмотр, Кариес, Консультация"
             className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
           />
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="dente-filter-chips gap-1.5 mt-2">
             {COMMON_REASONS.map((r) => (
               <button
                 key={r}
@@ -703,7 +676,7 @@ export function QuickBookingServiceSection({
                   const cur = reason.trim();
                   setReason(cur ? `${cur}, ${r.toLowerCase()}` : r);
                 }}
-                className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+                className="dente-filter-chip"
               >
                 + {r}
               </button>

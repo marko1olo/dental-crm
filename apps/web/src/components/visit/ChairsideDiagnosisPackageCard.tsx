@@ -65,7 +65,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 		setCheckedCodes(new Set(CARIES_DIAGNOSIS_BUNDLE.services.map((s) => s.code804n)));
 	}, [detectedToothState, selectedTooth]);
 
-	// 2. Отмеченные галочками услуги (врач может снять/добавить услугу в 1 клик)
+	// 2. Отмеченные галочками услуги (врач может снять/добавить услугу)
 	const [checkedCodes, setCheckedCodes] = useState<Set<string>>(() => {
 		return new Set(initialBundle.services.map((s) => s.code804n));
 	});
@@ -91,7 +91,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 		});
 	}, [activeBundle, selectedTooth, checkedCodes, catalog]);
 
-	// 4. 1-клик «Внести пакет в карту и счёт»
+	// 4. Внести пакет в карту и счёт
 	const handleApplyToPlan = () => {
 		const activeItems = customized.items.filter((it) => it.checked);
 		if (activeItems.length === 0) {
@@ -153,7 +153,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 		);
 	};
 
-	// 5. 1-клик «Передать в кассу 54-ФЗ»
+	// 5. Передать в кассу
 	const handleExportToCashier = () => {
 		const activeItems = customized.items.filter((it) => it.checked);
 		if (activeItems.length === 0) {
@@ -218,7 +218,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 			data-testid="chairside-diagnosis-package-card"
 			className="mb-3 p-3 rounded-xl bg-gradient-to-r from-teal-50/70 via-indigo-50/50 to-slate-50/60 dark:from-teal-950/20 dark:via-indigo-950/20 dark:to-slate-900/40 border border-teal-200/80 dark:border-teal-800/60 shadow-xs"
 		>
-			{/* Шапка пакета: Быстрый выбор клинического пакета (1 клик) */}
+			{/* Шапка пакета: Быстрый выбор клинического пакета */}
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
 				<div className="flex items-center gap-2">
 					<div className="w-6 h-6 rounded-md bg-teal-600 dark:bg-teal-500 text-white flex items-center justify-center shrink-0">
@@ -239,12 +239,12 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 							)}
 						</div>
 						<div className="text-[11px] text-slate-500 dark:text-slate-400">
-							{activeBundle.diagnosisTitle} у кресла в 1 клик без ручного поиска по 300 позициям
+							{activeBundle.diagnosisTitle} у кресла без ручного поиска по позициям
 						</div>
 					</div>
 				</div>
 
-				{/* Переключатель 6 базовых клинических пакетов в 1 клик */}
+				{/* Переключатель 6 базовых клинических пакетов */}
 				<div className="flex items-center gap-1 overflow-x-auto py-0.5 max-w-full">
 					{CANONICAL_DIAGNOSIS_BUNDLES.map((b) => {
 						const isSelected = b.id === activeBundle.id;
@@ -332,7 +332,7 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 						title="Передать пакет услуг в кассу с точным расчётом в копейках"
 					>
 						<Receipt className="w-4 h-4" />
-						В кассу (1 клик)
+						В кассу
 					</button>
 				</div>
 			</div>

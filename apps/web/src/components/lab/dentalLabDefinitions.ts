@@ -27,6 +27,8 @@ export {
 	type DentalLabOrderData,
 };
 
+export type Orthopedic6StageKey = CanonicalOrthopedic6StageId;
+
 export {
 	CANONICAL_LAB_WORK_TYPES,
 	LAB_WORK_TYPES_BY_ID,

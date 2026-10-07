@@ -250,15 +250,19 @@
 
 .audit-search-icon {
 	position: absolute;
-	left: 0.625rem;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
 	color: var(--muted, #64748b);
+	pointer-events: none;
 }
 
 .audit-search-input {
 	width: 100%;
 	min-height: 36px;
-	padding: 0.375rem 0.625rem 0.375rem 2.25rem;
-	border-radius: 6px;
+	padding-left: 38px !important;
+	padding-right: 32px !important;
+	border-radius: 8px;
 	border: 1px solid var(--line, #e2e8f0);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);

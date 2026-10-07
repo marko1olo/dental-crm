@@ -48,17 +48,17 @@ export interface NerveWorkerComputePayload {
 		readonly x: number;
 		readonly y: number;
 		readonly z: number;
-	};
+	} | undefined;
 	readonly voxelData: Int16Array;
 	readonly startSeedMm: Point3D;
 	readonly endSeedMm: Point3D;
-	readonly options?: FastMarchingNerveOptions;
-	readonly precomputedCostField?: Float32Array;
+	readonly options?: FastMarchingNerveOptions | undefined;
+	readonly precomputedCostField?: Float32Array | undefined;
 }
 
 export interface NerveWorkerPingPayload {
 	readonly type: "ping";
-	readonly requestId?: string;
+	readonly requestId?: string | undefined;
 }
 
 export type NerveWorkerInboundMessage =

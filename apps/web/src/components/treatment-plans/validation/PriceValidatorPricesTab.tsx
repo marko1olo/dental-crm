@@ -3,7 +3,7 @@
  *
  * Содержит:
  * 1. Тулбар с селектором политики и пакетными действиями (фиксация гарантии / обновление до прайса).
- * 2. Мягкое предупреждение о 30-дневном сроке (Мандат 8e: без блокировок клинической работы).
+ * 2. Информационное предупреждение о 30-дневном сроке действия сметы.
  * 3. Баннер валидационных сообщений.
  * 4. Дровер автономии врача / подтверждения цен в 1 клик.
  * 5. Таблицу построчной сверки сметы с текущим каталогом.
@@ -117,17 +117,17 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 						type="button"
 						className={`price-validator-btn-secondary ${adminOverride.isAuthorized ? "pv-badge-ok" : ""}`}
 						onClick={onToggleAdminDrawer}
-						title="Подтверждение цен плана лечащим врачом в 1 клик (Мандат 8e)"
+						title="Подтверждение цен плана лечащим врачом"
 					>
 						{adminOverride.isAuthorized ? <Check size={15} /> : <ShieldCheck size={15} />}{" "}
 						{adminOverride.isAuthorized
 							? "Согласовано врачом"
-							: "Автономия врача (1 клик)"}
+							: "Подтвердить цены"}
 					</button>
 				</div>
 			</div>
 
-			{/* Soft warning for 30-day expiration (Mandate 8e: zero blockers) */}
+			{/* Soft warning for 30-day expiration */}
 			{report.isPlanExpired && (
 				<div
 					className="price-validator-banner status-info"
@@ -143,7 +143,7 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 					<div>
 						<strong>Мягкое предупреждение: срок составления сметы превысил 30 дней</strong>
 						<div style={{ marginTop: 2, fontSize: "0.85rem" }}>
-							В соответствии с Мандатом 8e, истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ оказание услуг, создание нарядов ЗТЛ или проведение оплаты. Цены зафиксированы по согласованию с лечащим врачом.
+							Истечение 30 дней с момента составления плана лечения не блокирует оказание услуг, создание нарядов ЗТЛ или проведение оплаты. Цены зафиксированы по согласованию с лечащим врачом.
 						</div>
 					</div>
 				</div>
@@ -189,7 +189,7 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 				<div className="price-validator-admin-box">
 					<div className="price-validator-admin-header">
 						<span>
-							<ShieldCheck size={16} /> Автономия лечащего врача (Мандат 8e) / Подтверждение цен
+							<ShieldCheck size={16} /> Автономия лечащего врача / Подтверждение цен
 						</span>
 						{adminOverride.isAuthorized && (
 							<button
@@ -209,7 +209,7 @@ export const PriceValidatorPricesTab: React.FC<PriceValidatorPricesTabProps> = (
 							data-testid="btn-doctor-autonomy-approve"
 							style={{ background: "var(--pv-ok)", borderColor: "var(--pv-ok)" }}
 						>
-							<Check size={16} /> Подтвердить в 1 клик (без PIN-кода)
+							<Check size={16} /> Подтвердить (без PIN-кода)
 						</button>
 						<input
 							type="text"

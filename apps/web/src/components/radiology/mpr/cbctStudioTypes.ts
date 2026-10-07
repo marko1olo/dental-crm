@@ -66,17 +66,35 @@ export const CBCT_WORKSPACE_TABS: readonly CbctWorkspaceTabDefinition[] = [
 	},
 ] as const;
 
-export const DEFAULT_IAN_NERVE_POINTS: readonly Point3D[] = [
+export type NerveCanalSide = "right" | "left";
+
+export interface BilateralNerveCanals {
+	readonly right: readonly Point3D[];
+	readonly left: readonly Point3D[];
+	readonly activeSide: NerveCanalSide;
+}
+
+/** Дефолтные анатомические точки левого канала IAN (квадрант 3, x < 0) */
+export const DEFAULT_LEFT_IAN_NERVE_POINTS: readonly Point3D[] = [
 	{ x: -32.0, y: -2.0, z: 2.0 },
 	{ x: -28.0, y: -15.0, z: -4.0 },
 	{ x: -25.0, y: -28.0, z: -10.0 },
 	{ x: -22.0, y: -40.0, z: -14.0 },
 	{ x: -18.0, y: -46.0, z: -16.0 },
+];
+
+/** Дефолтные анатомические точки правого канала IAN (квадрант 4, x > 0) */
+export const DEFAULT_RIGHT_IAN_NERVE_POINTS: readonly Point3D[] = [
 	{ x: 18.0, y: -46.0, z: -16.0 },
 	{ x: 22.0, y: -40.0, z: -14.0 },
 	{ x: 25.0, y: -28.0, z: -10.0 },
 	{ x: 28.0, y: -15.0, z: -4.0 },
 	{ x: 32.0, y: -2.0, z: 2.0 },
+];
+
+export const DEFAULT_IAN_NERVE_POINTS: readonly Point3D[] = [
+	...DEFAULT_LEFT_IAN_NERVE_POINTS,
+	...DEFAULT_RIGHT_IAN_NERVE_POINTS,
 ];
 
 export function formatNerveNodesPlural(count: number): string {

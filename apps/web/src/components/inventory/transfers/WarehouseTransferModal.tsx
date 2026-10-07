@@ -280,9 +280,9 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 			transportDriverFullName: driverName || undefined,
 			transportVehiclePlate: vehiclePlate || undefined,
 			notes: notes.trim()
-				? `${notes.trim()}${hasOverdraft ? " [Внимание: списание в овердрафт склада]" : ""}`
+				? `${notes.trim()}${hasOverdraft ? " [Внимание: списание с дефицитом]" : ""}`
 				: hasOverdraft
-					? "Внимание: списание в овердрафт склада (Мандат 8e п. 10)"
+					? "Внимание: списание с дефицитом (расход сверх остатка)"
 					: undefined,
 		};
 
@@ -295,7 +295,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 		onClose();
 	};
 
-	// 1-кликовое прямое списание / утилизация ТМЦ единолично медсестрой без комиссии из 3 человек (Мандаты 8e п. 10, 8n)
+	// Быстрое прямое списание / утилизация ТМЦ единолично медсестрой без комиссии из 3 человек (Мандаты 8e п. 10, 8n)
 	const handleOneClickWriteOff = () => {
 		const doc: WarehouseTransferDocument = {
 			id: initialDocument?.id || `doc-${Date.now()}`,
@@ -311,7 +311,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 			receivedByPosition: receivedPosition || "Получатель ТМЦ",
 			transportDriverFullName: driverName || undefined,
 			transportVehiclePlate: vehiclePlate || undefined,
-			notes: `${notes ? `${notes}. ` : ""}Списано в 1 клик единолично медсестрой без комиссии из 3 человек (Мандат 8e п. 10, СанПиН 3.3686-21)${hasOverdraft ? ". Внимание: списание в овердрафт склада." : ""}`,
+			notes: `${notes ? `${notes}. ` : ""}Списание материалов дежурной медсестрой (СанПиН 3.3686-21)${hasOverdraft ? ". Внимание: расход сверх остатка (списание с дефицитом)." : ""}`,
 		};
 
 		if (onConfirmTransfer) {
@@ -321,9 +321,9 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 		}
 
 		if (hasOverdraft) {
-			showToast("Списание в 1 клик выполнено (Внимание: списание в овердрафт склада)", "warning");
+			showToast("Быстрое списание выполнено (расход сверх остатка, списание с дефицитом)", "warning");
 		} else {
-			showToast("Списание ТМЦ успешно оформлено медсестрой в 1 клик без комиссии из 3 человек", "success");
+			showToast("Списание ТМЦ успешно оформлено медсестрой без комиссии из 3 человек", "success");
 		}
 
 		onClose();
@@ -529,7 +529,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 						</div>
 					)}
 
-					{/* Визуальное предупреждение о мягком овердрафте (Мандат 8e п. 10 — не блокирует операцию) */}
+					{/* Визуальное предупреждение об отрицательном остатке */}
 					{hasOverdraft && (
 						<div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
 							<AlertCircle size={16} className="shrink-0 text-amber-600 mt-0.5" />
@@ -537,7 +537,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 								<div className="font-bold text-amber-900 dark:text-amber-100 flex items-center gap-1.5 flex-wrap">
 									<span>Внимание: остаток отрицательный, требуется оприходование накладной</span>
 									<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200">
-										Мандат 8e п. 10
+										Списание с дефицитом
 									</span>
 								</div>
 								<div className="text-muted mt-0.5 leading-relaxed">
@@ -547,7 +547,7 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 										const req = it.dispatchedQuantity > 0 ? it.dispatchedQuantity : it.requestedQuantity;
 										return `«${it.nameRu}» (в наличии ${stock} ${it.unitRu}, требуется ${req} ${it.unitRu}, дефицит ${req - stock} ${it.unitRu})`;
 									}).join("; ")}
-									. Задержка оприходования накладной поставщика не блокирует операцию перемещения ТМЦ или оказание экстренной помощи! Разрешено списание в отрицательный остаток (мягкий овердрафт).
+									. Перемещение учтено с дефицитом для последующего оприходования.
 								</div>
 							</div>
 						</div>
@@ -603,9 +603,9 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 														{isOverdraftItem && (
 															<span
 																className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded"
-																title="Списание в мягкий овердрафт склада"
+																title="Списание с дефицитом (мягкий учет)"
 															>
-																Овердрафт -{deficit} {item.unitRu}
+																Дефицит -{deficit} {item.unitRu}
 															</span>
 														)}
 													</div>

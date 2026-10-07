@@ -148,7 +148,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 		>
 			{/* ВЕРХНИЙ СЕГМЕНТИРОВАННЫЙ ПЕРЕКЛЮЧАТЕЛЬ МЕТОДОВ (APPLE HIG SEGMENTED CONTROL) */}
 			<div
-				className="flex w-full p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)] gap-1 shrink-0"
+				className="dente-segmented-bar w-full shrink-0"
 				role="tablist"
 				aria-label="Способ подтверждения согласия"
 			>
@@ -157,10 +157,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					data-testid="tab-method-tablet"
 					role="tab"
 					aria-selected={verificationMethod === "tablet_stylus"}
-					className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-						verificationMethod === "tablet_stylus"
-							? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
-							: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+					className={`dente-segmented-item flex-1 ${
+						verificationMethod === "tablet_stylus" ? "active" : ""
 					}`}
 					onClick={() => setVerificationMethod("tablet_stylus")}
 				>
@@ -176,10 +174,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					data-testid="tab-method-sms"
 					role="tab"
 					aria-selected={verificationMethod === "sms_otp"}
-					className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-						verificationMethod === "sms_otp"
-							? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
-							: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+					className={`dente-segmented-item flex-1 ${
+						verificationMethod === "sms_otp" ? "active" : ""
 					}`}
 					onClick={() => setVerificationMethod("sms_otp")}
 				>
@@ -195,10 +191,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					data-testid="tab-method-paper"
 					role="tab"
 					aria-selected={verificationMethod === "paper_physical"}
-					className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-						verificationMethod === "paper_physical"
-							? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-sm"
-							: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+					className={`dente-segmented-item flex-1 ${
+						verificationMethod === "paper_physical" ? "active" : ""
 					}`}
 					onClick={() => setVerificationMethod("paper_physical")}
 				>
@@ -381,10 +375,10 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 
 					{/* Действия для десктопа (на мобиле вынесено в липкий Bottom Bar) */}
 					{!isMobile && (
-						<div className="flex items-center gap-3 pt-1 flex-wrap">
+						<div className="flex items-center gap-2 pt-1 flex-wrap">
 							<button
 								type="button"
-								className="consent-action-btn primary"
+								className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1.5"
 								data-testid="btn-confirm-tablet-signed"
 								onClick={() => {
 									if (strokes.length === 0 && currentPoints.length === 0) {
@@ -394,17 +388,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 									onConfirmSign("tablet_stylus");
 								}}
 								disabled={isSubmitting || (strokes.length === 0 && currentPoints.length === 0)}
-								style={{
-									minHeight: "44px",
-									fontSize: "14px",
-									fontWeight: "bold",
-									background: strokes.length > 0 ? "var(--teal)" : "var(--muted)",
-									color: "var(--on-teal, #ffffff)",
-									boxShadow: "var(--shadow-1)",
-									cursor: strokes.length > 0 ? "pointer" : "not-allowed",
-								}}
 							>
-								<Zap size={18} />
+								<Zap size={14} />
 								<span>
 									{activeMode === "packages"
 										? `Подтвердить векторный пакет (${packageDocsCount} док.) в 1 клик`
@@ -413,42 +398,23 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							</button>
 							<button
 								type="button"
-								className="consent-tool-btn"
+								className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
 								data-testid="btn-download-pdfa-tablet"
 								onClick={onDownloadPdfA}
 								title="Скачать архивный документ ISO 19005-1 PDF/A-1b с векторной подписью"
 							>
-								<Download size={16} />
+								<Download size={14} />
 								<span>Скачать PDF/A</span>
 							</button>
 							<button
 								type="button"
-								className="consent-mode-btn active"
+								className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
 								onClick={() => setVerificationMethod("paper_physical")}
 								data-testid="tab-method-paper-return"
-								style={{
-									height: "36px",
-									padding: "0 12px",
-									fontSize: "12px",
-									borderRadius: "8px",
-									background: "var(--paper)",
-									color: "var(--ink)",
-									border: "1px solid var(--line-strong)",
-									cursor: "pointer",
-								}}
 								title="Свернуть сенсорную подпись и вернуться к бумажному бланку А4"
 							>
 								<Printer size={14} />
 								<span>Вернуться к бумажному бланку</span>
-							</button>
-							<button
-								type="button"
-								className="consent-tool-btn"
-								onClick={() => setVerificationMethod("paper_physical")}
-								title="Отменить экранную подпись и перейти к распечатке на бумаге"
-							>
-								<Printer size={16} />
-								<span>Печать на бумаге</span>
 							</button>
 						</div>
 					)}
@@ -521,7 +487,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					{!isMobile && (
 						<button
 							type="button"
-							className="consent-action-btn primary mt-1"
+							className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center justify-center gap-1.5 mt-1"
 							data-testid="btn-confirm-sms-signed"
 							onClick={() => {
 								if (!smsOtpCode || smsOtpCode.trim().length < 4) {
@@ -531,15 +497,8 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 								onConfirmSign("sms_otp");
 							}}
 							disabled={isSubmitting || !smsOtpCode || smsOtpCode.trim().length < 4}
-							style={{
-								minHeight: "44px",
-								fontSize: "14px",
-								fontWeight: "bold",
-								background: smsOtpCode && smsOtpCode.trim().length === 4 ? "var(--teal)" : "var(--muted)",
-								cursor: smsOtpCode && smsOtpCode.trim().length === 4 ? "pointer" : "not-allowed",
-							}}
 						>
-							<Zap size={18} />
+							<Zap size={14} />
 							<span>Подтвердить согласие по СМС</span>
 						</button>
 					)}
@@ -670,52 +629,18 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 					</div>
 
 					{/* Кнопки бумажного режима */}
-					<div className="flex items-center gap-3 pt-1 flex-wrap">
+					<div className="flex items-center gap-2 pt-1 flex-wrap">
 						<button
 							type="button"
-							className="consent-action-btn primary"
-							onClick={onPrint}
-							style={{
-								minHeight: "44px",
-								fontSize: "14px",
-								fontWeight: "bold",
-								background: "var(--teal)",
-								color: "var(--on-teal, #ffffff)",
-								boxShadow: "var(--shadow-1)",
-								cursor: "pointer",
-							}}
-							title={
-								activeMode === "packages"
-									? "Многостраничная печать заполненного пакета ИДС для подписи ручкой (А4)"
-									: "Печать заполненного бланка ИДС для подписи ручкой (А4)"
-							}
-						>
-							<Printer size={18} />
-							<span>
-								{activeMode === "packages" ? "Печать пакета для подписи ручкой (А4)" : "Печать согласия для подписи ручкой (А4)"}
-							</span>
-						</button>
-
-						<button
-							type="button"
-							className="consent-action-btn primary"
+							className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1.5"
 							data-testid="btn-confirm-paper-signed"
 							onClick={() => {
 								setPaperOriginalConfirmed(true);
 								onConfirmSign("paper_physical");
 							}}
 							disabled={isSubmitting}
-							style={{
-								minHeight: "44px",
-								fontSize: "14px",
-								fontWeight: "bold",
-								background: "var(--emerald, #059669)",
-								color: "#ffffff",
-								boxShadow: "var(--shadow-1)",
-								cursor: "pointer",
-							}}
 						>
-							<Zap size={18} />
+							<Zap size={14} />
 							<span>
 								{activeMode === "packages"
 									? `Подтвердить пакет (${packageDocsCount} док.) в 1 клик`
@@ -725,7 +650,23 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 
 						<button
 							type="button"
-							className="consent-tool-btn"
+							className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
+							onClick={onPrint}
+							title={
+								activeMode === "packages"
+									? "Многостраничная печать заполненного пакета ИДС для подписи ручкой (А4)"
+									: "Печать заполненного бланка ИДС для подписи ручкой (А4)"
+							}
+						>
+							<Printer size={14} />
+							<span>
+								{activeMode === "packages" ? "Печать пакета для подписи" : "Печать согласия для подписи"}
+							</span>
+						</button>
+
+						<button
+							type="button"
+							className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
 							data-testid="btn-print-blank-consent-inline"
 							onClick={onPrintBlank}
 							title={
@@ -734,20 +675,20 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 									: "Печать чистого бланка со строками «________» для ручного заполнения пациентом"
 							}
 						>
-							<FileText size={16} />
+							<FileText size={14} />
 							<span>
-								{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
+								{activeMode === "packages" ? "Печать чистых бланков («________»)" : "Печать чистого бланка («________»)"}
 							</span>
 						</button>
 
 						<button
 							type="button"
-							className="consent-tool-btn"
+							className="ghost-button min-h-[44px] sm:min-h-8 sm:h-8 px-2.5 text-[13px] font-medium rounded-lg flex items-center gap-1.5"
 							data-testid="btn-download-pdfa-inline"
 							onClick={onDownloadPdfA}
 							title="Скачать архивный документ ISO 19005-1 PDF/A-1b с криптографическим отпечатком"
 						>
-							<Download size={16} />
+							<Download size={14} />
 							<span>Скачать PDF/A</span>
 						</button>
 					</div>
@@ -762,19 +703,9 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						</span>
 						<button
 							type="button"
-							className="consent-mode-btn"
+							className="secondary-button min-h-[44px] sm:min-h-7 sm:h-7 px-2.5 text-[12px] font-medium rounded-md flex items-center gap-1.5"
 							onClick={() => setVerificationMethod("tablet_stylus")}
 							data-testid="tab-method-tablet-optional"
-							style={{
-								height: "28px",
-								padding: "0 10px",
-								fontSize: "11.5px",
-								borderRadius: "6px",
-								border: "1px dashed var(--line-strong)",
-								background: "var(--paper)",
-								color: "var(--muted)",
-								cursor: "pointer",
-							}}
 							title="Развернуть сенсорную панель для стилуса или пальца (если в клинике есть планшет)"
 						>
 							<PenTool size={13} />

@@ -36,7 +36,7 @@ function PaymentModalPreviewApp() {
 					DENTE Studio Clinical HIG — Оплата и Кассовый чек 54-ФЗ
 				</h1>
 				<p className="text-xs text-[var(--muted)]">
-					Тема: {rawTheme.toUpperCase()} | 1-Click касса соло-врача | Термолента 80мм ФФД 1.2
+					Тема: {rawTheme.toUpperCase()} | Экспресс-касса соло-врача | Термолента 80мм ФФД 1.2
 				</p>
 			</div>
 

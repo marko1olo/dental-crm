@@ -25,6 +25,7 @@ import {
 	UploadCloud,
 	User,
 	UserCheck,
+	X,
 	Zap,
 } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
@@ -39,6 +40,10 @@ import {
 	type RadiologyTactileFilterState,
 	type TactileDatePreset,
 } from "../RadiologyPatientSearchModal";
+import { DEMO_ARCHIVE_STUDIES } from "./demoArchiveStudies";
+import { RadiologyStudyRow } from "./RadiologyStudyRow";
+
+export { DEMO_ARCHIVE_STUDIES } from "./demoArchiveStudies";
 
 export const ARCHIVE_FDI_TEETH = [
 	"18", "17", "16", "15", "14", "13", "12", "11",
@@ -57,136 +62,13 @@ export interface RadiologyStudiesArchiveProps {
 export type ArchiveModalityFilter = "all" | "cbct" | "opg" | "periapical" | "ceph" | "photo";
 export type ArchiveBindingFilter = "all" | "pending_review" | "bound" | "unassigned";
 
-export const DEMO_ARCHIVE_STUDIES: ImagingStudy[] = [
-	{
-		id: "02b00000-0000-0000-0000-000000000001",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		patientId: "01a00000-0000-0000-0000-000000000001",
-		patientFullName: "Захаров Иван Дмитриевич",
-		dicomPatientName: "Zakharov Ivan",
-		dicomPatientId: "DICOM-CT-89412",
-		dicomBirthDate: "1985-04-12",
-		kind: "cbct",
-		title: "3D КЛКТ верхней и нижней челюсти 8x8",
-		modality: "CT",
-		seriesDescription: "KaVo OP 3D Pro / 80x80mm Standard Res",
-		studyDate: "2026-08-25",
-		capturedAt: "2026-08-25T10:30:00.000Z",
-		sliceCount: 420,
-		dimensions: "512x512x420",
-		voxelSpacing: "0.2mm",
-		fileSizeBytes: 185400000,
-		bindingStatus: "auto_bound",
-		bindingConfidence: 98,
-		sourceKind: "folder_watch",
-		sourceName: "KaVo eXam Vision PACS",
-		status: "available",
-		visitId: null,
-		toothCode: null,
-		region: null,
-		aiSummary: null,
-		previewUrl: "/radiology/sample_rvg_tooth16.jpg",
-		viewerUrl: null,
-	},
-	{
-		id: "02b00000-0000-0000-0000-000000000002",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		patientId: "01a00000-0000-0000-0000-000000000002",
-		patientFullName: "Иванов Алексей Сергеевич",
-		dicomPatientName: "Ivanov Alexey",
-		dicomPatientId: "DICOM-PAN-55421",
-		dicomBirthDate: "1992-08-24",
-		kind: "opg",
-		title: "Ортопантомограмма цифровая (ОПТГ)",
-		modality: "PAN",
-		seriesDescription: "Planmeca ProMax HD Panoramic",
-		studyDate: "2026-08-26",
-		capturedAt: "2026-08-26T14:15:00.000Z",
-		sliceCount: 1,
-		dimensions: "2840x1420",
-		voxelSpacing: "0.08mm",
-		fileSizeBytes: 14200000,
-		bindingStatus: "manual_bound",
-		bindingConfidence: 100,
-		sourceKind: "dicomweb",
-		sourceName: "Planmeca Romexis Hub",
-		status: "available",
-		visitId: null,
-		toothCode: null,
-		region: null,
-		aiSummary: null,
-		previewUrl: "/radiology/sample_rvg_pathology.jpg",
-		viewerUrl: null,
-	},
-	{
-		id: "02b00000-0000-0000-0000-000000000003",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		patientId: "01a00000-0000-0000-0000-000000000003",
-		patientFullName: "Смирнова Елена Александровна",
-		dicomPatientName: "Smirnova Elena",
-		dicomPatientId: "DICOM-RVG-10293",
-		dicomBirthDate: "1988-11-03",
-		kind: "periapical",
-		toothCode: "36",
-		region: "Моляр н/ч слева",
-		title: "Прицельный снимок зуб 36 (периапикальный)",
-		modality: "IO",
-		seriesDescription: "Vatech EzSensor Classic 1.5",
-		studyDate: "2026-08-28",
-		capturedAt: "2026-08-28T09:40:00.000Z",
-		sliceCount: 1,
-		dimensions: "1920x1440",
-		voxelSpacing: "0.02mm",
-		fileSizeBytes: 5200000,
-		bindingStatus: "auto_bound",
-		bindingConfidence: 94,
-		sourceKind: "folder_watch",
-		sourceName: "DENTE Рентген-станция",
-		status: "available",
-		visitId: null,
-		aiSummary: null,
-		previewUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
-		viewerUrl: null,
-	},
-	{
-		id: "02b00000-0000-0000-0000-000000000004",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		patientId: null,
-		patientFullName: null,
-		dicomPatientName: "Kuznetsov D.",
-		dicomPatientId: "DICOM-CT-99102",
-		dicomBirthDate: "1979-02-17",
-		kind: "cbct",
-		title: "3D КЛКТ сегмента нижней челюсти 5x5",
-		modality: "CT",
-		seriesDescription: "Morita Veraviewepocs 3D F40",
-		studyDate: "2026-08-28",
-		capturedAt: "2026-08-28T16:50:00.000Z",
-		sliceCount: 380,
-		dimensions: "512x512x380",
-		voxelSpacing: "0.125mm",
-		fileSizeBytes: 145000000,
-		bindingStatus: "pending_review",
-		bindingConfidence: 78,
-		sourceKind: "folder_watch",
-		sourceName: "i-Dixel Morita Network",
-		status: "available",
-		visitId: null,
-		toothCode: null,
-		region: null,
-		aiSummary: null,
-		previewUrl: "/radiology/sample_rvg_tooth16.jpg",
-		viewerUrl: null,
-	},
-];
-
 /**
  * RadiologyStudiesArchive — Глобальный реестр ВСЕХ исследований клиники (Архив КТ и рентгенов).
  *
  * МАНДАТЫ ВРАЧЕБНОЙ АВТОНОМИИ И ЭРГОНОМИКИ:
  * 1. Полноценная картотека всех снимков клиники с фильтрацией по модальности и статусу привязки.
- * 2. 1-клик запуск 3D КЛКТ Студии из реестра.
- * 3. 1-клик запуск фоновой автопривязки неразобранных КТ по ФИО пациентов.
+ * 2. Запуск 3D КЛКТ Студии из реестра.
+ * 3. Фоновая автопривязка неразобранных КТ по ФИО пациентов.
  * 4. Контроль сопоставления врача с возможностью мгновенного подтверждения или перепривязки.
  * 5. Плотная профессиональная десктопная сетка (кнопки 32–36px) и адаптивность под тач.
  */
@@ -373,14 +255,14 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 				if (modalityFilter === "photo" && study.kind !== "photo") return false;
 			}
 
-			// 1-клик быстрый фильтр по пресету даты
+			// Быстрый фильтр по пресету даты
 			if (datePresetFilter !== "all") {
 				if (!matchesDatePreset(study.capturedAt || study.studyDate, datePresetFilter)) {
 					return false;
 				}
 			}
 
-			// 1-клик быстрый фильтр по зубу FDI
+			// Быстрый фильтр по зубу FDI
 			if (toothFilter !== "all") {
 				if (String(study.toothCode || "") !== toothFilter) {
 					return false;
@@ -446,11 +328,11 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 							type="button"
 							onClick={handleScanDiskForDicom}
 							disabled={isDiskScanning}
-							className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+							className="secondary-button"
 							data-testid="btn-scan-disk-for-dicom"
 							title="Автономный поиск папок и архивов КТ на диске с фильтрацией мусора сторонних просмотрщиков и исключением дубликатов"
 						>
-							<HardDrive className={`w-3.5 h-3.5 ${isDiskScanning ? "animate-spin" : ""}`} />
+							<HardDrive className={`w-3.5 h-3.5 text-indigo-500 ${isDiskScanning ? "animate-spin" : ""}`} />
 							<span>{isDiskScanning ? "Поиск КТ..." : "Найти КТ на диске"}</span>
 						</button>
 
@@ -459,23 +341,23 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 							type="button"
 							onClick={handleTriggerAutoBinding}
 							disabled={isAutoBinding}
-							className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+							className="secondary-button"
 							data-testid="btn-auto-bind-scan"
 							title="Запустить алгоритм автопривязки неразобранных КТ по ФИО и дате рождения"
 						>
-							<Sparkles className={`w-3.5 h-3.5 ${isAutoBinding ? "animate-spin" : ""}`} />
+							<Sparkles className={`w-3.5 h-3.5 text-teal-500 ${isAutoBinding ? "animate-spin" : ""}`} />
 							<span>{isAutoBinding ? "Сопоставление..." : "Автопривязка по ФИО"}</span>
 						</button>
 
-						{/* Кнопка загрузки КТ */}
+						{/* Кнопка загрузки КТ — Единый Primary CTA архива */}
 						{onUploadNew && (
 							<button
 								type="button"
 								onClick={onUploadNew}
-								className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 transition-colors cursor-pointer"
+								className="primary-button"
 								data-testid="btn-archive-upload-new"
 							>
-								<Plus className="w-3.5 h-3.5 text-teal-500" />
+								<Plus className="w-3.5 h-3.5" />
 								<span>Загрузить снимок / КТ</span>
 							</button>
 						)}
@@ -485,7 +367,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 							type="button"
 							onClick={fetchAllStudies}
 							disabled={isLoading}
-							className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+							className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors cursor-pointer"
 							title="Обновить список"
 						>
 							<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -496,23 +378,24 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 				{/* Панель поиска и фильтров */}
 				<div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
 					{/* Поле поиска */}
-					<div className="relative flex-1 min-w-[220px]">
-						<Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+					<div className="dente-search-wrap flex-1 min-w-[220px]">
+						<Search className="dente-search-icon" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по ФИО пациента, названию или номеру зуба..."
-							className="w-full h-8 pl-8 pr-3 rounded-lg text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-hidden focus:border-teal-500 transition-colors"
+							className="dente-search-input"
 							data-testid="archive-search-input"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)]"
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
 							>
-								✕
+								<X size={14} />
 							</button>
 						)}
 					</div>
@@ -521,11 +404,11 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 					<button
 						type="button"
 						onClick={() => setShowTactileModal(true)}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors active:scale-95 cursor-pointer shrink-0 shadow-2xs"
 						data-testid="btn-open-tactile-matrix"
 						title="Тактильная матрица поиска исследований по датам и аппаратам"
 					>
-						<Filter className="w-3.5 h-3.5" />
+						<Filter className="w-3.5 h-3.5 text-emerald-500" />
 						<span>Матрица поиска</span>
 					</button>
 
@@ -534,25 +417,21 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setTactileFilters(DEFAULT_TACTILE_FILTERS)}
-							className="inline-flex items-center gap-1 h-8 px-2.5 text-xs font-bold rounded-lg bg-[#2E8B57]/15 text-[#2E8B57] border border-[#2E8B57]/30 hover:bg-[#2E8B57]/25 transition-colors cursor-pointer shrink-0"
+							className="inline-flex items-center gap-1 h-8 px-2.5 text-[12.5px] font-medium rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors cursor-pointer shrink-0"
 							title="Сбросить тактильные фильтры"
 							data-testid="btn-reset-tactile-matrix"
 						>
 							<span>Матрица: {tactileFilters.mode} / {tactileFilters.datePreset}</span>
-							<span className="text-xs ml-0.5">✕</span>
+							<X size={12} className="ml-0.5" />
 						</button>
 					)}
 
-					{/* 1-клик быстрый фильтр по датам (Сегодня / Вчера / 3 дня / Неделя / Месяц / Все) */}
-					<div className="flex items-center gap-0.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg p-0.5 overflow-x-auto scrollbar-none" data-testid="archive-date-presets-bar">
+					{/* Быстрый фильтр по датам (Сегодня / Вчера / 3 дня / Неделя / Месяц / Все) */}
+					<div className="dente-segmented-bar overflow-x-auto scrollbar-none" data-testid="archive-date-presets-bar">
 						<button
 							type="button"
 							onClick={() => setDatePresetFilter("all")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								datePresetFilter === "all"
-									? "bg-teal-600 text-white shadow-2xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${datePresetFilter === "all" ? "active" : ""}`}
 							data-testid="archive-date-all"
 						>
 							Все даты
@@ -560,11 +439,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setDatePresetFilter("today")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								datePresetFilter === "today"
-									? "bg-teal-600 text-white shadow-2xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${datePresetFilter === "today" ? "active" : ""}`}
 							data-testid="archive-date-today"
 						>
 							Сегодня
@@ -572,11 +447,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setDatePresetFilter("yesterday")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								datePresetFilter === "yesterday"
-									? "bg-teal-600 text-white shadow-2xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${datePresetFilter === "yesterday" ? "active" : ""}`}
 							data-testid="archive-date-yesterday"
 						>
 							Вчера
@@ -584,11 +455,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setDatePresetFilter("3days")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								datePresetFilter === "3days"
-									? "bg-teal-600 text-white shadow-2xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${datePresetFilter === "3days" ? "active" : ""}`}
 							data-testid="archive-date-3days"
 						>
 							3 дня
@@ -596,11 +463,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setDatePresetFilter("last_week")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								datePresetFilter === "last_week"
-									? "bg-teal-600 text-white shadow-2xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${datePresetFilter === "last_week" ? "active" : ""}`}
 							data-testid="archive-date-week"
 						>
 							Неделя
@@ -608,11 +471,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setDatePresetFilter("last_month")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								datePresetFilter === "last_month"
-									? "bg-teal-600 text-white shadow-2xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${datePresetFilter === "last_month" ? "active" : ""}`}
 							data-testid="archive-date-month"
 						>
 							Месяц
@@ -624,7 +483,7 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<select
 							value={toothFilter}
 							onChange={(e) => setToothFilter(e.target.value)}
-							className="h-7 px-2 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-xs outline-none cursor-pointer hover:border-teal-500"
+							className="h-8 px-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] text-[12.5px] font-medium outline-none cursor-pointer hover:border-teal-500 transition-colors"
 							data-testid="archive-tooth-filter"
 						>
 							<option value="all">Все зубы (FDI)</option>
@@ -640,15 +499,11 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 					</div>
 
 					{/* Сегментный фильтр по модальности */}
-					<div className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg p-0.5 overflow-x-auto scrollbar-none">
+					<div className="dente-segmented-bar overflow-x-auto scrollbar-none" data-testid="archive-modality-bar">
 						<button
 							type="button"
 							onClick={() => setModalityFilter("all")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								modalityFilter === "all"
-									? "bg-teal-600 text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${modalityFilter === "all" ? "active" : ""}`}
 							data-testid="filter-modality-all"
 						>
 							Все виды ({counts.total})
@@ -656,80 +511,56 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						<button
 							type="button"
 							onClick={() => setModalityFilter("cbct")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1 ${
-								modalityFilter === "cbct"
-									? "bg-teal-600 text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${modalityFilter === "cbct" ? "active" : ""}`}
 							data-testid="filter-modality-cbct"
 						>
-							<Box className="w-3 h-3" />
+							<Box className="w-3.5 h-3.5" />
 							<span>3D КЛКТ</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setModalityFilter("opg")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1 ${
-								modalityFilter === "opg"
-									? "bg-teal-600 text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${modalityFilter === "opg" ? "active" : ""}`}
 							data-testid="filter-modality-opg"
 						>
-							<Scan className="w-3 h-3" />
+							<Scan className="w-3.5 h-3.5" />
 							<span>ОПТГ</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setModalityFilter("periapical")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1 ${
-								modalityFilter === "periapical"
-									? "bg-teal-600 text-white shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${modalityFilter === "periapical" ? "active" : ""}`}
 							data-testid="filter-modality-rvg"
 						>
-							<Layers className="w-3 h-3" />
-							<span>Прицельные снимки</span>
+							<Layers className="w-3.5 h-3.5" />
+							<span>Прицельные</span>
 						</button>
 					</div>
 
 					{/* Сегментный фильтр по статусу контроля */}
-					<div className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] rounded-lg p-0.5 overflow-x-auto scrollbar-none">
+					<div className="dente-segmented-bar overflow-x-auto scrollbar-none" data-testid="archive-binding-bar">
 						<button
 							type="button"
 							onClick={() => setBindingFilter("all")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap ${
-								bindingFilter === "all"
-									? "bg-zinc-700 text-white dark:bg-zinc-600 shadow-2xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${bindingFilter === "all" ? "active" : ""}`}
 						>
 							Все статусы
 						</button>
 						<button
 							type="button"
 							onClick={() => setBindingFilter("pending_review")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1 ${
-								bindingFilter === "pending_review"
-									? "bg-amber-600 text-white shadow-2xs"
-									: "text-amber-500 hover:text-amber-400"
-							}`}
+							className={`dente-segmented-item ${bindingFilter === "pending_review" ? "active" : ""}`}
 							data-testid="filter-binding-pending"
 						>
-							<AlertCircle className="w-3 h-3" />
+							<AlertCircle className="w-3.5 h-3.5 text-amber-500" />
 							<span>Контроль ({counts.pending})</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setBindingFilter("bound")}
-							className={`h-7 px-2.5 rounded-md font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap inline-flex items-center gap-1 ${
-								bindingFilter === "bound"
-									? "bg-emerald-600 text-white shadow-2xs"
-									: "text-emerald-500 hover:text-emerald-400"
-							}`}
+							className={`dente-segmented-item ${bindingFilter === "bound" ? "active" : ""}`}
 						>
-							<Check className="w-3 h-3" />
+							<Check className="w-3.5 h-3.5 text-emerald-500" />
 							<span>Привязаны ({counts.bound})</span>
 						</button>
 					</div>
@@ -767,188 +598,16 @@ export const RadiologyStudiesArchive: React.FC<RadiologyStudiesArchiveProps> = (
 						)}
 					</div>
 				) : (
-					filteredStudies.map((study) => {
-						const isCbct = study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1);
-						const isBound = Boolean(study.patientId);
-
-						return (
-							<div
-								key={study.id}
-								className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] hover:border-teal-500/50 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-2xs"
-								data-testid={`study-row-${study.id}`}
-							>
-								{/* Левая колонка: Иконка модальности + Описание */}
-								<div className="flex items-start gap-3 min-w-0 flex-1">
-									<div
-										className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-											isCbct
-												? "bg-blue-500/15 text-blue-500 border-blue-500/30"
-												: study.kind === "opg"
-													? "bg-purple-500/15 text-purple-500 border-purple-500/30"
-													: "bg-teal-500/15 text-teal-500 border-teal-500/30"
-										}`}
-									>
-										{isCbct ? (
-											<Box className="w-5 h-5" />
-										) : study.kind === "opg" ? (
-											<Scan className="w-5 h-5" />
-										) : (
-											<Layers className="w-5 h-5" />
-										)}
-									</div>
-
-									<div className="min-w-0 flex-1">
-										<div className="flex items-center gap-2 flex-wrap">
-											<h4 className="text-xs font-bold text-[var(--ink)] truncate">
-												{study.title}
-											</h4>
-											{study.toothCode && (
-												<span className="px-1.5 py-0.2 rounded text-[11px] font-mono font-bold bg-teal-500/20 text-teal-600 dark:text-teal-300 border border-teal-500/30">
-													Зуб #{study.toothCode}
-												</span>
-											)}
-										</div>
-
-										<div className="flex items-center gap-3 text-[11px] text-[var(--muted)] mt-1 flex-wrap">
-											<span>
-												Дата:{" "}
-												<strong className="text-[var(--ink)]">
-													{study.capturedAt
-														? new Date(study.capturedAt).toLocaleDateString("ru-RU", {
-																day: "2-digit",
-																month: "2-digit",
-																year: "numeric",
-																hour: "2-digit",
-																minute: "2-digit",
-															})
-														: study.studyDate || "—"}
-												</strong>
-											</span>
-											<span>Серия: {study.seriesDescription || study.sourceName}</span>
-											{study.sliceCount && (
-												<span className="font-semibold text-blue-600 dark:text-blue-400">
-													{study.sliceCount} срез. ({study.voxelSpacing || "0.2mm"})
-												</span>
-											)}
-										</div>
-
-										{/* Блок привязки пациента */}
-										<div className="flex items-center gap-2 mt-1.5 flex-wrap">
-											<div className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ink)]">
-												<User className="w-3 h-3 text-[var(--muted)]" />
-												<span>
-													Пациент:{" "}
-													<strong
-														className={
-															study.patientFullName ? "text-[var(--ink)]" : "text-amber-500"
-														}
-													>
-														{study.patientFullName || "Не привязан к базе"}
-													</strong>
-												</span>
-											</div>
-
-											{study.dicomPatientName && (
-												<span className="text-[10px] text-[var(--muted)] font-mono">
-													(DICOM: {study.dicomPatientName})
-												</span>
-											)}
-
-											{/* Бейдж статуса */}
-											{study.bindingStatus === "manual_bound" ? (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-													<Check className="w-2.5 h-2.5" />
-													<span>Подтверждено врачом</span>
-												</span>
-											) : study.bindingStatus === "auto_bound" ? (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-													<Sparkles className="w-2.5 h-2.5" />
-													<span>Привязано по ФИО ({study.bindingConfidence || 95}%)</span>
-												</span>
-											) : study.bindingStatus === "pending_review" ? (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40">
-													<AlertCircle className="w-2.5 h-2.5" />
-													<span>Ожидает контроля ({study.bindingConfidence || 75}%)</span>
-												</span>
-											) : (
-												<span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-500/30">
-													<span>Не привязано</span>
-												</span>
-											)}
-
-											{study.archivePath && (
-												<span
-													className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30"
-													title={`Архив-источник КТ: ${study.archivePath}`}
-													data-testid={`badge-archive-${study.id}`}
-												>
-													<Archive className="w-2.5 h-2.5" />
-													<span>Архив КТ</span>
-												</span>
-											)}
-										</div>
-									</div>
-								</div>
-
-								{/* Правая колонка: 1-клик кнопки действий */}
-								<div className="flex items-center gap-2 shrink-0 self-end md:self-center flex-wrap">
-									{/* Контроль сопоставления */}
-									<button
-										type="button"
-										onClick={() => setActiveControlStudy(study)}
-										className="h-8 px-2.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-										data-testid={`btn-control-binding-${study.id}`}
-										title="Контроль привязки к пациенту / смена / отвязка"
-									>
-										<Settings className="w-3.5 h-3.5 text-[var(--muted)]" />
-										<span>Контроль</span>
-									</button>
-
-									{/* Запуск 3D Студии */}
-									{isCbct && onOpenStudio && (
-										<button
-											type="button"
-											onClick={() => onOpenStudio(study)}
-											className="h-8 px-3 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-500 text-white inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
-											data-testid={`btn-open-studio-${study.id}`}
-											title="1-клик запуск 3D КЛКТ Студии планирования имплантации"
-										>
-											<Box className="w-3.5 h-3.5" />
-											<span>🔬 3D Студия</span>
-										</button>
-									)}
-
-									{/* 1-клик запуск в 2D Рентген-просмотрщике */}
-									{onOpenSensorViewer && !isCbct && (
-										<button
-											type="button"
-											onClick={() => onOpenSensorViewer(study)}
-											className="h-8 px-2.5 text-xs font-bold rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-											data-testid={`btn-open-sensor-${study.id}`}
-											title="Открыть снимок в 2D Рентген-просмотрщике с калибровкой и фильтрами"
-										>
-											<Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-											<span>2D Сенсор</span>
-										</button>
-									)}
-
-									{/* Просмотр снимка */}
-									{onOpenViewer && (
-										<button
-											type="button"
-											onClick={() => onOpenViewer(study)}
-											className="h-8 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-											data-testid={`btn-open-viewer-${study.id}`}
-											title="Открыть снимок в просмотрщике"
-										>
-											<Eye className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-											<span>Просмотр</span>
-										</button>
-									)}
-								</div>
-							</div>
-						);
-					})
+					filteredStudies.map((study) => (
+						<RadiologyStudyRow
+							key={study.id}
+							study={study}
+							onOpenStudio={onOpenStudio}
+							onOpenViewer={onOpenViewer}
+							onOpenSensorViewer={onOpenSensorViewer}
+							onControlBinding={setActiveControlStudy}
+						/>
+					))
 				)}
 			</div>
 

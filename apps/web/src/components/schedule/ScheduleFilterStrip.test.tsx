@@ -97,12 +97,12 @@ describe("ScheduleFilterStrip Component", () => {
 		);
 
 		assert.ok(
-			html.includes("Острая боль (CITO!)"),
-			"Contains 'Острая боль (CITO!)' text",
+			html.includes("Острая боль (срочно)"),
+			"Contains 'Острая боль (срочно)' text",
 		);
 		assert.ok(
-			html.includes("aria-label=\"Пациент с острой болью CITO: быстрая запись дежурному врачу\""),
-			"Contains accessible CITO aria label",
+			html.includes("aria-label=\"Пациент с острой болью: быстрая запись дежурному врачу\""),
+			"Contains accessible urgent aria label",
 		);
 	});
 

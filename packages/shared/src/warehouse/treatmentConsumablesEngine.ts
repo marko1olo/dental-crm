@@ -506,6 +506,7 @@ export function calculateServiceConsumables(
 export interface ProcessStockDeductionOptions {
 	readonly allowOverdraft?: boolean | undefined;
 	readonly overdraftMessagePrefix?: string | undefined;
+	readonly overdraftMessageSuffix?: string | undefined;
 }
 
 /**
@@ -530,7 +531,7 @@ export function processConsumablesStockDeduction(
 	options: ProcessStockDeductionOptions = {},
 ): ProcessStockDeductionResult {
 	const allowOverdraft = options.allowOverdraft !== false;
-	const prefix = options.overdraftMessagePrefix ?? "Мандат 8e/8n: Мягкий овердрафт";
+	const prefix = options.overdraftMessagePrefix ?? "Складской овердрафт";
 
 	const stockTracker = new Map<string, number>();
 	if (currentStockMap instanceof Map) {
@@ -564,9 +565,9 @@ export function processConsumablesStockDeduction(
 
 		if (isOverdraftItem) {
 			hasOverdraft = true;
-			const suffix = prefix.includes("8n")
+			const suffix = options.overdraftMessageSuffix ?? (prefix.includes("8n")
 				? "Накладная в пути. Лечение не блокируется."
-				: "Операция не блокируется.";
+				: "Операция не блокируется.");
 			const warningMsg = `${prefix} позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}): списано ${planned.requiredQuantity} ${planned.unit}, остаток ${remainingQty} ${planned.unit}. ${suffix}`;
 
 			if (!allowOverdraft) {
@@ -669,7 +670,8 @@ export function executeBatchConsumablesDeduction(
 		request.currentStockMap,
 		{
 			allowOverdraft: request.allowOverdraft !== false,
-			overdraftMessagePrefix: "Мандат 8e: Складской овердрафт",
+			overdraftMessagePrefix: "Складской овердрафт",
+			overdraftMessageSuffix: "Операция не блокируется.",
 		},
 	);
 
@@ -724,7 +726,7 @@ export function formatConsumablesWriteOffA4Report(
 		`Лечащий врач: ${doctor} | Визит: ${result.visitId}`,
 		`Дата списания: ${date}`,
 		subDivider,
-		"1. ВЕДОМОСТЬ СПИСАННЫХ МАТЕРИАЛОВ ПО ОКАЗАННЫМ УСЛУГАМ 804Н:",
+		"1. ВЕДОМОСТЬ СПИСАННЫХ МАТЕРИАЛОВ ПО ОКАЗАННЫМ МЕДИЦИНСКИМ УСЛУГАМ:",
 	];
 
 	if (result.items.length === 0) {
@@ -748,12 +750,12 @@ export function formatConsumablesWriteOffA4Report(
 		`   Всего списано позиций номенклатуры: ${result.totalDeductedItems}`,
 		`   Общая себестоимость списанных материалов: ${result.totalCostPriceRub}`,
 		subDivider,
-		"3. СКЛАДСКОЙ КОНТРОЛЬ И САНПИН РЕГЛАМЕНТ (МАНДАТ 8E):",
+		"3. СКЛАДСКОЙ КОНТРОЛЬ И САНПИН РЕГЛАМЕНТ:",
 		...(result.hasOverdraft
 			? [
 					"   [!] ВНИМАНИЕ: Зафиксирован мягкий овердрафт складских позиций.",
 					...result.softOverdrafts.map((w) => `       - ${w}`),
-					"   Мандат 8e: Проведение лечения и спасение пациента не блокируются.",
+					"   Клинический приоритет: проведение лечения и оказание медицинской помощи пациенту не блокируются.",
 					"   Уведомление направлено в отдел снабжения для планового пополнения.",
 				]
 			: [

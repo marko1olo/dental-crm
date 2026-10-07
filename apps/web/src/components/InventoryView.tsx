@@ -489,15 +489,15 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 				openAddModal={openAddModal}
 			/>
 
-			{/* CATEGORY FILTER CHIPS ROW (Studio HIG - tactile button chips) */}
+			{/* CATEGORY FILTER CHIPS ROW (DENTE canonical filter chips) */}
 			{activeSubTab === "inventory" && (
 				<div
-					className="min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap shrink-0"
-					role="group"
+					className="dente-filter-chips min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap shrink-0"
+					role="toolbar"
 					aria-label="Фильтр по категориям материалов"
 					data-testid="inventory-category-filters-row"
 				>
-					<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] mr-1 shrink-0">
+					<span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mr-1 shrink-0">
 						Категории:
 					</span>
 					{INVENTORY_CATEGORIES.map((cat) => {
@@ -508,33 +508,15 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								key={cat.id}
 								type="button"
 								onClick={() => setSelectedCategory(cat.id)}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shrink-0 transition-all border whitespace-nowrap ${
-									isActive
-										? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs font-bold"
-										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] hover:text-[var(--teal-dark)]"
-								}`}
-								style={
-									isActive
-										? {
-												color: "#ffffff",
-												backgroundColor: "var(--teal)",
-												borderColor: "var(--teal)",
-											}
-										: undefined
-								}
+								className={`dente-filter-chip ${isActive ? "active" : ""}`}
+								aria-pressed={isActive}
 								data-testid={`inventory-category-chip-${cat.id}`}
 							>
 								<Icon
 									size={13}
-									className={
-										isActive
-											? "text-white shrink-0"
-											: "text-teal-600 dark:text-teal-400 shrink-0"
-									}
+									className="shrink-0"
 								/>
-								<span style={isActive ? { color: "#ffffff" } : undefined}>
-									{cat.label}
-								</span>
+								<span>{cat.label}</span>
 							</button>
 						);
 					})}

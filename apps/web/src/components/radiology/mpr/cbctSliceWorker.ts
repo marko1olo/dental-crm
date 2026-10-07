@@ -133,6 +133,12 @@ export interface GenerateProgressiveLodPayload {
 	}>;
 }
 
+export interface AbortRequestPayload {
+	requestId: number;
+	plane?: MprPlane | undefined;
+	volumeId?: string | undefined;
+}
+
 export type CbctWorkerInboundMessage =
 	| ({ type: "INIT_VOLUME" } & InitVolumePayload)
 	| ({ type: "RENDER_SLICE" } & RenderSlicePayload)
@@ -140,7 +146,8 @@ export type CbctWorkerInboundMessage =
 	| ({ type: "RENDER_CROSS_SECTION_SERIES" } & RenderCrossSectionSeriesPayload)
 	| ({ type: "DECODE_DICOM_SLICES" } & DecodeDicomSlicesPayload)
 	| ({ type: "GENERATE_PROGRESSIVE_LOD" } & GenerateProgressiveLodPayload)
-	| ({ type: "DISPOSE_VOLUME" } & DisposeVolumePayload);
+	| ({ type: "DISPOSE_VOLUME" } & DisposeVolumePayload)
+	| ({ type: "ABORT_REQUEST" } & AbortRequestPayload);
 
 export type CbctWorkerOutboundMessage =
 	| {
@@ -164,6 +171,11 @@ export type CbctWorkerOutboundMessage =
 				coronal: { metadata: MprSliceMetadata; pixelBuffer: ArrayBufferLike };
 				sagittal: { metadata: MprSliceMetadata; pixelBuffer: ArrayBufferLike };
 			};
+	  }
+	| {
+			type: "REQUEST_ABORTED";
+			requestId: number;
+			plane?: MprPlane | undefined;
 	  }
 	| {
 			type: "CROSS_SECTION_SERIES_RENDERED";
@@ -200,6 +212,11 @@ export type CbctWorkerOutboundMessage =
 // ─── WORKER CACHE & MESSAGE HANDLER ──────────────────────────────────────────
 
 export const workerVolumeCache = new Map<string, CbctVoxelVolume>();
+export const cancelledRequestIds = new Set<number>();
+
+export function clearCancelledRequests(): void {
+	cancelledRequestIds.clear();
+}
 
 /**
  * Pure message processing function decoupled from worker globals.
@@ -255,7 +272,28 @@ export function handleWorkerMessage(
 			break;
 		}
 
+		case "ABORT_REQUEST": {
+			cancelledRequestIds.add(msg.requestId);
+			postMessage({
+				type: "REQUEST_ABORTED",
+				requestId: msg.requestId,
+				...(msg.plane ? { plane: msg.plane } : {}),
+			});
+			break;
+		}
+
 		case "RENDER_SLICE": {
+			// Pre-flight check: drop stale aborted request before touching 3D volume or interpolating
+			if (cancelledRequestIds.has(msg.requestId)) {
+				cancelledRequestIds.delete(msg.requestId);
+				postMessage({
+					type: "REQUEST_ABORTED",
+					requestId: msg.requestId,
+					plane: msg.plane,
+				});
+				return;
+			}
+
 			const vol = cache.get(msg.volumeId);
 			if (!vol || !vol.data || vol.isDisposed) {
 				postMessage({
@@ -275,6 +313,7 @@ export function handleWorkerMessage(
 					...(msg.options.slabMode !== undefined ? { slabMode: msg.options.slabMode } : {}),
 					...(msg.options.slabThicknessMm !== undefined ? { slabThicknessMm: msg.options.slabThicknessMm } : {}),
 					...(msg.options.interpolation !== undefined ? { interpolation: msg.options.interpolation } : {}),
+					isAborted: () => cancelledRequestIds.has(msg.requestId),
 				};
 
 				const result = extractObliqueMprSlice(
@@ -303,6 +342,15 @@ export function handleWorkerMessage(
 					transferList,
 				);
 			} catch (err) {
+				if (err instanceof Error && err.message === "OPERATION_ABORTED") {
+					cancelledRequestIds.delete(msg.requestId);
+					postMessage({
+						type: "REQUEST_ABORTED",
+						requestId: msg.requestId,
+						plane: msg.plane,
+					});
+					return;
+				}
 				postMessage({
 					type: "ERROR",
 					requestId: msg.requestId,
@@ -314,6 +362,16 @@ export function handleWorkerMessage(
 		}
 
 		case "RENDER_ALL_PLANES": {
+			// Pre-flight check: drop stale aborted multi-plane render before extracting 3 oblique planes
+			if (cancelledRequestIds.has(msg.requestId)) {
+				cancelledRequestIds.delete(msg.requestId);
+				postMessage({
+					type: "REQUEST_ABORTED",
+					requestId: msg.requestId,
+				});
+				return;
+			}
+
 			const vol = cache.get(msg.volumeId);
 			if (!vol || !vol.data || vol.isDisposed) {
 				postMessage({
@@ -333,10 +391,23 @@ export function handleWorkerMessage(
 					...(msg.options.slabMode !== undefined ? { slabMode: msg.options.slabMode } : {}),
 					...(msg.options.slabThicknessMm !== undefined ? { slabThicknessMm: msg.options.slabThicknessMm } : {}),
 					...(msg.options.interpolation !== undefined ? { interpolation: msg.options.interpolation } : {}),
+					isAborted: () => cancelledRequestIds.has(msg.requestId),
 				};
 
 				const axialRes = extractObliqueMprSlice(vol, "axial", msg.crosshairMm, msg.angles, renderOpts);
+				if (cancelledRequestIds.has(msg.requestId)) {
+					cancelledRequestIds.delete(msg.requestId);
+					postMessage({ type: "REQUEST_ABORTED", requestId: msg.requestId });
+					return;
+				}
+
 				const coronalRes = extractObliqueMprSlice(vol, "coronal", msg.crosshairMm, msg.angles, renderOpts);
+				if (cancelledRequestIds.has(msg.requestId)) {
+					cancelledRequestIds.delete(msg.requestId);
+					postMessage({ type: "REQUEST_ABORTED", requestId: msg.requestId });
+					return;
+				}
+
 				const sagittalRes = extractObliqueMprSlice(vol, "sagittal", msg.crosshairMm, msg.angles, renderOpts);
 
 				const axialBuf = axialRes.data.buffer;
@@ -364,6 +435,14 @@ export function handleWorkerMessage(
 					transferList,
 				);
 			} catch (err) {
+				if (err instanceof Error && err.message === "OPERATION_ABORTED") {
+					cancelledRequestIds.delete(msg.requestId);
+					postMessage({
+						type: "REQUEST_ABORTED",
+						requestId: msg.requestId,
+					});
+					return;
+				}
 				postMessage({
 					type: "ERROR",
 					requestId: msg.requestId,
@@ -664,6 +743,7 @@ export function handleWorkerMessage(
 		}
 
 		case "DISPOSE_VOLUME": {
+			cancelledRequestIds.clear();
 			const vol = cache.get(msg.volumeId);
 			if (vol) {
 				vol.data = null;

@@ -42,6 +42,59 @@ export interface ToothHistoryTimelineEvent {
 	isVoided?: boolean;
 }
 
+export function formatToothStateLabel(state: string | null | undefined): string {
+	if (!state) return "";
+	const s = state.trim();
+	const lower = s.toLowerCase();
+	switch (lower) {
+		case "caries":
+			return "кариес";
+		case "pulpitis":
+			return "пульпит";
+		case "periodontitis":
+			return "периодонтит";
+		case "filled":
+		case "done":
+			return "пломба / пролечен";
+		case "crown":
+			return "коронка";
+		case "missing":
+			return "отсутствует";
+		case "healthy":
+		case "idle":
+			return "здоров";
+		case "root_canal_treated":
+		case "treatment":
+			return "депульпирован / каналы";
+		case "implant":
+			return "имплантат";
+		case "planned_implant":
+			return "план. имплантат";
+		case "root":
+			return "корень";
+		case "retained":
+			return "ретинированный";
+		case "extracted":
+			return "удален";
+		default:
+			return s;
+	}
+}
+
+export function formatToothStateTransition(
+	previousState: string | null | undefined,
+	newState: string,
+	reason: string | null | undefined,
+): string {
+	const prevLabel = previousState ? formatToothStateLabel(previousState) : null;
+	const newLabel = formatToothStateLabel(newState);
+	const reasonSuffix = reason ? ` (${reason})` : "";
+	if (prevLabel && prevLabel !== newLabel) {
+		return `Статус зуба: ${prevLabel} → ${newLabel}${reasonSuffix}`;
+	}
+	return `Статус зуба: ${newLabel}${reasonSuffix}`;
+}
+
 export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/odontogram/tooth-history/:patientId/:toothId",
@@ -260,6 +313,7 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 				changedByUserId: string | null;
 				authorName: string | null;
 				reason: string | null;
+				visitId: string | null;
 			}> = [];
 
 			try {
@@ -271,6 +325,7 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 						changedByUserId: toothStateHistory.changedByUserId,
 						authorName: users.fullName,
 						reason: toothStateHistory.reason,
+						visitId: toothStateHistory.visitId,
 					})
 					.from(toothStateHistory)
 					.leftJoin(users, eq(users.id, toothStateHistory.changedByUserId))
@@ -291,10 +346,13 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					events.push({
 						type: "state_change",
 						date: row.changedAt,
-						description: row.previousState
-							? `Статус зуба: ${row.previousState} → ${row.newState}${row.reason ? ` (${row.reason})` : ""}`
-							: `Статус зуба установлен: ${row.newState}`,
+						description: formatToothStateTransition(
+							row.previousState,
+							row.newState,
+							row.reason,
+						),
 						authorId: row.authorName ?? "Не указан",
+						visitId: row.visitId ?? null,
 					});
 				}
 			} else {

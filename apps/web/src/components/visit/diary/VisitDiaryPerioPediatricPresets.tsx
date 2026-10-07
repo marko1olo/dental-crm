@@ -53,7 +53,7 @@ export function VisitDiaryPerioPediatricPresets({
 					type="button"
 					onClick={handleInsertPerioStatus}
 					className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 rounded-l-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
-					title="Вставить физиологическую норму пародонта в 1 клик (десна бледно-розовая, плотная, карманов нет)"
+					title="Вставить физиологическую норму пародонта (десна бледно-розовая, плотная, карманов нет)"
 					data-testid="insert-perio-043-btn"
 				>
 					<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
@@ -83,7 +83,7 @@ export function VisitDiaryPerioPediatricPresets({
 					>
 						<div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[var(--line,#334155)] flex items-center justify-between">
 							<span>Патологии пародонта (МКБ-10)</span>
-							<span className="text-[10px] text-teal-400">1 клик в дневник</span>
+							<span className="text-[10px] text-teal-400">В дневник</span>
 						</div>
 						<div className="max-h-80 overflow-y-auto py-1 divide-y divide-[var(--line-subtle,#1e293b)]">
 							{PERIO_PATHOLOGY_PRESETS.map((preset) => (

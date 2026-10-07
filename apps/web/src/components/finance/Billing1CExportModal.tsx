@@ -427,7 +427,7 @@ export function Billing1CExportModal({
 									<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] font-bold uppercase text-[10px] tracking-wider">
 										<tr>
 											<th className="py-2.5 px-3 w-10 text-center">№</th>
-											<th className="py-2.5 px-3 min-w-[180px]">Код 804н / Услуга</th>
+											<th className="py-2.5 px-3 min-w-[180px]">Код услуги / Наименование</th>
 											<th className="py-2.5 px-3 w-16 text-center whitespace-nowrap">Зуб</th>
 											<th className="py-2.5 px-3 w-14 text-center whitespace-nowrap">Кол-во</th>
 											<th className="py-2.5 px-3 min-w-[105px] text-right whitespace-nowrap">Цена</th>

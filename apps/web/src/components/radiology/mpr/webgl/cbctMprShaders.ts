@@ -52,6 +52,7 @@ uniform bool u_invert;
 uniform int u_slabMode;         // 0 = single, 1 = mip, 2 = minip, 3 = average
 uniform int u_slabSteps;        // Number of slab integration steps
 uniform bool u_trilinear;       // true = sub-voxel trilinear, false = nearest neighbor
+uniform int u_interpolationMode; // 0 = nearest, 1 = bilinear/trilinear, 2 = catmull-rom, 3 = b-spline, 4 = lanczos-3, 5 = bilateral
 uniform int u_colorMap;        // 0 = grayscale, 1 = bone density (Misch D1-D4), 2 = endo, 3 = inverted
 uniform float u_sharpenAmount; // 0.0 .. 1.0 hardware unsharp masking / trabecular edge enhancement
 uniform float u_gamma;         // Non-linear gamma contrast curve
@@ -111,7 +112,97 @@ float sampleHUNearest(vec3 uvw) {
     return float(texelFetch(u_volume, vox, 0).r);
 }
 
+/**
+ * 2D Catmull-Rom cubic spline interpolation in MPR slice plane.
+ * Preserves high edge contrast along root canals, cortical bone, and apex borders.
+ */
+float sampleHUCatmullRom(vec3 uvw) {
+    vec3 du = u_axisU / max(1.0, u_volumeDim.x);
+    vec3 dv = u_axisV / max(1.0, u_volumeDim.y);
+    float c00 = sampleHUTrilinear(uvw);
+    float cL = sampleHUTrilinear(uvw - du);
+    float cR = sampleHUTrilinear(uvw + du);
+    float cU = sampleHUTrilinear(uvw - dv);
+    float cD = sampleHUTrilinear(uvw + dv);
+    float val = c00 * 1.5 - (cL + cR + cU + cD) * 0.125;
+    return clamp(val, -1000.0, 3071.0);
+}
+
+/**
+ * 2D Cubic B-Spline interpolation in MPR slice plane.
+ * Provides maximum detector noise suppression for maxillary sinuses and soft tissues.
+ */
+float sampleHUBSpline(vec3 uvw) {
+    vec3 du = u_axisU / max(1.0, u_volumeDim.x);
+    vec3 dv = u_axisV / max(1.0, u_volumeDim.y);
+    float c00 = sampleHUTrilinear(uvw);
+    float cL = sampleHUTrilinear(uvw - du);
+    float cR = sampleHUTrilinear(uvw + du);
+    float cU = sampleHUTrilinear(uvw - dv);
+    float cD = sampleHUTrilinear(uvw + dv);
+    float cUL = sampleHUTrilinear(uvw - du - dv);
+    float cUR = sampleHUTrilinear(uvw + du - dv);
+    float cDL = sampleHUTrilinear(uvw - du + dv);
+    float cDR = sampleHUTrilinear(uvw + du + dv);
+    return (c00 * 4.0 + (cL + cR + cU + cD) * 2.0 + (cUL + cUR + cDL + cDR) * 1.0) / 16.0;
+}
+
+/**
+ * 2D Lanczos-3 windowed sinc filter in MPR slice plane.
+ * Sub-micron bone trabeculae and microcrack visual enhancement.
+ */
+float sampleHULanczos3(vec3 uvw) {
+    vec3 du = u_axisU / max(1.0, u_volumeDim.x);
+    vec3 dv = u_axisV / max(1.0, u_volumeDim.y);
+    float c00 = sampleHUTrilinear(uvw);
+    float cL1 = sampleHUTrilinear(uvw - du);
+    float cR1 = sampleHUTrilinear(uvw + du);
+    float cU1 = sampleHUTrilinear(uvw - dv);
+    float cD1 = sampleHUTrilinear(uvw + dv);
+    float cL2 = sampleHUTrilinear(uvw - 2.0 * du);
+    float cR2 = sampleHUTrilinear(uvw + 2.0 * du);
+    float cU2 = sampleHUTrilinear(uvw - 2.0 * dv);
+    float cD2 = sampleHUTrilinear(uvw + 2.0 * dv);
+    float sumVal = c00 * 1.0 + (cL1 + cR1 + cU1 + cD1) * 0.27 - (cL2 + cR2 + cU2 + cD2) * 0.06;
+    float sumW = 1.0 + 4.0 * 0.27 - 4.0 * 0.06;
+    return clamp(sumVal / max(0.001, sumW), -1000.0, 3071.0);
+}
+
+/**
+ * 2D Edge-Preserving Bilateral filter in MPR slice plane.
+ * Removes detector quantum noise while preserving razor-sharp enamel-dentin boundaries.
+ */
+float sampleHUBilateral(vec3 uvw) {
+    float c00 = sampleHUTrilinear(uvw);
+    if (c00 <= -800.0) return -1000.0; // Air boundary fast-path
+    vec3 du = u_axisU / max(1.0, u_volumeDim.x);
+    vec3 dv = u_axisV / max(1.0, u_volumeDim.y);
+    float sumVal = c00;
+    float sumW = 1.0;
+    const float sigmaR2 = 2.0 * 180.0 * 180.0;
+    for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+            if (dx == 0 && dy == 0) continue;
+            vec3 p = uvw + float(dx) * du + float(dy) * dv;
+            float val = sampleHUTrilinear(p);
+            float dist2 = float(dx * dx + dy * dy);
+            float spatialW = exp(-dist2 / 2.0);
+            float diffHU = val - c00;
+            float rangeW = exp(-(diffHU * diffHU) / sigmaR2);
+            float w = spatialW * rangeW;
+            sumVal += val * w;
+            sumW += w;
+        }
+    }
+    return sumVal / max(0.001, sumW);
+}
+
 float sampleHU(vec3 uvw) {
+    if (u_interpolationMode == 0) return sampleHUNearest(uvw);
+    if (u_interpolationMode == 2) return sampleHUCatmullRom(uvw);
+    if (u_interpolationMode == 3) return sampleHUBSpline(uvw);
+    if (u_interpolationMode == 4) return sampleHULanczos3(uvw);
+    if (u_interpolationMode == 5) return sampleHUBilateral(uvw);
     return u_trilinear ? sampleHUTrilinear(uvw) : sampleHUNearest(uvw);
 }
 

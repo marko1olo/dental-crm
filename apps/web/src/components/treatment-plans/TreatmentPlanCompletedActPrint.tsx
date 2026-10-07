@@ -5,7 +5,7 @@
  * Постановлению Правительства РФ № 736 и ГОСТ Р 7.0.97-2016.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { type Kopecks, rublesToKopecks, sha256Hex } from "@dental/shared";
 import {
 	AlertTriangle,
 	Award,
@@ -18,28 +18,32 @@ import {
 	TrendingUp,
 	X,
 } from "lucide-react";
-import type { CompletedWorksActAndWriteOffData } from "./types";
-import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	BRAND_COLOR_PALETTES,
 	useDocumentBrandingStore,
 } from "../../store/documentBrandingStore";
-import { type Kopecks, rublesToKopecks, sha256Hex } from "@dental/shared";
+import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+import type { CompletedWorksActAndWriteOffData } from "./types";
 import "../../styles/premium-document-print.css";
 
+import { TreatmentPlanActHeader } from "./TreatmentPlanActHeader";
+import { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
+import { TreatmentPlanActSignatures } from "./TreatmentPlanActSignatures";
 import {
 	formatMoneyExact,
 	numberToWordsRu,
 	pluralizeRu,
 } from "./treatmentPlanActFormatters";
-import { TreatmentPlanActHeader } from "./TreatmentPlanActHeader";
-import { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
-import { TreatmentPlanActSignatures } from "./TreatmentPlanActSignatures";
 
-export { formatMoneyExact, numberToWordsRu, pluralizeRu } from "./treatmentPlanActFormatters";
 export { TreatmentPlanActHeader } from "./TreatmentPlanActHeader";
 export { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
 export { TreatmentPlanActSignatures } from "./TreatmentPlanActSignatures";
+export {
+	formatMoneyExact,
+	numberToWordsRu,
+	pluralizeRu,
+} from "./treatmentPlanActFormatters";
 export type TreatmentPlanActPrintData = CompletedWorksActAndWriteOffData;
 
 export interface TreatmentPlanCompletedActPrintProps {
@@ -70,7 +74,9 @@ export interface TreatmentPlanCompletedActPrintProps {
 	readonly isExecuting?: boolean;
 }
 
-export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActPrintProps> = ({
+export const TreatmentPlanCompletedActPrint: React.FC<
+	TreatmentPlanCompletedActPrintProps
+> = ({
 	isOpen,
 	actData,
 	clinicLegalName,
@@ -108,65 +114,90 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
 
-	const [showMicroConsumables, setShowMicroConsumables] = React.useState<boolean>(false);
+	const [showMicroConsumables, setShowMicroConsumables] =
+		React.useState<boolean>(false);
 
 	const { visibleProcedures, microConsumables } = React.useMemo(() => {
-		const regular = actData.completedProcedures.filter((it) => !isMicroConsumable(it));
-		const micro = actData.completedProcedures.filter((it) => isMicroConsumable(it));
+		const regular = actData.completedProcedures.filter(
+			(it) => !isMicroConsumable(it),
+		);
+		const micro = actData.completedProcedures.filter((it) =>
+			isMicroConsumable(it),
+		);
 		return {
-			visibleProcedures: showMicroConsumables ? actData.completedProcedures : regular,
+			visibleProcedures: showMicroConsumables
+				? actData.completedProcedures
+				: regular,
 			microConsumables: micro,
 		};
 	}, [actData.completedProcedures, showMicroConsumables]);
 
-	const palette = BRAND_COLOR_PALETTES[branding.brandAccentColor] || BRAND_COLOR_PALETTES.deep_teal;
+	const palette =
+		BRAND_COLOR_PALETTES[branding.brandAccentColor] ||
+		BRAND_COLOR_PALETTES.deep_teal;
 
 	// Legal Clinic Requisites
-	const legalName = clinicLegalName || branding.clinicLegalName || "Стоматологическая клиника";
+	const legalName =
+		clinicLegalName || branding.clinicLegalName || "Стоматологическая клиника";
 	const inn = clinicInn || branding.clinicInn || "";
 	const kpp = clinicKpp || "";
 	const ogrn = clinicOgrn || branding.clinicOgrn || "";
 	const address = clinicAddress || branding.clinicAddress || "";
-	const license =
-		clinicLicense ||
-		branding.licenseNumber ||
-		"";
+	const license = clinicLicense || branding.licenseNumber || "";
 	const phone = clinicPhone || branding.clinicPhone || "";
 	const website = clinicWebsite || branding.clinicWebsite || "";
 	const email = clinicEmail || "";
 
 	// Patient Requisites
-	const patientDob = patientBirthDate || "14.05.1988";
-	const patientGenderText = patientGender ? (patientGender === "female" ? "Женский" : "Мужской") : "Мужской";
+	const patientDob = patientBirthDate || "____________";
+	const patientGenderText = patientGender
+		? patientGender === "female"
+			? "Женский"
+			: "Мужской"
+		: "—";
 	const patientPass =
 		patientPassport ||
-		"Паспорт гражданина РФ: 45 12 № 384920, выдан ОВД «Хамовники» г. Москвы 20.06.2008, код 770-012";
-	const patientRegAddress = patientAddress || "г. Москва, Ломоносовский проспект, д. 24, кв. 89";
-	const patientContactPhone = patientPhone || "+7 (916) 234-56-78";
-	const patientSnilsVal = patientSnils || "142-983-201 77";
-	const patientOmsVal = patientOmsPolis || "ЕП ОМС 7700 8920 1928 3820";
+		"Паспорт РФ: серия _____ № _______, выдан ____________________, дата: __________, код: ________";
+	const patientRegAddress =
+		patientAddress ||
+		"________________________________________________________";
+	const patientContactPhone = patientPhone || "____________________";
+	const patientSnilsVal = patientSnils || "—";
+	const patientOmsVal = patientOmsPolis || "—";
 	const patientMedCard =
-		patientMedicalCardNumber || `МК-${actData.patientId.replace(/\D/g, "") || "2026-0891"}`;
+		patientMedicalCardNumber ||
+		(actData.patientId.replace(/\D/g, "")
+			? `МК-${actData.patientId.replace(/\D/g, "")}`
+			: "б/н");
 
 	// Doctor Requisites
-	const doctorSpec = doctorSpecialty || "Врач-стоматолог терапевт-эндодонтист";
-	const doctorSnilsVal = doctorSnils || "112-334-556 01";
+	const doctorSpec = doctorSpecialty || "Врач-стоматолог";
+	const doctorSnilsVal = doctorSnils || "—";
 
 	// Contract Date
 	const contractDateFormatted =
-		contractDate || (actData.createdAtIso ? new Date(actData.createdAtIso).toLocaleDateString("ru-RU") : actData.actDate);
+		contractDate ||
+		(actData.createdAtIso
+			? new Date(actData.createdAtIso).toLocaleDateString("ru-RU")
+			: actData.actDate);
 
 	// Calculated totals with exact kopecks
 	const grossServicesRub = actData.completedProcedures.reduce(
 		(acc, it) => acc + it.unitPriceRub * it.quantity,
 		0,
 	);
-	const discountTotalRub = actData.completedProcedures.reduce((acc, it) => acc + (it.discountRub || 0), 0);
+	const discountTotalRub = actData.completedProcedures.reduce(
+		(acc, it) => acc + (it.discountRub || 0),
+		0,
+	);
 	const netServicesRub = actData.totalServiceRub;
-	const netServicesKopecks = actData.totalServiceKopecks || (rublesToKopecks(netServicesRub) as Kopecks);
+	const netServicesKopecks =
+		actData.totalServiceKopecks || (rublesToKopecks(netServicesRub) as Kopecks);
 
 	const netMaterialRub = actData.totalMaterialCostRub;
-	const netMaterialKopecks = actData.totalMaterialCostKopecks || (rublesToKopecks(netMaterialRub) as Kopecks);
+	const netMaterialKopecks =
+		actData.totalMaterialCostKopecks ||
+		(rublesToKopecks(netMaterialRub) as Kopecks);
 
 	const servicesInWords = numberToWordsRu(
 		netServicesRub,
@@ -235,14 +266,19 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 					const data = encoder.encode(canonicalActPayload);
 					const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
 					const hashArray = Array.from(new Uint8Array(hashBuffer));
-					const hex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+					const hex = hashArray
+						.map((b) => b.toString(16).padStart(2, "0"))
+						.join("");
 					if (!isCancelled) {
 						setVerificationHash(`SHA-256: ${hex}`);
 					}
 					return;
 				}
 			} catch (e) {
-				console.warn("[TreatmentPlanCompletedActPrint] Web Crypto API calculation failed, using fallback:", e);
+				console.warn(
+					"[TreatmentPlanCompletedActPrint] Web Crypto API calculation failed, using fallback:",
+					e,
+				);
 			}
 			if (!isCancelled) {
 				setVerificationHash(`SHA-256: ${sha256Hex(canonicalActPayload)}`);
@@ -300,7 +336,8 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								</span>
 							</div>
 							<span className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-								Акт № {actData.actNumber} • Этап {actData.stageNumber}: {actData.stageTitle}
+								Акт № {actData.actNumber} • Этап {actData.stageNumber}:{" "}
+								{actData.stageTitle}
 							</span>
 						</div>
 					</div>
@@ -360,7 +397,11 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								}
 								data-testid="toggle-micro-consumables-act-btn"
 							>
-								{showMicroConsumables ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+								{showMicroConsumables ? (
+									<EyeOff className="w-4 h-4" />
+								) : (
+									<Eye className="w-4 h-4" />
+								)}
 								<span>
 									{showMicroConsumables
 										? "Скрыть мелкие расходники"
@@ -412,14 +453,21 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 					>
 						{/* Watermark: ЧЕРНОВИК if draft, ПОДПИСАНО ВРАЧОМ if signed/executed (Мандат 8e) */}
 						<div
-							className={actData.status === "signed" || actData.status === "executed" ? "doc-watermark-signed" : "doc-watermark-draft"}
+							className={
+								actData.status === "signed" || actData.status === "executed"
+									? "doc-watermark-signed"
+									: "doc-watermark-draft"
+							}
 							aria-hidden="true"
 							style={{
 								position: "absolute",
 								top: "50%",
 								left: "50%",
 								transform: "translate(-50%, -50%) rotate(-32deg)",
-								fontSize: actData.status === "signed" || actData.status === "executed" ? "50pt" : "64pt",
+								fontSize:
+									actData.status === "signed" || actData.status === "executed"
+										? "50pt"
+										: "64pt",
 								fontWeight: 900,
 								color:
 									actData.status === "signed" || actData.status === "executed"
@@ -482,10 +530,16 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							>
 								<div className="flex items-center gap-2">
 									<Award className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-									<span>1. Оказанные медицинские услуги (Клинический протокол)</span>
+									<span>
+										1. Оказанные медицинские услуги (Клинический протокол)
+									</span>
 								</div>
 								<span className="text-[11px] font-semibold lowercase opacity-90">
-									Позиций: {visibleProcedures.length + (!showMicroConsumables && microConsumables.length > 0 ? 1 : 0)}
+									Позиций:{" "}
+									{visibleProcedures.length +
+										(!showMicroConsumables && microConsumables.length > 0
+											? 1
+											: 0)}
 								</span>
 							</div>
 
@@ -493,15 +547,27 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								<table className="w-full border-collapse border border-slate-300 text-xs">
 									<thead>
 										<tr className="bg-slate-100 text-slate-800 font-bold text-[11px]">
-											<th className="border border-slate-300 p-2 text-center w-10">№</th>
-											<th className="border border-slate-300 p-2 text-center w-24">Зуб / Область</th>
-											<th className="border border-slate-300 p-2 text-left">
-												Наименование услуги по номенклатуре 804н
+											<th className="border border-slate-300 p-2 text-center w-10">
+												№
 											</th>
-											<th className="border border-slate-300 p-2 text-center w-14">Кол-во</th>
-											<th className="border border-slate-300 p-2 text-right w-24">Цена, ₽</th>
-											<th className="border border-slate-300 p-2 text-right w-20">Скидка, ₽</th>
-											<th className="border border-slate-300 p-2 text-right w-28">Итого, ₽</th>
+											<th className="border border-slate-300 p-2 text-center w-24">
+												Зуб / Область
+											</th>
+											<th className="border border-slate-300 p-2 text-left">
+												Наименование медицинской услуги
+											</th>
+											<th className="border border-slate-300 p-2 text-center w-14">
+												Кол-во
+											</th>
+											<th className="border border-slate-300 p-2 text-right w-24">
+												Цена, ₽
+											</th>
+											<th className="border border-slate-300 p-2 text-right w-20">
+												Скидка, ₽
+											</th>
+											<th className="border border-slate-300 p-2 text-right w-28">
+												Итого, ₽
+											</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -536,7 +602,9 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 																{it.code804n}
 															</span>
 														)}
-														<span className="font-semibold text-slate-900">{it.name}</span>
+														<span className="font-semibold text-slate-900">
+															{it.name}
+														</span>
 													</div>
 													{it.clinicalRationale && (
 														<div className="text-[11px] text-slate-500 italic mt-0.5">
@@ -551,7 +619,9 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 													{formatMoneyExact(it.unitPriceRub)}
 												</td>
 												<td className="border border-slate-300 p-2 text-right font-mono text-slate-500">
-													{it.discountRub > 0 ? `-${formatMoneyExact(it.discountRub)}` : "0,00 ₽"}
+													{it.discountRub > 0
+														? `-${formatMoneyExact(it.discountRub)}`
+														: "0,00 ₽"}
 												</td>
 												<td className="border border-slate-300 p-2 text-right font-mono font-bold text-slate-950">
 													{formatMoneyExact(it.priceRub)}
@@ -573,11 +643,14 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 															A26.07.001
 														</span>
 														<span className="font-semibold text-slate-900 not-italic">
-															Индивидуальный гигиенический и асептический комплект
+															Индивидуальный гигиенический и асептический
+															комплект
 														</span>
 													</div>
 													<div className="text-[11px] text-slate-500 not-italic mt-0.5">
-														(валики, салфетки, перчатки, слюноотсосы, маски — {microConsumables.length} наим., включено в базовую стоимость оказанных услуг)
+														(валики, салфетки, перчатки, слюноотсосы, маски —{" "}
+														{microConsumables.length} наим., включено в базовую
+														стоимость оказанных услуг)
 													</div>
 												</td>
 												<td className="border border-slate-300 p-2 text-center font-mono font-bold">
@@ -597,7 +670,10 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 
 										{/* Subtotals & Breakdown */}
 										<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
-											<td colSpan={6} className="border border-slate-300 p-2 text-right">
+											<td
+												colSpan={6}
+												className="border border-slate-300 p-2 text-right"
+											>
 												Стоимость оказанных услуг без учета скидки:
 											</td>
 											<td className="border border-slate-300 p-2 text-right font-mono">
@@ -606,7 +682,10 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 										</tr>
 										{discountTotalRub > 0 && (
 											<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
-												<td colSpan={6} className="border border-slate-300 p-2 text-right text-emerald-700">
+												<td
+													colSpan={6}
+													className="border border-slate-300 p-2 text-right text-emerald-700"
+												>
 													Сумма предоставленной скидки:
 												</td>
 												<td className="border border-slate-300 p-2 text-right font-mono text-emerald-700">
@@ -616,10 +695,17 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 										)}
 										<tr
 											className="font-extrabold text-xs"
-											style={{ backgroundColor: palette.softBg, color: palette.primaryDark }}
+											style={{
+												backgroundColor: palette.softBg,
+												color: palette.primaryDark,
+											}}
 										>
-											<td colSpan={6} className="border border-slate-300 p-2.5 text-right text-xs uppercase tracking-wide">
-												ИТОГО СТОИМОСТЬ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ (НДС НЕ ОБЛАГАЕТСЯ):
+											<td
+												colSpan={6}
+												className="border border-slate-300 p-2.5 text-right text-xs uppercase tracking-wide"
+											>
+												ИТОГО СТОИМОСТЬ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ (НДС НЕ
+												ОБЛАГАЕТСЯ):
 											</td>
 											<td
 												className="border border-slate-300 p-2.5 text-right font-mono text-sm font-black"
@@ -636,7 +722,8 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							<div className="p-2.5 bg-slate-50 border-x border-b border-slate-300 text-xs text-slate-800 rounded-b-lg">
 								<strong>Сумма прописью:</strong> <em>{servicesInWords}</em>.{" "}
 								<span className="text-[11px] text-slate-500">
-									НДС не облагается в соответствии с пп. 2 п. 2 ст. 149 НК РФ (медицинские услуги).
+									НДС не облагается в соответствии с пп. 2 п. 2 ст. 149 НК РФ
+									(медицинские услуги).
 								</span>
 							</div>
 						</div>
@@ -663,10 +750,15 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
 									Стоимость услуг (Выручка этапа):
 								</span>
-								<strong className="text-base font-mono block" style={{ color: palette.primaryDark }}>
+								<strong
+									className="text-base font-mono block"
+									style={{ color: palette.primaryDark }}
+								>
 									{formatMoneyExact(netServicesRub, netServicesKopecks)}
 								</strong>
-								<span className="text-[10px] text-slate-500 block">Без НДС (ст. 149 НК РФ)</span>
+								<span className="text-[10px] text-slate-500 block">
+									Без НДС (ст. 149 НК РФ)
+								</span>
 							</div>
 
 							<div className="space-y-1">
@@ -676,7 +768,9 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								<strong className="text-base font-mono text-slate-900 block">
 									{formatMoneyExact(netMaterialRub, netMaterialKopecks)}
 								</strong>
-								<span className="text-[10px] text-slate-500 block">По учетным ценам склада</span>
+								<span className="text-[10px] text-slate-500 block">
+									По учетным ценам склада
+								</span>
 							</div>
 
 							<div className="space-y-1">
@@ -686,10 +780,13 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								<strong className="text-base font-mono text-emerald-700 flex items-center gap-1.5">
 									<TrendingUp className="w-5 h-5 shrink-0" />
 									<span>
-										{formatMoneyExact(actData.marginRub)} ({actData.marginPercent}%)
+										{formatMoneyExact(actData.marginRub)} (
+										{actData.marginPercent}%)
 									</span>
 								</strong>
-								<span className="text-[10px] text-slate-500 block">Рентабельность медицинского этапа</span>
+								<span className="text-[10px] text-slate-500 block">
+									Рентабельность медицинского этапа
+								</span>
 							</div>
 						</div>
 

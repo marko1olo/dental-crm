@@ -50,11 +50,21 @@ import {
 	safeLocalStorageGetJson,
 	safeLocalStorageSetJson,
 } from "../../lib/safeLocalStorage";
+import {
+	matchWaitlistCandidatesForSlot,
+	type MatchWaitlistSlotParams,
+	type SmartSlotCandidateMatch,
+	type SmartSlotRecoveryResult,
+} from "./smartSlotRecoveryEngine";
 
 export {
 	resolveChairDutyDoctor,
 	syncShiftsWithServer,
 	computeShiftAssignment,
+	matchWaitlistCandidatesForSlot,
+	type MatchWaitlistSlotParams,
+	type SmartSlotCandidateMatch,
+	type SmartSlotRecoveryResult,
 	type ChairDoctorShiftAssignment,
 	type ChairDoctorSubShift,
 	type ScheduleChair,
@@ -489,7 +499,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 			}
 
 			showToast(
-				`График смен кресел применён на ${label} (${mondayIso}..) в 1 клик`,
+				`График смен кресел применён на ${label} (${mondayIso}..)`,
 				"success",
 				3500,
 			);
@@ -557,7 +567,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		}
 
 		showToast(
-			`График смен кресел применён на весь текущий месяц (${monthName}) в 1 клик`,
+			`График смен кресел применён на весь текущий месяц (${monthName})`,
 			"success",
 			3500,
 		);
@@ -702,6 +712,18 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		[onAppointmentMove],
 	);
 
+	// Smart Slot Recovery: match waitlist candidates for a freed/cancelled slot
+	const findSmartSlotRecoveryCandidates = useCallback(
+		(slotParams: Omit<MatchWaitlistSlotParams, "clinicName">) => {
+			const clinicName = dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || "DENTE";
+			return matchWaitlistCandidatesForSlot({
+				...slotParams,
+				clinicName,
+			});
+		},
+		[dashboard?.clinicSettings],
+	);
+
 	return {
 		chairs,
 		isSoloDoctor,
@@ -720,6 +742,7 @@ export function useSchedule(options: UseScheduleOptions = {}) {
 		duplicateChair,
 		resolveDutyDoctorForSlot,
 		moveAppointment,
+		findSmartSlotRecoveryCandidates,
 	};
 }
 

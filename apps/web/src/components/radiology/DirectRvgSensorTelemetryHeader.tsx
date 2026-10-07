@@ -76,10 +76,10 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 						<span>Прицельный снимок</span>
 						<span
 							className="rvg-badge-autotrigger"
-							title="Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"
+							title="Ожидание снимка (Hot Folder / Автоподхват)"
 							data-testid="rvg-non-conflicting-badge"
 						>
-							Auto-Trigger / USB
+							Hot Folder / TWAIN (Бесконфликтно)
 						</span>
 					</h2>
 					<p

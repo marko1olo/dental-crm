@@ -403,7 +403,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						<ArrowRight size={12} className="text-[var(--muted)]" />
 						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,var(--brand-primary))]">
 							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold">2</span>
-							<span>Шаг 2: Дневник приёма (1 клик)</span>
+							<span>Шаг 2: Дневник приёма</span>
 						</div>
 						<ArrowRight size={12} className="text-[var(--muted)]" />
 						<div className="flex items-center gap-1.5 font-bold text-[var(--ok-fg)]">
@@ -570,7 +570,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							</div>
 							<div>
 								<div className="font-bold text-sm text-[var(--ink)]">
-									1-Click Заполнение дневника по диагнозу и формуле
+									Заполнение дневника по диагнозу и формуле
 								</div>
 								<div className="text-xs text-[var(--muted)]">
 									Автозаполнение жалоб, осмотра, диагноза и плана лечения по клиническим стандартам
@@ -659,7 +659,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								<div className="font-bold text-sm text-[var(--teal-dark)]">
 									{hasCryptoSignature
 										? "Документ заверен квалифицированной ЭЦП (УКЭП)"
-										: "Дневник заблокирован (SHA-256)"}
+										: "Дневник заверен (контрольная сумма SHA-256)"}
 								</div>
 								<div className="text-[var(--muted)] font-mono">
 									SHA-256: {diaryHash}
@@ -699,7 +699,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							data-testid="summary-open-protocol-generator-btn"
 						>
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							<span>Дневник приёма (1 клик)</span>
+							<span>Дневник приёма</span>
 						</button>
 						{onOpenPrescription ? (
 							<button

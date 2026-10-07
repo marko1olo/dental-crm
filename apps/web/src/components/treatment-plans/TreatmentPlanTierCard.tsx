@@ -143,11 +143,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 			{/* Recommended Pill with Elevation */}
 			{tier.isRecommended && (
 				<div
-					className={`flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-[11px] font-black shadow-lg uppercase tracking-wider whitespace-nowrap z-30 ${
-						isMobile
-							? "self-center mb-1 -mt-1"
-							: "absolute -top-3.5 left-1/2 -translate-x-1/2"
-					}`}
+					className="flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-[11px] font-black shadow-lg uppercase tracking-wider whitespace-nowrap z-30 self-center mb-1 -mt-0.5"
 				>
 					<Crown size={13} />
 					<span>{tier.badge}</span>
@@ -201,7 +197,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 						<div
 							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20"
 							data-testid={`tier-locked-badge-${tier.tierId}`}
-							title="Смета тарифа утверждена: цены и график платежей заморожены (Мандат 8e, 8n)"
+							title="Смета тарифа утверждена: цены и график платежей заморожены"
 						>
 							<ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span>Смета зафиксирована по гарантии</span>
@@ -457,7 +453,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 				<button
 					type="button"
 					onClick={(e) => onSignClick(e, tier)}
-					className={`w-full min-h-[44px] sm:min-h-[34px] sm:h-[34px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-extrabold shadow-sm cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-98 ${
+					className={`w-full min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-[13px] font-semibold shadow-xs cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-[0.99] ${
 						isSelected
 							? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-emerald-600/20"
 							: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
@@ -473,7 +469,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 					<button
 						type="button"
 						onClick={(e) => onInstallmentClick(e, tier)}
-						className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
+						className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
 						title="Оформить рассрочку 0% по данному варианту"
 					>
 						<CreditCard size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -483,7 +479,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 					<button
 						type="button"
 						onClick={(e) => onCopyMessengerClick(e, tier)}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
 						title="Скопировать смету для WhatsApp / Telegram (понятный пациенту формат)"
 						aria-label="Скопировать смету"
 						data-testid={`copy-estimate-messenger-btn-${tier.tierId}`}
@@ -491,12 +487,12 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 						{copiedMessengerTierId === tier.tierId ? (
 							<>
 								<Check size={13} className="text-emerald-600 shrink-0" />
-								<span className="text-[11px] text-emerald-600 font-semibold">Скопировано</span>
+								<span className="text-[12.5px] text-emerald-600 font-semibold">Скопировано</span>
 							</>
 						) : (
 							<>
 								<Share2 size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span className="hidden sm:inline text-[11px]">Смета</span>
+								<span className="hidden sm:inline text-[13px]">Смета</span>
 							</>
 						)}
 					</button>
@@ -505,12 +501,12 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 						<button
 							type="button"
 							onClick={(e) => onPrintClick(e, tier)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg text-[13px] font-medium bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
 							title="Распечатать договор и смету"
 							aria-label="Договор и смета (QR)"
 						>
 							<Printer size={13} className="shrink-0" />
-							<span className="hidden sm:inline text-[11px]">Договор</span>
+							<span className="hidden sm:inline text-[13px]">Договор</span>
 						</button>
 					)}
 				</div>

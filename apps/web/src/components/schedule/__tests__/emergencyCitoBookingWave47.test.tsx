@@ -296,7 +296,7 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 				"Must flag isCitoOverbooking as true for transparent UI badging",
 			);
 			assert.ok(
-				collision.message?.includes("CITO-овербукинг"),
+				collision.message?.includes("Запись по острой боли"),
 				"Collision message must explicitly mention CITO overbooking permission",
 			);
 		});
@@ -334,15 +334,15 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 				"Must render header quick CITO button",
 			);
 			assert.ok(
-				html.includes("CITO! Острая боль (30 мин)"),
-				"Must display visible CITO label in header action bar",
+				html.includes("Срочная запись (Острая боль)"),
+				"Must display visible urgent label in header action bar",
 			);
 		});
 
 		it("2.2. quick reasons panel contains CITO emergency preset with 30-min duration and Lucide icon", () => {
 			const emergencyPreset = QUICK_APPOINTMENT_REASON_PRESETS.find((p) => p.id === "emergency");
 			assert.ok(emergencyPreset, "Emergency preset must exist in presets list");
-			assert.strictEqual(emergencyPreset.reason, "CITO! Острая боль");
+			assert.strictEqual(emergencyPreset.reason, "Срочно! Острая боль");
 			assert.strictEqual(emergencyPreset.durationMinutes, 30);
 			assert.strictEqual(emergencyPreset.tone, "emergency");
 			assert.strictEqual(emergencyPreset.testId, "quick-reason-emergency");
@@ -412,8 +412,8 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 				"Must render cito-overbooking-alert banner explaining soft overbooking permission",
 			);
 			assert.ok(
-				html.includes("Записать CITO (Острая боль / Овербукинг)"),
-				"Submit button must update text to confirm CITO overbooking",
+				html.includes("Записать срочно (Острая боль)"),
+				"Submit button must update text to confirm urgent overbooking",
 			);
 			assert.ok(
 				html.includes("bg-rose-600"),
@@ -437,7 +437,7 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 				"Must render convert-to-cito-btn in modal header",
 			);
 			assert.ok(
-				html.includes("Перевести в CITO (Острая боль)"),
+				html.includes("Перевести в срочный приём (острая боль)"),
 				"Button must have clear action label",
 			);
 		});
@@ -446,7 +446,7 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 			const citoAppt = {
 				...mockExistingAppointment,
 				isCito: true,
-				reason: "CITO! Острая боль (Обычная консультация)",
+				reason: "Срочно! Острая боль (Обычная консультация)",
 			};
 
 			const html = renderAppointmentModal({
@@ -462,11 +462,11 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 				"Must render appointment-cito-banner in modal body",
 			);
 			assert.ok(
-				html.includes("Экстренный приём CITO (Острая боль)"),
+				html.includes("Экстренная запись: острая боль"),
 				"Banner must state emergency appointment clearly",
 			);
 			assert.ok(
-				html.includes("Мягкий овербукинг разрешён"),
+				html.includes("Экстренная запись: острая боль"),
 				"Banner must confirm soft overbooking permission",
 			);
 		});
@@ -475,7 +475,7 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 			const citoAppt = {
 				...mockExistingAppointment,
 				isCito: true,
-				reason: "CITO! Острая боль",
+				reason: "Срочно! Острая боль",
 			};
 
 			const html = renderAppointmentModal({
@@ -483,8 +483,8 @@ describe("Wave 47: Emergency & CITO Booking Friction Elimination (Mandates 8e, 8
 			});
 
 			assert.ok(
-				html.includes("Сохранить CITO (Острая боль)"),
-				"Save button must state 'Сохранить CITO (Острая боль)'",
+				html.includes("Сохранить срочно (Острая боль)"),
+				"Save button must state 'Сохранить срочно (Острая боль)'",
 			);
 			assert.ok(
 				html.includes("bg-rose-600"),

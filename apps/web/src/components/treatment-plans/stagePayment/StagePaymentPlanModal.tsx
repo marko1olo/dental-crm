@@ -219,7 +219,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 					: s,
 			),
 		);
-		setStatusMessage(`Аванс ${formatKopecksRu(requiredAdvance)} по этапу №${targetStage.stageNumber} успешно внесен и заблокирован в эскроу.`);
+		setStatusMessage(`Аванс ${formatKopecksRu(requiredAdvance)} по этапу №${targetStage.stageNumber} успешно внесен и зарезервирован в эскроу.`);
 	};
 
 	const handleTopUpDeposit = () => {
@@ -247,7 +247,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 		setStages([...result.updatedStages]);
 		setDepositWallet(result.updatedDeposit);
 		if (result.allocatedLog.length > 0) {
-			setStatusMessage(`Депозит успешно распределен! Операций: ${result.allocatedLog.length}. Заблокировано в эскроу: ${formatKopecksRu(result.allocatedLog.reduce((a, b) => a + b.amountKopecks, 0))}`);
+			setStatusMessage(`Депозит успешно распределен! Операций: ${result.allocatedLog.length}. Зарезервировано в эскроу: ${formatKopecksRu(result.allocatedLog.reduce((a, b) => a + b.amountKopecks, 0))}`);
 		} else {
 			setStatusMessage("Нет этапов, требующих распределения депозита, либо недостаточно средств.");
 		}

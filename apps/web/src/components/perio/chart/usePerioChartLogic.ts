@@ -514,7 +514,7 @@ export function usePerioChartLogic({
 				}),
 			);
 			showToast(
-				`Зуб #${selectedToothNumber}: карман ${depth} мм с кровоточивостью (BOP) зафиксирован в 1 клик`,
+				`Зуб #${selectedToothNumber}: карман ${depth} мм с кровоточивостью (BOP) зафиксирован`,
 				"info",
 				3500,
 			);

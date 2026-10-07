@@ -27,16 +27,33 @@ export const PostVisitRecommendationsForm: React.FC<
 > = React.memo(function PostVisitRecommendationsForm(props) {
 	const {
 		typedPostVisitCareTopicOptions = [],
-		changePostVisitCareTopic = () => {},
+		changePostVisitCareTopic,
 		normalizedPostVisitCareTopic = (v) => v as PostVisitCareTopic,
-		markPostVisitManualEdited = () => {},
+		markPostVisitManualEdited,
 		activeDoctorFullName,
-		applyPostVisitCarePreset = () => {},
+		applyPostVisitCarePreset,
 		postVisitPresetFeedback,
 		postVisitManualEdited,
 		dashboard,
 		inferredTreatmentArea,
 	} = props;
+
+	const handleTopicChange = (topic: PostVisitCareTopic) => {
+		if (changePostVisitCareTopic) {
+			changePostVisitCareTopic(topic);
+		} else {
+			useDocumentStore.getState().setPostVisitCareTopic(topic);
+		}
+		if (applyPostVisitCarePreset) {
+			applyPostVisitCarePreset(topic, { force: true });
+		}
+	};
+
+	const handleManualEdit = () => {
+		if (markPostVisitManualEdited) {
+			markPostVisitManualEdited();
+		}
+	};
 
 	const {
 		postVisitCareTopic,
@@ -112,8 +129,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							height: "28px",
 						}}
 						onClick={() => {
-							changePostVisitCareTopic(btn.topic);
-							applyPostVisitCarePreset(btn.topic, { force: true });
+							handleTopicChange(btn.topic);
 						}}
 					>
 						{btn.label}
@@ -155,7 +171,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							<select
 								value={postVisitCareTopic}
 								onChange={(event) =>
-									changePostVisitCareTopic(
+									handleTopicChange(
 										normalizedPostVisitCareTopic(event.target.value),
 									)
 								}
@@ -172,7 +188,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							<input
 								value={postVisitDoctorFullName}
 								onChange={(event) => {
-									markPostVisitManualEdited();
+									handleManualEdit();
 									setPostVisitDoctorFullName(event.target.value);
 								}}
 								placeholder={activeDoctorFullName ?? "лечащий врач"}
@@ -184,7 +200,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							className="secondary-button"
 							type="button"
 							onClick={() =>
-								applyPostVisitCarePreset(postVisitCareTopic, { force: true })
+								applyPostVisitCarePreset?.(postVisitCareTopic, { force: true })
 							}
 						>
 							Подставить памятку для темы
@@ -210,7 +226,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitProcedureName}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitProcedureName(event.target.value);
 							}}
 							placeholder={
@@ -226,7 +242,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							<input
 								value={postVisitToothOrArea}
 								onChange={(event) => {
-									markPostVisitManualEdited();
+									handleManualEdit();
 									setPostVisitToothOrArea(event.target.value);
 								}}
 								placeholder={inferredTreatmentArea || "FDI / область лечения"}
@@ -237,7 +253,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							<input
 								value={postVisitPerformedAt}
 								onChange={(event) => {
-									markPostVisitManualEdited();
+									handleManualEdit();
 									setPostVisitPerformedAt(event.target.value);
 								}}
 							/>
@@ -248,7 +264,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitAllowedAfter}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitAllowedAfter(event.target.value);
 							}}
 							rows={3}
@@ -259,7 +275,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitRestrictions}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitRestrictions(event.target.value);
 							}}
 							rows={4}
@@ -270,7 +286,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitMedicationAndRinsePlan}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitMedicationAndRinsePlan(event.target.value);
 							}}
 							rows={4}
@@ -281,7 +297,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitHygieneInstructions}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitHygieneInstructions(event.target.value);
 							}}
 							rows={3}
@@ -292,7 +308,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitNutritionInstructions}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitNutritionInstructions(event.target.value);
 							}}
 							rows={3}
@@ -303,7 +319,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitUrgentWarningSigns}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitUrgentWarningSigns(event.target.value);
 							}}
 							rows={4}
@@ -315,7 +331,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							<input
 								value={postVisitFollowUpAt}
 								onChange={(event) => {
-									markPostVisitManualEdited();
+									handleManualEdit();
 									setPostVisitFollowUpAt(event.target.value);
 								}}
 								placeholder="дата или условие контроля"
@@ -326,7 +342,7 @@ export const PostVisitRecommendationsForm: React.FC<
 							<input
 								value={postVisitClinicContactInstruction}
 								onChange={(event) => {
-									markPostVisitManualEdited();
+									handleManualEdit();
 									setPostVisitClinicContactInstruction(event.target.value);
 								}}
 							/>
@@ -337,7 +353,7 @@ export const PostVisitRecommendationsForm: React.FC<
 						<textarea
 							value={postVisitTelegramSummary}
 							onChange={(event) => {
-								markPostVisitManualEdited();
+								handleManualEdit();
 								setPostVisitTelegramSummary(event.target.value);
 							}}
 							rows={3}

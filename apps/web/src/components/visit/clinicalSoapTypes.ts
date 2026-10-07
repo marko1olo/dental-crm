@@ -65,7 +65,7 @@ export interface ClinicalSoapPreset {
 export type ClinicalQuickPreset = ClinicalSoapPreset;
 
 /**
- * Расширенный интерфейс 1-кликового клинического автопилота врача-стоматолога у кресла.
+ * Расширенный интерфейс клинического автопилота врача-стоматолога у кресла.
  * Регламентирован Приказами Минздрава РФ № 804н, № 1051н (ИДС), Формой 043/у и клиническими рекомендациями СтАР.
  */
 export interface DoctorAutopilotPreset extends ClinicalSoapPreset {

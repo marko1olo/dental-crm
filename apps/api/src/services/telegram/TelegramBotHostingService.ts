@@ -918,4 +918,281 @@ export class TelegramBotHostingService {
 			}
 		);
 	}
+
+	/**
+	 * Подключение и верификация Telegram-бота клиники.
+	 * 1. Проверяет токен через Telegram Bot API (getMe).
+	 * 2. Шифрует токен через AES-256-GCM с tenant AAD (TelegramTokenVault).
+	 * 3. Сохраняет настройки в dente_telegram_bot_configs.
+	 * 4. Устанавливает команды бота и вебхук (если задан webhookBaseUrl).
+	 */
+	static async connectBot(params: {
+		organizationId: string;
+		botToken: string;
+		webhookBaseUrl?: string | null | undefined;
+		clinicId?: string | null | undefined;
+		botConfigId?: string | undefined;
+	}): Promise<{
+		ok: boolean;
+		bot?: {
+			username: string;
+			firstName: string;
+			maskedToken: string;
+			mode: string;
+			webhookReady: boolean;
+		};
+		error?: string;
+	}> {
+		const trimmedToken = params.botToken.trim();
+		if (!trimmedToken) {
+			return { ok: false, error: "Токен бота не может быть пустым." };
+		}
+
+		// 1. Верификация токена через getMe
+		const verifyResult = await this.verifyBotToken(trimmedToken);
+		if (!verifyResult.ok || !verifyResult.username) {
+			return {
+				ok: false,
+				error: verifyResult.error || "Не удалось верифицировать токен в Telegram Bot API. Проверьте правильность токена от @BotFather.",
+			};
+		}
+
+		// 2. Шифрование токена с tenant AAD
+		const encryptedToken = TelegramTokenVault.encryptToken(
+			trimmedToken,
+			params.organizationId,
+		);
+
+		const botConfigId = params.botConfigId || "default";
+		const now = new Date();
+
+		// 3. Проверяем наличие записи
+		const [existing] = await db
+			.select()
+			.from(denteTelegramBotConfigs)
+			.where(
+				and(
+					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+				),
+			)
+			.limit(1);
+
+		let webhookReady = false;
+
+		// 4. Настройка команд бота
+		try {
+			await this.setBotCommands(trimmedToken, DEFAULT_PATIENT_BOT_COMMANDS);
+		} catch {
+			// Не блокируем подключение при сбое установки команд
+		}
+
+		// 5. Настройка вебхука при наличии базового URL
+		const webhookUrl = params.webhookBaseUrl
+			? `${params.webhookBaseUrl.replace(/\/+$/, "")}/api/telegram/webhook`
+			: null;
+
+		if (webhookUrl) {
+			const webhookRes = await this.setupWebhook({
+				botToken: trimmedToken,
+				webhookUrl,
+			});
+			webhookReady = webhookRes.ok;
+		}
+
+		if (existing) {
+			await db
+				.update(denteTelegramBotConfigs)
+				.set({
+					clinicId: params.clinicId ?? existing.clinicId,
+					mode: "clinic_owned_bot",
+					botUsername: verifyResult.username,
+					ownBotUsername: verifyResult.username,
+					tokenSecretRef: encryptedToken,
+					webhookBaseUrl: webhookUrl || existing.webhookBaseUrl,
+					isActive: true,
+					updatedAt: now,
+				})
+				.where(eq(denteTelegramBotConfigs.id, existing.id));
+		} else {
+			await db.insert(denteTelegramBotConfigs).values({
+				organizationId: params.organizationId,
+				clinicId: params.clinicId ?? null,
+				botConfigId,
+				mode: "clinic_owned_bot",
+				botUsername: verifyResult.username,
+				ownBotUsername: verifyResult.username,
+				tokenSecretRef: encryptedToken,
+				webhookBaseUrl: webhookUrl,
+				isActive: true,
+				updatedAt: now,
+				createdAt: now,
+			});
+		}
+
+		return {
+			ok: true,
+			bot: {
+				username: verifyResult.username,
+				firstName: verifyResult.firstName || "Telegram Bot",
+				maskedToken: TelegramTokenVault.maskToken(trimmedToken),
+				mode: "clinic_owned_bot",
+				webhookReady,
+			},
+		};
+	}
+
+	/**
+	 * Получение статуса бота клиники.
+	 */
+	static async getBotStatus(params: {
+		organizationId: string;
+		botConfigId?: string | undefined;
+	}): Promise<{
+		ok: boolean;
+		connected: boolean;
+		bot: {
+			username: string | null;
+			firstName: string | null;
+			maskedToken: string | null;
+			mode: string;
+			webhookReady: boolean;
+		} | null;
+	}> {
+		const botConfigId = params.botConfigId || "default";
+
+		const [config] = await db
+			.select()
+			.from(denteTelegramBotConfigs)
+			.where(
+				and(
+					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+					eq(denteTelegramBotConfigs.isActive, true),
+				),
+			)
+			.limit(1);
+
+		if (!config || config.mode === "disabled" || !config.tokenSecretRef) {
+			return {
+				ok: true,
+				connected: false,
+				bot: null,
+			};
+		}
+
+		let maskedToken: string | null = null;
+		try {
+			const rawToken = TelegramTokenVault.resolveOperationalToken(
+				config.tokenSecretRef,
+				params.organizationId,
+			);
+			maskedToken = TelegramTokenVault.maskToken(rawToken);
+		} catch {
+			maskedToken = TelegramTokenVault.maskToken(config.tokenSecretRef);
+		}
+
+		return {
+			ok: true,
+			connected: true,
+			bot: {
+				username: config.botUsername || config.ownBotUsername || null,
+				firstName: "Telegram Bot",
+				maskedToken,
+				mode: config.mode,
+				webhookReady: Boolean(config.webhookBaseUrl),
+			},
+		};
+	}
+
+	/**
+	 * Отключение Telegram-бота клиники.
+	 */
+	static async disconnectBot(params: {
+		organizationId: string;
+		botConfigId?: string | undefined;
+	}): Promise<{ ok: boolean }> {
+		const botConfigId = params.botConfigId || "default";
+
+		await db
+			.update(denteTelegramBotConfigs)
+			.set({
+				mode: "disabled",
+				isActive: false,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+					eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+				),
+			);
+
+		return { ok: true };
+	}
+
+	/**
+	 * Тестирование подключения Telegram-бота.
+	 */
+	static async testBotConnection(params: {
+		organizationId: string;
+		botToken?: string | null | undefined;
+		botConfigId?: string | undefined;
+	}): Promise<{
+		ok: boolean;
+		bot?: TelegramBotMeResult;
+		webhook?: TelegramWebhookInfoResult;
+		error?: string;
+	}> {
+		let token = params.botToken ? params.botToken.trim() : "";
+
+		if (!token) {
+			const botConfigId = params.botConfigId || "default";
+			const [config] = await db
+				.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, params.organizationId),
+						eq(denteTelegramBotConfigs.botConfigId, botConfigId),
+					),
+				)
+				.limit(1);
+
+			if (!config?.tokenSecretRef) {
+				return {
+					ok: false,
+					error: "Токен бота не настроен. Сначала укажите токен от @BotFather.",
+				};
+			}
+
+			const resolved = TelegramTokenVault.resolveOperationalToken(
+				config.tokenSecretRef,
+				params.organizationId,
+			);
+			token = resolved || "";
+		}
+
+		if (!token) {
+			return { ok: false, error: "Не удалось получить токен бота." };
+		}
+
+		const botMe = await this.verifyBotToken(token);
+		if (!botMe.ok) {
+			return {
+				ok: false,
+				bot: botMe,
+				error: botMe.error || "Не удалось проверить статус бота в Telegram.",
+			};
+		}
+
+		const webhookInfo = await this.getWebhookInfo(token);
+
+		return {
+			ok: true,
+			bot: botMe,
+			webhook: webhookInfo,
+		};
+	}
 }
+

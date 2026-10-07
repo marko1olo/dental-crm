@@ -133,7 +133,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		}, 3500);
 	}, []);
 
-	// 1-клик переключение на единоличную инвентаризацию (Соло-врач / Ответственный)
+	// Единоличная инвентаризация (Соло-врач / Ответственный)
 	const handleSetSoloCommission = useCallback(() => {
 		const currentName = molFullName.trim() || "Ответственный сотрудник";
 		const currentPos = molPosition.trim() || "Ответственный сотрудник";
@@ -295,7 +295,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		[auditDate],
 	);
 
-	// Заполнение факта по учетным данным (1-клик)
+	// Заполнение факта по учетным данным
 	const handleAutofillFactByBook = useCallback(() => {
 		setItems((prev) =>
 			prev.map((it) =>
@@ -560,11 +560,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 				{/* 3. Toolbar & Filters */}
 				<div className="warehouse-inventory-toolbar">
 					<div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-						<div className="warehouse-inventory-search-box">
-							<Search size={16} color="var(--muted)" />
+						<div className="dente-search-wrap" style={{ maxWidth: 320 }}>
+							<Search size={14} className="dente-search-icon" />
 							<input
 								type="text"
-								className="warehouse-inventory-search-input"
+								className="dente-search-input"
 								placeholder="Поиск по названию, артикулу, LOT..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
@@ -572,39 +572,48 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							{searchQuery && (
 								<button
 									type="button"
+									className="dente-search-clear"
 									onClick={() => setSearchQuery("")}
-									style={{ background: "none", border: "none", cursor: "pointer" }}
+									aria-label="Очистить поиск"
 								>
-									<X size={14} color="var(--muted)" />
+									<X size={14} />
 								</button>
 							)}
 						</div>
 
-						<div className="warehouse-inventory-tabs">
+						<div className="dente-segmented-bar" role="tablist">
 							<button
 								type="button"
-								className={`warehouse-inventory-tab-btn ${filterTab === "all" ? "active" : ""}`}
+								role="tab"
+								aria-selected={filterTab === "all"}
+								className={`dente-segmented-item ${filterTab === "all" ? "active" : ""}`}
 								onClick={() => setFilterTab("all")}
 							>
 								Все ({items.length})
 							</button>
 							<button
 								type="button"
-								className={`warehouse-inventory-tab-btn ${filterTab === "discrepancies" ? "active" : ""}`}
+								role="tab"
+								aria-selected={filterTab === "discrepancies"}
+								className={`dente-segmented-item ${filterTab === "discrepancies" ? "active" : ""}`}
 								onClick={() => setFilterTab("discrepancies")}
 							>
 								Расхождения ({totals.surplusItemsCount + totals.shortageItemsCount})
 							</button>
 							<button
 								type="button"
-								className={`warehouse-inventory-tab-btn ${filterTab === "expired" ? "active" : ""}`}
+								role="tab"
+								aria-selected={filterTab === "expired"}
+								className={`dente-segmented-item ${filterTab === "expired" ? "active" : ""}`}
 								onClick={() => setFilterTab("expired")}
 							>
 								Просрочено ({totals.expiredItemsCount})
 							</button>
 							<button
 								type="button"
-								className={`warehouse-inventory-tab-btn ${filterTab === "risk" ? "active" : ""}`}
+								role="tab"
+								aria-selected={filterTab === "risk"}
+								className={`dente-segmented-item ${filterTab === "risk" ? "active" : ""}`}
 								onClick={() => setFilterTab("risk")}
 							>
 								Риск &lt;60д ({totals.warningItemsCount})

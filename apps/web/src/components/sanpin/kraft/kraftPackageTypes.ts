@@ -35,6 +35,9 @@ export interface KraftPackageRecord {
 	readonly barcode128: string;
 	readonly barcodeDataMatrixPayload: string;
 	readonly isBreached: boolean;
+	readonly isUnsealed?: boolean;
+	readonly unsealedAt?: string;
+	readonly unsealedBy?: string;
 	readonly notes: string;
 	readonly createdAt: string;
 }

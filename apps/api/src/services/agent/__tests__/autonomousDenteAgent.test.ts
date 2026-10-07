@@ -514,7 +514,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(result.verdict).toContain("2.6 (26)");
 			expect(result.verdict).toContain("K04.0");
 			expect(result.verdict).toMatch(/Анестезия:/);
-			expect(result.verdict).toMatch(/Смета по Приказу 804н:/);
+			expect(result.verdict).toMatch(/Смета услуг:/);
 			expect(result.verdict).toMatch(/Форма 043\/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК/);
 			expect(result.verdict).toMatch(/ИДС: IDS-03-ENDO/);
 			expect(result.verdict).toMatch(/Склад:/);
@@ -544,7 +544,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(result.isFinished).toBe(true);
 			const normAlert = result.safetyAlerts.find((a) => a.alertType === "physiological_norm");
 			expect(normAlert).toBeDefined();
-			expect(result.verdict).toContain("Физиологическая норма (Мандат 8e)");
+			expect(result.verdict).toContain("Физиологическая норма");
 		});
 	});
 

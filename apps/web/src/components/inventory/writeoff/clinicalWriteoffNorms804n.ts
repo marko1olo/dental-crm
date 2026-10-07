@@ -247,7 +247,7 @@ export const ORDER_804N_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
 	// A16.07.030.001 — Анестезия инфильтрационная (Приказ Минздрава РФ № 804н)
 	{
 		serviceCode: "A16.07.030.001",
-		serviceTitle: "Анестезия инфильтрационная в стоматологии (Номенклатура 804н)",
+		serviceTitle: "Анестезия инфильтрационная в стоматологии",
 		specialty: "general",
 		descriptionRu: "Инфильтрационное обезболивание периапикальной зоны с предварительной аппликационной анестезией",
 		standardDurationMinutes: 10,

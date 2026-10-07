@@ -1006,13 +1006,11 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					</span>
 
 					{/* Tool Toggle: Pan / Ruler / Curved Canal / Loupe */}
-					<div className="flex items-center gap-1 bg-[#0f172a] p-0.5 rounded border border-[#334155]">
+					<div className="dente-segmented-bar" data-testid="sensor-tools-segmented-bar">
 						<button
 							type="button"
 							onClick={() => setActiveTool("pan")}
-							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								activeTool === "pan" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
-							}`}
+							className={`dente-segmented-item ${activeTool === "pan" ? "active" : ""}`}
 							data-testid="btn-tool-pan"
 							title="Панорамирование (Рука)"
 						>
@@ -1022,9 +1020,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTool("ruler")}
-							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								activeTool === "ruler" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
-							}`}
+							className={`dente-segmented-item ${activeTool === "ruler" ? "active" : ""}`}
 							data-testid="btn-tool-ruler"
 							title="Измерительная калибровочная линейка"
 						>
@@ -1034,9 +1030,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTool("curved_canal")}
-							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								activeTool === "curved_canal" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
-							}`}
+							className={`dente-segmented-item ${activeTool === "curved_canal" ? "active" : ""}`}
 							data-testid="btn-tool-curved-canal"
 							title="Эндо-линейка искривленных каналов (Working Length / Апекс)"
 						>
@@ -1046,9 +1040,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTool("magnifier")}
-							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								activeTool === "magnifier" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
-							}`}
+							className={`dente-segmented-item ${activeTool === "magnifier" ? "active" : ""}`}
 							data-testid="btn-tool-magnifier"
 							title="Интерактивная 2.5x лупа для поиска микротрещин и апексов"
 						>
@@ -1058,9 +1050,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTool("lesion_contour")}
-							className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								activeTool === "lesion_contour" ? "bg-[#134e4a] text-[#2dd4bf]" : "text-slate-400 hover:text-white"
-							}`}
+							className={`dente-segmented-item ${activeTool === "lesion_contour" ? "active" : ""}`}
 							data-testid="btn-tool-lesion"
 							title="Контур периапикального очага / кисты (площадь по формуле Гаусса в мм²)"
 						>
@@ -1074,7 +1064,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={handleFinishCurvedCanal}
-							className="px-2 py-0.5 rounded bg-[#0284c7] hover:bg-[#0369a1] text-white text-[11px] font-bold cursor-pointer transition-colors"
+							className="h-7 px-2.5 rounded-lg bg-[#0284c7] hover:bg-[#0369a1] text-white text-[11px] font-bold cursor-pointer transition-colors"
 							title="Зафиксировать рабочую длину канала (WL)"
 							data-testid="btn-finish-canal"
 						>
@@ -1087,7 +1077,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={handleFinishLesionContour}
-							className="px-2 py-0.5 rounded bg-[#f59e0b] hover:bg-[#d97706] text-black text-[11px] font-bold cursor-pointer transition-colors"
+							className="h-7 px-2.5 rounded-lg bg-[#f59e0b] hover:bg-[#d97706] text-black text-[11px] font-bold cursor-pointer transition-colors"
 							title="Зафиксировать площадь очага деструкции (мм²)"
 							data-testid="btn-finish-lesion"
 						>
@@ -1100,7 +1090,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={handleClearMeasurements}
-							className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-[#1e293b] cursor-pointer"
+							className="h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-slate-400 hover:text-red-400 hover:border-red-400/50 cursor-pointer transition-colors flex items-center justify-center"
 							title="Очистить все линейки и каналы"
 							data-testid="btn-clear-measurements"
 						>
@@ -1112,7 +1102,7 @@ export const SensorStudyViewer: React.FC<SensorStudyViewerProps> = ({
 					<button
 						type="button"
 						onClick={handleResetView}
-						className="px-2 py-0.5 rounded border border-[#334155] bg-[#0f172a] text-slate-300 hover:text-white text-[11px] font-medium cursor-pointer"
+						className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-slate-300 hover:text-white text-[11px] font-medium cursor-pointer transition-colors"
 						title="Сбросить масштаб и положение (0)"
 						data-testid="btn-reset-view"
 					>

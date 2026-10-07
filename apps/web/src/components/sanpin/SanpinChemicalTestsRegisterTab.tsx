@@ -1,0 +1,571 @@
+import {
+	type PsoCleaningLog,
+} from "@dental/shared";
+import {
+	Award,
+	CheckCircle2,
+	FlaskConical,
+	Plus,
+	Search,
+	Sparkles,
+	X,
+	XCircle,
+} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { showToast } from "../GlobalToast";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	DEFAULT_DOM_CHUNK_STEP,
+	DEFAULT_DOM_PAGE_SIZE,
+	sliceDomList,
+} from "../../utils/domVirtualizationHelper";
+import {
+	STATUTORY_PSO_REAGENTS,
+	generateStatutoryPsoForm366PrintHtml,
+} from "./sanpinAzopyramEngine";
+import { PsoAddSampleModal } from "./PsoAddSampleModal";
+
+export function SanpinChemicalTestsRegisterTab() {
+	const appLogic = useOptionalAppLogicContext();
+	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [testFilter, setTestFilter] = useState<string>("all");
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [stampedRows, setStampedRows] = useState<Record<string, boolean>>({});
+	const [submitting, setSubmitting] = useState(false);
+
+	const nurseName = useMemo(() => {
+		return (
+			(appLogic as any)?.activeDoctor?.fullName ||
+			(appLogic as any)?.activeDoctor?.name ||
+			"Медсестра ЦСО"
+		);
+	}, [appLogic]);
+
+	const fetchLogs = async () => {
+		try {
+			setLoading(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const res = await fetch("/api/registers/pso", {
+				headers: {
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setLogs(Array.isArray(data) ? data : []);
+			} else {
+				setLogs([]);
+			}
+		} catch (err) {
+			console.error("Failed to load PSO logs", err);
+			setLogs([]);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchLogs();
+	}, []);
+
+	const handleQuickMarkBatchNorm = async () => {
+		if (submitting) return;
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+
+			const payload = {
+				instrumentName: "Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)",
+				batchItemCount: 100,
+				testedSampleCount: 3,
+				detergentBrand: "Биолот 0.5% + Аламинол 1%",
+				notes: `Азопирамовая проба — норма (реакция отрицательная, скрытой крови и остатков моющих средств нет). Партия допущена к стерилизации. [ЭЦП: ${nurseName}]`,
+			};
+
+			const res = await fetch("/api/registers/pso/quick-norm", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (res.ok) {
+				showToast("Азопирамовая проба: норма (реакция отрицательная, скрытая кровь отсутствует)!", "success");
+				fetchLogs();
+			} else {
+				// Fallback to standard /api/registers/pso
+				const fallbackRes = await fetch("/api/registers/pso", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+					body: JSON.stringify({
+						instrumentName: payload.instrumentName,
+						testType: "both",
+						batchItemCount: 100,
+						testedSampleCount: 3,
+						isAzopyramNegative: true,
+						isPhenolphthaleinNegative: true,
+						detergentBrand: payload.detergentBrand,
+						notes: payload.notes,
+					}),
+				});
+				if (fallbackRes.ok) {
+					showToast("Азопирамовая проба: норма (реакция отрицательная, скрытая кровь отсутствует)!", "success");
+					fetchLogs();
+				} else {
+					const err = await fallbackRes.json();
+					showToast(err.message || "Ошибка при отметке партии ПСО", "error");
+				}
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при отметке партии", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleStampVerification = (logId: string) => {
+		setStampedRows((prev) => ({
+			...prev,
+			[logId]: true,
+		}));
+		showToast("Электронный штамп ответственного применен к пробе ПСО", "success");
+	};
+
+	const filteredLogs = useMemo(() => {
+		return logs.filter((log) => {
+			const matchSearch =
+				!searchQuery ||
+				log.instrumentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				log.operatorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				log.detergentBrand?.toLowerCase().includes(searchQuery.toLowerCase());
+
+			const matchTest =
+				testFilter === "all" ||
+				(testFilter === "approved" && log.isBatchApproved) ||
+				(testFilter === "rejected" && !log.isBatchApproved);
+
+			return matchSearch && matchTest;
+		});
+	}, [logs, searchQuery, testFilter]);
+
+	const [displayLimit, setDisplayLimit] = useState(DEFAULT_DOM_PAGE_SIZE);
+
+	useEffect(() => {
+		setDisplayLimit(DEFAULT_DOM_PAGE_SIZE);
+	}, [searchQuery, testFilter]);
+
+	const logsSlice = useMemo(() => {
+		return sliceDomList(filteredLogs, displayLimit, 0);
+	}, [filteredLogs, displayLimit]);
+
+	const handleGenerateMonthlyForm366 = () => {
+		const recordsToPrint = logs.map((l, idx) => ({
+			id: l.id || `pso-${idx}`,
+			timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
+			instrumentName: l.instrumentName,
+			batchItemCount: l.batchItemCount,
+			testedSampleCount: l.testedSampleCount,
+			reagentLot: l.notes?.match(/Серия:\s*([^,\]|]+)/)?.[1]?.trim() || STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber,
+			solutionTimeRu: l.notes?.match(/Раствор:\s*([^,\]|]+)/)?.[1]?.trim() || "08:30 (годен до 2 ч)",
+			isAzopyramNegative: l.isAzopyramNegative ?? true,
+			isPhenolphthaleinNegative: l.isPhenolphthaleinNegative ?? true,
+			detergentBrand: l.detergentBrand || "Биолот 0.5% + Аламинол 1%",
+			isBatchApproved: l.isBatchApproved ?? true,
+			rejectionReason: l.rejectionReason || undefined,
+			operatorStaffFullName:
+				l.operatorName ||
+				(appLogic as any)?.activeDoctor?.fullName ||
+				(appLogic as any)?.activeDoctor?.name ||
+				nurseName ||
+				"Сотрудник клиники",
+			operatorStaffPosition: "Медсестра ЦСО / Врач",
+			electronicStampVerified: stampedRows[l.id] || Boolean(l.notes?.includes("ЭЦП")),
+			notes: l.notes || undefined,
+		}));
+
+		const html = generateStatutoryPsoForm366PrintHtml({
+			clinicName: (appLogic as any)?.clinicInfo?.name || "ООО «ДЕНТЕ КЛИНИК»",
+			clinicAddress: (appLogic as any)?.clinicInfo?.address || "г. Москва, ул. Профсоюзная, д. 45",
+			ogrn: (appLogic as any)?.clinicInfo?.ogrn || "1187746123456",
+			inn: (appLogic as any)?.clinicInfo?.inn || "7728412345",
+			licenseInfo: "ЛО41-01137-77/00368412 от 14.10.2021",
+			chiefDoctorFullName: (appLogic as any)?.activeDoctor?.fullName || "Главный врач клиники",
+			headNurseFullName: nurseName || "Главная медицинская сестра",
+			dateRangeTextRu: `Журнал за ${new Date().toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}`,
+			records: recordsToPrint,
+		});
+
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => printWin.print(), 500);
+		}
+		showToast("Сформирован официальный журнал проверки чистоты инструментов (пробы)!", "success");
+	};
+
+	return (
+		<div className="sanpin-tab-content">
+			<div className="sanpin-print-title">
+				<h2>ПРОВЕРКА ЧИСТОТЫ ИНСТРУМЕНТОВ (ПРОБЫ)</h2>
+				<p title="Контроль качества предстерилизационной очистки">Азопирамовая и фенолфталеиновая пробы</p>
+			</div>
+
+			<div className="sanpin-table-wrapper w-full overflow-x-auto min-w-0" style={{ position: "relative", zIndex: 1, width: "100%", overflowX: "auto" }}>
+				<div
+					className="sanpin-table-toolbar min-w-0 flex-nowrap"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "0.5rem",
+						padding: "0.35rem 0.65rem",
+						background: "var(--paper-soft, #f8fafc)",
+						borderBottom: "1px solid var(--line, #e2e8f0)",
+						overflowX: "auto",
+					}}
+				>
+					<div className="dente-search-wrap min-w-0 shrink" style={{ flex: "1 1 180px", minWidth: "140px", maxWidth: "320px" }}>
+						<Search size={14} className="dente-search-icon" />
+						<input
+							type="text"
+							placeholder="Поиск по инструментарию, моющему средству, оператору..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="dente-search-input !h-9"
+						/>
+						{searchQuery && (
+							<button
+								type="button"
+								className="dente-search-clear"
+								onClick={() => setSearchQuery("")}
+								aria-label="Очистить поиск"
+							>
+								<X size={12} />
+							</button>
+						)}
+					</div>
+
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }} className="shrink-0 flex-nowrap">
+						<select
+							value={testFilter}
+							onChange={(e) => setTestFilter(e.target.value)}
+							className="sanpin-select shrink-0 whitespace-nowrap"
+							style={{ minHeight: "36px", height: "36px", fontSize: "0.825rem", padding: "0.35rem 0.75rem", borderRadius: "8px", flexShrink: 0, whiteSpace: "nowrap" }}
+						>
+							<option value="all">Все пробы чистоты</option>
+							<option value="approved">Партия допущена (Проба отрицательная)</option>
+							<option value="rejected">Брак / Повторная очистка</option>
+						</select>
+
+						<button
+							type="button"
+							onClick={handleGenerateMonthlyForm366}
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
+							style={{
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								flexShrink: 0,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								borderRadius: "8px",
+							}}
+							title="Автоматическое формирование и печать журнала проверки чистоты инструментов с электронной подписью"
+							data-testid="generate-monthly-form366-btn"
+						>
+							<Sparkles size={14} color="#0d9488" className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Печать журнала проб</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleQuickMarkBatchNorm}
+							aria-busy={submitting}
+							className="sanpin-btn touch-manipulation shrink-0 whitespace-nowrap"
+							style={{
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.85rem",
+								fontSize: "0.825rem",
+								fontWeight: 700,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								flexShrink: 0,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								borderRadius: "8px",
+								background: "var(--brand-primary, #0284c7)",
+								color: "#ffffff",
+								border: "none",
+								boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+							}}
+							title="Фиксация отрицательной пробы (скрытой крови нет)"
+							data-testid="quick-pso-norm-btn"
+						>
+							<CheckCircle2 size={15} className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Проба отрицательная (скрытой крови нет)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsModalOpen(true)}
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
+							style={{
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								flexShrink: 0,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								borderRadius: "8px",
+							}}
+						>
+							<Plus size={14} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Внести пробу</span>
+						</button>
+					</div>
+				</div>
+
+				<div className="w-full overflow-x-auto min-w-0" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+					<table className="sanpin-table w-full min-w-0" style={{ width: "100%", minWidth: "1040px", tableLayout: "auto" }}>
+						<thead>
+							<tr>
+								<th style={{ fontSize: "0.825rem", width: "125px", minWidth: "115px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Дата и время</th>
+								<th style={{ fontSize: "0.825rem", minWidth: "180px" }} className="min-w-0">Наименование инструментария</th>
+								<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Объем партии</th>
+								<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Контроль</th>
+								<th style={{ fontSize: "0.825rem", width: "135px", minWidth: "130px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Азопирам (кровь)</th>
+								<th style={{ fontSize: "0.825rem", width: "145px", minWidth: "140px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Фенолфталеин (щелочь)</th>
+								<th style={{ fontSize: "0.825rem", width: "150px", minWidth: "140px" }} className="min-w-0">Моющее средство</th>
+								<th style={{ fontSize: "0.825rem", width: "155px", minWidth: "150px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Результат контроля</th>
+								<th style={{ fontSize: "0.825rem", width: "155px", minWidth: "150px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Заверка / Ответственный</th>
+							</tr>
+						</thead>
+						<tbody>
+							{loading ? (
+								<tr>
+									<td colSpan={9} style={{ textAlign: "center", padding: "2.5rem", fontSize: "0.95rem" }}>
+										Загрузка журнала ПСО...
+									</td>
+								</tr>
+							) : filteredLogs.length === 0 ? (
+								<tr>
+									<td colSpan={9} style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+										<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", maxWidth: "560px", margin: "0 auto" }}>
+											<FlaskConical size={36} color="var(--brand-primary, #2563eb)" />
+											<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+												Журнал проверки чистоты пуст
+											</div>
+											<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
+												Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов.
+											</div>
+											<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+												<button
+													type="button"
+													onClick={handleQuickMarkBatchNorm}
+													aria-busy={submitting}
+													className="sanpin-btn sanpin-btn-primary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+													title="Фиксация отрицательной пробы (скрытой крови нет)"
+													data-testid="empty-quick-pso-norm-btn"
+												>
+													<CheckCircle2 size={16} /> Проба отрицательная (скрытой крови нет)
+												</button>
+												<button
+													type="button"
+													onClick={() => setIsModalOpen(true)}
+													className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+												>
+													<Plus size={15} /> Внести пробу вручную
+												</button>
+											</div>
+										</div>
+									</td>
+								</tr>
+							) : (
+								logsSlice.visibleItems.map((log) => {
+									const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
+									const reagentLotMatch = log.notes?.match(/Серия:\s*([^,\]|]+)/);
+									const reagentLot = reagentLotMatch ? reagentLotMatch[1]?.trim() : STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber;
+									return (
+										<tr
+											key={log.id}
+											className="sanpin-log-row"
+											style={{
+												borderLeft: log.isBatchApproved ? "3px solid #10b981" : "3px solid #ef4444",
+												background: log.isBatchApproved ? "transparent" : "rgba(239, 68, 68, 0.05)",
+												minHeight: "44px",
+												contentVisibility: "auto",
+												containIntrinsicSize: "1px 44px",
+												contain: "content",
+											}}
+										>
+											<td style={{ fontSize: "0.8rem", whiteSpace: "nowrap", color: "var(--muted, #64748b)" }} className="whitespace-nowrap shrink-0">
+												{new Date(log.timestamp || log.createdAt || Date.now()).toLocaleString("ru-RU", {
+													day: "2-digit",
+													month: "2-digit",
+													year: "numeric",
+													hour: "2-digit",
+													minute: "2-digit",
+												})}
+											</td>
+											<td style={{ fontWeight: 600, fontSize: "0.825rem", color: "var(--ink, #0f172a)" }} className="min-w-0">
+												<div>{log.instrumentName}</div>
+												<div style={{ fontSize: "0.72rem", color: "var(--muted)", fontWeight: 400 }}>
+													ПСО реактив: {reagentLot}
+												</div>
+											</td>
+											<td style={{ fontSize: "0.825rem", fontWeight: 600, textAlign: "center" }} className="whitespace-nowrap shrink-0">
+												{log.batchItemCount} шт.
+											</td>
+											<td style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--brand-primary, #2563eb)", textAlign: "center" }} className="whitespace-nowrap shrink-0">
+												{log.testedSampleCount} шт.
+											</td>
+											<td className="whitespace-nowrap shrink-0">
+												<span
+													className={`sanpin-tag ${log.isAzopyramNegative ? "sanpin-tag-success" : "sanpin-tag-error"}`}
+													style={{ fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+												>
+													{log.isAzopyramNegative ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+													{log.isAzopyramNegative ? "Отрицат. (норма)" : "Положит. (кровь)"}
+												</span>
+											</td>
+											<td className="whitespace-nowrap shrink-0">
+												<span
+													className={`sanpin-tag ${log.isPhenolphthaleinNegative ? "sanpin-tag-success" : "sanpin-tag-error"}`}
+													style={{ fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+												>
+													{log.isPhenolphthaleinNegative ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+													{log.isPhenolphthaleinNegative ? "Отрицат. (норма)" : "Положит. (щелочь)"}
+												</span>
+											</td>
+											<td style={{ fontSize: "0.8rem", color: "var(--muted, #64748b)" }} className="min-w-0">
+												{log.detergentBrand || "Биолот / Аламинол"}
+											</td>
+											<td className="whitespace-nowrap shrink-0">
+												<span
+													className={`sanpin-badge ${log.isBatchApproved ? "sanpin-badge-passed" : "sanpin-badge-rejected"}`}
+													style={{ fontSize: "0.75rem" }}
+												>
+													{log.isBatchApproved ? "ДОПУЩЕНО" : "БРАК ПСО"}
+												</span>
+											</td>
+											<td className="whitespace-nowrap shrink-0" style={{ fontSize: "0.8rem" }}>
+												<div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+													<span style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>
+														{log.operatorName || nurseName}
+													</span>
+													{isStamped ? (
+														<span
+															style={{
+																fontSize: "0.68rem",
+																padding: "0.1rem 0.35rem",
+																borderRadius: "4px",
+																background: "rgba(16, 185, 129, 0.15)",
+																color: "#059669",
+																fontWeight: 700,
+															}}
+														>
+															ЭЦП
+														</span>
+													) : (
+														<button
+															type="button"
+															onClick={() => handleStampVerification(log.id)}
+															className="sanpin-btn touch-manipulation"
+															style={{
+																fontSize: "0.68rem",
+																padding: "0.1rem 0.35rem",
+																borderRadius: "4px",
+																border: "1px solid var(--border)",
+																background: "var(--paper-soft)",
+																cursor: "pointer",
+																display: "inline-flex",
+																alignItems: "center",
+																gap: "0.2rem",
+															}}
+															title="Заверить пробу электронной подписью ответственного лица"
+														>
+															<Award size={13} color="var(--brand-primary)" className="shrink-0" /> Заверить
+														</button>
+													)}
+												</div>
+											</td>
+										</tr>
+									);
+								})
+							)}
+						</tbody>
+					</table>
+				</div>
+
+				{logsSlice.hasMore && (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "8px",
+							padding: "12px 0",
+						}}
+					>
+						<button
+							type="button"
+							data-testid="pso-load-more-btn"
+							onClick={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "36px", padding: "0.35rem 1rem", fontSize: "0.8rem", fontWeight: 600 }}
+						>
+							Показать ещё 50 проб (осталось {logsSlice.remainingCount} из {logsSlice.totalCount})
+						</button>
+						<button
+							type="button"
+							data-testid="pso-load-all-btn"
+							onClick={() => setDisplayLimit(logsSlice.totalCount)}
+							className="sanpin-btn"
+							style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.75rem", color: "var(--muted)" }}
+						>
+							Все ({logsSlice.totalCount})
+						</button>
+					</div>
+				)}
+			</div>
+
+			<PsoAddSampleModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				onSuccess={fetchLogs}
+				defaultNurseName={nurseName}
+			/>
+		</div>
+	);
+}
+
+export { SanpinChemicalTestsRegisterTab as PsoRegisterTab };
+export default SanpinChemicalTestsRegisterTab;

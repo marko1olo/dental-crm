@@ -148,16 +148,16 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							<h2 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)] whitespace-nowrap m-0">
 								Комплексный план лечения
 							</h2>
-							<span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20 shrink-0">
+							<span className="text-[12px] px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20 shrink-0">
 								Клинический протокол
 							</span>
-							<span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20 shrink-0">
+							<span className="text-[12px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20 shrink-0">
 								СтАР
 							</span>
 							{planAgeDays > 30 && (
 								<span
-									className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs shrink-0"
-									title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (Мандат 8e)."
+									className="text-[12px] px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs shrink-0"
+									title="План составлен более 30 дней назад, цены могут быть скорректированы."
 								>
 									<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
 									<span>План составлен более 30 дней назад</span>
@@ -167,7 +167,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 
 						{/* 1-Click Status Transitions (Mandates 8e, 8c — Doctor Autonomy & Zero Barriers) */}
 						<div
-							className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs text-xs shrink-0 gap-1 overflow-x-auto max-w-full"
+							className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs shrink-0 gap-1 overflow-x-auto max-w-full"
 							role="group"
 							aria-label="Статус плана лечения"
 							data-testid="treatment-plan-status-control"
@@ -176,10 +176,10 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								type="button"
 								onClick={() => onStatusTransition("draft")}
 								data-testid="tp-status-btn-draft"
-								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
+								className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									planStatus === "draft"
-										? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)]"
+										? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
 								}`}
 								title="Черновик плана лечения"
 							>
@@ -189,12 +189,12 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								type="button"
 								onClick={() => onStatusTransition("agreed")}
 								data-testid="tp-status-btn-agreed"
-								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap touch-manipulation ${
+								className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap touch-manipulation ${
 									planStatus === "agreed"
-										? "bg-emerald-600 text-white shadow-2xs"
-										: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:bg-[var(--paper-strong)]"
+										? "bg-emerald-600 text-white font-semibold shadow-2xs"
+										: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:bg-[var(--paper)]/50"
 								}`}
-								title="План согласован с пациентом (1 клик)"
+								title="План согласован с пациентом"
 							>
 								<Check size={13} />
 								<span>Согласован</span>
@@ -203,12 +203,12 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								type="button"
 								onClick={() => onStatusTransition("in_progress")}
 								data-testid="tp-status-btn-in-progress"
-								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap touch-manipulation ${
+								className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap touch-manipulation ${
 									planStatus === "in_progress"
-										? "bg-teal-600 text-white shadow-2xs"
-										: "text-teal-700 dark:text-teal-400 hover:text-teal-800 hover:bg-[var(--paper-strong)]"
+										? "bg-teal-600 text-white font-semibold shadow-2xs"
+										: "text-teal-700 dark:text-teal-400 hover:text-teal-800 hover:bg-[var(--paper)]/50"
 								}`}
-								title="План переведен в работу (1 клик)"
+								title="План переведен в работу"
 							>
 								<Zap size={13} />
 								<span>В работе</span>
@@ -217,10 +217,10 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								type="button"
 								onClick={() => onStatusTransition("completed")}
 								data-testid="tp-status-btn-completed"
-								className={`min-h-[32px] sm:min-h-[26px] h-8 sm:h-[26px] px-3 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
+								className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									planStatus === "completed"
-										? "bg-blue-600 text-white shadow-2xs"
-										: "text-blue-700 dark:text-blue-400 hover:text-blue-800 hover:bg-[var(--paper-strong)]"
+										? "bg-blue-600 text-white font-semibold shadow-2xs"
+										: "text-blue-700 dark:text-blue-400 hover:text-blue-800 hover:bg-[var(--paper)]/50"
 								}`}
 								title="Лечение по плану завершено"
 							>
@@ -238,16 +238,16 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 					</p>
 				</div>
 
-				{/* Row 2: Clean 36px Command Bar — Tab Switcher (Left) & Actions (Right) */}
+				{/* Row 2: Clean 32px Command Bar — Tab Switcher (Left) & Actions (Right) */}
 				<div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/50">
 					{/* Tab Switcher: 3 Tiers vs Stages vs 4 Phases */}
-					<div className="inline-flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 gap-1">
+					<div className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] shrink-0 gap-1">
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
-							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
+							className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "3tier"
-									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
+									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
@@ -256,9 +256,9 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("stages")}
-							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
+							className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "stages"
-									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
+									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
@@ -268,9 +268,9 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							type="button"
 							onClick={() => setActiveViewTab("phased4")}
 							data-testid="tp-tab-phased4"
-							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
+							className={`h-7 px-3 rounded-[7px] text-[12.5px] font-medium transition-all cursor-pointer touch-manipulation whitespace-nowrap shrink-0 ${
 								activeViewTab === "phased4"
-									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
+									? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-2xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
@@ -283,17 +283,17 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						{/* Secondary 1: Digital Signature Indicator / Button */}
 						{signedAgreement ? (
 							<div
-								className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] sm:h-[38px] touch-manipulation whitespace-nowrap shrink-0"
+								className="flex items-center gap-1.5 px-3 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[12.5px] font-semibold h-8 touch-manipulation whitespace-nowrap shrink-0"
 								data-testid="tp-signed-badge"
 							>
-								<ShieldCheck size={15} />
+								<ShieldCheck size={14} />
 								<span>ПОДПИСАНО</span>
 							</div>
 						) : (
 							<button
 								type="button"
 								onClick={onOpenSignModal}
-								className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-xs whitespace-nowrap shrink-0"
+								className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-2xs whitespace-nowrap shrink-0"
 								title="Открыть окно цифровой подписи согласия"
 								data-testid="tp-sign-btn"
 							>
@@ -302,12 +302,12 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							</button>
 						)}
 
-						{/* Secondary 2: Quick Export to Cashier (1 click) */}
+						{/* Secondary 2: Quick Export to Cashier */}
 						<button
 							type="button"
 							onClick={onExportCashier}
-							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
-							title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
+							className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-2xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
+							title="Мгновенно отправить счет кассиру"
 							data-testid="tp-quick-cashier-btn"
 						>
 							<Send size={14} />
@@ -318,7 +318,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 						<button
 							type="button"
 							onClick={onGenerateCbctAutoPlan}
-							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
+							className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-2xs cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
 							title="Сформировать 3 сценария плана лечения на основе находок 3D КЛКТ (имплантация, синус-лифтинг, санация, ортопедия)"
 							data-testid="generate-cbct-auto-plan-btn"
 						>
@@ -331,15 +331,15 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							<button
 								type="button"
 								onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-								className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3 py-1 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation whitespace-nowrap"
+								className="h-8 px-3 rounded-lg text-[13px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs transition-colors touch-manipulation whitespace-nowrap"
 								title="Дополнительные студии, валидация и печать"
 								aria-label="Опции плана лечения"
-							aria-expanded={isOptionsMenuOpen}
-							data-testid="treatment-plan-options-menu-btn"
-						>
-							<MoreVertical size={15} className="text-[var(--teal,var(--brand-primary))]" />
-							<span className="hidden sm:inline">Опции</span>
-						</button>
+								aria-expanded={isOptionsMenuOpen}
+								data-testid="treatment-plan-options-menu-btn"
+							>
+								<MoreVertical size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span className="hidden sm:inline">Опции</span>
+							</button>
 
 						<div
 							className={`absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl shadow-2xl min-w-[260px] text-xs ${
@@ -372,7 +372,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								data-testid="options-menu-export-cashier-btn"
 							>
 								<Send size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Отправить счет кассиру (1 клик)</span>
+								<span>Отправить счет кассиру</span>
 							</button>
 
 							<button
@@ -405,7 +405,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								<span>Кассовый чек & Оплата</span>
 							</button>
 
-							<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+							<div className="px-2.5 py-1 text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
 								Специализированные студии
 							</div>
 							<button
@@ -423,7 +423,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									<span>Скидки и бонусы пациента</span>
 								</div>
 								{discountPercent > 0 && (
-									<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+									<span className="text-[12px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
 										-{discountPercent}%
 									</span>
 								)}
@@ -471,11 +471,11 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 									<span className="font-semibold">Куратор лечения (воронка и комиссия)</span>
 								</div>
 								{curatorFullName ? (
-									<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 shrink-0 border border-indigo-500/20">
+									<span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 shrink-0 border border-indigo-500/20">
 										{curatorFullName.split(" ")[0]}
 									</span>
 								) : (
-									<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
+									<span className="text-[12px] px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
 										Назначить
 									</span>
 								)}
@@ -530,7 +530,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								<span>Клинический валидатор СтАР</span>
 							</button>
 
-							<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
+							<div className="px-2.5 py-1 text-[12px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
 								Документы и производство
 							</div>
 							<button
@@ -569,7 +569,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 								data-testid="lab-work-order-one-click-btn"
 							>
 								<Zap size={14} className="text-amber-600 dark:text-amber-400" />
-								<span>Наряд ЗТЛ в 1 клик (Цирконий A2)</span>
+								<span>Наряд ЗТЛ (Цирконий A2)</span>
 							</button>
 						</div>
 					</div>
@@ -578,10 +578,10 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 					<button
 						type="button"
 						onClick={onSavePlanToDatabase}
-						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 border border-teal-500/40 cursor-pointer transition-all shadow-sm active:scale-98 shrink-0 whitespace-nowrap touch-manipulation"
+						className="primary-button h-8 flex items-center gap-1.5 px-4 rounded-lg text-[13px] font-semibold cursor-pointer transition-all shadow-xs active:scale-98 shrink-0 whitespace-nowrap touch-manipulation"
 						data-testid="treatment-plan-save-btn"
 					>
-						<Save size={15} className={isSaving ? "animate-spin" : ""} />
+						<Save size={14} className={isSaving ? "animate-spin" : ""} />
 						<span>{isSaving ? "Сохранение..." : "Сохранить"}</span>
 					</button>
 				</div>

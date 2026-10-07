@@ -460,7 +460,7 @@ export function AutoclaveEquipmentModal({
 											<Plus size={16} /> <span>Зарегистрировать автоклав клиники</span>
 										</button>
 										<div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.25rem" }}>
-											Быстрое добавление популярного аппарата (1 клик):
+											Быстрое добавление типового аппарата:
 										</div>
 										<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", justifyContent: "center", maxWidth: "600px" }}>
 											{POPULAR_STERILIZER_BRAND_PRESETS.slice(0, 6).map((preset) => (
@@ -567,7 +567,7 @@ export function AutoclaveEquipmentModal({
 							{!editId && (
 								<div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", padding: "0.5rem", background: "var(--paper-soft, #f8fafc)", borderRadius: "6px", border: "1px solid var(--line, #e2e8f0)" }}>
 									<span style={{ fontSize: "0.75rem", fontWeight: 700, width: "100%", color: "var(--ink, #0f172a)" }}>
-										Популярные марки (1 клик):
+										Типовые модели:
 									</span>
 									{POPULAR_STERILIZER_BRAND_PRESETS.map((p) => {
 										const isSel = selectedPresetId === p.id;

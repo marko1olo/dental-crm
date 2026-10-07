@@ -113,7 +113,7 @@ th { background: #f8fafc; font-weight: 700; }
 <body>
 <div class="header">
   <h1>АКТ СДАЧИ-ПРИЕМКИ ВЫПОЛНЕННЫХ СТОМАТОЛОГИЧЕСКИХ РАБОТ № ${params.actNumber}</h1>
-  <div class="clinic">${params.clinicLegalName} • Приказ Минздрава РФ № 804н • Закон РФ № 2300-1</div>
+  <div class="clinic">${params.clinicLegalName}</div>
 </div>
 <div class="patient">
   <div><strong>Пациент (Заказчик):</strong> ${params.patientName}</div>
@@ -122,7 +122,7 @@ th { background: #f8fafc; font-weight: 700; }
 </div>
 <table>
   <thead>
-    <tr><th>№</th><th>Код услуги (804н)</th><th>Наименование услуги</th><th>Кол-во</th><th>Сумма</th></tr>
+    <tr><th>№</th><th>Код услуги</th><th>Наименование услуги</th><th>Кол-во</th><th>Сумма</th></tr>
   </thead>
   <tbody>
     <tr><td>1</td><td>A16.07.002</td><td>Стоматологический прием и лечение</td><td>1</td><td>${params.rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>

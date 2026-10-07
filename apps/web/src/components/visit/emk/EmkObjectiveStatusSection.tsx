@@ -68,10 +68,10 @@ export function EmkObjectiveStatusSection({
 							data-testid="btn-emk-full-objective-norm"
 							onClick={handleApplyFullObjectiveNorm}
 							className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-							title="0-Клик полная норма осмотра: санирована, прикус ортогнатический, слизистая интактна"
+							title="Полная норма осмотра: санирована, прикус ортогнатический, слизистая интактна"
 						>
 							<ShieldCheck size={12} className="text-emerald-600" />
-							<span>0-Клик: Норма осмотра</span>
+							<span>Физиологическая норма осмотра</span>
 						</button>
 					</div>
 				</div>

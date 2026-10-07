@@ -178,7 +178,7 @@ export interface PatientDraftValidationInput {
 	identityDocument?: string | null | undefined;
 	/** Decree 659: Anonymous patient mode waives passport and SNILS requirements */
 	isAnonymous?: boolean | null | undefined;
-	/** Первичный приём или острая боль (CITO): не блокирует регистрацию без СНИЛС, паспорта и источника */
+	/** Первичный приём или острая боль: не блокирует регистрацию без СНИЛС, паспорта и источника */
 	isEmergencyOrPrimary?: boolean | null | undefined;
 }
 
@@ -199,7 +199,7 @@ export function validatePatientDraftWithRequirements(
 	const errors: Record<string, string> = {};
 	const missingRequiredLabels: string[] = [];
 
-	// 1. ФИО (для CITO / экстренного приёма допускается авто-подстановка "Пациент с острой болью (CITO)")
+	// 1. ФИО (для срочного приёма / острой боли допускается авто-подстановка "Пациент с острой болью (Срочный приём)")
 	const nameTrimmed = (draft.fullName || "").trim();
 	if (!nameTrimmed) {
 		if (!draft.isEmergencyOrPrimary) {
@@ -217,7 +217,7 @@ export function validatePatientDraftWithRequirements(
 			missingRequiredLabels.push("Телефон");
 		} else if (phoneDigits.length < 10) {
 			if (draft.isEmergencyOrPrimary && phoneDigits.length >= 5) {
-				// Первичный приём / острая боль (CITO): допустим городской/короткий номер от 5 цифр
+				// Первичный приём / острая боль: допустим городской/короткий номер от 5 цифр
 			} else {
 				errors.phone = "Номер телефона слишком короткий (минимум 10 цифр)";
 				missingRequiredLabels.push("Корректный телефон");
@@ -289,7 +289,7 @@ export function validatePatientDraftWithRequirements(
 	const isValid = Object.keys(errors).length === 0;
 
 	// Invariants (Mandate 8e): SNILS, passport, and patronymic NEVER block patient registration.
-	// Only full name (if not CITO) and valid phone (if required) can prevent immediate submission.
+	// Only full name (if not emergency) and valid phone (if required) can prevent immediate submission.
 	const blockingLabels = missingRequiredLabels.filter(
 		(l) => l === "ФИО" || l.includes("телефон"),
 	);
@@ -299,7 +299,7 @@ export function validatePatientDraftWithRequirements(
 
 	let guidanceMessage: string | null = null;
 	if (blockingLabels.length > 0) {
-		guidanceMessage = `Заполните обязательное поле для записи: «${blockingLabels.join(", ")}» (или включите режим «Острая боль / CITO»).`;
+		guidanceMessage = `Заполните обязательное поле для записи: «${blockingLabels.join(", ")}» (или включите режим «⚡ Срочный приём (Острая боль)»).`;
 	} else if (advisoryLabels.length > 0) {
 		guidanceMessage = `Рекомендуемые поля клиники: ${advisoryLabels.map((l) => `«${l}»`).join(", ")} (не блокируют регистрацию — можно внести позже в карте или при печати договора).`;
 	}

@@ -8,6 +8,8 @@ import {
 	EXTRACTION_DIAGNOSIS_BUNDLE,
 	HYGIENE_DIAGNOSIS_BUNDLE,
 	CROWN_DIAGNOSIS_BUNDLE,
+	TOOTH_804N_PRESETS,
+	type ToothClinicalServicePayload,
 	getDiagnosisBundleByToothState,
 	getDiagnosisBundleByIcd10,
 	resolveServicePriceAgainstCatalog,
@@ -189,5 +191,44 @@ describe("Canonical Diagnosis Service Bundles & 54-FZ 1-Click Checkout Engine", 
 			assert.ok(item.name.includes("[A"));
 			assert.ok(item.name.includes("(зуб 16)"));
 		}
+	});
+
+	test("TOOTH_804N_PRESETS strictly provides required 1-click chairside 804n presets with exact integer prices", () => {
+		// Caries
+		assert.equal(TOOTH_804N_PRESETS.cariesFilling.code804n, "A16.07.002.010");
+		assert.equal(TOOTH_804N_PRESETS.cariesFilling.priceRub, 4500);
+		assert.equal(TOOTH_804N_PRESETS.cariesFilling.priceKopecks, 450000);
+
+		// Endo
+		assert.equal(TOOTH_804N_PRESETS.endoCanals.code804n, "A16.07.030");
+		assert.equal(TOOTH_804N_PRESETS.endoCanals.priceRub, 3500);
+		assert.equal(TOOTH_804N_PRESETS.endoCanals.priceKopecks, 350000);
+
+		// Crown
+		assert.equal(TOOTH_804N_PRESETS.crownZirconia.code804n, "A16.07.004");
+		assert.equal(TOOTH_804N_PRESETS.crownZirconia.priceRub, 24000);
+		assert.equal(TOOTH_804N_PRESETS.crownZirconia.priceKopecks, 2400000);
+
+		// Extraction
+		assert.equal(TOOTH_804N_PRESETS.extractionPermanent.code804n, "A16.07.001");
+		assert.equal(TOOTH_804N_PRESETS.extractionPermanent.priceRub, 3500);
+		assert.equal(TOOTH_804N_PRESETS.extractionPermanent.priceKopecks, 350000);
+
+		// Anesthesia
+		assert.equal(TOOTH_804N_PRESETS.anesthesiaInfiltration.code804n, "A11.07.012");
+		assert.equal(TOOTH_804N_PRESETS.anesthesiaInfiltration.priceRub, 1200);
+		assert.equal(TOOTH_804N_PRESETS.anesthesiaInfiltration.priceKopecks, 120000);
+
+		// Verify building a typed ToothClinicalServicePayload attached to tooth 46
+		const toothPayload: ToothClinicalServicePayload = {
+			...TOOTH_804N_PRESETS.cariesFilling,
+			toothNumber: 46,
+			toothCode: "46",
+		};
+
+		assert.equal(toothPayload.toothNumber, 46);
+		assert.equal(toothPayload.toothCode, "46");
+		assert.equal(toothPayload.code804n, "A16.07.002.010");
+		assert.equal(toothPayload.priceRub, 4500);
 	});
 });

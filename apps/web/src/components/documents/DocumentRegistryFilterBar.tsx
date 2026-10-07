@@ -55,11 +55,11 @@ export function DocumentRegistryFilterBar({
 		>
 			{/* SEARCH ROW */}
 			<div className="document-search-row">
-				<div className="document-search-input-wrapper">
-					<Search size={16} className="document-search-icon" aria-hidden="true" />
+				<div className="document-search-input-wrapper dente-search-wrap">
+					<Search size={15} className="document-search-icon dente-search-icon" aria-hidden="true" />
 					<input
 						type="text"
-						className="document-search-input"
+						className="document-search-input dente-search-input"
 						placeholder="Быстрый поиск (ФИО, № карты, врач, статус ЭЦП, чек, ИНН)..."
 						value={safeQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
@@ -68,7 +68,7 @@ export function DocumentRegistryFilterBar({
 					{safeQuery.length > 0 && (
 						<button
 							type="button"
-							className="document-search-clear-btn"
+							className="document-search-clear-btn dente-search-clear"
 							onClick={() => onSearchChange("")}
 							aria-label="Очистить поисковый запрос"
 						>
@@ -146,7 +146,7 @@ export function DocumentRegistryFilterBar({
 						data-testid="filter-kind-acts"
 					>
 						<FileCheck size={13} className="shrink-0" aria-hidden="true" />
-						<span>Акты (804н)</span>
+						<span>Акты выполненных работ</span>
 					</button>
 					<button
 						type="button"

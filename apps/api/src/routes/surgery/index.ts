@@ -223,7 +223,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				visitType,
 				userId: identity.userId,
 				visitId: input.visitId,
-				notes: input.notes ?? `1-клик списание набора «${visitType}» (Мандат 8e, мягкий овердрафт)`,
+				notes: input.notes ?? `Списание набора «${visitType}»`,
 			});
 		});
 

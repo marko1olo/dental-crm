@@ -346,7 +346,7 @@ export async function createExpressLabOrder({
 	const toothFdiStr = targetTeeth.join(", ");
 
 	try {
-		showToast(`Создаём наряд ЗТЛ в 1 клик для зубов ${toothFdiStr}...`, "info", 2000);
+		showToast(`Создаём наряд ЗТЛ для зубов ${toothFdiStr}...`, "info", 2000);
 		const res = await fetch("/api/clinical/lab-orders", {
 			method: "POST",
 			headers: {
@@ -360,7 +360,7 @@ export async function createExpressLabOrder({
 				material: ONE_CLICK_LAB_DEFAULTS.materialName,
 				colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
 				dueDate: dueDateIso,
-				clinicalNotes: `• Экспресс 1-клик наряд ЗТЛ из плана лечения (${currentTierTitle})\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
+				clinicalNotes: `• Наряд ЗТЛ из плана лечения (${currentTierTitle})\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
 				priceRub,
 			}),
 		});
@@ -398,7 +398,7 @@ export async function createExpressLabOrder({
 		}
 
 		showToast(
-			`Наряд ЗТЛ успешно оформлен в 1 клик для зубов ${toothFdiStr} (Цирконий A2, срок до ${dueDateFormatted})!`,
+			`Наряд ЗТЛ успешно оформлен для зубов ${toothFdiStr} (Цирконий A2, срок до ${dueDateFormatted})!`,
 			"success",
 			6000,
 		);

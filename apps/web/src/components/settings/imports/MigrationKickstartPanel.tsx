@@ -105,11 +105,16 @@ export function MigrationKickstartPanel({
 				>
 					{(migrationProgressItems ?? []).map((item, idx) => (
 						<article
-							className={`migration-progress-step status-${item?.status}`}
+							className={`migration-progress-step status-${item?.status} ${item?.status === "active" ? "active" : ""}`}
 							key={item?.id ?? `prog-item-${idx}`}
 						>
-							<strong>{item?.title}</strong>
-							<span>{item?.detail}</span>
+							<div className="flex items-center gap-1.5 mb-0.5">
+								<span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-[var(--line-subtle)] text-[var(--muted)] font-mono">
+									Шаг {idx + 1}
+								</span>
+								<strong className="text-xs font-semibold text-[var(--ink)] truncate">{item?.title}</strong>
+							</div>
+							<span className="text-[11px] text-[var(--muted)] truncate">{item?.detail}</span>
 						</article>
 					))}
 				</section>
@@ -250,32 +255,34 @@ export function MigrationKickstartPanel({
 						</span>
 					</div>
 					<div className="migration-handoff-report-actions">
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void downloadSmartImportSafeHandoffReport()}
-							disabled={isSmartSafeReportLoading}
-							data-testid="download-smart-safe-handoff-report"
-						>
-							{isSmartSafeReportLoading ? (
-								<RefreshCw className="spinning" aria-hidden="true" />
-							) : null}
-							Скачать безопасный акт переноса (CSV)
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void downloadMigrationHandoffReport()}
-							disabled={
-								!migrationHandoffReportReady || isSmartReportLoading
-							}
-							data-testid="download-migration-handoff-report"
-						>
-							{isSmartReportLoading ? (
-								<RefreshCw className="spinning" aria-hidden="true" />
-							) : null}
-							Скачать полный чек-лист переноса
-						</button>
+						<div className="dente-segmented-bar" role="toolbar" aria-label="Скачать акты и чек-листы">
+							<button
+								className="dente-segmented-item"
+								type="button"
+								onClick={() => void downloadSmartImportSafeHandoffReport()}
+								disabled={isSmartSafeReportLoading}
+								data-testid="download-smart-safe-handoff-report"
+							>
+								{isSmartSafeReportLoading ? (
+									<RefreshCw className="spinning" size={13} aria-hidden="true" />
+								) : null}
+								<span>Акт переноса (CSV)</span>
+							</button>
+							<button
+								className="dente-segmented-item"
+								type="button"
+								onClick={() => void downloadMigrationHandoffReport()}
+								disabled={
+									!migrationHandoffReportReady || isSmartReportLoading
+								}
+								data-testid="download-migration-handoff-report"
+							>
+								{isSmartReportLoading ? (
+									<RefreshCw className="spinning" size={13} aria-hidden="true" />
+								) : null}
+								<span>Чек-лист переноса</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -368,34 +375,39 @@ export function MigrationKickstartPanel({
 								программы, папку снимков, архив выгрузки или сетевой экспорт.
 							</span>
 							<div className="migration-source-card-actions">
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={() => void pickBrowserMigrationSource()}
-									disabled={
-										isBrowserMigrationScanning || isMigrationAutopilotLoading
-									}
-								>
-									<Database aria-hidden="true" /> Выбрать другую папку
-								</button>
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={() => void discoverMigrationSources()}
-									disabled={
-										isMigrationSourceDiscovering ||
-										isMigrationAutopilotLoading
-									}
-								>
-									<ScanSearch aria-hidden="true" /> Найти на ПК
-								</button>
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={focusSmartImportWorkbench}
-								>
-									<FileText aria-hidden="true" /> Вставить выгрузку
-								</button>
+								<div className="dente-segmented-bar" role="toolbar" aria-label="Варианты выбора папки">
+									<button
+										className="dente-segmented-item"
+										type="button"
+										onClick={() => void pickBrowserMigrationSource()}
+										disabled={
+											isBrowserMigrationScanning || isMigrationAutopilotLoading
+										}
+									>
+										<Database size={13} aria-hidden="true" />
+										<span>Выбрать другую папку</span>
+									</button>
+									<button
+										className="dente-segmented-item"
+										type="button"
+										onClick={() => void discoverMigrationSources()}
+										disabled={
+											isMigrationSourceDiscovering ||
+											isMigrationAutopilotLoading
+										}
+									>
+										<ScanSearch size={13} aria-hidden="true" />
+										<span>Найти на ПК</span>
+									</button>
+									<button
+										className="dente-segmented-item"
+										type="button"
+										onClick={focusSmartImportWorkbench}
+									>
+										<FileText size={13} aria-hidden="true" />
+										<span>Вставить выгрузку</span>
+									</button>
+								</div>
 							</div>
 						</div>
 					) : null}

@@ -242,19 +242,23 @@ export const ChairsideBillingItemRow: React.FC<ChairsideBillingItemRowProps> = (
 						<span className="text-xs font-mono font-bold text-[var(--muted,#64748b)]">
 							#{index + 1}
 						</span>
-						<span className="text-xs font-bold text-[var(--ink,#0f172a)] break-words">
-							{item.title}
-						</span>
-						{item.toothCode && (
-							<span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
-								зуб {item.toothCode}
+						{item.toothCode ? (
+							<span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+								{item.toothCode.includes(",") ? `зубы ${item.toothCode}` : `зуб ${item.toothCode}`}
+							</span>
+						) : (
+							<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-500">
+								Общая
 							</span>
 						)}
 						{item.code804n && (
-							<span className="text-xs font-mono text-[var(--muted,#64748b)]">
-								{item.code804n}
+							<span className="text-xs font-mono font-semibold text-[var(--muted,#64748b)]">
+								[{item.code804n}]
 							</span>
 						)}
+						<span className="text-xs font-bold text-[var(--ink,#0f172a)] break-words">
+							{item.title}
+						</span>
 					</div>
 
 					{/* Per-Service 100% Warranty Autonomy Toggle */}

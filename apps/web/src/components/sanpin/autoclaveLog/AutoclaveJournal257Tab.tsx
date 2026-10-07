@@ -211,7 +211,7 @@ export function AutoclaveJournal257Tab({
 		}
 	};
 
-	// 1-Клик: Генерация и печать Формы 257/у за текущий месяц
+	// Генерация и печать Формы 257/у за текущий месяц
 	const handleGenerateMonthlyForm257 = () => {
 		const { currentMonthStart, currentMonthEnd, currentMonthNameRu } = getDynamicDateBounds();
 
@@ -272,7 +272,7 @@ export function AutoclaveJournal257Tab({
 		}
 	};
 
-	// 1-Клик: Нормативная выгрузка СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора
+	// Нормативная выгрузка СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора
 	const handleGenerateRegulatorySanpinInspection = () => {
 		const printHtml = generateRegulatorySanpinInspectionHtml({
 			form257Records: filteredRecords.length > 0 ? filteredRecords : records,
@@ -350,7 +350,7 @@ export function AutoclaveJournal257Tab({
 						style={{ minHeight: "36px", whiteSpace: "nowrap", flexShrink: 0, padding: "0 0.875rem" }}
 					>
 						<Autoclave size={16} />
-						<span>Заполнить автоклав в 1 клик</span>
+						<span>Заполнить автоклав нормой</span>
 					</button>
 				</div>
 			)}
@@ -445,7 +445,7 @@ export function AutoclaveJournal257Tab({
 								border: "none",
 								boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
 							}}
-							title="1-клик формирование журналов стерилизации и проверок качества для проверок"
+							title="Формирование журналов стерилизации и контроля качества для инспекций"
 							data-testid="journal-tab-regulatory-export-btn"
 						>
 							<FileBadge size={16} />

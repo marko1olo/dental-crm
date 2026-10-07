@@ -377,9 +377,9 @@ export function evaluateDoseCompliance(
 	if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.CRITICAL_EXCEEDED_THRESHOLD_MSV) {
 		status = "limit_exceeded";
 		zone = "red";
-		warningMessage = `Клиническое предупреждение (НРБ-99/2009): Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила профилактический лимит (${limitMsv} мЗв). Согласно Мандату 8e, блокировка аппарата ЗАПРЕЩЕНА: исследование выполняется по клиническим показаниям под личную ответственность лечащего врача с записью в медицинскую карту.`;
+		warningMessage = `Клиническое предупреждение (НРБ-99/2009): Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила профилактический лимит (${limitMsv} мЗв). Исследование выполняется по клиническим показаниям под личную ответственность лечащего врача с записью в медицинскую карту.`;
 		protocolActionRequired =
-			"Автономия врача (Мандат 8e): съемка не блокируется. Врач вносит клиническое обоснование в медицинскую карту (по острой боли, контроль пломбирования каналов или хирургический контроль). Никаких стационарных комиссий и начмедов.";
+			"Клиническое решение врача: исследование выполняется по клиническим показаниям. Врач вносит обоснование в медицинскую карту (по острой боли, контроль пломбирования каналов или хирургический контроль).";
 		requiresDoctorClinicalJustification = true;
 		recommendedIntervalDays = RADIATION_SAFETY_LIMITS_MSV.RECOMMENDED_CBCT_INTERVAL_DAYS;
 	} else if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.WARNING_THRESHOLD_MSV) {

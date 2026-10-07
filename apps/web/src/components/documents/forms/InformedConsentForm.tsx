@@ -241,7 +241,9 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 		];
 		const text = lines.join("\n");
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			navigator.clipboard.writeText(text).catch(() => {});
+			navigator.clipboard.writeText(text).catch((err) => {
+				console.warn("[InformedConsentForm] Clipboard write failed:", err);
+			});
 		}
 		showToast("Выжимка ИДС скопирована в буфер обмена для пациента", "success", 3000);
 	};
@@ -350,7 +352,7 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 						}
 					>
 						<Printer size={15} className="text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
-						<span>Печать бланка ИДС (1 клик)</span>
+						<span>Печать бланка ИДС</span>
 					</button>
 
 					{/* Кнопка прямого действия 2 (Закон Миллера): Открыть форму ИДС / планшет */}
@@ -435,11 +437,11 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 								setInformedConsentQuestionsAnswered(true);
 								setInformedConsentRisksUnderstood(true);
 								setInformedConsentWithdrawUnderstood(true);
-								showToast("Согласие на лечение заполнено нормой в 1 клик", "success", 3000);
+								showToast("Согласие на лечение заполнено нормой", "success", 3000);
 							}}
 						>
 							<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span>Заполнить ИДС нормой (1 клик)</span>
+							<span>Заполнить нормой</span>
 						</button>
 
 						<button

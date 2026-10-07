@@ -394,7 +394,7 @@ export function AppointmentCardContextMenu({
 							setIsCardMenuOpen(false);
 							void handleQuickStatusChange("cancelled", "Освобождено под лист ожидания");
 						}}
-						title="Отменить приём и сразу подобрать пациента из листа ожидания (DentalPRO & StomX parity)"
+						title="Отменить приём и подобрать пациента из листа ожидания"
 					>
 						<div className="flex items-center gap-2">
 							<Sparkles size={14} className="text-[var(--teal)] shrink-0" />

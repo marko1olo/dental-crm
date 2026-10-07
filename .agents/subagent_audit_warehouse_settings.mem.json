@@ -1,0 +1,180 @@
+{
+  "subagent": "Global Red Team Inquisitor 4: Warehouse, Lab Orders, Price List 804n, Messengers",
+  "domains": [
+    "#inventory",
+    "#lab_orders",
+    "#settings/prices",
+    "#settings/messengers"
+  ],
+  "status": "COMPLETED",
+  "ts_gate": {
+    "command": "npx tsc -p apps/web/tsconfig.json --noEmit",
+    "exitCode": 0,
+    "status": "PASSED"
+  },
+  "bug_fixes": [
+    {
+      "file": "apps/web/src/hooks/domains/useTelegramModule.ts",
+      "line": 199,
+      "description": "Fixed TypeError: Cannot read properties of undefined (reading 'updatedAt') by using optional chaining on telegramStatus?.settings?.updatedAt, preventing application crash in BootErrorBoundary."
+    }
+  ],
+  "visual_proof": {
+    "total_captured": 16,
+    "total_inspected": 16,
+    "resolutions": [
+      "PC (1440x900)",
+      "Mobile (390x844)"
+    ],
+    "themes": [
+      "Light",
+      "Dark"
+    ],
+    "screenshots": [
+      {
+        "domain": "#inventory",
+        "viewport": "1440x900",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_inventory_pc_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_inventory_pc_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "FEFO status badges, 8 items, toolbar, quick dispense / receipt modal triggers."
+      },
+      {
+        "domain": "#inventory",
+        "viewport": "1440x900",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_inventory_pc_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_inventory_pc_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark slate theme, high contrast WCAG AAA compliant text and table rows."
+      },
+      {
+        "domain": "#lab_orders",
+        "viewport": "1440x900",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_lab_orders_pc_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_lab_orders_pc_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Table with 4 lab orders, VITA shades (A2, A3, B1), 36px toolbar, status badges."
+      },
+      {
+        "domain": "#lab_orders",
+        "viewport": "1440x900",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_lab_orders_pc_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_lab_orders_pc_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Clean dark styling across lab orders table, steppers, and filters."
+      },
+      {
+        "domain": "#settings/prices",
+        "viewport": "1440x900",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_prices_pc_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_prices_pc_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Single-row toolbar, search bar with 38px left padding without icon collision, category filters, 804n code tags."
+      },
+      {
+        "domain": "#settings/prices",
+        "viewport": "1440x900",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_prices_pc_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_prices_pc_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark theme price table, category counters, tax deduction badges."
+      },
+      {
+        "domain": "#settings/messengers",
+        "viewport": "1440x900",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_messengers_pc_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_messengers_pc_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Omnichannel center with 7 channels (including 1C:MAX), AES-256-GCM Vault, cadence settings (24h/2h)."
+      },
+      {
+        "domain": "#settings/messengers",
+        "viewport": "1440x900",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_messengers_pc_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_messengers_pc_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark mode omnichannel center, cadences grid, secure token inputs."
+      },
+      {
+        "domain": "#inventory",
+        "viewport": "390x844",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_inventory_mobile_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_inventory_mobile_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Apple HIG grouped card lists, >=44x44px touch targets, 1-click carpule write-off button, floating bar, 0px horizontal scroll."
+      },
+      {
+        "domain": "#inventory",
+        "viewport": "390x844",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_inventory_mobile_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_inventory_mobile_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark mobile inventory cards, high contrast stock badges, zero horizontal shift."
+      },
+      {
+        "domain": "#lab_orders",
+        "viewport": "390x844",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_lab_orders_mobile_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_lab_orders_mobile_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Mobile lab timeline with production step indicator (Impression -> Framework -> Ceramic -> Try-in)."
+      },
+      {
+        "domain": "#lab_orders",
+        "viewport": "390x844",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_lab_orders_mobile_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_lab_orders_mobile_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark mobile lab orders view, distinct status chips."
+      },
+      {
+        "domain": "#settings/prices",
+        "viewport": "390x844",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_prices_mobile_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_prices_mobile_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Mobile price catalog, horizontal filter chip list, grouped service cards with tax deduction badges and price chevron."
+      },
+      {
+        "domain": "#settings/prices",
+        "viewport": "390x844",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_prices_mobile_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_prices_mobile_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark mobile price catalog, high contrast typography, Apple HIG touch targets."
+      },
+      {
+        "domain": "#settings/messengers",
+        "viewport": "390x844",
+        "theme": "light",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_messengers_mobile_light.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_messengers_mobile_light.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Mobile omnichannel hub, AES-256 badge, assistant bot setup CTA, 0px horizontal scroll."
+      },
+      {
+        "domain": "#settings/messengers",
+        "viewport": "390x844",
+        "theme": "dark",
+        "path": "docs/screenshots/audit_warehouse_settings/proof_messengers_mobile_dark.png",
+        "brain_artifact": "C:/Users/Admin/.gemini/antigravity/brain/7c7eaf40-d66f-4fc6-8372-8fcfd227492a/proof_messengers_mobile_dark.png",
+        "inspection_status": "VERIFIED_CLEAN",
+        "details": "Dark mobile messengers settings view, clean contrast and padding."
+      }
+    ]
+  }
+}

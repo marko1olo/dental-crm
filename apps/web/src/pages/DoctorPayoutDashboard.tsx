@@ -63,6 +63,7 @@ import type { DoctorCompletedServiceItem } from "../components/finance/payroll/p
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { DoctorPayoutMobileWallet } from "../components/finance/DoctorPayoutMobileWallet";
+import "../styles/dente-operations.css";
 
 /** Состояние расчёта по врачу. Значения приходят с сервера как есть. */
 type DoctorPayoutState =
@@ -351,10 +352,16 @@ function parseCommissionInput(raw: string): number | null {
 	return parsed;
 }
 
-export function DoctorPayoutDashboard() {
+export interface DoctorPayoutDashboardProps {
+	readonly initialReport?: DoctorPayoutReport | undefined;
+}
+
+export function DoctorPayoutDashboard({ initialReport }: DoctorPayoutDashboardProps = {}) {
 	const isMobile = useIsMobile(768);
 	const [month, setMonth] = useState<string>(() => currentMonthValue());
-	const [state, setState] = useState<PayoutLoadState>({ kind: "loading" });
+	const [state, setState] = useState<PayoutLoadState>(() =>
+		initialReport ? { kind: "ready", report: initialReport } : { kind: "loading" },
+	);
 	const [editingRateFor, setEditingRateFor] = useState<string | null>(null);
 	const [rateDraft, setRateDraft] = useState<string>("");
 	const [rateSave, setRateSave] = useState<CommissionSaveState>({
@@ -465,8 +472,9 @@ export function DoctorPayoutDashboard() {
 	}, []);
 
 	useEffect(() => {
+		if (initialReport) return;
 		void load(month);
-	}, [load, month]);
+	}, [load, month, initialReport]);
 
 	const saveRate = useCallback(
 		async (doctorUserId: string, raw: string) => {
@@ -1120,14 +1128,18 @@ export function DoctorPayoutDashboard() {
 																												{visit.services.map((srv) => (
 																													<li key={srv.id} className="ops-item-entry">
 																														{srv.order804nCode ? (
-																															<span className="ops-badge-804n">
-																																{srv.order804nCode}
-																															</span>
+																															<>
+																																<span className="ops-badge-804n">
+																																	{srv.order804nCode}
+																																</span>{" "}
+																															</>
 																														) : null}
 																														{srv.toothCode ? (
-																															<span className="ops-badge-tooth">
-																																Зуб {srv.toothCode}
-																															</span>
+																															<>
+																																<span className="ops-badge-tooth">
+																																	Зуб {srv.toothCode}
+																																</span>{" "}
+																															</>
 																														) : null}
 																														{srv.title} —{" "}
 																														<strong>

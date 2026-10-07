@@ -2,7 +2,7 @@
  * ============================================================================
  * SANPIN 3.3686-21 STERILIZATION & PSO QUALITY CONTROL AUTO-GENERATOR ENGINE
  * Автоматический генератор журналов для проверок Роспотребнадзора (Форма № 257/у и 366/у)
- * и 1-кликовое закрытие смены стерилизации для медсестры ЦСО.
+ * и регламентное закрытие смены стерилизации для медсестры ЦСО.
  * ============================================================================
  */
 
@@ -991,7 +991,7 @@ export function createDefaultChamberPoints(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. 1-CLICK DAILY SHIFT & MONTHLY INSPECTION AUTO-GENERATORS
+// 5. DAILY SHIFT & MONTHLY INSPECTION AUTO-GENERATORS
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MONTH_NAMES_RU = [
@@ -1732,7 +1732,7 @@ export function generateForm257PrintHtml(
 			<td style="width: 40%; text-align: right;">
 				<div class="font-bold">МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</div>
 				<div>Форма № 257/у</div>
-				<div class="subtext">Утверждена Минздравом СССР / СанПиН 3.3686-21</div>
+				<div class="subtext">СанПиН 3.3686-21</div>
 			</td>
 		</tr>
 	</table>

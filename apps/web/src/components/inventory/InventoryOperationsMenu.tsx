@@ -119,7 +119,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Управление складами и остатками: экспресс-пресеты, овердрафт и списание"
+						title="Управление складами и остатками: экспресс-пресеты, расход сверх остатка и списание"
 					>
 						<Warehouse size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Управление складами и остатками</span>
@@ -217,7 +217,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 
 					<div className="my-1 border-t border-[var(--line)]" />
 
-					{/* Быстрые списания в 1 клик (СанПиН / Сестра / Врач) */}
+					{/* Быстрые списания расходников (СанПиН / Сестра / Врач) */}
 					<button
 						type="button"
 						className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
@@ -227,10 +227,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание базового набора приёма (перчатки, маска, слюноотсос, нагрудник, валики)"
+						title="Быстрое списание базового набора приёма (перчатки, маска, слюноотсос, нагрудник, валики)"
 					>
 						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Списать базовый набор (1 клик)</span>
+						<span>Списать базовый набор</span>
 					</button>
 
 					<button
@@ -242,7 +242,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание пустой карпулы анестетика врачом без комиссии"
+						title="Быстрое списание пустой карпулы анестетика врачом без комиссии"
 					>
 						<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Списать карпулу анестетика</span>
@@ -272,7 +272,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание набора стерилизации: 1 лоток в крафт-пакете + перчатки"
+						title="Быстрое списание набора стерилизации: 1 лоток в крафт-пакете + перчатки"
 					>
 						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Набор стерилизации (1 лоток + перчатки)</span>
@@ -287,7 +287,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="Списание пустых карпул анестетиков в 1 клик без комиссии"
+						title="Быстрое списание пустых карпул анестетиков без комиссии"
 					>
 						<Syringe size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Списать карпулу (без комиссии)</span>
@@ -302,10 +302,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание набора визита «Терапия»"
+						title="Списание набора визита «Терапия»"
 					>
 						<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Списать визит: Терапия (1 клик)</span>
+						<span>Списать визит: Терапия</span>
 					</button>
 
 					<button
@@ -317,10 +317,10 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание набора визита «Хирургия»"
+						title="Списание набора визита «Хирургия»"
 					>
 						<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Списать визит: Хирургия (1 клик)</span>
+						<span>Списать визит: Хирургия</span>
 					</button>
 
 					<button
@@ -332,7 +332,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание расхода смены (Терапия)"
+						title="Списание расхода смены (Терапия)"
 					>
 						<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Списать смену: Терапия</span>
@@ -347,7 +347,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание расхода смены (Ортопедия)"
+						title="Списание расхода смены (Ортопедия)"
 					>
 						<PackageCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Списать смену: Ортопедия</span>
@@ -362,7 +362,7 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 							onClose();
 						}}
 						role="menuitem"
-						title="1-клик списание расхода смены (Хирургия)"
+						title="Списание расхода смены (Хирургия)"
 					>
 						<ShieldCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Списать смену: Хирургия</span>

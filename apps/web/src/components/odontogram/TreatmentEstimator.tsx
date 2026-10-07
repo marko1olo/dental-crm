@@ -87,7 +87,7 @@ const PLAN_SUBJECT: PanelSubject = {
 	accusative: "план лечения",
 	emptyTitle: "План лечения пуст",
 	emptyHint:
-		"Кликните на любой зуб на схеме слева, выберите патологию, и система автоматически подберет оптимальный набор процедур из прайс-листа",
+		"Выберите зуб на зубной формуле слева, укажите клинический статус, и система автоматически сформирует смету из прайс-листа",
 	failureConsequence:
 		"Не считайте, что плана нет: он не прочитан. Сохранение и подписание отключены — иначе рядом с сохранённым планом появится второй, а подпись пациента останется у старого.",
 };
@@ -557,11 +557,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							showToast("План лечения подтвержден на бумаге", "success");
 						}}
 						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
-						title="Пациент подписал распечатанную смету — подтвердить в 1 клик"
+						title="Пациент подписал распечатанную смету — подтвердить"
 						data-testid="estimator-paper-confirm-btn"
 					>
 						<ShieldCheck size={14} className="text-emerald-600" />
-						<span>На бумаге (1 клик)</span>
+						<span>На бумаге</span>
 					</button>
 					<button
 						type="button"

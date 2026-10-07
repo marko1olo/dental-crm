@@ -1,0 +1,91 @@
+{
+  "subagent": "schedule_design_inquisitor",
+  "timestamp": "2026-10-05T21:05:00+04:00",
+  "status": "COMPLETED",
+  "mission": "Eliminate UI defects across Schedule & Appointments cluster: fix search icon overlap on placeholders, eradicate naked text rows, integrate canonical DENTE segmented bars and filter chips, and verify live pixel proof.",
+  "invariants_enforced": [
+    "Mandate 8zf: Search Input Invariant & Segmented Controls Doctrine",
+    "Frontend Rules §§ 12-13: padding-left: 38px !important, left: 12px, pointer-events: none, .dente-segmented-bar, .dente-filter-chips",
+    "Designer Visual Inquisition Bible §§ 7-8: Single-height 32px controls, 1-row desktop toolbar, 44x44px touch targets on mobile",
+    "Mandate 8e: Doctor autonomy, zero disabled primary buttons, 1-click presets"
+  ],
+  "files_refactored": {
+    "apps/web/src/styles/components.css": {
+      "changes": "Updated .dente-search-input padding-left to 38px !important (Mandate 8zf / Frontend § 12) and icon left offset to 12px."
+    },
+    "apps/web/src/components/schedule/PreventiveInspectionModal.tsx": {
+      "changes": "Replaced naked category tabs and inline hex styles with .dente-filter-chips and .dente-filter-chip; replaced custom search input with .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear."
+    },
+    "apps/web/src/components/schedule/TomorrowRemindersModal.tsx": {
+      "changes": "Replaced custom channel buttons with .dente-segmented-bar and .dente-segmented-item; replaced custom search input with .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear."
+    },
+    "apps/web/src/components/schedule/DoctorFreeSlotsModal.tsx": {
+      "changes": "Removed inline hex styles; converted quick range, doctor, and chair buttons to .dente-filter-chips and .dente-filter-chip; converted duration presets and time-of-day filters to .dente-segmented-bar and .dente-segmented-item."
+    },
+    "apps/web/src/components/schedule/WaitlistToolbar.tsx": {
+      "changes": "Replaced search input with .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear; converted urgency filter pills to .dente-filter-chips and .dente-filter-chip."
+    },
+    "apps/web/src/components/schedule/WaitlistQuickFillModal.tsx": {
+      "changes": "Replaced sub-tabs with .dente-segmented-bar and .dente-segmented-item; converted search input to .dente-search-wrap; converted priority filter pills to .dente-filter-chips and .dente-filter-chip."
+    },
+    "apps/web/src/components/schedule/AppointmentModalPatientSection.tsx": {
+      "changes": "Upgraded patient search input to .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear while strictly preserving data-testid='appointment-patient-search-input'."
+    },
+    "apps/web/src/components/schedule/QuickBookingPatientSection.tsx": {
+      "changes": "Upgraded patient typeahead search input to .dente-search-wrap, .dente-search-icon, .dente-search-input, and .dente-search-clear while preserving keyboard navigation and focus management."
+    },
+    "apps/web/src/components/schedule/QuickBookingServiceSection.tsx": {
+      "changes": "Converted expo26-segmented-status header to .dente-segmented-bar with .dente-segmented-item; converted duration presets, quick status buttons, and common reasons to .dente-filter-chips and .dente-filter-chip."
+    },
+    "apps/web/src/components/schedule/ScheduleFilterStrip.tsx": {
+      "changes": "Harmonized StomX 3-stage day queue tabs with .dente-segmented-bar and .dente-segmented-item; converted all filter chips (All, My Chair, Doctors, Chairs, + Chair) to .dente-filter-chips and .dente-filter-chip; harmonized view mode switcher with .dente-segmented-bar and .dente-segmented-item; added .primary-button and .secondary-button classes."
+    },
+    "apps/web/src/components/schedule/ChairScheduleToolbar.tsx": {
+      "changes": "Converted 3-state schedule density mode switcher to .dente-segmented-bar and .dente-segmented-item; applied .secondary-button to shifts menu trigger; converted add chair button to .dente-filter-chip."
+    }
+  },
+  "verification": {
+    "typecheck_schedule_files": "PASS (0 TS errors in schedule files)",
+    "css_tokens": "PASS (check:css-tokens clean: 0 unresolvable CSS tokens across light and dark modes)",
+    "smoke_schedule_view_source": "PASS (ok: true, scheduleViewLazy: true, appScheduleRowsRemoved: true, appointmentActionsPreserved: true)",
+    "unit_tests": "TomorrowRemindersModal, WaitlistQuickFillModal, ChairScheduleToolbar suites passing",
+    "visual_screenshots": [
+      {
+        "file": "schedule_filter_strip_desktop_light.png",
+        "hash": "7c1b29a6bc915664e2fe53d112ae28df",
+        "size_bytes": 56795,
+        "verified_pixels": "Desktop Light: StomX 3-stage day queue in segmented bar [В холле 0 | Приём 0 | Оплата 0], filter chips for chairs, view mode switcher [Лента | Сетка | Кресла], high-contrast primary CTA '+ Запись'."
+      },
+      {
+        "file": "schedule_filter_strip_desktop_dark.png",
+        "hash": "12bb12ea4f2691545a948818cc25f6e3",
+        "size_bytes": 65601,
+        "verified_pixels": "Desktop Dark: High contrast dark theme, segmented controls on dark paper, crisp teal highlights and zero word clipping."
+      },
+      {
+        "file": "schedule_appointment_modal_light.png",
+        "hash": "19c13b11c95e9e0c3631f2ca8d03ef07",
+        "size_bytes": 75930,
+        "verified_pixels": "Modal Light: Clean patient card with 'AB' badge, 6 duration presets [15 мин - 2 часа], 1-click visit reasons, high contrast save button 'Сохранить срочно'."
+      },
+      {
+        "file": "schedule_appointment_modal_dark.png",
+        "hash": "81a2be290ed2d7cedd78b7cb10576196",
+        "size_bytes": 71730,
+        "verified_pixels": "Modal Dark: Slate dark theme, crisp contrast, glowing teal/rose badges, zero overflow."
+      },
+      {
+        "file": "schedule_appointment_modal_expanded_light.png",
+        "hash": "5347ecb9f260edf67a7f7b52449e95b8",
+        "size_bytes": 82079,
+        "verified_pixels": "Modal Expanded Light: Expanded 'Дополнительные параметры' spoiler, 6 1-click visit statuses [Ожидает | Подтвержден | В холле | В кресле | Завершен | Неявка], ZTL lab section."
+      },
+      {
+        "file": "schedule_appointment_modal_expanded_dark.png",
+        "hash": "7e698b4193cdcb13ae88edf80302b265",
+        "size_bytes": 78292,
+        "verified_pixels": "Modal Expanded Dark: Dark theme expanded spoiler, high contrast status pills, accessible ZTL lab section."
+      }
+    ]
+  }
+}

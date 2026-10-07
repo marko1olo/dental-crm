@@ -1,5 +1,5 @@
 /**
- * surgeryProtocols.ts — Хирургические протоколы, 1-клик нормы операций и мягкий овердрафт склада.
+ * surgeryProtocols.ts — Хирургические протоколы, физиологические нормы операций и мягкий овердрафт склада.
  * Стандарт: «Софт для врача, а не врач для софта. Любой барьер или лишний клик — это брак».
  */
 
@@ -62,7 +62,7 @@ export interface SurgicalMaterialDeductionResult {
 }
 
 /**
- * 1-клик списание хирургических материалов со склада с гарантированным мягким овердрафтом (Мандат 8e).
+ * Быстрое списание хирургических материалов со склада с гарантированным мягким овердрафтом (Мандат 8e).
  * Задержка оприходования накладной поставщика не блокирует врача и операцию.
  */
 export function quickDeductSurgicalMaterials(params: {
@@ -79,8 +79,8 @@ export function quickDeductSurgicalMaterials(params: {
 	}));
 
 	const messageRu = isOverdraft
-		? `Списано ${params.materials.length} поз. под операцию «${params.operationTitle || "Хирургическое вмешательство"}» в мягкий овердрафт склада (Мандат 8e: без комиссии и блокировки врача).`
-		: `Материалы операции «${params.operationTitle || "Хирургическое вмешательство"}» (${params.materials.length} поз.) успешно списаны со склада в 1 клик.`;
+		? `Списано ${params.materials.length} поз. под операцию «${params.operationTitle || "Хирургическое вмешательство"}» в мягкий овердрафт склада.`
+		: `Материалы операции «${params.operationTitle || "Хирургическое вмешательство"}» (${params.materials.length} поз.) успешно списаны со склада.`;
 
 	try {
 		if (typeof window !== "undefined") {
@@ -252,7 +252,7 @@ export interface SurgicalHemostasisOption {
 }
 
 /**
- * Варианты гемостаза лунки удаленного зуба в 1 клик (Мандат 8e).
+ * Варианты гемостаза лунки удаленного зуба (Мандат 8e).
  */
 export const SURGICAL_HEMOSTASIS_OPTIONS: readonly SurgicalHemostasisOption[] = [
 	{
@@ -291,7 +291,7 @@ export interface ExtractionComplexityOption {
 }
 
 /**
- * Степени сложности экстракции зуба в 1 клик по номенклатуре 804н (Мандат 8e).
+ * Степени сложности экстракции зуба по номенклатуре 804н (Мандат 8e).
  */
 export const EXTRACTION_COMPLEXITY_OPTIONS: readonly ExtractionComplexityOption[] = [
 	{
@@ -330,9 +330,9 @@ export interface StandardExtractionParams {
 }
 
 /**
- * 1-клик генератор протокола операции экстракции зуба (Мандаты 8e, 8k, 8i).
+ * Генератор протокола операции экстракции зуба (Мандаты 8e, 8k, 8i).
  * Поддерживает простое, сложное с разъединением корней и атипичное удаление
- * с 1-клик выбором гемостаза (Альвожил, гемостатическая губка, шов Викрил 4-0).
+ * с выбором гемостаза (Альвожил, гемостатическая губка, шов Викрил 4-0).
  */
 export function buildStandardExtractionProtocolText(
 	params: StandardExtractionParams = {},
@@ -416,7 +416,7 @@ export interface PostExtractionMemoParams {
 }
 
 /**
- * 1-клик формирование памятки пациенту после удаления для мессенджеров WhatsApp / Telegram
+ * Формирование памятки пациенту после удаления для мессенджеров WhatsApp / Telegram
  * (Мандаты 8k, 8e, 8d). Строгий полиграфический вид БЕЗ мультяшных эмодзи.
  * Включает канонические клинические пункты:
  * «Холод 15 мин, не греть, не полоскать, марлевый тампон сплюнуть через 20 мин».

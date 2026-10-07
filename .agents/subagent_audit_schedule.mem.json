@@ -1,0 +1,78 @@
+{
+  "subagent": "redteam_inquisitor_schedule_reception",
+  "timestamp": "2026-10-06T12:05:00+04:00",
+  "status": "COMPLETED",
+  "mission": "Adversarial audit, defect eradication, and visual proof for Schedule & Reception cluster (#schedule, appointment cards, chair palette toolbar, mobile agenda, booking drawer).",
+  "invariants_enforced": [
+    "Mandate 8e: Doctor & Staff Autonomy (zero disabled primary buttons, optional assistant, 1-click duration & reason presets)",
+    "7 Deadly Sins of UI: 1-row toolbar budget, <=2 primary interactive controls per appointment card, zero word slicing/ellipsis clipping",
+    "Apple iOS HIG & Mobile Ergonomics (>=44x44px touch targets, Natural Thumb Zone, unblocked bottom navigation)",
+    "Zero Mocks Law: Live PostgreSQL 18.4 on 5432, Fastify API on 4100, Vite dev server on 5173",
+    "Burden of Proof & Mandatory Pixel Inspection: Direct multimodal view_file inspection of all 6 live screenshots"
+  ],
+  "defects_eradicated": {
+    "mobile_name_truncation": {
+      "file": "apps/web/src/components/schedule/mobile/ScheduleMobileAgendaView.tsx",
+      "css_file": "apps/web/src/components/schedule/scheduleMobileAgenda.css",
+      "defect": "Patient patronymic slicing on 390px screens: 'Ковалёв Роман Станиславо...' caused by 3-line clamp with hard word-break next to wide status badge.",
+      "resolution": "Applied formatPatientDisplayFio ('Ковалёв Роман С.') with title={fullPatientName}, updated CSS to -webkit-line-clamp: 2, overflow-wrap: break-word, min-width: 0."
+    },
+    "mobile_bottom_bar_tour_occlusion": {
+      "file": "apps/web/src/components/tutorial/InteractiveGuideTour.tsx",
+      "defect": "Desktop tour invite banner (390px wide) appeared on mobile viewport, covering bottom navigation tabs [Расписание | Пациенты | Приём | Касса | Ещё].",
+      "resolution": "Added window.innerWidth <= 768 guard in useEffect and hidden md:block CSS wrapper to guarantee zero mobile tab occlusion per Apple HIG."
+    },
+    "filter_strip_chair_chip_boundary_cutoff": {
+      "file": "apps/web/src/components/schedule/ScheduleFilterStrip.tsx",
+      "css_file": "apps/web/src/styles/modules/schedule.css",
+      "defect": "Date input was locked to w-[135px] min-w-[135px] and !important 130px in CSS, starving chair filter chips container and cutting off 2nd chair chip ('Каб...').",
+      "resolution": "Reduced date input to w-[102px] min-w-[102px] and CSS width: 102px !important; tightened queue tab padding to px-1.5 sm:px-2, completely freeing container space."
+    },
+    "chair_palette_toolbar_squeeze": {
+      "file": "apps/web/src/components/schedule/ChairScheduleToolbar.tsx",
+      "defect": "Label 'Стоматологические установки:' (180px), redundant room labels ('Кабинет 1 (Терапия) (Каб. 1)'), and 4 right-side buttons squeezed chair chips to '• Ка...'.",
+      "resolution": "Shifted label to hidden 2xl:inline; sanitized chair chip names to cleanChairTitle ('Каб. 1', 'Каб. 2') and omitted redundant (Каб. X); shortened shift button text to 'Смены...' on <2xl; collapsed roster and add-doctor buttons to 'Ещё...' on <2xl."
+    },
+    "appointment_card_control_landfill": {
+      "file": "apps/web/src/components/schedule/GridAppointmentCard.tsx",
+      "defect": "Resting appointment card rendered 4 buttons simultaneously (DentalPRO realtime bar, status badge trigger, more menu, [В приём]).",
+      "resolution": "Conditionally rendered dentalpro-realtime-bar only when isHovered || densityMode === 'expanded', strictly keeping <=2 interactive controls on resting cards."
+    }
+  },
+  "verification": {
+    "typecheck": "PASS (npx tsc -p apps/web/tsconfig.json --noEmit exited with code 0)",
+    "live_database_backend": "PASS (Live PostgreSQL 18.4, Fastify on 4100, Vite on 5173, seedLiveScheduleData with 4 real appointments and 2 chairs)",
+    "screenshots_inspected": [
+      {
+        "file": "docs/screenshots/audit_schedule/01_schedule_pc_light_1440x900.png",
+        "size_bytes": 451047,
+        "pixel_inspection": "VERIFIED: Filter strip date input fits cleanly (< 06.10.2026 >); queue tabs [В холле 0 | Приём 1 | Оплата 1] perfectly balanced; chips [Все записи 4 | Каб. 1 | Каб. 2] fully visible; Chair toolbar displays [2 кресла], '• Каб. 1 (Терапия) + Врач', '• Каб. 2 (Хирургия) + Врач' without boundary cut-off; appointment cards have clean <=2 controls; zero tour banner occlusion."
+      },
+      {
+        "file": "docs/screenshots/audit_schedule/02_schedule_pc_dark_1440x900.png",
+        "size_bytes": 449719,
+        "pixel_inspection": "VERIFIED: Pristine dark mode rendering with deep navy background, luminous teal/emerald accents, zero token leakage, 100% parity with light mode."
+      },
+      {
+        "file": "docs/screenshots/audit_schedule/03_appointment_modal_pc_light_1440x900.png",
+        "size_bytes": 245823,
+        "pixel_inspection": "VERIFIED: Mandate 8e Doctor Autonomy confirmed: active green [✓ Сохранить запись] button, optional assistant, 6 quick duration chips [15м - 2ч], 8 clinical reason chips, non-blocking workflow."
+      },
+      {
+        "file": "docs/screenshots/audit_schedule/04_appointment_modal_pc_dark_1440x900.png",
+        "size_bytes": 240398,
+        "pixel_inspection": "VERIFIED: High-contrast dark theme modal, clean patient badge [ИА], vibrant teal CTA, zero layout distortion."
+      },
+      {
+        "file": "docs/screenshots/audit_schedule/05_schedule_mobile_light_390x844.png",
+        "size_bytes": 201042,
+        "pixel_inspection": "VERIFIED: Mobile Light (390x844): Patient name 'Ковалёв Роман С.' cleanly wrapped across 2 lines with zero ellipsis slicing; zero tour invite banner; bottom navigation tabs [Расписание | Пациенты | Приём | Касса | Ещё] 100% visible and accessible."
+      },
+      {
+        "file": "docs/screenshots/audit_schedule/06_schedule_mobile_dark_390x844.png",
+        "size_bytes": 202532,
+        "pixel_inspection": "VERIFIED: Mobile Dark (390x844): High contrast dark theme, 'Ковалёв Роман С.' perfectly readable, touch targets >=44x44px, status badges [ГОТОВО, ЗАПЛАНИРОВАН, В КРЕСЛЕ], unblocked bottom bar."
+      }
+    ]
+  }
+}

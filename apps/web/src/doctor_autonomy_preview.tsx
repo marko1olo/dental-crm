@@ -186,43 +186,41 @@ export function DoctorAutonomyPreviewApp() {
 	const [activeEmkTab, setActiveEmkTab] = useState("all");
 
 	useEffect(() => {
-		const updateTheme = () => {
-			const currentTheme = (document.documentElement.getAttribute("data-theme") || rawTheme) as ThemeMode;
-			setTheme(currentTheme);
-			const resolved = resolveTheme(currentTheme, false);
-			applyThemeToRoot(document.documentElement, resolved);
-			const isDark = currentTheme === "dark";
-			document.documentElement.classList.toggle("dark", isDark);
-			document.documentElement.classList.toggle("light", !isDark);
-			document.documentElement.setAttribute("data-theme", currentTheme);
-			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-			document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen`;
-		};
-		updateTheme();
-		const observer = new MutationObserver(updateTheme);
-		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-		return () => observer.disconnect();
-	}, [rawTheme]);
+		const resolved = resolveTheme(theme, false);
+		applyThemeToRoot(document.documentElement, resolved);
+		const isDark = theme === "dark";
+		document.documentElement.classList.toggle("dark", isDark);
+		document.documentElement.classList.toggle("light", !isDark);
+		document.documentElement.setAttribute("data-theme", theme);
+		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+		document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen`;
+	}, [theme]);
 
 	return (
 		<div className="min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col">
 			{/* Top Navigation Strip */}
-			<div className="h-12 border-b border-[var(--line)] bg-[var(--paper-strong)] px-4 flex items-center justify-between gap-3 text-xs shrink-0 select-none">
+			<div className="h-12 border-b border-[var(--line)] bg-[var(--paper-strong)] px-4 flex items-center justify-between gap-3 text-xs shrink-0 select-none relative z-[70]">
 				<div className="flex items-center gap-2">
 					<ShieldCheck size={18} className="text-teal-600 dark:text-teal-400" />
 					<strong className="font-bold text-[var(--ink)]">
-						DENTE — Мандат 8e (Автономия врача и персонала)
+						DENTE — Автономия врача и персонала
 					</strong>
 				</div>
 
-				<div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+				<div
+					className="inline-flex items-center p-[3px] rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] gap-[2px] shadow-2xs"
+					role="tablist"
+					aria-label="Вкладки демонстрации автономии врача"
+				>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeView === "schedule_modal"}
 						onClick={() => setActiveView("schedule_modal")}
-						className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition-all ${
+						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] transition-all cursor-pointer select-none whitespace-nowrap ${
 							activeView === "schedule_modal"
-								? "bg-[var(--teal)] text-white shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-white font-semibold shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
 						}`}
 						data-testid="tab-schedule-modal"
 					>
@@ -230,23 +228,27 @@ export function DoctorAutonomyPreviewApp() {
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeView === "emk_toolbar"}
 						onClick={() => setActiveView("emk_toolbar")}
-						className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition-all ${
+						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] transition-all cursor-pointer select-none whitespace-nowrap ${
 							activeView === "emk_toolbar"
-								? "bg-[var(--teal)] text-white shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-white font-semibold shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
 						}`}
 						data-testid="tab-emk-toolbar"
 					>
-						2. Норма ЭМК 1-клик
+						2. Норма ЭМК
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeView === "mobile_chairside"}
 						onClick={() => setActiveView("mobile_chairside")}
-						className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition-all ${
+						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] transition-all cursor-pointer select-none whitespace-nowrap ${
 							activeView === "mobile_chairside"
-								? "bg-[var(--teal)] text-white shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-white font-semibold shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
 						}`}
 						data-testid="tab-mobile-chairside"
 					>
@@ -254,11 +256,13 @@ export function DoctorAutonomyPreviewApp() {
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeView === "fast_checkout"}
 						onClick={() => setActiveView("fast_checkout")}
-						className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition-all ${
+						className={`h-7.5 px-3 rounded-[7px] text-[12.5px] transition-all cursor-pointer select-none whitespace-nowrap ${
 							activeView === "fast_checkout"
-								? "bg-[var(--teal)] text-white shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								? "bg-[var(--teal)] text-white font-semibold shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-medium"
 						}`}
 						data-testid="tab-fast-checkout"
 					>
@@ -269,7 +273,7 @@ export function DoctorAutonomyPreviewApp() {
 				<button
 					type="button"
 					onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-					className="px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer font-bold"
+					className="h-8 px-3 rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer text-[13px] font-medium shadow-2xs"
 					data-testid="theme-toggle-btn"
 				>
 					{theme === "light" ? "🌙 Dark" : "☀️ Light"}
@@ -353,7 +357,7 @@ export function DoctorAutonomyPreviewApp() {
 									value={
 										normApplied
 											? "Жалоб на момент осмотра не предъявляет. Соматически здоров. Физиологическая норма."
-											: "Нажмите кнопку «✓ Соматически здоров / Норма» в тулбаре выше для экспресс-заполнения нормы в 1 клик."
+											: "Нажмите кнопку «✓ Соматически здоров / Норма» в тулбаре выше для заполнения физиологической нормы."
 									}
 									className="w-full text-xs p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none"
 								/>
@@ -386,18 +390,18 @@ export function DoctorAutonomyPreviewApp() {
 						{/* Action Buttons Strip */}
 						<div className="flex items-center justify-between pt-3 border-t border-[var(--line)]">
 							<span className="text-xs text-[var(--muted)]">
-								Мандат 8e: Кнопка «Завершить приём» никогда не блокируется серым цветом
+								Кнопка «Завершить приём» доступна в любой момент визита
 							</span>
 							<div className="flex items-center gap-2">
 								<button
 									type="button"
-									className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)]/50 cursor-pointer"
+									className="h-9 px-4 rounded-xl text-[13px] font-medium bg-[var(--paper-soft)] border border-[var(--line-subtle)] text-[var(--ink)] hover:bg-[var(--line)]/50 cursor-pointer shadow-2xs"
 								>
 									Сохранить черновик
 								</button>
 								<button
 									type="button"
-									className="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-[var(--ok-fg)] text-white shadow-sm hover:opacity-90 cursor-pointer flex items-center gap-1.5"
+									className="h-9 px-4.5 rounded-xl text-[13px] font-semibold bg-[var(--ok-fg)] text-white shadow-sm hover:opacity-90 cursor-pointer flex items-center gap-1.5"
 									data-testid="btn-complete-visit-emk-preview"
 								>
 									<Check size={16} />

@@ -690,7 +690,7 @@ export function SettingsPricesTab() {
 										className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[240px] max-w-[340px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 										role="menu"
 									>
-										<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
+										<div className="px-2 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
 											Официальный справочник услуг
 										</div>
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
@@ -726,7 +726,7 @@ export function SettingsPricesTab() {
 													<span className="font-bold truncate">
 														{isSeedingBaseline ? "Наполнение каталога..." : "Заполнить базовый каталог (30 услуг)"}
 													</span>
-													<span className="text-[10px] opacity-80 truncate">Добавить недостающие типовые услуги с ценами</span>
+													<span className="text-xs opacity-80 truncate">Добавить недостающие типовые услуги с ценами</span>
 												</div>
 											</button>
 										</div>
@@ -767,7 +767,7 @@ export function SettingsPricesTab() {
 								}`}
 								onClick={() => setIsNativeScannerDropzoneOpen((prev) => !prev)}
 								data-testid="btn-native-pricelist-import"
-								title="Импорт прейскуранта клиники (Excel / CSV / Текст) со сканером кодов 804н"
+								title="Импорт прейскуранта клиники (Excel / CSV / Текст) со сканером номенклатуры услуг"
 							>
 								<UploadCloud size={13} className="text-[var(--teal)] shrink-0" />
 								<span className="hidden lg:inline">Импорт прейскуранта (Excel/CSV/Текст)</span>
@@ -815,9 +815,9 @@ export function SettingsPricesTab() {
 									</div>
 									<div>
 										<h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] leading-snug">
-											Импорт прейскуранта и сопоставление с кодами 804н
+											Импорт прейскуранта и сопоставление с номенклатурой услуг
 										</h4>
-										<p className="text-[11px] text-[var(--muted)] leading-tight">
+										<p className="text-xs text-[var(--muted)] leading-tight">
 											Загрузите файл Excel (.xlsx, .xls), CSV или вставьте текст прейскуранта из буфера обмена.
 										</p>
 									</div>
@@ -834,35 +834,27 @@ export function SettingsPricesTab() {
 
 							{/* Mode selector (File vs Text) & Collision Strategy */}
 							<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between w-full">
-								<div className="inline-flex p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs shrink-0">
+								<div className="dente-segmented-bar shrink-0" role="tablist">
 									<button
 										type="button"
 										onClick={() => setScannerMode("file")}
-										className="px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer"
-										style={
-											scannerMode === "file"
-												? { background: "var(--teal)", color: "#ffffff", fontWeight: 700 }
-												: { background: "transparent", color: "var(--ink)" }
-										}
+										className={`dente-segmented-item ${scannerMode === "file" ? "active" : ""}`}
+										data-active={scannerMode === "file"}
 									>
 										Файл Excel / CSV
 									</button>
 									<button
 										type="button"
 										onClick={() => setScannerMode("text")}
-										className="px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer"
-										style={
-											scannerMode === "text"
-												? { background: "var(--teal)", color: "#ffffff", fontWeight: 700 }
-												: { background: "transparent", color: "var(--ink)" }
-										}
+										className={`dente-segmented-item ${scannerMode === "text" ? "active" : ""}`}
+										data-active={scannerMode === "text"}
 									>
 										Вставка текста
 									</button>
 								</div>
 
 								<div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
-									<span className="text-[11px] text-[var(--muted)] hidden sm:inline shrink-0">Стратегия:</span>
+									<span className="text-xs text-[var(--muted)] hidden sm:inline shrink-0">Стратегия:</span>
 									<select
 										value={scannerCollisionStrategy}
 										onChange={(e) =>
@@ -922,14 +914,14 @@ export function SettingsPricesTab() {
 										<p style={{ fontWeight: 600, fontSize: "13px", margin: "2px 0" }}>
 											Перетащите сюда файл прейскуранта или нажмите для выбора
 										</p>
-										<span style={{ fontSize: "11px", color: "var(--muted)" }}>
+										<span style={{ fontSize: "12px", color: "var(--muted)" }}>
 											Поддерживаются книги Excel (.xlsx, .xls) и файлы CSV (.csv)
 										</span>
 										{scannerFile && (
 											<div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)]">
 												<FileSpreadsheet size={14} className="text-[var(--teal)] shrink-0" />
 												<span className="truncate max-w-xs">{scannerFile.name}</span>
-												<span className="text-[10px] text-[var(--muted)]">
+												<span className="text-xs text-[var(--muted)]">
 													({Math.round(scannerFile.size / 1024)} КБ)
 												</span>
 											</div>
@@ -951,10 +943,10 @@ export function SettingsPricesTab() {
 											type="button"
 											disabled={isScanningPricelist || !scannerText.trim()}
 											onClick={() => runScannerRequest({ rawContent: scannerText })}
-											className="primary-button h-8 px-4 text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+											className="primary-button h-8 px-4 text-[13px] font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg shadow-xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
 										>
 											<Sparkles size={14} />
-											<span>{isScanningPricelist ? "Сканирование..." : "Распознать и сопоставить с 804н"}</span>
+											<span>{isScanningPricelist ? "Сканирование..." : "Распознать и сопоставить с номенклатурой"}</span>
 										</button>
 									</div>
 								</div>
@@ -963,7 +955,7 @@ export function SettingsPricesTab() {
 							{isScanningPricelist && (
 								<div className="text-center py-2 flex items-center justify-center gap-2 text-xs text-[var(--teal)] font-semibold">
 									<RefreshCw size={14} className="animate-spin" />
-									<span>Идёт семантический анализ строк и подбор кодов 804н...</span>
+									<span>Идёт семантический анализ строк и подбор кодов номенклатуры...</span>
 								</div>
 							)}
 
@@ -1047,7 +1039,7 @@ export function SettingsPricesTab() {
 										<button
 											type="button"
 											data-testid="pricelist-seed-baseline-804n-btn"
-											title="Заполнить рекомендованный прейскурант 804н (30 базовых услуг)"
+											title="Заполнить рекомендованный прейскурант (30 базовых услуг)"
 											disabled={isSeedingBaseline}
 											onClick={() => handleSeedBaseline804n(false)}
 											className="primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
@@ -1060,8 +1052,7 @@ export function SettingsPricesTab() {
 											</span>
 										</button>
 									</div>
-									<div className="flex items-center gap-3 mt-1 text-[11px] text-[var(--muted)]">
-										<span>или</span>
+									<div className="flex flex-wrap items-center justify-center gap-2 mt-2">
 										<button
 											type="button"
 											onClick={() => {
@@ -1070,17 +1061,18 @@ export function SettingsPricesTab() {
 												setPriceProblem(null);
 												setEditServiceId("new");
 											}}
-											className="text-[var(--teal)] hover:underline font-semibold cursor-pointer"
+											className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg cursor-pointer"
 										>
-											добавить услугу вручную
+											<Plus size={14} className="text-[var(--teal)] mr-1 inline" />
+											Добавить вручную
 										</button>
-										<span>•</span>
 										<button
 											type="button"
 											onClick={() => setIsNativeScannerDropzoneOpen(true)}
-											className="text-[var(--teal)] hover:underline font-semibold cursor-pointer"
+											className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg cursor-pointer"
 										>
-											Импорт прейскуранта (Excel / CSV / Текст)
+											<UploadCloud size={14} className="text-[var(--teal)] mr-1 inline" />
+											Импорт прейскуранта
 										</button>
 									</div>
 								</div>
@@ -1309,7 +1301,7 @@ export function SettingsPricesTab() {
 							<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
 								<Sparkles size={18} className="text-[var(--teal)]" />
 								<h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--ink)" }}>
-									Сопоставление строк прейскуранта с номенклатурой 804н
+									Сопоставление строк прейскуранта с номенклатурой услуг
 								</h3>
 							</div>
 							<button

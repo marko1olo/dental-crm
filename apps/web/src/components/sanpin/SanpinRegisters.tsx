@@ -1,694 +1,35 @@
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	Activity,
-	AlertOctagon,
-	AlertTriangle,
-	Award,
-	Check,
-	CheckCircle2,
-	ChevronDown,
-	ChevronLeft,
-	ChevronRight,
-	Clock,
-	Download,
-	Droplets,
-	FileBadge,
-	FileCheck2,
-	FileSpreadsheet,
-	FileText,
-	Flame,
-	FlaskConical,
-	Gauge,
-	Layers,
-	MoreVertical,
-	Plus,
-	Printer,
-	QrCode,
-	Recycle,
-	Rocket,
-	RotateCcw,
-	Scan,
-	Search,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Thermometer,
-	Trash2,
-	Wind,
-	X,
-	XCircle,
-} from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { CabinetReadinessTab } from "./CabinetReadinessTab";
-import { AutoclaveRegisterTab } from "./AutoclaveRegisterTab";
-import { BactericidalRegisterTab } from "./BactericidalRegisterTab";
+import { SanpinAutoclaveRegisterTab } from "./SanpinAutoclaveRegisterTab";
+import { SanpinChemicalTestsRegisterTab } from "./SanpinChemicalTestsRegisterTab";
+import { SanpinUvAndCleaningRegisterTab } from "./SanpinUvAndCleaningRegisterTab";
 import { EmergencyBiohazardRegisterTab } from "./EmergencyBiohazardRegisterTab";
-import { GeneralCleaningRegisterTab } from "./GeneralCleaningRegisterTab";
 import { MedicalWasteRegisterTab } from "./MedicalWasteRegisterTab";
-import { PsoRegisterTab } from "./PsoRegisterTab";
 import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab";
 import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
+import { SanpinKraftPacketsTab } from "./kraft/SanpinKraftPacketsTab";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";
-import { executeShiftSanpinAutoClose, executeMonthSanpinBatchGenerator } from "./autoclaveLog/shiftAutoCloserEngine.js";
+import { SanpinDisinfectantsRegisterTab } from "./SanpinDisinfectantsRegisterTab";
+import { SanpinBacLabRegisterTab } from "./SanpinBacLabRegisterTab";
+import { SanpinNeedleDisposalRegisterTab } from "./SanpinNeedleDisposalRegisterTab";
+import { SanpinNurseSignModal } from "./SanpinNurseSignModal";
 import {
-	generateSanpinConsolidatedInspectionHtml,
-	exportSanpinConsolidatedArchiveToCsv,
-	generateSanpinShiftAutopilotBundle,
-	type ConsolidatedSanpinJournalData,
-	type PsoJournalRecord,
-	type Form257Record,
-	type ChamberPointEvaluation,
-	type SterilizerEquipmentRecord,
-	type BactericidalSessionRecord,
-	type BactericidalEquipmentRecord,
-	type GeneralCleaningJournalRecord,
-	type TemperatureHumidityLogRecord,
-} from "@dental/shared";
+	SANPIN_CATEGORIES,
+	SANPIN_TABS,
+	type SanpinRegisterTab,
+	type SanpinCategory,
+} from "./sanpinNavigationConfig";
+import { SanpinRegistersHeader } from "./SanpinRegistersHeader";
+import { executeShiftSanpinAutoClose, executeMonthSanpinBatchGenerator } from "./autoclaveLog/shiftAutoCloserEngine.js";
+import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
 import "./SanpinRegisters.css";
 
-export type SanpinRegisterTab =
-	| "retroactive_batch"
-	| "cabinet_readiness"
-	| "pso"
-	| "autoclave"
-	| "sterilizers"
-	| "bactericidal"
-	| "cleaning"
-	| "waste"
-	| "biohazard"
-	| "temperature"
-	| "disinfectants"
-	| "bac_lab"
-	| "needle_disposal";
-
-export type SanpinCategory = "sterilization" | "disinfection" | "waste_climate";
-
-export interface SanpinTabDef {
-	id: SanpinRegisterTab;
-	label: string;
-	shortLabel: string;
-	category: SanpinCategory;
-	icon: React.ComponentType<{ size?: number; color?: string; className?: string }>;
-}
-
-export interface SanpinCategoryDef {
-	id: SanpinCategory;
-	label: string;
-	shortLabel: string;
-	icon: React.ComponentType<{ size?: number; color?: string; className?: string }>;
-	tabs: SanpinTabDef[];
-}
-
-export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
-	{
-		id: "sterilization",
-		label: "Стерилизация",
-		shortLabel: "Стерилизация",
-		icon: Flame,
-		tabs: [
-			{ id: "autoclave", label: "Журнал работы стерилизаторов (автоклавов)", shortLabel: "Автоклавы", category: "sterilization", icon: Flame },
-			{ id: "sterilizers", label: "Парк стерилизаторов", shortLabel: "Оборудование", category: "sterilization", icon: Gauge },
-			{ id: "pso", label: "Контроль предстерилизационной очистки (азопирам)", shortLabel: "Контроль ПСО", category: "sterilization", icon: FlaskConical },
-			{ id: "cabinet_readiness", label: "Готовность кабинета к приёму", shortLabel: "Готовность кабинета", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Сухожар и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Sparkles },
-		],
-	},
-	{
-		id: "disinfection",
-		label: "Уборки и дезинфекция",
-		shortLabel: "Уборки",
-		icon: Sparkles,
-		tabs: [
-			{ id: "disinfectants", label: "Дезсредства и растворы", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
-			{ id: "bactericidal", label: "Обеззараживание воздуха (рециркуляторы)", shortLabel: "Чистый воздух", category: "disinfection", icon: Wind },
-			{ id: "cleaning", label: "Генеральные уборки", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
-			{ id: "bac_lab", label: "Проверка стерильности (смывы)", shortLabel: "Смывы", category: "disinfection", icon: Activity },
-		],
-	},
-	{
-		id: "waste_climate",
-		label: "Отходы и микроклимат",
-		shortLabel: "Отходы",
-		icon: Recycle,
-		tabs: [
-			{ id: "waste", label: "Утилизация отходов", shortLabel: "Отходы", category: "waste_climate", icon: Recycle },
-			{ id: "needle_disposal", label: "Утилизация игл", shortLabel: "Иглы", category: "waste_climate", icon: Trash2 },
-			{ id: "temperature", label: "Температура холодильников", shortLabel: "Холодильники", category: "waste_climate", icon: Thermometer },
-			{ id: "biohazard", label: "Журнал аварийных ситуаций", shortLabel: "Аварии", category: "waste_climate", icon: ShieldAlert },
-		],
-	},
-];
-
-export const SANPIN_TABS: Array<{
-	id: SanpinRegisterTab;
-	label: string;
-	icon: React.ComponentType<{ size?: number; color?: string; className?: string }>;
-}> = SANPIN_CATEGORIES.flatMap((c) => c.tabs);
-
-interface DisinfectantSolutionRecord {
-	id: string;
-	tradeNameRu: string;
-	purposeRu: string;
-	concentrationPercent: number;
-	preparationDate: string;
-	expiryDate: string;
-	testStripResultRu: string;
-	responsibleNurseRu: string;
-	volumeLiters: number;
-}
-
-function getRecentIsoDate(daysOffset = 0): string {
-	const d = new Date(Date.now() + daysOffset * 86400000);
-	return d.toISOString().slice(0, 10);
-}
-
-function getRecentDateTimeRu(daysOffset = 0, timeStr = "08:00"): string {
-	return `${getRecentIsoDate(daysOffset)} ${timeStr}`;
-}
-
-const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
-	{
-		id: "ds-01",
-		tradeNameRu: "Аламинол (раствор 1.5%)",
-		purposeRu: "Предстерилизационная очистка и дезинфекция инструментов (ЦСО)",
-		concentrationPercent: 1.5,
-		preparationDate: getRecentDateTimeRu(0, "08:00"),
-		expiryDate: getRecentDateTimeRu(14, "08:00"),
-		testStripResultRu: "Дезиконт-Аламинол: 1.5% норма (тест пройден)",
-		responsibleNurseRu: "Медсестра ЦСО",
-		volumeLiters: 10,
-	},
-	{
-		id: "ds-02",
-		tradeNameRu: "Бациллол АФ (экспресс-спрей)",
-		purposeRu: "Экстренная дезинфекция поверхностей установки и наконечников",
-		concentrationPercent: 100,
-		preparationDate: `${getRecentIsoDate(0)} (заводской)`,
-		expiryDate: getRecentIsoDate(365),
-		testStripResultRu: "Готовый заводской раствор (активен)",
-		responsibleNurseRu: "Медсестра ЦСО",
-		volumeLiters: 1.0,
-	},
-	{
-		id: "ds-03",
-		tradeNameRu: "Оптимакс Про (раствор 1.0%)",
-		purposeRu: "Дезинфекция слепков, зуботехнических оттисков и ложек",
-		concentrationPercent: 1.0,
-		preparationDate: getRecentDateTimeRu(-1, "09:00"),
-		expiryDate: getRecentDateTimeRu(13, "09:00"),
-		testStripResultRu: "Тест-полоска Оптимакс: 1.0% норма",
-		responsibleNurseRu: "Старшая медсестра",
-		volumeLiters: 5,
-	},
-	{
-		id: "ds-04",
-		tradeNameRu: "Дезискраб (раствор 2.0%)",
-		purposeRu: "Хирургическая обработка поверхностей и генеральная уборка операционной",
-		concentrationPercent: 2.0,
-		preparationDate: getRecentDateTimeRu(0, "07:30"),
-		expiryDate: getRecentDateTimeRu(14, "07:30"),
-		testStripResultRu: "Дезиконт-Дезискраб: 2.0% норма",
-		responsibleNurseRu: "Медсестра ЦСО",
-		volumeLiters: 8,
-	},
-	{
-		id: "ds-05",
-		tradeNameRu: "Бриллиант Классик (раствор 2.0%)",
-		purposeRu: "Обезвреживание медицинских отходов классов Б и В",
-		concentrationPercent: 2.0,
-		preparationDate: getRecentDateTimeRu(0, "08:15"),
-		expiryDate: getRecentDateTimeRu(7, "08:15"),
-		testStripResultRu: "Тест-полоска Бриллиант: 2.0% норма",
-		responsibleNurseRu: "Медсестра ЦСО",
-		volumeLiters: 15,
-	},
-];
-
-function DisinfectantsRegisterTab() {
-	const [query, setQuery] = useState("");
-	const [records, setRecords] = useState<DisinfectantSolutionRecord[]>(() =>
-		isDemoShowcaseMode() ? DEFAULT_DISINFECTANT_RECORDS : []
-	);
-	const filtered = useMemo(() => {
-		const q = query.trim().toLowerCase();
-		if (!q) return records;
-		return records.filter(
-			(r) =>
-				r.tradeNameRu.toLowerCase().includes(q) ||
-				r.purposeRu.toLowerCase().includes(q)
-		);
-	}, [records, query]);
-
-	const handleAddSolution = () => {
-		const now = new Date();
-		const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-		const prepDate = `${getRecentIsoDate(0)} ${timeStr}`;
-		const expDate = getRecentDateTimeRu(14, timeStr);
-		const newRecord: DisinfectantSolutionRecord = {
-			id: `ds-${Date.now()}`,
-			tradeNameRu: "Аламинол (раствор 1.5%)",
-			purposeRu: "Текущая предстерилизационная очистка и дезинфекция инструментов (ЦСО)",
-			concentrationPercent: 1.5,
-			preparationDate: prepDate,
-			expiryDate: expDate,
-			testStripResultRu: "Дезиконт-Аламинол: 1.5% норма (тест пройден)",
-			responsibleNurseRu: "Медсестра ЦСО",
-			volumeLiters: 5,
-		};
-		setRecords((prev) => [newRecord, ...prev]);
-		showToast("Рабочий раствор зарегистрирован в журнале!", "success");
-	};
-
-	const handleVerifyTestStrips = () => {
-		const now = new Date();
-		const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-		setRecords((prev) =>
-			prev.map((r) => ({
-				...r,
-				testStripResultRu: `Тест-полоска экспресс: норма (${timeStr}, активен)`,
-			}))
-		);
-		showToast(`Тест-полоски концентрации: все емкости (${records.length} шт.) в норме!`, "success");
-	};
-
-	return (
-		<div className="sanpin-tab-content">
-			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ ДЕЗСРЕДСТВ И РАБОЧИХ РАСТВОРОВ</h2>
-				<p title="Учет дезинфицирующих средств клиники">Дезсредства и рабочие растворы клиники</p>
-			</div>
-
-			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
-				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
-						<input
-							type="text"
-							placeholder="Поиск по препарату, назначению..."
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2.2rem", minWidth: "260px", minHeight: "34px", height: "34px", fontSize: "0.85rem" }}
-						/>
-					</div>
-				</div>
-
-				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={handleAddSolution}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
-					>
-						<Plus size={15} /> Приготовить раствор
-					</button>
-					<button
-						type="button"
-						onClick={handleVerifyTestStrips}
-						className="sanpin-btn sanpin-btn-secondary"
-						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 600 }}
-					>
-						<Droplets size={15} /> Экспресс-контроль полосками
-					</button>
-				</div>
-			</div>
-
-			<div className="sanpin-table-wrapper">
-				<table className="sanpin-table">
-					<thead>
-						<tr>
-							<th style={{ fontSize: "0.85rem" }}>Наименование дезсредства</th>
-							<th style={{ fontSize: "0.85rem" }}>Назначение и зона применения</th>
-							<th style={{ fontSize: "0.85rem" }}>Концентрация / Объем</th>
-							<th style={{ fontSize: "0.85rem" }}>Дата приготовления</th>
-							<th style={{ fontSize: "0.85rem" }}>Годен до</th>
-							<th style={{ fontSize: "0.85rem" }}>Тест-полоски / Контроль</th>
-							<th style={{ fontSize: "0.85rem" }}>Ответственный</th>
-						</tr>
-					</thead>
-					<tbody>
-						{filtered.length === 0 ? (
-							<tr>
-								<td colSpan={7} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--muted)" }}>
-									Нет приготовленных дезрастворов. Нажмите «Приготовить раствор» для внесения партии.
-								</td>
-							</tr>
-						) : (
-							filtered.map((r) => (
-								<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
-									<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.tradeNameRu}</td>
-									<td style={{ fontSize: "0.875rem" }}>{r.purposeRu}</td>
-									<td>
-										<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
-											{r.concentrationPercent}% ({r.volumeLiters} л)
-										</span>
-									</td>
-									<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.preparationDate}</td>
-									<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.expiryDate}</td>
-									<td>
-										<span style={{ fontSize: "0.8rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
-											<Check size={13} /> {r.testStripResultRu}
-										</span>
-									</td>
-									<td style={{ fontSize: "0.85rem", fontWeight: 500 }}>{r.responsibleNurseRu}</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	);
-}
-
-interface BacLabRecord {
-	id: string;
-	actNumberRu: string;
-	sampleDate: string;
-	targetObjectRu: string;
-	pathogensTestedRu: string;
-	resultRu: string;
-	labNameRu: string;
-	statusRu: string;
-}
-
-const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
-	{
-		id: "bac-01",
-		actNumberRu: "Акт № 264/С",
-		sampleDate: getRecentIsoDate(-4),
-		targetObjectRu: "Наконечник турбинный и угловой после автоклавирования",
-		pathogensTestedRu: "БГКП, Staphylococcus aureus, спорообразующие бациллы",
-		resultRu: "Рост микрофлоры отсутствует (100% стерильно)",
-		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
-		statusRu: "Протокол утвержден",
-	},
-	{
-		id: "bac-02",
-		actNumberRu: "Акт № 265/С",
-		sampleDate: getRecentIsoDate(-4),
-		targetObjectRu: "Столик врача, подголовник кресла, светильник (Кабинет 1)",
-		pathogensTestedRu: "ОМЧ, БГКП, синегнойная палочка (Pseudomonas)",
-		resultRu: "ОМЧ < 10 КОЕ/см², патогенная микрофлора не выделена",
-		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
-		statusRu: "Протокол утвержден",
-	},
-	{
-		id: "bac-03",
-		actNumberRu: "Акт № 266/С",
-		sampleDate: getRecentIsoDate(-9),
-		targetObjectRu: "Крафт-пакет хирургический базовый (контроль стерильности)",
-		pathogensTestedRu: "Аэробные и факультативно-анаэробные бактерии",
-		resultRu: "Стерильность подтверждена, посев стерилен",
-		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
-		statusRu: "Протокол утвержден",
-	},
-	{
-		id: "bac-04",
-		actNumberRu: "Акт № 267/С",
-		sampleDate: getRecentIsoDate(-14),
-		targetObjectRu: "Проба воздуха рабочей зоны при включенном Дезар-4",
-		pathogensTestedRu: "Общее микробное число (ОМЧ) в 1 м³ воздуха",
-		resultRu: "ОМЧ = 120 КОЕ/м³ (норматив до 500 КОЕ/м³ соблюден)",
-		labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
-		statusRu: "Протокол утвержден",
-	},
-];
-
-function BacLabRegisterTab() {
-	const [query, setQuery] = useState("");
-	const [records, setRecords] = useState<BacLabRecord[]>(() =>
-		isDemoShowcaseMode() ? DEFAULT_BAC_LAB_RECORDS : []
-	);
-	const filtered = useMemo(() => {
-		const q = query.trim().toLowerCase();
-		if (!q) return records;
-		return records.filter(
-			(r) =>
-				r.actNumberRu.toLowerCase().includes(q) ||
-				r.targetObjectRu.toLowerCase().includes(q)
-		);
-	}, [records, query]);
-
-	const handleAddProtocol = () => {
-		const nextActNum = 268 + records.length - DEFAULT_BAC_LAB_RECORDS.length;
-		const newRecord: BacLabRecord = {
-			id: `bac-${Date.now()}`,
-			actNumberRu: `Акт № ${nextActNum}/С`,
-			sampleDate: getRecentIsoDate(0),
-			targetObjectRu: "Операционный блок: смыв со столика хирурга и наконечника после автоклава",
-			pathogensTestedRu: "ОМЧ, БГКП, Staphylococcus aureus, спорообразующие бациллы",
-			resultRu: "Рост микрофлоры отсутствует (100% стерильно)",
-			labNameRu: "ФБУЗ «Центр гигиены и эпидемиологии»",
-			statusRu: "Протокол утвержден",
-		};
-		setRecords((prev) => [newRecord, ...prev]);
-		showToast("Протокол смывов аккредитованной лаборатории зарегистрирован!", "success");
-	};
-
-	return (
-		<div className="sanpin-tab-content">
-			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ ПРОВЕРКИ СТЕРИЛЬНОСТИ (СМЫВЫ)</h2>
-				<p title="Контроль чистоты и бактериологические исследования">Контроль стерильности и санитарно-бактериологические исследования</p>
-			</div>
-
-			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
-				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
-						<input
-							type="text"
-							placeholder="Поиск по акту, объекту смыва..."
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2.2rem", minWidth: "260px", minHeight: "34px", height: "34px", fontSize: "0.85rem" }}
-						/>
-					</div>
-				</div>
-
-				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={handleAddProtocol}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
-					>
-						<Plus size={15} /> Внести протокол смывов
-					</button>
-				</div>
-			</div>
-
-			<div className="sanpin-table-wrapper">
-				<table className="sanpin-table">
-					<thead>
-						<tr>
-							<th style={{ fontSize: "0.85rem" }}>№ Протокола / Акт</th>
-							<th style={{ fontSize: "0.85rem" }}>Дата забора</th>
-							<th style={{ fontSize: "0.85rem" }}>Объект контроля / Смыв</th>
-							<th style={{ fontSize: "0.85rem" }}>Определяемые патогены</th>
-							<th style={{ fontSize: "0.85rem" }}>Результат посева</th>
-							<th style={{ fontSize: "0.85rem" }}>Аккредитованная лаборатория</th>
-							<th style={{ fontSize: "0.85rem" }}>Статус</th>
-						</tr>
-					</thead>
-					<tbody>
-						{filtered.length === 0 ? (
-							<tr>
-								<td colSpan={7} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--muted)" }}>
-									Журнал бактериологических исследований пуст. Нажмите «Внести протокол смывов» для регистрации акта лаборатории.
-								</td>
-							</tr>
-						) : (
-							filtered.map((r) => (
-								<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
-									<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.actNumberRu}</td>
-									<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.sampleDate}</td>
-									<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{r.targetObjectRu}</td>
-									<td style={{ fontSize: "0.825rem" }}>{r.pathogensTestedRu}</td>
-									<td>
-										<span style={{ fontSize: "0.825rem", color: "var(--ok-fg)", display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
-											<Check size={13} /> {r.resultRu}
-										</span>
-									</td>
-									<td style={{ fontSize: "0.825rem", color: "var(--muted)" }}>{r.labNameRu}</td>
-									<td>
-										<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.8rem" }}>
-											{r.statusRu}
-										</span>
-									</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	);
-}
-
-interface NeedleDisposalRecord {
-	id: string;
-	shiftDateRu: string;
-	wasteTypeRu: string;
-	treatmentMethodRu: string;
-	netWeightKg: number;
-	containerCodeRu: string;
-	surrenderedNurseRu: string;
-	acceptedNurseRu: string;
-}
-
-const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
-	{
-		id: "nd-01",
-		shiftDateRu: getRecentDateTimeRu(0, "14:00"),
-		wasteTypeRu: "Иглы инъекционные карпульные 30G/27G отсеченные + карпулы анестетика",
-		treatmentMethodRu: "Иглоотсекатель / деструктор игл + хим. дезинфекция Бриллиант Классик 2%",
-		netWeightKg: 1.2,
-		containerCodeRu: "Желтый контейнер КБ-12 (одноразовый с иглосъемником)",
-		surrenderedNurseRu: "Медсестра ЦСО",
-		acceptedNurseRu: "Старшая медсестра",
-	},
-	{
-		id: "nd-02",
-		shiftDateRu: getRecentDateTimeRu(-1, "19:30"),
-		wasteTypeRu: "Иглы хирургические шовные, лезвия скальпелей, карпулы пустые",
-		treatmentMethodRu: "Механическое разрушение + автоклавирование 134°C (класс Б)",
-		netWeightKg: 0.85,
-		containerCodeRu: "Желтый контейнер КБ-11 (проколостойкий герметичный)",
-		surrenderedNurseRu: "Медсестра ЦСО",
-		acceptedNurseRu: "Старшая медсестра",
-	},
-	{
-		id: "nd-03",
-		shiftDateRu: getRecentDateTimeRu(-2, "20:00"),
-		wasteTypeRu: "Отработанные инъекционные карпулы с остатками анестетика и крови",
-		treatmentMethodRu: "Химическое обезвреживание дезсредством в желтом баке",
-		netWeightKg: 1.4,
-		containerCodeRu: "Желтый контейнер КБ-10 (пломба № 04812)",
-		surrenderedNurseRu: "Старшая медсестра",
-		acceptedNurseRu: "Специализированная организация (Класс Б)",
-	},
-];
-
-function NeedleDisposalRegisterTab() {
-	const [query, setQuery] = useState("");
-	const [records, setRecords] = useState<NeedleDisposalRecord[]>(() =>
-		isDemoShowcaseMode() ? DEFAULT_NEEDLE_DISPOSAL_RECORDS : []
-	);
-	const filtered = useMemo(() => {
-		const q = query.trim().toLowerCase();
-		if (!q) return records;
-		return records.filter(
-			(r) =>
-				r.wasteTypeRu.toLowerCase().includes(q) ||
-				r.containerCodeRu.toLowerCase().includes(q)
-		);
-	}, [records, query]);
-
-	const handleAddNeedleBatch = () => {
-		const now = new Date();
-		const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-		const containerNum = 13 + records.length - DEFAULT_NEEDLE_DISPOSAL_RECORDS.length;
-		const sealNum = String(4813 + records.length - DEFAULT_NEEDLE_DISPOSAL_RECORDS.length).padStart(5, "0");
-		const newRecord: NeedleDisposalRecord = {
-			id: `nd-${Date.now()}`,
-			shiftDateRu: `${getRecentIsoDate(0)} ${timeStr}`,
-			wasteTypeRu: "Иглы инъекционные карпульные 30G/27G + карпулы пустые (класс Б)",
-			treatmentMethodRu: "Иглоотсекатель / деструктор + хим. дезинфекция Бриллиант Классик 2%",
-			netWeightKg: 0.95,
-			containerCodeRu: `Желтый контейнер КБ-${containerNum} (пломба № ${sealNum})`,
-			surrenderedNurseRu: "Медсестра ЦСО",
-			acceptedNurseRu: "Старшая медсестра",
-		};
-		setRecords((prev) => [newRecord, ...prev]);
-		showToast("Партия утилизированных игл внесена в журнал!", "success");
-	};
-
-	return (
-		<div className="sanpin-tab-content">
-			<div className="sanpin-print-title">
-				<h2>УТИЛИЗАЦИЯ ИГЛ И ОСТРЫХ ИНСТРУМЕНТОВ</h2>
-				<p title="Безопасный сбор и утилизация использованных игл">Обезвреживание карпульных игл, лезвий и колющих отходов</p>
-			</div>
-
-			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
-				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted)" }} />
-						<input
-							type="text"
-							placeholder="Поиск по типу отходов, контейнеру..."
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2.2rem", minWidth: "260px", minHeight: "34px", height: "34px", fontSize: "0.85rem" }}
-						/>
-					</div>
-				</div>
-
-				<div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-					<button
-						type="button"
-						onClick={handleAddNeedleBatch}
-						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "34px", height: "34px", padding: "0.35rem 0.85rem", fontSize: "0.825rem", fontWeight: 700, background: "var(--teal)", color: "var(--on-teal, #fff)", border: "none" }}
-					>
-						<Plus size={15} /> Внести партию игл
-					</button>
-				</div>
-			</div>
-
-			<div className="sanpin-table-wrapper">
-				<table className="sanpin-table">
-					<thead>
-						<tr>
-							<th style={{ fontSize: "0.85rem" }}>Дата / Время смены</th>
-							<th style={{ fontSize: "0.85rem" }}>Вид острого инструментария</th>
-							<th style={{ fontSize: "0.85rem" }}>Способ обезвреживания</th>
-							<th style={{ fontSize: "0.85rem" }}>Масса нетто</th>
-							<th style={{ fontSize: "0.85rem" }}>Маркировка емкости / Контейнер</th>
-							<th style={{ fontSize: "0.85rem" }}>Сдал (медсестра)</th>
-							<th style={{ fontSize: "0.85rem" }}>Принял</th>
-						</tr>
-					</thead>
-					<tbody>
-						{filtered.length === 0 ? (
-							<tr>
-								<td colSpan={7} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--muted)" }}>
-									Журнал утилизации острых инструментов пуст. Нажмите «Внести партию игл» для фиксации обезвреженных отходов.
-								</td>
-							</tr>
-						) : (
-							filtered.map((r) => (
-								<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
-									<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.shiftDateRu}</td>
-									<td style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>{r.wasteTypeRu}</td>
-									<td style={{ fontSize: "0.825rem" }}>{r.treatmentMethodRu}</td>
-									<td>
-										<span className="sanpin-tag" style={{ fontSize: "0.825rem", fontWeight: 700, background: "var(--warn-bg)", color: "var(--warn-fg)", border: "1px solid var(--warn-fg)" }}>
-											{r.netWeightKg} кг (Класс Б)
-										</span>
-									</td>
-									<td style={{ fontSize: "0.825rem", fontFamily: "monospace" }}>{r.containerCodeRu}</td>
-									<td style={{ fontSize: "0.85rem" }}>{r.surrenderedNurseRu}</td>
-									<td style={{ fontSize: "0.85rem", fontWeight: 600 }}>{r.acceptedNurseRu}</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	);
-}
+export * from "./sanpinNavigationConfig";
 
 function SanpinRegistersInner() {
 	const appLogic = useOptionalAppLogicContext();
@@ -697,40 +38,29 @@ function SanpinRegistersInner() {
 	const [activeCategory, setActiveCategory] = useState<SanpinCategory>("sterilization");
 	const [showExpandedKpi, setShowExpandedKpi] = useState<boolean>(false);
 	const [summary, setSummary] = useState<any>(null);
-	const [loadingSummary, setLoadingSummary] = useState(true);
+	const [, setLoadingSummary] = useState(true);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
-	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
-	const [nurseSignPin, setNurseSignPin] = useState("");
-	const [signingShift, setSigningShift] = useState(false);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-	const exportMenuRef = useRef<HTMLDivElement>(null);
-	const tabsNavRef = useRef<HTMLDivElement>(null);
+	const [autoFilling, setAutoFilling] = useState(false);
+	const [autofillPeriod, setAutofillPeriod] = useState<"day" | "week" | "month">("month");
+	const [refreshCounter, setRefreshCounter] = useState(0);
 
-	// Select Tab and automatically sync Active Category
 	const handleSelectTab = useCallback((tabId: SanpinRegisterTab) => {
 		setActiveTab(tabId);
 		const foundCat = SANPIN_CATEGORIES.find((cat) => cat.tabs.some((t) => t.id === tabId));
 		if (foundCat) {
-			setActiveCategory((prevCat) => foundCat.id !== prevCat ? foundCat.id : prevCat);
+			setActiveCategory((prevCat) => (foundCat.id !== prevCat ? foundCat.id : prevCat));
 		}
 	}, []);
 
-	// Select Category and ensure valid Tab is active
 	const handleSelectCategory = useCallback((catId: SanpinCategory) => {
 		setActiveCategory(catId);
 		const targetCat = SANPIN_CATEGORIES.find((c) => c.id === catId);
 		if (targetCat) {
-			setActiveTab((prevTab) => targetCat.tabs.some((t) => t.id === prevTab) ? prevTab : targetCat.tabs[0]!.id);
-		}
-	}, []);
-
-	const scrollTabs = useCallback((direction: "left" | "right") => {
-		if (tabsNavRef.current) {
-			const offset = direction === "left" ? -260 : 260;
-			tabsNavRef.current.scrollBy({ left: offset, behavior: "smooth" });
+			setActiveTab((prevTab) => (targetCat.tabs.some((t) => t.id === prevTab) ? prevTab : targetCat.tabs[0]!.id));
 		}
 	}, []);
 
@@ -741,18 +71,6 @@ function SanpinRegistersInner() {
 	const wasteTotalKg = useMemo(() => {
 		return ((summary?.wasteMonth ?? []).reduce((acc: number, w: any) => acc + (w.totalKg || 0), 0) as number).toFixed(1);
 	}, [summary?.wasteMonth]);
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-				setIsExportMenuOpen(false);
-			}
-		};
-		if (isExportMenuOpen) {
-			document.addEventListener("mousedown", handleClickOutside);
-		}
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isExportMenuOpen]);
 
 	const fetchSummary = async () => {
 		try {
@@ -778,27 +96,114 @@ function SanpinRegistersInner() {
 		fetchSummary();
 	}, []);
 
-	const handleBatchNurseSign = async (e?: React.FormEvent, bypassNurse = false) => {
-		if (e) e.preventDefault();
+	// Hash-based direct subtab navigation (#sanpin/kraft, #sterilization/kraft, #sanpin/pso, etc.)
+	useEffect(() => {
+		const handleHash = () => {
+			if (typeof window === "undefined") return;
+			const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase();
+			const parts = hash.split(/[/?]/);
+			const sub = parts[1] || (parts[0] !== "sanpin" && parts[0] !== "sterilization" ? parts[0] : "");
+			if (sub) {
+				const tabMap: Record<string, SanpinRegisterTab> = {
+					kraft: "kraft",
+					"kraft-packets": "kraft",
+					autoclave: "autoclave",
+					pso: "pso",
+					azopyram: "pso",
+					sterilizers: "sterilizers",
+					fleet: "sterilizers",
+					cabinet_readiness: "cabinet_readiness",
+					retroactive_batch: "retroactive_batch",
+					bactericidal: "bactericidal",
+					cleaning: "cleaning",
+					waste: "waste",
+					temperature: "temperature",
+					disinfectants: "disinfectants",
+					disinfection: "disinfectants",
+					bac_lab: "bac_lab",
+					needle_disposal: "needle_disposal",
+					biohazard: "biohazard",
+				};
+				if (tabMap[sub]) {
+					handleSelectTab(tabMap[sub]!);
+				}
+			}
+		};
+		handleHash();
+		window.addEventListener("hashchange", handleHash);
+		return () => window.removeEventListener("hashchange", handleHash);
+	}, [handleSelectTab]);
+
+	const handleAutofillShift = async () => {
 		try {
-			setSigningShift(true);
-			const signerName = bypassNurse ? "Персонал клиники" : (nurseSignName.trim() || "Персонал клиники");
-			showToast(
-				`Смена успешно заверена цифровым штампом (${signerName}). Журналы стерилизации в норме.`,
-				"success",
-			);
-			setIsNurseSignModalOpen(false);
-			fetchSummary();
+			setAutoFilling(true);
+			const operatorName = (appLogic as any)?.activeDoctor?.fullName || "Ответственный сотрудник (врач/админ)";
+			const headNurseName = (appLogic as any)?.clinic?.legalEntityName || "Ответственный по СанПиН";
+
+			const rawAppointments = (appLogic as any)?.appointments;
+			const todayIso = new Date().toISOString().slice(0, 10);
+			const dayVisits = Array.isArray(rawAppointments)
+				? rawAppointments.filter((a: any) => (a?.date === todayIso || a?.startsAt?.startsWith(todayIso)) && a?.status !== "cancelled").length
+				: 0;
+			const effectiveVisits = dayVisits > 0 ? dayVisits : 12;
+
+			const shiftAutoResult = executeShiftSanpinAutoClose({
+				date: todayIso,
+				visitsCount: effectiveVisits,
+				operatorStaffFullName: operatorName,
+				headNurseSignatureFullName: headNurseName,
+			});
+
+			const bundle = generateSanpinShiftAutopilotBundle({
+				date: todayIso,
+				operatorFullName: operatorName,
+				headNurseFullName: headNurseName,
+			});
+
+			const headers: Record<string, string> = auth
+				? auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					})
+				: { "Content-Type": "application/json" };
+
+			let isApiSuccess = false;
+			try {
+				const res = await fetch("/api/registers/autofill-shift", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						...bundle,
+						autoShiftData: shiftAutoResult,
+					}),
+				});
+				if (res.ok) {
+					isApiSuccess = true;
+					showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
+					fetchSummary();
+					return;
+				}
+			} catch (fetchErr) {
+				console.warn("Backend /api/registers/autofill-shift unavailable, using statutory shared bundle locally", fetchErr);
+			}
+
+			if (!isApiSuccess) {
+				setSummary((prev: any) => ({
+					...(prev || {}),
+					pso: { totalToday: shiftAutoResult.totalPsoItems, approvedToday: shiftAutoResult.totalPsoItems },
+					sterilization: { totalCyclesToday: shiftAutoResult.totalAutoclaveCycles, passedToday: shiftAutoResult.totalAutoclaveCycles },
+					bactericidal: { totalEquipments: 4, expiredLamps: 0, warningLamps: 0 },
+					wasteMonth: [{ totalKg: shiftAutoResult.waste.classBWeightKg + shiftAutoResult.waste.classAWeightKg }],
+					temperature: { totalChecksToday: 4, deviationsToday: 0 },
+				}));
+
+				showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
+			}
 		} catch (err) {
-			showToast("Ошибка при заверке смены", "error");
+			showToast("Ошибка при авто-заполнении смены", "error");
 		} finally {
-			setSigningShift(false);
+			setAutoFilling(false);
 		}
 	};
-
-	const [autoFilling, setAutoFilling] = useState(false);
-	const [autofillPeriod, setAutofillPeriod] = useState<"day" | "week" | "month">("month");
-	const [refreshCounter, setRefreshCounter] = useState(0);
 
 	const handleAutofillByPeriod = async (period: "day" | "week" | "month") => {
 		if (period === "day") {
@@ -819,7 +224,7 @@ function SanpinRegistersInner() {
 				let totalPso = 0;
 				for (let i = daysToRun - 1; i >= 0; i--) {
 					const d = new Date(Date.now() - i * 86400000);
-					if (d.getDay() === 0) continue; // skip sunday
+					if (d.getDay() === 0) continue;
 					const dateStr = d.toISOString().slice(0, 10);
 					const res = executeShiftSanpinAutoClose({
 						date: dateStr,
@@ -870,789 +275,31 @@ function SanpinRegistersInner() {
 		}
 	};
 
-	const handleAutofillShift = async () => {
-		try {
-			setAutoFilling(true);
-			const operatorName = (appLogic as any)?.activeDoctor?.fullName || "Ответственный сотрудник (врач/админ)";
-			const headNurseName = (appLogic as any)?.clinic?.legalEntityName || "Ответственный по СанПиН";
-
-			// Автоматический учет приёмов из расписания дня
-			const rawAppointments = (appLogic as any)?.appointments;
-			const todayIso = new Date().toISOString().slice(0, 10);
-			const dayVisits = Array.isArray(rawAppointments)
-				? rawAppointments.filter((a: any) => (a?.date === todayIso || a?.startsAt?.startsWith(todayIso)) && a?.status !== "cancelled").length
-				: 0;
-			const effectiveVisits = dayVisits > 0 ? dayVisits : 12;
-
-			// Автономная компиляция смены СанПиН 3.3686-21
-			const shiftAutoResult = executeShiftSanpinAutoClose({
-				date: todayIso,
-				visitsCount: effectiveVisits,
-				operatorStaffFullName: operatorName,
-				headNurseSignatureFullName: headNurseName,
-			});
-
-			const bundle = generateSanpinShiftAutopilotBundle({
-				date: todayIso,
-				operatorFullName: operatorName,
-				headNurseFullName: headNurseName,
-			});
-
-			const headers: Record<string, string> = auth
-				? auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					})
-				: { "Content-Type": "application/json" };
-
-			let isApiSuccess = false;
-			try {
-				const res = await fetch("/api/registers/autofill-shift", {
-					method: "POST",
-					headers,
-					body: JSON.stringify({
-						...bundle,
-						autoShiftData: shiftAutoResult,
-					}),
-				});
-				if (res.ok) {
-					isApiSuccess = true;
-					showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
-					fetchSummary();
-					return;
-				}
-			} catch (fetchErr) {
-				console.warn("Backend /api/registers/autofill-shift unavailable, using statutory shared bundle locally", fetchErr);
-			}
-
-			if (!isApiSuccess) {
-				// Local statutory state sync
-				setSummary((prev: any) => ({
-					...(prev || {}),
-					pso: { totalToday: shiftAutoResult.totalPsoItems, approvedToday: shiftAutoResult.totalPsoItems },
-					sterilization: { totalCyclesToday: shiftAutoResult.totalAutoclaveCycles, passedToday: shiftAutoResult.totalAutoclaveCycles },
-					bactericidal: { totalEquipments: 4, expiredLamps: 0, warningLamps: 0 },
-					wasteMonth: [{ totalKg: shiftAutoResult.waste.classBWeightKg + shiftAutoResult.waste.classAWeightKg }],
-					temperature: { totalChecksToday: 4, deviationsToday: 0 },
-				}));
-
-				showToast(`Смена заполнена: ${effectiveVisits} приемов, автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, ПСО ${shiftAutoResult.totalPsoSamplesTested} проб, Pozis +4.2°C, ВИТ-2 21°C/55%`, "success");
-			}
-		} catch (err) {
-			showToast("Ошибка при авто-заполнении смены", "error");
-		} finally {
-			setAutoFilling(false);
-		}
-	};
-
-	const handleExportDossierPdf = () => {
-		window.print();
-	};
-
-	const fetchLiveConsolidatedSanpinData = async (): Promise<ConsolidatedSanpinJournalData> => {
-		const headers: Record<string, string> = auth
-			? auth.denteClinicalReadHeaders()
-			: { "Content-Type": "application/json" };
-
-		const [
-			psoRes,
-			sterilizationRes,
-			sterilizersRes,
-			bacLogsRes,
-			bacEquipRes,
-			cleaningRes,
-			tempLogsRes,
-		] = await Promise.allSettled([
-			fetch("/api/registers/pso", { headers }),
-			fetch("/api/registers/sterilization", { headers }),
-			fetch("/api/registers/sterilizers/equipments", { headers }),
-			fetch("/api/registers/bactericidal/logs", { headers }),
-			fetch("/api/registers/bactericidal/equipments", { headers }),
-			fetch("/api/registers/cleaning", { headers }),
-			fetch("/api/registers/temperature-humidity/logs", { headers }),
-		]);
-
-		const rawPso: any[] = psoRes.status === "fulfilled" && psoRes.value.ok ? await psoRes.value.json().catch(() => []) : [];
-		const rawSterilization: any[] = sterilizationRes.status === "fulfilled" && sterilizationRes.value.ok ? await sterilizationRes.value.json().catch(() => []) : [];
-		const rawSterilizers: any[] = sterilizersRes.status === "fulfilled" && sterilizersRes.value.ok ? await sterilizersRes.value.json().catch(() => []) : [];
-		const rawBacLogs: any[] = bacLogsRes.status === "fulfilled" && bacLogsRes.value.ok ? await bacLogsRes.value.json().catch(() => []) : [];
-		const rawBacEquip: any[] = bacEquipRes.status === "fulfilled" && bacEquipRes.value.ok ? await bacEquipRes.value.json().catch(() => []) : [];
-		const rawCleaning: any[] = cleaningRes.status === "fulfilled" && cleaningRes.value.ok ? await cleaningRes.value.json().catch(() => []) : [];
-		const rawTempLogs: any[] = tempLogsRes.status === "fulfilled" && tempLogsRes.value.ok ? await tempLogsRes.value.json().catch(() => []) : [];
-
-		// Map PSO
-		const psoRecords: PsoJournalRecord[] = rawPso.map((item: any, idx: number) => ({
-			id: item.id || `PSO-${idx + 1}`,
-			timestamp: item.timestamp || item.createdAt || new Date().toISOString(),
-			instrumentName: item.instrumentName || item.notes || "Стоматологический инструментарий",
-			categoryId: "therapeutic_kit",
-			batchItemCount: Number(item.batchItemCount) || 1,
-			testedSampleCount: Number(item.testedSampleCount) || 1,
-			testType: (item.testType as any) || "both_standard",
-			isAzopyramNegative: item.isAzopyramNegative ?? true,
-			isPhenolphthaleinNegative: item.isPhenolphthaleinNegative ?? true,
-			isSudanNegative: true,
-			detergentBrand: item.detergentBrand || "Биолот 0.5% + Аламинол 1.0%",
-			isBatchApproved: item.isBatchApproved ?? true,
-			rejectionReason: item.rejectionReason || undefined,
-			operatorStaffFullName:
-				item.operatorName ||
-				(appLogic as any)?.activeDoctor?.fullName ||
-				(appLogic as any)?.activeDoctor?.name ||
-				"Медсестра ЦСО",
-			operatorStaffPosition: "Медсестра ЦСО",
-			electronicStampVerified: true,
-			notes: item.notes || undefined,
-		}));
-
-		// Map Sterilizer Equipments
-		const sterilizerEquipments: SterilizerEquipmentRecord[] = rawSterilizers.map((eq: any) => ({
-			id: eq.id,
-			name: eq.name || eq.brandModel || "Автоклав",
-			brandModel: eq.brandModel || "Euronda E9 Next",
-			serialNumber: eq.serialNumber || "—",
-			inventoryNumber: eq.inventoryNumber || null,
-			deviceType: eq.deviceType || "Паровой",
-			deviceClass: eq.deviceClass || "B",
-			chamberVolumeLiters: eq.chamberVolumeLiters ? Number(eq.chamberVolumeLiters) : 18,
-			locationRoom: eq.locationRoom || "ЦСО",
-			verificationExpiryDate: eq.verificationExpiryDate || null,
-			lastMaintenanceDate: eq.lastMaintenanceDate || null,
-			nextMaintenanceDate: eq.nextMaintenanceDate || null,
-			status: eq.status || "active",
-			notes: eq.notes || null,
-		}));
-
-		// Map Form 257 (Autoclave Cycles)
-		const form257Records: Form257Record[] = rawSterilization.map((item: any, idx: number) => {
-			const eq = sterilizerEquipments.find((e) => e.id === item.autoclaveId);
-			const isPassed = item.status === "completed" || item.status === "passed" || item.status === "sterile_passed" || item.passedIndicator === true;
-			const chamberPoints: ChamberPointEvaluation[] = [
-				{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-				{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-				{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-				{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-				{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-			];
-
-			return {
-				id: item.id || `F257-${idx + 1}`,
-				date: item.timestamp ? item.timestamp.slice(0, 10) : new Date().toISOString().slice(0, 10),
-				cycleNumber: Number(item.cycleNumber) || (idx + 1),
-				sterilizerId: item.autoclaveId || eq?.id || "autoclave-01",
-				sterilizerCode: item.deviceName || eq?.brandModel || "АВТОКЛАВ-01",
-				sterilizerBrandModel: eq?.brandModel || item.deviceName || "Euronda E9 Next (Класс B)",
-				sterilizerSerialNumber: eq?.serialNumber || "SN-EUR-99824",
-				regimeId: item.cycleMode === "prion" ? "steam_134_20min" : "steam_134_5min",
-				regimeNameRu: item.cycleMode === "prion" ? "134°C Прион (20 мин)" : "134°C Универсальный (5 мин)",
-				targetTemperatureCelsius: 134,
-				targetPressureBar: 2.1,
-				targetExposureMinutes: item.cycleMode === "prion" ? 20 : 5,
-				actualTemperatureCelsius: Number(item.temperatureCelsius) || 134.5,
-				actualPressureBar: Number(item.pressureBar) || 2.15,
-				actualExposureMinutes: Number(item.durationMin) || 5.5,
-				itemsDescriptionRu: item.itemsDescription || "Стоматологический инструментарий (крафт-пакеты)",
-				packsCount: 1,
-				packagingType: item.packagingType || "kraft_pouch",
-				packagingNameRu: "Пакеты комбинированные самоклеящиеся",
-				shelfLifeDays: 50,
-				chamberPoints,
-				areAllPointsPassed: isPassed,
-				chemicalIndicatorNameRu: item.indicatorType || "Медтест 134/5 (5 класс)",
-				isCyclePassed: isPassed,
-				rejectionReason: !isPassed ? (item.rejectionReason || "Не пройден тест индикатора") : undefined,
-				status: isPassed ? "sterile_passed" : "rejected_defect",
-				operatorStaffFullName: item.operatorName || (appLogic as any)?.activeDoctor?.fullName || "Медсестра ЦСО",
-				operatorStaffPosition: "Медсестра ЦСО",
-				headNurseSignatureFullName: (appLogic as any)?.clinic?.legalEntityName || "Главная медсестра",
-				isHeadNurseVerified: true,
-				verificationTimestamp: item.createdAt || new Date().toISOString(),
-				digitalStampHash: `STAMP-${item.barcode || (item.id ? item.id.slice(0, 8) : "VERIFIED")}-ECP`,
-				createdAt: item.createdAt || new Date().toISOString(),
-			};
-		});
-
-		// Map Bactericidal Equipments
-		const bactericidalEquipments: BactericidalEquipmentRecord[] = rawBacEquip.map((eq: any) => ({
-			id: eq.id,
-			roomName: eq.roomName,
-			roomVolumeM3: Number(eq.roomVolumeM3) || 50,
-			deviceBrand: eq.deviceBrand,
-			serialNumber: eq.serialNumber,
-			deviceType: eq.deviceType || "recirculator_closed",
-			lampType: eq.lampType || "TUV 30W",
-			lampCount: Number(eq.lampCount) || 2,
-			maxLampHours: Number(eq.maxLampHours) || 8000,
-			totalOperatingHours: Number(eq.totalOperatingHours) || 0,
-			remainingLampHours: Number(eq.remainingLampHours) || (Number(eq.maxLampHours) - Number(eq.totalOperatingHours)),
-			remainingLampPercent: Number(eq.remainingLampPercent) || 100,
-			lampStatus: eq.lampStatus || "normal",
-			isLampCritical: Boolean(eq.isLampCritical),
-			lastLampReplacementDate: eq.lastLampReplacementDate || undefined,
-			notes: eq.notes || undefined,
-		}));
-
-		// Map Bactericidal Sessions
-		const bactericidalSessions: BactericidalSessionRecord[] = rawBacLogs.map((l: any, idx: number) => ({
-			id: l.id || `sess-${idx + 1}`,
-			equipmentId: l.equipmentId,
-			roomName: l.roomName || "Кабинет",
-			deviceBrand: l.deviceBrand || "Дезар-Кронт",
-			date: l.date,
-			sessionStartTime: l.sessionStartTime || "08:00",
-			sessionEndTime: l.sessionEndTime || "08:30",
-			durationMinutes: Number(l.durationMinutes) || 30,
-			durationHours: Number(l.durationHours) || Number((Number(l.durationMinutes) / 60).toFixed(2)) || 0.5,
-			operatingMode: (l.operatingMode as any) || "pre_op_preparation",
-			cumulativeHoursAfterSession: Number(l.cumulativeHoursAfterSession) || 0,
-			operatorStaffFullName: l.operatorName || (appLogic as any)?.activeDoctor?.fullName || "Оператор / Медсестра",
-		}));
-
-		// Map General Cleanings
-		const generalCleanings: GeneralCleaningJournalRecord[] = rawCleaning.map((r: any, idx: number) => ({
-			id: r.id || `clean-${idx + 1}`,
-			roomType: "surgical",
-			roomName: r.roomName,
-			scheduledDate: r.scheduledDate,
-			actualDateTime: r.actualDateTime,
-			treatedAreaM2: Number(r.treatedAreaM2) || 32.5,
-			disinfectantName: r.disinfectantName,
-			activeIngredient: r.activeIngredient || "ЧАС + Альдегиды",
-			solutionConcentrationPercent: Number(r.solutionConcentrationPercent) || 1.5,
-			applicationMethodRu: r.applicationMethod === "spraying" ? "Орошение" : "Двукратное протирание",
-			exposureTimeMinutes: Number(r.exposureTimeMinutes) || 60,
-			uvIrradiationMinutes: Number(r.uvIrradiationMinutes) || 60,
-			ventilationMinutes: Number(r.ventilationMinutes) || 15,
-			operatorStaffFullName: r.operatorName || "Медсестра / Санитар",
-			inspectorStaffFullName: r.inspectorName || undefined,
-			isInspectorVerified: Boolean(r.inspectorName || r.status === "verified_by_inspector"),
-			status: (r.status as any) || "completed",
-			notes: r.notes || undefined,
-		}));
-
-		// Map Temperature Logs
-		const temperatureLogs: TemperatureHumidityLogRecord[] = rawTempLogs.map((t: any, idx: number) => ({
-			id: t.id || `temp-${idx + 1}`,
-			measurementDate: t.measurementDate,
-			measurementPeriod: (t.measurementPeriod as any) || "morning",
-			equipmentName: t.equipmentName || "Фармацевтический холодильник Pozis",
-			location: t.location || "ЦСО / Процедурный кабинет",
-			meterDeviceName: t.equipmentType || "Термометр ТМН-1",
-			meterSerialNumber: undefined,
-			temperatureCelsius: Number(t.temperatureCelsius) || 4.0,
-			relativeHumidityPercent: t.relativeHumidityPercent ? Number(t.relativeHumidityPercent) : undefined,
-			targetTempMinCelsius: Number(t.targetTempMin) || 2,
-			targetTempMaxCelsius: Number(t.targetTempMax) || 8,
-			isWithinNorm: t.isWithinNorm ?? true,
-			deviationReason: t.deviationReason || undefined,
-			correctiveAction: t.correctiveAction || undefined,
-			operatorStaffFullName: t.operatorName || "Оператор ЦСО",
-			notes: t.notes || undefined,
-		}));
-
-		const now = new Date();
-		const monthStart = `01.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()}`;
-		const periodLabelRu = `за период с ${monthStart} по ${now.toLocaleDateString("ru-RU")}`;
-
-		return {
-			clinicInfo: {
-				name: (appLogic as any)?.clinicName || (appLogic as any)?.clinic?.clinicName || "Стоматологическая клиника",
-				ogrn: (appLogic as any)?.clinic?.ogrn || "",
-				inn: (appLogic as any)?.clinic?.inn || "",
-				address: (appLogic as any)?.clinic?.address || "",
-				chiefDoctor: "Главный врач",
-				headNurse: "Главная медсестра",
-				licenseNumber: (appLogic as any)?.clinic?.licenseNumber || "",
-				volumeNumber: 1,
-			},
-			periodLabelRu,
-			psoRecords,
-			form257Records,
-			sterilizerEquipments,
-			bactericidalSessions,
-			bactericidalEquipments,
-			generalCleanings,
-			temperatureLogs,
-		};
-	};
-
-	const handlePrintConsolidatedBinder = async () => {
-		try {
-			showToast("Формирование сводного протокола стерилизации...", "info");
-			const consolidatedData = await fetchLiveConsolidatedSanpinData();
-			const html = generateSanpinConsolidatedInspectionHtml(consolidatedData);
-
-			const printWindow = window.open("", "_blank");
-			if (printWindow) {
-				printWindow.document.write(html);
-				printWindow.document.close();
-				printWindow.focus();
-				setTimeout(() => {
-					printWindow.print();
-				}, 250);
-			} else {
-				const iframe = document.createElement("iframe");
-				iframe.style.position = "fixed";
-				iframe.style.right = "0";
-				iframe.style.bottom = "0";
-				iframe.style.width = "0";
-				iframe.style.height = "0";
-				iframe.style.border = "none";
-				document.body.appendChild(iframe);
-				const doc = iframe.contentWindow?.document;
-				if (doc) {
-					doc.open();
-					doc.write(html);
-					doc.close();
-					iframe.contentWindow?.focus();
-					setTimeout(() => {
-						iframe.contentWindow?.print();
-						setTimeout(() => document.body.removeChild(iframe), 1000);
-					}, 300);
-				}
-			}
-		} catch (err) {
-			console.error("Failed to print consolidated binder", err);
-			showToast("Ошибка при формировании сводного сшива", "error");
-		}
-	};
-
-	const handleExportConsolidatedCsv = async () => {
-		try {
-			showToast("Формирование сводного архива журналов (CSV)...", "info");
-			const consolidatedData = await fetchLiveConsolidatedSanpinData();
-			const csv = exportSanpinConsolidatedArchiveToCsv(consolidatedData);
-
-			const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.setAttribute("href", url);
-			link.setAttribute("download", "SanPiN_Consolidated_Production_Control_Archive.csv");
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
-			showToast("Сводный архив журналов (CSV) успешно экспортирован", "success");
-		} catch (err) {
-			console.error("Failed to export consolidated CSV", err);
-			showToast("Ошибка при экспорте сводного архива журналов", "error");
-		}
-	};
+	const exportContext = useMemo(() => ({ auth, appLogic }), [auth, appLogic]);
 
 	return (
 		<div className="sanpin-container">
-			{/* Top Header — Clean 1-Row Layout */}
-			<div className="sanpin-header" style={{ padding: "0.25rem 0 0.4rem", borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap" }}>
-				<div className="sanpin-title-block" style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexShrink: 0 }}>
-					<h1 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--ink)" }}>
-						<ShieldCheck size={20} color="var(--brand-primary, #2563eb)" />
-						<span>Санитарный контроль и стерилизация</span>
-					</h1>
-					<span className="sanpin-badge-gov" title="Норма стерилизации и чистоты" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
-						<CheckCircle2 size={12} /> Норма стерилизации
-					</span>
-					<span className="sanpin-badge-quality" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
-						<ShieldCheck size={13} /> Контроль качества: 100% норма (0 отклонений)
-					</span>
+			{/* Top Header Component */}
+			<SanpinRegistersHeader
+				summary={summary}
+				showExpandedKpi={showExpandedKpi}
+				onToggleExpandedKpi={() => setShowExpandedKpi((p) => !p)}
+				autofillPeriod={autofillPeriod}
+				setAutofillPeriod={setAutofillPeriod}
+				autoFilling={autoFilling}
+				onAutofillByPeriod={handleAutofillByPeriod}
+				exportContext={exportContext}
+				isExportMenuOpen={isExportMenuOpen}
+				setIsExportMenuOpen={setIsExportMenuOpen}
+				onRefreshSummary={fetchSummary}
+				onAutofillShift={handleAutofillShift}
+				onOpenRetroactiveBatchModal={() => setIsRetroactiveBatchModalOpen(true)}
+				onOpenNurseSignModal={() => setIsNurseSignModalOpen(true)}
+				onOpenKraftModal={() => setIsKraftModalOpen(true)}
+				onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
+			/>
 
-					{/* Consolidated 1-chip KPI status summary (Clickable to toggle detailed KPI grid) */}
-					{summary && (
-						<button
-							type="button"
-							onClick={() => setShowExpandedKpi((p) => !p)}
-							className="sanpin-kpi-summary-chip touch-manipulation"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								padding: "0.2rem 0.55rem",
-								borderRadius: "6px",
-								background: "var(--paper-soft, #f1f5f9)",
-								border: "1px solid var(--line, #e2e8f0)",
-								fontSize: "0.75rem",
-								fontWeight: 600,
-								color: "var(--ink, #334155)",
-								cursor: "pointer",
-								minHeight: "28px",
-								transition: "all 0.15s ease",
-							}}
-							title="Нажмите, чтобы развернуть подробные KPI карточки смены"
-							data-testid="sanpin-kpi-consolidated-chip"
-						>
-							<span style={{ color: "var(--teal)", fontWeight: 700 }}>
-								Смена: ПСО {summary.pso?.approvedToday ?? 0}
-							</span>
-							<span style={{ color: "var(--muted, #94a3b8)" }}>·</span>
-							<span style={{ color: "var(--teal)", fontWeight: 700 }}>
-								АК {summary.sterilization?.passedToday ?? 0}
-							</span>
-							<span style={{ color: "var(--muted, #94a3b8)" }}>·</span>
-							<span style={{ color: (summary.temperature?.deviationsToday ?? 0) > 0 ? "var(--bad-fg)" : "var(--ok-fg)", fontWeight: 700 }}>
-								T° {summary.temperature?.deviationsToday ? `${summary.temperature.deviationsToday} откл.` : "Норма"}
-							</span>
-						</button>
-					)}
-				</div>
-
-				<div className="sanpin-header-actions" style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
-					{/* 0-КЛИК ПЕРЕКЛЮЧАТЕЛЬ ПЕРИОДА: День | Неделя | Месяц */}
-					<div className="sanpin-period-switch" role="group" aria-label="Период автозаполнения">
-						<button
-							type="button"
-							onClick={() => setAutofillPeriod("day")}
-							className={`sanpin-period-btn ${autofillPeriod === "day" ? "active" : ""}`}
-							data-testid="sanpin-period-day-btn"
-						>
-							День
-						</button>
-						<button
-							type="button"
-							onClick={() => setAutofillPeriod("week")}
-							className={`sanpin-period-btn ${autofillPeriod === "week" ? "active" : ""}`}
-							data-testid="sanpin-period-week-btn"
-						>
-							Неделя
-						</button>
-						<button
-							type="button"
-							onClick={() => setAutofillPeriod("month")}
-							className={`sanpin-period-btn ${autofillPeriod === "month" ? "active" : ""}`}
-							data-testid="sanpin-period-month-btn"
-						>
-							Месяц
-						</button>
-					</div>
-
-					{/* 0-КЛИК АВТОЗАПОЛНЕНИЕ ЖУРНАЛА (ДЕНЬ | НЕДЕЛЯ | МЕСЯЦ) */}
-					<button
-						type="button"
-						onClick={() => handleAutofillByPeriod(autofillPeriod)}
-						aria-busy={autoFilling}
-						className="sanpin-btn-primary-cta touch-manipulation"
-						data-testid="sanpin-1click-autopilot-primary-btn"
-						title={`Сформировать все журналы в 1 клик за ${autofillPeriod === "day" ? "день" : autofillPeriod === "week" ? "неделю" : "месяц"} (Автоклав, пробы чистоты, воздух, отходы, холодильники — 100% норма, 0 ручного ввода)`}
-					>
-						<Sparkles size={15} />
-						<span>
-							{autoFilling
-								? "Заполнение..."
-								: `Заполнить журналы (${autofillPeriod === "day" ? "День" : autofillPeriod === "week" ? "Неделя" : "Месяц"})`}
-						</span>
-					</button>
-
-					{/* БЫСТРАЯ ПЕЧАТЬ: Печать журнала для проверок */}
-					<button
-						type="button"
-						onClick={handlePrintConsolidatedBinder}
-						className="sanpin-btn-export-cta touch-manipulation"
-						data-testid="sanpin-regulatory-export-btn"
-						title="Печать журналов стерилизации и проверок чистоты в 1 клик"
-					>
-						<Printer size={15} />
-						<span>Печать журнала для проверок</span>
-					</button>
-
-					{/* Dropdown: [⋮ Опции] — All secondary actions aggregated cleanly */}
-					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
-						<button
-							type="button"
-							onClick={() => setIsExportMenuOpen((prev) => !prev)}
-							className="sanpin-btn-options touch-manipulation"
-							aria-expanded={isExportMenuOpen}
-							data-testid="sanpin-options-dropdown-btn"
-							title="Дополнительные опции"
-						>
-							<MoreVertical size={14} />
-							<span className="hidden sm:inline">Опции</span>
-							<ChevronDown size={11} style={{ transform: isExportMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
-						</button>
-
-						{isExportMenuOpen && (
-							<div
-								style={{
-									position: "absolute",
-									right: 0,
-									top: "calc(100% + 4px)",
-									minWidth: "280px",
-									background: "var(--paper-strong, #ffffff)",
-									border: "1px solid var(--line, #e2e8f0)",
-									borderRadius: "10px",
-									boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15)",
-									zIndex: 1000,
-									padding: "0.35rem",
-									display: "flex",
-									flexDirection: "column",
-									gap: "0.2rem",
-								}}
-							>
-
-								{/* Обновить сводку */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										fetchSummary();
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-								>
-									<RotateCcw size={15} color="var(--teal)" />
-									<span>Обновить сводку смены</span>
-								</button>
-
-								<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "0.2rem 0" }} />
-
-								{/* Закрыть смену */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										handleAutofillShift();
-									}}
-									aria-busy={autoFilling}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-								>
-									<Sparkles size={15} color="var(--teal)" />
-									<span>{autoFilling ? "Оформление..." : "Закрыть смену (1 клик)"}</span>
-								</button>
-
-								{/* Пакетное закрытие */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										setIsRetroactiveBatchModalOpen(true);
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="open-retroactive-batch-header-btn"
-								>
-									<Gauge size={15} color="var(--teal)" />
-									<span>Пакетное закрытие (за период)</span>
-								</button>
-
-								<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "0.2rem 0" }} />
-
-								{/* Сводный сшив */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										handlePrintConsolidatedBinder();
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="print-consolidated-binder-btn"
-								>
-									<FileBadge size={15} color="var(--teal)" />
-									<span>Выгрузка журналов для проверки</span>
-								</button>
-
-								{/* CSV */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										handleExportConsolidatedCsv();
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="export-consolidated-csv-btn"
-								>
-									<Download size={15} color="var(--ok-fg)" />
-									<span>Сводный архив (CSV)</span>
-								</button>
-
-								{/* ЭЦП */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										setIsNurseSignModalOpen(true);
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-								>
-									<Award size={15} color="var(--teal)" />
-									<span>ЭЦП ответственного (заверка смены)</span>
-								</button>
-
-								{/* Маркировка */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										setIsKraftModalOpen(true);
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="open-kraft-studio-header-btn"
-								>
-									<QrCode size={15} color="var(--teal)" />
-									<span>Маркировка крафт-пакетов</span>
-								</button>
-
-								{/* Журнал 257/у */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										setIsJournal257ModalOpen(true);
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="open-journal-257-header-btn"
-								>
-									<FileSpreadsheet size={15} color="var(--teal)" />
-									<span>Журнал работы стерилизаторов (автоклавов)</span>
-								</button>
-
-								{/* Печать текущей вкладки */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										handleExportDossierPdf();
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-								>
-									<Printer size={15} color="var(--muted, #64748b)" />
-									<span>Печать текущей вкладки</span>
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-			</div>
-
-			{/* Unified 2-in-1 Category & Sub-Tab Navigation Bar (Miller's Law 7±2, <= 52px, 0 Visual Collision) */}
+			{/* Unified 2-in-1 Category & Sub-Tab Navigation Bar */}
 			<div
 				className="sanpin-unified-nav overflow-x-auto no-scrollbar scrollbar-none flex-nowrap min-w-0 max-w-full touch-pan-x"
 				style={{
@@ -1667,7 +314,6 @@ function SanpinRegistersInner() {
 					minHeight: "36px",
 				}}
 			>
-				{/* 1. Category Switcher (3 Segments) */}
 				<div className="sanpin-category-nav flex items-center gap-1 shrink-0" role="tablist" aria-label="Категории журналов контроля стерильности">
 					{SANPIN_CATEGORIES.map((cat) => {
 						const Icon = cat.icon;
@@ -1715,7 +361,6 @@ function SanpinRegistersInner() {
 
 				<div style={{ width: "1px", height: "20px", background: "var(--line, rgba(148, 163, 184, 0.3))", flexShrink: 0 }} />
 
-				{/* 2. Sub-Tabs for Active Category */}
 				<div
 					className="flex-1 flex items-center justify-start flex-nowrap overflow-x-auto scrollbar-none gap-1 touch-pan-x min-w-0 pl-1"
 					data-testid="sanpin-active-category-subtabs"
@@ -1758,7 +403,6 @@ function SanpinRegistersInner() {
 				</div>
 			</div>
 
-			{/* Optional Expanded KPI Grid */}
 			{showExpandedKpi && summary && (
 				<div className="sanpin-kpi-grid" style={{ marginBottom: "0.5rem" }}>
 					<div
@@ -1835,138 +479,36 @@ function SanpinRegistersInner() {
 				</div>
 			)}
 
-			{/* Tab Views: All 13 Statutory Registers */}
+			{/* Tab Views: All 14 Statutory Registers */}
 			{activeTab === "retroactive_batch" && <RetroactiveBatchTab />}
 			{activeTab === "cabinet_readiness" && <CabinetReadinessTab />}
-			{activeTab === "pso" && <PsoRegisterTab />}
-			{activeTab === "autoclave" && <AutoclaveRegisterTab key={`autoclave-tab-${refreshCounter}`} />}
+			{activeTab === "pso" && <SanpinChemicalTestsRegisterTab />}
+			{activeTab === "autoclave" && <SanpinAutoclaveRegisterTab key={`autoclave-tab-${refreshCounter}`} />}
+			{activeTab === "kraft" && <SanpinKraftPacketsTab />}
 			{activeTab === "sterilizers" && <SterilizerFleetManager />}
-			{activeTab === "bactericidal" && <BactericidalRegisterTab />}
-			{activeTab === "cleaning" && <GeneralCleaningRegisterTab />}
+			{activeTab === "bactericidal" && <SanpinUvAndCleaningRegisterTab initialSubTab="bactericidal" />}
+			{activeTab === "cleaning" && <SanpinUvAndCleaningRegisterTab initialSubTab="cleaning" />}
 			{activeTab === "waste" && <MedicalWasteRegisterTab />}
 			{activeTab === "biohazard" && <EmergencyBiohazardRegisterTab />}
 			{activeTab === "temperature" && <TemperatureHumidityRegisterTab />}
-			{activeTab === "disinfectants" && <DisinfectantsRegisterTab />}
-			{activeTab === "bac_lab" && <BacLabRegisterTab />}
-			{activeTab === "needle_disposal" && <NeedleDisposalRegisterTab />}
-
+			{activeTab === "disinfectants" && <SanpinDisinfectantsRegisterTab />}
+			{activeTab === "bac_lab" && <SanpinBacLabRegisterTab />}
+			{activeTab === "needle_disposal" && <SanpinNeedleDisposalRegisterTab />}
 
 			{/* Electronic Nurse Signature Shift Stamp Modal */}
-			{isNurseSignModalOpen && (
-				<div className="sanpin-modal-overlay" role="dialog" aria-modal="true">
-					<div className="sanpin-modal" style={{ maxWidth: "560px" }}>
-						<div className="sanpin-modal-header" style={{ padding: "1.25rem" }}>
-							<h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.15rem" }}>
-								<Award size={22} color="var(--brand-primary, #2563eb)" />
-								Цифровая заверка смены (ЭЦП / Ответственный сотрудник)
-							</h3>
-							<button
-								type="button"
-								onClick={() => setIsNurseSignModalOpen(false)}
-								style={{
-									minWidth: "34px",
-									minHeight: "34px",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									background: "none",
-									border: "none",
-									cursor: "pointer",
-									color: "var(--muted)",
-								}}
-							>
-								<X size={20} />
-							</button>
-						</div>
+			<SanpinNurseSignModal
+				isOpen={isNurseSignModalOpen}
+				onClose={() => setIsNurseSignModalOpen(false)}
+				onSuccess={fetchSummary}
+			/>
 
-						<form onSubmit={handleBatchNurseSign}>
-							<div className="sanpin-modal-body" style={{ padding: "1.25rem", gap: "1rem" }}>
-								<div
-									style={{
-										padding: "0.9rem",
-										borderRadius: "0.5rem",
-										background: "rgba(16, 185, 129, 0.08)",
-										border: "1px solid rgba(16, 185, 129, 0.25)",
-										fontSize: "0.85rem",
-										lineHeight: 1.4,
-									}}
-									title="Соответствует нормам стерильности"
-								>
-									<span style={{ fontWeight: 700, color: "#059669" }}>Контроль смены:</span> Настоящим подтверждается проверка целостности упаковок, срабатывания химических индикаторов класса 5 во всех точках закладки, отрицательные азопирамовые пробы и наработка ламп за текущую смену.
-								</div>
-
-								<div className="sanpin-form-group">
-									<label className="sanpin-form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-										ФИО ответственного сотрудника (врач / администратор / медсестра, опционально)
-									</label>
-									<input
-										type="text"
-										value={nurseSignName}
-										onChange={(e) => setNurseSignName(e.target.value)}
-										className="sanpin-input"
-										placeholder="Персонал клиники"
-										style={{ minHeight: "36px", height: "36px", fontSize: "0.875rem" }}
-									/>
-								</div>
-
-								<div className="sanpin-form-group">
-									<label className="sanpin-form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-										PIN-код подтверждения ЭЦП (опционально)
-									</label>
-									<input
-										type="password"
-										maxLength={6}
-										value={nurseSignPin}
-										onChange={(e) => setNurseSignPin(e.target.value)}
-										className="sanpin-input"
-										style={{ minHeight: "36px", height: "36px", fontSize: "1rem", letterSpacing: "4px" }}
-										placeholder="••••"
-									/>
-								</div>
-							</div>
-
-							<div className="sanpin-modal-footer" style={{ padding: "1rem 1.25rem", gap: "0.75rem", flexWrap: "wrap" }}>
-								<button
-									type="button"
-									onClick={() => setIsNurseSignModalOpen(false)}
-									className="sanpin-btn sanpin-btn-secondary"
-									style={{ minHeight: "34px", padding: "0.35rem 1rem" }}
-								>
-									Отмена
-								</button>
-								<button
-									type="button"
-									onClick={() => handleBatchNurseSign(undefined, true)}
-									aria-busy={signingShift}
-									className="sanpin-btn sanpin-btn-secondary"
-									style={{ minHeight: "34px", padding: "0.35rem 0.85rem", fontSize: "0.85rem", fontWeight: 700 }}
-									title="Пропустить медсестру: подтвердить смену персоналом клиники"
-								>
-									Пропустить медсестру (Персонал клиники)
-								</button>
-								<button
-									type="submit"
-									aria-busy={signingShift}
-									className="sanpin-btn sanpin-btn-primary"
-									style={{ minHeight: "34px", padding: "0.35rem 1.25rem", fontSize: "0.875rem", fontWeight: 700 }}
-								>
-									<FileBadge size={16} />
-									{signingShift ? "Заверка..." : "Поставить штамп ЭЦП"}
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
-
-			{/* Kraft Package Barcode Studio Modal (Azov / DGM 1-Click) */}
+			{/* Kraft Package Barcode Studio Modal */}
 			<KraftPackageBarcodeModal
 				isOpen={isKraftModalOpen}
 				onClose={() => setIsKraftModalOpen(false)}
 			/>
 
-
-			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}
+			{/* Form 257/u Studio Modal */}
 			<AutoclaveLog257Modal
 				isOpen={isJournal257ModalOpen}
 				initialTab="journal_257"
@@ -1986,6 +528,5 @@ function SanpinRegistersInner() {
 export const SanpinRegisters = React.memo(SanpinRegistersInner);
 SanpinRegisters.displayName = "SanpinRegisters";
 
-// Canonical re-export for backward-compatible views
 export { SanpinRegisters as SanpinRegistersView };
 export default SanpinRegisters;

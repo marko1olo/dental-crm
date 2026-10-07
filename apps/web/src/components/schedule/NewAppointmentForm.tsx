@@ -93,8 +93,8 @@ export const QUICK_APPOINTMENT_REASON_PRESETS: QuickAppointmentReasonPreset[] = 
 	{
 		id: "emergency",
 		testId: "quick-reason-emergency",
-		label: "CITO! Острая боль (30 мин)",
-		reason: "CITO! Острая боль",
+		label: "Срочная запись (Острая боль)",
+		reason: "Срочно! Острая боль",
 		durationMinutes: 30,
 		iconName: "AlertTriangle",
 		tone: "emergency",
@@ -247,13 +247,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			})
 			.catch((err) => {
 				logger.error("[Dente]", err);
-				// Не выдаём отказ чтения за «не заблокирован» — иначе админ запишет вслепую.
+				// Не выдаём отказ чтения за отсутствие ограничений — иначе админ запишет вслепую.
 				if (!cancelled) {
 					setBlacklistStatus({
 						isBlocked: false,
 						checkFailed: true,
 						reason:
-							"Статус блокировки записи не прочитан. Не считайте пациента разрешённым к записи.",
+							"Не удалось проверить статус пациента в чёрном списке. Уточните статус перед подтверждением записи.",
 					});
 				}
 			});
@@ -530,7 +530,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					updateNewAppointmentDraft("doctorUserId", resolvedDocId);
 				}
 			}
-			showToast("Экстренная запись CITO (Острая боль): 30 мин, овербукинг разрешён", "warning", 3000);
+			showToast("Срочная запись (Острая боль): 30 мин (наложение слота допустимо)", "warning", 3000);
 		}
 	};
 
@@ -668,7 +668,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		);
 		if (!newAppointmentDraft?.reason) {
 			const isCito = isCitoOrOverbook;
-			newAppointmentDraft.reason = isCito ? "CITO! Острая боль" : "Осмотр и консультация";
+			newAppointmentDraft.reason = isCito ? "Срочно! Острая боль" : "Осмотр и консультация";
 			updateNewAppointmentDraft("reason", newAppointmentDraft.reason);
 		}
 		await createAppointmentFromDraft({
@@ -1014,12 +1014,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								}
 							}}
 							className="min-h-[44px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-							title="Экстренная запись: CITO! Острая боль (30 мин, овербукинг разрешен)"
+							title="Срочная запись: острая боль (30 мин, наложение слотов допустимо)"
 							data-testid="header-cito-emergency-btn"
 						>
 							<Zap size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-							<span className="hidden sm:inline">CITO! Острая боль (30 мин)</span>
-							<span className="sm:hidden">CITO (30м)</span>
+							<span className="hidden sm:inline">Срочная запись (Острая боль)</span>
+							<span className="sm:hidden">Срочно (30м)</span>
 						</button>
 						{showCreateForm && (
 							<label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
@@ -1040,20 +1040,20 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								data-testid="cito-overbooking-badge"
 								className="save-state font-semibold text-rose-700 dark:text-rose-300 text-xs flex items-center gap-1 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-lg"
 								role="alert"
-								title={`${collision.message || "CITO-овербукинг (острая боль)"}. Мягкий овербукинг разрешен`}
+								title={`${collision.message || "Запись по острой боли"}. Наложение слота допустимо`}
 							>
 								<Zap size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
-								<span>CITO-овербукинг (острая боль)</span>
+								<span>Запись по острой боли</span>
 							</span>
 						) : collision.hasCollision ? (
 							<span
 								id="new-appointment-create-collision"
 								className="save-state font-medium text-amber-700 dark:text-amber-300 text-xs flex items-center gap-1"
 								role="alert"
-								title={`${collision.message}. Разрешена экстренная запись (острая боль / овербукинг)`}
+								title={`${collision.message}. Разрешена экстренная запись (острая боль / совмещение допустимо)`}
 							>
 								<AlertTriangle size={13} className="shrink-0" />
-								<span>{collision.message} (овербукинг разрешен)</span>
+								<span>{collision.message} (совмещение слотов допустимо)</span>
 							</span>
 						) : newAppointmentReadyToCreate ? (
 							<span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1">
@@ -1103,9 +1103,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							<Plus size={16} aria-hidden="true" className="mr-1.5 shrink-0" />
 							<span>
 								{collision.isCitoOverbooking
-									? "Записать CITO (Острая боль / Овербукинг)"
+									? "Записать срочно (Острая боль)"
 									: collision.hasCollision
-									? "Записать с овербукингом (острая боль)"
+									? "Записать на это время (острая боль)"
 									: "Создать запись"}
 							</span>
 						</button>
@@ -1279,7 +1279,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						</label>
 					</div>
 
-					{/* 1-клик панель быстрой длительности приёма (Мандаты 8e, 8k, 8n) */}
+					{/* Панель быстрой длительности приёма (Мандаты 8e, 8k, 8n) */}
 					<div className="mb-4 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]" data-testid="appointment-quick-durations-panel">
 						<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
 							<span className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
@@ -1343,7 +1343,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										type="button"
 										onClick={handleQuickCreatePatientFromQuery}
 										className="shrink-0 min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-xs font-bold hover:bg-[var(--teal-dark)] transition-colors cursor-pointer flex items-center gap-1"
-										title="Создать карту пациента на лету (1 клик)"
+										title="Создать карту пациента на лету"
 										data-testid="btn-new-appointment-quick-create-patient"
 									>
 										<Plus size={14} />
@@ -1415,9 +1415,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								>
 									<Ban size={14} className="shrink-0 text-red-600 dark:text-red-400" />
 									<span>
-										<strong>ЧЕРНЫЙ СПИСОК:</strong>{" "}
+										<strong>ЧЁРНЫЙ СПИСОК:</strong>{" "}
 										{blacklistStatus.reason ||
-											"Пациент заблокирован для записи на приём"}
+											"Пациент внесён в чёрный список (запись ограничена)"}
 									</span>
 								</div>
 							) : blacklistStatus?.checkFailed ? (
@@ -1428,7 +1428,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									<AlertTriangle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
 									<span>
 										{blacklistStatus.reason ||
-											"Статус блокировки записи не прочитан"}
+											"Не удалось проверить статус пациента в чёрном списке"}
 									</span>
 								</div>
 							) : null}
@@ -1593,12 +1593,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						</div>
 					</div>
 
-					{/* 1-клик экспресс-поводы визита (Quick Appointment Reasons, Фича 222: StomX / DentalPRO Parity) */}
+					{/* Экспресс-поводы визита (повод и длительность приёма) */}
 					<div className="form-span-2 mb-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]" data-testid="appointment-quick-reasons-panel">
 						<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
 							<span className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
 								<Stethoscope size={14} className="text-[var(--teal)] shrink-0" />
-								<span>Экспресс-поводы визита (повод + длительность в 1 клик):</span>
+								<span>Экспресс-поводы визита (повод + длительность):</span>
 							</span>
 						</div>
 						<div className="flex flex-wrap gap-1.5" data-testid="appointment-quick-reasons">
@@ -1739,8 +1739,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							<span>
 								{collision.message ||
 									(collision.isCitoOverbooking
-										? "CITO-овербукинг разрешён (острая боль): наложение на занятый слот разрешено."
-										: "Ресурсная коллизия. Разрешена экстренная запись (острая боль / овербукинг).")}
+										? "Запись по острой боли (наложение слота допустимо): наложение на занятый слот разрешено."
+										: "Ресурсная коллизия. Разрешена экстренная запись (острая боль / совмещение допустимо).")}
 							</span>
 						</div>
 					)}

@@ -252,7 +252,7 @@ export function UserLogin({
 						className="auth-quick-resume-btn"
 						title="Мгновенно продолжить работу под этим пользователем"
 					>
-						Войти в 1 клик <ArrowRight size={14} />
+						Войти <ArrowRight size={14} />
 					</button>
 				</div>
 			)}

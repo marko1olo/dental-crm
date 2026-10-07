@@ -155,7 +155,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
         )}
       />
 
-      {/* Quick Add Doctor Modal (StomX / DentalPRO parity, Feature 246) */}
+      {/* Модальное окно быстрого добавления врача */}
       <QuickAddDoctorModal
         isOpen={state.isAddDoctorOpen}
         onClose={() => state.setIsAddDoctorOpen(false)}
@@ -207,7 +207,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
         }}
       />
 
-      {/* Date Range Shift Assignment Modal (StomX / DentalPRO parity, Mandates 8d, 8e, 8k, 8n) */}
+      {/* Модальное окно назначения смен на диапазон дат */}
       <ChairDateRangeModal
         isOpen={state.isDateRangeModalOpen}
         onClose={() => state.setIsDateRangeModalOpen(false)}
@@ -226,7 +226,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = (props) => {
         onApply={state.handleApplyDateRange}
       />
 
-      {/* 1-Click Free Windows Slot Finder (DentalPRO / IDENT parity) */}
+      {/* Поиск свободных окон врача в 1 клик */}
       <DoctorFreeSlotsModal
         isOpen={isDoctorFreeSlotsOpen}
         onClose={() => setIsDoctorFreeSlotsOpen(false)}

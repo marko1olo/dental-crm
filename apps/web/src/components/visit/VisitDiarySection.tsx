@@ -248,7 +248,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		ensureRevisingIfLocked();
 		const drugName =
 			DENTAL_ANESTHETICS[drugId as AnestheticDrugId]?.tradeNamesRu[0] ?? "Анестетик";
-		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии, списание по FEFO в 1 клик без комиссии).`;
+		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, списание по FEFO в 1 клик без комиссии).`;
 		applyAnesthesiaPreset(disposalNote);
 
 		// Автоматическое списание со склада по FEFO (Мандат 8e, 8v, 8n)
@@ -322,7 +322,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="open-1click-templates-btn"
 						className="vde-043__btn vde-043__btn--primary text-xs font-bold px-3 py-1.5 min-h-[38px] flex items-center gap-1.5"
 						onClick={() => setShowTemplatesModal(true)}
-						title="Открыть каталог 1-клик клинических протоколов и шаблонов дневника"
+						title="Открыть каталог клинических протоколов и шаблонов дневника"
 					>
 						<Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
 						<span>Клинические протоколы</span>
@@ -338,7 +338,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							handleApplyFullPhysiologicalNorm();
 						}}
 						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer border border-[var(--ok-border,transparent)]"
-						title="1-клик норма для осмотра: соматически здоров, зубные ряды санированы/интактны, онкоскрининг в норме"
+						title="Норма для осмотра: соматически здоров, зубные ряды санированы/интактны, онкоскрининг в норме"
 					>
 						<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
 						<span>Норма</span>
@@ -387,7 +387,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									handleApplyFullPhysiologicalNorm();
 								}}
 								className="sm:hidden flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
+								title="Заполнить физиологической нормой (Соматически здоров / норма)"
 							>
 								<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
 								<span>Норма / Здоров</span>
@@ -430,7 +430,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
 						<span className="flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-							<span>1-Click Клинические протоколы и формулы (PSR, Дети, Кариес...)</span>
+							<span>Клинические протоколы и формулы (PSR, Дети, Кариес...)</span>
 						</span>
 						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
 						<span className="text-[10px] font-normal text-[var(--muted)] hidden group-open:inline">Свернуть &uarr;</span>
@@ -451,7 +451,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							</div>
 						)}
 						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
-							{/* 1-Click Physiological Norm Button */}
+							{/* Кнопка физиологической нормы */}
 							<button
 								type="button"
 								onClick={() => {
@@ -461,7 +461,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									handleApplyFullPhysiologicalNorm();
 								}}
 								className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-[44px] sm:min-h-[38px] sm:h-[38px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0 shrink-0 border border-[var(--ok-border,transparent)]"
-								title="Заполнить дневник физиологической нормой в 1 клик (соматически здоров, патологий не выявлено)"
+								title="Заполнить дневник физиологической нормой (соматически здоров, патологий не выявлено)"
 								data-testid="diary-norm-043-btn"
 							>
 								<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
@@ -564,7 +564,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							title="Внести клинический протокол в дневник приёма"
 						>
 							<Check size={18} />
-							<span>Применить (1 клик)</span>
+							<span>Применить</span>
 						</button>
 						<button
 							type="button"

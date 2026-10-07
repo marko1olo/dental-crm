@@ -7,7 +7,7 @@
  * - presets/orthopedicPresets.ts: ортопедия, коронки, вкладки, протезы
  * - presets/hygienePerioPresets.ts: гигиена, пародонтология, детская стоматология
  * - presets/canonicalTemplates.ts: канонические шаблоны 043/у
- * - presets/autopilotPresets.ts: 1-кликовые клинические автопилоты
+ * - presets/autopilotPresets.ts: клинические автопилоты у кресла
  */
 
 import { getToothAnatomicalDescription } from "../emr/templates/clinicalDiaryTemplatesEngine";
@@ -47,7 +47,7 @@ export const CLINICAL_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 ];
 
 /**
- * Топ-экспресс сценарии для мгновенного заполнения в 1 клик на панели визита.
+ * Топ-экспресс сценарии для мгновенного заполнения на панели визита.
  */
 export const TOP_EXPRESS_PRESET_IDS: readonly string[] = [
 	"norm_healthy",
@@ -59,7 +59,7 @@ export const TOP_EXPRESS_PRESET_IDS: readonly string[] = [
 ];
 
 /**
- * 4 ключевых 1-клик протокола терапии и эндодонтии (Мандаты 8e, 8i, 8k, 8n).
+ * 4 ключевых экспресс-протокола терапии и эндодонтии (Мандаты 8e, 8i, 8k, 8n).
  */
 export const THERAPY_ENDO_QUICK_PRESET_IDS: readonly string[] = [
 	"pulpitis_visit1",

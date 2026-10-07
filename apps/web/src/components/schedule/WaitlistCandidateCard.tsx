@@ -159,7 +159,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 									? "bg-emerald-600 text-white"
 									: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
 							}`}
-							title="Записать пациента в освободившийся слот в 1 клик с генерацией шаблона сообщения"
+							title="Записать пациента в освободившийся слот"
 							data-testid={`waitlist-book-slot-btn-${item.id}`}
 						>
 							<Zap
@@ -171,7 +171,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 									? "Записываем..."
 									: isBooked
 										? "Записан в слот"
-										: "В окно в 1 клик"}
+										: "Занять окно"}
 							</span>
 						</button>
 					) : fallbackSlot ? (

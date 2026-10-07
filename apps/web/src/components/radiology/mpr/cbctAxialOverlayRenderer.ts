@@ -235,43 +235,45 @@ export function drawAxialMprOverlay(
 		});
 	}
 
-	if (interpolatedNerve3D.length > 1) {
+	if (nervePoints.length > 0) {
 		ctx.save();
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
 
-		for (let i = 0; i < interpolatedNerve3D.length - 1; i++) {
-			const p1 = interpolatedNerve3D[i]!;
-			const p2 = interpolatedNerve3D[i + 1]!;
-			const midZ = (p1.z + p2.z) / 2.0;
-			const deltaZ = Math.abs(midZ - crosshairMm.z);
-			const gating = calculateNerveDistanceGating(deltaZ);
+		if (interpolatedNerve3D.length > 1) {
+			for (let i = 0; i < interpolatedNerve3D.length - 1; i++) {
+				const p1 = interpolatedNerve3D[i]!;
+				const p2 = interpolatedNerve3D[i + 1]!;
+				const midZ = (p1.z + p2.z) / 2.0;
+				const deltaZ = Math.abs(midZ - crosshairMm.z);
+				const gating = calculateNerveDistanceGating(deltaZ);
 
-			if (!gating.isVisible) continue;
+				if (!gating.isVisible) continue;
 
-			const p1Px = worldMmToSlicePx(p1, "axial", volume);
-			const p2Px = worldMmToSlicePx(p2, "axial", volume);
+				const p1Px = worldMmToSlicePx(p1, "axial", volume);
+				const p2Px = worldMmToSlicePx(p2, "axial", volume);
 
-			const haloWidthPx = Math.max(8, 4.0 / (metadata.pixelSpacingX || 0.4));
-			ctx.lineWidth = haloWidthPx;
-			ctx.setLineDash([5, 3]);
-			ctx.strokeStyle = `rgba(245, 158, 11, ${Number((gating.alpha * 0.45).toFixed(3))})`;
-			ctx.beginPath();
-			ctx.moveTo(p1Px.x, p1Px.y);
-			ctx.lineTo(p2Px.x, p2Px.y);
-			ctx.stroke();
+				const haloWidthPx = Math.max(8, 4.0 / (metadata.pixelSpacingX || 0.4));
+				ctx.lineWidth = haloWidthPx;
+				ctx.setLineDash([5, 3]);
+				ctx.strokeStyle = `rgba(245, 158, 11, ${Number((gating.alpha * 0.45).toFixed(3))})`;
+				ctx.beginPath();
+				ctx.moveTo(p1Px.x, p1Px.y);
+				ctx.lineTo(p2Px.x, p2Px.y);
+				ctx.stroke();
 
-			ctx.lineWidth = 2.5;
-			if (gating.isDashed) {
-				ctx.setLineDash([4, 4]);
-			} else {
-				ctx.setLineDash([]);
+				ctx.lineWidth = 2.5;
+				if (gating.isDashed) {
+					ctx.setLineDash([4, 4]);
+				} else {
+					ctx.setLineDash([]);
+				}
+				ctx.strokeStyle = `rgba(245, 158, 11, ${Number(gating.alpha.toFixed(3))})`;
+				ctx.beginPath();
+				ctx.moveTo(p1Px.x, p1Px.y);
+				ctx.lineTo(p2Px.x, p2Px.y);
+				ctx.stroke();
 			}
-			ctx.strokeStyle = `rgba(245, 158, 11, ${Number(gating.alpha.toFixed(3))})`;
-			ctx.beginPath();
-			ctx.moveTo(p1Px.x, p1Px.y);
-			ctx.lineTo(p2Px.x, p2Px.y);
-			ctx.stroke();
 		}
 
 		ctx.setLineDash([]);
@@ -285,7 +287,27 @@ export function drawAxialMprOverlay(
 			const p = worldMmToSlicePx(pt, "axial", volume);
 			const isSelected = selectedNerveNodeIdx === i;
 
-			if (isSelected) {
+			if (nervePoints.length === 1 && i === 0) {
+				ctx.strokeStyle = "#10b981";
+				ctx.lineWidth = 2.5;
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+				ctx.stroke();
+
+				ctx.fillStyle = "rgba(16, 185, 129, 0.45)";
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+				ctx.fill();
+
+				ctx.fillStyle = "#10b981";
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+				ctx.fill();
+
+				ctx.font = "bold 10px monospace";
+				ctx.fillStyle = "#34d399";
+				ctx.fillText("Seed 1: Foramen mentale", p.x + 11, p.y + 3);
+			} else if (isSelected) {
 				ctx.strokeStyle = "#38bdf8";
 				ctx.lineWidth = 2.0;
 				ctx.beginPath();

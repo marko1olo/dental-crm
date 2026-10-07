@@ -151,10 +151,10 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 								? "bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 								: "bg-teal-600 text-white hover:bg-teal-700 shadow-sm"
 						}`}
-						title={isShiftOpen ? "Завершить рабочую смену" : "Открыть смену врача в 1 клик"}
+						title={isShiftOpen ? "Завершить рабочую смену" : "Открыть смену врача"}
 					>
 						<Zap size={14} />
-						<span>{isShiftOpen ? "Завершить смену" : "Открыть смену в 1 клик"}</span>
+						<span>{isShiftOpen ? "Завершить смену" : "Открыть смену"}</span>
 					</button>
 					<button
 						type="button"

@@ -167,7 +167,7 @@ describe("Studio Clinical HIG: ReceiptPreview 54-FZ Fiscal Requisites (Mandate 8
 		);
 
 		assert.ok(htmlA4.includes("ТОВАРНЫЙ ЧЕК / СПРАВКА ОБ ОПЛАТЕ МЕДУСЛУГ"));
-		assert.ok(htmlA4.includes("Код 804н"));
+		assert.ok(htmlA4.includes("Код услуги"));
 	});
 });
 

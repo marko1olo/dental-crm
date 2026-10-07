@@ -280,7 +280,7 @@ describe("Component Rendering & UI Autonomy (ProcedureMaterialDeductionModal)", 
 
 		// Проверяем наличие контейнера пакетов
 		assert.ok(html.includes("data-testid=\"clinical-packages-bar\""));
-		assert.ok(html.includes("Клинические пакеты (1 клик)"));
+		assert.ok(html.includes("Клинические пакеты материалов"));
 
 		// Проверяем наличие всех 5 кнопок пакетов
 		assert.ok(html.includes("data-testid=\"package-btn-pkg-therapy\""));

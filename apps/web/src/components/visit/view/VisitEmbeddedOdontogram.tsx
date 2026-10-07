@@ -36,56 +36,56 @@ export const PATHOLOGY_STAMPS: readonly PathologyStampItem[] = [
 		label: "Осмотр",
 		color: "var(--ink)",
 		dotColor: "#94a3b8",
-		description: "Клик по зубу открывает клиническую карточку и подробное меню",
+		description: "Клиническая карточка зуба и статус обследования",
 	},
 	{
 		id: "caries",
 		label: "Кариес",
 		color: "#ea580c",
 		dotColor: "#ea580c",
-		description: "0-клик отметка кариозного поражения",
+		description: "Кариес дентина (K02.1)",
 	},
 	{
 		id: "pulpitis",
 		label: "Пульпит",
 		color: "#ef4444",
 		dotColor: "#ef4444",
-		description: "0-клик отметка пульпита (анатомически красная пульпа #ef4444)",
+		description: "Пульпит зуба (K04.0)",
 	},
 	{
 		id: "treatment",
 		label: "Периодонтит",
 		color: "#dc2626",
 		dotColor: "#dc2626",
-		description: "0-клик отметка периодонтита и эндодонтического лечения",
+		description: "Периодонтит и эндодонтическое лечение (K04.5)",
 	},
 	{
 		id: "done",
 		label: "Пломба",
 		color: "#16a34a",
 		dotColor: "#16a34a",
-		description: "0-клик отметка пломбы / реставрации",
+		description: "Пломбирование зуба композитом (A16.07.002)",
 	},
 	{
 		id: "crown",
 		label: "Коронка",
 		color: "#ca8a04",
 		dotColor: "#ca8a04",
-		description: "0-клик отметка искусственной коронки",
+		description: "Искусственная коронка (A16.07.004)",
 	},
 	{
 		id: "missing",
 		label: "Удален",
 		color: "#64748b",
 		dotColor: "#ef4444",
-		description: "0-клик отметка отсутствующего / удаленного зуба",
+		description: "Отсутствующий зуб (удален ранее, K08.1)",
 	},
 	{
 		id: "watch",
 		label: "Наблюдение",
 		color: "#d97706",
 		dotColor: "#d97706",
-		description: "0-клик отметка наблюдения / сомнительного прогноза",
+		description: "Клиническое наблюдение (сомнительный прогноз)",
 	},
 ] as const;
 
@@ -319,15 +319,15 @@ export function VisitEmbeddedOdontogram({
 				</div>
 			</div>
 
-			{/* 0-Клик панель выбора патологии (Мандат 8c, 8e): Кариес, Пульпит, Пломба, Коронка, Удален, Наблюдение */}
+			{/* Панель выбора клинического статуса (Мандат 8c, 8e): Кариес, Пульпит, Пломба, Коронка, Удален, Наблюдение */}
 			<div className="tooth-map-selected flex flex-wrap items-center justify-between gap-2 p-2 mb-3 bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg">
-				<div className="flex items-center gap-2">
-					<strong className="text-xs uppercase tracking-wider text-teal-800 dark:text-teal-400 font-bold">
-						0-Клик штамп:
+				<div className="flex items-center gap-2 shrink-0">
+					<strong className="text-xs uppercase tracking-wider text-teal-800 dark:text-teal-400 font-bold whitespace-nowrap shrink-0">
+						Клинический статус:
 					</strong>
 					<span className="text-xs text-slate-500 dark:text-slate-400">
 						{PATHOLOGY_STAMPS.find((s) => s.id === activeStamp)?.description ||
-							"Выберите патологию для нанесения в один клик"}
+							"Выберите клинический статус для нанесения на формулу"}
 					</span>
 				</div>
 

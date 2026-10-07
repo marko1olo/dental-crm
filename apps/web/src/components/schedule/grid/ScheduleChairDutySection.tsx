@@ -280,7 +280,7 @@ export function ScheduleChairDutySection({
             </div>
           </button>
         )}
-        {/* StomX / IDENT Shift Coverage Strip */}
+        {/* Индикатор покрытия смен кресла */}
         {assignment.shiftPreset !== "two_shifts" && (
           <div
             className="flex items-center gap-1 text-[10px] font-medium"
@@ -342,7 +342,7 @@ export function ScheduleChairDutySection({
             </div>
           </div>
         )}
-        {/* 1-Click Shift Segmented Control (StomX / DentalPRO parity & HIG >=44px) */}
+        {/* Сегментированный селектор смены */}
         <details className="hidden">
           <summary className="w-full h-7 min-h-[28px] px-2 py-0.5 flex items-center justify-between gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer select-none list-none transition-colors [&::-webkit-details-marker]:hidden">
             <span className="truncate flex items-center gap-1">
@@ -482,7 +482,7 @@ export function ScheduleChairDutySection({
   // Unassigned chair
   return (
     <div className="w-full flex flex-col gap-1">
-      {/* StomX / IDENT Shift Coverage Strip (Both shifts unassigned/free) */}
+      {/* Индикатор покрытия смен свободного кресла */}
       <div
         className="flex items-center gap-1 text-[10px] font-medium text-[var(--muted)]"
         data-testid={`chair-shift-strip-${chair.id}`}
@@ -541,14 +541,14 @@ export function ScheduleChairDutySection({
               )
             }
             className="min-h-[32px] sm:min-h-[26px] sm:h-6.5 py-0.5 sm:py-0 px-2 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal)] text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--teal)] hover:text-white transition-all border border-[var(--teal)]/20 shadow-2xs"
-            title={`Быстро назначить ${suggestedDoctor.fullName} (1 клик)`}
+            title={`Назначить: ${suggestedDoctor.fullName}`}
             data-testid={`btn-quick-assign-${chair.id}`}
           >
             <Zap
               size={11}
               className="text-[var(--teal)] shrink-0"
             />
-            <span className="truncate">{`1 клик: ${formatDoctorShortName(suggestedDoctor.fullName)}`}</span>
+            <span className="truncate">{formatDoctorShortName(suggestedDoctor.fullName)}</span>
           </button>
         )}
     </div>

@@ -355,30 +355,37 @@ export function DmsRegistryExportModal({
 				<div className="dms-modal-body">
 					{/* Фильтры и панель управления */}
 					<div className="dms-card">
-						{/* Быстрый 1-клик фильтр страховых компаний по Закону Хика (32–36px) */}
-						<div className="dms-quick-toolbar" style={{ marginBottom: "14px" }}>
-							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)", whiteSpace: "nowrap", flexShrink: 0 }}>
+						{/* Быстрый 1-клик фильтр страховых компаний (Canonical Filter Chips) */}
+						<div className="mb-3.5 flex items-center gap-2 overflow-x-auto">
+							<span className="text-xs font-semibold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0">
 								1-Клик фильтр:
 							</span>
-							<button
-								type="button"
-								className={`dms-quick-chip ${selectedInsurer === "all" ? "active" : ""}`}
-								onClick={() => setSelectedInsurer("all")}
-								title="Сводный отчет по всем страховым компаниям"
-							>
-								Все компании
-							</button>
-							{RUSSIAN_DMS_INSURERS.map((ins) => (
+							<div className="dente-filter-chips flex-nowrap">
 								<button
-									key={ins.key}
 									type="button"
-									className={`dms-quick-chip ${selectedInsurer === ins.shortName ? "active" : ""}`}
-									onClick={() => setSelectedInsurer(ins.shortName)}
-									title={`Отфильтровать реестр по компании ${ins.shortName}`}
+									className={`dente-filter-chip ${selectedInsurer === "all" ? "active" : ""}`}
+									data-active={selectedInsurer === "all"}
+									onClick={() => setSelectedInsurer("all")}
+									title="Сводный отчет по всем страховым компаниям"
 								>
-									{ins.shortName}
+									Все компании
 								</button>
-							))}
+								{RUSSIAN_DMS_INSURERS.map((ins) => {
+									const isActive = selectedInsurer === ins.shortName;
+									return (
+										<button
+											key={ins.key}
+											type="button"
+											className={`dente-filter-chip ${isActive ? "active" : ""}`}
+											data-active={isActive}
+											onClick={() => setSelectedInsurer(ins.shortName)}
+											title={`Отфильтровать реестр по компании ${ins.shortName}`}
+										>
+											{ins.shortName}
+										</button>
+									);
+								})}
+							</div>
 						</div>
 
 						{patientId && (
@@ -435,17 +442,26 @@ export function DmsRegistryExportModal({
 
 							<div className="dms-field-group">
 								<label htmlFor={searchRecordInputId} className="dms-label">Поиск по пациенту, полису или услуге</label>
-								<div style={{ position: "relative" }}>
-									<Search size={18} style={{ position: "absolute", left: "14px", top: "13px", color: "var(--muted, #64748b)" }} />
+								<div className="dente-search-wrap flex-1">
+									<Search size={14} className="dente-search-icon" />
 									<input
 										id={searchRecordInputId}
 										type="text"
 										placeholder="ФИО, полис, код услуги..."
 										value={searchFilter}
 										onChange={(e) => setSearchFilter(e.target.value)}
-										className="dms-input"
-										style={{ paddingLeft: "42px" }}
+										className="dente-search-input"
 									/>
+									{searchFilter && (
+										<button
+											type="button"
+											onClick={() => setSearchFilter("")}
+											className="dente-search-clear"
+											aria-label="Очистить поиск"
+										>
+											<X size={13} />
+										</button>
+									)}
 								</div>
 							</div>
 						</div>

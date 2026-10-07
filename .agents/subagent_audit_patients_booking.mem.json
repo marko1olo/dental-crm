@@ -1,0 +1,58 @@
+{
+  "task": "GLOBAL RED TEAM INQUISITOR 2: Картотека пациентов (#patients), Семейный баланс (PatientFamilyCard), Диспансерный учет (Recall Hub), Публичный виджет онлайн-записи (PublicBookingWidget)",
+  "timestamp": "2026-10-06T14:30:00+04:00",
+  "status": "COMPLETED",
+  "scope": {
+    "patients_list": "apps/web/src/PatientsView.tsx",
+    "mobile_patients_list": "apps/web/src/components/patients/mobile/MobilePatientsGroupedList.tsx",
+    "mobile_patients_styles": "apps/web/src/styles/modules/mobile-patients-list.css",
+    "recalls_hub_modal": "apps/web/src/components/patients/recalls/PatientRecallsHubModal.tsx",
+    "booking_categories_section": "apps/web/src/components/booking/BookingCategoriesSection.tsx",
+    "public_booking_styles": "apps/web/src/pages/PublicBookingWidget.css",
+    "playwright_audit_script": "scripts/audit_patients_booking_layout.cjs"
+  },
+  "database_entities": {
+    "patients": [
+      { "id": "p-audit-001", "name": "Иванов Иван Иванович", "role": "Глава семьи", "familyGroup": "Семья Ивановых" },
+      { "id": "p-audit-002", "name": "Иванова Мария Сергеевна", "role": "Супруга", "familyGroup": "Семья Ивановых" },
+      { "id": "p-audit-003", "name": "Иванов Артем Иванович", "role": "Ребенок", "familyGroup": "Семья Ивановых" },
+      { "id": "p-audit-004", "name": "Смирнова Ольга Павловна", "role": "Индивидуальный пациент", "familyGroup": null }
+    ],
+    "family_balance": {
+      "group_name": "Семья Ивановых",
+      "balance": 24500,
+      "head_patient_id": "p-audit-001"
+    },
+    "recalls": [
+      { "patient_id": "p-audit-001", "type": "hygiene", "dueDate": "2026-10-15", "status": "pending" }
+    ]
+  },
+  "fixes_applied": [
+    {
+      "id": "FIX-01-RECALLS-HUB-INTEGRATION",
+      "description": "Встроена прямая кнопка запуска «↺ Профосмотры» (data-testid=btn-patients-recalls-hub) в шапку картотеки PatientsView.tsx и выполнено монтирование полнофункционального PatientRecallsHubModal с канбан-доской, когортами диспансеризации и авто-вызовами."
+    },
+    {
+      "id": "FIX-02-QUICK-WHATSAPP-MOBILE",
+      "description": "В MobilePatientsGroupedList.tsx добавлена прямая кнопка открытия чата WhatsApp в 1 тап (.mobile-patient-chat-btn) с размером 44x44px и отдельной сенсорной зоной, независимой от кнопки звонка."
+    },
+    {
+      "id": "FIX-03-BOOKING-TRUNCATE-CURE",
+      "description": "В BookingCategoriesSection.tsx устранен многоточечный ад: класс truncate заменен на line-clamp-2 sm:line-clamp-none break-words, благодаря чему длинные русские названия и описания услуг читаются без срезания."
+    },
+    {
+      "id": "FIX-04-BOOKING-CABINET-CONTRAST",
+      "description": "В PublicBookingWidget.css карточка входа в личный кабинет (.PublicBookingWidget-glass-card) усилена непрозрачной поверхностью (#ffffff в Light / #090d16 в Dark), z-index: 10 и backdrop-filter: blur(24px), устранив полупрозрачное растворение в арт-фоне."
+    }
+  ],
+  "verification": {
+    "typecheck": "PASSED (npx tsc -p apps/web/tsconfig.json --noEmit exit code 0)",
+    "unit_tests": [
+      "apps/web/src/components/patients/mobile/__tests__/mobilePatientsGroupedList.test.tsx (3 passed)",
+      "apps/web/src/components/patients/recalls/__tests__/patientRecallAutonomy.test.tsx (5 passed)"
+    ],
+    "visual_screenshots_count": 15,
+    "screenshots_directory": "docs/screenshots/audit_patients_booking/",
+    "visual_inspection": "ALL 15 SCREENSHOTS PERSONALLY INSPECTED VIA view_file. No UI clipping, zero horizontal scroll on 390px, 44x44px touch targets confirmed."
+  }
+}

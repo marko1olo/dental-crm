@@ -40,6 +40,7 @@ import {
 	type ExpiryTrafficLightInfo,
 } from "./InventoryStockTable.js";
 import type { InventoryItem } from "./inventoryDataMappers.js";
+import { MobileInventoryInboundDrawer } from "./MobileInventoryInboundDrawer.js";
 import "../../styles/modules/mobile-inventory.css";
 
 export type MobileInventoryCategoryType =
@@ -313,7 +314,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 					const isDeficit = item.stockQuantity <= 1;
 					showToast(
 						isDeficit
-							? `Списано 1 ед. «${item.name}» (зафиксирован мягкий овердрафт)`
+							? `Списано 1 ед. «${item.name}» (расход сверх остатка, списание с дефицитом)`
 							: `Списано 1 ед. «${item.name}»`,
 						isDeficit ? "warning" : "success",
 					);
@@ -430,7 +431,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 								title="Критический дефицит материалов"
 								data-testid="mobile-inventory-deficit-badge"
 							>
-								⚠ Дефицит: {lowStockCount}
+								Дефицит: {lowStockCount}
 							</span>
 						) : (
 							<span className="mobile-inventory-kpi-badge">
@@ -438,14 +439,14 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 							</span>
 						)}
 
-						{/* Quick 1-Click Carpules Disposal for Nurse */}
+						{/* Quick Carpules Disposal for Nurse */}
 						{onQuickWriteoffCarpules && (
 							<button
 								type="button"
 								className="mobile-inventory-quick-carpule-btn"
 								onClick={onQuickWriteoffCarpules}
 								disabled={isWritingOffCarpules}
-								title="Утилизировать пустую карпулу анестетика в 1 клик"
+								title="Быстро утилизировать пустую карпулу анестетика"
 								data-testid="mobile-btn-quick-carpules"
 							>
 								<Syringe size={15} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
@@ -586,7 +587,7 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 												data-testid="badge-critical-deficit"
 											>
 												<AlertTriangle size={11} aria-hidden="true" />
-												<span>Закончился: 0 {item.unit || "шт."} (Овердрафт)</span>
+												<span>Закончился: 0 {item.unit || "шт."} (списание с дефицитом)</span>
 											</span>
 										) : isLowStock ? (
 											<span
@@ -685,203 +686,26 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 			</div>
 
 			{/* 6. NATIVE iOS BOTTOM SHEET FOR INVENTORY INTAKE & RECEIPT */}
-			{isInboundDrawerOpen && (
-				<div
-					className="mobile-inventory-drawer-backdrop"
-					onClick={() => setIsInboundDrawerOpen(false)}
-					data-testid="mobile-inventory-drawer-backdrop"
-				>
-					<div
-						className="mobile-inventory-drawer-surface"
-						onClick={(e) => e.stopPropagation()}
-						role="dialog"
-						aria-modal="true"
-						aria-label="Оприходование партии на склад"
-						data-testid="mobile-inventory-drawer"
-					>
-						{/* Tactile Drag Handle */}
-						<div className="mobile-inventory-drag-handle-wrap">
-							<div className="mobile-inventory-drag-handle" />
-						</div>
-
-						{/* Drawer Header */}
-						<div className="mobile-inventory-drawer-header">
-							<div>
-								<h2 className="mobile-inventory-drawer-title">
-									Оприходовать партию
-								</h2>
-								<p className="text-xs text-[var(--muted)] m-0">
-									{drawerTargetItem
-										? drawerTargetItem.name
-										: "Поступление расходных материалов"}
-								</p>
-							</div>
-
-							<button
-								type="button"
-								className="mobile-inventory-drawer-close"
-								onClick={() => setIsInboundDrawerOpen(false)}
-								aria-label="Закрыть шторку"
-							>
-								<X size={18} aria-hidden="true" />
-							</button>
-						</div>
-
-						{/* Drawer Body Form */}
-						<form onSubmit={handleSubmitInbound} className="mobile-inventory-drawer-body">
-							{/* Material Selection (if general intake) */}
-							{!drawerTargetItem && (
-								<div className="mobile-inventory-field-group">
-									<label className="mobile-inventory-field-label">
-										Материал со склада
-									</label>
-									<select
-										className="mobile-inventory-field-input"
-										value={drawerTargetItem ? (drawerTargetItem as InventoryItem).id : ""}
-										onChange={(e) => {
-											const found = items.find((it) => it.id === e.target.value);
-											if (found) {
-												setDrawerTargetItem(found);
-												setDrawerCustomName(found.name);
-											}
-										}}
-										data-testid="drawer-material-select"
-									>
-										<option value="">-- Выберите материал для пополнения --</option>
-										{items.map((it) => (
-											<option key={it.id} value={it.id}>
-												{it.name} (остаток: {it.stockQuantity} {it.unit || "шт."})
-											</option>
-										))}
-									</select>
-								</div>
-							)}
-
-							{/* Large Quantity Stepper */}
-							<div className="text-center">
-								<span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-									Количество к поступлению
-								</span>
-								<div className="mobile-inventory-stepper-wrap">
-									<button
-										type="button"
-										className="mobile-inventory-stepper-btn"
-										onClick={() => {
-											triggerHaptic();
-											setDrawerQuantity((prev) => Math.max(1, prev - 1));
-										}}
-										aria-label="Уменьшить количество на 1"
-										data-testid="drawer-stepper-minus"
-									>
-										<Minus size={20} aria-hidden="true" />
-									</button>
-
-									<span
-										className="mobile-inventory-stepper-val"
-										data-testid="drawer-stepper-value"
-									>
-										{drawerQuantity}
-									</span>
-
-									<button
-										type="button"
-										className="mobile-inventory-stepper-btn"
-										onClick={() => {
-											triggerHaptic();
-											setDrawerQuantity((prev) => prev + 1);
-										}}
-										aria-label="Увеличить количество на 1"
-										data-testid="drawer-stepper-plus"
-									>
-										<Plus size={20} aria-hidden="true" />
-									</button>
-								</div>
-							</div>
-
-							{/* Quick Increment Chips: +1, +5, +10, +50, +100 */}
-							<div
-								className="mobile-inventory-quick-chips-grid"
-								data-testid="drawer-quick-chips"
-							>
-								{[1, 5, 10, 50, 100].map((inc) => (
-									<button
-										key={inc}
-										type="button"
-										className="mobile-inventory-quick-chip"
-										onClick={() => {
-											triggerHaptic();
-											setDrawerQuantity((prev) => prev + inc);
-										}}
-										data-testid={`drawer-chip-plus-${inc}`}
-									>
-										+{inc}
-									</button>
-								))}
-							</div>
-
-							{/* Batch Number (Lot #) & Expiration Date (FEFO) */}
-							<div className="grid grid-cols-2 gap-3">
-								<div className="mobile-inventory-field-group">
-									<label className="mobile-inventory-field-label">
-										Партия / Серия
-									</label>
-									<input
-										type="text"
-										className="mobile-inventory-field-input"
-										value={drawerLotNumber}
-										onChange={(e) => setDrawerLotNumber(e.target.value)}
-										placeholder="LOT-2026..."
-										data-testid="drawer-input-lot"
-									/>
-								</div>
-
-								<div className="mobile-inventory-field-group">
-									<label className="mobile-inventory-field-label">
-										Срок годности (FEFO)
-									</label>
-									<input
-										type="date"
-										className="mobile-inventory-field-input"
-										value={drawerExpDate}
-										onChange={(e) => setDrawerExpDate(e.target.value)}
-										data-testid="drawer-input-expdate"
-									/>
-								</div>
-							</div>
-
-							{/* Drawer Sticky Footer with Submit Button */}
-							<div className="mobile-inventory-drawer-footer">
-								<button
-									type="submit"
-									disabled={isSubmittingInbound}
-									className="mobile-inventory-drawer-submit"
-									data-testid="drawer-btn-submit"
-								>
-									<CheckCircle2 size={20} aria-hidden="true" />
-									<span>
-										{isSubmittingInbound
-											? "Приём на склад..."
-											: `Принять на склад • +${drawerQuantity} шт`}
-									</span>
-								</button>
-
-								{onOpenInboundInvoice && (
-									<button
-										type="button"
-										className="mobile-inventory-drawer-secondary-link"
-										onClick={() => {
-											setIsInboundDrawerOpen(false);
-											onOpenInboundInvoice();
-										}}
-									>
-										Оформить официальную накладную поставщика (ТОРГ-12)
-									</button>
-								)}
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+			<MobileInventoryInboundDrawer
+				isOpen={isInboundDrawerOpen}
+				onClose={() => setIsInboundDrawerOpen(false)}
+				drawerTargetItem={drawerTargetItem}
+				items={items}
+				drawerQuantity={drawerQuantity}
+				setDrawerQuantity={setDrawerQuantity}
+				drawerLotNumber={drawerLotNumber}
+				setDrawerLotNumber={setDrawerLotNumber}
+				drawerExpDate={drawerExpDate}
+				setDrawerExpDate={setDrawerExpDate}
+				onSelectTargetItem={(found) => {
+					setDrawerTargetItem(found);
+					setDrawerCustomName(found.name);
+				}}
+				onSubmitInbound={handleSubmitInbound}
+				isSubmittingInbound={isSubmittingInbound}
+				onOpenInboundInvoice={onOpenInboundInvoice}
+				triggerHaptic={triggerHaptic}
+			/>
 		</div>
 	);
 };

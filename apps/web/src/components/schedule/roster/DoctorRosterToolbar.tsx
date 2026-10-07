@@ -307,7 +307,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									className="roster-btn roster-btn-secondary"
 									onClick={onCopyWeekToNextWeek}
 									style={{ minHeight: "34px", height: "34px" }}
-									title="Копировать все смены текущей недели на следующую неделю (+7 дней) в 1 клик"
+									title="Копировать все смены текущей недели на следующую неделю (+7 дней)"
 								>
 									<Copy size={16} />
 									<span>Копировать на след. неделю</span>
@@ -320,7 +320,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									className="roster-btn roster-btn-secondary"
 									onClick={onCopyWeekToMonth}
 									style={{ minHeight: "34px", height: "34px" }}
-									title="Копировать график текущей недели на следующие 4 недели вперед (месяц) в 1 клик"
+									title="Копировать график текущей недели на следующие 4 недели вперед (месяц)"
 								>
 									<CalendarRange size={16} />
 									<span>Копировать на 4 недели (месяц)</span>
@@ -333,7 +333,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									className="roster-btn roster-btn-secondary"
 									onClick={onClearWeek}
 									style={{ minHeight: "34px", height: "34px", color: "var(--bad-fg, #ef4444)" }}
-									title="Очистить все смены текущей недели в 1 клик"
+									title="Очистить все смены текущей недели"
 								>
 									<RotateCcw size={16} />
 									<span>Очистить неделю</span>
@@ -374,10 +374,10 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									<Layers size={16} />
 									<span>Шаблоны графиков ▾</span>
 								</button>
-								{isPresetMenuOpen && (
 									<div
 										className="roster-preset-menu"
 										style={{
+											display: isPresetMenuOpen ? "flex" : "none",
 											position: "absolute",
 											top: "calc(100% + 4px)",
 											left: 0,
@@ -386,11 +386,11 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 											border: "1px solid var(--line, #e2e8f0)",
 											borderRadius: "8px",
 											boxShadow: "var(--shadow-3, 0 10px 15px -3px rgba(0,0,0,0.1))",
-											display: "flex",
 											flexDirection: "column",
 											minWidth: "260px",
 											padding: "4px",
 										}}
+										aria-hidden={!isPresetMenuOpen}
 									>
 										<button
 											type="button"
@@ -487,7 +487,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 														textTransform: "uppercase",
 													}}
 												>
-													Закрепление за креслом (StomX)
+													Закрепление за креслом
 												</div>
 												<button
 													type="button"
@@ -564,7 +564,6 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 											</button>
 										)}
 									</div>
-								)}
 							</div>
 						</div>
 					</div>

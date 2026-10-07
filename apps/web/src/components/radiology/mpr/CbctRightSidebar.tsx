@@ -19,8 +19,9 @@ import type {
 import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 import type { HUZoneSampling, MischBoneClass } from "../boneDensityMischMath";
 import { formatMischDrillingRecommendation } from "../boneDensityMischMath";
-import type { StudioMode } from "./cbctStudioTypes";
+import type { StudioMode, NerveCanalSide } from "./cbctStudioTypes";
 import { formatNerveNodesPlural } from "./cbctStudioTypes";
+import { CbctNerveSidebarSection } from "./CbctNerveSidebarSection";
 
 const UPPER_JAW_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28] as const;
 const LOWER_JAW_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38] as const;
@@ -56,6 +57,8 @@ export interface CbctRightSidebarProps {
 	readonly nervePoints: readonly Point3D[]; readonly setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
 	readonly nerveTotalLengthMm: number; readonly selectedNerveNodeIdx: number | null;
 	readonly setSelectedNerveNodeIdx: React.Dispatch<React.SetStateAction<number | null>>;
+	readonly activeNerveSide?: NerveCanalSide | undefined;
+	readonly onSwitchNerveSide?: ((side: NerveCanalSide) => void) | undefined;
 	readonly displayBoneClass: string; readonly displayMeanHU: number | null; readonly displayTorque: string;
 	readonly displayNerveClearanceMm: number | null; readonly displayDrillingProtocol: string;
 	readonly selectedBrand: ImplantBrandKey; readonly setSelectedBrand: React.Dispatch<React.SetStateAction<ImplantBrandKey>>;
@@ -82,6 +85,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 	windowWidth, windowLevel, renderViewportOverlays, sampledVoxelHU, handleSelectTooth,
 	implant3DWorld, nerveAuditResult, huSamplingResult, currentImplantSpec, nervePoints,
 	setNervePoints, nerveTotalLengthMm, selectedNerveNodeIdx, setSelectedNerveNodeIdx,
+	activeNerveSide = "right", onSwitchNerveSide,
 	displayBoneClass, displayMeanHU, displayTorque, displayNerveClearanceMm, displayDrillingProtocol,
 	selectedBrand, setSelectedBrand, selectedDiameterMm, setSelectedDiameterMm,
 	selectedLengthMm, setSelectedLengthMm, implantEntryXOffsetMm, setImplantEntryXOffsetMm,
@@ -399,81 +403,16 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 					/>
 
 					{/* 3D MANDIBULAR NERVE TRACER PANEL (IAN 3D SPLINE) */}
-					<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2">
-						<div className="flex items-center justify-between text-xs">
-							<span className="font-bold text-zinc-400 flex items-center gap-1.5">
-								<Activity className="w-3.5 h-3.5 text-amber-400" />
-								3D Трассировка нерва (IAN)
-							</span>
-							<span className="px-2 py-0.5 rounded bg-zinc-900 text-amber-400 font-mono text-[11px] font-bold border border-amber-500/50">
-								{formatNerveNodesPlural(nervePoints.length)} • {nerveTotalLengthMm.toFixed(1)} мм
-							</span>
-						</div>
-
-						<div className="text-[11px] text-zinc-400 bg-zinc-900 p-2 rounded border border-zinc-800 flex flex-col gap-1">
-							<div className="flex justify-between items-center">
-								<span>Выбранный узел:</span>
-								<span className="font-bold font-mono text-zinc-100">
-									{selectedNerveNodeIdx !== null ? `Узел #${selectedNerveNodeIdx + 1}` : "—"}
-								</span>
-							</div>
-							<div className="flex justify-between items-center">
-								<span>Vatech пороги:</span>
-								<span className="font-bold text-amber-400 font-mono">3.0мм апекс • 1.5мм риск</span>
-							</div>
-							<div className="flex justify-between items-center">
-								<span>Режим 2-Seed:</span>
-								<span className={`font-mono font-bold ${nervePoints.length === 0 ? "text-cyan-400" : nervePoints.length === 1 ? "text-amber-400" : "text-emerald-400"}`}>
-									{nervePoints.length === 0 ? "1/2: Ментальное" : nervePoints.length === 1 ? "2/2: Мандибулярное" : "Fast Marching OK"}
-								</span>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-2 gap-1.5">
-							<button
-								type="button"
-								onClick={() => {
-									if (nervePoints.length === 0) return showToast("Трасса канала IAN пока не содержит узлов", "info");
-									if (selectedNerveNodeIdx !== null && selectedNerveNodeIdx >= 0 && selectedNerveNodeIdx < nervePoints.length) {
-										setNervePoints((prev) => prev.filter((_, idx) => idx !== selectedNerveNodeIdx));
-										setSelectedNerveNodeIdx(null);
-										showToast("Удален выбранный 3D-узел нерва", "info");
-									} else if (nervePoints.length > 0) {
-										setNervePoints((prev) => prev.slice(0, -1));
-										showToast("Удален последний узел нерва", "info");
-									}
-								}}
-								className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
-								data-testid="cbct-delete-nerve-node-btn"
-								disabled={selectedNerveNodeIdx === null}
-								title="Удалить выбранный или последний узел (Backspace)"
-							>
-								<Trash2 className="w-3.5 h-3.5 mr-1 text-rose-400" />
-								<span>Удалить узел</span>
-							</button>
-
-							<button
-								type="button"
-								onClick={() => {
-									if (nervePoints.length === 0) return showToast("Трасса канала IAN уже пуста", "info");
-									setNervePoints([]);
-									setSelectedNerveNodeIdx(null);
-									showToast("Трасса канала IAN сброшена", "info");
-								}}
-								className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
-								data-testid="cbct-reset-nerve-trace-btn"
-								disabled={nervePoints.length === 0}
-								title="Очистить все точки канала нерва"
-							>
-								<RotateCcw className="w-3.5 h-3.5 mr-1 text-amber-400" />
-								<span>Сброс трассы</span>
-							</button>
-						</div>
-						<div className="text-[10px] text-zinc-400 leading-tight flex items-center gap-1">
-							<Info className="w-3 h-3 text-cyan-400 shrink-0" />
-							<span>Vatech 2-Seed: 2 клика на срезах (ментальное + мандибулярное отв.) для 3D автоканала</span>
-						</div>
-					</div>
+					<CbctNerveSidebarSection
+						activeSide={activeNerveSide}
+						onSwitchSide={(side) => onSwitchNerveSide?.(side)}
+						nervePoints={nervePoints}
+						setNervePoints={setNervePoints}
+						nerveTotalLengthMm={nerveTotalLengthMm}
+						selectedNerveNodeIdx={selectedNerveNodeIdx}
+						setSelectedNerveNodeIdx={setSelectedNerveNodeIdx}
+						onShowToast={showToast}
+					/>
 
 					{/* VIRTUAL IMPLANT CALIPER SELECTION */}
 					<div className="p-3 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col gap-2.5" data-testid="cbct-selected-implant-card">
@@ -604,16 +543,16 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 						</div>
 
 						{/* Brand selector */}
-						<div className="grid grid-cols-5 gap-1.5">
+						<div className="dente-segmented-bar w-full grid grid-cols-5 p-1 gap-1" role="tablist" aria-label="Бренд имплантата">
 							{IMPLANT_BRAND_OPTIONS.map(({ key, label }) => (
 								<button
 									key={key}
 									type="button"
+									role="tab"
+									aria-selected={selectedBrand === key}
 									onClick={() => setSelectedBrand(key)}
-									className={`py-2 px-1 rounded-md text-xs font-bold capitalize min-h-[44px] transition-colors border flex items-center justify-center ${
-										selectedBrand === key
-											? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
-											: "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border-zinc-800 hover:bg-zinc-800"
+									className={`dente-segmented-item w-full !h-auto min-h-[38px] py-1.5 px-1 text-xs font-bold capitalize ${
+										selectedBrand === key ? "active" : ""
 									}`}
 								>
 									{label}
@@ -681,7 +620,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<button
 									type="button"
 									onClick={onToggleAnonymize}
-									className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer border min-h-[32px] flex items-center ${
+									className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer border min-h-[36px] flex items-center ${
 										isAnonymized
 											? "bg-emerald-950/80 text-emerald-300 border-emerald-600/70"
 											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"

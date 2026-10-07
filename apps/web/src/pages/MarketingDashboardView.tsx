@@ -230,7 +230,7 @@ export function MarketingDashboardView({
 				<div className="marketing-dashboard-controls">
 					{/* Period Selector (Segmented Control) */}
 					<div
-						className="marketing-period-segmented"
+						className="marketing-period-segmented dente-segmented-bar"
 						role="tablist"
 						aria-label="Выбор периода аналитики"
 					>
@@ -240,7 +240,7 @@ export function MarketingDashboardView({
 								type="button"
 								role="tab"
 								aria-selected={period === opt.id}
-								className={`marketing-period-btn ${period === opt.id ? "is-active" : ""}`}
+								className={`marketing-period-btn dente-segmented-item ${period === opt.id ? "is-active active" : ""}`}
 								onClick={() => setPeriod(opt.id)}
 								data-testid={`period-filter-${opt.id}`}
 							>
@@ -251,7 +251,7 @@ export function MarketingDashboardView({
 
 					<button
 						type="button"
-						className="secondary-button marketing-header-csv-btn"
+						className="secondary-button marketing-header-csv-btn h-8 min-h-[32px] px-3 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
 						onClick={handleExportCsv}
 						data-testid="marketing-export-csv-btn"
 						title="Экспортировать сводку в Excel (CSV)"
@@ -262,7 +262,7 @@ export function MarketingDashboardView({
 
 					<button
 						type="button"
-						className="primary-button marketing-header-promo-btn"
+						className="primary-button marketing-header-promo-btn h-8 min-h-[32px] px-3.5 rounded-lg text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer"
 						onClick={() => setIsNewPromoModalOpen(true)}
 						data-testid="marketing-create-promo-btn"
 					>

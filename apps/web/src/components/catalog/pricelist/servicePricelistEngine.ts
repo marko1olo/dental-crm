@@ -625,7 +625,7 @@ export function exportPricelistToCsv(
 ): string {
 	const delimiter = options?.delimiter ?? ';';
 	const headers = [
-		'Код 804н',
+		'Код услуги',
 		'Коммерческое наименование',
 		'Официальное наименование',
 		'Категория',

@@ -462,7 +462,7 @@ export function IncomingCallerCard({
 								<button
 									type="button"
 									onClick={onSendWhatsApp}
-									className="min-h-[32px] min-w-[32px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+									className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
 									title="Отправить подтверждение в WhatsApp"
 								>
 									<Send size={13} />
@@ -472,7 +472,7 @@ export function IncomingCallerCard({
 								<button
 									type="button"
 									onClick={onCopySms}
-									className="min-h-[32px] min-w-[32px] rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+									className="h-8 w-8 min-h-[32px] min-w-[32px] rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] flex items-center justify-center transition-all cursor-pointer shadow-xs"
 									title="Скопировать SMS"
 								>
 									{smsCopied ? (
@@ -566,7 +566,7 @@ export function IncomingCallerCard({
 							type="button"
 							onClick={onCaptureLead}
 							disabled={isCapturingLead || isLeadCaptured}
-							className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+							className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
 							data-testid="drawer-action-capture-lead"
 							title="1-Клик захват звонящего в лиды с автоматической разметкой рекламного канала"
 						>

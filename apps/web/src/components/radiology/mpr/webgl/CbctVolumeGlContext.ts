@@ -23,6 +23,7 @@ import {
 	CBCT_CROSS_SECTION_FRAGMENT_SHADER,
 	CBCT_CROSS_SECTION_VERTEX_SHADER,
 } from "./cbctCrossSectionShaders";
+import type { CbctRenderingTier } from "@dental/shared";
 import {
 	type CbctColorMapMode,
 	type GlSliceCoordinates,
@@ -33,6 +34,7 @@ import {
 	computeGlCrossSectionCoordinates,
 	computeGlSliceCoordinates,
 	resolveColorMapCode,
+	resolveInterpolationCode,
 	uploadVolumeTo3DTexture,
 } from "./CbctVolumeGlTextures";
 
@@ -52,6 +54,7 @@ interface GlUniformLocations {
 	slabMode: WebGLUniformLocation | null;
 	slabSteps: WebGLUniformLocation | null;
 	trilinear: WebGLUniformLocation | null;
+	interpolationMode: WebGLUniformLocation | null;
 	colorMap: WebGLUniformLocation | null;
 	sharpenAmount: WebGLUniformLocation | null;
 	gamma: WebGLUniformLocation | null;
@@ -76,12 +79,21 @@ export class CbctVolumeGlContext {
 	private vao: WebGLVertexArrayObject | null = null;
 	private uploadDim: { width: number; height: number; depth: number } | null = null;
 	private downsampleStep = 1;
+	private activeTier: CbctRenderingTier | null = null;
+	private targetMaxDim: number | null = null;
+	private uploadedTier: CbctRenderingTier | null = null;
+	private uploadedTargetMaxDim: number | null = null;
 	private cleanupContextListeners: (() => void) | null = null;
 	private uniforms: GlUniformLocations | null = null;
 	private crossSectionUniforms: GlUniformLocations | null = null;
 	private contextRestoredListeners: Set<() => void> = new Set();
 	private contextLostListeners: Set<() => void> = new Set();
 	private contextLostState = false;
+	private contextLossCount = 0;
+	private trackedBuffers: Set<WebGLBuffer> = new Set();
+	private trackedFramebuffers: Set<WebGLFramebuffer> = new Set();
+	private trackedRenderbuffers: Set<WebGLRenderbuffer> = new Set();
+	private trackedTextures: Set<WebGLTexture> = new Set();
 	private currentColorMap = 0;
 	private currentSharpenAmount = 0.0;
 	private lastCrosshairMm: Point3D | null = null;
@@ -94,6 +106,85 @@ export class CbctVolumeGlContext {
 
 	constructor(canvas?: HTMLCanvasElement) {
 		if (canvas) this.init(canvas);
+	}
+
+	public getContextLossCount(): number {
+		return this.contextLossCount;
+	}
+
+	public resetContextLossCount(): void {
+		this.contextLossCount = 0;
+	}
+
+	private handleContextLostDirect(): void {
+		this.contextLostState = true;
+		this.contextLossCount++;
+		this.isInitialized = false;
+		this.activeVolumeId = null;
+		this.volumeTexture = null;
+		this.uploadDim = null;
+		this.program = null;
+		this.crossSectionProgram = null;
+		this.vao = null;
+		this.uniforms = null;
+		this.crossSectionUniforms = null;
+		for (const cb of this.contextLostListeners) {
+			try {
+				cb();
+			} catch (err) {
+				console.error("[CbctVolumeGlContext] contextLostListener error:", err);
+			}
+		}
+	}
+
+	private handleContextRestoredDirect(): void {
+		this.contextLostState = false;
+		if (this.canvas) {
+			const targetVolume = this.activeVolume;
+			const targetCoords = this.lastCoords;
+			const restored = this.init(this.canvas);
+			if (restored && targetVolume && !targetVolume.isDisposed) {
+				this.uploadVolume(targetVolume, { forceReupload: true });
+				if (targetCoords) {
+					this.updateSliceBasisUniforms(targetCoords);
+				}
+			}
+			for (const cb of this.contextRestoredListeners) {
+				try {
+					cb();
+				} catch (err) {
+					console.error("[CbctVolumeGlContext] contextRestoredListener error:", err);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Red Team Inquisitor: Simulates WebGL context loss for testing recovery without crashing driver.
+	 */
+	public simulateContextLost(): void {
+		if (this.canvas && typeof this.canvas.dispatchEvent === "function") {
+			const evt = typeof Event !== "undefined"
+				? new Event("webglcontextlost", { cancelable: true })
+				: ({ type: "webglcontextlost", preventDefault: () => {} } as unknown as Event);
+			this.canvas.dispatchEvent(evt);
+		} else {
+			this.handleContextLostDirect();
+		}
+	}
+
+	/**
+	 * Red Team Inquisitor: Simulates WebGL context restoration for testing automatic recovery.
+	 */
+	public simulateContextRestored(): void {
+		if (this.canvas && typeof this.canvas.dispatchEvent === "function") {
+			const evt = typeof Event !== "undefined"
+				? new Event("webglcontextrestored")
+				: ({ type: "webglcontextrestored" } as unknown as Event);
+			this.canvas.dispatchEvent(evt);
+		} else {
+			this.handleContextRestoredDirect();
+		}
 	}
 
 	public init(canvas: HTMLCanvasElement): boolean {
@@ -111,6 +202,7 @@ export class CbctVolumeGlContext {
 				antialias: false,
 				preserveDrawingBuffer: true,
 				powerPreference: "high-performance",
+				desynchronized: true,
 			});
 			if (!gl) {
 				console.warn("[CbctVolumeGlContext] WebGL2 not supported on canvas, using CPU/Worker fallback.");
@@ -132,42 +224,10 @@ export class CbctVolumeGlContext {
 				if (typeof e.preventDefault === "function") {
 					e.preventDefault();
 				}
-				this.contextLostState = true;
-				this.isInitialized = false;
-				this.activeVolumeId = null;
-				this.volumeTexture = null;
-				this.uploadDim = null;
-				this.program = null;
-				this.crossSectionProgram = null;
-				this.vao = null;
-				this.uniforms = null;
-				this.crossSectionUniforms = null;
-				for (const cb of this.contextLostListeners) {
-					try {
-						cb();
-					} catch (err) {
-						console.error("[CbctVolumeGlContext] contextLostListener error:", err);
-					}
-				}
+				this.handleContextLostDirect();
 			};
 			const onContextRestored = () => {
-				this.contextLostState = false;
-				if (this.canvas) {
-					const restored = this.init(this.canvas);
-					if (restored && this.activeVolume && !this.activeVolume.isDisposed) {
-						this.uploadVolume(this.activeVolume, { forceReupload: true });
-						if (this.lastCoords) {
-							this.updateSliceBasisUniforms(this.lastCoords);
-						}
-					}
-					for (const cb of this.contextRestoredListeners) {
-						try {
-							cb();
-						} catch (err) {
-							console.error("[CbctVolumeGlContext] contextRestoredListener error:", err);
-						}
-					}
-				}
+				this.handleContextRestoredDirect();
 			};
 			if (typeof canvas.addEventListener === "function") {
 				canvas.addEventListener("webglcontextlost", onContextLost);
@@ -213,6 +273,25 @@ export class CbctVolumeGlContext {
 	public getLastAllPlanesTimeMs(): number { return this.lastAllPlanesTimeMs; }
 	public getLastCrossSectionRenderTimeMs(): number { return this.lastCrossSectionRenderTimeMs; }
 	public getCrossSectionProgram(): WebGLProgram | null { return this.crossSectionProgram; }
+	public getRenderingTier(): CbctRenderingTier { return this.activeTier ?? "balanced"; }
+	public setRenderingTier(tier: CbctRenderingTier): void {
+		if (this.activeTier !== tier) {
+			this.activeTier = tier;
+			if (this.volumeTexture) {
+				this.disposeGlResources({ texturesOnly: true });
+			}
+		}
+	}
+	public getTargetMaxDim(): number { return this.targetMaxDim ?? 2048; }
+	public setTargetMaxDim(dim: number): void {
+		const clamped = Math.max(64, Math.min(2048, Math.round(dim)));
+		if (this.targetMaxDim !== clamped) {
+			this.targetMaxDim = clamped;
+			if (this.volumeTexture) {
+				this.disposeGlResources({ texturesOnly: true });
+			}
+		}
+	}
 
 	public addContextRestoredListener(listener: () => void): () => void {
 		this.contextRestoredListeners.add(listener);
@@ -244,23 +323,149 @@ export class CbctVolumeGlContext {
 		return this.currentSharpenAmount;
 	}
 
-	private cleanupGlObjects(): void {
+	/**
+	 * Ironclad VRAM Resource Disposal.
+	 * Deterministically frees GPU memory: deletes all WebGL textures, framebuffers, renderbuffers,
+	 * vertex buffers, vertex array objects, shaders, and compiled programs.
+	 *
+	 * When switching volumes: pass `{ texturesOnly: true }` to release existing 3D textures.
+	 * When unmounting: pass `{ texturesOnly: false }` or default to release all WebGL objects.
+	 */
+	public disposeGlResources(options?: { texturesOnly?: boolean }): void {
 		const gl = this.gl;
 		if (!gl) return;
-		if (this.vao && gl.deleteVertexArray) { gl.deleteVertexArray(this.vao); this.vao = null; }
-		if (this.volumeTexture) { gl.deleteTexture(this.volumeTexture); this.volumeTexture = null; }
+
+		// 1. Delete volume texture and any tracked textures
+		if (this.volumeTexture) {
+			if (typeof gl.deleteTexture === "function") {
+				gl.deleteTexture(this.volumeTexture);
+			}
+			this.trackedTextures.delete(this.volumeTexture);
+			this.volumeTexture = null;
+		}
+
+		for (const tex of this.trackedTextures) {
+			if (typeof gl.deleteTexture === "function") {
+				gl.deleteTexture(tex);
+			}
+		}
+		this.trackedTextures.clear();
+
+		if (options?.texturesOnly) {
+			this.activeVolumeId = null;
+			this.activeVolume = null;
+			this.uploadDim = null;
+			this.downsampleStep = 1;
+			this.uploadedTier = null;
+			this.uploadedTargetMaxDim = null;
+			return;
+		}
+
+		// 2. Delete framebuffers
+		for (const fb of this.trackedFramebuffers) {
+			if (typeof gl.deleteFramebuffer === "function") {
+				gl.deleteFramebuffer(fb);
+			}
+		}
+		this.trackedFramebuffers.clear();
+
+		// 3. Delete renderbuffers
+		for (const rb of this.trackedRenderbuffers) {
+			if (typeof gl.deleteRenderbuffer === "function") {
+				gl.deleteRenderbuffer(rb);
+			}
+		}
+		this.trackedRenderbuffers.clear();
+
+		// 4. Delete vertex buffers
+		for (const buf of this.trackedBuffers) {
+			if (typeof gl.deleteBuffer === "function") {
+				gl.deleteBuffer(buf);
+			}
+		}
+		this.trackedBuffers.clear();
+
+		// 5. Delete vertex array object
+		if (this.vao && typeof gl.deleteVertexArray === "function") {
+			gl.deleteVertexArray(this.vao);
+			this.vao = null;
+		}
+
+		// 6. Delete shaders & programs
 		if (this.program) {
-			if (this.vertexShader) { gl.detachShader(this.program, this.vertexShader); gl.deleteShader(this.vertexShader); this.vertexShader = null; }
-			if (this.fragmentShader) { gl.detachShader(this.program, this.fragmentShader); gl.deleteShader(this.fragmentShader); this.fragmentShader = null; }
-			gl.deleteProgram(this.program);
+			if (this.vertexShader && typeof gl.detachShader === "function") {
+				gl.detachShader(this.program, this.vertexShader);
+			}
+			if (this.vertexShader && typeof gl.deleteShader === "function") {
+				gl.deleteShader(this.vertexShader);
+				this.vertexShader = null;
+			}
+			if (this.fragmentShader && typeof gl.detachShader === "function") {
+				gl.detachShader(this.program, this.fragmentShader);
+			}
+			if (this.fragmentShader && typeof gl.deleteShader === "function") {
+				gl.deleteShader(this.fragmentShader);
+				this.fragmentShader = null;
+			}
+			if (typeof gl.deleteProgram === "function") {
+				gl.deleteProgram(this.program);
+			}
 			this.program = null;
 		}
+
 		if (this.crossSectionProgram) {
-			if (this.crossSectionVertexShader) { gl.detachShader(this.crossSectionProgram, this.crossSectionVertexShader); gl.deleteShader(this.crossSectionVertexShader); this.crossSectionVertexShader = null; }
-			if (this.crossSectionFragmentShader) { gl.detachShader(this.crossSectionProgram, this.crossSectionFragmentShader); gl.deleteShader(this.crossSectionFragmentShader); this.crossSectionFragmentShader = null; }
-			gl.deleteProgram(this.crossSectionProgram);
+			if (this.crossSectionVertexShader && typeof gl.detachShader === "function") {
+				gl.detachShader(this.crossSectionProgram, this.crossSectionVertexShader);
+			}
+			if (this.crossSectionVertexShader && typeof gl.deleteShader === "function") {
+				gl.deleteShader(this.crossSectionVertexShader);
+				this.crossSectionVertexShader = null;
+			}
+			if (this.crossSectionFragmentShader && typeof gl.detachShader === "function") {
+				gl.detachShader(this.crossSectionProgram, this.crossSectionFragmentShader);
+			}
+			if (this.crossSectionFragmentShader && typeof gl.deleteShader === "function") {
+				gl.deleteShader(this.crossSectionFragmentShader);
+				this.crossSectionFragmentShader = null;
+			}
+			if (typeof gl.deleteProgram === "function") {
+				gl.deleteProgram(this.crossSectionProgram);
+			}
 			this.crossSectionProgram = null;
 		}
+
+		this.activeVolumeId = null;
+		this.activeVolume = null;
+		this.uploadDim = null;
+		this.downsampleStep = 1;
+		this.uploadedTier = null;
+		this.uploadedTargetMaxDim = null;
+		this.uniforms = null;
+		this.crossSectionUniforms = null;
+	}
+
+	public trackBuffer(buffer: WebGLBuffer): WebGLBuffer {
+		this.trackedBuffers.add(buffer);
+		return buffer;
+	}
+
+	public trackFramebuffer(framebuffer: WebGLFramebuffer): WebGLFramebuffer {
+		this.trackedFramebuffers.add(framebuffer);
+		return framebuffer;
+	}
+
+	public trackRenderbuffer(renderbuffer: WebGLRenderbuffer): WebGLRenderbuffer {
+		this.trackedRenderbuffers.add(renderbuffer);
+		return renderbuffer;
+	}
+
+	public trackTexture(texture: WebGLTexture): WebGLTexture {
+		this.trackedTextures.add(texture);
+		return texture;
+	}
+
+	private cleanupGlObjects(): void {
+		this.disposeGlResources();
 	}
 
 	private setupShaders(): boolean {
@@ -344,6 +549,7 @@ export class CbctVolumeGlContext {
 			slabMode: gl.getUniformLocation(program, "u_slabMode"),
 			slabSteps: gl.getUniformLocation(program, "u_slabSteps"),
 			trilinear: gl.getUniformLocation(program, "u_trilinear"),
+			interpolationMode: gl.getUniformLocation(program, "u_interpolationMode"),
 			colorMap: gl.getUniformLocation(program, "u_colorMap"),
 			sharpenAmount: gl.getUniformLocation(program, "u_sharpenAmount"),
 			gamma: gl.getUniformLocation(program, "u_gamma"),
@@ -353,20 +559,30 @@ export class CbctVolumeGlContext {
 		};
 	}
 
-	public uploadVolume(volume: CbctVoxelVolume, options?: { forceReupload?: boolean }): boolean {
+	public uploadVolume(
+		volume: CbctVoxelVolume,
+		options?: { forceReupload?: boolean; targetMaxDim?: number; tier?: CbctRenderingTier },
+	): boolean {
 		const gl = this.gl;
 		if (!gl || !this.isAvailable()) return false;
 		if (gl.isContextLost && gl.isContextLost()) return false;
 		if (!volume.data || volume.isDisposed) return false;
 
-		if (!options?.forceReupload && this.activeVolumeId === volume.id && this.volumeTexture) {
+		const tier = options?.tier ?? this.activeTier ?? undefined;
+		const targetMaxDim = options?.targetMaxDim ?? this.targetMaxDim ?? undefined;
+
+		if (
+			!options?.forceReupload &&
+			this.activeVolumeId === volume.id &&
+			this.volumeTexture &&
+			this.uploadedTier === (tier ?? null) &&
+			this.uploadedTargetMaxDim === (targetMaxDim ?? null)
+		) {
 			return true;
 		}
 
 		if (this.volumeTexture) {
-			gl.deleteTexture(this.volumeTexture);
-			this.volumeTexture = null;
-			this.activeVolumeId = null;
+			this.disposeGlResources({ texturesOnly: true });
 		}
 
 		let max3dSize = 2048;
@@ -381,13 +597,24 @@ export class CbctVolumeGlContext {
 			max3dSize = 2048;
 		}
 
-		const result = uploadVolumeTo3DTexture(gl, volume, max3dSize);
+		// Red Team TDR Prevention: Upon context loss degradation, clamp max 3D size to prevent re-crashing VRAM
+		if (this.contextLossCount > 0) {
+			max3dSize = Math.min(max3dSize, this.contextLossCount >= 2 ? 256 : 512);
+		}
+
+		const result = uploadVolumeTo3DTexture(gl, volume, {
+			max3dSize,
+			targetMaxDim,
+			tier,
+		});
 		if (!result) {
 			this.volumeTexture = null;
 			this.activeVolumeId = null;
 			this.activeVolume = null;
 			this.uploadDim = null;
 			this.downsampleStep = 1;
+			this.uploadedTier = null;
+			this.uploadedTargetMaxDim = null;
 			return false;
 		}
 
@@ -396,6 +623,8 @@ export class CbctVolumeGlContext {
 		this.activeVolumeId = volume.id;
 		this.activeVolume = volume;
 		this.uploadDim = result.uploadDim;
+		this.uploadedTier = tier ?? null;
+		this.uploadedTargetMaxDim = targetMaxDim ?? null;
 
 		if (this.uniforms?.volumeDim) {
 			gl.useProgram(this.program);
@@ -410,14 +639,7 @@ export class CbctVolumeGlContext {
 
 	public invalidateVolume(volumeId?: string): void {
 		if (!volumeId || this.activeVolumeId === volumeId) {
-			if (this.gl && this.volumeTexture) {
-				this.gl.deleteTexture(this.volumeTexture);
-				this.volumeTexture = null;
-			}
-			this.activeVolumeId = null;
-			this.activeVolume = null;
-			this.uploadDim = null;
-			this.downsampleStep = 1;
+			this.disposeGlResources({ texturesOnly: true });
 		}
 	}
 
@@ -481,7 +703,9 @@ export class CbctVolumeGlContext {
 		if (uniforms.invert) gl.uniform1i(uniforms.invert, options.invert ? 1 : 0);
 		if (uniforms.slabMode) gl.uniform1i(uniforms.slabMode, coords.slabModeCode);
 		if (uniforms.slabSteps) gl.uniform1i(uniforms.slabSteps, coords.slabSteps);
-		if (uniforms.trilinear) gl.uniform1i(uniforms.trilinear, options.interpolation !== "nearest" ? 1 : 0);
+		const interpCode = resolveInterpolationCode(options.interpolation);
+		if (uniforms.interpolationMode) gl.uniform1i(uniforms.interpolationMode, interpCode);
+		if (uniforms.trilinear) gl.uniform1i(uniforms.trilinear, interpCode !== 0 ? 1 : 0);
 
 		const colorMapCode = options.colorMap !== undefined ? resolveColorMapCode(options.colorMap) : this.currentColorMap;
 		const sharpenAmount = options.sharpenAmount !== undefined
@@ -760,8 +984,7 @@ let sharedGlContext: CbctVolumeGlContext | null = null;
 
 export function getSharedCbctGlContext(): CbctVolumeGlContext {
 	if (!sharedGlContext) {
-		const offscreenCanvas = typeof document !== "undefined" ? document.createElement("canvas") : null;
-		sharedGlContext = new CbctVolumeGlContext(offscreenCanvas ?? undefined);
+		sharedGlContext = new CbctVolumeGlContext();
 	}
 	return sharedGlContext;
 }

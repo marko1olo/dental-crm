@@ -42,18 +42,27 @@ export const ProfessionalDocumentA4Sheet: React.FC<ProfessionalDocumentA4SheetPr
 		}
 	};
 
-	const cl = contractData.clinic;
+	const cl = contractData?.clinic || medicalCardData?.clinic || actData?.clinic || treatmentPlanData?.clinic || {
+		name: "Клиника",
+		legalName: "ООО Стоматологическая клиника",
+		inn: "",
+		kpp: "",
+		ogrn: "",
+		address: "",
+		phone: "",
+	};
 
 	return (
 		<div className={`pro-a4-viewport ${className}`}>
 			{/* Верхний служебный тулбар (скрывается при @media print) */}
 			<div className="pro-a4-toolbar no-print">
-				<div className="pro-a4-tab-selector" role="tablist">
+				<div className="pro-a4-tab-selector dente-segmented-bar" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "contract"}
-						className={`pro-a4-tab-btn ${activeTab === "contract" ? "active" : ""}`}
+						data-active={activeTab === "contract"}
+						className={`pro-a4-tab-btn dente-segmented-item ${activeTab === "contract" ? "active" : ""}`}
 						onClick={() => onTabChange?.("contract")}
 						data-testid="a4-tab-contract"
 					>
@@ -63,17 +72,19 @@ export const ProfessionalDocumentA4Sheet: React.FC<ProfessionalDocumentA4SheetPr
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "act"}
-						className={`pro-a4-tab-btn ${activeTab === "act" ? "active" : ""}`}
+						data-active={activeTab === "act"}
+						className={`pro-a4-tab-btn dente-segmented-item ${activeTab === "act" ? "active" : ""}`}
 						onClick={() => onTabChange?.("act")}
 						data-testid="a4-tab-act"
 					>
-						2. Акт выполненных работ (804н)
+						2. Акт выполненных работ
 					</button>
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "treatment_plan"}
-						className={`pro-a4-tab-btn ${activeTab === "treatment_plan" ? "active" : ""}`}
+						data-active={activeTab === "treatment_plan"}
+						className={`pro-a4-tab-btn dente-segmented-item ${activeTab === "treatment_plan" ? "active" : ""}`}
 						onClick={() => onTabChange?.("treatment_plan")}
 						data-testid="a4-tab-treatment-plan"
 					>
@@ -83,7 +94,8 @@ export const ProfessionalDocumentA4Sheet: React.FC<ProfessionalDocumentA4SheetPr
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "medical_card"}
-						className={`pro-a4-tab-btn ${activeTab === "medical_card" ? "active" : ""}`}
+						data-active={activeTab === "medical_card"}
+						className={`pro-a4-tab-btn dente-segmented-item ${activeTab === "medical_card" ? "active" : ""}`}
 						onClick={() => onTabChange?.("medical_card")}
 						data-testid="a4-tab-medical-card"
 					>
@@ -155,7 +167,7 @@ export const ProfessionalDocumentA4Sheet: React.FC<ProfessionalDocumentA4SheetPr
 								<thead>
 									<tr>
 										<th style={{ width: "25px" }}>№</th>
-										<th style={{ width: "70px" }}>Код 804н</th>
+										<th style={{ width: "70px" }}>Код услуги</th>
 										<th>Наименование медицинской услуги</th>
 										<th style={{ width: "55px" }}>Зуб</th>
 										<th style={{ width: "35px" }}>Кол.</th>
@@ -277,7 +289,7 @@ export const ProfessionalDocumentA4Sheet: React.FC<ProfessionalDocumentA4SheetPr
 								<thead>
 									<tr>
 										<th style={{ width: "25px" }}>№</th>
-										<th style={{ width: "75px" }}>Код 804н</th>
+										<th style={{ width: "75px" }}>Код услуги</th>
 										<th>Наименование медицинской услуги</th>
 										<th style={{ width: "55px" }}>Зуб</th>
 										<th style={{ width: "35px" }}>Кол.</th>

@@ -489,23 +489,26 @@ export function WhatsAppChatPanel({
 			{/* Search Input Bar (if toggled) */}
 			{isSearchOpen && (
 				<div className="p-2 bg-[var(--paper-soft,rgba(30,41,59,0.5))] border-b border-[var(--line,#334155)] flex items-center gap-2 animate-fade-in">
-					<Search size={14} className="text-[var(--muted,#94a3b8)] ml-2" />
-					<input
-						type="text"
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						placeholder="Поиск по тексту диалога..."
-						className="flex-1 bg-transparent text-xs text-[var(--ink,#f8fafc)] focus:outline-none"
-					/>
-					{searchQuery && (
-						<button
-							type="button"
-							onClick={() => setSearchQuery("")}
-							className="p-1 text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
-						>
-							<X size={14} />
-						</button>
-					)}
+					<div className="dente-search-wrap w-full">
+						<Search size={14} className="dente-search-icon" />
+						<input
+							type="text"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							placeholder="Поиск по тексту диалога..."
+							className="dente-search-input w-full text-xs"
+						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
+							>
+								<X size={14} />
+							</button>
+						)}
+					</div>
 				</div>
 			)}
 

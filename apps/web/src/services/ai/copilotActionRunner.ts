@@ -151,7 +151,7 @@ export class CopilotActionRunner {
 				category: "clinical_odontogram",
 				needsConfirmation: true,
 				destructive: true,
-				message: `Действие «${pendingRecord.titleRu}» ожидает 1-клик подтверждения врача.`,
+				message: `Действие «${pendingRecord.titleRu}» ожидает подтверждения врача.`,
 				data: args,
 			};
 		}

@@ -463,12 +463,12 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
               patientId: existingPatient?.id || null,
               patientName: request.patientName,
               durationMinutes: 20,
-              reason: `CITO! ${request.requestType || "Острая боль"}`,
+              reason: `Срочно! ${request.requestType || "Острая боль"}`,
               isCitoEmergency: true,
             });
             setQuickBookingOpen(true);
             showToast(
-              `Экстренная запись CITO для «${request.patientName}»: проверьте время и подтвердите запись в 1 клик`,
+              `Срочная запись для «${request.patientName}»: проверьте время и подтвердите запись`,
               "info",
               4000,
             );

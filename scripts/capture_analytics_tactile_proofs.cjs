@@ -179,8 +179,9 @@ const mockDashboard = {
 
 async function run() {
   const targetDirs = [
+    path.resolve("C:/Clinic_MVP/dental-crm/screenshots"),
     path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live"),
-    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/478af925-ee37-452f-8239-cba2b739b39a"),
+    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/3a975bb8-6b30-4671-8c08-f67223761dd6"),
   ];
   for (const d of targetDirs) {
     if (!fs.existsSync(d)) {
@@ -196,16 +197,7 @@ async function run() {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  async function getActiveBaseUrl() {
-    for (const port of [5173, 5174, 5175]) {
-      try {
-        const res = await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(800) });
-        if (res.ok) return `http://127.0.0.1:${port}`;
-      } catch {}
-    }
-    return "http://127.0.0.1:5173";
-  }
-  const baseUrl = await getActiveBaseUrl();
+  const baseUrl = "http://127.0.0.1:5173";
   console.log(`[Playwright] Target Vite Base URL: ${baseUrl}`);
 
   const desktopContext = await browser.newContext({
@@ -255,6 +247,16 @@ async function run() {
   });
 
   const page = await desktopContext.newPage();
+
+  page.on("console", (msg) => {
+    const text = msg.text();
+    if (text.includes("error") || text.includes("Error") || text.includes("Auth") || text.includes("boot") || text.includes("Boot") || text.includes("dashboard")) {
+      console.log(`[BROWSER CONSOLE] ${msg.type()}: ${text}`);
+    }
+  });
+  page.on("pageerror", (err) => {
+    console.error(`[BROWSER UNCAUGHT ERROR] ${err.message}\n${err.stack}`);
+  });
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -316,55 +318,42 @@ async function run() {
     });
   });
 
-  console.log("Navigating to #schedule to initialize app...");
-  await page.goto(`${baseUrl}/#schedule`, { waitUntil: "domcontentloaded", timeout: 60000 });
-  await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
-  await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
-  await page.waitForTimeout(1500);
+  console.log("Navigating to #analytics to initialize app...");
+  await page.goto(`${baseUrl}/#analytics`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.waitForTimeout(2000);
 
-  // Remove any tour overlay
-  await page.evaluate(() => {
-    document
-      .querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone')
-      .forEach((el) => el.remove());
-  });
+  // Remove any tour overlay safely
+  try {
+    await page.evaluate(() => {
+      document
+        .querySelectorAll('.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone')
+        .forEach((el) => el.remove());
+    });
+  } catch (_e) {}
 
-  // Navigate to Analytics view
-  console.log("Navigating to #analytics...");
+  // Ensure hash is #analytics and view is rendered
   await page.evaluate(() => {
     window.location.hash = "analytics";
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   });
-  await page.waitForTimeout(1500);
-
-  // If there's an analytics tab in the sidebar, click it
-  const analyticsLink = page.locator('aside.sidebar nav a[href="#analytics"], .dnt-bottom-nav a[href="#analytics"], a:has-text("Аналитика")').first();
-  if (await analyticsLink.isVisible()) {
-    console.log("Clicking Analytics navigation link...");
-    await analyticsLink.click({ force: true });
-    await page.waitForTimeout(1500);
-  }
+  await page.waitForTimeout(2000);
 
   // Wait for analytics elements
   await page.waitForSelector(
-    ".analytics-dashboard-view, #analytics, .analytics-panel, .analytics-segmented, .analytics-section-tabs",
+    ".analytics-dashboard, .analytics-dashboard-view, #analytics, .analytics-panel, .analytics-segmented, .analytics-section-tabs",
     { state: "visible", timeout: 30000 }
   );
   await page.waitForTimeout(1500);
 
   async function applyTheme(theme) {
-    await page.evaluate((th) => {
-      localStorage.setItem("dente_theme_mode", th);
-      if (window.__useThemeStore && typeof window.__useThemeStore.getState === "function") {
-        window.__useThemeStore.getState().setThemeMode(th);
-      }
-      document.documentElement.setAttribute("data-theme", th);
-      const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(th);
-      document.documentElement.classList.toggle("dark", isDark);
-      document.documentElement.classList.toggle("light", !isDark);
-      document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    }, theme);
-    await page.waitForTimeout(800);
+    const isDark = theme === "dark";
+    await page.evaluate((dark) => {
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.classList.toggle("light", !dark);
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    }, isDark);
+    await page.waitForTimeout(600);
   }
 
   async function takeProof(fileName, viewName, modeName) {
@@ -378,6 +367,8 @@ async function run() {
       document.querySelectorAll('*').forEach((el) => {
         if (el.scrollTop > 0) el.scrollTop = 0;
       });
+      // Cleanly remove any tour overlay or banner elements without triggering side-effect clicks
+      document.querySelectorAll('aside, .tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], [data-testid="interactive-guide-tour-card"], .tour-backdrop-clickable-zone').forEach(e => e.remove());
     });
     await page.waitForTimeout(500);
 
@@ -400,18 +391,60 @@ async function run() {
     }
   }
 
-  // 1. Desktop Light
-  console.log("\nCapturing Analytics Desktop Light...");
-  await applyTheme("light");
-  await takeProof("proof_analytics_buttons_tactile_light.png", "Analytics Dashboard", "Desktop Light");
+  async function selectAnalyticsSection(sectionId) {
+    console.log(`Selecting section: ${sectionId}...`);
+    const moreBtn = page.locator('button.analytics-tab-btn[aria-expanded]');
+    await moreBtn.click();
+    await page.waitForTimeout(400);
 
-  // 2. Desktop Dark
-  console.log("\nCapturing Analytics Desktop Dark...");
+    let selector = '';
+    if (sectionId === 'clinic') selector = '.analytics-dropdown-menu button:has-text("Сводный пульт")';
+    else if (sectionId === 'marketing') selector = '.analytics-dropdown-menu button:has-text("Сквозной маркетинг")';
+    else if (sectionId === 'lost_patients') selector = '.analytics-dropdown-menu button:has-text("Возврат пациентов")';
+
+    if (selector) {
+      await page.locator(selector).click();
+      await page.waitForTimeout(1500);
+    }
+  }
+
+  // 1. Executive / Overview Light & Dark
+  console.log("\n--- Capturing Executive Overview ---");
+  await applyTheme("light");
+  await takeProof("proof_analytics_overview_light.png", "Executive Dashboard", "Desktop Light");
+
   await applyTheme("dark");
-  await takeProof("proof_analytics_buttons_tactile_dark.png", "Analytics Dashboard", "Desktop Dark");
+  await takeProof("proof_analytics_overview_dark.png", "Executive Dashboard", "Desktop Dark");
+
+  // 2. Clinic Analytics Dashboard Light & Dark
+  console.log("\n--- Capturing Clinic Analytics Dashboard ---");
+  await selectAnalyticsSection("clinic");
+  await applyTheme("light");
+  await takeProof("proof_analytics_clinic_dashboard_light.png", "Clinic Analytics Dashboard", "Desktop Light");
+
+  await applyTheme("dark");
+  await takeProof("proof_analytics_clinic_dashboard_dark.png", "Clinic Analytics Dashboard", "Desktop Dark");
+
+  // 3. Marketing Attribution Dashboard Light & Dark
+  console.log("\n--- Capturing Marketing Attribution Dashboard ---");
+  await selectAnalyticsSection("marketing");
+  await applyTheme("light");
+  await takeProof("proof_analytics_marketing_light.png", "Marketing Attribution Dashboard", "Desktop Light");
+
+  await applyTheme("dark");
+  await takeProof("proof_analytics_marketing_dark.png", "Marketing Attribution Dashboard", "Desktop Dark");
+
+  // 4. Lost Patients Panel Light & Dark
+  console.log("\n--- Capturing Lost Patients Panel ---");
+  await selectAnalyticsSection("lost_patients");
+  await applyTheme("light");
+  await takeProof("proof_analytics_lost_patients_light.png", "Lost Patients Panel", "Desktop Light");
+
+  await applyTheme("dark");
+  await takeProof("proof_analytics_lost_patients_dark.png", "Lost Patients Panel", "Desktop Dark");
 
   await browser.close();
-  console.log("\n>>> Live Analytics Proofs Successfully Captured! <<<");
+  console.log("\n>>> All Executive Analytics Proofs Successfully Captured! <<<");
 }
 
 run().catch((err) => {

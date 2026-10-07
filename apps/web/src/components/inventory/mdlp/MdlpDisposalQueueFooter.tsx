@@ -37,7 +37,7 @@ export const MdlpDisposalQueueFooter: React.FC<
 					className="mdlp-btn mdlp-btn-secondary font-semibold text-teal-700 min-h-[44px]"
 					style={{ minHeight: "44px" }}
 					onClick={onQuickNurseCarpulesDisposal}
-					title="Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)"
+					title="Быстро списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) (бумажный журнал учтён, старшая медсестра опциональна)"
 					data-testid="footer-quick-carpules-btn"
 				>
 					<Sparkles size={15} className="text-amber-500" /> Списать все

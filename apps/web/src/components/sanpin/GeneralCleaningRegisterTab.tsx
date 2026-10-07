@@ -10,6 +10,7 @@ import {
 	Printer,
 	Search,
 	Sparkles,
+	X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -76,7 +77,7 @@ export function GeneralCleaningRegisterTab() {
 		fetchLogs();
 	}, []);
 
-	// 1-Клик автопилот графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
+	// Автогенерация графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
 	const handleAutopilotMonth = async () => {
 		if (isAutopilotLoading) return;
 		try {
@@ -110,7 +111,7 @@ export function GeneralCleaningRegisterTab() {
 		}
 	};
 
-	// 1-Клик фиксация генеральной уборки по норме (Мандаты 8e, 8k)
+	// Регламентная фиксация генеральной уборки по норме (Мандаты 8e, 8k)
 	const handleQuickRecordNormCleaning = async () => {
 		if (submitting) return;
 		try {
@@ -205,16 +206,25 @@ export function GeneralCleaningRegisterTab() {
 
 			<div className="sanpin-control-bar">
 				<div className="sanpin-filter-group">
-					<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.6rem", color: "var(--muted)" }} />
+					<div className="dente-search-wrap" style={{ minWidth: "240px" }}>
+						<Search size={14} className="dente-search-icon" />
 						<input
 							type="text"
 							placeholder="Поиск по кабинету, дезсредству..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2rem", minWidth: "240px", height: "36px" }}
+							className="dente-search-input !h-9"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								className="dente-search-clear"
+								onClick={() => setSearchQuery("")}
+								aria-label="Очистить поиск"
+							>
+								<X size={12} />
+							</button>
+						)}
 					</div>
 					<select
 						value={typeFilter}
@@ -229,37 +239,22 @@ export function GeneralCleaningRegisterTab() {
 				</div>
 
 				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-					<div style={{ display: "inline-flex", borderRadius: "8px", border: "1px solid var(--line, #cbd5e1)", overflow: "hidden", height: "36px" }}>
+					<div className="dente-segmented-bar" role="tablist">
 						<button
 							type="button"
+							role="tab"
+							aria-selected={viewMode === "table"}
 							onClick={() => setViewMode("table")}
-							style={{
-								padding: "0.35rem 0.75rem",
-								minHeight: "36px",
-								fontSize: "0.825rem",
-								fontWeight: 700,
-								border: "none",
-								cursor: "pointer",
-								background: viewMode === "table" ? "var(--teal-soft, #f0fdfa)" : "var(--paper, #ffffff)",
-								color: viewMode === "table" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)",
-							}}
+							className={`dente-segmented-item ${viewMode === "table" ? "active" : ""}`}
 						>
 							Таблица
 						</button>
 						<button
 							type="button"
+							role="tab"
+							aria-selected={viewMode === "schedule"}
 							onClick={() => setViewMode("schedule")}
-							style={{
-								padding: "0.35rem 0.75rem",
-								minHeight: "36px",
-								fontSize: "0.825rem",
-								fontWeight: 700,
-								border: "none",
-								borderLeft: "1px solid var(--line, #cbd5e1)",
-								cursor: "pointer",
-								background: viewMode === "schedule" ? "var(--teal-soft, #f0fdfa)" : "var(--paper, #ffffff)",
-								color: viewMode === "schedule" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)",
-							}}
+							className={`dente-segmented-item ${viewMode === "schedule" ? "active" : ""}`}
 						>
 							График (7 дн.)
 						</button>
@@ -373,7 +368,7 @@ export function GeneralCleaningRegisterTab() {
 									data-testid="nurse-1click-norm-cleaning-btn"
 								>
 									<Sparkles size={14} color="var(--teal, #0d9488)" />
-									<span>1-Клик норма (Аламинол 5%)</span>
+									<span>Провести уборку (Аламинол 5%)</span>
 								</button>
 								<button
 									type="button"

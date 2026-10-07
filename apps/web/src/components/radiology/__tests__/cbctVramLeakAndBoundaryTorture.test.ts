@@ -22,16 +22,32 @@ import {
 	CBCT_MPR_FRAGMENT_SHADER,
 } from "../mpr/webgl/cbctMprShaders";
 import { DEFAULT_OBLIQUE_ROTATION } from "../cbctObliqueMatrixMath";
+import {
+	disposeWebGl2VolumeRaymarching,
+	type WebGlVolume3DState,
+} from "../mpr/cbctVolume3DShaders";
 
 function createMockTrackingGl(): {
 	gl: Record<string, unknown>;
 	calls: string[];
 	texturesCreated: string[];
 	texturesDeleted: string[];
+	buffersDeleted: string[];
+	framebuffersDeleted: string[];
+	renderbuffersDeleted: string[];
+	programsDeleted: string[];
+	shadersDeleted: string[];
+	vaosDeleted: string[];
 } {
 	const calls: string[] = [];
 	const texturesCreated: string[] = [];
 	const texturesDeleted: string[] = [];
+	const buffersDeleted: string[] = [];
+	const framebuffersDeleted: string[] = [];
+	const renderbuffersDeleted: string[] = [];
+	const programsDeleted: string[] = [];
+	const shadersDeleted: string[] = [];
+	const vaosDeleted: string[] = [];
 
 	const gl: Record<string, unknown> = {
 		VERTEX_SHADER: 0x8b31,
@@ -57,18 +73,30 @@ function createMockTrackingGl(): {
 		getParameter: (p: number) => (p === 0x8073 ? 2048 : null),
 		isContextLost: () => false,
 
-		createShader: () => ({ id: Math.random() }),
+		createShader: () => {
+			const id = `shader-${Math.random().toString(36).substring(2, 8)}`;
+			return { id };
+		},
 		shaderSource: () => {},
 		compileShader: () => {},
 		getShaderParameter: () => true,
-		deleteShader: () => {},
-		createProgram: () => ({ id: Math.random() }),
+		deleteShader: (s: { id?: string } | null) => {
+			calls.push("deleteShader");
+			if (s?.id) shadersDeleted.push(s.id);
+		},
+		createProgram: () => {
+			const id = `prog-${Math.random().toString(36).substring(2, 8)}`;
+			return { id };
+		},
 		attachShader: () => {},
 		linkProgram: () => {},
 		getProgramParameter: () => true,
 		useProgram: () => {},
-		deleteProgram: () => {},
-		detachShader: () => {},
+		deleteProgram: (p: { id?: string } | null) => {
+			calls.push("deleteProgram");
+			if (p?.id) programsDeleted.push(p.id);
+		},
+		detachShader: () => calls.push("detachShader"),
 		getUniformLocation: () => ({}),
 		uniform1i: () => {},
 		uniform1f: () => {},
@@ -95,14 +123,56 @@ function createMockTrackingGl(): {
 			if (tex?.id) texturesDeleted.push(tex.id);
 		},
 
-		createVertexArray: () => ({ id: "vao-test" }),
+		createBuffer: () => {
+			const id = `buf-${Math.random().toString(36).substring(2, 8)}`;
+			calls.push("createBuffer");
+			return { id };
+		},
+		deleteBuffer: (b: { id?: string } | null) => {
+			calls.push("deleteBuffer");
+			if (b?.id) buffersDeleted.push(b.id);
+		},
+		createFramebuffer: () => {
+			const id = `fbo-${Math.random().toString(36).substring(2, 8)}`;
+			calls.push("createFramebuffer");
+			return { id };
+		},
+		deleteFramebuffer: (fb: { id?: string } | null) => {
+			calls.push("deleteFramebuffer");
+			if (fb?.id) framebuffersDeleted.push(fb.id);
+		},
+		createRenderbuffer: () => {
+			const id = `rbo-${Math.random().toString(36).substring(2, 8)}`;
+			calls.push("createRenderbuffer");
+			return { id };
+		},
+		deleteRenderbuffer: (rb: { id?: string } | null) => {
+			calls.push("deleteRenderbuffer");
+			if (rb?.id) renderbuffersDeleted.push(rb.id);
+		},
+
+		createVertexArray: () => ({ id: `vao-${Math.random().toString(36).substring(2, 8)}` }),
 		bindVertexArray: () => {},
-		deleteVertexArray: () => calls.push("deleteVertexArray"),
+		deleteVertexArray: (vao: { id?: string } | null) => {
+			calls.push("deleteVertexArray");
+			if (vao?.id) vaosDeleted.push(vao.id);
+		},
 		viewport: (x: number, y: number, w: number, h: number) => calls.push(`viewport:${w}x${h}`),
 		drawArrays: () => calls.push("drawArrays"),
 	};
 
-	return { gl, calls, texturesCreated, texturesDeleted };
+	return {
+		gl,
+		calls,
+		texturesCreated,
+		texturesDeleted,
+		buffersDeleted,
+		framebuffersDeleted,
+		renderbuffersDeleted,
+		programsDeleted,
+		shadersDeleted,
+		vaosDeleted,
+	};
 }
 
 function makeMockVolume(id: string, width = 16, height = 16, depth = 16): CbctVoxelVolume {
@@ -318,6 +388,130 @@ describe("CBCT GPU VRAM Leak & Texture Boundary Torture", () => {
 				glCtx.dispose();
 			}, "Multiple dispose calls must be cleanly idempotent");
 			assert.strictEqual(glCtx.isAvailable(), false);
+		});
+	});
+
+	// ─── 6. HARDWARE VRAM DISPOSAL & RESOURCE REGISTRY (disposeGlResources) ───
+
+	describe("6. Hardware VRAM Disposal & Resource Registry (disposeGlResources)", () => {
+		it("disposeGlResources({ texturesOnly: true }) purges 3D volume texture while preserving compiled shader programs", () => {
+			const { gl, texturesCreated, texturesDeleted, programsDeleted } = createMockTrackingGl();
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			assert.strictEqual(glCtx.isAvailable(), true);
+
+			const vol = makeMockVolume("patient-vram-purge", 32, 32, 20);
+			glCtx.uploadVolume(vol);
+
+			assert.strictEqual(texturesCreated.length, 1);
+			assert.strictEqual(texturesDeleted.length, 0);
+
+			// Dispose texture only (e.g. during volume switch / invalidate)
+			glCtx.disposeGlResources({ texturesOnly: true });
+
+			assert.strictEqual(texturesDeleted.length, 1, "Must delete the 3D volume texture from VRAM");
+			assert.strictEqual(glCtx.getActiveVolumeId(), null, "Active volume ID must be cleared");
+			assert.strictEqual(glCtx.getActiveVolume(), null, "Active volume reference must be cleared");
+			assert.strictEqual(programsDeleted.length, 0, "Shader programs must NOT be deleted in texturesOnly mode");
+			assert.strictEqual(glCtx.isAvailable(), true, "Context must remain available for subsequent volume uploads");
+
+			glCtx.dispose();
+		});
+
+		it("disposeGlResources() deterministically deletes textures, FBOs, RBOs, VBOs, VAOs, shaders and programs", () => {
+			const {
+				gl,
+				texturesCreated,
+				texturesDeleted,
+				buffersDeleted,
+				framebuffersDeleted,
+				renderbuffersDeleted,
+				programsDeleted,
+				shadersDeleted,
+				vaosDeleted,
+			} = createMockTrackingGl();
+
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			const vol = makeMockVolume("patient-complete-purge", 16, 16, 16);
+			glCtx.uploadVolume(vol);
+
+			// Register additional tracked GPU resources (FBO, RBO, Buffer, extra texture)
+			const mockFbo = { id: "test-fbo" } as unknown as WebGLFramebuffer;
+			const mockRbo = { id: "test-rbo" } as unknown as WebGLRenderbuffer;
+			const mockBuf = { id: "test-buf" } as unknown as WebGLBuffer;
+			const mockTex = { id: "test-extra-tex" } as unknown as WebGLTexture;
+
+			glCtx.trackFramebuffer(mockFbo);
+			glCtx.trackRenderbuffer(mockRbo);
+			glCtx.trackBuffer(mockBuf);
+			glCtx.trackTexture(mockTex);
+
+			// Execute complete hardware disposal
+			glCtx.disposeGlResources();
+
+			// 1. Textures
+			assert.ok(texturesDeleted.length >= 2, "Must delete volume texture and tracked extra textures");
+			// 2. FBOs & RBOs
+			assert.ok(framebuffersDeleted.includes("test-fbo"), "Tracked framebuffer must be deleted via gl.deleteFramebuffer");
+			assert.ok(renderbuffersDeleted.includes("test-rbo"), "Tracked renderbuffer must be deleted via gl.deleteRenderbuffer");
+			// 3. VBO & VAO
+			assert.ok(buffersDeleted.includes("test-buf"), "Tracked buffer must be deleted via gl.deleteBuffer");
+			assert.ok(vaosDeleted.length >= 1, "VAO must be deleted via gl.deleteVertexArray");
+			// 4. Shaders & Programs
+			assert.ok(programsDeleted.length >= 1, "Compiled GLSL programs must be deleted via gl.deleteProgram");
+			assert.ok(shadersDeleted.length >= 2, "Compiled vertex and fragment shaders must be deleted via gl.deleteShader");
+
+			assert.strictEqual(glCtx.isAvailable(), false, "Context must be marked unavailable after full purge");
+
+			// Idempotent second call must not throw or double-delete
+			assert.doesNotThrow(() => {
+				glCtx.disposeGlResources();
+			});
+		});
+
+		it("disposeWebGl2VolumeRaymarching cleanly purges 3D volume texture, VAO and raymarching program", () => {
+			const { gl, texturesDeleted, programsDeleted, vaosDeleted } = createMockTrackingGl();
+			const mockTex = { id: "raymarch-tex-3d" } as unknown as WebGLTexture;
+			const mockVao = { id: "raymarch-vao" } as unknown as WebGLVertexArrayObject;
+			const mockProg = { id: "raymarch-prog" } as unknown as WebGLProgram;
+
+			const mockState: WebGlVolume3DState = {
+				gl: gl as unknown as WebGL2RenderingContext,
+				program: mockProg,
+				vao: mockVao,
+				volumeTexture: mockTex,
+				volumeDataRef: new Int16Array(100),
+				uploadDim: { width: 10, height: 10, depth: 1 },
+				targetLimitRef: 256,
+				uniforms: {} as any,
+			};
+
+			disposeWebGl2VolumeRaymarching(mockState);
+
+			assert.ok(texturesDeleted.includes("raymarch-tex-3d"), "3D raymarch texture must be deleted");
+			assert.ok(vaosDeleted.includes("raymarch-vao"), "Raymarch VAO must be deleted");
+			assert.ok(programsDeleted.includes("raymarch-prog"), "Raymarch shader program must be deleted");
+
+			assert.strictEqual(mockState.volumeTexture, null);
+			assert.strictEqual(mockState.volumeDataRef, null);
+			assert.strictEqual(mockState.uploadDim, null);
+			assert.strictEqual(mockState.targetLimitRef, undefined);
+
+			// Calling on null state is safe
+			assert.doesNotThrow(() => {
+				disposeWebGl2VolumeRaymarching(null);
+			});
 		});
 	});
 });

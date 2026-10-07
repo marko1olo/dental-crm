@@ -30,7 +30,7 @@ export interface MarketingViewProps {
 export function MarketingView({
 	clinicName = "Стоматология ДЕНТЕ Премиум",
 	clinicPhone: _clinicPhone,
-	initialTab = "promos",
+	initialTab = "analytics",
 }: MarketingViewProps) {
 	const isDemo = isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<MarketingTab>(initialTab);

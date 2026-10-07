@@ -282,8 +282,13 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		return reply.status(200).send({
 			presets: CANONICAL_DENTAL_LAB_PRESETS,
+			autonomyInfo: {
+				rule: "Истечение 30 дней с момента составления плана лечения не блокирует наряды ЗТЛ",
+				standardPreset: CANONICAL_DENTAL_LAB_PRESETS[0],
+				threeClickWorkflow: ["1. Зуб / Мост", "2. Конструкция", "3. Цвет VITA", "Срок сдачи: 5 раб. дней"],
+			},
 			mandate8eInfo: {
-				rule: "Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ наряды ЗТЛ",
+				rule: "Истечение 30 дней с момента составления плана лечения не блокирует наряды ЗТЛ",
 				standardPreset: CANONICAL_DENTAL_LAB_PRESETS[0],
 				threeClickWorkflow: ["1. Зуб / Мост", "2. Конструкция", "3. Цвет VITA", "Срок сдачи: 5 раб. дней"],
 			},
@@ -292,7 +297,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	/**
 	 * POST /api/clinical/dental-lab/check-plan-continuity
-	 * Проверка срока плана лечения с гарантией отсутствия блокировок по Мандату 8e.
+	 * Проверка срока плана лечения без блокировок оформления нарядов.
 	 */
 	app.post(
 		"/api/clinical/dental-lab/check-plan-continuity",
@@ -312,7 +317,6 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			const { planAgeDays } = parsed.data;
 			const isPlanExpired = planAgeDays > 30;
 
-			// Mandate 8e: Plan expiration does NOT block lab orders, services, or payment!
 			return reply.status(200).send({
 				canProceed: true,
 				blocked: false,
@@ -320,9 +324,10 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				planAgeDays,
 				requiresChiefPhysicianApproval: false,
 				requiresSeniorTechnicianApproval: false,
+				autonomyCompliant: true,
 				mandate8eCompliant: true,
 				noticeRu: isPlanExpired
-					? `План лечения составлен ${planAgeDays} дн. назад (>30 дней). По Мандату 8e наряды ЗТЛ, оказание услуг и оплата продолжаются без блокировок и согласований.`
+					? `План лечения составлен ${planAgeDays} дн. назад (>30 дней). Наряды ЗТЛ, оказание услуг и оплата продолжаются в штатном режиме без блокировок.`
 					: "План лечения активен. Ограничений на создание нарядов ЗТЛ нет.",
 			});
 		},
@@ -430,7 +435,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 					: `Конструкция: ${data.construction}, цвет: ${data.colorVita}`;
 
 			if (data.doctorClinicalOverride) {
-				const overrideNote = `[Клинический оверрайд врача: ${data.doctorOverrideReason || "Аванс < 50% / Срочное изготовление по клиническим показаниям"} (Мандат 8e)]`;
+				const overrideNote = `[Клиническое решение врача: ${data.doctorOverrideReason || "Аванс < 50% / Срочное изготовление по клиническим показаниям"}]`;
 				instructions = `${instructions}\n${overrideNote}`;
 			}
 
@@ -501,6 +506,16 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				standardPresetTitle: "Коронка ZrO2, цвет А2, срок 5 рабочих дней",
 				turnaroundBusinessDays: turnaroundDays,
 				dueDateIso: calculatedDueDate.toISOString(),
+				autonomy: {
+					isPlanExpired,
+					planAgeDays: planAge,
+					blocked: false,
+					canProceed: true,
+					doctorClinicalOverride: Boolean(data.doctorClinicalOverride),
+					doctorOverrideReason: data.doctorOverrideReason ?? null,
+					guarantee:
+						"Истечение 30 дней с момента составления плана лечения не блокирует создание нарядов ЗТЛ.",
+				},
 				mandate8e: {
 					isPlanExpired,
 					planAgeDays: planAge,
@@ -509,7 +524,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 					doctorClinicalOverride: Boolean(data.doctorClinicalOverride),
 					doctorOverrideReason: data.doctorOverrideReason ?? null,
 					guarantee:
-						"Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ (Мандат 8e). Запрещены согласования начмеда.",
+						"Истечение 30 дней с момента составления плана лечения не блокирует создание нарядов ЗТЛ.",
 				},
 			},
 		});

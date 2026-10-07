@@ -115,7 +115,7 @@ function computeDiaryHashForTrayLink(row: {
  * Мандат 8e / 8n: Запись мягкого клинического допуска в дневник 043/у по экстренным показаниям.
  */
 export function buildEmergencySterilizationAdmissionNote(barcode: string): string {
-	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21 / Мандаты 8e, 8n)]`;
+	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21)]`;
 }
 
 /**
@@ -128,7 +128,10 @@ export function applyEmergencySterilizationToDiaryTreatment(
 	const emergencyNote = buildEmergencySterilizationAdmissionNote(barcode);
 	const base = (currentTreatment ?? "").trim();
 	if (!base) return emergencyNote;
-	if (base.includes("мягкий допуск") && base.includes(barcode.trim())) {
+	if (
+		base.includes(emergencyNote.trim()) ||
+		(base.includes(barcode.trim()) && (base.includes("мягкий допуск") || base.includes("Стерилизация")))
+	) {
 		return base;
 	}
 	return `${base}\n${emergencyNote}`;
@@ -154,7 +157,7 @@ export function buildAutoProvisionSterilizationLogValues(params: {
 		cycleNumber: 1,
 		temperatureCelsius: "134.0",
 		pressureBar: "2.10",
-		itemsDescription: "Автоматическая регистрация стерильного лотка у кресла (СанПиН 3.3686-21, Мандаты 8e, 8n)",
+		itemsDescription: "Регистрация стерильного лотка у кресла (СанПиН 3.3686-21)",
 		operatorId: params.operatorId ?? null,
 		status: "passed" as const,
 		passedIndicator: true,
@@ -206,7 +209,7 @@ export function evaluateSterilizationLogForLinking(
 		return {
 			allowed: true,
 			isExpired: true,
-			emergencyLogNote: `[Мягкий допуск по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21 п. 3632, Мандаты 8e, 8n, ${now.toLocaleDateString("ru-RU")})]`,
+			emergencyLogNote: `[Мягкий допуск по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21 п. 3632, ${now.toLocaleDateString("ru-RU")})]`,
 		};
 	}
 
@@ -217,7 +220,7 @@ export function evaluateSterilizationLogForLinking(
 }
 
 /**
- * Мандаты 8e, 8k, 8n: Формирует ответ на 1-клик списание/вскрытие крафт-пакета медсестрой без комиссии.
+ * Формирует ответ на списание/вскрытие крафт-пакета медсестрой.
  */
 export function buildUnsealKraftPackageResponse(params: {
 	barcode: string;
@@ -238,7 +241,7 @@ export function buildUnsealKraftPackageResponse(params: {
 		status: "unsealed" as const,
 		sanpinVerified: true,
 		message:
-			"Крафт-пакет успешно вскрыт и списан в 1 клик без комиссии из 3 человек (СанПиН 3.3686-21 / Мандаты 8e, 8k, 8n).",
+			"Крафт-пакет успешно вскрыт и списан без комиссии из 3 человек (СанПиН 3.3686-21).",
 	};
 }
 
@@ -729,7 +732,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		const detergentBrand = body.detergentBrand || "Биолот 0.5% + Аламинол 1%";
 		const notes =
 			body.notes ||
-			"[СанПиН 3.3686-21 / Мандат 8e] Отметка партии в 1 клик: Азопирамовая и фенолфталеиновая пробы отрицательные, норма (ИнТест 132/20 / 134/5). Партия допущена к стерилизации.";
+			"[СанПиН 3.3686-21] Азопирамовая и фенолфталеиновая пробы отрицательные, норма (ИнТест 132/20 / 134/5). Партия допущена к стерилизации.";
 
 		const evaluation = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
 			batchItemCount,

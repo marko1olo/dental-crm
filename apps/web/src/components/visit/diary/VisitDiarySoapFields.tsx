@@ -132,7 +132,7 @@ export function VisitDiarySoapFields({
 				/>
 				{COMPLAINT_QUICK_CHIPS.length > 0 && (
 					<div
-						className="mt-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full flex-nowrap touch-pan-x"
+						className="mt-1.5 dente-filter-chips overflow-x-auto no-scrollbar py-0.5 max-w-full flex-nowrap touch-pan-x"
 						data-testid="complaint-quick-chips-bar"
 					>
 						<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 shrink-0">
@@ -147,11 +147,8 @@ export function VisitDiarySoapFields({
 									type="button"
 									onClick={() => handleAddComplaintChip(chipText)}
 									disabled={fieldsDisabled}
-									className={`text-xs min-h-[36px] px-2.5 py-1 rounded-lg font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 select-none shrink-0 ${
-										isApplied
-											? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold"
-											: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)]"
-									}`}
+									className={`dente-filter-chip shrink-0 ${isApplied ? "active" : ""}`}
+									data-active={isApplied}
 									title={
 										isApplied
 											? `Жалоба уже внесена: «${chipText}»`
@@ -161,7 +158,7 @@ export function VisitDiarySoapFields({
 								>
 									{chipText}
 									{isApplied ? (
-										<Check className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
+										<Check className="w-3 h-3 shrink-0" />
 									) : (
 										<Plus className="w-3 h-3 opacity-60 shrink-0" />
 									)}
@@ -310,6 +307,19 @@ export function VisitDiarySoapFields({
 									}}
 									placeholder="K02.1 Кариес... или введите название"
 								/>
+								{icdSearch && !fieldsDisabled && (
+									<button
+										type="button"
+										onClick={() => {
+											setIcdSearch("");
+											setShowIcdDropdown(false);
+										}}
+										className="vde-043__icd-search-clear"
+										aria-label="Очистить поиск диагноза"
+									>
+										<X className="w-3.5 h-3.5" />
+									</button>
+								)}
 								{showIcdDropdown && filteredIcd.length > 0 && (
 									<div className="vde-043__icd-drop">
 										{(filteredIcd ?? []).map((icd) => (
@@ -443,7 +453,7 @@ export function VisitDiarySoapFields({
 					>
 						<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-							1-Click Рекомендации пациенту:
+							Рекомендации пациенту:
 						</span>
 						<div className="flex flex-wrap items-center gap-1.5">
 							{PATIENT_RECOMMENDATIONS.map((rec) => (

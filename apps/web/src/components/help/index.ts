@@ -68,7 +68,7 @@ export const GUIDE_CATEGORIES: readonly ClinicalGuideCategoryMeta[] = [
 	{
 		id: "lab_warehouse",
 		label: "Лаборатория и склад",
-		description: "Зуботехнические наряды, шкала VITA и мягкий овердрафт",
+		description: "Зуботехнические наряды, шкала VITA и неблокируемый склад",
 	},
 	{
 		id: "infrastructure",
@@ -122,10 +122,10 @@ export const CLINICAL_GUIDES: readonly ClinicalGuideMeta[] = [
 	{
 		id: "odontogram",
 		category: "clinical",
-		title: "Зубная формула и одонтограмма за 2 клика",
+		title: "Зубная формула и одонтограмма (FDI / КПУ)",
 		shortTitle: "Одонтограмма",
 		badge: "Зубная формула",
-		description: "Быстрая маркировка кариеса, пульпита, коронок и 1-клик заполнение физиологической нормой (Shift+N).",
+		description: "Быстрая маркировка кариеса, пульпита, коронок и быстрое заполнение физиологической нормой (Shift+N).",
 		hotkeys: ["Shift+N", "1..8", "C", "P", "K", "X", "F"],
 		keywords: [
 			"одонтограмма",
@@ -190,7 +190,7 @@ export const CLINICAL_GUIDES: readonly ClinicalGuideMeta[] = [
 	{
 		id: "cashier",
 		category: "finance",
-		title: "Касса, оплата и чеки (Сплит в 3 клика)",
+		title: "Касса, оплата и чеки (Комбинированный сплит)",
 		shortTitle: "Касса и чеки",
 		badge: "Финансы",
 		description: "Комбинированная оплата (нал + карта + СБП QR + семейный депозит), печать чека без требования ИНН физлиц.",
@@ -324,10 +324,10 @@ export const CLINICAL_GUIDES: readonly ClinicalGuideMeta[] = [
 	{
 		id: "inventory",
 		category: "lab_warehouse",
-		title: "Склад и материалы (Мягкий овердрафт)",
+		title: "Склад и материалы (Неблокируемый учёт)",
 		shortTitle: "Склад",
 		badge: "Материалы",
-		description: "Фоновое автосписание по техкартам оказанных услуг, партии FEFO и мягкий овердрафт без блокировки врача.",
+		description: "Фоновое автосписание по техкартам оказанных услуг, партии FEFO и мягкий расход без блокировки врача.",
 		hotkeys: ["Ctrl+I", "F8"],
 		keywords: [
 			"склад",
@@ -356,7 +356,7 @@ export const CLINICAL_GUIDES: readonly ClinicalGuideMeta[] = [
 		title: "Стерилизация, чистота и журнал автоклава",
 		shortTitle: "Стерилизация",
 		badge: "Чистота и автоклав",
-		description: "Журнал автоклавирования, этикетки крафт-пакетов DataMatrix, пробы азопирам/фенолфталеин в 1 клик.",
+		description: "Журнал автоклавирования, этикетки крафт-пакетов DataMatrix, оперативная фиксация проб азопирам/фенолфталеин.",
 		hotkeys: ["Ctrl+Alt+S", "Ctrl+P"],
 		keywords: [
 			"стерилизация",

@@ -301,7 +301,7 @@ export function CabinetReadinessTab() {
 
 		setHistoryRecords((prev) => [record, ...prev]);
 		showToast(
-			`${selectedCabinet}: готовность к смене подтверждена (1 клик)`,
+			`${selectedCabinet}: готовность к смене подтверждена`,
 			"success",
 		);
 	};
@@ -311,11 +311,11 @@ export function CabinetReadinessTab() {
 			cabinetNumber: selectedCabinet,
 			appointmentType: selectedProfile,
 			operatorStaffFullName: nurseName || "Персонал клиники",
-			notes: "Приём начат (отметка в журнале, без блокировок врача)",
+			notes: "Приём начат (отметка в журнале)",
 		});
 		setHistoryRecords((prev) => [record, ...prev]);
 		showToast(
-			`${selectedCabinet}: приём начат в штатном режиме. Блокировки сняты.`,
+			`${selectedCabinet}: приём начат в штатном режиме.`,
 			"success",
 		);
 	};
@@ -352,7 +352,7 @@ export function CabinetReadinessTab() {
 						Экспресс-чек-лист: «Готовность кабинета и стоматологической установки»
 					</h2>
 					<p className="sanpin-pane-desc">
-						Стандартный протокол подготовки кабинета. Ведение в CRM опционально: при использовании бумажных журналов приём пациентов ведётся в штатном режиме без задержек и блокировок.
+						Стандартный протокол подготовки кабинета. Ведение в CRM опционально: при использовании бумажных журналов приём пациентов ведётся в обычном порядке.
 					</p>
 				</div>
 
@@ -362,7 +362,7 @@ export function CabinetReadinessTab() {
 						onClick={handleStartAppointmentPaperLogNorm}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "var(--teal)", color: "var(--on-teal, #fff)", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
-						title="1 Клик врачу: Начать приём без блокировок (бумажный журнал)"
+						title="Начать приём пациента (журнал заполняется параллельно)"
 						data-testid="cabinet-readiness-start-appointment-btn"
 					>
 						<CheckCircle2 size={18} /> <span>Начать приём (норма)</span>
@@ -373,7 +373,7 @@ export function CabinetReadinessTab() {
 						onClick={handleOneClickConfirmCabinetReady}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
-						title="1 Клик: Отметить все пункты текущего профиля как готовые"
+						title="Отметить все пункты текущего профиля как готовые"
 						data-testid="cabinet-readiness-autofill-btn"
 					>
 						<Zap size={18} /> <span>Кабинет готов к смене</span>
@@ -401,7 +401,7 @@ export function CabinetReadinessTab() {
 				</div>
 			</div>
 
-			{/* Compact 1-Click Readiness Status Strip (<= 40px) */}
+			{/* Компактная полоса статуса готовности (<= 40px) */}
 			<div
 				className="flex items-center justify-between gap-3 px-3 py-1.5 my-2 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)]"
 			>
@@ -717,9 +717,9 @@ export function CabinetReadinessTab() {
 												justifyContent: "center",
 												gap: "0.4rem",
 											}}
-											title="1 Клик: Отметить все недостающие пункты чек-листа как готовые"
+											title="Отметить все недостающие пункты чек-листа как готовые"
 										>
-											<Zap size={16} /> <span>Заполнить чек-лист в 1 клик</span>
+											<Zap size={16} /> <span>Заполнить чек-лист по норме</span>
 										</button>
 									</div>
 								</div>
@@ -771,7 +771,7 @@ export function CabinetReadinessTab() {
 						data-testid="submit-cabinet-readiness-btn"
 					>
 						<Check size={20} />
-						{evaluation.isFullyReady ? "Кабинет готов к приёму — зафиксировать (1 клик)" : "Сохранить статус проверки"}
+						{evaluation.isFullyReady ? "Кабинет готов к приёму — зафиксировать" : "Сохранить статус проверки"}
 					</button>
 				</div>
 			</div>

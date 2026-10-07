@@ -588,7 +588,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
         <p style="margin:3px 0;"><strong>Клинический диагноз по МКБ-10 (A):</strong> <span style="color:#0369a1; font-weight:bold;">${escapeHtml(d.clinicalDiagnosisIcd10 || d.assessmentDiagnosisText || d.diagnosisDetailed || d.assessmentDiagnosis || "K02.1 Кариес дентина")}</span></p>
         <p style="margin:3px 0;"><strong>Жалобы (S):</strong> ${escapeHtml(d.subjectiveComplaints || d.subjectiveComplaint || "Кратковременные боли от термических раздражителей.")}</p>
         <p style="margin:3px 0;"><strong>Объективно / Status localis (O):</strong> ${escapeHtml(d.objectiveStatusLocalis || d.objectiveStatus || "Глубокая кариозная полость на жевательной поверхности, дентин пигментирован, зондирование дна безболезненно, перкуссия отрицательна, ЭОД 4 мкА.")}</p>
-        <p style="margin:3px 0;"><strong>Протокол лечения (P / 804н):</strong> ${escapeHtml(d.treatmentProtocol804n || d.procedureProtocol || d.planAndTreatment || "Инфильтрационная анестезия Sol. Ubistesini 4% 1.7 мл. Препарирование кариозной полости, изоляция коффердам, медикаментозная обработка 2% хлоргексидином, лечебная прокладка Dycal, изолирующая прокладка SDR, пломба светоотверждаемым нанокомпозитом Ceram.x Spectra ST. Шлифовка, полировка.")}</p>
+        <p style="margin:3px 0;"><strong>Протокол лечения:</strong> ${escapeHtml(d.treatmentProtocol804n || d.procedureProtocol || d.planAndTreatment || "Инфильтрационная анестезия Sol. Ubistesini 4% 1.7 мл. Препарирование кариозной полости, изоляция коффердам, медикаментозная обработка 2% хлоргексидином, лечебная прокладка Dycal, изолирующая прокладка SDR, пломба светоотверждаемым нанокомпозитом Ceram.x Spectra ST. Шлифовка, полировка.")}</p>
         ${d.usedMaterials ? `<p style="margin:3px 0; font-size:8pt; color:#475569;"><strong>Использованные материалы:</strong> ${escapeHtml(d.usedMaterials)}</p>` : ""}
         ${d.homeCareRecommendations ? `<p style="margin:3px 0; font-size:8pt; color:#475569;"><strong>Рекомендации:</strong> ${escapeHtml(d.homeCareRecommendations)}</p>` : ""}
         <div style="text-align:right; font-size:7.5pt; color:#64748b; margin-top:4px;">Подпись врача: _________________ / ${escapeHtml(d.doctorFullName || doctorName)} / <span class="stamp-seal">М.П.</span></div>
@@ -1146,7 +1146,7 @@ export function renderForm037uHtml(payload: DailyDentistDiary037uPayload | any):
     </tfoot>
   </table>
 
-  <div class="section-title">2. Сводные итоги работы за смену (Норматив УЕТ по Приказу Минздрава РФ № 804н)</div>
+  <div class="section-title">2. Сводные итоги работы за смену (Норматив УЕТ)</div>
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-val">${totalPatients}</div>
@@ -1419,7 +1419,7 @@ export function renderForm039uHtml(payload: SummaryDentistStatement039uPayload |
     </tr>
   </table>
 
-  <div class="section-title">3. Выработка УЕТ по специальностям (Приказ Минздрава РФ № 804н)</div>
+  <div class="section-title">3. Выработка УЕТ по специальностям</div>
   <table class="data-table">
     <thead>
       <tr>
@@ -1760,7 +1760,7 @@ export function renderRadiationDoseSheetHtml(payload: RadiationDoseSheetPayload 
 		zoneClass = "red";
 		zoneBadgeClass = "badge-red";
 		zoneTitle = "КРАСНАЯ ЗОНА (Превышение контрольного годового уровня 1.0 мЗв)";
-		zoneRecommendation = "Внимание: достигнут рекомендуемый годовой порог 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования проводятся по обоснованным клиническим показаниям с записью в медицинской карте (форма 043/у) без блокировки съемки (Мандаты 8e, 8i).";
+		zoneRecommendation = "Внимание: достигнут рекомендуемый годовой порог 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования проводятся по обоснованным клиническим показаниям с записью в медицинской карте (форма 043/у) без блокировки съемки.";
 	} else if (totalDoseMsv >= 0.5) {
 		zoneClass = "yellow";
 		zoneBadgeClass = "badge-yellow";

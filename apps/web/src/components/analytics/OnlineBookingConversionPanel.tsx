@@ -345,7 +345,7 @@ export function OnlineBookingConversionPanel() {
 							Сквозная аналитика: Онлайн-записи vs Администраторы
 						</h3>
 						<p
-							className="text-[11px] text-[var(--muted)] m-0 leading-tight truncate hidden md:block"
+							className="text-xs text-[var(--muted)] m-0 leading-tight truncate hidden md:block"
 							title="Выделение автоматических каналов самозаписи (Сайт, Карты, 2ГИС, ПроДокторов, Боты) из воронки АТС"
 						>
 							Выделение автоматических каналов самозаписи (Сайт, Карты, 2ГИС, ПроДокторов, Боты) из воронки АТС
@@ -387,7 +387,7 @@ export function OnlineBookingConversionPanel() {
 					<div className="text-2xl font-extrabold text-[var(--ink)]">
 						{comparison.onlineSharePercent}%
 					</div>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-xs text-[var(--muted)] m-0">
 						{onlineSummary.totalBookings} из {comparison.grandTotalBookings}{" "}
 						всех записей
 					</p>
@@ -404,7 +404,7 @@ export function OnlineBookingConversionPanel() {
 							? onlineSummary.conversionRatePercent.toFixed(1)
 							: "0.0"}%
 					</div>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-xs text-[var(--muted)] m-0">
 						{onlineSummary.totalBookings} записей с {onlineSummary.totalViews}{" "}
 						просмотров
 					</p>
@@ -421,7 +421,7 @@ export function OnlineBookingConversionPanel() {
 							? onlineSummary.attendanceRatePercent.toFixed(1)
 							: "0.0"}%
 					</div>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-xs text-[var(--muted)] m-0">
 						Неявка: {Number.isFinite(onlineSummary.noShowRatePercent)
 							? onlineSummary.noShowRatePercent.toFixed(1)
 							: "0.0"}% ({onlineSummary.totalNoShow} чел.)
@@ -437,7 +437,7 @@ export function OnlineBookingConversionPanel() {
 					<div className="text-2xl font-extrabold text-[var(--ink)]">
 						{formatKopecksRu(onlineSummary.totalRevenueKopecks)}
 					</div>
-					<p className="text-[11px] text-[var(--muted)] m-0">
+					<p className="text-xs text-[var(--muted)] m-0">
 						Ср. чек: {formatKopecksRu(onlineSummary.avgCheckKopecks)} · ROMI:{" "}
 						{onlineSummary.romiPercent !== null
 							? onlineSummary.romiPercent > 0

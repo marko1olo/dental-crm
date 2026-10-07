@@ -31,7 +31,7 @@ export function useVisitDiarySectionPerio({
 }: UseVisitDiarySectionPerioParams) {
 	const handleInsertPerioStatus = () => {
 		ensureRevisingIfLocked();
-		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (НОРМА В 1 КЛИК)]
+		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (ФИЗИОЛОГИЧЕСКАЯ НОРМА)]
 Десна бледно-розовая, плотная, зубодесневое прикрепление сохранено, патологических карманов нет (норма).
 Глубина зондирования зубодесневых борозд: 1–2 мм во всех секстантах.
 Кровоточивость при зондировании (BOP): отсутствует (0%).

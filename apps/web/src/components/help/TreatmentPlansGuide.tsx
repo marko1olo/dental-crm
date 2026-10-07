@@ -216,7 +216,7 @@ export const TreatmentPlansGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour
 								</span>
 							</div>
 							<span className="text-[10px] text-[var(--muted)]">
-								Врач вправе применить скидку до 100% без паролей директора (Мандат 8e)
+								Врач вправе применить скидку до 100% без паролей директора
 							</span>
 						</div>
 					</div>

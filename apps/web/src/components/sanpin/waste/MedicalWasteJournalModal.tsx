@@ -144,7 +144,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 
 	const [isSubmittingQuickShift, setIsSubmittingQuickShift] = useState(false);
 
-	// 1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21
+	// Регламентная сдача отходов смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21
 	const handleQuickShiftWaste = async () => {
 		try {
 			setIsSubmittingQuickShift(true);
@@ -176,7 +176,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				operatorStaffFullName: operatorName || "Медсестра процедурного кабинета",
 				operatorStaffPosition: operatorPosition || "Медсестра",
 				status: "accumulating",
-				notes: "1-клик сдача безопасных отходов смены Класса А (упаковка, картон, бумага, чистые бахилы) по СанПиН 2.1.3684-21",
+				notes: "Сдача безопасных отходов смены Класса А (упаковка, картон, бумага, чистые бахилы) по СанПиН 2.1.3684-21",
 			};
 
 			const recSoft: MedicalWasteJournalRecord = {
@@ -197,7 +197,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				operatorStaffFullName: operatorName || "Медсестра процедурного кабинета",
 				operatorStaffPosition: operatorPosition || "Медсестра",
 				status: "accumulating",
-				notes: "1-клик сдача мягких отходов смены (перчатки, маски, салфетки, валики, слюноотсосы) по СанПиН 2.1.3684-21",
+				notes: "Сдача мягких отходов смены (перчатки, маски, салфетки, валики, слюноотсосы) по СанПиН 2.1.3684-21",
 			};
 
 			const recSharp: MedicalWasteJournalRecord = {
@@ -217,7 +217,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				operatorStaffFullName: operatorName || "Медсестра процедурного кабинета",
 				operatorStaffPosition: operatorPosition || "Медсестра",
 				status: "accumulating",
-				notes: "1-клик сдача острых отходов смены в желтом непрокалываемом контейнере (карпулы, иглы, скальпели) по СанПиН 2.1.3684-21",
+				notes: "Сдача острых отходов смены в желтом непрокалываемом контейнере (карпулы, иглы, скальпели) по СанПиН 2.1.3684-21",
 			};
 
 			try {
@@ -307,7 +307,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 		}
 	};
 
-	// 1-клик печать термоэтикетки 58x40 мм
+	// Печать термоэтикетки 58x40 мм
 	const handlePrintThermalSticker = (record: MedicalWasteJournalRecord) => {
 		const html = generateWasteThermalStickerHtml(record, {
 			clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",

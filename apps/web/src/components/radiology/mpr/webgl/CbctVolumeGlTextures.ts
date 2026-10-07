@@ -15,11 +15,64 @@ import {
 import { type RotationHandlePosition, calculateAngleFromHandleDrag } from "../../cbctObliqueMath";
 import { calculateCrosshairDragWorldMm } from "../../cbctVolumeLifecycleMath";
 import {
+	downsampleVolumeBoxFilter,
+	downsampleVolumeData as sharedDownsampleVolumeData,
+	getTargetMaxDimForTier,
+	calculateTextureVramMb,
+	type CbctRenderingTier,
+	type DownsampledVolumeDataResult,
+} from "@dental/shared";
+import {
 	CBCT_COLORMAP_MODES,
 	type CbctColorMapMode,
 } from "./cbctMprShaders";
 
-export { CBCT_COLORMAP_MODES, type CbctColorMapMode };
+export {
+	CBCT_COLORMAP_MODES,
+	type CbctColorMapMode,
+	downsampleVolumeBoxFilter,
+	getTargetMaxDimForTier,
+	calculateTextureVramMb,
+	type CbctRenderingTier,
+	type DownsampledVolumeDataResult,
+};
+
+export type CbctInterpolationOption =
+	| "nearest"
+	| "trilinear"
+	| "bilinear"
+	| "catmull_rom"
+	| "b_spline"
+	| "lanczos3"
+	| "bilateral";
+
+export const CBCT_INTERPOLATION_CODES = {
+	NEAREST: 0,
+	BILINEAR: 1, // alias: trilinear
+	CATMULL_ROM: 2,
+	B_SPLINE: 3,
+	LANCZOS3: 4,
+	BILATERAL: 5,
+} as const;
+
+export function resolveInterpolationCode(method?: CbctInterpolationOption | string): number {
+	switch (method) {
+		case "nearest":
+			return CBCT_INTERPOLATION_CODES.NEAREST;
+		case "catmull_rom":
+			return CBCT_INTERPOLATION_CODES.CATMULL_ROM;
+		case "b_spline":
+			return CBCT_INTERPOLATION_CODES.B_SPLINE;
+		case "lanczos3":
+			return CBCT_INTERPOLATION_CODES.LANCZOS3;
+		case "bilateral":
+			return CBCT_INTERPOLATION_CODES.BILATERAL;
+		case "bilinear":
+		case "trilinear":
+		default:
+			return CBCT_INTERPOLATION_CODES.BILINEAR;
+	}
+}
 
 export interface GlSliceRenderOptions {
 	windowWidth: number;
@@ -27,7 +80,7 @@ export interface GlSliceRenderOptions {
 	invert?: boolean | undefined;
 	slabMode?: SlabProjectionMode | undefined;
 	slabThicknessMm?: number | undefined;
-	interpolation?: "nearest" | "trilinear" | undefined;
+	interpolation?: CbctInterpolationOption | undefined;
 	expandObliqueDiagonal?: boolean | undefined;
 	safeDpr?: number | undefined;
 	clampDpr?: boolean | undefined;
@@ -136,30 +189,99 @@ export function applySafeDprToCanvas(
 }
 
 /**
- * Downsamples 3D voxel buffer by integer stride step (e.g. 2x) for low-spec GPU compatibility.
+ * Downsamples 3D voxel buffer by integer stride step (e.g. 2x) or targetMaxDim ceiling.
  * Guarantees volumes exceeding gl.MAX_3D_TEXTURE_SIZE (256/512) fit into hardware VRAM without crash.
  */
 export function downsampleVolumeData(
 	srcData: Int16Array,
 	srcDim: { width: number; height: number; depth: number },
-	step: number,
-): { data: Int16Array; width: number; height: number; depth: number } {
-	const dstW = Math.max(1, Math.ceil(srcDim.width / step));
-	const dstH = Math.max(1, Math.ceil(srcDim.height / step));
-	const dstD = Math.max(1, Math.ceil(srcDim.depth / step));
-	const dstData = new Int16Array(dstW * dstH * dstD);
-	const srcW = srcDim.width, srcSlice = srcDim.width * srcDim.height, dstSlice = dstW * dstH;
+	targetMaxDimOrStep = 256,
+): DownsampledVolumeDataResult {
+	const validParam = Number.isFinite(targetMaxDimOrStep) && targetMaxDimOrStep > 0
+		? targetMaxDimOrStep
+		: 256;
 
-	for (let dz = 0; dz < dstD; dz++) {
-		const srcZOffset = dz * step * srcSlice, dstZOffset = dz * dstSlice;
-		for (let dy = 0; dy < dstH; dy++) {
-			const srcYOffset = srcZOffset + dy * step * srcW, dstYOffset = dstZOffset + dy * dstW;
-			for (let dx = 0; dx < dstW; dx++) {
-				dstData[dstYOffset + dx] = srcData[srcYOffset + dx * step] ?? -1000;
+	if (validParam <= 8) {
+		const step = Math.max(1, Math.floor(validParam));
+		if (step <= 1) {
+			return {
+				data: srcData,
+				width: srcDim.width,
+				height: srcDim.height,
+				depth: srcDim.depth,
+				step: 1,
+				minHU: -1000,
+				maxHU: 3000,
+				vramMb: calculateTextureVramMb(srcDim.width, srcDim.height, srcDim.depth, 2),
+			};
+		}
+
+		const dstW = Math.max(1, Math.ceil(srcDim.width / step));
+		const dstH = Math.max(1, Math.ceil(srcDim.height / step));
+		const dstD = Math.max(1, Math.ceil(srcDim.depth / step));
+		const dstData = new Int16Array(dstW * dstH * dstD);
+		let minHU = 32767;
+		let maxHU = -32768;
+
+		for (let dz = 0; dz < dstD; dz++) {
+			const srcZOffset = dz * step * srcDim.width * srcDim.height;
+			const dstZOffset = dz * dstW * dstH;
+			for (let dy = 0; dy < dstH; dy++) {
+				const srcYOffset = srcZOffset + dy * step * srcDim.width;
+				const dstYOffset = dstZOffset + dy * dstW;
+				for (let dx = 0; dx < dstW; dx++) {
+					const val = srcData[srcYOffset + dx * step] ?? -1000;
+					dstData[dstYOffset + dx] = val;
+					if (val < minHU) minHU = val;
+					if (val > maxHU) maxHU = val;
+				}
 			}
 		}
+
+		const vramMb = calculateTextureVramMb(dstW, dstH, dstD, 2);
+		return {
+			data: dstData,
+			width: dstW,
+			height: dstH,
+			depth: dstD,
+			step,
+			minHU: minHU === 32767 ? -1000 : minHU,
+			maxHU: maxHU === -32768 ? 3000 : maxHU,
+			vramMb,
+		};
 	}
-	return { data: dstData, width: dstW, height: dstH, depth: dstD };
+
+	const maxDim = Math.max(srcDim.width, Math.max(srcDim.height, srcDim.depth));
+	let step = 1;
+	if (maxDim > validParam) {
+		step = Math.ceil(maxDim / validParam);
+	}
+
+	if (step <= 1) {
+		return {
+			data: srcData,
+			width: srcDim.width,
+			height: srcDim.height,
+			depth: srcDim.depth,
+			step: 1,
+			minHU: -1000,
+			maxHU: 3000,
+			vramMb: calculateTextureVramMb(srcDim.width, srcDim.height, srcDim.depth, 2),
+		};
+	}
+
+	const filtered = downsampleVolumeBoxFilter(srcData, srcDim, step, step, step);
+	const vramMb = calculateTextureVramMb(filtered.width, filtered.height, filtered.depth, 2);
+	return {
+		data: filtered.data,
+		width: filtered.width,
+		height: filtered.height,
+		depth: filtered.depth,
+		step,
+		minHU: filtered.minHU,
+		maxHU: filtered.maxHU,
+		vramMb,
+	};
 }
 
 /**
@@ -377,14 +499,21 @@ export interface VolumeTextureUploadResult {
 	downsampleStep: number;
 }
 
+export interface UploadVolumeOptions {
+	max3dSize?: number | undefined;
+	targetMaxDim?: number | undefined;
+	tier?: CbctRenderingTier | undefined;
+}
+
 /**
  * Uploads 16-bit signed HU volume to GPU VRAM as 3D Texture (gl.R16I / gl.SHORT).
- * Progressively downsamples 2x/4x/8x if dimensions exceed GPU limits or allocation fails.
+ * Progressively downsamples 2x/4x/8x if dimensions exceed GPU limits, targetMaxDim, or allocation fails.
+ * Guarantees zero out-of-memory crash on Potato / Low / Balanced tiers.
  */
 export function uploadVolumeTo3DTexture(
 	gl: WebGL2RenderingContext,
 	volume: CbctVoxelVolume,
-	max3dSize = 2048,
+	max3dSizeOrOptions: number | UploadVolumeOptions = 2048,
 ): VolumeTextureUploadResult | null {
 	if (typeof gl.isContextLost === "function" && gl.isContextLost()) return null;
 	if (!volume.data || volume.isDisposed) return null;
@@ -400,6 +529,20 @@ export function uploadVolumeTo3DTexture(
 	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+	const opts: UploadVolumeOptions = typeof max3dSizeOrOptions === "number"
+		? { max3dSize: max3dSizeOrOptions }
+		: (max3dSizeOrOptions ?? {});
+
+	const max3dSize = opts.max3dSize ?? 2048;
+	let targetCeiling = max3dSize;
+	if (opts.targetMaxDim && opts.targetMaxDim > 0) {
+		targetCeiling = Math.min(targetCeiling, opts.targetMaxDim);
+	}
+	if (opts.tier) {
+		const tierCeiling = getTargetMaxDimForTier(opts.tier);
+		targetCeiling = Math.min(targetCeiling, tierCeiling);
+	}
+
 	let step = 1;
 
 	// Mandate 8l & User Order: On mobile devices (phones & touch tablets with limited VRAM),
@@ -414,9 +557,9 @@ export function uploadVolumeTo3DTexture(
 	}
 
 	while (
-		Math.ceil(volume.dimensions.width / step) > max3dSize ||
-		Math.ceil(volume.dimensions.height / step) > max3dSize ||
-		Math.ceil(volume.dimensions.depth / step) > max3dSize
+		Math.ceil(volume.dimensions.width / step) > targetCeiling ||
+		Math.ceil(volume.dimensions.height / step) > targetCeiling ||
+		Math.ceil(volume.dimensions.depth / step) > targetCeiling
 	) {
 		step *= 2;
 	}
@@ -427,8 +570,8 @@ export function uploadVolumeTo3DTexture(
 	let uploadDepth = volume.dimensions.depth;
 
 	if (step > 1) {
-		console.warn(`[CbctVolumeGlTextures] Volume downsampled ${step}x for GPU limits (${max3dSize}).`);
-		const downsampled = downsampleVolumeData(rawData, volume.dimensions, step);
+		console.warn(`[CbctVolumeGlTextures] Volume downsampled ${step}x with 3D box-filter for GPU limits (${targetCeiling}).`);
+		const downsampled = downsampleVolumeBoxFilter(rawData, volume.dimensions, step, step, step);
 		uploadData = downsampled.data;
 		uploadWidth = downsampled.width;
 		uploadHeight = downsampled.height;
@@ -468,7 +611,7 @@ export function uploadVolumeTo3DTexture(
 			if (step > 8) {
 				break;
 			}
-			const downsampled = downsampleVolumeData(rawData, volume.dimensions, step);
+			const downsampled = downsampleVolumeBoxFilter(rawData, volume.dimensions, step, step, step);
 			uploadData = downsampled.data;
 			uploadWidth = downsampled.width;
 			uploadHeight = downsampled.height;

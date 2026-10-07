@@ -28,8 +28,8 @@ describe("PatientCardModal & TaxDeduction Autonomy (FNS Form KND 1151156)", () =
 			"Must render data-testid='btn-patient-tax-deduction' in header",
 		);
 		assert.ok(
-			html.includes("Справка ФНС (1151156)"),
-			"Must render button label 'Справка ФНС (1151156)'",
+			html.includes("Справка для вычета (13%)"),
+			"Must render button label 'Справка для вычета (13%)'",
 		);
 		assert.ok(
 			!html.includes('data-testid="btn-patient-tax-deduction" disabled'),
@@ -65,8 +65,8 @@ describe("PatientCardModal & TaxDeduction Autonomy (FNS Form KND 1151156)", () =
 			"Must render btn-patient-tax-deduction-tab in visits and finances header",
 		);
 		assert.ok(
-			html.includes("Справка ФНС (13%)"),
-			"Must render label 'Справка ФНС (13%)'",
+			html.includes("Справка для вычета (13%)"),
+			"Must render label 'Справка для вычета (13%)'",
 		);
 	});
 
@@ -90,7 +90,7 @@ describe("PatientCardModal & TaxDeduction Autonomy (FNS Form KND 1151156)", () =
 		assert.ok(html.includes("Справка для налогового вычета (13% НДФЛ)"));
 		assert.ok(html.includes("Вычет 13%"));
 		assert.ok(html.includes("Иванов Иван Иванович"));
-		assert.ok(html.includes("Печать справки КНД 1151156 (А4)"));
+		assert.ok(html.includes("Печать справки для налогового вычета (А4)"));
 		assert.ok(html.includes("Бланк («________»)") || html.includes("data-testid=\"btn-tax-print-blank\""));
 		assert.ok(!html.includes("<button disabled"));
 	});

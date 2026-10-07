@@ -476,14 +476,26 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 							{/* Левый сайдбар: Список контактов */}
 							<aside className="hub-contacts-sidebar">
 								<div className="hub-contacts-search">
-									<Search size={14} className="search-icon" />
-									<input
-										type="text"
-										className="hub-search-input"
-										placeholder="Поиск пациента / телефона..."
-										value={patientSearchQuery}
-										onChange={(e) => setPatientSearchQuery(e.target.value)}
-									/>
+									<div className="dente-search-wrap w-full">
+										<Search size={14} className="dente-search-icon" />
+										<input
+											type="text"
+											className="dente-search-input w-full"
+											placeholder="Поиск пациента / телефона..."
+											value={patientSearchQuery}
+											onChange={(e) => setPatientSearchQuery(e.target.value)}
+										/>
+										{patientSearchQuery && (
+											<button
+												type="button"
+												onClick={() => setPatientSearchQuery("")}
+												className="dente-search-clear"
+												aria-label="Очистить поиск"
+											>
+												<X size={13} />
+											</button>
+										)}
+									</div>
 								</div>
 
 								<div className="hub-contacts-list" role="list">
@@ -561,11 +573,39 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 									{/* Действия шапки */}
 									<div className="hub-chat-header-actions">
 										{/* Фильтр каналов в ленте */}
-										<div className="hub-filter-channels-group">
-											<button type="button" className={`hub-filter-btn ${channelFilter === "all" ? "active" : ""}`} onClick={() => setChannelFilter("all")}>Все</button>
-											<button type="button" className={`hub-filter-btn ${channelFilter === "whatsapp" ? "active" : ""}`} onClick={() => setChannelFilter("whatsapp")}>WhatsApp</button>
-											<button type="button" className={`hub-filter-btn ${channelFilter === "telegram" ? "active" : ""}`} onClick={() => setChannelFilter("telegram")}>Telegram</button>
-											<button type="button" className={`hub-filter-btn ${channelFilter === "sms" ? "active" : ""}`} onClick={() => setChannelFilter("sms")}>SMS</button>
+										<div className="dente-segmented-bar">
+											<button
+												type="button"
+												className={`dente-segmented-item ${channelFilter === "all" ? "active" : ""}`}
+												data-active={channelFilter === "all"}
+												onClick={() => setChannelFilter("all")}
+											>
+												Все
+											</button>
+											<button
+												type="button"
+												className={`dente-segmented-item ${channelFilter === "whatsapp" ? "active" : ""}`}
+												data-active={channelFilter === "whatsapp"}
+												onClick={() => setChannelFilter("whatsapp")}
+											>
+												WhatsApp
+											</button>
+											<button
+												type="button"
+												className={`dente-segmented-item ${channelFilter === "telegram" ? "active" : ""}`}
+												data-active={channelFilter === "telegram"}
+												onClick={() => setChannelFilter("telegram")}
+											>
+												Telegram
+											</button>
+											<button
+												type="button"
+												className={`dente-segmented-item ${channelFilter === "sms" ? "active" : ""}`}
+												data-active={channelFilter === "sms"}
+												onClick={() => setChannelFilter("sms")}
+											>
+												SMS
+											</button>
 										</div>
 
 										{/* Кнопка перехвата диалога у Telegram/VK бота (Operator Takeover) */}

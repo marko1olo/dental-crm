@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Check,
@@ -196,7 +197,7 @@ export function TomorrowRemindersModal({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalElement = (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
 			data-testid="tomorrow-reminders-modal"
@@ -222,7 +223,7 @@ export function TomorrowRemindersModal({
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted)] mt-0.5">
-								Отказоустойчивая рассылка Telegram · WhatsApp · SMS с подтверждением визита в 1 клик
+								Отказоустойчивая рассылка Telegram · WhatsApp · SMS с быстрым подтверждением визита
 							</p>
 						</div>
 					</div>
@@ -251,7 +252,7 @@ export function TomorrowRemindersModal({
 								onChange={(e) => setAllowQuietHoursOverride(e.target.checked)}
 								className="rounded text-[var(--teal)] focus:ring-[var(--teal)]"
 							/>
-							<span>Разрешить экстренную отправку (CITO)</span>
+							<span>Разрешить экстренную отправку (срочно)</span>
 						</label>
 					</div>
 				)}
@@ -306,14 +307,12 @@ export function TomorrowRemindersModal({
 				{/* Filter Tabs & Search Row */}
 				<div className="p-3 sm:px-5 border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3 shrink-0">
 					{/* Channel Filter Chips */}
-					<div className="flex items-center gap-1.5 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] text-xs font-bold overflow-x-auto max-w-full scrollbar-none">
+					<div className="dente-segmented-bar overflow-x-auto max-w-full scrollbar-none">
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("all")}
-							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center justify-center ${
-								selectedChannelFilter === "all"
-									? "bg-[var(--teal)] text-white shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							className={`dente-segmented-item ${
+								selectedChannelFilter === "all" ? "active" : ""
 							}`}
 						>
 							Все каналы ({summary.totalAppointmentsCount})
@@ -321,10 +320,8 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("telegram")}
-							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
-								selectedChannelFilter === "telegram"
-									? "bg-sky-600 text-white shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							className={`dente-segmented-item ${
+								selectedChannelFilter === "telegram" ? "active" : ""
 							}`}
 						>
 							<MessageCircle size={14} />
@@ -333,10 +330,8 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("whatsapp")}
-							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
-								selectedChannelFilter === "whatsapp"
-									? "bg-emerald-600 text-white shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							className={`dente-segmented-item ${
+								selectedChannelFilter === "whatsapp" ? "active" : ""
 							}`}
 						>
 							<MessageSquare size={14} />
@@ -345,10 +340,8 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("sms")}
-							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
-								selectedChannelFilter === "sms"
-									? "bg-indigo-600 text-white shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)]"
+							className={`dente-segmented-item ${
+								selectedChannelFilter === "sms" ? "active" : ""
 							}`}
 						>
 							<Phone size={14} />
@@ -357,15 +350,25 @@ export function TomorrowRemindersModal({
 					</div>
 
 					{/* Search Input */}
-					<div className="relative flex-1 min-w-[200px]">
-						<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+					<div className="dente-search-wrap flex-1 min-w-[200px]">
+						<Search className="dente-search-icon" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по пациенту, телефону, Telegram или врачу..."
-							className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none text-[var(--ink)]"
+							className="dente-search-input"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
+							>
+								<X size={12} />
+							</button>
+						)}
 					</div>
 				</div>
 
@@ -412,7 +415,7 @@ export function TomorrowRemindersModal({
 											</span>
 											{reminder.isCito && (
 												<span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white animate-pulse">
-													CITO Острая боль
+													СРОЧНО
 												</span>
 											)}
 											{/* Channel Preference Badge */}
@@ -736,4 +739,8 @@ export function TomorrowRemindersModal({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalElement, document.body)
+		: modalElement;
 }

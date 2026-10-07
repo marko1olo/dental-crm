@@ -212,7 +212,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 				<div className="flex items-center gap-2">
 					<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)]">
-						Суверенитет соло-доктора и нулевые тупики (Мандаты 8n, 8s):
+						Автономия соло-практики и бесперебойная работа кассы:
 					</span>
 				</div>
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[var(--muted)]">

@@ -234,7 +234,7 @@ const PRESET_CATEGORIES: PresetCategoryDef[] = [
 				notice={
 					<div style={{ margin: "16px 0", display: "flex", flexDirection: "column", gap: "12px" }}>
 						<span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block" }}>
-							Быстрое заполнение по клиническому профилю (1 клик):
+							Клинический профиль вмешательства:
 						</span>
 						{PRESET_CATEGORIES.map((cat) => (
 							<div key={cat.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>

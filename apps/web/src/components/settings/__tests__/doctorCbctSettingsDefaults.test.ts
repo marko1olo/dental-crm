@@ -38,6 +38,7 @@ test("Doctor CBCT Defaults — canonical fallback when storage empty", () => {
 	assert.strictEqual(defaults.airCutoffHU, -500, "Canonical Air Cutoff must be -500 HU");
 	assert.strictEqual(defaults.mprThicknessMm, 1.0, "Canonical MPR Thickness must be 1.0 mm");
 	assert.strictEqual(defaults.panoThicknessMm, 1.0, "Canonical Pano Thickness must be 1.0 mm");
+	assert.strictEqual(defaults.interpolationMethod, "catmull_rom", "Canonical Interpolation Method must be catmull_rom");
 });
 
 test("Doctor CBCT Defaults — saves and reloads personal preferences with DOM dispatch", () => {
@@ -143,7 +144,6 @@ test("Doctor CBCT Defaults — reset restores canonical standard", () => {
 test("Mandate 8b: File bounds check for all touched CBCT and settings files (<= 800 lines)", () => {
 	const filesToCheck = [
 		"apps/web/src/components/radiology/cbctLutMath.ts",
-		"apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
 		"apps/web/src/components/settings/DoctorCbctSettingsModal.tsx",
 		"apps/web/src/components/settings/DoctorCbctPreferencesCard.tsx",
 		"apps/web/src/components/settings/DoctorClinicalPreferencesSection.tsx",

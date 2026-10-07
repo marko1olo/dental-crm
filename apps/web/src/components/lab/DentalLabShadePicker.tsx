@@ -8,6 +8,7 @@
  */
 
 import React from "react";
+import "../../styles/components.css";
 import { Camera, Check, CheckCircle2, Trash2, Upload } from "lucide-react";
 import { ToothShadeGuide } from "../icons/DentalIcons";
 import {
@@ -64,23 +65,20 @@ export function DentalLabShadePicker({
 	};
 
 	return (
-		<div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-2.5 sm:p-3 space-y-3">
+		<div className="rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] p-2.5 sm:p-3 space-y-3">
 			{/* Верхняя строка: переключатель шкал и текущий выбранный оттенок */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex items-center gap-2 flex-wrap">
 					<ToothShadeGuide size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 						Шкала VITA:
 					</span>
-					<div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs">
+					<div className="dente-segmented-bar inline-flex items-center shrink-0">
 						<button
 							type="button"
 							onClick={() => handleSystemTabClick("classical")}
-							className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors ${
-								currentSystem === "classical"
-									? "bg-teal-600 text-white"
-									: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-							}`}
+							data-active={currentSystem === "classical" ? "true" : "false"}
+							className={`dente-segmented-item ${currentSystem === "classical" ? "active" : ""}`}
 							data-testid="vita-classical-tab"
 						>
 							VITA Classical
@@ -88,11 +86,8 @@ export function DentalLabShadePicker({
 						<button
 							type="button"
 							onClick={() => handleSystemTabClick("3d_master")}
-							className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 ${
-								currentSystem === "3d_master"
-									? "bg-teal-600 text-white"
-									: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-							}`}
+							data-active={currentSystem === "3d_master" ? "true" : "false"}
+							className={`dente-segmented-item ${currentSystem === "3d_master" ? "active" : ""}`}
 							data-testid="vita-3d-master-tab"
 						>
 							VITA 3D-Master
@@ -101,11 +96,8 @@ export function DentalLabShadePicker({
 							<button
 								type="button"
 								onClick={() => handleSystemTabClick("bleach")}
-								className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 ${
-									currentSystem === "bleach"
-										? "bg-teal-600 text-white"
-										: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-								}`}
+								data-active={currentSystem === "bleach" ? "true" : "false"}
+								className={`dente-segmented-item ${currentSystem === "bleach" ? "active" : ""}`}
 								data-testid="vita-bleach-tab"
 							>
 								Bleach
@@ -115,7 +107,7 @@ export function DentalLabShadePicker({
 				</div>
 
 				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+					<span className="text-xs text-[var(--muted,#64748b)] font-medium">
 						Выбранный оттенок:
 					</span>
 					<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-teal-600 text-white shadow-xs inline-flex items-center gap-1.5">
@@ -150,7 +142,7 @@ export function DentalLabShadePicker({
 							className="flex flex-wrap items-center gap-1.5"
 							data-testid={`vita-classical-group-${grp.id}`}
 						>
-							<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-16 shrink-0">
+							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] w-16 shrink-0">
 								Гр. {grp.id}:
 							</span>
 							<div className="flex flex-wrap items-center gap-1.5 flex-1">
@@ -168,7 +160,7 @@ export function DentalLabShadePicker({
 											className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 												isSelected
 													? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-													: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
 											data-testid={`vita-shade-${shade}`}
 										>
@@ -256,7 +248,7 @@ export function DentalLabShadePicker({
 											className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 												isSelected
 													? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-													: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
 											data-testid={`vita-shade-${shade}`}
 										>
@@ -338,7 +330,7 @@ export function DentalLabShadePicker({
 										className={`min-h-[48px] min-w-[64px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 											isSelected
 												? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-												: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
 										}`}
 										data-testid={`vita-shade-${shade}`}
 									>
@@ -361,16 +353,16 @@ export function DentalLabShadePicker({
 
 			{/* 4. Опциональный селектор оттенка культи (IPS Natural Die ND1–ND9) */}
 			{showStumpSelector && (
-				<div className="pt-2 border-t border-slate-200 dark:border-slate-700/80 space-y-2" data-testid="stump-shade-container">
+				<div className="pt-2 border-t border-[var(--line,#cbd5e1)] space-y-2" data-testid="stump-shade-container">
 					<div className="flex items-center justify-between flex-wrap gap-1">
-						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+						<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 							Цвет культи препарированного зуба (IPS Natural Die ND1–ND9):
 						</span>
 						{selectedStumpShade && onSelectStumpShade && (
 							<button
 								type="button"
 								onClick={() => onSelectStumpShade("")}
-								className="text-[11px] text-slate-500 hover:text-rose-600 underline cursor-pointer"
+								className="text-[11px] text-[var(--muted,#64748b)] hover:text-rose-600 underline cursor-pointer"
 							>
 								Сбросить культю
 							</button>
@@ -389,8 +381,8 @@ export function DentalLabShadePicker({
 									data-testid={`stump-shade-${nd.id}`}
 									className={`min-h-[48px] px-2.5 py-1.5 text-left rounded-lg border text-xs transition-all flex items-center justify-between gap-2 cursor-pointer ${
 										isSelected
-											? "bg-teal-50 dark:bg-teal-950/40 border-teal-600 font-bold text-teal-900 dark:text-teal-100 ring-2 ring-teal-500/30"
-											: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+											? "bg-teal-500/15 border-teal-600 font-bold text-teal-800 dark:text-teal-200 ring-2 ring-teal-500/30"
+											: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 									}`}
 								>
 									<div className="flex items-center gap-2 min-w-0">
@@ -427,13 +419,17 @@ export function DentalLabShadePicker({
 				</div>
 
 				{shadePhotoUrl ? (
-					<div className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-						<div className="w-14 h-14 rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0">
+					<div className="flex items-center gap-3 p-2 rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)]">
+						<div className="w-14 h-14 rounded-md overflow-hidden border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] shrink-0 flex items-center justify-center relative">
 							<img
 								src={shadePhotoUrl}
-								alt="Фото эталона расцветки VITA"
-								className="w-full h-full object-cover"
+								alt="Эталон VITA"
+								className="w-full h-full object-cover z-10"
+								onError={(e) => {
+									(e.currentTarget as HTMLElement).style.display = "none";
+								}}
 							/>
+							<ToothShadeGuide size={22} className="text-teal-600/60 absolute pointer-events-none" />
 						</div>
 						<div className="flex-1 min-w-0">
 							<div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">

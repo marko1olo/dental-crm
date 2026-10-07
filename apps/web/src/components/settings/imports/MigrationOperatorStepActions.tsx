@@ -80,7 +80,7 @@ export function MigrationOperatorStepActions({
 	const scriptTestId = (value: string) =>
 		testScope === "script" ? value : primaryButtonTestId;
 	const actionButtonClass =
-		testScope === "primary" ? "primary-button" : "text-button";
+		testScope === "primary" ? "primary-button" : "secondary-button";
 	const operatorStepNeedsCandidate = Boolean(
 		step.sourceFingerprint &&
 			migrationOperatorSourceBoundActions.includes(step.action) &&
@@ -96,26 +96,27 @@ export function MigrationOperatorStepActions({
 
 	return (
 		<div className="migration-source-card-actions">
-			{operatorStepNeedsCandidate ? (
-				<>
-					<button
-						className="text-button"
-						type="button"
-						onClick={() =>
-							void runMigrationAutopilot(undefined, {
-								includeSmartImportText: smartImportInputReady,
-							})
-						}
-						disabled={isMigrationAutopilotLoading}
-						data-testid={scriptTestId("operator-script-refresh-plan")}
-					>
-						<RefreshCw aria-hidden="true" /> Обновить план
-					</button>
-					<small className="migration-action-hint">
-						Источник уже не в текущем автоплане
-					</small>
-				</>
-			) : null}
+			<div className="dente-segmented-bar" role="toolbar" aria-label={`Действия шага: ${step.buttonLabel}`}>
+				{operatorStepNeedsCandidate ? (
+					<>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() =>
+								void runMigrationAutopilot(undefined, {
+									includeSmartImportText: smartImportInputReady,
+								})
+							}
+							disabled={isMigrationAutopilotLoading}
+							data-testid={scriptTestId("operator-script-refresh-plan")}
+						>
+							<RefreshCw aria-hidden="true" size={13} /> <span>Обновить план</span>
+						</button>
+						<small className="migration-action-hint">
+							Источник уже не в текущем автоплане
+						</small>
+					</>
+				) : null}
 			{step.action === "discover_sources" ? (
 				<button
 					className={actionButtonClass}
@@ -222,6 +223,7 @@ export function MigrationOperatorStepActions({
 					<UserCheck aria-hidden="true" /> {step.buttonLabel}
 				</span>
 			) : null}
+			</div>
 		</div>
 	);
 }

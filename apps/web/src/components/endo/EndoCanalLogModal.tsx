@@ -177,7 +177,7 @@ export function EndoCanalLogModal({
 
 				{/* Scrollable Content Body */}
 				<div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
-					{/* 1-Click Fast Clinical Protocols & Actions Bar */}
+					{/* Клинические протоколы эндодонтии и панель действий */}
 					<EndoQuickToolbar
 						activeTooth={activeTooth}
 						handleSwitchTooth={handleSwitchTooth}

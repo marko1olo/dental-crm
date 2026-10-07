@@ -97,40 +97,40 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 
 			{/* Allergy Warning Preview Strip */}
 			{penicillinConflict && (
-				<div data-testid="allergy-conflict-penicillin" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+				<div data-testid="allergy-conflict-penicillin" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex flex-wrap items-center justify-between gap-2">
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-						<span className="font-bold truncate">
+						<span className="font-bold leading-snug">
 							Внимание: выписан пенициллин при аллергии в анамнезе (Риск анафилаксии!)
 						</span>
 					</div>
-					<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+					<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0 ml-auto">
 						Автономия врача (Печать доступна)
 					</span>
 				</div>
 			)}
 			{nsaidConflict && (
-				<div data-testid="allergy-conflict-nsaid" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+				<div data-testid="allergy-conflict-nsaid" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex flex-wrap items-center justify-between gap-2">
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-						<span className="font-bold truncate">
+						<span className="font-bold leading-snug">
 							Внимание: выписан НПВС при аллергии на НПВС/аспирин в анамнезе
 						</span>
 					</div>
-					<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+					<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0 ml-auto">
 						Автономия врача (Печать доступна)
 					</span>
 				</div>
 			)}
 			{anestheticConflict && (
-				<div data-testid="allergy-conflict-anesthetic" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+				<div data-testid="allergy-conflict-anesthetic" className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex flex-wrap items-center justify-between gap-2">
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-						<span className="font-bold truncate">
+						<span className="font-bold leading-snug">
 							Внимание: выписан местный анестетик при аллергии на анестетики/лидокаин в анамнезе
 						</span>
 					</div>
-					<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+					<span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0 ml-auto">
 						Автономия врача (Печать доступна)
 					</span>
 				</div>
@@ -138,15 +138,15 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 
 			{/* DDI Warning Preview Strip (Soft Amber) */}
 			{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
-				<div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex items-center justify-between gap-2">
+				<div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex flex-wrap items-center justify-between gap-2">
 					<div className="flex items-center gap-2 min-w-0">
 						<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-						<span className="font-bold truncate">
+						<span className="font-bold leading-snug">
 							Предостережение: обнаружено {ddiSafetyAudit.drugInteractions.length}{" "}
 							{ddiSafetyAudit.drugInteractions.length === 1 ? "взаимодействие" : "взаимодействия"} (DDI)
 						</span>
 					</div>
-					<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0">
+					<span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0 ml-auto">
 						Печать разрешена
 					</span>
 				</div>
@@ -380,7 +380,7 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 						<FileText className="w-3.5 h-3.5 text-[var(--teal)]" />
 						Памятка пациенту (без латыни):
 					</span>
-					<span className="text-[10px] text-[var(--muted)]">Для понятного приёма дома</span>
+					<span className="text-xs text-[var(--muted)]">Для понятного приёма дома</span>
 				</div>
 
 				<div className="flex flex-col gap-2 text-xs">
@@ -411,7 +411,7 @@ export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> =
 					)}
 				</div>
 
-				<div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)]/60 pt-2 leading-relaxed">
+				<div className="text-xs text-[var(--muted)] border-t border-[var(--line)]/60 pt-2 leading-relaxed">
 					При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой: <strong>{phone}</strong>.
 				</div>
 			</div>

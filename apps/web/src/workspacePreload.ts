@@ -136,6 +136,11 @@ export function isLowSpecDevice(): boolean {
 		if (
 			docEl.getAttribute("data-low-spec") === "true" ||
 			docEl.getAttribute("data-hardware-tier") === "low" ||
+			docEl.getAttribute("data-hardware-tier") === "potato" ||
+			docEl.getAttribute("data-perf-tier") === "low" ||
+			docEl.getAttribute("data-perf-tier") === "potato" ||
+			docEl.getAttribute("data-perf-state") === "degraded" ||
+			docEl.getAttribute("data-ct-active") === "true" ||
 			docEl.classList.contains("low-spec-mode")
 		) {
 			return true;
@@ -165,6 +170,19 @@ function shouldPreloadWorkspaceRoutes(
 	view?: AppView,
 ): boolean {
 	if (intent === "cancel") return false;
+
+	if (typeof document !== "undefined") {
+		const docEl = document.documentElement;
+		// When CT 3D rendering is active or performance is degraded, background idle preloading is suppressed
+		if (
+			(docEl.getAttribute("data-ct-active") === "true" ||
+				docEl.getAttribute("data-perf-state") === "degraded") &&
+			intent === "idle"
+		) {
+			return false;
+		}
+	}
+
 	if (typeof navigator === "undefined") return true;
 	const nav = navigator as NetworkAwareNavigator;
 	const connection = nav.connection;
@@ -337,6 +355,16 @@ export function scheduleIdleWorkspacePreload(
 	currentView: AppView,
 ): (() => void) | undefined {
 	if (typeof window === "undefined") return undefined;
+	if (typeof document !== "undefined") {
+		const docEl = document.documentElement;
+		if (
+			docEl.getAttribute("data-ct-active") === "true" ||
+			docEl.getAttribute("data-perf-tier") === "potato" ||
+			docEl.getAttribute("data-hardware-tier") === "potato"
+		) {
+			return undefined;
+		}
+	}
 	if (!shouldPreloadWorkspaceRoutes("idle")) return undefined;
 
 	let preloadViews = (idleWorkspacePreloadPlan[currentView] ?? [])
@@ -480,6 +508,12 @@ export { warmupStatutoryCatalogs };
  */
 export function scheduleClinicalHotModulesWarmup(): (() => void) | undefined {
 	if (typeof window === "undefined") return undefined;
+	if (typeof document !== "undefined") {
+		const docEl = document.documentElement;
+		if (docEl.getAttribute("data-ct-active") === "true") {
+			return undefined;
+		}
+	}
 
 	// Запускаем фоновый прогрев и гидратацию кэша справочников (804н, МКБ-10, шаблоны 043/у) и офлайн-кэшей из IndexedDB в RAM во время idle (0 мс доступ)
 	const idleWindow = window as IdlePreloadWindow;

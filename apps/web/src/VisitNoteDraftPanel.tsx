@@ -255,13 +255,13 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 		if (onApply) {
 			onApply(SOMATIC_NORM_DRAFT);
 			showToast(
-				"Применен пресет: Соматически здоров / норма (1-клик). Заметка приёма обновлена.",
+				"Применен пресет: Соматически здоров / норма. Заметка приёма обновлена.",
 				"success",
 				7000,
 			);
 		} else {
 			showToast(
-				"Применен пресет: Соматически здоров / норма (1-клик).",
+				"Применен пресет: Соматически здоров / норма.",
 				"success",
 				5000,
 			);
@@ -342,10 +342,10 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 								data-testid="btn-draft-somatic-norm-one-click"
 								onClick={applySomaticNormQuick}
 								className="px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 min-h-[44px] inline-flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
-								title="Зафиксировать статус «Соматически здоров / норма» в 1 клик"
+								title="Зафиксировать статус «Соматически здоров / норма»"
 							>
 								<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-								<span>Норма в 1 клик</span>
+								<span>✓ Норма</span>
 							</button>
 							<button
 								type="button"

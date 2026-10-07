@@ -109,7 +109,7 @@ export const PaymentSbpView: React.FC<PaymentSbpViewProps> = ({
 								disabled={isCheckingSbp}
 								className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
 								data-testid="btn-manual-confirm-sbp"
-								title="Подтвердить зачисление средств по выписке/СМС банка (Мандат 8e)"
+								title="Подтвердить зачисление средств по выписке/СМС банка"
 							>
 								<Check size={13} />
 								<span>Подтвердить вручную</span>

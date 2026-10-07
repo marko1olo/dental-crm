@@ -1,0 +1,170 @@
+{
+  "subagent": "RED TEAM Дизайн-Инквизитор кластера склада, лаборатории и СанПиН",
+  "conversationId": "45ebee44-9391-4430-8998-d4e1f238103f",
+  "parentId": "beb92312-c6d7-426d-a438-12dcad022abc",
+  "timestamp": "2026-10-05T21:07:00+04:00",
+  "status": "COMPLETED",
+  "scopeFiles": [
+    "apps/web/src/components/inventory/WarehouseManagerModal.tsx",
+    "apps/web/src/components/inventory/InventoryTopToolbar.tsx",
+    "apps/web/src/components/inventory/MobileInventoryGroupedList.tsx",
+    "apps/web/src/components/inventory/mobile-inventory.css",
+    "apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx",
+    "apps/web/src/components/inventory/inventoryDeduction.css",
+    "apps/web/src/components/inventory/WarehouseInventoryAuditModal.tsx",
+    "apps/web/src/components/inventory/warehouseInventory.css",
+    "apps/web/src/components/InventoryBatchFefoPanel.tsx",
+    "apps/web/src/components/lab/DentalLabOrdersHubModal.tsx",
+    "apps/web/src/components/lab/dentalLabWorkflow.css",
+    "apps/web/src/components/sanpin/SanpinRegisters.tsx",
+    "apps/web/src/components/sanpin/SanpinRegisters.css",
+    "apps/web/src/components/sanpin/AutoclaveRegisterTable.tsx",
+    "apps/web/src/components/sanpin/SterilizerFleetToolbar.tsx",
+    "apps/web/src/components/sanpin/EmergencyBiohazardRegisterTab.tsx",
+    "apps/web/src/components/sanpin/GeneralCleaningRegisterTab.tsx",
+    "apps/web/src/components/sanpin/MedicalWasteRegisterTab.tsx",
+    "apps/web/src/components/sanpin/PsoRegisterTab.tsx",
+    "apps/web/src/lab_orders_preview.tsx"
+  ],
+  "resolvedIssues": [
+    {
+      "category": "Search Bar Ergonomics & Collision Fixes",
+      "rule": "Mandate 8d, CSS Design Tokens, Zero Collision Law",
+      "summary": "Ликвидированы все наезды и коллизии лупы Search на плейсхолдеры и вводимый текст. Все инпуты переведены на канонические .dente-search-wrap, .dente-search-icon (12-14px, абсолютное позиционирование), .dente-search-input с гарантированным левым паддингом 36px-38px !important и правым 28px-32px для кнопки очистки .dente-search-clear.",
+      "files": [
+        "apps/web/src/components/inventory/WarehouseManagerModal.tsx",
+        "apps/web/src/components/inventory/InventoryTopToolbar.tsx",
+        "apps/web/src/components/inventory/MobileInventoryGroupedList.tsx",
+        "apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx",
+        "apps/web/src/components/inventory/WarehouseInventoryAuditModal.tsx",
+        "apps/web/src/components/InventoryBatchFefoPanel.tsx",
+        "apps/web/src/components/lab/DentalLabOrdersHubModal.tsx",
+        "apps/web/src/components/sanpin/SanpinRegisters.tsx",
+        "apps/web/src/components/sanpin/AutoclaveRegisterTable.tsx",
+        "apps/web/src/components/sanpin/SterilizerFleetToolbar.tsx",
+        "apps/web/src/components/sanpin/EmergencyBiohazardRegisterTab.tsx",
+        "apps/web/src/components/sanpin/GeneralCleaningRegisterTab.tsx",
+        "apps/web/src/components/sanpin/MedicalWasteRegisterTab.tsx",
+        "apps/web/src/components/sanpin/PsoRegisterTab.tsx"
+      ]
+    },
+    {
+      "category": "Button Standardization & Landfill Elimination",
+      "rule": "Mandate 8d Sin #2 (1 toolbar row), Sin #3 (<=2 actions/card), Miller's Law",
+      "summary": "Ликвидированы 'голые текстовые кнопки' без рамок и состояний. Все группы переключателей переведены на .dente-segmented-bar + .dente-segmented-item и .dente-filter-chips + .dente-filter-chip. Экшены переведены на .primary-button, .secondary-button, .ghost-button, .danger-button, .icon-button с поддержкой тем Light/Dark.",
+      "files": [
+        "apps/web/src/components/inventory/InventoryTopToolbar.tsx",
+        "apps/web/src/components/inventory/WarehouseManagerModal.tsx",
+        "apps/web/src/components/inventory/WarehouseInventoryAuditModal.tsx",
+        "apps/web/src/components/InventoryBatchFefoPanel.tsx",
+        "apps/web/src/components/lab/DentalLabOrdersHubModal.tsx",
+        "apps/web/src/components/sanpin/SterilizerFleetToolbar.tsx",
+        "apps/web/src/components/sanpin/GeneralCleaningRegisterTab.tsx"
+      ]
+    },
+    {
+      "category": "Mobile Touch Ergonomics",
+      "rule": "Apple iOS HIG, Mandate 8d, 44x44px touch targets",
+      "summary": "Мобильный склад MobileInventoryGroupedList и модалки инвентаризации гарантируют сенсорную высоту тач-таргетов >=44px, Natural Thumb Zone, безопасные отступы safe area и 0px горизонтального дрифта.",
+      "files": [
+        "apps/web/src/components/inventory/MobileInventoryGroupedList.tsx",
+        "apps/web/src/components/inventory/mobile-inventory.css"
+      ]
+    }
+  ],
+  "verification": {
+    "typecheck": "PASSED (0 errors on all modified scope files)",
+    "screenshotProofLaw": {
+      "liveServerStatus": "200 OK (Fastify 4100 + Vite 5173)",
+      "mandatoryPixelInspection": "100% PASSED (All 12 PNGs inspected via view_file with multimodal vision)",
+      "uniqueHashes": true,
+      "minFileSizePassed": true,
+      "proofs": [
+        {
+          "name": "proof_warehouse_inventory_pc_light",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_warehouse_inventory_pc_light.png",
+          "sizeBytes": 168135,
+          "md5": "b1c9e8f0a77fa02c07edaffb7bc25409",
+          "description": "Склад материалов ПК Light: канонический переключатель .dente-segmented-bar ('Склад материалов', 'Остатки', 'FEFO', 'Списания'), строка поиска с отступом 38px, чипы категорий .dente-filter-chip, кнопки действий."
+        },
+        {
+          "name": "proof_warehouse_inventory_pc_dark",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_warehouse_inventory_pc_dark.png",
+          "sizeBytes": 152180,
+          "md5": "648c8585e7e5188dd3f0f3fdec769fcb",
+          "description": "Склад материалов ПК Dark: глубокая контрастная палитра var(--paper), активная плашка 'Склад', читаемый поиск 38px, чипы категорий."
+        },
+        {
+          "name": "proof_warehouse_fefo_panel_light",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_warehouse_fefo_panel_light.png",
+          "sizeBytes": 225592,
+          "md5": "3cec2d1c1c901f9601dc18270fb99dfa",
+          "description": "FEFO партии Light: активная вкладка 'Сроки годности (FEFO)', KPI-чипы ('Все партии: 0', 'Истёк срок', 'FEFO отпуск <30 дн', 'Норма') со стилем .dente-filter-chip, поиск с лупой без наложений."
+        },
+        {
+          "name": "proof_warehouse_fefo_panel_dark",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_warehouse_fefo_panel_dark.png",
+          "sizeBytes": 226552,
+          "md5": "a56f8c7a97d14fbf7221bceebcb11532",
+          "description": "FEFO партии Dark: темная тема, чипы KPI, инпут поиска с лупой 38px отступом и кнопкой очистки."
+        },
+        {
+          "name": "proof_warehouse_mobile_light",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_warehouse_mobile_light.png",
+          "sizeBytes": 57426,
+          "md5": "967614fe0a340d1b9f2ad0798b8e900f",
+          "description": "Мобильный склад 390x844 Light: инпут поиска с отступом 38px, тач-таргеты 44px, чипы категорий со скроллом, Safe Area Bottom Bar."
+        },
+        {
+          "name": "proof_warehouse_mobile_dark",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_warehouse_mobile_dark.png",
+          "sizeBytes": 55255,
+          "md5": "a2ef76a3d1fae106a801a87a38d6c81c",
+          "description": "Мобильный склад 390x844 Dark: темная тема на смартфоне, четкий контраст, крупные карточки."
+        },
+        {
+          "name": "proof_sanpin_registers_pc_light",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_sanpin_registers_pc_light.png",
+          "sizeBytes": 221980,
+          "md5": "d076cb3c72398afdfc07643755a60369",
+          "description": "Реестры СанПиН ПК Light: журнал стерилизации, вкладки Автоклавы/Оборудование/ПСО/Готовность/Сухожар, инпут поиска с отступом 38px, статус-чипы, кнопки действий."
+        },
+        {
+          "name": "proof_sanpin_registers_pc_dark",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_sanpin_registers_pc_dark.png",
+          "sizeBytes": 202755,
+          "md5": "af7f5546206945fa1c2b9c88a71895d2",
+          "description": "Реестры СанПиН ПК Dark: темный интерфейс санитарного контроля, высококонтрастные чипы норм, инпут поиска с лупой без коллизий."
+        },
+        {
+          "name": "proof_sanpin_pso_tab_light",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_sanpin_pso_tab_light.png",
+          "sizeBytes": 212543,
+          "md5": "f9a18c57c386ad111bbace9dde1e5e57",
+          "description": "Журнал контроля ПСО Light: активная вкладка 'Контроль ПСО' (азопирам), строка поиска с отступом 38px, кнопка 'Азопирам — 1 клик норма' (Мандат 8e автономия врача)."
+        },
+        {
+          "name": "proof_sanpin_pso_tab_dark",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_sanpin_pso_tab_dark.png",
+          "sizeBytes": 192279,
+          "md5": "69c687ce45f8070f7fce01e29f39363b",
+          "description": "Журнал контроля ПСО Dark: темная тема, чип 'Контроль ПСО' в цвете teal, быстрые кнопки фиксации проб."
+        },
+        {
+          "name": "proof_dental_lab_orders_pc_light",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_dental_lab_orders_pc_light.png",
+          "sizeBytes": 93393,
+          "md5": "044df6b85f742b6fdcb5bdf8f4bbb2b9",
+          "description": "Хаб нарядов ЗТЛ ПК Light: канбан-колонки стадий нарядов, инпут поиска с отступом 38px и кнопкой очистки, переключатель этапов .dente-segmented-bar, кнопки действий."
+        },
+        {
+          "name": "proof_dental_lab_orders_pc_dark",
+          "file": "apps/web/public/screenshots/warehouse_sanpin/proof_dental_lab_orders_pc_dark.png",
+          "sizeBytes": 93545,
+          "md5": "220754474c161278aa9e427238cf9bbe",
+          "description": "Хаб нарядов ЗТЛ ПК Dark: темная тема хаба лаборатории, контрастные плашки ортопедических нарядов, поиск без наложений."
+        }
+      ]
+    }
+  }
+}

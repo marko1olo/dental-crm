@@ -18,6 +18,7 @@ import {
 	Copy,
 	Search,
 	Sparkles,
+	X,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
@@ -146,21 +147,32 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 						1-клик выбор любимого материала с автоматическим подтягиванием в протокол медицинской карты
 					</p>
 				</div>
-				{/* Поиск материала */}
-				<div className="relative min-w-[240px]">
-					<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+				{/* Поиск материала — Canonical Dente Search Wrap */}
+				<div className="dente-search-wrap relative min-w-[240px]">
+					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
 						value={materialSearchQuery}
 						onChange={(e) => setMaterialSearchQuery(e.target.value)}
 						placeholder="Поиск материала (Filtek, Asteria, Kerr...)"
-						className="w-full text-xs pl-8 pr-2.5 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-teal-500"
+						className="dente-search-input"
 					/>
+					{materialSearchQuery && (
+						<button
+							type="button"
+							onClick={() => setMaterialSearchQuery("")}
+							className="dente-search-clear"
+							title="Очистить поиск"
+							aria-label="Очистить поиск"
+						>
+							<X size={13} />
+						</button>
+					)}
 				</div>
 			</div>
 
-			{/* Вкладки категорий материалов */}
-			<div className="flex gap-1.5 flex-wrap border-b border-[var(--line)] pb-2">
+			{/* Вкладки категорий материалов — Canonical Dente Filter Chips (Mandate 8zf) */}
+			<div className="dente-filter-chips border-b border-[var(--line)] pb-2">
 				{[
 					{ id: "composites" as const, label: `Композиты (${COMPOSITE_OPTIONS.length})` },
 					{ id: "adhesives" as const, label: `Адгезивы (${ADHESIVE_OPTIONS.length})` },
@@ -174,11 +186,8 @@ export function DoctorMaterialsCatalogSection({ className = "" }: DoctorMaterial
 							key={tab.id}
 							type="button"
 							onClick={() => setActiveMaterialTab(tab.id)}
-							className={`h-8 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border select-none ${
-								isActive
-									? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
+							className={`dente-filter-chip ${isActive ? "active" : ""}`}
+							data-active={isActive ? "true" : undefined}
 							data-testid={`material-tab-${tab.id}`}
 						>
 							{tab.label}

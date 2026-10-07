@@ -38,7 +38,7 @@ const mockDocuments: GeneratedDocument[] = [
 		patientId: "pat-1111-2222-3333-444455556666",
 		visitId: null,
 		kind: "completed_works_act",
-		title: "Акт выполненных работ (804н)",
+		title: "Акт выполненных работ",
 		status: "issued",
 		issuedAt: "2026-03-24T11:30:00.000Z",
 		totalAmountRub: 4800,

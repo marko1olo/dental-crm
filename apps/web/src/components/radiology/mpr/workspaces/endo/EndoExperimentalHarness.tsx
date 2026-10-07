@@ -206,7 +206,7 @@ export const EndoExperimentalHarness: React.FC<EndoExperimentalHarnessProps> = (
 					<div>
 						<div className="flex items-center gap-2">
 							<h2 className="text-sm font-bold tracking-wide text-zinc-100">
-								ENDO 3D VOXEL INQUISITION HARNESS
+								ENDO 3D VOXEL TEST HARNESS
 							</h2>
 							<span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
 								Frangi + FMM 26-Connected

@@ -95,12 +95,12 @@ export function OnlineBookingFunnelView({
 						key={item.step}
 						className={`p-2.5 rounded-lg border border-[var(--line)] space-y-1 ${item.color}`}
 					>
-						<span className="text-[11px] font-bold block">{item.step}</span>
+						<span className="text-xs font-bold block">{item.step}</span>
 						<div className="text-lg font-extrabold">{item.count}</div>
-						<span className="text-[10px] text-[var(--muted)] block truncate" title={item.label}>
+						<span className="text-xs text-[var(--muted)] block truncate" title={item.label}>
 							{item.label}
 						</span>
-						<span className="text-[10px] font-semibold text-[var(--teal)] block mt-0.5 truncate" title={item.dropoff}>
+						<span className="text-xs font-semibold text-[var(--teal)] block mt-0.5 truncate" title={item.dropoff}>
 							{item.dropoff}
 						</span>
 					</div>

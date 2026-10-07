@@ -298,7 +298,7 @@ export function useScheduleChairShiftBulkOps({
       }
 
       showToast(
-        `Врач ${formatDoctorShortName(doctorName)} подменяет врача на кресле «${chair.name}» (StomX Parity)`,
+        `Врач ${formatDoctorShortName(doctorName)} подменяет врача на кресле «${chair.name}»`,
         "success",
       );
     },

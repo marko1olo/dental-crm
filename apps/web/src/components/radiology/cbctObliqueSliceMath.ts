@@ -115,6 +115,7 @@ export function sampleVoxelTrilinearHU(
 export interface ObliqueSliceRenderOptions extends SliceRenderOptions {
 	readonly interpolation?: "nearest" | "trilinear" | undefined;
 	readonly outputBuffer?: Uint8ClampedArray | undefined;
+	readonly isAborted?: (() => boolean) | undefined;
 }
 
 /**
@@ -250,6 +251,9 @@ export function extractObliqueMprSlice(
 
 	if (!isSlabActive) {
 		for (let row = 0; row < heightPx; row++) {
+			if (row % 32 === 0 && options?.isAborted?.()) {
+				throw new Error("OPERATION_ABORTED");
+			}
 			const offsetRow = row - pivotPx.y;
 			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
 			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
@@ -332,6 +336,9 @@ export function extractObliqueMprSlice(
 		const startS_vz = (-halfSlabMm * nZ) * invSpZ;
 
 		for (let row = 0; row < heightPx; row++) {
+			if (row % 32 === 0 && options?.isAborted?.()) {
+				throw new Error("OPERATION_ABORTED");
+			}
 			const offsetRow = row - pivotPx.y;
 			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
 			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;

@@ -529,7 +529,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 								onClick={() => setActiveTab("task_calls")}
 							>
 								<PhoneCall size={16} />
-								<span>Задачи сервисных звонков (StomX)</span>
+								<span>Задачи сервисных звонков</span>
 							</button>
 						</div>
 

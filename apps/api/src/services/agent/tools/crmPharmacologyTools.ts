@@ -62,7 +62,7 @@ export const checkDrugInteractionsCrmTool: ToolDefinition<
 			is_blocked: false,
 			confirmation_required: false,
 			warning: audit.hasAllergyClash
-				? `У пациента аллергия на ${audit.allergyWarnings.map((w) => w.allergenGroup || w.proposedDrug).join(", ")}. Решение о назначении принимает лечащий врач (Мандат 8e).`
+				? `У пациента аллергия на ${audit.allergyWarnings.map((w) => w.allergenGroup || w.proposedDrug).join(", ")}. Решение о назначении принимает лечащий врач.`
 				: undefined,
 			blockedPrescriptions: audit.blockedPrescriptions,
 			allergyWarnings: audit.allergyWarnings,
@@ -104,7 +104,7 @@ export const checkAllergiesTool: ToolDefinition<
 > = {
 	name: "check_allergies",
 	description:
-		"Экспресс-проверка аллергологического анамнеза пациента по базе данных с оценкой перекрестной непереносимости конкретного препарата (Мандат 8e: мягкое инфо-предупреждение без блокировок).",
+		"Экспресс-проверка аллергологического анамнеза пациента по базе данных с оценкой перекрестной непереносимости конкретного препарата.",
 	parameters: checkAllergiesSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -162,10 +162,10 @@ export const checkAllergiesTool: ToolDefinition<
 
 		const hasAllergies = allergies.length > 0;
 		const recommendation = isConflict
-			? "Внимание: у пациента аллергия. Рекомендована замена на Клиндамицин 300 мг. Решение о назначении принимает лечащий врач (Мандат 8e: без блокировок)."
+			? "Внимание: у пациента аллергия. Рекомендована замена на Клиндамицин 300 мг. Решение о назначении принимает лечащий врач."
 			: hasAllergies
 				? "Аллергии зафиксированы, но прямой конфликт с запрашиваемым препаратом не выявлен."
-				: "Аллергоанамнез не отягощен (физиологическая норма по Мандату 8e).";
+				: "Аллергоанамнез не отягощен (физиологическая норма).";
 
 		return {
 			success: true,
@@ -290,7 +290,7 @@ export const recommendPrescriptionTool: ToolDefinition<
 			`─────────────────────────────────────────────────────────────────────────────`,
 			...drugs.map((d, idx) => `[${idx + 1}] ${d.category}:\n    Rp: ${d.latinName}\n    D.t.d. N 14\n    S: ${d.signaRu}`),
 			`─────────────────────────────────────────────────────────────────────────────`,
-			`[МАНДАТ 8E: АВТОНОМИЯ ВРАЧА — ДОЗИРОВКИ СКОРРЕКТИРОВАНЫ ПОД СОМАТИКУ]`,
+			`[АВТОНОМИЯ ВРАЧА — ДОЗИРОВКИ СКОРРЕКТИРОВАНЫ ПОД СОМАТИКУ]`,
 		].join("\n");
 
 		return {

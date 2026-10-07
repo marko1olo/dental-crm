@@ -300,10 +300,10 @@ export const DoctorCalendarSyncModal: React.FC<DoctorCalendarSyncModalProps> = (
 								</div>
 							</div>
 
-							{/* 1-Click Platform Integrations */}
+							{/* Platform Integrations */}
 							<div>
 								<div className="text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-2">
-									Быстрое подключение в 1 клик
+									Быстрое подключение календаря
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 									{/* Yandex Calendar */}

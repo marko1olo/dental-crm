@@ -4,7 +4,7 @@
  * ФУНКЦИОНАЛ:
  * 1. Зона риска оттока пациентов: классификация по срокам (6+ мес / 12+ мес / 24+ мес)
  *    и профилю первичного лечения (Санация / Имплантация / Терапия).
- * 2. 1-кликовое формирование персонализированного предложения на гигиену/профосмотр
+ * 2. Формирование персонализированного предложения на гигиену/профосмотр
  *    с соблюдением 38-ФЗ (О рекламе) и врачебной деонтологии.
  * 3. Когортный анализ возвращаемости (Recall 6 / 12 месяцев) после санации полости рта
  *    и имплантации с точным расчётом выручки повторных визитов.
@@ -23,6 +23,7 @@ import {
 	ShieldCheck,
 	TrendingUp,
 	Users,
+	X,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -71,7 +72,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
 	const [riskBandFilter, setRiskBandFilter] = useState<string>("all");
 
-	// Модальное окно 1-кликового предложения
+	// Модальное окно предложения
 	const [selectedOfferPatient, setSelectedOfferPatient] =
 		useState<LostPatientRow | null>(null);
 	const [activeOffer, setActiveOffer] =
@@ -318,26 +319,20 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted)]">
-							Когортный анализ возвращаемости (Recall 6/12м), выявление зоны риска и 1-кликовая реактивация
+							Когортный анализ возвращаемости (Recall 6/12м), выявление зоны риска и реактивация пациентов
 						</p>
 					</div>
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap">
-					<div
-						className="inline-flex items-center p-[3px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] min-h-[34px] flex-nowrap gap-1 overflow-x-auto max-w-full shadow-inner"
-						role="tablist"
-					>
+					<div className="dente-segmented-bar" role="tablist">
 						<button
 							type="button"
 							role="tab"
 							aria-selected={activeTab === "risk_list"}
 							onClick={() => setActiveTab("risk_list")}
-							className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-								activeTab === "risk_list"
-									? "bg-[var(--teal)] text-[var(--on-teal)] shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
-							}`}
+							className={`dente-segmented-item ${activeTab === "risk_list" ? "active" : ""}`}
+							data-active={activeTab === "risk_list"}
 						>
 							Зона риска ({filteredPatients.length})
 						</button>
@@ -346,11 +341,8 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							role="tab"
 							aria-selected={activeTab === "recall_cohorts"}
 							onClick={() => setActiveTab("recall_cohorts")}
-							className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-								activeTab === "recall_cohorts"
-									? "bg-[var(--teal)] text-[var(--on-teal)] shadow-xs"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
-							}`}
+							className={`dente-segmented-item ${activeTab === "recall_cohorts" ? "active" : ""}`}
+							data-active={activeTab === "recall_cohorts"}
 						>
 							Когорты Recall 6/12м
 						</button>
@@ -360,9 +352,10 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 						type="button"
 						onClick={fetchLostPatients}
 						disabled={loading}
-						className="p-1.5 min-h-[34px] min-w-[34px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors shadow-xs flex items-center justify-center cursor-pointer"
+						className="secondary-button h-8 w-8 min-h-[32px] min-w-[32px] p-0 rounded-lg inline-flex items-center justify-center cursor-pointer shadow-xs"
 						title="Обновить аналитику"
 						aria-label="Обновить аналитику"
+						data-testid="lost-patients-refresh-btn"
 					>
 						<RefreshCw
 							className={`w-4 h-4 ${loading ? "animate-spin text-[var(--teal)]" : ""}`}
@@ -396,7 +389,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							Recall 6м (Санация)
 						</span>
 						<span
-							className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+							className={`px-2 py-0.5 rounded text-xs font-bold ${
 								kpis.sanRecall6m >= 65
 									? "bg-emerald-500/10 text-[var(--ok-fg)]"
 									: kpis.sanRecall6m > 0
@@ -426,7 +419,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							Recall 12м (Импланты)
 						</span>
 						<span
-							className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+							className={`px-2 py-0.5 rounded text-xs font-bold ${
 								kpis.implRecall12m >= 60
 									? "bg-emerald-500/10 text-[var(--ok-fg)]"
 									: kpis.implRecall12m > 0
@@ -468,23 +461,32 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 			{activeTab === "risk_list" && (
 				<div>
 					<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-3">
-						<div className="relative flex-1">
-							<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+						<div className="dente-search-wrap flex-1">
+							<Search size={14} className="dente-search-icon" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по ФИО или номеру телефона..."
-								className="w-full pl-10 pr-3 py-1.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all"
-								style={{ paddingLeft: "2.5rem" }}
+								className="dente-search-input"
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="dente-search-clear"
+									aria-label="Очистить поиск"
+								>
+									<X size={13} />
+								</button>
+							)}
 						</div>
 
 						<div className="flex items-center gap-2 flex-wrap">
 							<select
 								value={categoryFilter}
 								onChange={(e) => setCategoryFilter(e.target.value)}
-								className="px-2.5 py-1.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+								className="h-8 px-2.5 text-[12.5px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] cursor-pointer"
 								aria-label="Фильтр по типу лечения"
 							>
 								<option value="all">Все профили лечения</option>
@@ -498,7 +500,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 							<select
 								value={riskBandFilter}
 								onChange={(e) => setRiskBandFilter(e.target.value)}
-								className="px-2.5 py-1.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+								className="h-8 px-2.5 text-[12.5px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] cursor-pointer"
 								aria-label="Фильтр по сроку отсутствия"
 							>
 								<option value="all">Любой срок риска</option>

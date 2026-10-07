@@ -23,6 +23,7 @@ import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import {
 	CANONICAL_CBCT_SETTINGS,
+	type CbctInterpolationMethod,
 	type DoctorCbctDefaultSettings,
 	loadDoctorCbctSettings,
 	resetDoctorCbctSettings,
@@ -61,6 +62,9 @@ export function DoctorCbctSettingsModal({
 	const [airCutoffHU, setAirCutoffHU] = useState<number>(initialDefaults.airCutoffHU);
 	const [mprThicknessMm, setMprThicknessMm] = useState<number>(initialDefaults.mprThicknessMm);
 	const [panoThicknessMm, setPanoThicknessMm] = useState<number>(initialDefaults.panoThicknessMm);
+	const [interpolationMethod, setInterpolationMethod] = useState<CbctInterpolationMethod>(
+		() => initialDefaults.interpolationMethod ?? "bilinear",
+	);
 
 	// Preview tabs & slice navigation
 	const [previewTab, setPreviewTab] = useState<"axial" | "pano">("axial");
@@ -87,6 +91,7 @@ export function DoctorCbctSettingsModal({
 			setAirCutoffHU(current.airCutoffHU);
 			setMprThicknessMm(current.mprThicknessMm);
 			setPanoThicknessMm(current.panoThicknessMm);
+			setInterpolationMethod(current.interpolationMethod ?? "bilinear");
 		}
 	}, [isOpen]);
 
@@ -237,6 +242,7 @@ export function DoctorCbctSettingsModal({
 			airCutoffHU,
 			mprThicknessMm,
 			panoThicknessMm,
+			interpolationMethod,
 		});
 		showToast(
 			`Персональные параметры КЛКТ сохранены (W: ${saved.windowWidth}, L: ${saved.windowLevel})`,
@@ -251,6 +257,7 @@ export function DoctorCbctSettingsModal({
 		airCutoffHU,
 		mprThicknessMm,
 		panoThicknessMm,
+		interpolationMethod,
 		onSaved,
 		onClose,
 	]);
@@ -264,6 +271,7 @@ export function DoctorCbctSettingsModal({
 		setAirCutoffHU(canon.airCutoffHU);
 		setMprThicknessMm(canon.mprThicknessMm);
 		setPanoThicknessMm(canon.panoThicknessMm);
+		setInterpolationMethod(canon.interpolationMethod ?? "bilinear");
 		showToast("Сброшено на канонический стандарт КЛКТ (4025 HU / 525 HU)", "info");
 	}, []);
 

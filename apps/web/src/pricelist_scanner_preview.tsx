@@ -123,23 +123,22 @@ function PricelistScannerPreviewApp() {
 		viewMode === "upload" ? "upload" : "diff",
 	);
 
+	const [theme, setTheme] = useState<ThemeMode>(rawTheme);
+
 	useEffect(() => {
-		const updateTheme = () => {
-			const currentTheme = (document.documentElement.getAttribute("data-theme") || rawTheme) as ThemeMode;
-			const resolved = resolveTheme(currentTheme, false);
-			applyThemeToRoot(document.documentElement, resolved);
-			const isDark = currentTheme === "dark";
-			document.documentElement.classList.toggle("dark", isDark);
-			document.documentElement.classList.toggle("light", !isDark);
-			document.documentElement.setAttribute("data-theme", currentTheme);
-			document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-			document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen p-4 md:p-6`;
-		};
-		updateTheme();
-		const observer = new MutationObserver(updateTheme);
-		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-		return () => observer.disconnect();
-	}, [rawTheme]);
+		const resolved = resolveTheme(theme, false);
+		applyThemeToRoot(document.documentElement, resolved);
+		const isDark = theme === "dark" || theme === "night" || theme === "cyber_xray";
+		document.documentElement.classList.toggle("dark", isDark);
+		document.documentElement.classList.toggle("light", !isDark);
+		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+		document.body.className = `theme-${resolved.theme} bg-[var(--paper)] text-[var(--ink)] antialiased min-h-screen p-4 md:p-6`;
+	}, [theme]);
+
+	useEffect(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: test hook
+		(window as any).__setPreviewTheme = (t: ThemeMode) => setTheme(t);
+	}, []);
 
 	return (
 		<div className="max-w-[1400px] mx-auto w-full space-y-6">

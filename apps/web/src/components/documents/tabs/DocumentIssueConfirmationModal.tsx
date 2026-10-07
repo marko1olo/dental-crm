@@ -273,7 +273,7 @@ export const DocumentIssueConfirmationModal: React.FC<
 						documentIssueRecipientSigned &&
 						documentIssueClinicSigned
 							? "Снять отметки"
-							: "Выбрать все (1 клик)"}
+							: "Выбрать все пункты"}
 					</button>
 				</div>
 				<label>

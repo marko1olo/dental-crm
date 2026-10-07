@@ -109,7 +109,7 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 			<button
 				type="button"
 				onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-				className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+				className={`h-7.5 flex items-center gap-1.5 px-2.5 rounded-[8px] text-[12.5px] font-medium whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
 					isMoreMenuOpen ||
 					activeStampTool === "Crown" ||
 					activeStampTool === "Missing" ||
@@ -117,8 +117,8 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 					isMultiSelectMode ||
 					isPerioOpen ||
 					isOrthoCephOpen
-						? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
-						: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 dark:hover:text-indigo-400"
+						? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-semibold"
+						: "bg-[var(--paper-soft,var(--odontogram-surface-hover,#f1f5f9))] text-[var(--ink-muted,#64748b)] border-[var(--line-subtle,var(--odontogram-border-subtle,#e2e8f0))] hover:text-indigo-600 dark:hover:text-indigo-400"
 				}`}
 				title="Дополнительные инструменты, штампы и модули анализа"
 				data-testid="btn-odontogram-more-menu"
@@ -147,10 +147,10 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 					role="menu"
 					aria-label="Дополнительные инструменты"
 				>
-					{/* Subgroup: Batch Presets (1-Click) */}
+					{/* Subgroup: Batch Presets */}
 					<div>
 						<div className="text-xs font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
-							Пакетные операции (1 клик)
+							Пакетные операции
 						</div>
 						<div className="flex flex-col gap-1">
 							<button
@@ -160,11 +160,11 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 									setIsMoreMenuOpen(false);
 								}}
 								className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/30"
-								title="Санация: отметить всю зубную формулу здоровой в 1 клик"
+								title="Физиологическая норма (зубные ряды интактны): отметить всю зубную формулу здоровой"
 								data-testid="btn-odontogram-all-healthy"
 							>
 								<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>Санация: все здоровы (1 клик)</span>
+								<span>Физиологическая норма (интактный ряд)</span>
 							</button>
 							<button
 								type="button"
@@ -458,7 +458,7 @@ export const OdontogramToolbarMoreMenu: React.FC<OdontogramToolbarMoreMenuProps>
 										? "bg-rose-600 text-white border-rose-700 shadow-md animate-pulse font-black"
 										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-rose-600 dark:hover:text-rose-400"
 								}`}
-								title="Режим быстрого удаления зубов в 1 клик"
+								title="Режим быстрого удаления зубов (экспресс-экстракция)"
 							>
 								<span className="flex items-center gap-2">
 									<Trash2 size={14} />

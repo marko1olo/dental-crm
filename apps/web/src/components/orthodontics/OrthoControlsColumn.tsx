@@ -240,10 +240,10 @@ export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
 }) => {
 	return (
 		<div className="lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto">
-			{/* 0. Stages Filter Bar */}
+			{/* 0. Stages Filter Bar (DENTE Segmented Bar) */}
 			<div
 				data-testid="ortho-stages-toolbar"
-				className="min-h-[36px] h-9 p-0.5 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700/60 flex items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0"
+				className="dente-segmented-bar w-full shrink-0 shadow-2xs"
 			>
 				{ORTHODONTIC_STAGE_TABS.map((stage) => {
 					const isSelected = stageFilter === stage.id;
@@ -271,14 +271,11 @@ export const OrthoControlsColumn: React.FC<OrthoControlsColumnProps> = ({
 								}
 							}}
 							data-testid={`ortho-stage-tab-${stage.id}`}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 ${
-								isSelected
-									? "bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400"
-									: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-transparent"
-							}`}
+							className={`dente-segmented-item ${isSelected ? "active" : ""}`}
 							title={stage.desc}
 						>
-							<span>{stage.label}</span>
+							<span className="hidden xl:inline">{stage.label}</span>
+							<span className="xl:hidden">{stage.shortLabel}</span>
 						</button>
 					);
 				})}

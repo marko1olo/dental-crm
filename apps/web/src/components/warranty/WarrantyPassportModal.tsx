@@ -747,13 +747,13 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 						<div className="warranty-studio-grid">
 							{/* Left Column: Form and Items */}
 							<div className="warranty-studio-main">
-								{/* 1-клик баннер гарантийного приёма */}
+								{/* Баннер гарантийного приёма */}
 								<div className="warranty-quick-remediation-banner">
 									<div className="warranty-remediation-banner-left">
 										<ShieldAlert size={20} className="warranty-remediation-banner-icon" />
 										<div>
 											<strong>Гарантийный приём (выпала пломба, расцементировка коронки, скол)</strong>
-											<p>1-клик оформление: Пациент платит 0 ₽ • Списание со склада по факту • Без мастер-паролей</p>
+											<p>Оформление гарантии: пациент платит 0 ₽ • Списание со склада по факту</p>
 										</div>
 									</div>
 									<button
@@ -771,14 +771,14 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 									</button>
 								</div>
 
-								{/* 1-клик импорт из завершенных этапов плана лечения (Мандат 8e & 8k) */}
+								{/* Импорт из завершенных этапов плана лечения */}
 								{completedStages && completedStages.length > 0 && (
 									<div className="warranty-stages-import-banner">
 										<div className="warranty-stages-banner-left">
 											<FileCheck size={18} style={{ color: "var(--teal)", flexShrink: 0 }} />
 											<div>
 												<strong>Завершенные этапы плана лечения ({completedStages.length} поз.)</strong>
-												<p>1-клик генерация гарантийного паспорта по всем выполненным манипуляциям</p>
+												<p>Формирование гарантийного паспорта по всем выполненным манипуляциям</p>
 											</div>
 										</div>
 										<button
@@ -887,11 +887,11 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 										</h4>
 									</div>
 
-									{/* 1-Клик нормативные пресеты СтАР (Мандат 8k) */}
+									{/* Нормативные пресеты СтАР */}
 									<div className="warranty-star-presets-bar">
 										<div className="warranty-star-presets-title">
 											<Award size={14} style={{ color: "var(--teal)" }} />
-											<span>1-Клик нормативные пресеты СтАР (Мандат 8k & 8e):</span>
+											<span>Нормативные пресеты СтАР:</span>
 										</div>
 										<div className="warranty-star-presets-grid">
 											{STAR_QUICK_PRESETS.map((qp) => (
@@ -1446,9 +1446,9 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 									</div>
 								</div>
 
-								{/* 1-клик шаблоны дефекта */}
+								{/* Шаблоны дефекта */}
 								<div className="warranty-form-group" style={{ marginBottom: "16px" }}>
-									<label className="warranty-label">1-Клик клинический шаблон дефекта (СтАР / 0 ₽):</label>
+									<label className="warranty-label">Клинический шаблон дефекта (СтАР / 0 ₽):</label>
 									<div className="warranty-defect-templates-grid">
 										{getAllWarrantyDefectTemplates().map((tmpl) => (
 											<button

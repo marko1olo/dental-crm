@@ -31,6 +31,20 @@ import { showToast } from "../../GlobalToast";
 import { BASELINE_804N_PRICELIST_SERVICES } from "../../catalog/pricelist/servicePricelistPresets";
 import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
 
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
+	all: "Все",
+	therapy: "Терапия",
+	anesthesia: "Анестезия",
+	orthopedics: "Ортопедия",
+	surgery: "Хирургия",
+	hygiene: "Гигиена",
+	orthodontics: "Ортодонтия",
+	radiology: "Рентген / КТ",
+	xray: "Рентген / КТ",
+	endo: "Эндодонтия",
+	other: "Прочее",
+};
+
 export interface MobileSettingsPricesViewProps {
 	// biome-ignore lint/suspicious/noExplicitAny: app logic props bag
 	readonly appLogic: Record<string, any>;
@@ -167,7 +181,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 						Прейскурант
 					</h2>
 					<span className="text-[11px] font-medium text-[var(--muted)]">
-						{rawCatalog.length} услуг по 804н
+						{rawCatalog.length} услуг в каталоге
 					</span>
 				</div>
 
@@ -185,26 +199,27 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 				</button>
 			</div>
 
-			{/* Search Row */}
+			{/* Search Row — Canonical Dente Search Wrap */}
 			<div className="px-4 pt-3 pb-2">
-				<div className="relative flex items-center w-full">
+				<div className="dente-search-wrap relative flex items-center w-full">
 					<Search
 						size={15}
-						className="absolute left-3.5 text-[var(--muted)] pointer-events-none"
+						className="dente-search-icon absolute left-3.5 text-[var(--muted)] pointer-events-none"
 					/>
 					<input
 						type="search"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						placeholder="Поиск по услугам или коду 804н..."
-						className="w-full h-10 min-h-[40px] pr-9 text-[14px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all mobile-settings-search-input"
+						placeholder="Поиск по услугам или коду..."
+						className="dente-search-input w-full h-10 min-h-[40px] pl-10 pr-9 text-[14px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all mobile-settings-search-input"
+						style={{ paddingLeft: "38px" }}
 						data-testid="input-mobile-price-search"
 					/>
 					{searchQuery && (
 						<button
 							type="button"
 							onClick={() => setSearchQuery("")}
-							className="absolute right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-transform cursor-pointer"
+							className="dente-search-clear absolute right-2.5 w-6 h-6 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-transform cursor-pointer"
 							aria-label="Очистить поиск"
 						>
 							<X size={14} />
@@ -213,12 +228,13 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 				</div>
 			</div>
 
-			{/* Category Chips Scroller */}
-			<div className="flex items-center gap-1.5 overflow-x-auto px-4 py-1.5 scrollbar-none overscroll-contain">
+			{/* Category Chips Scroller — Canonical Dente Filter Chips */}
+			<div className="dente-filter-chips flex items-center gap-1.5 overflow-x-auto px-4 py-1.5 scrollbar-none overscroll-contain">
 				<button
 					type="button"
 					onClick={() => setSelectedCategory("all")}
-					className={`mobile-filter-chip ${selectedCategory === "all" ? "active" : ""}`}
+					className={`dente-filter-chip mobile-filter-chip ${selectedCategory === "all" ? "active" : ""}`}
+					data-active={selectedCategory === "all" ? "true" : undefined}
 				>
 					<span>Все</span>
 					<span className="chip-counter">
@@ -235,7 +251,8 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 							key={cat.id}
 							type="button"
 							onClick={() => setSelectedCategory(cat.id)}
-							className={`mobile-filter-chip ${selectedCategory === cat.id ? "active" : ""}`}
+							className={`dente-filter-chip mobile-filter-chip ${selectedCategory === cat.id ? "active" : ""}`}
+							data-active={selectedCategory === cat.id ? "true" : undefined}
 						>
 							<span>{cat.label}</span>
 							{countInCat > 0 && (
@@ -276,27 +293,27 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 								>
 									{/* Left: Code badge + Full Title + Badges */}
 									<div className="flex flex-col gap-1 min-w-0 pr-3 flex-1">
-										<div className="flex items-center gap-2 flex-wrap">
+										<div className="flex items-center gap-1.5 flex-wrap">
 											{service.code ? (
-												<span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0">
+												<span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] shrink-0 whitespace-nowrap">
 													{service.code}
 												</span>
 											) : (
-												<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] shrink-0">
+												<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] shrink-0 whitespace-nowrap">
 													Без кода
 												</span>
 											)}
 											{s.taxDeductible !== false && (
-												<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+												<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 whitespace-nowrap">
 													Вычет
 												</span>
 											)}
 											{s.vatRate === "vat_20" ? (
-												<span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300">
+												<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 whitespace-nowrap">
 													НДС 20%
 												</span>
 											) : (
-												<span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-teal-500/10 text-teal-800 dark:text-teal-300">
+												<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-800 dark:text-teal-300 whitespace-nowrap">
 													ст. 149
 												</span>
 											)}
@@ -309,6 +326,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 										<div className="flex items-center gap-2 text-[12px] text-[var(--muted)] mt-0.5">
 											<span>
 												{serviceCategoryLabels[service.category || "therapy"] ||
+													DEFAULT_CATEGORY_LABELS[service.category || "therapy"] ||
 													service.category ||
 													"Терапия"}
 											</span>
@@ -348,7 +366,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 							<p className="text-[13px] text-[var(--muted)] leading-relaxed max-w-xs mx-auto">
 								{searchQuery
 									? "Проверьте поисковый запрос или сбросьте фильтры."
-									: "Быстро наполните номенклатуру 30 базовыми стоматологическими услугами по приказу 804н."}
+									: "Быстро наполните номенклатуру 30 базовыми стоматологическими услугами."}
 							</p>
 						</div>
 

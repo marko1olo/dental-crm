@@ -210,7 +210,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					amountRub: amt,
-					reasonText: "Служебное внесение разменного фонда (1-клик)",
+					reasonText: "Внесение разменного фонда",
 					cashierFullName,
 				}),
 			});
@@ -637,7 +637,7 @@ export const CashRegisterDrawer: React.FC<CashRegisterDrawerProps> = ({
 						data-testid="btn-drawer-new-payment"
 					>
 						<Plus size={18} />
-						<span>Принять оплату (1 клик)</span>
+						<span>Принять оплату</span>
 					</button>
 				</div>
 			</div>

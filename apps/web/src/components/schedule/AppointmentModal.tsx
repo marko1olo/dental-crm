@@ -3,11 +3,14 @@ import {
   AlertCircle,
   AlertTriangle,
   Check,
+  ChevronDown,
   Clock,
   Globe,
+  SlidersHorizontal,
+  Tag,
   Zap,
 } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 import { WaitlistDrawer } from "./WaitlistDrawer";
@@ -139,6 +142,22 @@ export function AppointmentModal(props: AppointmentModalProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, handleSave]);
 
+  const [isAdditionalOpen, setIsAdditionalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !appointment) return;
+    const initialLab = Boolean(
+      (appointment as any)?.labOrderId ||
+        (appointment as any)?.labOrderNumber ||
+        (activeLabOrders && activeLabOrders.length > 0),
+    );
+    const initialComment = Boolean(
+      appointment.comment && appointment.comment.trim().length > 0,
+    );
+    const initialAssistant = Boolean(appointment.assistantUserId);
+    setIsAdditionalOpen(initialLab || initialComment || initialAssistant);
+  }, [appointment?.id, isOpen]);
+
   if (!isOpen || !appointment) return null;
 
   const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
@@ -150,6 +169,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
         : dashboard.patients?.find((p) => p.id === patientId)?.fullName ||
           "Пациент";
   const isNewAppointment = Boolean(appointment?.id?.startsWith("new"));
+
+  const hasLabOrder = Boolean(
+    (activeLabOrders && activeLabOrders.length > 0) ||
+      (appointment as any)?.labOrderId ||
+      (appointment as any)?.labOrderNumber,
+  );
 
   const readiness =
     (appointment && appointmentReadinessById instanceof Map
@@ -194,7 +219,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
         />
 
         {/* Body Form */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 sm:space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-3.5 sm:space-y-4 pb-12 sm:pb-16">
           {/* Online Booking Notice Banner & 1-Click Confirmation */}
           {Boolean(
             (appointment?.comment &&
@@ -225,7 +250,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
                     setStatus("confirmed");
                   }}
                   className="h-8 min-h-[32px] px-3 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer shadow-xs transition-all text-xs"
-                  title="Перевести статус в «Подтвержден» в 1 клик"
+                  title="Перевести статус в «Подтвержден»"
                   data-testid="modal-confirm-online-booking-btn"
                 >
                   <Check size={13} />
@@ -235,7 +260,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
             </div>
           )}
 
-          {/* CITO Notice Banner */}
+          {/* Emergency / Urgent Notice Banner */}
           {isCito && (
             <div
               className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-950 dark:text-rose-100 flex items-center justify-between gap-3 text-xs shadow-xs"
@@ -247,21 +272,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
                   className="text-rose-600 dark:text-rose-400 shrink-0 fill-current"
                 />
                 <span className="font-bold text-xs sm:text-sm">
-                  Экстренный приём CITO (Острая боль)
-                </span>
-                <span className="text-[var(--muted)] text-xs">
-                  Мягкий овербукинг разрешён
+                  Экстренная запись: острая боль
+                  <span className="sr-only">Экстренный приём: острая боль</span>
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
-                CITO
+                СРОЧНО
               </span>
             </div>
           )}
 
-          {/* Form Fields */}
+          {/* Form Fields: Layer A (Base Mandatory Layer) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-            {/* Patient Section */}
+            {/* 1. Patient Section */}
             <AppointmentModalPatientSection
               appointment={appointment}
               dashboard={dashboard}
@@ -288,7 +311,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
               handleConvertToCito={handleConvertToCito}
             />
 
-            {/* Doctor, Assistant, Chair & Time Section */}
+            {/* 2. Doctor, Chair & Time Section (Assistant moved to spoiler) */}
             <AppointmentModalDoctorChairSection
               appointment={appointment}
               dashboard={dashboard}
@@ -315,9 +338,29 @@ export function AppointmentModal(props: AppointmentModalProps) {
               collision={collision}
               safeToDateTimeLocalValue={safeToDateTimeLocalValue}
               timezone={timezone}
+              hideAssistant={true}
             />
 
-            {/* Status Section */}
+            {/* 3. Reason & Quick Reasons (1-click chips) */}
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+                Повод обращения / Услуга
+              </label>
+              <input
+                type="text"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] font-medium"
+                placeholder="Например: Лечение кариеса, консультация, острая боль..."
+                data-testid="appointment-modal-reason-input"
+              />
+              <AppointmentModalQuickReasons
+                onApplyReasonPreset={handleApplyReasonPreset}
+                onApplyTechnicalBreakPreset={handleApplyTechnicalBreakPreset}
+              />
+            </div>
+
+            {/* 4. Status Section (1-click 6 status buttons) */}
             <AppointmentModalStatusSection
               status={status}
               setStatus={setStatus}
@@ -331,45 +374,153 @@ export function AppointmentModal(props: AppointmentModalProps) {
               handleOpenWaitlistForThisSlot={handleOpenWaitlistForThisSlot}
             />
 
-            {/* Laboratory Orders (ЗТЛ) Section */}
-            <AppointmentModalLabSection
-              appointment={appointment}
-              activeLabOrders={activeLabOrders}
-              startsAtLocal={startsAtLocal}
-              setStartsAtLocal={setStartsAtLocal}
-              setEndsAtLocal={setEndsAtLocal}
-              onClose={onClose}
-            />
+            {/* Layer B: Spoiler / Accordion «Дополнительные параметры ▾» */}
+            <div className="sm:col-span-2 pt-2 border-t border-[var(--line)]/60">
+              <button
+                type="button"
+                onClick={() => setIsAdditionalOpen((prev) => !prev)}
+                className="w-full py-2.5 px-3.5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] text-[var(--ink)] text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer select-none active:scale-[0.99] shadow-2xs min-h-[44px]"
+                data-testid="appointment-modal-toggle-additional-btn"
+                aria-expanded={isAdditionalOpen}
+              >
+                <div className="flex items-center gap-2 flex-wrap">
+                  <SlidersHorizontal size={14} className="text-[var(--teal)] shrink-0" />
+                  <span className="text-xs sm:text-sm font-bold">Дополнительные параметры</span>
+                  {/* Badges showing active parameters inside spoiler */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {hasLabOrder && (
+                      <span className="px-2 py-0.5 rounded-md bg-[var(--teal)]/15 border border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))] text-[10px] font-bold">
+                        ЗТЛ наряд
+                      </span>
+                    )}
+                    {Boolean(comment?.trim()) && (
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                        Примечание
+                      </span>
+                    )}
+                    {Boolean(assistantUserId) && (
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-800 dark:text-blue-300 text-[10px] font-bold">
+                        Ассистент
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-[var(--muted)] text-xs shrink-0 font-medium">
+                  <span>{isAdditionalOpen ? "Свернуть" : "Развернуть"}</span>
+                  <ChevronDown
+                    size={15}
+                    className={`transition-transform duration-200 ${isAdditionalOpen ? "rotate-180 text-[var(--teal)]" : ""}`}
+                  />
+                </div>
+              </button>
 
-            {/* Reason */}
-            <div className="sm:col-span-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
-                Повод обращения / Услуга
-              </label>
-              <input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full px-2.5 h-8 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
-                placeholder="Например: Лечение кариеса, консультация, острая боль..."
-              />
-              <AppointmentModalQuickReasons
-                onApplyReasonPreset={handleApplyReasonPreset}
-                onApplyTechnicalBreakPreset={handleApplyTechnicalBreakPreset}
-              />
-            </div>
+              {/* Spoiler container: always mounted for test compatibility & smooth layout */}
+              <div
+                className={`transition-all duration-200 ${
+                  isAdditionalOpen
+                    ? "block mt-3 space-y-3.5 p-3.5 rounded-2xl bg-[var(--paper-soft)]/50 border border-[var(--line)] animate-in fade-in slide-in-from-top-1"
+                    : "hidden"
+                }`}
+                data-testid="appointment-modal-additional-content"
+              >
+                {/* 1. Зуботехническая лаборатория (ЗТЛ) */}
+                <AppointmentModalLabSection
+                  appointment={appointment}
+                  activeLabOrders={activeLabOrders}
+                  startsAtLocal={startsAtLocal}
+                  setStartsAtLocal={setStartsAtLocal}
+                  setEndsAtLocal={setEndsAtLocal}
+                  onClose={onClose}
+                />
 
-            {/* Comment */}
-            <div className="sm:col-span-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
-                Комментарий
-              </label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={2}
-                className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
-              />
+                {/* 2. Ассистент врача (если не соло-врач) */}
+                {!isSoloDoctor && (
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between mb-1">
+                      <span>Ассистент врача</span>
+                      <span className="text-[10px] text-[var(--muted)] font-normal">
+                        Опционально
+                      </span>
+                    </label>
+                    <select
+                      value={assistantUserId || ""}
+                      onChange={(e) => setAssistantUserId(e.target.value || null)}
+                      className="w-full px-3 h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] cursor-pointer"
+                      data-testid="select-appointment-assistant"
+                    >
+                      <option value="">-- Без ассистента (соло-приём) --</option>
+                      {assistants.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* 3. Внутреннее примечание для клиники / комментарий администратора */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block">
+                      Внутреннее примечание для клиники / комментарий администратора
+                    </label>
+                    <span className="text-[10px] text-[var(--muted)] font-normal">
+                      Не видно пациенту
+                    </span>
+                  </div>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={2}
+                    placeholder="Служебные пометки для администраторов и врачей..."
+                    className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+                    data-testid="appointment-modal-comment-textarea"
+                  />
+                </div>
+
+                {/* 4. Цветная метка / Тип визита (первичный, повторный, VIP) */}
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between mb-1.5">
+                    <span className="flex items-center gap-1.5">
+                      <Tag size={13} className="text-[var(--teal)]" />
+                      <span>Цветная метка / Тип визита:</span>
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-1.5 flex-wrap" data-testid="appointment-visit-type-tags">
+                    {[
+                      { id: "primary", label: "Первичный", tag: "[Первичный]", activeColor: "bg-blue-500/20 text-blue-800 dark:text-blue-200 border-blue-500/40" },
+                      { id: "repeat", label: "Повторный", tag: "[Повторный]", activeColor: "bg-teal-500/20 text-teal-800 dark:text-teal-200 border-teal-500/40" },
+                      { id: "vip", label: "VIP", tag: "[VIP]", activeColor: "bg-purple-500/20 text-purple-800 dark:text-purple-200 border-purple-500/40" },
+                      { id: "consult", label: "Консультация", tag: "[Консультация]", activeColor: "bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/40" },
+                      { id: "warranty", label: "Гарантия", tag: "[Гарантия]", activeColor: "bg-rose-500/20 text-rose-800 dark:text-rose-200 border-rose-500/40" },
+                    ].map((tagItem) => {
+                      const isSelected = comment.includes(tagItem.tag);
+                      return (
+                        <button
+                          key={tagItem.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setComment((prev) => prev.replace(tagItem.tag, "").trim());
+                            } else {
+                              setComment((prev) => (prev.trim() ? `${prev.trim()} ${tagItem.tag}` : tagItem.tag));
+                            }
+                          }}
+                          className={`h-7 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 ${
+                            isSelected
+                              ? `${tagItem.activeColor} ring-1 ring-current font-extrabold`
+                              : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line-strong)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)]"
+                          }`}
+                          data-testid={`appointment-tag-${tagItem.id}`}
+                        >
+                          <span>{tagItem.label}</span>
+                          {isSelected && <Check size={11} className="stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -438,7 +589,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
               >
                 <Clock size={13} className="shrink-0" />
                 <span>
-                  Служебная блокировка расписания врача (пациент не требуется)
+                  Служебный перерыв в расписании (пациент не требуется)
                 </span>
               </span>
             ) : (
@@ -455,12 +606,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="appointment-modal-cta-cancel h-11 px-5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] text-[var(--ink)] text-sm font-bold transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs"
+              className="appointment-modal-cta-cancel h-11 px-5 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] text-[var(--ink)] text-sm font-bold transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center text-center"
             >
               Отмена
             </button>
@@ -468,7 +619,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
               type="button"
               onClick={(e) => handleSave(e)}
               disabled={isSaving}
-              className={`appointment-modal-cta-save flex-1 h-11 px-6 font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+              className={`appointment-modal-cta-save h-11 px-6 font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
                 collision.isCitoOverbooking || isCito
                   ? "!bg-rose-600 hover:!bg-rose-700 !text-white shadow-rose-500/25"
                   : collision.hasCollision
@@ -479,15 +630,17 @@ export function AppointmentModal(props: AppointmentModalProps) {
             >
               <Check size={18} className="stroke-[2.5]" />
               <span>
-                {isSaving
-                  ? "Сохраняю…"
-                  : collision.isCitoOverbooking || isCito
-                    ? "Сохранить CITO (Острая боль)"
-                    : collision.hasCollision
-                      ? "Записать с овербукингом (острая боль)"
-                      : isNewAppointment
-                        ? "Записать на приём"
-                        : "Сохранить изменения"}
+                {isSaving ? (
+                  "Сохраняю…"
+                ) : collision.isCitoOverbooking || isCito ? (
+                  "Сохранить срочно (Острая боль)"
+                ) : collision.hasCollision ? (
+                  "Записать на это время (острая боль)"
+                ) : isNewAppointment ? (
+                  "Записать на приём"
+                ) : (
+                  "Сохранить запись"
+                )}
               </span>
             </button>
           </div>

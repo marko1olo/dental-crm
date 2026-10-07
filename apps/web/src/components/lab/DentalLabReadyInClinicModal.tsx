@@ -332,7 +332,7 @@ export function DentalLabReadyInClinicModal({
 								Готовая работа в клинике (ЗТЛ № {order.orderNumber})
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 truncate">
-								Конструкция поступила из лаборатории · 1-клик запись и уведомление
+								Конструкция поступила из лаборатории · Принять работу из лаборатории и уведомить пациента
 							</p>
 						</div>
 					</div>
@@ -411,7 +411,7 @@ export function DentalLabReadyInClinicModal({
 								) : (
 									<>
 										<CalendarCheck className="w-4 h-4" />
-										<span>Записать на примерку/фиксацию (1 клик)</span>
+										<span>Выдать работу в кабинет (запись на примерку/фиксацию)</span>
 									</>
 								)}
 							</button>

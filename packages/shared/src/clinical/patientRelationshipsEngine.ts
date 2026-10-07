@@ -137,7 +137,7 @@ export const familyGuarantorPermissionSchema = z.enum(FAMILY_GUARANTOR_PERMISSIO
 export const FAMILY_GUARANTOR_PERMISSION_LABELS_RU: Record<FamilyGuarantorPermission, string> = {
 	view_medical_records: "Просмотр медицинской карты и снимков",
 	sign_consents: "Подписание ИДС и юридических согласий (ст. 20 № 323-ФЗ)",
-	shared_balance_payment: "Оплата с семейного счёта / депозита (Мандат 8e, 54-ФЗ)",
+	shared_balance_payment: "Оплата с семейного счёта / депозита (54-ФЗ)",
 	appointment_management: "Управление записями и расписанием приёмов",
 };
 
@@ -674,7 +674,7 @@ export function formatLegalGuardianConsentA4Protocol(
 		"   связанный с ними риск, возможные варианты вмешательства, их последствия,",
 		"   а также предполагаемые результаты оказания медицинской помощи.",
 		sub,
-		"4. ФИНАНСОВЫЕ И РЕГЛАМЕНТНЫЕ ОБЯЗАТЕЛЬСТВА (МАНДАТ 8E, 54-ФЗ):",
+		"4. ФИНАНСОВЫЕ И РАСЧЕТНЫЕ ОБЯЗАТЕЛЬСТВА (54-ФЗ):",
 		"   Законный представитель подтверждает право оплаты лечения с единого семейного",
 		"   счета / депозита пациента без бюрократических барьеров и задержек.",
 	];

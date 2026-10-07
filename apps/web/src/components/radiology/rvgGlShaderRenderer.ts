@@ -170,7 +170,10 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 			stencil: false,
 			antialias: false,
 			preserveDrawingBuffer: true,
-		}) || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+			powerPreference: "high-performance",
+		}) || canvas.getContext("experimental-webgl", {
+			powerPreference: "high-performance",
+		})) as WebGLRenderingContext | null;
 	} catch {
 		gl = null;
 	}

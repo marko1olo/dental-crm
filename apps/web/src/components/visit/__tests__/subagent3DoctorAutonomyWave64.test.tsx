@@ -147,8 +147,8 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 			"VisitEmkTab must have btn-fill-norm-quick",
 		);
 		assert.ok(
-			visitEmkTabSource.includes("Заполнить нормой в 1 клик"),
-			"VisitEmkTab must have label 'Заполнить нормой в 1 клик'",
+			visitEmkTabSource.includes("Заполнить нормой"),
+			"VisitEmkTab must have label 'Заполнить нормой'",
 		);
 
 		// PatientCardModal contains 1-click somatic healthy norm in toolbar (Mandate 8p §206)

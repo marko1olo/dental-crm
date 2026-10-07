@@ -122,14 +122,14 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const contractDate = payload.contractDate || new Date().toISOString().slice(0, 10);
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
 	const clinicAddress = payload.clinicAddress || "";
-	const clinicOgrn = payload.clinicOgrn || "1234567890123";
+	const clinicOgrn = payload.clinicOgrn || "—";
 	const clinicInn = payload.clinicInn || "_______________";
-	const clinicKpp = payload.clinicKpp || "770101001";
+	const clinicKpp = payload.clinicKpp || "";
 	const medLic = payload.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER;
 	const medLicDate = payload.medicalLicenseDate || DEFAULT_CLINIC_LICENSE_DATE;
 	const medLicIssuer = payload.medicalLicenseIssuer || DEFAULT_CLINIC_LICENSE_ISSUER;
 	const clinicPhone = payload.clinicPhone || "";
-	const clinicWebsite = payload.clinicWebsite || "https://dente-clinic.ru";
+	const clinicWebsite = payload.clinicWebsite || "";
 	const clinicCity =
 		payload.clinicCity?.trim() ||
 		(payload.clinicAddress?.includes("г. ")
@@ -295,11 +295,11 @@ export const actOfCompletedWorksPayloadSchema = z.object({
 	contractDate: z.string().trim().min(10).max(32).default(() => new Date().toISOString().slice(0, 10)),
 	clinicLegalName: z.string().trim().min(1).max(240).default('ООО "Денте Клиник"'),
 	clinicAddress: z.string().trim().max(240).default(""),
-	clinicOgrn: z.string().trim().max(32).default("1234567890123"),
+	clinicOgrn: z.string().trim().max(32).default(""),
 	clinicInn: z.string().trim().max(16).default(""),
 	medicalLicenseNumber: z.string().trim().max(64).default(DEFAULT_CLINIC_LICENSE_NUMBER),
 	customerFullName: z.string().trim().max(160).default(""),
-	customerPassport: z.string().trim().max(120).default("Паспорт гражданина РФ"),
+	customerPassport: z.string().trim().max(120).default(""),
 	patientFullName: z.string().trim().max(160).default(""),
 	attendingDoctorFullName: z.string().trim().max(160).default(""),
 	attendingDoctorSpecialty: z.string().trim().max(120).default("Врач-стоматолог"),
@@ -320,7 +320,7 @@ export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayloa
 	const contractDate = payload.contractDate || actDate;
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
 	const clinicAddress = payload.clinicAddress || "";
-	const clinicOgrn = payload.clinicOgrn || "1234567890123";
+	const clinicOgrn = payload.clinicOgrn || "—";
 	const clinicInn = payload.clinicInn || "_______________";
 	const medLic = payload.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER;
 
@@ -369,7 +369,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <div>Лицензия на медицинскую деятельность: <strong>№ ${escapeHtml(medLic)}</strong></div>
     </div>
     <div class="doc-requisites">
-      <div class="form-badge">ПРИКАЗ МЗ РФ № 804н</div>
+      <div class="form-badge">АКТ ПРИЕМКИ</div>
       <div>Медицинская номенклатура</div>
       <div>К Договору № ${escapeHtml(contractNum)}</div>
       <div style="font-weight:bold; color:#0f172a;">АКТ ВЫПОЛНЕННЫХ РАБОТ</div>
@@ -401,7 +401,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     <thead>
       <tr style="background:#f1f5f9;">
         <th style="width:5%; text-align:center;">№</th>
-        <th style="width:16%; text-align:center;">Код (804н)</th>
+        <th style="width:16%; text-align:center;">Код услуги</th>
         <th style="width:47%;">Наименование медицинской услуги</th>
         <th style="width:8%; text-align:center;">Кол-во</th>
         <th style="width:12%; text-align:right;">Цена (руб.)</th>

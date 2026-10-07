@@ -598,7 +598,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								Акт работ
+								Акт выполненных работ
 							</button>
 						</div>
 

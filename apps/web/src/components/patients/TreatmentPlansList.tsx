@@ -90,92 +90,87 @@ export const TreatmentPlansList: React.FC<TreatmentPlansListProps> = React.memo(
 				className={`treatment-plans-list-container flex flex-col gap-3 w-full text-[var(--ink)] ${className}`}
 				data-testid="treatment-plans-list"
 			>
-				{/* 1. Header Toolbar with Filter Chips and Search */}
-				<div className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xs">
-					{/* Status Filters */}
-					<div className="flex items-center gap-1.5 flex-wrap" data-testid="plans-status-filters">
+				{/* 1. Header Toolbar with Segmented Status Bar and Search */}
+				<div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xs">
+					{/* Status Filters: Canonical Segmented Bar */}
+					<div className="dente-segmented-bar overflow-x-auto max-w-full" role="tablist" data-testid="plans-status-filters">
 						<button
 							type="button"
+							role="tab"
+							aria-selected={statusFilter === "all"}
+							data-active={statusFilter === "all"}
 							onClick={() => setStatusFilter("all")}
-							className={`h-7 px-2.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-								statusFilter === "all"
-									? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs"
-									: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${statusFilter === "all" ? "active" : ""}`}
 							data-testid="filter-plans-all"
 						>
 							Все ({items.length})
 						</button>
 						<button
 							type="button"
+							role="tab"
+							aria-selected={statusFilter === "proposed"}
+							data-active={statusFilter === "proposed"}
+							onClick={() => setStatusFilter("proposed")}
+							className={`dente-segmented-item ${statusFilter === "proposed" ? "active" : ""}`}
+							data-testid="filter-plans-proposed"
+						>
+							Черновик ({items.filter((i) => i.status === "proposed" || (i as any).status === "draft").length})
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={statusFilter === "approved"}
+							data-active={statusFilter === "approved"}
+							onClick={() => setStatusFilter("approved")}
+							className={`dente-segmented-item ${statusFilter === "approved" ? "active" : ""}`}
+							data-testid="filter-plans-approved"
+						>
+							На согласовании ({items.filter((i) => i.status === "approved" || (i as any).status === "agreed").length})
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={statusFilter === "in_progress"}
+							data-active={statusFilter === "in_progress"}
 							onClick={() => setStatusFilter("in_progress")}
-							className={`h-7 px-2.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-								statusFilter === "in_progress"
-									? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs"
-									: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${statusFilter === "in_progress" ? "active" : ""}`}
 							data-testid="filter-plans-in-progress"
 						>
 							В работе ({items.filter((i) => i.status === "in_progress").length})
 						</button>
 						<button
 							type="button"
-							onClick={() => setStatusFilter("approved")}
-							className={`h-7 px-2.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-								statusFilter === "approved"
-									? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs"
-									: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-							}`}
-							data-testid="filter-plans-approved"
-						>
-							Согласовано ({items.filter((i) => i.status === "approved").length})
-						</button>
-						<button
-							type="button"
-							onClick={() => setStatusFilter("proposed")}
-							className={`h-7 px-2.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-								statusFilter === "proposed"
-									? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs"
-									: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-							}`}
-							data-testid="filter-plans-proposed"
-						>
-							Предложено ({items.filter((i) => i.status === "proposed").length})
-						</button>
-						<button
-							type="button"
+							role="tab"
+							aria-selected={statusFilter === "completed"}
+							data-active={statusFilter === "completed"}
 							onClick={() => setStatusFilter("completed")}
-							className={`h-7 px-2.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-								statusFilter === "completed"
-									? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs"
-									: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-							}`}
+							className={`dente-segmented-item ${statusFilter === "completed" ? "active" : ""}`}
 							data-testid="filter-plans-completed"
 						>
-							Выполнено ({items.filter((i) => i.status === "completed").length})
+							Завершен ({items.filter((i) => i.status === "completed").length})
 						</button>
 					</div>
 
 					{/* Search & Actions */}
 					<div className="flex items-center gap-2 flex-1 max-w-sm min-w-[200px] justify-end">
-						<div className="relative w-full">
-							<Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+						<div className="dente-search-wrap max-w-xs">
+							<Search className="dente-search-icon" aria-hidden="true" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по услуге или зубу..."
-								className="w-full h-7 pl-8 pr-7 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none focus:border-[var(--teal)]"
+								className="dente-search-input text-xs"
 								data-testid="plans-search-input"
 							/>
 							{searchQuery && (
 								<button
 									type="button"
 									onClick={() => setSearchQuery("")}
-									className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer p-0.5 bg-transparent border-0"
+									className="dente-search-clear"
 									title="Очистить"
 								>
-									<X className="w-3 h-3" />
+									<X size={13} />
 								</button>
 							)}
 						</div>
@@ -184,10 +179,10 @@ export const TreatmentPlansList: React.FC<TreatmentPlansListProps> = React.memo(
 							<button
 								type="button"
 								onClick={onNewPlanItem}
-								className="min-h-[30px] h-7 px-2.5 text-xs font-bold rounded-lg bg-[var(--teal)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 shadow-xs"
+								className="primary-button h-8 min-h-[32px] px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1 shrink-0"
 								data-testid="btn-add-plan-position"
 							>
-								<Plus className="w-3 h-3" />
+								<Plus size={14} />
 								<span>Добавить</span>
 							</button>
 						)}

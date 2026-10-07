@@ -319,7 +319,7 @@ export const CbctTunerPlayground: React.FC<CbctTunerPlaygroundProps> = ({
 								: "bg-cyan-950/70 text-cyan-300 border-cyan-500/60 hover:bg-cyan-900/90"
 						}`}
 						data-testid="cbct-tuner-copy-params-btn"
-						title="Скопировать текущие параметры в буфер обмена для отправки в чат"
+						title="Скопировать параметры калибровки"
 					>
 						{copiedFeedback ? <Check className="w-3.5 h-3.5 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
 						<span className="hidden sm:inline">{copiedFeedback ? "СКОПИРОВАНО!" : "Скопировать"}</span>
@@ -331,7 +331,7 @@ export const CbctTunerPlayground: React.FC<CbctTunerPlaygroundProps> = ({
 							onClick={onClose}
 							className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center"
 							data-testid="cbct-tuner-close-btn"
-							title="Закрыть тюнер и вернуться в CRM"
+							title="Закрыть окно просмотра"
 						>
 							<X className="w-4 h-4" />
 						</button>

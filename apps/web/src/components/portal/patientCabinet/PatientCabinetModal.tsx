@@ -892,9 +892,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					})}
 				</nav>
 
-				{/* =================================================================
-				    WAVE 2: SLEEK BOTTOM SHEETS (ANTI-MATRYOSHKA - DEPTH STRICTLY 1)
-				    ================================================================= */}
+				{/* Bottom Sheets */}
 
 				{/* 1. SBP Payment Bottom Sheet */}
 				<SbpPaymentSheet

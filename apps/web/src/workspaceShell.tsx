@@ -734,7 +734,7 @@ export function WorkspaceTopbar({
 				<div className="topbar-brand-mobile sm:hidden flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0 ml-1">
 					<Stethoscope size={18} aria-hidden="true" />
 				</div>
-				<div className="topbar-clinic shrink-0 min-w-0 sm:max-w-[280px] max-w-[140px] pl-1 sm:pl-0 flex flex-col justify-center leading-tight">
+				<div className="topbar-clinic shrink-0 min-w-0 sm:max-w-[280px] max-w-[190px] pl-1 sm:pl-0 flex flex-col justify-center leading-tight">
 					<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5 hidden sm:block">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>

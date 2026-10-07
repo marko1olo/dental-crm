@@ -215,97 +215,91 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 				</div>
 			</div>
 
-			{/* Method Selector Tabs */}
-			<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-1.5 sm:gap-2 overflow-x-auto flex-nowrap sm:flex-wrap shrink-0">
-				<button
-					type="button"
-					onClick={() => setActiveMethod("card_terminal")}
-					data-testid="tab-payment-card-terminal"
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-						activeMethod === "card_terminal"
-							? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
-					}`}
+			{/* Method Selector Tabs — Apple-style Segmented Control */}
+			<div className="p-2 sm:px-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center overflow-x-auto flex-nowrap shrink-0">
+				<div
+					className="dente-segmented-bar w-full sm:w-auto overflow-x-auto no-scrollbar"
+					role="tablist"
+					aria-label="Способ оплаты"
 				>
-					<CreditCard size={15} className="text-emerald-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0 hidden sm:inline">POS Терминал Сбербанк</span>
-					<span className="whitespace-nowrap shrink-0 sm:hidden">Терминал</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => setActiveMethod("card_terminal")}
+						data-testid="tab-payment-card-terminal"
+						role="tab"
+						aria-selected={activeMethod === "card_terminal"}
+						className={`dente-segmented-item ${activeMethod === "card_terminal" ? "active" : ""}`}
+					>
+						<CreditCard size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">POS Терминал</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">Терминал</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={() => setActiveMethod("sberpay_qr")}
-					data-testid="tab-payment-sberpay-qr"
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-						activeMethod === "sberpay_qr"
-							? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
-					}`}
-				>
-					<QrCode size={15} className="text-teal-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0 hidden sm:inline">SberPay QR (СБП)</span>
-					<span className="whitespace-nowrap shrink-0 sm:hidden">SberPay QR</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => setActiveMethod("sberpay_qr")}
+						data-testid="tab-payment-sberpay-qr"
+						role="tab"
+						aria-selected={activeMethod === "sberpay_qr"}
+						className={`dente-segmented-item ${activeMethod === "sberpay_qr" ? "active" : ""}`}
+					>
+						<QrCode size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">SberPay QR</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">SberPay</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={() => setActiveMethod("sbp_qr")}
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-						activeMethod === "sbp_qr"
-							? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
-					}`}
-					data-testid="tab-payment-sbp-qr"
-					title="Оплата СБП по QR (НСПК / ГОСТ Р 56042-2014)"
-				>
-					<QrCode size={15} className="text-teal-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0 hidden sm:inline">Оплата СБП по QR</span>
-					<span className="whitespace-nowrap shrink-0 sm:hidden">СБП QR</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => setActiveMethod("sbp_qr")}
+						data-testid="tab-payment-sbp-qr"
+						role="tab"
+						aria-selected={activeMethod === "sbp_qr"}
+						className={`dente-segmented-item ${activeMethod === "sbp_qr" ? "active" : ""}`}
+						title="Оплата СБП по QR (НСПК / ГОСТ Р 56042-2014)"
+					>
+						<QrCode size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">СБП по QR</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">СБП QR</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={() => setActiveMethod("cash")}
-					data-testid="tab-payment-cash"
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-						activeMethod === "cash"
-							? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
-					}`}
-				>
-					<Banknote size={15} className="text-emerald-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0">Наличные</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => setActiveMethod("cash")}
+						data-testid="tab-payment-cash"
+						role="tab"
+						aria-selected={activeMethod === "cash"}
+						className={`dente-segmented-item ${activeMethod === "cash" ? "active" : ""}`}
+					>
+						<Banknote size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+						<span className="whitespace-nowrap shrink-0">Наличные</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={() => setActiveMethod("family_deposit")}
-					data-testid="tab-payment-family-deposit"
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-						activeMethod === "family_deposit"
-							? "border-pink-500 bg-pink-500/10 text-pink-700 dark:text-pink-300 ring-2 ring-pink-400"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
-					}`}
-				>
-					<Users size={15} className="text-pink-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0 hidden sm:inline">Депозит / Семья</span>
-					<span className="whitespace-nowrap shrink-0 sm:hidden">Депозит</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => setActiveMethod("family_deposit")}
+						data-testid="tab-payment-family-deposit"
+						role="tab"
+						aria-selected={activeMethod === "family_deposit"}
+						className={`dente-segmented-item ${activeMethod === "family_deposit" ? "active" : ""}`}
+					>
+						<Users size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">Депозит / Семья</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">Депозит</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={() => setActiveMethod("split")}
-					data-testid="tab-payment-split"
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-						activeMethod === "split"
-							? "border-purple-500 bg-purple-500/10 text-purple-700 dark:text-purple-300 ring-2 ring-purple-400"
-							: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
-					}`}
-				>
-					<Wallet size={15} className="text-purple-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0 hidden sm:inline">Комбинированная (Сплит)</span>
-					<span className="whitespace-nowrap shrink-0 sm:hidden">Сплит</span>
-				</button>
+					<button
+						type="button"
+						onClick={() => setActiveMethod("split")}
+						data-testid="tab-payment-split"
+						role="tab"
+						aria-selected={activeMethod === "split"}
+						className={`dente-segmented-item ${activeMethod === "split" ? "active" : ""}`}
+					>
+						<Wallet size={14} className="shrink-0 text-purple-600 dark:text-purple-400" />
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">Комбинированная (Сплит)</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">Сплит</span>
+					</button>
+				</div>
 			</div>
 
 			{/* Debt Autonomy Banner (Mandates 8e & 8n: Patient debt never blocks receipt or tender) */}
@@ -320,7 +314,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						{(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString(
 							"ru-RU",
 						)}{" "}
-						₽. Долг не блокирует приём оплаты на фактически внесённую сумму и фискализацию чека.
+						₽. Возможен приём оплаты на фактически внесённую сумму.
 					</span>
 				</div>
 			)}

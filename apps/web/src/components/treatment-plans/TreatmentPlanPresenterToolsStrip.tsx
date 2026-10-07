@@ -88,7 +88,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "copilot" ? null : "copilot"))}
-							className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
+							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
 								activeToolsPanel === "copilot"
 									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
@@ -105,13 +105,13 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "bundles" ? null : "bundles"))}
-							className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
+							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
 								activeToolsPanel === "bundles"
 									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
 							}`}
 							data-testid="toggle-bundles-panel-btn"
-							title="Готовые клинические пакеты услуг (Мандат 8e)"
+							title="Готовые клинические пакеты услуг"
 						>
 							<Package size={13} />
 							<span>Клинические пакеты</span>
@@ -122,7 +122,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						<button
 							type="button"
 							onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
-							className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
+							className={`min-h-[36px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 border transition-colors cursor-pointer touch-manipulation ${
 								activeToolsPanel === "doctorDiscount" || doctorDiscountPercent > 0
 									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
@@ -161,7 +161,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 								type="button"
 								aria-busy={isCopilotExecuting}
 								onClick={() => onExecuteCopilot(act.id)}
-								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors"
+								className="h-7 px-2.5 rounded-lg text-[12.5px] font-medium bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors"
 								title={isCopilotExecuting ? "AI Copilot выполняет команду..." : act.description}
 								data-testid={`presenter-copilot-btn-${act.id}`}
 							>
@@ -187,7 +187,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 								}
 							}}
 							placeholder="Команда ассистенту (напр. 'бюджет 120к')"
-							className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none min-h-[32px] sm:min-h-[28px] sm:h-7"
+							className="flex-1 px-2.5 py-1 text-[13px] rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none min-h-[32px] sm:min-h-[32px] sm:h-8"
 							data-testid="presenter-copilot-input"
 						/>
 						<button
@@ -201,7 +201,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 									setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
 								}
 							}}
-							className="p-2 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] cursor-pointer touch-manipulation"
+							className="p-1.5 min-h-[32px] min-w-[32px] sm:h-8 sm:w-8 flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] cursor-pointer touch-manipulation"
 							title={isCopilotExecuting ? "Выполняется команда ассистента..." : "Отправить команду"}
 							data-testid="presenter-copilot-send-btn"
 						>
@@ -270,7 +270,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 										? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора"
 										: `Применить скидку ${pct}%`
 								}
-								className={`min-h-[36px] px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
+								className={`min-h-[36px] sm:min-h-[28px] sm:h-7 px-2.5 rounded-lg font-mono font-medium text-[12.5px] cursor-pointer transition-all ${
 									doctorDiscountPercent === pct
 										? pct === 100
 											? "bg-emerald-600 text-white shadow-xs"
@@ -285,11 +285,11 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 							</button>
 						))}
 						{doctorDiscountPercent === 100 && (
-							<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 ml-1">
+							<span className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 ml-1">
 								0 ₽ (Гарантийная переделка / Персонал)
 							</span>
 						)}
-						<div className="inline-flex items-center gap-1 ml-1" title="Свободная скидка врача (0-100%) без мастер-паролей (Мандат 8e)">
+						<div className="inline-flex items-center gap-1 ml-1" title="Свободная скидка врача (0-100%)">
 							<input
 								type="number"
 								min="0"
@@ -299,11 +299,11 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 									const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
 									onApplyDoctorDiscount(val);
 								}}
-								className="w-14 min-h-[32px] h-8 px-1.5 text-xs font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
+								className="w-14 min-h-[32px] sm:min-h-[28px] sm:h-7 px-1.5 text-[12.5px] font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
 								placeholder="%"
 								data-testid="presenter-custom-discount-input"
 							/>
-							<span className="text-xs text-[var(--tp-text-muted)] font-bold">%</span>
+							<span className="text-[12.5px] text-[var(--tp-text-muted)] font-bold">%</span>
 						</div>
 					</div>
 					<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">

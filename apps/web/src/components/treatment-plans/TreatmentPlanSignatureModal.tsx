@@ -227,7 +227,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 									))}
 								</div>
 								<div className="text-[11px] text-amber-700/90 dark:text-amber-300/90 font-semibold pt-1 border-t border-amber-500/20">
-									Внимание: в плане назначены взаимоисключающие манипуляции. Врач вправе утвердить план под личную клиническую ответственность (Mandates 8e, 8y).
+									Внимание: в плане назначены взаимоисключающие манипуляции. Врач вправе утвердить план под личную клиническую ответственность.
 								</div>
 							</div>
 						</div>
@@ -275,7 +275,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 						data-testid="paper-signature-confirm-btn"
 					>
 						<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
-						<span>Утвердить и подписать на бумаге (1 клик)</span>
+						<span>Утвердить и подписать на бумаге</span>
 					</button>
 
 					<button

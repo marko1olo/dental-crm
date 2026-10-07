@@ -82,46 +82,43 @@ export function MarketingAttributionDashboard() {
 				</div>
 
 				{/* Primary Section Switcher */}
-				<div className="inline-flex rounded-2xl bg-[var(--paper-soft)] p-1.5 border border-[var(--line)]">
+				<div className="dente-segmented-bar" role="tablist" aria-label="Сквозная аналитика маркетинга">
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeSection === "attribution"}
 						onClick={() => setActiveSection("attribution")}
-						className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border-0 cursor-pointer min-h-[36px] flex items-center gap-1.5 ${
-							activeSection === "attribution"
-								? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
-								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`dente-segmented-item ${activeSection === "attribution" ? "active" : ""}`}
+						data-active={activeSection === "attribution"}
 						data-testid="tab-online-vs-admin"
 					>
-						<Bot size={15} className="text-[var(--teal)]" />
+						<Bot size={14} className="text-[var(--teal)]" />
 						<span>Онлайн vs Администраторы</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeSection === "romi"}
 						onClick={() => setActiveSection("romi")}
-						className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border-0 cursor-pointer min-h-[36px] flex items-center gap-1.5 ${
-							activeSection === "romi"
-								? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
-								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`dente-segmented-item ${activeSection === "romi" ? "active" : ""}`}
+						data-active={activeSection === "romi"}
 						data-testid="tab-romi-table"
 					>
-						<DollarSign size={15} className="text-emerald-500" />
+						<DollarSign size={14} className="text-emerald-500" />
 						<span>ROMI и Затраты</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={activeSection === "field_settings"}
 						onClick={() => setActiveSection("field_settings")}
-						className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border-0 cursor-pointer min-h-[36px] flex items-center gap-1.5 ${
-							activeSection === "field_settings"
-								? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
-								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
+						className={`dente-segmented-item ${activeSection === "field_settings" ? "active" : ""}`}
+						data-active={activeSection === "field_settings"}
 						data-testid="tab-field-requirements"
 					>
-						<Settings size={15} className="text-indigo-500" />
+						<Settings size={14} className="text-indigo-500" />
 						<span>Обязательность полей карты</span>
 					</button>
 				</div>
@@ -158,7 +155,7 @@ export function MarketingAttributionDashboard() {
 							<button
 								type="button"
 								onClick={handleResetRequirements}
-								className="secondary-button text-xs min-h-[36px] inline-flex items-center gap-1.5 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] cursor-pointer"
+								className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
 								title="Сбросить к стандартным настройкам"
 							>
 								<RotateCcw size={14} />
@@ -167,7 +164,7 @@ export function MarketingAttributionDashboard() {
 							<button
 								type="button"
 								onClick={handleSaveRequirements}
-								className="primary-button text-xs min-h-[36px] inline-flex items-center gap-1.5 px-4 rounded-xl bg-[var(--teal)] text-white font-bold cursor-pointer"
+								className="primary-button h-8 px-4 rounded-lg text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
 								data-testid="save-patient-field-requirements-btn"
 							>
 								<Save size={14} />
@@ -186,7 +183,7 @@ export function MarketingAttributionDashboard() {
 										Номер телефона
 									</span>
 									{requirements.requirePhone && (
-										<span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold">
+										<span className="text-xs px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold">
 											ОБЯЗАТЕЛЬНО
 										</span>
 									)}
@@ -215,7 +212,7 @@ export function MarketingAttributionDashboard() {
 										Рекламный источник (Маркетинг)
 									</span>
 									{requirements.requireAdvertisingSource && (
-										<span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">
+										<span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">
 											ОБЯЗАТЕЛЬНО
 										</span>
 									)}
@@ -244,7 +241,7 @@ export function MarketingAttributionDashboard() {
 										СНИЛС (11 цифр)
 									</span>
 									{requirements.requireSnils && (
-										<span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-bold">
+										<span className="text-xs px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-bold">
 											ОБЯЗАТЕЛЬНО ДЛЯ ЕГИСЗ
 										</span>
 									)}
@@ -273,7 +270,7 @@ export function MarketingAttributionDashboard() {
 										Дата рождения
 									</span>
 									{requirements.requireBirthDate && (
-										<span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">
+										<span className="text-xs px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">
 											ОБЯЗАТЕЛЬНО
 										</span>
 									)}

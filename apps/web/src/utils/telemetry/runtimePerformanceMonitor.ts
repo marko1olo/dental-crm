@@ -89,6 +89,7 @@ export class RuntimePerformanceMonitor {
 	private isRunning = false;
 	private isTabVisible = true;
 	private isSamplingBurst = false;
+	private isBatteryThrottling = false;
 
 	// State Machine
 	private currentState: DynamicLoadState = "HEALTHY";
@@ -258,6 +259,26 @@ export class RuntimePerformanceMonitor {
 	}
 
 	/**
+	 * Sets battery-saving throttling state (e.g. from Battery API when discharging <= 20%).
+	 * Caps target FPS to 30, increases downscaling, and sets root data-battery-saving attribute.
+	 */
+	public setBatteryThrottling(active: boolean): void {
+		if (this.isBatteryThrottling === active) return;
+		this.isBatteryThrottling = active;
+		this.updateSnapshot(this.options.now());
+		if (this.options.syncDomAttributes) {
+			this.syncDom(this.currentState);
+		}
+	}
+
+	/**
+	 * Returns current battery throttling state.
+	 */
+	public getBatteryThrottling(): boolean {
+		return this.isBatteryThrottling;
+	}
+
+	/**
 	 * Subscribes a listener to snapshot changes.
 	 */
 	public subscribe(listener: (snapshot: DynamicPerformanceSnapshot) => void): () => void {
@@ -310,6 +331,7 @@ export class RuntimePerformanceMonitor {
 		this.currentState = "HEALTHY";
 		this.previousState = "HEALTHY";
 		this.stateChangedAt = now;
+		this.isBatteryThrottling = false;
 		this.candidateBetterState = null;
 		this.candidateStableSince = null;
 		this.sampleCount = 0;
@@ -681,16 +703,23 @@ export class RuntimePerformanceMonitor {
 				break;
 		}
 
+		if (this.isBatteryThrottling) {
+			targetFpsCap = Math.min(targetFpsCap, 30);
+			downscaleFactor = Math.min(downscaleFactor, 0.75);
+			recommendedBlurDisabled = true;
+		}
+
 		return {
 			timestamp: now,
 			state,
 			previousState: this.previousState,
 			stateChangedAt: this.stateChangedAt,
 			metrics: { ...this.currentMetrics },
-			isThrottlingRecommended: state !== "HEALTHY",
+			isThrottlingRecommended: state !== "HEALTHY" || this.isBatteryThrottling,
 			downscaleFactor,
 			targetFpsCap,
 			recommendedBlurDisabled,
+			isBatteryThrottling: this.isBatteryThrottling,
 		};
 	}
 
@@ -700,6 +729,12 @@ export class RuntimePerformanceMonitor {
 		const root = document.documentElement;
 		root.setAttribute("data-dynamic-load", state.toLowerCase());
 		root.setAttribute("data-dynamic-fps", String(this.currentMetrics.averageFps));
+
+		if (this.isBatteryThrottling) {
+			root.setAttribute("data-battery-saving", "true");
+		} else {
+			root.removeAttribute("data-battery-saving");
+		}
 
 		if (state === "DEGRADED" || state === "CRITICAL") {
 			root.setAttribute("data-blur-disabled", "true");

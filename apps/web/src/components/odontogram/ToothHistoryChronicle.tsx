@@ -1,4 +1,4 @@
-import { Activity, Calendar, Camera, FileText, History, Image, X } from "lucide-react";
+import { Activity, Calendar, Camera, CheckCircle2, FileEdit, FileText, History, Image, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import {
@@ -249,6 +249,10 @@ export function ToothHistoryChronicle({
 											<Calendar className="w-4 h-4 text-[var(--brand-500,#3b82f6)]" />
 										) : evt.kind === "state_change" ? (
 											<Activity className="w-4 h-4 text-amber-500" />
+										) : evt.kind === "treatment_procedure" ? (
+											<CheckCircle2 className="w-4 h-4 text-emerald-500" />
+										) : evt.kind === "diary_revision" ? (
+											<FileEdit className="w-4 h-4 text-indigo-500" />
 										) : (
 											/* Вид события неизвестен. Значок смены статуса здесь стоял
 										   как «иначе», то есть незнакомое событие выдавалось за

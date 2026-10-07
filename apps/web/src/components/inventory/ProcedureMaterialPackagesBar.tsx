@@ -24,10 +24,10 @@ export const ProcedureMaterialPackagesBar: React.FC<
 				<div className="inventory-clinical-packages-header">
 					<span className="inventory-clinical-packages-label">
 						<Zap size={14} className="shrink-0" />
-						Клинические пакеты (1 клик):
+						Клинические пакеты материалов:
 					</span>
 					<span className="inventory-clinical-packages-hint">
-						СИЗ + Крафт + анестезия + протокол лечения (1 клик)
+						СИЗ + Крафт + анестезия + протокол лечения
 					</span>
 				</div>
 				<div className="inventory-packages-chips">

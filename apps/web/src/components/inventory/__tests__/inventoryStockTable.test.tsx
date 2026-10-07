@@ -150,12 +150,14 @@ describe("FEFO Smart Anesthesia & Expiry Traffic Light (Mandates 8e, 8n, 8v)", (
 				"Must display soft overdraft badge for zero stock item",
 			);
 			assert.ok(
-				html.includes("Овердрафт (0-блокировка)"),
-				"Must display non-blocking overdraft label",
+				html.includes("Мягкий учет расхода (дефицит)") ||
+					html.includes("Овердрафт (0-блокировка)"),
+				"Must display non-blocking deficit label",
 			);
 			assert.ok(
-				html.includes("Списать (Овердрафт)"),
-				"Deduction button must allow overdraft deduction",
+				html.includes("Списать (с дефицитом)") ||
+					html.includes("Списать (Овердрафт)"),
+				"Deduction button must allow deficit deduction",
 			);
 		});
 	});

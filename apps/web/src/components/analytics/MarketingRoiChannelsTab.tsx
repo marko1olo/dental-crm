@@ -2,7 +2,7 @@
  * Вкладка детальной таблицы эффективности рекламных каналов и ROMI.
  */
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import React from "react";
 
 export interface ChannelPerformanceRow {
@@ -48,17 +48,16 @@ export function MarketingRoiChannelsTab({
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-2 flex-wrap">
 					<span className="text-xs font-semibold text-[var(--muted,#94a3b8)]">Категория:</span>
-					<div className="flex items-center gap-1 flex-wrap">
+					<div className="dente-filter-chips">
 						{uniqueCategories.map((cat) => (
 							<button
 								key={cat}
 								type="button"
 								onClick={() => onCategoryFilterChange(cat)}
-								className={`px-2.5 py-1 text-xs rounded-lg border font-semibold transition-all ${
-									categoryFilter === cat
-										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper-soft,#0f172a)] text-[var(--muted,#94a3b8)] border-[var(--line,rgba(204,251,241,0.15))] hover:text-white"
+								className={`dente-filter-chip ${
+									categoryFilter === cat ? "active" : ""
 								}`}
+								data-active={categoryFilter === cat}
 							>
 								{cat === "all" ? "Все каналы" : cat}
 							</button>
@@ -66,16 +65,26 @@ export function MarketingRoiChannelsTab({
 					</div>
 				</div>
 
-				<div className="relative min-w-[240px]">
-					<Search className="w-4 h-4 absolute left-3 top-2.5 text-[var(--muted,#94a3b8)]" />
+				<div className="dente-search-wrap min-w-[240px]">
+					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => onSearchQueryChange(e.target.value)}
 						placeholder="Поиск канала или заметки..."
-						className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-[var(--paper-soft,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(204,251,241,0.15))] outline-none focus:border-[var(--teal,#0d9488)]"
+						className="dente-search-input"
 						data-testid="search-channels-input"
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							onClick={() => onSearchQueryChange("")}
+							className="dente-search-clear"
+							aria-label="Очистить поиск"
+						>
+							<X size={13} />
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -125,7 +134,7 @@ export function MarketingRoiChannelsTab({
 										<td>
 											<div className="font-bold text-[var(--ink,#f8fafc)]">{ch.nameRu}</div>
 											{ch.notes && (
-												<div className="text-[11px] text-[var(--muted,#94a3b8)]">
+												<div className="text-xs text-[var(--muted,#94a3b8)]">
 													{ch.notes}
 												</div>
 											)}
@@ -138,13 +147,13 @@ export function MarketingRoiChannelsTab({
 										</td>
 										<td className="text-center font-mono">
 											{ch.callsCount}
-											<div className="text-[10px] text-[var(--muted,#94a3b8)]">
+											<div className="text-xs text-[var(--muted,#94a3b8)]">
 												CPL: {ch.cplFormatted}
 											</div>
 										</td>
 										<td className="text-center font-mono">
 											{ch.bookedAppointmentsCount}
-											<div className="text-[10px] text-[var(--muted,#94a3b8)]">
+											<div className="text-xs text-[var(--muted,#94a3b8)]">
 												CPA: {ch.cpaFormatted}
 											</div>
 										</td>

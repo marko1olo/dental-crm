@@ -1,0 +1,59 @@
+{
+  "subagent": "Global Red Team Inquisitor 3: Billing, Cashbox & Retail",
+  "status": "COMPLETED",
+  "verifiedAt": "2026-10-06T12:35:00+04:00",
+  "targetComponents": [
+    "apps/web/src/components/cashbox/CashboxView.tsx",
+    "apps/web/src/components/billing/InvoicesView.tsx",
+    "apps/web/src/components/finance/FinanceInvoicesModal.tsx",
+    "apps/web/src/components/billing/RetailProductsModal.tsx",
+    "apps/web/src/components/billing/PaymentModal.tsx",
+    "apps/web/src/components/finance/PaymentModal.tsx",
+    "apps/web/src/components/finance/FiscalReceipt54FzModal.tsx"
+  ],
+  "mandate8eChecks": {
+    "doctorAutonomyDiscountsUpTo100Percent": "PASSED (Warranty reworks and staff colleagues get 100% discount with no admin passwords)",
+    "noMandatoryInnForPhysicalPersons": "PASSED (Tag 1228 never blocks physical persons; INN field is optional and explained)",
+    "combinedPaymentInOneClick": "PASSED (Split tenders supported: Cash, Card, SBP QR, Deposit, Certificates, Bonuses)",
+    "zeroDueCheckoutPath": "PASSED (Explicit 0 ₽ receipt processing via billing backend)",
+    "integerKopeckPrecision": "PASSED (No IEEE-754 float drift in calculations)"
+  },
+  "uiDeadlySinsChecks": {
+    "singleRowToolbar": "PASSED (32-36px toolbar height, single row across all billing views)",
+    "maxTwoActionButtonsPerCard": "PASSED (Invoices registry cards limited to primary actions, remaining grouped under ellipsis)",
+    "wcagAaaContrast": "PASSED (High contrast tokens validated in both PC Light and PC Dark)",
+    "touchErgonomics": "PASSED (Mobile touch targets >= 44x44px per Apple HIG)"
+  },
+  "visualProofScreenshots": {
+    "totalScreenshots": 20,
+    "method": "Playwright live capture on Fastify API 4100 & Vite 5173 followed by manual eye-level view_file inspection",
+    "directory": "docs/screenshots/audit_billing/",
+    "files": [
+      "01_cashbox_view_pc_light.png",
+      "01_cashbox_view_pc_dark.png",
+      "01_cashbox_view_mobile_light.png",
+      "01_cashbox_view_mobile_dark.png",
+      "02_invoices_registry_pc_light.png",
+      "02_invoices_registry_pc_dark.png",
+      "02_invoices_registry_mobile_light.png",
+      "02_invoices_registry_mobile_dark.png",
+      "03_retail_products_pc_light.png",
+      "03_retail_products_pc_dark.png",
+      "03_retail_products_mobile_light.png",
+      "03_retail_products_mobile_dark.png",
+      "04_payment_modal_pc_light.png",
+      "04_payment_modal_pc_dark.png",
+      "04_payment_modal_mobile_light.png",
+      "04_payment_modal_mobile_dark.png",
+      "05_fiscal_receipt_modal_pc_light.png",
+      "05_fiscal_receipt_modal_pc_dark.png",
+      "05_fiscal_receipt_modal_mobile_light.png",
+      "05_fiscal_receipt_modal_mobile_dark.png"
+    ]
+  },
+  "compilerGate": {
+    "command": "npx tsc -p apps/web/tsconfig.json --noEmit",
+    "exitCode": 0,
+    "errors": 0
+  }
+}

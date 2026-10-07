@@ -213,12 +213,8 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 							type="button"
 							onClick={handleScanNow}
 							disabled={isScanning}
-							className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border transition-colors disabled:opacity-50"
-							style={{
-								background: "var(--accent, #0d9488)",
-								borderColor: "var(--accent, #0d9488)",
-								color: "#ffffff",
-							}}
+							className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+							data-testid="btn-dicom-daemon-scan-now"
 						>
 							<RefreshCw className={`w-3.5 h-3.5 ${isScanning ? "animate-spin" : ""}`} />
 							<span>{isScanning ? "Сканирование..." : "Сканировать сейчас"}</span>
@@ -227,7 +223,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 rounded-lg opacity-70 hover:opacity-100 transition-opacity cursor-pointer border border-transparent hover:border-gray-200"
+							className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 							aria-label="Закрыть"
 						>
 							<X className="w-4 h-4" />
@@ -235,57 +231,50 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 					</div>
 				</div>
 
-				{/* ─── Вкладки ─────────────────────────────────────────────── */}
+				{/* ─── Вкладки: Канонический DENTE Segmented Bar ─────────────── */}
 				<div
-					className="flex items-center gap-2 px-6 pt-3 border-b text-xs font-medium"
-					style={{ borderColor: "var(--line, #e2e8f0)" }}
+					className="px-6 py-2.5 border-b flex items-center"
+					style={{ borderColor: "var(--line, #e2e8f0)", background: "var(--paper-soft)" }}
 				>
-					<button
-						type="button"
-						onClick={() => setActiveTab("pending")}
-						className={`pb-2.5 px-1 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-							activeTab === "pending"
-								? "border-amber-500 font-bold text-amber-600 dark:text-amber-400"
-								: "border-transparent opacity-70 hover:opacity-100"
-						}`}
-					>
-						<span>Требуют подтверждения (60–85%)</span>
-						{pendingStudies.length > 0 && (
-							<span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-								{pendingStudies.length}
-							</span>
-						)}
-					</button>
+					<div className="dente-segmented-bar" data-testid="dicom-daemon-tabs">
+						<button
+							type="button"
+							onClick={() => setActiveTab("pending")}
+							className={`dente-segmented-item ${activeTab === "pending" ? "active" : ""}`}
+							data-testid="dicom-tab-pending"
+						>
+							<span>Требуют подтверждения (60–85%)</span>
+							{pendingStudies.length > 0 && (
+								<span className="px-1.5 py-0.2 rounded-full text-xs font-bold bg-amber-500 text-white ml-1">
+									{pendingStudies.length}
+								</span>
+							)}
+						</button>
 
-					<button
-						type="button"
-						onClick={() => setActiveTab("unassigned")}
-						className={`pb-2.5 px-1 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-							activeTab === "unassigned"
-								? "border-teal-500 font-bold text-teal-600 dark:text-teal-400"
-								: "border-transparent opacity-70 hover:opacity-100"
-						}`}
-					>
-						<span>Нераспознанные (&lt;60%)</span>
-						{unassignedStudies.length > 0 && (
-							<span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-gray-500 text-white">
-								{unassignedStudies.length}
-							</span>
-						)}
-					</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("unassigned")}
+							className={`dente-segmented-item ${activeTab === "unassigned" ? "active" : ""}`}
+							data-testid="dicom-tab-unassigned"
+						>
+							<span>Нераспознанные (&lt;60%)</span>
+							{unassignedStudies.length > 0 && (
+								<span className="px-1.5 py-0.2 rounded-full text-xs font-bold bg-zinc-500 text-white ml-1">
+									{unassignedStudies.length}
+								</span>
+							)}
+						</button>
 
-					<button
-						type="button"
-						onClick={() => setActiveTab("settings")}
-						className={`pb-2.5 px-1 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-							activeTab === "settings"
-								? "border-teal-500 font-bold text-teal-600 dark:text-teal-400"
-								: "border-transparent opacity-70 hover:opacity-100"
-						}`}
-					>
-						<Sliders className="w-3.5 h-3.5" />
-						<span>Папки и демон</span>
-					</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab("settings")}
+							className={`dente-segmented-item ${activeTab === "settings" ? "active" : ""}`}
+							data-testid="dicom-tab-settings"
+						>
+							<Sliders className="w-3.5 h-3.5" />
+							<span>Папки и демон</span>
+						</button>
+					</div>
 				</div>
 
 				{/* ─── Содержимое вкладки ──────────────────────────────────── */}
@@ -317,7 +306,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 									>
 										<div className="space-y-1.5">
 											<div className="flex items-center gap-2 flex-wrap">
-												<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+												<span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
 													Совпадение: {study.bindingConfidence}%
 												</span>
 												<span className="font-semibold text-sm">
@@ -340,12 +329,12 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 														</strong>
 													</p>
 												) : null}
-												<p className="opacity-70 text-[11px]">
+												<p className="opacity-70 text-xs">
 													Тег DICOM: {study.dicomPatientName ?? "Не указан"} | Дата рождения:{" "}
 													{study.dicomBirthDate ?? "—"} | Путь: {study.storagePath ?? "—"}
 												</p>
 												{study.aiSummary && (
-													<p className="text-[11px] italic opacity-60">
+													<p className="text-xs italic opacity-60">
 														{study.aiSummary}
 													</p>
 												)}
@@ -358,7 +347,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 													type="button"
 													disabled={actionPendingId === study.id}
 													onClick={() => handleBindPatient(study.id, study.patientId!)}
-													className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition-colors cursor-pointer"
+													className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-semibold rounded-lg text-white bg-[var(--teal)] hover:opacity-95 transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
 												>
 													<UserCheck className="w-3.5 h-3.5" />
 													<span>Привязать в 1 клик</span>
@@ -369,7 +358,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 												type="button"
 												disabled={actionPendingId === study.id}
 												onClick={() => handleDismiss(study.id)}
-												className="p-1.5 rounded-lg text-xs opacity-60 hover:opacity-100 hover:text-rose-600 transition-colors cursor-pointer"
+												className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 hover:border-rose-400/50 transition-colors cursor-pointer shadow-2xs"
 												title="Скрыть снимок"
 											>
 												<Trash2 className="w-4 h-4" />
@@ -400,14 +389,14 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 											<p className="font-medium text-xs">
 												{study.title} ({study.sliceCount ?? 0} ср.)
 											</p>
-											<p className="text-[11px] opacity-70">
+											<p className="text-xs text-[var(--muted)]">
 												ФИО в DICOM: {study.dicomPatientName ?? "—"} | Путь: {study.storagePath ?? "—"}
 											</p>
 										</div>
 										<button
 											type="button"
 											onClick={() => handleDismiss(study.id)}
-											className="px-2.5 py-1 rounded text-xs border opacity-70 hover:opacity-100 cursor-pointer"
+											className="h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors cursor-pointer shadow-2xs"
 										>
 											Скрыть
 										</button>
@@ -477,7 +466,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 												className="p-2 rounded border bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between"
 											>
 												<span className="truncate">{p}</span>
-												<span className="text-[10px] opacity-60">доступна</span>
+												<span className="text-xs opacity-60">доступна</span>
 											</div>
 										))
 									) : (
@@ -503,7 +492,7 @@ export const DicomImportManagerModal: React.FC<DicomImportManagerModalProps> = (
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-1.5 rounded-lg border hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer font-medium"
+						className="h-8 px-4 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer shadow-2xs"
 					>
 						Закрыть
 					</button>

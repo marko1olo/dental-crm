@@ -121,11 +121,11 @@ export function generateForm043uPrintHtml(payload: EgiszDentalCdaPayload): strin
 		${payload.diagnoses.map((d) => `<li><strong>${d.isPrimary ? "[Основной] " : "[Сопутствующий] "}</strong>${escapeXml(d.icd10Code)} — ${escapeXml(d.icd10Name)}${d.tooth ? ` (зуб ${escapeXml(String(d.tooth))})` : ""}</li>`).join("")}
 	</ul>
 
-	<div class="section-title">4. ОКАЗАННЫЕ МЕДИЦИНСКИЕ УСЛУГИ (НОМЕНКЛАТУРА 804Н)</div>
+	<div class="section-title">4. ОКАЗАННЫЕ МЕДИЦИНСКИЕ УСЛУГИ</div>
 	<table class="services-table">
 		<thead>
 			<tr>
-				<th style="width: 120px;">Код 804н</th>
+				<th style="width: 120px;">Код услуги</th>
 				<th>Наименование услуги</th>
 				<th style="width: 70px;">Зуб</th>
 			</tr>

@@ -120,12 +120,12 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 }) => {
 	return (
 		<div className="space-y-4" data-testid="ortho-archwire-selector">
-			{/* 1. Материал ортодонтической дуги */}
+			{/* 1. Материал ортодонтической дуги (Segmented Bar) */}
 			<div>
 				<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
 					Материал дуги
 				</span>
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+				<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-1 rounded-xl border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-1">
 					{ARCHWIRE_MATERIALS.map((mat) => {
 						const isSelected = archwireMaterial === mat.id;
 						return (
@@ -133,14 +133,14 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 								key={mat.id}
 								type="button"
 								onClick={() => setArchwireMaterial(mat.id)}
-								className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-bold border flex flex-col items-center justify-center transition-all cursor-pointer ${
+								className={`h-9 px-2.5 py-1 rounded-lg text-xs font-medium border flex flex-col items-center justify-center transition-all cursor-pointer ${
 									isSelected
-										? "bg-teal-500/20 border-teal-500 text-teal-800 dark:text-teal-300 font-black shadow-xs"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										? "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] dark:text-teal-300 font-bold shadow-xs"
+										: "bg-transparent border-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--line-subtle,#e2e8f0)]/50"
 								}`}
 							>
-								<span className="text-sm">{mat.badge}</span>
-								<span className="text-[10px] text-slate-500 truncate w-full text-center">
+								<span className="text-[12.5px] font-bold leading-tight">{mat.badge}</span>
+								<span className="text-[11.5px] text-[var(--muted,#64748b)] dark:text-slate-400 truncate w-full text-center leading-tight">
 									{mat.id === "NiTi" ? "Нивелирование" : mat.id === "CuNiTi" ? "Термо" : mat.id === "SS" ? "Сталь" : "Бета-титан"}
 								</span>
 							</button>
@@ -155,15 +155,15 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400">
 						Сечение дуги
 					</span>
-					<span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+					<span className="text-[12px] font-bold text-teal-700 dark:text-teal-300">
 						Выбрано: {archwireSection}"
 					</span>
 				</div>
 
 				<div className="flex flex-col gap-2">
 					{/* Круглые сечения */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-[11px] font-bold text-slate-400 w-16 shrink-0">Круглые:</span>
+					<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-1 rounded-lg border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 flex items-center gap-1 flex-wrap">
+						<span className="text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 px-2 shrink-0">Круглые:</span>
 						{ROUND_SECTIONS.map((sec) => {
 							const isSelected = archwireSection === sec;
 							return (
@@ -171,10 +171,10 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 									key={sec}
 									type="button"
 									onClick={() => setArchwireSection(sec)}
-									className={`min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+									className={`h-7 px-2.5 rounded-md text-[12.5px] font-medium transition-all cursor-pointer ${
 										isSelected
-											? "bg-amber-500 text-white border-amber-600 font-black shadow-xs"
-											: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+											? "bg-[var(--teal,#0d9488)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800"
 									}`}
 								>
 									{sec}"
@@ -184,8 +184,8 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 					</div>
 
 					{/* Прямоугольные сечения */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-[11px] font-bold text-slate-400 w-16 shrink-0">Прямоуг.:</span>
+					<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-1 rounded-lg border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 flex items-center gap-1 flex-wrap">
+						<span className="text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 px-2 shrink-0">Прямоуг.:</span>
 						{RECT_SECTIONS.map((sec) => {
 							const isSelected = archwireSection === sec;
 							return (
@@ -193,10 +193,10 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 									key={sec}
 									type="button"
 									onClick={() => setArchwireSection(sec)}
-									className={`min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+									className={`h-7 px-2 rounded-md text-[12px] font-medium transition-all cursor-pointer ${
 										isSelected
-											? "bg-amber-500 text-white border-amber-600 font-black shadow-xs"
-											: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+											? "bg-[var(--teal,#0d9488)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800"
 									}`}
 								>
 									{sec}"
@@ -208,14 +208,14 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 					{/* Рабочие дуги ортодонта */}
 					<div
 						data-testid="ortho-workhorse-wires-strip"
-						className="mt-2 p-2.5 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-1.5"
+						className="mt-1 p-2.5 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-1.5"
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1">
-								<Zap size={13} className="text-teal-600 dark:text-teal-400" />
+							<span className="text-[12px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1">
+								<Zap size={14} className="text-teal-600 dark:text-teal-400" />
 								Рабочие дуги ортодонта
 							</span>
-							<span className="text-[10px] text-teal-700/80 dark:text-teal-400/80 font-bold">
+							<span className="text-[12px] text-teal-700/90 dark:text-teal-400/90 font-medium">
 								Мгновенный выбор материала и сечения
 							</span>
 						</div>
@@ -229,15 +229,15 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 										type="button"
 										onClick={() => onSelectWorkhorseArchwire(wire)}
 										data-testid={`quick-wire-${wire.id}-btn`}
-										className={`min-h-[44px] px-2 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
+										className={`h-10 px-2.5 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
 											isSelected
-												? "bg-teal-600 text-white border-teal-700 font-black shadow-xs ring-1 ring-teal-400"
-												: "bg-white dark:bg-slate-900 border-teal-300/60 dark:border-teal-800 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+												? "bg-[var(--teal,#0d9488)] text-white border-teal-700 font-bold shadow-xs"
+												: "bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-teal-300/60 dark:border-teal-800/80 hover:border-teal-500 text-[var(--ink,#0f172a)] dark:text-slate-100"
 										}`}
 										title={wire.desc}
 									>
-										<span className="text-xs font-bold leading-tight truncate w-full">{wire.label}</span>
-										<span className={`text-[10px] truncate w-full ${isSelected ? "text-teal-100" : "text-slate-500 dark:text-slate-400"}`}>
+										<span className="text-[12.5px] font-bold leading-tight truncate w-full">{wire.label}</span>
+										<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-teal-100" : "text-[var(--muted,#64748b)] dark:text-slate-400"}`}>
 											{wire.material === "SS" ? "Рабочая сталь" : "Нивелирование"}
 										</span>
 									</button>
@@ -255,15 +255,15 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 			>
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-						<Sliders size={14} className="text-blue-500" />
+						<Sliders size={14} className="text-teal-600 dark:text-teal-400" />
 						Расчет торка и ангуляции
 					</span>
-					<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+					<span className="text-[12px] font-bold text-teal-700 dark:text-teal-300">
 						{TORQUE_PRESETS.find((t) => t.id === torquePreset)?.shortLabel}
 					</span>
 				</div>
 
-				{/* 4 Торк-пресета */}
+				{/* Торк-пресеты */}
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
 					{TORQUE_PRESETS.map((tOpt) => {
 						const isSelected = torquePreset === tOpt.id;
@@ -276,15 +276,15 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 									showToast(`Выбран торк: ${tOpt.label}`, "info");
 								}}
 								data-testid={`torque-preset-${tOpt.id}-btn`}
-								className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
+								className={`h-10 px-2.5 py-1 rounded-lg border text-left flex flex-col justify-center min-w-0 transition-all cursor-pointer ${
 									isSelected
-										? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
-										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+										? "bg-[var(--teal,#0d9488)] text-white border-teal-700 font-bold shadow-xs"
+										: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--paper-soft,#f1f5f9)]"
 								}`}
 								title={tOpt.desc}
 							>
-								<span className="text-xs font-bold leading-tight truncate w-full">{tOpt.shortLabel}</span>
-								<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+								<span className="text-[12.5px] font-bold leading-tight truncate w-full">{tOpt.shortLabel}</span>
+								<span className={`text-[11.5px] truncate w-full ${isSelected ? "text-teal-100" : "text-[var(--muted,#64748b)] dark:text-slate-400"}`}>
 									ВЧ {tOpt.u1Torque} / НЧ {tOpt.l1Torque}
 								</span>
 							</button>
@@ -292,12 +292,12 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 					})}
 				</div>
 
-				{/* Ангуляция резцов и клыков */}
-				<div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800/60">
-					<span className="text-[11px] font-bold text-slate-500">
+				{/* Ангуляция резцов и клыков (Segmented Bar) */}
+				<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800/60">
+					<span className="text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400">
 						Ангуляция резцов/клыков:
 					</span>
-					<div className="flex items-center gap-1.5">
+					<div className="bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-900/80 p-0.5 rounded-lg border border-[var(--line-subtle,#e2e8f0)] dark:border-slate-800 flex items-center gap-1">
 						{ANGULATION_PRESETS.map((aOpt) => {
 							const isSelected = angulationPreset === aOpt.id;
 							return (
@@ -306,10 +306,10 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 									type="button"
 									onClick={() => setAngulationPreset(aOpt.id)}
 									data-testid={`angulation-preset-${aOpt.id}-btn`}
-									className={`h-7 px-2 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+									className={`h-7 px-2.5 rounded-md text-[12px] font-medium transition-all cursor-pointer ${
 										isSelected
-											? "bg-blue-600 text-white border-blue-700 font-black shadow-xs"
-											: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+											? "bg-[var(--teal,#0d9488)] text-white font-semibold shadow-xs"
+											: "bg-transparent text-[var(--ink,#0f172a)] dark:text-slate-300 hover:bg-[var(--paper,#ffffff)] dark:hover:bg-slate-800"
 									}`}
 								>
 									{aOpt.shortLabel}
@@ -327,9 +327,9 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 					Межчелюстные эластики (тяга)
 				</span>
 
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 					<div>
-						<label htmlFor="elastic-scheme-select" className="block text-[11px] font-bold text-slate-500 mb-1">
+						<label htmlFor="elastic-scheme-select" className="block text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
 							Схема фиксации
 						</label>
 						<select
@@ -337,7 +337,7 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 							aria-label="Схема эластиков"
 							value={elasticScheme}
 							onChange={(e) => setElasticScheme(e.target.value)}
-							className="w-full min-h-[38px] px-2.5 py-1 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
+							className="w-full h-8 px-2.5 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
 						>
 							{ELASTIC_SCHEMES.map((e) => (
 								<option key={e.id} value={e.id}>
@@ -348,7 +348,7 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 					</div>
 
 					<div>
-						<label htmlFor="elastic-size-select" className="block text-[11px] font-bold text-slate-500 mb-1">
+						<label htmlFor="elastic-size-select" className="block text-[12px] font-bold text-[var(--muted,#64748b)] dark:text-slate-400 mb-1">
 							Размер и сила (калибр)
 						</label>
 						<select
@@ -362,7 +362,7 @@ export const OrthoArchwireSelector: React.FC<OrthoArchwireSelectorProps> = ({
 								if (onElasticSizeInteraction) onElasticSizeInteraction();
 								setElasticSize(e.target.value);
 							}}
-							className="w-full min-h-[38px] px-2.5 py-1 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
+							className="w-full h-8 px-2.5 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-lg text-[12.5px] font-medium text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
 						>
 							{ELASTIC_SIZES.map((s) => (
 								<option key={s.id} value={s.id}>

@@ -201,6 +201,11 @@ const CbctTunerPlayground = lazyWithRetry(() =>
 		default: module.CbctTunerPlayground,
 	})),
 );
+const SmartSlotRecoveryPopover = lazyWithRetry(() =>
+	import("./components/schedule/SmartSlotRecoveryPopover").then((module) => ({
+		default: module.SmartSlotRecoveryPopover,
+	})),
+);
 /*
  * Панель вставлена сюда, а не в AppRouter.tsx: тот файл никто не импортировал —
  * это был мёртвый код, и панели, добавленные в него, не отрисовывались вообще.
@@ -1058,24 +1063,24 @@ export function App() {
 		const handleDirectHashRoutes = () => {
 			if (typeof window === "undefined") return;
 			const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase();
-			const [route] = hash.split("/");
+			const [route, subroute] = hash.split(/[/?]/);
 			if (route === "visit") {
 				setCurrentView("visit");
 			} else if (route === "schedule") {
 				setCurrentView("schedule");
 			} else if (route === "patients") {
 				setCurrentView("patients");
-			} else if (route === "finance") {
+			} else if (route === "finance" || route === "invoices") {
 				setCurrentView("finance");
-			} else if (route === "sanpin") {
+			} else if (route === "sanpin" || route === "sterilization" || route === "sanpin-sterilization" || route === "scanner") {
 				setCurrentView("scanner");
-			} else if (route === "cmo" || route === "payout" || route === "payouts") {
+			} else if (route === "cmo" || route === "payout" || route === "payouts" || route === "analytics") {
 				setCurrentView("analytics");
 			} else if (route === "telephony" || route === "communications" || route === "bots") {
 				setCurrentView("communications");
 			} else if (route === "documents") {
 				setCurrentView("documents");
-			} else if (route === "lab") {
+			} else if (route === "lab" || route === "lab_orders" || route === "lab-orders") {
 				setCurrentView("lab");
 			} else if (route === "inventory" || route === "warehouse") {
 				setCurrentView("inventory");
@@ -1083,13 +1088,18 @@ export function App() {
 				setCurrentView("leads");
 			} else if (route === "marketing") {
 				setCurrentView("marketing");
+			} else if (route === "settings") {
+				setCurrentView("settings");
+				if (subroute) {
+					setSettingsTab(subroute);
+				}
 			}
 		};
 		handleDirectHashRoutes();
 		window.addEventListener("hashchange", handleDirectHashRoutes);
 		return () =>
 			window.removeEventListener("hashchange", handleDirectHashRoutes);
-	}, [setCurrentView]);
+	}, [setCurrentView, setSettingsTab]);
 
 	// Wave 319: Global event bus listener for opening doctor shift cockpit from Omnibar / quick actions
 	useEffect(() => {
@@ -1177,17 +1187,34 @@ export function App() {
 		},
 	);
 
+	// Smart Slot Recovery Standalone Launcher (?smart_slot=demo, ?recovery=demo, #recovery, #smart-slot)
+	const [isSmartSlotRecoveryDemoOpen, setIsSmartSlotRecoveryDemoOpen] = useState<boolean>(
+		() => {
+			if (typeof window === "undefined") return false;
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			return (
+				search.includes("smart_slot") ||
+				search.includes("recovery") ||
+				hash.includes("smart-slot") ||
+				hash.includes("recovery")
+			);
+		},
+	);
+
 	useEffect(() => {
 		const handleOpenCbct = () => setIsCbctDirectModalOpen(true);
 		const handleOpenTuner = () => setIsCbctTunerOpen(true);
 		const handleOpenConsent = () => setIsConsentDirectModalOpen(true);
 		const handleOpenCeph = () => setIsCephDirectModalOpen(true);
 		const handleOpenEgisz = () => setIsEgiszRemdModalOpen(true);
+		const handleOpenRecovery = () => setIsSmartSlotRecoveryDemoOpen(true);
 		window.addEventListener("dente:open-cbct-demo", handleOpenCbct);
 		window.addEventListener("dente:open-cbct-tuner", handleOpenTuner);
 		window.addEventListener("dente:open-consent-modal", handleOpenConsent);
 		window.addEventListener("dente:open-ceph-demo", handleOpenCeph);
 		window.addEventListener("dente:open-egisz-remd", handleOpenEgisz);
+		window.addEventListener("dente:open-recovery-demo", handleOpenRecovery);
 
 		const handleUrlChange = () => {
 			const search = window.location.search || "";
@@ -1229,6 +1256,14 @@ export function App() {
 			) {
 				setIsEgiszRemdModalOpen(true);
 			}
+			if (
+				search.includes("smart_slot") ||
+				search.includes("recovery") ||
+				hash.includes("smart-slot") ||
+				hash.includes("recovery")
+			) {
+				setIsSmartSlotRecoveryDemoOpen(true);
+			}
 		};
 		window.addEventListener("popstate", handleUrlChange);
 		window.addEventListener("hashchange", handleUrlChange);
@@ -1237,6 +1272,8 @@ export function App() {
 			window.removeEventListener("dente:open-cbct-tuner", handleOpenTuner);
 			window.removeEventListener("dente:open-consent-modal", handleOpenConsent);
 			window.removeEventListener("dente:open-ceph-demo", handleOpenCeph);
+			window.removeEventListener("dente:open-egisz-remd", handleOpenEgisz);
+			window.removeEventListener("dente:open-recovery-demo", handleOpenRecovery);
 			window.removeEventListener("popstate", handleUrlChange);
 			window.removeEventListener("hashchange", handleUrlChange);
 		};
@@ -1655,6 +1692,43 @@ export function App() {
 					initialDocType="cda_semd"
 					initialTab={((typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null) as any) ?? "signature"}
 				/>
+			</Suspense>
+		);
+	}
+
+	// SMART SLOT RECOVERY STANDALONE LAUNCHER (?smart_slot=demo, ?recovery=demo, #recovery, #smart-slot)
+	if (isSmartSlotRecoveryDemoOpen) {
+		const demoDate = new Date();
+		demoDate.setHours(demoDate.getHours() + 2, 0, 0, 0);
+		const demoEndDate = new Date(demoDate);
+		demoEndDate.setMinutes(demoEndDate.getMinutes() + 45);
+
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка умного подбора слота..." />}>
+				<div className="w-screen h-screen flex items-center justify-center bg-[var(--paper-soft)] p-4">
+					<SmartSlotRecoveryPopover
+						isOpen={true}
+						onClose={() => {
+							setIsSmartSlotRecoveryDemoOpen(false);
+							const url = new URL(window.location.href);
+							url.searchParams.delete("smart_slot");
+							url.searchParams.delete("recovery");
+							window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+						}}
+						slot={{
+							appointmentId: "demo-cancelled-slot-1",
+							startsAt: demoDate.toISOString(),
+							endsAt: demoEndDate.toISOString(),
+							doctorId: "doc-1",
+							doctorName: "Д-р Смирнов А.П.",
+							chairId: "chair-1",
+							chairName: "Кресло №1 (Терапия)",
+							freedBecause: "Отмена пациентом за 2 часа (ОРВИ)",
+							patientName: "Алексеев Владимир Сергеевич",
+						}}
+						clinicName="Стоматология DENTE"
+					/>
+				</div>
 			</Suspense>
 		);
 	}

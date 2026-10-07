@@ -379,10 +379,10 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="staff-touch-target-button staff-btn-secondary p-2 min-w-[44px] min-h-[44px] w-11 h-11 inline-flex items-center justify-center cursor-pointer"
+						className="w-8 h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center cursor-pointer transition-colors"
 						aria-label="Закрыть"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</header>
 
@@ -571,7 +571,7 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="staff-touch-target-button staff-btn-secondary"
+							className="h-8 px-4 rounded-lg text-[13px] font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center cursor-pointer transition-colors"
 						>
 							Отмена
 						</button>
@@ -580,12 +580,12 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 							type="button"
 							onClick={handleSave}
 							disabled={isSaving}
-							className="staff-touch-target-button staff-btn-primary"
+							className="h-8 px-4 rounded-lg text-[13px] font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 inline-flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
 						>
 							{isSaving ? (
-								<RefreshCw className="w-4 h-4 animate-spin" />
+								<RefreshCw className="w-3.5 h-3.5 animate-spin" />
 							) : (
-								<Save className="w-4 h-4" />
+								<Save className="w-3.5 h-3.5" />
 							)}
 							<span>Сохранить карточку</span>
 						</button>

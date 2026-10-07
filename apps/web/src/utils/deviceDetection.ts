@@ -130,6 +130,8 @@ export function isLowSpecHardware(): boolean {
 			el.getAttribute("data-perf-tier") === "potato" ||
 			el.getAttribute("data-perf-tier") === "low" ||
 			el.getAttribute("data-perf") === "low" ||
+			el.getAttribute("data-perf-state") === "degraded" ||
+			el.getAttribute("data-ct-active") === "true" ||
 			el.classList.contains("low-spec-mode") ||
 			el.classList.contains("low-spec-perf")
 		) {
@@ -150,7 +152,12 @@ export function isLowSpecHardware(): boolean {
 		}
 	}
 
-	// 2. Explicit navigator checks (for node test mocks & real browser APIs)
+	// 2. Delegate to canonical hardware profiler (respects manual overrides, storage, profiler score)
+	if (isLowSpecCanonical()) {
+		return true;
+	}
+
+	// 3. Explicit navigator checks (for node test mocks & real browser APIs)
 	if (typeof navigator !== "undefined") {
 		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
 		const cores = navigator.hardwareConcurrency;
@@ -172,8 +179,7 @@ export function isLowSpecHardware(): boolean {
 		}
 	}
 
-	// 3. Delegate to canonical hardware profiler
-	return isLowSpecCanonical();
+	return false;
 }
 
 /**
@@ -184,7 +190,7 @@ export function isLowSpecHardware(): boolean {
  */
 export function getHardwareResourceTier(): HardwareResourceTier {
 	if (typeof document !== "undefined" && document.documentElement) {
-		const tier = document.documentElement.getAttribute("data-hardware-tier");
+		const tier = document.documentElement.getAttribute("data-hardware-tier") || document.documentElement.getAttribute("data-perf-tier");
 		if (tier === "potato" || tier === "low") {
 			return "low";
 		}
@@ -194,6 +200,17 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 		if (tier === "ultra" || tier === "high") {
 			return "high";
 		}
+	}
+
+	const profile = getHardwareProfile();
+	if (profile.tier === "potato" || profile.tier === "low") {
+		return "low";
+	}
+	if (profile.tier === "balanced") {
+		return "medium";
+	}
+	if (profile.tier === "ultra") {
+		return "high";
 	}
 
 	if (isLowSpecHardware()) {
@@ -216,14 +233,7 @@ export function getHardwareResourceTier(): HardwareResourceTier {
 		}
 	}
 
-	const profile = getHardwareProfile();
-	if (profile.tier === "potato" || profile.tier === "low") {
-		return "low";
-	}
-	if (profile.tier === "balanced") {
-		return "medium";
-	}
-	return "high";
+	return "medium";
 }
 
 /**

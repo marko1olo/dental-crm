@@ -1,27 +1,17 @@
 import {
-	calculateCashChange,
-	getCashPresetSuggestions,
 	type PaymentMethod,
-	parseKopecks,
-	percentageOfKopecks,
-	splitKopecks,
-	rubToKopecks,
 	kopecksToRub,
 	normalizePaymentMethod,
+	percentageOfKopecks,
+	rubToKopecks,
 } from "@dental/shared";
 import {
 	Banknote,
 	Bot,
-	ChevronDown,
-	Coins,
 	CreditCard,
-	MoreVertical,
 	QrCode,
-	SlidersHorizontal,
-	UserRound,
-	X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { PaymentModal } from "./components/finance/PaymentModal";
 import { showToast } from "./components/GlobalToast";
@@ -33,17 +23,32 @@ import {
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
+import { useFiscalOperations } from "./hooks/useFiscalOperations";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { textToNumbers } from "./lib/stringUtils";
+import { PaymentCheckoutBar } from "./PaymentCheckoutBar";
+import {
+	type DoctorDiscountPreset,
+	PaymentDiscountsAndSplitSection,
+} from "./PaymentDiscountsAndSplitSection";
+import {
+	digitsOnly,
+	PaymentFiscalCashierBar,
+} from "./PaymentFiscalCashierBar";
+import { PaymentQuickTenderGrid } from "./PaymentQuickTenderGrid";
+import {
+	type TaxDeductionCode,
+	TaxPayerDetails,
+} from "./PaymentTaxPayerDetails";
 import {
 	normalizeRubAmountInput,
 	validateRubAmountInput,
 } from "./rubAmountInput";
 import { SmartParsePreview } from "./SmartParsePreview";
 
-type TaxDeductionCode = "" | "1" | "2";
+export type { TaxDeductionCode };
 
-type PaymentCaptureProps = {
+export type PaymentCaptureProps = {
 	amount: string;
 	feedback: string;
 	fiscalCashierName: string;
@@ -98,581 +103,6 @@ const visiblePaymentMethods: PaymentMethod[] = [
 	"bank_transfer",
 ];
 
-const digitsOnly = (value: string, maxLength: number) =>
-	value.replace(/[^\d]/g, "").slice(0, maxLength);
-
-type DigitsInputProps = Omit<
-	React.InputHTMLAttributes<HTMLInputElement>,
-	"onChange"
-> & {
-	maxLength: number;
-	onChange: (value: string) => void;
-};
-
-function DigitsInput({ maxLength, onChange, ...props }: DigitsInputProps) {
-	return (
-		<input
-			inputMode="numeric"
-			autoComplete="off"
-			pattern="[0-9]*"
-			{...props}
-			onChange={(event) => onChange(digitsOnly(event.target.value, maxLength))}
-		/>
-	);
-}
-
-type FiscalDetailsProps = {
-	fiscalCashierName: string;
-	fiscalDetailsOpen: boolean;
-	fiscalFd: string;
-	fiscalFn: string;
-	fiscalFpd: string;
-	fiscalReceiptIssuedAt: string;
-	fiscalReceiptNumber: string;
-	fiscalReceiptUrl: string;
-	fiscalReceiptUrlInvalid: boolean;
-	onFiscalCashierNameChange: (value: string) => void;
-	onFiscalFdChange: (value: string) => void;
-	onFiscalFnChange: (value: string) => void;
-	onFiscalFpdChange: (value: string) => void;
-	onFiscalReceiptIssuedAtChange: (value: string) => void;
-	onFiscalReceiptNumberChange: (value: string) => void;
-	onFiscalReceiptUrlChange: (value: string) => void;
-	paymentMissingId: string;
-};
-
-function FiscalDetails({
-	fiscalCashierName,
-	fiscalDetailsOpen,
-	fiscalFd,
-	fiscalFn,
-	fiscalFpd,
-	fiscalReceiptIssuedAt,
-	fiscalReceiptNumber,
-	fiscalReceiptUrl,
-	fiscalReceiptUrlInvalid,
-	onFiscalCashierNameChange,
-	onFiscalFdChange,
-	onFiscalFnChange,
-	onFiscalFpdChange,
-	onFiscalReceiptIssuedAtChange,
-	onFiscalReceiptNumberChange,
-	onFiscalReceiptUrlChange,
-	paymentMissingId,
-}: FiscalDetailsProps) {
-	return (
-		<details
-			className="payment-capture-detail-section"
-			open={fiscalDetailsOpen}
-		>
-			<summary>Фискальный чек и кассир</summary>
-			<div className="smart-details-content">
-				<div className="payment-capture-detail-grid">
-					{/* id + htmlFor обязательны: оформление «плавающей» подписи держится
-            на соседних селекторах (.smart-field input ~ label), а вот
-            доступное имя из соседства не берётся — программа чтения с
-            экрана объявляла эти поля безымянными. Атрибуты только
-            добавляются, на вид ничего не влияет. */}
-					<div className="smart-field">
-						<input
-							id="payment-fiscal-receipt-number"
-							autoComplete="off"
-							value={fiscalReceiptNumber}
-							onChange={(event) =>
-								onFiscalReceiptNumberChange(event.target.value)
-							}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-fiscal-receipt-number">
-							Номер чека (можно пусто, если есть ФД/ФПД)
-						</label>
-					</div>
-					<div className="smart-field no-float">
-						<input
-							id="payment-fiscal-receipt-issued-at"
-							type="datetime-local"
-							value={fiscalReceiptIssuedAt}
-							onChange={(event) =>
-								onFiscalReceiptIssuedAtChange(event.target.value)
-							}
-						/>
-						<label htmlFor="payment-fiscal-receipt-issued-at">Дата чека</label>
-					</div>
-					<div className="smart-field">
-						<DigitsInput
-							id="payment-fiscal-fn"
-							maxLength={32}
-							value={fiscalFn}
-							onChange={onFiscalFnChange}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-fiscal-fn">
-							ФН (номер фискального накопителя)
-						</label>
-					</div>
-					<div className="smart-field">
-						<DigitsInput
-							id="payment-fiscal-fd"
-							maxLength={32}
-							value={fiscalFd}
-							onChange={onFiscalFdChange}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-fiscal-fd">
-							ФД (номер фискального документа)
-						</label>
-					</div>
-					<div className="smart-field">
-						<DigitsInput
-							id="payment-fiscal-fpd"
-							maxLength={32}
-							value={fiscalFpd}
-							onChange={onFiscalFpdChange}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-fiscal-fpd">ФПД (фискальный признак)</label>
-					</div>
-					<div className="smart-field">
-						<input
-							id="payment-fiscal-receipt-url"
-							type="url"
-							autoComplete="url"
-							aria-invalid={fiscalReceiptUrlInvalid || undefined}
-							aria-describedby={
-								fiscalReceiptUrlInvalid ? paymentMissingId : undefined
-							}
-							value={fiscalReceiptUrl}
-							onChange={(event) => onFiscalReceiptUrlChange(event.target.value)}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-fiscal-receipt-url">
-							Ссылка ОФД (https://...)
-						</label>
-					</div>
-					<div className="smart-field">
-						<input
-							id="payment-fiscal-cashier-name"
-							autoComplete="off"
-							value={fiscalCashierName}
-							onChange={(event) =>
-								onFiscalCashierNameChange(event.target.value)
-							}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-fiscal-cashier-name">
-							Кассир (ФИО администратора)
-						</label>
-					</div>
-				</div>
-			</div>
-		</details>
-	);
-}
-
-type TaxPayerDetailsProps = {
-	applyPatientTaxDefaults: () => void;
-	onPayerBirthDateChange: (value: string) => void;
-	onPayerFullNameChange: (value: string) => void;
-	onPayerIdentityDocumentChange: (value: string) => void;
-	onPayerInnChange: (value: string) => void;
-	onPayerRelationshipChange: (value: string) => void;
-	onTaxDeductionCodeChange: (value: TaxDeductionCode) => void;
-	patientDefaults: {
-		birthDate?: string | null;
-		fullName?: string | null;
-		identityDocument?: string | null;
-		taxpayerInn?: string | null;
-	};
-	patientTaxDefaultsAvailable: boolean;
-	payerBirthDate: string;
-	payerFullName: string;
-	payerIdentityDocument: string;
-	payerInn: string;
-	payerInnInvalid: boolean;
-	payerRelationship: string;
-	paymentMissingId: string;
-	taxDeductionCode: TaxDeductionCode;
-	taxDefaultsGuidanceId: string;
-	taxPayerDetailsOpen: boolean;
-};
-
-function TaxPayerDetails({
-	applyPatientTaxDefaults,
-	onPayerBirthDateChange,
-	onPayerFullNameChange,
-	onPayerIdentityDocumentChange,
-	onPayerInnChange,
-	onPayerRelationshipChange,
-	onTaxDeductionCodeChange,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
-	patientDefaults,
-	patientTaxDefaultsAvailable,
-	payerBirthDate,
-	payerFullName,
-	payerIdentityDocument,
-	payerInn,
-	payerInnInvalid,
-	payerRelationship,
-	paymentMissingId,
-	taxDeductionCode,
-	taxDefaultsGuidanceId,
-	taxPayerDetailsOpen,
-}: TaxPayerDetailsProps) {
-	return (
-		<details
-			className="payment-capture-detail-section"
-			open={taxPayerDetailsOpen}
-		>
-			<summary>Плательщик для налогового вычета</summary>
-			<div className="smart-details-content">
-				<div className="payment-capture-detail-grid">
-					<div className="smart-field">
-						<input
-							id="payment-payer-full-name"
-							autoComplete="name"
-							value={payerFullName}
-							onChange={(event) => onPayerFullNameChange(event.target.value)}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-payer-full-name">
-							Плательщик для вычета (ФИО)
-						</label>
-					</div>
-					<div className="smart-field">
-						<DigitsInput
-							id="payment-payer-inn"
-							maxLength={12}
-							aria-invalid={payerInnInvalid || undefined}
-							aria-describedby={payerInnInvalid ? paymentMissingId : undefined}
-							value={payerInn}
-							onChange={onPayerInnChange}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-payer-inn">
-							ИНН плательщика (если есть, физлицам не требуется)
-						</label>
-					</div>
-					<div className="smart-field no-float">
-						<input
-							id="payment-payer-birth-date"
-							type="date"
-							autoComplete="bday"
-							value={payerBirthDate}
-							onChange={(event) => onPayerBirthDateChange(event.target.value)}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-payer-birth-date">
-							Дата рождения плательщика
-						</label>
-					</div>
-					<div className="smart-field">
-						<input
-							id="payment-payer-identity-document"
-							autoComplete="off"
-							value={payerIdentityDocument}
-							onChange={(event) =>
-								onPayerIdentityDocumentChange(event.target.value)
-							}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-payer-identity-document">
-							Документ плательщика (паспорт / иной)
-						</label>
-					</div>
-					<div className="smart-field">
-						<input
-							id="payment-payer-relationship"
-							autoComplete="off"
-							value={payerRelationship}
-							onChange={(event) =>
-								onPayerRelationshipChange(event.target.value)
-							}
-							placeholder=" "
-						/>
-						<label htmlFor="payment-payer-relationship">
-							Родство (пациент, мать...)
-						</label>
-						<div
-							className="quick-chips-row"
-							style={{ marginTop: "6px", padding: "0 14px 10px 14px" }}
-						>
-							{["пациент", "мать", "отец", "супруг", "супруга"].map((rel) => (
-								<button
-									key={rel}
-									type="button"
-									style={{ minHeight: "44px" }}
-									className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold"
-									onClick={() => onPayerRelationshipChange(rel)}
-								>
-									{rel}
-								</button>
-							))}
-						</div>
-					</div>
-					<div
-						role="toolbar"
-						className="quick-chips-row"
-						style={{ marginBottom: "20px" }}
-						aria-label="Код медицинской услуги для налогового вычета"
-					>
-						<button
-							style={{ minHeight: "44px" }}
-							className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === "" ? "active" : ""}`}
-							type="button"
-							aria-pressed={taxDeductionCode === ""}
-							onClick={() => onTaxDeductionCodeChange("")}
-						>
-							Не выбран
-						</button>
-						{(["1", "2"] as const).map((code) => (
-							<button
-								style={{ minHeight: "44px" }}
-								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === code ? "active" : ""}`}
-								key={code}
-								type="button"
-								aria-pressed={taxDeductionCode === code}
-								onClick={() => onTaxDeductionCodeChange(code)}
-							>
-								Код {code}
-							</button>
-						))}
-					</div>
-					<div className="payment-tax-defaults">
-						<button
-							style={{ minHeight: "44px" }}
-							className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8"
-							type="button"
-							onClick={applyPatientTaxDefaults}
-							disabled={false}
-							aria-describedby={
-								!patientTaxDefaultsAvailable ? taxDefaultsGuidanceId : undefined
-							}
-							data-testid="payment-fill-payer-from-patient"
-						>
-							<UserRound aria-hidden="true" /> Заполнить из карточки пациента
-						</button>
-						{!patientTaxDefaultsAvailable ? (
-							<small id={taxDefaultsGuidanceId}>
-								В карточке пациента нет ФИО, даты рождения, документа или ИНН
-								для автозаполнения.
-							</small>
-						) : (
-							<small>
-								Заполнит только пустые поля и не перезапишет ручные правки
-								администратора.
-							</small>
-						)}
-					</div>
-				</div>
-			</div>
-		</details>
-	);
-}
-
-type InstallmentCalculatorProps = {
-	totalAmount: number;
-	isOpen: boolean;
-};
-
-function InstallmentCalculator({
-	totalAmount,
-	isOpen,
-}: InstallmentCalculatorProps) {
-	const [months, setMonths] = useState(6);
-	const [downPaymentPercent, setDownPaymentPercent] = useState(0);
-
-	// БЫЛО: monthlyPayment = Math.round(remaining / months) без сверки с итогом.
-	// 100 000 ₽ на 6 месяцев → 16 667 × 6 = 100 002 ₽ (пациенту называли на 2 ₽
-	// больше стоимости лечения), 70 000 ₽ на 3 месяца → 69 999 ₽ (счёт не закрыть).
-	// Теперь остаток от деления добирается последним платежом: сумма сходится точно.
-	const totalKopecks = parseKopecks(totalAmount);
-	const basisPoints = Math.round(downPaymentPercent * 100);
-	const downPaymentKopecks = percentageOfKopecks(totalKopecks, basisPoints);
-	const remainingKopecks = Math.max(0, totalKopecks - downPaymentKopecks);
-	const parts =
-		months > 0 && remainingKopecks > 0
-			? splitKopecks(remainingKopecks, months)
-			: [0];
-	const monthlyPaymentKopecks = parts[0] ?? 0;
-	const lastMonthPaymentKopecks = parts[parts.length - 1] ?? 0;
-	const downPayment = downPaymentKopecks / 100;
-	const monthlyPayment = monthlyPaymentKopecks / 100;
-	const lastMonthPayment = lastMonthPaymentKopecks / 100;
-	const hasUnevenLastPayment =
-		months > 0 && lastMonthPaymentKopecks !== monthlyPaymentKopecks;
-	const scheduleTotalKopecks =
-		downPaymentKopecks +
-		parts.reduce((acc, part) => acc + (part ?? 0), 0);
-
-	return (
-		<details
-			className="payment-capture-detail-section"
-			open={isOpen}
-			style={{ marginBottom: "6px" }}
-		>
-			{/* БЫЛО: «Калькулятор рассрочки (Внутренний)». Слово «внутренний» —
-          из разработки: пользователю оно не говорит ничего, а насторожить
-          может. Смысл в том, что рассрочка беспроцентная и от самой клиники,
-          без банка, — так и написано. */}
-			<summary>Рассрочка от клиники, без банка</summary>
-			<div
-				className="smart-details-content p-3 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] mt-2"
-			>
-				<div
-					style={{
-						display: "flex",
-						gap: "20px",
-						flexWrap: "wrap",
-						marginBottom: "16px",
-					}}
-				>
-					<div style={{ flex: "1 1 200px" }}>
-						<label
-							htmlFor="installment-months-range"
-							style={{
-								fontSize: "13px",
-								fontWeight: 600,
-								color: "var(--ink)",
-								display: "block",
-								marginBottom: "8px",
-							}}
-						>
-							Срок рассрочки (мес): {months}
-						</label>
-						<input
-							id="installment-months-range"
-							type="range"
-							min="2"
-							max="24"
-							step="1"
-							value={months}
-							onChange={(e) => setMonths(parseInt(e.target.value, 10))}
-							style={{ width: "100%" }}
-						/>
-						<div
-							style={{
-								display: "flex",
-								gap: "6px",
-								marginTop: "8px",
-								flexWrap: "wrap",
-							}}
-						>
-							{[3, 6, 12, 24].map((m) => (
-								<button
-									key={m}
-									type="button"
-									className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${months === m ? "active" : ""}`}
-									onClick={() => setMonths(m)}
-								>
-									{m} мес
-								</button>
-							))}
-						</div>
-					</div>
-					<div style={{ flex: "1 1 200px" }}>
-						<label
-							htmlFor="installment-down-payment-range"
-							style={{
-								fontSize: "13px",
-								fontWeight: 600,
-								color: "var(--ink)",
-								display: "block",
-								marginBottom: "8px",
-							}}
-						>
-							Первоначальный взнос: {downPaymentPercent}%
-						</label>
-						<input
-							id="installment-down-payment-range"
-							type="range"
-							min="0"
-							max="80"
-							step="10"
-							value={downPaymentPercent}
-							onChange={(e) =>
-								setDownPaymentPercent(parseInt(e.target.value, 10))
-							}
-							style={{ width: "100%" }}
-						/>
-						<div
-							style={{
-								display: "flex",
-								gap: "6px",
-								marginTop: "8px",
-								flexWrap: "wrap",
-							}}
-						>
-							{[0, 20, 30, 50].map((p) => (
-								<button
-									key={p}
-									type="button"
-									className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${downPaymentPercent === p ? "active" : ""}`}
-									onClick={() => setDownPaymentPercent(p)}
-								>
-									{p}%
-								</button>
-							))}
-						</div>
-					</div>
-				</div>
-
-				<div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-[var(--line)]">
-					<div>
-						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
-							Сумма лечения
-						</div>
-						<div style={{ fontSize: "16px", fontWeight: 600 }}>
-							{money(totalAmount)}
-						</div>
-					</div>
-					<div>
-						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
-							Первый взнос
-						</div>
-						<div style={{ fontSize: "16px", fontWeight: 600 }}>
-							{money(downPayment)}
-						</div>
-					</div>
-					<div style={{ textAlign: "right" }}>
-						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
-							Ежемесячный платеж
-						</div>
-						<div
-							style={{
-								fontSize: "20px",
-								fontWeight: 700,
-								color: "var(--rust)",
-							}}
-						>
-							{money(monthlyPayment)}
-						</div>
-						{hasUnevenLastPayment && (
-							<div
-								style={{
-									fontSize: "12px",
-									color: "var(--muted)",
-									marginTop: "2px",
-								}}
-							>
-								последний месяц — {money(lastMonthPayment)}
-							</div>
-						)}
-					</div>
-				</div>
-				<div
-					style={{
-						fontSize: "12px",
-						color: "var(--muted)",
-						marginTop: "12px",
-					}}
-				>
-					Итого по графику: {money(fromKopecks(scheduleTotalKopecks))}
-				</div>
-			</div>
-		</details>
-	);
-}
-
 export function PaymentCapture({
 	amount,
 	feedback,
@@ -716,8 +146,8 @@ export function PaymentCapture({
 }: PaymentCaptureProps) {
 	const [smartInputText, setSmartInputText] = useState("");
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
-	// Таймер автоскрытия предпросмотра — держим, чтобы отменить при размонтировании.
 	const smartPreviewTimerRef = useRef<number | null>(null);
+
 	useEffect(
 		() => () => {
 			if (smartPreviewTimerRef.current)
@@ -725,6 +155,7 @@ export function PaymentCapture({
 		},
 		[],
 	);
+
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
@@ -733,12 +164,11 @@ export function PaymentCapture({
 	const [isSplit5050Mode, setIsSplit5050Mode] = useState(false);
 	const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 	const [receivedCash, setReceivedCash] = useState<string>("");
+	const { isOnline, pendingCount, syncQueue, isSyncing } = useFiscalOperations();
 
 	useEffect(() => {
 		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-			if (e.key === "Escape" && isMoreActionsOpen) {
-				setIsMoreActionsOpen(false);
-			}
+			if (e.key === "Escape" && isMoreActionsOpen) setIsMoreActionsOpen(false);
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
@@ -754,60 +184,32 @@ export function PaymentCapture({
 			if (parsed.taxDeductionCode)
 				onTaxDeductionCodeChange(parsed.taxDeductionCode as TaxDeductionCode);
 
-			setSmartParsedData({
-				isAiTask: false,
-				text: `Успешно распознано: ${text}`,
-				parsed,
-			});
+			setSmartParsedData({ isAiTask: false, text: `Успешно распознано: ${text}`, parsed });
 			setShowSmartPreview(true);
-			// БЫЛО: setTimeout без сохранения идентификатора и без очистки. Через
-			// 2 секунды он безусловно стирал поле голосового ввода — если оператор
-			// за это время начинал печатать вручную, текст пропадал прямо посреди
-			// слова. Плюс таймер срабатывал уже после размонтирования компонента.
-			if (smartPreviewTimerRef.current)
-				window.clearTimeout(smartPreviewTimerRef.current);
+			if (smartPreviewTimerRef.current) window.clearTimeout(smartPreviewTimerRef.current);
 			smartPreviewTimerRef.current = window.setTimeout(() => {
 				smartPreviewTimerRef.current = null;
 				setShowSmartPreview(false);
-				// Поле очищаем ТОЛЬКО если оператор не начал править его вручную.
-				setSmartInputText((current) => (current === text ? "" : current));
+				setSmartInputText((cur) => (cur === text ? "" : cur));
 			}, 2000);
 		}
 	};
 
-	type DoctorDiscountPreset =
-		| "warranty_100"
-		| "colleague_100"
-		| "percent_50"
-		| "percent_20"
-		| "percent_10";
-
-	const [selectedDoctorDiscount, setSelectedDoctorDiscount] =
-		useState<DoctorDiscountPreset | null>(null);
+	const [selectedDoctorDiscount, setSelectedDoctorDiscount] = useState<DoctorDiscountPreset | null>(null);
 
 	const isZeroAllowedDiscount =
-		(selectedDoctorDiscount === "warranty_100" ||
-			selectedDoctorDiscount === "colleague_100") &&
+		(selectedDoctorDiscount === "warranty_100" || selectedDoctorDiscount === "colleague_100") &&
 		(amount.trim() === "0" || normalizeRubAmountInput(amount) === 0);
 
-	const amountMissingStep = isZeroAllowedDiscount
-		? null
-		: validateRubAmountInput(amount);
-	// rubAmountInputMissingStep(amount)
-	const taxDeductionRequested =
-		taxDeductionCode === "1" || taxDeductionCode === "2";
+	const amountMissingStep = isZeroAllowedDiscount ? null : validateRubAmountInput(amount);
+	const taxDeductionRequested = taxDeductionCode === "1" || taxDeductionCode === "2";
 	const trimmedFiscalReceiptUrl = fiscalReceiptUrl.trim();
 	const trimmedPayerInn = payerInn.trim();
 	const paymentMissingId = "payment-capture-missing";
 	const taxDefaultsGuidanceId = "payment-tax-defaults-guidance";
 	const paymentAmountInvalid = Boolean(amountMissingStep);
-	const fiscalReceiptUrlInvalid = Boolean(
-		trimmedFiscalReceiptUrl &&
-			!/^https?:\/\/\S+$/i.test(trimmedFiscalReceiptUrl),
-	);
-	const payerInnInvalid = Boolean(
-		trimmedPayerInn && !/^\d{10}$|^\d{12}$/.test(trimmedPayerInn),
-	);
+	const fiscalReceiptUrlInvalid = Boolean(trimmedFiscalReceiptUrl && !/^https?:\/\/\S+$/i.test(trimmedFiscalReceiptUrl));
+	const payerInnInvalid = Boolean(trimmedPayerInn && !/^\d{10}$|^\d{12}$/.test(trimmedPayerInn));
 	const patientTaxDefaultsAvailable = Boolean(
 		patientDefaults.fullName?.trim() ||
 			patientDefaults.birthDate?.trim() ||
@@ -816,65 +218,28 @@ export function PaymentCapture({
 	);
 	const fiscalDetailsOpen =
 		taxDeductionRequested ||
-		Boolean(
-			fiscalReceiptNumber.trim() ||
-				fiscalReceiptIssuedAt.trim() ||
-				fiscalFn.trim() ||
-				fiscalFd.trim() ||
-				fiscalFpd.trim() ||
-				trimmedFiscalReceiptUrl,
-		);
+		Boolean(fiscalReceiptNumber.trim() || fiscalReceiptIssuedAt.trim() || fiscalFn.trim() || fiscalFd.trim() || fiscalFpd.trim() || trimmedFiscalReceiptUrl);
 	const taxPayerDetailsOpen =
 		taxDeductionRequested ||
-		Boolean(
-			payerFullName.trim() ||
-				trimmedPayerInn ||
-				payerBirthDate.trim() ||
-				payerIdentityDocument.trim() ||
-				(payerRelationship.trim() && payerRelationship.trim() !== "пациент"),
-		);
-	// Финансовые блокеры 54-ФЗ (Мандат 8e / 8n: физлицам ИНН по 54-ФЗ не требуется и НИКОГДА не блокирует кассу)
+		Boolean(payerFullName.trim() || trimmedPayerInn || payerBirthDate.trim() || payerIdentityDocument.trim() || (payerRelationship.trim() && payerRelationship.trim() !== "пациент"));
+
 	const paymentMissingSteps = [
-		!patientContextReady
-			? patientContextMessage || "выберите пациента текущего приема"
-			: null,
+		!patientContextReady ? patientContextMessage || "выберите пациента текущего приема" : null,
 		amountMissingStep,
-		fiscalReceiptUrlInvalid
-			? "ссылка ОФД должна начинаться с http:// или https://"
-			: null,
-	].filter((step): step is string => Boolean(step));
+		fiscalReceiptUrlInvalid ? "ссылка ОФД должна начинаться с http:// или https://" : null,
+	].filter((s): s is string => Boolean(s));
 	const paymentReadyToSubmit = paymentMissingSteps.length === 0;
-	const isZeroAmount =
-		!isZeroAllowedDiscount &&
-		(!amount.trim() ||
-			normalizeRubAmountInput(amount) === 0 ||
-			normalizeRubAmountInput(amount) === null);
+	const isZeroAmount = !isZeroAllowedDiscount && (!amount.trim() || normalizeRubAmountInput(amount) === 0 || normalizeRubAmountInput(amount) === null);
 
-	const parsedInputAmount = normalizeRubAmountInput(amount);
-	const dueAmount =
-		parsedInputAmount !== null && parsedInputAmount > 0
-			? parsedInputAmount
-			: (remainingDebt !== undefined ? remainingDebt : (parsedInputAmount ?? 1));
-
-	// Опциональные поля для справки об оплате мед. услуг в ФНС (Мандат 8e / 8n: НЕ БЛОКИРУЮТ приём денег)
 	const taxDeductionMissingSteps = [
 		payerInnInvalid ? "ИНН плательщика должен содержать 10 или 12 цифр (опционально для физлиц)" : null,
-		taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
-			? "дата фискального чека"
-			: null,
+		taxDeductionRequested && !fiscalReceiptIssuedAt.trim() ? "дата фискального чека" : null,
 		taxDeductionRequested && !payerFullName.trim() ? "ФИО плательщика" : null,
-		taxDeductionRequested && !payerBirthDate.trim()
-			? "дата рождения плательщика"
-			: null,
-		taxDeductionRequested && !payerIdentityDocument.trim()
-			? "документ плательщика"
-			: null,
-		taxDeductionRequested && !payerRelationship.trim()
-			? "родство плательщика"
-			: null,
-	].filter((step): step is string => Boolean(step));
-	const isTaxDeductionDraft =
-		taxDeductionRequested && taxDeductionMissingSteps.length > 0;
+		taxDeductionRequested && !payerBirthDate.trim() ? "дата рождения плательщика" : null,
+		taxDeductionRequested && !payerIdentityDocument.trim() ? "документ плательщика" : null,
+		taxDeductionRequested && !payerRelationship.trim() ? "родство плательщика" : null,
+	].filter((s): s is string => Boolean(s));
+	const isTaxDeductionDraft = taxDeductionRequested && taxDeductionMissingSteps.length > 0;
 
 	const applyDoctorDiscount = (preset: DoctorDiscountPreset) => {
 		if (selectedDoctorDiscount === preset) {
@@ -882,83 +247,50 @@ export function PaymentCapture({
 			return;
 		}
 		setSelectedDoctorDiscount(preset);
-
-		const base =
-			remainingDebt && remainingDebt > 0
-				? remainingDebt
-				: (normalizeRubAmountInput(amount) ?? 0);
+		const base = remainingDebt && remainingDebt > 0 ? remainingDebt : (normalizeRubAmountInput(amount) ?? 0);
 
 		if (preset === "warranty_100") {
 			onAmountChange("0");
-			showToast(
-				"Применена 100% скидка врача: гарантийная переделка (к оплате 0 ₽, без пароля)",
-				"info",
-			);
+			showToast("Применена 100% скидка врача: гарантийная переделка (к оплате 0 ₽, без пароля)", "info");
 			return;
 		}
-
 		if (preset === "colleague_100") {
 			onAmountChange("0");
-			showToast(
-				"Применена 100% скидка для персонала (к оплате 0 ₽, без пароля)",
-				"info",
-			);
+			showToast("Применена 100% скидка для персонала (к оплате 0 ₽, без пароля)", "info");
 			return;
 		}
-
 		if (base > 0) {
 			const baseKop = toKopecks(base);
 			if (baseKop !== null && baseKop > 0) {
-				if (preset === "percent_50") {
-					const discountedKop = percentageOfKopecks(baseKop, 5000);
+				const pctMap: Record<string, { pct: number; label: string }> = {
+					percent_50: { pct: 5000, label: "50%" },
+					percent_20: { pct: 8000, label: "20%" },
+					percent_10: { pct: 9000, label: "10%" },
+				};
+				const cfg = pctMap[preset];
+				if (cfg) {
+					const discountedKop = percentageOfKopecks(baseKop, cfg.pct);
 					const discountedRub = fromKopecks(discountedKop);
 					onAmountChange(rubAmountForInput(discountedRub));
-					showToast(`Применена скидка врача 50%: ${money(discountedRub)}`, "info");
-					return;
-				}
-				if (preset === "percent_20") {
-					const discountedKop = percentageOfKopecks(baseKop, 8000);
-					const discountedRub = fromKopecks(discountedKop);
-					onAmountChange(rubAmountForInput(discountedRub));
-					showToast(`Применена скидка врача 20%: ${money(discountedRub)}`, "info");
-					return;
-				}
-				if (preset === "percent_10") {
-					const discountedKop = percentageOfKopecks(baseKop, 9000);
-					const discountedRub = fromKopecks(discountedKop);
-					onAmountChange(rubAmountForInput(discountedRub));
-					showToast(`Применена скидка врача 10%: ${money(discountedRub)}`, "info");
-					return;
+					showToast(`Применена скидка врача ${cfg.label}: ${money(discountedRub)}`, "info");
 				}
 			}
 		} else {
-			showToast(
-				"Укажите базовую сумму платежа или выберите долг для расчета скидки",
-				"warning",
-			);
+			showToast("Укажите базовую сумму платежа или выберите долг для расчета скидки", "warning");
 		}
 	};
 
 	const applySplit5050Preset = () => {
-		const effectiveTotal =
-			normalizeRubAmountInput(amount) ??
-			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
+		const effectiveTotal = normalizeRubAmountInput(amount) ?? (remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
 		if (!patientId && effectiveTotal <= 0) {
-			showToast(
-				"Выберите пациента или укажите сумму для расчета 50/50",
-				"warning",
-			);
+			showToast("Выберите пациента или укажите сумму для расчета 50/50", "warning");
 			return;
 		}
-
 		if (effectiveTotal > 0) {
 			const half = Math.round(effectiveTotal / 2);
 			onAmountChange(String(half));
 			onMethodChange("cash");
-			showToast(
-				`Комбинированная оплата 50/50: 1-я часть (${money(half)}, Наличные). 2-я часть (${money(effectiveTotal - half)}, Карта) принимается следом.`,
-				"info",
-			);
+			showToast(`Комбинированная оплата 50/50: 1-я часть (${money(half)}, Наличные). 2-я часть (${money(effectiveTotal - half)}, Карта) принимается следом.`, "info");
 		} else {
 			setIsSplit5050Mode(true);
 			setIsSplitModalOpen(true);
@@ -983,96 +315,59 @@ export function PaymentCapture({
 
 	const handlePrimarySubmit = () => {
 		if (isSaving) return;
-
 		if (!patientId) {
 			showToast("Выберите пациента для проведения платежа", "warning");
 			return;
 		}
-
 		if (!paymentReadyToSubmit) {
 			const parsed = normalizeRubAmountInput(amount);
 			if (parsed === null || parsed === 0 || !amount.trim()) {
 				if (remainingDebt && remainingDebt > 0) {
 					onAmountChange(rubAmountForInput(remainingDebt));
-					showToast(
-						`Установлена сумма по смете: ${money(remainingDebt)}. Нажмите «Принять оплату» для подтверждения`,
-						"info",
-					);
+					showToast(`Установлена сумма по смете: ${money(remainingDebt)}. Нажмите «Принять оплату» для подтверждения`, "info");
 					return;
 				}
-				showToast(
-					"Укажите сумму платежа или выберите услугу из плана",
-					"warning",
-				);
+				showToast("Укажите сумму платежа или выберите услугу из плана", "warning");
 				return;
 			}
 			const firstMissing = paymentMissingSteps[0];
-			showToast(
-				firstMissing
-					? `Для проведения платежа: ${firstMissing}`
-					: "Укажите сумму платежа или выберите услугу из плана",
-				"warning",
-			);
+			showToast(firstMissing ? `Для проведения платежа: ${firstMissing}` : "Укажите сумму платежа или выберите услугу из плана", "warning");
 			return;
 		}
-
 		if (isTaxDeductionDraft) {
-			showToast(
-				"Оплата принимается. Данные для справки налогового вычета можно довнести позже в карточке пациента.",
-				"info",
-			);
+			showToast("Оплата принимается. Данные для справки налогового вычета можно довнести позже в карточке пациента.", "info");
 		}
-
 		onSubmit();
 	};
 
 	const handleSberPosClick = () => {
 		if (isSaving) return;
-
 		if (!patientId) {
 			showToast("Выберите пациента для проведения платежа", "warning");
 			return;
 		}
-
 		if (!paymentReadyToSubmit) {
 			const parsed = normalizeRubAmountInput(amount);
 			if (parsed === null || parsed === 0 || !amount.trim()) {
 				if (remainingDebt && remainingDebt > 0) {
 					onAmountChange(rubAmountForInput(remainingDebt));
-					showToast(
-						`Установлена сумма по смете: ${money(remainingDebt)}. Открываю терминал Сбербанка`,
-						"info",
-					);
+					showToast(`Установлена сумма по смете: ${money(remainingDebt)}. Открываю терминал Сбербанка`, "info");
 					setIsSberPosModalOpen(true);
 					return;
 				}
-				showToast(
-					"Укажите сумму платежа или выберите услугу из плана",
-					"warning",
-				);
+				showToast("Укажите сумму платежа или выберите услугу из плана", "warning");
 				return;
 			}
 			const firstMissing = paymentMissingSteps[0];
-			showToast(
-				firstMissing
-					? `Для проведения платежа: ${firstMissing}`
-					: "Укажите сумму платежа или выберите услугу из плана",
-				"warning",
-			);
+			showToast(firstMissing ? `Для проведения платежа: ${firstMissing}` : "Укажите сумму платежа или выберите услугу из плана", "warning");
 			return;
 		}
-
 		if (isTaxDeductionDraft) {
-			showToast(
-				"Открываю терминал Сбербанка. Данные для справки налогового вычета можно довнести позже в карточке пациента.",
-				"info",
-			);
+			showToast("Открываю терминал Сбербанка. Данные для справки налогового вычета можно довнести позже в карточке пациента.", "info");
 		}
-
 		setIsSberPosModalOpen(true);
 	};
 
-	// Acquiring Emergency Collision Resolution: Manual Card Terminal Confirmation (Mandate 8e)
 	const handleManualCardTerminalSubmit = () => {
 		if (isSaving) return;
 		if (!patientId) {
@@ -1091,76 +386,58 @@ export function PaymentCapture({
 			}
 		}
 		onMethodChange("card");
-		showToast(
-			"Оплата картой подтверждена на терминале вручную (без повторного списания с карты). Сохраняю платёж...",
-			"success",
-			4500
-		);
+		showToast("Оплата картой подтверждена на терминале вручную (без повторного списания с карты). Сохраняю платёж...", "success", 4500);
 		onSubmit();
 	};
+
 	const applyPatientTaxDefaults = () => {
 		const hasPatientData = Boolean(
-			patientDefaults?.fullName?.trim() ||
-				patientDefaults?.birthDate?.trim() ||
-				patientDefaults?.identityDocument?.trim() ||
-				patientDefaults?.taxpayerInn?.trim(),
+			patientDefaults?.fullName?.trim() || patientDefaults?.birthDate?.trim() || patientDefaults?.identityDocument?.trim() || patientDefaults?.taxpayerInn?.trim(),
 		);
-
-		const isNoPatientSelected =
-			patientId === null ||
-			patientId === "" ||
-			(!patientContextReady && !hasPatientData);
+		const isNoPatientSelected = patientId === null || patientId === "" || (!patientContextReady && !hasPatientData);
 
 		if (!hasPatientData || isNoPatientSelected) {
-			showToast(
-				"В карточке пациента отсутствуют ФИО и реквизиты плательщика",
-				"warning",
-			);
+			showToast("В карточке пациента отсутствуют ФИО и реквизиты плательщика", "warning");
 			return;
 		}
-
-		if (!payerFullName.trim() && patientDefaults.fullName?.trim())
-			onPayerFullNameChange(patientDefaults.fullName.trim());
-		if (!payerBirthDate.trim() && patientDefaults.birthDate?.trim())
-			onPayerBirthDateChange(patientDefaults.birthDate.trim());
-		if (
-			!payerIdentityDocument.trim() &&
-			patientDefaults.identityDocument?.trim()
-		)
-			onPayerIdentityDocumentChange(patientDefaults.identityDocument.trim());
-		if (!trimmedPayerInn && patientDefaults.taxpayerInn?.trim())
-			onPayerInnChange(digitsOnly(patientDefaults.taxpayerInn, 12));
+		if (!payerFullName.trim() && patientDefaults.fullName?.trim()) onPayerFullNameChange(patientDefaults.fullName.trim());
+		if (!payerBirthDate.trim() && patientDefaults.birthDate?.trim()) onPayerBirthDateChange(patientDefaults.birthDate.trim());
+		if (!payerIdentityDocument.trim() && patientDefaults.identityDocument?.trim()) onPayerIdentityDocumentChange(patientDefaults.identityDocument.trim());
+		if (!trimmedPayerInn && patientDefaults.taxpayerInn?.trim()) onPayerInnChange(digitsOnly(patientDefaults.taxpayerInn, 12));
 		if (!payerRelationship.trim()) onPayerRelationshipChange("пациент");
-
-		showToast(
-			"Заполнены доступные данные пациента. Недостающие реквизиты можно внести вручную",
-			"info",
-		);
+		showToast("Заполнены доступные данные пациента. Недостающие реквизиты можно внести вручную", "info");
 	};
 
 	return (
-		<div
-			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-4 pb-28 sm:pb-24"
-			id="payment-capture"
-		>
+		<div className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-4 pb-28 sm:pb-24" id="payment-capture">
+			<PaymentFiscalCashierBar
+				isOnline={isOnline}
+				pendingCount={pendingCount}
+				isSyncing={isSyncing}
+				onSyncQueue={() => void syncQueue(async () => true)}
+				fiscalCashierName={fiscalCashierName}
+				fiscalDetailsOpen={fiscalDetailsOpen}
+				fiscalFd={fiscalFd}
+				fiscalFn={fiscalFn}
+				fiscalFpd={fiscalFpd}
+				fiscalReceiptIssuedAt={fiscalReceiptIssuedAt}
+				fiscalReceiptNumber={fiscalReceiptNumber}
+				fiscalReceiptUrl={fiscalReceiptUrl}
+				fiscalReceiptUrlInvalid={fiscalReceiptUrlInvalid}
+				onFiscalCashierNameChange={onFiscalCashierNameChange}
+				onFiscalFdChange={onFiscalFdChange}
+				onFiscalFnChange={onFiscalFnChange}
+				onFiscalFpdChange={onFiscalFpdChange}
+				onFiscalReceiptIssuedAtChange={onFiscalReceiptIssuedAtChange}
+				onFiscalReceiptNumberChange={onFiscalReceiptNumberChange}
+				onFiscalReceiptUrlChange={onFiscalReceiptUrlChange}
+				paymentMissingId={paymentMissingId}
+			/>
+
 			{feedback ? (
-				<div
-					className="payment-capture-feedback"
-					role="status"
-					aria-live="polite"
-				>
-					{feedback}
-				</div>
+				<div className="payment-capture-feedback" role="status" aria-live="polite">{feedback}</div>
 			) : (
 				<>
-					{/* flexDirection задаём явно. Класс .smart-ai-booking в main.css
-            содержит flex-direction: column, инлайновый стиль его не отменял, и
-            строка разворачивалась в столбик: значок, поле ввода и микрофон
-            вставали друг под другом в узкой колонке шириной около 200px, а
-            подсказка «Пример: Оплата 5000 картой…» обрезалась на полуслове.
-            Видно на скриншоте экрана «Оплаты». Соседний вызов класса в
-            NewAppointmentForm столбик задаёт сам, поэтому общий стиль не
-            трогаем. */}
 					<div
 						className="smart-ai-booking payment-smart-ai-booking col-span-full"
 						style={{
@@ -1193,22 +470,9 @@ export function PaymentCapture({
 										handleSmartDictation(smartInputText);
 									}
 								}}
-								style={{
-									width: "100%",
-									border: "none",
-									background: "transparent",
-									outline: "none",
-									fontSize: "11.5px",
-									paddingRight: "6px",
-									boxSizing: "border-box",
-									fontFamily: "inherit",
-									color: "var(--ink)",
-								}}
+								style={{ width: "100%", border: "none", background: "transparent", outline: "none", fontSize: "11.5px", paddingRight: "6px", boxSizing: "border-box", fontFamily: "inherit", color: "var(--ink)" }}
 							/>
-							<DictationHints
-								isVisible={showHints && !smartInputText}
-								type="payment"
-							/>
+							<DictationHints isVisible={showHints && !smartInputText} type="payment" />
 						</div>
 						<SmartMicrophoneButton
 							context="payment"
@@ -1217,69 +481,46 @@ export function PaymentCapture({
 								setSmartInputText(normalized);
 								handleSmartDictation(normalized);
 							}}
-							style={{
-								color: "var(--teal-dark)",
-								background: "transparent",
-								border: "none",
-							}}
+							style={{ color: "var(--teal-dark)", background: "transparent", border: "none" }}
 							className="icon-button"
 						/>
 					</div>
-					<div
-						className="quick-chips-row payment-smart-chips col-span-full"
-						style={{
-							gridColumn: "1 / -1",
-							marginBottom: "2px",
-							display: "flex",
-							gap: "3px",
-							width: "100%",
-						}}
-					>
+
+					<div className="quick-chips-row payment-smart-chips col-span-full" style={{ gridColumn: "1 / -1", marginBottom: "2px", display: "flex", gap: "3px", width: "100%" }}>
 						<button
 							type="button"
+							style={{ minHeight: "44px" }}
 							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
-							<Banknote
-								size={12}
-								className="text-emerald-600 dark:text-emerald-400 shrink-0"
-								aria-hidden="true"
-							/>
+							<Banknote size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
 							<span className="sm:hidden">5000 нал</span>
 							<span className="hidden sm:inline">5000 наличными</span>
 						</button>
 						<button
 							type="button"
+							style={{ minHeight: "44px" }}
 							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
-							<CreditCard
-								size={12}
-								className="text-teal-600 dark:text-teal-400 shrink-0"
-								aria-hidden="true"
-							/>
+							<CreditCard size={12} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 							<span className="sm:hidden">15000 карта</span>
 							<span className="hidden sm:inline">15000 картой</span>
 						</button>
 						<button
 							type="button"
+							style={{ minHeight: "44px" }}
 							className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold inline-flex items-center gap-1 shrink-0"
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
-							<QrCode
-								size={12}
-								className="text-indigo-600 dark:text-indigo-400 shrink-0"
-								aria-hidden="true"
-							/>
+							<QrCode size={12} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
 							<span className="sm:hidden">20000 СБП</span>
 							<span className="hidden sm:inline">20000 СБП + вычет</span>
 						</button>
 					</div>
+
 					{showSmartPreview && smartParsedData && (
-						<div
-							className="col-span-full"
-							style={{ gridColumn: "1 / -1", marginBottom: "8px" }}
-						>
+						<div className="col-span-full" style={{ gridColumn: "1 / -1", marginBottom: "8px" }}>
 							<SmartParsePreview
 								parsedData={smartParsedData}
 								rawText={smartInputText}
@@ -1293,108 +534,34 @@ export function PaymentCapture({
 					)}
 				</>
 			)}
-			<div
-				className="payment-amount-section col-span-full p-2 sm:p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]"
-				style={{ gridColumn: "1 / -1", margin: "1px 0 2px 0" }}
-				data-testid="payment-amount-section"
-			>
-				<div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-					<div className="w-full sm:w-44 shrink-0">
-						<label
-							htmlFor="payment-amount-input"
-							className="block text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5"
-						>
-							Сумма к оплате (₽)
-						</label>
-						<div className="relative">
-							<input
-								id="payment-amount-input"
-								inputMode="numeric"
-								autoComplete="transaction-amount"
-								pattern="[0-9\s]*"
-								aria-label="Сумма оплаты"
-								aria-invalid={paymentAmountInvalid || undefined}
-								aria-describedby={
-									paymentAmountInvalid ? paymentMissingId : undefined
-								}
-								value={amount}
-								onChange={(event) => onAmountChange(event.target.value)}
-								placeholder="0 ₽"
-								className="w-full h-8 sm:h-8 px-2.5 text-sm font-bold font-mono rounded-lg border border-[var(--line-strong)] bg-[var(--paper)] dark:bg-[var(--paper-strong)] dark:border-[var(--glass-border)] text-[var(--ink)] focus:border-[var(--teal)] focus:ring-2 focus:ring-[var(--teal)]/20 outline-none transition-all"
-							/>
-							{amount ? (
-								<button
-									type="button"
-									onClick={() => onAmountChange("")}
-									className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[44px] sm:min-h-0 text-xs text-[var(--muted)] hover:text-[var(--ink)] px-1 cursor-pointer flex items-center justify-center"
-									title="Очистить сумму"
-								>
-									<X size={12} aria-hidden="true" />
-								</button>
-							) : null}
-						</div>
-					</div>
 
-					{remainingDebt !== undefined && (
-						<div className="flex-1 min-w-0">
-							<span className="block text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">
-								Быстрые суммы:
-							</span>
-							<div
-								className="quick-chips-row payment-amount-presets flex flex-wrap items-center gap-1 sm:gap-1.5"
-								role="toolbar"
-								aria-label="Быстрый выбор суммы к оплате"
-							>
-								{remainingDebt > 0 && (
-									<button
-										type="button"
-										className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 font-bold text-xs shrink-0 bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
-										onClick={() =>
-											onAmountChange(rubAmountForInput(remainingDebt))
-										}
-									>
-										Долг: {money(remainingDebt)}
-									</button>
-								)}
-								{[500, 1000, 2000, 3000, 5000].map((val) => (
-									<button
-										key={val}
-										type="button"
-										className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 font-bold text-xs shrink-0 ${amount === String(val) ? "active" : ""}`}
-										onClick={() => onAmountChange(String(val))}
-									>
-										{val.toLocaleString("ru-RU")} ₽
-									</button>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
-			</div>
+			<PaymentQuickTenderGrid
+				amount={amount}
+				onAmountChange={onAmountChange}
+				remainingDebt={remainingDebt}
+				method={method}
+				paymentAmountInvalid={paymentAmountInvalid}
+				paymentMissingId={paymentMissingId}
+				receivedCash={receivedCash}
+				onReceivedCashChange={setReceivedCash}
+			/>
 
-			{/* 2-уровневая панель чекаута (Мандаты 8e, 8n, 8p): Уровень 2 — Способ оплаты */}
 			<div
-				role="toolbar"
-				className="quick-chips-row payment-methods-toolbar col-span-full"
-				style={{
-					gridColumn: "1 / -1",
-					marginBottom: method === "cash" ? "2px" : "3px",
-					width: "100%",
-				}}
+				role="tablist"
+				className="dente-segmented-bar w-full flex col-span-full"
+				style={{ gridColumn: "1 / -1", marginBottom: method === "cash" ? "2px" : "3px" }}
 				aria-label="Способ оплаты"
 			>
 				{visiblePaymentMethods.map((paymentMethod) => {
 					const isActive = method === paymentMethod;
 					return (
 						<button
-							className={`quick-chip min-h-[44px] sm:min-h-8 sm:h-8 px-1 sm:px-3 text-[11px] sm:text-xs font-bold justify-center text-center ${
-								isActive
-									? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 dark:border-teal-400 font-bold"
-									: ""
-							}`}
+							style={{ minHeight: "44px" }}
+							className={`dente-segmented-item min-h-[44px] flex-1 ${isActive ? "active" : ""}`}
 							key={paymentMethod}
 							type="button"
-							aria-pressed={isActive}
+							role="tab"
+							aria-selected={isActive}
 							onClick={() => onMethodChange(paymentMethod)}
 							data-testid={`payment-method-${paymentMethod}`}
 						>
@@ -1412,253 +579,22 @@ export function PaymentCapture({
 													: methodLabels[paymentMethod] || paymentMethod}
 							</span>
 							<span className="hidden sm:inline">
-								{methodLabels[paymentMethod] ||
-									(paymentMethod === "family_wallet"
-										? "Баланс / Аванс"
-										: paymentMethod)}
+								{methodLabels[paymentMethod] || (paymentMethod === "family_wallet" ? "Баланс / Аванс" : paymentMethod)}
 							</span>
 						</button>
 					);
 				})}
 			</div>
 
-			{/* Скидки врача и сплит оплаты под компактной раскрывающейся панелью (Мандаты 8e, 8n, 8p: 2-уровневая касса без свалки кнопок) */}
-			<details
-				className="payment-options-accordion group col-span-full rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] px-2.5 py-1.5 my-1 text-xs select-none shadow-xs"
-				data-testid="payment-options-accordion"
-				style={{ gridColumn: "1 / -1" }}
-			>
-				<summary className="flex items-center justify-between cursor-pointer font-semibold text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors min-h-[30px] px-1 [&::-webkit-details-marker]:hidden">
-					<div className="flex items-center gap-1.5">
-						<SlidersHorizontal size={13} className="text-[var(--teal)] shrink-0" />
-						<span className="text-[11px] sm:text-xs font-bold">Скидки врача и сплит оплаты</span>
-						{selectedDoctorDiscount && (
-							<span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-500/15 px-1.5 py-0.5 rounded">
-								Скидка активна
-							</span>
-						)}
-					</div>
-					<div className="flex items-center gap-1 text-[11px] text-[var(--muted)]">
-						<span className="group-open:hidden text-[10px]">Опции</span>
-						<ChevronDown
-							size={13}
-							className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
-						/>
-					</div>
-				</summary>
-				<div className="pt-2 space-y-2 border-t border-[var(--line-subtle)] mt-1.5">
-					{/* Скидки врача и гарантийные переделки (Мандат 8e п. 7, Мандат 8n: без паролей администратора и блокировок) */}
-					<div
-						className="doctor-discounts-section"
-						data-testid="doctor-discounts-section"
-					>
-						<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
-							Скидка врача / Гарантия:
-						</span>
-						<div
-							role="toolbar"
-							className="quick-chips-row doctor-discount-chips flex flex-wrap gap-1"
-							aria-label="Скидки врача и гарантийные переделки"
-						>
-							<button
-								type="button"
-								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-extrabold shrink-0 ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
-								onClick={() => applyDoctorDiscount("warranty_100")}
-								data-testid="btn-doctor-discount-warranty"
-								title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
-							>
-								<span className="sm:hidden">100% Гарантия</span>
-								<span className="hidden sm:inline">100% Гарантия (Переделка)</span>
-							</button>
-							<button
-								type="button"
-								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
-								onClick={() => applyDoctorDiscount("colleague_100")}
-								data-testid="btn-doctor-discount-colleague"
-								title="100% скидка для коллег и персонала клиники"
-							>
-								Персонал 100%
-							</button>
-							<button
-								type="button"
-								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-								onClick={() => applyDoctorDiscount("percent_50")}
-								data-testid="btn-doctor-discount-50"
-							>
-								<span className="sm:hidden">-50%</span>
-								<span className="hidden sm:inline">Скидка 50%</span>
-							</button>
-							<button
-								type="button"
-								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-								onClick={() => applyDoctorDiscount("percent_20")}
-								data-testid="btn-doctor-discount-20"
-							>
-								<span className="sm:hidden">-20%</span>
-								<span className="hidden sm:inline">Скидка 20%</span>
-							</button>
-							<button
-								type="button"
-								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-								onClick={() => applyDoctorDiscount("percent_10")}
-								data-testid="btn-doctor-discount-10"
-							>
-								<span className="sm:hidden">-10%</span>
-								<span className="hidden sm:inline">Скидка 10%</span>
-							</button>
-						</div>
-					</div>
-
-					{/* Комбинированная оплата в 1 клик (Мандаты 8e, 8n, 8k: нал + карта + баланс без трения) */}
-					<div
-						className="combined-payment-presets-section"
-						data-testid="combined-payment-presets-section"
-					>
-						<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
-							Комбинированная оплата в 1 клик:
-						</span>
-						<div
-							role="toolbar"
-							className="quick-chips-row combined-payment-chips flex flex-wrap gap-1"
-							aria-label="Комбинированная оплата в 1 клик"
-						>
-							<button
-								type="button"
-								className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-400 hover:bg-indigo-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
-								onClick={applySplit5050Preset}
-								data-testid="btn-combo-split-50-50"
-								title="Комбинированная оплата: 50% Наличные + 50% Карта"
-							>
-								<Coins size={13} className="shrink-0" />
-								<span>50/50 Нал + Карта</span>
-							</button>
-							<button
-								type="button"
-								className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-400 hover:bg-teal-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
-								onClick={applyThreeWaySplitPreset}
-								data-testid="btn-combo-split-three-way"
-								title="Комбинированная оплата в 1 клик: Нал + Карта + Баланс"
-							>
-								<UserRound size={13} className="shrink-0" />
-								<span>Нал + Карта + Баланс</span>
-							</button>
-							<button
-								type="button"
-								className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400 hover:bg-purple-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
-								onClick={applyDepositPlusCardPreset}
-								data-testid="btn-combo-split-deposit-card"
-								title="Комбинированная оплата: Баланс + Карта"
-							>
-								<CreditCard size={13} className="shrink-0" />
-								<span>Баланс + Карта</span>
-							</button>
-						</div>
-					</div>
-				</div>
-			</details>
-
-			{method === "cash" &&
-				(normalizeRubAmountInput(amount) ?? 0) > 0 &&
-				(() => {
-					const requiredRub = normalizeRubAmountInput(amount) ?? 0;
-					const tenderedRub =
-						normalizeRubAmountInput(receivedCash) ?? requiredRub;
-					const changeCalc = calculateCashChange(requiredRub, tenderedRub);
-					const presets = getCashPresetSuggestions(requiredRub);
-
-					return (
-						<div
-							className="col-span-full p-3 mb-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/30 space-y-2"
-							style={{ gridColumn: "1 / -1" }}
-							data-testid="cash-change-hud"
-						>
-							<div className="flex items-center justify-between gap-2 flex-wrap">
-								<span className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
-									<Coins size={18} className="text-[var(--teal-dark)]" />
-									Калькулятор сдачи (Наличные)
-								</span>
-								{changeCalc.changeRub > 0 ? (
-									<span className="font-mono font-black text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-[var(--teal-dark)] text-white shadow-sm">
-										Сдача: {changeCalc.changeRub.toLocaleString("ru-RU")} ₽
-									</span>
-								) : changeCalc.isShortage ? (
-									<span className="font-mono font-bold text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white shadow-sm">
-										Не хватает: {changeCalc.shortageRub.toLocaleString("ru-RU")}{" "}
-										₽
-									</span>
-								) : (
-									<span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-										Без сдачи
-									</span>
-								)}
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-								<div className="smart-field no-float">
-									<input
-										id="payment-tendered-cash-input"
-										inputMode="numeric"
-										pattern="[0-9\s]*"
-										placeholder={`${requiredRub} ₽`}
-										value={receivedCash}
-										onChange={(e) => setReceivedCash(e.target.value)}
-										className="text-right font-mono font-bold text-base min-h-[44px]"
-									/>
-									<label htmlFor="payment-tendered-cash-input">
-										Получено купюрами (₽)
-									</label>
-								</div>
-
-								<div className="space-y-1.5">
-									<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
-										Быстрый выбор купюры:
-									</span>
-									<div className="flex flex-wrap gap-2">
-										<button
-											type="button"
-											className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-dark)] text-white hover:brightness-110 active:brightness-95 shadow-sm cursor-pointer"
-											onClick={() => setReceivedCash(String(requiredRub))}
-										>
-											Без сдачи ({requiredRub.toLocaleString("ru-RU")} ₽)
-										</button>
-										{Array.from(new Set([500, 1000, 2000, 5000, ...presets]))
-											.filter((p) => p >= requiredRub)
-											.slice(0, 5)
-											.map((preset) => (
-												<button
-													key={preset}
-													type="button"
-													className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)] shadow-sm cursor-pointer"
-													onClick={() => setReceivedCash(String(preset))}
-												>
-													{preset.toLocaleString("ru-RU")} ₽
-												</button>
-											))}
-									</div>
-								</div>
-							</div>
-						</div>
-					);
-				})()}
-			<FiscalDetails
-				fiscalCashierName={fiscalCashierName}
-				fiscalDetailsOpen={fiscalDetailsOpen}
-				fiscalFd={fiscalFd}
-				fiscalFn={fiscalFn}
-				fiscalFpd={fiscalFpd}
-				fiscalReceiptIssuedAt={fiscalReceiptIssuedAt}
-				fiscalReceiptNumber={fiscalReceiptNumber}
-				fiscalReceiptUrl={fiscalReceiptUrl}
-				fiscalReceiptUrlInvalid={fiscalReceiptUrlInvalid}
-				onFiscalCashierNameChange={onFiscalCashierNameChange}
-				onFiscalFdChange={onFiscalFdChange}
-				onFiscalFnChange={onFiscalFnChange}
-				onFiscalFpdChange={onFiscalFpdChange}
-				onFiscalReceiptIssuedAtChange={onFiscalReceiptIssuedAtChange}
-				onFiscalReceiptNumberChange={onFiscalReceiptNumberChange}
-				onFiscalReceiptUrlChange={onFiscalReceiptUrlChange}
-				paymentMissingId={paymentMissingId}
+			<PaymentDiscountsAndSplitSection
+				amount={amount}
+				selectedDoctorDiscount={selectedDoctorDiscount}
+				onApplyDoctorDiscount={applyDoctorDiscount}
+				onApplySplit5050={applySplit5050Preset}
+				onApplyThreeWaySplit={applyThreeWaySplitPreset}
+				onApplyDepositPlusCard={applyDepositPlusCardPreset}
 			/>
+
 			<TaxPayerDetails
 				applyPatientTaxDefaults={applyPatientTaxDefaults}
 				onPayerBirthDateChange={onPayerBirthDateChange}
@@ -1680,21 +616,9 @@ export function PaymentCapture({
 				taxDefaultsGuidanceId={taxDefaultsGuidanceId}
 				taxPayerDetailsOpen={taxPayerDetailsOpen}
 			/>
-			{/* БЫЛО: parseFloat("120 000") === 120. Поле суммы явно разрешает пробелы
-          (pattern="[0-9\s]*"), администратор набирает "120 000" — и калькулятор
-          показывал рассрочку на 120 ₽ по 20 ₽ в месяц. Используем тот же
-          нормализатор, что и валидация формы: он снимает пробелы и NBSP. */}
-			<InstallmentCalculator
-				totalAmount={normalizeRubAmountInput(amount) ?? 0}
-				isOpen={false}
-			/>
+
 			{!paymentReadyToSubmit ? (
-				<div
-					className="payment-capture-missing"
-					id={paymentMissingId}
-					role="status"
-					aria-live="polite"
-				>
+				<div className="payment-capture-missing" id={paymentMissingId} role="status" aria-live="polite">
 					<strong>Чтобы принять оплату, осталось:</strong>
 					<ul>
 						{paymentMissingSteps.map((step) => (
@@ -1703,238 +627,47 @@ export function PaymentCapture({
 					</ul>
 				</div>
 			) : isTaxDeductionDraft ? (
-				<div
-					className="payment-capture-tax-draft-hint px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200 text-xs font-medium my-2"
-					role="status"
-					data-testid="payment-tax-draft-hint"
-				>
+				<div className="payment-capture-tax-draft-hint px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200 text-xs font-medium my-2" role="status" data-testid="payment-tax-draft-hint">
 					<span className="font-bold">Налоговый вычет (черновик): </span>
 					<span>
-						Оплата не блокируется. Для формирования справки ФНС не хватает:{" "}
-						{taxDeductionMissingSteps.join(", ")} (можно заполнить позже в
-						карточке пациента).
+						Оплата не блокируется. Для формирования справки ФНС не хватает: {taxDeductionMissingSteps.join(", ")} (можно заполнить позже в карточке пациента).
 					</span>
 				</div>
 			) : null}
+
 			<p className="payment-capture-safeguard text-[10px] text-[var(--muted)] my-1 block">
-				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте
-				возвратом или коррекцией, не повторной записью.
+				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте возвратом или коррекцией, не повторной записью.
 			</p>
 
-			{/* Буфер прокрутки (pb-28), чтобы фиксированная нижняя планка не перекрывала табы и элементы управления */}
-			<div
-				className="payment-capture-bottom-spacer block w-full h-28 sm:h-20 pointer-events-none select-none"
-				style={{ minHeight: "112px" }}
-				aria-hidden="true"
+			<div className="payment-capture-bottom-spacer block w-full h-28 sm:h-20 pointer-events-none select-none" style={{ minHeight: "112px" }} aria-hidden="true" />
+
+			<PaymentCheckoutBar
+				amount={amount}
+				remainingDebt={remainingDebt}
+				paymentReadyToSubmit={paymentReadyToSubmit}
+				paymentMissingId={paymentMissingId}
+				isSaving={isSaving}
+				isZeroAmount={isZeroAmount}
+				isMoreActionsOpen={isMoreActionsOpen}
+				onToggleMoreActions={() => setIsMoreActionsOpen((prev) => !prev)}
+				onCloseMoreActions={() => setIsMoreActionsOpen(false)}
+				onPrimarySubmit={handlePrimarySubmit}
+				onSberPosClick={handleSberPosClick}
+				onOpenSplitModal={handleOpenSplitModal}
+				onManualCardTerminalSubmit={handleManualCardTerminalSubmit}
 			/>
 
-			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p: фиксирована внизу экрана) */}
-			<div
-				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-2 sm:px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-1.5 sm:gap-2 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,200px)] pb-safe overflow-hidden"
-				style={{
-					position: "fixed",
-					bottom: 0,
-					right: 0,
-					zIndex: 50,
-				}}
-				data-testid="payment-checkout-bar"
-			>
-				{/* Итого к списанию / оплате */}
-				<div
-					className="payment-total-due-banner flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink sm:shrink-0 min-w-0 sm:min-w-[150px] md:min-w-[170px]"
-					data-testid="payment-total-due-banner"
-				>
-					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-sm:text-xs max-sm:leading-none whitespace-nowrap pr-1 sm:pr-1.5 shrink-0">
-						<span className="hidden sm:inline">Итого к списанию:</span>
-						<span className="sm:hidden">Итого:</span>
-					</span>
-					<span className="text-sm sm:text-base font-black font-mono text-[var(--ink)] max-sm:text-sm max-sm:leading-tight whitespace-nowrap text-right flex-1 min-w-0">
-						{amount && normalizeRubAmountInput(amount) !== null
-							? `${(normalizeRubAmountInput(amount) ?? 0).toLocaleString("ru-RU")} ₽`
-							: remainingDebt && remainingDebt > 0
-								? `${remainingDebt.toLocaleString("ru-RU")} ₽`
-								: "0 ₽"}
-					</span>
-				</div>
-
-				<div
-					className="payment-actions flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-1 min-w-0 justify-end"
-				>
-					<button
-						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2 sm:px-3 whitespace-nowrap shrink-0"
-						type="button"
-						onClick={handlePrimarySubmit}
-						aria-busy={isSaving || undefined}
-						aria-describedby={
-							!paymentReadyToSubmit ? paymentMissingId : undefined
-						}
-						disabled={isSaving}
-						title={isSaving ? "Идет сохранение платежа в базе данных..." : undefined}
-						data-testid="payment-submit-button"
-						id="cashier-tender-action-btn"
-						data-tour="cashier-pay"
-					>
-						<CreditCard aria-hidden="true" size={16} className="shrink-0" />{" "}
-						<span className="truncate">
-							{isSaving
-								? "Записываю..."
-								: isZeroAmount
-									? "Введите сумму"
-									: "Принять оплату"}
-						</span>
-					</button>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden min-w-0 px-2 sm:px-2.5 lg:px-3 overflow-hidden shrink disabled:opacity-40 disabled:cursor-not-allowed"
-						type="button"
-						onClick={handleSberPosClick}
-						aria-describedby={
-							!paymentReadyToSubmit ? paymentMissingId : undefined
-						}
-						disabled={isSaving}
-						title={
-							isSaving
-								? "Идет сохранение платежа, терминал занят..."
-								: "Оплата картой (Сбербанк POS / QR)"
-						}
-						data-testid="payment-sberpos-button"
-					>
-						<CreditCard aria-hidden="true" size={15} className="shrink-0" />{" "}
-						<span className="hidden sm:inline truncate whitespace-nowrap">
-							<span className="2xl:inline hidden">Оплата картой (Сбербанк POS / QR)</span>
-							<span className="2xl:hidden xl:inline hidden">Картой (POS/QR)</span>
-							<span className="xl:hidden">Картой</span>
-						</span>
-					</button>
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden flex items-center gap-1 sm:gap-1.5 min-w-0 px-2 sm:px-2.5 lg:px-3 whitespace-nowrap shrink disabled:opacity-40 disabled:cursor-not-allowed"
-						type="button"
-						onClick={handleOpenSplitModal}
-						aria-describedby={
-							!paymentReadyToSubmit ? paymentMissingId : undefined
-						}
-						disabled={isSaving}
-						title={
-							isSaving
-								? "Операция выполняется..."
-								: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
-						}
-						data-testid="payment-split-modal-button"
-					>
-						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
-						<span className="hidden sm:inline whitespace-nowrap">
-							<span className="hidden xl:inline">Комбо </span>Сплит
-						</span>
-					</button>
-					<div className="relative shrink-0 flex-shrink-0">
-						<button
-							className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-9 sm:h-9 sm:min-w-9 sm:w-9 p-0 flex items-center justify-center rounded-lg shrink-0 flex-shrink-0"
-							type="button"
-							onClick={() => setIsMoreActionsOpen((prev) => !prev)}
-							aria-expanded={isMoreActionsOpen}
-							aria-label="Дополнительные способы оплаты"
-							disabled={isSaving}
-							title={isSaving ? "Операция выполняется..." : "Дополнительные способы оплаты"}
-						>
-							<MoreVertical
-								size={16}
-								className="shrink-0 text-[var(--muted)]"
-							/>
-						</button>
-						{isMoreActionsOpen && (
-							<div
-								className="absolute right-0 bottom-full mb-1 w-56 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
-								role="menu"
-							>
-								<button
-									type="button"
-									onClick={() => {
-										setIsMoreActionsOpen(false);
-										handleSberPosClick();
-									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
-									role="menuitem"
-									disabled={isSaving}
-									title={
-										isSaving
-											? "Операция выполняется..."
-											: "Сбер POS"
-									}
-								>
-									<CreditCard
-										size={15}
-										className="shrink-0 text-[var(--teal)]"
-									/>
-									<span>Сбер POS</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsMoreActionsOpen(false);
-										handleOpenSplitModal();
-									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
-									role="menuitem"
-									disabled={isSaving}
-									data-testid="payment-split-modal-button"
-									title={
-										isSaving
-											? "Операция выполняется..."
-											: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
-									}
-								>
-									<Coins
-										size={15}
-										className="shrink-0 text-indigo-600 dark:text-indigo-400"
-									/>
-									<span>Комбо (Сплит)</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsMoreActionsOpen(false);
-										handleManualCardTerminalSubmit();
-									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg hover:bg-[var(--line)] text-blue-700 dark:text-blue-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
-									role="menuitem"
-									disabled={isSaving}
-									title={
-										isSaving
-											? "Операция выполняется..."
-											: "Зафиксировать оплату в CRM, если карта списана на терминале вручную"
-									}
-									data-testid="payment-manual-card-terminal-button"
-								>
-									<CreditCard
-										size={15}
-										className="shrink-0 text-blue-600 dark:text-blue-400"
-									/>
-									<span>Карта подтверждена вручную</span>
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-			</div>
 			{patientId && (
 				<SberPosTerminalModal
 					isOpen={isSberPosModalOpen}
 					onClose={() => setIsSberPosModalOpen(false)}
 					totalBillKop={rubToKopecks(
 						Number(
-							normalizeRubAmountInput(amount) ??
-								(remainingDebt && remainingDebt > 0 ? remainingDebt : 0),
+							normalizeRubAmountInput(amount) ?? (remainingDebt && remainingDebt > 0 ? remainingDebt : 0),
 						),
 					)}
 					patientName={patientDefaults?.fullName || payerFullName || "Пациент"}
-					orderId={`CHK-2026-${
-						patientId
-							? patientId
-									.replace(/[^a-zA-Z0-9]/g, "")
-									.slice(0, 6)
-									.toUpperCase()
-							: "891"
-					}`}
+					orderId={`CHK-2026-${patientId ? patientId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() : "891"}`}
 					initialOperation={method === "online" ? "sberpay_qr" : "sale"}
 					onSelectAlternativeMethod={(altMethod) => {
 						onMethodChange(normalizePaymentMethod(altMethod));
@@ -1942,12 +675,8 @@ export function PaymentCapture({
 					onTransactionSuccess={(response) => {
 						setIsSberPosModalOpen(false);
 						onAmountChange("");
-						if (response.rrn) {
-							onFiscalFdChange(response.rrn);
-						}
-						if (response.authCode) {
-							onFiscalFpdChange(response.authCode);
-						}
+						if (response.rrn) onFiscalFdChange(response.rrn);
+						if (response.authCode) onFiscalFpdChange(response.authCode);
 						showToast(
 							`Оплата ${money(kopecksToRub(response.amountKop))} через терминал Сбербанка (${response.cardIssuer}) успешно зафиксирована. RRN: ${response.rrn}`,
 							"success",
@@ -1955,6 +684,7 @@ export function PaymentCapture({
 					}}
 				/>
 			)}
+
 			<PaymentModal
 				isOpen={isSplitModalOpen}
 				onClose={() => {
@@ -1963,30 +693,19 @@ export function PaymentCapture({
 				}}
 				patientId={patientId || undefined}
 				patientName={patientDefaults?.fullName || payerFullName || undefined}
-					amountRub={
-						normalizeRubAmountInput(amount) ??
-						(remainingDebt && remainingDebt > 0 ? remainingDebt : undefined)
-					}
-					patientDebtRub={
-						remainingDebt && remainingDebt > 0 ? remainingDebt : undefined
-					}
-					cashierName={fiscalCashierName || undefined}
-					defaultMethod="split"
-					initialSplit5050={isSplit5050Mode}
-					onSuccess={(paymentData) => {
-						setIsSplitModalOpen(false);
-						setIsSplit5050Mode(false);
-						onAmountChange("");
-						const formattedAmount = paymentData.amountKopecks
-							? money(kopecksToRub(paymentData.amountKopecks))
-							: "";
-						showToast(
-							`Комбинированная оплата ${formattedAmount} успешно зафиксирована.`,
-							"success",
-							4000,
-						);
-					}}
-				/>
+				amountRub={normalizeRubAmountInput(amount) ?? (remainingDebt && remainingDebt > 0 ? remainingDebt : undefined)}
+				patientDebtRub={remainingDebt && remainingDebt > 0 ? remainingDebt : undefined}
+				cashierName={fiscalCashierName || undefined}
+				defaultMethod="split"
+				initialSplit5050={isSplit5050Mode}
+				onSuccess={(paymentData) => {
+					setIsSplitModalOpen(false);
+					setIsSplit5050Mode(false);
+					onAmountChange("");
+					const formattedAmount = paymentData.amountKopecks ? money(kopecksToRub(paymentData.amountKopecks)) : "";
+					showToast(`Комбинированная оплата ${formattedAmount} успешно зафиксирована.`, "success", 4000);
+				}}
+			/>
 		</div>
 	);
 }

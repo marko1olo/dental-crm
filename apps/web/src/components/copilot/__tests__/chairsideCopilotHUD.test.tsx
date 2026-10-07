@@ -175,11 +175,11 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     );
 
     expect(html).toContain("btn-chairside-apply-all");
-    expect(html).toContain("Применить всё в 1 клик");
+    expect(html).toContain("Применить все предложения");
     expect(html).toContain("btn-chairside-dismiss-all");
     expect(html).toContain("Сброс");
     expect(html).toContain("chairside-autonomy-note");
-    expect(html).toContain("Автономия врача (Мандат 8e) • 0 блокировок • Обратимые действия");
+    expect(html).toContain("Полный контроль врача");
   });
 
   it("9. renders quick clinical presets chips (Caries, Pulpitis, Hygiene)", () => {

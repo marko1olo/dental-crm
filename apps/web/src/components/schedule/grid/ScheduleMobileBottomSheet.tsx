@@ -545,7 +545,7 @@ export function ScheduleMobileBottomSheet({
                 {effectiveChairs.length > 1 && (
                   <div className="space-y-1.5 pt-2 border-t border-[var(--line)]">
                     <div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
-                      Сменить кресло (1 клик):
+                      Сменить кресло:
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {effectiveChairs.map((ch) => {
@@ -586,7 +586,7 @@ export function ScheduleMobileBottomSheet({
                 {doctors.length > 1 && (
                   <div className="space-y-1.5 pt-2 border-t border-[var(--line)]">
                     <div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
-                      Сменить врача (1 клик):
+                      Сменить врача:
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {doctors.slice(0, 4).map((doc) => {

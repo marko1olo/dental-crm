@@ -74,12 +74,12 @@ export function executeApplySomaticNormAutonomy({
 
 	let normText =
 		"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
-	let toastMessage = "Применена норма: соматически здоров (1 клик)";
+	let toastMessage = "Применена норма: соматически здоров";
 
 	if (!isClean && combinedText) {
 		const formattedDiary = formatSafetyProfileToDiaryText(safety);
 		normText = `${formattedDiary} Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает.`;
-		toastMessage = "Подставлен анамнез с учетом соматического статуса пациента (1 клик)";
+		toastMessage = "Подставлен анамнез с учетом соматического статуса пациента";
 	}
 
 	const objNorm =
@@ -149,7 +149,7 @@ export function executeApplyHygienePresetAutonomy({
 			updateVisitNoteField("recommendations", hygieneRec);
 		}
 	}
-	showToastFn("Применён протокол: Профгигиена выполнена (1 клик)", "success");
+	showToastFn("Применён протокол: Профгигиена выполнена", "success");
 	return { executed: true };
 }
 
@@ -173,7 +173,7 @@ export function executeApplyAnesthesiaPresetAutonomy({
 
 	let anesthesiaText =
 		"Анестезия: инфильтрационная / проводниковая Sol. Articaini 4% с эпинефрином 1:100 000 — 1.7 мл (Артикаин). Анестезия наступила через 3 минуты, глубокая, достаточная для безболезненного вмешательства. Без осложнений.";
-	let toastMessage = "Добавлена стандартная анестезия: Sol. Articaini 4% (1 клик)";
+	let toastMessage = "Добавлена стандартная анестезия: Sol. Articaini 4%";
 
 	if (
 		safety.hasHypertension ||
@@ -186,7 +186,7 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	) {
 		anesthesiaText =
 			"Анестезия (кардио-протокол): инфильтрационная / проводниковая Sol. Mepivacaini 3% без вазоконстриктора (Скандонест) — 1.7 мл. Анестезия наступила через 3 минуты, гемодинамика стабильная, АД и пульс в норме. Без осложнений.";
-		toastMessage = "Добавлена кардио-безопасная анестезия: Sol. Mepivacaini 3% plain (1 клик)";
+		toastMessage = "Добавлена кардио-безопасная анестезия: Sol. Mepivacaini 3% plain";
 	} else if (
 		safety.hasArticaineAllergy ||
 		safety.hasSulfiteAllergy ||
@@ -196,7 +196,7 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	) {
 		anesthesiaText =
 			"Анестезия (гипоаллергенный протокол): Sol. Mepivacaini 3% без вазоконстриктора и без сульфитных консервантов (Скандонест) — 1.7 мл. Без признаков аллергических реакций.";
-		toastMessage = "Добавлена гипоаллергенная анестезия: Sol. Mepivacaini 3% (1 клик)";
+		toastMessage = "Добавлена гипоаллергенная анестезия: Sol. Mepivacaini 3%";
 	} else if (
 		(safety.pregnancyTrimester && safety.pregnancyTrimester !== "none") ||
 		combinedText.includes("беременн") ||
@@ -205,7 +205,7 @@ export function executeApplyAnesthesiaPresetAutonomy({
 	) {
 		anesthesiaText =
 			"Анестезия (гестационный протокол): инфильтрационная Sol. Articaini 4% с минимальным содержанием эпинефрина 1:200 000 — 1.7 мл. Без осложнений.";
-		toastMessage = "Добавлена безопасная анестезия для беременных: Sol. Articaini 1:200 000 (1 клик)";
+		toastMessage = "Добавлена безопасная анестезия для беременных: Sol. Articaini 1:200 000";
 	}
 
 	if (typeof updateVisitNoteField === "function") {

@@ -398,7 +398,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 			<div className="gost-presets-bar w-full flex flex-wrap items-center justify-between gap-2 p-2 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] rounded-xl shadow-xs">
 				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--odontogram-ink)]">
 					<Zap size={13} className="text-amber-500 shrink-0" />
-					<span>Экспресс-пресеты (1 клик):</span>
+					<span>Клинические экспресс-протоколы:</span>
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">

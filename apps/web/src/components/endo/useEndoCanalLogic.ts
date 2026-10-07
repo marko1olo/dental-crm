@@ -334,7 +334,7 @@ export function useEndoCanalLogic({
 		);
 	};
 
-	// 1-клик пресеты
+	// Клинические протоколы эндодонтии
 	const handleApplyExpressApicalPreset = () => {
 		const preset = applyExpressApicalEndoProtocol(canals, activeTooth);
 		setCanals(preset.canals);
@@ -342,7 +342,7 @@ export function useEndoCanalLogic({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		setStageStamp("COMPLETED");
-		showToast("Применен 1-клик протокол: Каналы пройдены и обтурированы до апекса", "success");
+		showToast("Обтурация канала (гуттаперча + силер): Каналы пройдены и обтурированы до апекса", "success");
 	};
 
 	const handleApplyCaOh2Protocol = () => {
@@ -352,7 +352,7 @@ export function useEndoCanalLogic({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		setStageStamp("TEMP_CAOH2");
-		showToast("Применен 1-клик протокол: Временная повязка Ca(OH)2 (Каласепт)", "info");
+		showToast("Протокол эндодонтического лечения: Временная повязка Ca(OH)2 (Каласепт)", "info");
 	};
 
 	const handleApplyPulpitisPreset = () => {
@@ -362,7 +362,7 @@ export function useEndoCanalLogic({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		setStageStamp("COMPLETED");
-		showToast("Применен 1-клик протокол: Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)", "success");
+		showToast("Протокол эндодонтического лечения: Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)", "success");
 	};
 
 	const handleApplyPrimaryEndoPreset = () => {
@@ -372,7 +372,7 @@ export function useEndoCanalLogic({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		setStageStamp("TEMP_CAOH2");
-		showToast("Применен 1-клик протокол: Первичное эндо (ProTaper Gold + Metapex)", "success");
+		showToast("Протокол эндодонтического лечения: Первичное эндо (ProTaper Gold + Metapex)", "success");
 	};
 
 	const handleApplyRetreatmentPreset = () => {
@@ -382,7 +382,7 @@ export function useEndoCanalLogic({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		setStageStamp("TEMP_CAOH2");
-		showToast("Применен 1-клик протокол: Повторное эндо (D-RaCe + ревизия)", "info");
+		showToast("Протокол эндодонтического лечения: Повторное эндо (D-RaCe + ревизия)", "info");
 	};
 
 	const handleApplyObturationPreset = () => {
@@ -392,7 +392,7 @@ export function useEndoCanalLogic({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		setStageStamp("COMPLETED");
-		showToast("Применен 1-клик протокол: Постоянная обтурация (GuttaCore / AH Plus)", "success");
+		showToast("Обтурация канала (гуттаперча + силер): Постоянная обтурация (GuttaCore / AH Plus)", "success");
 	};
 
 	const handleApplyPulpitisObturationPreset = () => {

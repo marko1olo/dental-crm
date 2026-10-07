@@ -251,16 +251,16 @@ export function DocumentUkepSignButton({
 					<button
 						type="button"
 						onClick={() => void detectPlugin()}
-						className="dente-button dente-button--secondary min-h-[44px] justify-center text-xs"
+						className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center justify-center gap-1.5"
 					>
-						<RefreshCw className="mr-2" size={14} />
+						<RefreshCw size={14} />
 						<span>Проверить снова</span>
 					</button>
 					<a
 						href="https://cryptopro.ru/products/cades/plugin"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-flex items-center justify-center min-h-[44px] px-3 text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline"
+						className="inline-flex items-center justify-center min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium text-[var(--teal,#0d9488)] hover:underline"
 					>
 						Инструкция по установке плагина →
 					</a>
@@ -270,10 +270,10 @@ export function DocumentUkepSignButton({
 	}
 
 	return (
-		<div className="p-3.5 border border-[var(--glass-border,#e2e8f0)] dark:border-slate-800 rounded-lg bg-[var(--paper-subtle,#f8fafc)] dark:bg-slate-900/50">
+		<div className="p-3.5 border border-[var(--line,#e2e8f0)] rounded-lg bg-[var(--paper-soft,#f8fafc)]">
 			<label
 				htmlFor="ukep-cert-select"
-				className="block text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-300 mb-1.5"
+				className="block text-xs font-semibold text-[var(--ink,#0f172a)] mb-1.5"
 			>
 				Сертификат электронной подписи врача (63-ФЗ):
 			</label>
@@ -304,9 +304,9 @@ export function DocumentUkepSignButton({
 					<button
 						type="button"
 						onClick={() => void loadCertificates()}
-						className="dente-button dente-button--secondary min-h-[44px] justify-center text-xs w-full sm:w-auto"
+						className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
 					>
-						<RefreshCw className="mr-2" size={14} />
+						<RefreshCw size={14} />
 						<span>Проверить снова</span>
 					</button>
 				</div>
@@ -327,9 +327,9 @@ export function DocumentUkepSignButton({
 					<button
 						type="button"
 						onClick={() => void loadCertificates()}
-						className="dente-button dente-button--secondary min-h-[44px] justify-center text-xs w-full sm:w-auto"
+						className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8 px-3 text-[13px] font-medium rounded-lg inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
 					>
-						<RefreshCw className="mr-2" size={14} />
+						<RefreshCw size={14} />
 						<span>Проверить снова</span>
 					</button>
 				</div>
@@ -340,7 +340,7 @@ export function DocumentUkepSignButton({
 						value={selectedThumbprint}
 						onChange={(e) => setSelectedThumbprint(e.target.value)}
 						disabled={isSigning}
-						className="w-full text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded px-2.5 py-2 mb-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)] dark:text-slate-100"
+						className="w-full text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg px-2.5 py-2 mb-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]"
 					>
 						{certificates.map((cert) => {
 							const expiry = new Date(cert.validTo).toLocaleDateString(
@@ -420,16 +420,16 @@ export function DocumentUkepSignButton({
 				type="button"
 				onClick={handleSign}
 				disabled={isSigning}
-				className="dente-button dente-button--primary min-h-[44px] w-full justify-center text-xs font-semibold"
+				className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 w-full px-3 text-[13px] font-semibold rounded-lg flex items-center justify-center gap-1.5"
 			>
 				{isSigning ? (
 					<>
-						<Loader2 className="dente-icon-spin mr-2" size={16} />
+						<Loader2 className="dente-icon-spin" size={15} />
 						<span>Идет подписание... Введите PIN-код на токене</span>
 					</>
 				) : (
 					<>
-						<FileSignature className="mr-2" size={16} />
+						<FileSignature size={15} />
 						<span>Подписать УКЭП (КриптоПро)</span>
 					</>
 				)}

@@ -25,9 +25,9 @@ export function useInventoryQuickWriteoff({
 	const [isWritingOffVisitBundle, setIsWritingOffVisitBundle] = useState(false);
 
 	/**
-	 * 1-клик списание базового набора приёма:
+	 * Быстрое списание базового набора приёма:
 	 * (перчатки, маска, слюноотсос, нагрудник, валики) без поиска по 1000 позициям склада.
-	 * Реализует мягкий овердрафт склада без блокировки приёма.
+	 * Реализует расход сверх остатка (мягкий овердрафт) склада без блокировки приёма.
 	 */
 	const handleQuickWriteoffStandardKit = async (options?: {
 		visitId?: string;
@@ -59,8 +59,8 @@ export function useInventoryQuickWriteoff({
 				const data = await res.json();
 				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
 					const notice = options?.visitId
-						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
-						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+						? `Требуется оприходование: материал списан с дефицитом по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (расход сверх остатка / списание с дефицитом), требуется оприходование накладной";
 					showToast(notice, "warning");
 				} else {
 					showToast(
@@ -82,9 +82,9 @@ export function useInventoryQuickWriteoff({
 	};
 
 	/**
-	 * 1-клик списание пустых карпул анестетика (СанПиН 3.3686-21, ПКУ).
+	 * Быстрое списание пустых карпул анестетика (СанПиН 3.3686-21, ПКУ).
 	 * Ликвидирует требование комиссии из 3 человек.
-	 * Реализует мягкий овердрафт склада без комиссии.
+	 * Реализует расход сверх остатка (мягкий овердрафт) склада без комиссии.
 	 */
 	const handleQuickWriteoffCarpules = async (options?: {
 		carpulesCount?: number;
@@ -122,8 +122,8 @@ export function useInventoryQuickWriteoff({
 				const data = await res.json();
 				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
 					const notice = options?.visitId
-						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
-						: "Остаток 0: зафиксирован мягкий овердрафт (списание карпул выполнено, накладная в пути)";
+						? `Требуется оприходование: материал списан с дефицитом по визиту №${options.visitId}`
+						: "Остаток 0: зафиксирован расход сверх остатка (списание с дефицитом: списание карпул выполнено, накладная в пути)";
 					showToast(notice, "warning");
 				} else {
 					const count = options?.carpulesCount ?? 1;
@@ -132,7 +132,7 @@ export function useInventoryQuickWriteoff({
 							? `Бой карпул анестетика (${count} шт., стекло Класс Б)`
 							: options?.disposalReason === "partial_dose"
 								? `Неполные карпулы анестетика (${count} шт., Класс Б)`
-								: `Пустые карпулы анестетика списаны в 1 клик (${count} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`;
+								: `Пустые карпулы анестетика списаны (${count} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`;
 					showToast(reasonText, "success");
 				}
 				fetchItems();
@@ -149,9 +149,9 @@ export function useInventoryQuickWriteoff({
 	};
 
 	/**
-	 * 1-клик списание пустой карпулы анестетика (Септанест/Убистезин)
+	 * Быстрое списание пустой карпулы анестетика (Септанест/Убистезин)
 	 * по СанПиН 3.3686-21, ПКУ без созыва комиссии из 3 человек.
-	 * Мягкий овердрафт при задержке оприходования накладной.
+	 * Расход сверх остатка при задержке оприходования накладной.
 	 */
 	const handleQuickWriteoffAnestheticCarpule = async (options?: {
 		carpulesCount?: number;
@@ -166,12 +166,12 @@ export function useInventoryQuickWriteoff({
 			...(options?.visitId ? { visitId: options.visitId } : {}),
 			...(options?.cabinetId ? { cabinetId: options.cabinetId } : {}),
 			...(options?.chairId ? { chairId: options.chairId } : {}),
-			notes: options?.notes ?? "1-клик списание карпулы анестетика (Септанест/Убистезин) без комиссии",
+			notes: options?.notes ?? "Быстрое списание карпулы анестетика (Септанест/Убистезин) без комиссии",
 		});
 	};
 
 	/**
-	 * 1-клик списание «Набор стерилизации: 1 лоток + перчатки»
+	 * Быстрое списание «Набор стерилизации: 1 лоток + перчатки»
 	 * (1 лоток со смотровым набором в крафт-пакете + 2 пары перчаток + дезинфицирующая салфетка)
 	 * без созыва комиссии из 3 человек и с мягким овердрафтом склада (Мандат 8e п. 10).
 	 */
@@ -198,7 +198,7 @@ export function useInventoryQuickWriteoff({
 						...(options?.visitId ? { visitId: options.visitId } : {}),
 						...(options?.cabinetId ? { cabinetId: options.cabinetId } : {}),
 						...(options?.chairId ? { chairId: options.chairId } : {}),
-						notes: options?.notes ?? "1-клик списание: Набор стерилизации: 1 лоток + перчатки",
+						notes: options?.notes ?? "Быстрое списание: Набор стерилизации: 1 лоток + перчатки",
 						allowSoftOverdraft: true,
 						allowOverdraft: true,
 					}),
@@ -209,12 +209,12 @@ export function useInventoryQuickWriteoff({
 				const data = await res.json();
 				if (data.isOverdraft || (Array.isArray(data.warnings) && data.warnings.length > 0)) {
 					const notice = options?.visitId
-						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
-						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+						? `Требуется оприходование: материал списан с дефицитом по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (расход сверх остатка / списание с дефицитом), требуется оприходование накладной";
 					showToast(notice, "warning");
 				} else {
 					showToast(
-						"Набор стерилизации (1 лоток + перчатки) успешно списан в 1 клик",
+						"Набор стерилизации (1 лоток + перчатки) успешно списан",
 						"success",
 					);
 				}
@@ -232,9 +232,9 @@ export function useInventoryQuickWriteoff({
 	};
 
 	/**
-	 * 1-клик пакетное списание стандартного расхода смены (комплект терапия / ортопедия / хирургия).
+	 * Быстрое пакетное списание стандартного расхода смены (комплект терапия / ортопедия / хирургия).
 	 * Избавляет персонал от ручного прокликивания 40 позиций.
-	 * Реализует мягкий овердрафт склада без блокировки работы.
+	 * Реализует расход сверх остатка (мягкий овердрафт) склада без блокировки работы.
 	 */
 	const handleQuickWriteoffShiftBundle = async (
 		bundleType: "therapy" | "orthopedics" | "surgery" = "therapy",
@@ -280,8 +280,8 @@ export function useInventoryQuickWriteoff({
 				const data = await res.json();
 				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
 					const notice = options?.visitId
-						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
-						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+						? `Требуется оприходование: материал списан с дефицитом по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (расход сверх остатка / списание с дефицитом), требуется оприходование накладной";
 					showToast(notice, "warning");
 				} else {
 					showToast(
@@ -303,10 +303,10 @@ export function useInventoryQuickWriteoff({
 	};
 
 	/**
-	 * 1-клик пакетное списание материалов по типовой карте визита:
+	 * Быстрое пакетное списание материалов по типовой карте визита:
 	 * - «Терапия»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник
 	 * - «Хирургия»: карпула анестетика + игла + скальпель + шовный материал + гемостатическая губка
-	 * Реализует мягкий овердрафт при задержке накладной и списание без созыва комиссии (Мандат 8e п. 10).
+	 * Реализует расход сверх остатка (мягкий овердрафт) при задержке накладной и списание без созыва комиссии (Мандат 8e п. 10).
 	 */
 	const handleQuickWriteoffVisitBundle = async (
 		visitType: "therapy" | "surgery" = "therapy",
@@ -347,12 +347,12 @@ export function useInventoryQuickWriteoff({
 				const data = await res.json();
 				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
 					const notice = options?.visitId
-						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
-						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+						? `Требуется оприходование: материал списан с дефицитом по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (расход сверх остатка / списание с дефицитом), требуется оприходование накладной";
 					showToast(notice, "warning");
 				} else {
 					showToast(
-						`Набор «Визит: ${visitNameRu}» успешно списан в 1 клик (${data.deductedItems?.length || (visitType === "surgery" ? 5 : 6)} позиций без комиссии)`,
+						`Набор «Визит: ${visitNameRu}» успешно списан (${data.deductedItems?.length || (visitType === "surgery" ? 5 : 6)} позиций без комиссии)`,
 						"success",
 					);
 				}

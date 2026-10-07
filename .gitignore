@@ -46,6 +46,8 @@ local-secrets/*.local
 playwright-report/
 blob-report/
 *.tsbuildinfo
+*.onnx
+models/
 
 # PGlite database is a regenerable artifact (rebuilt via `npm run db:reset-seed`
 # from .data/dental-crm-state.json). Never track its raw Postgres page files.

@@ -132,7 +132,7 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 													type="button"
 													onClick={() => onReplaceWithImplant(item.toothNumber!)}
 													className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-amber-600 hover:bg-amber-700 text-white transition-colors cursor-pointer"
-													title="Заменить на имплантацию в 1 клик"
+													title="Заменить позицию на дентальную имплантацию"
 													data-testid={`btn-ghost-replace-implant-${item.toothNumber}`}
 												>
 													<ArrowRightLeft size={12} />

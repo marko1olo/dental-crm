@@ -139,7 +139,7 @@ export const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 		} else {
 			showToast(
 				isOverdraft
-					? `Списано ${sheetQuantity} ед. «${activeSheetItem.name}» (зафиксирован мягкий овердрафт по Мандату 8n)`
+					? `Списано ${sheetQuantity} ед. «${activeSheetItem.name}» (расход сверх остатка / списание с дефицитом)`
 					: `Списано ${sheetQuantity} ед. «${activeSheetItem.name}» по FEFO`,
 				isOverdraft ? "info" : "success",
 			);
@@ -358,7 +358,7 @@ export const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 									{isOverdraft ? (
 										<span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
 											<ShieldAlert size={11} className="shrink-0" />
-											<span>Мягкий овердрафт</span>
+											<span>Расход сверх остатка</span>
 										</span>
 									) : isLowStock ? (
 										<span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">

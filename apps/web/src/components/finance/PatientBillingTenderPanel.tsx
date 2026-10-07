@@ -64,13 +64,13 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 }) => {
 	return (
 		<div className="space-y-4">
-			{/* Экспресс-оплата в 1 клик */}
+			{/* Экспресс-оплата */}
 			<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-2">
 						<Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
 						<span className="text-xs font-black text-[var(--ink)] uppercase tracking-wider">
-							Экспресс-оплата в 1 клик (чек фискализируется мгновенно):
+							Экспресс-оплата (мгновенная фискализация чека):
 						</span>
 					</div>
 					<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
@@ -87,7 +87,7 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 						}}
 						className="min-h-[44px] px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 						data-testid="btn-express-pay-card"
-						title="Оплатить картой 100% суммы и пробить чек в 1 клик"
+						title="Оплатить картой 100% суммы и пробить чек"
 					>
 						<CreditCard className="w-4 h-4 shrink-0" />
 						<span>Оплатить картой (вся сумма)</span>
@@ -101,7 +101,7 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 						}}
 						className="min-h-[44px] px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 						data-testid="btn-express-pay-cash"
-						title="Оплатить наличными 100% суммы и пробить чек в 1 клик"
+						title="Оплатить наличными 100% суммы и пробить чек"
 					>
 						<Banknote className="w-4 h-4 shrink-0" />
 						<span>Оплатить наличными (вся сумма)</span>
@@ -114,7 +114,7 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 						}}
 						className="min-h-[44px] px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 						data-testid="btn-express-pay-sbp"
-						title="Оплатить через СБП QR 100% суммы и пробить чек в 1 клик"
+						title="Оплатить через СБП QR 100% суммы и пробить чек"
 					>
 						<QrCode className="w-4 h-4 shrink-0" />
 						<span>Оплатить через СБП</span>
@@ -122,13 +122,13 @@ export const PatientBillingTenderPanel: React.FC<PatientBillingTenderPanelProps>
 				</div>
 			</div>
 
-			{/* 1-Click Fast Payment Tender Selection & Change Calculator */}
+			{/* Payment Tender Selection & Change Calculator */}
 			<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3.5" data-testid="patient-billing-payment-panel">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-2">
 						<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 						<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)] m-0 uppercase tracking-wider">
-							Способ оплаты (1-клик)
+							Способ оплаты:
 						</h4>
 					</div>
 					<span className="text-[11px] text-[var(--muted)]">

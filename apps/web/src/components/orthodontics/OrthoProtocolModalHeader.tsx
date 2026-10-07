@@ -20,72 +20,73 @@ export const OrthoProtocolModalHeader: React.FC<OrthoProtocolModalHeaderProps> =
 	calculatedServicesCount,
 }) => {
 	return (
-		<div className="flex items-center justify-between px-4 py-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
-			<div className="flex items-center gap-2.5">
-				<div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
+		<div className="flex items-center justify-between px-4 py-2.5 bg-[var(--surface,#f8fafc)] dark:bg-slate-900 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
+			<div className="flex items-center gap-2.5 min-w-0 mr-3">
+				<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/30 shrink-0">
 					<BracesBracket size={18} />
 				</div>
-				<div>
-					<h2 id="ortho-protocol-title" className="text-base font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
+				<div className="min-w-0">
+					<h2 id="ortho-protocol-title" className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white m-0 truncate">
 						Ортодонтический протокол приёма
 					</h2>
-					<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 m-0">
+					<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 m-0 truncate">
 						Выбор брекетов, дуг, сечений и эластиков · {patientName}
 					</p>
 				</div>
 			</div>
 
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-2 shrink-0">
 				<button
 					type="button"
 					onClick={onPrintOrthodonticCard}
-					className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+					className="secondary-button shrink-0"
 					data-testid="top-print-ortho-protocol-btn"
-					title="Распечатать карту (Мандат 8e: печать со штампом в любой момент)"
+					title="Распечатать карту"
 					aria-label="Печать протокола"
 				>
-					<Printer size={16} />
+					<Printer size={15} />
 					<span className="hidden sm:inline">Печать протокола</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer whitespace-nowrap"
+					className="secondary-button shrink-0"
 					data-testid="add-ortho-services-to-invoice-btn"
 					title="Начислить услуги в чек/смету визита"
 					aria-label="Начислить услуги в чек/смету"
 				>
-					<Receipt size={16} />
+					<Receipt size={15} />
 					<span>Начислить услуги в чек</span>
 					<span
-						className="px-1.5 py-0.5 rounded-full text-[11px] font-black bg-white/20 text-white min-w-[20px] text-center"
+						className="px-1.5 py-0.2 rounded-full text-[12px] font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 border border-[var(--line,#e2e8f0)] dark:border-slate-600 min-w-[20px] text-center"
 						data-testid="ortho-services-count-badge"
 					>
 						{calculatedServicesCount}
 					</span>
 				</button>
 
+				{/* Single Primary CTA for Ortho Protocol */}
 				<button
 					type="button"
 					onClick={onApplyToVisitNote}
-					className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer whitespace-nowrap"
+					className="primary-button shrink-0"
 					data-testid="apply-to-form-043-btn"
 					title="Вставить протокол в медицинскую карту"
 					aria-label="В медицинскую карту"
 				>
-					<CheckCircle2 size={16} />
+					<CheckCircle2 size={15} />
 					<span>В карту</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
+					className="secondary-button !w-8 !h-8 !p-0 shrink-0"
 					aria-label="Закрыть"
 					data-testid="close-ortho-protocol-btn"
 				>
-					<X size={18} />
+					<X size={16} />
 				</button>
 			</div>
 		</div>

@@ -299,7 +299,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 										whiteSpace: "nowrap",
 									}}
 								>
-									Восстановить: {activeLastPatient.patientName} (1 клик)
+									Восстановить: {activeLastPatient.patientName}
 								</span>
 							</button>
 						</div>
@@ -539,7 +539,7 @@ export const RecentPatientHistoryWidget: React.FC<{
 							cursor: "pointer",
 						}}
 					>
-						⚡ Восстановить карту (1 клик)
+						⚡ Восстановить карту
 					</button>
 				</div>
 			)}

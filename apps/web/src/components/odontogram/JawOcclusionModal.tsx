@@ -324,11 +324,11 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 							type="button"
 							onClick={handle1ClickNorm}
 							className="min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 touch-manipulation"
-							title="1 клик: Физиологическая норма"
+							title="Физиологическая норма (ортогнатический прикус)"
 							data-testid="jaw-1click-norm-btn"
 						>
 							<Zap size={14} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Норма (1 клик)</span>
+							<span>Физиологическая норма</span>
 						</button>
 
 						<button
@@ -515,7 +515,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 						data-testid="jaw-modal-apply-btn"
 					>
 						{selectedPreset ? <Check size={14} /> : <Zap size={14} />}
-						<span>{selectedPreset ? "Внести в карту (1 клик)" : "Норма в 1 клик"}</span>
+						<span>{selectedPreset ? "Внести в карту" : "Физиологическая норма"}</span>
 					</button>
 				</div>
 			</div>

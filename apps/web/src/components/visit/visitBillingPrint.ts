@@ -29,7 +29,7 @@ export function printVisitBillingEstimate({
 				<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${idx + 1}</td>
 				<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${s.code804n}</td>
 				<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">
-					${s.title}${s.toothCode ? ` (зуб ${s.toothCode})` : ""}
+					${s.toothCode ? `<span style="font-weight: 600; color: #4338ca;">[${s.toothCode.includes(",") ? `Зубы ${s.toothCode}` : `Зуб ${s.toothCode}`}]</span> ` : ""}${s.title}
 					${s.isWarranty ? '<span style="color: #15803d; font-weight: bold;"> [Гарантия 100%]</span>' : ""}
 				</td>
 				<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${s.quantity}</td>

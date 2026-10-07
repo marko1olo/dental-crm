@@ -292,7 +292,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 					<div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-200">
 						<span className="font-bold block">Гарантия 100% · Внутренний акт клиники</span>
 						<span className="text-[11px] text-purple-700 dark:text-purple-300">
-							В соответствии с 54-ФЗ и Мандатом 8e чек на 0 ₽ не направляется в ОФД.
+							В соответствии с 54-ФЗ чек на 0 ₽ не направляется в ОФД.
 						</span>
 					</div>
 				) : (

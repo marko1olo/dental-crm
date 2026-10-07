@@ -101,6 +101,9 @@ export const createAppointmentSchema = z
 		comment: z.string().trim().max(1000).nullable().optional(),
 		allowOverbooking: z.boolean().optional(),
 		allowEmergencyOverride: z.boolean().optional(),
+		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
+		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
+		completedServices: z.array(z.record(z.string(), z.any())).optional(),
 	})
 	.superRefine((value, context) => {
 		const startsAt = parseStrictAppointmentDateTimeMs(value.startsAt);
@@ -145,6 +148,9 @@ export const updateAppointmentSchema = z
 		allowOverbooking: z.boolean().optional(),
 		allowEmergencyOverride: z.boolean().optional(),
 		expectedCurrentStatus: z.array(appointmentStatusSchema).optional(),
+		invoice_items: z.array(z.record(z.string(), z.any())).optional(),
+		invoiceItems: z.array(z.record(z.string(), z.any())).optional(),
+		completedServices: z.array(z.record(z.string(), z.any())).optional(),
 	})
 	.superRefine((value, context) => {
 		const startsAt =

@@ -64,7 +64,7 @@ export function ScheduleGridFooter({
           type="button"
           onClick={handleCopyWeekShiftsToNextWeek}
           className="h-6 px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-all shadow-2xs hover:border-[var(--teal)]"
-          title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик"
+          title="Скопировать график смен кресел на следующую неделю (+7 дней)"
           aria-label="Скопировать график на следующую неделю"
           data-testid="btn-grid-copy-next-week"
         >

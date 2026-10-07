@@ -64,18 +64,18 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 							: (patient?.patientName || "Пациент")}
 					</span>
 					<span
-						className={`px-2 py-0.5 rounded border text-[11px] font-medium ${badgeClass}`}
+						className={`px-2 py-0.5 rounded border text-xs font-medium ${badgeClass}`}
 					>
 						{risk.bandLabel}
 					</span>
-					<span className="px-1.5 py-0.2 rounded bg-[var(--paper)] border border-[var(--line)] text-[10px] text-[var(--muted)]">
+					<span className="px-2 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-xs text-[var(--muted)]">
 						{categoryTitle}
 					</span>
 				</div>
 
-				<div className="flex items-center gap-3 text-[var(--muted)] text-[11px] mt-1 flex-wrap">
+				<div className="flex items-center gap-3 text-[var(--muted)] text-xs mt-1 flex-wrap">
 					<span className="flex items-center gap-1">
-						<Phone className="w-3 h-3 text-[var(--teal)]" />
+						<Phone className="w-3.5 h-3.5 text-[var(--teal)]" />
 						{formatPhoneNumber(patient?.phone)}
 					</span>
 					<span>·</span>
@@ -85,7 +85,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 							: `Без приёма ${days} дн.`}
 					</span>
 					<span>·</span>
-					<span className="text-[var(--teal)]">
+					<span className="text-[var(--teal)] font-medium">
 						{risk.recommendedService}
 					</span>
 				</div>
@@ -96,15 +96,15 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 				{patient?.phone ? (
 					<a
 						href={`tel:${patient.phone.replace(/[^\d+]/g, "")}`}
-						className="px-2.5 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
+						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium transition-colors inline-flex items-center gap-1.5 shadow-xs touch-manipulation"
 						title="Позвонить пациенту"
 					>
-						<Phone className="w-3.5 h-3.5" />
+						<Phone className="w-3.5 h-3.5 text-[var(--teal)]" />
 						<span>Позвонить</span>
 					</a>
 				) : (
 					<span
-						className="px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] text-[var(--muted)] font-medium text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-not-allowed opacity-60"
+						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium text-[var(--muted)] inline-flex items-center gap-1.5 cursor-not-allowed opacity-60"
 						title="Номер телефона не указан"
 					>
 						<Phone className="w-3.5 h-3.5" />
@@ -118,7 +118,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 						href={`https://wa.me/${patient.phone.replace(/\D/g, "")}`}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
+						className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[13px] transition-colors inline-flex items-center gap-1.5 shadow-xs touch-manipulation"
 						title="Написать в WhatsApp"
 					>
 						<MessageSquare className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 					</a>
 				) : (
 					<span
-						className="px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] text-[var(--muted)] font-medium text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-not-allowed opacity-60"
+						className="secondary-button h-8 px-3 rounded-lg text-[13px] font-medium text-[var(--muted)] inline-flex items-center gap-1.5 cursor-not-allowed opacity-60"
 						title="Номер телефона не указан"
 					>
 						<MessageSquare className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 					<button
 						type="button"
 						onClick={onToggleMenu}
-						className="p-1.5 min-h-[32px] min-w-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center justify-center cursor-pointer touch-manipulation"
+						className="secondary-button h-8 w-8 min-h-[32px] min-w-[32px] p-0 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center justify-center cursor-pointer touch-manipulation shadow-xs"
 						title="Дополнительные действия"
 						aria-label="Дополнительные действия"
 					>

@@ -712,7 +712,7 @@ export const PHYSIOLOGICAL_NORM_PRESET: Clinical1ClickTemplate = {
 	category: "preventive",
 	icd10Code: "Z01.2",
 	icd10Title: "Стоматологическое обследование / Соматически сохранен",
-	badge: "Мандат 8e",
+	badge: "Стандарт",
 	icon: "shield",
 	isCore1Click: true,
 	toothTargetRequired: false,

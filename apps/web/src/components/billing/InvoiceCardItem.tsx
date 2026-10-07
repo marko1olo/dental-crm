@@ -135,7 +135,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 					</div>
 					<div className="mt-1">
 						<FiscalReceiptStatusBadge
-							status={isPaid ? "fiscalized" : "pending"}
+							status={inv.fiscalStatus ?? (isPaid ? "fiscalized" : "pending")}
 							receiptNumber={inv.number}
 						/>
 					</div>

@@ -53,7 +53,7 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 					<div className="font-semibold text-sm text-[var(--ink)] flex items-center justify-between gap-2">
 						<span>Стерилизация, чистота и автоклав</span>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300">
-							Журналы в 1 клик
+							Штатный регламент СанПиН
 						</span>
 					</div>
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
@@ -71,15 +71,15 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 						<span>Интерактивный журнал стерилизации (СанПиН 3.3686-21)</span>
 					</div>
 
-					{/* 1-Click Autonorm CTA */}
+					{/* Statutory Autonorm CTA */}
 					<button
 						type="button"
 						onClick={() => setIsNormaApplied(true)}
 						className="px-2.5 py-1 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] flex items-center gap-1 hover:bg-emerald-500/25 transition-all cursor-pointer"
-						title="Заполнить журнал азопирамовых проб нормой в 1 клик"
+						title="Заполнить журнал азопирамовых проб по норме СанПиН"
 					>
 						<Check size={12} />
-						<span>{isNormaApplied ? "✓ Журнал в норме" : "✓ Заполнить нормой (1 клик)"}</span>
+						<span>{isNormaApplied ? "Журнал соответствует норме" : "Заполнить по норме СанПиН"}</span>
 					</button>
 				</div>
 
@@ -111,8 +111,9 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 							</div>
 							<p className="text-[10px] text-[var(--muted)]">Контроль скрытых следов крови</p>
 							<div className="pt-1">
-								<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-									✓ Отрицательно (Норма)
+								<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold inline-flex items-center gap-1">
+									<Check size={11} />
+									<span>Отрицательно (Норма)</span>
 								</span>
 							</div>
 						</div>
@@ -125,8 +126,9 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 							</div>
 							<p className="text-[10px] text-[var(--muted)]">Контроль остатков моющих средств</p>
 							<div className="pt-1">
-								<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-									✓ Отрицательно (Норма)
+								<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold inline-flex items-center gap-1">
+									<Check size={11} />
+									<span>Отрицательно (Норма)</span>
 								</span>
 							</div>
 						</div>
@@ -139,8 +141,9 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 							</div>
 							<p className="text-[10px] text-[var(--muted)]">Тест-полоска 5 класса внутри пакета</p>
 							<div className="pt-1">
-								<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-									✓ Цвет изменен: Стерильно
+								<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold inline-flex items-center gap-1">
+									<Check size={11} />
+									<span>Цвет изменен: Стерильно</span>
 								</span>
 							</div>
 						</div>
@@ -198,7 +201,7 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 				</div>
 				<p className="text-[var(--muted)] text-[11px] leading-relaxed">
 					Раздел гарантирует 100% инфекционную безопасность пациентов и юридическую готовность к проверкам надзорных органов.
-					Журналы азопирамовой пробы и стерилизации формируются автоматически в один клик без ручного заполнения бумажных тетрадей.
+					Журналы азопирамовой пробы и стерилизации формируются автоматически в соответствии с регламентом без ручного заполнения бумажных тетрадей.
 				</p>
 			</div>
 
@@ -217,7 +220,7 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 							<span>Предстерилизационная очистка (ПСО)</span>
 						</div>
 						<p className="text-[var(--muted)] text-[11px] leading-relaxed">
-							Проведите дезинфекцию и мойку инструментов. Нажмите «✓ Все пробы отрицательны / норма» для фиксации азопирамовой и фенолфталеиновой проб.
+							Проведите дезинфекцию и мойку инструментов. Нажмите «Все пробы отрицательны / норма» для фиксации азопирамовой и фенолфталеиновой проб.
 						</p>
 					</div>
 
@@ -324,7 +327,7 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 				<ul className="text-[11px] text-[var(--muted)] space-y-1.5">
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Должен ли врач сканировать пакеты на приёме?</strong>
-						<span>Нет! Согласно Мандату 8v, инструменты стерильны по умолчанию. Врач лечит людей, а не работает сканером штрихкодов в дневнике приёма.</span>
+						<span>Нет! Инструменты стерильны по умолчанию. Врач лечит людей, а не работает сканером штрихкодов в дневнике приёма.</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Сколько сохраняется стерильность?</strong>
@@ -345,7 +348,7 @@ export const SanPiNAutoclaveGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTou
 						<span>Интерактивный тренажёр: Автоклав и журналы чистоты</span>
 					</div>
 					<p className="text-[11px] text-blue-700/80 dark:text-blue-300/80">
-						Узнайте, как формируются официальные санитарные журналы в 1 клик без ручной писанины.
+						Узнайте, как формируются официальные санитарные журналы по регламенту СанПиН 3.3686-21 без ручной писанины.
 					</p>
 				</div>
 				<button

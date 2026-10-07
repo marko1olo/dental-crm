@@ -277,6 +277,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				social_media: 5000,
 				prodoctorov: 0,
 				napopravku: 0,
+				avito: 0,
+				yandex_maps: 0,
+				max: 0,
 				other: 0,
 			});
 
@@ -328,6 +331,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				social_media: 5000,
 				prodoctorov: 0,
 				napopravku: 0,
+				avito: 0,
+				yandex_maps: 0,
+				max: 0,
 				other: 0,
 			});
 
@@ -373,6 +379,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				social_media: 5000,
 				prodoctorov: 0,
 				napopravku: 0,
+				avito: 0,
+				yandex_maps: 0,
+				max: 0,
 				other: 0,
 			});
 
@@ -416,6 +425,9 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				site_seo: 0,
 				recommendations: 0,
 				social_media: 0,
+				avito: 0,
+				yandex_maps: 0,
+				max: 0,
 				other: 0,
 			});
 

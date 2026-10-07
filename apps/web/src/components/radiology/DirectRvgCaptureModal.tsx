@@ -663,7 +663,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 												handleTriggerCapture();
 											}}
 											className="rvg-empty-btn-primary"
-											title="Мгновенный захват <50мс без искусственных задержек (Mandate 8e)"
+											title="Мгновенный захват <50мс без искусственных задержек"
 										>
 											<Zap className="w-4 h-4 fill-current" />
 											<span>Захват снимка (Space) · &lt;50мс</span>

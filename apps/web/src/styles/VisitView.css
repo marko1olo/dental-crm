@@ -954,79 +954,87 @@ html.dark .visit-subtab-btn.active {
 	border-color: var(--ink);
 }
 
-/* 5. Floating Bottom Bar (Natural Thumb Zone) */
-.mobile-bottom-bar-floating {
-	position: fixed;
-	bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-	left: 0;
-	right: 0;
-	z-index: 9000;
-	background: color-mix(in srgb, var(--paper-strong) 94%, transparent);
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
-	border-top: 1px solid var(--line);
-	padding: 8px 12px;
-	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	box-sizing: border-box;
+/* 5. Floating Bottom Bar (Natural Thumb Zone) - Mobile only (<= 639px) */
+@media (max-width: 639px) {
+	.mobile-bottom-bar-floating {
+		position: fixed;
+		bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+		left: 0;
+		right: 0;
+		z-index: 9000;
+		background: color-mix(in srgb, var(--paper-strong) 94%, transparent);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-top: 1px solid var(--line);
+		padding: 8px 12px;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		box-sizing: border-box;
+	}
+
+	.mobile-bottom-cta-primary {
+		width: 100%;
+		min-height: 48px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		background: var(--ok-fg);
+		color: #ffffff;
+		border: none;
+		border-radius: 12px;
+		font-size: 14px;
+		font-weight: 800;
+		cursor: pointer;
+		touch-action: manipulation;
+		box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+		transition: transform 0.1s ease, opacity 0.15s ease;
+	}
+
+	.mobile-bottom-cta-primary:active {
+		transform: scale(0.98);
+		opacity: 0.92;
+	}
+
+	.mobile-bottom-cta-next {
+		width: 100%;
+		min-height: 48px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		background: var(--brand);
+		color: #ffffff;
+		border: none;
+		border-radius: 12px;
+		font-size: 14px;
+		font-weight: 800;
+		cursor: pointer;
+		touch-action: manipulation;
+		box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+		transition: transform 0.1s ease, opacity 0.15s ease;
+	}
+
+	.mobile-bottom-cta-next:active {
+		transform: scale(0.98);
+		opacity: 0.92;
+	}
+
+	.mobile-bottom-secondary-strip {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+	}
 }
 
-.mobile-bottom-cta-primary {
-	width: 100%;
-	min-height: 48px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	background: var(--ok-fg);
-	color: #ffffff;
-	border: none;
-	border-radius: 12px;
-	font-size: 14px;
-	font-weight: 800;
-	cursor: pointer;
-	touch-action: manipulation;
-	box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-	transition: transform 0.1s ease, opacity 0.15s ease;
-}
-
-.mobile-bottom-cta-primary:active {
-	transform: scale(0.98);
-	opacity: 0.92;
-}
-
-.mobile-bottom-cta-next {
-	width: 100%;
-	min-height: 48px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	background: var(--brand);
-	color: #ffffff;
-	border: none;
-	border-radius: 12px;
-	font-size: 14px;
-	font-weight: 800;
-	cursor: pointer;
-	touch-action: manipulation;
-	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
-	transition: transform 0.1s ease, opacity 0.15s ease;
-}
-
-.mobile-bottom-cta-next:active {
-	transform: scale(0.98);
-	opacity: 0.92;
-}
-
-.mobile-bottom-secondary-strip {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	width: 100%;
+@media (min-width: 640px) {
+	.mobile-bottom-bar-floating {
+		display: none !important;
+	}
 }
 
 

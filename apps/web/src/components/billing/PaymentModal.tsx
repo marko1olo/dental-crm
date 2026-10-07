@@ -9,7 +9,7 @@
  * - Quick denomination bills (1 000, 2 000, 5 000, 10 000 ₽) with instant change calculation HUD.
  * - Compact doctor discounts (0%, 5%, 10%, 15%, 20%, 50%, warranty 100%) with tactile Studio HIG chips.
  * - Integrated live 54-FZ thermal receipt tape with genuine FNS verification QR code.
- * - Document tabs: Segmented Tab Bar (macOS Studio HIG) for Receipt, Invoice & Act 804n.
+ * - Document tabs: Segmented Tab Bar (macOS Studio HIG) for Receipt, Invoice & Completed Act.
  * - Zero emojis (strict Lucide vector icons).
  * - WCAG AAA contrast in both Light and Dark themes.
  */
@@ -100,6 +100,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 		execHook,
 	} = usePaymentModalLogic(props);
 
+	const [mobileTab, setMobileTab] = useState<"checkout" | "receipt">("checkout");
+
 	if (!isOpen) return null;
 
 	const formatMoney = (rub: number) =>
@@ -107,8 +109,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
 		});
-
-	const [mobileTab, setMobileTab] = useState<"checkout" | "receipt">("checkout");
 
 	const modalContent = (
 		<div
@@ -245,7 +245,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 								data-testid="btn-payment-modal-print-act"
 							>
 								<FileText size={13} className="text-slate-500" />
-								<span>Акт 804н</span>
+								<span>Акт выполненных работ</span>
 							</button>
 						</div>
 
@@ -322,15 +322,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									data-testid="btn-payment-close-warranty-zero"
 								>
 									<Sparkles size={14} />
-									<span>Закрыть визит в 1 клик (0 ₽)</span>
+									<span>Закрыть визит (0 ₽)</span>
 								</button>
 							</div>
 						)}
 
-						{/* 1-Click Method Switcher Segment */}
+						{/* Method Switcher Segment */}
 						<div className="space-y-1.5">
 							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
-								Способ оплаты (1 клик):
+								Способ оплаты:
 							</span>
 							<div className="payment-method-grid">
 								<button
@@ -529,7 +529,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 									onClick={tendersHook.applyThreeWayCashCardAdvancePreset}
 									className="discount-preset-chip discount-preset-combo"
 									data-testid="preset-three-way-split"
-									title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
+									title="Комбинированная оплата: Нал + Карта + Аванс"
 								>
 									<Users size={12} className="text-teal-600 dark:text-teal-400" />
 									<span>Нал + Карта + Аванс</span>

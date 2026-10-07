@@ -154,7 +154,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		icon: FileSpreadsheet,
 		highlights: [
 			"Умная сетка расписания по креслам и кабинетам с длительными блоками",
-			"Быстрый чек по кассе без очередей и без блокировок",
+			"Быстрый расчет на кассе без очередей и задержек",
 			"Уведомления пациентов в WhatsApp и Telegram",
 		],
 		avatarInitials: "СП",

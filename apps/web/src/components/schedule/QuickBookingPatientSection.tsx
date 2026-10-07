@@ -110,19 +110,19 @@ export function QuickBookingPatientSection(props: QuickBookingPatientSectionProp
               type="button"
               onClick={() => {
                 setAppointmentType("emergency");
-                setReason("CITO! Острая боль");
-                setComment("Экстренный прием по острой боли (CITO)");
+                setReason("⚡ Срочно: острая боль");
+                setComment("Срочный приём по острой боли");
                 setDurationMinutes(30);
                 setShowInlineNewPatient(true);
-                setNewPatientFullName("Пациент с острой болью (CITO)");
+                setNewPatientFullName("Пациент с острой болью (срочно)");
                 setNewPatientPhone("");
               }}
               className="text-xs font-extrabold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-rose-500/10 rounded-xl cursor-pointer transition-colors"
-              title="Создать временную карту для пациента с острой болью за 1 клик"
+              title="Создать временную карту для пациента с острой болью"
               data-testid="quick-booking-cito-express-btn"
             >
               <Flame size={14} />
-              <span>+ Экспресс-пациент CITO</span>
+              <span>+ Срочный пациент (острая боль)</span>
             </button>
             <button
               type="button"
@@ -391,14 +391,12 @@ export function QuickBookingPatientSection(props: QuickBookingPatientSectionProp
       ) : (
         /* Typeahead Search Input */
         <div className="relative z-30">
-          <div className="relative">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
-            />
+          <div className="dente-search-wrap">
+            <Search className="dente-search-icon" />
             <input
               ref={searchInputRef}
               type="text"
+              data-testid="quick-booking-patient-search-input"
               value={searchQuery}
               placeholder="Поиск по ФИО, телефону или дате рождения…"
               onChange={(e) => {
@@ -429,10 +427,24 @@ export function QuickBookingPatientSection(props: QuickBookingPatientSectionProp
                   setIsTypeaheadOpen(false);
                 }
               }}
-              className="w-full pl-10 pr-4 py-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] focus:border-transparent transition-all"
+              className="dente-search-input"
               aria-autocomplete="list"
               aria-expanded={isTypeaheadOpen}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setIsTypeaheadOpen(false);
+                }}
+                className="dente-search-clear"
+                title="Очистить поиск"
+                aria-label="Очистить поиск"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
 
           {/* Dropdown Suggestions */}

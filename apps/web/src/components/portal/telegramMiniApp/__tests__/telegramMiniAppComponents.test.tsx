@@ -91,7 +91,7 @@ describe("Telegram WebApp Mini-App & Interactive Tooth Formula Flow", () => {
 		assert.ok(html.includes("Отмеченные зубы (2):"));
 		assert.ok(html.includes("Зуб 16"));
 		assert.ok(html.includes("Зуб 24"));
-		assert.ok(html.includes("CITO"));
+		assert.ok(html.includes("Срочно"));
 	});
 
 	it("renders TelegramMiniAppBooking with 4 specialist categories and attached tooth complaints", () => {

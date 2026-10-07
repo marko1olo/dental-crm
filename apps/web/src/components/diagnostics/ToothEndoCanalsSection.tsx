@@ -175,7 +175,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 				updatedAt: new Date().toISOString(),
 			},
 		});
-		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Пульпит (ProTaper F2 + AH Plus)`, "success", 3000);
+		showToast(`Зуб #${toothNumber}: Протокол эндодонтического лечения (Пульпит: ProTaper F2 + AH Plus)`, "success", 3000);
 	};
 
 	const handleApplyPeriodontitisTempPreset = () => {
@@ -197,7 +197,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 				updatedAt: new Date().toISOString(),
 			},
 		});
-		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Периодонтит (Каласепт Ca(OH)2)`, "info", 3000);
+		showToast(`Зуб #${toothNumber}: Протокол эндодонтического лечения (Периодонтит: Каласепт Ca(OH)2)`, "info", 3000);
 	};
 
 	const handleApplyObturationPermanentPreset = () => {
@@ -219,7 +219,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 				updatedAt: new Date().toISOString(),
 			},
 		});
-		showToast(`Зуб #${toothNumber}: применён 1-клик протокол постоянной обтурации до апекса`, "success", 3000);
+		showToast(`Зуб #${toothNumber}: Обтурация канала (гуттаперча + силер) до апекса`, "success", 3000);
 	};
 
 	const handleApplyAnatomicalLengths = () => {
@@ -277,7 +277,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 				updatedAt: new Date().toISOString(),
 			},
 		});
-		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Ревизии/Распломбировки`, "warning", 3000);
+		showToast(`Зуб #${toothNumber}: Протокол эндодонтического лечения (Ревизия и распломбировка)`, "warning", 3000);
 	};
 
 	const handleInsertEndoProtocol = () => {
@@ -318,7 +318,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 								e.stopPropagation();
 								handleApplyExpressProTaper();
 							}}
-							title="Быстрый протокол ProTaper 25.06 (1 клик)"
+							title="Быстрый протокол ProTaper 25.06"
 						>
 							<EndoFileCanal size={12} />
 							<span>Экспресс ProTaper</span>
@@ -339,12 +339,12 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 
 			{showEndoTable && (
 				<div className="dente-endo-body">
-					{/* 1-Click Express Endodontic Presets Bar */}
+					{/* Express Endodontic Presets Bar */}
 					<div className="dente-endo-presets-bar" data-testid="endo-presets-bar">
 						<div className="dente-endo-presets-label-row">
 							<span className="dente-endo-presets-title">
 								<EndoFileCanal size={14} />
-								<span>Экспресс-протоколы эндодонтии (1 клик):</span>
+								<span>Клинические протоколы эндодонтии:</span>
 							</span>
 						</div>
 						<div className="dente-endo-presets-actions min-w-0">

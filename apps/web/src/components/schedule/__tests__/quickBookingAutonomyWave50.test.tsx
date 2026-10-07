@@ -114,7 +114,7 @@ function setupMockDom() {
 				set data(v: string) {
 					this._val = String(v ?? "");
 				},
-				style: {},
+				style: createMockStyle(),
 				parentNode: null,
 				ownerDocument: null,
 			};
@@ -127,6 +127,21 @@ function setupMockDom() {
 		defaultView: null as any,
 	};
 
+	function createMockStyle(): any {
+		const s: any = {
+			setProperty(k: string, v: string) {
+				s[k] = v;
+			},
+			removeProperty(k: string) {
+				delete s[k];
+			},
+			getPropertyValue(k: string) {
+				return s[k] || "";
+			},
+		};
+		return s;
+	}
+
 	function createMockElement(tag = "div"): MockDomNode {
 		const children: MockDomNode[] = [];
 		const listeners: Record<string, EventListener[]> = {};
@@ -136,7 +151,7 @@ function setupMockDom() {
 			nodeType: 1,
 			tagName: tag.toUpperCase(),
 			nodeName: tag.toUpperCase(),
-			style: {},
+			style: createMockStyle(),
 			dataset: {},
 			children,
 			childNodes: children,

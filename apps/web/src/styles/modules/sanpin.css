@@ -128,8 +128,8 @@
 
 [data-theme="dark"] .sanpin-period-switch,
 .dark .sanpin-period-switch {
-	background: #1e293b;
-	border-color: #334155;
+	background: var(--paper-soft);
+	border-color: var(--line);
 }
 
 .sanpin-period-btn {

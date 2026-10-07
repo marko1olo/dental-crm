@@ -313,10 +313,11 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 		<section
 			className="staff-management-studio animate-fade-in w-full min-w-0"
 			aria-label="Управление персоналом"
+			data-testid="settings-staff-tab"
 		>
-			<div className="import-copy">
-				<h3>Управление персоналом</h3>
-				<p>
+			<div className="import-copy flex flex-col gap-1 mb-4">
+				<h3 className="text-lg font-bold text-[var(--ink)]">Управление персоналом</h3>
+				<p className="text-xs text-[var(--muted)]">
 					Добавляйте новых врачей, ассистентов и администраторов. Устанавливайте
 					PIN-коды для доступа к планшету клиники.
 				</p>
@@ -326,7 +327,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 				<StaffCommissionsPanel />
 				<StaffAuthorityPanel />
 				{/* Список сотрудников */}
-				<article className="settings-card col-span-full form-span-2 w-full">
+				<article className="settings-card col-span-full form-span-2 w-full" data-testid="active-staff-list-card">
 					<div className="settings-card-header">
 						<h4>Активный персонал</h4>
 					</div>
@@ -414,18 +415,18 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												aria-label={`Телефон сотрудника ${member.fullName || ""}`}
 												value={phoneDraft}
 												onChange={(e) => setPhoneDraft(e.target.value)}
-												className="min-w-[7rem] flex-1 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+												className="min-w-[7rem] flex-1 h-8 px-2.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 											/>
 											<button
 												type="submit"
-												className="primary-button px-3 py-1 text-xs"
+												className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 transition-opacity cursor-pointer"
 												disabled={loading}
 											>
 												ОК
 											</button>
 											<button
 												type="button"
-												className="secondary-button px-3 py-1 text-xs"
+												className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 												onClick={() => setEditingPhoneForId(null)}
 											>
 												Отмена
@@ -444,18 +445,18 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												placeholder="PIN"
 												value={newPin}
 												onChange={(e) => setNewPin(e.target.value)}
-												className="w-20 text-center px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+												className="w-20 text-center h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 											/>
 											<button
 												type="submit"
-												className="primary-button px-3 py-1 text-xs"
+												className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 transition-opacity cursor-pointer"
 												disabled={loading}
 											>
 												ОК
 											</button>
 											<button
 												type="button"
-												className="secondary-button px-3 py-1 text-xs"
+												className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 												onClick={() => setEditingPinForId(null)}
 											>
 												Отмена
@@ -473,18 +474,18 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												placeholder="Пароль"
 												value={newPassword}
 												onChange={(e) => setNewPassword(e.target.value)}
-												className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+												className="w-full h-8 px-2.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
 											/>
 											<button
 												type="submit"
-												className="primary-button px-3 py-1 text-xs"
+												className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] text-[var(--on-teal)] hover:opacity-90 transition-opacity cursor-pointer"
 												disabled={loading}
 											>
 												ОК
 											</button>
 											<button
 												type="button"
-												className="secondary-button px-3 py-1 text-xs"
+												className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 												onClick={() => setEditingPasswordForId(null)}
 											>
 												Отмена
@@ -494,7 +495,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 										<div className="flex items-center gap-2">
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer font-semibold text-teal-700 dark:text-teal-400"
+												className="flex-1 h-8 px-2.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--on-teal)] text-[var(--teal)] text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 												onClick={() => setSelectedStaffForCard(member)}
 												title="Открыть расширенную карточку сотрудника (СНИЛС, ИНН, медкнижка, ставки ЗП, безопасность)"
 											>
@@ -502,7 +503,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											</button>
 											<button
 												type="button"
-												className="secondary-button flex-1 justify-center py-1.5 text-xs flex items-center gap-1 cursor-pointer"
+												className="flex-1 h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 												onClick={() => {
 													setEditingPhoneForId(member.id);
 													setEditingPinForId(null);
@@ -521,7 +522,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 											<div className="relative">
 												<button
 													type="button"
-													className="secondary-button p-1.5 text-xs flex items-center justify-center cursor-pointer rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+													className="w-8 h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer transition-colors"
 													onClick={() =>
 														setCredentialMenuOpenId(
 															credentialMenuOpenId === member.id ? null : member.id,

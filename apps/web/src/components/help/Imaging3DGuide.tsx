@@ -261,7 +261,7 @@ export const Imaging3DGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =
 								✓ Без принудительных нейросетей
 							</span>
 							<span>·</span>
-							<span>Снимок загружается мгновенно без блокировки интерфейса (Мандат 8e)</span>
+							<span>Снимок загружается мгновенно без блокировки интерфейса</span>
 						</div>
 						<div className="flex items-center gap-1 font-mono">
 							<span>W: 2400 · L: 600 (Bone Window)</span>
@@ -423,7 +423,7 @@ export const Imaging3DGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =
 				<ul className="text-[11px] text-[var(--muted)] space-y-1.5">
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Зависает ли программа на ИИ-анализе снимка?</strong>
-						<span>Нет! Согласно Мандату 8e, снимок открывается моментально без принудительного запуска нейросетей. ИИ-помощник запускается только по отдельной кнопке врача.</span>
+						<span>Нет! Снимок открывается моментально без принудительного запуска нейросетей. ИИ-помощник запускается только по отдельной кнопке врача.</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Нужна ли внешняя программа для DICOM?</strong>

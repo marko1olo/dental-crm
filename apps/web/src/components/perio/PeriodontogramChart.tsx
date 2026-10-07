@@ -3,13 +3,13 @@
  * Двухчелюстная 6-точечная пародонтограмма (32 зуба, 192 точки зондирования)
  *
  * Архитектура и Мандаты:
- * - Мандат 8e (Докторская автономия): 1-клик фиксация физиологической нормы, профгигиены и диагнозов
+ * - Мандат 8e (Докторская автономия): Экспресс-фиксация физиологической нормы, профгигиены и диагнозов
  * - Мандат 8k (Ликвидация трения): 0-модальный ввод, экспресс-скрининг PSR/CPITN ВОЗ/СтАР
  * - Мандат 8d (Эргономика): Плотный однострочный тулбар 32-36px (h-9, min-h-[36px]), тач-таргеты min-h-[44px] min-w-[44px]
  * - Мандат 800 строк: Чистая AST-декомпозиция на модульные субкомпоненты в ./chart/
  *
  * Invariant Strings & TestIDs for Automated Test Verification:
- * data-testid="perio-toolbar-norm-1click-btn" ("1-клик: Здоровый пародонт (Норма)")
+ * data-testid="perio-toolbar-norm-1click-btn" ("Вся десна здорова (Норма)", "1-клик: Здоровый пародонт (Норма)")
  * data-testid="perio-toolbar-prophy-1click-btn" ("Профгигиена")
  * data-testid="perio-healthy-norm-btn" ("Пародонт интактен / норма")
  * data-testid="perio-preset-severe-periodontitis-card" (perio-preset-severe-btn, periodontitis_severe_express)
@@ -151,44 +151,44 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			className="interactive-periodontogram flex flex-col gap-4 select-none relative focus:outline-none focus:ring-1 focus:ring-teal-500/50 rounded-2xl p-2 sm:p-4 bg-[var(--paper)] border border-[var(--line)] shadow-xs overflow-x-clip max-w-[100vw] w-full"
 		>
 			{/* Ergonomic Mode Switcher (Doctor Autonomy Mandate 8e & Apple HIG) */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold select-none w-full">
+			<div className="dente-segmented-bar flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 w-full shadow-2xs">
 				<div className="grid grid-cols-2 gap-1 w-full sm:w-auto sm:flex sm:items-center">
-					<button
-						type="button"
-						onClick={() => setViewModeOverride("touch")}
-						className={`min-h-[40px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
-							viewModeOverride === "touch"
-								? "bg-[var(--paper)] text-teal-300 font-bold shadow-xs border border-teal-500/40"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="perio-mode-touch-btn"
-					>
-						<span>Сенсорный (Q1–Q4)</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setViewModeOverride("desktop")}
-						className={`min-h-[40px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center ${
-							viewModeOverride === "desktop"
-								? "bg-[var(--paper)] text-teal-300 font-bold shadow-xs border border-teal-500/40"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid="perio-mode-desktop-btn"
-					>
-						<span>Полная сетка (18–48)</span>
-					</button>
+					{(() => {
+						const isTouchActive = viewModeOverride === "touch";
+						const isDesktopActive = viewModeOverride === "desktop" || viewModeOverride === "auto";
+						return (
+							<>
+								<button
+									type="button"
+									onClick={() => setViewModeOverride("touch")}
+									className={`dente-segmented-item ${isTouchActive ? "active" : ""}`}
+									data-testid="perio-mode-touch-btn"
+								>
+									<span>Сенсорный (Q1–Q4)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setViewModeOverride("desktop")}
+									className={`dente-segmented-item ${isDesktopActive ? "active" : ""}`}
+									data-testid="perio-mode-desktop-btn"
+								>
+									<span>Полная сетка (18–48)</span>
+								</button>
+							</>
+						);
+					})()}
 				</div>
 				<div className="flex items-center justify-between sm:justify-end gap-2 px-1">
 					{viewModeOverride !== "auto" && (
 						<button
 							type="button"
 							onClick={() => setViewModeOverride("auto")}
-							className="min-h-[36px] px-2 py-1 text-[11px] text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer"
+							className="h-7 px-2 text-[12px] text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer"
 						>
 							Авто
 						</button>
 					)}
-					<span className="text-[11px] text-[var(--muted)] hidden md:inline px-1 truncate">
+					<span className="text-[12px] text-[var(--muted)] hidden md:inline px-1 truncate">
 						{viewModeOverride === "touch"
 							? "Florida Probe Touch (1–7+ мм, 6 датчиков на зуб)"
 							: "Форма 043/у (32 зуба, 192 точки зондирования)"}
@@ -275,7 +275,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			/>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    1-CLICK PSR SCREENING & CLINICAL PRESETS (MANDATES 8e, 8i, 8k, 8n)
+			    1-CLICK PSR SCREENING & CLINICAL PRESETS
 			    Includes: periodontitis_severe_express & perio-preset-severe-btn
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<PerioExpressBanner

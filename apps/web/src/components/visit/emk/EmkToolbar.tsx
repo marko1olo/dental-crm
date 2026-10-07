@@ -227,8 +227,8 @@ export function EmkToolbar({
 								if (onApplyNorm) onApplyNorm();
 								else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
 							}}
-							className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs active:scale-[0.98] shrink-0"
-							title="Заполнить физиологическую норму осмотра и анамнеза в 1 клик (Z01.2)"
+							className="h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 text-[13px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs active:scale-[0.98] shrink-0"
+							title="Заполнить физиологическую норму осмотра и анамнеза (Z01.2)"
 						>
 							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span className="hidden sm:inline">✓ Соматически здоров / Норма</span>
@@ -238,12 +238,12 @@ export function EmkToolbar({
 
 					{/* Кнопка вызова Каталога 1 142 протоколов + меню быстрых норм */}
 					{onOpenProtocolsCatalog && (
-						<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all h-8 min-h-[32px] max-h-[32px]">
+						<div className="inline-flex items-center rounded-lg border border-[var(--line-subtle)] bg-[var(--paper)] shadow-2xs overflow-hidden shrink-0 hover:border-[var(--teal)] transition-all h-8 min-h-[32px] max-h-[32px]">
 							<button
 								type="button"
 								data-testid="btn-open-protocols-catalog-1142"
 								onClick={onOpenProtocolsCatalog}
-								className="h-8 min-h-[32px] max-h-[32px] px-2.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
+								className="h-8 min-h-[32px] max-h-[32px] px-3 text-[13px] font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap touch-manipulation active:scale-[0.98]"
 								title="Открыть полный каталог 1 142 клинических протоколов (СтАР / Минздрав РФ)"
 							>
 								<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -259,7 +259,7 @@ export function EmkToolbar({
 								ref={buttonRef}
 								data-testid="btn-toggle-extra-soap-menu"
 								onClick={() => setIsExtraMenuOpen((prev) => !prev)}
-								className={`h-8 min-h-[32px] max-h-[32px] px-2 border-l border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center ${
+								className={`h-8 min-h-[32px] max-h-[32px] px-2 border-l border-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center ${
 									isExtraMenuOpen ? "bg-[var(--paper-soft)] text-[var(--ink)]" : ""
 								}`}
 								title="Быстрые клинические нормы и бланки"
@@ -282,7 +282,7 @@ export function EmkToolbar({
 							aria-hidden={!isExtraMenuOpen}
 						>
 							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-								Клинические нормы в 1 клик
+								Клинические нормы
 							</div>
 
 							{Boolean(onApplyNorm || onApplyPhysiologicalNorm) && (
@@ -398,10 +398,10 @@ export function EmkToolbar({
 						type="button"
 						data-testid="btn-toggle-chairside-hud"
 						onClick={onToggleCopilot}
-						className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
+						className={`h-8 min-h-[32px] max-h-[32px] px-3 rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 text-[13px] font-medium shadow-2xs whitespace-nowrap shrink-0 active:scale-[0.98] ${
 							isCopilotOpen
 								? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal-fill,var(--teal))]"
-								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] hover:border-[var(--teal)]"
+								: "border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] hover:border-[var(--teal)]"
 						}`}
 						title="Интеллектуальный клинический ассистент приёма DENTA Copilot"
 					>
@@ -419,7 +419,7 @@ export function EmkToolbar({
 						</div>
 					)}
 
-					{/* 1-Клик Undo / Redo */}
+					{/* Панель Undo / Redo */}
 					<div className="flex items-center gap-1 shrink-0" data-testid="emk-undo-redo-group">
 						<button
 							type="button"
@@ -429,10 +429,10 @@ export function EmkToolbar({
 								if (ok) showToast("Действие отменено (Undo)", "info", 2000);
 							}}
 							disabled={!canUndo}
-							className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap touch-manipulation shadow-2xs ${
+							className={`h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border transition-all inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap touch-manipulation shadow-2xs ${
 								canUndo
-									? "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] cursor-pointer active:scale-95"
-									: "border border-[var(--line)]/40 bg-[var(--paper)]/30 text-[var(--muted)]/50 cursor-not-allowed"
+									? "border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] cursor-pointer active:scale-95"
+									: "border border-[var(--line-subtle)]/40 bg-[var(--paper)]/30 text-[var(--muted)]/50 cursor-not-allowed"
 							}`}
 							title="Отменить последнее действие (Ctrl+Z)"
 							aria-label="Отменить последнее действие в приёме"
@@ -449,7 +449,7 @@ export function EmkToolbar({
 									const ok = handleRedo();
 									if (ok) showToast("Действие возвращено (Redo)", "info", 2000);
 								}}
-								className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] transition-all inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap shadow-2xs cursor-pointer active:scale-95 touch-manipulation"
+								className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border border-[var(--line-subtle)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] transition-all inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap shadow-2xs cursor-pointer active:scale-95 touch-manipulation"
 								title="Повторить отмененное действие (Ctrl+Y)"
 								aria-label="Повторить отмененное действие"
 							>
@@ -463,7 +463,7 @@ export function EmkToolbar({
 					<button
 						type="button"
 						onClick={() => handleSchedule()}
-						className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+						className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border border-[var(--line-subtle)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-schedule-next-stage"
 						title="Записать пациента на следующий этап через 5 дней"
 					>
@@ -472,12 +472,12 @@ export function EmkToolbar({
 						<span className="sm:hidden">+5д</span>
 					</button>
 
-					{/* 1-Клик печать Формы 043/у (Мандат 8e) */}
+					{/* Печать Формы 043/у (Мандат 8e) */}
 					{onPrint043 && (
 						<button
 							type="button"
 							onClick={onPrint043}
-							className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
+							className="h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg text-[12.5px] font-medium border border-[var(--line-subtle)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] hover:text-[var(--teal-ink,var(--teal))] text-[var(--ink)] shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap"
 							data-testid="btn-toolbar-print-043u"
 							title="Печать медицинской карты Форма 043/у"
 							aria-label="Печать медицинской карты Форма 043/у"
@@ -489,10 +489,10 @@ export function EmkToolbar({
 
 					{/* Статус сохранения (Гарантия отсутствия обрезки текста) */}
 					<span
-						className={`visit-note-status-badge text-[11px] font-semibold h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs ${
+						className={`visit-note-status-badge text-[12px] font-medium h-8 min-h-[32px] max-h-[32px] px-2.5 rounded-lg border transition-all shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs ${
 							hasUnsavedChanges
 								? "bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
-								: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
+								: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line-subtle)]"
 						}`}
 					>
 						{hasUnsavedChanges ? (
@@ -528,9 +528,9 @@ export function EmkToolbar({
 								type="button"
 								role="tab"
 								aria-selected={isActive}
-								className={`mobile-segmented-btn flex-1 min-h-[40px] px-1 text-xs font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation select-none border ${
+								className={`mobile-segmented-btn flex-1 min-h-[40px] px-1 text-[12.5px] rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation select-none border ${
 									isActive
-										? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-xs font-bold"
+										? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-xs font-semibold"
 										: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border-transparent font-medium"
 								}`}
 								onClick={() => setActiveEmkTab(step.id)}
@@ -551,8 +551,8 @@ export function EmkToolbar({
 					})}
 				</div>
 
-				{/* Десктопный вариант (полный 5-вкладочный бар со всеми разделами) */}
-				<div className="hidden sm:flex items-center gap-1 p-1 w-full min-w-0 h-[36px] min-h-[36px] max-h-[36px] overflow-x-auto scrollbar-none">
+				{/* Десктопный вариант (полный 5-вкладочный бар со всеми разделами в стиле Apple Segmented Control) */}
+				<div className="hidden sm:flex items-center gap-1 p-[3px] m-1 rounded-[10px] bg-[var(--paper-soft)] border border-[var(--line-subtle)] min-w-0 h-[34px] overflow-x-auto scrollbar-none shadow-2xs">
 					{tabs.map((tab) => {
 						const isFilled = isTabFilled(tab.id);
 						const isActive = isTabActive(tab.id);
@@ -562,10 +562,10 @@ export function EmkToolbar({
 								type="button"
 								role="tab"
 								aria-selected={isActive}
-								className={`emk-tab-button flex-1 min-w-0 whitespace-nowrap text-xs h-7 px-3 font-semibold rounded-md transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 touch-manipulation select-none border ${
+								className={`emk-tab-button flex-1 min-w-0 whitespace-nowrap text-[12.5px] h-7 px-3 rounded-[7px] transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 touch-manipulation select-none ${
 									isActive
-										? "active bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50 border border-transparent font-medium"
+										? "active bg-[var(--paper)] text-[var(--ink)] border border-[var(--line-subtle)] shadow-xs font-semibold"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 border border-transparent font-medium"
 								}`}
 								onClick={() => setActiveEmkTab(tab.id)}
 							>

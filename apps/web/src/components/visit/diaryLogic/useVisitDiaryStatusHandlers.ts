@@ -411,7 +411,7 @@ export function useVisitDiaryStatusHandlers({
 				showToast(
 					json?.reattached
 						? "Оттиск УКЭП прикреплён к отредактированному дневнику."
-						: "Дневник подписан и заблокирован (ЭЦП врача).",
+						: "Дневник успешно подписан (ЭЦП врача).",
 					"success",
 				);
 			} else if (res.status === 409) {

@@ -375,16 +375,16 @@ export function runEgisz043uPreflight(payload: EgiszDentalCdaPayload): EgiszPref
 			checks.push({
 				id: "proc_804n_empty",
 				category: "clinical",
-				title: "Медицинские услуги по Номенклатуре 804н",
+				title: "Медицинские услуги по номенклатуре",
 				status: "failed",
-				details: "Для протокола вмешательства (СЭМД 303) обязателен перечень выполненных услуг по Номенклатуре 804н",
+				details: "Для протокола вмешательства (СЭМД 303) обязателен перечень выполненных медицинских услуг",
 				oid: EGISZ_REMD_OIDS.NOMENKLATURA_804N,
 			});
 		} else {
 			checks.push({
 				id: "proc_804n_ok",
 				category: "clinical",
-				title: "Услуги номенклатуры 804н",
+				title: "Медицинские услуги",
 				status: "passed",
 				details: `Услуг оказано: ${payload.procedures.length} (${payload.procedures.map((p) => p.code).join(", ")})`,
 				oid: EGISZ_REMD_OIDS.NOMENKLATURA_804N,

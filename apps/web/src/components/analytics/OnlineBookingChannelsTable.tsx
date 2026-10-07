@@ -148,7 +148,7 @@ export function OnlineBookingChannelsTable({
 										</td>
 										<td className="py-2.5 px-3 text-right font-medium text-blue-600 dark:text-blue-400">
 											{ch.attendedCount}{" "}
-											<span className="text-[11px] text-[var(--muted)]">
+											<span className="text-xs text-[var(--muted)]">
 												({attendPercent.toFixed(0)}%)
 											</span>
 										</td>

@@ -1,0 +1,121 @@
+{
+  "subagent": "GLOBAL_RED_TEAM_INQUISITOR_1_LEGAL_DOCS",
+  "auditDate": "2026-10-06T14:17:00+04:00",
+  "scope": [
+    "apps/web/src/DocumentsView.tsx",
+    "apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx",
+    "apps/web/src/components/documents/forms/InformedConsentForm.tsx",
+    "apps/web/src/components/documents/DocumentPayloadCard.tsx",
+    "apps/web/src/components/documents/DocumentA4PrintPreviewModal.tsx",
+    "apps/web/src/components/consents/InformedConsentModal.tsx",
+    "apps/web/src/components/documents/mobile/MobileDocumentsHub.tsx"
+  ],
+  "mandatesChecked": [
+    "Mandate 8e: Doctor Autonomy (No disabled print buttons, 1-click physiological norm, revision mode 'Исправленному верить', blank contracts with ______ placeholders)",
+    "Mandate 8d: 7 Deadly UI Sins (1 toolbar row, <=2 buttons per card, WCAG AAA contrast, no text truncation, modal depth <= 1, search input padding >= 38px)",
+    "Mandate 8x/8z: Plain Russian Clinical UX (Zero bureaucratic abbreviations in buttons)",
+    "Mandate 8k/8n: Zero Mocks & Live Execution Contours",
+    "Apple iOS HIG & Mobile Touch Ergonomics (390x844 iPhone 14 Pro, >=44x44px touch targets, bottom bar)"
+  ],
+  "visualProofScreenshots": {
+    "pc_light_documents": {
+      "path": "docs/screenshots/audit_legal_docs/pc_light_documents.png",
+      "sizeBytes": 755640,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "Documents Hub & Registry in PC Light (1440x900). 1-row header, quick intake CTA, search input with 38px left padding, zero text clipping."
+    },
+    "pc_dark_documents": {
+      "path": "docs/screenshots/audit_legal_docs/pc_dark_documents.png",
+      "sizeBytes": 571283,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "Documents Hub & Registry in PC Dark (1440x900). Deep slate palette, high contrast tokens, verified WCAG AAA."
+    },
+    "pc_light_043u": {
+      "path": "docs/screenshots/audit_legal_docs/pc_light_043u.png",
+      "sizeBytes": 785897,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "DentalMedicalCard043uForm in PC Light (1440x900). Rendered directly without collapsed <details> obstruction. 32-tooth FDI odontogram, DMFT formula, 1-click norm preset button, revision mode banner 'Исправленному верить'."
+    },
+    "pc_dark_043u": {
+      "path": "docs/screenshots/audit_legal_docs/pc_dark_043u.png",
+      "sizeBytes": 523650,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "DentalMedicalCard043uForm in PC Dark (1440x900). High contrast tooth badges, dark inputs with crisp white typography."
+    },
+    "pc_light_consent": {
+      "path": "docs/screenshots/audit_legal_docs/pc_light_consent.png",
+      "sizeBytes": 550954,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "InformedConsentForm in PC Light (1440x900). 1-line toolbar 36px, 2 primary CTA buttons ('Печать бланка ИДС', 'Подписать на планшете'), overflow menu, clean clinical inputs."
+    },
+    "pc_dark_consent": {
+      "path": "docs/screenshots/audit_legal_docs/pc_dark_consent.png",
+      "sizeBytes": 409286,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "InformedConsentForm in PC Dark (1440x900). Dark slate inputs, high contrast clinical labels."
+    },
+    "pc_light_print_preview": {
+      "path": "docs/screenshots/audit_legal_docs/pc_light_print_preview.png",
+      "sizeBytes": 369454,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "DocumentA4PrintPreviewModal in PC Light (1440x900). GOST A4 sheet rendering, watermark stamp draft/signed, clean close action."
+    },
+    "pc_dark_print_preview": {
+      "path": "docs/screenshots/audit_legal_docs/pc_dark_print_preview.png",
+      "sizeBytes": 295706,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "DocumentA4PrintPreviewModal in PC Dark (1440x900). Dark modal backdrop and container, WCAG compliant header."
+    },
+    "pc_light_consent_modal": {
+      "path": "docs/screenshots/audit_legal_docs/pc_light_consent_modal.png",
+      "sizeBytes": 271575,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "InformedConsentModal in PC Light (1440x900). 323-FZ & 1051n statutory badge, ЧЕРНОВИК watermark, 1-click packages, PDF/A export, vector signature."
+    },
+    "pc_dark_consent_modal": {
+      "path": "docs/screenshots/audit_legal_docs/pc_dark_consent_modal.png",
+      "sizeBytes": 94142,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "InformedConsentModal in PC Dark (1440x900). Midnight theme tokens, high contrast text and buttons, zero bleeding."
+    },
+    "mobile_light_documents": {
+      "path": "docs/screenshots/audit_legal_docs/mobile_light_documents.png",
+      "sizeBytes": 410371,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "MobileDocumentsHub in iPhone 14 Pro Light (390x844). Apple HIG grouped cards, >=44x44px touch targets, 'Пакет 1-клик' emerald CTA, horizontal category chips, bottom navigation bar."
+    },
+    "mobile_dark_documents": {
+      "path": "docs/screenshots/audit_legal_docs/mobile_dark_documents.png",
+      "sizeBytes": 370796,
+      "inspected": true,
+      "status": "PASS",
+      "caption": "MobileDocumentsHub in iPhone 14 Pro Dark (390x844). Zero horizontal scroll drift, zero text truncation, high contrast touch ergonomics."
+    }
+  },
+  "modificationsApplied": [
+    {
+      "file": "apps/web/src/components/documents/DocumentPayloadCard.tsx",
+      "rationale": "Eliminated collapsed <details> hurdle on clinical document forms. Forms and FDI odontograms now open immediately by default without requiring an extra click."
+    },
+    {
+      "file": "apps/web/src/components/sanpin/SanpinAutoclaveRegisterTab.tsx",
+      "rationale": "Fixed AutoclaveRegisterTable props mismatch to restore clean TypeScript compilation."
+    }
+  ],
+  "verificationGates": {
+    "typecheck": "PASSED (npx tsc -p apps/web/tsconfig.json --noEmit exited with code 0)",
+    "vitest": "PASSED (apps/web/src/tests/documentPayloadForms.test.ts 30/30 assertions pass)",
+    "multimodalInspection": "100% of 12 PNG files personally inspected via view_file"
+  }
+}

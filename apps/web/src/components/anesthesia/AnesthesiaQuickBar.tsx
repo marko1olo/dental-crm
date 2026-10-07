@@ -1,5 +1,4 @@
-import type React from "react";
-import { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
 	AlertTriangle,
 	Heart,
@@ -289,7 +288,7 @@ export function AnesthesiaQuickBar({
 	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
 		if (disabled) return;
 		showQuickToast(
-			`Списана пустая карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б, списание по FEFO в 1 клик (мягкий овердрафт)`,
+			`Списана карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б, списание по FEFO (расход сверх остатка)`,
 			4000,
 		);
 		if (onDisposalCarpules) {
@@ -300,7 +299,7 @@ export function AnesthesiaQuickBar({
 	const handleNursePacketDisposal = () => {
 		if (disabled) return;
 		showQuickToast(
-			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: списание по FEFO в 1 клик (мягкий овердрафт)",
+			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: списание по FEFO (расход сверх остатка)",
 			4000,
 		);
 		if (onDisposalCarpules) {
@@ -333,7 +332,7 @@ export function AnesthesiaQuickBar({
 
 		const normDiaryText = `Инфильтрационная/проводниковая анестезия: ${STANDARD_ANESTHESIA_NORM_PRESET_RU}`;
 		onApplyAnesthesia?.(normDiaryText, result);
-		showQuickToast("Норма анестезии внесена в протокол в 1 клик!", 3500);
+		showQuickToast("Анестезия: протокол сформирован", 3500);
 	};
 
 	const handleApplyUltracainForteCombined = () => {
@@ -364,7 +363,7 @@ export function AnesthesiaQuickBar({
 		const diaryText =
 			"Комбинированная мандибулярная проводниковая и инфильтрационная анестезия: Ультракаин Д-С Форте 1:100 000 (1.7 мл). Двухплоскостная аспирация отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.";
 		onApplyAnesthesia?.(diaryText, result);
-		showQuickToast("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл) внесена в 1 клик!", 3500);
+		showQuickToast("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл): протокол сформирован", 3500);
 	};
 
 	const handleApplySeptanestInfiltration = () => {
@@ -395,13 +394,13 @@ export function AnesthesiaQuickBar({
 		const diaryText =
 			"Инфильтрационная наднадкостничная анестезия: Септанест 1:100 000 (1.7 мл). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.";
 		onApplyAnesthesia?.(diaryText, result);
-		showQuickToast("Инфильтрационная анестезия Септанест (1.7 мл) внесена в 1 клик!", 3500);
+		showQuickToast("Инфильтрационная анестезия Септанест (1.7 мл): протокол сформирован", 3500);
 	};
 
 	const handleNurseSeptanestDisposal = () => {
 		if (disabled) return;
 		showQuickToast(
-			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б, списано в 1 клик (без комиссии)",
+			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б, списание выполнено",
 			4000,
 		);
 		if (onDisposalCarpules) {
@@ -461,7 +460,7 @@ export function AnesthesiaQuickBar({
 							<span>Журнал пробы</span>
 						</button>
 					)}
-					<span className="text-[11px] text-[var(--muted)]">1-клик выбор дозировки</span>
+					<span className="text-[11px] text-[var(--muted)]">Выбор дозировки</span>
 				</div>
 			</div>
 
@@ -537,7 +536,7 @@ export function AnesthesiaQuickBar({
 			{((hasSulfiteAllergy || hasBronchialAsthma) && !selectedDrugInfo.isAdrenalineFree) && (
 				<div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-800 dark:text-amber-200 text-xs font-medium" role="status">
 					<AlertTriangle size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-					<span>Внимание: выбранный препарат содержит сульфиты (E223). Рекомендован Скандонест 3% (без адреналина). Введение разрешено по клиническому решению врача (Мандат 8e).</span>
+					<span>Внимание: выбранный препарат содержит сульфиты (E223). Рекомендован Скандонест 3% (без адреналина). Введение разрешено по клиническому решению врача.</span>
 				</div>
 			)}
 
@@ -547,7 +546,7 @@ export function AnesthesiaQuickBar({
 				<div className="flex items-center gap-2 flex-wrap">
 					<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1 shrink-0">
 						<Plus size={13} className="text-[var(--teal)]" />
-						Ввести дозу (1 клик):
+						Ввести дозу:
 					</span>
 
 					{/* Primary 1: Норма 1.7 мл */}
@@ -556,7 +555,7 @@ export function AnesthesiaQuickBar({
 						disabled={disabled}
 						onClick={handleApplyStandardNormPreset}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-700 dark:text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="1 клик норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
+						title="Норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
 						data-testid="anesthesia-dose-norm-preset"
 					>
 						<DentalSyringe size={14} className="text-amber-500 dark:text-amber-300 shrink-0" />
@@ -569,7 +568,7 @@ export function AnesthesiaQuickBar({
 						disabled={disabled}
 						onClick={handleApplyUltracainForteCombined}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/50 text-xs sm:text-sm font-black text-teal-700 dark:text-teal-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="1 клик: Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте (2-пл. аспирация отр.)"
+						title="Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте (2-пл. аспирация отр.)"
 						data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"
 					>
 						<DentalSyringe size={14} className="text-teal-500 shrink-0" />
@@ -610,13 +609,13 @@ export function AnesthesiaQuickBar({
 						</button>
 					</div>
 
-					{/* Primary 3: Списать карпулу 1 клик */}
+					{/* Primary 3: Списать карпулу */}
 					<button
 						type="button"
 						disabled={disabled}
 						onClick={() => handleNurseQuickDisposal(1.0)}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Списать пустые карпулы анестетика в 1 клик по FEFO (без комиссии, мягкий овердрафт)"
+						title="Списать пустые карпулы анестетика по FEFO (расход сверх остатка)"
 						data-testid="nurse-quick-carpule-disposal"
 					>
 						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -676,7 +675,7 @@ export function AnesthesiaQuickBar({
 									data-testid="nurse-quick-septanest-disposal"
 								>
 									<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Списать Септанест (1 клик)</span>
+									<span>Списать препарат</span>
 								</button>
 								<button
 									type="button"
@@ -777,7 +776,7 @@ export function AnesthesiaQuickBar({
 								setSafetyWarning(null);
 								handleApplyCarpules(count, true);
 							}}
-							title="Применить клиническое суждение врача и внести препарат в протокол 043/у (Мандат 8e: автономия врача)"
+							title="Применить клиническое суждение врача и внести препарат в протокол 043/у"
 						>
 							Всё равно внести (врачебное решение)
 						</button>

@@ -332,7 +332,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = ({
 								<thead>
 									<tr className="border-b border-[var(--line)] text-[11px] text-[var(--muted)] font-bold">
 										<th className="py-1.5 pr-2">№</th>
-										<th className="py-1.5 pr-2">Код 804н</th>
+										<th className="py-1.5 pr-2">Код услуги</th>
 										<th className="py-1.5 pr-2">Наименование услуги</th>
 										<th className="py-1.5 text-center pr-2">Кол-во</th>
 										<th className="py-1.5 text-right pr-2">Цена</th>

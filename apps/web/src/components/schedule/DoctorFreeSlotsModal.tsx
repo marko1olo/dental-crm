@@ -137,7 +137,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 							<Calendar size={13} className="text-[var(--teal,var(--brand-primary))]" />
 							Диапазон поиска:
 						</span>
-						<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+						<div className="dente-filter-chips overflow-x-auto pb-1 scrollbar-none">
 							{[
 								{ label: "Сегодня", offset: 0, horizon: 1 },
 								{ label: "Завтра", offset: 1, horizon: 1 },
@@ -156,12 +156,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 											setStartDateOffsetDays(r.offset);
 											setHorizonDays(r.horizon);
 										}}
-										className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer flex items-center gap-1 whitespace-nowrap shadow-2xs ${
-											isSelected
-												? "border border-transparent font-bold"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-										}`}
-										style={isSelected ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										className={`dente-filter-chip ${isSelected ? "active" : ""}`}
 										data-testid={`quick-range-btn-${r.offset}-${r.horizon}`}
 									>
 										<span>{r.label}</span>
@@ -177,16 +172,11 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 							<User size={13} className="text-[var(--teal,var(--brand-primary))]" />
 							Врач:
 						</span>
-						<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+						<div className="dente-filter-chips overflow-x-auto pb-1 scrollbar-none">
 							<button
 								type="button"
 								onClick={() => setSelectedDoctorId("")}
-								className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
-									selectedDoctorId === ""
-										? "border border-transparent font-bold"
-										: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-								}`}
-								style={selectedDoctorId === "" ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+								className={`dente-filter-chip ${selectedDoctorId === "" ? "active" : ""}`}
 								data-testid="filter-doc-any"
 							>
 								Любой врач клиники
@@ -196,12 +186,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 									key={doc.id}
 									type="button"
 									onClick={() => setSelectedDoctorId(doc.id)}
-									className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
-										selectedDoctorId === doc.id
-											? "border border-transparent font-bold"
-											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-									}`}
-									style={selectedDoctorId === doc.id ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+									className={`dente-filter-chip ${selectedDoctorId === doc.id ? "active" : ""}`}
 									data-testid={`filter-doc-${doc.id}`}
 								>
 									{doc.fullName}
@@ -222,16 +207,11 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 								<Armchair size={13} className="text-[var(--teal,var(--brand-primary))]" />
 								Установка / Кресло:
 							</span>
-							<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+							<div className="dente-filter-chips overflow-x-auto pb-1 scrollbar-none">
 								<button
 									type="button"
 									onClick={() => setSelectedChairId("")}
-									className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
-										selectedChairId === ""
-											? "border border-transparent font-bold"
-											: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-									}`}
-									style={selectedChairId === "" ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+									className={`dente-filter-chip ${selectedChairId === "" ? "active" : ""}`}
 									data-testid="filter-chair-any"
 								>
 									Любое свободное кресло
@@ -241,12 +221,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 										key={chair.id}
 										type="button"
 										onClick={() => setSelectedChairId(chair.id)}
-										className={`h-7 px-2.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap shadow-2xs ${
-											selectedChairId === chair.id
-												? "border border-transparent font-bold"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
-										}`}
-										style={selectedChairId === chair.id ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										className={`dente-filter-chip ${selectedChairId === chair.id ? "active" : ""}`}
 										data-testid={`filter-chair-${chair.id}`}
 									>
 										{chair.name}
@@ -263,18 +238,13 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
 								<Clock size={13} className="text-[var(--teal,var(--brand-primary))]" /> Длительность приёма:
 							</span>
-							<div className="flex gap-1">
+							<div className="dente-segmented-bar w-full flex">
 								{[15, 30, 45, 60, 90, 120].map((dur) => (
 									<button
 										key={dur}
 										type="button"
 										onClick={() => setDurationMinutes(dur)}
-										className={`h-7 flex-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
-											durationMinutes === dur
-												? "border border-transparent font-bold"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
-										}`}
-										style={durationMinutes === dur ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										className={`dente-segmented-item flex-1 ${durationMinutes === dur ? "active" : ""}`}
 										data-testid={`duration-chip-${dur}`}
 									>
 										{dur}м
@@ -288,7 +258,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
 								<Sun size={13} className="text-[var(--teal,var(--brand-primary))]" /> Время суток:
 							</span>
-							<div className="flex gap-1">
+							<div className="dente-segmented-bar w-full flex">
 								{(
 									[
 										{ id: "all", label: "Все" },
@@ -301,12 +271,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 										key={t.id}
 										type="button"
 										onClick={() => setTimeOfDayFilter(t.id)}
-										className={`h-7 flex-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
-											timeOfDayFilter === t.id
-												? "border border-transparent font-bold"
-												: "border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
-										}`}
-										style={timeOfDayFilter === t.id ? { color: "var(--on-teal, #ffffff)", backgroundColor: "var(--teal-fill, var(--teal, #0d9488))" } : undefined}
+										className={`dente-segmented-item flex-1 ${timeOfDayFilter === t.id ? "active" : ""}`}
 										data-testid={`tod-filter-${t.id}`}
 									>
 										{t.label}

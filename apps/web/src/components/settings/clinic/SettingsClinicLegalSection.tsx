@@ -15,6 +15,7 @@ import {
 	FileText,
 	Search,
 	ShieldCheck,
+	X,
 } from "lucide-react";
 
 type TextInputChangeEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -124,6 +125,54 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 							? `Не заполнено: ${(legalMissingFields || []).join(", ")}`
 							: "Минимум заполнен"}
 					</span>
+				</div>
+			</div>
+
+			{/* Поиск реквизитов юрлица через DaData / ЕГРЮЛ */}
+			<div className="my-3 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+				<div className="dente-search-wrap flex-1">
+					<Search className="dente-search-icon" size={14} aria-hidden="true" />
+					<input
+						type="search"
+						value={clinicProfileDraft.inn || ""}
+						onChange={(e) =>
+							updateClinicProfileDraft(
+								"inn",
+								e.target.value.replace(/[^\d]/g, "").slice(0, 12),
+							)
+						}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								void lookupClinicPublicProfile();
+							}
+						}}
+						placeholder="Быстрый поиск реквизитов юрлица по ИНН клиники (10 или 12 цифр)..."
+						className="dente-search-input"
+						data-testid="input-quick-search-inn"
+					/>
+					{clinicProfileDraft.inn && (
+						<button
+							type="button"
+							onClick={() => updateClinicProfileDraft("inn", "")}
+							className="dente-search-clear"
+							aria-label="Очистить ИНН"
+						>
+							<X size={13} />
+						</button>
+					)}
+				</div>
+				<div className="dente-segmented-bar shrink-0">
+					<button
+						className="dente-segmented-item active"
+						type="button"
+						onClick={() => void lookupClinicPublicProfile()}
+						disabled={isClinicPublicLookupLoading || !clinicProfileDraft.inn}
+						data-testid="btn-lookup-clinic-profile"
+					>
+						<Search aria-hidden="true" size={14} />
+						<span>{isClinicPublicLookupLoading ? "Ищу в ЕГРЮЛ..." : "Найти в ЕГРЮЛ / DaData"}</span>
+					</button>
 				</div>
 			</div>
 
@@ -559,26 +608,30 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 
 			{/* Actions */}
 			<div className="clinic-profile-actions">
-				<button
-					className="secondary-button"
-					type="button"
-					onClick={() => void lookupClinicPublicProfile()}
-					disabled={isClinicPublicLookupLoading}
-				>
-					<Search aria-hidden="true" size={16} />{" "}
-					{isClinicPublicLookupLoading
-						? "Ищу реквизиты…"
-						: "Найти реквизиты по ИНН"}
-				</button>
-				<button
-					className="primary-button"
-					type="button"
-					onClick={() => void saveClinicProfileFromDraft()}
-					disabled={clinicProfileSaveState === "saving"}
-				>
-					<ShieldCheck aria-hidden="true" size={16} />{" "}
-					{clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить профиль"}
-				</button>
+				<div className="dente-segmented-bar" role="toolbar" aria-label="Сохранение профиля клиники">
+					<button
+						className="dente-segmented-item"
+						type="button"
+						onClick={() => void lookupClinicPublicProfile()}
+						disabled={isClinicPublicLookupLoading}
+					>
+						<Search aria-hidden="true" size={14} />{" "}
+						<span>
+							{isClinicPublicLookupLoading
+								? "Ищу реквизиты…"
+								: "Найти реквизиты по ИНН"}
+						</span>
+					</button>
+					<button
+						className="dente-segmented-item active"
+						type="button"
+						onClick={() => void saveClinicProfileFromDraft()}
+						disabled={clinicProfileSaveState === "saving"}
+					>
+						<ShieldCheck aria-hidden="true" size={14} />{" "}
+						<span>{clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить профиль"}</span>
+					</button>
+				</div>
 				<span className={`save-state save-state-${clinicProfileSaveState}`}>
 					{clinicProfileSaveState === "saved"
 						? "Сохранено"
@@ -665,10 +718,10 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 						</div>
 					) : null}
 					{(typedTargets ?? []).length ? (
-						<div className="clinic-public-targets">
+						<div className="clinic-public-targets dente-filter-chips">
 							{typedTargets.map((target: any) => (
 								<a
-									className="secondary-button"
+									className="dente-filter-chip"
 									href={target.url}
 									key={`${target.kind}:${target.title}`}
 									target="_blank"
@@ -676,7 +729,8 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 									aria-label={`Открыть публичный источник реквизитов: ${target.title}`}
 									title={`Открыть публичный источник реквизитов: ${target.title}`}
 								>
-									<ExternalLink size={14} aria-hidden="true" /> {target.title}
+									<ExternalLink size={13} aria-hidden="true" />
+									<span>{target.title}</span>
 								</a>
 							))}
 						</div>

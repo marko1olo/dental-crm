@@ -67,7 +67,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 	const [hasWarehouseDelay, setHasWarehouseDelay] = useState<boolean>(false);
 	const [isMaterialsDeducted, setIsMaterialsDeducted] = useState<boolean>(false);
 
-	// 1-Клик параметры имплантации
+	// Параметры имплантации
 	const [implantBrand, setImplantBrand] = useState<string>("Dentium");
 	const [implantDiameter, setImplantDiameter] = useState<number>(4.0);
 	const [implantLength, setImplantLength] = useState<number>(10.0);
@@ -159,7 +159,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 		showToast(`Норма операции: «${norm.title}»`, "success");
 	};
 
-	// 1-Клик пресет: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, снимок)
+	// Пресет: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, снимок)
 	const handleApplyStandardImplantationPreset = (
 		overrides?: Partial<StandardImplantationParams>,
 	) => {
@@ -194,7 +194,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 
 		setProtocolText(generated);
 		showToast(
-			`1-Клик норма: ${brand} Ø${dia}×${len} мм, 35 Н/см, ISQ ${isq}, ${cap === "fdm" ? "ФДМ" : "Заглушка"}, ${suture}`,
+			`✓ Физиологическая норма: ${brand} Ø${dia}×${len} мм, 35 Н/см, ISQ ${isq}, ${cap === "fdm" ? "ФДМ" : "Заглушка"}, ${suture}`,
 			"success",
 		);
 	};
@@ -308,7 +308,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted)]">
-							1-клик нормы операций • Безбарьерный софт для хирурга
+							Клинические протоколы операций • Безбарьерный софт для хирурга
 						</p>
 					</div>
 				</div>
@@ -396,11 +396,11 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				</div>
 			</div>
 
-			{/* 1-Клик Нормы операций */}
+			{/* Хирургические нормы операций */}
 			<div className="space-y-2">
 				<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
 					<Zap size={14} className="text-[var(--teal,#0d9488)]" />
-					<span>1-Клик Хирургические нормы (СтАР / Минздрав):</span>
+					<span>Хирургические нормы (СтАР / Минздрав):</span>
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
@@ -429,7 +429,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				</div>
 			</div>
 
-			{/* Динамический 1-Клик кокпит по категории операции (Мандаты 8e, 8k, 8z) */}
+			{/* Динамический кокпит по категории операции (Мандаты 8e, 8k, 8z) */}
 			{currentNorm.category === "extraction" ? (
 				<VisitSurgeryExtractionBar
 					effectiveTooth={effectiveTooth}
@@ -512,7 +512,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						onClick={handlePrintSurgicalIds}
 						className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation"
 						data-testid="btn-tab-print-ids"
-						title="Печать комплекта ИДС и памятки пациента (1 клик = 3 бланка)"
+						title="Печать комплекта ИДС и памятки пациента (3 бланка)"
 					>
 						<FileCheck size={16} />
 						<span>Печать ИДС</span>
@@ -530,7 +530,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						<span>Печать протокола</span>
 					</button>
 
-					{/* 1-Клик списание материалов со склада с мягким овердрафтом (Мандат 8e) */}
+					{/* Списание материалов со склада с мягким овердрафтом (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={handleQuickDeductWarehouseMaterials}
@@ -540,7 +540,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 								: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)]"
 						}`}
 						data-testid="btn-tab-deduct-materials"
-						title="1-Клик списание материалов операции (имплантат, графт, мембрана, расходники) со склада"
+						title="Списание материалов операции (имплантат, графт, мембрана, расходники) со склада"
 					>
 						<PackageMinus size={16} />
 						<span>{isMaterialsDeducted ? "Материалы списаны" : "Списать со склада"}</span>

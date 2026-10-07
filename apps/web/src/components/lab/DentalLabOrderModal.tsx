@@ -446,7 +446,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							onClick={form.handlePrint}
 							data-testid="lab-order-footer-print-btn"
 							className="min-h-[44px] sm:min-h-9 sm:h-9 px-3.5 sm:px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-							title="Распечатать наряд-заказ ГОСТ (А4)"
+							title="Распечатать наряд-заказ (А4)"
 						>
 							<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span className="hidden sm:inline">Печать (А4)</span>

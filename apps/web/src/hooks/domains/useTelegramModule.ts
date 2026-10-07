@@ -196,7 +196,7 @@ export function useTelegramModule({
 		setTelegramSettingsSaveState("idle");
 		setTelegramSettingsSaveError(null);
 	}, [
-		telegramStatus?.settings.updatedAt,
+		telegramStatus?.settings?.updatedAt,
 		telegramSettingsDirty,
 		setTelegramStaffEscalationChannelDraft,
 		telegramStatus?.settings,

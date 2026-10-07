@@ -348,10 +348,10 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 
 					{/* View Toggle & Close */}
 					<div className="expanded-focus-header-actions">
-						<div className="leads-viewmode-segmented">
+						<div className="leads-viewmode-segmented dente-segmented-bar">
 							<button
 								type="button"
-								className={`leads-viewmode-segmented-btn ${viewMode === "cards" ? "is-active" : ""}`}
+								className={`leads-viewmode-segmented-btn dente-segmented-item ${viewMode === "cards" ? "is-active active" : ""}`}
 								onClick={() => setViewMode("cards")}
 								title="Вид: 3-колоночная широкая сетка карточек"
 								data-testid="focus-view-toggle-cards"
@@ -361,7 +361,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 							</button>
 							<button
 								type="button"
-								className={`leads-viewmode-segmented-btn ${viewMode === "table" ? "is-active" : ""}`}
+								className={`leads-viewmode-segmented-btn dente-segmented-item ${viewMode === "table" ? "is-active active" : ""}`}
 								onClick={() => setViewMode("table")}
 								title="Вид: клинический спредшит (таблица 32px)"
 								data-testid="focus-view-toggle-table"
@@ -387,20 +387,22 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 				{/* 2. FILTER & SORT TOOLBAR */}
 				<div className="expanded-focus-toolbar">
 					{/* Search Box */}
-					<div className="expanded-focus-search-box">
-						<Search size={14} className="text-[var(--muted)] shrink-0" />
+					<div className="dente-search-wrap expanded-focus-search-box min-w-[260px] max-w-[340px] flex-1">
+						<Search size={14} className="dente-search-icon" />
 						<input
 							type="text"
 							placeholder="Поиск по имени, телефону, жалобе..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="expanded-focus-search-input"
+							className="dente-search-input"
+							aria-label="Поиск по имени, телефону или жалобе"
 						/>
 						{searchQuery && (
 							<button
 								type="button"
 								onClick={() => setSearchQuery("")}
-								className="text-[var(--muted)] hover:text-[var(--ink)]"
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
 							>
 								<X size={12} />
 							</button>
@@ -408,24 +410,24 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 					</div>
 
 					{/* SLA Urgency Filter Tabs */}
-					<div className="expanded-focus-urgency-tabs">
+					<div className="expanded-focus-urgency-tabs dente-segmented-bar" role="tablist">
 						<button
 							type="button"
-							className={`expanded-focus-tab ${urgencyFilter === "all" ? "is-active" : ""}`}
+							className={`expanded-focus-tab dente-segmented-item ${urgencyFilter === "all" ? "is-active active" : ""}`}
 							onClick={() => setUrgencyFilter("all")}
 						>
 							Все ({metrics.totalCount})
 						</button>
 						<button
 							type="button"
-							className={`expanded-focus-tab expanded-focus-tab--fresh ${urgencyFilter === "fresh" ? "is-active" : ""}`}
+							className={`expanded-focus-tab dente-segmented-item expanded-focus-tab--fresh ${urgencyFilter === "fresh" ? "is-active active" : ""}`}
 							onClick={() => setUrgencyFilter("fresh")}
 						>
 							Свежие ({metrics.freshCount})
 						</button>
 						<button
 							type="button"
-							className={`expanded-focus-tab expanded-focus-tab--warning ${urgencyFilter === "warning" ? "is-active" : ""}`}
+							className={`expanded-focus-tab dente-segmented-item expanded-focus-tab--warning ${urgencyFilter === "warning" ? "is-active active" : ""}`}
 							onClick={() => setUrgencyFilter("warning")}
 						>
 							Внимание ({metrics.warningCount})
@@ -433,7 +435,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 						{metrics.breachedCount > 0 && (
 							<button
 								type="button"
-								className={`expanded-focus-tab expanded-focus-tab--breached ${urgencyFilter === "breached" ? "is-active" : ""}`}
+								className={`expanded-focus-tab dente-segmented-item expanded-focus-tab--breached ${urgencyFilter === "breached" ? "is-active active" : ""}`}
 								onClick={() => setUrgencyFilter("breached")}
 							>
 								Просрочен SLA ({metrics.breachedCount})
@@ -869,7 +871,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 									<button
 										type="button"
 										onClick={() => setVisibleLimit((prev) => prev + 60)}
-										className="px-4 py-2 text-xs font-semibold rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										className="secondary-button h-8 min-h-[32px] px-4 rounded-lg text-[13px] font-medium cursor-pointer"
 									>
 										Показать ещё 60 (показано {visibleLeads.length} из {displayLeads.length})
 									</button>
@@ -1146,7 +1148,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 									<button
 										type="button"
 										onClick={() => setVisibleLimit((prev) => prev + 60)}
-										className="px-4 py-2 text-xs font-semibold rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										className="secondary-button h-8 min-h-[32px] px-4 rounded-lg text-[13px] font-medium cursor-pointer"
 									>
 										Показать ещё 60 (показано {visibleLeads.length} из {displayLeads.length})
 									</button>

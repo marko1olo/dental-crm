@@ -96,12 +96,12 @@ export function ConsentItemRow({
 				</div>
 
 				<div className="vct-card-actions">
-					{/* 1. Статус / Подтверждение: 1-клик отметка подписи */}
+					{/* 1. Статус / Подтверждение: отметка подписи */}
 					<button
 						type="button"
 						onClick={onTogglePaperSigned}
 						className={`vct-btn ${isSigned ? "vct-btn-secondary" : "vct-btn-success"}`}
-						title={isSigned ? "Снять отметку о подписи" : "1-клик отметка: пациент подписал согласие на бумаге"}
+						title={isSigned ? "Снять отметку о подписи" : "Отметка: пациент подписал согласие на бумаге"}
 					>
 						{isSigned ? (
 							<>

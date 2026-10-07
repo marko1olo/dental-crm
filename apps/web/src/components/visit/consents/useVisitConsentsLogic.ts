@@ -395,7 +395,7 @@ export function useVisitConsentsLogic({
 		[activeAppointment?.id, patientId, substitutionContext.doctorName, substitutionContext.patientName],
 	);
 
-	// 1-Клик отметка: Подписано на бумаге
+	// Отметка: Подписано на бумаге
 	const handleTogglePaperSigned = useCallback((key: ConsentTemplateKey, itemTitle: string) => {
 		const current = consentRecords[key];
 		const isCurrentlySigned = Boolean(current?.isSigned);
@@ -425,7 +425,7 @@ export function useVisitConsentsLogic({
 		}
 	}, [consentRecords, patientId, persistConsentToBackend, saveConsentRecords, substitutionContext.doctorName]);
 
-	// 1-Клик: Отметить все необходимые согласия на сегодня как подписанные на бумаге
+	// Отметить все необходимые согласия на сегодня как подписанные на бумаге
 	const handleMarkAllRequiredTodaySigned = useCallback(() => {
 		if (unsignedRequiredItems.length === 0) {
 			showToast("Все требуемые на сегодня согласия уже подписаны", "info");
@@ -472,7 +472,7 @@ export function useVisitConsentsLogic({
 		showToast("Чистый бланк согласия на лечение отправлен на печать", "info");
 	}, [substitutionContext]);
 
-	// 1-Клик: Печать пакета согласий на сегодня
+	// Печать пакета согласий на сегодня
 	const handlePrintTodayPackage = useCallback(() => {
 		let pkgKey: ConsentPackageKey = "PACKAGE_PRIMARY_VISIT";
 		if (requiredFlags.CONSENT_SURGERY_IMPLANT) {
@@ -488,7 +488,7 @@ export function useVisitConsentsLogic({
 		showToast("Пакет согласий на сегодня сформирован и отправлен на печать", "success");
 	}, [requiredFlags, substitutionContext, isVisitClosed]);
 
-	// 1-Клик: Сформировать доп. согласие на новые процедуры (печать + фиксация)
+	// Сформировать доп. согласие на новые процедуры (печать + фиксация)
 	const handleFormAddendumConsent = useCallback(() => {
 		if (consentScopeMismatch.uncoveredTemplateKeys.length === 0) {
 			showToast("Все процедуры текущего визита уже покрыты соглашением", "info");
@@ -524,7 +524,7 @@ export function useVisitConsentsLogic({
 		showToast("Сформировано и отправлено на печать доп. согласие на новые процедуры", "success");
 	}, [consentScopeMismatch, consentRecords, substitutionContext.doctorName, patientId, persistConsentToBackend, saveConsentRecords, handlePrintSingleFilled, handlePrintTodayPackage]);
 
-	// 1-Клик: Отметить доп. согласие подписанным на бумаге без печати
+	// Отметить доп. согласие подписанным на бумаге без печати
 	const handleMarkAddendumSigned = useCallback(() => {
 		if (consentScopeMismatch.uncoveredTemplateKeys.length === 0) {
 			showToast("Все процедуры текущего визита уже покрыты соглашением", "info");

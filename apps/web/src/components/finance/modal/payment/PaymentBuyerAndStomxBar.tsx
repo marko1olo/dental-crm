@@ -193,7 +193,7 @@ export const PaymentBuyerAndStomxBar: React.FC<PaymentBuyerAndStomxBarProps> = (
 						{buyerInnError && (
 							<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 flex items-center gap-1">
 								<AlertCircle size={10} />
-								<span>{buyerInnError} (оплата не блокируется)</span>
+								<span>{buyerInnError}</span>
 							</p>
 						)}
 					</div>

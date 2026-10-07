@@ -369,7 +369,7 @@ describe("JawOcclusionModal & VoiceDictationAssistantModal — Mandate 8e Doctor
 	});
 
 	describe("JawOcclusionModal — Mandates 8e, 8k, 8n", () => {
-		it("renders with 0 disabled buttons and displays 'Норма в 1 клик (043/у)' when no preset is selected", async () => {
+		it("renders with 0 disabled buttons and displays 'Физиологическая норма' when no preset is selected", async () => {
 			const container = mockDom.doc.createElement("div");
 			mockDom.body.appendChild(container);
 
@@ -390,12 +390,12 @@ describe("JawOcclusionModal & VoiceDictationAssistantModal — Mandate 8e Doctor
 			assert.equal(applyBtn.disabled, false, "МАНДАТ 8e: Кнопка НЕ должна быть заблокирована (disabled=false)");
 			assert.match(
 				applyBtn.textContent || "",
-				/Норма в 1 клик/,
-				"Текст кнопки по умолчанию должен предлагать норму в 1 клик",
+				/Физиологическая норма/,
+				"Текст кнопки по умолчанию должен предлагать физиологическую норму",
 			);
 
 			const normBtn = findNodeByTestId(mockDom.body, "jaw-1click-norm-btn");
-			assert.ok(normBtn, "Верхняя кнопка нормы в 1 клик обязана присутствовать");
+			assert.ok(normBtn, "Верхняя кнопка нормы обязана присутствовать");
 			assert.equal(normBtn.disabled, false, "Кнопка нормы не должна быть заблокирована");
 
 			await act(async () => {

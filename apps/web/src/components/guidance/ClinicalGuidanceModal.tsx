@@ -138,20 +138,30 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 
 				{/* Search & Category Filter Toolbar */}
 				<div className="p-3 border-b border-[var(--line)] space-y-2.5 bg-[var(--paper)]">
-					<div className="relative">
-						<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
+					<div className="dente-search-wrap">
+						<Search size={14} className="dente-search-icon" />
 						<input
 							ref={searchInputRef}
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по клавишам или действиям (например: Ctrl+S, касса, кариес)..."
-							className="w-full pl-9 pr-3 py-1.5 text-xs bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder-[var(--muted)] focus:outline-hidden focus:ring-1 focus:ring-teal-500"
+							className="dente-search-input"
 						/>
+						{searchQuery && (
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="dente-search-clear"
+								aria-label="Очистить поиск"
+							>
+								<X size={14} />
+							</button>
+						)}
 					</div>
 
 					{/* Category Tabs */}
-					<div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+					<div className="dente-segmented-bar overflow-x-auto pb-0 text-[11px] no-scrollbar max-w-full">
 						{categoryTabs.map((tab) => {
 							const isActive = activeCategory === tab.id;
 							return (
@@ -159,11 +169,7 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 									key={tab.id}
 									type="button"
 									onClick={() => setActiveCategory(tab.id)}
-									className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-colors cursor-pointer ${
-										isActive
-											? "bg-teal-500 text-white font-semibold"
-											: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]/50"
-									}`}
+									className={`dente-segmented-item ${isActive ? "active" : ""}`}
 								>
 									{tab.label}
 								</button>

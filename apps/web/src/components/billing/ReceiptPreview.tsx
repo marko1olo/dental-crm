@@ -362,7 +362,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 										{idx + 1}. {item.name}
 									</div>
 									<div className="text-[10px] text-slate-500 font-mono">
-										Код услуги (804н): {item.code804n || "A16.07.002"}
+										Код услуги: {item.code804n || "A16.07.002"}
 									</div>
 									<div className="flex justify-between text-[11px] text-slate-800">
 										<span className="text-slate-600">
@@ -534,7 +534,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 							</p>
 						</div>
 						<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300">
-							54-ФЗ • 804н
+							54-ФЗ • Квитанция
 						</span>
 					</div>
 
@@ -555,7 +555,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
 						<thead>
 							<tr className="border-b-2 border-slate-300 bg-slate-50 text-slate-700">
 								<th className="py-1 px-2">№</th>
-								<th className="py-1 px-2">Код 804н</th>
+								<th className="py-1 px-2">Код услуги</th>
 								<th className="py-1 px-2">Наименование услуги</th>
 								<th className="py-1 px-2 text-right">Кол-во</th>
 								<th className="py-1 px-2 text-right">Сумма</th>

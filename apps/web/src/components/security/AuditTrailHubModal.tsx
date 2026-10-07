@@ -487,15 +487,25 @@ export function AuditTrailHubModal({
 
 					{/* Search & Filter Bar */}
 					<div className="audit-filter-bar">
-						<div className="audit-search-input-box">
-							<Search size={16} className="audit-search-icon" />
+						<div className="audit-search-input-box dente-search-wrap">
+							<Search size={15} className="audit-search-icon dente-search-icon" />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="Поиск по ФИО, пациенту, IP или действию..."
-								className="audit-search-input"
+								className="audit-search-input dente-search-input"
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="dente-search-clear"
+									aria-label="Очистить поиск"
+								>
+									<X size={14} />
+								</button>
+							)}
 						</div>
 
 						<select

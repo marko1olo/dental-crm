@@ -243,7 +243,10 @@ describe("BOM Deduction & Soft Overdraft Autonomy (Mandates 8e, 8k, 8n, 8s)", ()
 			assert.equal(result.singlePersonApproval, true);
 			assert.ok(result.sealNumber.startsWith("ПЛ-Б-"));
 			assert.ok(result.barcode.startsWith("WASTE-CLASS_B-DENT-"));
-			assert.ok(capturedToast.includes("1-клик сдача отходов Класса Б"));
+			assert.ok(
+				capturedToast.includes("Сдача отходов Класса Б") ||
+					capturedToast.includes("1-клик сдача отходов Класса Б"),
+			);
 
 			// Проверка HTML акта
 			assert.ok(result.actHtml.includes("АКТ НАКОПЛЕНИЯ И ПЕРЕДАЧИ МЕДИЦИНСКИХ ОТХОДОВ КЛАССА Б"));

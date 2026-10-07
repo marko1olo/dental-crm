@@ -191,13 +191,13 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
 
         if (collisionCheck.isCitoOverbooking) {
           showToast(
-            `CITO-овербукинг разрешён (острая боль): ${collisionCheck.message}`,
+            `Запись по острой боли (наложение слота допустимо): ${collisionCheck.message}`,
             "warning",
             4500,
           );
         } else if (collisionCheck.hasCollision) {
           showToast(
-            `Внимание: ${collisionCheck.message}. Запись перенесена с овербукингом`,
+            `Внимание: ${collisionCheck.message}. Запись перенесена с совмещением слотов`,
             "warning",
             4500,
           );
@@ -585,11 +585,11 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
                 doctorUserId: slotDocId,
                 doctorName: slotDocName,
                 durationMinutes: 30,
-                reason: "Острая боль (CITO Резерв)",
+                reason: "Острая боль (Срочный резерв)",
               })
             }
             className="w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-amber-500/70 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 flex items-center justify-center gap-1.5 px-2 cursor-pointer transition-all shadow-2xs"
-            title={`Экстренный резерв (CITO): ${hour} (${chair.name}). Буфер 30 мин для пациентов с острой болью`}
+            title={`Экстренный резерв (срочно): ${hour} (${chair.name}). Буфер 30 мин для пациентов с острой болью`}
             aria-label={`Экстренный резерв на ${hour}, кресло ${chair.name}. Буфер 30 минут для пациентов с острой болью`}
             data-testid="schedule-emergency-buffer-slot"
           >

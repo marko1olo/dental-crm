@@ -252,7 +252,7 @@ export function evaluateClinicalAccess(
 				hasClinicalAccess: true,
 				normalizedRole: "curator_clinical",
 				reason:
-					"Куратор лечения с подтвержденной квалификацией врача/ассистента (Мандат 8e)",
+					"Куратор лечения с подтвержденной квалификацией врача/ассистента",
 			};
 		}
 
@@ -277,7 +277,7 @@ export function evaluateClinicalAccess(
 				hasClinicalAccess: true,
 				normalizedRole: "manager_clinical",
 				reason:
-					"Управляющий с подтвержденной клинической квалификацией врача (Мандат 8e)",
+					"Управляющий с подтвержденной клинической квалификацией врача",
 			};
 		}
 

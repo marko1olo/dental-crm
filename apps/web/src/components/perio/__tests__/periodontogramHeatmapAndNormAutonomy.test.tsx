@@ -12,7 +12,7 @@
  *    - <= 6 mm (5..6 mm) -> 'warning-high' (moderate periodontitis, orange #f97316)
  *    - > 6 mm (7..15 mm) -> 'error' (severe deep pocket, rose #fb7185)
  * 2. Class & Hex mappings with DENTE design tokens & Light/Dark themes.
- * 3. 1-Click Physiological Norm («Вся десна здорова (Норма)» / «Десна здорова (Норма 1-клик)»):
+ * 3. Physiological Norm («Вся десна здорова (Норма)»):
  *    - Sets all 32 teeth (192 probing points) to normal physiology in 1 click (2 mm, 0% BOP, 0% plaque, 0 recession).
  *    - Doctor is never forced to type 192 points manually at chairside (Mandates 8e, 8k).
  * 4. Touch ergonomics: target >= 44x44px, vector Lucide icons, 0 emojis (Mandate 8d).

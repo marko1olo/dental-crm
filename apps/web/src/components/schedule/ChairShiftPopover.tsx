@@ -194,7 +194,7 @@ export function ChairShiftPopover({
       {/* Shift Presets */}
       <div className="flex flex-col gap-1 border-t border-[var(--line)] pt-2">
         <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-          Смена в 1 клик:
+          Шаблоны смен:
         </span>
         <div className="grid grid-cols-2 gap-1.5">
           <button
@@ -265,7 +265,7 @@ export function ChairShiftPopover({
             onClick={() => handleAssignShift(chair, "even_odd")}
             className="px-2 py-1.5 rounded-lg border border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer col-span-2"
             data-testid={`chair-view-shift-even-odd-${chair.id}`}
-            title="Чётные/Нечётные дни месяца (1 клик)"
+            title="Чётные/Нечётные дни месяца"
           >
             <Zap size={12} className="text-amber-500 shrink-0" />
             <span>Чет/Нечет</span>
@@ -299,7 +299,7 @@ export function ChairShiftPopover({
         <span>Клонировать кресло</span>
       </button>
 
-      {/* Quick substitute doctor action (StomX Parity, Feature 245) */}
+      {/* Быстрая замена дежурного врача */}
       <button
         type="button"
         onClick={() =>
@@ -311,7 +311,7 @@ export function ChairShiftPopover({
         className="mt-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer min-h-[44px]"
         style={{ minHeight: "44px" }}
         data-testid={`chair-view-substitute-btn-${chair.id}`}
-        title="Быстрая подмена дежурного врача на кресле в 1 клик"
+        title="Быстрая подмена дежурного врача на кресле"
       >
         <UserCheck size={14} className="text-amber-500 shrink-0" />
         <span>Подменить врача...</span>

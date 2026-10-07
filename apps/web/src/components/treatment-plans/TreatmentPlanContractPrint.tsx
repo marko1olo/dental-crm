@@ -228,7 +228,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 								}`}
 								data-testid="contract-view-official-btn"
 							>
-								804н (Минздрав)
+								Официальная смета
 							</button>
 						</div>
 
@@ -404,13 +404,13 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 									<tr className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[9px]">
 										<th className="border border-slate-300 p-1.5 text-center w-8">№</th>
 										{viewMode === "official_appendix" && (
-											<th className="border border-slate-300 p-1.5 text-center w-20">Код (804н)</th>
+											<th className="border border-slate-300 p-1.5 text-center w-20">Код услуги</th>
 										)}
 										<th className="border border-slate-300 p-1.5 text-center w-12">Зуб</th>
 										<th className="border border-slate-300 p-1.5 text-left">
 											{viewMode === "patient_friendly"
 												? "Медицинская услуга и применяемые материалы"
-												: "Наименование медицинской услуги (Приказ 804н)"}
+												: "Наименование медицинской услуги"}
 										</th>
 										<th className="border border-slate-300 p-1.5 text-center w-10">Кол.</th>
 										<th className="border border-slate-300 p-1.5 text-right w-20">Цена, ₽</th>
@@ -652,7 +652,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 							<div className="p-2.5 rounded-xl bg-white border border-amber-300 text-amber-900 text-[10px] flex items-center gap-2">
 								<Clock size={13} className="text-amber-600 shrink-0" />
 								<span>
-									<strong>Примечание:</strong> План составлен более 30 дней назад ({planAgeDays} дн.), цены могут быть скорректированы. Стоимость зафиксирована и утверждена лечащим врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e).
+									<strong>Примечание:</strong> План составлен более 30 дней назад ({planAgeDays} дн.), цены могут быть скорректированы. Стоимость зафиксирована и утверждена лечащим врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений.
 								</span>
 							</div>
 						)}

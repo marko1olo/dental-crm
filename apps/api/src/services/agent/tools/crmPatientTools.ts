@@ -231,7 +231,7 @@ export const createPatientTool: ToolDefinition<
 > = {
 	name: "create_patient",
 	description:
-		"Регистрация нового пациента в клинике с автосозданием амбулаторной карты 043/у, дефолтной физиологической нормой (Мандат 8e) и проверкой дубликатов по телефону.",
+		"Регистрация нового пациента в клинике с автосозданием амбулаторной карты 043/у, дефолтной физиологической нормой и проверкой дубликатов по телефону.",
 	parameters: createPatientSchema,
 	permissions: ["patients.write"],
 	category: "write",
@@ -434,7 +434,7 @@ export const getPatientSummaryTool: ToolDefinition<
 		const somaticStatus =
 			somaticConditions.length > 0
 				? somaticConditions.join(", ")
-				: "Соматически здоров / норма (Мандат 8e)";
+				: "Соматически здоров / норма";
 
 		const renderedBriefRu = [
 			`КАРТОЧКА ПАЦИЕНТА: ${fullName} (карта: ${card043Number})`,
@@ -503,7 +503,7 @@ export const getFamilyDepositBalanceTool: ToolDefinition<
 > = {
 	name: "get_family_deposit_balance",
 	description:
-		"Запрос остатков средств на семейном депозите, прав списания (canSpendFamilyWallet) и связанных родственников пациента (Мандат 8ab).",
+		"Запрос остатков средств на семейном депозите, прав списания (canSpendFamilyWallet) и связанных родственников пациента.",
 	parameters: getFamilyDepositBalanceSchema,
 	permissions: ["patients.read", "billing.read"],
 	category: "read",

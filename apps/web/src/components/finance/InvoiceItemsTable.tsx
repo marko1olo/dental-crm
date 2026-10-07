@@ -35,7 +35,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 							className="text-rose-600 dark:text-rose-400"
 						/>
 						<span>
-							Оформление заблокировано системой финансового контроля:
+							Требуется подтверждение позиций сметы:
 						</span>
 					</div>
 					<ul className="list-disc pl-5 space-y-0.5">

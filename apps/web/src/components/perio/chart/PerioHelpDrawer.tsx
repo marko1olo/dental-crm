@@ -58,7 +58,7 @@ export const PerioHelpDrawer: React.FC<PerioHelpDrawerProps> = React.memo(({
 						Shift + N
 					</kbd>{" "}
 					<span className="text-[var(--muted)]">
-						— 1-клик «Пародонт интактен / норма»
+						— «Пародонт интактен / норма»
 					</span>
 				</div>
 				<div>

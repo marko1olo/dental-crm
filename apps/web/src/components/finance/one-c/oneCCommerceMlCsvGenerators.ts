@@ -127,7 +127,7 @@ export function generateAccountantExecutiveSummary(pkg: OneCCommerceMlPackage): 
    Номер: ${sales.documentNumber} от ${sales.documentDateIso}
    Касса ККМ: ${sales.cashRegisterName}
    Склад списания: ${sales.warehouseName}
-   Оказано услуг: ${sales.items.length} позиций по номенклатуре 804н
+   Оказано услуг: ${sales.items.length} позиций по номенклатуре
    Выручка брутто: ${formatKopToRubLocale(sales.totalRevenueKopecks)} (НДС: Освобождено по ${TAX_EXEMPTION_ARTICLE_149_RU})
    Способы оплаты:
 ${paymentsText}

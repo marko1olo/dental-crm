@@ -78,36 +78,42 @@
 	display: inline-flex;
 	align-items: center;
 	background: var(--paper-soft);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	padding: 2px;
-	gap: 2px;
+	border: 1px solid var(--line-subtle);
+	border-radius: 10px;
+	padding: 3px;
+	gap: 3px;
 	height: 32px;
 	box-sizing: border-box;
 }
 
 .marketing-period-btn {
-	padding: 4px 10px;
-	font-size: 12px;
+	height: 26px;
+	padding: 0 10px;
+	font-size: 12.5px;
 	font-weight: 500;
 	color: var(--muted);
 	background: transparent;
-	border: none;
-	border-radius: 6px;
+	border: 1px solid transparent;
+	border-radius: 7px;
 	cursor: pointer;
 	transition: all 0.15s ease;
 	white-space: nowrap;
 	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .marketing-period-btn:hover {
 	color: var(--ink);
 }
 
-.marketing-period-btn.is-active {
-	background: var(--paper);
+.marketing-period-btn.is-active,
+.marketing-period-btn.active {
+	background: var(--paper-strong, var(--paper));
 	color: var(--ink);
 	font-weight: 600;
+	border-color: var(--line);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -571,30 +577,36 @@
 }
 
 .marketing-cohort-action {
-	margin-top: 2px;
+	margin-top: 4px;
+	height: 26px;
+	padding: 0 8px;
 	font-size: 11px;
 	font-weight: 600;
-	color: var(--teal);
-	background: none;
-	border: none;
-	padding: 0;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	border-radius: 6px;
 	cursor: pointer;
 	text-align: left;
 	display: inline-flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: 4px;
+	transition: all 0.15s ease;
 }
 
 .marketing-cohort-action:hover {
-	text-decoration: underline;
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+	text-decoration: none;
 }
 
 /* Header utility buttons without Tailwind */
 .marketing-header-csv-btn {
 	height: 32px;
 	min-height: 32px;
-	padding: 0 10px;
-	font-size: 12px;
+	padding: 0 12px;
+	font-size: 13px;
 	font-weight: 500;
 	display: inline-flex;
 	align-items: center;
@@ -609,13 +621,15 @@
 
 .marketing-header-csv-btn:hover {
 	background: var(--paper-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
 }
 
 .marketing-header-promo-btn {
 	height: 32px;
 	min-height: 32px;
-	padding: 0 12px;
-	font-size: 12px;
+	padding: 0 14px;
+	font-size: 13px;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
@@ -625,18 +639,25 @@
 }
 
 .marketing-modal-link {
+	height: 28px;
+	padding: 0 10px;
 	font-size: 12px;
 	font-weight: 600;
-	color: var(--teal);
-	background: transparent;
-	border: none;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	border-radius: 7px;
 	cursor: pointer;
-	padding: 0;
-	transition: opacity 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	transition: all 0.15s ease;
 }
 
 .marketing-modal-link:hover {
-	text-decoration: underline;
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+	text-decoration: none;
 }
 
 /* Dark mode elevation (all 6 dark themes) */

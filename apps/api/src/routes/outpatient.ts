@@ -592,7 +592,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			count: itemsWithLockStatus.length,
 			queue: itemsWithLockStatus,
 			advisoryNotice:
-				"Экспертный аудит качества главного врача носит рекомендательно-наставнический характер (Мандат 8e). Дневники врачей не подлежат карательной блокировке.",
+				"Экспертный аудит качества главного врача носит рекомендательно-наставнический характер. Дневники врачей доступны для редактирования лечащим врачом.",
 		});
 	});
 

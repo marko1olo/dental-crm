@@ -318,7 +318,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Блокирует ли аллергия пациента кнопку сохранения?</strong>
-						<span>Никогда! Согласно Мандату 8y, аллергия отображается как пассивная предупреждающая плашка, а врач сохраняет полную автономию.</span>
+						<span>Никогда! Аллергия отображается как пассивная предупреждающая плашка, а врач сохраняет полную автономию.</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Что если внезапно закрылась вкладка?</strong>

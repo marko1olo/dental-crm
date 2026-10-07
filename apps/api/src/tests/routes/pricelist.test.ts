@@ -263,7 +263,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 			);
 			assert.ok(
 				body.includes(
-					"Код 804н;Коммерческое наименование;Раздел;Специальность;Цена (руб);Длительность (мин);НДС;Налоговый вычет;Статус",
+					"Код услуги;Коммерческое наименование;Раздел;Специальность;Цена (руб);Длительность (мин);НДС;Налоговый вычет;Статус",
 				),
 			);
 		});
@@ -301,7 +301,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 
 			assert.strictEqual(response.statusCode, 200);
 			assert.ok(response.body.startsWith("\uFEFF"));
-			assert.ok(response.body.includes("Код 804н;"));
+			assert.ok(response.body.includes("Код услуги;"));
 		});
 	});
 

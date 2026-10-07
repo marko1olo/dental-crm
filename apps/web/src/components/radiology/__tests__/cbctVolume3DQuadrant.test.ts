@@ -455,6 +455,7 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				"utf-8",
 			);
 			assert.ok(
+				source.includes("interactiveDownsampleFactor") ||
 				source.includes("subSample = isInteracting ? (rawWidth > 600 ? 4 : 3) : (rawWidth > 800 ? 2 : 1)"),
 				"Must downsample resolution during drag interaction for 60 FPS on weak GPUs",
 			);

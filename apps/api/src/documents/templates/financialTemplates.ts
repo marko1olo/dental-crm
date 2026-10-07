@@ -109,7 +109,7 @@ export function treatmentCostEstimate(
         <thead>
           <tr>
             <th style="width: 5%;">№ п/п</th>
-            <th style="width: 12%;">Код (804н)</th>
+            <th style="width: 12%;">Код услуги</th>
             <th style="width: 33%;">Наименование услуги / материала</th>
             <th style="width: 14%;">Зуб / область</th>
             <th style="width: 6%;">Кол-во</th>

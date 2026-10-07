@@ -30,7 +30,7 @@ export function downloadPricelistCsv(items: readonly ServicePricelistItem[]): vo
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement('a');
 	link.setAttribute('href', url);
-	link.setAttribute('download', `DENTE_Pricelist_804n_${new Date().toISOString().slice(0, 10)}.csv`);
+	link.setAttribute('download', `DENTE_Pricelist_${new Date().toISOString().slice(0, 10)}.csv`);
 	document.body.appendChild(link);
 	link.click();
 	document.body.removeChild(link);
@@ -175,7 +175,7 @@ export const PricelistImportExportModal: React.FC<PricelistImportExportModalProp
 					vatExemptionArticle: 'пп. 2 п. 2 ст. 149 НК РФ',
 					isActive: true,
 					isArchived: false,
-					tags: ['импорт_804н'],
+					tags: ['импорт_номенклатура'],
 				};
 				addedList.push(newItem);
 			}
@@ -202,12 +202,46 @@ export const PricelistImportExportModal: React.FC<PricelistImportExportModalProp
 		}
 
 		if (result.validItems.length > 0) {
-			const existingMap = new Map(items.map((i) => [i.code804n, i]));
+			const updatedItems = [...items];
+			const idIndexMap = new Map<string, number>();
+			const signatureIndexMap = new Map<string, number>();
+
+			updatedItems.forEach((item, idx) => {
+				idIndexMap.set(item.id, idx);
+				const sig = `${item.code804n.trim().toUpperCase()}::${item.commercialTitle.trim().toLowerCase()}`;
+				signatureIndexMap.set(sig, idx);
+			});
+
+			let addedCount = 0;
+			let updatedCount = 0;
+
 			for (const imported of result.validItems) {
-				existingMap.set(imported.code804n, imported);
+				const sig = `${imported.code804n.trim().toUpperCase()}::${imported.commercialTitle.trim().toLowerCase()}`;
+				const existingIndexById = imported.id ? idIndexMap.get(imported.id) : undefined;
+				const existingIndexBySig = signatureIndexMap.get(sig);
+
+				const targetIndex = existingIndexById !== undefined ? existingIndexById : existingIndexBySig;
+
+				if (targetIndex !== undefined) {
+					const existing = updatedItems[targetIndex]!;
+					updatedItems[targetIndex] = {
+						...existing,
+						...imported,
+						id: existing.id,
+					};
+					updatedCount++;
+				} else {
+					updatedItems.push(imported);
+					idIndexMap.set(imported.id, updatedItems.length - 1);
+					signatureIndexMap.set(sig, updatedItems.length - 1);
+					addedCount++;
+				}
 			}
-			const merged = Array.from(existingMap.values());
-			onApplyImported(merged, `Импортировано ${result.validItems.length} позиций прейскуранта`);
+
+			onApplyImported(
+				updatedItems,
+				`Импортировано: ${addedCount} новых, ${updatedCount} обновлено (всего в каталоге: ${updatedItems.length})`,
+			);
 			if (importTimerRef.current) clearTimeout(importTimerRef.current);
 			importTimerRef.current = setTimeout(() => {
 				importTimerRef.current = null;

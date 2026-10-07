@@ -1,19 +1,10 @@
 /**
  * DENTE CRM — CBCT Honest Anatomical Dental Arch & Enamel Beads Engine
- *
- * Implements:
- * 1. Honest 2D Enamel Mass Centroids:
- *    c_x = sum(x * HU) / sum(HU), c_y = sum(y * HU) / sum(HU)
- *    computed strictly over the physical crown enamel/dentin volume.
- * 2. C2-continuous interpolating Catmull-Rom spline passing 100% strictly
- *    through genuine tooth centroids. ZERO artificial buccal deviation,
- *    zero forced symmetry, zero synthetic parabolas.
- * 3. Natural edentulous defect bridging along the alveolar ridge without
- *    inventing fake markers or placing phantom circles on bare bone.
- * 4. Anatomical boundaries: smooth distal termination at Tuber Maxillae
- *    and retromolar triangle, zero buccal flaring, zero ramal overshoot.
+ * 1. Honest 2D Enamel Mass Centroids: c = sum(p * HU) / sum(HU) strictly over crown enamel.
+ * 2. C2-continuous Catmull-Rom spline passing 100% strictly through genuine tooth centroids.
+ * 3. Natural edentulous defect bridging along alveolar ridge without fake phantom markers.
+ * 4. Anatomical boundaries: smooth distal termination at retromolar triangle / Tuber Maxillae.
  * 5. Small FOV sectional scan ridge tracing (targeted sectoral FOV).
- *
  * Governed by Mandate 8b (file size <= 800 lines).
  */
 
@@ -93,11 +84,8 @@ export function extractEnamelBeadsDistanceTransform(
 			const idx = y * width + x;
 			if (dist[idx]! > 0) {
 				dist[idx] = Math.min(
-					dist[idx]!,
-					dist[idx - 1]! + 1,
-					dist[(y - 1) * width + x]! + 1,
-					dist[(y - 1) * width + x - 1]! + 1.414,
-					dist[(y - 1) * width + x + 1]! + 1.414,
+					dist[idx]!, dist[idx - 1]! + 1, dist[(y - 1) * width + x]! + 1,
+					dist[(y - 1) * width + x - 1]! + 1.414, dist[(y - 1) * width + x + 1]! + 1.414,
 				);
 			}
 		}
@@ -108,11 +96,8 @@ export function extractEnamelBeadsDistanceTransform(
 			const idx = y * width + x;
 			if (dist[idx]! > 0) {
 				dist[idx] = Math.min(
-					dist[idx]!,
-					dist[idx + 1]! + 1,
-					dist[(y + 1) * width + x]! + 1,
-					dist[(y + 1) * width + x - 1]! + 1.414,
-					dist[(y + 1) * width + x + 1]! + 1.414,
+					dist[idx]!, dist[idx + 1]! + 1, dist[(y + 1) * width + x]! + 1,
+					dist[(y + 1) * width + x - 1]! + 1.414, dist[(y + 1) * width + x + 1]! + 1.414,
 				);
 			}
 		}
@@ -309,10 +294,15 @@ export function findAnteriorArchApexRobust(
 	const minX = originMm.x + fovMarginX;
 	const maxX = originMm.x + width * spX - fovMarginX;
 
-	// High-density center of mass across sagittal corridor
+	// High-density center of mass across anterior region (mandibular symphysis & anterior teeth).
+	// Restricting to the anterior 45% of the FOV prevents unilateral posterior molar loss or unilateral metal
+	// restorations from dragging the sagittal midline away from the incisors.
 	let sumWeight = 0;
 	let sumWeightX = 0;
+	const anteriorMaxY = minY + (maxY - minY) * 0.45;
 	for (let y = 0; y < height; y += 4) {
+		const worldY = originMm.y + y * spY;
+		if (worldY < minY || worldY > anteriorMaxY) continue;
 		const rowOffset = y * width;
 		for (let x = 0; x < width; x += 4) {
 			const hu = data[rowOffset + x] ?? -1000;
@@ -384,10 +374,9 @@ export function findAnteriorArchApexRobust(
 		if (incisorSumW > 50) {
 			const comX = incisorSumWX / incisorSumW;
 			const comY = incisorSumWY / incisorSumW;
-			const finalApexX = Math.abs(comX - midlineX) < 3.0 ? midlineX : comX;
 			return {
-				apex: { x: Number(finalApexX.toFixed(2)), y: Number(comY.toFixed(2)) },
-				midlineX,
+				apex: { x: Number(comX.toFixed(2)), y: Number(comY.toFixed(2)) },
+				midlineX: Number(comX.toFixed(2)),
 			};
 		}
 
@@ -419,6 +408,26 @@ export function findAnteriorArchApexRobust(
 		}
 	}
 
+	if (bestY < Infinity) {
+		let crestW = 0;
+		let crestWX = 0;
+		for (let sy = bestY; sy <= bestY + 8.0; sy += spY) {
+			for (let sx = midlineX - 12.0; sx <= midlineX + 12.0; sx += spX) {
+				const hu = sampleMipHUContinuous(mip, sx, sy);
+				if (hu >= 380) {
+					const w = hu;
+					crestW += w;
+					crestWX += w * sx;
+				}
+			}
+		}
+		const crestComX = crestW > 50 ? crestWX / crestW : midlineX;
+		return {
+			apex: { x: Number(crestComX.toFixed(2)), y: Number(bestY.toFixed(2)) },
+			midlineX: Number(crestComX.toFixed(2)),
+		};
+	}
+
 	const apexY = bestY < Infinity ? bestY : originMm.y + height * spY * 0.25;
 	return {
 		apex: { x: Number(midlineX.toFixed(2)), y: Number(apexY.toFixed(2)) },
@@ -426,17 +435,11 @@ export function findAnteriorArchApexRobust(
 	};
 }
 
-/**
- * Backward compatibility wrapper for fitOrthodonticParabola.
- */
+/** Backward compatibility wrapper for fitOrthodonticParabola. */
 export function fitOrthodonticParabola(
-	mip: AxialMIPSlab,
-	apex: Point2D,
-	midlineX: number,
-	jawType: "mandible" | "maxilla",
+	mip: AxialMIPSlab, _apex: Point2D, _midlineX: number, jawType: "mandible" | "maxilla",
 ): { curve: Point2D[]; a: number; b: number; xSpan: number } {
-	const res = detectHonestDentalArch(mip, jawType);
-	return { curve: [...res.curve.splinePointsMm], a: 0.015, b: 0, xSpan: 28.0 };
+	return { curve: [...detectHonestDentalArch(mip, jawType).curve.splinePointsMm], a: 0.015, b: 0, xSpan: 28.0 };
 }
 
 /**
@@ -638,42 +641,66 @@ export function detectHonestDentalArch(
 		let prevPt = { x: midlineX, y: apex.y };
 
 		for (const b of branch) {
-			const distFromMidline = Math.hypot(b.wx - midlineX, b.wy - apex.y);
+			const distFromMidlineX = Math.abs(b.wx - midlineX);
 			const stepFromPrev = teethList.length > 0
 				? Math.hypot(b.wx - prevPt.x, b.wy - prevPt.y)
-				: distFromMidline;
+				: distFromMidlineX;
 
 			let toothNum = lastNum + 1;
 
 			if (lastNum === 0) {
-				// Distance of first tooth from patient sagittal midline:
-				// Central incisor is within 8.5 mm of midline.
-				if (distFromMidline > 16.0) {
+				// Transverse distance of first tooth from patient sagittal midline:
+				// Central incisor (11/21/31/41) center is ~2.5..3.0 mm from midline (threshold 6.2 mm).
+				// Lateral incisor (12/22/32/42) center is ~7.5..9.5 mm from midline.
+				// Canine (13/23/33/43) is > 13.0 mm (when central and lateral incisors missing).
+				if (distFromMidlineX > 13.0) {
 					toothNum = 3; // canine (central & lateral incisors missing)
-				} else if (distFromMidline > 8.5) {
+				} else if (distFromMidlineX > 6.2) {
 					toothNum = 2; // lateral incisor (central incisor missing)
 				} else {
 					toothNum = 1; // central incisor (11/21/31/41)
 				}
-			} else {
-				// Relative gap between consecutive teeth along the dental arch:
-				// Normal adjacent teeth are spaced ~ 5..10 mm apart.
-				// In edentulous defects:
-				// - Gap 10.5 .. 18 mm => exactly 1 missing tooth! (step = +2)
-				// - Gap 18.0 .. 28 mm => exactly 2 missing teeth! (step = +3)
-				// - Gap >= 28 mm => 3 missing teeth! (step = +4)
-				if (stepFromPrev >= 28.0) {
-					toothNum = lastNum + 4;
-				} else if (stepFromPrev >= 18.0) {
+			} else if (lastNum <= 2) {
+				// Incisors (normal spacing: 5.5..8.5 mm)
+				if (stepFromPrev >= 22.0) {
 					toothNum = lastNum + 3;
-				} else if (stepFromPrev >= 10.5) {
+				} else if (stepFromPrev >= 12.0) {
+					toothNum = lastNum + 2;
+				} else {
+					toothNum = lastNum + 1;
+				}
+			} else if (lastNum <= 4) {
+				// Canines and premolars (normal spacing: 7.0..10.5 mm)
+				if (stepFromPrev >= 25.0) {
+					toothNum = lastNum + 3;
+				} else if (stepFromPrev >= 14.5) {
+					toothNum = lastNum + 2;
+				} else {
+					toothNum = lastNum + 1;
+				}
+			} else {
+				// Molars (normal spacing: 10.0..13.5 mm)
+				// Missing 1 molar gap (e.g. 45 -> 47): ~21..25 mm
+				// Missing 2 molars gap (e.g. 45 -> 48): ~32..37 mm
+				if (stepFromPrev >= 42.0) {
+					toothNum = lastNum + 4;
+				} else if (stepFromPrev >= 26.0) {
+					toothNum = lastNum + 3;
+				} else if (stepFromPrev >= 16.5) {
 					toothNum = lastNum + 2;
 				} else {
 					toothNum = lastNum + 1;
 				}
 			}
 
-			if (toothNum > 8) continue;
+			// Clamping: if terminal bead steps slightly beyond 8 due to defect jumps, lock to 8
+			if (toothNum > 8) {
+				if (lastNum < 8) {
+					toothNum = 8;
+				} else {
+					continue;
+				}
+			}
 			if (toothNum <= lastNum) toothNum = lastNum + 1;
 			if (toothNum > 8) continue;
 
@@ -716,7 +743,28 @@ export function detectHonestDentalArch(
 	// 6. Natural sequence of real tooth control points:
 	//    [posterior right (e.g. 48..47) ... anterior right (41) -> anterior left (31) ... posterior left (37..38)]
 	const rightReversed = [...rightAnchors].reverse();
-	const chain = [...rightReversed, ...leftAnchors];
+	let chain = [...rightReversed, ...leftAnchors];
+
+	// Natural bridging for frontal adentia:
+	// When central incisors 41 and 31 are both missing, insert the detected anterior alveolar
+	// bone crest apex into the spline chain to prevent the Catmull-Rom curve from flattening
+	// across the canine chord and cutting through the lingual cortical plate
+	const hasCentralIncisors = rightAnchors.some((a) => a.toothFdi.endsWith("1")) ||
+		leftAnchors.some((a) => a.toothFdi.endsWith("1"));
+
+	if (!hasCentralIncisors && rightAnchors.length > 0 && leftAnchors.length > 0) {
+		const apexAnchor: HonestToothAnchor = {
+			id: "ha_crest_apex",
+			toothFdi: jawType === "mandible" ? "41_31_defect" : "11_21_defect",
+			labelRu: "Гребень",
+			positionMm: { x: apex.x, y: apex.y },
+			isQuadrantRight: true,
+			isMissing: true,
+			peakHU: 500,
+			status: "missing_defect",
+		};
+		chain = [...rightReversed, apexAnchor, ...leftAnchors];
+	}
 
 	// 7. Natural sequence of genuine tooth control points for C2-continuous Catmull-Rom spline:
 	// In edentulous gaps (e.g. missing 26 between 25 and 27), Catmull-Rom directly interpolates

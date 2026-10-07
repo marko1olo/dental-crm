@@ -309,24 +309,24 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex flex-col justify-start items-center p-0 sm:p-4 animate-in fade-in duration-200"
+			className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex flex-col justify-start items-center p-0 sm:p-4 animate-in fade-in duration-200"
 			data-testid="modal-a4-document-preview"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Предварительный просмотр печатных документов A4"
 		>
-			<div className="relative w-full max-w-[1020px] bg-slate-100 dark:bg-slate-900 rounded-none sm:rounded-xl shadow-2xl border border-slate-300 dark:border-slate-800 flex flex-col my-auto overflow-hidden">
+			<div className="relative w-full max-w-[1020px] bg-[var(--paper)] text-[var(--ink)] rounded-none sm:rounded-xl shadow-2xl border border-[var(--line)] flex flex-col my-auto overflow-hidden">
 				{/* Top Modal Header */}
-				<header className="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">
+				<header className="flex items-center justify-between px-4 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)]">
+					<div className="flex items-center gap-2.5">
+						<div className="w-8 h-8 rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] flex items-center justify-center font-bold shrink-0">
 							<FileText size={18} />
 						</div>
 						<div>
-							<h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+							<h2 className="text-[14px] font-bold text-[var(--ink)] leading-tight">
 								Официальный документооборот клиники · Стандарт A4
 							</h2>
-							<p className="text-xs text-slate-500 dark:text-slate-400">
+							<p className="text-[12px] text-[var(--muted)]">
 								Пациент: <strong>{pt.fullName}</strong> · Карта: <strong>{pt.cardNumber}</strong> · {todayRu}
 							</p>
 						</div>
@@ -336,17 +336,17 @@ export const DocumentA4PrintPreviewModal: React.FC<DocumentA4PrintPreviewModalPr
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+							className="min-w-[32px] min-h-[32px] w-8 h-8 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] rounded-lg hover:bg-[var(--paper)] transition cursor-pointer"
 							data-testid="btn-close-a4-preview-modal"
 							aria-label="Закрыть окно"
 						>
-							<X size={20} />
+							<X size={18} />
 						</button>
 					</div>
 				</header>
 
 				{/* Modal Body: A4 Sheet */}
-				<main className="p-0 sm:p-4 max-h-[85vh] overflow-y-auto bg-slate-200 dark:bg-slate-950 flex justify-center">
+				<main className="p-0 sm:p-4 max-h-[85vh] overflow-y-auto bg-[var(--paper-soft)] flex justify-center">
 					<ProfessionalDocumentA4Sheet
 						activeTab={activeTab}
 						onTabChange={setActiveTab}

@@ -127,7 +127,7 @@ export function PrimaryIntakePackageModal({
 		if (!documentsByKind.has("patient_intake_questionnaire")) {
 			onCreateDocument("patient_intake_questionnaire");
 		}
-		showToast("Анкета здоровья заполнена нормой: соматически здоров, противопоказаний нет (1 клик)", "success", 3500);
+		showToast("Анкета здоровья заполнена нормой: соматически здоров, противопоказаний нет", "success", 3500);
 	};
 
 	const handleBatchPrint = () => {
@@ -323,10 +323,10 @@ export function PrimaryIntakePackageModal({
 										color: isNormApplied ? "var(--success-fg, #10b981)" : "var(--teal, #0d9488)",
 										fontWeight: 600,
 									}}
-									title="Заполнить все 10 пунктов соматической анкеты нормой в 1 клик: аллергий нет, анестетики переносит, гемостаз в норме"
+									title="Заполнить все 10 пунктов соматической анкеты физиологической нормой: аллергий нет, анестетики переносит, гемостаз в норме"
 								>
 									<Sparkles size={14} aria-hidden="true" />
-									<span>{isNormApplied ? "Анкета: соматически здоров (норма)" : "Заполнить анкету: Соматически здоров / норма (1 клик)"}</span>
+									<span>{isNormApplied ? "Анкета: соматически здоров (норма)" : "Заполнить анкету: Соматически здоров / норма"}</span>
 								</button>
 								<span className="document-patient-badge">
 									<ShieldCheck size={14} aria-hidden="true" />
@@ -385,7 +385,7 @@ export function PrimaryIntakePackageModal({
 												title="Заполнить анкету соматической нормой"
 											>
 												<Sparkles size={13} aria-hidden="true" />
-												<span>{isNormApplied ? "Норма" : "Норма (1 клик)"}</span>
+												<span>{isNormApplied ? "Норма" : "Заполнить нормой"}</span>
 											</button>
 										)}
 
@@ -467,7 +467,7 @@ export function PrimaryIntakePackageModal({
 								cursor: "pointer",
 								border: "none",
 							}}
-							title="1-Клик печать всего комплекта (Договор + Согласие ИДС + Персональные данные + Анкета здоровья) под ручную подпись"
+							title="Печать всего комплекта (Договор + Согласие ИДС + Персональные данные + Анкета здоровья) под ручную подпись"
 						>
 							<Printer size={16} aria-hidden="true" />
 							<span>Распечатать весь пакет (4 бланка)</span>
@@ -529,7 +529,7 @@ export function PrimaryIntakePackageModal({
 								title="Заполнить анкету здоровья нормой (аллергий нет, противопоказаний нет)"
 							>
 								<Sparkles size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span>{isNormApplied ? "Анкета в норме" : "Анкета: норма (1 клик)"}</span>
+								<span>{isNormApplied ? "Анкета в норме" : "Анкета: заполнить нормой"}</span>
 							</button>
 							<button
 								type="button"

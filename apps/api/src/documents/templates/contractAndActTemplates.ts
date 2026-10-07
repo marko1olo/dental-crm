@@ -317,7 +317,7 @@ export function financialServiceTable(
       <thead>
         <tr>
           <th style="width: 5%;">№ п/п</th>
-          <th style="width: 13%;">Код (804н)</th>
+          <th style="width: 13%;">Код услуги</th>
           <th style="width: 32%;">Наименование медицинской услуги</th>
           <th style="width: 14%;">Зуб / область</th>
           <th style="width: 6%;">Кол-во</th>
@@ -471,7 +471,7 @@ export function paidMedicalServicesContract(
     <h2>3. Стоимость услуг, сроки и порядок расчетов</h2>
     <div class="legal-body">
       <p class="legal-clause">3.1. Предварительная (ориентировочная) стоимость медицинских услуг по настоящему Договору составляет: <strong>${payload.estimatedTotalRub > 0 ? escapeHtml(rub(payload.estimatedTotalRub)) : "_______ руб. ___ коп."}</strong>. Сумма прописью: <strong>${payload.estimatedTotalRub > 0 && totalWords ? escapeHtml(totalWords) : "________________________________________________"}</strong>. НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ).</p>
-      <p class="legal-clause">3.2. Согласованный перечень медицинских услуг с кодами по Номенклатуре медицинских услуг (Приказ Минздрава России № 804н):</p>
+      <p class="legal-clause">3.2. Согласованный перечень медицинских услуг:</p>
       ${financialServiceTable(document, context, true)}
       <p class="legal-clause">3.3. Порядок оплаты: <strong>${escapeHtml(payload.paymentTerms)}</strong>. Оплата производится безналичным расчетом либо наличными денежными средствами в кассу Исполнителя с обязательной выдачей фискального кассового чека.</p>
       <p class="legal-clause">3.4. Правила изменения стоимости и объема услуг: <strong>${escapeHtml(payload.priceChangeRules)}</strong>. Оказание дополнительных платных услуг оформляется дополнительным соглашением к договору до начала их оказания. Экстренная медицинская помощь при угрозе жизни оказывается без взимания дополнительной платы.</p>
@@ -531,7 +531,7 @@ export function paidMedicalServicesContract(
       ${row("Ориентировочная сумма", rub(treatmentPlanTotalRub(document, context)))}
       ${row("Правовая основа", "Правила предоставления медицинскими организациями платных медицинских услуг (ПП РФ от 11.05.2023 № 736), ст. 84 Федерального закона № 323-ФЗ")}
     </table>
-    <h2>2. Перечень услуг и стоимость (Номенклатура 804н)</h2>
+    <h2>2. Перечень услуг и стоимость</h2>
     ${financialServiceTable(document, context, true)}
     <h2>3. Порядок оказания, оплаты и гарантии</h2>
     ${checkList([
@@ -575,7 +575,7 @@ export function completedWorksAct(
       ${row("Замечания и претензии", payload.patientClaimsText?.trim() || "Медицинские услуги оказаны качественно, в полном объеме и в срок; замечаний и претензий нет.")}
     </table>
 
-    <h2>Перечень выполненных услуг (Номенклатура 804н)</h2>
+    <h2>Перечень выполненных услуг</h2>
     ${financialServiceTable(document, context, true)}
 
     <div class="total-words-box">
@@ -606,7 +606,7 @@ export function completedWorksAct(
     <div class="notice">
       Пациент подтверждает надлежащее получение стоматологических услуг. Замечания по объему, срокам и качеству фиксируются до подписания акта.
     </div>
-    <h2>Перечень оказанных услуг (Номенклатура 804н)</h2>
+    <h2>Перечень оказанных услуг</h2>
     ${financialServiceTable(document, context, true)}
     <table>
       ${row("Фактически оплачено", rub(paidTotalForDocument(document, context) || document.totalAmountRub))}

@@ -289,11 +289,11 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 					<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-1.5">
 						<div className="flex items-center justify-between gap-2">
 							<span className="font-bold text-[var(--ink)] text-sm">{study.title}</span>
-							<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]">
+							<span className="px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]">
 								{study.kind}
 							</span>
 						</div>
-						<div className="flex items-center gap-3 text-[var(--muted)] text-[11px] flex-wrap">
+						<div className="flex items-center gap-3 text-[var(--muted)] text-xs flex-wrap">
 							<span>Серия: {study.seriesDescription || study.sourceName}</span>
 							{study.sliceCount && <span>Срезов: {study.sliceCount}</span>}
 							<span>Дата: {study.capturedAt ? new Date(study.capturedAt).toLocaleDateString("ru-RU") : "—"}</span>
@@ -304,7 +304,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						{/* Блок 1: DICOM Заголовок */}
 						<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 flex flex-col gap-2">
-							<div className="flex items-center gap-1.5 text-[var(--muted)] font-semibold text-[11px]">
+							<div className="flex items-center gap-1.5 text-[var(--muted)] font-semibold text-xs">
 								<FileText className="w-3.5 h-3.5 text-blue-400" />
 								<span>Данные из DICOM томографа:</span>
 							</div>
@@ -312,11 +312,11 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 								<div className="font-bold text-sm text-[var(--ink)]" data-testid="dicom-patient-name">
 									{dicomName}
 								</div>
-								<div className="text-[var(--muted)] text-[11px] mt-0.5">
+								<div className="text-[var(--muted)] text-xs mt-0.5">
 									Дата рожд: <span className="font-medium text-[var(--ink)]">{dicomBirth}</span>
 								</div>
 								{study.dicomPatientId && (
-									<div className="text-[var(--muted)] text-[10px] mt-0.5 truncate">
+									<div className="text-[var(--muted)] text-xs mt-0.5 truncate">
 										DICOM ID: {study.dicomPatientId}
 									</div>
 								)}
@@ -326,12 +326,12 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 						{/* Блок 2: Сопоставленный пациент клиники */}
 						<div className="p-3.5 rounded-xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-950/20 flex flex-col gap-2">
 							<div className="flex items-center justify-between gap-1.5">
-								<div className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 font-semibold text-[11px]">
+								<div className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400 font-semibold text-xs">
 									<UserCheck className="w-3.5 h-3.5" />
 									<span>Пациент в базе клиники:</span>
 								</div>
 								{confidence > 0 && (
-									<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-500/20 text-teal-600 dark:text-teal-300">
+									<span className="px-2 py-0.5 rounded-md text-xs font-bold bg-teal-500/20 text-teal-700 dark:text-teal-300">
 										{confidence}%
 									</span>
 								)}
@@ -340,7 +340,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 								<div className="font-bold text-sm text-[var(--ink)]" data-testid="crm-matched-patient-name">
 									{selectedPatient ? selectedPatient.fullName : currentPatientName}
 								</div>
-								<div className="text-[var(--muted)] text-[11px] mt-0.5">
+								<div className="text-[var(--muted)] text-xs mt-0.5">
 									{selectedPatient ? (
 										<span className="text-teal-600 dark:text-teal-400 font-medium">
 											Выбран для новой привязки • {selectedPatient.cardNumber || selectedPatient.phone || "Без тел."}
@@ -372,27 +372,37 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 								<button
 									type="button"
 									onClick={() => setShowSearchBox(false)}
-									className="text-[11px] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									className="text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 								>
 									Отмена
 								</button>
 							</div>
 
-							<div className="relative">
-								<Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+							<div className="dente-search-wrap w-full">
+								<Search className="dente-search-icon" />
 								<input
 									type="text"
 									value={searchQuery}
 									onChange={(e) => handleSearchPatients(e.target.value)}
 									placeholder="Введите ФИО, телефон или номер карты..."
-									className="w-full h-8 pl-8 pr-3 rounded-lg text-xs bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-hidden focus:border-teal-500"
+									className="dente-search-input"
 									autoFocus
 								/>
+								{searchQuery && (
+									<button
+										type="button"
+										onClick={() => handleSearchPatients("")}
+										className="dente-search-clear"
+										aria-label="Очистить поиск"
+									>
+										✕
+									</button>
+								)}
 							</div>
 
 							{isSearching && (
-								<div className="text-[11px] text-[var(--muted)] flex items-center gap-1.5 py-1">
-									<RefreshCw className="w-3 h-3 animate-spin" />
+								<div className="text-xs text-[var(--muted)] flex items-center gap-1.5 py-1">
+									<RefreshCw className="w-3.5 h-3.5 animate-spin" />
 									<span>Поиск в реестре пациентов...</span>
 								</div>
 							)}
@@ -411,12 +421,12 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 										>
 											<div className="min-w-0">
 												<div className="font-bold text-[var(--ink)] truncate">{p.fullName}</div>
-												<div className="text-[10px] text-[var(--muted)]">
+												<div className="text-xs text-[var(--muted)]">
 													{p.birthDate ? `${p.birthDate} • ` : ""}
 													{p.phone || p.cardNumber || "Без контактов"}
 												</div>
 											</div>
-											<span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 shrink-0">
+											<span className="text-xs font-semibold text-teal-600 dark:text-teal-400 shrink-0">
 												Выбрать
 											</span>
 										</button>
@@ -428,7 +438,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 						<button
 							type="button"
 							onClick={() => setShowSearchBox(true)}
-							className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500 transition-colors text-xs font-semibold cursor-pointer"
+							className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-teal-500 transition-colors text-[13px] font-medium cursor-pointer shadow-2xs"
 							data-testid="btn-open-patient-search"
 						>
 							<Search className="w-3.5 h-3.5" />
@@ -445,7 +455,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 								type="button"
 								onClick={handleUnbind}
 								disabled={isSubmitting}
-								className="h-8 px-3 text-xs font-semibold rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+								className="h-8 px-3 text-[13px] font-medium rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
 								data-testid="btn-unbind-patient"
 								title="Отвязать исследование от текущего пациента"
 							>
@@ -459,7 +469,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 px-3.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
+							className="h-8 px-3.5 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer shadow-2xs"
 						>
 							Отмена
 						</button>
@@ -468,7 +478,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 							type="button"
 							onClick={handleConfirmBinding}
 							disabled={isSubmitting || (!isCurrentlyBound && !selectedPatient)}
-							className="h-8 px-4 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+							className="h-8 px-4 text-[13px] font-semibold rounded-lg bg-[var(--teal)] hover:opacity-95 text-[var(--on-teal,#ffffff)] shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
 							data-testid="btn-confirm-binding"
 						>
 							<Check className="w-3.5 h-3.5" />

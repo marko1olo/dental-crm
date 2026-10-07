@@ -85,70 +85,54 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 				<div className="space-y-1">
 					<div className="flex items-center gap-2 flex-wrap">
 						<span
-							className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider"
-							style={{
-								background: "var(--accent-soft, rgba(13, 148, 136, 0.15))",
-								color: "var(--accent, #0d9488)",
-							}}
+							className="px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30"
 						>
 							{modality || "КЛКТ 3D"}
 						</span>
 
 						{isAutoBound ? (
 							<span
-								className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold"
-								style={{
-									background: "var(--ok-soft, rgba(16, 185, 129, 0.12))",
-									color: "var(--ok-fg, #059669)",
-								}}
+								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
 							>
-								<CheckCircle className="w-3 h-3" />
+								<CheckCircle className="w-3.5 h-3.5" />
 								Автопривязано ({bindingConfidence}%)
 							</span>
 						) : (
 							<span
-								className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold"
-								style={{
-									background: "var(--warn-soft, rgba(234, 179, 8, 0.12))",
-									color: "var(--warn-fg, #ca8a04)",
-								}}
+								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40"
 							>
-								<AlertCircle className="w-3 h-3" />
+								<AlertCircle className="w-3.5 h-3.5" />
 								{bindingConfidence}% соответствие
 							</span>
 						)}
 
-						<span className="text-xs opacity-60 flex items-center gap-1">
-							<Calendar className="w-3 h-3" />
+						<span className="text-xs text-[var(--muted)] flex items-center gap-1">
+							<Calendar className="w-3.5 h-3.5" />
 							{formattedDate}
 						</span>
 					</div>
 
-					<h3 className="font-bold text-sm leading-tight tracking-tight">
+					<h3 className="font-bold text-sm leading-tight tracking-tight text-[var(--ink)]">
 						{title}
 					</h3>
 
 					{patientName && (
-						<p className="text-xs opacity-75">
-							Пациент: <strong className="font-semibold">{patientName}</strong>
+						<p className="text-xs text-[var(--muted)]">
+							Пациент: <strong className="font-semibold text-[var(--ink)]">{patientName}</strong>
 						</p>
 					)}
 				</div>
 
-				<div className="flex items-center gap-1.5 flex-wrap">
+				<div className="flex items-center gap-2 flex-wrap">
 					{onOpenControl && (
 						<button
 							type="button"
 							data-testid={`btn-patient-study-control-${studyId}`}
 							onClick={() => onOpenControl(studyId)}
-							className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
-							style={{
-								borderColor: "var(--line, #e2e8f0)",
-								color: "var(--ink, #0f172a)",
-							}}
+							className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer shadow-2xs"
 							title="Проверить сопоставление с DICOM"
 						>
-							<Settings className="w-3.5 h-3.5 opacity-70" />
+							<Settings className="w-3.5 h-3.5 text-[var(--muted)]" />
 							<span>Контроль</span>
 						</button>
 					)}
@@ -164,10 +148,7 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 								setIsViewerOpen(true);
 							}
 						}}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all duration-150 cursor-pointer hover:opacity-95 active:scale-95"
-						style={{
-							background: "var(--accent, #0d9488)",
-						}}
+						className="inline-flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-[var(--teal)] text-[var(--on-teal,#ffffff)] shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
 					>
 						<Box className="w-3.5 h-3.5" />
 						<span>3D КЛКТ Студия</span>
@@ -180,13 +161,9 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 							setSelectedViewMode("sectioning");
 							setIsViewerOpen(true);
 						}}
-						className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
-						style={{
-							borderColor: "var(--line, #e2e8f0)",
-							color: "var(--ink, #0f172a)",
-						}}
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer shadow-2xs"
 					>
-						<Grid3X3 className="w-3.5 h-3.5 opacity-70" />
+						<Grid3X3 className="w-3.5 h-3.5 text-[var(--muted)]" />
 						<span>Раздел (Кросс-секции)</span>
 					</button>
 
@@ -197,13 +174,9 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 							setSelectedViewMode("2d");
 							setIsViewerOpen(true);
 						}}
-						className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
-						style={{
-							borderColor: "var(--line, #e2e8f0)",
-							color: "var(--ink, #0f172a)",
-						}}
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer shadow-2xs"
 					>
-						<Eye className="w-3.5 h-3.5 opacity-70" />
+						<Eye className="w-3.5 h-3.5 text-[var(--muted)]" />
 						<span>2D Срез</span>
 					</button>
 				</div>
@@ -211,36 +184,32 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 
 			{/* Параметры томографии (вокслы, срезы, матрица) */}
 			<div
-				className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 rounded-xl border text-xs"
-				style={{
-					background: "var(--paper-subtle, rgba(0, 0, 0, 0.02))",
-					borderColor: "var(--line, #e2e8f0)",
-				}}
+				className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs"
 			>
 				<div>
-					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Томограф</span>
-					<strong className="truncate block font-semibold">{manufacturer || "Стандартный DICOM"}</strong>
+					<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Томограф</span>
+					<strong className="truncate block font-semibold text-[var(--ink)]">{manufacturer || "Стандартный DICOM"}</strong>
 				</div>
 				<div>
-					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Кол-во срезов</span>
-					<strong className="block font-semibold flex items-center gap-1">
-						<Layers className="w-3 h-3 opacity-70" />
+					<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Кол-во срезов</span>
+					<strong className="block font-semibold text-[var(--ink)] flex items-center gap-1">
+						<Layers className="w-3 h-3 text-[var(--muted)]" />
 						{sliceCount || "—"}
 					</strong>
 				</div>
 				<div>
-					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Размер кадра</span>
-					<strong className="block font-semibold">{dimensions || "—"}</strong>
+					<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Размер кадра</span>
+					<strong className="block font-semibold text-[var(--ink)]">{dimensions || "—"}</strong>
 				</div>
 				<div>
-					<span className="block opacity-60 text-[10px] uppercase tracking-wide">Размер вокселя</span>
-					<strong className="block font-semibold">{voxelSpacing || "—"}</strong>
+					<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Размер вокселя</span>
+					<strong className="block font-semibold text-[var(--ink)]">{voxelSpacing || "—"}</strong>
 				</div>
 			</div>
 
 			{/* Нижняя панель действий */}
 			<div className="flex items-center justify-between pt-1 text-xs">
-				<span className="text-[11px] opacity-60 truncate max-w-xs" title={storagePath ?? ""}>
+				<span className="text-xs text-[var(--muted)] truncate max-w-xs" title={storagePath ?? ""}>
 					{storagePath ? `Путь: ${storagePath}` : ""}
 				</span>
 
@@ -249,9 +218,9 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 						<button
 							type="button"
 							onClick={() => onAttachToVisit(studyId)}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+							className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 transition-colors cursor-pointer shadow-2xs"
 						>
-							<FileText className="w-3 h-3 text-teal-600" />
+							<FileText className="w-3.5 h-3.5 text-teal-600" />
 							<span>В медицинскую карту</span>
 						</button>
 					)}

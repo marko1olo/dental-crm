@@ -133,7 +133,7 @@ describe("Consent SSOT Engine Suite (323-ФЗ, 1051н, 152-ФЗ, Mandates 8e & 8
 			assert.equal(result.isCito, true);
 			// Врачебная автономия (Мандат 8e & 8n): спасение жизни приоритетно!
 			assert.equal(result.canProceed, true, "CITO must allow doctor to proceed without disabled buttons");
-			assert.ok(result.warningTitle.includes("CITO"), "Title must highlight emergency care protocol");
+			assert.ok(result.warningTitle.includes("Оказание экстренной помощи по острой боли"), "Title must highlight emergency care protocol");
 			assert.ok(result.legalRiskNotice.includes("323-ФЗ"), "Legal notice must cite emergency care statute 323-FZ");
 		});
 	});

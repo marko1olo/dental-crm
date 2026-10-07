@@ -50,17 +50,37 @@ import {
 	drawPanoramicOverlay,
 	drawCrossSectionOverlay,
 } from "./cbctCurvedOverlayRenderers";
-import { CbctWorkerBridge } from "./cbctWorkerBridge";
+import { renderAllSliceOverlays } from "./cbctSliceOverlaysRenderer";
+import { CbctWorkerBridge, isStaleSliceRequestError } from "./cbctWorkerBridge";
 import {
 	getSharedCbctGlContext,
 	disposeSharedCbctGlContext,
 } from "./webgl/CbctVolumeGlContext";
+import {
+	loadDoctorCbctSettings,
+	type DoctorCbctDefaultSettings,
+} from "../cbctLutMath";
+import {
+	CBCT_ADAPTIVE_INTERACTION_DEBOUNCE_MS,
+	CBCT_INTERACTION_EVENT,
+	notifyCbctSliceInteraction,
+	resolveAdaptiveInterpolationMethod,
+	useCbctAdaptiveInteraction,
+} from "./cbctAdaptiveSlicePipeline";
+
+export {
+	CBCT_ADAPTIVE_INTERACTION_DEBOUNCE_MS,
+	CBCT_INTERACTION_EVENT,
+	notifyCbctSliceInteraction,
+	resolveAdaptiveInterpolationMethod,
+};
 
 export interface UseCbctSliceRendererParams {
 	isOpen: boolean;
 	volume: CbctVoxelVolume | null;
 	crosshairMm: Point3D;
 	obliqueAngles: ObliqueRotationAngles;
+	notifySliceInteractionRef?: React.MutableRefObject<(() => void) | null>;
 	windowWidth: number;
 	windowLevel: number;
 	invertColors: boolean;
@@ -263,6 +283,111 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 	const pendingRafRef = useRef<number | null>(null);
 	const transformsRef = useRef(transforms);
 	transformsRef.current = transforms;
+	const isTabHiddenRef = useRef<boolean>(false);
+	const [forceSliceRenderTick, setForceSliceRenderTick] = React.useState<number>(0);
+	const [doctorCbctDefaults, setDoctorCbctDefaults] = React.useState<DoctorCbctDefaultSettings>(() =>
+		loadDoctorCbctSettings(),
+	);
+
+	// Synchronize with doctor defaults changes (interpolation method, thicknesses)
+	useEffect(() => {
+		const handleDefaultsUpdate = (e: Event) => {
+			const detail = (e as CustomEvent<DoctorCbctDefaultSettings>).detail;
+			if (detail) {
+				setDoctorCbctDefaults(detail);
+			} else {
+				setDoctorCbctDefaults(loadDoctorCbctSettings());
+			}
+			setForceSliceRenderTick((t) => t + 1);
+		};
+		if (typeof window !== "undefined") {
+			window.addEventListener("dente:cbct-defaults-updated", handleDefaultsUpdate);
+		}
+		return () => {
+			if (typeof window !== "undefined") {
+				window.removeEventListener("dente:cbct-defaults-updated", handleDefaultsUpdate);
+			}
+		};
+	}, []);
+
+	// Tab Visibility Hibernation: cancel ongoing render loops when tab is hidden
+	useEffect(() => {
+		const onVisibilityChange = () => {
+			const hidden = typeof document !== "undefined" && document.visibilityState === "hidden";
+			isTabHiddenRef.current = hidden;
+			if (hidden) {
+				if (pendingRafRef.current !== null) {
+					safeCancelAnimFrame(pendingRafRef.current);
+					pendingRafRef.current = null;
+				}
+			} else {
+				// Smooth restart on tab restore: schedule 1 slice redraw pass
+				setForceSliceRenderTick((t) => t + 1);
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", onVisibilityChange);
+		}
+		return () => {
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", onVisibilityChange);
+			}
+		};
+	}, []);
+
+	// Two-Stage Adaptive Interaction Pipeline (FEAT-010):
+	// Stage 1 (0–80 ms during active scroll/drag): hardware bilinear (120+ FPS)
+	// Stage 2 (pause > 80 ms): refine slice with doctor's selected Lanczos-3 / Bilateral
+	const { isInteractingRef, notifySliceInteraction, dispose: disposeAdaptiveInteraction } =
+		useCbctAdaptiveInteraction({
+			debounceMs: CBCT_ADAPTIVE_INTERACTION_DEBOUNCE_MS,
+			onSettled: () => {
+				setForceSliceRenderTick((t) => t + 1);
+			},
+		});
+
+	if (params.notifySliceInteractionRef) {
+		params.notifySliceInteractionRef.current = notifySliceInteraction;
+	}
+
+	// Automatic trigger on focal coordinate changes
+	const prevCrosshairRef = useRef(crosshairMm);
+	const prevObliqueRef = useRef(obliqueAngles);
+	useEffect(() => {
+		const prevC = prevCrosshairRef.current;
+		const prevO = prevObliqueRef.current;
+		const isMoved =
+			prevC.x !== crosshairMm.x ||
+			prevC.y !== crosshairMm.y ||
+			prevC.z !== crosshairMm.z ||
+			prevO.axialAngleDeg !== obliqueAngles.axialAngleDeg ||
+			prevO.coronalTiltDeg !== obliqueAngles.coronalTiltDeg ||
+			prevO.sagittalTiltDeg !== obliqueAngles.sagittalTiltDeg;
+
+		if (isMoved) {
+			prevCrosshairRef.current = crosshairMm;
+			prevObliqueRef.current = obliqueAngles;
+			notifySliceInteraction();
+		}
+	}, [crosshairMm, obliqueAngles, notifySliceInteraction]);
+
+	// WebGL Context Lost & Restored Subscriptions
+	useEffect(() => {
+		const glContext = getSharedCbctGlContext();
+		const unsubLost = glContext.addContextLostListener(() => {
+			// Context lost: force slice re-render so worker fallback kicks in without black screen
+			setForceSliceRenderTick((t) => t + 1);
+		});
+		const unsubRestored = glContext.addContextRestoredListener(() => {
+			// Context restored: force slice re-render on revived hardware GPU
+			setForceSliceRenderTick((t) => t + 1);
+		});
+		return () => {
+			unsubLost();
+			unsubRestored();
+		};
+	}, []);
 
 	// Deterministic release of offscreen canvas backing stores and bridge on modal close or unmount
 	useEffect(() => {
@@ -271,6 +396,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				safeCancelAnimFrame(pendingRafRef.current);
 				pendingRafRef.current = null;
 			}
+			disposeAdaptiveInteraction();
 			if (bridgeRef.current) {
 				bridgeRef.current.dispose();
 				bridgeRef.current = null;
@@ -289,11 +415,11 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		return () => {
 			releaseOffscreens();
 		};
-	}, [isOpen]);
+	}, [isOpen, disposeAdaptiveInteraction]);
 
 	// LAYER 1a: HARDWARE GPU WEBGL2 (PRIORITY) & ASYNCHRONOUS WEB WORKER (FALLBACK) MPR SLICE EXTRACTION
 	useEffect(() => {
-		if (!volume || !isOpen) return;
+		if (!volume || !isOpen || isTabHiddenRef.current) return;
 
 		const reqId = ++latestRenderReqIdRef.current;
 
@@ -304,7 +430,13 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 
 		pendingRafRef.current = safeRequestAnimFrame(() => {
 			pendingRafRef.current = null;
-			if (!isOpen || !volume) return;
+			if (!isOpen || !volume || isTabHiddenRef.current) return;
+
+			const targetMethod = doctorCbctDefaults.interpolationMethod ?? "bilinear";
+			const effectiveInterpolation = resolveAdaptiveInterpolationMethod(
+				targetMethod,
+				isInteractingRef.current,
+			);
 
 			// LAYER 1a (Hardware GPU WebGL2 Priority — < 0.5 ms instantaneous MPR rendering, CPU sleeps)
 			const glContext = getSharedCbctGlContext();
@@ -329,7 +461,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 						invert: invertColors,
 						slabMode,
 						slabThicknessMm,
-						interpolation: "trilinear",
+						interpolation: effectiveInterpolation,
 						gamma: 1.50,
 						useSoftKnee: false,
 						softKneeCeiling: 215.0,
@@ -387,7 +519,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 						invert: invertColors,
 						slabMode,
 						slabThicknessMm,
-						interpolation: "trilinear",
+						interpolation: effectiveInterpolation === "nearest" ? "nearest" : "trilinear",
 						gamma: 1.50,
 						useSoftKnee: false,
 						softKneeCeiling: 215.0,
@@ -430,6 +562,9 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 					);
 				})
 				.catch((err) => {
+					if (isStaleSliceRequestError(err)) {
+						return;
+					}
 					console.warn("[useCbctSliceRenderer] Background slice render error:", err);
 				});
 		});
@@ -443,7 +578,8 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 	}, [
 		volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors,
 		slabMode, slabThicknessMm, maximizedViewport, viewLayout, layoutBurstCount, studioMode,
-		axialBaseCanvasRef, coronalBaseCanvasRef, sagittalBaseCanvasRef,
+		axialBaseCanvasRef, coronalBaseCanvasRef, sagittalBaseCanvasRef, forceSliceRenderTick,
+		doctorCbctDefaults.interpolationMethod,
 	]);
 
 	// LAYER 1b: FAST ZERO-GC VIEWPORT PAN & ZOOM REDRAW (60 FPS) & WORKSPACE SWITCH TRANSFERS
@@ -527,6 +663,12 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		let renderedByGl = false;
 		const glContext = getSharedCbctGlContext();
 		if (volume && glContext.isAvailable()) {
+			const targetMethod = doctorCbctDefaults.interpolationMethod ?? "bilinear";
+			const effectiveInterpolation = resolveAdaptiveInterpolationMethod(
+				targetMethod,
+				isInteractingRef.current,
+			);
+
 			const glRes = glContext.renderCrossSection(
 				volume,
 				activeCrossSection.centerPointMm,
@@ -537,7 +679,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
-					interpolation: "trilinear",
+					interpolation: effectiveInterpolation,
 					widthMm: activeCrossSection.widthMm,
 					heightMm: activeCrossSection.heightMm,
 					pixelSpacingMm: activeCrossSection.pixelSpacingMm,
@@ -577,6 +719,8 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		slabThicknessMm,
 		transforms.cross_section,
 		crossSectionBaseCanvasRef,
+		forceSliceRenderTick,
+		doctorCbctDefaults.interpolationMethod,
 	]);
 
 	// LAYER 2: OVERLAY VECTOR RENDERING

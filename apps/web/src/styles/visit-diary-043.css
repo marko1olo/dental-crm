@@ -438,7 +438,31 @@ html.dark .vde-043__letter--p {
 }
 
 .vde-043__icd-input {
-	padding-left: 2.25rem;
+	padding-left: 38px !important;
+	padding-right: 32px !important;
+}
+
+.vde-043__icd-search-clear {
+	position: absolute;
+	right: 0.5rem;
+	top: 50%;
+	transform: translateY(-50%);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	color: var(--muted);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vde-043__icd-search-clear:hover {
+	background: color-mix(in srgb, var(--ink) 10%, transparent);
+	color: var(--ink);
 }
 
 .vde-043__icd-drop {

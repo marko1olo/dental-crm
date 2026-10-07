@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * SANPIN 1-CLICK SHIFT AUTO-CLOSER & BATCH DOCUMENTATION ENGINE
+ * SANPIN AUTOMATED SHIFT CLOSER & BATCH DOCUMENTATION ENGINE
  * (СанПиН 3.3686-21, СанПиН 2.1.3684-21, Р 3.5.1904-04, Приказ 706н)
  * ============================================================================
  *
@@ -390,11 +390,11 @@ export function compileShiftWasteLog(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. 1-CLICK UNIFIED SHIFT AUTO-CLOSER
+// 6. UNIFIED SHIFT AUTO-CLOSER
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * 1-Клик Автозаполнение СанПиН за смену:
+ * Автоматизированное закрытие журналов СанПиН за смену:
  * Формирует полный юридический и нормативный комплект документации за рабочий день.
  */
 export function executeShiftSanpinAutoClose(
@@ -547,7 +547,7 @@ export async function persistShiftSanpinAutoClose(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7. 1-CLICK MONTHLY BATCH GENERATOR FOR INSPECTIONS
+// 7. MONTHLY BATCH GENERATOR FOR INSPECTIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
 const RUSSIAN_MONTH_NAMES = [
@@ -556,7 +556,7 @@ const RUSSIAN_MONTH_NAMES = [
 ];
 
 /**
- * 1-Клик Генератор СанПиН за месяц:
+ * Сводная генерация журналов СанПиН за месяц:
  * Формирует сводное нормативное досье за весь календарный месяц для проверок Роспотребнадзора.
  */
 export function executeMonthSanpinBatchGenerator(

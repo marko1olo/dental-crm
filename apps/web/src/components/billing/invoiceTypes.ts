@@ -1,3 +1,5 @@
+import type { FiscalReceiptStatusCode } from "../finance/FiscalReceiptStatusBadge.js";
+
 export interface InvoiceLineItem {
 	id: string;
 	code?: string | undefined;
@@ -25,6 +27,8 @@ export interface BillingInvoice {
 	createdAt: string;
 	paidAt?: string | undefined;
 	paymentMethod?: string | undefined;
+	fiscalStatus?: FiscalReceiptStatusCode | undefined;
+	isOfflineQueued?: boolean | undefined;
 	notes?: string | undefined;
 }
 

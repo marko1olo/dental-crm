@@ -131,17 +131,26 @@ export function AutoclaveRegisterTable({
 				className="sanpin-table-toolbar min-w-0 flex items-center justify-between gap-2 p-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border-b border-[var(--line,#e2e8f0)] dark:border-[#334155]"
 			>
 				{/* Search Field (Shared) */}
-				<div className="flex-1 min-w-[140px] max-w-full sm:max-w-xs relative flex items-center">
-					<Search size={15} className="absolute left-3 text-[var(--muted,#94a3b8)] pointer-events-none" />
+				<div className="dente-search-wrap flex-1 min-w-[140px] max-w-full sm:max-w-xs">
+					<Search size={14} className="dente-search-icon" />
 					<input
 						type="text"
 						placeholder="Поиск по аппарату, лотку, штрихкоду..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="sanpin-input w-full pl-9 pr-3 rounded-lg text-xs"
-						style={{ minHeight: "32px", height: "32px" }}
+						className="dente-search-input !h-8"
 						data-testid="autoclave-search-input"
 					/>
+					{searchQuery && (
+						<button
+							type="button"
+							className="dente-search-clear"
+							onClick={() => setSearchQuery("")}
+							aria-label="Очистить поиск"
+						>
+							<X size={12} />
+						</button>
+					)}
 				</div>
 
 				{/* Desktop Toolbar Action Strip (Hidden on Mobile <= 768px) */}
@@ -179,7 +188,7 @@ export function AutoclaveRegisterTable({
 						<span className="shrink-0 whitespace-nowrap">Оборудование ({clinicDevices.length})</span>
 					</button>
 
-					{/* Action: 1-Клик печать наклеек (10 шт. / 30 дн.) */}
+					{/* Action: Печать маркировок (пачка 10 шт. / 30 дн.) */}
 					<button
 						type="button"
 						onClick={() => {
@@ -204,36 +213,41 @@ export function AutoclaveRegisterTable({
 							borderColor: "var(--teal, #0d9488)",
 							background: "var(--paper-strong, #ffffff)",
 						}}
-						title="Печать пачки из 10 наклеек крафт-пакетов (срок 30 дней) в 1 клик"
+						title="Печать пачки из 10 наклеек крафт-пакетов (срок 30 дней)"
 						data-testid="autoclave-quick-batch-labels-btn"
 					>
 						<Printer size={14} className="shrink-0" />
 						<span className="shrink-0 whitespace-nowrap">Печать наклеек (10 шт.)</span>
 					</button>
 
-					{/* Action: + Зафиксировать цикл */}
+					{/* Action: + Зафиксировать цикл стерилизации (134°C, 2.1 бар) */}
 					<button
 						type="button"
 						onClick={onQuickShiftBatch}
 						aria-busy={isLoggingBatch}
-						className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
+						className="sanpin-btn touch-manipulation shrink-0 whitespace-nowrap"
 						style={{
 							minHeight: "32px",
 							height: "32px",
-							padding: "0.25rem 0.65rem",
+							padding: "0.25rem 0.75rem",
 							fontSize: "0.8125rem",
-							fontWeight: 600,
+							fontWeight: 700,
 							display: "inline-flex",
 							alignItems: "center",
 							gap: "0.35rem",
 							borderRadius: "8px",
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+							cursor: "pointer",
 						}}
 						data-testid="sanpin-autoclave-new-cycle-btn"
-						title="1-клик фоновая фиксация нормативного цикла стерилизации смены"
+						title="Цикл стерилизации завершён: зафиксировать параметры 134°C / 2.1 бар в журнале"
 					>
-						<Plus size={14} className="shrink-0" />
+						<Sparkles size={14} className="shrink-0" />
 						<span className="shrink-0 whitespace-nowrap">
-							{isLoggingBatch ? "Фиксация..." : "Зафиксировать цикл"}
+							{isLoggingBatch ? "Фиксация..." : "Цикл завершён (134°C)"}
 						</span>
 					</button>
 
@@ -406,17 +420,17 @@ export function AutoclaveRegisterTable({
 			    DESKTOP VIEW: 9-Column Table (Hidden on Mobile <= 768px)
 			    ========================================================================= */}
 			<div className="hidden md:block w-full overflow-x-auto min-w-0" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-				<table className="sanpin-table w-full min-w-0" style={{ width: "100%", minWidth: "1080px", tableLayout: "auto" }}>
+				<table className="sanpin-table w-full min-w-0" style={{ width: "100%", minWidth: "1180px", tableLayout: "auto" }}>
 					<thead>
 						<tr>
 							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Дата / № Цикла</th>
 							<th style={{ fontSize: "0.825rem", width: "130px", minWidth: "120px" }} className="min-w-0">Марка аппарата</th>
-							<th style={{ fontSize: "0.825rem", width: "160px", minWidth: "150px" }} className="min-w-0">Стерилизуемые изделия</th>
-							<th style={{ fontSize: "0.825rem", width: "110px", minWidth: "100px" }} className="min-w-0">Вид упаковки</th>
+							<th style={{ fontSize: "0.825rem", width: "180px", minWidth: "165px" }} className="min-w-0">Стерилизуемые изделия</th>
+							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px" }} className="min-w-0">Вид упаковки</th>
 							<th style={{ fontSize: "0.825rem", width: "120px", minWidth: "115px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Режим (T°, P, t)</th>
-							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Индикатор</th>
-							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Срок годности</th>
-							<th style={{ fontSize: "0.825rem", width: "175px", minWidth: "165px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Штрихкод / Статус</th>
+							<th style={{ fontSize: "0.825rem", width: "100px", minWidth: "95px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Индикатор</th>
+							<th style={{ fontSize: "0.825rem", width: "100px", minWidth: "95px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Срок годности</th>
+							<th style={{ fontSize: "0.825rem", width: "215px", minWidth: "205px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Штрихкод / Статус</th>
 							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "135px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Заверка / Оператор</th>
 						</tr>
 					</thead>
@@ -531,7 +545,7 @@ export function AutoclaveRegisterTable({
 											</div>
 										</td>
 
-										<td style={{ width: "160px", minWidth: "150px" }} className="min-w-0">
+										<td style={{ width: "180px", minWidth: "165px" }} className="min-w-0">
 											<div
 												style={{
 													fontSize: "0.8125rem",
@@ -549,7 +563,7 @@ export function AutoclaveRegisterTable({
 											</div>
 										</td>
 
-										<td style={{ width: "110px", minWidth: "100px" }} className="min-w-0">
+										<td style={{ width: "140px", minWidth: "130px" }} className="min-w-0">
 											<div
 												style={{
 													fontSize: "0.775rem",
@@ -578,13 +592,13 @@ export function AutoclaveRegisterTable({
 											</div>
 										</td>
 
-										<td style={{ width: "95px", minWidth: "90px" }} className="whitespace-nowrap shrink-0">
+										<td style={{ width: "100px", minWidth: "95px" }} className="whitespace-nowrap shrink-0">
 											<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
-												<CheckCircle2 size={12} className="shrink-0" /> {log.indicatorType === "class6_emulating" ? "Класс 6" : "Класс 5 (Норма)"}
+												<CheckCircle2 size={12} className="shrink-0" /> {log.indicatorType === "class6_emulating" ? "Класс 6" : "Класс 5"}
 											</span>
 										</td>
 
-										<td style={{ width: "95px", minWidth: "90px", fontSize: "0.8rem", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
+										<td style={{ width: "100px", minWidth: "95px", fontSize: "0.8rem", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
 											{log.expiresAt && !isNaN(new Date(log.expiresAt).getTime()) ? (
 												<span style={{ fontWeight: 600, color: "#059669" }}>
 													{new Date(log.expiresAt).toLocaleDateString("ru-RU")}
@@ -594,8 +608,8 @@ export function AutoclaveRegisterTable({
 											)}
 										</td>
 
-										<td style={{ width: "175px", minWidth: "165px" }} className="whitespace-nowrap shrink-0">
-											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", whiteSpace: "nowrap" }}>
+										<td style={{ width: "215px", minWidth: "205px" }} className="whitespace-nowrap shrink-0">
+											<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap" }}>
 												<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Стерилизация завершена успешно, контроль пройден (100% норма)">
 													<CheckCircle2 size={12} className="shrink-0" /> Стерильно
 												</span>
@@ -607,9 +621,11 @@ export function AutoclaveRegisterTable({
 															color: "var(--brand-primary, #2563eb)",
 															fontWeight: 700,
 															background: "rgba(37, 99, 235, 0.08)",
-															padding: "0.15rem 0.4rem",
+															padding: "0.15rem 0.45rem",
 															borderRadius: "4px",
 															whiteSpace: "nowrap",
+															flexShrink: 0,
+															letterSpacing: "0.02em",
 														}}
 														title={`Штрихкод крафт-пакета: ${log.barcode}`}
 													>

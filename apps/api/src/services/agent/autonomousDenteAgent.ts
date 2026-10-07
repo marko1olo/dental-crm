@@ -392,8 +392,8 @@ export class AutonomousDenteAgent {
 		currentIteration = 3;
 		if (currentIteration <= this.maxIterations) {
 			const thought3 = [
-				`[ИТЕРАЦИЯ 3/5: РАСЧЕТ СМЕТЫ ПО НОМЕНКЛАТУРЕ 804Н В ТОЧНЫХ КОПЕЙКАХ]`,
-				`Категория: ${clinicalCategory}. Скидка врача: ${resolvedDiscount}% (Мандат 8e: 0-100% без блокировок).`,
+				`[ИТЕРАЦИЯ 3/5: РАСЧЕТ СМЕТЫ В ТОЧНЫХ КОПЕЙКАХ]`,
+				`Категория: ${clinicalCategory}. Скидка врача: ${resolvedDiscount}% (свобода скидок без блокировок).`,
 				`ДЕЙСТВИЕ: Вызов calculate_804n_estimate для формирования калькуляции в точных целых копейках.`,
 			].join("\n");
 			fullThoughtTraces.push(thought3);
@@ -420,7 +420,7 @@ export class AutonomousDenteAgent {
 			actions.push({
 				id: `card_est_${crypto.randomUUID().slice(0, 8)}`,
 				type: "apply_estimate_804n",
-				title: `Смета 804н: ${estimateResult.formattedTotal} (скидка ${resolvedDiscount}%)`,
+				title: `Смета услуг: ${estimateResult.formattedTotal} (скидка ${resolvedDiscount}%)`,
 				description: `Услуг: ${estimateResult.items.length}. Итого: ${estimateResult.totalRub} ₽ (${estimateResult.totalKopecks} коп.). Применение без административных паролей.`,
 				payload: estimateResult as any,
 				readyForOneClickApply: true,
@@ -434,7 +434,7 @@ export class AutonomousDenteAgent {
 			const thought4 = [
 				`[ИТЕРАЦИЯ 4/5: ГЕНЕРАЦИЯ ПРОТОКОЛА ПРИЁМА SOAP ФОРМА 043/У И СМЕЖНЫХ ДОКУМЕНТОВ]`,
 				`Формирование дневника SOAP по протоколам СтАР и МКБ-10 (${primaryIcd10}).`,
-				`Статус документа: ЧЕРНОВИК (Мандат 8e: печать и редактирование без замков).`,
+				`Статус документа: ЧЕРНОВИК (печать и редактирование без замков).`,
 				labReq ? `Дополнительно: формирование черновика наряда ЗТЛ (${labReq.workType}, оттенок ${labReq.vitaShade}).` : "",
 				appReq ? `Дополнительно: запись на повторный приём (${appReq.startsAt}) без обязательного ассистента.` : "",
 			].filter(Boolean).join("\n");
@@ -515,7 +515,7 @@ export class AutonomousDenteAgent {
 					id: `card_app_${crypto.randomUUID().slice(0, 8)}`,
 					type: "apply_appointment",
 					title: `Запись на повторный прием: ${appReq.startsAt.slice(0, 16).replace("T", " ")}`,
-					description: `Причина: ${appReq.reason}. Назначение ассистента НЕ требуется (Мандат 8e).`,
+					description: `Причина: ${appReq.reason}. Назначение ассистента опционально.`,
 					payload: appointmentResult as any,
 					readyForOneClickApply: true,
 					doctorAutonomyGuaranteed: true,
@@ -544,7 +544,7 @@ export class AutonomousDenteAgent {
 				doctorAutonomyGuaranteed: true,
 			});
 
-			// Tool: check_warehouse_supplies (Soft overdraft Mandate 8e / Background automatic script Mandate 8ab)
+			// Tool: check_warehouse_supplies
 			const warehouseObservation = await checkWarehouseSuppliesTool.handler(ctx, {
 				organizationId: orgId,
 				itemName: anestheticResult?.drugName || "Артикаин 4% (карпулы 1.7 мл)",
@@ -558,7 +558,7 @@ export class AutonomousDenteAgent {
 				type: "check_warehouse_supplies",
 				title: `Расходные материалы (автосписание): ${warehouseObservation.itemName}`,
 				description: warehouseObservation.isSoftOverdraft
-					? `Фоновое автосписание: мягкий овердрафт ${warehouseObservation.currentStock} шт. (дефицит: ${warehouseObservation.deficitCount} шт.). Приём врача не блокируется (Мандат 8v/8ab).`
+					? `Фоновое автосписание: списание под процедуру ${warehouseObservation.currentStock} шт. (дефицит: ${warehouseObservation.deficitCount} шт.). Приём врача не блокируется.`
 					: `Фоновое автосписание: остаток ${warehouseObservation.currentStock} шт. Списание выполняется бэкендом без участия врача.`,
 				payload: warehouseObservation as any,
 				readyForOneClickApply: true,
@@ -571,7 +571,7 @@ export class AutonomousDenteAgent {
 		const criticalAlert = safetyAlerts.find((a) => a.severity === "critical");
 		const warningAlert = safetyAlerts.find((a) => a.severity === "warning");
 
-		let safetySummary = "Физиологическая норма (Мандат 8e). Противопоказаний нет.";
+		let safetySummary = "Физиологическая норма. Противопоказаний нет.";
 		if (criticalAlert) {
 			safetySummary = `ВНИМАНИЕ: ${criticalAlert.title}. Рекомендовано: ${criticalAlert.safeAlternative}.`;
 		} else if (warningAlert) {
@@ -585,8 +585,8 @@ export class AutonomousDenteAgent {
 			`• Клинический диагноз: ${primaryIcd10} ${diagnosisName}.`,
 			`• Фармакологическая безопасность: ${safetySummary}`,
 			anestheticResult ? `• Анестезия: ${anestheticResult.drugName} — ${anestheticResult.recommendedCarpules} карп. (макс. ${anestheticResult.maxCarpules} карп. на ${anestheticResult.patientWeightKg} кг).` : null,
-			`• Смета по Приказу 804н: ${totalDueStr}${resolvedDiscount > 0 ? ` (скидка врача ${resolvedDiscount}%)` : ""}.`,
-			`• Форма 043/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК (Мандат 8e: врач правит только патологию).`,
+			`• Смета услуг: ${totalDueStr}${resolvedDiscount > 0 ? ` (скидка врача ${resolvedDiscount}%)` : ""}.`,
+			`• Форма 043/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК (врач правит только патологию).`,
 			consentResult ? `• ИДС: ${consentResult.consentCode} (${consentResult.consentTitle}) — готово к печати.` : null,
 			warehouseResult ? `• Склад: ${warehouseResult.itemName} (${warehouseResult.isSoftOverdraft ? `мягкий овердрафт, дефицит ${warehouseResult.deficitCount} шт.` : `в наличии ${warehouseResult.currentStock} шт.`}) — приём не заблокирован.` : null,
 			labOrderResult ? `• Наряд ЗТЛ: ${labOrderResult.workType} (${labOrderResult.vitaShade}) — портал готов.` : null,

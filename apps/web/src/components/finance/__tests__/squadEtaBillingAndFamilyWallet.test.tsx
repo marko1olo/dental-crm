@@ -47,7 +47,7 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 		assert.ok(html.includes('data-testid="tender-btn-installment"'), "Installment tender button must be present");
 
 		// Assert Anti-Matryoshka clean layout
-		assert.ok(html.includes("Способ оплаты (1-клик)"), "Monolithic header must be visible");
+		assert.ok(html.includes("Способ оплаты:"), "Monolithic header must be visible");
 	});
 
 	it("Exact Cash Change Engine: calculates change down to kopecks without float drift", () => {

@@ -244,7 +244,7 @@ export function WarehouseManagerModal({
 		}, 0);
 	}, [activeWriteoffLines]);
 
-	// 1-кликовые пресеты
+	// Быстрые пресеты
 	const handleApplyPreset = useCallback((presetId: string) => {
 		const preset = CANONICAL_WAREHOUSE_PRESETS.find((p) => p.id === presetId);
 		if (!preset) return;
@@ -263,7 +263,7 @@ export function WarehouseManagerModal({
 			return next;
 		});
 
-		showToast(`Пресет «${preset.name}» применен в 1 клик`, "info");
+		showToast(`Пресет «${preset.name}» применен`, "info");
 	}, [itemsWithCategory]);
 
 	// Изменение количества в степпере
@@ -300,7 +300,7 @@ export function WarehouseManagerModal({
 			}
 			showToast(
 				hasActiveOverdraft
-					? `Списано позиций: ${activeWriteoffLines.length} (зафиксирован мягкий овердрафт без остановки приема)`
+					? `Списано позиций: ${activeWriteoffLines.length} (расход сверх остатка / списание с дефицитом без остановки приема)`
 					: `Успешно списано позиций: ${activeWriteoffLines.length}`,
 				"success"
 			);
@@ -390,16 +390,26 @@ export function WarehouseManagerModal({
 				{activeView === "inventory" && (
 					<div className="min-h-[36px] h-auto py-1 px-5 bg-[var(--paper,#ffffff)] border-b border-[var(--border,#e2e8f0)] flex flex-wrap items-center gap-2 text-xs shrink-0">
 						{/* Поиск */}
-						<div className="relative flex-1 min-w-[180px] max-w-xs">
-							<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#94a3b8)]" />
+						<div className="dente-search-wrap relative flex-1 min-w-[180px] max-w-xs">
+							<Search size={14} className="dente-search-icon" />
 							<input
 								type="text"
-								className="w-full h-8 min-h-[32px] pl-8 pr-2.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+								className="dente-search-input"
 								placeholder="Поиск по названию или SKU..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								data-testid="warehouse-search-input"
 							/>
+							{searchQuery && (
+								<button
+									type="button"
+									className="dente-search-clear"
+									onClick={() => setSearchQuery("")}
+									aria-label="Очистить поиск"
+								>
+									<X size={12} />
+								</button>
+							)}
 						</div>
 
 						{/* Категория */}
@@ -419,41 +429,43 @@ export function WarehouseManagerModal({
 
 						<div className="h-4 w-px bg-[var(--border,#cbd5e1)] mx-1" />
 
-						{/* 1-кликовые пресеты */}
-						<span className="text-[var(--muted,#64748b)] font-semibold flex items-center gap-1 shrink-0">
-							<Zap size={13} className="text-amber-500" />
-							Пресеты:
-						</span>
+						{/* Быстрые пресеты */}
+						<div className="dente-filter-chips flex items-center gap-1.5 flex-wrap">
+							<span className="text-[var(--muted,#64748b)] font-semibold flex items-center gap-1 shrink-0 text-xs">
+								<Zap size={13} className="text-amber-500" />
+								Пресеты:
+							</span>
 
-						<button
-							type="button"
-							className="h-8 min-h-[32px] px-3 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
-							onClick={() => handleApplyPreset("anesthesia-17")}
-							data-testid="preset-anesthesia-btn"
-							title="10 карпул Артикаина 1.7 мл + 10 карпульных игл 30G"
-						>
-							Стандартная анестезия 1.7 мл
-						</button>
+							<button
+								type="button"
+								className="dente-filter-chip text-xs font-semibold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+								onClick={() => handleApplyPreset("anesthesia-17")}
+								data-testid="preset-anesthesia-btn"
+								title="10 карпул Артикаина 1.7 мл + 10 карпульных игл 30G"
+							>
+								Стандартная анестезия 1.7 мл
+							</button>
 
-						<button
-							type="button"
-							className="h-8 min-h-[32px] px-3 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
-							onClick={() => handleApplyPreset("filling-standard")}
-							data-testid="preset-filling-btn"
-							title="СИЗ + Крафт + Композит + Адгезив + Микробраши"
-						>
-							Пломбирование зуба
-						</button>
+							<button
+								type="button"
+								className="dente-filter-chip text-xs font-semibold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+								onClick={() => handleApplyPreset("filling-standard")}
+								data-testid="preset-filling-btn"
+								title="СИЗ + Крафт + Композит + Адгезив + Микробраши"
+							>
+								Пломбирование зуба
+							</button>
 
-						<button
-							type="button"
-							className="h-8 min-h-[32px] px-3 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
-							onClick={() => handleApplyPreset("hygiene-prof")}
-							data-testid="preset-hygiene-btn"
-							title="Air-Flow + Паста + Щетки + Оптрагейт"
-						>
-							Профгигиена
-						</button>
+							<button
+								type="button"
+								className="dente-filter-chip text-xs font-semibold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+								onClick={() => handleApplyPreset("hygiene-prof")}
+								data-testid="preset-hygiene-btn"
+								title="Air-Flow + Паста + Щетки + Оптрагейт"
+							>
+								Профгигиена
+							</button>
+						</div>
 
 						{activeWriteoffLines.length > 0 && (
 							<button
@@ -469,7 +481,7 @@ export function WarehouseManagerModal({
 					</div>
 				)}
 
-				{/* SOFT OVERDRAFT BANNER (МАНДАТ 8e п. 10, МАНДАТ 8n п. 2) */}
+				{/* Режим учета при нехватке остатка */}
 				{hasActiveOverdraft && (
 					<div
 						className="px-5 py-2.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/50 flex items-center gap-3 text-xs text-amber-900 dark:text-amber-200 shrink-0"
@@ -477,7 +489,7 @@ export function WarehouseManagerModal({
 					>
 						<ShieldAlert size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 						<div className="flex-1 leading-snug min-w-0">
-							<strong>Внимание: остаток отрицательный, требуется оприходование накладной.</strong> Задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача (мягкий овердрафт).
+							<strong>Внимание: остаток отрицательный, требуется оприходование накладной.</strong> Расход учтён с дефицитом и не блокирует текущие операции склада и приём пациентов.
 						</div>
 					</div>
 				)}
@@ -573,7 +585,7 @@ export function WarehouseManagerModal({
 															className="block text-[10px] text-amber-600 dark:text-amber-400 font-semibold truncate max-w-[160px]"
 															title="Внимание: остаток отрицательный, требуется оприходование накладной"
 														>
-															{isZeroStock ? "Остаток 0 (Овердрафт)" : "Внимание: дефицит (Овердрафт)"}
+															{isZeroStock ? "Остаток 0 (списание с дефицитом)" : "Внимание: дефицит"}
 														</span>
 													)}
 												</td>
@@ -698,7 +710,7 @@ export function WarehouseManagerModal({
 													<div className="font-medium">{line.name}</div>
 													{line.isOverdraft && (
 														<span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
-															[Мягкий овердрафт]
+															[Расход сверх остатка]
 														</span>
 													)}
 												</td>

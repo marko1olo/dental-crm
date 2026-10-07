@@ -557,7 +557,7 @@ export const APPOINTMENT_TYPE_PRESETS: readonly AppointmentTypePreset[] = [
 	{
 		type: "primary",
 		label: "Первичный",
-		description: "Первичный осмотр и консультация",
+		description: "Осмотр и консультация",
 		defaultReason: "Первичный осмотр",
 		defaultDurationMinutes: 30,
 		defaultStatus: "planned",
@@ -566,7 +566,7 @@ export const APPOINTMENT_TYPE_PRESETS: readonly AppointmentTypePreset[] = [
 	{
 		type: "secondary",
 		label: "Повторный",
-		description: "Плановое лечение / повторный прием",
+		description: "Лечение по плану",
 		defaultReason: "Повторный прием (Лечение)",
 		defaultDurationMinutes: 60,
 		defaultStatus: "planned",
@@ -575,8 +575,8 @@ export const APPOINTMENT_TYPE_PRESETS: readonly AppointmentTypePreset[] = [
 	{
 		type: "emergency",
 		label: "Острая боль",
-		description: "Экстренный слот CITO (высокий приоритет)",
-		defaultReason: "CITO! Острая боль",
+		description: "Срочный приём (CITO)",
+		defaultReason: "Срочно! Острая боль",
 		defaultDurationMinutes: 30,
 		defaultStatus: "confirmed",
 		isEmergency: true,

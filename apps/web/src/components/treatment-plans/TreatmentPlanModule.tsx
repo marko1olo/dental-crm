@@ -286,7 +286,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								}}
 								data-testid="tp-add-catalog-service-btn"
 								className="min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
-								title="Добавить любую услугу из утвержденного прейскуранта клиники (Мандат 8e)"
+								title="Добавить любую услугу из утвержденного прейскуранта клиники"
 							>
 								<Plus size={14} />
 								<span>+ Услуга из каталога</span>

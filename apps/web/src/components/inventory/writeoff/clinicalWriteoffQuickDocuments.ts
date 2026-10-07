@@ -55,9 +55,9 @@ export interface QuickAnesthesiaPackageWriteoffParams {
 }
 
 /**
- * 1-клик списание стандартного пакета анестезии:
+ * Быстрое списание стандартного пакета анестезии:
  * (1 карпула 1.7 мл + карпульная игла + антисептик инъекционного поля).
- * Врач или медсестра списывают в 1 клик без создания комиссий, накладных и согласований (Мандаты 8e, 8n).
+ * Врач или медсестра списывают оперативно без создания комиссий, накладных и согласований (Мандаты 8e, 8n).
  */
 export function createQuickAnesthesiaPackageWriteoffDocument(
 	params: QuickAnesthesiaPackageWriteoffParams = {},
@@ -128,7 +128,7 @@ export function createQuickAnesthesiaPackageWriteoffDocument(
 			actualQuantity: item.count,
 			discrepancyQuantity: 0,
 			discrepancyReasonCode: "standard_consumption" as const,
-			discrepancyNotes: "Стандартный пакет анестезии: карпула 1.7 мл + игла + антисептик (1 клик без комиссии)",
+			discrepancyNotes: "Стандартный пакет анестезии: карпула 1.7 мл + игла + антисептик (без комиссии)",
 			batchId: fefoResult.batch?.batchId,
 			lotNumber: fefoResult.batch?.lotNumber || `LOT-ANES-PKG-${Date.now().toString().slice(-4)}`,
 			serialNumber: undefined,
@@ -176,7 +176,7 @@ export function createQuickAnesthesiaPackageWriteoffDocument(
 		status: "confirmed",
 		notes:
 			params.notes ||
-			"1-клик списание стандартного пакета анестезии (1 карпула 1.7 мл + карпульная игла + антисептик) — списание медсестрой без комиссии (Клинический регламент)",
+			"Быстрое списание стандартного пакета анестезии (1 карпула 1.7 мл + карпульная игла + антисептик) — списание медсестрой без комиссии (Клинический регламент)",
 		confirmedAt: new Date().toISOString(),
 		isQuickCarpuleWriteoff: true,
 		isSingleSigner: true,
@@ -185,7 +185,7 @@ export function createQuickAnesthesiaPackageWriteoffDocument(
 }
 
 /**
- * Быстрое списание пустых использованных карпул и ампул анестетиков в 1 клик
+ * Быстрое списание пустых использованных карпул и ампул анестетиков
  * старшей медсестрой или ассистентом без необходимости созыва комиссии из 3 человек.
  */
 export function createQuickCarpuleWriteoffDocument(
@@ -240,7 +240,7 @@ export function createQuickCarpuleWriteoffDocument(
 		actualQuantity: count,
 		discrepancyQuantity: 0,
 		discrepancyReasonCode: "standard_consumption",
-		discrepancyNotes: params.notes || "Экспресс-списание использованных карпул анестетика (1 клик)",
+		discrepancyNotes: params.notes || "Экспресс-списание использованных карпул анестетика",
 		batchId: fefoResult.batch?.batchId,
 		lotNumber: params.lotNumber || fefoResult.batch?.lotNumber || "LOT-ART-2026",
 		serialNumber: undefined,
@@ -468,7 +468,7 @@ export function createQuickVisitWriteoffDocument(
 			actualQuantity: actualQty,
 			discrepancyQuantity: 0,
 			discrepancyReasonCode: "standard_consumption",
-			discrepancyNotes: params.notes || `1-клик типовой визит (${visitType === "surgery" ? "Хирургия" : "Терапия"})`,
+			discrepancyNotes: params.notes || `Типовой визит (${visitType === "surgery" ? "Хирургия" : "Терапия"})`,
 			batchId: fefoResult.batch?.batchId,
 			lotNumber: fefoResult.batch?.lotNumber || "LOT-VISIT-2026",
 			serialNumber: undefined,
@@ -515,7 +515,7 @@ export function createQuickVisitWriteoffDocument(
 		status: "confirmed",
 		notes:
 			params.notes ||
-			`1-клик списание набора визита (${visitType === "surgery" ? "Хирургия" : "Терапия"}) без комиссии из 3 человек`,
+			`Списание набора визита (${visitType === "surgery" ? "Хирургия" : "Терапия"}) без комиссии из 3 человек`,
 		confirmedAt: new Date().toISOString(),
 		isQuickCarpuleWriteoff: false,
 		isSingleSigner: params.isSingleSigner !== false,

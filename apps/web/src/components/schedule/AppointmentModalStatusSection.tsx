@@ -36,12 +36,26 @@ export function AppointmentModalStatusSection({
   handleApplyRefusalReason,
   handleOpenWaitlistForThisSlot,
 }: AppointmentModalStatusSectionProps) {
+  const handleSelectStatus = (nextStatus: Appointment["status"]) => {
+    setStatus(nextStatus);
+    if (
+      hasOpenVisit &&
+      activeVisitLockedAppointmentStatuses.has(nextStatus)
+    ) {
+      showToast(
+        "Внимание: по этой записи открыт активный визит в кресле. Изменение статуса разрешено лечащему врачу.",
+        "warning",
+        4000,
+      );
+    }
+  };
+
   return (
     <div className="sm:col-span-2">
       <div className="flex items-center justify-between gap-2 mb-1">
         <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
           <CalendarCheck size={13} className="text-[var(--teal)]" />
-          <span>Статус визита (1 клик):</span>
+          <span>Статус визита:</span>
         </label>
         {status && (
           <span className="text-[11px] font-semibold text-[var(--muted)]">
@@ -56,7 +70,7 @@ export function AppointmentModalStatusSection({
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-1.5 mb-1.5">
         <button
           type="button"
-          onClick={() => setStatus("planned")}
+          onClick={() => handleSelectStatus("planned")}
           className={`appointment-modal-status-chip appointment-modal-status-chip--planned ${status === "planned" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "planned"
               ? "!bg-amber-500 !text-white font-extrabold !border-amber-500 shadow-sm ring-2 ring-amber-500/30"
@@ -73,7 +87,7 @@ export function AppointmentModalStatusSection({
         </button>
         <button
           type="button"
-          onClick={() => setStatus("confirmed")}
+          onClick={() => handleSelectStatus("confirmed")}
           className={`appointment-modal-status-chip appointment-modal-status-chip--confirmed ${status === "confirmed" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "confirmed"
               ? "!bg-emerald-600 !text-white font-extrabold !border-emerald-600 shadow-sm ring-2 ring-emerald-600/30"
@@ -90,7 +104,7 @@ export function AppointmentModalStatusSection({
         </button>
         <button
           type="button"
-          onClick={() => setStatus("arrived")}
+          onClick={() => handleSelectStatus("arrived")}
           className={`appointment-modal-status-chip appointment-modal-status-chip--arrived ${status === "arrived" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "arrived"
               ? "!bg-amber-600 !text-white font-extrabold !border-amber-600 shadow-sm ring-2 ring-amber-600/30"
@@ -107,7 +121,7 @@ export function AppointmentModalStatusSection({
         </button>
         <button
           type="button"
-          onClick={() => setStatus("in_treatment")}
+          onClick={() => handleSelectStatus("in_treatment")}
           className={`appointment-modal-status-chip appointment-modal-status-chip--in_treatment ${status === "in_treatment" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "in_treatment"
               ? "!bg-[var(--teal)] !text-white font-extrabold !border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]/30"
@@ -124,7 +138,7 @@ export function AppointmentModalStatusSection({
         </button>
         <button
           type="button"
-          onClick={() => setStatus("completed")}
+          onClick={() => handleSelectStatus("completed")}
           className={`appointment-modal-status-chip appointment-modal-status-chip--completed ${status === "completed" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "completed"
               ? "!bg-slate-700 !text-white font-extrabold !border-slate-700 shadow-sm ring-2 ring-slate-700/30"
@@ -141,7 +155,7 @@ export function AppointmentModalStatusSection({
         </button>
         <button
           type="button"
-          onClick={() => setStatus("no_show")}
+          onClick={() => handleSelectStatus("no_show")}
           className={`appointment-modal-status-chip appointment-modal-status-chip--no_show ${status === "no_show" ? "active" : ""} min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 shadow-2xs ${
             status === "no_show"
               ? "!bg-rose-600 !text-white font-extrabold !border-rose-600 shadow-sm ring-2 ring-rose-600/30"
@@ -158,23 +172,15 @@ export function AppointmentModalStatusSection({
         </button>
       </div>
 
+      {/* Hidden select kept for screen readers, programmatic access, and test backward compatibility */}
       <select
         value={status}
         onChange={(e) => {
-          const nextStatus = e.target.value as Appointment["status"];
-          setStatus(nextStatus);
-          if (
-            hasOpenVisit &&
-            activeVisitLockedAppointmentStatuses.has(nextStatus)
-          ) {
-            showToast(
-              "Внимание: по этой записи открыт активный визит в кресле. Изменение статуса разрешено лечащему врачу.",
-              "warning",
-              4000,
-            );
-          }
+          handleSelectStatus(e.target.value as Appointment["status"]);
         }}
-        className="w-full px-3 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border border-[var(--line-strong)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[var(--teal)] mt-1.5 cursor-pointer"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
         data-testid="select-appointment-status"
       >
         {(
@@ -213,7 +219,7 @@ export function AppointmentModalStatusSection({
                   size={13}
                   className="text-rose-600 dark:text-rose-400"
                 />
-                Причина отмены / неявки (1 клик):
+                Причина отмены / неявки:
               </span>
               <span className="text-[10px] text-[var(--muted)] font-normal">
                 Фиксируется в комментарии и таймлайне
@@ -245,7 +251,7 @@ export function AppointmentModalStatusSection({
             </div>
           </div>
 
-          {/* StomX 1-Click Waitlist Auto-Fill Banner */}
+          {/* Панель быстрого заполнения окна из листа ожидания */}
           <div
             className="mt-2 pt-2 border-t border-rose-500/20 flex flex-wrap items-center justify-between gap-2"
             data-testid="cancellation-waitlist-banner"

@@ -26,6 +26,7 @@ import {
 	type EmployeeTimesheetResult,
 } from "@dental/shared";
 import { useAppStore } from "../../store/appStore";
+import "./timesheetT13.css";
 
 export interface TimesheetT13ModalProps {
 	readonly isOpen: boolean;
@@ -168,6 +169,19 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(
 		() => resolvedEmployees[0]?.id || "",
 	);
+	const [roleFilter, setRoleFilter] = useState<"all" | "doctor" | "assistant" | "admin">("all");
+
+	const roleCounts = useMemo(() => {
+		let doctor = 0;
+		let assistant = 0;
+		let admin = 0;
+		resolvedEmployees.forEach((e) => {
+			if (e.positionRu.includes("Ассистент")) assistant++;
+			else if (e.positionRu.includes("Администратор")) admin++;
+			else doctor++;
+		});
+		return { all: resolvedEmployees.length, doctor, assistant, admin };
+	}, [resolvedEmployees]);
 
 	useEffect(() => {
 		if (
@@ -241,6 +255,16 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 			});
 		});
 	}, [isOpen, resolvedEmployees, schedules, year, month]);
+ 
+	const filteredResults = useMemo(() => {
+		if (roleFilter === "all") return allResults;
+		return allResults.filter((r) => {
+			if (roleFilter === "doctor") return r.positionRu.includes("Врач");
+			if (roleFilter === "assistant") return r.positionRu.includes("Ассистент");
+			if (roleFilter === "admin") return r.positionRu.includes("Администратор");
+			return true;
+		});
+	}, [allResults, roleFilter]);
 
 	const activeResult: EmployeeTimesheetResult = useMemo(() => {
 		if (!activeEmployee) {
@@ -412,18 +436,18 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 						type="button"
 						onClick={onClose}
 						aria-label="Закрыть табель"
-						className="w-9 h-9 rounded-xl border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+						className="w-8 h-8 rounded-lg border border-[var(--line)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4" />
 					</button>
 				</div>
 
-				{/* Toolbar / Filters — Strict 1-row layout (Sin 2 compliant, h-9, 32-36px) */}
-				<div className="h-9 px-4 border-b border-[var(--line)] bg-[var(--paper)] flex items-center gap-2 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
+				{/* Toolbar / Filters — Strict 1-row layout (Sin 2 compliant, h-10, 32-36px) */}
+				<div className="h-10 px-4 border-b border-[var(--line)] bg-[var(--paper)] flex items-center gap-2.5 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
 					{/* Month / Year Selector */}
 					<div className="flex items-center gap-2 shrink-0">
-						<span className="text-xs font-bold text-[var(--muted)]">Период:</span>
-						<div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
+						<span className="text-[12px] font-semibold text-[var(--muted)]">Период:</span>
+						<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] h-8">
 							<button
 								type="button"
 								onClick={() => {
@@ -434,12 +458,12 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 										setMonth((m) => m - 1);
 									}
 								}}
-								className="p-0.5 text-[var(--muted)] hover:text-[var(--ink)]"
+								className="p-0.5 text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
 								title="Предыдущий месяц"
 							>
 								<ChevronLeft className="w-3.5 h-3.5" />
 							</button>
-							<span className="text-xs font-extrabold text-[var(--ink)] capitalize min-w-[120px] text-center">
+							<span className="text-[12.5px] font-bold text-[var(--ink)] capitalize min-w-[120px] text-center">
 								{monthLabelRu}
 							</span>
 							<button
@@ -452,7 +476,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 										setMonth((m) => m + 1);
 									}
 								}}
-								className="p-0.5 text-[var(--muted)] hover:text-[var(--ink)]"
+								className="p-0.5 text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
 								title="Следующий месяц"
 							>
 								<ChevronRight className="w-3.5 h-3.5" />
@@ -462,11 +486,12 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 
 					{/* Employee Switcher */}
 					<div className="flex items-center gap-2 shrink-0">
-						<span className="text-xs font-bold text-[var(--muted)]">Сотрудник:</span>
+						<span className="text-[12px] font-semibold text-[var(--muted)]">Сотрудник:</span>
 						<select
 							value={selectedEmployeeId}
 							onChange={(e) => setSelectedEmployeeId(e.target.value)}
-							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
+							title={resolvedEmployees.find((e) => e.id === selectedEmployeeId)?.name}
+							className="h-8 max-w-[240px] lg:max-w-[300px] truncate px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[12.5px] font-semibold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 						>
 							{resolvedEmployees.map((emp) => (
 								<option key={emp.id} value={emp.id}>
@@ -476,44 +501,55 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 						</select>
 					</div>
 
-					{/* 1-Click Monthly Fill (Mandate 8s: Solo Doctor & Small Clinic Sovereignty) */}
-					<div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-[var(--line)]">
-						<span className="text-[11px] font-bold text-[var(--muted)]">Заполнить месяц:</span>
-						<button
-							type="button"
-							data-testid="btn-fill-6-6"
-							onClick={() => handleBatchFillHours(6.6)}
-							title="Заполнить рабочие дни по норме для врачей-стоматологов (33 ч/нед, 6.6 ч/день)"
-							className="h-7 px-2.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--on-teal)] text-xs font-bold text-[var(--teal)] transition-colors cursor-pointer flex items-center gap-1"
-						>
-							<Clock className="w-3 h-3" />
-							6.6 ч (норма)
-						</button>
-						<button
-							type="button"
-							data-testid="btn-fill-8-0"
-							onClick={() => handleBatchFillHours(8.0)}
-							title="Заполнить рабочие дни по стандартной норме 40 ч/нед (8 ч/день)"
-							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-xs font-bold text-[var(--ink)] transition-colors cursor-pointer flex items-center gap-1"
-						>
-							8 ч (стандарт)
-						</button>
+					{/* 1-Click Monthly Fill as Segmented Bar (Mandate 8s: Solo Doctor & Small Clinic Sovereignty) */}
+					<div className="flex items-center gap-2 shrink-0 pl-2 border-l border-[var(--line)]">
+						<span className="text-[12px] font-semibold text-[var(--muted)]">Заполнить норму:</span>
+						<div className="dente-segmented-bar" role="group" aria-label="Норма часов смены">
+							<button
+								type="button"
+								data-testid="btn-fill-6-6"
+								onClick={() => handleBatchFillHours(6.6)}
+								title="Норма для врачей-стоматологов (33 ч/нед, 6.6 ч/день — ст. 350 ТК РФ)"
+								className="dente-segmented-item"
+							>
+								<Clock className="w-3 h-3 mr-1 text-[var(--teal)]" />
+								6.6 ч (Врачи)
+							</button>
+							<button
+								type="button"
+								data-testid="btn-fill-7-8"
+								onClick={() => handleBatchFillHours(7.8)}
+								title="Норма для ассистентов (39 ч/нед, 7.8 ч/день)"
+								className="dente-segmented-item"
+							>
+								7.8 ч (Ассистенты)
+							</button>
+							<button
+								type="button"
+								data-testid="btn-fill-8-0"
+								onClick={() => handleBatchFillHours(8.0)}
+								title="Стандартная норма 40 ч/нед (8 ч/день)"
+								className="dente-segmented-item"
+							>
+								8.0 ч (Стандарт)
+							</button>
+						</div>
 					</div>
 
-					{/* Quick Actions — Exactly 2 buttons: CSV export (secondary) + Print (primary) */}
+					{/* Quick Actions — Exactly 2 standardized buttons: CSV export (secondary) + Print (primary) */}
 					<div className="flex items-center gap-2 shrink-0 ml-auto">
 						<button
 							type="button"
 							onClick={handleExportCsv}
-							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-xs font-bold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="dente-btn-secondary"
 						>
 							<Download className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Экспорт табеля (CSV)
+							Экспорт CSV
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="h-7 px-3 rounded-lg bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="dente-btn-primary"
 						>
 							<Printer className="w-3.5 h-3.5" />
 							Печать
@@ -526,41 +562,41 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 					{/* Stat Summary Cards */}
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 timesheet-no-print">
 						<div className="timesheet-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Отработано дней</span>
+							<span className="text-[12px] font-medium text-[var(--muted)]">Отработано дней</span>
 							<span className="text-base sm:text-lg font-black text-[var(--teal)]">
 								{activeResult.monthTotalSummary.daysWorked} дней
 							</span>
-							<span className="text-[10px] text-[var(--muted)]">
+							<span className="text-[12px] text-[var(--muted)]">
 								I пол: {activeResult.firstHalfSummary.daysWorked} дн / II пол: {activeResult.secondHalfSummary.daysWorked} дн
 							</span>
 						</div>
 
 						<div className="timesheet-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Отработано часов</span>
+							<span className="text-[12px] font-medium text-[var(--muted)]">Отработано часов</span>
 							<span className="text-base sm:text-lg font-black text-[var(--ink)]">
 								{activeResult.monthTotalSummary.totalHoursWorked} ч
 							</span>
-							<span className="text-[10px] text-[var(--muted)]">
+							<span className="text-[12px] text-[var(--muted)]">
 								Дневные: {activeResult.monthTotalSummary.regularHoursWorked} ч
 							</span>
 						</div>
 
 						<div className="timesheet-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Сверхурочные / Выходные</span>
+							<span className="text-[12px] font-medium text-[var(--muted)]">Сверхурочные / Выходные</span>
 							<span className="text-base sm:text-lg font-black text-[var(--warn-fg)]">
 								{activeResult.monthTotalSummary.overtimeHoursWorked + activeResult.monthTotalSummary.weekendHoursWorked} ч
 							</span>
-							<span className="text-[10px] text-[var(--muted)]">
+							<span className="text-[12px] text-[var(--muted)]">
 								Сверхурочные (С): {activeResult.monthTotalSummary.overtimeHoursWorked} ч / РВ: {activeResult.monthTotalSummary.weekendHoursWorked} ч
 							</span>
 						</div>
 
 						<div className="timesheet-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Неявки (Отпуск / Больничный)</span>
+							<span className="text-[12px] font-medium text-[var(--muted)]">Неявки (Отпуск / Больничный)</span>
 							<span className="text-base sm:text-lg font-black text-[var(--bad-fg)]">
 								{activeResult.monthTotalSummary.vacationDays + activeResult.monthTotalSummary.sickLeaveDays} дней
 							</span>
-							<span className="text-[10px] text-[var(--muted)]">
+							<span className="text-[12px] text-[var(--muted)]">
 								Больничный (Б): {activeResult.monthTotalSummary.sickLeaveDays} дн / Отпуск (ОТ): {activeResult.monthTotalSummary.vacationDays} дн
 							</span>
 						</div>
@@ -688,10 +724,42 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 					</div>
 
 					{/* Department Summary Table for All Staff */}
-					<div className="flex flex-col gap-2">
-						<h3 className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
-							Сводная ведомость отработанного времени по персоналу ({monthLabelRu}):
-						</h3>
+					<div className="flex flex-col gap-2.5">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<h3 className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
+								Сводная ведомость отработанного времени по персоналу ({monthLabelRu}):
+							</h3>
+							<div className="dente-segmented-bar timesheet-no-print" role="group" aria-label="Фильтр по категориям">
+								<button
+									type="button"
+									onClick={() => setRoleFilter("all")}
+									className={`dente-segmented-item ${roleFilter === "all" ? "active" : ""}`}
+								>
+									Все ({roleCounts.all})
+								</button>
+								<button
+									type="button"
+									onClick={() => setRoleFilter("doctor")}
+									className={`dente-segmented-item ${roleFilter === "doctor" ? "active" : ""}`}
+								>
+									Врачи ({roleCounts.doctor})
+								</button>
+								<button
+									type="button"
+									onClick={() => setRoleFilter("assistant")}
+									className={`dente-segmented-item ${roleFilter === "assistant" ? "active" : ""}`}
+								>
+									Ассистенты ({roleCounts.assistant})
+								</button>
+								<button
+									type="button"
+									onClick={() => setRoleFilter("admin")}
+									className={`dente-segmented-item ${roleFilter === "admin" ? "active" : ""}`}
+								>
+									Администраторы ({roleCounts.admin})
+								</button>
+							</div>
+						</div>
 						<div className="border border-[var(--line)] rounded-xl overflow-hidden overflow-x-auto bg-[var(--paper)]">
 							<table className="w-full text-left text-xs">
 								<thead className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
@@ -708,7 +776,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-[var(--line)]">
-									{allResults.map((res) => (
+									{filteredResults.map((res) => (
 										<tr
 											key={res.employeeId}
 											onClick={() => setSelectedEmployeeId(res.employeeId)}
@@ -746,24 +814,23 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 				</div>
 
 				{/* Footer */}
-				<div className="min-h-[48px] sm:h-12 sm:min-h-0 px-3 sm:px-5 py-2 sm:py-0 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
-					<div className="text-xs text-[var(--muted)]">
+				<div className="h-12 px-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
+					<div className="text-[12.5px] text-[var(--muted)]">
 						Ответственный за табель: <span className="font-bold text-[var(--ink)]">{resolvedEmployees.length <= 1 ? "Врач-руководитель (Соло-практика)" : "Главный врач"}</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={handleExportCsv}
-							className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 sm:px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="dente-btn-secondary"
 						>
 							<Download className="w-4 h-4 text-[var(--teal)] shrink-0" />
-							<span className="hidden sm:inline">Выгрузить табель рабочего времени в CSV</span>
-							<span className="sm:hidden">Экспорт табеля</span>
+							<span>Выгрузить табель в CSV</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 sm:px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="dente-btn-primary"
 						>
 							<Printer className="w-4 h-4 shrink-0" />
 							<span>Печать табеля рабочего времени</span>

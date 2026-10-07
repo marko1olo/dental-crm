@@ -218,7 +218,7 @@ export const ScheduleGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =>
 							<div className="flex items-center gap-2">
 								<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>
-									<strong>Окно забронировано за 5 секунд!</strong> Пациент: Новиков И.В. · Время: {selectedSlot || "12:00"} · Ассистент не требуется (Мандат 8e).
+									<strong>Окно забронировано за 5 секунд!</strong> Пациент: Новиков И.В. · Время: {selectedSlot || "12:00"} · Ассистент не требуется.
 								</span>
 							</div>
 							<button
@@ -347,7 +347,7 @@ export const ScheduleGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =>
 				<ul className="text-[11px] text-[var(--muted)] space-y-1.5">
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Обязателен ли ассистент?</strong>
-						<span>Нет! Согласно Мандату 8e (Автономия врача), запись создается мгновенно без обязательного выбора ассистента.</span>
+						<span>Нет! Запись создается мгновенно без обязательного выбора ассистента.</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Как перенести запись?</strong>

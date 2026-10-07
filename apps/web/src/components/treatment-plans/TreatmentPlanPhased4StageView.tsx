@@ -547,7 +547,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                           type="button"
                           onClick={() => onBookStageToVisit(cat, items)}
                           className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal)] border border-[var(--border)] transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-w-0"
-                          title="Записать пациента на прием по данному этапу (Мандат 8e)"
+                          title="Записать пациента на прием по данному этапу"
                           data-testid={`phased-book-stage-${cat}`}
                         >
                           <Calendar className="w-3.5 h-3.5 shrink-0" />

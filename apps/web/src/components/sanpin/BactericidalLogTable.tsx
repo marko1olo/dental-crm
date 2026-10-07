@@ -66,7 +66,7 @@ export function BactericidalLogTable({
 						gap: "0.35rem",
 						borderRadius: "8px",
 					}}
-					title="1-клик выгрузка официального журнала регистрации и контроля работы бактерицидной установки со штампами"
+					title="Выгрузка официального журнала регистрации и контроля работы бактерицидной установки со штампами"
 					data-testid="bactericidal-print-official-btn"
 				>
 					<Printer size={15} /> <span>Печать журнала</span>

@@ -20,16 +20,22 @@
 }
 
 .PublicBookingWidget-glass-card {
+	position: relative;
+	z-index: 10;
 	background: var(--paper-strong, #ffffff);
 	border: 1px solid var(--line, #e2e8f0);
 	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12);
+	backdrop-filter: blur(24px);
 }
 
 [data-theme="dark"] .PublicBookingWidget-glass-card,
 .dark .PublicBookingWidget-glass-card {
-	background: var(--paper-strong, #0f172a);
+	position: relative;
+	z-index: 10;
+	background: var(--paper-strong, #090d16);
 	border: 1px solid var(--line, #1e293b);
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(24px);
 }
 
 /* ==========================================================================

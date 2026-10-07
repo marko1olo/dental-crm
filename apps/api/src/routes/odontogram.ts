@@ -71,7 +71,33 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 ] as const;
 
 export type ClinicalToothState = (typeof CLINICAL_TOOTH_STATE_VALUES)[number];
-export const clinicalToothStateSchema = z.enum(CLINICAL_TOOTH_STATE_VALUES);
+
+export function normalizeClinicalToothState(val: string): ClinicalToothState {
+	const trimmed = val.trim();
+	const lower = trimmed.toLowerCase();
+	if (lower === "done" || lower === "filled") return "Filled";
+	if (lower === "caries") return "Caries";
+	if (lower === "pulpitis") return "Pulpitis";
+	if (lower === "periodontitis") return "Periodontitis";
+	if (lower === "crown") return "Crown";
+	if (lower === "missing") return "Missing";
+	if (lower === "healthy" || lower === "idle") return "Healthy";
+	if (lower === "treatment" || lower === "root_canal_treated") return "Root_Canal_Treated";
+	if (lower === "implant") return "Implant";
+	if (lower === "planned_implant") return "Planned_Implant";
+	if (lower === "root") return "Root";
+	if (lower === "retained") return "Retained";
+	if (lower === "extracted") return "Extracted";
+	if (lower === "impacted") return "Impacted";
+	const found = CLINICAL_TOOTH_STATE_VALUES.find((s) => s.toLowerCase() === lower);
+	if (found) return found;
+	return "Healthy";
+}
+
+export const clinicalToothStateSchema = z.preprocess(
+	(val) => (typeof val === "string" ? normalizeClinicalToothState(val) : val),
+	z.enum(CLINICAL_TOOTH_STATE_VALUES),
+);
 
 export const endoCanalMeasurementSchema = z.object({
 	id: z.string().optional(),
@@ -112,7 +138,11 @@ const batchToothStateSchema = z.object({
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	notes: z.string().max(10000).optional().nullable(),
 	clinicalData: endoToothClinicalDataSchema.optional().nullable(),
-	visitId: z.string().uuid().optional().nullable(),
+	visitId: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((v) => (v && UUID_SHAPE.test(v) ? v : null)),
 	updatedAt: z.string().optional().nullable(),
 	version: z.number().int().nonnegative().optional().nullable(),
 	reason: z.string().max(1000).optional().nullable(),
@@ -1182,7 +1212,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 										blockingRule: blockingRule.message,
 										overrideReason: input.clinicalBlockerOverrideReason ?? null,
 									},
-									`[Мандат 8e: Автономия врача] План лечения сохранен вопреки противопоказанию под ответственность врача: ${blockingRule.message}`,
+									`[Автономия врача] План лечения сохранен под ответственность врача: ${blockingRule.message}`,
 								);
 							} else {
 								const err = new Error(

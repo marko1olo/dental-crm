@@ -127,7 +127,7 @@ export const PatientBillingDiscountsToolbar: React.FC<PatientBillingDiscountsToo
 									: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
 							}`}
 							data-testid="btn-discount-warranty"
-							title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
+							title="100% гарантийная переделка клинического этапа (к оплате 0 ₽)"
 						>
 							<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 							<span>100% Гарантия</span>

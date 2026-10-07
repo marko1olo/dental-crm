@@ -33,6 +33,7 @@ export interface PricelistFiltersAndBatchBarProps {
 export const PricelistFiltersAndBatchBar: React.FC<PricelistFiltersAndBatchBarProps> = ({
 	searchTerm,
 	onSearchChange,
+	selectedCategory: _selectedCategory,
 	onCategoryChange,
 	selectedSpecialty,
 	onSpecialtyChange,

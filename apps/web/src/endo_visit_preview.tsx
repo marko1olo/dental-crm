@@ -139,7 +139,7 @@ function EndoVisitPreviewApp() {
 						<span>DENTE КЛКТ 3D & ЭМК 043/у • Сквозная интеграция</span>
 					</h1>
 					<p className="text-[11px] text-[var(--muted)]">
-						Пациент: Захаров И.Д. (Зуб #36) • Мандат 8e: Автономия врача и 1-клик экспорт
+						Пациент: Захаров И.Д. (Зуб #36) • Автономия врача и быстрый экспорт
 					</p>
 				</div>
 				<div className="flex items-center gap-1.5 flex-wrap">

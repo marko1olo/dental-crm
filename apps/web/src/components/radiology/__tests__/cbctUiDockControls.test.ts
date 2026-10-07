@@ -135,7 +135,7 @@ describe("CBCT UI Dock & Viewport Ruler Hardware Controls", () => {
 
 			assert.ok(html.includes("МИШ"), "Displays МИШ badge when bone_density is active");
 			assert.ok(html.includes("100%"), "Displays 100% badge when sharpenAmount is 1.0");
-			assert.ok(html.includes("bg-emerald-500/20"), "Sharpen button has emerald glow when active");
+			assert.ok(html.includes("bg-cyan-500/25"), "Sharpen button has cyan glow when active");
 		});
 
 		it("displays active badges for Endo and 50% sharpening", () => {

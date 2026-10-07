@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/tailwind.css";
 import "./styles/main.css";
+import "./styles/components.css";
 import "./styles/shadow-analyst.css";
 import "./styles/modules/patients.css";
 import "./styles/patients-redesign.css";
@@ -22,6 +23,7 @@ import { ImplantPassportCard } from "./components/implants/ImplantPassportCard";
 import { ImplantPassportModal } from "./components/implants/ImplantPassportModal";
 import { createDefaultPassportRecord } from "./components/implants/implantQuickPresets";
 import { PeriodontogramChart } from "./components/perio/PeriodontogramChart";
+import { PeriodontalPocketDepthModal } from "./components/perio/PeriodontalPocketDepthModal";
 import { applyThemeToRoot, resolveTheme, type ThemeMode } from "./lib/themeClasses";
 
 function SurgeryCockpitPreviewApp() {
@@ -127,7 +129,7 @@ function SurgeryCockpitPreviewApp() {
 							<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
 								1. Кокпит хирургического удаления зуба (Зуб 48)
 							</h2>
-							<span className="text-xs text-[var(--muted)]">Мандаты 8e / 8k / 8b</span>
+							<span className="text-xs text-[var(--muted)]">Амбулаторная хирургия</span>
 						</div>
 						<VisitSurgeryExtractionBar
 							effectiveTooth={48}
@@ -148,7 +150,7 @@ function SurgeryCockpitPreviewApp() {
 							<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
 								2. Кокпит костной пластики, НКР и синус-лифтинга (Зуб 16 / 26)
 							</h2>
-							<span className="text-xs text-[var(--muted)]">Мандаты 8e / 8b</span>
+							<span className="text-xs text-[var(--muted)]">Костная пластика</span>
 						</div>
 						<VisitSurgerySinusGbrBar
 							effectiveTooth={16}
@@ -168,7 +170,7 @@ function SurgeryCockpitPreviewApp() {
 							<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
 								3. Расширенный кокпит имплантации (8 брендов + стабильность + ФДМ)
 							</h2>
-							<span className="text-xs text-[var(--muted)]">Мандаты 8z / 8e</span>
+							<span className="text-xs text-[var(--muted)]">Дентальная имплантация</span>
 						</div>
 						<VisitSurgeryImplantBar
 							implantBrand={activeBrand}
@@ -202,7 +204,7 @@ function SurgeryCockpitPreviewApp() {
 							<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
 								4. Полный инлайн-протокол операции (VisitSurgeryProtocolTab)
 							</h2>
-							<span className="text-xs text-[var(--muted)]">Мандат 8i SSOT</span>
+							<span className="text-xs text-[var(--muted)]">Протокол операции 043/у</span>
 						</div>
 						<VisitSurgeryProtocolTab
 							activeTooth={36}
@@ -223,9 +225,9 @@ function SurgeryCockpitPreviewApp() {
 					>
 						<div className="flex items-center justify-between">
 							<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
-								5. Паспорт имплантата (ImplantPassportCard — Без советского птичьего языка)
+								5. Паспорт имплантата (ImplantPassportCard)
 							</h2>
-							<span className="text-xs text-[var(--muted)]">Мандаты 8y / 8x / 8z</span>
+							<span className="text-xs text-[var(--muted)]">Гарантийный паспорт</span>
 						</div>
 						<ImplantPassportCard
 							data={samplePassport}
@@ -250,7 +252,7 @@ function SurgeryCockpitPreviewApp() {
 								<h2 className="text-sm font-semibold text-[var(--ink)] uppercase tracking-wide">
 									6. Пародонтограмма 6-точечного зондирования Florida Probe (32 зуба, 192 точки)
 								</h2>
-								<span className="text-xs text-[var(--muted)]">Мандаты 8e / 8k / 8d</span>
+								<span className="text-xs text-[var(--muted)]">Пародонтология</span>
 							</div>
 						)}
 						<PeriodontogramChart
@@ -277,6 +279,18 @@ function SurgeryCockpitPreviewApp() {
 							inventoryOverdraftActive={false}
 							onSavePassport={(data) => console.log("Passport saved:", data)}
 							onInsertIntoDiary={(txt) => console.log("Diary inserted:", txt)}
+						/>
+					</div>
+				)}
+
+				{/* 8. Periodontal Pocket Depth Modal */}
+				{view === "pocket_modal" && (
+					<div data-testid="perio-pocket-modal-wrapper" className="relative z-50">
+						<PeriodontalPocketDepthModal
+							isOpen={isModalOpen}
+							onClose={() => setIsModalOpen(false)}
+							toothNumber={16}
+							onSaveToothRecord={(rec) => console.log("Saved perio tooth record:", rec)}
 						/>
 					</div>
 				)}

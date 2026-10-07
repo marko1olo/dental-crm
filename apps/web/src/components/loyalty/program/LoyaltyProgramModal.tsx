@@ -318,7 +318,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 	const handleOneClickRedeemToInvoice = () => {
 		if (invoiceAmountRub <= 0) {
-			showToast("Сумма счета не указана для 1-клик списания", "warning");
+			showToast("Сумма счета не указана для списания бонусов", "warning");
 			return;
 		}
 		if (effectiveBalanceRub <= 0 && !isDoctorOverride) {
@@ -341,7 +341,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			return;
 		}
 
-		// Mandate 8i, 8n: One wallet per family — parent pays for child/spouse in 1-click
+		// Mandate 8i, 8n: One wallet per family — parent pays for child/spouse
 		const selectedTargetMember = familyState.familyMembers.find(
 			(m) => m.patientId === familyState.selectedFamilyMemberId
 		);
@@ -384,25 +384,25 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			medicalCardNumber,
 			operationType: "redemption",
 			operationTypeRu: isDoctorOverride
-				? `1-клик списание: Привилегия врача 100% (${currentTier.nameRu})`
-				: `1-клик списание в чек (${currentTier.nameRu})`,
+				? `Списание бонусов: Привилегия врача 100% (${currentTier.nameRu})`
+				: `Списание бонусов в чек (${currentTier.nameRu})`,
 			invoiceAmountKop: Math.round(invoiceAmountRub * 100),
 			pointsDeltaRub: -targetCalc.actualRedeemedPointsRub,
 			balanceAfterRub: effectiveBalanceRub - targetCalc.actualRedeemedPointsRub,
 			paymentMethodRu: "Бонусы + Касса",
 			staffNameRu: "Администратор / Врач",
 			noteRu: isDoctorOverride
-				? `1-клик: Гарантийное/автономное покрытие счета бонусами ${targetCalc.actualRedeemedPointsRub} ₽`
-				: `1-клик: Списание бонусов ${targetCalc.actualRedeemedPointsRub} ₽ в чек`,
+				? `Гарантийное/автономное покрытие счета бонусами ${targetCalc.actualRedeemedPointsRub} ₽`
+				: `Списание бонусов ${targetCalc.actualRedeemedPointsRub} ₽ в чек`,
 		};
 
 		setLedgerEntries((prev) => [newLedgerItem, ...prev]);
 		setRedemptionSuccessMsg(
-			`1-клик списание: Успешно списано ${targetCalc.actualRedeemedPointsRub} бонусов. К доплате: ${targetCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽`
+			`Успешно списано ${targetCalc.actualRedeemedPointsRub} бонусов. К доплате: ${targetCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽`
 		);
-		showToast(`1-клик: Списано ${targetCalc.actualRedeemedPointsRub} бонусов в чек`, "success");
+		showToast(`Списано ${targetCalc.actualRedeemedPointsRub} бонусов в чек`, "success");
 
-		// Persist 1-click redemption to PostgreSQL 18 ACID endpoint (Mandates 8e, 8b, 8n)
+		// Persist redemption to PostgreSQL 18 ACID endpoint (Mandates 8e, 8b, 8n)
 		if (patientId) {
 			fetch("/api/loyalty/redeem", {
 				method: "POST",
@@ -416,11 +416,11 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					pointsToRedeem: targetCalc.actualRedeemedPointsRub,
 					allowFullCoverage: isDoctorOverride,
 					description: isDoctorOverride
-						? `1-клик: Гарантийное/автономное покрытие счета бонусами ${targetCalc.actualRedeemedPointsRub} ₽`
-						: `1-клик: Списание бонусов ${targetCalc.actualRedeemedPointsRub} ₽ в чек`,
+						? `Гарантийное/автономное покрытие счета бонусами ${targetCalc.actualRedeemedPointsRub} ₽`
+						: `Списание бонусов ${targetCalc.actualRedeemedPointsRub} ₽ в чек`,
 				}),
 			}).catch((err) => {
-				console.warn("[Loyalty] 1-click redemption backend sync error:", err);
+				console.warn("[Loyalty] redemption backend sync error:", err);
 			});
 		}
 
@@ -541,10 +541,10 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 				</header>
 
 				{/* Navigation Tabs */}
-				<nav className="loyalty-tabs-nav" aria-label="Разделы программы лояльности">
+				<nav className="loyalty-tabs-nav dente-segmented-bar" aria-label="Разделы программы лояльности">
 					<button
 						type="button"
-						className={`loyalty-tab-btn ${activeTab === "balance" ? "active" : ""}`}
+						className={`loyalty-tab-btn dente-segmented-item ${activeTab === "balance" ? "active" : ""}`}
 						onClick={() => setActiveTab("balance")}
 					>
 						<Award size={16} />
@@ -552,7 +552,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					</button>
 					<button
 						type="button"
-						className={`loyalty-tab-btn ${activeTab === "family" ? "active" : ""}`}
+						className={`loyalty-tab-btn dente-segmented-item ${activeTab === "family" ? "active" : ""}`}
 						onClick={() => setActiveTab("family")}
 					>
 						<Users size={16} />
@@ -560,7 +560,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					</button>
 					<button
 						type="button"
-						className={`loyalty-tab-btn ${activeTab === "referrals" ? "active" : ""}`}
+						className={`loyalty-tab-btn dente-segmented-item ${activeTab === "referrals" ? "active" : ""}`}
 						onClick={() => setActiveTab("referrals")}
 						data-testid="loyalty-referrals-tab-btn"
 					>
@@ -569,7 +569,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					</button>
 					<button
 						type="button"
-						className={`loyalty-tab-btn ${activeTab === "certificates" ? "active" : ""}`}
+						className={`loyalty-tab-btn dente-segmented-item ${activeTab === "certificates" ? "active" : ""}`}
 						onClick={() => setActiveTab("certificates")}
 					>
 						<Gift size={16} />
@@ -577,7 +577,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					</button>
 					<button
 						type="button"
-						className={`loyalty-tab-btn ${activeTab === "promos" ? "active" : ""}`}
+						className={`loyalty-tab-btn dente-segmented-item ${activeTab === "promos" ? "active" : ""}`}
 						onClick={() => setActiveTab("promos")}
 					>
 						<Tag size={16} />
@@ -585,7 +585,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					</button>
 					<button
 						type="button"
-						className={`loyalty-tab-btn ${activeTab === "ledger" ? "active" : ""}`}
+						className={`loyalty-tab-btn dente-segmented-item ${activeTab === "ledger" ? "active" : ""}`}
 						onClick={() => setActiveTab("ledger")}
 					>
 						<Coins size={16} />
