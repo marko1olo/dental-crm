@@ -34,7 +34,7 @@
 	z-index: var(--z-modal, 3001);
 	width: 95%;
 	max-width: 500px;
-	max-height: min(620px, 92vh);
+	max-height: min(720px, 94vh);
 	background: var(--paper-strong, var(--paper, #fff));
 	border: 1px solid var(--line, #e2e8f0);
 	border-radius: 12px;
